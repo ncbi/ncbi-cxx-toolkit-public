@@ -8,11 +8,11 @@
 <H2>Structure Window : File Commands</H2>
 <ul>
   <li><A href="#open">Open</A>
+  <li><A href="#network">Network Load</A>
   <li><A href="#save">Save</A>
   <li><A href="#save_as">Save As</A>
   <li><A href="#png">Export PNG</A>
   <li><A href="#realign">Realign Structures</A>
-  <li><A href="#limit">Limit Structures</A>
   <li><A href="#preferences">Preferences</A>
   <li><A href="#fonts">Set Fonts</A>
   <li><A href="#exit">Exit</A></li>
@@ -23,15 +23,16 @@
   will always be true of files downloaded from NCBI structure-based servers).
   If a there is already a structure being viewed, you will be prompted to save
   any changes before opening the new file.</p>
+<h3><a name="network"></a>Network Load</h3>
+<p>This is a shortcut to loading particular structures. Enter either a 4-letter PDB code
+or an MMDB integer ID. Cn3D will connect to NCBI's MMDB database via the internet and download
+that structure directly, which you can then manipulate as usual or save to a local file if desired.</p>
 <h3><a name="save"></a>Save</h3>
-<p>Save the current structure to a file on the local disk. You can save either
-  ASCII or binary files, depending on the extension you choose: if the extension
-  is ".val" it will be saved as binary, otherwise it will be saved as
-  ASCII. Confirmation dialogs will appear if changes have been made, and a filename prompt will always come up.</p>
+<p>Save the current data to a file on the local disk, using the same filename 
+  and data type as was initially loaded. Cn3D will assume all editing changes are to be kept.</p>
 <h3><a name="save_as"></a>Save As</h3>
-<p>Similar to <a href="#save">Save</a> except no confirmation dialogs will
-be shown; Cn3D will assume all changes are to be kept. The data will be saved
-to the same filename from which it was loaded.</p>
+<p>Similar to <a href="#save">Save</a> except a dialog will appear in which you can choose
+ a diectory and file name and specify either ASCII or binary type files.</p>
 <h3><a name="png"></a>Export PNG</h3>
 <p>Save the image currently displayed in the structure window to a PNG-format
   file. First, you will be prompted for a file name and path. Then you will see
@@ -48,8 +49,7 @@ to the same filename from which it was loaded.</p>
   same relative width/height as the current structure window. If unchecked, the
   view may not correspond exactly to what you see in the structure window.
   <li><b>Interlaced</b>: whether to create an interlaced PNG file. Interlacing
-    is mainly for web images; it is unavailable for images larger than 
-    the current window.</li>
+    is mainly for web images; it is unavailable for larger images.</li>
 </ul>
 <p>Once you have set all the appropriate parameters, hit <b>OK</b>. You will see
   a small progress meter as the file is created; you'll have to wait until export
@@ -58,13 +58,9 @@ to the same filename from which it was loaded.</p>
 <p>Re-compute the structure alignment(s) between multiple structures. Each slave
   structure will be realigned with the master according to a rigid body fit, using
   only the alpha carbon coordinates of residues in aligned blocks. The RMSD
-  between the coordinate sets for each slave will be printed in the message log.</p>
-<h3><a name="limit"></a>Limit Structures</h3>
-<p>Limits the number of structures that will be loaded next time a file is opened.
-  Use this for large structure alignments (like CDD's) where you only want to
-  view the first <b><i>N</i></b> structures. This can also be useful on slower
-  computers, since rendering many structures can be quite CPU and memory intensive.
-</p>
+  between the coordinate sets for each slave will be printed in the message log. If there are
+ aligned columns selected in the sequence window, then a dialog will appear asking whether to
+ use only the selected residues for structure alignment.</p>
 <h3><a name="preferences"></a>Preferences</h3>
 <p>Brings up the Preferences dialog. These are program configuration options that
   persist from one session to another. There are three panels in this dialog:</p>
@@ -85,10 +81,15 @@ to the same filename from which it was loaded.</p>
     the same structures over a slow network connection. This panel allows you
     to set the location of the cache, and limit the amount of disk space it will
     use.</p>
-  <p><b>Advanced</b>: the first checkbox controls whether CDD annotation information is read-only 
+  <p><b>Advanced</b>
+<ul><li>The <b>CDD Annotations</b> checkbox controls whether CDD annotation information is read-only 
   (the default) or editable. Un-check this option if you want to edit the 
-  annotation information stored in a local CDD file. <b>Unix only:</b> the
- <b>Browser Launch</b> field tells Cn3D how to launch a web browser on your system.
+  annotation information stored in a local CDD file.</li>
+<li><b>Max structures</b>: a limit of how many structures to load from a file with a multi-structured alignment.</li>
+<li><b>Footprint residues</b>: In certain BLAST operations (like self-hits), the alignment is restricted to the currently aligned footprint, for avoiding ambiguity with repeated domains. The "excess" specified here allows the alignment to extend that many residues beyond the existing footprint.</li>
+<li><b>Eye separation</b>: controls the stereo view, how great the depth of the perceived stereo appears.</li>
+<li><b>Proximal</b>: whether to use proximal (cross-eyed) or distal (uncrossed) stereo.</li>
+<li><b>Browser Launch</b>: (<b>UNIX ONLY</b>) tells Cn3D how to launch a web browser on your system.
  The default is netscape, for which the launch command is:</p>
 <pre>( netscape -raise -remote 'openURL(&lt;URL&gt;)' || netscape '&lt;URL&gt;' ) &gt;/dev/null 2&gt;&amp;1 &amp;</pre>
 <p>This brings up the document in an existing netscape window; if you want to
@@ -96,6 +97,8 @@ use a new window for each document, use the command:</p>
 <pre>( netscape -noraise -remote 'openURL(&lt;URL&gt;,new-window)' || netscape '&lt;URL&gt;' ) &gt;/dev/null 2&gt;&amp;1 &amp;</pre>
 <p>These command strings should be all on one line. You can customize the command to launch any browser you wish. Each occurrence of the string &lt;URL&gt; will be replaced by the actual URL of the web page Cn3D is launching.
 </p>
+</li>
+</ul>
 <h3><a name="fonts"></a>Set Fonts</h3>
 Sets the fonts used in the structure and sequence windows. Like the <b>Preferences</b>
 above, these settings are persistent across multiple Cn3D sessions.

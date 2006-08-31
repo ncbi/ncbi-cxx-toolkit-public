@@ -138,8 +138,11 @@
     color according to the information content of each column, where a higher 
     score is more red. 
       <li><b>Fit</b>: colors each residue according to how well it "fits" 
-        in the column it is in. A residue colored blue has a low average substitution 
-        score with the other residues in that column.</li>
+        in the column it is in (based on residue-to-PSSM score). A residue colored red has a high substitution 
+        score given the other residues in that column; a blue color indicates a low score.</li>
+      <li><b>Block fit</b>: similar to <i>fit</i> except residues are colored by blocks and ranked by the sum of residue-to-PSSM scores. The highest scoring blocks in the entire alignment are red, the lowest blue.</li>
+      <li><b>Normalized block fit</b>: similar to <i>block fit</i> except scores are normalized within each column of aligned block; the highest scoring row in a given block column is red, the lowest blue.</li>
+      <li><b>Block row fit</b>: Similar to <i>normalized block fit</i> excpet scores are normalized across each sequence row; the highest scoring block of a given sequence will be red, the lowest blue.</li>
     </ul>
   </li>
 </ul>
@@ -197,4 +200,4 @@ to the entire structure rather than to specific groups.
   that style is at the top of the <b>Displayed</b> list. Similarly, you can lower 
   the annotation's order by pressing <b>Move down</b>.</p>
 </BODY>
-</HTML> 
+</HTML>

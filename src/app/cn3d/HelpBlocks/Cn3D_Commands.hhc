@@ -21,7 +21,7 @@
         <param name="Local" value="SW_View.htm">
         </OBJECT>
     <LI><OBJECT type="text/sitemap">
-        <param name="Name" value="Show / Hide">
+        <param name="Name" value="Select">
         <param name="Local" value="SW_ShowHide.htm">
         </OBJECT>
     <LI><OBJECT type="text/sitemap">

@@ -19,9 +19,11 @@ panels. The rest of this menu is for advanced users and is only available when y
   <li><a href="#name">Edit name</a></li>
   <li><a href="#description">Edit description</a></li>
   <li><a href="#notes">Edit notes</a></li>
-  <li><a href="#references">Edit references</a></li>
+  <li><a href="#references">Edit PubMed references</a></li>
+  <li><a href="#books">Edit book references</a></li>
   <li><a href="#annotate">Edit annotations</a></li>
   <li><a href="#reject">Reject sequence</a></li>
+  <li><a href="#show">Show rejects</a></li>
 </ul>
 <h3><a name="overview"></a>CDD overview</h3>
 <p>This is an informative panel that presents information about a CDD when
@@ -40,12 +42,16 @@ so line breaks are not preserved.
 <h3><a name="notes"></a>Edit notes</h3>
 Edit the CDD notes. This is free text in multiple lines, so line breaks (where
 a line is not auto-wrapped) are preserved.
-<h3><a name="references"></a>Edit references</h3>
+<h3><a name="references"></a>Edit PubMed references</h3>
 This panel allows you to add PubMed ID links to the literature. Click <b>Add</b>
 to add a new reference; the available references will appear in the list above.
 Select any reference and click <b>Launch</b> to start up a web browser to get
 more information on the article. Click <b>Edit</b> to change the reference number,
-or <b>Delete</b> to remove it.
+or <b>Delete</b> to remove it. <b>Move up</b> and <b>Move down</b> can be used to reorder the list.
+<h3><a name="books"></a>Edit book references</h3>
+Similar to the <i>PubMed references</i> panel as described above, this lets you maintain a list of
+NCBI book references. These are in a format specific to NCBI's book viewer, in the form of 
+<i>name<b>.</b>type<b>#</b>address<b>.</b>sub-address</i>. If you have text in this format in the clipboard, you can use the <b>Paste</b> button to input the entire reference directly, otherwise use <b>New</b> and fill in the four fields. Use <b>Edit</b> to change an existing reference.
 <h3><a name="annotate"></a>Annotate</h3>
 <p>Annotations on a CDD are linked to columns in the alignment, such as columns
   of conserved residues at an active site. To create a new annotation, highlight
@@ -72,5 +78,7 @@ windows. You can choose to add any sequence to the CDD's reject list, which will
 cue the update system to not include the sequence in any subsequent updates, so
 <b>use with caution</b>! You can also optionally remove the sequence from the
 alignment and import windows.</p>
+<h3><a name="show"></a>Show rejects</h3>
+Writes a list of rejected sequences to the message log window.
 </BODY>
 </HTML>
