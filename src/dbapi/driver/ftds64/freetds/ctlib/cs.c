@@ -749,6 +749,9 @@ CS_RETCODE
 cs_loc_alloc(CS_CONTEXT * ctx, CS_LOCALE ** locptr)
 {
 	/* TODO */
+	*locptr = (CS_LOCALE *) malloc(sizeof(CS_LOCALE));
+	memset(*locptr, '\0', sizeof(CS_LOCALE));
+
 	return CS_SUCCEED;
 }
 
@@ -756,6 +759,23 @@ CS_RETCODE
 cs_loc_drop(CS_CONTEXT * ctx, CS_LOCALE * locale)
 {
 	/* TODO */
+    if (locale) {
+        if (locale->language) {
+            free(locale->language);
+        }
+        if (locale->charset) {
+            free(locale->charset);
+        }
+        if (locale->time) {
+            free(locale->time);
+        }
+        if (locale->collate) {
+            free(locale->collate);
+        }
+
+        free(locale);
+    }
+
 	return CS_SUCCEED;
 }
 
@@ -763,6 +783,44 @@ CS_RETCODE
 cs_locale(CS_CONTEXT * ctx, CS_INT action, CS_LOCALE * locale, CS_INT type, CS_VOID * buffer, CS_INT buflen, CS_INT * outlen)
 {
 	/* TODO */
+	if (action == CS_GET) {
+        switch (type) {
+        case CS_LC_ALL:
+#if 0
+        case CS_LC_COLLATE:
+        case CS_LC_CTYPE:
+        case CS_LC_MESSAGE:
+        case CS_LC_TIME:
+        case CS_SYB_SORTORDER:
+        case CS_SYB_LANG_CHARSET:
+#endif
+        case CS_SYB_LANG:
+        case CS_SYB_CHARSET:
+        default:
+            return CS_FAIL;
+        }
+    }
+
+	if (action == CS_SET) {
+        switch (type) {
+        case CS_SYB_CHARSET:
+            locale->charset = strdup((char*)buffer);
+            break;
+        case CS_LC_ALL:
+#if 0
+        case CS_LC_COLLATE:
+        case CS_LC_CTYPE:
+        case CS_LC_MESSAGE:
+        case CS_LC_TIME:
+        case CS_SYB_SORTORDER:
+        case CS_SYB_LANG_CHARSET:
+#endif
+        case CS_SYB_LANG:
+        default:
+            return CS_FAIL;
+        }
+    }
+
 	return CS_SUCCEED;
 }
 
