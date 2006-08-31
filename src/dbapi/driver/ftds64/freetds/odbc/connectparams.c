@@ -50,8 +50,8 @@ TDS_RCSID(var, "$Id$");
 
 /**
  * Call this to get the INI file containing Data Source Names.
- * @note rules for determining the location of ODBC config may be different 
- * then what you expect - at this time they differ from unixODBC 
+ * @note rules for determining the location of ODBC config may be different
+ * then what you expect - at this time they differ from unixODBC
  *
  * @return file opened or NULL if error
  * @retval 1 worked
@@ -63,17 +63,17 @@ static FILE *tdoGetIniFileName(void);
  *
  * PURPOSE
  *
- *  This is an implementation of a common MS API call. This implementation 
+ *  This is an implementation of a common MS API call. This implementation
  *  should only be used if the ODBC sub-system/SDK does not have it.
  *  For example; unixODBC has its own so those using unixODBC should NOT be
  *  using this implementation because unixODBC;
- *  - provides caching of ODBC config data 
+ *  - provides caching of ODBC config data
  *  - provides consistent interpretation of ODBC config data (i.e, location)
  *
  * ARGS
  *
  *  see ODBC documentation
- *                      
+ *
  * RETURNS
  *
  *  see ODBC documentation
@@ -81,7 +81,7 @@ static FILE *tdoGetIniFileName(void);
  * NOTES:
  *
  *  - the spec is not entirely implemented... consider this a lite version
- *  - rules for determining the location of ODBC config may be different then what you 
+ *  - rules for determining the location of ODBC config may be different then what you
  *    expect see tdoGetIniFileName().
  *
  */
@@ -116,7 +116,7 @@ parse_server(char *server, TDSCONNECTION * connection)
 	return 1;
 }
 
-/** 
+/**
  * Read connection information from given DSN
  * @param DSN           DSN name
  * @param connection    where to store connection info
@@ -190,7 +190,7 @@ odbc_get_dsn_info(const char *DSN, TDSCONNECTION * connection)
 	return 1;
 }
 
-/** 
+/**
  * Parse connection string and fill connection according
  * @param connect_string     connect string
  * @param connect_string_end connect string end (pointer to char past last)
@@ -291,6 +291,8 @@ odbc_parse_connect_string(const char *connect_string, const char *connect_string
 		} else if (strcasecmp(option, "PacketSize") == 0) {
 			connection->block_size = atoi(tds_dstr_cstr(&value));
 			/* TODO "Address" field */
+		} else if (strcasecmp(option, "client_charset") == 0) {
+			dest_s = &connection->client_charset;
 		}
 
 		/* copy to destination */
@@ -342,7 +344,7 @@ tdoParseProfile(const char *option, const char *value, void *param)
 }
 
 #if defined(WIN32) && defined(_FREETDS_LIBRARY_SOURCE)
-int INSTAPI 
+int INSTAPI
 SQLGetPrivateProfileString(LPCSTR pszSection, LPCSTR pszEntry, LPCSTR pszDefault, LPSTR pRetBuffer, int nRetBuffer,
 			   LPCSTR pszFileName)
 #else
@@ -438,9 +440,9 @@ tdoGetIniFileName()
 
 /*
  * Begin BIG Hack.
- *  
- * We need these from odbcinstext.h but it wants to 
- * include <log.h> and <ini.h>, which are not in the 
+ *
+ * We need these from odbcinstext.h but it wants to
+ * include <log.h> and <ini.h>, which are not in the
  * standard include path.  XXX smurph
  * confirmed by unixODBC stuff, odbcinstext.h shouldn't be installed. freddy77
  */
@@ -471,7 +473,7 @@ typedef struct tODBCINSTPROPERTY
 }
 ODBCINSTPROPERTY, *HODBCINSTPROPERTY;
 
-/* 
+/*
  * End BIG Hack.
  */
 
