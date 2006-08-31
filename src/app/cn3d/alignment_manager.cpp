@@ -1246,7 +1246,7 @@ void AlignmentManager::RefineAlignment(void)
             else
                 ERRORMSG("AlignmentManager::RefineAlignment() - problem converting refinement result");
         } else {
-            ERRORMSG("AlignmentManager::RefineAlignment() - failed to make a refined alignment. Alignment unchanged.");
+            WARNINGMSG("AlignmentManager::RefineAlignment() - failed to make a refined alignment. Alignment unchanged.");
         }
 
     } else {
@@ -1262,6 +1262,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2006/08/31 20:45:38  thiessen
+* warning instead of error when refiner cancelled
+*
 * Revision 1.110  2006/07/13 22:33:50  thiessen
 * change all 'slave' -> 'dependent'
 *
