@@ -824,7 +824,7 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
     buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
     if ( !buf ) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, 
-                   "Failed to allocate " + NStr::IntToString(buflen) + "bytes");
+               "Failed to allocate " + NStr::IntToString(buflen) + " bytes");
     }
     safe_buf.reset(buf);
     if (sentinel == eSentinels)
@@ -1572,6 +1572,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.125  2006/08/31 14:03:17  camacho
+ * Minor
+ *
  * Revision 1.124  2006/07/19 13:28:34  madden
  * Phiblast added to CBlastQueryFilteredFrames::QueryHasMultipleFrames
  *
