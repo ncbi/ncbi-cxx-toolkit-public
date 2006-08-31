@@ -108,6 +108,10 @@ public:
     virtual bool IsAbleTo(ECapability cpb) const;
 
     virtual CS_CONTEXT* CTLIB_GetContext(void) const;
+    CS_LOCALE* GetLocale(void) const
+    {
+        return m_Locale;
+    }
 
     static bool CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg);
     static bool CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
@@ -119,16 +123,24 @@ public:
         return m_TDSVersion;
     }
 
+    void SetClientCharset(const string& charset);
+    const string& GetClientCharset(void) const
+    {
+        return m_ClientCharset;
+    }
+
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
 private:
     CS_CONTEXT* m_Context;
+    CS_LOCALE*  m_Locale;
     CS_INT      m_PacketSize;
     CS_INT      m_LoginRetryCount;
     CS_INT      m_LoginLoopDelay;
     CS_INT      m_TDSVersion;
     CTLibContextRegistry* m_Registry;
+    string      m_ClientCharset;
 
     CS_CONNECTION* x_ConnectToServer(const string&   srv_name,
                                      const string&   usr_name,
@@ -751,6 +763,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/08/31 14:58:41  ssikorsk
+ * Added ClientCharset and locale to the DriverContext.
+ *
  * Revision 1.44  2006/08/22 20:11:42  ssikorsk
  * - CTL_RowResult::m_CmdNum.
  *
