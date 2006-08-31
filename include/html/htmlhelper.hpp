@@ -75,6 +75,10 @@ public:
     static string HTMLEncode(const string& str,
                              THTMLEncodeFlags flags = fEncodeAll);
 
+    /// Decode HTML entities and character references    
+    static CStringUTF8 HTMLDecode(const string& str,
+                                  EEncoding encoding = eEncoding_Unknown);
+
     /// Encode a string for JavaScript.
     ///
     /// Call HTMLEncode and also encode all non-printable characters.
@@ -278,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/08/31 17:25:44  gouriano
+ * Added HTMLDecode method
+ *
  * Revision 1.18  2006/08/08 18:06:48  ivanov
  * CHTMLHelper -- added flags parameter to HTMLEncode/HTMLJavaScriptEncode.
  * Added new method HTMLAttributeEncode to encode HTML tags attributes.
