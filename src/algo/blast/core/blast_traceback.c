@@ -349,8 +349,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    Int4 * frame_offsets   = NULL;
    Int4 * frame_offsets_a = NULL;
    Boolean partial_translation = FALSE;
-   const Boolean is_rpsblast = (program_number == eBlastTypeRpsTblastn || 
-                                program_number == eBlastTypeRpsBlast);
+   const Boolean is_rpsblast = Blast_ProgramIsRpsBlast(program_number);
    const Boolean kIsOutOfFrame = score_options->is_ooframe;
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
    const Boolean kTranslateSubject = 
@@ -519,10 +518,17 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                  query_length, adjusted_s_length);
          }
 
-         if (is_rpsblast)
-            cutoff = hit_params->cutoffs[hsp_list->query_index].cutoff_score;
-         else
+         if (is_rpsblast) {
+            Int4 rps_context = hsp_list->query_index;
+            if (program_number == eBlastTypeRpsTblastn) {
+               rps_context = hsp_list->query_index * NUM_FRAMES +
+                        BLAST_FrameToContext(hsp->subject.frame, program_number);
+            }
+            cutoff = hit_params->cutoffs[rps_context].cutoff_score;
+         }
+         else {
             cutoff = hit_params->cutoffs[hsp->context].cutoff_score;
+         }
 
          if (gap_align->score >= cutoff) {
             Boolean delete_hsp = FALSE;
