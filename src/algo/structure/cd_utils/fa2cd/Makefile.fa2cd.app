@@ -40,7 +40,7 @@ LIB =   xbma_refiner \
 
 #NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lblastcompadj -lncbiobj -lncbi
 
-LDFLAGS = $(FAST_LDFLAGS) -static
+LDFLAGS = $(FAST_LDFLAGS) 
 
 LIBS = $(ORIG_LIBS)
 
@@ -49,4 +49,4 @@ LIBS = $(ORIG_LIBS)
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) HERE
 
 #install:  fa2cd
-#	mv -i fa2cd ~/saikat/fa2cd
+#   mv -i fa2cd ~/saikat/fa2cd
