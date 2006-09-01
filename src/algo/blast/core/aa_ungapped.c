@@ -37,6 +37,7 @@ static char const rcsid[] =
 
 Int2 BlastAaWordFinder(BLAST_SequenceBlk * subject,
                        BLAST_SequenceBlk * query,
+                       BlastQueryInfo * query_info,
                        LookupTableWrap * lut_wrap,
                        Int4 ** matrix,
                        const BlastInitialWordParameters * word_params,
@@ -47,41 +48,60 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk * subject,
                        BlastUngappedStats * ungapped_stats)
 {
     Int2 status = 0;
+    BlastUngappedCutoffs *cutoffs;
 
     /* find the word hits and do ungapped extensions */
 
     if (ewp->diag_table->multiple_hits) {
         if (lut_wrap->lut_type == RPS_LOOKUP_TABLE) {
+            /* for rpsblast, query contains the concatenated database
+               and subject contains one query sequence (or one frame
+               of a translated nucleotide sequence). This means the cutoff
+               and X-drop value is the same for all hits */
+            Int4 context = subject->oid;
+            if (subject->frame != 0) {
+                context = subject->oid * NUM_FRAMES +
+                          BLAST_FrameToContext(subject->frame,
+                                               eBlastTypeRpsTblastn);
+            }
+            cutoffs = word_params->cutoffs + context;
             status = BlastRPSWordFinder_TwoHit(subject, query,
                                                lut_wrap, ewp->diag_table,
                                                matrix,
-                                               word_params->cutoff_score,
-                                               word_params->x_dropoff,
+                                               cutoffs->cutoff_score,
+                                               cutoffs->x_dropoff,
                                                init_hitlist, ungapped_stats);
         } else {
             status = BlastAaWordFinder_TwoHit(subject, query,
                                               lut_wrap, ewp->diag_table,
                                               matrix,
-                                              word_params->cutoff_score,
-                                              word_params->x_dropoff,
+                                              word_params,
+                                              query_info,
                                               offset_pairs,
                                               offset_array_size,
                                               init_hitlist, ungapped_stats);
         }
     } else {
         if (lut_wrap->lut_type == RPS_LOOKUP_TABLE) {
+            Int4 context = subject->oid;
+            if (subject->frame != 0) {
+                context = subject->oid * NUM_FRAMES +
+                          BLAST_FrameToContext(subject->frame,
+                                               eBlastTypeRpsTblastn);
+            }
+            cutoffs = word_params->cutoffs + context;
             status = BlastRPSWordFinder_OneHit(subject, query,
                                                lut_wrap, ewp->diag_table,
                                                matrix,
-                                               word_params->cutoff_score,
-                                               word_params->x_dropoff,
+                                               cutoffs->cutoff_score,
+                                               cutoffs->x_dropoff,
                                                init_hitlist, ungapped_stats);
         } else {
             status = BlastAaWordFinder_OneHit(subject, query,
                                               lut_wrap, ewp->diag_table,
                                               matrix,
-                                              word_params->cutoff_score,
-                                              word_params->x_dropoff,
+                                              word_params,
+                                              query_info,
                                               offset_pairs,
                                               offset_array_size,
                                               init_hitlist, ungapped_stats);
@@ -251,8 +271,8 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                          const LookupTableWrap * lookup_wrap,
                          BLAST_DiagTable * diag,
                          Int4 ** matrix,
-                         Int4 cutoff,
-                         Int4 dropoff,
+                         const BlastInitialWordParameters * word_params,
+                         BlastQueryInfo * query_info,
                          BlastOffsetPair * NCBI_RESTRICT offset_pairs,
                          Int4 array_size,
                          BlastInitHitList * ungapped_hsps,
@@ -274,6 +294,8 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     DiagStruct *diag_array;
     Boolean right_extend;
     Int4 hits_extended = 0;
+    Int4 curr_context;
+    BlastUngappedCutoffs *cutoffs;
 
     ASSERT(diag != NULL);
 
@@ -343,12 +365,17 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
 
                 /* Extend this pair of hits. The extension to the left must
                    reach the end of the first word in order for extension to 
-                   the right to proceed. */
+                   the right to proceed.
+                 
+                   To use the cutoff and X-drop values appropriate for this
+                   extension, the query context must first be found */
 
+                curr_context = BSearchContextInfo(query_offset, query_info);
+                cutoffs = word_params->cutoffs + curr_context;
                 score = BlastAaExtendTwoHit(matrix, subject, query,
                                             last_hit + wordsize,
                                             subject_offset, query_offset,
-                                            dropoff, &hsp_q, &hsp_s,
+                                            cutoffs->x_dropoff, &hsp_q, &hsp_s,
                                             &hsp_len, use_pssm,
                                             wordsize, &right_extend,
                                             &s_last_off);
@@ -356,7 +383,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                 ++hits_extended;
 
                 /* if the hsp meets the score threshold, report it */
-                if (score >= cutoff)
+                if (score >= cutoffs->cutoff_score)
                     BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
                                      query_offset, subject_offset, hsp_len,
                                      score);
@@ -483,8 +510,8 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
                               const LookupTableWrap * lookup_wrap,
                               BLAST_DiagTable * diag,
                               Int4 ** matrix,
-                              Int4 cutoff,
-                              Int4 dropoff,
+                              const BlastInitialWordParameters * word_params,
+                              BlastQueryInfo * query_info,
                               BlastOffsetPair * NCBI_RESTRICT offset_pairs,
                               Int4 array_size,
                               BlastInitHitList * ungapped_hsps,
@@ -504,6 +531,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     Int4 diag_offset, diag_coord, diag_mask, diff;
     DiagStruct *diag_array;
     Int4 hits_extended = 0;
+    Int4 curr_context;
 
     ASSERT(diag != NULL);
 
@@ -535,20 +563,25 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
             /* do an extension, but only if we have not already extended this 
                far */
             if (diff >= 0) {
-                ++hits_extended;
+                Int4 curr_context = BSearchContextInfo(query_offset, 
+                                                       query_info);
+                BlastUngappedCutoffs *cutoffs = word_params->cutoffs + 
+                                                        curr_context;
                 score = BlastAaExtendOneHit(matrix, subject, query,
                                             subject_offset, query_offset,
-                                            dropoff, &hsp_q, &hsp_s, &hsp_len,
+                                            cutoffs->x_dropoff, 
+                                            &hsp_q, &hsp_s, &hsp_len,
                                             wordsize, use_pssm, &s_last_off);
 
                 /* if the hsp meets the score threshold, report it */
-                if (score >= cutoff) {
+                if (score >= cutoffs->cutoff_score) {
                     BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
                                      query_offset, subject_offset, hsp_len,
                                      score);
                 }
                 diag_array[diag_coord].last_hit =
                     s_last_off - (wordsize - 1) + diag_offset;
+                ++hits_extended;
             }
         }                       /* end for */
     }                           /* end while */

@@ -528,6 +528,7 @@ s_NuclUngappedExtend(BLAST_SequenceBlk * query,
  * @param template_length specifies overlap of two words in two-hit model [in]
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
+ * @param query_info Structure containing query context ranges [in]
  * @param diag_table Structure containing diagonal table with word extension 
  *                   information [in]
  * @param q_off The offset in the query sequence [in]
@@ -542,7 +543,8 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
                              BLAST_SequenceBlk * subject, Uint4 min_step,
                              Uint1 template_length,
                              const BlastInitialWordParameters * word_params,
-                             Int4 ** matrix, BLAST_DiagTable * diag_table,
+                             Int4 ** matrix, BlastQueryInfo * query_info,
+                             BLAST_DiagTable * diag_table,
                              Int4 q_off, Int4 s_end, Int4 s_off,
                              BlastInitHitList * init_hitlist)
 {
@@ -557,6 +559,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
     Uint4 last_hit;
     Uint4 hit_saved;
     DiagStruct *hit_level_array;
+    BlastUngappedCutoffs *cutoffs;
 
     hit_level_array = diag_table->hit_level_array;
     ASSERT(hit_level_array);
@@ -587,11 +590,13 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
     if (hit_ready) {
         if (word_params->options->ungapped_extension) {
             /* Perform ungapped extension */
+            Int4 context = BSearchContextInfo(q_off, query_info);
+            cutoffs = word_params->cutoffs + context;
             ungapped_data = &dummy_ungapped_data;
             s_NuclUngappedExtend(query, subject, matrix, q_off, s_end, s_off,
-                                 -word_params->x_dropoff, ungapped_data,
+                                 -(cutoffs->x_dropoff), ungapped_data,
                                  word_params->nucl_score_table,
-                                 word_params->reduced_nucl_cutoff_score);
+                                 cutoffs->reduced_nucl_cutoff_score);
 
             last_hit = ungapped_data->length + ungapped_data->s_start
                 + diag_table->offset;
@@ -603,7 +608,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
             BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
             /* Set the "saved" flag for this hit */
             hit_saved = 1;
-        } else if (ungapped_data->score >= word_params->cutoff_score) {
+        } else if (ungapped_data->score >= cutoffs->cutoff_score) {
             BlastUngappedData *final_data =
                 (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
             *final_data = *ungapped_data;
@@ -635,6 +640,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
  * @param lookup Lookup table [in]
  * @param word_params Parameters for finding and extending initial words [in]
  * @param matrix Matrix for ungapped extension [in]
+ * @param query_info Structure containing query context ranges [in]
  * @param diag_table Structure containing diagonal array [in]
  * @param num_hits Number of lookup table hits [in]
  * @param offset_pairs Array of query and subject offsets of lookup table 
@@ -648,7 +654,8 @@ s_DiscMbDiagTableExtendInitialHits(BLAST_SequenceBlk * query,
                               BLAST_SequenceBlk * subject,
                               LookupTableWrap * lookup,
                               const BlastInitialWordParameters * word_params,
-                              Int4 ** matrix, BLAST_DiagTable * diag_table,
+                              Int4 ** matrix, BlastQueryInfo * query_info,
+                              BLAST_DiagTable * diag_table,
                               Int4 num_hits,
                               const BlastOffsetPair * offset_pairs,
                               BlastInitHitList * init_hitlist)
@@ -660,7 +667,7 @@ s_DiscMbDiagTableExtendInitialHits(BLAST_SequenceBlk * query,
     for (index = 0; index < num_hits; ++index) {
         if (s_BlastnDiagTableExtendInitialHit
             (query, subject, mb_lt->scan_step, mb_lt->template_length,
-             word_params, matrix, diag_table,
+             word_params, matrix, query_info, diag_table,
              offset_pairs[index].qs_offsets.q_off,
              offset_pairs[index].qs_offsets.s_off,
              offset_pairs[index].qs_offsets.s_off, init_hitlist))
@@ -682,6 +689,7 @@ s_DiscMbDiagTableExtendInitialHits(BLAST_SequenceBlk * query,
  * @param template_length specifies overlap of two words in two-hit model [in]
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
+ * @param query_info Structure containing query context ranges [in]
  * @param hash_table Structure containing initial hits [in] [out]
  * @param q_off The offset in the query sequence [in]
  * @param s_end The offset in the subject sequence where this hit ends [in]
@@ -695,7 +703,8 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                BLAST_SequenceBlk * subject, Uint4 min_step,
                                Uint1 template_length,
                                const BlastInitialWordParameters * word_params,
-                               Int4 ** matrix, BLAST_DiagHash * hash_table,
+                               Int4 ** matrix, BlastQueryInfo * query_info,
+                               BLAST_DiagHash * hash_table,
                                Int4 q_off, Int4 s_end, Int4 s_off,
                                BlastInitHitList * init_hitlist)
 {
@@ -707,6 +716,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     Int4 rc;
     Int4 last_hit, hit_saved=0;
     Int4 s_pos = s_end + hash_table->offset;
+    BlastUngappedCutoffs *cutoffs;
 
     window_size = word_params->options->window_size;
     two_hits = (window_size > 0);
@@ -739,12 +749,14 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
         if (hit_ready) {
             if (word_params->options->ungapped_extension) {
                 /* Perform ungapped extension */
+                Int4 context = BSearchContextInfo(q_off, query_info);
+                cutoffs = word_params->cutoffs + context;
                 ungapped_data = &dummy_ungapped_data;
                 s_NuclUngappedExtend(query, subject, matrix, q_off, s_end,
-                                     s_off, -word_params->x_dropoff,
+                                     s_off, -(cutoffs->x_dropoff),
                                      ungapped_data,
                                      word_params->nucl_score_table,
-                                     word_params->reduced_nucl_cutoff_score);
+                                     cutoffs->reduced_nucl_cutoff_score);
 
                 last_hit = ungapped_data->length + ungapped_data->s_start + hash_table->offset;
             } else {
@@ -756,7 +768,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                                      ungapped_data);
                 /* Set the "saved" flag for this hit */
                 hit_saved = 1;
-            } else if (ungapped_data->score >= word_params->cutoff_score) {
+            } else if (ungapped_data->score >= cutoffs->cutoff_score) {
                 BlastUngappedData *final_data =
                     (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
                 *final_data = *ungapped_data;
@@ -789,12 +801,14 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
             hit_ready = TRUE;
             if (word_params->options->ungapped_extension) {
                 /* Perform ungapped extension */
+                Int4 context = BSearchContextInfo(q_off, query_info);
+                cutoffs = word_params->cutoffs + context;
                 ungapped_data = &dummy_ungapped_data;
                 s_NuclUngappedExtend(query, subject, matrix, q_off, s_end,
-                                     s_off, -word_params->x_dropoff,
+                                     s_off, -(cutoffs->x_dropoff),
                                      ungapped_data,
                                      word_params->nucl_score_table,
-                                     word_params->reduced_nucl_cutoff_score);
+                                     cutoffs->reduced_nucl_cutoff_score);
                 level = ungapped_data->length + ungapped_data->s_start + hash_table->offset;
             } else {
                 ungapped_data = NULL;
@@ -803,7 +817,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
                 BLAST_SaveInitialHit(init_hitlist, q_off, s_off,
                                      ungapped_data);
                 hit_saved = 1;
-            } else if (ungapped_data->score >= word_params->cutoff_score) {
+            } else if (ungapped_data->score >= cutoffs->cutoff_score) {
                 BlastUngappedData *final_data =
                     (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
                 *final_data = *ungapped_data;
@@ -832,6 +846,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
  * @param lookup Lookup table [in]
  * @param word_params Parameters for finding and extending initial words [in]
  * @param matrix Matrix for ungapped extension [in]
+ * @param query_info Structure containing query context ranges [in]
  * @param hash_table Structure containing word hits [in]
  * @param num_hits Number of lookup table hits [in]
  * @param offset_pairs Array of query and subject offsets of lookup table 
@@ -846,6 +861,7 @@ s_DiscMbDiagHashExtendInitialHits(BLAST_SequenceBlk * query,
                                 LookupTableWrap * lookup,
                                 const BlastInitialWordParameters *
                                 word_params, Int4 ** matrix,
+                                BlastQueryInfo * query_info,
                                 BLAST_DiagHash * hash_table, Int4 num_hits,
                                 const BlastOffsetPair * offset_pairs,
                                 BlastInitHitList * init_hitlist)
@@ -857,7 +873,7 @@ s_DiscMbDiagHashExtendInitialHits(BLAST_SequenceBlk * query,
     for (index = 0; index < num_hits; ++index) {
         if (s_BlastnDiagHashExtendInitialHit
             (query, subject, mb_lt->scan_step, mb_lt->template_length,
-             word_params, matrix, hash_table,
+             word_params, matrix, query_info, hash_table,
              offset_pairs[index].qs_offsets.q_off,
              offset_pairs[index].qs_offsets.s_off,
              offset_pairs[index].qs_offsets.s_off, init_hitlist))
@@ -873,7 +889,8 @@ DiscMB_ExtendInitialHits(const BlastOffsetPair * offset_pairs,
                          BLAST_SequenceBlk * subject,
                          LookupTableWrap * lookup,
                          const BlastInitialWordParameters * word_params,
-                         Int4 ** matrix, Blast_ExtendWord * ewp,
+                         Int4 ** matrix, BlastQueryInfo * query_info,
+                         Blast_ExtendWord * ewp,
                          BlastInitHitList * init_hitlist)
 {
     ASSERT(lookup->lut_type == MB_LOOKUP_TABLE &&
@@ -881,12 +898,12 @@ DiscMB_ExtendInitialHits(const BlastOffsetPair * offset_pairs,
 
     if (word_params->container_type == eDiagArray) {
         return s_DiscMbDiagTableExtendInitialHits(query, subject, lookup,
-                                             word_params, matrix,
+                                             word_params, matrix, query_info,
                                              ewp->diag_table, num_hits,
                                              offset_pairs, init_hitlist);
     } else if (word_params->container_type == eDiagHash) {
         return s_DiscMbDiagHashExtendInitialHits(query, subject, lookup,
-                                               word_params, matrix,
+                                               word_params, matrix, query_info,
                                                ewp->hash_table, num_hits,
                                                offset_pairs, init_hitlist);
     }
@@ -931,7 +948,8 @@ BlastNaExtendRight(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                    const BlastInitialWordParameters * word_params,
                    LookupTableWrap * lookup_wrap,
                    BLAST_SequenceBlk * query, BLAST_SequenceBlk * subject,
-                   Int4 ** matrix, Blast_ExtendWord * ewp,
+                   Int4 ** matrix, BlastQueryInfo * query_info,
+                   Blast_ExtendWord * ewp,
                    BlastInitHitList * init_hitlist)
 {
     Int4 index;
@@ -1031,7 +1049,8 @@ BlastNaExtendRight(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hit_ready =
                 s_BlastnDiagHashExtendInitialHit(query, subject, min_step,
                                                template_length, word_params,
-                                               matrix, ewp->hash_table,
+                                               matrix, query_info,
+                                               ewp->hash_table,
                                                q_offset - extended_left,
                                                s_off + extended_right,
                                                s_offset - extended_left,
@@ -1040,6 +1059,7 @@ BlastNaExtendRight(const BlastOffsetPair * offset_pairs, Int4 num_hits,
             hit_ready = s_BlastnDiagTableExtendInitialHit(query, subject, min_step,
                                                      template_length,
                                                      word_params, matrix,
+                                                     query_info,
                                                      ewp->diag_table,
                                                      q_offset - extended_left,
                                                      s_off + extended_right,
@@ -1055,6 +1075,7 @@ BlastNaExtendRight(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 /* Description in blast_extend.h */
 Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
                        BLAST_SequenceBlk * query,
+                       BlastQueryInfo * query_info,
                        LookupTableWrap * lookup_wrap,
                        Int4 ** matrix,
                        const BlastInitialWordParameters * word_params,
@@ -1082,8 +1103,8 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
 
         hits_extended +=
             BlastNaExtendRight(offset_pairs, hitsfound, word_params,
-                               lookup_wrap, query, subject, matrix, ewp,
-                               init_hitlist);
+                               lookup_wrap, query, subject, matrix, 
+                               query_info, ewp, init_hitlist);
 
         start_offset = next_start;
     }
@@ -1105,6 +1126,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                           LookupTableWrap * lookup_wrap,
                           BLAST_SequenceBlk * query,
                           BLAST_SequenceBlk * subject, Int4 ** matrix,
+                          BlastQueryInfo * query_info,
                           Blast_ExtendWord * ewp,
                           BlastInitHitList * init_hitlist)
 {
@@ -1154,6 +1176,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                     s_BlastnDiagHashExtendInitialHit(query, subject, min_step,
                                                    template_length,
                                                    word_params, matrix,
+                                                   query_info,
                                                    ewp->hash_table, q_offset,
                                                    s_offset + lut_word_length,
                                                    s_offset, init_hitlist);
@@ -1161,8 +1184,8 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                 hit_ready =
                     s_BlastnDiagTableExtendInitialHit(query, subject, min_step,
                                                  template_length, word_params,
-                                                 matrix, ewp->diag_table,
-                                                 q_offset,
+                                                 matrix, query_info,
+                                                 ewp->diag_table, q_offset,
                                                  s_offset + lut_word_length,
                                                  s_offset, init_hitlist);
             }
@@ -1245,7 +1268,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                     s_BlastnDiagHashExtendInitialHit(query, subject, min_step,
                                                    template_length,
                                                    word_params, matrix,
-                                                   ewp->hash_table,
+                                                   query_info, ewp->hash_table,
                                                    q_offset - extended_left,
                                                    s_off,
                                                    s_offset - extended_left,
@@ -1254,7 +1277,8 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                 hit_ready =
                     s_BlastnDiagTableExtendInitialHit(query, subject, min_step,
                                                  template_length, word_params,
-                                                 matrix, ewp->diag_table,
+                                                 matrix, query_info,
+                                                 ewp->diag_table,
                                                  q_offset - extended_left,
                                                  s_off,
                                                  s_offset - extended_left,
@@ -1270,6 +1294,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair * offset_pairs, Int4 num_hits,
 /* Description in blast_extend.h */
 Int2 MB_WordFinder(BLAST_SequenceBlk * subject,
                    BLAST_SequenceBlk * query,
+                   BlastQueryInfo * query_info,
                    LookupTableWrap * lookup_wrap,
                    Int4 ** matrix,
                    const BlastInitialWordParameters * word_params,
@@ -1320,13 +1345,14 @@ Int2 MB_WordFinder(BLAST_SequenceBlk * subject,
             hits_extended +=
                 BlastNaExtendRightAndLeft(offset_pairs, hitsfound,
                                           word_params, lookup_wrap, query,
-                                          subject, matrix, ewp, init_hitlist);
+                                          subject, matrix, query_info,
+                                          ewp, init_hitlist);
             break;
         case eUpdateDiag:
             hits_extended +=
                 DiscMB_ExtendInitialHits(offset_pairs, hitsfound, query,
                                          subject, lookup_wrap, word_params,
-                                         matrix, ewp, init_hitlist);
+                                         matrix, query_info, ewp, init_hitlist);
             break;
         default:
             break;
@@ -1352,6 +1378,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk * subject,
 /* Description in blast_extend.h */
 Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk * subject,
                           BLAST_SequenceBlk * query,
+                          BlastQueryInfo * query_info,
                           LookupTableWrap * lookup_wrap,
                           Int4 ** matrix,
                           const BlastInitialWordParameters * word_params,
@@ -1380,8 +1407,8 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk * subject,
 
         hits_extended +=
             BlastNaExtendRightAndLeft(offset_pairs, hitsfound, word_params,
-                                      lookup_wrap, query, subject,
-                                      matrix, ewp, init_hitlist);
+                                      lookup_wrap, query, subject, matrix, 
+                                      query_info, ewp, init_hitlist);
 
         start_offset = next_start;
     }
