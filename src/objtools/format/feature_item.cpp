@@ -3553,19 +3553,56 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
     bool insertion_seq_name = false,
          plasmid_name = false,
          transposon_name = false;
+    string primer_fwd_seq, 
+        primer_fwd_name, 
+        primer_rev_seq, 
+        primer_rev_name;
+
     ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
         ESourceQualifier slot = s_SubSourceToSlot(**it);
-        if ( slot == eSQ_insertion_seq_name ) {
+
+        switch( slot ) {
+
+        case eSQ_insertion_seq_name:
             insertion_seq_name = true;
-        } else if ( slot == eSQ_plasmid_name ) {
-            plasmid_name = true;
-        } else if ( slot == eSQ_transposon_name ) {
-            transposon_name = true;
-        }
-        if (slot != eSQ_none) {
             x_AddQual(slot, new CFlatSubSourceQVal(**it));
+            break;
+
+        case eSQ_plasmid_name:
+            plasmid_name = true;
+            x_AddQual(slot, new CFlatSubSourceQVal(**it));
+            break;
+
+        case eSQ_transposon_name:
+            transposon_name = true;
+            x_AddQual(slot, new CFlatSubSourceQVal(**it));
+            break;
+
+        case eSQ_fwd_primer_seq:
+            primer_fwd_seq = (**it).GetName();
+            break;
+
+        case eSQ_fwd_primer_name:
+            primer_fwd_name = (**it).GetName();
+            break;
+
+        case eSQ_rev_primer_seq:
+            primer_rev_seq = (**it).GetName();
+            break;
+
+        case eSQ_rev_primer_name:
+            primer_rev_name = (**it).GetName();
+            break;
+
+        default:
+            if (slot != eSQ_none) {
+                x_AddQual(slot, new CFlatSubSourceQVal(**it));
+            }
+            break;
         }
     }
+    x_AddQual( eSQ_pcr_primer, new CFlatSubSourcePrimer( 
+        primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) );
 
     // some qualifiers are flags in genome and names in subsource,
     // print once with name
@@ -3695,11 +3732,7 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
     DO_QUAL(collection_date);
     DO_QUAL(collected_by);
     DO_QUAL(identified_by);
-    DO_QUAL(fwd_primer_seq);
-    DO_QUAL(rev_primer_seq);
-    DO_QUAL(fwd_primer_name);
-    DO_QUAL(rev_primer_name);
-    
+    DO_QUAL(pcr_primer);
     DO_QUAL(genotype);
     x_FormatQual(eSQ_plastid_name, "plastid", qvec);
     
@@ -3858,6 +3891,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.81  2006/09/01 14:14:38  ludwigf
+* FIXED: Source qualifiers /primer_fwd_name, /primer_fwd_seq, /primer_rev_seq
+*  /primer_rev_name should be lumped together as one big /PCR_primer
+*  qualifier.
+*
 * Revision 1.80  2006/08/31 17:13:00  ludwigf
 * ADDED: Extra mode flag that controls whether codon_recognized becomes a
 *  qualifier or part of the note in the flat file. As implemented, it will

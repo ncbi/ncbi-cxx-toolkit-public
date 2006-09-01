@@ -201,6 +201,7 @@ enum ESourceQualifier {
     eSQ_organelle,
     eSQ_orgmod_note,
     eSQ_pathovar,
+    eSQ_pcr_primer,
     eSQ_plasmid_name,
     eSQ_plastid_name,
     eSQ_pop_variant,
@@ -246,6 +247,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/09/01 14:14:38  ludwigf
+* FIXED: Source qualifiers /primer_fwd_name, /primer_fwd_seq, /primer_rev_seq
+*  /primer_rev_name should be lumped together as one big /PCR_primer
+*  qualifier.
+*
 * Revision 1.10  2005/12/06 18:01:57  ludwigf
 * FIXED: Added feature qualifier "evidence".
 * I had removed that qualifier a few weeks back, thus making it illegal not

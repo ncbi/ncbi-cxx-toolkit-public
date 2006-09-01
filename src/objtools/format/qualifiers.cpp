@@ -58,7 +58,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
 const string IFlatQVal::kSpace     = " ";
 const string IFlatQVal::kSemicolon = ";";
 const string IFlatQVal::kComma     = ",";
@@ -494,7 +493,7 @@ CFlatInferenceQVal::CFlatInferenceQVal( const string& gbValue ) :
         "protein motif",
         "ab initio prediction",
         0
-    };
+    }; 
     for ( size_t i=0; legalPrefixes[i] != 0; ++i ) {
         if ( NStr::StartsWith( gbValue, legalPrefixes[i] ) ) {
             m_str = gbValue;
@@ -697,6 +696,39 @@ void s_ConvertGtLt(string& subname)
     }
 }
 
+void CFlatSubSourcePrimer::Format(
+    TFlatQuals& q, 
+    const string& name,
+    CBioseqContext& ctx, 
+    IFlatQVal::TFlags flags) const
+{
+    string value;
+    if ( ! m_fwd_name.empty() ) {
+        value += "fwd_name: " + m_fwd_name;
+    }
+    if ( ! m_fwd_seq.empty() ) {
+        if ( ! value.empty() ) {
+            value += ", ";
+        }
+        value += "fwd_seq: " + m_fwd_seq;
+    }
+    if ( ! m_rev_name.empty() ) {
+        if ( ! value.empty() ) {
+            value += ", ";
+        }
+        value += "rev_name: " + m_rev_name;
+    }
+    if ( ! m_rev_seq.empty() ) {
+        if ( ! value.empty() ) {
+            value += ", ";
+        }
+        value += "rev_seq: " + m_rev_seq;
+    }
+    if ( value.empty() ) {
+        return;
+    }
+    x_AddFQ( q, "PCR_primers", value );
+}
 
 void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
                               CBioseqContext& ctx, IFlatQVal::TFlags flags) const
@@ -1050,6 +1082,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2006/09/01 14:14:38  ludwigf
+* FIXED: Source qualifiers /primer_fwd_name, /primer_fwd_seq, /primer_rev_seq
+*  /primer_rev_name should be lumped together as one big /PCR_primer
+*  qualifier.
+*
 * Revision 1.40  2006/08/31 17:13:00  ludwigf
 * ADDED: Extra mode flag that controls whether codon_recognized becomes a
 *  qualifier or part of the note in the flat file. As implemented, it will

@@ -498,6 +498,33 @@ private:
     CConstRef<CSubSource> m_Value;
 };
 
+class NCBI_FORMAT_EXPORT CFlatSubSourcePrimer : public IFlatQVal
+{
+public:
+    CFlatSubSourcePrimer(
+        const string& fwd_name,
+        const string& fwd_seq,
+        const string& rev_name,
+        const string& rev_seq ) :
+        IFlatQVal( &kSpace, &kSemicolon),
+        m_fwd_name( fwd_name ),
+        m_fwd_seq( fwd_seq ),
+        m_rev_name( rev_name ),
+        m_rev_seq( rev_seq )
+    {
+        NStr::ToLower( m_fwd_seq );
+        NStr::ToLower( m_rev_seq );
+    }
+
+    void Format( 
+        TFlatQuals& quals, const string& name, CBioseqContext& ctx, TFlags flags) const;
+
+protected:
+    string m_fwd_name;
+    string m_fwd_seq;
+    string m_rev_name;
+    string m_rev_seq;
+};
 
 class NCBI_FORMAT_EXPORT CFlatXrefQVal : public IFlatQVal
 {
@@ -595,6 +622,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/09/01 14:14:38  ludwigf
+* FIXED: Source qualifiers /primer_fwd_name, /primer_fwd_seq, /primer_rev_seq
+*  /primer_rev_name should be lumped together as one big /PCR_primer
+*  qualifier.
+*
 * Revision 1.27  2006/08/30 13:28:50  ludwigf
 * FIXED: Handling of "exp_ev" qualifier and "inference" gb-qualifier. The
 *  second may be used to modify the value of the first.
