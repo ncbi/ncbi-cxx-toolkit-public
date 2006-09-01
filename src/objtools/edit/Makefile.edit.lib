@@ -5,3 +5,5 @@
 
 SRC = seq_entry_edit promote
 LIB    = xobjedit
+
+ASN_DEP = seqset
