@@ -1999,7 +1999,7 @@ CSearchResultSet CRemoteBlast::GetResultSet()
     }
     
     ITERATE(vector<string>, ite, E) {
-        int err = kBlastMessageNoContext;
+        err = kBlastMessageNoContext;
         
         CRef<CSearchMessage>
             sm(new CSearchMessage(eBlastSevError, err, *ite));
@@ -2028,6 +2028,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2006/09/01 14:22:06  camacho
+* Pacify solaris compiler
+*
 * Revision 1.48  2006/08/30 17:43:58  bealer
 * - Add CLocalBlast-like constructor and GetResultSet() methods.
 *

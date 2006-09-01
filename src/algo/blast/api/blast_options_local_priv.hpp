@@ -1161,8 +1161,8 @@ CBlastOptionsLocal::SetEffectiveSearchSpace(Int8 eff)
 inline void 
 CBlastOptionsLocal::SetEffectiveSearchSpace(const vector<Int8>& eff)
 {
-    if (m_EffLenOpts->num_searchspaces < (Int4)eff.size()) {
-        m_EffLenOpts->num_searchspaces = eff.size();
+    if (m_EffLenOpts->num_searchspaces < static_cast<Int4>(eff.size())) {
+        m_EffLenOpts->num_searchspaces = static_cast<Int4>(eff.size());
         if (m_EffLenOpts->searchsp_eff) sfree(m_EffLenOpts->searchsp_eff);
         m_EffLenOpts->searchsp_eff = (Int8 *)malloc(eff.size() * sizeof(Int8));
     }

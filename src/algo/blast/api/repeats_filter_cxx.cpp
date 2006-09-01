@@ -142,12 +142,10 @@ s_BlastSeqLoc2MaskedRegions(const CSeq_loc    & query,
 ///
 /// @param alignment    Seq-align-set containing Dense-segs which specify the
 ///                     ranges of hits. [in]
-/// @param query_start  Start offset of the used part of the query. [in]
 /// @param locs         Filtered areas for this query are added here. [out]
 
 static void
 s_SeqAlignToBlastSeqLoc(const CSeq_align_set& alignment, 
-                        int query_start,
                         BlastSeqLoc ** locs)
 {
     ITERATE(CSeq_align_set::Tdata, dense_seg, alignment.Get()) {
@@ -208,7 +206,7 @@ s_FillMaskLocFromBlastResults(TSeqLocVector& query,
         ITERATE(CSeq_align_set::Tdata, alignment, result.GetSeqAlign()->Get()) {
             _ASSERT((*alignment)->GetSegs().IsDisc());
             s_SeqAlignToBlastSeqLoc((*alignment)->GetSegs().GetDisc(), 
-                                    query_start, &loc_list);
+                                    &loc_list);
         }
         
         // Make the intervals unique
@@ -286,7 +284,7 @@ s_FillMaskLocFromBlastResults(CBlastQueryVector& query,
         ITERATE(CSeq_align_set::Tdata, alignment, result.GetSeqAlign()->Get()) {
             _ASSERT((*alignment)->GetSegs().IsDisc());
             s_SeqAlignToBlastSeqLoc((*alignment)->GetSegs().GetDisc(), 
-                                    query_start, &loc_list);
+                                    &loc_list);
         }
         
         // Make the intervals unique
@@ -412,6 +410,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.34  2006/09/01 14:22:06  camacho
+ *  Pacify solaris compiler
+ *
  *  Revision 1.33  2006/08/29 18:13:30  madden
  *  Doxygen fixes
  *

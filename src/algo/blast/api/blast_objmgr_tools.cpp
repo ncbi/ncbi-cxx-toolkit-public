@@ -693,7 +693,7 @@ PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in,
 }
 
 CRef<objects::CSeq_loc>
-MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & sloc )
+MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & /*sloc*/ )
 {
     // This function could produce this error only in cases where a
     // clean (non-information-losing) conversion failed.
@@ -714,6 +714,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2006/09/01 14:22:06  camacho
+* Pacify solaris compiler
+*
 * Revision 1.74  2006/08/02 16:12:46  camacho
 * Correct handling of no repeat filtering results
 *
