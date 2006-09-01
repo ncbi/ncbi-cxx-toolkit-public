@@ -157,7 +157,7 @@ public:
                   int db_err_code)
         : CException(info,
                      prev_exception,
-                     CException::eInvalid,
+                     (CException::EErrCode)err_code,
                      message,
                      severity )
         , m_DBErrCode(db_err_code)
@@ -508,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/09/01 20:16:02  ssikorsk
+ * Fixed problem with setting up of a value of type EErrCode in ctor of CDB_Exception.
+ *
  * Revision 1.29  2006/07/28 14:57:40  ssikorsk
  * Added GetSybaseSeverity/SetSybaseSeverity to CDB_Exception.
  *
