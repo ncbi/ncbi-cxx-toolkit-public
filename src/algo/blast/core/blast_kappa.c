@@ -1745,7 +1745,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     if (do_link_hsps) {
         ASSERT(hitParams->link_hsp_params != NULL);
         cutoff_s =
-            (int) (hitParams->cutoff_score * context->localScalingFactor);
+            (int) (hitParams->cutoff_score_min * context->localScalingFactor);
     } else {
         /* There is no cutoff score; we consider e-values instead */
         cutoff_s = 1;
