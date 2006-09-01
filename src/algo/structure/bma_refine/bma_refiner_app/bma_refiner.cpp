@@ -812,12 +812,14 @@ int main(int argc, const char* argv[])
     CObjectOStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
 
     // Execute main application function
-    CTime start(CTime::eCurrent), stop;
+    const CTime start(CTime::eCurrent);
+    CTime stop;
     CAlignmentRefiner refiner;
     result = refiner.AppMain(argc, argv, 0, eDS_Default, 0);
 
     //  Timing info
-    cout << "\n\n****  Elapsed Time = " << stop.SetCurrent().DiffSecond(start) << " sec  ****" << endl << endl;
+    stop.SetCurrent();
+    cout << "\n\n****  Elapsed Time = " << stop.DiffSecond(start) << " sec  ****" << endl << endl;
 
     return result;
 }
@@ -826,6 +828,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/09/01 15:31:54  lanczyck
+ * make CTime 'start' const
+ *
  * Revision 1.11  2006/04/05 19:26:32  lanczyck
  * allow for changing order of phases in a cycle; handle case where DoPhase fails (e.g., can't do block alignment in LOO phase) w/o crashing
  *
