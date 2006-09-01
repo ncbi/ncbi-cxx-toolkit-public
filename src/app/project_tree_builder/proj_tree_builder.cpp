@@ -808,7 +808,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     if (k != m->second.m_Contents.end()) {
         lib_or_dll = k->second.front();
     }
-    if (!lib_or_dll.empty()) {
+    if (!lib_or_dll.empty() ||
+        CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone) {
         if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
             list<string> dll_depends;
             k = m->second.m_Contents.find("DLL_LIB");
@@ -1311,6 +1312,19 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                               GetApp().GetProjectTreeInfo().m_TreeNode);
     if ( !CDirEntry(node_path).Exists() )
         return;
+    if (!is_root &&
+        CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvcNone) {
+        // on UNIX the build tree is already configured,
+        // we check if this particular subtree is enabled (ie, exists) there
+        string subtree =
+            CDirEntry::CreateRelativePath(
+                GetApp().GetProjectTreeInfo().m_Src, dir_name);
+        subtree = CDirEntry::ConcatPath(CDirEntry(GetApp().m_Solution).GetDir(), subtree);
+        if (!CDirEntry(subtree).Exists()) {
+            LOG_POST(Info << subtree << " : skipped (not configured)");
+            return;
+        }
+    }
     
     bool weak=false;
     bool process_projects = !is_root && filter->CheckProject(dir_name,&weak);
@@ -1657,6 +1671,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/09/01 17:22:23  gouriano
+ * On UNIX skip projects, which are disabled by configure
+ *
  * Revision 1.41  2006/08/01 16:02:11  gouriano
  * Corrected macro resolving
  *

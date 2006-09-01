@@ -227,7 +227,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,2,0) );
+    SetVersion( CVersionInfo(1,2,1) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -1165,6 +1165,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2006/09/01 17:22:23  gouriano
+ * On UNIX skip projects, which are disabled by configure
+ *
  * Revision 1.81  2006/07/25 18:37:27  gouriano
  * Made dependency on datatool for ASN projects optional
  *
