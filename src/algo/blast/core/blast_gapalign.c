@@ -2974,6 +2974,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    Boolean is_prot;
    Boolean restricted_alignment = FALSE;
    Boolean is_greedy;
+   Boolean is_rpsblast = Blast_ProgramIsRpsBlast(program_number);
    Int4 max_offset;
    Int4 rps_cutoff_index;
    Int2 status = 0;
@@ -3016,9 +3017,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       }
    }
 
-   if (program_number == eBlastTypeRpsTblastn || 
-       program_number == eBlastTypeRpsBlast) {
-
+   if (is_rpsblast) {
       rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
       if (program_number == eBlastTypeRpsBlast)
          rps_cutoff_index = subject->oid;
@@ -3105,8 +3104,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
          BlastHSP* new_hsp;
          Int4 cutoff, restricted_cutoff = 0;
 
-         if (program_number == eBlastTypeRpsTblastn || 
-             program_number == eBlastTypeRpsBlast) 
+         if (is_rpsblast)
             cutoff = hit_params->cutoffs[rps_cutoff_index].cutoff_score;
          else
             cutoff = hit_params->cutoffs[context].cutoff_score;
