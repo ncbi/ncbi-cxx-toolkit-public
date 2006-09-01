@@ -284,8 +284,9 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
          
          BlastInitHitListReset(init_hitlist);
          
-         aux_struct->WordFinder(subject, query, lookup, matrix, word_params, 
-                                aux_struct->ewp, aux_struct->offset_pairs, 
+         aux_struct->WordFinder(subject, query, query_info, lookup, matrix, 
+                                word_params, aux_struct->ewp, 
+                                aux_struct->offset_pairs, 
                                 kScanSubjectOffsetArraySize,
                                 init_hitlist, ungapped_stats);
             
@@ -590,20 +591,24 @@ s_FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs,
                         const BlastHitSavingParameters* hit_params)
 {
    /* since the cutoff score here will be used for display
-      putposes, strip out any internal scaling of the scores */
+      purposes, strip out any internal scaling of the scores 
+    
+      If this was a multi-query search, use the least stringent
+      cutoff and most generous dropoff value among all the 
+      possible sequences */
 
    Int4 scale_factor = (Int4)score_params->scale_factor;
 
    if (!return_cutoffs)
       return -1;
 
-   return_cutoffs->x_drop_ungapped = 
-      word_params->x_dropoff / scale_factor;
+   return_cutoffs->x_drop_ungapped = word_params->x_dropoff_max / scale_factor;
    return_cutoffs->x_drop_gap = ext_params->gap_x_dropoff / scale_factor;
    return_cutoffs->x_drop_gap_final = ext_params->gap_x_dropoff_final / 
                                                         scale_factor;
-   return_cutoffs->ungapped_cutoff = word_params->cutoff_score / scale_factor;
-   return_cutoffs->cutoff_score = hit_params->cutoff_score;
+   return_cutoffs->ungapped_cutoff = word_params->cutoff_score_min / 
+                                                        scale_factor;
+   return_cutoffs->cutoff_score = hit_params->cutoff_score_min / scale_factor;
 
    return 0;
 }
