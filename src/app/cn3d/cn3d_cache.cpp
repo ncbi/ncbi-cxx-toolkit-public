@@ -142,26 +142,27 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
     const string& uid, int mmdbID, EModel_type modelType)
 {
     // construct URL
-    static const wxString host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
-    wxString args;
+    static const string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
+    string args("save=Save&dopt=j&uid=");
     if (mmdbID > 0)
-        args.Printf("uid=%i&form=6&db=t&save=Save&dopt=j&Complexity=", mmdbID);
+        args += NStr::IntToString(mmdbID);
     else    // assume PDB id
-        args.Printf("uid=%s&form=6&db=t&save=Save&dopt=j&Complexity=", uid.c_str());
+        args += uid;
+    args += "&Complexity=";
     switch (modelType) {
-        case eModel_type_ncbi_all_atom: args += "Cn3D%20Subset"; break;
-        case eModel_type_pdb_model: args += "All%20Models"; break;
+        case eModel_type_ncbi_all_atom: args += "3"; break;
+        case eModel_type_pdb_model: args += "4"; break;
         case eModel_type_ncbi_backbone:
         default:
-            args += "Virtual%20Bond%20Model"; break;
+            args += "2"; break;
     }
 
     // load from network
-    INFOMSG("Trying to load structure data from " << host.c_str() << path.c_str() << '?' << args.c_str());
+    INFOMSG("Trying to load structure data from " << host << path << '?' << args);
     string err;
     CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1());
 
-    if (!GetAsnDataViaHTTP(host.c_str(), path.c_str(), args.c_str(), mime.GetPointer(), &err) ||
+    if (!GetAsnDataViaHTTP(host, path, args, mime.GetPointer(), &err) ||
             !mime->IsStrucseq()) {
         ERRORMSG("Failed to read structure " << uid << " from network\nreason: " << err);
         return NULL;
@@ -297,6 +298,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/09/01 14:57:16  thiessen
+* update mmdbsrv url
+*
 * Revision 1.18  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
