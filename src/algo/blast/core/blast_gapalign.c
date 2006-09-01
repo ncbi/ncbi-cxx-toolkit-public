@@ -2975,6 +2975,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    Boolean restricted_alignment = FALSE;
    Boolean is_greedy;
    Int4 max_offset;
+   Int4 rps_cutoff_index;
    Int2 status = 0;
    BlastHSPList* hsp_list = NULL;
    const BlastHitSavingOptions* hit_options = hit_params->options;
@@ -2985,6 +2986,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    Int4 **rpsblast_pssms = NULL;   /* Pointer to concatenated PSSMs in
                                        RPS-BLAST database */
    const int kHspNumMax = BlastHspNumMax(TRUE, hit_options);
+   const double kRestrictedMult = 0.68;/* fraction of the ordinary cutoff score
+                                        used for approximate gapped alignment */
 
    if (!query || !subject || !gap_align || !score_params || !ext_params ||
        !hit_params || !init_hitlist || !hsp_list_ptr)
@@ -3007,14 +3010,22 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    if (hit_params->restricted_align && !score_params->options->is_ooframe) {
       init_hsp = init_hitlist->init_hsp_array;
       if (init_hsp->ungapped_data &&
-          init_hsp->ungapped_data->score < hit_params->restricted_cutoff) {
+          init_hsp->ungapped_data->score < (Int4)(kRestrictedMult *
+                                         hit_params->cutoff_score_min)) {
           restricted_alignment = TRUE;
       }
    }
 
    if (program_number == eBlastTypeRpsTblastn || 
        program_number == eBlastTypeRpsBlast) {
-       rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
+
+      rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
+      if (program_number == eBlastTypeRpsBlast)
+         rps_cutoff_index = subject->oid;
+      else
+         rps_cutoff_index = subject->oid * NUM_FRAMES +
+                            BLAST_FrameToContext(subject->frame, 
+                                                 program_number);
    }
 
    ASSERT(Blast_InitHitListIsSortedByScore(init_hitlist));
@@ -3092,10 +3103,19 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                                     hit_options->min_diag_separation))
       {
          BlastHSP* new_hsp;
+         Int4 cutoff, restricted_cutoff = 0;
 
-         if (gapped_stats) {
+         if (program_number == eBlastTypeRpsTblastn || 
+             program_number == eBlastTypeRpsBlast) 
+            cutoff = hit_params->cutoffs[rps_cutoff_index].cutoff_score;
+         else
+            cutoff = hit_params->cutoffs[context].cutoff_score;
+
+         if (restricted_alignment)
+             restricted_cutoff = (Int4)(kRestrictedMult * cutoff);
+
+         if (gapped_stats)
             ++gapped_stats->extensions;
-         }
  
          if(is_prot && !score_params->options->is_ooframe) {
             max_offset = 
@@ -3116,8 +3136,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                                                 score_params, init_hsp, 
                                                 restricted_alignment);
             if (restricted_alignment &&
-                gap_align->score < hit_params->cutoff_score &&
-                gap_align->score >= hit_params->restricted_cutoff) {
+                gap_align->score < cutoff &&
+                gap_align->score >= restricted_cutoff) {
 
                 /* the alignment score is inconclusive; it may really be
                    low-scoring, or the approximate gapped alignment
@@ -3175,7 +3195,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
             return status;
          }
         
-         if (gap_align->score >= hit_params->cutoff_score) {
+         if (gap_align->score >= cutoff) {
              Int2 query_frame = 0;
              /* For mixed-frame search, the query frame is determined 
                 from the offset, not only from context. */

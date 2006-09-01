@@ -349,6 +349,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    Int4 * frame_offsets   = NULL;
    Int4 * frame_offsets_a = NULL;
    Boolean partial_translation = FALSE;
+   const Boolean is_rpsblast = (program_number == eBlastTypeRpsTblastn || 
+                                program_number == eBlastTypeRpsBlast);
    const Boolean kIsOutOfFrame = score_options->is_ooframe;
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
    const Boolean kTranslateSubject = 
@@ -444,6 +446,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          Int4 start_shift = 0;
          Int4 adjusted_s_length;
          Uint1* adjusted_subject;
+         Int4 cutoff;
 
          if (kTranslateSubject) {
             if (!kIsOutOfFrame && !partial_translation) {
@@ -516,7 +519,12 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                  query_length, adjusted_s_length);
          }
 
-         if (gap_align->score >= hit_params->cutoff_score) {
+         if (is_rpsblast)
+            cutoff = hit_params->cutoffs[hsp_list->query_index].cutoff_score;
+         else
+            cutoff = hit_params->cutoffs[hsp->context].cutoff_score;
+
+         if (gap_align->score >= cutoff) {
             Boolean delete_hsp = FALSE;
             Blast_HSPUpdateWithTraceback(gap_align, hsp);
 
@@ -672,7 +680,7 @@ s_PHITracebackFromHSPList(EBlastProgramType program_number,
                                        query_pattern_length, 
                                        hsp->pat_info->length, pattern_blk);
        
-       if (gap_align->score >= hit_params->cutoff_score) {
+       if (gap_align->score >= hit_params->cutoff_score_min) {
            Blast_HSPUpdateWithTraceback(gap_align, hsp);
 
        } else {
