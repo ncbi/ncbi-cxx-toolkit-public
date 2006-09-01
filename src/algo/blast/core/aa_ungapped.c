@@ -531,7 +531,6 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     Int4 diag_offset, diag_coord, diag_mask, diff;
     DiagStruct *diag_array;
     Int4 hits_extended = 0;
-    Int4 curr_context;
 
     ASSERT(diag != NULL);
 
