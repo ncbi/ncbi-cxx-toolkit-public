@@ -40,6 +40,7 @@
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_parameters.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_diagnostics.h>
 
@@ -165,6 +166,7 @@ BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist);
  * @param subject The subject sequence [in]
  * @param query The query sequence (needed only for the discontiguous word 
  *        case) [in]
+ * @param query_info concatenated query information [in]
  * @param lookup Pointer to the (wrapper) lookup table structure. Only
  *        traditional MegaBlast lookup table supported. [in]
  * @param matrix The scoring matrix [in]
@@ -178,6 +180,7 @@ BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist);
  */
 Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   BLAST_SequenceBlk* query, 
+                   BlastQueryInfo* query_info,
 		   LookupTableWrap* lookup,
 		   Int4** matrix, 
 		   const BlastInitialWordParameters* word_params,
@@ -192,6 +195,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
  * @param subject The subject sequence [in]
  * @param query The query sequence (needed only for the discontiguous word 
  *        case) [in]
+ * @param query_info concatenated query information [in]
  * @param lookup_wrap Pointer to the (wrapper) lookup table structure. Only
  *        traditional BLASTn lookup table supported. [in]
  * @param matrix The scoring matrix [in]
@@ -205,6 +209,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
  */
 Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject, 
 		       BLAST_SequenceBlk* query,
+                       BlastQueryInfo* query_info,
 		       LookupTableWrap* lookup_wrap,
 		       Int4** matrix,
 		       const BlastInitialWordParameters* word_params, 
@@ -220,6 +225,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
  * @param subject The subject sequence [in]
  * @param query The query sequence (needed only for the discontiguous word 
  *        case) [in]
+ * @param query_info concatenated query information [in]
  * @param lookup_wrap Pointer to the (wrapper) lookup table structure. Only
  *        traditional BLASTn lookup table supported.[in]
  * @param matrix The scoring matrix [in]
@@ -233,6 +239,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
  */
 Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject, 
 			  BLAST_SequenceBlk* query,
+                          BlastQueryInfo* query_info,
 			  LookupTableWrap* lookup_wrap,
 			  Int4** matrix,
 			  const BlastInitialWordParameters* word_params, 
@@ -290,6 +297,7 @@ Boolean Blast_InitHitListIsSortedByScore(BlastInitHitList* init_hitlist);
  * @param query Query sequence data [in]
  * @param subject Subject sequence data [in]
  * @param matrix Scoring matrix for ungapped extension [in]
+ * @param query_info Structure containing query context ranges [in]
  * @param ewp Word extension structure containing information about the 
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
@@ -301,7 +309,8 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
                    const BlastInitialWordParameters* word_params,
                    LookupTableWrap* lookup_wrap,
                    BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
-                   Int4** matrix, Blast_ExtendWord* ewp, 
+                   Int4** matrix, BlastQueryInfo* query_info,
+                   Blast_ExtendWord* ewp, 
                    BlastInitHitList* init_hitlist);
 
 /** Extend the lookup table exact match hit in both directions and 
@@ -313,6 +322,7 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
  * @param query Query sequence data [in]
  * @param subject Subject sequence data [in]
  * @param matrix Scoring matrix for ungapped extension [in]
+ * @param query_info Structure containing query context ranges [in]
  * @param ewp Word extension structure containing information about the 
  *            extent of already processed hits on each diagonal [in]
  * @param init_hitlist Structure to keep the extended hits. 
@@ -324,7 +334,8 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
                           const BlastInitialWordParameters* word_params,
                           LookupTableWrap* lookup_wrap,
                           BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
-                          Int4** matrix, Blast_ExtendWord* ewp, 
+                          Int4** matrix, BlastQueryInfo* query_info,
+                          Blast_ExtendWord* ewp, 
                           BlastInitHitList* init_hitlist);
 
 /** Discontiguous Mega BLAST initial word extension
@@ -335,6 +346,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
  * @param lookup Lookup table structure [in]
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
+ * @param query_info Structure containing query context ranges [in]
  * @param ewp The structure containing word extension information [in]
  * @param init_hitlist The structure containing information about all 
  *                     initial hits [in] [out]
@@ -345,7 +357,8 @@ DiscMB_ExtendInitialHits(const BlastOffsetPair* offset_pairs,
                          Int4 num_hits, BLAST_SequenceBlk* query, 
                          BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
                          const BlastInitialWordParameters* word_params, 
-                         Int4** matrix, Blast_ExtendWord* ewp, 
+                         Int4** matrix, BlastQueryInfo* query_info,
+                         Blast_ExtendWord* ewp, 
                          BlastInitHitList* init_hitlist);
 
 #ifdef __cplusplus
