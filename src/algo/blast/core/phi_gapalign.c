@@ -810,7 +810,7 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
 
            /* PHI BLAST does not support query concatenation, so context is 
               always 0. */
-           if (gap_align->score >= hit_params->cutoff_score) {
+           if (gap_align->score >= hit_params->cutoff_score_min) {
                Blast_HSPInit(gap_align->query_start, gap_align->query_stop, 
                              gap_align->subject_start, gap_align->subject_stop, 
                              q_pat_offset, s_pat_offset, 
