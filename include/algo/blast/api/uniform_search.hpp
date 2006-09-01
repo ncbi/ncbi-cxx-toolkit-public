@@ -232,6 +232,8 @@ private:
 class NCBI_XBLAST_EXPORT CSearchResultSet {
 public:
 
+    typedef vector< CRef<CSearchResults> >::size_type size_type;
+
     /// Default constructor
     CSearchResultSet() {}
     
@@ -243,7 +245,7 @@ public:
     /// Allow array-like access with integer indices to CSearchResults 
     /// contained by this object
     /// @param i query sequence index [in]
-    CSearchResults & operator[](int i)
+    CSearchResults & operator[](size_type i)
     {
         return *m_Results[i];
     }
@@ -251,7 +253,7 @@ public:
     /// Allow array-like access with integer indices to const CSearchResults 
     /// contained by this object
     /// @param i query sequence index [in]
-    const CSearchResults & operator[](int i) const
+    const CSearchResults & operator[](size_type i) const
     {
         return *m_Results[i];
     }
@@ -279,10 +281,11 @@ public:
     {
         m_Results.push_back(result);
     }
-    
-private:
+private:    
+
     /// Vector of results.
     vector< CRef<CSearchResults> > m_Results;
+
 };
 
 
