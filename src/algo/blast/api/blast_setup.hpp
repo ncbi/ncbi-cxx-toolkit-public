@@ -149,6 +149,16 @@ public:
     virtual TSeqPos GetLength(int index) const = 0;
 };
 
+/// Choose between a Seq-loc specified query strand and the strand obtained
+/// from the CBlastOptions
+/// @param query_seqloc Seq-loc corresponding to a given query sequence [in]
+/// @param program program type from the CORE's point of view [in]
+/// @param strand_option strand as specified by the BLAST options [in]
+objects::ENa_strand
+BlastSetup_GetStrand(const objects::CSeq_loc& query_seqloc,
+                     EBlastProgramType program,
+                     objects::ENa_strand strand_option);
+
 /// Lightweight wrapper around sequence data which provides a CSeqVector-like
 /// interface to the data
 class IBlastSeqVector {
@@ -484,6 +494,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2006/09/01 16:46:52  camacho
+* + BlastSetup_GetStrand to consolidate assignment of strand obtained from a Seq-loc and CBlastOptions
+*
 * Revision 1.63  2006/06/05 13:28:39  madden
 * Add BlastFindMatrixPath, remove FindMatrixOrPath
 *

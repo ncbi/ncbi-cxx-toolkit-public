@@ -86,6 +86,34 @@ s_QueryInfo_SetContext(BlastQueryInfo*   qinfo,
     }
 }
 
+ENa_strand 
+BlastSetup_GetStrand(ENa_strand seqloc_strand, 
+                     EBlastProgramType program,
+                     ENa_strand strand_opt)
+{
+    if (Blast_QueryIsProtein(program)) {
+        return eNa_strand_unknown;
+    }
+
+    // Only if the strand specified by the options is NOT both or unknown,
+    // it takes precedence over what is specified by the query's strand
+    ENa_strand retval = (strand_opt == eNa_strand_both || 
+                         strand_opt == eNa_strand_unknown) 
+        ? seqloc_strand : strand_opt;
+    if (Blast_QueryIsNucleotide(program) && retval == eNa_strand_unknown) {
+        retval = eNa_strand_both;
+    }
+    return retval;
+}
+
+ENa_strand 
+BlastSetup_GetStrand(const CSeq_loc& query_seqloc, 
+                     EBlastProgramType program, 
+                     ENa_strand strand_opt)
+{
+    return BlastSetup_GetStrand(query_seqloc.GetStrand(), program, strand_opt);
+}
+
 /// Adjust first context depending on the first query strand
 static void
 s_AdjustFirstContext(BlastQueryInfo* query_info, 
@@ -102,12 +130,9 @@ s_AdjustFirstContext(BlastQueryInfo* query_info,
 
     _ASSERT(is_na || translate);
 
-    // Only if the strand specified by the options is NOT both or unknown,
-    // it takes precedence over what is specified by the query's strand
-    ENa_strand strand = (strand_opt == eNa_strand_both || 
-                         strand_opt == eNa_strand_unknown) 
-        ? queries.GetStrand(0)
-        : strand_opt;
+    ENa_strand strand = BlastSetup_GetStrand(queries.GetStrand(0), prog,
+                                             strand_opt);
+    _ASSERT(strand != eNa_strand_unknown);
 
     // Adjust the first context if the requested strand is the minus strand
     if (strand == eNa_strand_minus) {
@@ -149,12 +174,9 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
             // SetupQueries
         }
 
-        ENa_strand strand = queries.GetStrand(j);
+        ENa_strand strand = BlastSetup_GetStrand(queries.GetStrand(j), prog,
+                                                 strand_opt);
         
-        if (strand_opt == eNa_strand_minus || strand_opt == eNa_strand_plus) {
-            strand = strand_opt;
-        }
-
         if (translate) {
             for (unsigned int i = 0; i < kNumContexts; i++) {
                 unsigned int prot_length = 
@@ -488,7 +510,7 @@ SetupQueries_OMF(IBlastQuerySource& queries,
 {
     _ASSERT(seqblk);
     _ASSERT( !queries.Empty() );
-    if (messages.size() != (size_t)queries.Size()) {
+    if (messages.size() != queries.Size()) {
         messages.resize(queries.Size());
     }
 
@@ -515,19 +537,10 @@ SetupQueries_OMF(IBlastQuerySource& queries,
         
         try {
 
-            if ((is_na || translate) &&
-                (strand_opt == eNa_strand_unknown || 
-                 strand_opt == eNa_strand_both)) 
-            {
-                strand = queries.GetStrand(index);
-                // The default for nucleotide queries is both strands
-                // FIXME: this should be handled inside the GetStrand() call
-                // above
-                if (strand == eNa_strand_unknown) {
-                    strand = eNa_strand_both;
-                }
-            } else {
-                strand = strand_opt;
+            strand = BlastSetup_GetStrand(queries.GetStrand(index), prog,
+                                          strand_opt);
+            if ((is_na || translate) && strand == eNa_strand_unknown) {
+                strand = eNa_strand_both;
             }
             
             CRef<CBlastQueryFilteredFrames> frame_to_bsl = 
@@ -1572,6 +1585,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.126  2006/09/01 16:46:52  camacho
+ * + BlastSetup_GetStrand to consolidate assignment of strand obtained from a Seq-loc and CBlastOptions
+ *
  * Revision 1.125  2006/08/31 14:03:17  camacho
  * Minor
  *
