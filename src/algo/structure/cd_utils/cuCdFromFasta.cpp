@@ -84,10 +84,10 @@ void CCdFromFasta::InitializeParameters(const Fasta2CdParams* params)
     m_parameters.cdName = (isNull || params->cdName.length() == 0) ? m_parameters.cdAcc : params->cdName;
 
     //  Fill in name for the CD.
-    SetName(m_parameters.cdAcc);
+    SetName(m_parameters.cdName);
 
     //  SetAcccession will make a new accession object since none exists.
-    SetAccession(m_parameters.cdName);
+    SetAccession(m_parameters.cdAcc);
 
     m_parameters.useLocalIds = (isNull) ? false : params->useLocalIds;
     m_parameters.useAsIs = (isNull) ? true : params->useAsIs;
@@ -303,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/01 15:32:46  lanczyck
+ * bug fix: swapped name and accession
+ *
  * Revision 1.2  2006/08/21 17:05:07  lanczyck
  * use .cn3 extension instead of .acd
  *
