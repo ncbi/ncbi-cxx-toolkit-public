@@ -43,6 +43,7 @@ extern "C" {
  *
  * @param subject the subject sequence [in]
  * @param query the query sequence [in]
+ * @param query_info concatenated query information [in]
  * @param lookup the lookup table [in]
  * @param matrix the substitution matrix [in]
  * @param word_params word parameters, needed for cutoff and dropoff [in]
@@ -54,6 +55,7 @@ extern "C" {
  */
 Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
 		       BLAST_SequenceBlk* query,
+                       BlastQueryInfo* query_info,
 		       LookupTableWrap* lookup,
 		       Int4** matrix,
 		       const BlastInitialWordParameters* word_params,
@@ -70,8 +72,8 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
  * @param lookup_wrap the lookup table [in]
  * @param diag the diagonal array structure [in/out]
  * @param matrix the substitution matrix [in]
- * @param cutoff cutoff score for saving ungapped HSPs [in]
- * @param dropoff x dropoff [in]
+ * @param word_params structure containing per-context cutoff information [in]
+ * @param query_info structure containing context ranges [in]
  * @param offset_pairs Array for storing query and subject offsets. [in]
  * @param array_size the number of elements in each offset array [in]
  * @param ungapped_hsps hsps resulting from the ungapped extension [out]
@@ -83,8 +85,8 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      const LookupTableWrap* lookup_wrap,
 			      BLAST_DiagTable* diag,
 			      Int4 ** matrix,
-			      Int4 cutoff,
-			      Int4 dropoff,
+			      const BlastInitialWordParameters * word_params,
+			      BlastQueryInfo * query_info,
                               BlastOffsetPair* NCBI_RESTRICT offset_pairs,
 			      Int4 array_size,
 	                      BlastInitHitList* ungapped_hsps, 
@@ -120,8 +122,8 @@ Int2 BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
  * @param lookup_wrap the lookup table
  * @param diag the diagonal array structure
  * @param matrix the substitution matrix [in]
- * @param cutoff cutoff score for saving ungapped HSPs [in]
- * @param dropoff x dropoff [in]
+ * @param word_params structure containing per-context cutoff information [in]
+ * @param query_info structure containing context ranges [in]
  * @param offset_pairs Array for storing query and subject offsets. [in]
  * @param array_size the number of elements in each offset array
  * @param ungapped_hsps hsps resulting from the ungapped extensions [out]
@@ -132,8 +134,8 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      const LookupTableWrap* lookup_wrap,
 			      BLAST_DiagTable* diag,
 			      Int4 ** matrix,
-			      Int4 cutoff,
-			      Int4 dropoff,
+			      const BlastInitialWordParameters * word_params,
+			      BlastQueryInfo * query_info,
                               BlastOffsetPair* NCBI_RESTRICT offset_pairs,
 			      Int4 array_size,
 	            BlastInitHitList* ungapped_hsps, 
