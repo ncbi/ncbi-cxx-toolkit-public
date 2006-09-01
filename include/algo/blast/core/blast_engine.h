@@ -174,7 +174,7 @@ Blast_RunPreliminarySearch(EBlastProgramType program,
 typedef Int2 (*BlastGetGappedScoreType) 
      (EBlastProgramType, /**< @todo comment function pointer types */
       BLAST_SequenceBlk*, 
-      BlastQueryInfo* query_info,
+      BlastQueryInfo*,
       BLAST_SequenceBlk*, 
       BlastGapAlignStruct*, 
       const BlastScoringParameters*,
@@ -188,6 +188,7 @@ typedef Int2 (*BlastGetGappedScoreType)
 typedef Int2 (*BlastWordFinderType) 
      (BLAST_SequenceBlk*, /**< @todo comment function pointer types */
       BLAST_SequenceBlk*,
+      BlastQueryInfo*,
       LookupTableWrap*, 
       Int4**, 
       const BlastInitialWordParameters*,
