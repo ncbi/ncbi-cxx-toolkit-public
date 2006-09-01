@@ -371,6 +371,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    Int4** matrix;
    Int2 factor = 1;
    const Uint1 kResidueMask = 0x0f;
+   Int4 cutoff_score = hit_params->cutoffs[hsp->context].cutoff_score;
 
    matrix = sbp->matrix->data;
 
@@ -442,7 +443,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
                  and edit scripts positions information untouched, otherwise reset
                  the best score to 0 and point the best edit script positions to
                  the new start. */
-              if (score < hit_params->cutoff_score) {
+              if (score < cutoff_score) {
                   /* Start from new offset; discard all previous information. */
                   best_q_start = query;
                   best_s_start = subject;
@@ -474,8 +475,8 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    
    /* Update HSP data. */
    return
-       s_UpdateReevaluatedHSP(hsp, TRUE, hit_params->cutoff_score, score, 
-                              query_start, subject_start, best_q_start, 
+       s_UpdateReevaluatedHSP(hsp, TRUE, cutoff_score,
+                              score, query_start, subject_start, best_q_start, 
                               best_q_end, best_s_start, best_s_end, 
                               best_start_esp_index, best_end_esp_index,
                               best_end_esp_num);
@@ -520,6 +521,7 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
    Int4 index;
    const Uint1 kResidueMask = (translated ? 0xff : 0x0f);
    Int4 hsp_length = hsp->query.end - hsp->query.offset;
+   Int4 cutoff_score = word_params->cutoffs[hsp->context].cutoff_score;
 
    matrix = sbp->matrix->data;
 
@@ -543,7 +545,7 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
           /* If previous top score never reached the cutoff, discard the front
              part of the alignment completely. Otherwise keep pointer to the 
              top-scoring front part. */
-         if (score < word_params->cutoff_score) {
+         if (score < cutoff_score) {
             best_q_start = best_q_end = query;
             best_s_start = best_s_end = subject;
             score = 0;
@@ -562,7 +564,7 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
 
    /* Update HSP data. */
    return
-       s_UpdateReevaluatedHSPUngapped(hsp, word_params->cutoff_score, score, 
+       s_UpdateReevaluatedHSPUngapped(hsp, cutoff_score, score,
                                       query_start, subject_start, best_q_start,
                                       best_q_end, best_s_start, best_s_end);
 } 
@@ -3034,6 +3036,7 @@ Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program,
 Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, const SBlastHitsParameters* blasthit_params)
 {
+
    if (!hsp_list)
       return 0;
 
