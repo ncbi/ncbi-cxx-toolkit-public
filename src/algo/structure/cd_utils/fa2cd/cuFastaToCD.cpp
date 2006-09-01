@@ -463,6 +463,8 @@ void CFasta2CD::Init(void)
 
     argDescr->AddOptionalKey("t", "threshold", "exclude columns w/ median PSSM score less than this value from CD block model\n(no columns excluded by default; a threshold of 3 is good if trimming bad columns is desired)", argDescr->eDouble);
 
+    argDescr->AddFlag("v", "report program version and exit; any other arguments present are ignored.");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(argDescr.release());
 }
@@ -474,7 +476,9 @@ void CFasta2CD::Init(void)
 int CFasta2CD::Run(void)
 {
 
-//    bool useLocalIds, useAlignmentAsis;
+    const string fa2cdVersion = "fa2cd -- Version 1.0.0  ($Date$) \n\nFile conversion utiltiy to generate a .cn3 file, usable as input to Cn3D and CDTree,\nfrom a file containing a mFASTA formatted multiple alignment.\n";
+
+    //    bool useLocalIds, useAlignmentAsis;
     unsigned int nSeq = 1;
     string test, err;
     string fastaFile, cdOutFile, cdAcc, compareMethodStr;
@@ -486,6 +490,13 @@ int CFasta2CD::Run(void)
 
     // Process arguments
     CArgs args = GetArgs();
+
+    //  If requested, report version and exit.
+    if (args["v"]) {
+        NcbiCerr << fa2cdVersion << NcbiEndl;
+        return 0;
+    }
+
     PrintArgs(cerr);
     fastaFile = args["i"].AsString();
 
@@ -696,6 +707,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/09/01 15:44:05  lanczyck
+ * add -v (version) flag
+ *
  * Revision 1.4  2006/08/23 19:42:18  lanczyck
  * change defaults and arguments for public release with CDTree
  *
