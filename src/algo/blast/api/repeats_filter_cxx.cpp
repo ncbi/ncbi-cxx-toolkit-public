@@ -196,9 +196,6 @@ s_FillMaskLocFromBlastResults(TSeqLocVector& query,
             continue;
         }
 
-        Int4 query_start = sequence::GetStart(*query[query_index].seqloc,
-                                              query[query_index].scope);
-        
         // Get the previous mask locations
         BlastSeqLoc* loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask);
         
@@ -249,9 +246,6 @@ s_FillMaskLocFromBlastResults(CBlastQueryVector& query,
         if (result.GetSeqAlign().Empty() || result.GetSeqAlign()->IsEmpty()) {
             continue;
         }
-        
-        Int4 query_start = sequence::GetStart(*query.GetQuerySeqLoc(qindex),
-                                              query.GetScope(qindex));
         
         // Get the previous mask locations
         TMaskedQueryRegions mqr = query.GetMaskedRegions(qindex);
@@ -410,6 +404,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.36  2006/09/01 16:56:37  camacho
+ *  Remove unused variable
+ *
  *  Revision 1.35  2006/09/01 16:45:53  camacho
  *  Use size_type whenever possible
  *
