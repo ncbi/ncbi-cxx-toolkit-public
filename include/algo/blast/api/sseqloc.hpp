@@ -172,6 +172,9 @@ private:
 
 class CBlastQueryVector : public CObject {
 public:
+    /// size_type type definition
+    typedef vector< CRef<CBlastSearchQuery> >::size_type size_type;
+
     /// Add a query to the set.
     ///
     /// The CBlastSearchQuery is added to the list of queries for this
@@ -190,7 +193,7 @@ public:
     }
     
     /// Returns the number of queries found in this query vector.
-    int Size() const
+    size_type Size() const
     {
         return m_Queries.size();
     }
@@ -198,51 +201,51 @@ public:
     /// Get the query Seq-loc for a query by index.
     /// @param i The index of a query.
     /// @return The Seq-loc representing the query.
-    CConstRef<objects::CSeq_loc> GetQuerySeqLoc(int i) const
+    CConstRef<objects::CSeq_loc> GetQuerySeqLoc(size_type i) const
     {
-        _ASSERT(i < (int) m_Queries.size());
+        _ASSERT(i < m_Queries.size());
         return m_Queries[i]->GetQuerySeqLoc();
     }
     
     /// Get the scope containing a query by index.
     /// @param i The index of a query.
     /// @return The CScope containing the query.
-    CRef<objects::CScope> GetScope(int i) const
+    CRef<objects::CScope> GetScope(size_type i) const
     {
-        _ASSERT(i < (int) m_Queries.size());
+        _ASSERT(i < m_Queries.size());
         return m_Queries[i]->GetScope();
     }
     
     /// Get the masked regions for a query by number.
     /// @param i The index of a query.
     /// @return The masked (filtered) regions of that query.
-    TMaskedQueryRegions GetMaskedRegions(int i) const
+    TMaskedQueryRegions GetMaskedRegions(size_type i) const
     {
-        _ASSERT(i < (int) m_Queries.size());
+        _ASSERT(i < m_Queries.size());
         return m_Queries[i]->GetMaskedRegions();
     }
     
     /// Assign a list of masked regions to one query.
     /// @param i The index of the query.
     /// @param mqr The masked regions for this query.
-    void SetMaskedRegions(int i, TMaskedQueryRegions mqr)
+    void SetMaskedRegions(size_type i, TMaskedQueryRegions mqr)
     {
-        _ASSERT(i < (int) m_Queries.size());
+        _ASSERT(i < m_Queries.size());
         m_Queries[i]->SetMaskedRegions(mqr);
     }
     
     /// Add a masked region to the set for a query.
     /// @param i The index of the query.
     /// @param mqr The masked region to add.
-    void AddMask(int i, CRef<CSeqLocInfo> sli)
+    void AddMask(size_type i, CRef<CSeqLocInfo> sli)
     {
         m_Queries[i]->AddMask(sli);
     }
     
     CRef<CBlastSearchQuery>
-    GetBlastSearchQuery(int i) const
+    GetBlastSearchQuery(size_type i) const
     {
-        _ASSERT(i < (int) m_Queries.size());
+        _ASSERT(i < m_Queries.size());
         return m_Queries[i];
     }
     

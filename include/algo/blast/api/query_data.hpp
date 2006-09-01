@@ -55,6 +55,10 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT ILocalQueryData : public CObject
 {
 public:
+    /// Default constructor
+    ILocalQueryData() : m_SumOfSequenceLengths(0) {}
+
+    /// virtual destructor
     virtual ~ILocalQueryData() {}
 
     /// Accessor for the BLAST_SequenceBlk structure
@@ -65,30 +69,32 @@ public:
     
     
     /// Get the number of queries.
-    virtual int GetNumQueries() = 0;
+    virtual size_t GetNumQueries() = 0;
     
     /// Get the Seq_loc for the sequence indicated by index.
-    virtual CConstRef<objects::CSeq_loc> GetSeq_loc(int index) = 0;
+    virtual CConstRef<objects::CSeq_loc> GetSeq_loc(size_t index) = 0;
     
     /// Get the length of the sequence indicated by index.
-    virtual int GetSeqLength(int index) = 0;
+    virtual size_t GetSeqLength(size_t index) = 0;
 
-    int GetSumOfSequenceLengths() {
-        int retval = 0;
-        for (int i = 0; i < GetNumQueries(); i++) {
-            retval += GetSeqLength(i);
+    /// Compute the sum of all the sequence's lengths
+    size_t GetSumOfSequenceLengths() {
+        if (m_SumOfSequenceLengths == 0) {
+            for (size_t i = 0; i < GetNumQueries(); i++) {
+                m_SumOfSequenceLengths += GetSeqLength(i);
+            }
         }
-        return retval;
+        return m_SumOfSequenceLengths;
     }
 
     /// Retrieve all error/warning messages
     void GetMessages(TSearchMessages& messages) const;
 
     /// Retrieve error/warning messages for a specific query
-    void GetQueryMessages(int index, TQueryMessages& qmsgs);
+    void GetQueryMessages(size_t index, TQueryMessages& qmsgs);
 
     /// Determine if a given query sequence is valid or not
-    bool IsValidQuery(int index);
+    bool IsValidQuery(size_t index);
     
 protected:
     /// Data member to cache the BLAST_SequenceBlk
@@ -100,7 +106,8 @@ protected:
     TSearchMessages m_Messages;
 
 private:
-    void x_ValidateIndex(int index);
+    void x_ValidateIndex(size_t index);
+    size_t m_SumOfSequenceLengths;
 };
 
 class IRemoteQueryData : public CObject

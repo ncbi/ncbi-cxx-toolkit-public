@@ -75,7 +75,7 @@ IQueryFactory::MakeRemoteQueryData()
 //
 
 void
-ILocalQueryData::x_ValidateIndex(int index)
+ILocalQueryData::x_ValidateIndex(size_t index)
 {
     if (index < 0 || index > GetNumQueries()) {
         throw std::out_of_range("Index " + NStr::IntToString(index) +
@@ -86,7 +86,7 @@ ILocalQueryData::x_ValidateIndex(int index)
 }
 
 bool
-ILocalQueryData::IsValidQuery(int index)
+ILocalQueryData::IsValidQuery(size_t index)
 {
     x_ValidateIndex(index);
 
@@ -97,7 +97,7 @@ ILocalQueryData::IsValidQuery(int index)
     for (int i = query_info->first_context;
          i <= query_info->last_context; 
          i++) {
-        if (query_info->contexts[i].query_index == index) {
+        if (query_info->contexts[i].query_index == (int)index) {
             if ( !query_info->contexts[i].is_valid ) {
                 all_contexts_valid = false;
                 break;
@@ -108,7 +108,7 @@ ILocalQueryData::IsValidQuery(int index)
 }
 
 void
-ILocalQueryData::GetQueryMessages(int index, TQueryMessages& qmsgs)
+ILocalQueryData::GetQueryMessages(size_t index, TQueryMessages& qmsgs)
 {
     x_ValidateIndex(index);
     qmsgs = m_Messages[index];

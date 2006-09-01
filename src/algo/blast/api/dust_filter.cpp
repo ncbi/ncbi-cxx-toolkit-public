@@ -148,7 +148,7 @@ Blast_FindDustFilterLoc(CBlastQueryVector& queries,
                         Uint4 level, Uint4 window, Uint4 linker)
 {
 
-    for(int i = 0; i < queries.Size(); i++) {
+    for(size_t i = 0; i < queries.Size(); i++) {
         CSeqVector data(*queries.GetQuerySeqLoc(i), *queries.GetScope(i),
                         CBioseq_Handle::eCoding_Iupac);
 
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.9  2006/09/01 16:45:53  camacho
+ *  Use size_type whenever possible
+ *
  *  Revision 1.8  2006/05/22 15:13:12  camacho
  *  From Mike DiCuccio: rearrangement of the code to avoid production of null
  *  Seq-locs by the CSeq_loc_Mapper

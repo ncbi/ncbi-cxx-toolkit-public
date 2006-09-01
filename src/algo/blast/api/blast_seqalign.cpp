@@ -1483,7 +1483,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                     bool is_gapped, 
                                     bool is_ooframe)
 {
-    _ASSERT(results->num_queries == query_data.GetNumQueries());
+    _ASSERT(results->num_queries == (int)query_data.GetNumQueries());
 
     TSeqAlignVector retval;
     CConstRef<CSeq_id> subject_id;
@@ -1581,7 +1581,7 @@ s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
            size. */
-        _ASSERT(seqalign.size() == (size_t)query_data.GetNumQueries());
+        _ASSERT(seqalign.size() == query_data.GetNumQueries());
 
         if (retval.size() == 0) {
             // First time around, just fill the empty vector with the 
@@ -1688,6 +1688,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2006/09/01 16:45:53  camacho
+* Use size_type whenever possible
+*
 * Revision 1.76  2006/08/29 18:13:30  madden
 * Doxygen fixes
 *

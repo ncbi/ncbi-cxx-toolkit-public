@@ -78,13 +78,13 @@ public:
     virtual BlastQueryInfo* GetQueryInfo();
     
     /// Get the number of queries.
-    virtual int GetNumQueries();
+    virtual size_t GetNumQueries();
     
     /// Get the Seq_loc for the sequence indicated by index.
-    virtual CConstRef<CSeq_loc> GetSeq_loc(int index);
+    virtual CConstRef<CSeq_loc> GetSeq_loc(size_t index);
     
     /// Get the length of the sequence indicated by index.
-    virtual int GetSeqLength(int index);
+    virtual size_t GetSeqLength(size_t index);
     
 private:
     const CBlastOptions* m_Options;
@@ -135,22 +135,22 @@ CObjMgrFree_LocalQueryData::GetQueryInfo()
     return m_QueryInfo;
 }
 
-int 
+size_t 
 CObjMgrFree_LocalQueryData::GetNumQueries()
 {
-    int retval = m_QuerySource->Size();
-    _ASSERT(retval == GetQueryInfo()->num_queries);
+    size_t retval = m_QuerySource->Size();
+    _ASSERT(retval == (size_t)GetQueryInfo()->num_queries);
     return retval;
 }
 
 CConstRef<CSeq_loc> 
-CObjMgrFree_LocalQueryData::GetSeq_loc(int index)
+CObjMgrFree_LocalQueryData::GetSeq_loc(size_t index)
 {
     return m_QuerySource->GetSeqLoc(index);
 }
 
-int 
-CObjMgrFree_LocalQueryData::GetSeqLength(int index)
+size_t 
+CObjMgrFree_LocalQueryData::GetSeqLength(size_t index)
 {
     return m_QuerySource->GetLength(index);
 }

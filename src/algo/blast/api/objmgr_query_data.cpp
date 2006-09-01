@@ -108,7 +108,7 @@ s_QueryVectorToBioseqSet(const CBlastQueryVector & queries)
 {
     list< CRef<CSeq_entry> > se_list;
     
-    for(int i = 0; i < queries.Size(); i++) {
+    for(size_t i = 0; i < queries.Size(); i++) {
         CScope & scope = *queries.GetScope(i);
         
         const CBioseq * cbs = 
@@ -167,7 +167,7 @@ s_QueryVectorToTSeqLocs(const CBlastQueryVector & queries)
 {
     CObjMgr_QueryFactory::TSeqLocs retval;
     
-    for(int i = 0; i < queries.Size(); i++) {
+    for(size_t i = 0; i < queries.Size(); i++) {
         CSeq_loc * slp =
             const_cast<CSeq_loc *>(&* queries.GetQuerySeqLoc(i));
         
@@ -219,13 +219,13 @@ public:
     
     
     /// Get the number of queries.
-    virtual int GetNumQueries();
+    virtual size_t GetNumQueries();
     
     /// Get the Seq_loc for the sequence indicated by index.
-    virtual CConstRef<CSeq_loc> GetSeq_loc(int index);
+    virtual CConstRef<CSeq_loc> GetSeq_loc(size_t index);
     
     /// Get the length of the sequence indicated by index.
-    virtual int GetSeqLength(int index);
+    virtual size_t GetSeqLength(size_t index);
     
 private:
     const TSeqLocVector* m_Queries;     ///< Adaptee in adapter design pattern
@@ -285,22 +285,22 @@ CObjMgr_LocalQueryData::GetQueryInfo()
     return m_QueryInfo.Get();
 }
 
-int
+size_t
 CObjMgr_LocalQueryData::GetNumQueries()
 {
-    int retval = m_QuerySource->Size();
-    _ASSERT(retval == GetQueryInfo()->num_queries);
+    size_t retval = m_QuerySource->Size();
+    _ASSERT(retval == (size_t)GetQueryInfo()->num_queries);
     return retval;
 }
 
 CConstRef<CSeq_loc> 
-CObjMgr_LocalQueryData::GetSeq_loc(int index)
+CObjMgr_LocalQueryData::GetSeq_loc(size_t index)
 {
     return m_QuerySource->GetSeqLoc(index);
 }
 
-int 
-CObjMgr_LocalQueryData::GetSeqLength(int index)
+size_t 
+CObjMgr_LocalQueryData::GetSeqLength(size_t index)
 {
     return m_QuerySource->GetLength(index);
 }

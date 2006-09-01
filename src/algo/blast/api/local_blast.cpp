@@ -114,8 +114,8 @@ CLocalBlast::Run()
     // Add the filtered query regions, if any
     TSeqLocInfoVector masks = m_PrelimSearch->GetFilteredQueryRegions();
     if ( !masks.empty() ) {
-        _ASSERT(masks.size() == (size_t)retval.GetNumResults());
-        for (int i = 0; i < retval.GetNumResults(); i++) {
+        _ASSERT(masks.size() == retval.GetNumResults());
+        for (size_t i = 0; i < retval.GetNumResults(); i++) {
             retval[i].SetMaskedQueryRegions(masks[i]);
         }
     }

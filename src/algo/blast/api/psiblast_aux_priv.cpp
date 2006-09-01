@@ -320,8 +320,9 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
 
     CRef<ILocalQueryData> query_data(seq_fetcher->MakeLocalQueryData(&opts));
     BLAST_SequenceBlk* seqblk = query_data->GetSequenceBlk();
-    _ASSERT(query_data->GetSeqLength(0) == seqblk->length);
-    _ASSERT(query_data->GetSeqLength(0) == pssm->GetPssm().GetNumColumns());
+    _ASSERT(query_data->GetSeqLength(0) == (size_t)seqblk->length);
+    _ASSERT(query_data->GetSeqLength(0) == 
+            (size_t)pssm->GetPssm().GetNumColumns());
     auto_ptr< CNcbiMatrix<double> > freq_ratios
         (CScorematPssmConverter::GetFreqRatios(pssm));
 

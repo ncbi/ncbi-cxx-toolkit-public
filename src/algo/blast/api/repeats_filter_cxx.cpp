@@ -187,7 +187,7 @@ static void
 s_FillMaskLocFromBlastResults(TSeqLocVector& query, 
                               const CSearchResultSet& results)
 {
-    _ASSERT(results.GetNumResults() == (int)query.size());
+    _ASSERT(results.GetNumResults() == query.size());
     
     for (size_t query_index = 0; query_index < query.size(); ++query_index) {
         const CSearchResults& result = results[query_index];
@@ -241,9 +241,9 @@ s_FillMaskLocFromBlastResults(CBlastQueryVector& query,
                               const CSearchResultSet& results,
                               EBlastProgramType program)
 {
-    _ASSERT(results.GetNumResults() == (int)query.Size());
+    _ASSERT(results.GetNumResults() == query.Size());
     
-    for (int qindex = 0; qindex < query.Size(); ++qindex) {
+    for (size_t qindex = 0; qindex < query.Size(); ++qindex) {
         const CSearchResults& result = results[qindex];
         
         if (result.GetSeqAlign().Empty() || result.GetSeqAlign()->IsEmpty()) {
@@ -384,7 +384,7 @@ Blast_FindRepeatFilterLoc(CBlastQueryVector& queries, const char* filter_db)
     // Remove any lower case masks, because they should not be used for the 
     // repeat locations search.
     CBlastQueryVector temp_queries;
-    for (int i = 0; i < queries.Size(); ++i) {
+    for (size_t i = 0; i < queries.Size(); ++i) {
         TMaskedQueryRegions no_masks;
         CRef<CBlastSearchQuery> query
             (new CBlastSearchQuery(*queries.GetQuerySeqLoc(i),
@@ -410,6 +410,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.35  2006/09/01 16:45:53  camacho
+ *  Use size_type whenever possible
+ *
  *  Revision 1.34  2006/09/01 14:22:06  camacho
  *  Pacify solaris compiler
  *

@@ -232,6 +232,7 @@ private:
 class NCBI_XBLAST_EXPORT CSearchResultSet {
 public:
 
+    /// size_type type definition
     typedef vector< CRef<CSearchResults> >::size_type size_type;
 
     /// Default constructor
@@ -269,9 +270,9 @@ public:
     CConstRef<CSearchResults> operator[](const objects::CSeq_id & ident) const;
     
     /// Return the number of results contained by this object
-    int GetNumResults() const
+    size_type GetNumResults() const
     {
-        return (int) m_Results.size();
+        return m_Results.size();
     }
     
     /// Add results to this object, intended to be used by internal
