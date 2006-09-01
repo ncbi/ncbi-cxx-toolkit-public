@@ -44,6 +44,7 @@ extern "C" {
 /** WordFinder type function for PHI BLAST.
  * @param subject Subject sequence [in]
  * @param query Query sequence [in]
+ * @param query_info Concatenated query information [in]
  * @param lookup_wrap Wrapper for the lookup table with pattern information [in]
  * @param matrix Scoring matrix (not used) 
  * @param word_params Initial word parameters (not used)
@@ -58,8 +59,9 @@ extern "C" {
  * @return always zero
  */
 Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
-        BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
-        Int4** matrix, const BlastInitialWordParameters* word_params,
+        BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
+        LookupTableWrap* lookup_wrap, Int4** matrix, 
+        const BlastInitialWordParameters* word_params,
         Blast_ExtendWord* ewp, BlastOffsetPair* NCBI_RESTRICT offset_pairs,
         Int4 max_hits, BlastInitHitList* init_hitlist, 
         BlastUngappedStats* ungapped_stats);
