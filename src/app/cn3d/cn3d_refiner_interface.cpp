@@ -405,12 +405,13 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     const align_refine::LeaveOneOutParams& current_loo,
     const align_refine::BlockEditingParams& current_be,
     const vector < string >& titles) :
-        wxDialog(parent, -1, "Set Alignment Refiner Options", wxPoint(100,100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
+        wxDialog(parent, -1, "Alignment Refiner Options", wxPoint(100,100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
 		rowTitles(titles)
 {
     wxBoxSizer *hSizer;
     rowsToExclude = current_loo.rowsToExclude;
 
+//    wxScrolledWindow *panel = new wxScrolledWindow(this, -1, wxDefaultPosition, wxDefaultSize, wxVSCROLL);
     wxPanel *panel = new wxPanel(this, -1);
 
     //  Dialog heading
@@ -431,7 +432,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     item61->AddGrowableCol( 1 );
 
     //  # of cycles/trial
-    wxStaticText *item63 = new wxStaticText( panel, ID_TEXT, wxT("Number of refinement cycles/trial:"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText *item63 = new wxStaticText( panel, ID_TEXT, wxT("Number of refinement cycles:                    "), wxDefaultPosition, wxDefaultSize, 0 );
     item61->Add( item63, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     hSizer = new wxBoxSizer(wxHORIZONTAL);
     nCyclesSpin = new IntegerSpinCtrl(panel,
@@ -440,18 +441,6 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(nCyclesSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
     hSizer->Add(nCyclesSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
-    item61->Add(hSizer, 0, wxALIGN_RIGHT);
-
-    //  # of independent refinement trials (may want to leave this out)
-    wxStaticText *item62 = new wxStaticText( panel, ID_TEXT, wxT("Number of refinement trials:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item61->Add( item62, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    hSizer = new wxBoxSizer(wxHORIZONTAL);
-    nTrialsSpin = new IntegerSpinCtrl(panel,
-        1, 20, 1, current_genl.nTrials,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    hSizer->Add(nTrialsSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(nTrialsSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item61->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Order of phases (LOO->BE or BE->LOO)
@@ -480,6 +469,24 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     doLooCheck->SetValue(current_loo.doLOO);
     item5->Add( doLooCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
 
+    //  LNO parameter (1 == L00; >1 = group size for running LNO)
+    wxStaticText *item12 = new wxStaticText( panel, ID_TEXT, wxT("Group rows in sets of:"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
+    item5->Add( item12, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    hSizer = new wxBoxSizer(wxHORIZONTAL);
+    lnoSpin = new IntegerSpinCtrl(panel,
+        1, 50, 1, current_loo.lno,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    hSizer->Add(lnoSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(lnoSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    item5->Add(hSizer, 0, wxALIGN_RIGHT);
+
+    //  Blank space
+    wxStaticText *item24 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item24, 0, wxALIGN_CENTER, 5 );
+    wxStaticText *item25 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item25, 0, wxALIGN_CENTER, 5 );
+
     //  perform LOO/LNO on structures?
     wxStaticText *item6 = new wxStaticText( panel, ID_TEXT, wxT("Refine rows with structure:"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item6, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -488,15 +495,6 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     fixStructCheck = new wxCheckBox( panel, ID_FIX_STRUCT_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     fixStructCheck->SetValue(!current_loo.fixStructures);
     item5->Add( fixStructCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
-
-    //  use entire sequence length, or restricted to aligned footprint
-    wxStaticText *item9 = new wxStaticText( panel, ID_TEXT, wxT("Refine using full sequence:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item9, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-//    wxStaticText *item10 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-//    item5->Add( item10, 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
-    fullSeqCheck = new wxCheckBox( panel, ID_FULL_SEQ_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    fullSeqCheck->SetValue(current_loo.fullSequence);
-    item5->Add( fullSeqCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     // align all non-structured rows?
     wxStaticText *item90 = new wxStaticText( panel, ID_TEXT, wxT("Refine all unstructured rows:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -509,12 +507,34 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
 
     //  Order of row selection in LOO/LNO
     int initialSelOrderIndex = (int) current_loo.selectorCode;
-    wxStaticText *item68 = new wxStaticText( panel, ID_TEXT, wxT("Row selection order:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item68, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-//    wxStaticText *item69 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-//    item5->Add( item69, 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5 );
+//    wxStaticText *item68 = new wxStaticText( panel, ID_TEXT, wxT("Row selection order:"), wxDefaultPosition, wxDefaultSize, 0 );
+//    item5->Add( item68, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     looSelectionOrderCombo = new wxComboBox( panel, ID_LOO_SEL_ORDER_COMBOBOX, looSelectionOrderStrings[initialSelOrderIndex], wxDefaultPosition, wxDefaultSize, sizeof(looSelectionOrderStrings)/sizeof(looSelectionOrderStrings[0]), looSelectionOrderStrings, wxCB_READONLY );
-    item5->Add( looSelectionOrderCombo, 0, wxALIGN_RIGHT|wxALL, 5 );
+    looSelectionOrderCombo->Show(false);
+//    item5->Add( looSelectionOrderCombo, 0, wxALIGN_RIGHT|wxALL, 5 );
+
+    //  # of independent refinement trials 
+//    wxStaticText *item62 = new wxStaticText( panel, ID_TEXT, wxT("Number of refinement trials:"), wxDefaultPosition, wxDefaultSize, 0 );
+//    item5->Add( item62, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    hSizer = new wxBoxSizer(wxHORIZONTAL);
+    nTrialsSpin = new IntegerSpinCtrl(panel,
+        1, 10, 1, current_genl.nTrials,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    hSizer->Add(nTrialsSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(nTrialsSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    nTrialsSpin->GetTextCtrl()->Show(false);
+    nTrialsSpin->GetSpinButton()->Show(false);
+//    item5->Add(hSizer, 0, wxALIGN_RIGHT);
+
+    //  use entire sequence length, or restricted to aligned footprint
+    wxStaticText *item9 = new wxStaticText( panel, ID_TEXT, wxT("Refine using full sequence:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item9, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+//    wxStaticText *item10 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+//    item5->Add( item10, 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
+    fullSeqCheck = new wxCheckBox( panel, ID_FULL_SEQ_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    fullSeqCheck->SetValue(current_loo.fullSequence);
+    item5->Add( fullSeqCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     //  Allow extension/contraction of footprint (N-terminus)
     wxStaticText *item30 = new wxStaticText( panel, ID_TEXT, wxT("N-terminal footprint extension:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -540,23 +560,11 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     hSizer->Add(cExtSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
-    //  LNO parameter (1 == L00; >1 = group size for running LNO)
-    wxStaticText *item12 = new wxStaticText( panel, ID_TEXT, wxT("Group rows in sets of:"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
-    item5->Add( item12, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    hSizer = new wxBoxSizer(wxHORIZONTAL);
-    lnoSpin = new IntegerSpinCtrl(panel,
-        1, 50, 1, current_loo.lno,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    hSizer->Add(lnoSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(lnoSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
-    item5->Add(hSizer, 0, wxALIGN_RIGHT);
-
     //  Blank space
-    wxStaticText *item24 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item24, 0, wxALIGN_CENTER, 5 );
-    wxStaticText *item25 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item25, 0, wxALIGN_CENTER, 5 );
+    wxStaticText *item124 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item124, 0, wxALIGN_CENTER, 5 );
+    wxStaticText *item125 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item125, 0, wxALIGN_CENTER, 5 );
 //    wxStaticText *item26 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
 //    item5->Add( item26, 0, wxALIGN_CENTER, 5 );
 
@@ -597,8 +605,8 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Seed for RNG to define order of leaving out rows (useful for debugging!!)
-    wxStaticText *item27 = new wxStaticText( panel, ID_TEXT, wxT("Random number seed (0=no preference):"), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item27, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+//    wxStaticText *item27 = new wxStaticText( panel, ID_TEXT, wxT("Random number seed (0=no preference):"), wxDefaultPosition, wxDefaultSize, 0 );
+//    item5->Add( item27, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     hSizer = new wxBoxSizer(wxHORIZONTAL);
     rngSpin = new IntegerSpinCtrl(panel,
         0, 1000000000, 3727851, current_loo.seed,
@@ -606,14 +614,16 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(rngSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
     hSizer->Add(rngSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
-    item5->Add(hSizer, 0, wxALIGN_RIGHT);
+    rngSpin->GetTextCtrl()->Show(false);
+    rngSpin->GetSpinButton()->Show(false);
+//    item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     item3->Add( item5, 0, wxALIGN_CENTER_VERTICAL, 0 );
 
 
     //  **************************************************  //
     //  Start GUI elements for block extension parameters.
-    wxStaticBox *item37 = new wxStaticBox( panel, -1, wxT("Block Extension Parameters") );
+    wxStaticBox *item37 = new wxStaticBox( panel, -1, wxT("Block Modification Parameters") );
     item37->SetFont( wxFont( 10, wxROMAN, wxNORMAL, wxBOLD ) );
     wxStaticBoxSizer *item36 = new wxStaticBoxSizer( item37, wxVERTICAL );
 
@@ -628,8 +638,8 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     esCombo->SetValue(blockEditAlgStrings[initialValue]);
     item38->Add( esCombo, 0, wxALIGN_RIGHT|wxALL, 5 );
 
-    //  Extend first?
-    wxStaticText *item39b = new wxStaticText( panel, ID_TEXT, wxT("Extend first?"), wxDefaultPosition, wxDefaultSize, 0 );
+    //  Expand first?
+    wxStaticText *item39b = new wxStaticText( panel, ID_TEXT, wxT("Expand first?"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item39b, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     extendFirstCheck = new wxCheckBox( panel, ID_BEXTEND_FIRST_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     extendFirstCheck->SetValue(current_be.extendFirst);
@@ -706,13 +716,16 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     wxButton *item56 = new wxButton( panel, wxID_CANCEL, wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
     item54->Add( item56, 0, wxALIGN_CENTER|wxALL, 5 );
 
+    wxBoxSizer *item103 = new wxBoxSizer( wxHORIZONTAL );
 
     //  Place sub-sizers in outermost sizer.
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
-//    item0->Add( item1, 0, wxALIGN_CENTER|wxALL, 5 );
-    item0->Add( item64, 0, wxALIGN_LEFT|wxALL, 5 );
-    item0->Add( item3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    item0->Add( item36, 0, wxALIGN_CENTER|wxALL, 5 );
+    item0->Add( item64, 0, wxALIGN_CENTER|wxALL, 5 );
+//    item0->Add( item3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+//    item0->Add( item36, 0, wxALIGN_CENTER|wxALL, 5 );
+    item103->Add( item3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item103->Add( item36, 0, wxALIGN_CENTER_HORIZONTAL | wxALIGN_TOP |wxALL, 5 );
+    item0->Add(item103, 0, wxALIGN_CENTER|wxALL, 2);
     item0->Add( item54, 0, wxALIGN_CENTER|wxALL, 5 );
 
     panel->SetAutoLayout(true);
@@ -991,6 +1004,11 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/09/03 19:16:32  lanczyck
+* rearrange the refiner dialog for 4.2 release to avoid too tall a dialog;
+* remove options related only to multiple trials (i.e., random selection order) and get rid of best-to-worst sort order.
+* other wording changes
+*
 * Revision 1.15  2006/04/10 15:21:40  thiessen
 * undo part of previous fix (vector element removal
 *
