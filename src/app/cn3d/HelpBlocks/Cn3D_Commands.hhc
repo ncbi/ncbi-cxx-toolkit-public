@@ -62,6 +62,10 @@
         <param name="Name" value="Sequence Window : Import">
         <param name="Local" value="AW_Update.htm">
         </OBJECT>
+    <LI><OBJECT type="text/sitemap">
+        <param name="Name" value="Sequence Window : Refiner">
+        <param name="Local" value="refinerHelp.htm">
+        </OBJECT>
   </UL>
   <LI><OBJECT type="text/sitemap">
       <param name="Name" value="Import Window Menus">

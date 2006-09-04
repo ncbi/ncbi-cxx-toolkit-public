@@ -1,0 +1,180 @@
+<html>
+    <head>
+        <title>Cn3D Help:  Alignment Refiner</title>
+    </head>
+    <body>
+        <font face="arial"><a name="top">&nbsp;</a>
+        <h3>Alignment Refinement</h3>
+        <BR>
+
+        <UL>
+            <LI>
+                <A href="#Overview">Overview</A>
+            </LI>
+            <LI>
+                <A href="#Algorithm">Algorithm Summary</A>
+            </LI>
+            <LI>Parameter Settings
+                <UL>
+                <LI>
+                    <A href="#General">General Refiner Parameters</A>
+                <LI>
+                    <A href="#BlockShift">Block Shifting Phase Parameters</A>
+                <LI>
+                    <A href="#BlockExtension">Block Modification Phase Parameters</A>
+                </UL>
+            </LI>
+            <LI>
+                <A href="#Ref">Reference</A>
+            </LI>
+        </UL>
+        <br>
+        <hr>
+
+        <a name="Overview">&nbsp;</a>
+        <P><b>Overview</b></P>
+        <P>
+        This option applies an automatic refinement algorithm to the current multiple alignment in Cn3D's sequence viewer, using the existing 'block model' as a biologically-motivated constraint on the search space.  To perform refinement:
+        <OL>
+            <LI>enable editing in the sequence viewer (Edit->Enable Editor);
+            <LI>all blocks are refined by default, but to limit refinement to specific blocks, mark them using the 'Import->Mark Block' command -- marked blocks are highlighted in grey;
+            <LI>select the 'Edit->Alignment Refiner' command in the sequence viewer;
+            <LI>unchecking 'Refine all unstructured rows' box in the refinement parameters dialog allows you to limit the refinement to specific non-structure rows, if desired;
+            <LI>change any other dialog settings, then click the 'OK' button.
+        </OL>
+        </P>
+        <P>
+        When the refinement options dialog appears, Cn3D highlights in yellow all initially aligned residues (the yellow highlighting replaces the grey highlight of a marked block, but the mark is remembered).  After refinement, any changes made are identified as <STRONG><EM>unhighlighted</EM></STRONG> residues that are now part of an aligned block in the sequence viewer.  All originally aligned residues that are no longer aligned in the refined multiple alignment remain in yellow for easy identification of the modification made.  The lack of yellow highlights outside the bounds of an aligned block after refinement indicates that no changes were made.  If you are dissatisfied with the results, issue the 'Edit->Undo' command in the sequence viewer to restore your original pre-refinement alignment:  trial-and-error use of the refiner can thus be performed in a non-destructive manner.
+        </P>
+        <P>
+        Starting with a passably good initial multiple alignment this alignment refinement procedure corrects a variety of flaws, and provides a means of adding (or removing) alignment columns.   The algorithm tends to do best in finding and fixing local misalignments on a single sequence.  Further, it performs well even in families that contain evolutionarily distant members, while not disrupting known regions of structural and sequence conservation represented by the block model.  (Links to a paper describing the alignment refiner and a stand-alone version of the refiner is given in the <A href="#Ref">Reference</A> section below.)
+        </P>
+        <P>
+        <EM>This feature is not intended for use with an alignment that has not first undergone basic scrutiny.</EM>.  As a corollary, it has a harder time making global, coordinated changes across a majority of the sequences since the algorithm presumes that 'on average' the input alignment is correct.  An alignment contaminated by many sequences unrelated to the domain family being described, that consists of multiple families with sufficiently distinctive features or has other serious errors may be nominally improved for individual sequences but that is not guaranteed.  Such initial flaws can confound the algorithm as it assumes all sequences in the alignment do in fact belong to one family, so global misalignments may remain in such a case.
+        </P>
+        <p align="right"><font size="-2"><A href="#top">back to top</A></font></p>
+        <br>
+        <hr>
+
+
+        <a name="Algorithm">&nbsp;</a>
+        <P><b>Algorithm Summary</b></P>
+        <P>
+        In concept, the alignment refiner reformulates the 'Block Align' functionality found in the Import Viewer, but instead applies it to sequences in the sequence viewer so as to optimize each block's location (and optionally, size) on each sequence, based on a PSSM computed from the multiple alignment.  Provisional alignments in the Import Viewer are not affected by the alignment refiner.
+        </P>
+        <P>
+        Each independent run of the refiner is composed of one or more <STRONG><EM>cycles</EM></STRONG>.  In turn, a cycle can carry out two distinct refinement <STRONG><EM>phases</EM></STRONG>:  block shifting and block modification.  In the block-shifting phase, blocks on each selected sequence from the multiple alignment are repositioned consistent with the initial block model (i.e., block order, number and size are unmodified).  The same dynamic programming algorithm used by the Import Viewer's 'Block Align' is run for each sequence selected for refinement, where the optimization is done against the PSSM computed from the current state of the multiple alignment <EM>with the sequence currently under refinement left out</EM>.  In this phase, sequences are refined in ascending order according to the score of the sequence against the PSSM over the aligned residues at the start of the phase (i.e., from worst to best score vs. the PSSM).
+        </P>
+        <P>
+        The other (and by default optional) phase in each cycle is 'block modification'.  In this phase, pre-existing blocks in the alignment may be extended or contracted at their N- and/or C-terminii.  New block creation and block splitting are not allowed.  Note that unlike the block-shifting phase, this phase simulataneously alters the block on every sequence in the multiple alignment.  Furthermore, this phase does not use a dynamic programming approach but a heuristic which is outlined in the 'Block Modification Parameters' section.
+        </P>
+        <P>
+        The algorithm has been evaluated and benchmarked against a set of 362 Conserved Domain Database (CDD) alignments and shows an overall score improvement, reliability in retrieval of functional important sites and enhanced sensitivity compared to the original CDD alignment (citation in <A href="#Ref">Reference section</A>).  The score used by the alignment refiner is a sum over the sequence-to-PSSM score for each sequence in a multiple alignment.  The method is reasonably fast, refining an initial alignment containing a hundred or so columns and several hundreds of highly diverse sequences within minutes.
+        </P>
+        <P>
+        However, as with all automated methods, the alignment refiner will not 'do the right thing' in every case from a biological point-of-view, even when it improves the alignment score.  So, care should be taken to examine the output before proceeding, using 'Undo' and/or re-running the refiner with different settings or for a restricted set of sequences if necessary.
+        </P>
+
+        <p align="right"><font size="-2"><A href="#top">back to top</A></font></p>
+        <br>
+        <hr>
+
+        <a name="General">&nbsp;</a>
+        <P><b>General Refiner Parameters</b></P>
+        <ul>
+            <li><em>Number of refinement cycles:</em>&nbsp;&nbsp;<font size="-1">(Default:  3)</font><BR> Each refinement consists of one or more cycles, the alignment output from a cycle being used as the input to the next.  If the alignment score has not changed after a cycle, all remaining cycles are skipped.  Cn3D uses the output of the last cycle as the refined alignment.
+
+            <li><em>Phase Order:</em>&nbsp;&nbsp;<font size="-1">(Default:  shift blocks first)</font><BR>Active only when both block shifting and block modification phases are being used.  In that case, specify the order in which the phases are executed in each cycle.
+            </li>
+        </ul>
+        <P></P>
+        <p align="right"><font size="-2"><A href="#top">back to top</A></font></p>
+        <br>
+        <hr>
+
+        <a name="BlockShift">&nbsp;</a>
+        <P><b>Block Shifting Phase Parameters</b></P>
+        Note:  the reference (master) sequence in the alignment does <em>not</em> undergo refinement.
+        <ul>
+            <li><em>Shift blocks?</em>&nbsp;&nbsp;<font size="-1">(Default:  checked)</font><BR>Uncheck this box to skip the block shifting phase in each cycle.
+
+            <li><em>Group rows in sets of:</em>&nbsp;&nbsp;<font size="-1">(Default:  1)</font><BR>This is an important setting if you have a large alignment or simply want to reduce the refiner's run time.  After each sequence processed in this phase, a PSSM recalculation is required before moving to the next sequence.  You can speed up the calculation at the expense of accuracy by grouping rows in sets of size greater than one:  this recomputes the PSSM after the entire group has undergone block shifting.  The number of rows in your alignment affects how large to make this without sacrificing too much accuracy, but as a rule-of-thumb avoid increasing the group size beyond 1/10-th of the number of rows being refined.
+
+            <li><em>Refine rows with structure:</em>&nbsp;&nbsp;<font size="-1">(Default:  unchecked)</font><BR>The refiner does not explicitly use structure data.  However, rows with structures may have been manually aligned such that they implicitly reflect this added structural information.  Prevent the refiner from making change to rows with structure by leaving this box in its default, unchecked state.  Check the box to also refine structured rows.
+
+            <li><em>Refine all unstructured rows:</em>&nbsp;&nbsp;<font size="-1">(Default:  checked)</font><BR>By default, all unstructured rows are included in the refinement.  To select a subset of unstructured rows, first uncheck the box.  A second dialog then appears in which you choose the exact group of unstructured rows to refine.
+
+<!--
+            <li><em>Row selection order:</em><BR>  Normally you will not need to change this option, which specifies that block shifting will be performed first on those sequences with the lowest scores against the PSSM from the start of this phase, and last on those sequence with the highest PSSM score.  Other alternatives are 'Best-to-worst self-hit', and an order based on random selection.  (Default:  Worst-to-best self-hit)
+
+            <li><em>Number of refinement trials:</em><BR> This option is only relevant if 'Shift blocks?' is checked and the 'Row selection order' is set for random selection.  In that case, the refinement algorithm runs this many independent trials using different row selection orders, each of which is randomly determined.  The trial with highest scoring refined alignment is selected by Cn3D.  <EM>Warning:  changing this value will markedly increase the run-time!</EM>  (Default:  1)
+-->
+
+            <li><em>Refine using full sequence:</em>&nbsp;&nbsp;<font size="-1">(Default:  unchecked)</font><BR>By default, block shifting on a sequence is constrained to the footprint defined by the first and last aligned residue (plus optional N- and C-terminal extensions mentioned below).  Check this box to allow the refiner to shift the blocks across the full sequence length.  However, this can be risky especially for multi-domain proteins and proteins with tandem repeats.
+
+            <li><em>N-terminal footprint extension:</em>&nbsp;&nbsp;<font size="-1">(Default:  20)</font><BR>  If you are not refining with the full sequence length, this option allows the N-terminal block to shift up to this many residues toward the sequence N-terminus.  When using the 'Refine using full sequence' option, negative values restrict blocks from shifting to within this many residues (in absolute value) of the N-terminus.
+
+            <li><em>C-terminal footprint extension:</em>&nbsp;&nbsp;<font size="-1">(Default:  20)</font><BR>  If you are not refining with the full sequence length, this option allows the C-terminal block to shift up to this many residues toward the sequence C-terminus.  When using the 'Refine using full sequence' option, negative values restrict blocks from shifting to within this many residues (in absolute value) of the C-terminus.
+            </li>
+
+<!--
+            <li><em>Random number seed (0=no preference):</em><BR>If you are using a random row selection order, you can specify a random number seed.  (Default:  0; i.e., program determines new seed on each invokation)
+            </li>
+-->
+        </ul>
+        The next three parameters correspond to parameters in the 'Block Align' dialog and control the size of the maximum allowed loop in the refined alignment.  (For Cn3D's purposes, a 'loop' is simply a contiguous stretch of unaligned residues.)  This is important when full sequences or large footprint extensions are used because the N- and C-terminal blocks can be shifted far from their initial position for reasons unrelated to the quality of the initial alignment.  For example, if there are multiple domains in sequence, the block may be shifted out of the current domain of interest into a neighboring domain or tandem repeat.  The maximum loop allowed in the refined alignment is:  min{ (loop percentile)*(maximum loop length) + loop extension, loop cutoff}.
+        <ul>
+            <li><em>Loop percentile:</em>&nbsp;&nbsp;<font size="-1">(Default:  1)</font><BR>  Fractional size of the maximum loop length desired.  For refinement purposes, one typically wants to be able to have loops at least as long as in the input alignment.
+
+            <li><em>Loop extension:</em>&nbsp;&nbsp;<font size="-1">(Default:  10)</font><BR>  An additive number of residues a loop can have beyond that implied by the 'Loop percentile' above.
+
+            <li><em>Loop cutoff (0=none):</em>&nbsp;&nbsp;<font size="-1">(Default:  0)</font><BR>  An absolute maximum loop length, measured in number of residues.  Useful if one or more sequence in the alignment has an anomalously large unaligned insertion.
+        </ul>
+        <P></P>
+        <p align="right"><font size="-2"><A href="#top">back to top</A></font></p>
+        <br>
+        <hr>
+
+
+        <a name="BlockExtension">&nbsp;</a>
+        <P><b>Block Modification Phase Parameters</b></P>
+        <ul>
+            <li><em>Change block model?</em>&nbsp;&nbsp;<font size="-1">(Default:  No)</font><BR>The default is to not execute the block modification phase in each cycle.  When it is executed, you have three options:  allow existing block to be extended ('Only expand'), allow existing blocks to be shortened ('Only shrink') and allow blocks to be extended and shortened ('Expand and shrink').
+
+            <li><em>Expand  first?</em>&nbsp;&nbsp;<font size="-1">(Default:  Expand first)</font><BR>When 'Expand and shrink' is chosen for 'Change block model?', select whether attempts to expand or attempts to shrink are performed first.
+
+            <li><em>Minimum block size:</em>&nbsp;&nbsp;<font size="-1">(Default:  1)</font><BR>Specify the smallest refined block size:  blocks will not be shrunk to less than this size.  This value must be positive:  the refiner does not permit block deletion.  Blocks in the initial alignment that start out smaller than this size are exempt from this criteria when expanding (i.e., the refiner will not force a block to expand to reach the minimum block size).
+            </li>
+        </ul>
+        <p>The following three threshold parameters control the decision as to whether it is advantageous to extend or shrink a column.  A column can be added to the N- or C-terminal end of a block if:  i)  no sequence in the alignment has a gap in the column, and ii)  each of the three quantities computed for the column exceed the threshold values.  Expansion at a block terminus stops as soon as a column failing this test is encountered.  Similarly, a column can be removed from the N- or C-terminal end of a block if <EM>all</EM> of the three quantities computed for that column fall below their respective threshold values.  Shrinking of a block terminus stops as soon as a column fail this test is encountered, or the minimum block size is reached.</p>
+
+        <ul>
+            <li><em>Median PSSM score threshold:</em>&nbsp;&nbsp;<font size="-1">(Default:  3)</font><BR>The PSSM score of each aligned residue in the column is found, and the median of all such values determined.  This threshold specifies the minimum median PSSM score for a column to be considered good enough to be added to/kept in an alignment.
+
+            <li><em>Voting percentage (% of rows vote to extend):</em>&nbsp;&nbsp;<font size="-1">(Default:  70%)</font><BR>The fraction of residues with non-negative PSSM scores in the column.  This parameter tries to avoid columns with many negatively scored residues from being added to an alignment.
+
+            <li><em>Weighted (by PSSM score) voting percentage:</em>&nbsp;&nbsp;<font size="-1">(Default:  70%)</font><BR>Similar to the previous parameter, except that each residue in a column "votes" in proportion to the magnitude of its score, not just its sign.  This parameter tries to compensate for cases of noisy columns that might have a few marginally negatively scored residues but is otherwise well conserved.
+            </li>
+        </ul>
+        <P></P>
+        <p align="right"><font size="-2"><A href="#top">back to top</A></font></p>
+        <br>
+        <hr>
+
+
+        <a name="Ref"></a>
+        <P><b>Reference</b></P>
+        The Cn3D alignment refiner was initially developed as a stand-alone program for block-based multiple alignment refinement.  Further details can be found in the paper:<BR>
+        <P>"Refining multiple
+        sequence alignments with conserved core regions", Saikat Chakrabarti,
+        Christopher J. Lanczycki, Anna R. Panchenko, Teresa M. Przytycka, Paul
+        A. Thiessen and Stephen H. Bryant (2006) Nucl. Acids Res., 34, 2598-2606
+        (PMID: <A href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=pubmed&cmd=Retrieve&dopt=AbstractPlus&list_uids=16707662&query_hl=1&itool=pubmed_docsum">16707662</A>).
+        </P>
+        <p>The stand-alone program, which takes Cn3D-readable files as input, may be downloaded from the <A href="ftp://ftp.ncbi.nih.gov/pub/REFINER">NCBI ftp site</A>.</p>
+
+        <br>
+
+    </font>
+    </body>
+</html>

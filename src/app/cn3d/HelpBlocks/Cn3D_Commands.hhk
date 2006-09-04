@@ -62,6 +62,10 @@
              <PARAM NAME="Local" VALUE="AW_Update.htm">
          </OBJECT>
     <LI> <OBJECT TYPE="text/sitemap">
+             <PARAM NAME="Name" VALUE="Sequence Window : Refiner">
+             <PARAM NAME="Local" VALUE="refinerHelp.htm">
+         </OBJECT>
+    <LI> <OBJECT TYPE="text/sitemap">
              <PARAM NAME="Name" VALUE="Import Window Menus">
              <PARAM NAME="Local" VALUE="UpdateWindow.htm">
          </OBJECT>
