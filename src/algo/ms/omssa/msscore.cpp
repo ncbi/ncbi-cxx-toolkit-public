@@ -598,7 +598,7 @@ CMSSpectrumMatch::GetStdDevDelta(void) const
      for (i = 0; i < GetHits(); ++i) {
          StdDev += pow(GetHitInfo(i).GetDelta() - Mean, 2.0);
      }
-     StdDev = pow(StdDev/GetHits(), 0.5);
+     StdDev = pow(static_cast <double> (StdDev)/GetHits(), 0.5);
      return static_cast <int> (StdDev);
 }
 
