@@ -104,23 +104,31 @@ public:
         
           
         int ret = -1;
-        bool canceled = ExecRemoteApp(m_Params.GetAppPath(), 
-                                      args, 
-                                      request->GetStdIn(), 
-                                      result->GetStdOut(), 
-                                      result->GetStdErr(),
-                                      ret,
-                                      context,
-                                      m_Params.GetMaxAppRunningTime(),
-                                      request->GetAppRunTimeout(),
-                                      m_Params.GetKeepAlivePeriod(),
-                                      tmp_path);
+        bool finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
+                                         args, 
+                                         request->GetStdIn(), 
+                                         result->GetStdOut(), 
+                                         result->GetStdErr(),
+                                         ret,
+                                         context,
+                                         m_Params.GetMaxAppRunningTime(),
+                                         request->GetAppRunTimeout(),
+                                         m_Params.GetKeepAlivePeriod(),
+                                         tmp_path,
+                                         NULL,
+                                         m_Params.GetMonitorAppPath(),
+                                         m_Params.GetMaxMonitorRunningTime(),
+                                         m_Params.GetMonitorPeriod());
 
         result->SetRetCode(ret); 
         result->Send(context.GetOStream());
 
-        string stat = " is canceled.";
-        if (!canceled) {
+        string stat;
+        if( !finished_ok ) {
+            if (context.GetShutdownLevel() == 
+                CNetScheduleClient::eShutdownImmidiate) 
+                stat = " is canceled.";
+        } else {
             if (ret != 0 && m_Params.GetNonZeroExitAction() != 
                            CRemoteAppParams::eDoneOnNonZeroExit) {
                 if (m_Params.GetNonZeroExitAction() == CRemoteAppParams::eFailOnNonZeroExit) {
@@ -210,6 +218,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/09/05 14:35:22  didenko
+ * Added option to run a job monitor appliction
+ *
  * Revision 1.23  2006/07/13 14:38:54  didenko
  * Added support for running an application using remote_app_dispatcher utility
  *

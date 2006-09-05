@@ -50,7 +50,11 @@ bool ExecRemoteApp(const string& cmd,
                    int app_running_time,
                    int keep_alive_period,
                    const string& tmp_path,
-                   const char* const env[] = 0);
+                   const char* const env[] = 0,
+                   const string& monitor_app = kEmptyStr,
+                   int max_monitor_running_time = 5,
+                   int monitor_period = 5);
+
 
 
 class IRegistry;
@@ -74,6 +78,10 @@ public:
     bool RunInSeparateDir() const { return m_RunInSeparateDir; }
     const string& GetTempDir() const { return m_TempDir; }
 
+    const string& GetMonitorAppPath() const { return m_MonitorAppPath; }
+    int GetMaxMonitorRunningTime() const { return m_MaxMonitorRunningTime; }
+    int GetMonitorPeriod() const { return m_MonitorPeriod; }
+
 private:
     string m_AppPath;
     int m_MaxAppRunningTime;
@@ -81,6 +89,11 @@ private:
     ENonZeroExitAction m_NonZeroExitAction;
     bool m_RunInSeparateDir;
     string m_TempDir;
+
+    string m_MonitorAppPath;
+    int m_MaxMonitorRunningTime;
+    int m_MonitorPeriod;
+
 };
 
 
@@ -89,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/05 14:35:22  didenko
+ * Added option to run a job monitor appliction
+ *
  * Revision 1.2  2006/06/22 19:33:14  didenko
  * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
  *

@@ -69,7 +69,7 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
         else if (NStr::CompareNocase(val, "done") == 0 )
             m_NonZeroExitAction = eDoneOnNonZeroExit;
         else {
-            LOG_POST(Warning << "Unknown parameter value : Section [" 
+           ERR_POST(Warning << "Unknown parameter value : Section [" 
                      << sec_name << "], param : \"non_zero_exit_action\", value : \""
                      << val << "\". Allowed values: fail, return, done"); 
         }
@@ -103,6 +103,28 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
             + m_AppPath;
         m_AppPath = CDirEntry::NormalizePath(tmp);
     }
+
+    m_MonitorAppPath = reg.GetString(sec_name, "monitor_app_path", "" );
+    if (!CDirEntry::IsAbsolutePath(m_AppPath)) {
+        string tmp = CDir::GetCwd() 
+            + CDirEntry::GetPathSeparator() 
+            + m_MonitorAppPath;
+        m_MonitorAppPath = CDirEntry::NormalizePath(tmp);
+        if (!m_MonitorAppPath.empty()) {
+            CFile f(m_MonitorAppPath);
+            if (!f.Exists() || !CanExecRemoteApp(f) ) {
+                ERR_POST("Can not execute \"" << m_MonitorAppPath 
+                         << "\". The Monitor application will not run!");
+                m_MonitorAppPath = "";
+            }
+        }
+    }
+    m_MaxMonitorRunningTime = 
+        reg.GetInt(sec_name,"max_monitor_running_time",0,0,IRegistry::eReturn);
+
+    m_MonitorPeriod = 
+        reg.GetInt(sec_name,"monitor_period",0,0,IRegistry::eReturn);
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -133,6 +155,151 @@ struct STmpDirGuard
     ~STmpDirGuard() { if (!m_Path.empty()) CDir(m_Path).Remove(); }
     const string& m_Path;
 };
+//////////////////////////////////////////////////////////////////////////////
+///
+class CRAMonitor
+{
+public:
+    CRAMonitor(const string& app, int max_app_running_time) 
+        : m_App(app), m_MaxAppRunningTime(max_app_running_time)  {}
+
+    int Run(vector<string>& args, CNcbiOstream& stdout, CNcbiOstream& stderr)
+    {
+        CNcbiStrstream in;
+        int exit_value;
+        bool ret = CPipe::ExecWait(m_App, args, in, 
+                                   stdout, stderr, exit_value, kEmptyStr, NULL, NULL);
+        if(!ret || exit_value > 2)
+            return 3;
+        return exit_value;
+    }
+
+private:
+    string m_App;
+    int m_MaxAppRunningTime;
+};
+//////////////////////////////////////////////////////////////////////////////
+///
+class CPipeCallBack : public CPipe::ICallBack
+{
+public:
+    CPipeCallBack( CWorkerNodeJobContext& context,
+                   int max_app_running_time,
+                   int app_running_time,
+                   int keep_alive_period)
+        : m_Context(context), m_MaxAppRunningTime(max_app_running_time),
+          m_AppRunningTime(app_running_time), m_KeepAlivePeriod(keep_alive_period),
+          m_Monitor(NULL)
+    {
+        if (m_KeepAlivePeriod > 0)
+            m_KeepAlive.reset(new CStopWatch(CStopWatch::eStart));
+
+        if (m_MaxAppRunningTime > 0 || m_AppRunningTime > 0)
+            m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));        
+    }
+    
+    virtual ~CPipeCallBack() {}
+
+    void SetMonitor(CRAMonitor& monitor, int monitor_perod)
+    {
+        m_Monitor = &monitor;
+        m_MonitorPeriod = monitor_perod;
+        if (m_MonitorPeriod)
+            m_MonitorWatch.reset(new CStopWatch(CStopWatch::eStart));        
+        
+    }
+
+    virtual bool Perform(TProcessHandle pid) 
+    {
+        if (m_Context.GetShutdownLevel() == 
+            CNetScheduleClient::eShutdownImmidiate) {
+            return false;
+        }
+        if (m_RunningTime.get()) {
+            double elapsed = m_RunningTime->Elapsed();
+            if (m_AppRunningTime > 0 &&  elapsed > (double)m_AppRunningTime) {
+                ERR_POST( "The application's runtime has exceeded a time("
+                        << m_AppRunningTime
+                        << " sec) set by the client");
+                return false;
+            }
+            if ( m_MaxAppRunningTime > 0 && elapsed > (double)m_MaxAppRunningTime) {
+                ERR_POST("The application's runtime has exceeded a time("
+                         << m_MaxAppRunningTime
+                         <<" sec) set in the config file");
+                return false;
+            }
+        }
+
+        if (m_KeepAlive.get() 
+            && m_KeepAlive->Elapsed() > (double) m_KeepAlivePeriod ) {
+            m_Context.JobDelayExpiration(m_KeepAlivePeriod + 10);
+            m_KeepAlive->Restart();
+        }
+        if (m_Monitor && m_MonitorWatch.get() 
+            && m_MonitorWatch->Elapsed() > (double) m_MonitorPeriod) {
+            CNcbiStrstream stdout;
+            CNcbiStrstream stderr;
+            vector<string> args;
+            args.push_back( "-pid " + NStr::UIntToString(pid) );
+            args.push_back( "-jid " + m_Context.GetJobKey() );
+            int ret = m_Monitor->Run(args, stdout, stderr);
+            switch(ret) {
+            case 0:
+                if( stdout.pcount() > 0 )
+                    stdout << '\0';
+                    m_Context.PutProgressMessage(stdout.str(), true);
+                if( stderr.pcount() > 0 && m_Context.IsLogRequested()) {
+                    LOG_POST( CTime(CTime::eCurrent).AsString() 
+                              << ": Job " << m_Context.GetJobKey() 
+                              << " -- " << stderr.rdbuf());
+                }
+                break;
+            case 1:
+                if( stderr.pcount() > 0 ) {
+                    LOG_POST( CTime(CTime::eCurrent).AsString() 
+                              << ": Job " << m_Context.GetJobKey() 
+                              << " -- " << stderr.rdbuf());
+                }
+                return false;
+            case 2: 
+                {
+                string errmsg;
+                if( stdout.pcount() > 0 ) {
+                    stdout << '\0';
+                    errmsg = stdout.str();
+                } else 
+                    errmsg = "Monitor requested the job termination.";
+                throw runtime_error(errmsg);
+                }
+                break;
+            default:
+                LOG_POST( CTime(CTime::eCurrent).AsString() 
+                          << ": Job " << m_Context.GetJobKey() 
+                          << " Monitor internal error");
+                if( stderr.pcount() > 0 ) {
+                    LOG_POST( ": " << stderr.rdbuf());
+                }
+                break;
+            }
+            m_MonitorWatch->Restart();
+        }
+
+        return true;
+    }
+
+private:
+    CWorkerNodeJobContext& m_Context;
+    int m_MaxAppRunningTime;
+    int m_AppRunningTime;
+    int m_KeepAlivePeriod;
+    auto_ptr<CStopWatch> m_KeepAlive;
+    auto_ptr<CStopWatch> m_RunningTime;
+    CRAMonitor* m_Monitor;
+    auto_ptr<CStopWatch> m_MonitorWatch;
+    int m_MonitorPeriod;
+
+};
 
 //////////////////////////////////////////////////////////////////////////////
 ///
@@ -145,126 +312,25 @@ bool ExecRemoteApp(const string& cmd,
                    int app_running_time,
                    int keep_alive_period,
                    const string& tmp_path,
-                   const char* const env[])
+                   const char* const env[],
+                   const string& monitor_app,
+                   int max_monitor_running_time,
+                   int monitor_period)
 {
     STmpDirGuard guard(tmp_path);
 
-    CPipe pipe;
-    EIO_Status st = pipe.Open(cmd.c_str(), args, CPipe::fStdErr_Open,tmp_path, env);
-    if (st != eIO_Success)
-        NCBI_THROW(CException, eInvalid, 
-                   "Could not execute " + cmd + " file.");
+    CPipeCallBack callback(context,
+                           max_app_running_time,
+                           app_running_time,
+                           keep_alive_period);
 
-    
-    auto_ptr<CStopWatch> keep_alive;
-    if (keep_alive_period > 0)
-        keep_alive.reset(new CStopWatch(CStopWatch::eStart));
-
-    auto_ptr<CStopWatch> running_time;
-    if (max_app_running_time > 0 || app_running_time >> 0)
-        running_time.reset(new CStopWatch(CStopWatch::eStart));
-
-    bool canceled = false;
-    bool out_done = false;
-    bool err_done = false;
-    bool in_done = false;
-    
-    const size_t buf_size = 4096;
-    char buf[buf_size];
-    size_t bytes_in_inbuf = 0;
-    size_t total_bytes_written = 0;
-    char inbuf[buf_size];
-
-    CPipe::TChildPollMask mask = CPipe::fStdIn | CPipe::fStdOut | CPipe::fStdErr;
-
-    STimeout wait_time = {1, 0};
-    while (!out_done || !err_done) {
-        EIO_Status rstatus;
-        size_t bytes_read;
-
-        CPipe::TChildPollMask rmask = pipe.Poll(mask, &wait_time);
-        if (rmask & CPipe::fStdIn && !in_done) {
-            if ( in.good() && bytes_in_inbuf == 0) {
-                bytes_in_inbuf = CStreamUtils::Readsome(in, inbuf, buf_size);
-                total_bytes_written = 0;
-            }
-        
-            size_t bytes_written;
-            if (bytes_in_inbuf > 0) {
-                rstatus = pipe.Write(inbuf + total_bytes_written, bytes_in_inbuf,
-                                     &bytes_written);
-                if (rstatus != eIO_Success) {
-                    ERR_POST("Not all the data is written to stdin of a child process.");
-                    in_done = true;
-                }
-                total_bytes_written += bytes_written;
-                bytes_in_inbuf -= bytes_written;
-            }
-
-            if ((!in.good() && bytes_in_inbuf == 0) || in_done) {
-                pipe.CloseHandle(CPipe::eStdIn);
-                mask &= ~CPipe::fStdIn;
-            }
-
-        } if (rmask & CPipe::fStdOut) {
-            // read stdout
-            if (!out_done) {
-                rstatus = pipe.Read(buf, buf_size, &bytes_read);
-                out.write(buf, bytes_read);
-                if (rstatus != eIO_Success) {
-                    out_done = true;
-                    mask &= ~CPipe::fStdOut;
-            }
-        }
-
-
-        } if (rmask & CPipe::fStdErr) {
-            if (!err_done) {
-                rstatus = pipe.Read(buf, buf_size, &bytes_read, CPipe::eStdErr);
-                err.write(buf, bytes_read);
-                if (rstatus != eIO_Success) {
-                    err_done = true;
-                    mask &= ~CPipe::fStdErr;
-                }
-            }
-        }
-        if (!CProcess(pipe.GetProcessHandle()).IsAlive())
-            break;
-
-        if (context.GetShutdownLevel() == 
-            CNetScheduleClient::eShutdownImmidiate) {
-            CProcess(pipe.GetProcessHandle()).Kill();
-            canceled = true;
-            break;
-        }
-        if (running_time.get()) {
-            double elapsed = running_time->Elapsed();
-            if (app_running_time > 0 &&  elapsed > (double)app_running_time) {
-                CProcess(pipe.GetProcessHandle()).Kill();
-                NCBI_THROW(CException, eUnknown, 
-                      "The application's runtime has exceeded a time(" +
-                       NStr::UIntToString(app_running_time) +
-                      " sec) set by the client");
-            }
-            if ( max_app_running_time > 0 && elapsed > (double)max_app_running_time) {
-                CProcess(pipe.GetProcessHandle()).Kill();
-                NCBI_THROW(CException, eUnknown, 
-                      "The application's runtime has exceeded a time(" +
-                      NStr::UIntToString(max_app_running_time) +
-                      " sec) set in the config file");
-            }
-        }
-
-        if (keep_alive.get() 
-            && keep_alive->Elapsed() > (double) keep_alive_period ) {
-            context.JobDelayExpiration(keep_alive_period + 10);
-            keep_alive->Restart();
-        }
-
+    auto_ptr<CRAMonitor> ra_monitor;
+    if (!monitor_app.empty() && monitor_period > 0) {
+        ra_monitor.reset(new CRAMonitor(monitor_app, max_monitor_running_time));
+        callback.SetMonitor(*ra_monitor, monitor_period);
     }
 
-    pipe.Close(&exit_value);
-    return canceled;
+    return CPipe::ExecWait(cmd, args, in, out, err, exit_value, tmp_path, env, &callback);
 }
 
 
@@ -274,6 +340,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/05 14:35:22  didenko
+ * Added option to run a job monitor appliction
+ *
  * Revision 1.2  2006/06/22 19:33:14  didenko
  * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
  *
