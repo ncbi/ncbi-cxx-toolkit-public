@@ -42,6 +42,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/ncbistre.hpp>
 #include <connect/ncbi_core.h>
 #include <vector>
 
@@ -360,9 +361,9 @@ public:
 
     static bool ExecWait(const string&         cmd,
                          const vector<string>& args,
-                         CNcbiIstream&         stdin,
-                         CNcbiOstream&         stdout,
-                         CNcbiOstream&         stderr,
+                         CNcbiIstream&         in,
+                         CNcbiOstream&         out,
+                         CNcbiOstream&         err,
                          int&                  exit_value,
                          const string&         current_dir  = kEmptyStr,
                          const char* const     env[]        = 0,
@@ -436,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/09/05 16:53:13  didenko
+ * Fix compile time error on Windows and Sun
+ *
  * Revision 1.31  2006/09/05 14:33:10  didenko
  * Added ExecWait static method
  *

@@ -1726,9 +1726,9 @@ TProcessHandle CPipe::GetProcessHandle(void) const
 /* static */
 bool CPipe::ExecWait(const string&         cmd,
                      const vector<string>& args,
-                     CNcbiIstream&         stdin,
-                     CNcbiOstream&         stdout,
-                     CNcbiOstream&         stderr,
+                     CNcbiIstream&         in,
+                     CNcbiOstream&         out,
+                     CNcbiOstream&         err,
                      int&                  exit_value,
                      const string&         current_dir,
                      const char* const     env[],
@@ -1761,8 +1761,8 @@ bool CPipe::ExecWait(const string&         cmd,
 
         CPipe::TChildPollMask rmask = pipe.Poll(mask, &wait_time);
         if (rmask & CPipe::fStdIn && !in_done) {
-            if ( stdin.good() && bytes_in_inbuf == 0) {
-                bytes_in_inbuf = CStreamUtils::Readsome(stdin, inbuf, buf_size);
+            if ( in.good() && bytes_in_inbuf == 0) {
+                bytes_in_inbuf = CStreamUtils::Readsome(in, inbuf, buf_size);
                 total_bytes_written = 0;
             }
         
@@ -1778,7 +1778,7 @@ bool CPipe::ExecWait(const string&         cmd,
                 bytes_in_inbuf -= bytes_written;
             }
 
-            if ((!stdin.good() && bytes_in_inbuf == 0) || in_done) {
+            if ((!in.good() && bytes_in_inbuf == 0) || in_done) {
                 pipe.CloseHandle(CPipe::eStdIn);
                 mask &= ~CPipe::fStdIn;
             }
@@ -1787,7 +1787,7 @@ bool CPipe::ExecWait(const string&         cmd,
             // read stdout
             if (!out_done) {
                 rstatus = pipe.Read(buf, buf_size, &bytes_read);
-                stdout.write(buf, bytes_read);
+                out.write(buf, bytes_read);
                 if (rstatus != eIO_Success) {
                     out_done = true;
                     mask &= ~CPipe::fStdOut;
@@ -1798,7 +1798,7 @@ bool CPipe::ExecWait(const string&         cmd,
         } if (rmask & CPipe::fStdErr) {
             if (!err_done) {
                 rstatus = pipe.Read(buf, buf_size, &bytes_read, CPipe::eStdErr);
-                stderr.write(buf, bytes_read);
+                err.write(buf, bytes_read);
                 if (rstatus != eIO_Success) {
                     err_done = true;
                     mask &= ~CPipe::fStdErr;
@@ -1830,6 +1830,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/09/05 16:52:43  didenko
+ * Fix compile time error on Windows and Sun
+ *
  * Revision 1.63  2006/09/05 14:33:10  didenko
  * Added ExecWait static method
  *

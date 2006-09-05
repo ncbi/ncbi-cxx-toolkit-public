@@ -204,13 +204,13 @@ public:
     CRAMonitor(const string& app, int max_app_running_time) 
         : m_App(app), m_MaxAppRunningTime(max_app_running_time)  {}
 
-    int Run(vector<string>& args, CNcbiOstream& stdout, CNcbiOstream& stderr)
+    int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err)
     {
         CPipeCallBack_Base callback(m_MaxAppRunningTime, 0);
         CNcbiStrstream in;
         int exit_value;
         bool ret = CPipe::ExecWait(m_App, args, in, 
-                                   stdout, stderr, exit_value, 
+                                   out, err, exit_value, 
                                    kEmptyStr, NULL,
                                    &callback);
         if(!ret || exit_value > 2)
@@ -268,52 +268,52 @@ public:
         }
         if (m_Monitor && m_MonitorWatch.get() 
             && m_MonitorWatch->Elapsed() > (double) m_MonitorPeriod) {
-            CNcbiStrstream stdout;
-            CNcbiStrstream stderr;
+            CNcbiStrstream out;
+            CNcbiStrstream err;
             vector<string> args;
             args.push_back( "-pid " + NStr::UIntToString(pid) );
             args.push_back( "-jid " + m_Context.GetJobKey() );
 
-            int ret = m_Monitor->Run(args, stdout, stderr);
+            int ret = m_Monitor->Run(args, out, err);
             switch(ret) {
             case 0:
-                if( stdout.pcount() > 0 )
-                    stdout << '\0';
-                    m_Context.PutProgressMessage(stdout.str(), true);
-                if( stderr.pcount() > 0 && m_Context.IsLogRequested()) {
+                if( out.pcount() > 0 )
+                    out << '\0';
+                    m_Context.PutProgressMessage(out.str(), true);
+                if( err.pcount() > 0 && m_Context.IsLogRequested()) {
                     LOG_POST( CTime(CTime::eCurrent).AsString() 
                               << ": Job " << m_Context.GetJobKey() 
-                              << " -- " << stderr.rdbuf());
+                              << " -- " << err.rdbuf());
                 }
                 break;
             case 1:
-                if( stderr.pcount() > 0 ) {
+                if( err.pcount() > 0 ) {
                     LOG_POST( CTime(CTime::eCurrent).AsString() 
                               << ": Job " << m_Context.GetJobKey() 
-                              << " -- " << stderr.rdbuf());
+                              << " -- " << err.rdbuf());
                 }
                 return false;
             case 2: 
                 {
-                if( stderr.pcount() > 0 ) {
+                if( err.pcount() > 0 ) {
                     LOG_POST( CTime(CTime::eCurrent).AsString() 
                               << ": Job " << m_Context.GetJobKey() 
-                              << " -- " << stderr.rdbuf());
+                              << " -- " << err.rdbuf());
                 }
                 string errmsg;
-                if( stdout.pcount() > 0 ) {
-                    stdout << '\0';
-                    errmsg = stdout.str();
+                if( out.pcount() > 0 ) {
+                    out << '\0';
+                    errmsg = out.str();
                 } else 
                     errmsg = "Monitor requested the job termination.";
                 throw runtime_error(errmsg);
                 }
                 break;
             default:
-                if( stderr.pcount() > 0 ) {
+                if( err.pcount() > 0 ) {
                     LOG_POST( CTime(CTime::eCurrent).AsString() 
                               << ": Job " << m_Context.GetJobKey() 
-                              << " Monitor internal error: " << stderr.rdbuf());
+                              << " Monitor internal error: " << err.rdbuf());
                 } else {
                     LOG_POST( CTime(CTime::eCurrent).AsString() 
                               << ": Job " << m_Context.GetJobKey() 
@@ -376,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/09/05 16:56:05  didenko
+ * Fix compile time error on Windows and Sun
+ *
  * Revision 1.6  2006/09/05 16:24:22  didenko
  * Added handling for max_monitor_running_time parameter
  *
