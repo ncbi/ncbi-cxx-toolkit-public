@@ -152,9 +152,9 @@ bool CAgpSyntaxValidator::ValidateLine(
     //  error is on the previous line. Directly Log
     //  the error messages.
     if(!prev_line_error_occured) {
-      LOG_POST( prev_line_num << ": " << prev_line);
+      AGP_POST( prev_line_num << ": " << prev_line);
     }
-    LOG_POST("\tWARNING: gap at the end of an object");
+    AGP_POST("\tWARNING: gap at the end of an object");
   }
   if(last_validation) return m_LineErrorOccured;
 
@@ -275,7 +275,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
   if(new_obj) { AGP_WARNING("Object begins with a gap"); }
   if(prev_component_type == "N") {
     // Previous line a gap.
-    LOG_POST( prev_line_num << ": " << prev_line);
+    AGP_POST( prev_line_num << ": " << prev_line);
     AGP_WARNING("Two consequtive gap lines. It may be a gap at the end of "
     "a scaffold, or two non scaffold-breaking gaps.");
 
@@ -295,9 +295,9 @@ void CAgpSyntaxValidator::x_OnGapLine(
           // the error is on the previous line.
           // Directly Log the error messages.
           if(!prev_line_error_occured) {
-            LOG_POST( prev_line_num << ": " << prev_line);
+            AGP_POST( prev_line_num << ": " << prev_line);
           }
-          LOG_POST("\tWARNING: "
+          AGP_POST("\tWARNING: "
             "Next line is a scaffold-ending gap. "
             "Current line is a fragment gap. "
             "A Scaffold should not end with a gap."
@@ -333,7 +333,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
   }
 
   //// Check if the line looks more like a component
-  //// (i.e. dl.component_type should NOT ne "N")
+  //// (i.e. dl.component_type should be != "N")
   if (error) {
     // A component line has integers in column 7
     // (component start) and column 8 (component end);
@@ -549,7 +549,7 @@ int CAgpSyntaxValidator::x_CheckValues(
 
 void CAgpSyntaxValidator::PrintTotals()
 {
-  LOG_POST("\n"
+  AGP_POST("\n"
     "Objects     : " << m_ObjCount << "\n" <<
     "Scaffolds   : " << m_ScaffoldCount   << "\n"
     "  singletons: " << m_SingletonCount << "\n\n"

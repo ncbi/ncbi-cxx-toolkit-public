@@ -266,11 +266,11 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
 
       m_CurrentFileName =
           args['#' + NStr::IntToString(i)].AsString();
-      LOG_POST("\n"<<m_CurrentFileName);
+      AGP_POST("\n"<<m_CurrentFileName);
       CNcbiIstream& istr =
           args['#' + NStr::IntToString(i)].AsInputFile();
       if (!istr) {
-          LOG_POST(Fatal << "Unable to open file : " <<
+          AGP_POST(Fatal << "Unable to open file : " <<
                     m_CurrentFileName);
           exit (0);
       }
@@ -548,13 +548,15 @@ void CAgpValidateApplication::x_CheckTaxid()
   }
 
   if (!agp_taxid) {
-      LOG_POST("Unable to determine a Taxid for the AGP");
+      AGP_POST("Unable to determine a Taxid for the AGP");
       // todo: print most popular taxids
       return;
   }
 
-  LOG_POST(Error<< "The AGP's taxid is: " << agp_taxid);
-  LOG_POST_ONCE(Error<< "Components with incorrect taxids:");
+  //LOG_POST(Error<< "The AGP's taxid is: " << agp_taxid);
+  //LOG_POST_ONCE(Error<< "Components with incorrect taxids:");
+  AGP_POST("The AGP's taxid is: " << agp_taxid);
+  AGP_POST( "Components with incorrect taxids:");
 
   // report components that have an incorrect taxid
   ITERATE(TTaxidMap, map_it, m_TaxidMap) {
@@ -562,7 +564,7 @@ void CAgpValidateApplication::x_CheckTaxid()
 
     int taxid = map_it->first;
     ITERATE(TAgpInfoList, list_it, map_it->second) {
-      LOG_POST( Error << "\t"
+      AGP_POST( "\t"
         << list_it->filename     << ", "
         << list_it->line_num     << ": "
         << list_it->component_id
@@ -589,10 +591,6 @@ int main(int argc, const char* argv[])
 
 /*
  * ===========================================================================
- * $Log$
- * Revision 1.11  2006/09/05 15:16:41  sapojnik
- * comments
- *
  * Revision 1.10  2006/08/29 21:31:56  sapojnik
  * "Syntax" validations moved to a separate class CAgpSyntaxValidator
  *

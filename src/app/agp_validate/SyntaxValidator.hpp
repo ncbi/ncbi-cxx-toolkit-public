@@ -49,8 +49,8 @@
         m_LineErrorOccured = false;
 
 #define END_LINE_VALIDATE_MSG(line_num, line)\
-  LOG_POST( line_num << ": " << line <<\
-    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n");\
+  cout << line_num << ": " << line <<\
+    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n\n";\
   delete m_ValidateMsg;\
   m_ValidateMsg = new CNcbiOstrstream;
 
@@ -59,6 +59,8 @@
         *m_ValidateMsg << "\n\t" << severity << ": " <<  msg
 #define AGP_ERROR(msg) AGP_MSG("ERROR", msg)
 #define AGP_WARNING(msg) AGP_MSG("WARNING", msg)
+
+#define AGP_POST(msg) cout << msg << "\n"
 
 #define NO_LOG false
 
