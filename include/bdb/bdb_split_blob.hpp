@@ -131,12 +131,14 @@ protected:
     static
     unsigned SelectSplit(unsigned blob_size)
     {
-        static unsigned size_split[] = {256, 512, 2048, 4096, 8192};
+        static unsigned size_split[] = {
+            256, 512, 2048, 4096, 8192, 16384, 32768
+        };
         for(unsigned i = 0; i < sizeof(size_split)/sizeof(*size_split); ++i) {
             if (blob_size < size_split[i])  
                 return i;
         }
-        return 5;
+        return 7;
     }
 
 protected:
@@ -383,7 +385,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CBDB_BlobSplitStore(TObjDeMux* de_mux)
     m_PageSizes[2] = 8 * 1024;
     m_PageSizes[3] = 16* 1024;
     m_PageSizes[4] = 16* 1024;
-    m_PageSizes[6] = 32* 1024;
+    m_PageSizes[5] = 32* 1024;
+    m_PageSizes[6] = 64* 1024;
 }
 
 template<class TBV, class TObjDeMux, class TL>
@@ -644,7 +647,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetPageSize(unsigned splice) const
 {
     if (splice < m_PageSizes.size()) 
         return m_PageSizes[splice];
-    return 32* 1024;
+    return 64* 1024;
 }
 
 template<class TBV, class TObjDeMux, class TL>
@@ -735,6 +738,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/09/05 15:13:25  dicuccio
+ * Modified BDB split store: use up to 64k page sizes, fixed problems with holes
+ * in slice detection
+ *
  * Revision 1.9  2006/06/26 12:34:39  dicuccio
  * Expose environment through GetEnv()
  *
