@@ -97,7 +97,7 @@ void CGnomonEngine::GenerateSeqAnnot()
 
     CSeq_annot::C_Data::TFtable& ftable = m_Annot->SetData().SetFtable();
 
-    size_t counter = 0;
+    int counter = 0;
     string locus_tag_base("GNOMON_");
     ITERATE (list<CGene>, it, genes) {
         const CGene& igene = *it;
@@ -175,7 +175,7 @@ void CGnomonEngine::GenerateSeqAnnot()
         feat_gene->SetLocation().SetInt().SetStrand
             (strand == ePlus ? eNa_strand_plus : eNa_strand_minus);
 
-        const CSeq_id& loc_id = sequence::GetId(feat_mrna->GetLocation(), 0);
+//        const CSeq_id& loc_id = sequence::GetId(feat_mrna->GetLocation(), 0);
 
         feat_gene->SetLocation().SetId
             (sequence::GetId(feat_mrna->GetLocation(), 0));
@@ -247,6 +247,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/05 14:56:08  souvorov
+ * Minor fix
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *
