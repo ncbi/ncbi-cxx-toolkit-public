@@ -24,16 +24,13 @@
  * ===========================================================================
  *
  * Authors:
- *      Lou Friedman
+ *      Lou Friedman, Victor Sapojnikov
  *
  * File Description:
- *      Validate AGP data. The AGP data source is either an AGP file
- *      or from the AGP DB. A command line option picks the type of
- *      validation; either syntactic or semantic. Syntactic validation
- *      are tests that can be preformed solely by the information that
- *      is in the AGP file. Semantic validation are trests that require
- *      extra, external information, such as, the size of a sequence.
- *
+ *      Validate AGP data. A command line option to chose either syntactic
+ *      or semantic validation. Syntactic validation uses only the information
+ *      in the AGP file. Semantic validation queries sequence length and taxid
+ *      via ObjectManager or CEntrez2Client.
  *
  */
 
@@ -41,7 +38,7 @@
 #include "SyntaxValidator.hpp"
 
 // Objects includes
-// todo: move this to a separate .cpp file for semantic validator
+// todo: move this to a separate .cpp file with semantic validator
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -56,7 +53,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 
 // Object Manager includes
-// todo: move this to a separate .cpp file for semantic validator
+// todo: move this to a separate .cpp file with semantic validator
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -593,6 +590,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/09/05 15:16:41  sapojnik
+ * comments
+ *
  * Revision 1.10  2006/08/29 21:31:56  sapojnik
  * "Syntax" validations moved to a separate class CAgpSyntaxValidator
  *
