@@ -48,9 +48,11 @@
 #define START_LINE_VALIDATE_MSG \
         m_LineErrorOccured = false;
 
+#define AGP_POST(msg) cout << msg << "\n"
+
 #define END_LINE_VALIDATE_MSG(line_num, line)\
-  cout << line_num << ": " << line <<\
-    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n\n";\
+  AGP_POST( line_num << ": " << line <<\
+    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n");\
   delete m_ValidateMsg;\
   m_ValidateMsg = new CNcbiOstrstream;
 
@@ -59,8 +61,6 @@
         *m_ValidateMsg << "\n\t" << severity << ": " <<  msg
 #define AGP_ERROR(msg) AGP_MSG("ERROR", msg)
 #define AGP_WARNING(msg) AGP_MSG("WARNING", msg)
-
-#define AGP_POST(msg) cout << msg << "\n"
 
 #define NO_LOG false
 
@@ -90,6 +90,9 @@ public:
   bool ValidateLine(
     CNcbiOstrstream* msgStream, const SDataLine& dl,
     const string& text_line, bool last_validation=false);
+
+  // Note: resets post_prev
+  const string& PreviousLineToPrint();
 
   // static bool GapBreaksScaffold(int type, int linkage);
   void PrintTotals();
@@ -192,6 +195,7 @@ protected:
 
   string prev_object;
   string prev_component_type;
+  //string prev_component_id;
   int prev_gap_type;
   string prev_line;
 
@@ -200,6 +204,9 @@ protected:
   int  prev_line_num;
   bool prev_line_error_occured;
   int  componentsInLastScaffold;
+
+  // true: print the previous line as well, to illustrate the error better
+  bool post_prev;
 };
 
 END_NCBI_SCOPE

@@ -96,6 +96,7 @@ private:
   bool m_LineErrorOccured;
   CNcbiOstrstream* m_ValidateMsg;
 
+
   // data of an AGP line either
   //  from a file or the agp adb
   // typedef vector<SDataLine> TDataLines;
@@ -353,6 +354,13 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
     m_ValidateMsg, dl, text_line, last_validation);
 
   if(errorOccured) {
+
+    string prev_line = m_LineValidator->PreviousLineToPrint();
+    if(prev_line.size() && dl.line_num>1 ) {
+      // This error is better illustrated by 2 lines of AGP
+      AGP_POST(dl.line_num-1 << ": " << prev_line);
+    }
+
     END_LINE_VALIDATE_MSG(dl.line_num, text_line);
   }
 

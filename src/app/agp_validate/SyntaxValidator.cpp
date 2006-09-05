@@ -47,6 +47,7 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   prev_line_num = 0;
   prev_line_error_occured = false;
   componentsInLastScaffold = 0;
+  post_prev = false;
 
   m_ObjCount = 0;
   m_ScaffoldCount = 0;
@@ -187,6 +188,7 @@ bool CAgpSyntaxValidator::ValidateLine(
     dl.line_num, dl.part_num, "part_num"
   )) {
     if(part_num != prev_part_num+1) {
+      post_prev=true;
       AGP_ERROR("Part number (column 4) != previous "
         "part number +1");
     }
@@ -210,6 +212,7 @@ bool CAgpSyntaxValidator::ValidateLine(
   prev_line_num = dl.line_num;
   //prev_line_filename = m_app->m_CurrentFileName;
   prev_line_error_occured = m_LineErrorOccured;
+  //prev_component_id = dl.component_id;
 
   return m_LineErrorOccured; // may be set in AGP_WARNING, AGP_ERROR
 }
@@ -275,9 +278,10 @@ void CAgpSyntaxValidator::x_OnGapLine(
   if(new_obj) { AGP_WARNING("Object begins with a gap"); }
   if(prev_component_type == "N") {
     // Previous line a gap.
-    AGP_POST( prev_line_num << ": " << prev_line);
-    AGP_WARNING("Two consequtive gap lines. It may be a gap at the end of "
-    "a scaffold, or two non scaffold-breaking gaps.");
+    //AGP_POST( prev_line_num << ": " << prev_line);
+    post_prev=true;
+    AGP_WARNING("Two consequtive gap lines. There may be a gap at the end of "
+    "a scaffold, two non scaffold-breaking gaps, etc");
 
     /*
     // Check the gap_type.
@@ -397,8 +401,8 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     "orientation"
   )) {
     if( dl.orientation == "0") {
-      AGP_ERROR( "Component cannot have an unknown"
-        " orientation.");
+      AGP_ERROR( "Component cannot have an unknown orientation"
+      );
       m_CompZeroCount++;
       error = true;
     } else if (dl.orientation == "+") {
@@ -450,6 +454,11 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     }
 
     if(!isDraft) {
+      /* Need better means of finding a probable offending line(s).
+      if(prev_component_id==dl.component_id) {
+        post_prev=true;
+      }
+      */
       AGP_WARNING("Duplicate component id found.");
     }
     if( str_details.size() ) {
@@ -503,6 +512,9 @@ int CAgpSyntaxValidator::x_CheckRange(
 {
   int length = 0;
   if(begin <= start){
+    /* Need better means of finding a probable offending line(s).
+    post_prev=true;
+    */
     AGP_ERROR( begin_name << " field overlaps the previous "
       "line");
   }
@@ -583,6 +595,14 @@ void CAgpSyntaxValidator::PrintTotals()
   );
 }
 
+const string& CAgpSyntaxValidator::PreviousLineToPrint()
+{
+  if(post_prev) {
+    post_prev=false;
+    return prev_line;
+  }
+  return NcbiEmptyString;
+}
 
 END_NCBI_SCOPE
 
