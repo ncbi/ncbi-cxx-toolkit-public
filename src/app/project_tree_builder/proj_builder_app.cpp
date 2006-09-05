@@ -619,7 +619,12 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             ITERATE(list<string>, d, dependencies) {
                 ofs << " " << *d;
             }
-            ofs << endl << "\t+cd " << rel_path << "; $(MAKE) $(MFLAGS)"
+            ofs << endl << "\t";
+            ofs << "+";
+            if (p->second.m_MakeType >= eMakeType_Expendable) {
+                ofs << "-";
+            }
+            ofs << "cd " << rel_path << "; $(MAKE) $(MFLAGS)"
                 << " APP_PROJ=" << target_app
                 << " LIB_PROJ=" << target_lib
                 << " $(MTARGET)" << endl << endl;
@@ -1165,6 +1170,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2006/09/05 16:46:35  gouriano
+ * In flat makefile mark expendable project as non-mandatory
+ *
  * Revision 1.82  2006/09/01 17:22:23  gouriano
  * On UNIX skip projects, which are disabled by configure
  *
