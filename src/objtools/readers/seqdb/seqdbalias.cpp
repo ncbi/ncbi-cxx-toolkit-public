@@ -55,8 +55,8 @@ BEGIN_NCBI_SCOPE
 
 void CSeqDBAliasNode::x_Tokenize(const string & dbnames)
 {
-    vector<string> dbs;
-    NStr::Tokenize(dbnames, " ", dbs, NStr::eMergeDelims);
+    vector<CSeqDB_Substring> dbs;
+    SeqDB_SplitQuoted(dbnames, dbs);
     
     m_DBList.resize(dbs.size());
     
@@ -64,7 +64,6 @@ void CSeqDBAliasNode::x_Tokenize(const string & dbnames)
         m_DBList[i].Assign(dbs[i]);
     }
 }
-
 
 CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                                  const string   & dbname_list,
