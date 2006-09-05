@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.436 2006/08/21 14:23:56 ucko Exp $
+#  $Id: configure.ac,v 1.437 2006/09/05 17:43:31 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -5549,9 +5549,10 @@ if test "$with_flat_makefile" = "yes"; then
       no | '' ) ;;
       *       ) cfm_flags="$cfm_flags -p $with_projects" ;;
    esac
-   $real_srcdir/scripts/create_flat_makefile.sh "$build_root" \
-       -s "$real_srcdir" $cfm_flags
-   build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
+   if $real_srcdir/scripts/create_flat_makefile.sh "$build_root" \
+       -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
+      build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
+   fi
 fi
 
 dnl execute extra-action
