@@ -571,13 +571,14 @@ TDiagPostFlags& CDiagBuffer::sx_GetPostFlags(void)
 {
     static const TDiagPostFlags s_OldDefaultPostFlags =
         eDPF_Prefix | eDPF_Severity | eDPF_ErrorID | 
-        eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation | eDPF_ErrCodeUseSeverity;
+        eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation |
+        eDPF_ErrCodeUseSeverity | eDPF_AtomicWrite;
     static const TDiagPostFlags s_NewDefaultPostFlags =
         s_OldDefaultPostFlags |
 #if defined(NCBI_THREADS)
         eDPF_TID | eDPF_SerialNo_Thread |
 #endif
-        eDPF_PID | eDPF_SerialNo;
+        eDPF_PID | eDPF_SerialNo | eDPF_AtomicWrite;
     static TDiagPostFlags s_PostFlags = TOldPostFormatParam::GetDefault() ?
         s_OldDefaultPostFlags : s_NewDefaultPostFlags;
     return s_PostFlags;
@@ -1818,7 +1819,15 @@ extern CDiagBuffer& GetDiagBuffer(void)
 void CStreamDiagHandler::Post(const SDiagMessage& mess)
 {
     if (m_Stream) {
-        (*m_Stream) << mess;
+        if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
+            CNcbiOstrstream os;
+            os << mess;
+            m_Stream->write(os.str(), os.pcount());
+            os.rdbuf()->freeze(false);
+        }
+        else {
+            (*m_Stream) << mess;
+        }
         if (m_QuickFlush) {
             (*m_Stream) << NcbiFlush;
         }
@@ -1990,7 +1999,15 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
     if ( !info->m_Stream ) {
         return;
     }
-    (*info->m_Stream) << mess;
+    if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
+        CNcbiOstrstream os;
+        os << mess;
+        info->m_Stream->write(os.str(), os.pcount());
+        os.rdbuf()->freeze(false);
+    }
+    else {
+        (*info->m_Stream) << mess;
+    }
     if (info->m_QuickFlush) {
         (*info->m_Stream) << NcbiFlush;
     }
@@ -2016,6 +2033,7 @@ public:
                     ios::openmode mode);
     string GetLogFile(EDiagFileType file_type) const;
     bool IsDiagStream(const CNcbiOstream* os) const;
+
 private:
     auto_ptr<CDiagHandler> m_StreamHandler;
     auto_ptr<CDiagHandler> m_FileHandler;
@@ -2815,6 +2833,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.128  2006/09/05 18:54:55  grichenk
+ * Added eDPF_AtomicWrite flag. Modified handlers to
+ * enable atomic write.
+ *
  * Revision 1.127  2006/07/11 16:35:04  grichenk
  * Use StringToUInt8() to parse UID.
  *

@@ -298,6 +298,10 @@ enum EDiagPostFlag {
     eDPF_AppLog             = 0x1000000, ///< Post message to application log
     eDPF_IsMessage          = 0x2000000, ///< Print "Message" severity name.
 
+    /// Hint for the current handler to make message output as atomic as
+    /// possible (e.g. for stream and file handlers).
+    eDPF_AtomicWrite        = 0x4000000,
+
     /// Use global default flags (merge with).
     /// @sa SetDiagPostFlag(), UnsetDiagPostFlag(), IsSetDiagPostFlag()
     eDPF_Default            = 0x10000000
@@ -1558,6 +1562,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.114  2006/09/05 18:54:55  grichenk
+ * Added eDPF_AtomicWrite flag. Modified handlers to
+ * enable atomic write.
+ *
  * Revision 1.113  2006/07/05 22:35:42  ssikorsk
  * Qualify NCBI namespace for g_DiagUnknownFunction() in NCBI_CURRENT_FUNCTION
  *
