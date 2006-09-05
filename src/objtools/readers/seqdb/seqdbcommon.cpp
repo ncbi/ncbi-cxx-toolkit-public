@@ -724,6 +724,77 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname)
     m_CurrentOrder = in_order ? eGi : eNone;
 }
 
+void SeqDB_CombineAndQuote(const vector<string> & dbs,
+                           string               & dbname)
+{
+    int sz = 0;
+    
+    for(unsigned i = 0; i < dbs.size(); i++) {
+        sz += 3 + dbs[i].size();
+    }
+    
+    dbname.reserve(sz);
+    
+    for(unsigned i = 0; i < dbs.size(); i++) {
+        if (dbname.size()) {
+            dbname.append(" ");
+        }
+        
+        if (dbs[i].find(" ") != string::npos) {
+            dbname.append("\"");
+            dbname.append(dbs[i]);
+            dbname.append("\"");
+        } else {
+            dbname.append(dbs[i]);
+        }
+    }
+}
+
+void SeqDB_SplitQuoted(const string             & dbname,
+                       vector<CSeqDB_Substring> & dbs)
+{
+    // split names
+    
+    const char * sp = dbname.data();
+    
+    bool quoted = false;
+    unsigned begin = 0;
+    
+    for(unsigned i = 0; i < dbname.size(); i++) {
+        char ch = dbname[i];
+        
+        if (quoted) {
+            // Quoted mode sees '"' as the only actionable token.
+            if (ch == '"') {
+                if (begin < i) {
+                    dbs.push_back(CSeqDB_Substring(sp + begin, sp + i));
+                }
+                begin = i + 1;
+                quoted = false;
+            }
+        } else {
+            // Non-quote mode: Space or quote starts the next string.
+            
+            if (ch == ' ') {
+                if (begin < i) {
+                    dbs.push_back(CSeqDB_Substring(sp + begin, sp + i));
+                }
+                begin = i + 1;
+            } else if (ch == '"') {
+                if (begin < i) {
+                    dbs.push_back(CSeqDB_Substring(sp + begin, sp + i));
+                }
+                begin = i + 1;
+                quoted = true;
+            }
+        }
+    }
+    
+    if (begin < dbname.size()) {
+        dbs.push_back(CSeqDB_Substring(sp + begin, sp + dbname.size()));
+    }
+}
+
 
 END_NCBI_SCOPE
 

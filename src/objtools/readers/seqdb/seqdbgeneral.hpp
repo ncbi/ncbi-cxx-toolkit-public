@@ -1176,6 +1176,20 @@ private:
 };
 
 
+/// Combine and quote list of database names.
+///
+/// @param dbs Database names to combine.
+/// @param dbname Combined database name.
+void SeqDB_CombineAndQuote(const vector<string> & dbs,
+                           string               & dbname);
+
+/// Combine and quote list of database names.
+///
+/// @param dbname Combined database name.
+/// @param dbs Database names to combine.
+void SeqDB_SplitQuoted(const string             & dbname,
+                       vector<CSeqDB_Substring> & dbs);
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBGENERAL_HPP

@@ -189,7 +189,9 @@ public:
     /// Short Constructor
     /// 
     /// This version of the constructor assumes memory mapping and
-    /// that the entire possible OID range will be included.
+    /// that the entire possible OID range will be included.  Please
+    /// use quotes ("") around database names that contains space
+    /// characters.
     /// 
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces
@@ -199,6 +201,21 @@ public:
     ///   The database will be filtered by this GI list if non-null.
     CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gilist = 0);
     
+    /// Short Constructor
+    /// 
+    /// This version of the constructor assumes memory mapping and
+    /// that the entire possible OID range will be included.
+    /// 
+    /// @param dbs
+    ///   A list of database or alias names.
+    /// @param seqtype
+    ///   Specify eProtein, eNucleotide, or eUnknown.
+    /// @param gilist
+    ///   The database will be filtered by this GI list if non-null.
+    CSeqDB(const vector<string> & dbs,
+           ESeqType               seqtype,
+           CSeqDBGiList         * gilist = 0);
+    
     /// Constructor with MMap Flag and OID Range.
     ///
     /// If the oid_end value is specified as zero, or as a value
@@ -207,7 +224,8 @@ public:
     /// and end will cause inclusion of the entire database.  This
     /// version of the constructor is obsolete because the sequence
     /// type is specified as a character (eventually only the ESeqType
-    /// version will exist).
+    /// version will exist).  Please use quotes ("") around database
+    /// names that contains space characters.
     /// 
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
@@ -231,6 +249,39 @@ public:
            int            oid_end,
            bool           use_mmap,
            CSeqDBGiList * gi_list = 0);
+    
+    /// Constructor with MMap Flag and OID Range.
+    ///
+    /// If the oid_end value is specified as zero, or as a value
+    /// larger than the number of OIDs, it will be adjusted to the
+    /// number of OIDs in the database.  Specifying 0,0 for the start
+    /// and end will cause inclusion of the entire database.  This
+    /// version of the constructor is obsolete because the sequence
+    /// type is specified as a character (eventually only the ESeqType
+    /// version will exist).
+    /// 
+    /// @param dbname
+    ///   A list of database or alias names.
+    /// @param seqtype
+    ///   Specify eProtein, eNucleotide, or eUnknown.
+    /// @param oid_begin
+    ///   Iterator will skip OIDs less than this value.  Only OIDs
+    ///   found in the OID lists (if any) will be returned.
+    /// @param oid_end
+    ///   Iterator will return up to (but not including) this OID.
+    /// @param use_mmap
+    ///   If kSeqDBMMap is specified (the default), memory mapping is
+    ///   attempted.  If kSeqDBNoMMap is specified, or memory mapping
+    ///   fails, this platform does not support it, the less efficient
+    ///   read and write calls are used instead.
+    /// @param gi_list
+    ///   The database will be filtered by this GI list if non-null.
+    CSeqDB(const vector<string> & dbname,
+           ESeqType               seqtype,
+           int                    oid_begin,
+           int                    oid_end,
+           bool                   use_mmap,
+           CSeqDBGiList         * gi_list = 0);
     
     /// Destructor.
     ///
