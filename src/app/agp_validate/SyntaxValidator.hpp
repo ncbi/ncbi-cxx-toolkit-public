@@ -27,13 +27,8 @@
  *      Lou Friedman, Victor Sapojnikov
  *
  * File Description:
- *      Validate AGP data. The AGP data source is either an AGP file
- *      or from the AGP DB. A command line option picks the type of
- *      validation; either syntactic or semantic. Syntactic validation
- *      are tests that can be preformed solely by the information that
- *      is in the AGP file. Semantic validation are trests that require
- *      extra, external information, such as, the size of a sequence.
- *
+ *      Syntactic validation tests that can be preformed solely by the
+ *      information that in the AGP file.
  *
  */
 
@@ -102,12 +97,16 @@ public:
   string prev_line_filename;
 
 protected:
-  /*
+  // Vars assigned in ValidateLine(),
+  // further validated in x_OnGapLine() x_OnComponentLine()
+  int obj_range_len;
+  bool new_obj;
+
+  // Private subroutines for ValidateLine()
   void x_OnGapLine(
     const SDataLine& dl, const string& text_line);
   void x_OnComponentLine(
     const SDataLine& dl, const string& text_line);
-  */
 
   int m_ObjCount;
   int m_ScaffoldCount;
