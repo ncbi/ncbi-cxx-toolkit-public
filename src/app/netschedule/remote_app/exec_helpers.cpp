@@ -120,10 +120,10 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
         }
     }
     m_MaxMonitorRunningTime = 
-        reg.GetInt(sec_name,"max_monitor_running_time",0,0,IRegistry::eReturn);
+        reg.GetInt(sec_name,"max_monitor_running_time",0,5,IRegistry::eReturn);
 
     m_MonitorPeriod = 
-        reg.GetInt(sec_name,"monitor_period",0,0,IRegistry::eReturn);
+        reg.GetInt(sec_name,"monitor_period",0,5,IRegistry::eReturn);
 
 }
 
@@ -340,6 +340,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/05 15:09:50  didenko
+ * Set default values for max_monitor_running_time and monitor_period paramters
+ *
  * Revision 1.3  2006/09/05 14:35:22  didenko
  * Added option to run a job monitor appliction
  *
