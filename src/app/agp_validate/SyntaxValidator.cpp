@@ -338,6 +338,8 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   m_CompCount++;
   componentsInLastScaffold++;
 
+  //// Check that component begin & end are integers,
+  //// begin < end, component span length == that of the object
   if( (comp_start = x_CheckIntField(
         dl.line_num,dl.component_start,"component_start"
       )) &&
@@ -360,6 +362,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     error = true;
   }
 
+  //// Orientation must be "+"  or " -"
   if (x_CheckValues(
     dl.line_num, m_OrientaionValues, dl.orientation,
     "orientation"
@@ -378,7 +381,11 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     error = true;
   }
 
-
+  //// Check that component spans do not overlap
+  //// and are in correct order
+  if( comp_start >= comp_end ) {
+    int tmp = comp_end; comp_end = comp_start; comp_start = tmp;
+  }
   CRange<TSeqPos>  component_range(comp_start, comp_end);
   TCompIdSpansPair value_pair(
     dl.component_id, TCompSpans(component_range)
@@ -386,32 +393,49 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   pair<TCompId2Spans::iterator, bool> id_insert_result =
      m_CompId2Spans.insert(value_pair);
   if (id_insert_result.second == false) {
-    TCompSpans& collection =
-      (id_insert_result.first)->second;
+    TCompSpans& collection = (id_insert_result.first)->second;
 
+    // Need not check the span order for these:
+    bool isDraft =
+      dl.component_type=="A" || // Active Finishing
+      dl.component_type=="D" || // Draft HTG
+      dl.component_type=="P";   // Pre Draft
     string str_details="";
+
     if(collection.IntersectingWith(component_range)) {
-      str_details = " The span overlaps "
+      // To do: (try to) print both lines with overlapping spans
+      str_details = "The span overlaps "
         "a previous span for this component.";
     }
-    else if (
-      comp_start < (int)collection.GetToOpen() &&
-      dl.orientation!="-"
-    ) {
-      str_details=" Component span is out of order.";
+    else if ( !isDraft) {
+      if( ( dl.orientation=="+" &&
+            comp_start > (int)collection.GetToOpen() ) ||
+          ( dl.orientation=="-" &&
+            comp_end  < (int)collection.GetFrom() )
+      ) {
+        // A correct order.
+      }
+      else {
+        str_details = "Component span is out of order.";;
+      }
     }
-    AGP_WARNING("Duplicate component id found." << str_details);
+
+    if(!isDraft) {
+      AGP_WARNING("Duplicate component id found.");
+    }
+    if( str_details.size() ) {
+      AGP_WARNING(str_details);
+    }
+
     collection.CombineWith(component_range);
   }
 
+  //// Check if the line looks more like a gap
+  //// (i.e. dl.component_type should be "N")
   if(error) {
-    // Check if the line should be a gap type
-    //  i.e., dl.component_type == "N"
-
     // Gap line has integer (gap len) in column 6,
     // gap type value in column 7,
     // a yes/no in column 8.
-    // (vsap) was: gap_len = x_CheckIntField(
     if(x_CheckIntField(
         dl.line_num, dl.gap_length, "gap_length",
       NO_LOG) && x_CheckValues(
@@ -494,9 +518,9 @@ void CAgpSyntaxValidator::PrintTotals()
     "  singletons: " << m_SingletonCount << "\n\n"
     "Unique Component Accessions: "<< m_CompId2Spans.size() <<"\n"<<
     "Lines with Components      : " << m_CompCount        << "\n" <<
-    "\torientation +       : " << m_CompPosCount   << "\n" <<
-    "\torientation -       : " << m_CompNegCount   << "\n" <<
-    "\torientation 0       : " << m_CompZeroCount  << "\n\n"
+    "\torientation +      : " << m_CompPosCount   << "\n" <<
+    "\torientation -      : " << m_CompNegCount   << "\n" <<
+    "\torientation 0      : " << m_CompZeroCount  << "\n\n"
 
  << "Gaps: " << m_GapCount
  << "\n\t   with linkage: yes\tno"
