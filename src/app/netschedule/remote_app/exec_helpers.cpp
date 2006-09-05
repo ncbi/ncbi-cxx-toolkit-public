@@ -105,12 +105,12 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
     }
 
     m_MonitorAppPath = reg.GetString(sec_name, "monitor_app_path", "" );
-    if (!CDirEntry::IsAbsolutePath(m_AppPath)) {
-        string tmp = CDir::GetCwd() 
-            + CDirEntry::GetPathSeparator() 
-            + m_MonitorAppPath;
-        m_MonitorAppPath = CDirEntry::NormalizePath(tmp);
-        if (!m_MonitorAppPath.empty()) {
+    if (!m_MonitorAppPath.empty()) {
+        if (!CDirEntry::IsAbsolutePath(m_MonitorAppPath)) {
+            string tmp = CDir::GetCwd() 
+                + CDirEntry::GetPathSeparator() 
+                + m_MonitorAppPath;
+            m_MonitorAppPath = CDirEntry::NormalizePath(tmp);
             CFile f(m_MonitorAppPath);
             if (!f.Exists() || !CanExecRemoteApp(f) ) {
                 ERR_POST("Can not execute \"" << m_MonitorAppPath 
@@ -119,6 +119,7 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
             }
         }
     }
+
     m_MaxMonitorRunningTime = 
         reg.GetInt(sec_name,"max_monitor_running_time",0,5,IRegistry::eReturn);
 
@@ -340,6 +341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/09/05 15:34:19  didenko
+ * fixed monitor_app_path parameter handling
+ *
  * Revision 1.4  2006/09/05 15:09:50  didenko
  * Set default values for max_monitor_running_time and monitor_period paramters
  *
