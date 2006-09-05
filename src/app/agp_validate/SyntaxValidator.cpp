@@ -57,14 +57,17 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_CompZeroCount = 0;
   m_GapCount = 0;
 
-  m_TypeGapCnt["fragmentyes"] = 0;
-  m_TypeGapCnt["fragmentno"] = 0;
-  m_TypeGapCnt["split_finishedyes"] = 0;
-  m_TypeGapCnt["split_finishedno"] = 0;
-  m_TypeGapCnt["cloneyes"] = 0;
-  m_TypeGapCnt["cloneno"] = 0;
   m_TypeGapCnt["contigyes"] = 0;
   m_TypeGapCnt["contigno"] = 0;
+  m_TypeGapCnt["cloneyes"] = 0;
+  m_TypeGapCnt["cloneno"] = 0;
+  m_TypeGapCnt["fragmentyes"] = 0;
+  m_TypeGapCnt["fragmentno"] = 0;
+  m_TypeGapCnt["repeatyes"] = 0;
+  m_TypeGapCnt["repeatno"] = 0;
+
+  //m_TypeGapCnt["split_finishedyes"] = 0;
+  //m_TypeGapCnt["split_finishedno"] = 0;
   m_TypeGapCnt["centromereyes"] = 0;
   m_TypeGapCnt["centromereno"] = 0;
   m_TypeGapCnt["short_armyes"] = 0;
@@ -74,16 +77,21 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_TypeGapCnt["telomereyes"] = 0;
   m_TypeGapCnt["telomereno"] = 0;
 
+  m_TypeGapCnt["invalid gap type"]=0;
+
   // initialize values
-  m_GapTypes.insert("fragment");
-  m_GapTypes.insert("split_finished");
-  m_GapTypes.insert("clone");
-  m_GapTypes.insert("contig");
-  m_GapTypes.insert("centromere");
-  m_GapTypes.insert("short_arm");
-  m_GapTypes.insert("heterochromatin");
-  m_GapTypes.insert("telomere");
-  m_GapTypes.insert("scaffold");
+  m_GapTypes["contig"         ] = GAP_contig         ;
+  m_GapTypes["clone"          ] = GAP_clone          ;
+  m_GapTypes["fragment"       ] = GAP_fragment       ;
+  m_GapTypes["repeat"         ] = GAP_repeat         ;
+
+  m_GapTypes["centromere"     ] = GAP_centromere     ;
+  m_GapTypes["short_arm"      ] = GAP_short_arm      ;
+  m_GapTypes["heterochromatin"] = GAP_heterochromatin;
+  m_GapTypes["telomere"       ] = GAP_telomere       ;
+
+  //m_GapTypes["scaffold"]=GAP_scaffold);
+  //m_GapTypes["split_finished"]=GAP_split_finished;
 
   m_ComponentTypeValues.insert("A");
   m_ComponentTypeValues.insert("D");
@@ -98,8 +106,8 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_OrientaionValues.insert("-");
   m_OrientaionValues.insert("0");
 
-  m_LinkageValues.insert("yes");
-  m_LinkageValues.insert("no");
+  m_LinkageValues["no" ] = LINKAGE_no;
+  m_LinkageValues["yes"] = LINKAGE_yes;
 }
 
 bool CAgpSyntaxValidator::ValidateLine(
@@ -136,11 +144,9 @@ bool CAgpSyntaxValidator::ValidateLine(
     componentsInLastScaffold=0;
   }
 
-  if( new_obj && (prev_component_type == "N") &&
-      (prev_gap_type == "fragment")
-  ) {
-    // A new scafold. Previous line is a scaffold
-    // ending with a fragment gap
+  if( new_obj && prev_component_type == "N" ) {
+    // A new scafold.
+    // Previous line is a gap at the end of a scaffold
 
     // special error reporting mechanism since the
     //  error is on the previous line. Directly Log
@@ -148,7 +154,7 @@ bool CAgpSyntaxValidator::ValidateLine(
     if(!prev_line_error_occured) {
       LOG_POST( prev_line_num << ": " << prev_line);
     }
-    LOG_POST("\tWARNING: Fragment gap at the end of a scaffold.");
+    LOG_POST("\tWARNING: gap at the end of an object");
   }
   if(last_validation) return m_LineErrorOccured;
 
@@ -200,7 +206,6 @@ bool CAgpSyntaxValidator::ValidateLine(
 
   ////
   prev_component_type = dl.component_type;
-  prev_gap_type = dl.gap_type;
   prev_line = text_line;
   prev_line_num = dl.line_num;
   //prev_line_filename = m_app->m_CurrentFileName;
@@ -216,6 +221,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
   bool error= false;
   m_GapCount++;
 
+  //// Check the line: gap length, values in gap_type and linkage
   if(gap_len = x_CheckIntField(
     dl.line_num, dl.gap_length, "gap_length"
   )) {
@@ -229,31 +235,52 @@ void CAgpSyntaxValidator::x_OnGapLine(
     error = true;
   }
 
-  if( x_CheckValues(
-        dl.line_num, m_GapTypes, dl.gap_type, "gap_type"
-      ) && x_CheckValues(
-        dl.line_num, m_LinkageValues, dl.linkage, "linkage"
-      )
-  ) {
-    string key = dl.gap_type + dl.linkage;
-    m_TypeGapCnt[key]++;
+  int gap_type = x_CheckValues(
+    dl.line_num, m_GapTypes, dl.gap_type, "gap_type");
+  int linkage = -1;
+  bool endsScaffold = true;
+  if( gap_type>=0 ) {
+    linkage = x_CheckValues(
+        dl.line_num, m_LinkageValues, dl.linkage, "linkage");
+
+    if(linkage>=0) {
+      string key = dl.gap_type + dl.linkage;
+      m_TypeGapCnt[key]++;
+
+      //// Check whether  gap_type and linkage combination is valid,
+      //// and if this combination ends the scaffold.
+      if(gap_type==GAP_fragment) {
+        endsScaffold=false;
+      }
+      else if(linkage==LINKAGE_yes) {
+        endsScaffold=false;
+        if( gap_type==GAP_clone || gap_type==GAP_repeat ) {
+          // Ok
+        }
+        else {
+          AGP_WARNING("Invalid linkage=yes for gap_type="<<dl.gap_type);
+          error=true;
+        }
+      }
+      // else: endsScaffold remains true
+    }
   }
   else {
+    m_TypeGapCnt["invalid gap type"]++;
     error = true;
   }
 
-  if (new_obj) {
-    if (dl.gap_type == "fragment") {
-      AGP_WARNING("Scaffold begins with a fragment gap.");
-    }
-    else {
-      AGP_WARNING("Object begins with a scaffold-ending gap."
-      );
-    }
-  }
+  //// Check gap context: is it a start of a new object,
+  //// does it follow another gap, is it the end of a scaffold
+  if(new_obj) { AGP_WARNING("Object begins with a gap"); }
+  if(prev_component_type == "N") {
+    // Previous line a gap.
+    LOG_POST( prev_line_num << ": " << prev_line);
+    AGP_WARNING("Two consequtive gap lines. It may be a gap at the end of "
+    "a scaffold, or two non scaffold-breaking gaps.");
 
-  if (prev_component_type == "N") {
-    // Previous line a gap. Check the gap_type.
+    /*
+    // Check the gap_type.
     if(prev_gap_type == "fragment") {
       // two gaps in a row
 
@@ -294,20 +321,20 @@ void CAgpSyntaxValidator::x_OnGapLine(
         }
       }
     }
+    */
   }
-  else if( dl.gap_type != "fragment" ) {
+  else if( endsScaffold ) {
     // 2006/08/28: Previous line is the last component of a scaffold
     m_ScaffoldCount++;
     if(componentsInLastScaffold==1) m_SingletonCount++;
   }
-  if( dl.gap_type != "fragment" ) {
+  if( endsScaffold ) {
     componentsInLastScaffold=0;
   }
 
+  //// Check if the line looks more like a component
+  //// (i.e. dl.component_type should NOT ne "N")
   if (error) {
-    // Check if the line should be a component type
-    // i.e., dl.component_type != "N"
-
     // A component line has integers in column 7
     // (component start) and column 8 (component end);
     // +, - or 0 in column 9 (orientation).
@@ -325,6 +352,8 @@ void CAgpSyntaxValidator::x_OnGapLine(
         " a component line and not a gap line.");
     }
   }
+
+  prev_gap_type = gap_type;
 }
 
 void CAgpSyntaxValidator::x_OnComponentLine(
@@ -451,14 +480,6 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   }
 }
 
-/*
-bool CAgpSyntaxValidator::GapBreaksScaffold(int type, int linkage)
-{
-  // Not implemented
-  return false;
-}
-*/
-
 int CAgpSyntaxValidator::x_CheckIntField(
   int line_num, const string& field,
   const string& field_name, bool log_error)
@@ -510,6 +531,22 @@ bool CAgpSyntaxValidator::x_CheckValues(
   return true;
 }
 
+int CAgpSyntaxValidator::x_CheckValues(
+  int line_num,
+  const TValuesMap& values,
+  const string& value,
+  const string& field_name,
+  bool log_error)
+{
+  TValuesMap::const_iterator it = values.find(value);
+  if( it==values.end() ) {
+    if (log_error)
+      AGP_ERROR("Invalid value for " << field_name);
+    return -1;
+  }
+  return it->second;
+}
+
 void CAgpSyntaxValidator::PrintTotals()
 {
   LOG_POST("\n"
@@ -524,10 +561,13 @@ void CAgpSyntaxValidator::PrintTotals()
 
  << "Gaps: " << m_GapCount
  << "\n\t   with linkage: yes\tno"
- << "\n\tFragment       : "<<m_TypeGapCnt["fragmentyes"       ]
- << "\t"                   <<m_TypeGapCnt["fragmentno"        ]
  << "\n\tClone          : "<<m_TypeGapCnt["cloneyes"          ]
  << "\t"                   <<m_TypeGapCnt["cloneno"           ]
+ << "\n\tFragment       : "<<m_TypeGapCnt["fragmentyes"       ]
+ << "\t"                   <<m_TypeGapCnt["fragmentno"        ]
+ << "\n\tRepeat         : "<<m_TypeGapCnt["repeatyes"         ]
+ << "\t"                   <<m_TypeGapCnt["repeatno"          ]
+ << "\n"
  << "\n\tContig         : "<<m_TypeGapCnt["contigyes"         ]
  << "\t"                   <<m_TypeGapCnt["contigno"          ]
  << "\n\tCentromere     : "<<m_TypeGapCnt["centromereyes"     ]
@@ -538,8 +578,8 @@ void CAgpSyntaxValidator::PrintTotals()
  << "\t"                   <<m_TypeGapCnt["heterochromatinno" ]
  << "\n\tTelomere       : "<<m_TypeGapCnt["telomereyes"       ]
  << "\t"                   <<m_TypeGapCnt["telomereno"        ]
- << "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
- << "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
+ //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
+ //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
   );
 }
 

@@ -138,15 +138,48 @@ protected:
 
   // proper values for the different fields in the AGP
   typedef set<string> TValuesSet;
-  // typedef pair< TValuesSet::iterator, bool> TValuesSetResult;
   TValuesSet m_ComponentTypeValues;
-  TValuesSet m_GapTypes;
   TValuesSet m_OrientaionValues;
-  TValuesSet m_LinkageValues;
+  //TValuesSet m_GapTypes;
+  //TValuesSet m_LinkageValues;
+
+  // Compared to TValuesSet. provides code optimization by avoiding
+  // repetetive string comparisons.
+  typedef map<string, int> TValuesMap;
+  enum {
+    GAP_contig         ,
+    GAP_clone          ,
+    GAP_fragment       ,
+    GAP_repeat         ,
+
+    GAP_centromere     ,
+    GAP_short_arm      ,
+    GAP_heterochromatin,
+    GAP_telomere       ,
+
+    //GAP_scaffold       ,
+    //GAP_split_finished ,
+
+    GAP_count
+  };
+  enum {
+    LINKAGE_no ,
+    LINKAGE_yes ,
+    LINKAGE_count
+  };
+  TValuesMap m_GapTypes;
+  TValuesMap m_LinkageValues;
+
 
   bool x_CheckValues(int line_num, const TValuesSet& values,
     const string& value, const string& field_name,
     bool log_error = true);
+  // Returns an integer constant mapped to the allowed text value,
+  // -1 if the value is unknowm
+  int x_CheckValues(int line_num, const TValuesMap& values,
+    const string& value, const string& field_name,
+    bool log_error = true);
+
   int x_CheckRange(int line_num, int start, int begin,
     int end, string begin_name, string end_name);
   int x_CheckIntField(int line_num, const string& field,
@@ -157,7 +190,7 @@ protected:
 
   string prev_object;
   string prev_component_type;
-  string prev_gap_type;
+  int prev_gap_type;
   string prev_line;
 
   int  prev_end;
