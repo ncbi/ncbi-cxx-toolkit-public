@@ -621,7 +621,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             }
             ofs << endl << "\t";
             ofs << "+";
-            if (p->second.m_MakeType >= eMakeType_Expendable) {
+            if (p->second.m_MakeType == eMakeType_Expendable) {
                 ofs << "-";
             }
             ofs << "cd " << rel_path << "; $(MAKE) $(MFLAGS)"
@@ -1170,6 +1170,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2006/09/05 18:05:37  gouriano
+ * In flat makefile mark expendable project as non-mandatory
+ *
  * Revision 1.83  2006/09/05 16:46:35  gouriano
  * In flat makefile mark expendable project as non-mandatory
  *
