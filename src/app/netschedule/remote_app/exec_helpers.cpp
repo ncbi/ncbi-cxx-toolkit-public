@@ -121,10 +121,10 @@ void CRemoteAppParams::Load(const string& sec_name, const IRegistry& reg)
     }
 
     m_MaxMonitorRunningTime = 
-        reg.GetInt(sec_name,"max_monitor_running_time",0,5,IRegistry::eReturn);
+        reg.GetInt(sec_name,"max_monitor_running_time",5,0,IRegistry::eReturn);
 
     m_MonitorPeriod = 
-        reg.GetInt(sec_name,"monitor_period",0,5,IRegistry::eReturn);
+        reg.GetInt(sec_name,"monitor_period",5,0,IRegistry::eReturn);
 
 }
 
@@ -158,6 +158,46 @@ struct STmpDirGuard
 };
 //////////////////////////////////////////////////////////////////////////////
 ///
+class CPipeCallBack_Base : public CPipe::ICallBack
+{
+public:
+    CPipeCallBack_Base(int max_app_running_time, int app_running_time)
+        : m_MaxAppRunningTime(max_app_running_time),
+          m_AppRunningTime(app_running_time)
+    {
+        if (m_MaxAppRunningTime > 0 || m_AppRunningTime > 0)
+            m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));        
+    }
+    
+    virtual ~CPipeCallBack_Base() {}
+
+    virtual bool Perform(TProcessHandle /*pid*/) 
+    {
+        if (m_RunningTime.get()) {
+            double elapsed = m_RunningTime->Elapsed();
+            if (m_AppRunningTime > 0 &&  elapsed > (double)m_AppRunningTime) {
+                ERR_POST( "The application's runtime has exceeded a time("
+                        << m_AppRunningTime
+                        << " sec) set by the client");
+                return false;
+            }
+            if ( m_MaxAppRunningTime > 0 && elapsed > (double)m_MaxAppRunningTime) {
+                ERR_POST("The application's runtime has exceeded a time("
+                         << m_MaxAppRunningTime
+                         <<" sec) set in the config file");
+                return false;
+            }
+        }
+        return true;
+    }
+private:
+    int m_MaxAppRunningTime;
+    int m_AppRunningTime;
+    auto_ptr<CStopWatch> m_RunningTime;
+
+};
+//////////////////////////////////////////////////////////////////////////////
+///
 class CRAMonitor
 {
 public:
@@ -166,10 +206,13 @@ public:
 
     int Run(vector<string>& args, CNcbiOstream& stdout, CNcbiOstream& stderr)
     {
+        CPipeCallBack_Base callback(m_MaxAppRunningTime, 0);
         CNcbiStrstream in;
         int exit_value;
         bool ret = CPipe::ExecWait(m_App, args, in, 
-                                   stdout, stderr, exit_value, kEmptyStr, NULL, NULL);
+                                   stdout, stderr, exit_value, 
+                                   kEmptyStr, NULL,
+                                   &callback);
         if(!ret || exit_value > 2)
             return 3;
         return exit_value;
@@ -179,24 +222,23 @@ private:
     string m_App;
     int m_MaxAppRunningTime;
 };
+
 //////////////////////////////////////////////////////////////////////////////
 ///
-class CPipeCallBack : public CPipe::ICallBack
+class CPipeCallBack : public CPipeCallBack_Base
 {
 public:
     CPipeCallBack( CWorkerNodeJobContext& context,
                    int max_app_running_time,
                    int app_running_time,
                    int keep_alive_period)
-        : m_Context(context), m_MaxAppRunningTime(max_app_running_time),
-          m_AppRunningTime(app_running_time), m_KeepAlivePeriod(keep_alive_period),
+        : CPipeCallBack_Base(max_app_running_time, app_running_time),
+          m_Context(context), m_KeepAlivePeriod(keep_alive_period),
           m_Monitor(NULL)
     {
         if (m_KeepAlivePeriod > 0)
             m_KeepAlive.reset(new CStopWatch(CStopWatch::eStart));
 
-        if (m_MaxAppRunningTime > 0 || m_AppRunningTime > 0)
-            m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));        
     }
     
     virtual ~CPipeCallBack() {}
@@ -216,21 +258,8 @@ public:
             CNetScheduleClient::eShutdownImmidiate) {
             return false;
         }
-        if (m_RunningTime.get()) {
-            double elapsed = m_RunningTime->Elapsed();
-            if (m_AppRunningTime > 0 &&  elapsed > (double)m_AppRunningTime) {
-                ERR_POST( "The application's runtime has exceeded a time("
-                        << m_AppRunningTime
-                        << " sec) set by the client");
-                return false;
-            }
-            if ( m_MaxAppRunningTime > 0 && elapsed > (double)m_MaxAppRunningTime) {
-                ERR_POST("The application's runtime has exceeded a time("
-                         << m_MaxAppRunningTime
-                         <<" sec) set in the config file");
-                return false;
-            }
-        }
+        if( !CPipeCallBack_Base::Perform(pid) )
+            return false;
 
         if (m_KeepAlive.get() 
             && m_KeepAlive->Elapsed() > (double) m_KeepAlivePeriod ) {
@@ -244,6 +273,7 @@ public:
             vector<string> args;
             args.push_back( "-pid " + NStr::UIntToString(pid) );
             args.push_back( "-jid " + m_Context.GetJobKey() );
+
             int ret = m_Monitor->Run(args, stdout, stderr);
             switch(ret) {
             case 0:
@@ -265,6 +295,11 @@ public:
                 return false;
             case 2: 
                 {
+                if( stderr.pcount() > 0 ) {
+                    LOG_POST( CTime(CTime::eCurrent).AsString() 
+                              << ": Job " << m_Context.GetJobKey() 
+                              << " -- " << stderr.rdbuf());
+                }
                 string errmsg;
                 if( stdout.pcount() > 0 ) {
                     stdout << '\0';
@@ -275,11 +310,14 @@ public:
                 }
                 break;
             default:
-                LOG_POST( CTime(CTime::eCurrent).AsString() 
-                          << ": Job " << m_Context.GetJobKey() 
-                          << " Monitor internal error");
                 if( stderr.pcount() > 0 ) {
-                    LOG_POST( ": " << stderr.rdbuf());
+                    LOG_POST( CTime(CTime::eCurrent).AsString() 
+                              << ": Job " << m_Context.GetJobKey() 
+                              << " Monitor internal error: " << stderr.rdbuf());
+                } else {
+                    LOG_POST( CTime(CTime::eCurrent).AsString() 
+                              << ": Job " << m_Context.GetJobKey() 
+                              << " Monitor internal error.");
                 }
                 break;
             }
@@ -291,11 +329,8 @@ public:
 
 private:
     CWorkerNodeJobContext& m_Context;
-    int m_MaxAppRunningTime;
-    int m_AppRunningTime;
     int m_KeepAlivePeriod;
     auto_ptr<CStopWatch> m_KeepAlive;
-    auto_ptr<CStopWatch> m_RunningTime;
     CRAMonitor* m_Monitor;
     auto_ptr<CStopWatch> m_MonitorWatch;
     int m_MonitorPeriod;
@@ -341,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/09/05 16:24:22  didenko
+ * Added handling for max_monitor_running_time parameter
+ *
  * Revision 1.5  2006/09/05 15:34:19  didenko
  * fixed monitor_app_path parameter handling
  *
