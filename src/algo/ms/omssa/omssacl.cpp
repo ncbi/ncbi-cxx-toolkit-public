@@ -214,11 +214,14 @@ void COMSSA::Init()
                 CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("tez", "prozdep", "charge dependency of precursor mass tolerance (0 = none, 1 = linear)",
                 CArgDescriptions::eInteger, "1");
-    argDesc->AddDefaultKey("tex", "exact", 
-                   "threshold in Da above which the mass of neutron should be added in exact mass search",
+    argDesc->AddDefaultKey("ta", "autotol", 
+                   "automatic mass tolerance adjustment fraction",
                    CArgDescriptions::eDouble, 
-                   "1446.94");
-
+                   "0.5");
+    argDesc->AddDefaultKey("tex", "exact", 
+                    "threshold in Da above which the mass of neutron should be added in exact mass search",
+                    CArgDescriptions::eDouble, 
+                    "1446.94");
     argDesc->AddDefaultKey("i", "ions", 
                "id numbers of ions to search (comma delimited, no spaces)",
                CArgDescriptions::eString, 
@@ -277,6 +280,7 @@ void COMSSA::Init()
 			   CArgDescriptions::eString,
 			   "");
     argDesc->AddFlag("ml", "print a list of modifications and their corresponding id number");
+    argDesc->AddFlag("mnm", "n-term methionine should not be cleaved");
     argDesc->AddDefaultKey("mx", "modinputfile", 
 			   "file containing modification data",
 			   CArgDescriptions::eString,
@@ -469,6 +473,7 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
     Settings->SetMsmstol(args["to"].AsDouble());
     Settings->SetZdep(args["tez"].AsInteger());
     Settings->SetExactmass(args["tex"].AsDouble());
+    Settings->SetAutomassadjust(args["ta"].AsDouble());
 
     InsertList(args["i"].AsString(), Settings->SetIonstosearch(), "unknown ion");
     Settings->SetCutlo(args["cl"].AsDouble());
@@ -483,6 +488,7 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
     Settings->SetMissedcleave(args["v"].AsInteger());
     InsertList(args["mv"].AsString(), Settings->SetVariable(), "unknown variable mod");
     InsertList(args["mf"].AsString(), Settings->SetFixed(), "unknown fixed mod");
+    Settings->SetNmethionine(!args["mnm"]);
     Settings->SetDb(args["d"].AsString());
     Settings->SetHitlistlen(args["hl"].AsInteger());
     Settings->SetTophitnum(args["ht"].AsInteger());
@@ -500,7 +506,6 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
 
     Settings->SetMinnoenzyme(args["no"].AsInteger());
     Settings->SetMaxnoenzyme(args["nox"].AsInteger());
-
     if (args["x"].AsString() != "0") {
         InsertList(args["x"].AsString(), Settings->SetTaxids(), "unknown tax id");
     }
@@ -521,6 +526,13 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
     return;
 }
 
+
+/** progress callback */
+static void OMSSACallback(int TotalSeq, int Completed, void* Anything)
+{
+    ERR_POST(Info << "Sequence=" << Completed << " Percent=" << (double)Completed/TotalSeq <<
+             "%");
+}
 
 int COMSSA::Run()
 {    
@@ -613,9 +625,10 @@ int COMSSA::Run()
 
 	_TRACE("omssa: search begin");
 	SearchEngine.Search(*MySearch.SetRequest().begin(),
-                  *MySearch.SetResponse().begin(), 
-                  Modset,
-                  SearchSettings);
+                        *MySearch.SetResponse().begin(), 
+                        Modset,
+                        SearchSettings,
+                        &OMSSACallback);
 	_TRACE("omssa: search end");
 
 

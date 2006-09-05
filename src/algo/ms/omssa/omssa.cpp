@@ -229,7 +229,7 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
         string Filename((*iOutFile)->GetOutfile());
         EMSSerialDataFormat DataFormat =
             static_cast <EMSSerialDataFormat> ((*iOutFile)->GetOutfiletype());
-        ESerialDataFormat FileFormat;
+        ESerialDataFormat FileFormat(eSerial_AsnText);
 
         auto_ptr <CObjectOStream> txt_out;
         if(DataFormat == eMSSerialDataFormat_asntext)
@@ -473,6 +473,12 @@ void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
         }
 
         Peaks->ReadAndProcess(*Spectrum, *GetSettings());
+//#if 0
+        {
+            ofstream os("test.dta");
+            Peaks->Write(os, eMSSpectrumFileType_dta, eMSPeakListCharge1);
+        }
+//#endif
         PeakSet.AddPeak(Peaks);
 
     }
@@ -639,7 +645,7 @@ void CSearch::CreateModCombinations(int Missed,
                                     int Masses[],
                                     int EndMasses[],
                                     int NumMod[],
-                                    unsigned NumMassAndMask[],
+                                    int NumMassAndMask[],
                                     int NumModSites[],
                                     CMod ModList[][MAXMOD]
                                    )
@@ -804,7 +810,8 @@ void CSearch::MakeOidSet(void)
 int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     CRef <CMSResponse> MyResponseIn,
                     CRef <CMSModSpecSet> Modset,
-                    CRef <CMSSearchSettings> SettingsIn)
+                    CRef <CMSSearchSettings> SettingsIn,
+                    TOMSSACallback Callback)
 {
 
     try {
@@ -859,7 +866,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                 GetSettings()->GetPrecursorsearchtype(), Modset);
         // initialize variable mods and set enzyme to use n-term methionine cleavage
         SetEnzyme()->SetNMethionine() = 
-        VariableMods.Init(GetSettings()->GetVariable(), Modset);
+            VariableMods.Init(GetSettings()->GetVariable(), Modset) ||
+            SetSettings()->GetNmethionine();
 
         const int *IntMassArray = MassArray.GetIntMass();
         const int *PrecursorIntMassArray = PrecursorMassArray.GetIntMass();
@@ -878,7 +886,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         MassAndMask.reset(new TMassMask[MAXMISSEDCLEAVE*MaxModPerPep]);
 
         // the number of masses and masks for each peptide
-        unsigned NumMassAndMask[MAXMISSEDCLEAVE];
+        int NumMassAndMask[MAXMISSEDCLEAVE];
 
         // set up mass array, indexed by missed cleavage
         // note that EndMasses is the end mass of peptide, kept separate to allow
@@ -915,8 +923,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
         // iterate through sequences
         for (iSearch = 0; rdfp->CheckOrFindOID(iSearch); iSearch++) {
-            if (iSearch/10000*10000 == iSearch) ERR_POST(Info << "sequence " << 
-                                                         iSearch);
+            if (iSearch/10000*10000 == iSearch) 
+                if(Callback) Callback(Getnumseq(), iSearch, 0);
 
             // if oid restricted search, check to see if oid is in set
             if (GetRestrictedSearch() && SetOidSet().find(iSearch) == SetOidSet().end())
@@ -1534,7 +1542,7 @@ CMSMatchedPeakSet * CSearch::PepCharge(CMSHit& Hit,
     int iii;
     int lowmz(0), highmz;
 
-    int Size = Hit.GetStop() - Hit.GetStart();
+    unsigned Size = Hit.GetStop() - Hit.GetStart();
 
     // decide if there is any terminal bias
     EMSTerminalBias TerminalBias(eMSNoTerminalBias);
@@ -1614,7 +1622,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             SetIons(ForwardIon, BackwardIon);
 
             // minimum intensity
-            int minintensity = Threshold * Peaks->GetMaxI(Which);
+            int minintensity = static_cast <int> (Threshold * Peaks->GetMaxI(Which));
 
 
             TSeriesChargePairList::const_iterator iPairList;
@@ -1676,10 +1684,18 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 }
             }
 
-            double a = HitList[iHitList].CalcPoissonMean(GetSettings()->GetProbfollowingion(),
-                                                         GetEnzyme()->GetCleaveNum(),
-                                                         GetSettings()->GetProbfollowingion(),
-                                                         19);
+            double adjust = 2.0 * HitList[iHitList].GetStdDevDelta() / 
+                MSSCALE2INT(GetSettings()->GetMsmstol());
+            if(adjust < GetSettings()->GetAutomassadjust()) 
+                adjust = GetSettings()->GetAutomassadjust();
+            if(adjust > 1.0) 
+                adjust = 1.0;
+            double a = 
+                HitList[iHitList].CalcPoissonMean(GetSettings()->GetProbfollowingion(),
+                                                  GetEnzyme()->GetCleaveNum(),
+                                                  GetSettings()->GetProbfollowingion(),
+                                                  19,
+                                                  adjust);
 
             if (a == 0) {
                 // threshold probably too high
@@ -1721,13 +1737,14 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
             if (UseRankScore) {
                 if (HitList[iHitList].GetM() != 0.0) {
                     double Perf = HitList[iHitList].CalcRankProb();
+//                    _TRACE( "Perf=" << Perf << " pval=" << pval << " N=" << N );
                     pval *= Perf;
                     pval *= 10.0;  // correction to scales
                 }
                 else ERR_POST(Info << "M is zero");
             }
             double eval = 3e3 * pval * N;
-            _TRACE( " pval=" << pval << " eval=" << eval );
+//            _TRACE( " pval=" << pval << " eval=" << eval );
             ScoreList.insert(pair<const double, CMSHit *> 
                              (eval, &(HitList[iHitList])));
         }   

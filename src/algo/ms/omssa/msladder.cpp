@@ -57,6 +57,7 @@ CLadder::CLadder(void): LadderIndex(0),
     Ladder(new int[kMSLadderMax]),
     Hit(new int[kMSLadderMax]),
     Intensity(new unsigned[kMSLadderMax]),
+    Delta(new int[kMSLadderMax]),
     LadderSize(kMSLadderMax),
     M(0),
     Sum(0)
@@ -68,6 +69,7 @@ CLadder::CLadder(int SizeIn): LadderIndex(0),
     Ladder(new int[SizeIn]),
     Hit(new int[SizeIn]),
     Intensity(new unsigned[SizeIn]),
+    Delta(new int[SizeIn]),
     LadderSize(SizeIn),
     M(0),
     Sum(0)
@@ -97,6 +99,7 @@ CLadder::CLadder(const CLadder& Old) : LadderIndex(0),
         (*this)[i] = *(Old.Ladder.get() + i);
         GetHit()[i] = *(Old.Hit.get() + i);
         SetIntensity()[i] = Old.GetIntensity()[i];
+        SetDelta()[i] = Old.GetDelta()[i];
     }
 }
 

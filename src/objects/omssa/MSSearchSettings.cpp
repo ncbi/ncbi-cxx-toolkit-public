@@ -560,6 +560,17 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
          retval = 1;
      }
 
+     if(CanGetAutomassadjust()) {
+         if (GetAutomassadjust() < 0.0 || GetAutomassadjust() > 1.0) {
+              Error.push_back("automatic mass tolerance adjustment fraction is < 0 or > 1");
+              retval = 1;
+          }
+      }
+      else {
+          Error.push_back("unable to get automatic mass tolerance adjustment fraction ");
+          retval = 1;
+      }
+
     return retval;
 }
 
@@ -573,6 +584,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/09/05 18:03:48  lewisg
+* auto mass tolerance and get rid of warnings
+*
 * Revision 1.7  2006/08/21 15:18:21  lewisg
 * asn.1 changes, bug fixes
 *

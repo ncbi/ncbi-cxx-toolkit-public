@@ -55,7 +55,7 @@ CAA::CAA(void)
     int i;
     for(i = 0; i < 256; i++) AAMap[i] = kNumUniqueAA;
     for(i = 0; i < kNumUniqueAA; i++) {
-	AAMap[UniqueAA[i]] = i;
+	AAMap[static_cast <int> (UniqueAA[i])] = i;
 	// deal with blast readdb encoding.
 	AAMap[i] = i;
     }
@@ -623,8 +623,8 @@ void CMassArray::Init(const CMSMod &Mods,
 
     for(i = Mods.GetAAMods(eMSModType_modaa).begin(); i != Mods.GetAAMods(eMSModType_modaa).end(); i++) {
     	for(j = 0; j < Modset->GetModNumChars(*i); j++) {
-    	    CalcMass[Modset->GetModChar(*i, j)] +=  MSSCALE2DBL(Modset->GetModMass(*i));
-    	    IntCalcMass[Modset->GetModChar(*i, j)] += Modset->GetModMass(*i);
+    	    CalcMass[static_cast <int> (Modset->GetModChar(*i, j))] +=  MSSCALE2DBL(Modset->GetModMass(*i));
+    	    IntCalcMass[static_cast <int> (Modset->GetModChar(*i, j))] += Modset->GetModMass(*i);
     	}
     }
 }
@@ -632,6 +632,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.36  2006/09/05 18:03:39  lewisg
+  auto mass tolerance and get rid of warnings
+
   Revision 1.35  2006/08/28 20:03:01  lewisg
   perf improvements - no constref or comparesorted
 

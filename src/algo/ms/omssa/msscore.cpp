@@ -81,7 +81,6 @@ const int CMSBasicMatchedPeak::IsForwardSeries(EMSIonSeries Series)
     return -1;
 }
 
-
 CMSMatchedPeak::CMSMatchedPeak(void):
 MassTolerance(-1),
 ExpIons(-1),
@@ -148,7 +147,7 @@ CMSMatchedPeakSet::Compare(CMSMatchedPeakSet *Other, bool SameDirection)
     if(!Other ||
        (GetMatchedPeakSet().size() != Other->GetMatchedPeakSet().size()) ) return;            
 
-    int i, j;
+    unsigned i, j;
 
     for(i = 0; i < GetMatchedPeakSet().size(); ++i) {
         if(SameDirection) j = i;
@@ -186,7 +185,7 @@ CMSMatchedPeakSet *
 {   
     CMSMatchedPeakSet *retval;
     int Key = ChargeSeries2Key(Charge, Series);
-    int Realsize = min(Size, Maxproductions);
+    unsigned Realsize = min(Size, Maxproductions);
 
     // find old matches
     if (GetMatchMap().find(Key) != GetMatchMap().end()) {
@@ -288,7 +287,7 @@ CMSBasicMatchedPeak * CMSSpectrumMatch::Find(
 void CMSSpectrumMatch::FillMatchedPeaks(
                                        TMSCharge Charge, 
                                        TMSIonSeries Series, 
-                                       int Size, 
+                                       unsigned Size, 
                                        TMSIntensity MinIntensity, 
                                        bool Skipb1,
                                        EMSTerminalBias TerminalIon,
@@ -298,7 +297,7 @@ void CMSSpectrumMatch::FillMatchedPeaks(
     CMSMatchedPeakSet *MatchPeakSet =
     SetIonSeriesMatchMap().CreateSeries(Charge, Series, Size, Maxproductions);
 
-    int i;
+    unsigned i;
 
     // iterate over series and look for matching hits
     for (i = 0; i < MatchPeakSet->GetMatchedPeakSet().size(); ++i) {
@@ -345,7 +344,7 @@ void CMSSpectrumMatch::FillMatchedPeaks(
     // if unset, iterate until first set, then fill in mz
 
     // find first -1
-    int j;
+    unsigned j;
     for (i = 0; i < MatchPeakSet->GetMatchedPeakSet().size(); ++i) {
         if (MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ() != 0) break;
     }
@@ -355,7 +354,7 @@ void CMSSpectrumMatch::FillMatchedPeaks(
         (MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ()/ (i+1)) * (j+1);
     }
     // now fill out sections in the center
-    int LastIndex(i);
+    unsigned LastIndex(i);
     for (; i < MatchPeakSet->GetMatchedPeakSet().size(); ++i) {
         if (MatchPeakSet->GetMatchedPeakSet()[i]->GetMZ() != 0) {
             if (i != LastIndex) {
@@ -432,7 +431,8 @@ const double
 CMSSpectrumMatch::CalcPoissonMean(double ProbTerminal,
                                   int NumTerminalMasses, 
                                   double ProbDependent, 
-                                  int NumUniqueMasses
+                                  int NumUniqueMasses,
+                                  double ToleranceAdjust
                                   ) const
 {
     double Mean(0.0L);
@@ -454,11 +454,13 @@ CMSSpectrumMatch::CalcPoissonMean(double ProbTerminal,
 
             // calculate single poisson
             // add it to total poisson
-            Mean += 2.0 * Peak->GetMassTolerance() * Peak->GetExpIons();
+            Mean += 2.0 * Peak->GetMassTolerance() * Peak->GetExpIons() * ToleranceAdjust;
+            _TRACE( "mean=" << Mean << " masstol=" << Peak->GetMassTolerance() << " expions=" <<  Peak->GetExpIons());
 
             // if a statistically dependent peak, add in dependent match probability
             if (Peak->GetMatchType() == eMSMatchTypeDependent && NumUniqueMasses != 0) {
                 Mean += ProbDependent / NumUniqueMasses;
+                _TRACE( "mean=" << Mean << " probdep=" << ProbDependent << " numunique=" << NumUniqueMasses);
             }
 
             // if a statistically biased terminal peak, add in biased match probability
@@ -505,7 +507,7 @@ const double CMSSpectrumMatch::CalcPvalue(double Mean, int Hits) const
     if (Hits <= 0) return 1.0L;
 
     int i;
-    double retval(0.0L), increment, beforeincrement;
+    double retval(0.0L), increment, beforeincrement(0.0L);
 
     for (i = 0; i < Hits; i++) {
         increment = CalcPoisson(Mean, i);
@@ -533,7 +535,7 @@ const double CMSSpectrumMatch::CalcPvalueTopHit(double Mean, int Hits, double No
     if (Hits <= 0) return 1.0L;
 
     int i;
-    double retval(0.0L), increment, beforeretval(-1.0), beforeincrement;
+    double retval(0.0L), increment, beforeretval(-1.0), beforeincrement(0.0L);
 
     for (i = 1; i < Hits; i++) {
         increment = CalcPoissonTopHit(Mean, i, TopHitProb);
@@ -571,4 +573,32 @@ const double CMSSpectrumMatch::CalcRankProb(void) const
     return Perf;
 }
 
+
+const TMSMZ 
+CMSSpectrumMatch::GetMeanDelta(void) const
+{
+    TMSMZ Mean(0);
+
+    int i;
+    for (i = 0; i < GetHits(); ++i) {
+        Mean += GetHitInfo(i).GetDelta();
+    }
+    return static_cast <int> (Mean/(static_cast <double> (GetHits())));
+}
+
+const TMSMZ 
+CMSSpectrumMatch::GetStdDevDelta(void) const
+{
+    TMSMZ Mean;
+    double StdDev(0.0L);
+
+    Mean = GetMeanDelta();
+
+    int i;
+     for (i = 0; i < GetHits(); ++i) {
+         StdDev += pow(GetHitInfo(i).GetDelta() - Mean, 2.0);
+     }
+     StdDev = pow(StdDev/GetHits(), 0.5);
+     return static_cast <int> (StdDev);
+}
 

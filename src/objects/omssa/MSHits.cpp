@@ -82,7 +82,7 @@ void CMSHits::MakePepString(string& StringOut) const
         StringOut = GetPepstring();
         NStr::ToUpper(StringOut);
         ITERATE(TMods, i, GetMods()) {
-            if((*i)->GetSite() < StringOut.size())
+            if((*i)->GetSite() < static_cast <int> (StringOut.size()))
                 StringOut[(*i)->GetSite()] = tolower((unsigned char) StringOut[(*i)->GetSite()]);
         }
     }
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/09/05 18:03:48  lewisg
+* auto mass tolerance and get rid of warnings
+*
 * Revision 1.6  2005/06/06 15:29:56  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

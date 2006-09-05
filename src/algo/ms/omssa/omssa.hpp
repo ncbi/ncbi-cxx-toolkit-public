@@ -81,6 +81,8 @@ const int kAccLen = 20;
 // arbitrary high evalue
 const double kHighEval = 1e50;
 
+/** progress callback for CSearch */
+typedef void (*TOMSSACallback)(int TotalSeq, int Completed, void* Anything);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -91,7 +93,7 @@ const double kHighEval = 1e50;
 //
 
 typedef struct _MassMask {
-    unsigned Mass, Mask;
+    int Mass, Mask;
 } TMassMask;
 
 
@@ -134,7 +136,8 @@ public:
     int Search(CRef<CMSRequest> MyRequestIn,
                CRef<CMSResponse> MyResponseIn,
                CRef <CMSModSpecSet> Modset,
-               CRef <CMSSearchSettings> SettingsIn);
+               CRef <CMSSearchSettings> SettingsIn,
+               TOMSSACallback Callback = 0);
 
 
    /**
@@ -328,7 +331,7 @@ protected:
                                int Masses[],
                                int EndMasses[],
                                int NumMod[],
-                               unsigned NumMassAndMask[],
+                               int NumMassAndMask[],
                                int NumModSites[],
                                CMod ModList[][MAXMOD]);
 

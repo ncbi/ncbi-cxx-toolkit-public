@@ -178,8 +178,14 @@ public:
     /** Get the ion series number */
     const TMSNumber GetNumber(void) const;
 
-    /** Get the ion series number */
+    /** Set the ion series number */
     TMSNumber& SetNumber(void);
+
+    /** Get the mass delta */
+    const TMSMZ GetDelta(void) const;
+
+     /** Set the mass delta */
+    TMSMZ& SetDelta(void);
 
     /** 
      * is a particular series forward going? 
@@ -189,17 +195,20 @@ public:
      */
     static const int IsForwardSeries(EMSIonSeries Series);
 
+
 private:
     TMSCharge Charge;
     TMSIonSeries Series;
     TMSNumber Number;
+    TMSMZ Delta;
 };
 
 inline
 CMSBasicMatchedPeak::CMSBasicMatchedPeak(void):
     Charge(-1),
     Series(eMSIonTypeUnknown),
-    Number(-1)
+    Number(-1),
+    Delta(0)
 {
 }
 
@@ -207,7 +216,8 @@ inline
 CMSBasicMatchedPeak::CMSBasicMatchedPeak(const CMSBasicPeak& BasicPeak):
     Charge(-1),
     Series(eMSIonTypeUnknown),
-    Number(-1)
+    Number(-1),
+    Delta(0)
 {
     SetMZ() = BasicPeak.GetMZ();
     SetIntensity() = BasicPeak.GetIntensity();
@@ -249,6 +259,17 @@ TMSNumber& CMSBasicMatchedPeak::SetNumber(void)
     return Number;
 }
 
+inline
+const TMSMZ CMSBasicMatchedPeak::GetDelta(void) const
+{
+    return Delta;
+}
+
+inline
+TMSMZ& CMSBasicMatchedPeak::SetDelta(void)
+{
+    return Delta;
+}
 
 
 /**
@@ -650,7 +671,7 @@ public:
     void FillMatchedPeaks(
         TMSCharge Charge, 
         TMSIonSeries Series, 
-        int Size, 
+        unsigned Size, 
         TMSIntensity MinIntensity, 
         bool Skipb1,
         EMSTerminalBias TerminalIon,
@@ -664,13 +685,16 @@ public:
      * @param NumTerminalMasses the number of terminal masses searched (2 for trypsin)
      * @param ProbDependent the probability of a peak following a peak
      * @param NumUniqueMasses the number of unique masses searched (19 with no modifications)
+     * @param ToleranceAdjust the fraction to adjust mass tolerance
+     *                        > 0 and <=1
      * 
      * @return mean of poisson
      */
     const double CalcPoissonMean(double ProbTerminal=0.0L,
                                  int NumTerminalMasses=2,
                                  double ProbDependent=0.0L, 
-                                 int NumUniqueMasses=19) const;
+                                 int NumUniqueMasses=19,
+                                 double ToleranceAdjust = 1.0L) const;
 
     /**
      * calulate the poisson distribution
@@ -726,6 +750,16 @@ public:
      * @return probability of given ranks
      */
     const double CalcRankProb(void) const;
+
+    /**
+     * Calc mean delta
+     */
+    const TMSMZ GetMeanDelta(void) const;
+
+    /**
+     *  Calc std dev of delta
+     */
+    const TMSMZ GetStdDevDelta(void) const;
 
 private:
     // disallow copy

@@ -66,7 +66,7 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
         SetM() += Ladder.GetM();
         
         // examine hits array
-        unsigned i;
+        int i;
         for(i = 0; i < Ladder.size(); i++) {
             // if hit, add to hitlist
             if(Ladder.GetHit()[i] > 0) {
@@ -77,6 +77,7 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
                 SetHitInfo(iHitInfo).SetIntensity() = Ladder.GetIntensity()[i];
                 //  for poisson test
                 SetHitInfo(iHitInfo).SetMZ() = Ladder[i];
+                SetHitInfo(iHitInfo).SetDelta() = Ladder.GetDelta()[i];
                 //
                 iHitInfo++;
             }
@@ -297,7 +298,7 @@ void CMSPeakList::Sort(EMSPeakListSort SortType)
 
 void CMSPeakList::Rank(void)
 {
-    unsigned i;
+    int i;
     for(i = 1; i <= GetNum(); i++)
         GetMZI()[i-1].SetRank() = i;
 }
@@ -397,7 +398,7 @@ const bool CMSPeak::ContainsFast(const int value,
                                  const EMSPeakListTypes Which) const
 {
 
-    int x, l, r;
+    int x(0), l, r;
     CRef <CMSPeakList> PeakList = GetPeakLists()[Which];
 
     l = 0;
@@ -409,7 +410,7 @@ const bool CMSPeak::ContainsFast(const int value,
 	    l = x + 1;
         else if (PeakList->GetMZI()[x].GetMZ() > value + tol)
 	    r = x - 1;
-	else return true;
+        else return true;
     } 
     
     if (x < PeakList->GetNum() - 1 && 
@@ -420,53 +421,11 @@ const bool CMSPeak::ContainsFast(const int value,
 }
 
 
-const int CMSPeak::CompareSorted(CLadder& Ladder,
-                                  const EMSPeakListTypes Which,
-                                  TIntensity* Intensity)
-{
-    unsigned i(0), j(0);
-    int retval(0);
-    CRef <CMSPeakList> PeakList = SetPeakLists()[Which];
-
-    if(Ladder.size() == 0 ||  PeakList->GetNum() == 0) return 0;
-
-    do {
-	if (PeakList->GetMZI()[j].GetMZ() < Ladder[i] - tol) {
-	    j++;
-	    if(j >= PeakList->GetNum()) break;
-	    continue;
-	}
-	else if(PeakList->GetMZI()[j].GetMZ() > Ladder[i] + tol) {
-	    i++;
-	    if(i >= Ladder.size()) break;
-	    continue;
-	}
-	else {
-        // avoid double count
-	    if(PeakList->GetUsed()[j] == 0) {
-            PeakList->GetUsed()[j] = 1;
-            Ladder.GetHit()[i] = Ladder.GetHit()[i] + 1;
-	    }
-	    retval++;
-	    // record the intensity if requested, used for auto adjust
-	    if(Intensity) {
-            *(Intensity->get() + i) = PeakList->GetMZI()[j].GetIntensity();
-	    }
-	    j++;
-	    if(j >= PeakList->GetNum()) break;
-	    i++;
-	    if(i >= Ladder.size()) break;
-	}
-    } while(true);
-    return retval;
-}
-
-
 int CMSPeak::CompareSortedRank(CLadder& Ladder,
                                EMSPeakListTypes Which)
 {
 
-    unsigned i(0), j(0);
+    int i(0), j(0);
     int retval(0);
     CRef <CMSPeakList> PeakList = SetPeakLists()[Which];
 
@@ -496,6 +455,7 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder,
             retval++;
             // record the intensity  for scoring
             Ladder.SetIntensity()[i] = PeakList->GetMZI()[j].GetIntensity();
+            Ladder.SetDelta()[i] = PeakList->GetMZI()[j].GetMZ() - Ladder[i];
             j++;
             if (j >= PeakList->GetNum()) break;
             i++;
@@ -508,7 +468,7 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder,
 
 const int CMSPeak::Compare(CLadder& Ladder, const EMSPeakListTypes Which) const
 {
-    unsigned i;
+    int i;
     int retval(0);
     for(i = 0; i < Ladder.size(); i++) {
 	if(ContainsFast(Ladder[i], Which)) {
@@ -522,7 +482,7 @@ const int CMSPeak::Compare(CLadder& Ladder, const EMSPeakListTypes Which) const
 
 const bool CMSPeak::CompareTop(CLadder& Ladder)
 {
-    unsigned i;
+    int i;
     CRef <CMSPeakList> PeakList = SetPeakLists()[eMSPeakListTop];
 
     for(i = 0; i < PeakList->GetNum(); i++) {
@@ -785,7 +745,7 @@ const int CMSPeak::AboveThresh(const double Threshold,
  const EMSPeakListTypes Which) const
 {
     CMZI *MZISort = new CMZI[GetPeakLists()[Which]->GetNum()];
-    unsigned i;
+    int i;
     for(i = 0; i < GetPeakLists()[Which]->GetNum(); i++)
         MZISort[i] = GetPeakLists()[Which]->GetMZI()[i];
 
@@ -804,7 +764,7 @@ const int CMSPeak::AboveThresh(const double Threshold,
 
 void CMSPeak::CullBaseLine(const double Threshold, CMZI *Temp, int& TempLen)
 {
-    unsigned iMZI;
+    int iMZI;
     for(iMZI = 0; iMZI < TempLen && Temp[iMZI].GetIntensity() > Threshold * Temp[0].GetIntensity(); iMZI++);
     TempLen = iMZI;
 }
@@ -1161,7 +1121,7 @@ void CMSPeak::HighLow(int& High, int& Low, int& NumPeaks, const int PrecursorMas
 
     int MaxI = GetMaxI(Which);
 
-    unsigned iMZI;
+    int iMZI;
     for(iMZI = 0; iMZI < GetPeakLists()[Which]->GetNum(); iMZI++) {
 	if(GetPeakLists()[Which]->GetMZI()[iMZI].GetIntensity() > Threshold*MaxI &&
 	   GetPeakLists()[Which]->GetMZI()[iMZI].GetMZ() <= PrecursorMass) {
@@ -1183,7 +1143,7 @@ const int CMSPeak::CountAAIntervals(const CMassArray& MassArray,
                                     const bool Nodup, 
                                     const EMSPeakListTypes Which) const
 {	
-    unsigned ipeaks, low;
+    int ipeaks, low;
     int i;
     int PeakCount(0);
     if(GetPeakLists()[Which]->GetSorted() != eMSPeakListSortMZ) return -1;
@@ -1221,7 +1181,8 @@ const int CMSPeak::CountAAIntervals(const CMassArray& MassArray,
 
 const int CMSPeak::GetMaxI(const EMSPeakListTypes Which) const
 {
-    unsigned Intensity(0), i;
+    unsigned Intensity(0);
+    int i;
     for(i = 0; i < GetPeakLists()[Which]->GetNum(); i++) {
         if(Intensity < GetPeakLists()[Which]->GetMZI()[i].GetIntensity())
 	    Intensity = GetPeakLists()[Which]->GetMZI()[i].GetIntensity();

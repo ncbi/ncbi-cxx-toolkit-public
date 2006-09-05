@@ -550,8 +550,8 @@ public:
     char * const GetUsed(void) const;
     void SetUsed(char * In);
 
-    const unsigned GetNum(void) const;
-    unsigned& SetNum(void);
+    const int GetNum(void) const;
+    int& SetNum(void);
 
     const EMSPeakListSort GetSorted(void) const;
     EMSPeakListSort& SetSorted(void);
@@ -587,7 +587,7 @@ private:
     /** used to mark m/z values as used in a match */
     AutoPtr <char, ArrayDeleter<char> > Used;
     /** number of CMZI */
-    unsigned Num;
+    int Num;
     /** have the CMZI been sorted? */
     EMSPeakListSort Sorted;
 };
@@ -624,13 +624,13 @@ void CMSPeakList::SetUsed(char * In)
 }
 
 inline
-const unsigned CMSPeakList::GetNum(void) const
+const int CMSPeakList::GetNum(void) const
 {
     return Num;
 }
 
 inline
-unsigned& CMSPeakList::SetNum(void)
+int& CMSPeakList::SetNum(void)
 {
     return Num;
 }
@@ -953,20 +953,6 @@ public:
      * @param Which which experimental spectrum to use
      */
     const EMSPeakListTypes GetWhich(const int Charge) const;
-
-    /**
-     * compare assuming all lists are sorted
-     * the intensity array holds the intensity if there is a match to the ladder
-     * returns total number of matches, which may be more than is recorded in the ladder due to overlap
-     * 
-     * 
-     * @param Intensity is optional argument that allows recording of the intensity
-     * @param Which which experimental spectrum to use
-     * @param Ladder the ladder to compare to
-     */
-    const int CompareSorted(CLadder& Ladder,
-                            const EMSPeakListTypes Which,
-                            TIntensity * Intensity);
     
     /**
      * initializes arrays used to track hits

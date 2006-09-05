@@ -58,6 +58,8 @@ const int kMSLadderMax = 10000;
 /** container for intensity */
 typedef AutoArray <unsigned> TIntensity;
 
+/** container for mass deltas */
+typedef AutoArray <int> TDelta;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -183,7 +185,17 @@ public:
      */
     TIntensity& SetIntensity(void);
 
+     /**
+     * Get the mass delta array
+     */
+    const TDelta& GetDelta(void) const;
+
     /**
+     * Set the mass delta array
+     */
+    TDelta& SetDelta(void);
+
+   /**
     * Get the number of matches
     */
     const int GetM(void) const;
@@ -207,6 +219,10 @@ private:
     int LadderIndex; // current end of the ladder
     AutoPtr <int, ArrayDeleter<int> > Ladder;
     AutoPtr <THit, ArrayDeleter<THit> > Hit;
+    /** intensity of matched peaks */
+    TIntensity Intensity;
+    /** mass deltas between theoretical and experimental */
+    TDelta Delta;
     int LadderSize;  // size of allocated buffer
     int Start, Stop;  // inclusive start and stop position in sequence
     int Index;  // gi or position in blastdb
@@ -217,8 +233,6 @@ private:
     int M;
     /** sum of ranks of matched peaks */
     int Sum;
-    /** intensity of matched peaks */
-    TIntensity Intensity;
 };
 
 
@@ -347,6 +361,18 @@ inline
 TIntensity& CLadder::SetIntensity(void)
 {
     return Intensity;
+}
+
+inline
+const TDelta& CLadder::GetDelta(void) const
+{
+    return Delta;
+}
+
+inline
+TDelta& CLadder::SetDelta(void)
+{
+    return Delta;
 }
 
 inline

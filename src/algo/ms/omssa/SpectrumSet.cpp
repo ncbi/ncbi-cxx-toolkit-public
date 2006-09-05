@@ -320,7 +320,7 @@ bool CSpectrumSet::GetDTAHeader(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectru
 
 bool CSpectrumSet::Peaks2Spectrum(const TInputPeaks& InputPeaks, CRef <CMSSpectrum>& MySpectrum) const
 {
-    int i;
+    unsigned i;
 
     float MaxI(0.0);
 
@@ -474,7 +474,6 @@ int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
 {
     string Line;
     bool GotMass(false);
-    double dummy;
     TInputPeaks InputPeaks;
 
     // find the start of the block

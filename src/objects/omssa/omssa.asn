@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.33 2006/08/21 15:18:21 lewisg Exp $
+-- $Id: omssa.asn,v 1.34 2006/09/05 18:03:48 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -375,7 +375,9 @@ MSSearchSettings ::= SEQUENCE {
 	infiles SEQUENCE OF MSInFile OPTIONAL,         -- input files
 	outfiles SEQUENCE OF MSOutFile OPTIONAL,       -- output files
  	nocorrelationscore INTEGER OPTIONAL,           -- turn on correlation score (1=nocorr)
-	probfollowingion REAL OPTIONAL                 -- probability of a consecutive ion (used in correlation)
+	probfollowingion REAL OPTIONAL,                -- probability of a consecutive ion (used in correlation)
+        nmethionine BOOLEAN OPTIONAL,                  -- should nmethionine be cleaved?
+	automassadjust REAL OPTIONAL                   -- fraction allowable adjustment of product mass tolerance
         }
 
 MSSerialDataFormat ::= INTEGER {
