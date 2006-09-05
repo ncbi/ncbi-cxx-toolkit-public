@@ -911,15 +911,19 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
     if (oldgnu) {
         // Name prefix cannot be used because there are times, and other stuff
         if (!s_OctalToNum(value, h->prefix,      12)) {
-            NCBI_THROW(CTarException, eUnsupportedTarFormat,
-                       "Bad last access time");
-        }
-        info.m_Stat.st_atime = value;
+            if (memcmp(h->prefix,      "\0\0\0\0\0" "\0\0\0\0\0" "\0", 12)) {
+                NCBI_THROW(CTarException, eUnsupportedTarFormat,
+                           "Bad last access time");
+            }
+        } else
+            info.m_Stat.st_atime = value;
         if (!s_OctalToNum(value, h->prefix + 12, 12)) {
-            NCBI_THROW(CTarException, eUnsupportedTarFormat,
-                       "Bad creation time");
-        }
-        info.m_Stat.st_ctime = value;
+            if (memcmp(h->prefix + 12, "\0\0\0\0\0" "\0\0\0\0\0" "\0", 12)) {
+                NCBI_THROW(CTarException, eUnsupportedTarFormat,
+                           "Bad creation time");
+            }
+        } else
+            info.m_Stat.st_ctime = value;
     }
 
     return eSuccess;
@@ -1688,6 +1692,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/09/05 20:38:01  lavr
+ * Be less stringent when extracting old GNU's last access and creation time
+ *
  * Revision 1.44  2006/08/12 17:47:29  lavr
  * Allow type '5' for V7 archives
  *
