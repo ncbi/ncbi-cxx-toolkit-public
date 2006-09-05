@@ -351,6 +351,24 @@ public:
     ///   Open, Close, CProcess class
     TProcessHandle GetProcessHandle(void) const;
 
+    class NCBI_XCONNECT_EXPORT ICallBack 
+    {
+    public:
+        virtual ~ICallBack() {}
+        virtual bool Perform(TProcessHandle) = 0;
+    };
+
+    static bool ExecWait(const string&         cmd,
+                         const vector<string>& args,
+                         CNcbiIstream&         stdin,
+                         CNcbiOstream&         stdout,
+                         CNcbiOstream&         stderr,
+                         int&                  exit_value,
+                         const string&         current_dir  = kEmptyStr,
+                         const char* const     env[]        = 0,
+                         ICallBack*            callback     = 0);
+                        
+
 protected:
     CPipeHandle*   m_PipeHandle;        ///< Internal pipe handle that handles
     EChildIOHandle m_ReadHandle;        ///< Default read handle
@@ -418,6 +436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/09/05 14:33:10  didenko
+ * Added ExecWait static method
+ *
  * Revision 1.30  2006/05/24 14:14:23  ivanov
  * CPipe::Open - added more comments
  *

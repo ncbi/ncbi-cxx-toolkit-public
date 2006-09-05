@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_pipe.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/stream_utils.hpp>
 #include "ncbi_core_cxxp.hpp"
 #include <assert.h>
 #include <memory>
@@ -1722,6 +1723,106 @@ TProcessHandle CPipe::GetProcessHandle(void) const
     return m_PipeHandle ? m_PipeHandle->GetProcessHandle() : 0;
 }
 
+/* static */
+bool CPipe::ExecWait(const string&         cmd,
+                     const vector<string>& args,
+                     CNcbiIstream&         stdin,
+                     CNcbiOstream&         stdout,
+                     CNcbiOstream&         stderr,
+                     int&                  exit_value,
+                     const string&         current_dir,
+                     const char* const     env[],
+                     CPipe::ICallBack*     callback)
+{
+    CPipe pipe;
+    EIO_Status st = pipe.Open(cmd, args, CPipe::fStdErr_Open,current_dir, env);
+    if (st != eIO_Success)
+        NCBI_THROW(CException, eInvalid, 
+                   "Could not execute " + cmd + " file.");
+
+   
+    bool finished_ok = true;
+    bool out_done = false;
+    bool err_done = false;
+    bool in_done = false;
+    
+    const size_t buf_size = 4096;
+    char buf[buf_size];
+    size_t bytes_in_inbuf = 0;
+    size_t total_bytes_written = 0;
+    char inbuf[buf_size];
+
+    CPipe::TChildPollMask mask = CPipe::fStdIn | CPipe::fStdOut | CPipe::fStdErr;
+    try {
+    STimeout wait_time = {1, 0};
+    while (!out_done || !err_done) {
+        EIO_Status rstatus;
+        size_t bytes_read;
+
+        CPipe::TChildPollMask rmask = pipe.Poll(mask, &wait_time);
+        if (rmask & CPipe::fStdIn && !in_done) {
+            if ( stdin.good() && bytes_in_inbuf == 0) {
+                bytes_in_inbuf = CStreamUtils::Readsome(stdin, inbuf, buf_size);
+                total_bytes_written = 0;
+            }
+        
+            size_t bytes_written;
+            if (bytes_in_inbuf > 0) {
+                rstatus = pipe.Write(inbuf + total_bytes_written, bytes_in_inbuf,
+                                     &bytes_written);
+                if (rstatus != eIO_Success) {
+                    ERR_POST("Not all the data is written to stdin of a child process.");
+                    in_done = true;
+                }
+                total_bytes_written += bytes_written;
+                bytes_in_inbuf -= bytes_written;
+            }
+
+            if ((!stdin.good() && bytes_in_inbuf == 0) || in_done) {
+                pipe.CloseHandle(CPipe::eStdIn);
+                mask &= ~CPipe::fStdIn;
+            }
+
+        } if (rmask & CPipe::fStdOut) {
+            // read stdout
+            if (!out_done) {
+                rstatus = pipe.Read(buf, buf_size, &bytes_read);
+                stdout.write(buf, bytes_read);
+                if (rstatus != eIO_Success) {
+                    out_done = true;
+                    mask &= ~CPipe::fStdOut;
+            }
+        }
+
+
+        } if (rmask & CPipe::fStdErr) {
+            if (!err_done) {
+                rstatus = pipe.Read(buf, buf_size, &bytes_read, CPipe::eStdErr);
+                stderr.write(buf, bytes_read);
+                if (rstatus != eIO_Success) {
+                    err_done = true;
+                    mask &= ~CPipe::fStdErr;
+                }
+            }
+        }
+        if (!CProcess(pipe.GetProcessHandle()).IsAlive())
+            break;
+        if (callback) {
+            if (!callback->Perform(pipe.GetProcessHandle())) {
+                CProcess(pipe.GetProcessHandle()).Kill();
+                finished_ok = false;
+                break;
+            }
+        }
+    }    
+    } catch (...) {
+        CProcess(pipe.GetProcessHandle()).Kill();
+        throw;
+    }
+    pipe.Close(&exit_value);
+    return finished_ok;
+}
+
 
 END_NCBI_SCOPE
 
@@ -1729,6 +1830,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/09/05 14:33:10  didenko
+ * Added ExecWait static method
+ *
  * Revision 1.62  2006/06/19 14:01:36  ivanov
  * Use CExec::QuoteArg() to quote command line arguments if necessary
  *
