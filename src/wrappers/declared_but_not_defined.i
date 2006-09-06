@@ -30,7 +30,7 @@
  *
  */
 
-%ignore ncbi::CThreadNonStop::RequestDoJob;
+%ignore ncbi::objects::CFlatFileConfig::SetCodonRecognizedToNote;
 
 %ignore ncbi::objects::CPrefetchToken::GetPriority;
 %ignore ncbi::objects::CPrefetchToken::SetPriority;
@@ -82,6 +82,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/09/06 16:06:47  jcherry
+ * Added %ignore (CFlatFileConfig::SetCodonRecognizedToNote) and removed an
+ * obsolete one (CThreadNonStop::RequestDoJob)
+ *
  * Revision 1.18  2006/08/17 20:22:22  jcherry
  * %ignore ncbi::CThreadNonStop::RequestDoJob
  *
