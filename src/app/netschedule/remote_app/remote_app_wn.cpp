@@ -209,7 +209,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  Routine magic spells
 
-NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
+NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.5.0);
 
 //NCBI_WORKERNODE_MAIN(CRemoteAppJob, 1.0.1);
 
@@ -218,6 +218,9 @@ NCBI_WORKERNODE_MAIN_EX(CRemoteAppJob, CRemoteAppIdleTask, 1.0.0);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/09/06 16:58:03  didenko
+ * Changed the version number
+ *
  * Revision 1.24  2006/09/05 14:35:22  didenko
  * Added option to run a job monitor appliction
  *
