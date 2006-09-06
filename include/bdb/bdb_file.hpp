@@ -165,6 +165,9 @@ public:
     // Set Berkeley DB page size value. By default OS default is used.
     void SetPageSize(unsigned int page_size);
 
+    // Set Berkeley DB page size value. By default OS default is used.
+    unsigned int GetPageSize() const;
+
     /// Set Berkeley DB memory cache size for the file (default is 256K).
     void SetCacheSize(unsigned int cache_size);
 
@@ -623,6 +626,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/09/06 16:37:39  dicuccio
+ * Implement GetPageSize()
+ *
  * Revision 1.45  2006/08/23 19:59:05  dicuccio
  * Implement CBDB_RawFile::Compact()
  *

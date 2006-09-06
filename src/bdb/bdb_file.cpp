@@ -363,6 +363,8 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
     if ( m_PageSize ) {
         ret = m_DB->set_pagesize(m_DB, m_PageSize);
         BDB_CHECK(ret, 0);
+    } else {
+        m_DB->get_pagesize(m_DB, &m_PageSize);
     }
 
     if (!m_Env) {
@@ -510,6 +512,12 @@ void CBDB_RawFile::SetPageSize(unsigned int page_size)
         BDB_THROW(eInvalidValue, "Page size must be power of 2");
     }
     m_PageSize = page_size;
+}
+
+unsigned int CBDB_RawFile::GetPageSize() const
+{
+    _ASSERT(m_DB == 0); // we can set page size only before opening the file
+    return m_PageSize;
 }
 
 void CBDB_RawFile::Sync()
@@ -1291,6 +1299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/09/06 16:37:39  dicuccio
+ * Implement GetPageSize()
+ *
  * Revision 1.61  2006/08/24 14:59:48  ucko
  * Make CBDB_RawFile::Compact a no-op when DB_COMPACT_FLAGS is undefined.
  * (The compact operation is new to 4.4.)
