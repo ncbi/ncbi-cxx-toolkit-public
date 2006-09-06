@@ -910,6 +910,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 
     if (oldgnu) {
         // Name prefix cannot be used because there are times, and other stuff
+        // NB: times are valid for incremental archive only, so checks relaxed
         if (!s_OctalToNum(value, h->prefix,      12)) {
             if (memcmp(h->prefix,      "\0\0\0\0\0" "\0\0\0\0\0" "\0", 12)) {
                 NCBI_THROW(CTarException, eUnsupportedTarFormat,
@@ -1692,6 +1693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/09/06 14:49:24  lavr
+ * Comment on GNU's atime and ctime being optional (incr. archive only)
+ *
  * Revision 1.45  2006/09/05 20:38:01  lavr
  * Be less stringent when extracting old GNU's last access and creation time
  *
