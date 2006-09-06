@@ -132,12 +132,15 @@ public:
      * @param MyResponseIn the results of the search
      * @param Modset list of modifications
      * @param SettingsIn the search settings
+     * @param Callback callback function for progress meter
+     * @param CallbackData data passed back to callback fcn
      */
     int Search(CRef<CMSRequest> MyRequestIn,
                CRef<CMSResponse> MyResponseIn,
                CRef <CMSModSpecSet> Modset,
                CRef <CMSSearchSettings> SettingsIn,
-               TOMSSACallback Callback = 0);
+               TOMSSACallback Callback = 0,
+               void *CallbackData = 0);
 
 
    /**

@@ -811,7 +811,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     CRef <CMSResponse> MyResponseIn,
                     CRef <CMSModSpecSet> Modset,
                     CRef <CMSSearchSettings> SettingsIn,
-                    TOMSSACallback Callback)
+                    TOMSSACallback Callback,
+                    void *CallbackData)
 {
 
     try {
@@ -924,7 +925,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         // iterate through sequences
         for (iSearch = 0; rdfp->CheckOrFindOID(iSearch); iSearch++) {
             if (iSearch/10000*10000 == iSearch) 
-                if(Callback) Callback(Getnumseq(), iSearch, 0);
+                if(Callback) Callback(Getnumseq(), iSearch, CallbackData);
 
             // if oid restricted search, check to see if oid is in set
             if (GetRestrictedSearch() && SetOidSet().find(iSearch) == SetOidSet().end())

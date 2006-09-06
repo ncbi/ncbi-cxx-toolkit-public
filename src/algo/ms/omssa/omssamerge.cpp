@@ -79,7 +79,7 @@ private:
 
 COMSSAMerge::COMSSAMerge()
 {
-    SetVersion(CVersionInfo(1, 0, 0));
+    SetVersion(CVersionInfo(1, 0, 1));
 }
 
 
@@ -90,6 +90,11 @@ void COMSSAMerge::Init()
 {
 
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
+
+    argDesc->AddDefaultKey("i", "infiles", 
+                "file containing list of input files on separate lines",
+                CArgDescriptions::eString,
+                "");
 
     argDesc->AddFlag("sw", "output search results without spectra");
 
@@ -104,7 +109,7 @@ void COMSSAMerge::Init()
     argDesc->AddFlag("ob", "output as binary asn.1 formatted search results");
     argDesc->AddFlag("ox", "output as xml formatted search results");
 
-    argDesc->AddExtra(1,10000, "input file names", CArgDescriptions::eString);
+    argDesc->AddExtra(0,10000, "input file names", CArgDescriptions::eString);
 
 
     SetupArgDescriptions(argDesc.release());
@@ -146,23 +151,50 @@ int COMSSAMerge::Run()
 
 
     // loop thru input files
-    if ( args.GetNExtra() ) {
+    if ( args["i"].AsString() != "") {
+        ifstream is(args["i"].AsString().c_str());
+        bool Begin(true);
+        if(!is)
+            ERR_POST(Fatal << "unable to open input file list " << args["i"].AsString());
+        while(!is.eof()) {
+            string iFileName;
+            NcbiGetline(is, iFileName, "\x0d\x0a");
+            if(iFileName == "" || is.eof()) continue;
+            try {
+                CRef <COMSSASearch> InSearch(new COMSSASearch);
+                InSearch->ReadCompleteSearch(iFileName, InFileType);
+                if(Begin) {
+                    Begin = false;
+                    MySearch->CopyCMSSearch(InSearch);
+                }
+                else {
+                    // add
+                    MySearch->AppendSearch(InSearch);
+                }
+            }
+            catch(CException& e) {
+                ERR_POST(Fatal << "exception: " << e.what());
+                return 1;
+            }
+        }
+    }
+    else if ( args.GetNExtra() ) {
         for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
             CRef <COMSSASearch> InSearch(new COMSSASearch);
             InSearch->ReadCompleteSearch(args[extra].AsString(), InFileType);
-            if(extra == 1) {
-                // copy
-                MySearch->CopyCMSSearch(InSearch);
-            }
-            else {
-                // add
-                try {
+            try {
+                if(extra == 1) {
+                    // copy
+                    MySearch->CopyCMSSearch(InSearch);
+                }
+                else {
+                    // add
                     MySearch->AppendSearch(InSearch);
                 }
-                catch(CException& e) {
-                    ERR_POST(Fatal << "exception: " << e.what());
-                    return 1;
-                }
+            }
+            catch(CException& e) {
+                ERR_POST(Fatal << "exception: " << e.what());
+                return 1;
             }
         }
     }
