@@ -1573,7 +1573,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
     }
 
     /* set the socket back to blocking mode */
-    if ( !s_SetNonblock(lsock->sock, 0/*false*/) ) {
+    if (s_Initialized  &&  !s_SetNonblock(lsock->sock, 0/*false*/)) {
         CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: [LSOCK::Close] "
                                " Cannot set socket back to blocking mode",
                                lsock->id, (unsigned int) lsock->sock));
@@ -1595,7 +1595,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
     }
 
     status = eIO_Success;
-    for (;;) { /* close persistently - retry if interrupted by a signal */
+    while (s_Initialized) { /* close persistently - retry if interrupted */
         /* success */
         if (SOCK_CLOSE(lsock->sock) == 0)
             break;
@@ -1637,7 +1637,8 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
     }
 
     memcpy(handle, &lsock->sock, handle_size);
-    return lsock->sock == SOCK_INVALID ? eIO_Closed : eIO_Success;
+    return (!s_Initialized  ||  lsock->sock == SOCK_INVALID
+            ? eIO_Closed : eIO_Success);
 }
 
 
@@ -2552,7 +2553,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         return eIO_InvalidArg;
     }
 
-    if (SOCK_SHUTDOWN(sock->sock, x_how) != 0) {
+    if (s_Initialized  &&  SOCK_SHUTDOWN(sock->sock, x_how) != 0) {
         int x_errno = SOCK_ERRNO;
         if (
 #if defined(NCBI_OS_LINUX)/*bug in the Linux kernel to report*/  || \
@@ -2999,8 +3000,12 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
 
 extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
 {
-    EIO_Status status = sock->sock==SOCK_INVALID ? eIO_Success : s_Close(sock);
-    assert(sock->sock == SOCK_INVALID);
+    EIO_Status status;
+    if (!s_Initialized) {
+        sock->sock = SOCK_INVALID;
+        status = eIO_Success;
+    } else
+        status = sock->sock == SOCK_INVALID ? eIO_Success : s_Close(sock);
 
     if (destroy) {
         BUF_Destroy(sock->r_buf);
@@ -4560,6 +4565,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.191  2006/09/06 15:25:31  lavr
+ * Allow silent closure of sockets after the socket API having been finalized
+ *
  * Revision 6.190  2006/08/14 19:09:13  lavr
  * Use AF_INET consistently everywhere
  *
