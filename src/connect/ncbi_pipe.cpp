@@ -1723,25 +1723,29 @@ TProcessHandle CPipe::GetProcessHandle(void) const
     return m_PipeHandle ? m_PipeHandle->GetProcessHandle() : 0;
 }
 
+
+CPipe::IProcessWatcher::~IProcessWatcher()
+{
+}
+
 /* static */
-bool CPipe::ExecWait(const string&         cmd,
-                     const vector<string>& args,
-                     CNcbiIstream&         in,
-                     CNcbiOstream&         out,
-                     CNcbiOstream&         err,
-                     int&                  exit_value,
-                     const string&         current_dir,
-                     const char* const     env[],
-                     CPipe::ICallBack*     callback)
+CPipe::EFinish CPipe::ExecWait(const string&         cmd,
+                               const vector<string>& args,
+                               CNcbiIstream&         in,
+                               CNcbiOstream&         out,
+                               CNcbiOstream&         err,
+                               int&                  exit_value,
+                               const string&         current_dir,
+                               const char* const     env[],
+                               CPipe::IProcessWatcher* watcher)
 {
     CPipe pipe;
     EIO_Status st = pipe.Open(cmd, args, CPipe::fStdErr_Open,current_dir, env);
     if (st != eIO_Success)
         NCBI_THROW(CException, eInvalid, 
                    "Could not execute " + cmd + " file.");
-
-   
-    bool finished_ok = true;
+ 
+    EFinish finish = eDone;
     bool out_done = false;
     bool err_done = false;
     bool in_done = false;
@@ -1807,10 +1811,11 @@ bool CPipe::ExecWait(const string&         cmd,
         }
         if (!CProcess(pipe.GetProcessHandle()).IsAlive())
             break;
-        if (callback) {
-            if (!callback->Perform(pipe.GetProcessHandle())) {
+        if (watcher) {
+            if (watcher->Watch(pipe.GetProcessHandle()) != 
+                IProcessWatcher::eContinue) {
                 CProcess(pipe.GetProcessHandle()).Kill();
-                finished_ok = false;
+                finish = eCanceled;
                 break;
             }
         }
@@ -1820,7 +1825,7 @@ bool CPipe::ExecWait(const string&         cmd,
         throw;
     }
     pipe.Close(&exit_value);
-    return finished_ok;
+    return finish;
 }
 
 
@@ -1830,6 +1835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/09/06 16:55:52  didenko
+ * Renamed CPipe::ICallBack to CPipe::IProcessWatcher
+ *
  * Revision 1.64  2006/09/05 16:52:43  didenko
  * Fix compile time error on Windows and Sun
  *

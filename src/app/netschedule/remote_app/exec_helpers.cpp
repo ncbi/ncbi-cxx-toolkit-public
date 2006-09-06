@@ -158,10 +158,10 @@ struct STmpDirGuard
 };
 //////////////////////////////////////////////////////////////////////////////
 ///
-class CPipeCallBack_Base : public CPipe::ICallBack
+class CPipeProcessWatcher_Base : public CPipe::IProcessWatcher
 {
 public:
-    CPipeCallBack_Base(int max_app_running_time, int app_running_time)
+    CPipeProcessWatcher_Base(int max_app_running_time, int app_running_time)
         : m_MaxAppRunningTime(max_app_running_time),
           m_AppRunningTime(app_running_time)
     {
@@ -169,9 +169,9 @@ public:
             m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));        
     }
     
-    virtual ~CPipeCallBack_Base() {}
+    virtual ~CPipeProcessWatcher_Base() {}
 
-    virtual bool Perform(TProcessHandle /*pid*/) 
+    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle /*pid*/) 
     {
         if (m_RunningTime.get()) {
             double elapsed = m_RunningTime->Elapsed();
@@ -179,16 +179,16 @@ public:
                 ERR_POST( "The application's runtime has exceeded a time("
                         << m_AppRunningTime
                         << " sec) set by the client");
-                return false;
+                return CPipe::IProcessWatcher::eStop;
             }
             if ( m_MaxAppRunningTime > 0 && elapsed > (double)m_MaxAppRunningTime) {
                 ERR_POST("The application's runtime has exceeded a time("
                          << m_MaxAppRunningTime
                          <<" sec) set in the config file");
-                return false;
+                return CPipe::IProcessWatcher::eStop;
             }
         }
-        return true;
+        return CPipe::IProcessWatcher::eContinue;
     }
 private:
     int m_MaxAppRunningTime;
@@ -206,14 +206,14 @@ public:
 
     int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err)
     {
-        CPipeCallBack_Base callback(m_MaxAppRunningTime, 0);
+        CPipeProcessWatcher_Base callback(m_MaxAppRunningTime, 0);
         CNcbiStrstream in;
         int exit_value;
-        bool ret = CPipe::ExecWait(m_App, args, in, 
-                                   out, err, exit_value, 
-                                   kEmptyStr, NULL,
-                                   &callback);
-        if(!ret || exit_value > 2)
+        CPipe::EFinish ret = CPipe::ExecWait(m_App, args, in, 
+                                             out, err, exit_value, 
+                                             kEmptyStr, NULL,
+                                             &callback);
+        if(ret != CPipe::eDone || exit_value > 2)
             return 3;
         return exit_value;
     }
@@ -225,14 +225,14 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-class CPipeCallBack : public CPipeCallBack_Base
+class CPipeProcessWatcher : public CPipeProcessWatcher_Base
 {
 public:
-    CPipeCallBack( CWorkerNodeJobContext& context,
+    CPipeProcessWatcher( CWorkerNodeJobContext& context,
                    int max_app_running_time,
                    int app_running_time,
                    int keep_alive_period)
-        : CPipeCallBack_Base(max_app_running_time, app_running_time),
+        : CPipeProcessWatcher_Base(max_app_running_time, app_running_time),
           m_Context(context), m_KeepAlivePeriod(keep_alive_period),
           m_Monitor(NULL)
     {
@@ -241,7 +241,7 @@ public:
 
     }
     
-    virtual ~CPipeCallBack() {}
+    virtual ~CPipeProcessWatcher() {}
 
     void SetMonitor(CRAMonitor& monitor, int monitor_perod)
     {
@@ -252,14 +252,18 @@ public:
         
     }
 
-    virtual bool Perform(TProcessHandle pid) 
+    
+
+    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid) 
     {
         if (m_Context.GetShutdownLevel() == 
             CNetScheduleClient::eShutdownImmidiate) {
-            return false;
+            return CPipe::IProcessWatcher::eStop;
         }
-        if( !CPipeCallBack_Base::Perform(pid) )
-            return false;
+
+        CPipe::IProcessWatcher::EAction action = CPipeProcessWatcher_Base::Watch(pid);
+        if( action != CPipe::IProcessWatcher::eContinue )
+            return action;
 
         if (m_KeepAlive.get() 
             && m_KeepAlive->Elapsed() > (double) m_KeepAlivePeriod ) {
@@ -281,25 +285,15 @@ public:
                     out << '\0';
                     m_Context.PutProgressMessage(out.str(), true);
                 if( err.pcount() > 0 && m_Context.IsLogRequested()) {
-                    LOG_POST( CTime(CTime::eCurrent).AsString() 
-                              << ": Job " << m_Context.GetJobKey() 
-                              << " -- " << err.rdbuf());
+                    x_Log("Info", err);
                 }
                 break;
             case 1:
-                if( err.pcount() > 0 ) {
-                    LOG_POST( CTime(CTime::eCurrent).AsString() 
-                              << ": Job " << m_Context.GetJobKey() 
-                              << " -- " << err.rdbuf());
-                }
-                return false;
+                x_Log("job is returned", err);
+                return CPipe::IProcessWatcher::eStop;
             case 2: 
                 {
-                if( err.pcount() > 0 ) {
-                    LOG_POST( CTime(CTime::eCurrent).AsString() 
-                              << ": Job " << m_Context.GetJobKey() 
-                              << " -- " << err.rdbuf());
-                }
+                x_Log("job failed", err);
                 string errmsg;
                 if( out.pcount() > 0 ) {
                     out << '\0';
@@ -310,24 +304,30 @@ public:
                 }
                 break;
             default:
-                if( err.pcount() > 0 ) {
-                    LOG_POST( CTime(CTime::eCurrent).AsString() 
-                              << ": Job " << m_Context.GetJobKey() 
-                              << " Monitor internal error: " << err.rdbuf());
-                } else {
-                    LOG_POST( CTime(CTime::eCurrent).AsString() 
-                              << ": Job " << m_Context.GetJobKey() 
-                              << " Monitor internal error.");
-                }
+                x_Log("internal error", err);
                 break;
             }
             m_MonitorWatch->Restart();
         }
 
-        return true;
+        return CPipe::IProcessWatcher::eContinue;
     }
 
 private:
+    inline void x_Log(const string& what, CNcbiStrstream& sstream) 
+    {
+        if( sstream.pcount() > 0 ) {
+            LOG_POST( CTime(CTime::eCurrent).AsString() 
+                      << ": Job " << m_Context.GetJobKey() 
+                      << " (Monitor): " << what << ": " << sstream.rdbuf());
+        } else {
+            LOG_POST( CTime(CTime::eCurrent).AsString() 
+                      << ": Job " << m_Context.GetJobKey() 
+                      << " (Monitor): " << what << ".");
+        }
+
+    }
+
     CWorkerNodeJobContext& m_Context;
     int m_KeepAlivePeriod;
     auto_ptr<CStopWatch> m_KeepAlive;
@@ -355,10 +355,10 @@ bool ExecRemoteApp(const string& cmd,
 {
     STmpDirGuard guard(tmp_path);
 
-    CPipeCallBack callback(context,
-                           max_app_running_time,
-                           app_running_time,
-                           keep_alive_period);
+    CPipeProcessWatcher callback(context,
+                                 max_app_running_time,
+                                 app_running_time,
+                                 keep_alive_period);
 
     auto_ptr<CRAMonitor> ra_monitor;
     if (!monitor_app.empty() && monitor_period > 0) {
@@ -366,7 +366,8 @@ bool ExecRemoteApp(const string& cmd,
         callback.SetMonitor(*ra_monitor, monitor_period);
     }
 
-    return CPipe::ExecWait(cmd, args, in, out, err, exit_value, tmp_path, env, &callback);
+    return CPipe::ExecWait(cmd, args, in, out, err, exit_value, 
+                           tmp_path, env, &callback) == CPipe::eDone;
 }
 
 
@@ -376,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/09/06 16:57:32  didenko
+ * Renamed CPipe::ICallBack to CPipe::IProcessWatcher
+ *
  * Revision 1.8  2006/09/06 12:20:44  ivanov
  * Perform::Perform() -- fixed errors on MSVC64
  *

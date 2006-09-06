@@ -352,22 +352,30 @@ public:
     ///   Open, Close, CProcess class
     TProcessHandle GetProcessHandle(void) const;
 
-    class NCBI_XCONNECT_EXPORT ICallBack 
+    class NCBI_XCONNECT_EXPORT IProcessWatcher 
     {
     public:
-        virtual ~ICallBack() {}
-        virtual bool Perform(TProcessHandle) = 0;
+        enum EAction {
+            eContinue,
+            eStop
+        };
+        virtual ~IProcessWatcher();
+        virtual EAction Watch(TProcessHandle) = 0;
     };
 
-    static bool ExecWait(const string&         cmd,
-                         const vector<string>& args,
-                         CNcbiIstream&         in,
-                         CNcbiOstream&         out,
-                         CNcbiOstream&         err,
-                         int&                  exit_value,
-                         const string&         current_dir  = kEmptyStr,
-                         const char* const     env[]        = 0,
-                         ICallBack*            callback     = 0);
+    enum EFinish {
+        eDone,
+        eCanceled
+    };
+    static EFinish ExecWait(const string&         cmd,
+                            const vector<string>& args,
+                            CNcbiIstream&         in,
+                            CNcbiOstream&         out,
+                            CNcbiOstream&         err,
+                            int&                  exit_value,
+                            const string&         current_dir  = kEmptyStr,
+                            const char* const     env[]        = 0,
+                            IProcessWatcher*      watcher      = 0);
                         
 
 protected:
@@ -437,6 +445,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/09/06 16:55:52  didenko
+ * Renamed CPipe::ICallBack to CPipe::IProcessWatcher
+ *
  * Revision 1.32  2006/09/05 16:53:13  didenko
  * Fix compile time error on Windows and Sun
  *
