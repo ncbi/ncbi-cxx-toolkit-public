@@ -287,7 +287,6 @@ public:
     CFlatFileConfig& SetOldFeaturesOrder     (bool val = true);
     CFlatFileConfig& SetHideGapFeatures      (bool val = true);
     CFlatFileConfig& SetNeverTranslateCDS    (bool val = true);
-    CFlatFileConfig& SetCodonRecognizedToNote(bool val = true);
     
 
 private:
@@ -382,6 +381,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/09/06 16:32:00  ludwigf
+* FIXED: Removed prototype CFlatFileConfig::SetCodonRecognizedToNote(). This
+*  class of flags isn't supposed to have setters.
+*
 * Revision 1.8  2006/08/31 17:13:00  ludwigf
 * ADDED: Extra mode flag that controls whether codon_recognized becomes a
 *  qualifier or part of the note in the flat file. As implemented, it will
