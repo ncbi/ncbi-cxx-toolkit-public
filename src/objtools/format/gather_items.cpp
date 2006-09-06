@@ -1557,7 +1557,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
     }
 
     // map from cds product to nucleotide
-    CSeq_loc_Mapper prot_to_cds(feat.GetProduct(), mapped_loc, &scope);
+    CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
     
     CSeq_feat_Handle prev;  // keep track of the previous feature
     for ( ; it; ++it ) {
@@ -1635,6 +1635,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2006/09/06 13:51:51  ludwigf
+* FIXED: Maping of features back to CDS would not take frame number into
+*  account.
+*
 * Revision 1.58  2006/06/20 17:28:33  dicuccio
 * Don't restrict to an annotation type
 *
