@@ -271,7 +271,7 @@ public:
             CNcbiStrstream out;
             CNcbiStrstream err;
             vector<string> args;
-            args.push_back( "-pid " + NStr::UIntToString(pid) );
+            args.push_back( "-pid " + NStr::UInt8ToString((Uint8)pid) );
             args.push_back( "-jid " + m_Context.GetJobKey() );
 
             int ret = m_Monitor->Run(args, out, err);
@@ -376,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/09/06 12:20:44  ivanov
+ * Perform::Perform() -- fixed errors on MSVC64
+ *
  * Revision 1.7  2006/09/05 16:56:05  didenko
  * Fix compile time error on Windows and Sun
  *
