@@ -104,6 +104,62 @@ static bool s_ValidId(const CSeq_id& id)
 }
 
 
+static bool s_QualifiersMeetPrimerReqs( 
+    const string& fwd_name, 
+    const string& fwd_seq, 
+    const string& rev_name, 
+    const string& rev_seq )
+{
+    if ( fwd_seq.empty() ) {
+        return false;
+    }
+    if ( rev_seq.empty() ) {
+        return false;
+    }
+    // watch out, there are probably more, related to compound values in each of the
+    // constituents. Test cases?
+    //
+    return true;
+}
+
+
+static string s_MakePcrPrimerNote(
+    const string& fwd_name,
+    const string& fwd_seq,
+    const string& rev_name,
+    const string& rev_seq )
+{
+    if ( fwd_name.empty() && fwd_seq.empty() && rev_name.empty() && rev_seq.empty() ) {
+        return "";
+    }
+
+    string note( "PCR_primers=" );
+    size_t init_length = note.length();
+    if ( ! fwd_name.empty() ) {
+        note += string( "fwd_name: " ) + fwd_name;
+    }
+    if ( ! fwd_seq.empty() ) {
+        if ( note.length() > init_length ) {
+            note += ", ";
+        }
+        note += string( "fwd_seq: " ) + fwd_seq;
+    }
+    if ( ! rev_name.empty() ) {
+        if ( note.length() > init_length ) {
+            note += ", ";
+        }
+        note += string( "rev_name: " ) + rev_name;
+    }
+    if ( ! rev_seq.empty() ) {
+        if ( note.length() > init_length ) {
+            note += ", ";
+        }
+        note += string( "rev_seq: " ) + rev_seq;
+    }
+    return note;
+}
+
+
 static bool s_CheckQuals_cdregion(const CSeq_feat& feat, const CSeq_loc& loc, CBioseqContext& ctx)
 {
     if ( !ctx.Config().CheckCDSProductId() ) {
@@ -3601,8 +3657,47 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
             break;
         }
     }
-    x_AddQual( eSQ_pcr_primer, new CFlatSubSourcePrimer( 
-        primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) );
+
+    //  ------------------------------------------------------------------------
+    //  PCR primer rules:
+    //
+    //  In general, primer_fwd_name, primer_fwd_seq, primer_rev_name, and
+    //  primer_rev_seq are combined into a single PCR_primer qualifier in the
+    //  flat file. However, for this to happen, some criteria on presence of
+    //  certain fields and their cardinalities have to be met.
+    //
+    //  If those criteria are not met, then there will not be a PCR_primer
+    //  qualifier, and the existing *_name and *_seq are instead appended to
+    //  the feature /note.
+    //  ------------------------------------------------------------------------
+    if ( s_QualifiersMeetPrimerReqs( 
+        primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) ) 
+    {
+        x_AddQual( eSQ_pcr_primer, new CFlatSubSourcePrimer( 
+            primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq ) );
+    } 
+    else 
+    {
+        //
+        //  Alert:
+        //  We have potentially four constituents all of which go into /notes.
+        //  /notes is composed of substrings that are separated by semicolons.
+        //  The problem is that the PCR_primer pieces are supposed to be a single
+        //  atomic substring of /notes, internally using commas to separate
+        //  sub components.
+        //  The easy way out is to compose the entire PCR-primer subnote all at
+        //  once, and then stuff that string into a single slot for the /note
+        //  formatter to pick up.
+        //  The following combines any of /fwd_primer_name, /fwd_primer_seq,
+        //  /rev/primer_name, /rev_primer_seq into a /pcr_primer_note qualifier.
+        //
+        string primer_value = s_MakePcrPrimerNote( 
+            primer_fwd_name, primer_fwd_seq, primer_rev_name, primer_rev_seq );
+        if ( !primer_value.empty() ) {
+            x_AddQual( eSQ_pcr_primer_note, new CFlatStringQVal( primer_value ) );
+        }
+     }
+    //< end of special PCR_primer handling
 
     // some qualifiers are flags in genome and names in subsource,
     // print once with name
@@ -3785,16 +3880,16 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(collection_date);
         DO_NOTE(collected_by);
         DO_NOTE(identified_by);
-        DO_NOTE(fwd_primer_seq);
-        DO_NOTE(rev_primer_seq);
-        DO_NOTE(fwd_primer_name);
-        DO_NOTE(rev_primer_name);
 
         DO_NOTE(genotype);
         x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);
         
         x_FormatNoteQual(eSQ_endogenous_virus_name, "endogenous_virus", qvec);
     }
+    DO_NOTE(pcr_primer_note);
+//    DO_NOTE(rev_primer_seq);
+//    DO_NOTE(fwd_primer_name);
+//    DO_NOTE(rev_primer_name);
 
     if (!m_WasDesc) {
         x_FormatNoteQual(eSQ_seqfeat_note, "note", qvec);
@@ -3891,6 +3986,14 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.82  2006/09/06 14:13:39  ludwigf
+* CHANGED: We no longer produce separate /fwd_primer_name, ...,
+*  /rev_primer_seq flat file qualifiers. Instead, they are either combined
+*  into a new /pcr_primer qualifier, or lumped under a "PCR_primers" heading
+*  into /notes.
+*  Which of the two happens depends on whether additional constraints among
+*  object qualifiers "fwd_primer_name", ..., "rev_primer_seq" are met.
+*
 * Revision 1.81  2006/09/01 14:14:38  ludwigf
 * FIXED: Source qualifiers /primer_fwd_name, /primer_fwd_seq, /primer_rev_seq
 *  /primer_rev_name should be lumped together as one big /PCR_primer

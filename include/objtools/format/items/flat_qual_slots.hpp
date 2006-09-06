@@ -202,6 +202,7 @@ enum ESourceQualifier {
     eSQ_orgmod_note,
     eSQ_pathovar,
     eSQ_pcr_primer,
+    eSQ_pcr_primer_note,
     eSQ_plasmid_name,
     eSQ_plastid_name,
     eSQ_pop_variant,
@@ -247,6 +248,14 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/09/06 14:13:39  ludwigf
+* CHANGED: We no longer produce separate /fwd_primer_name, ...,
+*  /rev_primer_seq flat file qualifiers. Instead, they are either combined
+*  into a new /pcr_primer qualifier, or lumped under a "PCR_primers" heading
+*  into /notes.
+*  Which of the two happens depends on whether additional constraints among
+*  object qualifiers "fwd_primer_name", ..., "rev_primer_seq" are met.
+*
 * Revision 1.11  2006/09/01 14:14:38  ludwigf
 * FIXED: Source qualifiers /primer_fwd_name, /primer_fwd_seq, /primer_rev_seq
 *  /primer_rev_name should be lumped together as one big /PCR_primer
