@@ -586,6 +586,7 @@ CMSSpectrumMatch::GetMeanDelta(void) const
     return static_cast <int> (Mean/(static_cast <double> (GetHits())));
 }
 
+
 const TMSMZ 
 CMSSpectrumMatch::GetStdDevDelta(void) const
 {
@@ -596,9 +597,8 @@ CMSSpectrumMatch::GetStdDevDelta(void) const
 
     int i;
      for (i = 0; i < GetHits(); ++i) {
-         StdDev += pow(GetHitInfo(i).GetDelta() - Mean, 2.0);
+         StdDev += pow((double)GetHitInfo(i).GetDelta() - Mean, 2.0);
      }
-     StdDev = pow(static_cast <double> (StdDev)/GetHits(), 0.5);
-     return static_cast <int> (StdDev);
+     StdDev = pow((double)StdDev/GetHits(), 0.5);
+     return (TMSMZ)StdDev;
 }
-
