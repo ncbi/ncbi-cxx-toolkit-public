@@ -78,6 +78,9 @@ constructed from the current alignment.
     with the first row. Then the other sequences most similar to the selected
     row will be clustered around it. This is useful for grouping similar sequences
     together, and for automatically finding similar sequences in a large alignment.</li>
+  <li><b>By loop length</b>: select anyplace in an unaligned region, and this will
+    sort the sequences according to the number of residues in that region (highest
+    first).</li>
 </ul>
 <h3><a name="delete_row"></a>Delete row</h3>
 Select this item and then click on any but the first sequence to remove that
