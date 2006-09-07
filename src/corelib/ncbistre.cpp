@@ -202,6 +202,21 @@ CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
 }
 
 
+bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
+{
+    if (!(os << is.rdbuf()))
+        return false;
+    os.flush();
+    if (!os.good())
+        return false;
+    if (!CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
+        os.clear(IOS_BASE::failbit);
+        return false;
+    }
+    return true;
+}
+
+
 CNcbiOstrstreamToString::operator string(void) const
 {
     SIZE_TYPE length = m_Out.pcount();
@@ -414,6 +429,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/09/07 17:48:08  lavr
+ * +NcbiStreamCopy()
+ *
  * Revision 1.44  2006/02/16 16:15:56  lavr
  * WritePrintable():  Remove unnecessary block
  *

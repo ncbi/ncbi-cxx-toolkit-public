@@ -336,6 +336,22 @@ NCBI_XNCBI_EXPORT
 extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 
 
+/// Copy entire contents of stream "is" into "os".
+/// Return "true" if the operation was successful, "is"
+/// was read entirely, and all its contents reached "os";
+/// "false" if either extraction from "is" or insertion
+/// into "os" failed.
+/// Note that on successful completion, is.eof() is always true.
+/// The call may throw exceptions only if they are enabled on
+/// respective streams.
+/// Note that the call is an extension for standard
+/// istream::operator<<(streambuf*), which severely
+/// lacks error checking (esp. for partial write failures).
+NCBI_XNCBI_EXPORT
+extern bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is);
+
+
+
 // "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
 #if defined(HAVE_NO_CHAR_TRAITS)
 #  define CT_INT_TYPE      int
@@ -590,6 +606,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/09/07 17:47:20  lavr
+ * +NcbiStreamCopy()
+ *
  * Revision 1.50  2006/06/06 13:30:59  vasilche
  * Added 'explicit' keyword to converters constructors
  *
