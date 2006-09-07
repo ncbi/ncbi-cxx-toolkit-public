@@ -42,7 +42,7 @@
 #define HTTP_NCBI_MESSAGE       "NCBI-Message:"
 #define LBSM_DEFAULT_TIME       30    /* Exp.time for svc. to be used within */
 #define LBSM_DEFAULT_RATE       1000  /* For SLBSM_Service::info.rate below  */
-#define DISPATCHER_CFGPATH      "/var/etc/lbsmd/"
+#define DISPATCHER_CFGPATH      "/etc/lbsmd/"
 #define DISPATCHER_CFGFILE      "servrc.cfg"
 #define DISP_PROTOCOL_VERSION   "1.1"
 #define DISPD_MESSAGE_FILE      ".dispd.msg"
@@ -64,6 +64,9 @@ typedef unsigned int ticket_t;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2006/09/07 17:50:02  lavr
+ * DISPATCHER_CFGPATH to define as "/etc/lbsmd"
+ *
  * Revision 6.13  2006/04/05 14:59:04  lavr
  * +LBSM_DEFAULTs
  *
