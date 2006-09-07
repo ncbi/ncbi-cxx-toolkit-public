@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.437 2006/09/05 17:43:31 ucko Exp $
+#  $Id: configure.ac,v 1.438 2006/09/07 19:40:37 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2240,7 +2240,7 @@ fi
 
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(atoll basename lchown fseeko getpagesize getpwuid \
-               gettimeofday getuid readpassphrase nanosleep \
+               getrusage gettimeofday getuid readpassphrase nanosleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \
                sysmp timegm utimes lutimes)
