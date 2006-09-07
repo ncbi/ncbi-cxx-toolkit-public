@@ -14,7 +14,7 @@ test_ncbi_namedpipe_connector server >>$server_log 2>&1 &
 server_pid=$!
 trap 'kill -9 $server_pid' 1 2 15
 
-sleep 2
+sleep 10
 $CHECK_EXEC test_ncbi_namedpipe_connector client >>$client_log 2>&1  ||  exit_code=1
 
 kill $server_pid  ||  exit_code=2
