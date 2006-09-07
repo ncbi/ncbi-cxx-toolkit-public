@@ -3,8 +3,6 @@
 APP = project_tree_builder
 
 SRC = file_contents \
-      msvc71_project__ \
-      msvc71_project___ \
       msvc_configure \
       msvc_makefile \
       msvc_masterproject_generator \
@@ -31,4 +29,4 @@ SRC = file_contents \
 DATATOOL_SRC = msvc71_project
 
 
-LIB = xser xutil xncbi
+LIB = xutil xncbi

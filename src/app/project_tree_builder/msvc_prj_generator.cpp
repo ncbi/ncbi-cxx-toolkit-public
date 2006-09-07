@@ -12,6 +12,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#if NCBI_COMPILER_MSVC
 
 static 
 void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
@@ -478,12 +479,17 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;" + tool_exe_location;
 }
 
+#endif //NCBI_COMPILER_MSVC
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/09/07 15:09:01  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.48  2006/08/04 19:10:21  gouriano
  * Added AdditionalDependencies Linker option
  *

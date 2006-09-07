@@ -32,11 +32,15 @@
 
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbienv.hpp>
-#include <app/project_tree_builder/msvc71_project__.hpp>
+#if NCBI_COMPILER_MSVC
+#   include <app/project_tree_builder/msvc71_project__.hpp>
+#endif //NCBI_COMPILER_MSVC
 #include <app/project_tree_builder/proj_item.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
+
+#if NCBI_COMPILER_MSVC
 USING_SCOPE(objects);
 
 /// Creates CVisualStudioProject class instance from file.
@@ -67,6 +71,7 @@ void SaveToXmlFile  (const string&               file_path,
 ///   Project to save.
 void SaveIfNewer    (const string&               file_path, 
                      const CVisualStudioProject& project);
+#endif //NCBI_COMPILER_MSVC
 
 /// Consider promotion candidate to present 
 bool PromoteIfDifferent(const string& present_path, 
@@ -283,6 +288,7 @@ public:
 };
 
 
+#if NCBI_COMPILER_MSVC
 // Insert .cpp and .c files to filter and set PCH usage if necessary
 class CSrcToFilterInserterWithPch
 {
@@ -323,7 +329,6 @@ private:
     CSrcToFilterInserterWithPch(const CSrcToFilterInserterWithPch&);
     CSrcToFilterInserterWithPch& operator=(const CSrcToFilterInserterWithPch&);
 };
-
 
 class CBasicProjectsFilesInserter : public IFilesToProjectInserter
 {
@@ -423,14 +428,15 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
                                 const string&           project_dir,
                                 const SCustomBuildInfo& build_info);
 
-/// Checks if 2 dirs has the same root
-bool SameRootDirs(const string& dir1, const string& dir2);
-
 
 /// Fill-In MSVC 7.10 Utility project
 void CreateUtilityProject(const string&            name, 
                           const list<SConfigInfo>& configs, 
                           CVisualStudioProject*    project);
+#endif //NCBI_COMPILER_MSVC
+
+/// Checks if 2 dirs has the same root
+bool SameRootDirs(const string& dir1, const string& dir2);
 
 /// Project naming schema
 string CreateProjectName(const CProjKey& project_id);
@@ -510,6 +516,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/09/07 15:09:24  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.34  2006/07/13 15:13:51  gouriano
  * Made it work on UNIX - to generate combined makefile
  *

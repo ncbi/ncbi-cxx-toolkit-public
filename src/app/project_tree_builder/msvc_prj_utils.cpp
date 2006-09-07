@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#if NCBI_COMPILER_MSVC
 
 CVisualStudioProject* LoadFromXmlFile(const string& file_path)
 {
@@ -77,6 +78,26 @@ void SaveToXmlFile(const string&               file_path,
     xs << project;
 }
 
+void SaveIfNewer(const string&               file_path, 
+                 const CVisualStudioProject& project)
+{
+    // If no such file then simple write it
+    if ( !CDirEntry(file_path).Exists() ) {
+        SaveToXmlFile(file_path, project);
+        LOG_POST(Info << "Created    : " << project.GetAttlist().GetName());
+        return;
+    }
+
+    // Save new file to tmp path.
+    string candidate_file_path = file_path + ".candidate";
+    SaveToXmlFile(candidate_file_path, project);
+    if (PromoteIfDifferent(file_path, candidate_file_path)) {
+        LOG_POST(Info << "Modified   : " << project.GetAttlist().GetName());
+    } else {
+        LOG_POST(Info << "Left intact: " << project.GetAttlist().GetName());
+    }
+}
+#endif //NCBI_COMPILER_MSVC
 
 bool PromoteIfDifferent(const string& present_path, 
                         const string& candidate_path)
@@ -133,27 +154,6 @@ bool PromoteIfDifferent(const string& present_path,
         CDirEntry(candidate_path).Remove();
     }
     return false;
-}
-
-
-void SaveIfNewer(const string&               file_path, 
-                 const CVisualStudioProject& project)
-{
-    // If no such file then simple write it
-    if ( !CDirEntry(file_path).Exists() ) {
-        SaveToXmlFile(file_path, project);
-        LOG_POST(Info << "Created    : " << project.GetAttlist().GetName());
-        return;
-    }
-
-    // Save new file to tmp path.
-    string candidate_file_path = file_path + ".candidate";
-    SaveToXmlFile(candidate_file_path, project);
-    if (PromoteIfDifferent(file_path, candidate_file_path)) {
-        LOG_POST(Info << "Modified   : " << project.GetAttlist().GetName());
-    } else {
-        LOG_POST(Info << "Left intact: " << project.GetAttlist().GetName());
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -450,6 +450,7 @@ string ConfigName(const string& config)
 
 
 //-----------------------------------------------------------------------------
+#if NCBI_COMPILER_MSVC
 
 CSrcToFilterInserterWithPch::CSrcToFilterInserterWithPch
                                         (const string&            project_id,
@@ -944,16 +945,6 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
 }
 
 
-bool SameRootDirs(const string& dir1, const string& dir2)
-{
-    if ( dir1.empty() )
-        return false;
-    if ( dir2.empty() )
-        return false;
-    return dir1[0] == dir2[0];
-}
-
-
 void CreateUtilityProject(const string&            name, 
                           const list<SConfigInfo>& configs, 
                           CVisualStudioProject*    project)
@@ -1035,6 +1026,17 @@ void CreateUtilityProject(const string&            name,
         //Globals
         project->SetGlobals("");
     }}
+}
+#endif //NCBI_COMPILER_MSVC
+
+
+bool SameRootDirs(const string& dir1, const string& dir2)
+{
+    if ( dir1.empty() )
+        return false;
+    if ( dir2.empty() )
+        return false;
+    return dir1[0] == dir2[0];
 }
 
 
@@ -1156,6 +1158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/09/07 15:09:01  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.52  2006/07/13 15:13:29  gouriano
  * Made it work on UNIX - to generate combined makefile
  *

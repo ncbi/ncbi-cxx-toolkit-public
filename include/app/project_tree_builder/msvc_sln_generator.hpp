@@ -46,6 +46,8 @@ BEGIN_NCBI_SCOPE
 ///
 /// Generates solution file from projects set.
 
+#if NCBI_COMPILER_MSVC
+
 class CMsvcSolutionGenerator
 {
 public:
@@ -136,7 +138,7 @@ private:
     CMsvcSolutionGenerator(const CMsvcSolutionGenerator&);
     CMsvcSolutionGenerator& operator= (const CMsvcSolutionGenerator&);
 };
-
+#endif //NCBI_COMPILER_MSVC
 
 END_NCBI_SCOPE
 
@@ -144,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/09/07 15:09:24  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.17  2006/02/21 19:14:18  gouriano
  * Added DATASPEC_ALL project
  *

@@ -42,6 +42,7 @@ BEGIN_NCBI_SCOPE
 //-----------------------------------------------------------------------------
 CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
 {
+#if NCBI_COMPILER_MSVC
     CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if (ifs) {
         //read registry
@@ -50,6 +51,7 @@ CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
         CDirEntry::SplitPath(file_path, &m_MakeFileBaseDir);
 //        LOG_POST(Info << "Using rules from " << file_path);
     }
+#endif //NCBI_COMPILER_MSVC
 }
 
 
@@ -700,6 +702,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/09/07 15:09:01  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.23  2006/04/24 16:43:28  gouriano
  * Corrected redefinition of makefile macros
  *

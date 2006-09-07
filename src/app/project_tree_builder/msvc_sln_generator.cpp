@@ -38,6 +38,7 @@
 #include <app/project_tree_builder/msvc_makefile.hpp>
 
 BEGIN_NCBI_SCOPE
+#if NCBI_COMPILER_MSVC
 
 //-----------------------------------------------------------------------------
 CMsvcSolutionGenerator::CMsvcSolutionGenerator
@@ -570,13 +571,16 @@ CMsvcSolutionGenerator::WriteUtilityProjectConfiguration(const TUtilityProject& 
             << endl;
     }
 }
-
+#endif //NCBI_COMPILER_MSVC
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/09/07 15:09:01  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.34  2006/07/13 15:13:29  gouriano
  * Made it work on UNIX - to generate combined makefile
  *

@@ -227,7 +227,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,2,1) );
+    SetVersion( CVersionInfo(1,2,2) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -426,6 +426,7 @@ int CProjBulderApp::Run(void)
 
 void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
 {
+#if NCBI_COMPILER_MSVC
     LOG_POST(Info << "*** Generating MSVC projects ***");
 
     bool dll = (GetBuildType().GetType() == CBuildType::eDll);
@@ -537,6 +538,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     sln_gen.SaveSolution(m_Solution);
 
     CreateFeaturesAndPackagesFiles(configurations);
+#endif //NCBI_COMPILER_MSVC
 }
 
 void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
@@ -613,7 +615,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                                                             
 #if NCBI_COMPILER_MSVC
             rel_path = NStr::Replace(rel_path,"\\","/");
-#endif
+#endif //NCBI_COMPILER_MSVC
 
             ofs << target << " :";
             ITERATE(list<string>, d, dependencies) {
@@ -1170,6 +1172,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2006/09/07 15:09:00  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.84  2006/09/05 18:05:37  gouriano
  * In flat makefile mark expendable project as non-mandatory
  *

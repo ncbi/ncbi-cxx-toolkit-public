@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#if NCBI_COMPILER_MSVC
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CMsvcProjectGenerator --
@@ -64,13 +65,16 @@ private:
     CMsvcProjectGenerator(const CMsvcProjectGenerator&);
     CMsvcProjectGenerator& operator= (const CMsvcProjectGenerator&);
 };
-
+#endif //NCBI_COMPILER_MSVC
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/09/07 15:09:24  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.13  2006/02/15 19:47:44  gouriano
  * Exclude projects with unmet requirements from BUILD-ALL
  *

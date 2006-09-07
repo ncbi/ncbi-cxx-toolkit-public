@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#if NCBI_COMPILER_MSVC
 
 static void
 s_RegisterCreatedFilter(CRef<CFilter>& filter, CSerialObject* parent);
@@ -214,12 +215,16 @@ CMsvcMasterProjectGenerator::CreateProjectFileItem(const CProjKey& project_id)
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 }
 
+#endif //NCBI_COMPILER_MSVC
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/09/07 15:09:01  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.21  2006/07/13 15:13:29  gouriano
  * Made it work on UNIX - to generate combined makefile
  *

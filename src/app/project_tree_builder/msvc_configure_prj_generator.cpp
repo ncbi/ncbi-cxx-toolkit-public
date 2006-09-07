@@ -35,6 +35,8 @@
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
+#if NCBI_COMPILER_MSVC
+
 CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                   (const string&            output_dir,
                                    const list<SConfigInfo>& configs,
@@ -273,7 +275,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
     ofs << "start \"\" \"%SLN_PATH%_configuration_log.txt\"" << endl
         << "exit /b 1" << endl;
 }
-
+#endif //NCBI_COMPILER_MSVC
 
 END_NCBI_SCOPE
 
@@ -282,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/09/07 15:09:01  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.30  2006/04/03 16:44:54  gouriano
  * Put configure lock only after building PTB
  *

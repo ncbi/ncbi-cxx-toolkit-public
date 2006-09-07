@@ -1,4 +1,3 @@
-USR_PROJ = msvc71
 APP_PROJ = project_tree_builder
 
 srcdir = @srcdir@

@@ -36,6 +36,8 @@
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
+
+#if NCBI_COMPILER_MSVC
 USING_SCOPE(objects);
 
 /////////////////////////////////////////////////////////////////////////////
@@ -98,13 +100,16 @@ private:
         (const CMsvcMasterProjectGenerator&);
 
 };
-
+#endif //NCBI_COMPILER_MSVC
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/09/07 15:09:24  gouriano
+ * Disable MS Visual Studio-specific code on UNIX
+ *
  * Revision 1.13  2006/01/23 18:26:33  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *
