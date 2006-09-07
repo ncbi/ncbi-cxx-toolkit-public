@@ -88,6 +88,7 @@ private:
             MID_FLOAT_G_V,
             MID_SORT_SELF_HIT,
             MID_PROXIMITY_SORT,
+            MID_SORT_LOOPS,
         MID_SQ_REFINER,
         // mouse mode
         MID_MOVE_ROW,
@@ -147,6 +148,11 @@ private:
         menuBar->Check(MID_PROXIMITY_SORT, false);
         SetCursor(wxNullCursor);
     }
+    void SortLoopsOff(void)
+    {
+        menuBar->Check(MID_SORT_LOOPS, false);
+        SetCursor(wxNullCursor);
+    }
 
     SequenceViewerWidget::eMouseMode GetMouseModeForCreateAndMerge(void)
     {
@@ -164,6 +170,7 @@ public:
     bool DoRealignRow(void) const { return menuBar->IsChecked(MID_REALIGN_ROW); }
     bool DoMarkBlock(void) const { return menuBar->IsChecked(MID_MARK_BLOCK); }
     bool DoProximitySort(void) const { return menuBar->IsChecked(MID_PROXIMITY_SORT); }
+    bool DoSortLoops(void) const { return menuBar->IsChecked(MID_SORT_LOOPS); }
 
     void CancelDerivedSpecialModesExcept(int id)
     {
@@ -172,6 +179,7 @@ public:
         if (id != MID_REALIGN_ROW && DoRealignRow()) RealignRowOff();
         if (id != MID_MARK_BLOCK && DoMarkBlock()) MarkBlockOff();
         if (id != MID_PROXIMITY_SORT && DoProximitySort()) ProximitySortOff();
+        if (id != MID_SORT_LOOPS && DoSortLoops()) SortLoopsOff();
     }
 };
 
@@ -182,6 +190,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/09/07 02:32:55  thiessen
+* add sort by loop length
+*
 * Revision 1.34  2006/05/30 19:14:38  thiessen
 * add realign rows w/ highlights
 *

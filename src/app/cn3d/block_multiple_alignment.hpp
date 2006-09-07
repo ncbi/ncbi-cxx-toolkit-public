@@ -299,6 +299,9 @@ public:
     // return a number from 1..n for aligned blocks, -1 for unaligned
     int GetAlignedBlockNumber(unsigned int alignmentIndex) const { return blockMap[alignmentIndex].alignedBlockNum; }
 
+    // returns the loop length of the unaligned region at the given row and alignment index; -1 if that position is aligned
+    int GetLoopLength(unsigned int row, unsigned int alignmentIndex);
+
     // return [0..1] for aligned residues depending on the alignment position - first aligned column is 0, last is 1;
     // -1 if unaligned. This is mainly for alignment rainbow coloring
     double GetRelativeAlignmentFraction(unsigned int alignmentIndex) const;
@@ -436,6 +439,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2006/09/07 02:32:55  thiessen
+* add sort by loop length
+*
 * Revision 1.57  2006/07/13 22:33:50  thiessen
 * change all 'slave' -> 'dependent'
 *

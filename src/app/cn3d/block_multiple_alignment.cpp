@@ -1787,6 +1787,17 @@ int BlockMultipleAlignment::GetAlignmentIndex(unsigned int row, unsigned int seq
     return -1;
 }
 
+// returns the loop length of the unaligned region at the given row and alignment index; -1 if that position is aligned
+int BlockMultipleAlignment::GetLoopLength(unsigned int row, unsigned int alignmentIndex)
+{
+    UnalignedBlock *block = dynamic_cast<UnalignedBlock*>(blockMap[alignmentIndex].block);
+    if (!block)
+        return -1;
+
+    const Block::Range *range = block->GetRangeOfRow(row);
+    return (range->to - range->from + 1);
+}
+
 
 ///// UngappedAlignedBlock methods /////
 
@@ -1915,6 +1926,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2006/09/07 02:32:55  thiessen
+* add sort by loop length
+*
 * Revision 1.81  2006/07/13 22:33:50  thiessen
 * change all 'slave' -> 'dependent'
 *

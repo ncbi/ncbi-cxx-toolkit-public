@@ -222,6 +222,7 @@ public:
     void FloatPDBRowsToTop(void);
     void FloatHighlightsToTop(void);
     void FloatGVToTop(void);
+    bool SortRowsByLoopLength(unsigned int row, unsigned int alnIndex);
 
     // a sort of clustering of similar sequences around a particular row
     bool ProximitySort(unsigned int displayRow);
@@ -302,6 +303,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/09/07 02:32:55  thiessen
+* add sort by loop length
+*
 * Revision 1.32  2006/07/13 22:33:51  thiessen
 * change all 'slave' -> 'dependent'
 *

@@ -485,6 +485,14 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 return false;
             }
 
+            if (sequenceWindow->DoSortLoops()) {
+                if (SortRowsByLoopLength(row, column)) {
+                    sequenceWindow->SortLoopsOff();
+                    GlobalMessenger()->PostRedrawSequenceViewer(sequenceWindow->sequenceViewer);
+                }
+                return false;
+            }
+
             if (sequenceWindow->DoRealignRow() || sequenceWindow->DoDeleteRow()) {
                 DisplayRowFromAlignment *selectedRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
                 if (!selectedRow || selectedRow->row == 0 || !selectedRow->alignment) {
@@ -988,8 +996,6 @@ void SequenceDisplay::SortRowsByIdentifier(void)
 {
     rowComparisonFunction = CompareRowsByIdentifier;
     SortRows();
-    (*viewerWindow)->viewer->Save();   // make this an undoable operation
-	(*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
@@ -997,25 +1003,18 @@ void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
     if (!CalculateRowScoresWithThreader(weightPSSM)) return;
     rowComparisonFunction = CompareRowsByScore;
     SortRows();
-    TRACEMSG("sorted rows");
-    (*viewerWindow)->viewer->Save();   // make this an undoable operation
-	(*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::FloatPDBRowsToTop(void)
 {
     rowComparisonFunction = CompareRowsFloatPDB;
     SortRows();
-    (*viewerWindow)->viewer->Save();   // make this an undoable operation
-	(*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::FloatHighlightsToTop(void)
 {
     rowComparisonFunction = CompareRowsFloatHighlights;
     SortRows();
-    (*viewerWindow)->viewer->Save();   // make this an undoable operation
-	(*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::FloatGVToTop(void)
@@ -1039,8 +1038,6 @@ void SequenceDisplay::FloatGVToTop(void)
 
     rowComparisonFunction = CompareRowsFloatGV;
     SortRows();
-    (*viewerWindow)->viewer->Save();   // make this an undoable operation
-    (*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::SortRowsBySelfHit(void)
@@ -1055,11 +1052,27 @@ void SequenceDisplay::SortRowsBySelfHit(void)
             // then sort by score
             rowComparisonFunction = CompareRowsByEValue;
             SortRows();
-			(*viewerWindow)->viewer->Save();   // make this an undoable operation
-			(*viewerWindow)->UpdateDisplay(this);
-            break;
+            return;
         }
     }
+}
+
+bool SequenceDisplay::SortRowsByLoopLength(unsigned int row, unsigned int alnIndex)
+{
+    DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+    if (!alnRow)
+        return false;
+
+    for (unsigned int r=0; r<alnRow->alignment->NRows(); ++r) {
+        int loop = alnRow->alignment->GetLoopLength(r, alnIndex);
+        if (loop < 0)   // means this column is aligned
+            return false;
+        alnRow->alignment->SetRowDouble(r, loop);
+    }
+
+    rowComparisonFunction = CompareRowsByScore;
+    SortRows();
+    return true;
 }
 
 void SequenceDisplay::SortRows(void)
@@ -1096,6 +1109,9 @@ void SequenceDisplay::SortRows(void)
         rows = newRows;
     else
         ERRORMSG("SequenceDisplay::SortRows() - internal inconsistency");
+
+    (*viewerWindow)->viewer->Save();   // make this an undoable operation
+    (*viewerWindow)->UpdateDisplay(this);
 }
 
 bool SequenceDisplay::ProximitySort(unsigned int displayRow)
@@ -1323,6 +1339,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2006/09/07 02:32:55  thiessen
+* add sort by loop length
+*
 * Revision 1.86  2006/07/13 22:33:51  thiessen
 * change all 'slave' -> 'dependent'
 *

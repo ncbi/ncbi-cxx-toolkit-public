@@ -68,7 +68,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_MOVE_ROW,                        SequenceViewerWindow::OnMoveRow)
     EVT_MENU      (MID_SHOW_UPDATES,                    SequenceViewerWindow::OnShowUpdates)
     EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_HLIT_ROWS,  SequenceViewerWindow::OnRealign)
-    EVT_MENU_RANGE(MID_SORT_IDENT, MID_PROXIMITY_SORT,  SequenceViewerWindow::OnSort)
+    EVT_MENU_RANGE(MID_SORT_IDENT, MID_SORT_LOOPS,      SequenceViewerWindow::OnSort)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
     EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_PSSM,   SequenceViewerWindow::OnExport)
@@ -110,9 +110,10 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_SORT_THREADER, "By &Score");
     subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
     subMenu->Append(MID_FLOAT_HIGHLIGHTS, "Float Hi&ghlights");
-    subMenu->Append(MID_FLOAT_G_V, "Float &Geometry Violations");
+    subMenu->Append(MID_FLOAT_G_V, "Float Geometry &Violations");
     subMenu->Append(MID_SORT_SELF_HIT, "By Self-&Hit");
-    subMenu->Append(MID_PROXIMITY_SORT, "&Proximity Sort", "", true);
+    subMenu->Append(MID_PROXIMITY_SORT, "Pro&ximity Sort", "", true);
+    subMenu->Append(MID_SORT_LOOPS, "By &Loop Length", "", true);
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows...", subMenu);
     editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
     editMenu->AppendSeparator();
@@ -383,14 +384,17 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
 
 void SequenceViewerWindow::OnSort(wxCommandEvent& event)
 {
+    if (event.GetId() != MID_PROXIMITY_SORT && DoProximitySort())
+        ProximitySortOff();
+    if (event.GetId() != MID_SORT_LOOPS && DoSortLoops())
+        SortLoopsOff();
+
     switch (event.GetId()) {
         case MID_SORT_IDENT:
-            if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->SortRowsByIdentifier();
             break;
         case MID_SORT_THREADER:
         {
-            if (DoProximitySort()) ProximitySortOff();
             GetFloatingPointDialog fpDialog(NULL,
                 "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
                 0.0, 1.0, 0.05, (MASTER_HAS_STRUCTURE ?
@@ -404,19 +408,15 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             break;
         }
         case MID_FLOAT_HIGHLIGHTS:
-            if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->FloatHighlightsToTop();
             break;
         case MID_FLOAT_PDBS:
-            if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->FloatPDBRowsToTop();
             break;
         case MID_FLOAT_G_V:
-            if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->FloatGVToTop();
             break;
         case MID_SORT_SELF_HIT:
-            if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->SortRowsBySelfHit();
             break;
         case MID_PROXIMITY_SORT:
@@ -425,6 +425,13 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
                 SetCursor(*wxCROSS_CURSOR);
             else
                 ProximitySortOff();
+            break;
+        case MID_SORT_LOOPS:
+            CancelAllSpecialModesExcept(MID_SORT_LOOPS);
+            if (DoSortLoops())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                SortLoopsOff();
             break;
     }
 }
@@ -599,6 +606,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2006/09/07 02:32:55  thiessen
+* add sort by loop length
+*
 * Revision 1.65  2006/07/13 22:33:51  thiessen
 * change all 'slave' -> 'dependent'
 *
