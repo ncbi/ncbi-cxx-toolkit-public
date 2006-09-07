@@ -253,30 +253,24 @@ s_DupSequencesTest(int    * ids,
     s_RemoveFiles(files);
 }
 
+static CRef<CObjectManager> s_CreateObjMgr()
+{
+    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    CRef<CReader> reader(new CId2Reader());
+    reader->SetPreopenConnection(false);
+    CGBDataLoader::RegisterInObjectManager(*obj_mgr, reader);
+    return obj_mgr;
+}
+
 CRef<CScope> s_GetScope()
 {
-    CRef<CObjectManager> obj_mgr;
-    
-    if (obj_mgr.Empty()) {
-        obj_mgr.Reset(CObjectManager::GetInstance());
-    }
-    
-    try {
-        CRef<CReader> reader(new CId2Reader);
-        reader->SetPreopenConnection(false);
-        
-        CGBDataLoader::RegisterInObjectManager(*obj_mgr,
-                                               reader,
-                                               CObjectManager::eDefault);
-    } catch (const CException& e) {
-        ERR_POST(Warning << e.GetMsg());
-    }
-    
+    static CRef<CObjectManager> obj_mgr = s_CreateObjMgr();
+
     CRef<CScope> scope(new CScope(*obj_mgr));
-    
+
     // Add default loaders to the scope.
     scope->AddDefaults();
-    
+
     return scope;
 }
 
@@ -536,6 +530,9 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/09/07 17:23:21  bealer
+ * - Only construct object manager once.
+ *
  * Revision 1.6  2006/08/30 19:53:27  camacho
  * Make verbose output less restrictive
  *
