@@ -618,7 +618,7 @@ bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
     case eDS_ToStdlog: {
         // open log.file
         if ( CDiagContext::IsSetOldPostFormat() ) {
-            return x_SetupLogFile(m_Arguments->GetProgramName() + ".log");
+            return x_SetupLogFile(m_Arguments->GetProgramName());
         }
         else {
             return x_SetupLogFiles();
@@ -1152,7 +1152,7 @@ string CNcbiApplication::GetLogFileName(EDiagFileType file_type) const
     }
     switch ( file_type ) {
     case eDiagFile_All:
-        return GetSplitLogFile() ? m_LogFileName : m_LogFileName + ".log";
+        return GetSplitLogFile() ? m_LogFileName : m_LogFileName;
     case eDiagFile_Err:
         return logname.empty() ? m_LogFileName + ".err" : logname;
     case eDiagFile_Log:
@@ -1209,6 +1209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.128  2006/09/07 20:10:32  grichenk
+ * Do not add '.log' to the log file name.
+ *
  * Revision 1.127  2006/08/30 18:08:13  ucko
  * Load global registry settings in addition to program-specific ones by
  * default (which can be overridden in various ways).
