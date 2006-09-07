@@ -38,6 +38,9 @@
 #endif
 
 #if defined(NCBI_OS_UNIX)
+#  if defined(NCBI_OS_SOLARIS)
+#    include <corelib/ncbifile.hpp>
+#  endif
 #  include <sys/time.h>
 #  include <sys/resource.h>
 #  include <sys/times.h>
@@ -615,6 +618,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/09/07 23:21:14  ucko
+ * +<corelib/ncbifile.hpp> on Solaris.
+ *
  * Revision 1.53  2006/09/07 19:46:01  ucko
  * Add a semi-portable GetMemoryUsage method.
  *
