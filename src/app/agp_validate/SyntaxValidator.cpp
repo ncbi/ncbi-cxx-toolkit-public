@@ -217,6 +217,42 @@ public:
     ps->AddAccRuns(digrun);
   }
 
+
+  // Replace "#" in a simple pattern like BCM_Spur_v#.#_Scaffold#
+  // with digits or numerical [ranges].
+  static string GetExpandedPattern(value_type* p)
+  {
+    return p->second->ExpandPattern(p->first);
+  }
+
+  static int GetCount(value_type* p)
+  {
+    return p->second->acc_count;
+  }
+
+  // >pointer to >value_type vector for sorting
+  typedef vector<value_type*> pv_vector;
+
+private:
+  // For sorting by accession count
+  static int x_byCount( value_type* a, value_type* b )
+  {
+    if( GetCount(a) != GetCount(b) ){
+      return GetCount(a) < GetCount(b);
+    }
+    return a->first < b->first;
+  }
+
+public:
+  void GetSortedValues(pv_vector& out)
+  {
+    out.clear(); out.reserve( size() );
+    for(iterator it = begin();  it != end(); ++it) {
+      out.push_back(&*it);
+    }
+    std::sort( out.begin(), out.end(), x_byCount );
+  }
+
 };
 
 CAgpSyntaxValidator::CAgpSyntaxValidator()
@@ -796,11 +832,11 @@ void CAgpSyntaxValidator::PrintTotals()
 
   AGP_POST("\nObject names and counts:");
   // TO DO:
-  //   sort by count;
   //   print not more than 50, not more than 10 with acc.count==1;
   //   instead of the omiited patterns, print:
   //     how many patterns were omitted,
   //     how many accessions they contain.
+  /*
   for(CObjNamePatternCounter::iterator it = objNamePatterns->begin();
       it != objNamePatterns->end(); ++it
   ) {
@@ -809,7 +845,20 @@ void CAgpSyntaxValidator::PrintTotals()
       << "\t" << it->second->acc_count << "\n"
     );
   }
+  */
 
+  // Get a vector with sorted map values
+  CObjNamePatternCounter::pv_vector pat_cnt;
+  objNamePatterns->GetSortedValues(pat_cnt);
+
+  for(CObjNamePatternCounter::pv_vector::iterator it =
+      pat_cnt.begin(); it != pat_cnt.end(); ++it
+  ) {
+    AGP_POST( "\t"
+      << CObjNamePatternCounter::GetExpandedPattern(*it) << "\t"
+      << CObjNamePatternCounter::GetCount(*it) << "\n"
+    );
+  }
 }
 
 const string& CAgpSyntaxValidator::PreviousLineToPrint()
