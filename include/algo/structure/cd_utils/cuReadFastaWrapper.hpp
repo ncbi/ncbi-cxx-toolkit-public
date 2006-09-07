@@ -52,13 +52,17 @@ public:
         m_cacheRawFasta = cacheRawString;
         m_rawFastaString = "";
         m_activeFastaString = "";
+        m_useBioseqSet = true;
         m_seqEntry.Reset();
     }
 
     virtual ~CFastaIOWrapper() {};
 
     virtual bool ReadFile(CNcbiIstream& iStream) = 0;
-    virtual bool Write(CNcbiOstream& ostream) {return false;};
+    virtual bool Write(CNcbiOstream& ostream) {
+        ostream << m_activeFastaString;
+        return (m_activeFastaString.length() > 0);
+    }
 
     //  Subclasses have option to fill in a CSeq_entry.
     bool HasSeqEntry() const {return m_seqEntry.NotEmpty();}
@@ -92,6 +96,9 @@ public:
 
     string GetError() {return m_error;}
 
+    bool IsUseBioseqSet() const { return m_useBioseqSet;}
+    void SetUseBioseqSet(bool useBioseqSet) { m_useBioseqSet = useBioseqSet;}
+
 protected:
 
     bool m_cacheRawFasta;
@@ -100,6 +107,7 @@ protected:
 
     string m_error;
 
+    bool m_useBioseqSet;  //  if true, force the CSeq_entry to use a Bioseq-set even if only one sequence
     CRef< CSeq_entry > m_seqEntry;
 
 };
@@ -109,7 +117,7 @@ protected:
 
 
 //  Uses the 'ReadFasta' C++-Toolkit function as a reader.
-//  The CSeq_entry has a CBioseq_set unless there's only one bioseq.
+//  By default, the CSeq_entry *always* has a CBioseq_set, even if there's only one bioseq.
 class NCBI_CDUTILS_EXPORT CBasicFastaWrapper : public CFastaIOWrapper {
 
 public:
@@ -154,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2006/09/07 17:34:14  lanczyck
+ * fixes so can read in file w/ a single sequence
+ *
  * Revision 1.2  2006/08/09 18:41:24  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *

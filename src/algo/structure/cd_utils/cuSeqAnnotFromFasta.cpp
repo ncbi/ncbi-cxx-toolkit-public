@@ -152,7 +152,6 @@ bool CSeqAnnotFromFasta::MakeSeqAnnotFromFasta(CNcbiIstream& is, CFastaIOWrapper
     CRef<CSeq_entry> seqEntry(new CSeq_entry);
     seqEntry->Assign(*fastaIO.GetSeqEntry());
 
-
     //  Need to make a new accession object since none exists.
     if (dummyCD.GetId().Get().size() == 0) {
         CRef< CCdd_id > cdId(new CCdd_id());
@@ -205,7 +204,6 @@ bool CSeqAnnotFromFasta::MakeIBMSeqAnnot(CCdCore& dummyCD)
     unsigned int nSeq = (unsigned int) dummyCD.GetNumSequences(), maxLenIndex = 0;
     unsigned char uc;
     string masterSequence, sequence;
-//    vector<string> columnStrings;
     vector<unsigned int> residueCount;  
     set<unsigned int> masterSeqIndices, forcedBreaks;  
 
@@ -213,16 +211,12 @@ bool CSeqAnnotFromFasta::MakeIBMSeqAnnot(CCdCore& dummyCD)
     typedef SeqStartMap::iterator SeqStartIt;
     typedef SeqStartMap::value_type SeqStartVT;
 
-//    bm::bvector<> bs;
-
     unsigned int nBlocks;
     vector<unsigned int> blockStarts;
     vector<unsigned int> blockLengths;
 
     if (nSeq == 0) {
         return false;
-    } else if (nSeq == 1) {
-        //  What do here?  Align to self??
     }
 
     //  Find the longest sequence; cache the sequence strings (which may have 
@@ -234,17 +228,14 @@ bool CSeqAnnotFromFasta::MakeIBMSeqAnnot(CCdCore& dummyCD)
 
     //  Count number of residues in each column.
     residueCount.resize(maxLen);
-//    columnStrings.resize(maxLen);
     for (i = 0; i < nSeq; ++i) {
         sequence = m_sequences[i];
         len = sequence.length();
         for (j = 0; j < len; ++j) {
             uc = toupper((unsigned char) sequence[j]);
-//            if (uc != 'X' && isalpha(uc)) {
             if (isalpha(uc)) {
                 ++residueCount[j];
             }
-//            columnStrings[j] += sequence[j];
         }
      }
 
@@ -265,18 +256,30 @@ bool CSeqAnnotFromFasta::MakeIBMSeqAnnot(CCdCore& dummyCD)
     if (! dummyCD.GetSeqIDForIndex(m_masterIndex, master)) return false;
 
     for (i = 0; i < nSeq; ++i) {
-        if (i == m_masterIndex) continue;
-        if (!dummyCD.GetSeqIDForIndex(i, slave)) return false;
 
-        CRef<CSeq_align> sa(new CSeq_align());
-        if (BuildMasterSlaveSeqAlign(master, slave, masterSequence, m_sequences[i], blockStarts, blockLengths, sa)) {
-            aligns.push_back(sa);
-            _TRACE("    Made IBM seq-align " << i);
-        }
-        
+        //  If one sequence, simply align it to itself
+        if (nSeq == 1) {
+
+            CRef<CSeq_align> sa(new CSeq_align());
+            if (BuildMasterSlaveSeqAlign(master, master, m_sequences[i], m_sequences[i], blockStarts, blockLengths, sa)) {
+                aligns.push_back(sa);
+                _TRACE("    Made IBM dummy seq-align " << i);
+            }
+
+        } else {
+
+            if (i == m_masterIndex) continue;
+            if (!dummyCD.GetSeqIDForIndex(i, slave)) return false;
+
+            CRef<CSeq_align> sa(new CSeq_align());
+            if (BuildMasterSlaveSeqAlign(master, slave, masterSequence, m_sequences[i], blockStarts, blockLengths, sa)) {
+                aligns.push_back(sa);
+                _TRACE("    Made IBM seq-align " << i);
+            }
+        }        
     }
 
-    if (aligns.size() == nSeq - 1) {
+    if (aligns.size() == nSeq - 1 || (nSeq == 1 && aligns.size() == nSeq)) {
         builtIt = true;
         PurgeNonAlphaFromCachedSequences();
         _TRACE("IBM Seq-annot installed in member variable m_seqAnnot\n");
@@ -294,7 +297,6 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
     unsigned int nSeq = (unsigned int) dummyCD.GetNumSequences(), maxLenIndex = 0;
     unsigned char uc;
     string sequence, masterSequence;
-//    string masterColumnString, slaveColumnString;
     vector<unsigned int> residueCount, masterResidueCount;  
     set<unsigned int> masterSeqIndices, forcedBreaks;  
 
@@ -309,8 +311,6 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
 
     if (nSeq == 0) {
         return false;
-    } else if (nSeq == 1) {
-        //  What do here?  Align to self??
     }
 
     //  Cache the sequence strings (keeping any gap characters at this point).
@@ -342,10 +342,25 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
 
     //  For each master-slave pair, flag the columns that are aligned.
     for (i = 0; i < nSeq; ++i) {
+
+        //  If one sequence, simply align it to itself
+        if (nSeq == 1) {
+
+            blockStarts.clear();
+            blockLengths.clear();
+            nBlocks = GetBlocksFromCounts(1, masterResidueCount, forcedBreaks, blockStarts, blockLengths);
+            if (nBlocks == 0) return false;
+
+            CRef<CSeq_align> sa(new CSeq_align());
+            if (BuildMasterSlaveSeqAlign(master, master, m_sequences[i], m_sequences[i], blockStarts, blockLengths, sa)) {
+                aligns.push_back(sa);
+                _TRACE("    Made IBM dummy seq-align " << i);
+            }
+            continue;
+        } 
+
         if (i == m_masterIndex) continue;
 
-//        masterColumnString.erase();
-//        slaveColumnString.erase();
         residueCount.assign(maxLen, 0);
         sequence = m_sequences[i];
         len = min((unsigned int)sequence.length(), masterLen);
@@ -355,8 +370,6 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
             if (isalpha(uc) && masterResidueCount[j] > 0) {
                 residueCount[j] = 1;
             }
-//            masterColumnString += masterSequence[j];
-//            slaveColumnString += sequence[j];
         }
 
         //  Find this pair's block model
@@ -380,7 +393,7 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
      }
 
 
-    if (aligns.size() == nSeq - 1) {
+    if (aligns.size() == nSeq - 1 || (nSeq == 1 && aligns.size() == nSeq)) {
         builtIt = true;
         PurgeNonAlphaFromCachedSequences();
         _TRACE("As-is Seq-annot installed in member variable m_seqAnnot\n");
@@ -403,6 +416,10 @@ unsigned int CSeqAnnotFromFasta::DetermineMasterIndex(CCdCore& dummyCD, Masterin
     vector<unsigned int> nGapsBySeq, nAlignedBySeq, nAlignedByCol, lengths;
     vector<string> tmpSeqs;
     const CPDB_seq_id* pPDB;
+
+    //  If one sequence, it must be the master.
+    if (dummyCD.GetNumSequences() == 1) 
+        method = eFirstSequence;
 
     switch (method) {
 
@@ -743,12 +760,16 @@ bool  CSeqAnnotFromFasta::BuildMasterSlaveSeqAlign(const CRef<CSeq_id>& masterSe
     return true;
 }
 
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/07 17:35:24  lanczyck
+ * fixes so can read in file w/ a single sequence
+ *
  * Revision 1.3  2006/06/07 20:34:16  lanczyck
  * comment out debugging code
  *

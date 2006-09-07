@@ -131,14 +131,12 @@ private:
     void CacheSequences(CCdCore& dummyCD, unsigned int& longestSequenceIndex, bool degapSequences);
 
     bool MakeIBMSeqAnnot(CCdCore& dummyCD);
+    bool MakeAsIsSeqAnnot(CCdCore& dummyCD);
 
     //  Make a seq_align from the block starts & lengths, where the starts are based 
     //  on the sequences passed in.  The seq-align is made by reindexing to a *gapless*
     //  version of the master and slave sequences.
     bool  BuildMasterSlaveSeqAlign(const CRef<CSeq_id>& masterSeqid, const CRef<CSeq_id>& slaveSeqid, const string& masterSequence, const string& slaveSequence, const vector<unsigned int>& blockStarts, const vector<unsigned int>& blockLengths, CRef<CSeq_align>& pairwiseSA); 
-
-
-    bool MakeAsIsSeqAnnot(CCdCore& dummyCD);
 
     //  Sets m_masterIndex as per the mastering method chosen.  Returns m_masterIndex.
     unsigned int DetermineMasterIndex(CCdCore& dummyCD, MasteringMethod masterMethod);
@@ -154,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2006/09/07 17:34:14  lanczyck
+ * fixes so can read in file w/ a single sequence
+ *
  * Revision 1.2  2006/08/09 18:41:24  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
