@@ -284,7 +284,11 @@ enum EDiagPostFlag {
     eDPF_All                = 0xFFFFF,
 
     /// Default flags to use when tracing.
+#if defined(NCBI_THREADS)
     eDPF_Trace              = 0xF81F,
+#else
+    eDPF_Trace              = 0x581F,
+#endif
 
     /// Print the posted message only; without severity, location, prefix, etc.
     eDPF_Log                = 0x0,
@@ -1562,6 +1566,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.115  2006/09/07 19:31:13  grichenk
+ * Print TID and thread serial number from TRACE only in MT.
+ *
  * Revision 1.114  2006/09/05 18:54:55  grichenk
  * Added eDPF_AtomicWrite flag. Modified handlers to
  * enable atomic write.
