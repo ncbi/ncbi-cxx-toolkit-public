@@ -1,7 +1,7 @@
 # $Id$
 
 APP = agp_validate
-SRC = agp_validate db SyntaxValidator
+SRC = agp_validate db SyntaxValidator AccessionPatterns
 
 LIB = entrez2cli entrez2 taxon1 ncbi_xdbapi_ftds$(STATIC) $(FTDS_LIB) \
 	  dbapi$(STATIC) dbapi_driver$(STATIC) xobjutil $(OBJMGR_LIBS:%=%$(STATIC))

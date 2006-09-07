@@ -82,7 +82,7 @@ struct SDataLine {
   string  linkage;
 };
 
-class CObjNamePatternCounter;
+class CAccPatternCounter;
 
 class CAgpSyntaxValidator
 {
@@ -212,7 +212,7 @@ protected:
   // true: print the previous line as well, to illustrate the error better
   bool post_prev;
 
-  CObjNamePatternCounter* objNamePatterns;
+  CAccPatternCounter* objNamePatterns;
 };
 
 END_NCBI_SCOPE

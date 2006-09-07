@@ -267,7 +267,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
 
       m_CurrentFileName =
           args['#' + NStr::IntToString(i)].AsString();
-      AGP_POST("\n"<<m_CurrentFileName);
+      AGP_POST(m_CurrentFileName<<"\n");
       CNcbiIstream& istr =
           args['#' + NStr::IntToString(i)].AsInputFile();
       if (!istr) {
