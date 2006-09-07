@@ -63,6 +63,15 @@ BEGIN_SCOPE(blast)
 #define GAP_VALUE -1
 #endif
 
+/// Duplicate any serial object.
+template<class TObj>
+CRef<TObj> s_DuplicateObject(const TObj & id)
+{
+    CRef<TObj> id2(new TObj);
+    SerialAssign(*id2, id);
+    return id2;
+}
+
 // Declared in blast_seqinfosrc.hpp
 void
 GetSequenceLengthAndId(const IBlastSeqInfoSrc * seqinfo_src,
@@ -305,13 +314,11 @@ s_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
     dense_seg->SetDim(2);
 
     // Set the sequence ids
-    CDense_seg::TIds& ids = dense_seg->SetIds();
-    CRef<CSeq_id> tmp(new CSeq_id(master->AsFastaString()));
-    ids.push_back(tmp);
-    tmp.Reset(new CSeq_id(slave->AsFastaString()));
-    ids.push_back(tmp);
+    CDense_seg::TIds & ids = dense_seg->SetIds();
+    ids.push_back(s_DuplicateObject(*master));
+    ids.push_back(s_DuplicateObject(*slave));
     ids.resize(dense_seg->GetDim());
-
+    
     dense_seg->SetLens() = lengths;
     dense_seg->SetStrands() = strands;
     dense_seg->SetStarts() = starts;
@@ -343,9 +350,9 @@ s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
     int nsegs = (int) lengths.size();   // number of segments in alignment
     TSignedSeqPos m_start, m_stop;      // start and stop for master sequence
     TSignedSeqPos s_start, s_stop;      // start and stop for slave sequence
-
-    CRef<CSeq_id> master_id(new CSeq_id(master->AsFastaString()));
-    CRef<CSeq_id> slave_id(new CSeq_id(slave->AsFastaString()));
+    
+    CRef<CSeq_id> master_id = s_DuplicateObject(*master);
+    CRef<CSeq_id> slave_id = s_DuplicateObject(*slave);
     
     for (int i = 0; i < nsegs; i++) {
         CRef<CStd_seg> std_seg(new CStd_seg());
@@ -632,14 +639,14 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
             slp1->SetInt().SetFrom(s_GetCurrPos(start1, esp->num[index]));
             slp1->SetInt().SetTo(MIN(start1,original_length1) - 1);
-            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            tmp = s_DuplicateObject(*id1);
             slp1->SetInt().SetId(*tmp);
             slp1->SetInt().SetStrand(strand1);
             
             /* Empty nucleotide piece */
-            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            tmp = s_DuplicateObject(*id2);
             slp2->SetEmpty(*tmp);
-
+            
             seq_int1_last.Reset(&slp1->SetInt());
             /* Keep previous seq_int2_last, in case there is a frame shift
                immediately after this gap */
@@ -655,7 +662,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 slp1->SetInt().SetFrom(s_GetCurrPos(start1, 1));
                 to1 = MIN(start1,original_length1) - 1;
                 slp1->SetInt().SetTo(to1);
-                tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                tmp = s_DuplicateObject(*id1);
                 slp1->SetInt().SetId(*tmp);
                 slp1->SetInt().SetStrand(strand1);
                 
@@ -673,7 +680,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                     slp2->SetInt().SetFrom(original_length2 - to2 - 1);
                 }
                 
-                tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                tmp = s_DuplicateObject(*id2);
                 slp2->SetInt().SetId(*tmp);
                 slp2->SetInt().SetStrand(strand2);
 
@@ -685,16 +692,16 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 if (reverse) {
                     seg->SetLoc().push_back(slp2);
                     seg->SetLoc().push_back(slp1);
-                    tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                    tmp = s_DuplicateObject(*id2);
                     ids.push_back(tmp);
-                    tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                    tmp = s_DuplicateObject(*id1);
                     ids.push_back(tmp);
                 } else {
                     seg->SetLoc().push_back(slp1);
                     seg->SetLoc().push_back(slp2);
-                    tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                    tmp = s_DuplicateObject(*id1);
                     ids.push_back(tmp);
-                    tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                    tmp = s_DuplicateObject(*id2);
                     ids.push_back(tmp);
                 }
                 ids.resize(seg->GetDim());
@@ -705,7 +712,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
             first_shift = false;
 
             /* Protein piece is empty */
-            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            tmp = s_DuplicateObject(*id1);
             slp1->SetEmpty(*tmp);
             
             /* Nucleotide scale shifted by 3, protein gapped */
@@ -719,7 +726,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 slp2->SetInt().SetTo(original_length2 - from2 - 1);
                 slp2->SetInt().SetFrom(original_length2 - to2 - 1);
             }
-            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            tmp = s_DuplicateObject(*id2);
             slp2->SetInt().SetId(*tmp);
             slp2->SetInt().SetStrand(strand2);
             
@@ -756,12 +763,12 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
             slp1->SetInt().SetFrom(from1);
             slp1->SetInt().SetTo(to1);
-            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            tmp = s_DuplicateObject(*id1);
             slp1->SetInt().SetId(*tmp);
             slp1->SetInt().SetStrand(strand1);
             slp2->SetInt().SetFrom(from2);
             slp2->SetInt().SetTo(to2);
-            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            tmp = s_DuplicateObject(*id2);
             slp2->SetInt().SetId(*tmp);
             slp2->SetInt().SetStrand(strand2);
            
@@ -797,12 +804,12 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
                 slp1->SetInt().SetFrom(from1);
                 slp1->SetInt().SetTo(to1);
-                tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                tmp = s_DuplicateObject(*id1);
                 slp1->SetInt().SetId(*tmp);
                 slp1->SetInt().SetStrand(strand1);
                 slp2->SetInt().SetFrom(from2);
                 slp2->SetInt().SetTo(to2);
-                tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                tmp = s_DuplicateObject(*id2);
                 slp2->SetInt().SetId(*tmp);
                 slp2->SetInt().SetStrand(strand2);
 
@@ -844,7 +851,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 
             } else if ((Uint1)esp->op_type[index] > 3) {
                 /* Protein piece is empty */
-                tmp.Reset(new CSeq_id(id1->AsFastaString()));
+                tmp = s_DuplicateObject(*id1);
                 slp1->SetEmpty(*tmp);
                 /* Simulating insertion of nucleotides */
                 from2 = s_GetCurrPos(start2, 
@@ -861,7 +868,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 slp2->SetInt().SetFrom(from2);
                 slp2->SetInt().SetTo(to2);
                 
-                tmp.Reset(new CSeq_id(id2->AsFastaString()));
+                tmp = s_DuplicateObject(*id2);
                 slp2->SetInt().SetId(*tmp);
 
                 seq_int1_last.Reset(NULL);
@@ -885,16 +892,16 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
         if (reverse) {
             seg->SetLoc().push_back(slp2);
             seg->SetLoc().push_back(slp1);
-            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            tmp = s_DuplicateObject(*id2);
             ids.push_back(tmp);
-            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            tmp = s_DuplicateObject(*id1);
             ids.push_back(tmp);
         } else {
             seg->SetLoc().push_back(slp1);
             seg->SetLoc().push_back(slp2);
-            tmp.Reset(new CSeq_id(id1->AsFastaString()));
+            tmp = s_DuplicateObject(*id1);
             ids.push_back(tmp);
-            tmp.Reset(new CSeq_id(id2->AsFastaString()));
+            tmp = s_DuplicateObject(*id2);
             ids.push_back(tmp);
         }
         ids.resize(seg->GetDim());
@@ -1024,14 +1031,12 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
 
     // Set the sequence ids
     CDense_diag::TIds& ids = retval->SetIds();
-    CRef<CSeq_id> tmp(new CSeq_id(query_id->AsFastaString()));
-    ids.push_back(tmp);
-    tmp.Reset(new CSeq_id(subject_id->AsFastaString()));
-    ids.push_back(tmp);
+    ids.push_back(s_DuplicateObject(*query_id));
+    ids.push_back(s_DuplicateObject(*subject_id));
     ids.resize(retval->GetDim());
-
+    
     retval->SetLen(hsp->query.end - hsp->query.offset);
-
+    
     CDense_diag::TStrands& strands = retval->SetStrands();
     strands.push_back(s_Frame2Strand(hsp->query.frame));
     strands.push_back(s_Frame2Strand(hsp->subject.frame));
@@ -1078,10 +1083,10 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
 
     // Set the sequence ids
     CStd_seg::TIds& ids = retval->SetIds();
-    CRef<CSeq_id> tmp(new CSeq_id(query_id->AsFastaString()));
+    CRef<CSeq_id> tmp = s_DuplicateObject(*query_id);
     query_loc->SetInt().SetId(*tmp);
     ids.push_back(tmp);
-    tmp.Reset(new CSeq_id(subject_id->AsFastaString()));
+    tmp = s_DuplicateObject(*subject_id);
     subject_loc->SetInt().SetId(*tmp);
     ids.push_back(tmp);
     ids.resize(retval->GetDim());
@@ -1688,6 +1693,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2006/09/07 17:15:15  bealer
+* - Duplicate Seq-ids via SerialAssign rather than AsFastaString().
+*
 * Revision 1.77  2006/09/01 16:45:53  camacho
 * Use size_type whenever possible
 *
