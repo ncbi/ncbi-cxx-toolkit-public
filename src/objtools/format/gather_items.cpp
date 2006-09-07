@@ -197,6 +197,26 @@ void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry) const
 } 
 
 
+static bool s_LocationsTouch( const CSeq_loc& loc1, const CSeq_loc& loc2 )
+{
+    CRange<TSeqPos> rg1, rg2;
+    try {
+        rg1 = loc1.GetTotalRange();
+        rg2 = loc2.GetTotalRange();
+    }
+    catch( ... ) {
+        return false;
+    }
+    return (rg1.GetFrom() == rg2.GetTo() + 1) || (rg1.GetTo() + 1 == rg2.GetFrom());
+};
+
+
+static bool s_LocationsOverlap( const CSeq_loc& loc1, const CSeq_loc& loc2 )
+{
+    return ( -1 != TestForOverlap( loc1, loc2, eOverlap_Simple, kInvalidSeqPos, 0 ) );
+};
+
+
 static bool s_IsSegmented(const CBioseq_Handle& seq)
 {
     return seq  &&
@@ -1051,13 +1071,13 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
         return;
     }
 
-//    if (!m_Current->Config().IsModeDump()) {
-//        x_MergeEqualBioSources(srcs);
-//    }
+    if (!m_Current->Config().IsModeDump()) {
+        x_MergeEqualBioSources(srcs);
+    }
     
     // sort by type (descriptor / feature) and location
     sort(srcs.begin(), srcs.end(), SSortSourceByLoc());
-    
+
     // if the descriptor has a focus (by now sorted to be first),
     // subtract out all other source locations.
     if (srcs.front()->IsFocus()  &&  !srcs.front()->IsSynthetic()) {
@@ -1093,16 +1113,21 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
             const CSeq_feat& f = (*it)->GetFeat();
             const string& c = f.IsSetComment() ? f.GetComment() : kEmptyStr;
             if (NStr::EqualNocase(c2, c)  &&
-                (*it2)->GetSource().Equals((*it)->GetSource())) {
-                CRef<CSeq_loc> merged_loc = 
-                    Seq_loc_Add((*it2)->GetLoc(),(*it)->GetLoc(),
-                                CSeq_loc::fSort | CSeq_loc::fMerge_All,
-                                &m_Current->GetScope());
-                (*it2)->SetLoc(*merged_loc);
-                it = srcs.erase(it);
-            } else {
-                ++it;
+                (*it2)->GetSource().Equals((*it)->GetSource())) 
+            {
+                if ( s_LocationsOverlap( (*it)->GetLoc(), (*it2)->GetLoc() ) ||
+                    s_LocationsTouch(  (*it)->GetLoc(), (*it2)->GetLoc() ) )
+                {
+                    CRef<CSeq_loc> merged_loc = 
+                        Seq_loc_Add((*it2)->GetLoc(),(*it)->GetLoc(),
+                                    CSeq_loc::fSort | CSeq_loc::fMerge_All,
+                                    &m_Current->GetScope());
+                    (*it2)->SetLoc(*merged_loc);
+                    it = srcs.erase(it);
+                    continue;
+                }
             }
+            ++it;
         }
         it = ++it2;
     }
@@ -1181,7 +1206,7 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, const CBioseq_Handle& seq)
     return (last  &&  seq.IsSynonym(last.GetSeq_id()));
 }
 
-
+/* gcc warning: "defined but not used"
 static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
 {
     if ( ctx.GetMapper() != 0 ) {
@@ -1209,7 +1234,7 @@ static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
     }
     return mapper;
 }
-
+*/
 
 static bool s_CopyCDSFromCDNA(CBioseqContext& ctx)
 {
@@ -1635,6 +1660,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2006/09/07 18:42:39  ludwigf
+* CHANGED: Source features that differ only in location will be merged IFF
+*  the underlying locations touch each other.
+*
 * Revision 1.59  2006/09/06 13:51:51  ludwigf
 * FIXED: Maping of features back to CDS would not take frame number into
 *  account.
