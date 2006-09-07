@@ -2067,11 +2067,13 @@ extern bool SetLogFile(const string& file_name,
         }
         else {
             // output to file
-            CNcbiOfstream* str = new CNcbiOfstream(file_name.c_str(),
+            string file_name_ext = file_name + ".log";
+            CNcbiOfstream* str = new CNcbiOfstream(file_name_ext.c_str(),
                 mode);
             if ( !str->is_open() ) {
                 SetLogFile("-", eDiagFile_All, quick_flush);
-                ERR_POST(Warning << "Failed to initialize log: " << file_name);
+                ERR_POST(Warning << "Failed to initialize log: "
+                    << file_name_ext);
                 return false;
             }
             else {
@@ -2833,6 +2835,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.129  2006/09/07 19:32:24  grichenk
+ * Add '.log' to the file name in SetLogFile().
+ *
  * Revision 1.128  2006/09/05 18:54:55  grichenk
  * Added eDPF_AtomicWrite flag. Modified handlers to
  * enable atomic write.
