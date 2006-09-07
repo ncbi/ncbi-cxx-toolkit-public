@@ -53,6 +53,16 @@ static void Test_General(void)
 
     // Number of processors
     cout << "Number of processors: " << GetCpuCount() << endl;
+    cout << "Page size: " << GetVirtualMemoryPageSize() << endl;
+
+    size_t total, resident, shared;
+    if (GetMemoryUsage(&total, &resident, &shared)) {
+        cout << "Total memory usage (in bytes):  " << total    << endl;
+        cout << "Resident set size (in bytes):   " << resident << endl;
+        cout << "Shared memory usage (in bytes): " << shared   << endl;
+    } else {
+        cout << "Couldn't determine memory usage." << endl;
+    }
 }
 
 
@@ -188,6 +198,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2006/09/07 19:46:17  ucko
+ * Test_General: report page size and memory usage (if determinable)
+ *
  * Revision 6.9  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
