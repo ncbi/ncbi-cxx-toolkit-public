@@ -82,10 +82,13 @@ struct SDataLine {
   string  linkage;
 };
 
+class CObjNamePatternCounter;
+
 class CAgpSyntaxValidator
 {
 public:
   CAgpSyntaxValidator();
+  ~CAgpSyntaxValidator();
   // former CAgpValidateApplication::x_ValidateSyntaxLine
   bool ValidateLine(
     CNcbiOstrstream* msgStream, const SDataLine& dl,
@@ -120,6 +123,7 @@ protected:
   int m_CompPosCount;
   int m_CompNegCount;
   int m_CompZeroCount;
+  int m_CompNaCount;
   int m_GapCount;
 
   // count the dfiffernt types of gaps
@@ -207,6 +211,8 @@ protected:
 
   // true: print the previous line as well, to illustrate the error better
   bool post_prev;
+
+  CObjNamePatternCounter* objNamePatterns;
 };
 
 END_NCBI_SCOPE

@@ -40,8 +40,189 @@ USING_NCBI_SCOPE;
 
 BEGIN_NCBI_SCOPE
 
+// Stores minimal and maximal values for a run of up to 15 digits.
+// A more precise name might be be "CRunOfDigitsStatistics"
+// We preserve leading zeroes by storing min/max values as strings.
+// We also count how many times min and max values occur.
+class CRunOfDigits
+{
+public:
+  double min_val, max_val;
+  string min_str, max_str;
+  int min_val_count, max_val_count, total_count;
+
+  // If these lengths are not equal,
+  // then the following optimization must be suppressed:
+  // AC[00001..0085] -> AC00[01..85]
+  int min_len, max_len;
+
+  CRunOfDigits()
+  {
+    min_val=kMax_Double; max_val=0;
+    min_val_count=max_val_count=total_count=0;
+    min_len=100; max_len=0;
+  }
+
+  void AddString(const string& s)
+  {
+    total_count++;
+
+    double d=NStr::StringToDouble(s);
+    if(d<min_val) {
+      min_val=d;
+      min_str=s;
+      min_val_count=1;
+    }
+    else if(d==min_val) {
+      min_val_count++;
+    }
+
+    if(d>max_val) {
+      max_val=d;
+      max_str=s;
+      max_val_count=1;
+    }
+    else if(d==max_val) {
+      max_val_count++;
+    }
+
+    int i=s.size();
+    if(i<min_len) min_len=1;
+    if(i>max_len) max_len=i;
+  }
+
+  // Returns a string represeting the range of values in this run of digits.
+  // Possible formats:
+  //   [min_val..max_val]
+  //   min_val            when there was just one value in this run;
+  //
+  //   [min_val,max_val]  when there were exactly 2 values in this run;
+  //   prefix[from..to]   | when min_val and max_val start with a common prefix
+  //   prefix[from,to]    | and all submitted strings have the same length
+  string GetString() const
+  {
+    if(min_val==max_val) return min_str;
+    int prefix_len=0;
+    if(min_len==max_len) {
+      // Can optimize: // [0001..0085] -> 00[01..85]
+      while( prefix_len<min_len &&
+        min_str[prefix_len] == max_str[prefix_len]
+      ) prefix_len++;
+    }
+
+    string sep=".."; // A range
+    if(min_val_count+max_val_count==total_count) {
+      sep=","; // Just 2 values
+    }
+    return min_str.substr(0,prefix_len) + "[" +
+      min_str.substr(prefix_len) + sep +
+      max_str.substr(prefix_len) + "]";
+  }
+};
+
+typedef vector<CRunOfDigits> CRunsOfDigits;
+class CPatternStats
+{
+public:
+  typedef vector<string> TStrVec;
+
+  int acc_count;
+  CRunsOfDigits* runs;
+
+  // runs_count is the number of continuous digit runs,
+  // e.g. 2 for "AC01234.5". runs_count is the same
+  // for all accessions of the same pattern.
+  CPatternStats(int runs_count)
+  {
+    acc_count=0;
+    runs = new CRunsOfDigits(runs_count);
+  }
+  ~CPatternStats()
+  {
+    delete runs;
+  }
+
+  void AddAccRuns(TStrVec& runs_str)
+  {
+    acc_count++;
+    for( SIZE_TYPE i=0; i<runs_str.size(); i++ ) {
+      (*runs)[i].AddString(runs_str[i]);
+    }
+  }
+
+  // Replace "#" in a simple pattern like BCM_Spur_v#.#_Scaffold#
+  // with digits or numerical [ranges].
+  string ExpandPattern(const string& pattern) const
+  {
+    int i = 0;
+    SIZE_TYPE pos = 0;
+    string res = pattern;
+
+    for(;;) {
+      pos = NStr::Find(res, "#", pos);
+      if(pos==NPOS) break;
+
+      res.replace( pos, 1, (*runs)[i].GetString() );
+      i++;
+    }
+    return res;
+  }
+};
+
+
+/* Display accession naming patterns.
+ * Replace all groups of digits in accessions
+ * with numerical ranges; keep a digit at a given place
+ * if only one digit is possible there.
+ */
+class CObjNamePatternCounter : public map<string, CPatternStats*>
+{
+public:
+  void addObject(const string& name)
+  {
+    string s;
+    s.reserve(name.size());
+
+    // Replace runs of digits with # -> s;
+    // collect those runs in digrun.
+    bool prev_digit=false;
+    vector<string> digrun;
+    for(SIZE_TYPE i=0; i<name.size(); i++) {
+      if( isdigit(name[i]) ) {
+        if(!prev_digit) {
+          s+="#";
+          prev_digit=true;
+          digrun.push_back(NcbiEmptyString);
+        }
+        digrun.back() += name[i];
+      }
+      else{
+        prev_digit=false;
+        s+=name[i];
+      }
+    }
+
+    // Using the "#pattern" (s) as a key in this map,
+    // add digrun values to the statistics.
+    iterator it = find(s);
+    CPatternStats* ps;
+    if(it==end()) {
+      ps = new CPatternStats( digrun.size() );
+      insert( value_type(s, ps) );
+    }
+    else {
+      ps = it->second;
+    }
+
+    ps->AddAccRuns(digrun);
+  }
+
+};
+
 CAgpSyntaxValidator::CAgpSyntaxValidator()
 {
+  objNamePatterns = new CObjNamePatternCounter();
+
   prev_end = 0;
   prev_part_num = 0;
   prev_line_num = 0;
@@ -56,6 +237,7 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_CompPosCount = 0;
   m_CompNegCount = 0;
   m_CompZeroCount = 0;
+  m_CompNaCount = 0;
   m_GapCount = 0;
 
   m_TypeGapCnt["contigyes"] = 0;
@@ -99,16 +281,23 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_ComponentTypeValues.insert("F");
   m_ComponentTypeValues.insert("G");
   m_ComponentTypeValues.insert("P");
-  m_ComponentTypeValues.insert("N");
+  m_ComponentTypeValues.insert("N"); // gap
   m_ComponentTypeValues.insert("O");
+  // m_ComponentTypeValues.insert("U"); // gap of unknown size
   m_ComponentTypeValues.insert("W");
 
   m_OrientaionValues.insert("+");
   m_OrientaionValues.insert("-");
   m_OrientaionValues.insert("0");
+  m_OrientaionValues.insert("na");
 
   m_LinkageValues["no" ] = LINKAGE_no;
   m_LinkageValues["yes"] = LINKAGE_yes;
+}
+
+CAgpSyntaxValidator::~CAgpSyntaxValidator()
+{
+  delete objNamePatterns;
 }
 
 bool CAgpSyntaxValidator::ValidateLine(
@@ -165,6 +354,8 @@ bool CAgpSyntaxValidator::ValidateLine(
     if (obj_insert_result.second == false) {
       AGP_ERROR("Duplicate object: " << dl.object);
     }
+
+    objNamePatterns->addObject(dl.object);
   }
 
   obj_begin = x_CheckIntField(
@@ -395,20 +586,28 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     error = true;
   }
 
-  //// Orientation must be "+"  or " -"
+  //// Orientation: + - 0 na
   if (x_CheckValues(
     dl.line_num, m_OrientaionValues, dl.orientation,
     "orientation"
   )) {
+    // todo: avoid additional string comparisons;
+    // use array for counting; count invalid orientations
+
     if( dl.orientation == "0") {
       AGP_ERROR( "Component cannot have an unknown orientation"
       );
       m_CompZeroCount++;
       error = true;
-    } else if (dl.orientation == "+") {
-        m_CompPosCount++;
-    } else {
-        m_CompNegCount++;
+    }
+    else if (dl.orientation == "+") {
+      m_CompPosCount++;
+    }
+    else if (dl.orientation == "-") {
+      m_CompNegCount++;
+    }
+    else {
+      m_CompNaCount++;
     }
   } else {
     error = true;
@@ -562,14 +761,15 @@ int CAgpSyntaxValidator::x_CheckValues(
 void CAgpSyntaxValidator::PrintTotals()
 {
   AGP_POST("\n"
-    "Objects     : " << m_ObjCount << "\n" <<
+    "Objects     : " << m_ObjCount << "\n"
     "Scaffolds   : " << m_ScaffoldCount   << "\n"
     "  singletons: " << m_SingletonCount << "\n\n"
-    "Unique Component Accessions: "<< m_CompId2Spans.size() <<"\n"<<
-    "Lines with Components      : " << m_CompCount        << "\n" <<
-    "\torientation +      : " << m_CompPosCount   << "\n" <<
-    "\torientation -      : " << m_CompNegCount   << "\n" <<
-    "\torientation 0      : " << m_CompZeroCount  << "\n\n"
+    "Unique Component Accessions: "<< m_CompId2Spans.size() <<"\n"
+    "Lines with Components      : " << m_CompCount        << "\n"
+    "\torientation +      : " << m_CompPosCount   << "\n"
+    "\torientation -      : " << m_CompNegCount   << "\n"
+    "\torientation 0      : " << m_CompZeroCount  << "\n"
+    "\torientation na     : "<< m_CompNaCount    << "\n\n"
 
  << "Gaps: " << m_GapCount
  << "\n\t   with linkage: yes\tno"
@@ -593,6 +793,23 @@ void CAgpSyntaxValidator::PrintTotals()
  //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
  //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
   );
+
+  AGP_POST("\nObject names and counts:");
+  // TO DO:
+  //   sort by count;
+  //   print not more than 50, not more than 10 with acc.count==1;
+  //   instead of the omiited patterns, print:
+  //     how many patterns were omitted,
+  //     how many accessions they contain.
+  for(CObjNamePatternCounter::iterator it = objNamePatterns->begin();
+      it != objNamePatterns->end(); ++it
+  ) {
+    AGP_POST( "\t"
+      << it->second->ExpandPattern( it->first)
+      << "\t" << it->second->acc_count << "\n"
+    );
+  }
+
 }
 
 const string& CAgpSyntaxValidator::PreviousLineToPrint()
