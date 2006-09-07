@@ -81,7 +81,7 @@ if test $buildptb = "no"; then
   ptb="$extptb"
   if test -x "$ptb"; then
     ptbver=`$ptb -version 2>&1 | sed -e 's/[a-zA-Z._: ]//g'`
-    if test $ptbver -lt 121; then
+    if test $ptbver -lt 122; then
       $ptb -version 2>&1
       echo "Prebuilt project_tree_builder at"
       echo $extptb
@@ -108,7 +108,8 @@ test -f "$ptbini" || Usage "$ptbini not found"
 
 COMMON_Exec cd $builddir
 if test "$buildptb" = "yes"; then
-  ptbdep="corelib util serial serial/datatool app/project_tree_builder"
+#  ptbdep="corelib util serial serial/datatool app/project_tree_builder"
+  ptbdep="corelib util app/project_tree_builder"
   for dep in $ptbdep; do
     test -d "$dep"          || Usage "$builddir/$dep not found"
     test -f "$dep/Makefile" || Usage "$builddir/$dep/Makefile not found"
