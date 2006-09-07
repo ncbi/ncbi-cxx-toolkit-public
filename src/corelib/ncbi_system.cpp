@@ -67,9 +67,26 @@ extern "C" {
 #endif
 
 #if defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbidll.hpp>
 #  include <crtdbg.h>
+// #  include <psapi.h>
 #  include <stdlib.h>
 #  include <windows.h>
+
+struct SProcessMemoryCounters
+{
+    DWORD  size;
+    DWORD  page_fault_count;
+    SIZE_T peak_working_set_size;
+    SIZE_T working_set_size;
+    SIZE_T quota_peak_paged_pool_usage;
+    SIZE_T quota_paged_pool_usage;
+    SIZE_T quota_peak_nonpaged_pool_usage;
+    SIZE_T quota_nonpaged_pool_usage;
+    SIZE_T pagefile_usage;
+    SIZE_T peak_pagefile_usage;
+};
+
 #endif
 
 
@@ -437,6 +454,69 @@ unsigned long GetVirtualMemoryPageSize(void)
 }
 
 
+bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
+{
+    size_t scratch;
+    if ( !total )    { total    = &scratch; }
+    if ( !resident ) { resident = &scratch; }
+    if ( !shared )   { shared   = &scratch; }
+#ifdef NCBI_OS_MSWIN
+    try {
+        // Load PSAPI dynamic library -- it should exist on MS-Win NT/2000/XP
+        CDll psapi_dll("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
+        BOOL (STDMETHODCALLTYPE FAR * dllGetProcessMemoryInfo)
+            (HANDLE process, SProcessMemoryCounters& counters, DWORD size) = 0;
+        dllGetProcessMemoryInfo
+            = psapi_dll.GetEntryPoint_Func("GetProcessMemoryInfo",
+                                           &dllGetProcessMemoryInfo);
+        if (dllGetProcessMemoryInfo) {
+            SProcessMemoryCounters counters;
+            dllGetProcessMemoryInfo(GetCurrentProcess(), &counters,
+                                    sizeof(counters));
+            *total    = counters.quota_paged_pool_usage
+                        + counters.quota_nonpaged_pool_usage;
+            *resident = counters.working_set_size;
+            *shared   = 0;
+            return true;
+        }
+    } catch (CException) {
+        // Just catch all exceptions from CDll
+    }
+#elif defined(NCBI_OS_LINUX)
+    static unsigned long page_size = GetVirtualMemoryPageSize();
+    CNcbiIfstream statm("/proc/self/statm");
+    if (statm) {
+        statm >> *total >> *resident >> *shared;
+        *total    *= page_size;
+        *resident *= page_size;
+        *shared   *= page_size;
+        return true;
+    }
+#elif defined(NCBI_OS_SOLARIS)
+    Int8 len = CFile("/proc/self/as").GetLength();
+    if (len > 0) {
+        *total    = len;
+        *resident = len; // conservative estimate
+        *shared   = 0;   // does this info exist anywhere?
+        return true;
+    }
+#elif defined(HAVE_GETRUSAGE)
+    struct rusage ru;
+    memset(&ru, '0', sizeof(ru));
+    if (getrusage(RUSAGE_SELF, &ru) >= 0  &&  ru.ru_maxrss > 0) {
+        // XXX - account for "ticks of execution"?
+        *total = ru.ru_ixrss + ru.ru_idrss + ru.ru_isrss;
+        *resident = ru.ru_maxrss;
+        *shared = ru.ru_ixrss;
+        return true;
+    } else {
+        return false;
+    }
+#endif
+    return false;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Sleep
@@ -535,6 +615,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/09/07 19:46:01  ucko
+ * Add a semi-portable GetMemoryUsage method.
+ *
  * Revision 1.52  2006/03/24 13:51:33  ivanov
  * SleepMicroSec [Unix]: use advantage of SELECT_UPDATES_TIMEOUT
  *

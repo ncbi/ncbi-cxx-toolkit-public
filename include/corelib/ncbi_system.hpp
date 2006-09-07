@@ -136,6 +136,12 @@ NCBI_XNCBI_EXPORT
 extern unsigned long GetVirtualMemoryPageSize(void);
 
 
+/// [UNIX & Windows] Return current memory usage, in bytes.
+/// NULL arguments will not be filled in.
+/// Returns true if able to determine memory usage, and false otherwise.
+NCBI_XNCBI_EXPORT
+extern bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared);
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Sleep
@@ -198,6 +204,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/09/07 19:45:55  ucko
+ * Add a semi-portable GetMemoryUsage method.
+ *
  * Revision 1.20  2006/03/14 13:24:57  ivanov
  * Sleep*(): added parameter of EInterruptOnSignal type.
  * [Unix] try to utilize unslept part of the time if interrupted by a signal.
