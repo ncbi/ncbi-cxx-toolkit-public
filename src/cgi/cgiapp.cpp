@@ -418,6 +418,10 @@ CCgiApplication::CCgiApplication(void)
    m_HTTPStatus(200),
    m_RequestTimer(CStopWatch::eStop)
 {
+    // Turn on iteration number
+    SetDiagPostFlag(eDPF_Iteration);
+    SetDiagTraceFlag(eDPF_Iteration);
+
     SetStdioFlags(fBinaryCin | fBinaryCout);
     DisableArgDescriptions();
     RegisterDiagFactory("stderr", new CStderrDiagFactory);
@@ -911,7 +915,7 @@ string CCgiApplication::GetLogFileName(EDiagFileType file_type) const
     string logname = GetArguments().GetProgramBasename();
     switch ( file_type ) {
     case eDiagFile_All:
-        return GetSplitLogFile() ? logname : logname + ".log";
+        return logname;
     case eDiagFile_Err:
         return logname + ".err";
     case eDiagFile_Log:
@@ -1151,6 +1155,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.86  2006/09/08 15:34:36  grichenk
+* Turn on iteration number in logs for all CGIs.
+* Do not add '.log' to the log file name.
+*
 * Revision 1.85  2006/08/24 16:17:44  grichenk
 * Fixed parsing of absolute paths from /etc/toolkitrc.
 *

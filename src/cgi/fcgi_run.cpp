@@ -344,10 +344,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     // Main Fast-CGI loop
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
 
-    // Turn on iteration number
-    SetDiagPostFlag(eDPF_Iteration);
-    SetDiagTraceFlag(eDPF_Iteration);
-
     for (m_Iteration = 1;  m_Iteration <= max_iterations;  ++m_Iteration) {
 
         // Make sure to restore old diagnostic state after each iteration
@@ -632,6 +628,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.65  2006/09/08 15:34:36  grichenk
+ * Turn on iteration number in logs for all CGIs.
+ * Do not add '.log' to the log file name.
+ *
  * Revision 1.64  2006/09/07 19:31:46  grichenk
  * Turn on iteration number in log.
  *
