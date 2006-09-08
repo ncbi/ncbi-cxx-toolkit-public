@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq seqalign blast
+ASN_DEP = seq blast xnetblast
 
 SRC = contig_assembly
 
