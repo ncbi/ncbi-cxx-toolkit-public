@@ -90,6 +90,10 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
 }
 
+CBlastPrelimSearch::~CBlastPrelimSearch()
+{
+}
+
 void
 CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CRef<CBlastOptions> options,

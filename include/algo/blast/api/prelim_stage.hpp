@@ -82,6 +82,8 @@ public:
                        BlastSeqSrc* seqsrc,
                        CConstRef<objects::CPssmWithParameters> pssm);
 
+    ~CBlastPrelimSearch();
+
     /// Borrow the internal data and results results. 
     CRef<SInternalData> Run();
 
