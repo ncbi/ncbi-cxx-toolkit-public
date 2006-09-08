@@ -82,9 +82,6 @@ public:
                        BlastSeqSrc* seqsrc,
                        CConstRef<objects::CPssmWithParameters> pssm);
 
-    /// Destructor
-    ~CBlastPrelimSearch();
-
     /// Borrow the internal data and results results. 
     CRef<SInternalData> Run();
 
@@ -125,7 +122,7 @@ private:
     /// produced by it.
     CRef<IQueryFactory>             m_QueryFactory;
     CRef<SInternalData>             m_InternalData;
-    const CBlastOptionsMemento*     m_OptsMemento;
+    auto_ptr<const CBlastOptionsMemento>     m_OptsMemento;
 
     /// Warnings and error messages
     TSearchMessages                 m_Messages;

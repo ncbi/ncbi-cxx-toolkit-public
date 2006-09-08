@@ -116,12 +116,12 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
     }
 
     // 3. Create the options memento
-    m_OptsMemento = options->CreateSnapshot();
+    m_OptsMemento.reset(options->CreateSnapshot());
 
     // 4. Create the BlastScoreBlk
     BlastSeqLoc* lookup_segments(0);
     BlastScoreBlk* sbp =
-        CSetupFactory::CreateScoreBlock(m_OptsMemento, query_data,
+        CSetupFactory::CreateScoreBlock(m_OptsMemento.get(), query_data,
                                         &lookup_segments, 
                                         m_Messages,
                                         &m_MasksForAllQueries,
@@ -134,7 +134,7 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
 
     // 5. Create lookup table
     LookupTableWrap* lut =
-        CSetupFactory::CreateLookupTable(query_data, m_OptsMemento,
+        CSetupFactory::CreateLookupTable(query_data, m_OptsMemento.get(),
                                      m_InternalData->m_ScoreBlk->GetPointer(),
                                      lookup_segments, 
                                      m_InternalData->m_RpsData);
@@ -152,9 +152,9 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
 
     // 7. Create HSP stream
     BlastHSPStream* hsp_stream = IsMultiThreaded()
-        ? CSetupFactory::CreateHspStreamMT(m_OptsMemento, 
+        ? CSetupFactory::CreateHspStreamMT(m_OptsMemento.get(), 
                                            query_data->GetNumQueries())
-        : CSetupFactory::CreateHspStream(m_OptsMemento, 
+        : CSetupFactory::CreateHspStream(m_OptsMemento.get(), 
                                          query_data->GetNumQueries());
     m_InternalData->m_HspStream.Reset
         (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
@@ -162,11 +162,6 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
     // 8. Get errors/warnings
     query_data->GetMessages(m);
     m_Messages.Combine(m);
-}
-
-CBlastPrelimSearch::~CBlastPrelimSearch()
-{
-    delete m_OptsMemento;
 }
 
 int
@@ -178,7 +173,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch()
     // Create the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
         thread->Reset(new CPrelimSearchThread(*m_InternalData, 
-                                              m_OptsMemento));
+                                              m_OptsMemento.get()));
         if (thread->Empty()) {
             NCBI_THROW(CBlastSystemException, eOutOfMemory,
                        "Failed to create preliminary search thread");
@@ -213,7 +208,7 @@ CBlastPrelimSearch::Run()
     int retval =
         (IsMultiThreaded()
          ? x_LaunchMultiThreadedSearch()
-         : CPrelimSearchRunner(*m_InternalData, m_OptsMemento)());
+         : CPrelimSearchRunner(*m_InternalData, m_OptsMemento.get())());
     
     _ASSERT(retval == 0);
     if (retval) {
