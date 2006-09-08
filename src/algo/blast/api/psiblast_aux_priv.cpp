@@ -65,6 +65,7 @@ static char const rcsid[] =
 #include <objects/general/Object_id.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <sstream>
 
 /** @addtogroup AlgoBlast
  *
@@ -164,7 +165,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
 
     if ((options->GetCompositionBasedStats() == eCompositionBasedStats) &&
         freq_ratios_all_zeros) {
-        CNcbiOstrstream os;
+        ostringstream os;
         os << "Frequency ratios for PSSM are all zeros, frequency ratios for ";
         os << options->GetMatrixName() << " will be used during traceback ";
         os << "in composition based statistics";
