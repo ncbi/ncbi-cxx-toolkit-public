@@ -474,7 +474,7 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
                                            &dllGetProcessMemoryInfo);
         if (dllGetProcessMemoryInfo) {
             SProcessMemoryCounters counters;
-            dllGetProcessMemoryInfo(GetCurrentProcess(), &counters,
+            dllGetProcessMemoryInfo(GetCurrentProcess(), counters,
                                     sizeof(counters));
             *total    = counters.quota_paged_pool_usage
                         + counters.quota_nonpaged_pool_usage;
@@ -512,8 +512,6 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
         *resident = ru.ru_maxrss;
         *shared = ru.ru_ixrss;
         return true;
-    } else {
-        return false;
     }
 #endif
     return false;
@@ -618,6 +616,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/09/08 12:12:57  ivanov
+ * Fixed compilation error on MS Windows.
+ *
  * Revision 1.54  2006/09/07 23:21:14  ucko
  * +<corelib/ncbifile.hpp> on Solaris.
  *
