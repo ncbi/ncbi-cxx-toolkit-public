@@ -403,6 +403,7 @@ CObjMgr_QueryFactory::CObjMgr_QueryFactory(CRef<objects::CSeq_loc> seqloc)
 {
     if ( seqloc.Empty() || seqloc->IsNull() || 
          (seqloc->Which() == CSeq_loc::e_not_set)) {
+        delete m_SeqLocs;
         NCBI_THROW(CBlastException, eInvalidArgument, "Empty/invalid Seq-loc");
     }
 }
