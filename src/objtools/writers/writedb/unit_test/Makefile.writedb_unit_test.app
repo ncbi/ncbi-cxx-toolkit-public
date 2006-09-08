@@ -3,7 +3,8 @@
 APP = writedb_unit_test
 SRC = writedb_unit_test
 
-CPPFLAGS = $(FAST_CPPFLAGS) $(BOOST_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
 LIB = seqdb writedb xobjutil blastdb $(OBJMGR_LIBS)
