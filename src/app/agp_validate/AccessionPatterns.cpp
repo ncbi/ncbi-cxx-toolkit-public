@@ -43,6 +43,8 @@
 #include "AccessionPatterns.hpp"
 #include <corelib/ncbi_limits.hpp>
 
+#include <algorithm>
+
 USING_NCBI_SCOPE;
 
 BEGIN_NCBI_SCOPE
