@@ -516,6 +516,10 @@ private:
     ///   true on success
     bool x_SetupLogFiles(void);
 
+    /// Copy data written to the memory diag stream (if any) to the
+    /// log file if CFileDiagHandler is installed.
+    void x_FlushMemoryDiagStream(void);
+
     /// Setup C++ standard I/O streams' behaviour.
     ///
     /// Called from AppMain() to do compiler-specific optimization
@@ -631,6 +635,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/09/08 15:33:35  grichenk
+ * Flush data from memory stream when switching to log file.
+ *
  * Revision 1.63  2006/08/30 18:09:08  ucko
  * Bring some comments in line with current reality; fix an indentation goof.
  *

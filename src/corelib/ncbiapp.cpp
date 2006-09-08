@@ -1054,10 +1054,23 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 }
 
 
+void CNcbiApplication::x_FlushMemoryDiagStream(void)
+{
+    CFileDiagHandler* handler =
+        dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
+    if ( !handler ) {
+        return;
+    }
+    FlushDiag(handler->GetLogStream(eDiagFile_Err), false);
+    m_DiagStream.reset();
+}
+
+
 bool CNcbiApplication::x_SetupLogFile(const string& name, ios::openmode mode)
 {
     if ( SetLogFile(name, eDiagFile_All, true, mode) ) {
         m_LogFileName = name;
+        x_FlushMemoryDiagStream();
         return true;
     }
     return false;
@@ -1126,17 +1139,24 @@ bool CNcbiApplication::x_SetupLogFiles(void)
     string path = GetDefaultLogPath();
     bool base_only = false;       // true if must use base name only
     bool try_all = true;
+    bool success = false;
 
     if ( !GetSplitLogFile() ) {
-        return s_SetupLogFile(GetLogFileName(eDiagFile_All),
+        success =  s_SetupLogFile(GetLogFileName(eDiagFile_All),
             eDiagFile_All, path, base_only, try_all);
     }
-    bool success = s_SetupLogFile(GetLogFileName(eDiagFile_Err),
-        eDiagFile_Err, path, base_only, try_all);
-    success &= s_SetupLogFile(GetLogFileName(eDiagFile_Log),
-        eDiagFile_Log, path, base_only, try_all);
-    success &= s_SetupLogFile(GetLogFileName(eDiagFile_Trace),
-        eDiagFile_Trace, path, base_only, try_all);
+    else {
+        success = s_SetupLogFile(GetLogFileName(eDiagFile_Err),
+            eDiagFile_Err, path, base_only, try_all);
+        success &= s_SetupLogFile(GetLogFileName(eDiagFile_Log),
+            eDiagFile_Log, path, base_only, try_all);
+        success &= s_SetupLogFile(GetLogFileName(eDiagFile_Trace),
+            eDiagFile_Trace, path, base_only, try_all);
+    }
+
+    if (success) {
+        x_FlushMemoryDiagStream();
+    }
     return success;
 }
 
@@ -1152,7 +1172,7 @@ string CNcbiApplication::GetLogFileName(EDiagFileType file_type) const
     }
     switch ( file_type ) {
     case eDiagFile_All:
-        return GetSplitLogFile() ? m_LogFileName : m_LogFileName;
+        return m_LogFileName;
     case eDiagFile_Err:
         return logname.empty() ? m_LogFileName + ".err" : logname;
     case eDiagFile_Log:
@@ -1209,6 +1229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.129  2006/09/08 15:33:41  grichenk
+ * Flush data from memory stream when switching to log file.
+ *
  * Revision 1.128  2006/09/07 20:10:32  grichenk
  * Do not add '.log' to the log file name.
  *

@@ -1936,6 +1936,22 @@ string CFileDiagHandler::GetLogFile(EDiagFileType file_type) const
 }
 
 
+CNcbiOstream* CFileDiagHandler::GetLogStream(EDiagFileType file_type)
+{
+    switch ( file_type ) {
+    case eDiagFile_Err:
+        return m_Err.m_Stream;
+    case eDiagFile_Log:
+        return m_Log.m_Stream;
+    case eDiagFile_Trace:
+        return m_Trace.m_Stream;
+    case eDiagFile_All:
+        break;  // NULL
+    }
+    return 0;
+}
+
+
 bool CFileDiagHandler::x_ReopenLog(SLogFileInfo& info)
 {
     // Remember and reset stream mode
@@ -2835,6 +2851,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.130  2006/09/08 15:33:41  grichenk
+ * Flush data from memory stream when switching to log file.
+ *
  * Revision 1.129  2006/09/07 19:32:24  grichenk
  * Add '.log' to the file name in SetLogFile().
  *

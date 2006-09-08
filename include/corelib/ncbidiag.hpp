@@ -1260,6 +1260,9 @@ public:
     /// returns empty string.
     string GetLogFile(EDiagFileType file_type) const;
 
+    /// Get current log stream. If file_type is eDiagFile_All, returns NULL.
+    CNcbiOstream* GetLogStream(EDiagFileType file_type);
+
 private:
     bool x_ReopenFiles(void);
 
@@ -1566,6 +1569,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.116  2006/09/08 15:33:35  grichenk
+ * Flush data from memory stream when switching to log file.
+ *
  * Revision 1.115  2006/09/07 19:31:13  grichenk
  * Print TID and thread serial number from TRACE only in MT.
  *
