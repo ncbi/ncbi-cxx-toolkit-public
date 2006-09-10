@@ -7,7 +7,7 @@
 REQUIRES = objects
 LIB = xstruct_util
 
-ASN_DEP = seqset
+ASN_DEP = seqset scoremat
 
 SRC = aaa_dummy_pch \
 	struct_util \
