@@ -226,7 +226,7 @@ CMultiAligner::ComputeTree()
 
     // build the phylo tree associated with the matrix
 
-    m_Tree.ComputeTree(distances.GetMatrix());
+    m_Tree.ComputeTree(distances.GetMatrix(), m_FastMeTree);
 
     //--------------------------------
     if (m_Verbose) {
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 
 /* =======================================================================
  * $Log$
+ * Revision 1.12  2006/09/11 16:29:28  papadopo
+ * pass the tree-building method when building the tree
+ *
  * Revision 1.11  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers
