@@ -98,6 +98,7 @@ public:
   const string& PreviousLineToPrint();
 
   // static bool GapBreaksScaffold(int type, int linkage);
+  static bool IsGapType(const string& type);
   void PrintTotals();
 
   // Temporarily public;

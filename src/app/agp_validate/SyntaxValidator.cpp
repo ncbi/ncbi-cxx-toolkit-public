@@ -105,7 +105,7 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_ComponentTypeValues.insert("P");
   m_ComponentTypeValues.insert("N"); // gap
   m_ComponentTypeValues.insert("O");
-  // m_ComponentTypeValues.insert("U"); // gap of unknown size
+  m_ComponentTypeValues.insert("U"); // gap of unknown size
   m_ComponentTypeValues.insert("W");
 
   m_OrientaionValues.insert("+");
@@ -156,7 +156,7 @@ bool CAgpSyntaxValidator::ValidateLine(
     componentsInLastScaffold=0;
   }
 
-  if( new_obj && prev_component_type == "N" ) {
+  if( new_obj && IsGapType(prev_component_type) ) {
     // A new scafold.
     // Previous line is a gap at the end of a scaffold
 
@@ -212,7 +212,7 @@ bool CAgpSyntaxValidator::ValidateLine(
     dl.component_type,"component_type");
 
   //// Gap- or component-specific code.
-  if (dl.component_type == "N") {
+  if( IsGapType(dl.component_type) ) {
     x_OnGapLine(dl, text_line);
   }
   else {
@@ -289,7 +289,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
   //// Check gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold
   if(new_obj) { AGP_WARNING("Object begins with a gap"); }
-  if(prev_component_type == "N") {
+  if(IsGapType(prev_component_type)) {
     // Previous line a gap.
     //AGP_POST( prev_line_num << ": " << prev_line);
     post_prev=true;
@@ -350,7 +350,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
   }
 
   //// Check if the line looks more like a component
-  //// (i.e. dl.component_type should be != "N")
+  //// (i.e. dl.component_type should be != "N" or "U")
   if (error) {
     // A component line has integers in column 7
     // (component start) and column 8 (component end);
@@ -365,7 +365,8 @@ void CAgpSyntaxValidator::x_OnGapLine(
           dl.line_num, m_OrientaionValues,
           dl.orientation, "orientation", NO_LOG
     ) ) {
-      AGP_WARNING( "Line with component_type=N appears to be"
+      AGP_WARNING( "Line with component_type=" <<
+        dl.component_type << " appears to be"
         " a component line and not a gap line.");
     }
   }
@@ -490,7 +491,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   }
 
   //// Check if the line looks more like a gap
-  //// (i.e. dl.component_type should be "N")
+  //// (i.e. dl.component_type should be "N" or "U")
   if(error) {
     // Gap line has integer (gap len) in column 6,
     // gap type value in column 7,
@@ -644,6 +645,11 @@ const string& CAgpSyntaxValidator::PreviousLineToPrint()
     return prev_line;
   }
   return NcbiEmptyString;
+}
+
+bool CAgpSyntaxValidator::IsGapType(const string& type)
+{
+  return type=="N" || type=="U";
 }
 
 END_NCBI_SCOPE
