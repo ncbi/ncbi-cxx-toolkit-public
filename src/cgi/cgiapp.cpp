@@ -38,6 +38,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
+#include <corelib/ncbi_system.hpp> // for SuppressSystemMessageBox
 
 #ifdef NCBI_OS_UNIX
 #  include <unistd.h>
@@ -418,6 +419,9 @@ CCgiApplication::CCgiApplication(void)
    m_HTTPStatus(200),
    m_RequestTimer(CStopWatch::eStop)
 {
+    // Disable system popup messages
+    SuppressSystemMessageBox();
+
     // Turn on iteration number
     SetDiagPostFlag(eDPF_Iteration);
     SetDiagTraceFlag(eDPF_Iteration);
@@ -1155,6 +1159,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.87  2006/09/11 20:08:24  ivanov
+* Added SuppressSystemMessageBox() call to CCgiApplication constructor
+*
 * Revision 1.86  2006/09/08 15:34:36  grichenk
 * Turn on iteration number in logs for all CGIs.
 * Do not add '.log' to the log file name.
