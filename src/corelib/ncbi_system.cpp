@@ -583,9 +583,23 @@ void SleepSec(unsigned long sec, EInterruptOnSignal onsignal)
 /// Suppress Diagnostic Popup Messages
 ///
 
+#if defined(NCBI_OS_MSWIN)
+static bool s_EnableSuppressSystemMessageBox = true;
+#endif
+
+// Handler for "Unhandled" exceptions
+static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
+{
+    // Always terminate a program
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
 extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
 {
 #if defined(NCBI_OS_MSWIN)
+    if ( !s_EnableSuppressSystemMessageBox ) {
+        return;
+    }
     // System errors
     if ( (mode & fSuppress_System) == fSuppress_System ) {
        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
@@ -604,6 +618,20 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
         _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
         _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
     }
+    // Exceptions
+    if ( (mode & fSuppress_Exception) == fSuppress_Exception ) {
+        SetUnhandledExceptionFilter(_SEH_Handler);
+    }
+#else
+    // not implemented
+#endif
+}
+
+
+extern void DisableSuppressSystemMessageBox()
+{
+#if defined(NCBI_OS_MSWIN)
+    s_EnableSuppressSystemMessageBox = false;
 #else
     // not implemented
 #endif
@@ -616,6 +644,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/09/11 19:51:14  ivanov
+ * MSWin:
+ * Added unhandled exception filter to ESuppressSystemMessageBox.
+ * Added function DisableSuppressSystemMessageBox().
+ *
  * Revision 1.55  2006/09/08 12:12:57  ivanov
  * Fixed compilation error on MS Windows.
  *
