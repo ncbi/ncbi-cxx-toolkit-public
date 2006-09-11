@@ -271,8 +271,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
       CNcbiIstream& istr =
           args['#' + NStr::IntToString(i)].AsInputFile();
       if (!istr) {
-          AGP_POST(Fatal << "Unable to open file : " <<
-                    m_CurrentFileName);
+          cerr << "Unable to open file : " << m_CurrentFileName;
           exit (0);
       }
       x_ValidateFile(istr);
