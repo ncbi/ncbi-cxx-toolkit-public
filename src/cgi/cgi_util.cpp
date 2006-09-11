@@ -30,9 +30,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
+#include <corelib/ncbienv.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_util.hpp>
+#include <cgi/cgiapp.hpp>
+#include <cgi/cgictx.hpp>
 #include <stdlib.h>
 
 BEGIN_NCBI_SCOPE
@@ -799,8 +801,18 @@ IUrlEncoder* CUrl::GetDefaultEncoder(void)
 
 CCgiUserAgent::CCgiUserAgent(void)
 {
-    const char* user_agent = getenv("HTTP_USER_AGENT");
-    if (user_agent  &&  *user_agent) {
+    CNcbiApplication* ncbi_app = CNcbiApplication::Instance();
+    CCgiApplication* cgi_app   = CCgiApplication::Instance();
+    string user_agent;
+    if (cgi_app) {
+        user_agent = cgi_app->GetContext().GetRequest()
+            .GetProperty(eCgi_HttpUserAgent);
+    } else if (ncbi_app) {
+        user_agent = ncbi_app->GetEnvironment().Get("HTTP_USER_AGENT");
+    } else {
+        user_agent = getenv("HTTP_USER_AGENT");
+    }
+    if ( !user_agent.empty() ) {
         x_Parse(user_agent);
     }
 }
@@ -1148,6 +1160,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/09/11 20:07:43  ucko
+ * CCgiUserAgent::CCgiUserAgent(void): look in the right place for
+ * Fast-CGIs, provided they're using CCgiApplication.
+ *
  * Revision 1.15  2006/08/15 16:30:07  ivanov
  * Fix for previous revision
  *
