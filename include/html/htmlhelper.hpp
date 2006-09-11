@@ -75,9 +75,17 @@ public:
     static string HTMLEncode(const string& str,
                              THTMLEncodeFlags flags = fEncodeAll);
 
+    enum EHTMLDecodeFlags {
+        fCharRef_Entity  = 1,       ///< Character entity reference(s) was found
+        fCharRef_Numeric = 1 << 1,  ///< Numeric character reference(s) was found
+        fEncoding        = 1 << 2   ///< Character encoding changed
+    };
+    typedef int THTMLDecodeFlags;       //<  bitwise OR of "EHTMLDecodeFlags"
+
     /// Decode HTML entities and character references    
     static CStringUTF8 HTMLDecode(const string& str,
-                                  EEncoding encoding = eEncoding_Unknown);
+                                  EEncoding encoding = eEncoding_Unknown,
+                                  THTMLDecodeFlags* result_flags = NULL);
 
     /// Encode a string for JavaScript.
     ///
@@ -282,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/09/11 12:42:30  gouriano
+ * Modified HTMLDecode to also return result of decoding
+ *
  * Revision 1.19  2006/08/31 17:25:44  gouriano
  * Added HTMLDecode method
  *

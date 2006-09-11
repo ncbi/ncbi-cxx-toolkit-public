@@ -219,6 +219,8 @@ string CHTMLHelper::StripSpecialChars(const string& str)
 
 // Character entity references
 // http://www.w3.org/TR/html4/sgml/entities.html
+// http://www.w3.org/TR/1998/REC-html40-19980424/charset.html#h-5.3
+
 static struct tag_HtmlEntities
 {
     TUnicodeSymbol u;
@@ -482,9 +484,11 @@ static struct tag_HtmlEntities
 };
 
 
-CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding)
+CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding,
+                                    THTMLDecodeFlags* result_flags)
 {
     CStringUTF8 ustr;
+    THTMLDecodeFlags result = 0;
     if (encoding == eEncoding_Unknown) {
         encoding = CStringUTF8::GuessEncoding(str);
         if (encoding == eEncoding_Unknown) {
@@ -509,7 +513,8 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding)
             ent = isalpha((unsigned char)(*itmp)) != 0;
             dec = !ent && *itmp == '#' && ++itmp != e &&
                   isdigit((unsigned char)(*itmp)) != 0;
-            hex = !dec && itmp != e && *itmp == 'x' && ++itmp != e &&
+            hex = !dec && itmp != e &&
+                  (*itmp == 'x' || *itmp == 'X') && ++itmp != e &&
                   isxdigit((unsigned char)(*itmp)) != 0;
             start_of_entity = itmp;
             if (itmp != e && (ent || dec || hex)) {
@@ -535,11 +540,13 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding)
                             if (entity.compare(p->s) == 0) {
                                 uch = p->u;
                                 parsed = true;
+                                result |= fCharRef_Entity;
                                 break;
                             }
                         }
                     } else {
                         parsed = true;
+                        result |= fCharRef_Numeric;
                         for (itmp = start_of_entity;
                              itmp != end_of_entity; ++itmp) {
                             TUnicodeSymbol ud = *itmp;
@@ -571,8 +578,12 @@ CStringUTF8 CHTMLHelper::HTMLDecode(const string& str, EEncoding encoding)
         if (encoding == eEncoding_UTF8 || encoding == eEncoding_Ascii) {
             ustr.append( 1, ch );
         } else {
+            result |= fEncoding;
             ustr.Append(CStringUTF8::CharToSymbol( ch, encoding ));
         }
+    }
+    if (result_flags) {
+        *result_flags = result;
     }
     return ustr;
 }
@@ -583,6 +594,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/09/11 12:42:20  gouriano
+ * Modified HTMLDecode to also return result of decoding
+ *
  * Revision 1.31  2006/08/31 19:35:08  gouriano
  * cosmetics
  *
