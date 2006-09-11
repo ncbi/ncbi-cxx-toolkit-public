@@ -78,7 +78,9 @@ namespace {
                 env_var += section;
                 env_var += "__";
             }
-            env_var += variable;
+            if (variable) {
+                env_var += variable;
+            }
         }
         NStr::ToUpper(env_var);
         return env_var;
@@ -335,6 +337,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/09/11 18:01:04  grichenk
+ * Check for null pointer in GetEnvVarName().
+ *
  * Revision 1.3  2006/01/05 20:40:17  grichenk
  * Added explicit environment variable name for params.
  * Added default value caching flag to CParam constructor.
