@@ -173,29 +173,40 @@ extern void SleepMicroSec(unsigned long mc_sec,
 ///
 /// Suppress Diagnostic Popup Messages
 ///
-/// Suppress popup messages on execution errors.
-/// NOTE: Windows-specific, suppresses all error message boxes in both
-/// runtime and in debug libraries, as well as all General Protection Fault
-/// messages. Usefull to suppress messages about missing loaded DLLs,
-/// for example.
-
-/// [Windows]
 
 /// Suppress modes
 enum ESuppressSystemMessageBox {
-    fSuppress_System  = (1<<0),     ///< System errors
-    fSuppress_Runtime = (1<<1),     ///< Runtime library
-    fSuppress_Debug   = (1<<2),     ///< Debug library
-
-    fSuppress_All     = fSuppress_System | fSuppress_Runtime | fSuppress_Debug,
-    fSuppress_Default = fSuppress_System | fSuppress_Runtime
+    fSuppress_System    = (1<<0),     ///< System errors
+    fSuppress_Runtime   = (1<<1),     ///< Runtime library
+    fSuppress_Debug     = (1<<2),     ///< Debug library
+    fSuppress_Exception = (1<<3),     ///< Unhandled exceptions
+    fSuppress_All     = fSuppress_System | fSuppress_Runtime | 
+                        fSuppress_Debug  | fSuppress_Exception,
+    fSuppress_Default = fSuppress_System | fSuppress_Runtime | 
+                        fSuppress_Exception
 };
 /// Binary OR of "ESuppressSystemMessageBox"
 typedef int TSuppressSystemMessageBox;  
 
+/// Suppress popup messages on execution errors.
+///
+/// NOTE: MS Windows-specific.
+/// Suppresses all error message boxes in both runtime and in debug libraries,
+/// as well as all General Protection Fault messages.
 NCBI_XNCBI_EXPORT
 extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode = 
                                      fSuppress_Default);
+
+/// Prevent run of SuppressSystemMessageBox().
+///
+/// NOTE: MS Windows-specific.
+/// If this function is called, all following calls of
+/// SuppressSystemMessageBox() will be ignored.
+/// For example can be used in CGI applications where SuppressSystemMessageBox
+/// always calls in the CCgiApplication constructor.
+/// 
+NCBI_XNCBI_EXPORT
+extern void DisableSuppressSystemMessageBox();
 
 
 END_NCBI_SCOPE
@@ -204,6 +215,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/09/11 19:50:05  ivanov
+ * Added flag fSuppress_Exception to ESuppressSystemMessageBox.
+ * Added function DisableSuppressSystemMessageBox().
+ *
  * Revision 1.21  2006/09/07 19:45:55  ucko
  * Add a semi-portable GetMemoryUsage method.
  *
