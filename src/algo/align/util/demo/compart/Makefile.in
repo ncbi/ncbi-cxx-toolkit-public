@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (algo/align/util/demo/compart)
+#################################
+
+APP_PROJ = compart
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
