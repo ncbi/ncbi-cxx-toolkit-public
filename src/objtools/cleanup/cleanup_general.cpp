@@ -294,7 +294,23 @@ CName_std::TInitials s_GetInitialsFromFirst(const CName_std& name)
     while (it != end) {
         // skip "junk"
         while (it != end  &&  !isalpha((unsigned char)(*it))) {
-            ++it;
+            switch( (unsigned char)(*it) ) {
+
+            case '(':
+                // regard words in parentheses as nick names. Nick names do not contribute
+                // to the initials
+                //
+                while ( ')' != (unsigned char)(*it)  &&  it != end ) {
+                    ++it;
+                }
+                ++it;
+                break;
+
+            default:
+                ++it;
+                break;
+
+            }
         }
         // copy the first character of each word
         if (it != end) {
@@ -545,6 +561,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/09/11 17:14:28  ludwigf
+ * CHANGED: Do not consider names in paretheses (like nicknames) when making
+ *  the list of initials.
+ *
  * Revision 1.3  2006/07/31 14:29:37  rsmith
  * Add change reporting
  *
