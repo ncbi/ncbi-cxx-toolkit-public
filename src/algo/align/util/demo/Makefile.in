@@ -3,7 +3,7 @@
 # Meta-makefile (algo/align/util/demo)
 #################################
 
-SUB_PROJ = hfilter
+SUB_PROJ = hfilter compart
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
