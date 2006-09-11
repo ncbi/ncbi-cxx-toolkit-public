@@ -410,6 +410,10 @@ void CGenbankFormatter::x_Authors
     if (ref.IsSetAuthors()) {
         CReferenceItem::FormatAuthors(ref.GetAuthors(), authors);
     }
+    if ( authors.empty() ) {
+        /* supress AUTHOR line */
+        return;
+    }
     if (!NStr::EndsWith(authors, '.')) {
         authors += '.';
     }
@@ -873,6 +877,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2006/09/11 14:51:04  ludwigf
+* CHANGED: Suppress empty AUTHORS lists.
+*
 * Revision 1.34  2005/09/07 16:06:14  shomrat
 * Pass the object to the text output stream
 *
