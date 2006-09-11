@@ -936,20 +936,9 @@ public:
     ///   A space seperated list of database names.
     /// @param prot_nucl
     ///   Indicates whether the database is protein or nucleotide.
-    CSeqDBAliasFile(CSeqDBAtlas     & atlas,
-                    const string    & name_list,
-                    char              prot_nucl)
-        : m_AliasSets (atlas)
-    {
-        if (name_list.size() && prot_nucl != '-') {
-            m_Node.Reset(new CSeqDBAliasNode(atlas,
-                                             name_list,
-                                             prot_nucl,
-                                             m_AliasSets));
-            
-            m_Node->GetVolumeNames(m_VolumeNames);
-        }
-    }
+    CSeqDBAliasFile(CSeqDBAtlas  & atlas,
+                    const string & name_list,
+                    char           prot_nucl);
     
     /// Get the list of volume names.
     ///
@@ -1133,6 +1122,9 @@ private:
     
     /// The cached output of the topmost node's GetVolumeNames().
     vector<string> m_VolumeNames;
+    
+    /// True if this is a protein database.
+    bool m_IsProtein;
     
     /// Disable copy operator.
     CSeqDBAliasFile & operator =(const CSeqDBAliasFile &);

@@ -53,6 +53,22 @@
 BEGIN_NCBI_SCOPE
 
 
+CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
+                                 const string    & name_list,
+                                 char              prot_nucl)
+    : m_AliasSets (atlas),
+      m_IsProtein (prot_nucl == 'p')
+{
+    if (name_list.size() && prot_nucl != '-') {
+        m_Node.Reset(new CSeqDBAliasNode(atlas,
+                                         name_list,
+                                         prot_nucl,
+                                         m_AliasSets));
+        
+        m_Node->GetVolumeNames(m_VolumeNames);
+    }
+}
+
 void CSeqDBAliasNode::x_Tokenize(const string & dbnames)
 {
     vector<CSeqDB_Substring> dbs;
@@ -65,9 +81,9 @@ void CSeqDBAliasNode::x_Tokenize(const string & dbnames)
     }
 }
 
-CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
-                                 const string   & dbname_list,
-                                 char             prot_nucl,
+CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas     & atlas,
+                                 const string    & dbname_list,
+                                 char              prot_nucl,
                                  CSeqDBAliasSets & alias_sets)
     : m_Atlas    (atlas),
       m_DBPath   ("."),
@@ -1495,7 +1511,9 @@ void CSeqDBAliasFile::GetAliasFileValues(TAliasFileValues   & afv,
         map<string,string> values;
         values["TITLE"] = v->GetTitle();
         
-        afv[v->GetVolName()].push_back(values);
+        string extn = (m_IsProtein ? ".pin" : ".nin");
+        
+        afv[v->GetVolName() + extn].push_back(values);
     }
     
     m_Node->GetAliasFileValues(afv);
