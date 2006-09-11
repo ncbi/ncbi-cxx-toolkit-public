@@ -2177,7 +2177,27 @@ public:
     ///
     /// @return
     ///   Number of symbols (code points)
-    size_t GetSymbolCount(void) const;
+    SIZE_TYPE GetSymbolCount(void) const;
+    
+    /// Get the number of valid UTF-8 symbols (code points) in the buffer
+    ///
+    /// @param src
+    ///   Character buffer
+    /// @param buf_size
+    ///   The number of bytes in the buffer
+    /// @return
+    ///   Number of valid symbols (no exception thrown)
+    static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
+    
+    /// Get the number of valid UTF-8 bytes (code units) in the buffer
+    ///
+    /// @param src
+    ///   Character buffer
+    /// @param buf_size
+    ///   The number of bytes in the buffer
+    /// @return
+    ///   Number of valid bytes (no exception thrown)
+    static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
 
     /// Check that the character encoding of the string is valid UTF-8
     ///
@@ -3193,6 +3213,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.106  2006/09/11 13:08:04  gouriano
+ * Added buffer validation into CStringUTF8
+ *
  * Revision 1.105  2006/08/31 17:23:49  gouriano
  * Possibility to append unicode char to UTF8 string
  *

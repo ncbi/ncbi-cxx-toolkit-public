@@ -2158,9 +2158,9 @@ extern char* strdup(const char* str)
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8
 
-size_t CStringUTF8::GetSymbolCount(void) const
+SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
 {
-    size_t count = 0;
+    SIZE_TYPE count = 0;
     for (const char* src = c_str(); *src; ++src, ++count) {
         size_t more=0;
         bool good = x_EvalFirst(*src, more);
@@ -2174,6 +2174,41 @@ size_t CStringUTF8::GetSymbolCount(void) const
         }
     }
     return count;
+}
+
+SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
+{
+    SIZE_TYPE count = 0, cur_size=0;
+    for (; *src && cur_size < buf_size; ++src, ++count, ++cur_size) {
+        size_t more=0;
+        bool good = x_EvalFirst(*src, more);
+        while (more-- && good && ++cur_size < buf_size) {
+            good = x_EvalNext(*(++src));
+        }
+        if ( !good ) {
+            return count;
+        }
+    }
+    return count;
+}
+
+SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
+{
+    SIZE_TYPE count = 0, cur_size=0;
+    for (; *src && cur_size < buf_size; ++src, ++count, ++cur_size) {
+        size_t more=0;
+        bool good = x_EvalFirst(*src, more);
+        while (more-- && good && cur_size < buf_size) {
+            good = x_EvalNext(*(++src));
+            if (good) {
+                ++cur_size;
+            }
+        }
+        if ( !good ) {
+            return cur_size;
+        }
+    }
+    return cur_size;
 }
 
 string CStringUTF8::AsSingleByteString(EEncoding encoding) const
@@ -2506,6 +2541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.181  2006/09/11 13:07:53  gouriano
+ * Added buffer validation into CStringUTF8
+ *
  * Revision 1.180  2006/08/23 13:32:57  ivanov
  * + NStr::ReplaceInPlace()
  *
