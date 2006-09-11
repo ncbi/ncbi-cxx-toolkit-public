@@ -584,8 +584,8 @@ void SleepSec(unsigned long sec, EInterruptOnSignal onsignal)
 ///
 
 #if defined(NCBI_OS_MSWIN)
+
 static bool s_EnableSuppressSystemMessageBox = true;
-#endif
 
 // Handler for "Unhandled" exceptions
 static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
@@ -593,6 +593,8 @@ static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
     // Always terminate a program
     return EXCEPTION_EXECUTE_HANDLER;
 }
+
+#endif
 
 extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
 {
@@ -644,6 +646,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/09/11 20:15:44  ivanov
+ * Fixed compilation error
+ *
  * Revision 1.56  2006/09/11 19:51:14  ivanov
  * MSWin:
  * Added unhandled exception filter to ESuppressSystemMessageBox.
