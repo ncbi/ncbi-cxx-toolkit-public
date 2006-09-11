@@ -76,7 +76,7 @@ CRWStreambuf::CRWStreambuf(IReaderWriter*       rw,
                            streamsize           n,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
-    : m_Flags(f), m_Reader(rw), m_Writer(rw), m_pBuf(s),
+    : m_Flags(f), m_Reader(rw), m_Writer(rw), m_pBuf(0),
       x_GPos((CT_OFF_TYPE)(0)), x_PPos((CT_OFF_TYPE)(0))
 {
     setbuf(s  &&  n ? s : 0, n ? n : kDefaultBufSize << 1);
@@ -88,7 +88,7 @@ CRWStreambuf::CRWStreambuf(IReader*             r,
                            streamsize           n,
                            CT_CHAR_TYPE*        s,
                            CRWStreambuf::TFlags f)
-    : m_Flags(f), m_Reader(r), m_Writer(w), m_pBuf(s),
+    : m_Flags(f), m_Reader(r), m_Writer(w), m_pBuf(0),
       x_GPos((CT_OFF_TYPE)(0)), x_PPos((CT_OFF_TYPE)(0))
 {
     setbuf(s  &&  n ? s : 0,
@@ -119,9 +119,7 @@ CRWStreambuf::~CRWStreambuf()
         }
     }
 
-    if ( m_pBuf ) {
-        delete[] m_pBuf;
-    }
+    delete[] m_pBuf;
 }
 
 
@@ -137,21 +135,24 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
     if (pptr()  &&  pptr() != pbase()) {
         ERR_POST(Error << "CRWStreambuf::setbuf(): Write data pending");
     }
-    if (m_pBuf != s) {
-        delete[] m_pBuf;
-        m_pBuf = s;
+
+    delete[] m_pBuf;
+
+    if (!n) {
+        _ASSERT(kDefaultBufSize > 1);
+        n = kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
     }
 
-    streamsize    x_size = n ? n :
-        kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
-    CT_CHAR_TYPE* x_buf  = s ? s :
-        (n == 1 ? &x_Buf : new CT_CHAR_TYPE[x_size]);
-
-    n = x_size >> (m_Reader  &&  m_Writer ? 1 : 0);
+    if (!s) {
+        if (n != 1)
+            s = m_pBuf = new CT_CHAR_TYPE[n];
+        else
+            s = &x_Buf;
+    }
 
     if (m_Reader) {
-        m_BufSize  = x_size == 1 ? 1 : n;
-        m_ReadBuf  = x_buf;
+        m_BufSize  = n == 1 ? 1 : n >> (m_Reader  &&  m_Writer ? 1 : 0);
+        m_ReadBuf  = s;
     } else {
         m_BufSize  = 0;
         m_ReadBuf  = 0;
@@ -159,11 +160,11 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
 
     if (m_Writer) {
-        m_WriteBuf = x_size == 1 ? 0 : x_buf + m_BufSize;
+        m_WriteBuf = n == 1 ? 0 : s + m_BufSize;
     } else {
         m_WriteBuf = 0;
     }
-    setp(m_WriteBuf, m_WriteBuf + (m_WriteBuf ? x_size - m_BufSize : 0));
+    setp(m_WriteBuf, m_WriteBuf + (m_WriteBuf ? n - m_BufSize : 0));
 
     return this;
 }
@@ -449,6 +450,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.26  2006/09/11 19:38:05  lavr
+ * Fix memory leak / corruption in setbuf()
+ *
  * Revision 1.25  2006/08/24 15:00:29  lavr
  * xsputn() to use I/O status when looping over actual writes to device
  *
