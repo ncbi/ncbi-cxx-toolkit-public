@@ -337,6 +337,12 @@ public:
     ///
     void SetIterate(bool iterate) { m_Iterate = iterate; }
 
+    /// Use the FastME algorithm to generate the tree
+    /// (default is to use neighbor-joining)
+    /// @param fastme True if FastME is used
+    ///
+    void SetFastmeTree(bool fastme) { m_FastMeTree = fastme; }
+
     // ---------------- Running the aligner -----------------------
 
     /// Clear out the state left by the previous alignment operation
@@ -458,6 +464,7 @@ private:
 
     bool m_Verbose;
     bool m_Iterate;
+    bool m_FastMeTree;
 
     void x_LoadBlockBoundaries(string blockfile,
                       vector<SSegmentLoc>& blocklist);
@@ -521,6 +528,9 @@ END_NCBI_SCOPE
 
 /* ====================================================================
  * $Log$
+ * Revision 1.17  2006/09/11 16:31:22  papadopo
+ * use neighbor-joining or FastME to generate trees
+ *
  * Revision 1.16  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers
