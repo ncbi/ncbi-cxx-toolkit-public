@@ -536,7 +536,7 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
             }
         }
     } else {
-        width = sprintf(buffer, "%.*g", digits, data);
+        width = sprintf(buffer, "%.*g", (int)digits, data);
     }
     m_Output.PutString(buffer, width);
 }
@@ -1442,6 +1442,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2006/09/11 13:14:14  gouriano
+* Corrected field precision
+*
 * Revision 1.93  2006/06/27 17:59:01  gouriano
 * Corrected writing of AnyContent objects
 *
