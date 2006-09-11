@@ -138,6 +138,10 @@ void CMultiApplication::Init(void)
     arg_desc->AddDefaultKey("pseudo", "pseudocount", 
                      "Pseudocount constant",
                      CArgDescriptions::eDouble, "2.0");
+    arg_desc->AddDefaultKey("fastme", "fastme", 
+                     "Use FastME tree generation algorithm instead of "
+                     "neighbor joining",
+                     CArgDescriptions::eBoolean, "F");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -266,6 +270,7 @@ int CMultiApplication::Run(void)
     }
 
     aligner.SetVerbose(args["v"].AsBoolean());
+    aligner.SetFastmeTree(args["fastme"].AsBoolean());
 
     aligner.Run();
 
@@ -299,6 +304,9 @@ int main(int argc, const char* argv[])
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.8  2006/09/11 16:30:17  papadopo
+  allow the tree-building method to vary
+
   Revision 1.7  2006/03/10 19:27:43  papadopo
   allow pairwise user-specified constraints to be read from file
 
