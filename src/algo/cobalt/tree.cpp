@@ -53,7 +53,7 @@ CTree::PrintTree(const TPhyTreeNode *tree, int level)
         printf("    ");
 
     printf("node: ");
-    if (tree->GetValue().GetId() >= 0)
+    if (tree->IsLeaf() && tree->GetValue().GetId() >= 0)
         printf("query %d ", tree->GetValue().GetId());
     if (tree->GetValue().IsSetDist())
         printf("distance %lf", tree->GetValue().GetDist());
@@ -242,13 +242,18 @@ CTree::x_RerootTree(TPhyTreeNode *node)
 }
 
 void
-CTree::ComputeTree(const CDistMethods::TMatrix& distances)
+CTree::ComputeTree(const CDistMethods::TMatrix& distances,
+                   bool use_fastme)
 {
     if (m_Tree) {
         delete m_Tree;
     }
 
-    m_Tree = CDistMethods::FastMeTree(distances);
+    if (use_fastme)
+        m_Tree = CDistMethods::FastMeTree(distances);
+    else
+        m_Tree = CDistMethods::NjTree(distances);
+
     m_Tree->GetValue().SetDist(0.0);
 
     x_RerootTree(x_FindLargestEdge(m_Tree, m_Tree));
@@ -259,6 +264,10 @@ END_NCBI_SCOPE
 
 /* ====================================================================
  * $Log$
+ * Revision 1.7  2006/09/11 16:28:41  papadopo
+ * 1. Use neighbor-joining by default, with FastME as an option
+ * 2. When printing trees, assume query sequences only occur at tree leaves
+ *
  * Revision 1.6  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers
