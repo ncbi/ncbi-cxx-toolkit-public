@@ -1896,7 +1896,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             string ext = entry.GetExt();
             string adj_name = file_name;
             if (ext == ".log"  ||  ext == ".err"  ||  ext == ".trace") {
-                adj_name = entry.GetBase();
+                adj_name = entry.GetDir() + entry.GetBase();
             }
             m_Err.m_FileName = special ? adj_name : adj_name + ".err";
             m_Err.m_Mode = mode;
@@ -1988,10 +1988,9 @@ bool CFileDiagHandler::x_ReopenLog(SLogFileInfo& info)
 
 bool CFileDiagHandler::x_ReopenFiles(void)
 {
-    bool res = true;
-    res &= x_ReopenLog(m_Err);
-    res &= x_ReopenLog(m_Log);
-    res &= x_ReopenLog(m_Trace);
+    bool res = x_ReopenLog(m_Err);
+    res = x_ReopenLog(m_Log)  &&  res;
+    res = x_ReopenLog(m_Trace)  &&  res;
     m_LastReopen->SetCurrent();
     return res;
 }
@@ -2080,6 +2079,9 @@ extern bool SetLogFile(const string& file_name,
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
+            ERR_POST(Warning <<
+                "Failed to set log file for the selected event type: "
+                "split log is disabled");
             return false;
         }
         // Check special filenames
@@ -2615,6 +2617,9 @@ bool CDoubleDiagHandler::SetLogFile(const string& file_name,
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
+            ERR_POST(Warning <<
+                "Failed to set log file for the selected event type: "
+                "split log is disabled");
             return false;
         }
         // Check special filenames
@@ -2894,6 +2899,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.132  2006/09/12 20:38:55  grichenk
+ * More warnings from SetLogFile().
+ * Fixed log file path.
+ *
  * Revision 1.131  2006/09/12 15:02:04  grichenk
  * Fixed log file name extensions.
  * Added GetDiagStream().

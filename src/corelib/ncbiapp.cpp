@@ -655,8 +655,9 @@ bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
         SetDiagHandler(new CSysLog);
         break;
     default: {
+        ERR_POST(Warning << "Unknown EAppDiagStream value");
         _ASSERT(0);
-        break;
+        return false;
     }
     } // switch ( diag )
 
@@ -1063,12 +1064,12 @@ void CNcbiApplication::x_FlushMemoryDiagStream(void)
 
 bool CNcbiApplication::x_SetupLogFile(const string& name, ios::openmode mode)
 {
-    if ( SetLogFile(name, eDiagFile_All, true, mode) ) {
-        m_LogFileName = name;
-        x_FlushMemoryDiagStream();
-        return true;
+    if ( !SetLogFile(name, eDiagFile_All, true, mode) ) {
+        return false;
     }
-    return false;
+    m_LogFileName = name;
+    x_FlushMemoryDiagStream();
+    return true;
 }
 
 
@@ -1125,6 +1126,7 @@ bool s_SetupLogFile(string logname,
             return true;
         }
     }
+    ERR_POST(Warning << "Failed to initialize log file");
     return false;
 }
 
@@ -1143,10 +1145,10 @@ bool CNcbiApplication::x_SetupLogFiles(void)
     else {
         success = s_SetupLogFile(GetLogFileName(eDiagFile_Err),
             eDiagFile_Err, path, base_only, try_all);
-        success &= s_SetupLogFile(GetLogFileName(eDiagFile_Log),
-            eDiagFile_Log, path, base_only, try_all);
-        success &= s_SetupLogFile(GetLogFileName(eDiagFile_Trace),
-            eDiagFile_Trace, path, base_only, try_all);
+        success = s_SetupLogFile(GetLogFileName(eDiagFile_Log),
+            eDiagFile_Log, path, base_only, try_all)  &&  success;
+        success = s_SetupLogFile(GetLogFileName(eDiagFile_Trace),
+            eDiagFile_Trace, path, base_only, try_all)  &&  success;
     }
 
     if (success) {
@@ -1223,6 +1225,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.131  2006/09/12 20:38:55  grichenk
+ * More warnings from SetLogFile().
+ * Fixed log file path.
+ *
  * Revision 1.130  2006/09/12 15:02:04  grichenk
  * Fixed log file name extensions.
  * Added GetDiagStream().
