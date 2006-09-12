@@ -56,6 +56,7 @@ public:
 
     ~CBlobStreamHelper()
     {
+        Reset();
     }
 
     CNcbiOstream& GetOStream(const string& fname = "", 
@@ -159,6 +160,7 @@ public:
 
     ~CRemoteAppRequestMB_Impl() 
     {
+        Reset();
     }
 
     CNcbiOstream& GetStdInForWrite() 
@@ -473,6 +475,7 @@ public:
     }
     ~CRemoteAppResultMB_Impl()
     {
+        Reset();
     }    
 
     CNcbiOstream& GetStdOutForWrite() 
@@ -667,6 +670,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/12 14:59:20  didenko
+ * Got rid of memory leaks
+ *
  * Revision 1.2  2006/07/18 19:46:00  didenko
  * Fixed bug in the Reset method of request class
  *

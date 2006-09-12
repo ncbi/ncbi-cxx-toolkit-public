@@ -50,6 +50,7 @@ public:
 
     virtual ~IRemoteAppRequest_Impl() 
     {
+        Reset();
     }
 
     virtual CNcbiOstream& GetStdInForWrite() = 0;
@@ -110,7 +111,10 @@ protected:
     }
 
 public:
-    virtual ~IRemoteAppResult_Impl() {};
+    virtual ~IRemoteAppResult_Impl() 
+    {
+        Reset();
+    };
 
     virtual CNcbiIstream& GetStdOutForRead() = 0;
     virtual CNcbiOstream& GetStdOutForWrite() = 0;
@@ -142,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/12 14:59:20  didenko
+ * Got rid of memory leaks
+ *
  * Revision 1.1  2006/07/13 14:32:38  didenko
  * Modified the implemention of remote application's request and result classes
  *
