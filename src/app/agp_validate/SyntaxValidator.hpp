@@ -48,7 +48,7 @@
 #define START_LINE_VALIDATE_MSG \
         m_LineErrorOccured = false;
 
-#define AGP_POST(msg) cout << msg << "\n"
+#define AGP_POST(msg) cerr << msg << "\n"
 
 #define END_LINE_VALIDATE_MSG(line_num, line)\
   AGP_POST( line_num << ": " << line <<\
@@ -59,12 +59,15 @@
 #define AGP_MSG(severity, msg) \
         m_LineErrorOccured = true; \
         *m_ValidateMsg << "\n\t" << severity << ": " <<  msg
-#define AGP_ERROR(msg) AGP_MSG("ERROR", msg)
-#define AGP_WARNING(msg) AGP_MSG("WARNING", msg)
+#define AGP_ERROR(msg) agp_error_count++; AGP_MSG("ERROR", msg)
+#define AGP_WARNING(msg) agp_warn_count++; AGP_MSG("WARNING", msg)
 
 #define NO_LOG false
 
 BEGIN_NCBI_SCOPE
+
+extern int agp_error_count;
+extern int agp_warn_count;
 
 struct SDataLine {
   int     line_num;
@@ -83,6 +86,21 @@ struct SDataLine {
 };
 
 class CAccPatternCounter;
+
+
+class CValuesCount : public map<string, int>
+{
+public:
+  void add(const string& c);
+
+  // >pointer to >value_type vector for sorting
+  typedef vector<value_type*> pv_vector;
+  void GetSortedValues(pv_vector& out);
+
+private:
+  // For sorting by value count
+  static int x_byCount( value_type* a, value_type* b );
+};
 
 class CAgpSyntaxValidator
 {
@@ -127,11 +145,15 @@ protected:
   int m_CompNaCount;
   int m_GapCount;
 
-  // count the dfiffernt types of gaps
-  map<string, int> m_TypeGapCnt;
 
-  // keep track of the  object ids used
-  //  in the AGP. Used to detect duplicates.
+  CValuesCount m_TypeGapCnt;  // column 7: fragment, clone, ...
+  CValuesCount m_TypeCompCnt; // column 5: A, D, F, ..., N, U
+
+  // Count component types and N/U gap types.
+  int  m_LineTypes;
+  int* m_LineTypeCnt;
+
+  // keep track of the object ids to detect duplicates.
   typedef set<string> TObjSet;
   typedef pair<TObjSet::iterator, bool> TObjSetResult;
   TObjSet m_ObjIdSet;

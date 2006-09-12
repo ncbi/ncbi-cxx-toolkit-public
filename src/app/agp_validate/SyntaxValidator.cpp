@@ -41,6 +41,9 @@ USING_NCBI_SCOPE;
 
 BEGIN_NCBI_SCOPE
 
+int agp_error_count=0;
+int agp_warn_count=0;
+
 CAgpSyntaxValidator::CAgpSyntaxValidator()
 {
   objNamePatterns = new CAccPatternCounter();
@@ -208,8 +211,15 @@ bool CAgpSyntaxValidator::ValidateLine(
     prev_part_num = part_num;
   }
 
-  x_CheckValues( dl.line_num, m_ComponentTypeValues,
-    dl.component_type,"component_type");
+  if(x_CheckValues(
+    dl.line_num, m_ComponentTypeValues,
+    dl.component_type, "component_type"
+  )) {
+    m_TypeCompCnt.add( dl.component_type );
+  }
+  else {
+    m_TypeCompCnt.add( "invalid type" );
+  }
 
   //// Gap- or component-specific code.
   if( IsGapType(dl.component_type) ) {
@@ -583,41 +593,105 @@ int CAgpSyntaxValidator::x_CheckValues(
 
 void CAgpSyntaxValidator::PrintTotals()
 {
-  AGP_POST("\n"
+  //// Counts of errors and warnings
+  if(agp_error_count==0) {
+    cout << "No errors, ";
+  }
+  else if(agp_error_count==1) {
+    cout << "1 error, ";
+  }
+  else{
+    cout << agp_error_count << " errors, ";
+  }
+  if(agp_warn_count==0) {
+    cout << "no warnings.\n";
+  }
+  else if(agp_warn_count==1) {
+    cout << "1 warning.\n";
+  }
+  else{
+    cout << agp_warn_count << " warnings.\n";
+  }
+
+  string s_comp, s_gap;
+  CValuesCount::pv_vector comp_cnt;
+  m_TypeCompCnt.GetSortedValues(comp_cnt);
+
+  for(CValuesCount::pv_vector::iterator
+    it = comp_cnt.begin();
+    it != comp_cnt.end();
+    ++it
+  ) {
+    string *s = IsGapType((*it)->first) ? &s_gap : &s_comp;
+
+    if( s->size() ) *s+= ", ";
+    *s+= (*it)->first;
+    *s+= ":";
+    *s+= NStr::IntToString((*it)->second);
+  }
+
+  cout << "\n"
     "Objects     : " << m_ObjCount << "\n"
     "Scaffolds   : " << m_ScaffoldCount   << "\n"
     "  singletons: " << m_SingletonCount << "\n\n"
     "Unique Component Accessions: "<< m_CompId2Spans.size() <<"\n"
-    "Lines with Components      : " << m_CompCount        << "\n"
+    "Lines with Components      : " << m_CompCount;
+
+  if( s_comp.size() ) {
+    if( NStr::Find(s_comp, ",")!=NPOS ) {
+       // (W: 1234, D: 5678)
+      cout << " (" << s_comp << ")";
+    }
+    else {
+      // One type of components: (W) or (invalid type)
+      cout << " (" << s_comp.substr( 0, NStr::Find(s_comp, ":") ) << ")";
+    }
+  }
+  cout << "\n"
     "\torientation +      : " << m_CompPosCount   << "\n"
     "\torientation -      : " << m_CompNegCount   << "\n"
     "\torientation 0      : " << m_CompZeroCount  << "\n"
-    "\torientation na     : "<< m_CompNaCount    << "\n\n"
+    "\torientation na     : " << m_CompNaCount    << "\n";
 
- << "Gaps: " << m_GapCount
- << "\n\t   with linkage: yes\tno"
- << "\n\tclone          : "<<m_TypeGapCnt["cloneyes"          ]
- << "\t"                   <<m_TypeGapCnt["cloneno"           ]
- << "\n\tfragment       : "<<m_TypeGapCnt["fragmentyes"       ]
- << "\t"                   <<m_TypeGapCnt["fragmentno"        ]
- << "\n\trepeat         : "<<m_TypeGapCnt["repeatyes"         ]
- << "\t"                   <<m_TypeGapCnt["repeatno"          ]
- << "\n"
- << "\n\tcontig         : "<<m_TypeGapCnt["contigyes"         ]
- << "\t"                   <<m_TypeGapCnt["contigno"          ]
- << "\n\tcentromere     : "<<m_TypeGapCnt["centromereyes"     ]
- << "\t"                   <<m_TypeGapCnt["centromereno"      ]
- << "\n\tshort_arm      : "<<m_TypeGapCnt["short_armyes"      ]
- << "\t"                   <<m_TypeGapCnt["short_armno"       ]
- << "\n\theterochromatin: "<<m_TypeGapCnt["heterochromatinyes"]
- << "\t"                   <<m_TypeGapCnt["heterochromatinno" ]
- << "\n\ttelomere       : "<<m_TypeGapCnt["telomereyes"       ]
- << "\t"                   <<m_TypeGapCnt["telomereno"        ]
- //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
- //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
-  );
+  cout << "\n" << "Gaps: " << m_GapCount;
+  // To do: print (N) if all components are of one type,
+  //        or (N: 1234, U: 5678)
+  if( s_gap.size() ) {
+    if( NStr::Find(s_gap, ",")!=NPOS ) {
+       // (N: 1234, N: 5678)
+      cout << " (" << s_gap << ")";
+    }
+    else {
+      // One type of gaps: (N)
+      cout << " (" << s_gap.substr( 0, NStr::Find(s_gap, ":") ) << ")";
+    }
+  }
 
-  AGP_POST("\nObject names and counts:");
+
+  cout
+  << "\n\t   with linkage: yes\tno"
+  << "\n\tclone          : "<<m_TypeGapCnt["cloneyes"          ]
+  << "\t"                   <<m_TypeGapCnt["cloneno"           ]
+  << "\n\tfragment       : "<<m_TypeGapCnt["fragmentyes"       ]
+  << "\t"                   <<m_TypeGapCnt["fragmentno"        ]
+  << "\n\trepeat         : "<<m_TypeGapCnt["repeatyes"         ]
+  << "\t"                   <<m_TypeGapCnt["repeatno"          ]
+  << "\n"
+  << "\n\tcontig         : "<<m_TypeGapCnt["contigyes"         ]
+  << "\t"                   <<m_TypeGapCnt["contigno"          ]
+  << "\n\tcentromere     : "<<m_TypeGapCnt["centromereyes"     ]
+  << "\t"                   <<m_TypeGapCnt["centromereno"      ]
+  << "\n\tshort_arm      : "<<m_TypeGapCnt["short_armyes"      ]
+  << "\t"                   <<m_TypeGapCnt["short_armno"       ]
+  << "\n\theterochromatin: "<<m_TypeGapCnt["heterochromatinyes"]
+  << "\t"                   <<m_TypeGapCnt["heterochromatinno" ]
+  << "\n\ttelomere       : "<<m_TypeGapCnt["telomereyes"       ]
+  << "\t"                   <<m_TypeGapCnt["telomereno"        ]
+  //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
+  //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
+  << "\n";
+
+  cout << "\nObject names and counts:\n";
   // TO DO:
   //   print not more than 50, not more than 10 with acc.count==1;
   //   instead of the omitted patterns, print:
@@ -631,10 +705,9 @@ void CAgpSyntaxValidator::PrintTotals()
   for(CAccPatternCounter::pv_vector::iterator it =
       pat_cnt.begin(); it != pat_cnt.end(); ++it
   ) {
-    AGP_POST( "\t"
-      << CAccPatternCounter::GetExpandedPattern(*it) << "\t"
-      << CAccPatternCounter::GetCount(*it) << "\n"
-    );
+    cout <<  "\t"
+    << CAccPatternCounter::GetExpandedPattern(*it) << "\t"
+    << CAccPatternCounter::GetCount(*it) << "\n";
   }
 }
 
@@ -651,6 +724,37 @@ bool CAgpSyntaxValidator::IsGapType(const string& type)
 {
   return type=="N" || type=="U";
 }
+
+//// class CValuesCount
+
+void CValuesCount::GetSortedValues(pv_vector& out)
+{
+  out.clear(); out.reserve( size() );
+  for(iterator it = begin();  it != end(); ++it) {
+    out.push_back(&*it);
+  }
+  std::sort( out.begin(), out.end(), x_byCount );
+}
+
+void CValuesCount::add(const string& c)
+{
+  iterator it = find(c);
+  if(it==end()) {
+    (*this)[c]=1;
+  }
+  else{
+    it->second++;
+  }
+}
+
+int CValuesCount::x_byCount( value_type* a, value_type* b )
+{
+  if( a->second != b->second ){
+    return a->second > b->second; // by count, largest first
+  }
+  return a->first < b->first; // by name
+}
+
 
 END_NCBI_SCOPE
 

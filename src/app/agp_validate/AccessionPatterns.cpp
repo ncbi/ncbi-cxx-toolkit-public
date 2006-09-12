@@ -240,7 +240,7 @@ int CAccPatternCounter::GetCount(value_type* p)
 int CAccPatternCounter::x_byCount( value_type* a, value_type* b )
 {
   if( GetCount(a) != GetCount(b) ){
-    return GetCount(a) < GetCount(b);
+    return GetCount(a) > GetCount(b);
   }
   return a->first < b->first;
 }
