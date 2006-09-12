@@ -84,7 +84,7 @@ CBDB_MultiRowBuffer::CBDB_MultiRowBuffer(size_t buf_size)
 
 CBDB_MultiRowBuffer::~CBDB_MultiRowBuffer()
 {
-    delete [] m_BufPtr;
+    delete [] (char*)m_BufPtr;
     delete m_Data_DBT;
 }
 void CBDB_MultiRowBuffer::InitDBT()
@@ -470,10 +470,9 @@ void CBDB_RawFile::x_Open(const char* filename,
         }
 
 
-        DBTYPE db_type;
+        DBTYPE db_type = DB_BTREE;
         switch (m_DB_Type) {
         case eBtree:
-            db_type = DB_BTREE;
             break;
         case eQueue:
             db_type = DB_QUEUE;
@@ -640,10 +639,9 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
         }
     }
 
-    DBTYPE db_type;
+    DBTYPE db_type = DB_BTREE;
     switch (m_DB_Type) {
     case eBtree:
-        db_type = DB_BTREE;
         break;
     case eQueue:
         db_type = DB_QUEUE;
@@ -1181,6 +1179,7 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
                                    unsigned int bdb_flag,
                                    CBDB_MultiRowBuffer*  multirow_buf)
 {
+	int ret;
     if (multirow_buf == 0) {
         return ReadCursor(dbc, bdb_flag);
     }
@@ -1207,10 +1206,10 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
     multirow_buf->InitDBT();
 
     // Cursor read
-    int ret = dbc->c_get(dbc,
-                         m_DBT_Key,
-                         multirow_buf->m_Data_DBT,
-                         bdb_flag | DB_MULTIPLE_KEY);
+    ret = dbc->c_get(dbc,
+                     m_DBT_Key,
+                     multirow_buf->m_Data_DBT,
+                     bdb_flag | DB_MULTIPLE_KEY);
     switch (ret) {
     case DB_NOTFOUND:
         return eBDB_NotFound;
@@ -1404,6 +1403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/09/12 17:01:16  kuznets
+ * Fixed compilation bugs and warnings
+ *
  * Revision 1.63  2006/09/12 16:55:14  kuznets
  * Implemented multi-row fetch
  *
