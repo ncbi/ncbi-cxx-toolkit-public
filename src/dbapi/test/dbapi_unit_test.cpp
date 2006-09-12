@@ -48,6 +48,26 @@ enum { max_text_size = 8000 };
 #define CONN_OWNERSHIP  eTakeOwnership
 static const char* msg_record_expected = "Record expected";
 
+
+///////////////////////////////////////////////////////////////////////////
+class CErrHandler : public CDB_UserHandler
+{
+public:
+    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+    virtual bool HandleIt(CDB_Exception* ex);
+};
+
+
+///////////////////////////////////////////////////////////////////////////
+class CODBCErrHandler : public CDB_UserHandler
+{
+public:
+    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
+    virtual bool HandleIt(CDB_Exception* ex);
+};
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Patterns to test:
 //      I) Statement:
@@ -101,7 +121,6 @@ protected:
 ///////////////////////////////////////////////////////////////////////////////
 CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
 : m_args(args)
-, m_ErrHandler(new CErrHandler)
 , m_DM( CDriverManager::GetInstance() )
 , m_DS( NULL )
 , m_TableName( "#dbapi_unit_table" )
@@ -2098,6 +2117,142 @@ CDBAPIUnitTest::Test_Variant2(void)
             }
         }
     }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_CDB_Exception(void)
+{
+    static const CDiagCompileInfo kBlankCompileInfo;
+    const string message("Very dangerous message");
+    const int msgnumber = 67890;
+
+    {
+        const string server_name("server_name");
+        const string user_name("user_name");
+        const int severity = 12345;
+
+        CDB_Exception ex(
+            kBlankCompileInfo,
+            NULL,
+            CDB_Exception::eMulti,
+            message,
+            eDiag_Trace,
+            msgnumber);
+
+        ex.SetServerName(server_name);
+        ex.SetUserName(user_name);
+        ex.SetSybaseSeverity(severity);
+
+        BOOST_CHECK_EQUAL(server_name, ex.GetServerName());
+        BOOST_CHECK_EQUAL(user_name, ex.GetUserName());
+        BOOST_CHECK_EQUAL(severity, ex.GetSybaseSeverity());
+
+        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Trace, ex.GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
+    }
+
+    {
+        CDB_DSEx ex(
+            kBlankCompileInfo,
+            NULL,
+            message,
+            eDiag_Fatal,
+            msgnumber);
+
+        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(CDB_Exception::eDS, ex.Type());
+    }
+
+    {
+        const string proc_name("proc_name");
+        const int proc_line = 12345;
+
+        CDB_RPCEx ex(
+            kBlankCompileInfo,
+            NULL,
+            message,
+            eDiag_Critical,
+            msgnumber,
+            proc_name,
+            proc_line);
+
+        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Critical, ex.GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eRPC, ex.Type());
+    }
+
+    {
+        const string sql_state("sql_state");
+        const int batch_line = 12345;
+
+        CDB_SQLEx ex(
+            kBlankCompileInfo,
+            NULL,
+            message,
+            eDiag_Error,
+            msgnumber,
+            sql_state,
+            batch_line);
+
+        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eSQL, ex.GetErrCode());
+        BOOST_CHECK_EQUAL(CDB_Exception::eSQL, ex.Type());
+    }
+
+    {
+        CDB_DeadlockEx ex(
+            kBlankCompileInfo,
+            NULL,
+            message);
+
+        BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(CDB_Exception::eDeadlock, ex.Type());
+    }
+
+    {
+        CDB_TimeoutEx ex(
+            kBlankCompileInfo,
+            NULL,
+            message,
+            msgnumber);
+
+        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(CDB_Exception::eTimeout, ex.Type());
+    }
+
+    {
+        CDB_ClientEx ex(
+            kBlankCompileInfo,
+            NULL,
+            message,
+            eDiag_Warning,
+            msgnumber);
+
+        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Warning, ex.GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eClient, ex.Type());
+    }
+
+    {
+        CDB_MultiEx ex(
+            kBlankCompileInfo,
+            NULL);
+
+        BOOST_CHECK_EQUAL(0, ex.GetDBErrCode());
+        BOOST_CHECK_EQUAL(eDiag_Info, ex.GetSeverity());
+        BOOST_CHECK_EQUAL(kEmptyStr, ex.GetMsg());
+        BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
+    }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -4297,6 +4452,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
+
+    add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
+    add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception, DBAPIInstance));
+
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Create_Destroy, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
@@ -4309,8 +4468,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
     // tc->depends_on(tc_init);
     // add(tc);
-
-    add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
     boost::unit_test::test_case* tc_parameters =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters,
@@ -4400,7 +4557,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(select_stmt_tc);
 
         if ( args.GetServerType() == CTestArguments::eMsSql &&
-             args.GetDriverName() != "msdblib") {
+             (args.GetDriverName() != "msdblib" && args.GetDriverName() != "dblib")) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML, DBAPIInstance);
             tc->depends_on(tc_init);
             tc->depends_on(select_stmt_tc);
@@ -4638,6 +4795,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.93  2006/09/12 15:03:48  ssikorsk
+ * Implemented Test_CDB_Exception.
+ *
  * Revision 1.92  2006/08/31 14:56:12  ssikorsk
  * Made tests database-independent.
  *
