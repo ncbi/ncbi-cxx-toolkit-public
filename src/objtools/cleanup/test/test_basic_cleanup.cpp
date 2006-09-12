@@ -192,14 +192,11 @@ int CTest_cleanupApplication::Run(void)
         }
     }
 
-    unsigned int result = 0;
-    if (args["x"]) {            
-        if ( changes->ChangeCount() > 0 ) {
-            result = PrintChanges(changes, args);
-        }
+    if ( changes->ChangeCount() > 0 ) {
+        PrintChanges(changes, args);
     }
 
-    return result;
+    return 0;
 }
 
 
@@ -377,8 +374,9 @@ SIZE_TYPE CTest_cleanupApplication::PrintChanges
         return 0;
     }
 
-    ITERATE(vector<CCleanupChange::EChanges>, vit, changes->GetAllChanges()) {
-        *os << CCleanupChange::GetDescription(*vit) << endl;
+    vector<string> changes_str = changes->GetAllDescriptions();
+    ITERATE(vector<string>, vit, changes_str) {
+        *os << *vit << endl;
     }
 
     *os << "Number of changes: " << changes->ChangeCount() << endl;
@@ -406,6 +404,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/09/12 19:43:58  rsmith
+ * fix reporting for changes.
+ *
  * Revision 1.3  2006/07/13 17:11:28  rsmith
  * change reporting changed.
  *
