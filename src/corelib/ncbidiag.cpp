@@ -1890,16 +1890,25 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
     bool special = s_IsSpecialLogName(file_name);
     switch ( file_type ) {
     case eDiagFile_All:
-        m_Err.m_FileName = special ? file_name : file_name + ".err";
-        m_Err.m_Mode = mode;
-        m_Err.m_QuickFlush = quick_flush;
-        m_Log.m_FileName = special ? file_name : file_name + ".log";
-        m_Log.m_Mode = mode;
-        m_Log.m_QuickFlush = quick_flush;
-        m_Trace.m_FileName = special ? file_name : file_name + ".trace";
-        m_Trace.m_Mode = mode;
-        m_Trace.m_QuickFlush = quick_flush;
-        break;
+        {
+            // Remove known extension if any
+            CDirEntry entry(file_name);
+            string ext = entry.GetExt();
+            string adj_name = file_name;
+            if (ext == ".log"  ||  ext == ".err"  ||  ext == ".trace") {
+                adj_name = entry.GetBase();
+            }
+            m_Err.m_FileName = special ? adj_name : adj_name + ".err";
+            m_Err.m_Mode = mode;
+            m_Err.m_QuickFlush = quick_flush;
+            m_Log.m_FileName = special ? adj_name : adj_name + ".log";
+            m_Log.m_Mode = mode;
+            m_Log.m_QuickFlush = quick_flush;
+            m_Trace.m_FileName = special ? adj_name : adj_name + ".trace";
+            m_Trace.m_Mode = mode;
+            m_Trace.m_QuickFlush = quick_flush;
+            break;
+        }
     case eDiagFile_Err:
         m_Err.m_FileName = file_name;
         m_Err.m_Mode = mode;
@@ -2049,6 +2058,7 @@ public:
                     ios::openmode mode);
     string GetLogFile(EDiagFileType file_type) const;
     bool IsDiagStream(const CNcbiOstream* os) const;
+    CNcbiOstream* GetDiagStream(void) const;
 
 private:
     auto_ptr<CDiagHandler> m_StreamHandler;
@@ -2083,13 +2093,12 @@ extern bool SetLogFile(const string& file_name,
         }
         else {
             // output to file
-            string file_name_ext = file_name + ".log";
-            CNcbiOfstream* str = new CNcbiOfstream(file_name_ext.c_str(),
+            CNcbiOfstream* str = new CNcbiOfstream(file_name.c_str(),
                 mode);
             if ( !str->is_open() ) {
                 SetLogFile("-", eDiagFile_All, quick_flush);
                 ERR_POST(Warning << "Failed to initialize log: "
-                    << file_name_ext);
+                    << file_name);
                 return false;
             }
             else {
@@ -2511,13 +2520,39 @@ extern void SetDiagStream(CNcbiOstream* os, bool quick_flush,
                           FDiagCleanup cleanup, void* cleanup_data)
 {
     // Temp. code to enable CDoubleDiagHandler
-    CDoubleDiagHandler* h = dynamic_cast<CDoubleDiagHandler*>(GetDiagHandler());
+    CDoubleDiagHandler* h =
+        dynamic_cast<CDoubleDiagHandler*>(GetDiagHandler());
     if ( h ) {
         h->SetDiagStream(os, quick_flush, cleanup, cleanup_data);
         return;
     }
     SetDiagHandler(new CCompatStreamDiagHandler(os, quick_flush,
                                                 cleanup, cleanup_data));
+}
+
+
+extern CNcbiOstream* GetDiagStream(void)
+{
+    CDiagHandler* diagh = GetDiagHandler();
+    if ( !diagh ) {
+        return 0;
+    }
+    CDoubleDiagHandler* dh =
+        dynamic_cast<CDoubleDiagHandler*>(diagh);
+    if ( dh ) {
+        return dh->GetDiagStream();
+    }
+    const CStreamDiagHandler* sh =
+        dynamic_cast<CStreamDiagHandler*>(diagh);
+    if ( sh ) {
+        return sh->m_Stream;
+    }
+    CFileDiagHandler* fh =
+        dynamic_cast<CFileDiagHandler*>(diagh);
+    if ( fh ) {
+        return fh->GetLogStream(eDiagFile_Err);
+    }
+    return 0;
 }
 
 
@@ -2561,6 +2596,14 @@ bool CDoubleDiagHandler::IsDiagStream(const CNcbiOstream* os) const
     const CStreamDiagHandler* sdh =
         dynamic_cast<CStreamDiagHandler*>(m_StreamHandler.get());
     return sdh  &&  sdh->m_Stream == os;
+}
+
+
+CNcbiOstream* CDoubleDiagHandler::GetDiagStream(void) const
+{
+    const CStreamDiagHandler* sdh =
+        dynamic_cast<CStreamDiagHandler*>(m_StreamHandler.get());
+    return sdh ? sdh->m_Stream : 0;
 }
 
 
@@ -2851,6 +2894,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.131  2006/09/12 15:02:04  grichenk
+ * Fixed log file name extensions.
+ * Added GetDiagStream().
+ *
  * Revision 1.130  2006/09/08 15:33:41  grichenk
  * Flush data from memory stream when switching to log file.
  *

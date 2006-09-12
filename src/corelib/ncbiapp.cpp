@@ -1056,12 +1056,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 
 void CNcbiApplication::x_FlushMemoryDiagStream(void)
 {
-    CFileDiagHandler* handler =
-        dynamic_cast<CFileDiagHandler*>(GetDiagHandler());
-    if ( !handler ) {
-        return;
-    }
-    FlushDiag(handler->GetLogStream(eDiagFile_Err), false);
+    FlushDiag(GetDiagStream(), false);
     m_DiagStream.reset();
 }
 
@@ -1172,11 +1167,10 @@ string CNcbiApplication::GetLogFileName(EDiagFileType file_type) const
     }
     switch ( file_type ) {
     case eDiagFile_All:
-        return m_LogFileName;
-    case eDiagFile_Err:
-        return logname.empty() ? m_LogFileName + ".err" : logname;
     case eDiagFile_Log:
         return logname.empty() ? m_LogFileName + ".log" : logname;
+    case eDiagFile_Err:
+        return logname.empty() ? m_LogFileName + ".err" : logname;
     case eDiagFile_Trace:
         return logname.empty() ? m_LogFileName + ".trace" : logname;
     }
@@ -1229,6 +1223,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.130  2006/09/12 15:02:04  grichenk
+ * Fixed log file name extensions.
+ * Added GetDiagStream().
+ *
  * Revision 1.129  2006/09/08 15:33:41  grichenk
  * Flush data from memory stream when switching to log file.
  *

@@ -919,11 +919,10 @@ string CCgiApplication::GetLogFileName(EDiagFileType file_type) const
     string logname = GetArguments().GetProgramBasename();
     switch ( file_type ) {
     case eDiagFile_All:
-        return logname;
-    case eDiagFile_Err:
-        return logname + ".err";
     case eDiagFile_Log:
         return logname + ".log";
+    case eDiagFile_Err:
+        return logname + ".err";
     case eDiagFile_Trace:
         return logname + ".trace";
     }
@@ -1159,6 +1158,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.88  2006/09/12 15:02:04  grichenk
+* Fixed log file name extensions.
+* Added GetDiagStream().
+*
 * Revision 1.87  2006/09/11 20:08:24  ivanov
 * Added SuppressSystemMessageBox() call to CCgiApplication constructor
 *

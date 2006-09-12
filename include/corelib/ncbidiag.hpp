@@ -1196,6 +1196,7 @@ public:
     virtual void Post(const SDiagMessage& mess);
 
     NCBI_XNCBI_EXPORT friend bool IsDiagStream(const CNcbiOstream* os);
+    NCBI_XNCBI_EXPORT friend CNcbiOstream* GetDiagStream(void);
     friend class CDoubleDiagHandler;
 
 protected:
@@ -1330,6 +1331,9 @@ extern void SetDiagStream
 NCBI_XNCBI_EXPORT 
 extern bool IsDiagStream(const CNcbiOstream* os);
 
+/// Get current diagnostic stream (if it was set by SetDiagStream) or NULL.
+NCBI_XNCBI_EXPORT
+extern CNcbiOstream* GetDiagStream(void);
 
 /// Split log files flag. If set, the output is sent to different
 /// log files depending on the severity level.
@@ -1344,6 +1348,9 @@ NCBI_XNCBI_EXPORT extern bool GetSplitLogFile(void);
 /// stderr if their files have not been assigned yet.
 /// If split log flag is off, any file type except eDiagFile_All
 /// will be ignored.
+/// If the file_name contains one of the extensions .log, .err or .trace
+/// and the file type is eDiagFile_All, the extension will be removed
+/// before adding the new one.
 /// Return true on success, false if the file could not be open.
 NCBI_XNCBI_EXPORT
 extern bool SetLogFile(const string& file_name,
@@ -1569,6 +1576,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.117  2006/09/12 15:02:04  grichenk
+ * Fixed log file name extensions.
+ * Added GetDiagStream().
+ *
  * Revision 1.116  2006/09/08 15:33:35  grichenk
  * Flush data from memory stream when switching to log file.
  *
