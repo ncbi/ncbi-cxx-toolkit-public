@@ -49,7 +49,7 @@ public:
                        message,
                        eDiag_Error,
                        1000)
-    NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDbapiException, CDB_ClientEx);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDbapiException, CDB_ClientEx, 1000);
 };
 
 #define NCBI_DBAPI_THROW( message ) \
@@ -64,6 +64,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/12 15:01:31  ssikorsk
+ * Fixed code to use new version of NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION.
+ *
  * Revision 1.3  2005/04/04 13:03:56  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
