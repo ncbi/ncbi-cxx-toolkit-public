@@ -131,24 +131,6 @@ private:
 
 
 ///////////////////////////////////////////////////////////////////////////
-class CErrHandler : public CDB_UserHandler
-{
-public:
-    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
-    virtual bool HandleIt(CDB_Exception* ex);
-};
-
-
-///////////////////////////////////////////////////////////////////////////
-class CODBCErrHandler : public CDB_UserHandler
-{
-public:
-    // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
-    virtual bool HandleIt(CDB_Exception* ex);
-};
-
-
-///////////////////////////////////////////////////////////////////////////
 class CDBAPIUnitTest
 {
 public:
@@ -164,6 +146,8 @@ public:
     // Testing Approach for value wrappers
     void Test_Variant(void);
     void Test_Variant2(void);
+
+    void Test_CDB_Exception(void);
 
     // Testing Approach for Members
     // Test particular methods.
@@ -232,7 +216,6 @@ protected:
 
 private:
     const CTestArguments    m_args;
-    auto_ptr<CErrHandler>   m_ErrHandler;
     CDriverManager&         m_DM;
     IDataSource*            m_DS;
     auto_ptr<IConnection>   m_Conn;
@@ -255,6 +238,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2006/09/12 15:02:57  ssikorsk
+ * Added Test_CDB_Exception.
+ *
  * Revision 1.41  2006/08/24 17:00:24  ssikorsk
  * + Test_Unicode
  *
