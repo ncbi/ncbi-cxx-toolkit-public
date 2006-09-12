@@ -129,6 +129,14 @@ public:
 
     ~CBDB_FileCursor();
 
+    /// Init multi-row fetch
+    ///
+    /// @buffer_size 
+    ///    Size of fetch buffer 
+    ///    (at least one page size, multiple of 1024 bytes in size)
+    ///
+    void InitMultiFetch(size_t buffer_size);
+
     /// Set search condition(type of interval)
     ///
     /// @note
@@ -176,6 +184,15 @@ public:
                             size_t size, 
                             CBDB_File::EAfterWrite write_flag 
                                 = CBDB_File::eDiscardData);
+
+
+    /// Get data pointer from last fetch (only when in multifetch mode)
+    ///
+    const void* GetLastMultiFetchData() const;
+
+    /// Get data length from last fetch (only when in multifetch mode)
+    ///
+    size_t GetLastMultiFetchDataLen() const;
 
     // Returns number of records with same key as this cursor refers
     TRecordCount KeyDupCount() const;
@@ -237,6 +254,8 @@ private:
     bool                   m_FirstFetched;
     /// Type of locking (conventional or RMW)
     unsigned int           m_FetchFlags;
+    /// Buffer class for multiple fetch
+    CBDB_MultiRowBuffer*   m_MutiRowBuf;
 
     friend class CBDB_FC_Condition;
 };
@@ -310,6 +329,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/09/12 16:55:28  kuznets
+ * Implemented multi-row fetch
+ *
  * Revision 1.18  2006/02/01 16:15:55  kuznets
  * CCursorGuard renamed CBDB_CursorGuard
  *

@@ -1341,6 +1341,9 @@ public:
 	/// Copy all fields from another manager with the same(a must!) structure
 	void CopyFrom(const CBDB_BufferManager& bman);
 
+    /// Copy packed data (buffer) from an external source
+    void CopyPackedFrom(void* data, size_t data_size);
+
 protected:
     CBDB_BufferManager();
 
@@ -2062,6 +2065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/09/12 16:55:28  kuznets
+ * Implemented multi-row fetch
+ *
  * Revision 1.51  2005/06/03 16:20:36  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

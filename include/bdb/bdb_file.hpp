@@ -287,6 +287,38 @@ private:
 };
 
 
+/// Multirow buffer for reading many rows in one call
+///
+
+class NCBI_BDB_EXPORT CBDB_MultiRowBuffer
+{
+public:
+    CBDB_MultiRowBuffer(size_t buf_size);
+    ~CBDB_MultiRowBuffer();
+
+    /// Get data buffer pointer from last cursor read
+    const void* GetLastDataPtr() const { return m_LastData; }
+    /// Get BLOB length from last cursor read
+    size_t      GetLastDataLen() const { return m_LastDataLen; }
+protected:
+    void  InitDBT();
+    void  MultipleInit();
+private:
+    CBDB_MultiRowBuffer(const CBDB_MultiRowBuffer&);
+    CBDB_MultiRowBuffer& operator=(const CBDB_MultiRowBuffer&);
+protected:
+    DBT*     m_Data_DBT;  ///< Temp DBT for multiple fetch
+    void*    m_Buf;       ///< Multiple row buffer
+    size_t   m_BufSize;   ///< buffer size
+    void*    m_BufPtr;    ///< current buffer position
+    void*    m_LastKey;   ///< Last key pointer returned by DB_MULTIPLE_KEY_NEXT
+    void*    m_LastData;  ///< Last data pointer returned by DB_MULTIPLE_KEY_NEXT
+    size_t   m_LastKeyLen; 
+    size_t   m_LastDataLen; 
+
+friend class CBDB_File;
+};
+
 
 
 /// Berkeley DB file class. 
@@ -436,6 +468,14 @@ protected:
                             void**       buf, 
                             size_t       buf_size, 
                             EReallocMode allow_realloc);
+
+
+    /// Multiple-row read into a buffer
+    /// Buffer is to be traversed using DB_MULTIPLE_KEY_NEXT (BerkeleyDB)
+    EBDB_ErrCode ReadCursor(DBC*         dbc, 
+                            unsigned int bdb_flag,
+                            CBDB_MultiRowBuffer*  multirow_buf);
+
 
     /// Write DB cursor
     EBDB_ErrCode WriteCursor(DBC* dbc, unsigned int bdb_flag, 
@@ -626,6 +666,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/09/12 16:55:28  kuznets
+ * Implemented multi-row fetch
+ *
  * Revision 1.46  2006/09/06 16:37:39  dicuccio
  * Implement GetPageSize()
  *

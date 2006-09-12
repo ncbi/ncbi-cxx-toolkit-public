@@ -642,6 +642,17 @@ void CBDB_BufferManager::CopyFrom(const CBDB_BufferManager& buf_mgr)
 	CopyFieldsFrom(buf_mgr);
 }
 
+void CBDB_BufferManager::CopyPackedFrom(void* data, size_t data_size)
+{
+    _ASSERT(data);
+    _ASSERT(data_size < m_BufferSize);
+
+    memcpy(m_Buffer, data, data_size);
+    SetDBT_Size(data_size);
+    ArrangePtrsPacked();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_FieldLString::
 //
@@ -1034,6 +1045,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/09/12 16:55:14  kuznets
+ * Implemented multi-row fetch
+ *
  * Revision 1.34  2005/06/03 16:39:34  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

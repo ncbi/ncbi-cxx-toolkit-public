@@ -67,6 +67,39 @@ private:
     DB** m_DB;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_MultiRowBuffer::
+//
+
+
+CBDB_MultiRowBuffer::CBDB_MultiRowBuffer(size_t buf_size)
+{
+    m_Data_DBT = new DBT;
+    m_Buf = new char[buf_size];
+    m_BufSize = buf_size; 
+    m_BufPtr = 0;
+    m_LastKey = m_LastData = 0;
+    m_LastKeyLen = m_LastDataLen = 0; 
+}
+
+CBDB_MultiRowBuffer::~CBDB_MultiRowBuffer()
+{
+    delete [] m_BufPtr;
+    delete m_Data_DBT;
+}
+void CBDB_MultiRowBuffer::InitDBT()
+{
+    memset(m_Data_DBT, 0, sizeof(DBT));
+    m_Data_DBT->data = m_Buf;
+    m_Data_DBT->ulen = m_Data_DBT->size = m_BufSize;
+    m_Data_DBT->flags = DB_DBT_USERMEM;
+}
+
+void CBDB_MultiRowBuffer::MultipleInit()
+{
+    DB_MULTIPLE_INIT(m_BufPtr, m_Data_DBT);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_RawFile::
@@ -1144,6 +1177,78 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
     return eBDB_Ok;
 }
 
+EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc, 
+                                   unsigned int bdb_flag,
+                                   CBDB_MultiRowBuffer*  multirow_buf)
+{
+    if (multirow_buf == 0) {
+        return ReadCursor(dbc, bdb_flag);
+    }
+
+    // Something sits in the memory buffer already, get the next record
+    //
+    if (multirow_buf->m_BufPtr != 0) {
+        DB_MULTIPLE_KEY_NEXT(
+            multirow_buf->m_BufPtr,
+            multirow_buf->m_Data_DBT,
+            multirow_buf->m_LastKey,  multirow_buf->m_LastKeyLen,
+            multirow_buf->m_LastData, multirow_buf->m_LastDataLen);
+
+        if (multirow_buf->m_BufPtr != 0) {
+            goto read_epilog;
+        }
+    }
+
+
+    // read prolog actions
+    m_KeyBuf->Pack();
+    m_KeyBuf->PrepareDBT_ForRead(m_DBT_Key);
+
+    multirow_buf->InitDBT();
+
+    // Cursor read
+    int ret = dbc->c_get(dbc,
+                         m_DBT_Key,
+                         multirow_buf->m_Data_DBT,
+                         bdb_flag | DB_MULTIPLE_KEY);
+    switch (ret) {
+    case DB_NOTFOUND:
+        return eBDB_NotFound;
+    case DB_KEYEMPTY:
+        // record has been deleted
+        return eBDB_KeyEmpty;
+    }
+
+    BDB_CHECK(ret, FileName().c_str());
+
+
+    // Get the first record out of the fetching buffer
+    //
+    multirow_buf->MultipleInit();
+
+    DB_MULTIPLE_KEY_NEXT(
+            multirow_buf->m_BufPtr,
+            multirow_buf->m_Data_DBT,
+            multirow_buf->m_LastKey,  multirow_buf->m_LastKeyLen,
+            multirow_buf->m_LastData, multirow_buf->m_LastDataLen);
+    if (multirow_buf->m_BufPtr == 0) {
+        return eBDB_NotFound;
+    }
+
+    // Read epilog (copy things into field buffer)
+    //
+read_epilog:
+    m_KeyBuf->CopyPackedFrom(multirow_buf->m_LastKey,  
+                             multirow_buf->m_LastKeyLen);
+    if ( m_DataBuf.get() ) {
+        m_DataBuf->CopyPackedFrom(multirow_buf->m_LastData,  
+                                  multirow_buf->m_LastDataLen);
+    }
+    return eBDB_Ok;
+}
+
+
+
 EBDB_ErrCode CBDB_File::WriteCursor(DBC* dbc, unsigned int bdb_flag, 
                                     EAfterWrite write_flag)
 {
@@ -1299,6 +1404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/09/12 16:55:14  kuznets
+ * Implemented multi-row fetch
+ *
  * Revision 1.62  2006/09/06 16:37:39  dicuccio
  * Implement GetPageSize()
  *
