@@ -428,7 +428,7 @@ bool CBandAligner::x_CheckMemoryLimit()
 {
     const size_t elem_size = GetElemSize();
     const size_t gdim = m_guides.size();
-    const size_t max_mem = 1024 * 1024 * (512 + 2 * 1024);
+    const size_t max_mem = 1024u * 1024u * (512u + 2u * 1024u);
     if(gdim) {
 
         size_t dim1 = m_guides[0], dim2 = m_guides[2];
@@ -468,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/09/12 20:14:11  kapustin
+ * Avoid gcc warning - use unsigned literals
+ *
  * Revision 1.12  2006/08/29 18:23:48  kapustin
  * Use numeric_limits to define size_t max
  *
