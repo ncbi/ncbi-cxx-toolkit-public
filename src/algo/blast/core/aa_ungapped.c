@@ -892,7 +892,9 @@ Int4 BlastDiagUpdate(BLAST_DiagTable * diag, Int4 length)
     if (diag == NULL)
         return 0;
 
-    if (diag->offset >= INT4_MAX / 2) {
+    /* BLAST_DiagTable.offset gets compared to DiagStruct.last_hit and
+        that has only 31 bits to use. */
+    if (diag->offset >= INT4_MAX / 4) {
         BlastDiagClear(diag);
     } else {
         diag->offset += length;
