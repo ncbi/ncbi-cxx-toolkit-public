@@ -143,7 +143,7 @@ s_TranslateHSPsToDNAPCoord(EBlastProgramType program,
                 BSearchContextInfo(init_hsp->offsets.qs_offsets.q_off, 
                                    query_info);
             
-            frame_idx = context_idx % 3;
+            frame_idx = context_idx % CODON_LENGTH;
             init_frame_idx = context_idx - frame_idx;
             
             frame_pos = contexts[init_frame_idx].query_offset + frame_idx;
