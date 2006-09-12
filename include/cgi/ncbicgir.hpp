@@ -80,7 +80,32 @@ public:
     void   SetContentType(const string& type);
     string GetContentType(void) const;
 
+    // Set filename for undisplayable content; please include an
+    // appropriate extension, and don't bother with directory
+    // components (which clients generally discard).
+    void   SetFilename(const string& name);
+
     void   SetLocation(const CUrl& url);
+
+    // Various styles of multipart responses, none of which is
+    // universally supported. :-/
+    enum EMultipartMode
+    {
+        eMultipart_none, // default (just a single part)
+        eMultipart_mixed,
+        eMultipart_related,
+        eMultipart_replace // push-style refreshing
+    };
+    void           SetMultipartMode(EMultipartMode mode = eMultipart_mixed);
+    EMultipartMode GetMultipartMode(void);
+
+    void BeginPart  (const string& name, const string& type);
+    void EndPart    (void);
+    void EndLastPart(void);
+
+    void BeginPart  (const string& name, const string& type, CNcbiOstream& os);
+    void EndPart    (CNcbiOstream& os);
+    void EndLastPart(CNcbiOstream& os);
 
     // Get cookies set
     const CCgiCookies& Cookies(void) const;
@@ -108,12 +133,21 @@ protected:
     static const string sm_ContentTypeName;     // Content type header name
     static const string sm_LocationName;        // Location header name
     static const string sm_ContentTypeDefault;  // Dflt content type: text/html
+    static const string sm_ContentTypeMixed;    // multipart/mixed
+    static const string sm_ContentTypeRelated;  // multipart/related
+    static const string sm_ContentTypeXMR;      // multipart/x-mixed-replace
+    static const string sm_ContentDispoName;    // Content-Disposition
+    static const string sm_FilenamePrefix;      // Syntax preceding the filename
     static const string sm_HTTPStatusName;      // Status header name:   Status
     static const string sm_HTTPStatusDefault;   // Default HTTP status:  200 OK
+    static const string sm_BoundaryPrefix;      // Start of multipart boundary
     
     typedef map<string, string, PNocase> TMap;
 
     bool          m_IsRawCgi;      // The "raw CGI" flag
+    EMultipartMode m_IsMultipart;  // (Three-way) multipart flag
+    bool          m_BetweenParts;  // Did we already print the boundary?
+    string        m_Boundary;      // Multipart boundary
     TMap          m_HeaderValues;  // Header lines in alphabetical order
     CCgiCookies   m_Cookies;       // Cookies
     CNcbiOstream* m_Output;        // Default output stream
@@ -165,9 +199,41 @@ inline string CCgiResponse::GetContentType(void) const
     return GetHeaderValue(sm_ContentTypeName);
 }
 
+inline void CCgiResponse::SetFilename(const string& name)
+{
+    SetHeaderValue(sm_ContentDispoName,
+                   sm_FilenamePrefix + NStr::PrintableString(name) + '"');
+}
+
 inline void CCgiResponse::SetLocation(const CUrl& url)
 {
     SetHeaderValue(sm_LocationName, url.ComposeUrl(CCgiArgs::eAmp_Char));
+}
+
+inline void CCgiResponse::SetMultipartMode(EMultipartMode mode)
+{
+    m_IsMultipart = mode;
+    m_Boundary    = sm_BoundaryPrefix + GetDiagContext().GetStringUID();
+}
+
+inline CCgiResponse::EMultipartMode CCgiResponse::GetMultipartMode(void)
+{
+    return m_IsMultipart;
+}
+
+inline void CCgiResponse::BeginPart(const string& name, const string& type)
+{
+    BeginPart(name, type, out());
+}
+
+inline void CCgiResponse::EndPart(void)
+{
+    EndPart(out());
+}
+
+inline void CCgiResponse::EndLastPart(void)
+{
+    EndLastPart(out());
 }
 
 inline const CCgiCookies& CCgiResponse::Cookies(void) const
@@ -215,6 +281,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2006/09/12 14:27:45  ucko
+ * Add a SetFilename method and an API for producing multipart responses.
+ *
  * Revision 1.21  2006/06/29 14:32:43  didenko
  * Added tracking cookie
  *

@@ -55,9 +55,14 @@ BEGIN_NCBI_SCOPE
 const string CCgiResponse::sm_ContentTypeName    = "Content-Type";
 const string CCgiResponse::sm_LocationName       = "Location";
 const string CCgiResponse::sm_ContentTypeDefault = "text/html";
+const string CCgiResponse::sm_ContentTypeMixed   = "multipart/mixed";
+const string CCgiResponse::sm_ContentTypeRelated = "multipart/related";
+const string CCgiResponse::sm_ContentTypeXMR     = "multipart/x-mixed-replace";
+const string CCgiResponse::sm_ContentDispoName   = "Content-Disposition";
+const string CCgiResponse::sm_FilenamePrefix     = "attachment; filename=\"";
 const string CCgiResponse::sm_HTTPStatusName     = "Status";
 const string CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
-
+const string CCgiResponse::sm_BoundaryPrefix     = "NCBI_CGI_Boundary_";
 
 inline bool s_ZeroTime(const tm& date)
 {
@@ -68,6 +73,8 @@ inline bool s_ZeroTime(const tm& date)
 
 CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
     : m_IsRawCgi(false),
+      m_IsMultipart(eMultipart_none),
+      m_BetweenParts(false),
       m_Output(os ? os : &NcbiCout),
       m_OutputFD(os ? ofd : STDOUT_FILENO), // "os" is NOT a typo
       m_Session(NULL)
@@ -181,9 +188,36 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         os << "HTTP/1.1 " << status << HTTP_EOL;
     }
 
+    if (m_IsMultipart != eMultipart_none
+        &&  CCgiUserAgent().GetEngine() == CCgiUserAgent::eEngine_IE) {
+        // MSIE requires multipart responses to start with these extra
+        // headers, which confuse other browsers. :-/
+        os << sm_ContentTypeName << ": message/rfc822" << HTTP_EOL << HTTP_EOL
+           << "Mime-Version: 1.0" << HTTP_EOL;
+    }
+
     // Default content type (if it's not specified by user already)
-    if ( !HaveHeaderValue(sm_ContentTypeName) ) {
-        os << sm_ContentTypeName << ": " << sm_ContentTypeDefault << HTTP_EOL;
+    switch (m_IsMultipart) {
+    case eMultipart_none:
+        if ( !HaveHeaderValue(sm_ContentTypeName) ) {
+            os << sm_ContentTypeName << ": " << sm_ContentTypeDefault
+               << HTTP_EOL;
+        }
+        break;
+    case eMultipart_mixed:
+        os << sm_ContentTypeName << ": " << sm_ContentTypeMixed
+           << "; boundary=" << m_Boundary << HTTP_EOL;
+        break;
+    case eMultipart_related:
+        os << sm_ContentTypeName << ": " << sm_ContentTypeRelated
+           << "; type=" << (HaveHeaderValue(sm_ContentTypeName)
+                            ? sm_ContentTypeName : sm_ContentTypeDefault)
+           << "; boundary=" << m_Boundary << HTTP_EOL;
+        break;
+    case eMultipart_replace:
+        os << sm_ContentTypeName << ": " << sm_ContentTypeXMR
+           << "; boundary=" << m_Boundary << HTTP_EOL;
+        break;
     }
     
     if (m_Session) {
@@ -203,14 +237,72 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
 
     // All header lines (in alphabetical order)
     ITERATE (TMap, i, m_HeaderValues) {
-        if (skip_status  &&
-            NStr::CompareNocase(i->first, sm_HTTPStatusName) == 0)
+        if (skip_status  &&  NStr::EqualNocase(i->first, sm_HTTPStatusName)) {
             break;
+        } else if (m_IsMultipart != eMultipart_none
+                   &&  NStr::StartsWith(i->first, "Content-", NStr::eNocase)) {
+            break;
+        }
         os << i->first << ": " << i->second << HTTP_EOL;
+    }
+
+    if (m_IsMultipart != eMultipart_none) { // proceed with first part
+        os << HTTP_EOL << "--" << m_Boundary << HTTP_EOL;
+        if ( !HaveHeaderValue(sm_ContentTypeName) ) {
+            os << sm_ContentTypeName << ": " << sm_ContentTypeDefault
+               << HTTP_EOL;
+        }
+        for (TMap::const_iterator it = m_HeaderValues.lower_bound("Content-");
+             it != m_HeaderValues.end()
+             &&  NStr::StartsWith(it->first, "Content-", NStr::eNocase);
+             ++it) {
+            os << it->first << ": " << it->second << HTTP_EOL;
+        }
     }
 
     // End of header (empty line)
     return os << HTTP_EOL;
+}
+
+void CCgiResponse::BeginPart(const string& name, const string& type_in,
+                             CNcbiOstream& os)
+{
+    _ASSERT(m_IsMultipart != eMultipart_none);
+    if ( !m_BetweenParts ) {
+        os << HTTP_EOL << "--" << m_Boundary << HTTP_EOL;
+    }
+
+    string type = type_in;
+    if (type.empty() /* &&  m_IsMultipart == eMultipart_replace */) {
+        type = GetHeaderValue(sm_ContentTypeName);
+    }
+    os << sm_ContentTypeName << ": "
+       << (type.empty() ? sm_ContentTypeDefault : type) << HTTP_EOL;
+
+    if ( !name.empty() ) {
+        os << sm_ContentDispoName << ": " << sm_FilenamePrefix
+           << NStr::PrintableString(name) << '"' << HTTP_EOL;
+    } else if (m_IsMultipart != eMultipart_replace) {
+        ERR_POST(Warning << "multipart content contains anonymous part");
+    }
+
+    os << HTTP_EOL;
+}
+
+void CCgiResponse::EndPart(CNcbiOstream& os)
+{
+    _ASSERT(m_IsMultipart != eMultipart_none);
+    if ( !m_BetweenParts ) {
+        os << HTTP_EOL << "--" << m_Boundary << HTTP_EOL << NcbiFlush;
+    }
+    m_BetweenParts = true;
+}
+
+void CCgiResponse::EndLastPart(CNcbiOstream& os)
+{
+    _ASSERT(m_IsMultipart != eMultipart_none);
+    os << HTTP_EOL << "--" << m_Boundary << "--" << HTTP_EOL << NcbiFlush;
+    m_IsMultipart = eMultipart_none; // forbid adding more parts
 }
 
 
@@ -234,6 +326,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.27  2006/09/12 14:27:52  ucko
+* Add a SetFilename method and an API for producing multipart responses.
+*
 * Revision 1.26  2006/06/29 14:32:43  didenko
 * Added tracking cookie
 *
