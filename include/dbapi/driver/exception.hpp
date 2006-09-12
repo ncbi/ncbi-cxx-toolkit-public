@@ -45,10 +45,11 @@
 
 BEGIN_NCBI_SCOPE
 
-
 /// Helper macro for default database exception implementation.
-#define NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
-    {} \
+#define NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class, db_err_code) \
+    { \
+        this->x_InitCDB(db_err_code); \
+    } \
     exception_class(const exception_class& other) \
        : base_class(other) \
     { \
@@ -63,6 +64,7 @@ public: \
         return typeid(*this) == typeid(exception_class) ? \
             (TErrCode)x_GetErrCode() : (TErrCode)CException::eInvalid; \
     } \
+    EType Type(void) const { return static_cast<EType>(GetErrCode());  } \
 protected: \
     exception_class(void) {} \
     virtual const CException* x_Clone(void) const \
@@ -171,6 +173,7 @@ protected:
     void x_StartOfWhat(ostream& out) const;
     void x_EndOfWhat  (ostream& out) const;
     virtual void x_Assign(const CException& src);
+    void x_InitCDB(int db_error_code) { m_DBErrCode = db_error_code; }
 
 private:
     string  m_ServerName;
@@ -189,7 +192,8 @@ public:
              EDiagSev severity,
              int db_err_code)
         : CDB_Exception(info, prev_exception, CDB_Exception::eDS, message, severity, db_err_code)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DSEx, CDB_Exception);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DSEx, CDB_Exception, db_err_code);
+
 };
 
 
@@ -212,7 +216,7 @@ public:
                         db_err_code)
         , m_ProcName(proc_name.empty() ? "Unknown" : proc_name)
         , m_ProcLine(proc_line)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_RPCEx, CDB_Exception);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_RPCEx, CDB_Exception, db_err_code);
 
 public:
     const string& ProcName()  const { return m_ProcName; }
@@ -248,7 +252,7 @@ public:
                         db_err_code)
         , m_SqlState(sql_state.empty() ? "Unknown" : sql_state)
         , m_BatchLine(batch_line)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_SQLEx, CDB_Exception);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_SQLEx, CDB_Exception, db_err_code);
 
 public:
     const string& SqlState()   const { return m_SqlState;  }
@@ -273,7 +277,8 @@ public:
                    const CException* prev_exception,
                    const string& message)
        : CDB_Exception(info, prev_exception, CDB_Exception::eDeadlock, message, eDiag_Error, 123456)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DeadlockEx, CDB_Exception);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DeadlockEx, CDB_Exception, 123456);
+
 };
 
 
@@ -291,7 +296,7 @@ public:
                        message,
                        eDiag_Error,
                        db_err_code)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_TimeoutEx, CDB_Exception);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_TimeoutEx, CDB_Exception, db_err_code);
 };
 
 
@@ -310,7 +315,7 @@ public:
                        message,
                        severity,
                        db_err_code)
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_ClientEx, CDB_Exception);
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_ClientEx, CDB_Exception, db_err_code);
 };
 
 
@@ -324,13 +329,13 @@ public:
                 unsigned int  capacity = 64)
         : CDB_Exception(info,
                         prev_exception,
-                        eMulti,
+                        CDB_Exception::eMulti,
                         kEmptyStr,
                         eDiag_Info,
                         0)
         , m_Bag( new CObjectFor<TExceptionStack>() )
         , m_NofRooms( capacity )
-        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION( CDB_MultiEx, CDB_Exception );
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_MultiEx, CDB_Exception, 0 );
 
 public:
     bool              Push(const CDB_Exception& ex);
@@ -508,6 +513,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/09/12 14:58:35  ssikorsk
+ * Added method CDB_Exception::x_InitCDB;
+ * Improved macro NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION;
+ *
  * Revision 1.30  2006/09/01 20:16:02  ssikorsk
  * Fixed problem with setting up of a value of type EErrCode in ctor of CDB_Exception.
  *
