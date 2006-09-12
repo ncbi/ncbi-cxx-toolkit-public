@@ -737,6 +737,16 @@ Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, EBlastEncoding encoding,
    return 0;
 }
 
+size_t
+BLAST_GetTranslatedProteinLength(size_t nucleotide_length, unsigned int context)
+{
+    ASSERT(context >= 0 && context < NUM_FRAMES);
+    if (nucleotide_length == 0) {
+        return 0;
+    }
+    return (nucleotide_length - context % CODON_LENGTH) / CODON_LENGTH;
+}
+
 Int2 BLAST_CreateMixedFrameDNATranslation(BLAST_SequenceBlk* query_blk, 
                                           const BlastQueryInfo* query_info)
 {

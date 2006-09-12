@@ -212,6 +212,19 @@ NCBI_XBLAST_EXPORT
 Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, 
                    EBlastEncoding encoding, Uint1** packed_seq);
 
+/** 
+ * @brief Calculates the length of frame for a translated protein
+ * 
+ * @param nucleotide_length Length of the nucleotide sequence translated [in]
+ * @param context Index of the translated frame (values: 0 to 5, inclusive)
+ * [in]
+ * 
+ * @return The requested length, or 0 if the nucleotide length is 0
+ */
+size_t
+BLAST_GetTranslatedProteinLength(size_t nucleotide_length, 
+                                 unsigned int context);
+
 /** Initialize the mixed-frame sequence for out-of-frame gapped extension.
  * @param query_blk Sequence block containing the concatenated frames of the 
  *                  query. The mixed-frame sequence is saved here. [in] [out]

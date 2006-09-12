@@ -180,8 +180,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
         if (translate) {
             for (unsigned int i = 0; i < kNumContexts; i++) {
                 unsigned int prot_length = 
-                    (length == 0 ? 0 : 
-                     (length - i % CODON_LENGTH) / CODON_LENGTH);
+                    BLAST_GetTranslatedProteinLength(length, i);
                 max_length = MAX(max_length, prot_length);
                 
                 Uint4 ctx_len(0);
@@ -1585,6 +1584,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.127  2006/09/12 20:53:45  camacho
+ * +BLAST_GetTranslatedProteinLength
+ *
  * Revision 1.126  2006/09/01 16:46:52  camacho
  * + BlastSetup_GetStrand to consolidate assignment of strand obtained from a Seq-loc and CBlastOptions
  *
