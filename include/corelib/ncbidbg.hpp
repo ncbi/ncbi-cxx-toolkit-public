@@ -61,9 +61,6 @@ BEGIN_NCBI_SCOPE
 #  define NCBI_TROUBLE(mess) \
     NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, mess)
 
-#  ifdef _ASSERT
-#  undef _ASSERT
-#  endif
 #  define NCBI_ASSERT(expr, mess) \
     do { if ( !(expr) ) \
         NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
@@ -88,7 +85,9 @@ BEGIN_NCBI_SCOPE
 
 #endif  /* else!_DEBUG */
 
-
+#ifdef _ASSERT
+#  undef _ASSERT
+#endif
 #define _TROUBLE        NCBI_TROUBLE(NULL)
 #define _ASSERT(expr)   NCBI_ASSERT(expr, NULL)
 #define _VERIFY(expr)   NCBI_VERIFY(expr, NULL)
@@ -120,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.38  2006/09/12 16:19:36  ivanov
+ * Fixed warning about _ASSERT redefinition on MSVC8
+ *
  * Revision 1.37  2006/07/24 13:37:40  grichenk
  * Fixed warning in NCBI_VERIFY
  *
