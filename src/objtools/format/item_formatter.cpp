@@ -398,168 +398,219 @@ static string s_DoSup(const string& issue, const string& part_sup, const string&
 }
 
 
-static bool s_ParsePagesPart(const string& pages, SIZE_TYPE& dig, string& let)
+static void s_FixPages( string& pages )
+//
+//  Note: The following code is written to be mostly feature for feature and bug 
+//  for bug compatible with the C toolkit version. 
+//
 {
-    static const char* kDigits  = "0123456789";
-    static const char* kPosDigits  = kDigits+1;
+    const char* digits = "0123456789";
+    string::iterator it;
+    string firstText, firstNumber, dash, lastText, lastNumber;
 
-    bool first_digits = true;
-
-    if (pages.empty()) {
-        return false;
-    }
-
-    // positive numbers come first
-    if (0 == pages.find_first_of(kPosDigits) ) {
-        first_digits = true;
-        dig = NStr::StringToUInt(pages, NStr::fAllowTrailingSymbols);
-        SIZE_TYPE i = pages.find_first_not_of(kDigits);
-        if (i != NPOS) {
-            let = pages.substr(i);
-        }
-//    } else if (isalpha((unsigned char) pages[0])) {  // letters come first
-//        first_digits = false;
-//        SIZE_TYPE i = pages.find_first_of(kDigits);
-//        if (i == NPOS) {
-//            let = pages;
-//        } else {
-//            let = pages.substr(0, i);
-//            dig = NStr::StringToUInt(pages.substr(i), NStr::fAllowTrailingSymbols);
-//        }
-    } else {  // page numbers with leading zeros or letters
-        first_digits = false;
-        SIZE_TYPE i = pages.find_first_of( kPosDigits );
-        if (i == NPOS) {
-            let = pages;
-        } else {
-            let = pages.substr(0, i);
-            dig = NStr::StringToUInt(pages.substr(i), NStr::fAllowTrailingSymbols);
-        }
-    }
-
-    return first_digits;
-}
-
-
-static bool s_ParsePages
-(const string& pages,
- SIZE_TYPE& dig1,
- string& let1,
- SIZE_TYPE& dig2,
- string& let2,
- bool &first_digits)
-{
-    if (pages.empty()) {
-        return false;
-    }
-
-    dig1 = dig2 = 0;
-    let1.erase();
-    let2.erase();
-
-    SIZE_TYPE hyphen = pages.find('-');
-    _ASSERT(hyphen != NPOS);
-
-    first_digits = s_ParsePagesPart(pages.substr(0, hyphen), dig1, let1);
-    s_ParsePagesPart(pages.substr(hyphen + 1, NPOS), dig2, let2);
-
-    return true;
-}
-
-
-static void s_FixPages(string& pages)
-{
-    static const string kRomans  = "IVXLCDM-";
-
-    // remove all spaces
-    size_t next = 0;
-    NON_CONST_ITERATE(string, it, pages) {
-        if (!isspace(*it)) {
-            pages[next++] = *it;
-        }
-    }
-    if (next < pages.length()) {
-        pages.resize(next);
-    }
-    if (pages.empty()) {
+    //
+    //  Test 1:
+    //  Don't touch that string if it doesn't have any digits in it.
+    //
+    size_t firstDigit = pages.find_first_of( digits );
+    if ( NPOS == firstDigit ) {
         return;
     }
 
-    // allow all roman numerals (and hyphen) 
-    if (pages.find_first_not_of(kRomans) == NPOS) {
-        return;
-    }
-
-    // reject if no dash
-    if (pages.find('-') == NPOS) {
-        return;
-    }
-
-    // reject if contain non alpha numeric characters other than dash
-    ITERATE (string, it, pages) {
-        if (!isalnum((unsigned char)(*it))  &&  *it != '-') {
-            return;
-        }
-    }
-    
-    SIZE_TYPE dig1, dig2;
-    string let1, let2;
-    bool first_digits;
-
-    s_ParsePages(pages, dig1, let1, dig2, let2, first_digits);
-
-    if (first_digits) {
-        if (dig2 == 0) {
-            return;
-        }
-    } else {
-        if ((dig1 == 0)  &&  (dig2 != 0)) {
-            return;
-        }
-    }
-
-    // The following expands "F502-512" into "F502-F512" and
-    // checks, for entries like "12a-12c" that a > c.  "12aa-12ab",
-    // "125G-137A", "125-G137" would be rejected.
-    if (!let1.empty()  &&  let2.empty()  &&  !first_digits) {
-        let2 = let1;
-    }
-    if (first_digits  &&  !let1.empty()  &&  !let2.empty()) {
-        if (let2 < let1) {
-            return;
-        }
-    }
-
-    // The following expands "125-37" into "125-137".
-    if (dig1 != 0  &&  dig2 != 0) {
-        if (dig2 < dig1) {
-            string num1 = NStr::UIntToString(dig1);
-            string num2 = NStr::UIntToString(dig2);
-            if (num1.length() > num2.length()) {
-                size_t diff = num1.length() - num2.length();
-                dig2 = NStr::StringToUInt(num1.substr(0, diff) + num2);
+    //
+    //  If the string starts with a digit, try to parse input into
+    //  firstNumber firstText [ dash lastNumber lastText ] :
+    //
+    if ( 0 == firstDigit ) {
+        it = pages.begin();
+        while ( it != pages.end() ) {
+            if ( ::isdigit( *it ) ) {
+                firstNumber += *it;
             }
+            else if ( *it != ' ' ) {
+                break;
+            }
+            ++it;
+        }
+        while ( it != pages.end() ) {
+            if ( ::isalpha( *it ) || ' ' == *it ) {
+                firstText += *it;
+            }
+            else {
+                break;
+            }
+            ++it;
+        }
+
+        /* Test 2: dash test */
+        if ( it != pages.end() && *it != '-' ) {
+//            pages = "";
+            return;
+        }
+        ++it;
+        if ( it == pages.end() ) {
+            return;
+        }
+
+        while ( it != pages.end() ) {
+            if ( ::isdigit( *it ) ) {
+                lastNumber += *it;
+            }
+            else if ( *it != ' ' ) {
+                break;
+            }
+            ++it;
+        }
+        while ( it != pages.end() ) {
+            if ( ::isalpha( *it ) || ' ' == *it ) {
+                lastText += *it;
+            }
+            else {
+                break;
+            }
+            ++it;
+        }
+        
+        /* Test 3: end of string test */
+        if ( it != pages.end() ) {
+//            pages = "";
+            return;
         }
     }
-    if (dig2 < dig1) {
+
+    //
+    //  Otherwise, try to parse input into 
+    //  firstText firstNumber [ dash lastText lastNumber ] :
+    //
+    else {
+        it = pages.begin();
+        while ( it != pages.end() ) {
+            if ( ::isalpha( *it ) || ' ' == *it ) {
+                firstText += *it;
+            }
+            else {
+                break;
+            }
+            ++it;
+        }
+        while ( it != pages.end() ) {
+            if ( ::isdigit( *it ) ) {
+                firstNumber += *it;
+            }
+            else if ( *it != ' ' ) {
+                break;
+            }
+            ++it;
+        }
+
+        /* Test 2: dash test */
+        if ( it != pages.end() && *it != '-' ) {
+//            pages = "";
+            return;
+        }
+        ++it;
+        if ( it == pages.end() ) {
+            return;
+        }
+
+        while ( it != pages.end() ) {
+            if ( ::isalpha( *it ) || ' ' == *it ) {
+                lastText += *it;
+            }
+            else {
+                break;
+            }
+            ++it;
+        }
+        while ( it != pages.end() ) {
+            if ( ::isdigit( *it ) ) {
+                lastNumber += *it;
+            }
+            else if ( *it != ' ' ) {
+                break;
+            }
+            ++it;
+        }
+
+        /* Test 3: end of string test */
+        if ( it != pages.end() ) {
+//            pages = "";
+            return;
+        }
+    }
+
+    //
+    //  Test 4:
+    //  The textual part of the page number must be a single letter.
+    //  If there is both a first and a last page then the two textual
+    //  parts must match.
+    //
+    if ( ! firstText.empty() ) {
+        if ( firstText.length() != 1 ) {
+            return;
+        }
+    }
+    if ( ! lastText.empty() ) {
+        if ( lastText != firstText ) {
+            return;
+        }
+    }
+
+    //
+    //  If we are dealing with a single page rather than a page range then
+    //  we are ready to produce the final output:
+    //
+    if ( lastText.empty() && lastNumber.empty() ) {
+        pages = ( (0 == firstDigit) ? 
+            (firstNumber + firstText) : (firstText + firstNumber) );
         return;
     }
 
-    if (first_digits) {
-        pages = NStr::UIntToString(dig1) + let1 + "-" + NStr::UIntToString(dig2) + let2;
-    } else {
-        pages = let1;
-        if (dig1 != 0) {
-            pages += NStr::UIntToString(dig1);
-        }
-        pages += '-';
-        pages += let2;
-        if (dig2 != 0) {
-            pages += NStr::UIntToString(dig2);
-        }
+    //
+    //  Otherwise, Test 5:
+    //  In test ranges, the first page has a numeric part if and only if 
+    //  the the last page has.
+    //
+    if ( firstNumber.empty() && ! lastNumber.empty() ) {
+        return;
     }
-}
+    if ( ! firstNumber.empty() && lastNumber.empty() ) {
+        return;
+    }
 
+    //
+    //  Normalize last page number by prepending any implied leading digits.
+    //  Normalize empty last page text by making it equal to the first page
+    //  text.
+    //
+    if ( lastNumber.length() < firstNumber.length() ) {
+        lastNumber = firstNumber.substr( 0, 
+            firstNumber.length() - lastNumber.length() ) + lastNumber;
+    }
+    if ( lastText.empty() ) {
+        lastText = firstText;
+    }
+
+    //
+    //  Test 6:
+    //  Make sure the numerical part of the last page is no less than the
+    //  numerical part of the first page:
+    //
+    if ( NStr::StringToULong( firstNumber ) > NStr::StringToULong( lastNumber ) ) {
+        return;
+    }
+
+    //
+    //  Finally ready to produce the output string:
+    //
+    if ( 0 == firstDigit ) {
+        pages = firstNumber + firstText + "-" + lastNumber + lastText;
+    }
+    else {
+        pages = firstText + firstNumber + "-" + lastText + lastNumber;
+    }
+    return;
+}
 
 static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool do_gb)
 {
@@ -1307,6 +1358,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2006/09/12 19:13:15  ludwigf
+* CHANGED: Rewrote s_FixPages() to more closely resemble the corresponding
+*  function in the C toolkit.
+*
 * Revision 1.33  2006/05/08 15:00:04  ludwigf
 * FIXED: Page range sspecifications for references that don't use plain old
 *  integers to number their pages.
