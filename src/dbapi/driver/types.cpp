@@ -45,6 +45,326 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
+CWString::CWString(void) :
+    m_AvailableValueType(0),
+    m_StringEncoding(eEncoding_Unknown),
+    m_Char(NULL),
+    m_WChar(NULL)
+{
+}
+
+
+CWString::CWString(const CWString& str) :
+    m_AvailableValueType(str.m_AvailableValueType),
+    m_StringEncoding(str.m_StringEncoding),
+    m_Char(NULL),
+    m_WChar(NULL),
+    m_String(str.m_String),
+    m_WString(str.m_WString),
+    m_UTF8String(str.m_UTF8String)
+{
+    if (!m_String.empty()) {
+        m_Char = m_String.c_str();
+    }
+
+    if (!m_WString.empty()) {
+        m_WChar = m_WString.c_str();
+    }
+}
+
+
+CWString::CWString(const char* str,
+                   string::size_type size,
+                   EEncoding enc) :
+    m_AvailableValueType(eChar),
+    m_StringEncoding(enc),
+    m_Char(NULL),
+    m_WChar(NULL)
+{
+    if (size == string::npos) {
+        m_Char = str;
+    } else {
+        m_String.assign(str, size);
+        m_Char = m_String.c_str();
+        m_AvailableValueType |= eString;
+    }
+}
+
+
+CWString::CWString(const wchar_t* str,
+                   wstring::size_type size) :
+    m_AvailableValueType(eWChar),
+    m_StringEncoding(eEncoding_Unknown),
+    m_Char(NULL),
+    m_WChar(NULL)
+{
+    if (size == wstring::npos) {
+        m_WChar = str;
+    } else {
+        m_WString.assign(str, size);
+        m_WChar = m_WString.c_str();
+        m_AvailableValueType |= eWString;
+    }
+}
+
+
+CWString::CWString(const string& str, EEncoding enc) :
+    m_AvailableValueType(eString),
+    m_StringEncoding(enc),
+    m_Char(NULL),
+    m_WChar(NULL),
+    m_String(str)
+{
+    m_Char = m_String.c_str();
+    m_AvailableValueType |= eChar;
+}
+
+
+CWString::CWString(const wstring& str) :
+    m_AvailableValueType(eWString),
+    m_Char(NULL),
+    m_WChar(NULL),
+    m_WString(str)
+{
+    m_WChar = m_WString.c_str();
+    m_AvailableValueType |= eWChar;
+}
+
+
+CWString::~CWString(void)
+{
+}
+
+
+CWString& CWString::operator=(const CWString& str)
+{
+    if (&str != this) {
+        m_AvailableValueType = str.m_AvailableValueType;
+        m_StringEncoding = str.m_StringEncoding;
+        m_Char = NULL;
+        m_WChar = NULL;
+        m_String = str.m_String;
+        m_WString = str.m_WString;
+        m_UTF8String = str.m_UTF8String;
+
+        if (!m_String.empty()) {
+            m_Char = m_String.c_str();
+        }
+
+        if (!m_WString.empty()) {
+            m_WChar = m_WString.c_str();
+        }
+    }
+
+    return *this;
+}
+
+
+void CWString::x_CalculateEncoding(EEncoding str_enc) const
+{
+    if (str_enc != eEncoding_Unknown) {
+        m_StringEncoding = str_enc;
+    } else {
+        m_StringEncoding = eEncoding_ISO8859_1;
+    }
+}
+
+void CWString::x_UTF8ToString(EEncoding str_enc) const
+{
+    if (m_StringEncoding == eEncoding_Unknown) {
+        x_CalculateEncoding(str_enc);
+    }
+
+    if (m_StringEncoding == eEncoding_UTF8) {
+        m_String = m_UTF8String;
+    } else {
+        m_String = m_UTF8String.AsSingleByteString(m_StringEncoding);
+    }
+
+    m_AvailableValueType |= eString;
+}
+
+
+void CWString::x_StringToUTF8(EEncoding str_enc) const
+{
+    if (m_StringEncoding == eEncoding_Unknown) {
+        x_CalculateEncoding(str_enc);
+    }
+
+    if (m_AvailableValueType & eString) {
+        m_UTF8String.Assign(m_String, m_StringEncoding);
+    } else if (m_AvailableValueType & eChar) {
+        m_UTF8String.Assign(m_Char, m_StringEncoding);
+    }
+
+    m_AvailableValueType |= eUTF8String;
+}
+
+
+void CWString::x_MakeString(EEncoding str_enc) const
+{
+    if (m_AvailableValueType & eString) {
+        if (!(m_AvailableValueType & eChar)) {
+            m_Char = m_String.c_str();
+            m_AvailableValueType |= eChar;
+        }
+    } else if (m_AvailableValueType & eChar) {
+        m_String = m_Char;
+        m_AvailableValueType |= eString;
+    } else if (m_AvailableValueType & eUTF8String) {
+        x_UTF8ToString(str_enc);
+        x_MakeString(str_enc);
+    } else if (m_AvailableValueType & eWString) {
+        m_UTF8String = m_WString;
+        m_AvailableValueType |= eUTF8String;
+        x_UTF8ToString(str_enc);
+        x_MakeString(str_enc);
+    } else if (m_AvailableValueType & eWChar) {
+        m_UTF8String = m_WChar;
+        m_AvailableValueType |= eUTF8String;
+        x_UTF8ToString(str_enc);
+        x_MakeString(str_enc);
+    }
+}
+
+void CWString::x_MakeWString(EEncoding str_enc) const
+{
+    if (m_AvailableValueType & eWString) {
+        if (!(m_AvailableValueType & eWChar)) {
+            m_WChar = m_WString.c_str();
+            m_AvailableValueType |= eWChar;
+        }
+    } else if (m_AvailableValueType & eWChar) {
+        m_WString = m_WChar;
+        m_AvailableValueType |= eWString;
+    } else if (m_AvailableValueType & eUTF8String) {
+        m_WString = m_UTF8String.AsUnicode();
+        m_AvailableValueType |= eWString;
+        x_MakeWString(str_enc);
+    } else if (m_AvailableValueType & eString) {
+        x_StringToUTF8(str_enc);
+        x_MakeWString(str_enc);
+    } else if (m_AvailableValueType & eChar) {
+        x_StringToUTF8(str_enc);
+        x_MakeWString(str_enc);
+    }
+}
+
+void CWString::x_MakeUTF8String(EEncoding str_enc) const
+{
+    if (m_AvailableValueType & eUTF8String) {
+        return;
+    } else if (m_AvailableValueType & eString) {
+        x_StringToUTF8(str_enc);
+    } else if (m_AvailableValueType & eChar) {
+        x_StringToUTF8(str_enc);
+    } else if (m_AvailableValueType & eWString) {
+        m_UTF8String = m_WString;
+        m_AvailableValueType |= eUTF8String;
+    } else if (m_AvailableValueType & eWChar) {
+        m_UTF8String = m_WChar;
+        m_AvailableValueType |= eUTF8String;
+    }
+}
+
+size_t CWString::GetSymbolNum(void) const
+{
+    size_t num = 0;
+
+    if (m_AvailableValueType & eString) {
+        num = m_String.size();
+    } else if (m_AvailableValueType & eWString) {
+        num = m_WString.size();
+    } else if (m_AvailableValueType & eChar) {
+        num = strlen(m_Char);
+    } else if (m_AvailableValueType & eWChar) {
+        // ???
+        x_MakeWString();
+        num = m_WString.size();
+    } else if (m_AvailableValueType & eUTF8String) {
+        num = m_UTF8String.GetSymbolCount();
+    }
+
+    return num;
+}
+
+void CWString::Clear(void)
+{
+    m_AvailableValueType = 0;
+    m_StringEncoding = eEncoding_Unknown;
+    m_Char = NULL;
+    m_WChar = NULL;
+    m_String.clear();
+    m_WString.clear();
+    m_UTF8String.clear();
+}
+
+void CWString::Assign(const char* str,
+                      string::size_type size,
+                      EEncoding enc)
+{
+    m_WChar = NULL;
+    m_WString.clear();
+    m_UTF8String.clear();
+
+    m_StringEncoding = enc;
+    if (size == string::npos) {
+        m_String.clear();
+        m_Char = str;
+        m_AvailableValueType = eChar;
+    } else {
+        m_String.assign(str, size);
+        m_Char = m_String.c_str();
+        m_AvailableValueType = eChar | eString;
+    }
+}
+
+void CWString::Assign(const wchar_t* str,
+                      wstring::size_type size)
+{
+    m_StringEncoding = eEncoding_Unknown;
+    m_Char = NULL;
+    m_String.clear();
+    m_UTF8String.clear();
+
+    if (size == wstring::npos) {
+        m_WString.clear();
+        m_WChar = str;
+        m_AvailableValueType = eWChar;
+    } else {
+        m_WString.assign(str, size);
+        m_WChar = m_WString.c_str();
+        m_AvailableValueType = eWChar | eWString;
+    }
+}
+
+void CWString::Assign(const string& str,
+                      EEncoding enc)
+{
+    m_WChar = NULL;
+    m_WString.clear();
+    m_UTF8String.clear();
+
+    m_StringEncoding = enc;
+    m_String = str;
+    m_Char = m_String.c_str();
+    m_AvailableValueType = eChar | eString;
+}
+
+void CWString::Assign(const wstring& str)
+{
+    m_StringEncoding = eEncoding_Unknown;
+    m_Char = NULL;
+    m_String.clear();
+    m_UTF8String.clear();
+
+    m_WString = str;
+    m_WChar = m_WString.c_str();
+    m_AvailableValueType = eWChar | eWString;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CDB_Object::
 //
 
@@ -215,49 +535,178 @@ void CDB_BigInt::AssignValue(CDB_Object& v)
     }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_String::
+//
+
+CDB_String::CDB_String(void) :
+    CDB_Object(true)
+{
+}
+
+
+CDB_String::CDB_String(const CDB_String& other) :
+    CDB_Object(other),
+    m_WString(other.m_WString)
+{
+}
+
+
+CDB_String::CDB_String(const string& s, EEncoding enc) :
+    m_WString(s, enc)
+{
+    m_Null = false;
+}
+
+
+CDB_String::CDB_String(const char* s,
+                       string::size_type size,
+                       EEncoding enc) :
+    m_WString(string(s, size), enc)
+{
+    m_Null = (s == NULL);
+}
+
+
+CDB_String::~CDB_String(void)
+{
+}
+
+
+CDB_String& CDB_String::operator= (const CDB_String& other)
+{
+    if (this != &other) {
+        Assign(other);
+    }
+    return *this;
+}
+
+
+CDB_String& CDB_String::operator= (const string& s)
+{
+    Assign(s);
+    return *this;
+}
+
+
+CDB_String& CDB_String::operator= (const char* s)
+{
+    Assign(s);
+    return *this;
+}
+
+
+void CDB_String::Assign(const CDB_String& other)
+{
+    m_Null = other.m_Null;
+    m_WString = other.m_WString;
+}
+
+
+void CDB_String::Assign(const string& s,
+                        EEncoding enc)
+{
+    m_Null = false;
+    m_WString.Assign(s, enc);
+}
+
+
+void CDB_String::Assign(const char* s,
+                        string::size_type size,
+                        EEncoding enc)
+{
+    if ( s ) {
+        m_Null = false;
+        if (size == string::npos) {
+            m_WString.Assign(string(s), enc);
+        } else {
+            m_WString.Assign(string(s, size), enc);
+        }
+    } else {
+        m_Null = true;
+    }
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_VarChar::
 //
 
-CDB_VarChar& CDB_VarChar::SetValue(const string& s)
+CDB_VarChar::CDB_VarChar(void)
 {
-    m_Null = false;
+    return;
+}
+
+
+CDB_VarChar::CDB_VarChar(const string& s,
+                         EEncoding enc)
+{
+    SetValue(s, enc);
+}
+
+
+CDB_VarChar::CDB_VarChar(const char* s,
+                         EEncoding enc)
+{
+    SetValue(s, enc);
+}
+
+
+CDB_VarChar::CDB_VarChar(const char* s,
+                         size_t l,
+                         EEncoding enc)
+{
+    SetValue(s, l, enc);
+}
+
+
+CDB_VarChar::~CDB_VarChar(void)
+{
+}
+
+
+CDB_VarChar& CDB_VarChar::SetValue(const string& s,
+                                   EEncoding enc)
+{
+    Assign(s, enc);
+
     m_Size = s.copy(m_Val, sizeof(m_Val) - 1);
     m_Val[m_Size] = '\0';
     return *this;
 }
 
 
-CDB_VarChar& CDB_VarChar::SetValue(const char* s)
+CDB_VarChar& CDB_VarChar::SetValue(const char* s,
+                                   EEncoding enc)
 {
+    Assign(s, string::npos, enc);
+
     if ( s ) {
         for (m_Size = 0;  (m_Size < sizeof(m_Val) - 1)  &&  (*s != '\0');
              ++s) {
             m_Val[m_Size++] = *s;
         }
         m_Val[m_Size] = '\0';
-        m_Null = false;
     }
-    else {
-        m_Null = true;
-    }
+
     return *this;
 }
 
 
-CDB_VarChar& CDB_VarChar::SetValue(const char* s, size_t l)
+CDB_VarChar& CDB_VarChar::SetValue(const char* s, size_t l,
+                                   EEncoding enc)
 {
+    Assign(s, l, enc);
+
     if ( s ) {
         m_Size = l < sizeof(m_Val) ? l : sizeof(m_Val) - 1;
         if ( m_Size ) {
             memcpy(m_Val, s, m_Size);
         }
         m_Val[m_Size] = '\0';
-        m_Null = false;
     }
-    else {
-        m_Null = true;
-    }
+
     return *this;
 }
 
@@ -271,6 +720,7 @@ EDB_Type CDB_VarChar::GetType() const
 CDB_Object* CDB_VarChar::Clone() const
 {
     return m_Null ? new CDB_VarChar : new CDB_VarChar(m_Val);
+//     return m_Null ? new CDB_VarChar : new CDB_VarChar(static_cast<const char*>(m_WString));
 }
 
 
@@ -287,7 +737,7 @@ void CDB_VarChar::AssignValue(CDB_Object& v)
 //
 
 
-CDB_Char::CDB_Char(size_t s) : CDB_Object(true)
+CDB_Char::CDB_Char(size_t s)
 {
     m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
     m_Val  = new char[m_Size + 1];
@@ -296,7 +746,10 @@ CDB_Char::CDB_Char(size_t s) : CDB_Object(true)
 }
 
 
-CDB_Char::CDB_Char(size_t s, const string& v) :  CDB_Object(false)
+CDB_Char::CDB_Char(size_t s,
+                   const string& v,
+                   EEncoding enc) :
+    CDB_String(v, enc)
 {
     m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
     m_Val = new char[m_Size + 1];
@@ -308,7 +761,10 @@ CDB_Char::CDB_Char(size_t s, const string& v) :  CDB_Object(false)
 }
 
 
-CDB_Char::CDB_Char(size_t len, const char* str) :  CDB_Object(str == 0)
+CDB_Char::CDB_Char(size_t len,
+                   const char* str,
+                   EEncoding enc) :
+    CDB_String(str, len, enc)
 {
     m_Size = (len < 1) ? 1 : (len > kMaxCharSize ? kMaxCharSize : len);
     m_Val = new char[m_Size + 1];
@@ -329,10 +785,10 @@ CDB_Char::CDB_Char(size_t len, const char* str) :  CDB_Object(str == 0)
 }
 
 
-CDB_Char::CDB_Char(const CDB_Char& v)
+CDB_Char::CDB_Char(const CDB_Char& v) :
+    CDB_String(v),
+    m_Size(v.m_Size)
 {
-    m_Null = v.m_Null;
-    m_Size = v.m_Size;
     m_Val = new char[m_Size + 1];
     memcpy(m_Val, v.m_Val, m_Size + 1);
 }
@@ -340,46 +796,58 @@ CDB_Char::CDB_Char(const CDB_Char& v)
 
 CDB_Char& CDB_Char::operator= (const CDB_Char& v)
 {
-    m_Null = v.m_Null;
-    size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
-    memmove(m_Val, v.m_Val, l);
-    if (l < m_Size)
-        memset(m_Val + l, ' ', m_Size - l);
+    if (this != &v) {
+        Assign(v);
+
+        size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
+        memmove(m_Val, v.m_Val, l);
+        if (l < m_Size) {
+            memset(m_Val + l, ' ', m_Size - l);
+        }
+    }
+
     return *this;
 }
 
 
 CDB_Char& CDB_Char::operator= (const string& v)
 {
-    m_Null = false;
+    Assign(v);
+
     size_t l = v.copy(m_Val, m_Size);
-    if (l < m_Size)
+    if (l < m_Size) {
         memset(m_Val + l, ' ', m_Size - l);
+    }
+
     return *this;
 }
 
 
 CDB_Char& CDB_Char::operator= (const char* v)
 {
-    if (v == 0) {
-        m_Null = true;
-    }
-    else {
-        m_Null = false;
+    Assign(v);
+
+    if (v != NULL) {
         size_t l;
 
         for (l = 0;  (l < m_Size)  &&  (*v != '\0');  ++v) {
             m_Val[l++] = *v;
         }
-        if (l < m_Size)
+        if (l < m_Size) {
             memset(m_Val + l, ' ', m_Size - l);
+        }
     }
+
     return *this;
 }
 
 
-void CDB_Char::SetValue(const char* str, size_t len)
+void CDB_Char::SetValue(const char* str,
+                        size_t len,
+                        EEncoding enc)
 {
+    Assign(str, len, enc);
+
     if ( str ) {
         if (len >= m_Size) {
             memcpy(m_Val, str, m_Size);
@@ -390,10 +858,6 @@ void CDB_Char::SetValue(const char* str, size_t len)
             }
             memset(m_Val + len, ' ', m_Size - len);
         }
-        m_Null = false;
-    }
-    else {
-        m_Null = true;
     }
 }
 
@@ -412,17 +876,18 @@ void CDB_Char::AssignValue(CDB_Object& v)
 {
     CHECK_DRIVER_ERROR( v.GetType() != eDB_Char, "wrong type of CDB_Object", 2 );
 
-    register CDB_Char& cv= (CDB_Char&)v;
+    CDB_Char& cv = (CDB_Char&)v;
+
+    Assign(cv);
+
     if(m_Size < cv.m_Size) {
         delete [] m_Val;
-        m_Val= new char[cv.m_Size+1];
+        m_Val = new char[cv.m_Size+1];
     }
-    m_Size= cv.m_Size;
-    if(cv.IsNULL()) {
-        m_Null= true;
-    }
-    else {
-        m_Null= false;
+
+    m_Size = cv.m_Size;
+
+    if(!cv.IsNULL()) {
         memcpy(m_Val, cv.m_Val, m_Size+1);
     }
 }
@@ -440,14 +905,17 @@ CDB_Char::~CDB_Char()
 //
 
 
-CDB_LongChar::CDB_LongChar(size_t s) : CDB_Object(true)
+CDB_LongChar::CDB_LongChar(size_t s)
 {
     m_Size = (s < 1) ? 1 : s;
     m_Val  = new char[m_Size + 1];
 }
 
 
-CDB_LongChar::CDB_LongChar(size_t s, const string& v) :  CDB_Object(false)
+CDB_LongChar::CDB_LongChar(size_t s,
+                           const string& v,
+                           EEncoding enc) :
+    CDB_String(v, enc)
 {
     m_Size = (s < 1) ? K8_1 : s;
     m_Val = new char[m_Size + 1];
@@ -456,7 +924,10 @@ CDB_LongChar::CDB_LongChar(size_t s, const string& v) :  CDB_Object(false)
 }
 
 
-CDB_LongChar::CDB_LongChar(size_t len, const char* str) :  CDB_Object(str == 0)
+CDB_LongChar::CDB_LongChar(size_t len,
+                           const char* str,
+                           EEncoding enc) :
+    CDB_String(str, len, enc)
 {
     m_Size = (len < 1) ? K8_1 : len;
     m_Val = new char[m_Size + 1];
@@ -466,10 +937,10 @@ CDB_LongChar::CDB_LongChar(size_t len, const char* str) :  CDB_Object(str == 0)
 }
 
 
-CDB_LongChar::CDB_LongChar(const CDB_LongChar& v)
+CDB_LongChar::CDB_LongChar(const CDB_LongChar& v) :
+    CDB_String(v),
+    m_Size(v.m_Size)
 {
-    m_Null = v.m_Null;
-    m_Size = v.m_Size;
     m_Val = new char[m_Size + 1];
     memcpy(m_Val, v.m_Val, m_Size + 1);
 }
@@ -477,30 +948,34 @@ CDB_LongChar::CDB_LongChar(const CDB_LongChar& v)
 
 CDB_LongChar& CDB_LongChar::operator= (const CDB_LongChar& v)
 {
-    m_Null = v.m_Null;
-    size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
-    memmove(m_Val, v.m_Val, l);
-    m_Val[l]= '\0';
+    if (this != &v) {
+        Assign(v);
+
+        size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
+        memmove(m_Val, v.m_Val, l);
+        m_Val[l]= '\0';
+    }
+
     return *this;
 }
 
 
 CDB_LongChar& CDB_LongChar::operator= (const string& v)
 {
-    m_Null = false;
+    Assign(v);
+
     size_t l = v.copy(m_Val, m_Size);
     m_Val[l]= '\0';
+
     return *this;
 }
 
 
 CDB_LongChar& CDB_LongChar::operator= (const char* v)
 {
-    if (v == 0) {
-        m_Null = true;
-    }
-    else {
-        m_Null = false;
+    Assign(v);
+
+    if (v != NULL) {
         size_t l;
 
         for (l = 0;  (l < m_Size)  &&  (*v != '\0');  ++v) {
@@ -508,12 +983,17 @@ CDB_LongChar& CDB_LongChar::operator= (const char* v)
         }
         m_Val[l]= '\0';
     }
+
     return *this;
 }
 
 
-void CDB_LongChar::SetValue(const char* str, size_t len)
+void CDB_LongChar::SetValue(const char* str,
+                            size_t len,
+                            EEncoding enc)
 {
+    Assign(str, len, enc);
+
     if ( str ) {
         if (len >= m_Size) {
             memcpy(m_Val, str, m_Size);
@@ -525,10 +1005,6 @@ void CDB_LongChar::SetValue(const char* str, size_t len)
             }
             m_Val[len]= '\0';
         }
-        m_Null = false;
-    }
-    else {
-        m_Null = true;
     }
 }
 
@@ -549,18 +1025,19 @@ void CDB_LongChar::AssignValue(CDB_Object& v)
 {
     CHECK_DRIVER_ERROR( v.GetType() != eDB_LongChar, "wrong type of CDB_Object", 2 );
 
-    register CDB_LongChar& cv= (CDB_LongChar&)v;
+    CDB_LongChar& cv= (CDB_LongChar&)v;
+
+    Assign(cv);
+
     if(m_Size < cv.m_Size) {
         delete [] m_Val;
         m_Val= new char[cv.m_Size+1];
     }
-    m_Size= cv.m_Size;
-    if(cv.IsNULL()) {
-        m_Null= true;
-    }
-    else {
-        m_Null= false;
-        memcpy(m_Val, cv.m_Val, m_Size+1);
+
+    m_Size = cv.m_Size;
+
+    if(!cv.IsNULL()) {
+        memcpy(m_Val, cv.m_Val, m_Size + 1);
     }
 }
 
@@ -1612,6 +2089,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/09/13 19:43:30  ssikorsk
+ * Implemented CWString and CDB_String;
+ * Fixed CDB_VarChar, CDB_Char, and CDB_LongChar;
+ *
  * Revision 1.23  2006/08/07 15:55:01  ssikorsk
  * Moved definitions of big inline functions into cpp.
  *
