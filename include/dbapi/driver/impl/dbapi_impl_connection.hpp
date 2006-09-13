@@ -174,6 +174,10 @@ protected:
         return *m_DriverContext;
     }
 
+    virtual void SetTimeout(size_t nof_secs);
+    virtual void SetTextImageSize(size_t nof_bytes);
+
+
 protected:
     void Release(void);
     static CDB_Result* Create_Result(impl::CResult& result);
@@ -262,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/09/13 19:22:21  ssikorsk
+ * Added methods SetTimeout and SetTextImageSize.
+ *
  * Revision 1.6  2006/07/18 15:46:00  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
