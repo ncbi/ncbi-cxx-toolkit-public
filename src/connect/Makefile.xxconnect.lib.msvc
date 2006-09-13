@@ -1,4 +1,5 @@
 [AddToProject]
-HeadersInInclude = *.hpp !threaded_server.hpp \
+HeadersInInclude = *.hpp \
+   !threaded_server.hpp !server_connection.hpp !connection_pool.hpp \
    !netschedule_client.hpp !netcache_client.hpp !netservice_client.hpp
 HeadersInSrc = *.hpp

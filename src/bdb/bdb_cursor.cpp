@@ -167,7 +167,8 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, ECursorUpdateType utype)
   m_CondTo(eLast),
   m_FetchDirection(eForward),
   m_FirstFetched(false),
-  m_FetchFlags(0)
+  m_FetchFlags(0),
+  m_MutiRowBuf(0)
 {
     CBDB_Env* env = m_Dbf.GetEnv();
     CBDB_Transaction* trans = dbf.GetTransaction();
@@ -718,6 +719,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/09/13 18:32:21  joukovv
+ * Added (non-functional yet) framework for thread-per-request thread pooling model,
+ * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.
+ *
  * Revision 1.22  2006/09/12 16:55:14  kuznets
  * Implemented multi-row fetch
  *
