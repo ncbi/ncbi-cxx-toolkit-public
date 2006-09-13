@@ -118,6 +118,7 @@ typedef struct SAlignFileRaw {
     int                  expected_num_sequence;
     int                  expected_sequence_len;
     int                  num_segments;
+    char                 align_format_found;
 } SAlignRawFileData, * SAlignRawFilePtr;
 
 /* These functions are used for storing and transmitting information
@@ -2311,12 +2312,14 @@ s_GetNexusSizeComments
         (s_GetOneNexusSizeComment (str, "ntax", &num_sequences)
         ||   s_GetOneNexusSizeComment (str, "NTAX", &num_sequences))) {
         afrp->expected_num_sequence = num_sequences;
+        afrp->align_format_found = eTrue;
         *found_ntax = eTrue;
     }
     if (! *found_nchar  &&
         (s_GetOneNexusSizeComment (str, "nchar", &num_chars)
         ||  s_GetOneNexusSizeComment (str, "NCHAR", &num_chars))) {
         afrp->expected_sequence_len = num_chars;
+        afrp->align_format_found = eTrue;
         *found_nchar = eTrue;
     }
 }
@@ -2556,6 +2559,24 @@ static EBool s_SkippableString (char * str)
         ||  s_IsTwoNumbersSeparatedBySpace (str)
         ||  s_IsConsensusLine (str)
         ||  str [0] == ';') {
+        return eTrue;
+    } else {
+        return eFalse;
+    }
+}
+
+
+/* This function determines whether str contains a indication
+ * that this is real alignment format (nexus, clustal, etc.)
+ */
+static EBool s_IsAlnFormatString (char * str)
+{
+    if (s_StringNICmp (str, "matrix", 6) == 0
+        ||  s_StringNICmp (str, "#NEXUS", 6) == 0
+        ||  s_StringNICmp (str, "CLUSTAL W", 8) == 0
+        ||  s_SkippableNexusComment (str)
+        ||  s_IsTwoNumbersSeparatedBySpace (str)
+        ||  s_IsConsensusLine (str)) {
         return eTrue;
     } else {
         return eFalse;
@@ -3220,6 +3241,7 @@ static SAlignRawFilePtr s_AlignFileRawNew (void)
     afrp->expected_num_sequence = 0;
     afrp->expected_sequence_len = 0;
     afrp->num_segments          = 1;
+    afrp->align_format_found    = eFalse;
     return afrp;
 }
 
@@ -3492,6 +3514,8 @@ s_FindInterleavedBlocks
         s_IntLinkFree (afrp->offset_list);
         afrp->offset_list = NULL;
         afrp->block_size = 0;
+    } else {
+        afrp->align_format_found = eTrue;
     }
     s_SizeInfoFree (size_list);
     
@@ -3586,6 +3610,7 @@ s_ReadAlignFileRaw
                     s_GetFASTAExpectedNumbers (tmp, afrp);
                     found_expected_ntax = eTrue;
                     found_expected_nchar = eTrue;
+                    afrp->align_format_found = eTrue;
                } else {
                     s_GetNexusSizeComments (tmp, &found_expected_ntax,
                                             &found_expected_nchar, afrp);
@@ -3609,6 +3634,7 @@ s_ReadAlignFileRaw
             } else if (strncmp (tmp, "begin taxa;", 11) == 0) {
                 tmp [0] = 0;
                 in_taxa_comment = eTrue;
+                afrp->align_format_found = eTrue;
             }
 
             /* remove complete single-line bracketed comments from line 
@@ -3638,6 +3664,10 @@ s_ReadAlignFileRaw
                 }
                 tmp [0] = 0;
             }
+
+            if (!afrp->align_format_found  && s_IsAlnFormatString (tmp)) {
+                afrp->align_format_found = eTrue;
+            }                  
 
             if (s_SkippableString (tmp)) {
                 tmp [0] = 0;
@@ -5780,6 +5810,7 @@ s_ConvertDataToOutput
     afp->num_deflines = afrp->num_deflines;
     afp->num_segments = afrp->num_segments;
     afp->num_sequences = 0;
+    afp->align_format_found = afrp->align_format_found;
     lengths = NULL;
 
     for (arsp = afrp->sequences;  arsp != NULL;  arsp = arsp->next) {
@@ -6016,6 +6047,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/09/13 18:34:59  bollin
+ * added flag to indicate whether alignment formatting clues were found
+ *
  * Revision 1.27  2005/12/12 13:35:30  bollin
  * changed alignment reader code to handle PHYLIP IDs when there are no spaces
  * between the IDs and the sequence.  Note - if there are spaces in the sequence

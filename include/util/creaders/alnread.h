@@ -115,6 +115,7 @@ typedef struct SAlignmentFile {
     char ** sequences;
     char ** organisms;
     char ** deflines;
+    char    align_format_found;
 } SAlignmentFile, * TAlignmentFilePtr;
 
 extern NCBI_CREADERS_EXPORT TAlignmentFilePtr AlignmentFileNew (void);
@@ -165,6 +166,9 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx (
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/09/13 18:34:41  bollin
+ * added flag to indicate whether alignment formatting clues were found
+ *
  * Revision 1.5  2005/10/21 15:18:36  bollin
  * added function to allow the gap, missing, and match characters to be read
  * from NEXUS comments for an alignment
