@@ -36,6 +36,10 @@
 
 #include <algorithm>
 
+#if defined(NCBI_OS_MSWIN)
+#  include <winsock2.h>
+#endif
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(impl)
@@ -44,7 +48,9 @@ BEGIN_SCOPE(impl)
 //  CDriverContext::
 //
 
-CDriverContext::CDriverContext(void)
+CDriverContext::CDriverContext(void) :
+    m_MaxTextImageSize(0),
+    m_ClientEncoding(eEncoding_ISO8859_1)
 {
     PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault(), eTakeOwnership );
     PushDefConnMsgHandler ( &CDB_UserHandler::GetDefault(), eTakeOwnership );
@@ -53,6 +59,29 @@ CDriverContext::CDriverContext(void)
 CDriverContext::~CDriverContext(void)
 {
     return;
+}
+
+bool CDriverContext::SetTimeout(unsigned int nof_secs)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    if (I_DriverContext::SetLoginTimeout(nof_secs)) {
+        UpdateConnTimeout();
+        return true;
+    }
+
+    return false;
+}
+
+bool CDriverContext::SetMaxTextImageSize(size_t nof_bytes)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    m_MaxTextImageSize = nof_bytes;
+
+    UpdateConnMaxTextImageSize();
+
+    return true;
 }
 
 void CDriverContext::PushCntxMsgHandler(CDB_UserHandler* h,
@@ -359,6 +388,84 @@ bool CDriverContext::ConnectedToMSSQLServer(void) const
     return false;
 }
 
+void CDriverContext::SetClientCharset(const string& charset)
+{
+    m_ClientCharset = charset;
+    m_ClientEncoding = eEncoding_Unknown;
+
+    if (NStr::CompareNocase(charset.c_str(), "UTF-8") == 0 ||
+        NStr::CompareNocase(charset.c_str(), "UTF8") == 0) {
+        m_ClientEncoding = eEncoding_UTF8;
+    } else if (NStr::CompareNocase(charset.c_str(), "Ascii") == 0) {
+        m_ClientEncoding = eEncoding_Ascii;
+    } else if (NStr::CompareNocase(charset.c_str(), "ISO8859_1") == 0 ||
+               NStr::CompareNocase(charset.c_str(), "ISO8859-1") == 0
+               ) {
+        m_ClientEncoding = eEncoding_ISO8859_1;
+    } else if (NStr::CompareNocase(charset.c_str(), "Windows_1252") == 0 ||
+               NStr::CompareNocase(charset.c_str(), "Windows-1252") == 0) {
+        m_ClientEncoding = eEncoding_Windows_1252;
+    }
+}
+
+void CDriverContext::UpdateConnTimeout(void) const
+{
+    // Do not protect this method. It is protected.
+
+    ITERATE(TConnPool, it, m_NotInUse) {
+        CConnection* t_con = *it;
+        if (!t_con) continue;
+
+        t_con->SetTimeout(GetTimeout());
+    }
+
+    ITERATE(TConnPool, it, m_InUse) {
+        CConnection* t_con = *it;
+        if (!t_con) continue;
+
+        t_con->SetTimeout(GetTimeout());
+    }
+}
+
+
+void CDriverContext::UpdateConnMaxTextImageSize(void) const
+{
+    // Do not protect this method. It is protected.
+
+    ITERATE(TConnPool, it, m_NotInUse) {
+        CConnection* t_con = *it;
+        if (!t_con) continue;
+
+        t_con->SetTextImageSize(GetMaxTextImageSize());
+    }
+
+    ITERATE(TConnPool, it, m_InUse) {
+        CConnection* t_con = *it;
+        if (!t_con) continue;
+
+        t_con->SetTextImageSize(GetMaxTextImageSize());
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+CWinSock::CWinSock(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
+    {
+        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
+    }
+#endif
+}
+
+CWinSock::~CWinSock(void)
+{
+#if defined(NCBI_OS_MSWIN)
+        WSACleanup();
+#endif
+}
 
 END_SCOPE(impl)
 
@@ -367,6 +474,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/13 19:51:58  ssikorsk
+ * Implemented SetTimeout, SetMaxTextImageSize with CDriverContext;
+ * Implemented SetClientCharset, UpdateConnTimeout, UpdateConnMaxTextImageSize
+ * with CDriverContext;
+ * Implemented class CWinSock;
+ *
  * Revision 1.2  2006/07/12 20:35:22  ucko
  * #include <algorithm> for find()
  *
