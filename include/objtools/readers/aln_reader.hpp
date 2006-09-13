@@ -38,6 +38,38 @@
 
 BEGIN_NCBI_SCOPE
 
+// class CAlnError holds error information
+class NCBI_XOBJREAD_EXPORT CAlnError
+{
+public:
+
+    // error categories
+    typedef enum {
+        eAlnErr_Unknown = -1,
+        eAlnErr_NoError = 0,
+        eAlnErr_Fatal,
+        eAlnErr_BadData,
+        eAlnErr_BadFormat
+    } EAlnErr;
+    
+    // constructor
+    CAlnError(int category, int line_num, string id, string message);
+    
+    // destructor
+    ~CAlnError() {}
+    
+    // accessors
+    const EAlnErr GetCategory() { return m_Category; }
+    const int     GetLineNum() { return m_LineNum; }
+    const string  GetID() { return m_ID; }
+    const string  GetMessage() { return m_Message; }
+    
+private:
+    EAlnErr m_Category;
+    int     m_LineNum;
+    string  m_ID;
+    string  m_Message;
+};
 
 ///
 /// class CAlnReader supports importing a large variety of text-based
@@ -53,9 +85,12 @@ public:
         eAlpha_Nucleotide,
         eAlpha_Protein
     };
+ 
+    // error messages
+    typedef vector<CAlnError> TErrorList;
 
     // constructor
-    CAlnReader(CNcbiIstream& is) : m_IS(is), m_ReadDone(false) {};
+    CAlnReader(CNcbiIstream& is) : m_IS(is), m_ReadDone(false) { m_Errors.clear(); };
 
     // destructor
     ~CAlnReader(void);
@@ -104,7 +139,7 @@ public:
     /// Read the file
     /// This is the main function
     /// that would parse the alignment file and create the result data
-    void Read();
+    void Read(bool guess=false);
 
 
 
@@ -115,6 +150,8 @@ public:
     const vector<string>& GetDeflines(void)  const {return m_Deflines;};
     int                   GetDim(void)       const {return m_Dim;};
 
+    const TErrorList& GetErrorList(void)     const {return m_Errors;};
+    
     /// Create ASN.1 classes from the parsed alignment
     CRef<objects::CSeq_align> GetSeqAlign(void);
     CRef<objects::CSeq_entry> GetSeqEntry(void);
@@ -157,6 +194,7 @@ private:
     CRef<objects::CSeq_entry> m_Entry;
     vector<string>            m_SeqVec; 
     vector<TSeqPos>           m_SeqLen; 
+    TErrorList                m_Errors;
 };
 
 
@@ -279,6 +317,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/13 18:37:18  bollin
+ * added methods to allow access to errors and warnings from alignment reading,
+ * added flag to indicate whether "alignment" being read is a guess - stricter
+ * rules apply in this case
+ *
  * Revision 1.3  2005/04/26 17:28:12  dicuccio
  * Added Fasta + Gap API
  *
