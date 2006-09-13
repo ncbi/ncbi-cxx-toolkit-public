@@ -32,10 +32,12 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <string.h>
+
 #ifdef HAVE_ODBCSS_H
 #include <odbcss.h>
 #endif
 
+#include "odbc_utils.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -58,7 +60,7 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
     m_Link(conn),
     m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx.GetReporter())
 {
-    m_Reporter.SetHandlerStack(&GetMsgHandlers());
+    m_Reporter.SetHandlerStack(GetMsgHandlers());
 }
 
 
@@ -167,7 +169,7 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_i
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
-    return x_SendData(stmt, img);
+    return x_SendData(CDB_ITDescriptor::eBinary, stmt, img);
 
 }
 
@@ -186,7 +188,7 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
-    return x_SendData(stmt, txt);
+    return x_SendData(CDB_ITDescriptor::eText, stmt, txt);
 }
 
 
@@ -295,7 +297,8 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
         case SQL_SUCCESS_WITH_INFO:
         case SQL_ERROR:
             stmt.ReportErrors();
-        default: break;
+        default:
+            break;
         }
     }
 #endif
@@ -312,16 +315,31 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
 
     *ph = SQL_LEN_DATA_AT_EXEC(size);
 
+    int c_type = 0;
+    int sql_type = 0;
+
+    if (descr_type == CDB_ITDescriptor::eText) {
+#ifdef UNICODE
+        c_type = SQL_C_WCHAR;
+        sql_type = SQL_WLONGVARCHAR;
+#else
+        c_type = SQL_C_CHAR;
+        sql_type = SQL_LONGVARCHAR;
+#endif
+    } else {
+        c_type = SQL_C_BINARY;
+        sql_type = SQL_LONGVARBINARY;
+    }
+
     // Do not use SQLDescribeParam. It is not implemented with the odbc driver
     // from FreeTDS.
+
     if (!ODBC_xCheckSIE(SQLBindParameter(
             stmt.GetHandle(),
             1,
             SQL_PARAM_INPUT,
-            descr_type == CDB_ITDescriptor::eText ?
-                SQL_C_CHAR : SQL_C_BINARY,
-            descr_type == CDB_ITDescriptor::eText ?
-                SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+            c_type,
+            sql_type,
             size,
             0,
             id,
@@ -332,7 +350,7 @@ static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
     }
 
     if (!ODBC_xCheckSIE(SQLPrepare(stmt.GetHandle(),
-                                   (SQLCHAR*)q.c_str(),
+                                   CODBCString(q, odbc::DefStrEncoding),
                                    SQL_NTS),
                         stmt)) {
         return false;
@@ -363,14 +381,41 @@ static bool ODBC_xSendDataGetId(CStatementBase& stmt,
     }
 }
 
-bool CODBC_Connection::x_SendData(CStatementBase& stmt,
+bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
+                                  CStatementBase& stmt,
                                   CDB_Stream& stream)
 {
     char buff[1801];
-    size_t s;
 
-    while(( s = stream.Read(buff, sizeof(buff))) != 0 ) {
-        switch(SQLPutData(stmt.GetHandle(), (SQLPOINTER)buff, (SQLINTEGER)s)) {
+    size_t s;
+    int rc;
+
+    while(( s = stream.Read(buff, sizeof(buff) - 1)) != 0 ) {
+#ifdef UNICODE
+        if (descr_type == CDB_ITDescriptor::eText) {
+            // Convert string.
+
+            buff[s] = '\0';
+            CODBCString odbc_str(buff, string::npos, odbc::DefStrEncoding);
+
+            rc = SQLPutData(stmt.GetHandle(),
+                            (SQLPOINTER)static_cast<wchar_t*>(odbc_str),
+                            (SQLINTEGER)odbc_str.GetSymbolNum() * 2 // Number of bytes ...
+                            );
+        } else {
+            rc = SQLPutData(stmt.GetHandle(),
+                            (SQLPOINTER)buff,
+                            (SQLINTEGER)s // Number of bytes ...
+                            );
+        }
+#else
+        rc = SQLPutData(stmt.GetHandle(),
+                        (SQLPOINTER)buff,
+                        (SQLINTEGER)s // Number of bytes ...
+                        );
+#endif
+
+        switch( rc ) {
         case SQL_SUCCESS_WITH_INFO:
             stmt.ReportErrors();
         case SQL_NEED_DATA:
@@ -385,6 +430,7 @@ bool CODBC_Connection::x_SendData(CStatementBase& stmt,
             return false;
         }
     }
+
     switch(SQLParamData(stmt.GetHandle(), (SQLPOINTER*)&s)) {
     case SQL_SUCCESS_WITH_INFO: stmt.ReportErrors();
     case SQL_SUCCESS:           break;
@@ -423,9 +469,6 @@ bool CODBC_Connection::x_SendData(CStatementBase& stmt,
     }
     return true;
 }
-
-void CODBC_Connection::ODBC_SetTimeout(SQLULEN nof_secs) {}
-void CODBC_Connection::ODBC_SetTextImageSize(SQLULEN nof_bytes) {}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -549,7 +592,9 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
                                      size_t nof_bytes,
                                      bool logit) :
     CStatementBase(*conn),
-    impl::CSendDataCmd(nof_bytes)
+    impl::CSendDataCmd(nof_bytes),
+    m_DescrType(descr.GetColumnType() == CDB_ITDescriptor::eText ?
+                CDB_ITDescriptor::eText : CDB_ITDescriptor::eBinary)
 {
     SQLPOINTER p = (SQLPOINTER)1;
     if((!ODBC_xSendDataPrepare(*this, descr, (SQLINTEGER)nof_bytes,
@@ -566,7 +611,34 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     if(nof_bytes > m_Bytes2go) nof_bytes= m_Bytes2go;
     if(nof_bytes < 1) return 0;
 
-    switch(SQLPutData(GetHandle(), (SQLPOINTER)chunk_ptr, (SQLINTEGER)nof_bytes)) {
+    int rc;
+
+#ifdef UNICODE
+    if (m_DescrType == CDB_ITDescriptor::eText) {
+        // Convert string.
+
+        CODBCString odbc_str(static_cast<const char*>(chunk_ptr), nof_bytes, odbc::DefStrEncoding);
+        // Force odbc_str to make conversion to wchar_t*.
+        wchar_t* wchar_str = odbc_str;
+
+        rc = SQLPutData(GetHandle(),
+                        (SQLPOINTER)wchar_str,
+                        (SQLINTEGER)odbc_str.GetSymbolNum() * 2 // Number of bytes ...
+                        );
+    } else {
+        rc = SQLPutData(GetHandle(),
+                        (SQLPOINTER)chunk_ptr,
+                        (SQLINTEGER)nof_bytes // Number of bytes ...
+                        );
+    }
+#else
+    rc = SQLPutData(GetHandle(),
+                    (SQLPOINTER)chunk_ptr,
+                    (SQLINTEGER)nof_bytes // Number of bytes ...
+                    );
+#endif
+
+    switch( rc ) {
     case SQL_SUCCESS_WITH_INFO:
         ReportErrors();
     case SQL_NEED_DATA:
@@ -659,6 +731,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/09/13 20:06:12  ssikorsk
+ * Revamp code to support  unicode version of ODBC API.
+ *
  * Revision 1.41  2006/08/22 18:08:45  ssikorsk
  * Improved calculation of CDB_ITDescriptor::ETDescriptorType in ODBC_xSendDataPrepare.
  *

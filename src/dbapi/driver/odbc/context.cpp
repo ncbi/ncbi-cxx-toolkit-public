@@ -50,9 +50,7 @@
 #include <odbcss.h>
 #endif
 
-#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
-#  include <winsock2.h>
-#endif
+#include "odbc_utils.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -188,9 +186,16 @@ void CODBC_Reporter::ReportErrors(void) const
 {
     SQLINTEGER NativeError;
     SQLSMALLINT MsgLen;
+
+    enum {eMsgStrLen = 1024};
+
+#ifdef UNICODE
+    SQLWCHAR SqlState[6];
+    SQLWCHAR Msg[eMsgStrLen];
+#else
     SQLCHAR SqlState[6];
-    SQLCHAR Msg[1024];
-    string err_msg;
+    SQLCHAR Msg[eMsgStrLen];
+#endif
 
     if( !m_HStack ) {
         return;
@@ -200,15 +205,15 @@ void CODBC_Reporter::ReportErrors(void) const
 
     for(SQLSMALLINT i= 1; i < 128; i++) {
         int rc = SQLGetDiagRec(m_HType, m_Handle, i, SqlState, &NativeError,
-                             Msg, sizeof(Msg), &MsgLen);
+                               Msg, eMsgStrLen, &MsgLen);
 
         if (rc != SQL_NO_DATA) {
-            string err_msg( reinterpret_cast<const char*>(Msg) );
+            string err_msg(CODBCString(Msg).AsUTF8());
             err_msg += GetExtraMsg();
 
             switch( rc ) {
             case SQL_SUCCESS:
-                if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
+                if(util::strncmp(SqlState, _T("HYT"), 3) == 0) { // timeout
 
                     CDB_TimeoutEx to(kBlankCompileInfo,
                                     0,
@@ -217,7 +222,7 @@ void CODBC_Reporter::ReportErrors(void) const
 
                     m_HStack->PostMsg(&to);
                 }
-                else if(strncmp((const char*)SqlState, "40001", 5) == 0) { // deadlock
+                else if(util::strncmp(SqlState, _T("40001"), 5) == 0) { // deadlock
                     CDB_DeadlockEx dl(kBlankCompileInfo,
                                     0,
                                     err_msg.c_str());
@@ -229,7 +234,7 @@ void CODBC_Reporter::ReportErrors(void) const
                                 err_msg.c_str(),
                                 (NativeError == 0 ? eDiag_Info : eDiag_Warning),
                                 NativeError,
-                                (const char*)SqlState,
+                                CODBCString(SqlState).AsLatin1(),
                                 0);
                     m_HStack->PostMsg(&se);
                 }
@@ -283,7 +288,6 @@ CODBCContext::CODBCContext(SQLLEN version,
                            int tds_version,
                            bool use_dsn)
 : m_PacketSize(0)
-, m_TextImageSize(0)
 , m_Reporter(0, SQL_HANDLE_ENV, 0)
 , m_UseDSN(use_dsn)
 , m_Registry(&CODBCContextRegistry::Instance())
@@ -292,22 +296,13 @@ CODBCContext::CODBCContext(SQLLEN version,
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
-#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
-    {
-        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
-    }
-#endif
-
-
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
         string err_message = "Cannot allocate a context" + m_Reporter.GetExtraMsg();
         DATABASE_DRIVER_ERROR( err_message, 400001 );
     }
 
     m_Reporter.SetHandle(m_Context);
-    m_Reporter.SetHandlerStack(&m_CntxHandlers);
+    m_Reporter.SetHandlerStack(GetCtxHandlerStack());
 
     SQLSetEnvAttr(m_Context, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)version, 0);
     // For FreeTDS sake.
@@ -336,65 +331,6 @@ void
 CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 {
     m_Registry = registry;
-}
-
-
-bool CODBCContext::SetLoginTimeout(unsigned int nof_secs)
-{
-    m_LoginTimeout = nof_secs;
-    return true;
-}
-
-
-bool CODBCContext::SetTimeout(unsigned int nof_secs)
-{
-    CFastMutexGuard mg(m_Mtx);
-
-    m_Timeout = nof_secs;
-
-    ITERATE(TConnPool, it, m_NotInUse) {
-        CODBC_Connection* t_con
-            = dynamic_cast<CODBC_Connection*>(*it);
-        if (!t_con) continue;
-
-        t_con->ODBC_SetTimeout(GetTimeout());
-    }
-
-    ITERATE(TConnPool, it, m_InUse) {
-        CODBC_Connection* t_con
-            = dynamic_cast<CODBC_Connection*>(*it);
-        if (!t_con) continue;
-
-        t_con->ODBC_SetTimeout(GetTimeout());
-    }
-
-    return true;
-}
-
-
-bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
-{
-    CFastMutexGuard mg(m_Mtx);
-
-    m_TextImageSize = (SQLUINTEGER) nof_bytes;
-
-    ITERATE(TConnPool, it, m_NotInUse) {
-        CODBC_Connection* t_con
-            = dynamic_cast<CODBC_Connection*>(*it);
-        if (!t_con) continue;
-
-        t_con->ODBC_SetTextImageSize(m_TextImageSize);
-    }
-
-    ITERATE(TConnPool, it, m_InUse) {
-        CODBC_Connection* t_con
-            = dynamic_cast<CODBC_Connection*>(*it);
-        if (!t_con) continue;
-
-        t_con->ODBC_SetTextImageSize(m_TextImageSize);
-    }
-
-    return true;
 }
 
 
@@ -433,10 +369,6 @@ CODBCContext::~CODBCContext()
 {
     try {
         x_Close();
-
-#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
-        WSACleanup();
-#endif
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -483,7 +415,7 @@ CODBCContext::x_Close(bool delete_conn)
 }
 
 
-void CODBCContext::ODBC_SetPacketSize(SQLUINTEGER packet_size)
+void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 {
     CFastMutexGuard mg(m_Mtx);
 
@@ -491,7 +423,7 @@ void CODBCContext::ODBC_SetPacketSize(SQLUINTEGER packet_size)
 }
 
 
-SQLHENV CODBCContext::ODBC_GetContext() const
+SQLHENV CODBCContext::GetODBCContext(void) const
 {
     return m_Context;
 }
@@ -642,7 +574,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
 
                     if (CheckSIE(SQLDriverConnect(con,
                                                   0,
-                                                  (SQLCHAR*) conn_str.c_str(),
+                                                  CODBCString(conn_str, odbc::DefStrEncoding),
                                                   SQL_NTS,
                                                   0,
                                                   0,
@@ -676,13 +608,13 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         }
 #endif
 
-        r = SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
+        r = SQLDriverConnect(con, 0, CODBCString(connect_str, odbc::DefStrEncoding), SQL_NTS,
                              0, 0, 0, SQL_DRIVER_NOPROMPT);
     }
     else {
-        r = SQLConnect(con, (SQLCHAR*) srv_name.c_str(), SQL_NTS,
-                      (SQLCHAR*) user_name.c_str(), SQL_NTS,
-                      (SQLCHAR*) passwd.c_str(), SQL_NTS);
+        r = SQLConnect(con, CODBCString(srv_name, odbc::DefStrEncoding), SQL_NTS,
+                      CODBCString(user_name, odbc::DefStrEncoding), SQL_NTS,
+                      CODBCString(passwd, odbc::DefStrEncoding), SQL_NTS);
     }
 
     if (CheckSIE(r, con)) {
@@ -742,8 +674,8 @@ I_DriverContext* ODBC_CreateContext(const map<string,string>* attr = 0)
             page_size = citer->second;
         }
         if(!page_size.empty()) {
-    SQLUINTEGER s= atoi(page_size.c_str());
-    cntx->ODBC_SetPacketSize(s);
+            SQLUINTEGER s= atoi(page_size.c_str());
+            cntx->SetPacketSize(s);
       }
     }
     return cntx;
@@ -830,7 +762,7 @@ CDbapiOdbcCFBase::CreateInstance(
 
         // Set parameters ...
         if ( page_size ) {
-            drv->ODBC_SetPacketSize( page_size );
+            drv->SetPacketSize( page_size );
         }
 
         if ( !client_charset.empty() ) {
@@ -855,6 +787,15 @@ class CDbapiOdbcCF_ftds64 : public CDbapiOdbcCFBase
 public:
     CDbapiOdbcCF_ftds64(void)
     : CDbapiOdbcCFBase("ftds64_odbc")
+    {
+    }
+};
+
+class CDbapiOdbcCF_odbcw : public CDbapiOdbcCFBase
+{
+public:
+    CDbapiOdbcCF_odbcw(void)
+    : CDbapiOdbcCFBase("odbcw")
     {
     }
 };
@@ -884,10 +825,20 @@ extern "C"
 
     NCBI_DBAPIDRIVER_ODBC_EXPORT
     void
+    NCBI_EntryPoint_xdbapi_odbcw(
+        CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+        CPluginManager<I_DriverContext>::EEntryPointRequest method)
+    {
+        CHostEntryPointImpl<CDbapiOdbcCF_odbcw>::NCBI_EntryPointImpl( info_list, method );
+    }
+
+    NCBI_DBAPIDRIVER_ODBC_EXPORT
+    void
     DBAPI_RegisterDriver_ODBC(void)
     {
         RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbc );
         RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_odbc );
+        RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_odbcw );
     }
 
 }
@@ -921,6 +872,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/09/13 20:06:56  ssikorsk
+ * Revamp code to support  unicode version of ODBC API.
+ *
  * Revision 1.66  2006/08/31 15:00:24  ssikorsk
  * Handle ClientCharset.
  *

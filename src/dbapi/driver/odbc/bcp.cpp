@@ -40,6 +40,8 @@
     #include <odbcss.h>
 #endif
 
+#include "odbc_utils.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -66,7 +68,7 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
     string extra_msg = "Table Name: " + table_name;
     SetDiagnosticInfo( extra_msg );
 
-    if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
+    if (bcp_init(cmd, CODBCString(table_name, odbc::DefStrEncoding), 0, 0, DB_IN) != SUCCEED) {
         ReportErrors();
         string err_message = "bcp_init failed" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 423001 );
@@ -115,8 +117,13 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             case eDB_Char:
             case eDB_VarChar:
             case eDB_LongChar:
+#ifdef UNICODE
+                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
+                             SQL_VARLEN_DATA,(BYTE*) "", sizeof(WCHAR), SQLNCHAR, i + 1);
+#else
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA,(BYTE*) "", 1, SQLCHARACTER, i + 1);
+#endif
                 break;
 #if 0
             case eDB_VarChar:
@@ -151,9 +158,15 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                              0, 0, SQLDATETIME, i + 1);
                 break;
             case eDB_Text:
+#ifdef UNICODE
+                r = bcp_bind(m_Cmd, 0, 0,
+                             SQL_VARLEN_DATA, (BYTE*) "", sizeof(WCHAR),
+                             SQLNTEXT, i + 1);
+#else
                 r = bcp_bind(m_Cmd, 0, 0,
                              SQL_VARLEN_DATA, (BYTE*) "", 1,
                              SQLTEXT, i + 1);
+#endif
                 m_HasTextImage = true;
                 break;
             case eDB_Image:
@@ -220,26 +233,47 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         break;
         case eDB_Char: {
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
+#ifdef UNICODE
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+                == SUCCEED &&
+                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                == SUCCEED ? SUCCEED : FAIL;
+#else
             r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
                 bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
+#endif
         }
         break;
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
+#ifdef UNICODE
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+                == SUCCEED &&
+                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                == SUCCEED ? SUCCEED : FAIL;
+#else
             r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
                 bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
+#endif
         }
         break;
         case eDB_LongChar: {
             CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+#ifdef UNICODE
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+                == SUCCEED &&
+                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                == SUCCEED ? SUCCEED : FAIL;
+#else
             r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
                 bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
+#endif
         }
         break;
         case eDB_Binary: {
@@ -481,6 +515,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/09/13 20:05:14  ssikorsk
+ * Revamp code to support  unicode version of ODBC API.
+ *
  * Revision 1.21  2006/08/10 15:24:22  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *

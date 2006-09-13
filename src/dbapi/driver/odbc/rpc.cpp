@@ -35,6 +35,8 @@
 
 #include <stdio.h>
 
+#include "odbc_utils.hpp"
+
 BEGIN_NCBI_SCOPE
 
 
@@ -93,7 +95,7 @@ bool CODBC_RPCCmd::Send()
        q_str+= ";\nselect " + param_result_query;
    }
 
-    switch(SQLExecDirect(GetHandle(), (SQLCHAR*)q_str.c_str(), SQL_NTS)) {
+    switch(SQLExecDirect(GetHandle(), CODBCString(q_str, odbc::DefStrEncoding), SQL_NTS)) {
     case SQL_SUCCESS:
         m_hasResults= true;
         break;
@@ -302,6 +304,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
     char p_nm[16], tbuf[32];
     // check if we do have a named parameters (first named - all named)
     bool param_named= !m_Params.GetParamName(0).empty();
+    SQLRETURN rc;
 
     for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
         if(m_Params.GetParamStatus(n) == 0) continue;
@@ -313,180 +316,199 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
         case eDB_Int: {
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
             type = "int";
-            indicator[n]= 4;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_SLONG,
-                             SQL_INTEGER, 4, 0, val.BindVal(), 4, indicator+n);
+            indicator[n] = 4;
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_SLONG,
+                             SQL_INTEGER, 4, 0, val.BindVal(), 4, indicator + n);
             break;
         }
         case eDB_SmallInt: {
             CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
             type = "smallint";
-            indicator[n]= 2;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_SSHORT,
-                             SQL_SMALLINT, 2, 0, val.BindVal(), 2, indicator+n);
+            indicator[n] = 2;
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_SSHORT,
+                             SQL_SMALLINT, 2, 0, val.BindVal(), 2, indicator + n);
             break;
         }
         case eDB_TinyInt: {
             CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
             type = "tinyint";
-            indicator[n]= 1;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_UTINYINT,
-                             SQL_TINYINT, 1, 0, val.BindVal(), 1, indicator+n);
+            indicator[n] = 1;
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_UTINYINT,
+                             SQL_TINYINT, 1, 0, val.BindVal(), 1, indicator + n);
             break;
         }
         case eDB_BigInt: {
             CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
             type = "numeric";
-            indicator[n]= 8;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_SBIGINT,
-                             SQL_NUMERIC, 18, 0, val.BindVal(), 18, indicator+n);
+            indicator[n] = 8;
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_SBIGINT,
+                             SQL_NUMERIC, 18, 0, val.BindVal(), 18, indicator + n);
 
             break;
         }
         case eDB_Char: {
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-            type= "varchar(255)";
-            indicator[n]= SQL_NTS;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                             SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
+            indicator[n] = SQL_NTS;
+#ifdef UNICODE
+            type = "nvarchar(255)";
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
+                             SQL_WVARCHAR, 255, 0, (void*)val.AsUnicode(odbc::DefStrEncoding), 256 * 2, indicator + n);
+#else
+            type = "varchar(255)";
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+                             SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator + n);
+#endif
             break;
         }
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
+            indicator[n] = SQL_NTS;
+#ifdef UNICODE
+            type = "nvarchar(255)";
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
+                             SQL_WVARCHAR, 255, 0, (void*)val.AsUnicode(odbc::DefStrEncoding), 256 * 2, indicator + n);
+#else
             type = "varchar(255)";
-            indicator[n]= SQL_NTS;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                             SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+                             SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator + n);
+#endif
             break;
         }
         case eDB_LongChar: {
             CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+            indicator[n] = SQL_NTS;
+            type = tbuf;
+#ifdef UNICODE
+            sprintf(tbuf,"nvarchar(%d)", val.Size());
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
+                             SQL_WVARCHAR, val.Size(), 0, (void*)val.AsUnicode(odbc::DefStrEncoding), val.Size() * 2, indicator + n);
+#else
             sprintf(tbuf,"varchar(%d)", val.Size());
-            type= tbuf;
-            indicator[n]= SQL_NTS;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                             SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+                             SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.Size(), indicator + n);
+#endif
             break;
         }
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
             type = "varbinary(255)";
-            indicator[n]= val.Size();
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_BINARY,
-                             SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
+            indicator[n] = val.Size();
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
+                             SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator + n);
             break;
         }
         case eDB_VarBinary: {
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
             type = "varbinary(255)";
-            indicator[n]= val.Size();
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_BINARY,
-                             SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
+            indicator[n] = val.Size();
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
+                             SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator + n);
             break;
         }
         case eDB_LongBinary: {
             CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
             sprintf(tbuf,"varbinary(%d)", val.Size());
-            type= tbuf;
-            indicator[n]= val.DataSize();
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_BINARY,
-                             SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
+            type = tbuf;
+            indicator[n] = val.DataSize();
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
+                             SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator + n);
             break;
         }
         case eDB_Float: {
             CDB_Float& val = dynamic_cast<CDB_Float&> (param);
             type = "real";
-            indicator[n]= 4;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_FLOAT,
-                             SQL_REAL, 4, 0, val.BindVal(), 4, indicator+n);
+            indicator[n] = 4;
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_FLOAT,
+                             SQL_REAL, 4, 0, val.BindVal(), 4, indicator + n);
             break;
         }
         case eDB_Double: {
             CDB_Double& val = dynamic_cast<CDB_Double&> (param);
             type = "float";
-            indicator[n]= 8;
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_DOUBLE,
-                             SQL_FLOAT, 8, 0, val.BindVal(), 8, indicator+n);
+            indicator[n] = 8;
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_DOUBLE,
+                             SQL_FLOAT, 8, 0, val.BindVal(), 8, indicator + n);
             break;
         }
         case eDB_SmallDateTime: {
             CDB_SmallDateTime& val = dynamic_cast<CDB_SmallDateTime&> (param);
             type = "smalldatetime";
-            SQL_TIMESTAMP_STRUCT* ts= 0;
+            SQL_TIMESTAMP_STRUCT* ts = 0;
             if(!val.IsNULL()) {
-                ts= (SQL_TIMESTAMP_STRUCT*)bind_guard.Alloc(sizeof(SQL_TIMESTAMP_STRUCT));
-                const CTime& t= val.Value();
-                ts->year= t.Year();
-                ts->month= t.Month();
-                ts->day= t.Day();
-                ts->hour= t.Hour();
-                ts->minute= t.Minute();
-                ts->second= 0;
-                ts->fraction= 0;
-                indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
+                ts = (SQL_TIMESTAMP_STRUCT*)bind_guard.Alloc(sizeof(SQL_TIMESTAMP_STRUCT));
+                const CTime& t = val.Value();
+                ts->year = t.Year();
+                ts->month = t.Month();
+                ts->day = t.Day();
+                ts->hour = t.Hour();
+                ts->minute = t.Minute();
+                ts->second = 0;
+                ts->fraction = 0;
+                indicator[n] = sizeof(SQL_TIMESTAMP_STRUCT);
             }
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
                              SQL_TYPE_TIMESTAMP, 16, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT),
-                             indicator+n);
+                             indicator + n);
             break;
         }
         case eDB_DateTime: {
             CDB_DateTime& val = dynamic_cast<CDB_DateTime&> (param);
             type = "datetime";
-            SQL_TIMESTAMP_STRUCT* ts= 0;
+            SQL_TIMESTAMP_STRUCT* ts = 0;
             if(!val.IsNULL()) {
                 ts= (SQL_TIMESTAMP_STRUCT*)bind_guard.Alloc(sizeof(SQL_TIMESTAMP_STRUCT));
-                const CTime& t= val.Value();
-                ts->year= t.Year();
-                ts->month= t.Month();
-                ts->day= t.Day();
-                ts->hour= t.Hour();
-                ts->minute= t.Minute();
-                ts->second= t.Second();
-                ts->fraction= t.NanoSecond()/1000000;
-                ts->fraction*= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
-                indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
+                const CTime& t = val.Value();
+                ts->year = t.Year();
+                ts->month = t.Month();
+                ts->day = t.Day();
+                ts->hour = t.Hour();
+                ts->minute = t.Minute();
+                ts->second = t.Second();
+                ts->fraction = t.NanoSecond()/1000000;
+                ts->fraction *= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
+                indicator[n] = sizeof(SQL_TIMESTAMP_STRUCT);
             }
-            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
+            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
                              SQL_TYPE_TIMESTAMP, 23, 3, ts, sizeof(SQL_TIMESTAMP_STRUCT),
-                             indicator+n);
+                             indicator + n);
             break;
         }
         default:
             return false;
         }
 
-        q_exec+= n? ',':' ';
+        CheckSIE(rc, "SQLBindParameter failed", 420066);
+
+        q_exec += n ? ',':' ';
 
         if(!param_named) {
             sprintf(p_nm, "@pR%d", n);
-            q_exec+= p_nm;
-            cmd+= "declare ";
-            cmd+= p_nm;
-            cmd+= ' ';
-            cmd+= type;
-            cmd+= ";select ";
-            cmd+= p_nm;
-            cmd+= " = ?;";
+            q_exec += p_nm;
+            cmd += "declare ";
+            cmd += p_nm;
+            cmd += ' ';
+            cmd += type;
+            cmd += ";select ";
+            cmd += p_nm;
+            cmd += " = ?;";
         }
         else {
-            q_exec+= name+'='+name;
+            q_exec += name+'='+name;
             cmd += "declare " + name + ' ' + type + ";select " + name + " = ?;";
         }
 
         if(param.IsNULL()) {
-            indicator[n]= SQL_NULL_DATA;
+            indicator[n] = SQL_NULL_DATA;
         }
 
         if ((m_Params.GetParamStatus(n) & CDB_Params::fOutput) != 0) {
-            q_exec+= " output";
-            const char* p_name= param_named? name.c_str() : p_nm;
-            if(!q_select.empty()) q_select+= ',';
+            q_exec += " output";
+            const char* p_name = param_named? name.c_str() : p_nm;
+            if(!q_select.empty()) q_select += ',';
             q_select.append(p_name+1);
-            q_select+= '=';
-            q_select+= p_name;
+            q_select += '=';
+            q_select += p_name;
         }
-
     }
     return true;
 }
@@ -524,6 +546,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/09/13 20:09:25  ssikorsk
+ * Revamp code to support  unicode version of ODBC API.
+ *
  * Revision 1.30  2006/08/10 15:24:22  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *
