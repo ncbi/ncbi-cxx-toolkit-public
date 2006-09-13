@@ -61,24 +61,6 @@ bool CSL3Context::IsAbleTo(ECapability /*cpb*/) const
 }
 
 
-bool CSL3Context::SetLoginTimeout(unsigned int /*nof_secs*/)
-{
-    return true;
-}
-
-
-bool CSL3Context::SetTimeout(unsigned int /*nof_secs*/)
-{
-    return false;
-}
-
-
-bool CSL3Context::SetMaxTextImageSize(size_t /*nof_bytes*/)
-{
-    return true;
-}
-
-
 impl::CConnection*
 CSL3Context::MakeIConnection(const SConnAttr& conn_attr)
 {
@@ -146,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/09/13 19:59:41  ssikorsk
+ * Deleted implementation of SetLoginTimeout, SetTimeout, and SetMaxTextImageSize with CSL3Context;
+ *
  * Revision 1.4  2006/07/18 15:47:59  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
