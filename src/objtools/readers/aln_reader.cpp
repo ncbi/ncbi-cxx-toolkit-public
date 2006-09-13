@@ -112,6 +112,15 @@ void CAlnReader::Read()
         NCBI_THROW2(CObjReaderParseException, eFormat,
                    "Error reading alignment", 0);
     }
+    
+    int first_len = strlen (afp->sequences[0]);
+    for (int i = 1; i < afp->num_sequences; i++) {
+        if (strlen (afp->sequences[i]) != first_len) {
+            AlignmentFileFree (afp);
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                       "Error reading alignment", 0);
+        }
+    }
 
     // build the CAlignment
     m_Seqs.resize(afp->num_sequences);
@@ -204,8 +213,13 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
 
     ids.resize(m_Dim);
 
-    // get the length of the aln row, asuming all rows are the same
+    // get the length of the alignment
     TSeqPos aln_stop = m_Seqs[0].size();
+    for (TNumrow row_i = 1; row_i < m_Dim; row_i++) {
+        if (m_Seqs[row_i].size() > aln_stop) {
+            aln_stop = m_Seqs[row_i].size();
+        }
+    }
 
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
         CBioseq::TId xid;
@@ -218,7 +232,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
 
     m_SeqVec.resize(m_Dim);
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        m_SeqVec[row_i].resize(aln_stop, 0); // size unknown, resize to max
+        m_SeqVec[row_i].resize(m_Seqs[row_i].length(), 0);
     }
     m_SeqLen.resize(m_Dim, 0);
     vector<bool> is_gap;  is_gap.resize(m_Dim, true);
@@ -231,24 +245,31 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     
     for (TSeqPos aln_pos = 0; aln_pos < aln_stop; aln_pos++) {
         for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-            const char& residue = m_Seqs[row_i][aln_pos];
-            if (residue != m_MiddleGap[0]  &&
-                residue != m_EndGap[0]  &&
-                residue != m_Missing[0]) {
-
-                if (is_gap[row_i]) {
-                    is_gap[row_i] = false;
-                    new_seg = true;
-                }
-
-                // add to the sequence vector
-                m_SeqVec[row_i][m_SeqLen[row_i]++] = residue;
-
-            } else {
-
-                if ( !is_gap[row_i] ) {
+            if (aln_pos >= m_Seqs[row_i].length()) {
+                if (!is_gap[row_i]) {
                     is_gap[row_i] = true;
                     new_seg = true;
+                }
+            } else {
+                const char& residue = m_Seqs[row_i][aln_pos];
+                if (residue != m_MiddleGap[0]  &&
+                    residue != m_EndGap[0]  &&
+                    residue != m_Missing[0]) {
+
+                    if (is_gap[row_i]) {
+                        is_gap[row_i] = false;
+                        new_seg = true;
+                    }
+
+                    // add to the sequence vector
+                    m_SeqVec[row_i][m_SeqLen[row_i]++] = residue;
+
+                } else {
+  
+                    if ( !is_gap[row_i] ) {
+                        is_gap[row_i] = true;
+                        new_seg = true;
+                    }
                 }
 
             }
@@ -380,6 +401,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/09/13 12:27:47  bollin
+ * fixed bug in GetSeqAlign that was truncating and extending sequences to
+ * match the length of the first sequence in an alignment - function now
+ * handles a "bad" alignment.
+ * Also changed the Read method to reject alignments where the sequences are not
+ * all the same length.
+ *
  * Revision 1.16  2005/10/24 13:44:34  jcherry
  * Tolerate all three line-termination conventions, regardless of platform
  *
