@@ -188,6 +188,21 @@ I_DriverContext::GetHostName(void) const
     return m_HostName;
 }
 
+bool I_DriverContext::SetLoginTimeout (unsigned int nof_secs)
+{
+    m_LoginTimeout = nof_secs;
+
+    return true;
+}
+
+bool I_DriverContext::SetTimeout      (unsigned int nof_secs)
+{
+    m_Timeout = nof_secs;
+
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////
 I_Connection::I_Connection(void)
 {
 }
@@ -219,6 +234,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/09/13 19:47:09  ssikorsk
+ * Implemented SetLoginTimeout and SetTimeout for I_DriverContext.
+ *
  * Revision 1.30  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
@@ -240,7 +258,7 @@ END_NCBI_SCOPE
  * Added methods PushMsgHandler, PopMsgHandler and DropCmd to I_Connection.
  *
  * Revision 1.24  2006/05/18 16:53:46  ssikorsk
- * 	      Set default login timeout and operation timeout to 0.
+ *        Set default login timeout and operation timeout to 0.
  *
  * Revision 1.23  2006/05/15 19:32:43  ssikorsk
  * Added EOwnership argument to methods PushCtxMsgHandler and PushDefConnMsgHandler
