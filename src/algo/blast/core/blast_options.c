@@ -480,6 +480,18 @@ BlastExtensionOptionsValidate(EBlastProgramType program_number,
 		}
 	}
 
+        if ((options->ePrelimGapExt == eSmithWatermanScoreOnly &&
+             options->eTbackExt != eSmithWatermanTbckFull) ||
+            (options->ePrelimGapExt != eSmithWatermanScoreOnly &&
+             options->eTbackExt == eSmithWatermanTbckFull))
+	{
+		Blast_MessageWrite(blast_msg, eBlastSevWarning, 
+                                   kBlastMessageNoContext,
+                           "Score-only and traceback Smith-Waterman must "
+                           "both be specified");
+		return (Int2) 3;
+	}
+
 	return 0;
 }
 
@@ -1315,6 +1327,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.187  2006/09/13 15:08:37  papadopo
+ * validate Smith-Waterman options
+ *
  * Revision 1.186  2006/07/13 15:11:18  papadopo
  * turn on sum statistics in BLAST_FillHitSavingOptions when an ungapped search is specified
  *
