@@ -118,27 +118,6 @@ protected:
     }
 };
 
-///////////////////////////////////////////////////////////////////////////////
-CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
-: m_args(args)
-, m_DM( CDriverManager::GetInstance() )
-, m_DS( NULL )
-, m_TableName( "#dbapi_unit_table" )
-{
-    SetDiagFilter(eDiagFilter_All, "!/dbapi/driver/ctlib");
-}
-
-CDBAPIUnitTest::~CDBAPIUnitTest(void)
-{
-//     I_DriverContext* drv_context = m_DS->GetDriverContext();
-//
-//     drv_context->PopDefConnMsgHandler( m_ErrHandler.get() );
-//     drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
-
-    m_Conn.reset(NULL);
-    m_DM.DestroyDs(m_args.GetDriverName());
-    m_DS = NULL;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 bool CErrHandler::HandleIt(CDB_Exception* ex)
@@ -178,6 +157,42 @@ bool CODBCErrHandler::HandleIt(CDB_Exception* ex)
 // #endif
 // }
 
+
+///////////////////////////////////////////////////////////////////////////////
+CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
+: m_args(args)
+, m_DM( CDriverManager::GetInstance() )
+, m_DS( NULL )
+, m_TableName( "#dbapi_unit_table" )
+{
+    SetDiagFilter(eDiagFilter_All, "!/dbapi/driver/ctlib");
+}
+
+CDBAPIUnitTest::~CDBAPIUnitTest(void)
+{
+//     I_DriverContext* drv_context = m_DS->GetDriverContext();
+//
+//     drv_context->PopDefConnMsgHandler( m_ErrHandler.get() );
+//     drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
+
+    m_Conn.reset(NULL);
+    m_DM.DestroyDs(m_args.GetDriverName());
+    m_DS = NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Connect(const auto_ptr<IConnection>& conn) const
+{
+    conn->Connect(
+        m_args.GetUserName(),
+        m_args.GetUserPassword(),
+        m_args.GetServerName()
+//             m_args.GetDatabaseName()
+        );
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::TestInit(void)
@@ -204,7 +219,9 @@ CDBAPIUnitTest::TestInit(void)
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-        if ( m_args.GetDriverName() == "odbc" || m_args.GetDriverName() == "ftds64_odbc" ) {
+        if ( m_args.GetDriverName() == "odbc" ||
+            m_args.GetDriverName() == "odbcw" ||
+            m_args.GetDriverName() == "ftds64_odbc" ) {
             drv_context->PushCntxMsgHandler(new CODBCErrHandler, eTakeOwnership);
             drv_context->PushDefConnMsgHandler(new CODBCErrHandler, eTakeOwnership);
         } else {
@@ -217,12 +234,7 @@ CDBAPIUnitTest::TestInit(void)
 
         m_Conn->SetMode(IConnection::eBulkInsert);
 
-        m_Conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(m_Conn);
 
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
@@ -409,8 +421,8 @@ void CDBAPIUnitTest::Test_Unicode(void)
     string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem Suchprotokoll entfernen");
 
 //     string str_utf8("\320\237\321\203\320\277\320\272\320\270\320\275");
-//     string str_utf8("\xD0\x9F\xD1\x83\xD0\xBF\xD0\xBA\xD0\xB8\xD0\xBD");
-    string str_utf8("HELLO");
+    string str_utf8("\xD0\x9F\xD1\x83\xD0\xBF\xD0\xBA\xD0\xB8\xD0\xBD");
+//     string str_utf8("HELLO");
 
     CStringUTF8 utf8_str_1252_rus(str_rus, eEncoding_Windows_1252);
     CStringUTF8 utf8_str_1252_ger(str_ger, eEncoding_Windows_1252);
@@ -499,31 +511,9 @@ void CDBAPIUnitTest::Test_Unicode(void)
             DumpResults(auto_stmt.get());
         }
 
-        // Call stored procedure ...
-        {
+        // Use permanent table ...
+        if (false) {
             auto_stmt->ExecuteUpdate( "DELETE FROM DBAPI_Sample..test_nstring_table" );
-
-//             // Insert data ...
-//             {
-//                 auto_ptr<ICallableStatement> auto_istmt( m_Conn->GetCallableStatement("DBAPI_Sample..TestProc3") );
-//
-//                 auto_istmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
-//                                                        utf8_str_1252_rus.size()),
-//                                      "@val" );
-//                 auto_istmt->Execute();
-//
-//                 //
-//                 auto_istmt->SetParam( CVariant::VarChar(utf8_str_1252_ger.c_str(),
-//                                                        utf8_str_1252_ger.size()),
-//                                      "@val" );
-//                 auto_istmt->Execute();
-//
-//                 //
-//                 auto_istmt->SetParam( CVariant::VarChar(utf8_str_utf8.c_str(),
-//                                                        utf8_str_utf8.size()),
-//                                      "@val" );
-//                 auto_istmt->Execute();
-//             }
 
             // Insert data ...
             {
@@ -610,12 +600,7 @@ CDBAPIUnitTest::Create_Destroy(void)
     // Destroy a statement before a connection get destroyed ...
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -625,12 +610,7 @@ CDBAPIUnitTest::Create_Destroy(void)
     // Do not destroy statement, let it be destroyed ...
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         IStatement* stmt(local_conn->CreateStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -644,12 +624,7 @@ CDBAPIUnitTest::Create_Destroy(void)
     // Destroy a statement before a connection get destroyed ...
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -659,12 +634,7 @@ CDBAPIUnitTest::Create_Destroy(void)
     // Do not destroy statement, let it be destroyed ...
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         IStatement* stmt(local_conn->GetStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -681,12 +651,7 @@ void CDBAPIUnitTest::Multiple_Close(void)
     // Destroy a statement before a connection get destroyed ...
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -704,12 +669,7 @@ void CDBAPIUnitTest::Multiple_Close(void)
 
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -728,12 +688,7 @@ void CDBAPIUnitTest::Multiple_Close(void)
     // Do not destroy a statement, let it be destroyed ...
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         IStatement* stmt(local_conn->CreateStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -751,12 +706,7 @@ void CDBAPIUnitTest::Multiple_Close(void)
 
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         IStatement* stmt(local_conn->CreateStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -779,12 +729,7 @@ void CDBAPIUnitTest::Multiple_Close(void)
     // Destroy a statement before a connection get destroyed ...
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -802,12 +747,7 @@ void CDBAPIUnitTest::Multiple_Close(void)
 
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -826,12 +766,7 @@ void CDBAPIUnitTest::Multiple_Close(void)
     // Do not destroy a statement, let it be destroyed ...
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         IStatement* stmt(local_conn->GetStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -849,12 +784,7 @@ void CDBAPIUnitTest::Multiple_Close(void)
 
     {
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         IStatement* stmt(local_conn->GetStatement());
         stmt->SendSql( "SELECT name FROM sysobjects" );
@@ -2110,6 +2040,7 @@ CDBAPIUnitTest::Test_Variant2(void)
 
                 // Retrieve results, if any
                 while( rs->Next() ) {
+                    BOOST_CHECK_EQUAL(false, rs->GetVariant(1).IsNull());
                     string col1 = rs->GetVariant(1).GetString();
                     BOOST_CHECK(col1.size() == str_size || col1.size() == 255);
                     str_size *= size_step;
@@ -2607,12 +2538,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         drv_context->PushCntxMsgHandler( drv_err_handler.get() );
 
@@ -2626,7 +2552,6 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                     "unknown",
                     "invalid",
                     m_args.GetServerName()
-//                     m_args.GetDatabaseName()
                     );
             }
             catch( const CDB_Exception& ) {
@@ -2652,12 +2577,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         {
             // Create a new connection ...
             auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-            conn->Connect(
-                m_args.GetUserName(),
-                m_args.GetUserPassword(),
-                m_args.GetServerName()
-//                 m_args.GetDatabaseName()
-                );
+            Connect(conn);
 
             // Reinit the errot handler because it can be affected during connection.
             drv_err_handler->Init();
@@ -2694,12 +2614,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         {
             // Create a new connection ...
             auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-            conn->Connect(
-                m_args.GetUserName(),
-                m_args.GetUserPassword(),
-                m_args.GetServerName()
-//                 m_args.GetDatabaseName()
-                );
+            Connect(conn);
 
             // Reinit the errot handler because it can be affected during connection.
             drv_err_handler->Init();
@@ -2726,12 +2641,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 
 
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        local_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(local_conn);
 
         drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
 
@@ -2769,12 +2679,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         ////////////////////////////////////////////////////////////////////////
         // Create a new connection.
         auto_ptr<IConnection> new_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-        new_conn->Connect(
-            m_args.GetUserName(),
-            m_args.GetUserPassword(),
-            m_args.GetServerName()
-//             m_args.GetDatabaseName()
-            );
+        Connect(new_conn);
 
         // New connection should be affected ...
         {
@@ -2811,12 +2716,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         {
             // Create a new connection ...
             auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-            conn->Connect(
-                m_args.GetUserName(),
-                m_args.GetUserPassword(),
-                m_args.GetServerName()
-//                 m_args.GetDatabaseName()
-                );
+            Connect(conn);
 
             try {
                 Test_ES_01(*conn);
@@ -4452,7 +4352,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-
+    //
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception, DBAPIInstance));
 
@@ -4460,6 +4360,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
+    //
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Multiple_Close, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
@@ -4469,6 +4370,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // tc->depends_on(tc_init);
     // add(tc);
 
+    //
     boost::unit_test::test_case* tc_parameters =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters,
                               DBAPIInstance);
@@ -4482,14 +4384,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-//     if (args.GetDriverName() == "ftds63" ||
-// //         args.GetDriverName() == "ftds64_ctlib" ||
-//         args.GetDriverName() == "ftds") {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
-//         tc->depends_on(tc_init);
-//         tc->depends_on(tc_parameters);
-//         add(tc);
-//     }
+    if (
+//         args.GetDriverName() == "ftds63" ||
+//         args.GetDriverName() == "ftds63" ||
+//         args.GetDriverName() == "ftds64_ctlib" ||
+        args.GetDriverName() == "odbcw") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
+        tc->depends_on(tc_init);
+        tc->depends_on(tc_parameters);
+        add(tc);
+    }
 
     {
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
@@ -4500,6 +4404,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             // args.GetDriverName() == "dblib" || // Code will hang up with dblib for some reason ...
             args.GetDriverName() == "ftds63" ||
             args.GetDriverName() == "odbc" ||
+            args.GetDriverName() == "odbcw" ||
             // args.GetDriverName() == "msdblib" || // doesn't work ...
             args.GetDriverName() == "ftds64_odbc" ||
             args.GetDriverName() == "ftds64_ctlib" ||
@@ -4569,6 +4474,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         if (((args.GetDriverName() == "ftds" ||
               args.GetDriverName() == "ftds63" ||
               args.GetDriverName() == "odbc" ||
+              args.GetDriverName() == "odbcw" ||
               args.GetDriverName() == "ftds64_odbc" ||
               args.GetDriverName() == "ftds64_dblib" ) &&
              args.GetServerType() == CTestArguments::eMsSql)
@@ -4651,7 +4557,8 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
-                      "gateway", "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib"
+                      "gateway", "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib", \
+                      "odbcw"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
@@ -4795,6 +4702,11 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.94  2006/09/13 20:03:50  ssikorsk
+ * Added the odbcw driver to the test-suite;
+ * Enabled Test_Unicode with the odbcw driver;
+ * Revamp code to use method Connect;
+ *
  * Revision 1.93  2006/09/12 15:03:48  ssikorsk
  * Implemented Test_CDB_Exception.
  *
