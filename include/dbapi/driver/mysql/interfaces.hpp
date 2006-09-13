@@ -71,10 +71,6 @@ public:
     virtual ~CMySQLContext();
 
 public:
-    virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
-    virtual bool SetTimeout      (unsigned int nof_secs = 0);
-    virtual bool SetMaxTextImageSize(size_t nof_bytes);
-
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
     virtual bool IsAbleTo(ECapability cpb) const;
@@ -267,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/09/13 19:34:16  ssikorsk
+ * Removed methods SetLoginTimeout, SetTimeout, and SetMaxTextImageSize from CMySQLContext.
+ *
  * Revision 1.26  2006/08/02 18:44:00  ssikorsk
  * winsock.h --> winsock2.h
  *
