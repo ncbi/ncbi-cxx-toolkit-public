@@ -204,6 +204,14 @@ void CConnection::ReleaseInterface(void)
 }
 
 
+void CConnection::SetTimeout(size_t nof_secs)
+{
+}
+
+void CConnection::SetTextImageSize(size_t nof_bytes)
+{
+}
+
 END_SCOPE(impl)
 
 END_NCBI_SCOPE
@@ -211,6 +219,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/09/13 19:48:56  ssikorsk
+ * Implemented SetTimeout, SetTextImageSize for CConnection.
+ *
  * Revision 1.4  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
