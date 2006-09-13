@@ -32,8 +32,6 @@
  *
  */
 
-#include <corelib/ncbimtx.hpp>
-
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
 
@@ -413,11 +411,11 @@ public:
     /// NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
     ///        DB API), then set the timeout to infinite.
     /// Return FALSE on error.
-    virtual bool SetLoginTimeout (unsigned int nof_secs = 0) = 0;
-    virtual bool SetTimeout      (unsigned int nof_secs = 0) = 0;
+    virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
+    virtual bool SetTimeout      (unsigned int nof_secs = 0);
 
     unsigned int GetLoginTimeout (void) const { return m_LoginTimeout; }
-    unsigned int GetTimeout      (void) const { return m_Timeout;        }
+    unsigned int GetTimeout      (void) const { return m_Timeout;      }
 
     /// Set maximal size for Text and Image objects. Text and Image objects
     /// exceeding this size will be truncated.
@@ -528,12 +526,10 @@ public:
 protected:
     virtual CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr) = 0;
 
-    mutable CFastMutex m_Mtx;
-
+private:
     unsigned int    m_LoginTimeout;
     unsigned int    m_Timeout;
 
-private:
     string          m_AppName;
     string          m_HostName;
 
@@ -659,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/09/13 19:33:19  ssikorsk
+ * Removed mutex from I_DriverContext;
+ *
  * Revision 1.53  2006/08/03 18:42:10  ssikorsk
  * Removed deprecation with WasSent(), WasCanceled(), SetRecompile().
  * These methods are still deprecated in CDB_... classes.
@@ -687,7 +686,7 @@ END_NCBI_SCOPE
  * Added members m_MsgHandlers and m_CMDs to I_Connection.
  *
  * Revision 1.45  2006/05/18 16:52:22  ssikorsk
- * 	 Added GetLoginTimeout and GetTimeout methods to the I_DriverContext class.
+ *   Added GetLoginTimeout and GetTimeout methods to the I_DriverContext class.
  *
  * Revision 1.44  2006/05/15 19:32:16  ssikorsk
  * Added EOwnership argument to methods PushCtxMsgHandler and PushDefConnMsgHandler
