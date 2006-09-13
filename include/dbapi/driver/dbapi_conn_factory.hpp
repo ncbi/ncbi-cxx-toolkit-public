@@ -33,6 +33,7 @@
 *============================================================================
 */
 
+#include <corelib/ncbimtx.hpp>
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 #include <map>
@@ -277,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/09/13 19:45:55  ucko
+ * +<corelib/ncbimtx.hpp> for CFastMutex
+ *
  * Revision 1.7  2006/05/18 18:45:41  ssikorsk
  * Added const to parameters of CalculateConnectionTimeout and CalculateLoginTimeout.
  *
