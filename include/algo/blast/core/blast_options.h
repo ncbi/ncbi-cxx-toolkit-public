@@ -252,8 +252,9 @@ typedef struct BlastInitialWordOptions {
 typedef enum EBlastPrelimGapExt {
     eDynProgExt,                /**< standard affine gapping */
     eGreedyExt,                 /**< Greedy extension (megaBlast) */
-    eGreedyWithTracebackExt     /**< Greedy extension with Traceback
+    eGreedyWithTracebackExt,    /**< Greedy extension with Traceback
                                calculated. */
+    eSmithWatermanScoreOnly     /**< Score-only smith-waterman */
 } EBlastPrelimGapExt;
 
 /** The algorithm to be used for final gapped
@@ -262,8 +263,9 @@ typedef enum EBlastPrelimGapExt {
 typedef enum EBlastTbackExt {
     eDynProgTbck,          /**< standard affine gapping */
     eGreedyTbck,           /**< Greedy extension (megaBlast) */
-    eSmithWatermanTbck     /**< Smith-waterman finds optimal scores, then 
+    eSmithWatermanTbck,    /**< Smith-waterman finds optimal scores, then 
                                 ALIGN_EX to find alignment. */
+    eSmithWatermanTbckFull /**< Smith-waterman to find all alignments */
 } EBlastTbackExt;
 
 /** Options used for gapped extension 
