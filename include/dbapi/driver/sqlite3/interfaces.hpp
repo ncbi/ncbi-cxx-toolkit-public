@@ -65,10 +65,6 @@ public:
     virtual ~CSL3Context(void);
 
 public:
-    virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
-    virtual bool SetTimeout      (unsigned int nof_secs = 0);
-    virtual bool SetMaxTextImageSize(size_t nof_bytes);
-
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
     virtual bool IsAbleTo(ECapability cpb) const;
@@ -296,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/09/13 19:30:35  ssikorsk
+ * Removed methods SetLoginTimeout, SetTimeout, and SetMaxTextImageSize from CSL3Context.
+ *
  * Revision 1.6  2006/07/19 14:09:55  ssikorsk
  * Refactoring of CursorCmd.
  *
