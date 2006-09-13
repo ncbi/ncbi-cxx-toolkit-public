@@ -205,14 +205,6 @@ CTDSContext::CTDSContext(DBINT version) :
         "You cannot use more than one ftds contexts "
        "concurrently", 200000 );
 
-#if defined(NCBI_OS_MSWIN)
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
-    {
-        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
-    }
-#endif
-
     char hostname[256];
     if(gethostname(hostname, 256) == 0) {
         hostname[255]= '\0';
@@ -270,38 +262,38 @@ int CTDSContext::GetTDSVersion(void) const
 
 bool CTDSContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    m_LoginTimeout = nof_secs;
-    return true;
-    //    return dbsetlogintime(nof_secs) == SUCCEED;
+    return I_DriverContext::SetLoginTimeout(nof_secs);
 }
 
 
 bool CTDSContext::SetTimeout(unsigned int nof_secs)
 {
-    m_Timeout = nof_secs;
-    return true;
-    //    return dbsettime(nof_secs) == SUCCEED;
+    return impl::CDriverContext::SetTimeout(nof_secs);
 }
 
 
 bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 {
+    impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
+
     CFastMutexGuard mg(m_Mtx);
 
     char s[64];
-    sprintf(s, "%lu", (unsigned long) nof_bytes);
+    sprintf(s, "%lu", (unsigned long) GetMaxTextImageSize());
 
     return Check(dbsetopt(0, DBTEXTLIMIT, s, -1)) == SUCCEED
         /* && dbsetopt(0, DBTEXTSIZE, s, -1) == SUCCEED */;
 }
 
 
-void CTDSContext::SetClientCharset(const char* charset) const
+void CTDSContext::SetClientCharset(const string& charset)
 {
     _ASSERT( m_Login );
-    _ASSERT( charset );
+    _ASSERT( !charset.empty() );
 
-    DBSETLCHARSET( m_Login, const_cast<char*>(charset) );
+    CDriverContext::SetClientCharset(charset);
+
+    DBSETLCHARSET( m_Login, const_cast<char*>(charset.c_str()) );
 }
 
 impl::CConnection*
@@ -355,10 +347,6 @@ CTDSContext::~CTDSContext()
 {
     try {
         x_Close();
-
-#if defined(NCBI_OS_MSWIN)
-        WSACleanup();
-#endif
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -660,7 +648,7 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
 
 void CTDSContext::CheckFunctCall(void)
 {
-    GetFTDS8ExceptionStorage().Handle(m_CntxHandlers);
+    GetFTDS8ExceptionStorage().Handle(GetCtxHandlerStack());
 }
 
 
@@ -895,6 +883,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2006/09/13 19:57:56  ssikorsk
+ * Revamp code to use CWinSock.
+ *
  * Revision 1.81  2006/08/21 18:03:26  ssikorsk
  * Adjusted winsock2 initialization/finalization.
  *

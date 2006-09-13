@@ -218,14 +218,6 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
-#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
-    {
-        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
-    }
-#endif
-
     SetApplicationName("CTLibDriver");
 
     CS_RETCODE r = reuse_context ? Check(cs_ctx_global(version, &m_Context)) :
@@ -323,7 +315,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
 CS_RETCODE
 CTLibContext::Check(CS_RETCODE rc)
 {
-    GetCTLExceptionStorage().Handle(m_CntxHandlers);
+    GetCTLExceptionStorage().Handle(GetCtxHandlerStack());
 
     return rc;
 }
@@ -353,7 +345,10 @@ CTLibContext::x_SetRegistry(CTLibContextRegistry* registry)
 
 bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    m_LoginTimeout = nof_secs;
+    CFastMutexGuard mg(m_Mtx);
+
+    I_DriverContext::SetLoginTimeout(nof_secs);
+
     CS_INT t_out = (CS_INT) GetLoginTimeout();
     t_out = (t_out == 0 ? CS_NO_LIMIT : t_out);
 
@@ -368,7 +363,10 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
-    m_Timeout = nof_secs;
+    impl::CDriverContext::SetTimeout(nof_secs);
+
+    CFastMutexGuard mg(m_Mtx);
+
     CS_INT t_out = (CS_INT) GetTimeout();
     t_out = (t_out == 0 ? CS_NO_LIMIT : t_out);
 
@@ -383,7 +381,11 @@ bool CTLibContext::SetTimeout(unsigned int nof_secs)
 
 bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
-    CS_INT ti_size = (CS_INT) nof_bytes;
+    impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
+
+    CFastMutexGuard mg(m_Mtx);
+
+    CS_INT ti_size = (CS_INT) GetMaxTextImageSize();
     return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
                            CS_TEXTLIMIT,
@@ -441,10 +443,6 @@ CTLibContext::~CTLibContext()
             cs_loc_drop(CTLIB_GetContext(), m_Locale);
             m_Locale = NULL;
         }
-
-#if defined(FTDS_IN_USE) && defined(NCBI_OS_MSWIN)
-        WSACleanup();
-#endif
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -942,7 +940,7 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 
 void CTLibContext::SetClientCharset(const string& charset)
 {
-    m_ClientCharset = charset;
+    CDriverContext::SetClientCharset(charset);
 
     if ( !GetClientCharset().empty() ) {
         cs_locale(CTLIB_GetContext(),
@@ -1241,6 +1239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2006/09/13 19:53:21  ssikorsk
+ * Revamp code to use CWinSock.
+ *
  * Revision 1.92  2006/08/31 15:02:05  ssikorsk
  * Handle ClientCharset and locale.
  *

@@ -257,14 +257,6 @@ CDBLibContext::CDBLibContext(DBINT version)
         SetHostName( hostname );
     }
 
-#if defined(NCBI_OS_MSWIN) && defined(FTDS_IN_USE)
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
-    {
-        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
-    }
-#endif
-
 #ifdef MS_DBLIB_IN_USE
     if (Check(dbinit()) == NULL || version == 31415)
 #else
@@ -328,23 +320,32 @@ int CDBLibContext::GetTDSVersion(void) const
 
 bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    m_LoginTimeout = nof_secs;
-    return Check(dbsetlogintime(GetLoginTimeout())) == SUCCEED;
+    if (I_DriverContext::SetLoginTimeout(nof_secs)) {
+        return Check(dbsetlogintime(GetLoginTimeout())) == SUCCEED;
+    }
+
+    return false;
 }
 
 
 bool CDBLibContext::SetTimeout(unsigned int nof_secs)
 {
-    m_Timeout = nof_secs;
-    return Check(dbsettime(GetTimeout())) == SUCCEED;
+    if (impl::CDriverContext::SetTimeout(nof_secs)) {
+        return Check(dbsettime(GetTimeout())) == SUCCEED;
+    }
+
+    return false;
 }
 
 
 bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
-    char s[64];
-    sprintf(s, "%lu", (unsigned long) nof_bytes);
+    impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
+
     CFastMutexGuard mg(m_Mtx);
+
+    char s[64];
+    sprintf(s, "%lu", (unsigned long) GetMaxTextImageSize());
 
 #ifdef MS_DBLIB_IN_USE
     return Check(dbsetopt(0, DBTEXTLIMIT, s)) == SUCCEED;
@@ -353,13 +354,15 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
 #endif
 }
 
-void CDBLibContext::SetClientCharset(const char* charset) const
+void CDBLibContext::SetClientCharset(const string& charset)
 {
     _ASSERT( m_Login );
-    _ASSERT( charset );
+    _ASSERT( !charset.empty() );
+
+    CDriverContext::SetClientCharset(charset);
 
 #ifndef MS_DBLIB_IN_USE
-    DBSETLCHARSET( m_Login, const_cast<char*>(charset) );
+    DBSETLCHARSET( m_Login, const_cast<char*>(charset.c_str()) );
 #endif
 }
 
@@ -469,10 +472,6 @@ CDBLibContext::x_Close(bool delete_conn)
                 g_pContext = NULL;
                 x_RemoveFromRegistry();
             }
-
-#if defined(NCBI_OS_MSWIN) && defined(FTDS_IN_USE)
-            WSACleanup();
-#endif
         }
     } else {
         if (delete_conn && x_SafeToFinalize()) {
@@ -744,7 +743,7 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
 
 void CDBLibContext::CheckFunctCall(void)
 {
-    GetDBLExceptionStorage().Handle(m_CntxHandlers);
+    GetDBLExceptionStorage().Handle(GetCtxHandlerStack());
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1349,6 +1348,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2006/09/13 19:53:56  ssikorsk
+ * Revamp code to use CWinSock.
+ *
  * Revision 1.89  2006/08/02 18:49:03  ssikorsk
  * Added implementation of NCBI_EntryPoint_xdbapi_ftds64_dblib.
  *
