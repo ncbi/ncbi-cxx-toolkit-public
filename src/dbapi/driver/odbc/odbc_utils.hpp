@@ -34,8 +34,108 @@
 
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 
+#ifdef NCBI_OS_MSWIN
+#include <windows.h>
+#endif
+
+#include <sql.h>
+#include <sqlext.h>
+#include <sqltypes.h>
 
 BEGIN_NCBI_SCOPE
+
+/////////////////////////////////////////////////////////////////////////////
+class CODBCString : public CWString
+{
+public:
+    explicit CODBCString(SQLCHAR* str,
+                         EEncoding enc = eEncoding_Unknown);
+    explicit CODBCString(const char* str,
+                         string::size_type size = string::npos,
+                         EEncoding enc = eEncoding_Unknown);
+    explicit CODBCString(SQLWCHAR* str);
+    explicit CODBCString(const wchar_t* str,
+                         wstring::size_type size = wstring::npos);
+    explicit CODBCString(const string& str, EEncoding enc = eEncoding_Unknown);
+    explicit CODBCString(const wstring& str);
+    ~CODBCString(void);
+
+public:
+    operator LPCSTR(void) const
+    {
+        if (!(GetAvailableValueType() & eChar)) {
+            x_MakeString();
+        }
+
+        return reinterpret_cast<LPCSTR>(m_Char);
+    }
+    operator SQLCHAR*(void) const
+    {
+        if (!(GetAvailableValueType() & eChar)) {
+            x_MakeString();
+        }
+
+        return const_cast<SQLCHAR*>(reinterpret_cast<const SQLCHAR*>(m_Char));
+    }
+    operator const SQLCHAR*(void) const
+    {
+        if (!(GetAvailableValueType() & eChar)) {
+            x_MakeString();
+        }
+
+        return reinterpret_cast<const SQLCHAR*>(m_Char);
+    }
+};
+
+/////////////////////////////////////////////////////////////////////////////
+#if defined(UNICODE)
+#ifndef __T
+#  define __T(x)      L ## x
+#endif
+#else
+#ifndef __T
+#  define __T(x)      x
+#endif
+#endif
+
+#ifndef _T
+#  define _T(x)       __T(x)
+#endif
+
+inline
+wstring operator+(const wstring& str1, const string& str2)
+{
+    return str1 + CStringUTF8(str2).AsUnicode();
+}
+
+namespace util
+{
+    inline
+    int strncmp(const char* str1, const char* str2, size_t count)
+    {
+        return ::strncmp(str1, str2, count);
+    }
+
+    inline
+    int strncmp(const wchar_t* str1, const wchar_t* str2, size_t count)
+    {
+        return ::wcsncmp(str1, str2, count);
+    }
+
+    inline
+    int strncmp(const SQLCHAR* str1, const char* str2, size_t count)
+    {
+        return strncmp((const char*)str1, str2, count);
+    }
+
+    inline
+    int strncmp(const char* str1, const SQLCHAR* str2, size_t count)
+    {
+        return strncmp(str1, (const char*)str2, count);
+    }
+
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 extern NCBI_DBAPIDRIVER_ODBC_EXPORT const string kDBAPI_ODBC_DriverName;
@@ -66,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/13 20:10:35  ssikorsk
+ * Added class CODBCString.
+ *
  * Revision 1.1  2006/07/25 13:52:01  ssikorsk
  * Initial version.
  *
