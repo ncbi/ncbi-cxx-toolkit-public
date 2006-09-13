@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 8, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 9, 0, 0);
 
 
 BEGIN_SCOPE(impl)
@@ -606,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/09/13 19:26:22  ssikorsk
+ * Set interface version to 9.0.0
+ *
  * Revision 1.29  2006/08/21 18:09:14  ssikorsk
  * Added enum ETDescriptorType to the CDB_ITDescriptor class in order to be able to pass
  * binary/text/unknown type;
