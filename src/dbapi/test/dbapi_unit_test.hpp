@@ -213,6 +213,7 @@ protected:
     static void DumpResults(IStatement* const stmt);
     static int GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
                                const string& table_name);
+    void Connect(const auto_ptr<IConnection>& conn) const;
 
 private:
     const CTestArguments    m_args;
@@ -238,6 +239,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2006/09/13 20:01:00  ssikorsk
+ * Added method Connect to CDBAPIUnitTest.
+ *
  * Revision 1.42  2006/09/12 15:02:57  ssikorsk
  * Added Test_CDB_Exception.
  *
