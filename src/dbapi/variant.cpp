@@ -1,37 +1,37 @@
 /* $Id$
 * ===========================================================================
 *
-*                            PUBLIC DOMAIN NOTICE                          
+*                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
-*                                                                          
-*  This software/database is a "United States Government Work" under the   
-*  terms of the United States Copyright Act.  It was written as part of    
-*  the author's official duties as a United States Government employee and 
-*  thus cannot be copyrighted.  This software/database is freely available 
-*  to the public for use. The National Library of Medicine and the U.S.    
-*  Government have not placed any restriction on its use or reproduction.  
-*                                                                          
-*  Although all reasonable efforts have been taken to ensure the accuracy  
-*  and reliability of the software and data, the NLM and the U.S.          
-*  Government do not and cannot warrant the performance or results that    
-*  may be obtained by using this software or data. The NLM and the U.S.    
-*  Government disclaim all warranties, express or implied, including       
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
 *  warranties of performance, merchantability or fitness for any particular
-*  purpose.                                                                
-*                                                                          
-*  Please cite the author in any work or product based on this material.   
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
 *
 * ===========================================================================
 *
 * File Name:  $Id$
 *
 * Author:  Michael Kholodov
-*   
+*
 * File Description:   CVariant class implementation
 *
 *
 *
-*/ 
+*/
 
 #include <ncbi_pch.hpp>
 #include <dbapi/variant.hpp>
@@ -42,17 +42,17 @@
 BEGIN_NCBI_SCOPE
 
 //CVariantException::CVariantException(const string& msg)
-//    : m_msg(msg) 
-//{
-//
-//}
-//    
-//CVariantException::~CVariantException() throw() 
+//    : m_msg(msg)
 //{
 //
 //}
 //
-//const char* CVariantException::what() const throw() 
+//CVariantException::~CVariantException() throw()
+//{
+//
+//}
+//
+//const char* CVariantException::what() const throw()
 //{
 //    return m_msg.c_str();
 //}
@@ -138,7 +138,7 @@ CVariant CVariant::Numeric(unsigned int precision,
                            unsigned int scale,
                            const char* p)
 {
-    return CVariant(p ? new CDB_Numeric(precision, scale, p) 
+    return CVariant(p ? new CDB_Numeric(precision, scale, p)
                     : new CDB_Numeric());
 }
 
@@ -149,56 +149,56 @@ CVariant::CVariant(EDB_Type type, size_t size)
     switch ( type ) {
     case eDB_Int:
         m_data = new CDB_Int();
-        return;  
+        return;
     case eDB_SmallInt:
         m_data = new CDB_SmallInt();
-        return;  
+        return;
     case eDB_TinyInt:
         m_data = new CDB_TinyInt();
-        return;  
+        return;
     case eDB_BigInt:
         m_data = new CDB_BigInt();
-        return;  
+        return;
     case eDB_LongChar:
         if( size == 0 )
         {
             NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of LONGCHAR should not be 0");
         }
         m_data = new CDB_LongChar(size);
-        return;  
+        return;
     case eDB_VarChar:
         m_data = new CDB_VarChar();
-        return;  
+        return;
     case eDB_Char:
         if( size == 0 )
         {
             NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of CHAR should not be 0");
         }
         m_data = new CDB_Char(size);
-        return;  
+        return;
     case eDB_LongBinary:
         if( size == 0 )
         {
             NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of LONGBINARY should not be 0");
         }
         m_data = new CDB_LongBinary(size);
-        return;  
+        return;
     case eDB_VarBinary:
         m_data = new CDB_VarBinary();
-        return;  
+        return;
     case eDB_Binary:
         if( size == 0 )
         {
             NCBI_THROW(CVariantException, eVariant, "Illegal argument, the size of BINARY should not be 0");
         }
         m_data = new CDB_Binary(size);
-        return;  
+        return;
     case eDB_Float:
         m_data = new CDB_Float();
-        return;  
+        return;
     case eDB_Double:
         m_data = new CDB_Double();
-        return;  
+        return;
     case eDB_DateTime:
         m_data = new CDB_DateTime();
         return;
@@ -224,43 +224,56 @@ CVariant::CVariant(EDB_Type type, size_t size)
 }
 
 
-CVariant::CVariant(CDB_Object* o) 
-    : m_data(o) 
+CVariant::CVariant(CDB_Object* o)
+    : m_data(o)
 {
     return;
 }
 
 
-CVariant::CVariant(Int8 v) 
+CVariant::CVariant(Int8 v)
     : m_data(new CDB_BigInt(v)) {}
 
 
-CVariant::CVariant(Int4 v) 
+CVariant::CVariant(Int4 v)
     : m_data(new CDB_Int(v)) {}
 
-//CVariant::CVariant(int v) 
+//CVariant::CVariant(int v)
 //: m_data(new CDB_Int(v)) {}
 
-CVariant::CVariant(Int2 v) 
+CVariant::CVariant(Int2 v)
     : m_data(new CDB_SmallInt(v)) {}
 
-CVariant::CVariant(Uint1 v) 
+CVariant::CVariant(Uint1 v)
     : m_data(new CDB_TinyInt(v)) {}
 
 CVariant::CVariant(float v)
     : m_data(new CDB_Float(v)) {}
 
-CVariant::CVariant(double v) 
+CVariant::CVariant(double v)
     : m_data(new CDB_Double(v)) {}
 
-CVariant::CVariant(bool v) 
+CVariant::CVariant(bool v)
     : m_data(new CDB_Bit(v)) {}
 
-CVariant::CVariant(const string& v) 
-    : m_data(new CDB_VarChar(v)) {}
+CVariant::CVariant(const string& v)
+    : m_data(new CDB_VarChar(v))
+{
+    if (v.size() > 255) {
+        ERR_POST(Warning << "String of size " << v.size() << " was truncated to 255 characters" );
+    }
+}
 
-CVariant::CVariant(const char* s) 
-    : m_data(new CDB_VarChar(s)) {}
+CVariant::CVariant(const char* s)
+    : m_data(new CDB_VarChar(s))
+{
+    if (s) {
+        size_t size = strlen(s);
+        if (size > 255) {
+            ERR_POST(Warning << "String of size " << size << " was truncated to 255 characters" );
+        }
+    }
+}
 
 CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
     : m_data(0)
@@ -286,8 +299,8 @@ CVariant::CVariant(const CVariant& v)
         m_data = v.GetData()->Clone();
     }
 }
-			      
-CVariant::~CVariant(void) 
+
+CVariant::~CVariant(void)
 {
     try {
         delete m_data;
@@ -299,7 +312,7 @@ CVariant::~CVariant(void)
 CDB_Object* CVariant::GetNonNullData() const {
     if( m_data == 0 )
         NCBI_THROW(CVariantException, eVariant, "CVariant::GetNonNullData(): null data");
-  
+
     return m_data;
 }
 
@@ -310,7 +323,7 @@ void CVariant::SetData(CDB_Object* o) {
 
 
 
-string CVariant::GetString(void) const 
+string CVariant::GetString(void) const
 {
     string s("");
 
@@ -318,7 +331,7 @@ string CVariant::GetString(void) const
     {
         switch( GetType() ) {
         case eDB_TinyInt:
-        case eDB_SmallInt:      
+        case eDB_SmallInt:
         case eDB_Int:
         case eDB_BigInt:
         case eDB_Numeric:
@@ -363,28 +376,28 @@ string CVariant::GetString(void) const
                 break;
             }
         case eDB_TinyInt:
-            s = NStr::IntToString((long)GetByte()); 
+            s = NStr::IntToString((long)GetByte());
             break;
-        case eDB_SmallInt:      
-            s = NStr::IntToString(GetInt2()); 
+        case eDB_SmallInt:
+            s = NStr::IntToString(GetInt2());
             break;
         case eDB_Int:
-            s = NStr::IntToString(GetInt4()); 
+            s = NStr::IntToString(GetInt4());
             break;
         case eDB_BigInt:
-            s = NStr::Int8ToString(GetInt8()); 
+            s = NStr::Int8ToString(GetInt8());
             break;
         case eDB_Float:
-            s = NStr::DoubleToString(GetFloat()); 
+            s = NStr::DoubleToString(GetFloat());
             break;
         case eDB_Double:
-            s = NStr::DoubleToString(GetDouble()); 
+            s = NStr::DoubleToString(GetDouble());
             break;
         case eDB_Bit:
-            s = NStr::BoolToString(GetBit()); 
+            s = NStr::BoolToString(GetBit());
             break;
         case eDB_Numeric:
-            s = ((CDB_Numeric*)GetData())->Value(); 
+            s = ((CDB_Numeric*)GetData())->Value();
             break;
         case eDB_DateTime:
         case eDB_SmallDateTime:
@@ -401,7 +414,7 @@ string CVariant::GetString(void) const
 
 Int8 CVariant::GetInt8() const
 {
-    if( !IsNull() ) 
+    if( !IsNull() )
     {
         switch( GetType() ) {
         case eDB_BigInt:
@@ -546,7 +559,7 @@ const CTime& CVariant::GetCTime() const
     return *ptr;
 }
 
-string CVariant::AsNotNullString(const string& v) const 
+string CVariant::AsNotNullString(const string& v) const
 {
     if( IsNull() )
         return v;
@@ -741,7 +754,7 @@ CVariant& CVariant::operator=(const CVariant& v)
     return *this;
 }
 
-bool operator<(const CVariant& v1, const CVariant& v2) 
+bool operator<(const CVariant& v1, const CVariant& v2)
 {
     bool less = false;
 
@@ -762,7 +775,7 @@ bool operator<(const CVariant& v1, const CVariant& v2)
         case eDB_TinyInt:
             less = v1.GetByte() < v2.GetByte();
             break;
-        case eDB_SmallInt:      
+        case eDB_SmallInt:
             less = v1.GetInt2() < v2.GetInt2();
             break;
         case eDB_Int:
@@ -788,7 +801,7 @@ bool operator<(const CVariant& v1, const CVariant& v2)
     return less;
 }
 
-bool operator==(const CVariant& v1, const CVariant& v2) 
+bool operator==(const CVariant& v1, const CVariant& v2)
 {
     bool less = false;
 
@@ -814,7 +827,7 @@ bool operator==(const CVariant& v1, const CVariant& v2)
         case eDB_TinyInt:
             less = v1.GetByte() == v2.GetByte();
             break;
-        case eDB_SmallInt:      
+        case eDB_SmallInt:
             less = v1.GetInt2() == v2.GetInt2();
             break;
         case eDB_Int:
@@ -841,6 +854,9 @@ bool operator==(const CVariant& v1, const CVariant& v2)
 }
 /*
 * $Log$
+* Revision 1.42  2006/09/13 19:17:48  ssikorsk
+* Post a warning if a string was truncated.
+*
 * Revision 1.41  2005/11/02 15:02:25  ssikorsk
 * Catch all exceptions in destructors.
 *
