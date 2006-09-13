@@ -66,12 +66,132 @@ enum EDB_Type {
     eDB_Image,
     eDB_Bit,
     eDB_Numeric,
-	eDB_LongChar,
-	eDB_LongBinary,
+    eDB_LongChar,
+    eDB_LongBinary,
 
     eDB_UnsupportedType
 };
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CWString
+{
+public:
+    CWString(void);
+    CWString(const CWString& str);
+
+    explicit CWString(const char* str,
+                      string::size_type size = string::npos,
+                      EEncoding enc = eEncoding_Unknown);
+    explicit CWString(const wchar_t* str,
+                      wstring::size_type size = wstring::npos);
+    explicit CWString(const string& str,
+                      EEncoding enc = eEncoding_Unknown);
+    explicit CWString(const wstring& str);
+
+    ~CWString(void);
+
+    CWString& operator=(const CWString& str);
+
+public:
+    operator char*(void) const
+    {
+        if (!(GetAvailableValueType() & eChar)) {
+            x_MakeString();
+        }
+
+        return const_cast<char*>(m_Char);
+    }
+    operator const char*(void) const
+    {
+        if (!(GetAvailableValueType() & eChar)) {
+            x_MakeString();
+        }
+
+        return m_Char;
+    }
+    operator wchar_t*(void) const
+    {
+        if (!(GetAvailableValueType() & eWChar)) {
+            x_MakeWString();
+        }
+
+        return const_cast<wchar_t*>(m_WChar);
+    }
+    operator const wchar_t*(void) const
+    {
+        if (!(GetAvailableValueType() & eWChar)) {
+            x_MakeWString();
+        }
+
+        return m_WChar;
+    }
+
+public:
+    // str_enc - expected string encoding.
+    const string& AsLatin1(EEncoding str_enc = eEncoding_Unknown) const
+    {
+        if (!(GetAvailableValueType() & eString)) {
+            x_MakeString(str_enc);
+        }
+
+        return m_String;
+    }
+    const string& AsUTF8(EEncoding str_enc = eEncoding_Unknown) const
+    {
+        if (!(GetAvailableValueType() & eUTF8String)) {
+            x_MakeUTF8String(str_enc);
+        }
+
+        return m_UTF8String;
+    }
+    const wstring& AsUnicode(EEncoding str_enc = eEncoding_Unknown) const
+    {
+        if (!(GetAvailableValueType() & eWString)) {
+            x_MakeWString(str_enc);
+        }
+
+        return m_WString;
+    }
+    size_t GetSymbolNum(void) const;
+
+public:
+    void Clear(void);
+    void Assign(const char* str,
+                string::size_type size = string::npos,
+                EEncoding enc = eEncoding_Unknown);
+    void Assign(const wchar_t* str,
+                wstring::size_type size = wstring::npos);
+    void Assign(const string& str,
+                EEncoding enc = eEncoding_Unknown);
+    void Assign(const wstring& str);
+
+protected:
+    int GetAvailableValueType(void) const
+    {
+        return m_AvailableValueType;
+    }
+
+    void x_MakeString(EEncoding str_enc = eEncoding_Unknown) const;
+    void x_MakeWString(EEncoding str_enc = eEncoding_Unknown) const;
+    void x_MakeUTF8String(EEncoding str_enc = eEncoding_Unknown) const;
+
+    void x_CalculateEncoding(EEncoding str_enc) const;
+    void x_UTF8ToString(EEncoding str_enc = eEncoding_Unknown) const;
+    void x_StringToUTF8(EEncoding str_enc = eEncoding_Unknown) const;
+
+protected:
+    enum {eChar = 1, eWChar = 2, eString = 4, eWString = 8, eUTF8String = 16};
+
+    mutable int             m_AvailableValueType;
+    mutable EEncoding       m_StringEncoding; // Source string encoding.
+    mutable const char*     m_Char;
+    mutable const wchar_t*  m_WChar;
+    mutable string          m_String;
+    mutable wstring         m_WString;
+    mutable CStringUTF8     m_UTF8String;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -232,27 +352,86 @@ protected:
 };
 
 
-class NCBI_DBAPIDRIVER_EXPORT CDB_VarChar : public CDB_Object
+// Abstract base class.
+class NCBI_DBAPIDRIVER_EXPORT CDB_String : public CDB_Object
+{
+public:
+    CDB_String(void);
+    CDB_String(const CDB_String& other);
+    explicit CDB_String(const string& s,
+                        EEncoding enc = eEncoding_Unknown);
+    explicit CDB_String(const char* s,
+                        string::size_type size = string::npos,
+                        EEncoding enc = eEncoding_Unknown);
+    virtual ~CDB_String(void);
+
+public:
+    // assignment operators
+    CDB_String& operator= (const CDB_String& other);
+    CDB_String& operator= (const string& s);
+    CDB_String& operator= (const char* s);
+
+public:
+#if defined(HAVE_WSTRING)
+    // enc - expected source string encoding.
+    const wchar_t*  AsUnicode(EEncoding enc) const
+    {
+        return m_Null ? NULL : m_WString.AsUnicode(enc).c_str();
+    }
+#endif
+
+    const char* Value(void) const
+    {
+        return m_Null ? 0 : static_cast<const char*>(m_WString);
+    }
+    size_t Size(void) const
+    {
+        return m_Null ? 0 : m_WString.GetSymbolNum();
+    }
+
+public:
+    // set-value methods
+    void Assign(const CDB_String& other);
+    void Assign(const string& s,
+                EEncoding enc = eEncoding_Unknown);
+    void Assign(const char* s,
+                string::size_type size = string::npos,
+                EEncoding enc = eEncoding_Unknown);
+
+private:
+    CWString m_WString;
+};
+
+
+class NCBI_DBAPIDRIVER_EXPORT CDB_VarChar : public CDB_String
 {
 public:
     // constructors
-    CDB_VarChar()                           : CDB_Object(true)  { return; }
-    CDB_VarChar(const string& s)            { SetValue(s); }
-    CDB_VarChar(const char*   s)            { SetValue(s); }
-    CDB_VarChar(const char*   s, size_t l)  { SetValue(s, l); }
+    CDB_VarChar();
+    CDB_VarChar(const string& s,
+                EEncoding enc = eEncoding_Unknown);
+    CDB_VarChar(const char* s,
+                EEncoding enc = eEncoding_Unknown);
+    CDB_VarChar(const char* s,
+                size_t l,
+                EEncoding enc = eEncoding_Unknown);
+    virtual ~CDB_VarChar(void);
 
     // assignment operators
     CDB_VarChar& operator= (const string& s)  { return SetValue(s); }
     CDB_VarChar& operator= (const char*   s)  { return SetValue(s); }
 
     // set-value methods
-    CDB_VarChar& SetValue(const string& s);
-    CDB_VarChar& SetValue(const char* s);
-    CDB_VarChar& SetValue(const char* s, size_t l);
+    CDB_VarChar& SetValue(const string& s,
+                          EEncoding enc = eEncoding_Unknown);
+    CDB_VarChar& SetValue(const char* s,
+                          EEncoding enc = eEncoding_Unknown);
+    CDB_VarChar& SetValue(const char* s, size_t l,
+                          EEncoding enc = eEncoding_Unknown);
 
     //
     const char* Value() const  { return m_Null ? 0 : m_Val;  }
-    size_t      Size()  const  { return m_Null ? 0 : m_Size; }
+    size_t      Size()  const  { return m_Size; }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -263,24 +442,32 @@ protected:
     char   m_Val[256];
 };
 
-
-
-class NCBI_DBAPIDRIVER_EXPORT CDB_Char : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_Char : public CDB_String
 {
 public:
     enum { kMaxCharSize = 255 };
 
     CDB_Char(size_t s = 1);
-    CDB_Char(size_t s, const string& v);
-    CDB_Char(size_t len, const char* str);
+    CDB_Char(size_t s,
+             const string& v,
+             EEncoding enc = eEncoding_Unknown);
+    // This ctoe copies a string.
+    CDB_Char(size_t len,
+             const char* str,
+             EEncoding enc = eEncoding_Unknown);
     CDB_Char(const CDB_Char& v);
 
     CDB_Char& operator= (const CDB_Char& v);
     CDB_Char& operator= (const string& v);
+    // This operator copies a string.
     CDB_Char& operator= (const char* v);
 
-    void SetValue(const char* str, size_t len);
+    // This method copies a string.
+    void SetValue(const char* str,
+                  size_t len,
+                  EEncoding enc = eEncoding_Unknown);
 
+    //
     const char* Value() const  { return m_Null ? 0 : m_Val; }
     size_t      Size()  const  { return m_Size; }
 
@@ -291,27 +478,37 @@ public:
     virtual ~CDB_Char();
 
 protected:
-    size_t m_Size;
-    char*  m_Val;
+    size_t      m_Size;
+    char*       m_Val;
 };
 
 #define K8_1 8191
 
-class NCBI_DBAPIDRIVER_EXPORT CDB_LongChar : public CDB_Object
+class NCBI_DBAPIDRIVER_EXPORT CDB_LongChar : public CDB_String
 {
 public:
 
     CDB_LongChar(size_t s = K8_1);
-    CDB_LongChar(size_t s, const string& v);
-    CDB_LongChar(size_t len, const char* str);
+    CDB_LongChar(size_t s,
+                 const string& v,
+                 EEncoding enc = eEncoding_Unknown);
+    // This ctor copies a string.
+    CDB_LongChar(size_t len,
+                 const char* str,
+                 EEncoding enc = eEncoding_Unknown);
     CDB_LongChar(const CDB_LongChar& v);
 
     CDB_LongChar& operator= (const CDB_LongChar& v);
     CDB_LongChar& operator= (const string& v);
+    // This operator copies a string.
     CDB_LongChar& operator= (const char* v);
 
-    void SetValue(const char* str, size_t len);
+    // This method copies a string.
+    void SetValue(const char* str,
+                  size_t len,
+                  EEncoding enc = eEncoding_Unknown);
 
+    //
     const char* Value() const  { return m_Null ? 0 : m_Val; }
     size_t      Size()  const  { return m_Size; }
     size_t  DataSize()  const  { return m_Null? 0 : strlen(m_Val); }
@@ -323,8 +520,8 @@ public:
     virtual ~CDB_LongChar();
 
 protected:
-    size_t m_Size;
-    char*  m_Val;
+    size_t      m_Size;
+    char*       m_Val;
 };
 
 
@@ -642,6 +839,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/09/13 19:28:56  ssikorsk
+ * Added new classes CWString and CDB_String;
+ * Revamp CDB_VarChar, CDB_Char, and CDB_LongChar to inherit from CDB_String;
+ *
  * Revision 1.22  2006/08/22 20:12:44  ssikorsk
  * Reordered EDB_Type.
  *
