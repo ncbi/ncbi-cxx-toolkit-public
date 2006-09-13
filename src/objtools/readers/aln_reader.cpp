@@ -51,6 +51,35 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+CAlnError::CAlnError(int category, int line_num, string id, string message)
+{
+    switch (category) 
+    {
+    case -1:
+        m_Category = eAlnErr_Unknown;
+        break;
+    case 0:
+        m_Category = eAlnErr_NoError;
+        break;
+    case 1:
+        m_Category = eAlnErr_Fatal;
+        break;
+    case 2:
+        m_Category = eAlnErr_BadData;
+        break;
+    case 3:
+        m_Category = eAlnErr_BadFormat;
+        break;
+    default:
+        m_Category = eAlnErr_Unknown;
+        break;
+    }
+
+    m_LineNum = line_num;
+    m_ID = id;
+    m_Message = message;
+}
+
 
 static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
 {
@@ -67,20 +96,35 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
 static void ALIGNMENT_CALLBACK s_ReportError(TErrorInfoPtr err_ptr,
                                              void *user_data)
 {
-    if (err_ptr->category != eAlnErr_Fatal) {
-        // ignore non-fatal errors
-        return;
-    }
-    string msg = "Error reading alignment file";
-    if (err_ptr->line_num > -1) {
-        msg += " at line " + NStr::IntToString(err_ptr->line_num);
-    }
-    if (err_ptr->message) {
-        msg += ":  ";
-        msg += err_ptr->message;
-    }
+    CAlnReader::TErrorList *err_list;
+    TErrorInfoPtr           next_err;
+    
+    while (err_ptr != NULL) {    
+        if (user_data != NULL) {
+            err_list = (CAlnReader::TErrorList *)user_data;
+            (*err_list).push_back (CAlnError(err_ptr->category, err_ptr->line_num, 
+                                             err_ptr->id == NULL ? "" : err_ptr->id, 
+                                             err_ptr->message == NULL ? "" : err_ptr->message));
+        }
 
-    LOG_POST(Error << msg);
+        if (err_ptr->category == eAlnErr_Fatal) {
+            string msg = "Error reading alignment file";
+            if (err_ptr->line_num > -1) {
+                msg += " at line " + NStr::IntToString(err_ptr->line_num);
+            }
+            if (err_ptr->message) {
+                msg += ":  ";
+                msg += err_ptr->message;
+            }
+
+            LOG_POST(Error << msg);
+        }
+        next_err = err_ptr->next;  
+        free (err_ptr->id);
+        free (err_ptr->message);
+        free (err_ptr);
+        err_ptr = next_err;
+    }
 }
 
 
@@ -89,7 +133,7 @@ CAlnReader::~CAlnReader()
 }
 
 
-void CAlnReader::Read()
+void CAlnReader::Read(bool guess)
 {
     if (m_ReadDone) {
         return;
@@ -106,8 +150,9 @@ void CAlnReader::Read()
 
     // read the alignment stream
     TAlignmentFilePtr afp;
+    m_Errors.clear();
     afp = ReadAlignmentFile(s_ReadLine, (void *) &m_IS,
-                            s_ReportError, 0, &info);
+                            s_ReportError, &(m_Errors), &info);
     if (!afp) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
                    "Error reading alignment", 0);
@@ -116,6 +161,24 @@ void CAlnReader::Read()
     int first_len = strlen (afp->sequences[0]);
     for (int i = 1; i < afp->num_sequences; i++) {
         if (strlen (afp->sequences[i]) != first_len) {
+            AlignmentFileFree (afp);
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                       "Error reading alignment", 0);
+        }
+    }
+    
+    // if we're trying to guess whether this is an alignment file,
+    // and no tell-tale alignment format lines were found,
+    // check to see if any of the lines contain gaps.
+    // no gaps plus no alignment indicators -> don't guess alignment
+    if (guess && !afp->align_format_found) {
+        bool found_gap = false;
+        for (int i = 0; i < afp->num_sequences && !found_gap; i++) {
+            if (strchr (afp->sequences[i], '-') != NULL) {
+                found_gap = true;
+            }
+        }
+        if (!found_gap) {
             AlignmentFileFree (afp);
             NCBI_THROW2(CObjReaderParseException, eFormat,
                        "Error reading alignment", 0);
@@ -401,6 +464,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/09/13 18:38:50  bollin
+ * added method to allow access to errors and warnings during alignment reading.
+ * Also added flag to indicate whether "alignment" being read is a guess -
+ * stricter rules apply in this case
+ *
  * Revision 1.17  2006/09/13 12:27:47  bollin
  * fixed bug in GetSeqAlign that was truncating and extending sequences to
  * match the length of the first sequence in an alignment - function now
