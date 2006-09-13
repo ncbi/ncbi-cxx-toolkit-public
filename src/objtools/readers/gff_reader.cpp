@@ -193,12 +193,7 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
 
             string id_str = feat.GetNamedQual(qual_name);
             if ( !id_str.empty() ) {
-                CRef<CSeq_id> id;
-                try {
-                    id.Reset(new CSeq_id(id_str));
-                } catch (CSeqIdException&) {
-                    id.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
-                }
+                CRef<CSeq_id> id = x_ResolveSeqName(id_str);
                 feat.SetProduct().SetWhole(*id);
             }
         }
@@ -1056,9 +1051,23 @@ CRef<CSeq_id> CGFFReader::x_ResolveSeqName(const string& name)
 
 CRef<CSeq_id> CGFFReader::x_ResolveNewSeqName(const string& name)
 {
+    if (m_Flags & fAllIdsAsLocal) {
+        if (name.compare(0, 4, "lcl|") == 0) {
+            return CRef<CSeq_id>(new CSeq_id(name));
+        } else {
+            return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, name));
+        }
+    }
+
+    if (m_Flags & fNumericIdsAsLocal) {
+        if (name.find_first_not_of("0123456789") == string::npos) {
+            return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, name));
+        }
+    }
     try {
         return CRef<CSeq_id>(new CSeq_id(name));
-    } catch (CSeqIdException&) {
+    }
+    catch (CSeqIdException&) {
         return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, name));
     }
 }
@@ -1145,6 +1154,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2006/09/13 14:44:11  dicuccio
+* Force all seq-id creation through the same function (x_ResolveNewSeqName() /
+* x_ResolveSeqName()).  Added options to force numeric IDs to be local IDs, and
+* to interpret all IDs as local IDs.
+*
 * Revision 1.25  2006/08/21 18:31:18  ucko
 * x_ParseFeatRecord: invoke CFeature_table_reader::CreateSeqFeat with
 * the new fTranslateBadKey flag, if only because gbench currently

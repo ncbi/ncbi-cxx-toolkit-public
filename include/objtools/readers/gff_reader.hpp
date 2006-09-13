@@ -87,6 +87,12 @@ public:
         ///< create gene features for mRNAs and CDSs if none exist already
         fCreateGeneFeats    = 0x20,
 
+        ///< numeric identifiers are local IDs
+        fNumericIdsAsLocal  = 0x40,
+
+        ///< all identifiers are local IDs
+        fAllIdsAsLocal      = 0x80,
+
         fDefaults = 0
     };
     typedef int TFlags;
@@ -224,6 +230,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/09/13 14:44:10  dicuccio
+ * Force all seq-id creation through the same function (x_ResolveNewSeqName() /
+ * x_ResolveSeqName()).  Added options to force numeric IDs to be local IDs, and
+ * to interpret all IDs as local IDs.
+ *
  * Revision 1.9  2005/03/29 19:19:33  jcherry
  * Added export specifier
  *
