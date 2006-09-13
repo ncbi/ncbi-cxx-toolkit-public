@@ -161,7 +161,9 @@ const unsigned int kTDSMaxNameLen = kDBLibMaxNameLen;
 
 class CDblibContextRegistry;
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBLibContext : public impl::CDriverContext
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBLibContext :
+    public impl::CDriverContext,
+    public impl::CWinSock
 {
     friend class CDB_Connection;
 
@@ -207,7 +209,7 @@ public:
                                      const string& procname,
                                      int           line);
 
-    void SetClientCharset(const char* charset) const;
+    virtual void SetClientCharset(const string& charset);
     CDBLibContext* GetContext(void) const;
 
 public:
@@ -1063,6 +1065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/09/13 19:37:01  ssikorsk
+ * SetClientCharset(const char*) -->SetClientCharset(const string&)
+ *
  * Revision 1.49  2006/07/19 14:09:55  ssikorsk
  * Refactoring of CursorCmd.
  *
