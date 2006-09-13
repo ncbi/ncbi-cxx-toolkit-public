@@ -65,12 +65,12 @@ public:
                          const string& database = kEmptyStr);
 
     virtual void ConnectValidated(IConnValidator& validator,
-								  const string& user,
+                                  const string& user,
                                   const string& password,
                                   const string& server,
                                   const string& database = kEmptyStr);
 
-	virtual IConnection* CloneConnection(EOwnership ownership);
+    virtual IConnection* CloneConnection(EOwnership ownership);
 
     // New part begin
 
@@ -163,6 +163,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.22  2006/09/13 19:45:27  ssikorsk
+* Beautify source.
+*
 * Revision 1.21  2006/01/26 18:08:23  kholodov
 * Added: ConnectValidated() method
 *
