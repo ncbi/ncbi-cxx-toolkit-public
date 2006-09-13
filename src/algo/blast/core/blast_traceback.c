@@ -59,6 +59,7 @@ static char const rcsid[] =
 #include <algo/blast/core/link_hsps.h>
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_kappa.h>
+#include <algo/blast/core/blast_sw.h>
 #include <algo/blast/core/phi_gapalign.h>
 #include "blast_gapalign_priv.h"
 #include "blast_psi_priv.h"
@@ -340,8 +341,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    BlastHSP* hsp;
    Uint1* query,* subject;
    Int4 query_length;
-   Int4 subject_length=0;
    BlastHSP** hsp_array;
+   Int4 subject_length=0;
    Int4 q_start, s_start;
    BlastHitSavingOptions* hit_options = hit_params->options;
    BlastScoringOptions* score_options = score_params->options;
@@ -354,15 +355,27 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    const Boolean kGreedyTraceback = (ext_options->eTbackExt == eGreedyTbck);
    const Boolean kTranslateSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
+   const Boolean kSmithWaterman = (ext_options->eTbackExt == 
+                                   eSmithWatermanTbckFull);
    BlastQueryInfo* query_info = query_info_in;
    Int4 offsets[2];
+   Int4 num_initial_hsps = hsp_list->hspcnt;
    BlastIntervalTree* tree = NULL;
    
-   if (hsp_list->hspcnt == 0) {
+   if (num_initial_hsps == 0) {
       return 0;
    }
 
    hsp_array = hsp_list->hsp_array;
+
+   /* for Smith-Waterman, the results do not overwrite 
+      the input list of HSPs one by one; instead, hsp_list
+      is rebuilt from scratch */
+   if (kSmithWaterman) {
+       hsp_list->hspcnt = 0;
+       hsp_list->hsp_array = (BlastHSP **)malloc(hsp_list->allocated *
+                                                 sizeof(BlastHSP *));
+   }
 
    if (kTranslateSubject) {
       if (!gen_code_string && program_number != eBlastTypeRpsTblastn)
@@ -414,7 +427,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                                  0, (subject_length > 0 ? subject_length :
                                  subject_blk->length / CODON_LENGTH) + 1);
 
-   for (index=0; index < hsp_list->hspcnt; index++) {
+   for (index=0; index < num_initial_hsps; index++) {
       hsp = hsp_array[index];
       if (program_number == eBlastTypeBlastx && kIsOutOfFrame) {
           Int4 context = hsp->context - hsp->context % CODON_LENGTH;
@@ -499,8 +512,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          adjusted_s_length = subject_length;
          adjusted_subject = subject;
 
-        /* Perform the gapped extension with traceback */
-         if (!kTranslateSubject) {
+         if (!kTranslateSubject && !kSmithWaterman) {
              AdjustSubjectRange(&s_start, &adjusted_s_length, q_start, 
                                 query_length, &start_shift);
              adjusted_subject = subject + start_shift;
@@ -508,16 +520,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                 a shift in the other direction later. */
              hsp->subject.gapped_start = s_start;
          }
-         if (kGreedyTraceback) {
-             BLAST_GreedyGappedAlignment(query, adjusted_subject, 
-                 query_length, adjusted_s_length, gap_align, 
-                 score_params, q_start, s_start, FALSE, TRUE);
-         } else {
-             BLAST_GappedAlignmentWithTraceback(program_number, query, 
-                 adjusted_subject, gap_align, score_params, q_start, s_start, 
-                 query_length, adjusted_s_length);
-         }
 
+         /* compute the cutoff score to use */
          if (is_rpsblast) {
             Int4 rps_context = hsp_list->query_index;
             if (program_number == eBlastTypeRpsTblastn) {
@@ -528,6 +532,31 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          }
          else {
             cutoff = hit_params->cutoffs[hsp->context].cutoff_score;
+         }
+
+         /* Perform the gapped extension with traceback */
+         if (kSmithWaterman) {
+
+             /* with Smith-Waterman, 'hsp' is a placeholder that gives
+                the context and frames of local alignments. The following
+                will compute all of the HSPs that really belong to this
+                query-subject pair, then append them to hsp_list. */
+             SmithWatermanScoreWithTraceback(program_number,
+                         query, query_length,
+                         adjusted_subject, adjusted_s_length,
+                         hsp, hsp_list, score_params, 
+                         hit_params, gap_align, start_shift, cutoff);
+             /* remove the original HSP unconditionally */
+             gap_align->score = INT4_MIN;
+
+         } else if (kGreedyTraceback) {
+             BLAST_GreedyGappedAlignment(query, adjusted_subject, 
+                 query_length, adjusted_s_length, gap_align, 
+                 score_params, q_start, s_start, FALSE, TRUE);
+         } else {
+             BLAST_GappedAlignmentWithTraceback(program_number, query, 
+                 adjusted_subject, gap_align, score_params, q_start, s_start, 
+                 query_length, adjusted_s_length);
          }
 
          if (gap_align->score >= cutoff) {
@@ -573,6 +602,12 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       }
    }
    
+   if (kSmithWaterman) {
+       /* switch over to the result of the traceback */
+       sfree(hsp_array);
+       hsp_array = hsp_list->hsp_array;
+   }
+
    if (frame_offsets_a) {
        sfree(frame_offsets_a);
    }
