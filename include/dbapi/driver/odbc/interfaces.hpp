@@ -56,6 +56,10 @@
 #  define HAVE_SQLGETPRIVATEPROFILESTRING 1
 #endif
 
+#ifdef UCS2
+#  define UNICODE 1
+#endif
+
 #include <sql.h>
 #include <sqlext.h>
 #include <sqltypes.h>
@@ -65,6 +69,18 @@
 #endif
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(odbc)
+
+#if defined(UNICODE)
+    typedef SQLWCHAR TSqlChar;
+    static const EEncoding DefStrEncoding = eEncoding_UTF8;
+#else
+    typedef SQLCHAR TSqlChar;
+    static const EEncoding DefStrEncoding = eEncoding_ISO8859_1;
+#endif
+
+END_SCOPE(odbc)
 
 class CODBCContext;
 class CODBC_Connection;
@@ -95,8 +111,8 @@ public:
 
 public:
     void ReportErrors(void) const;
-    void SetHandlerStack(CDBHandlerStack* hs) {
-        m_HStack = hs;
+    void SetHandlerStack(CDBHandlerStack& hs) {
+        m_HStack = &hs;
     }
     void SetHandle(SQLHANDLE h) {
         m_Handle = h;
@@ -113,11 +129,11 @@ private:
     CODBC_Reporter(void);
 
 private:
-    CDBHandlerStack* m_HStack;
-    SQLHANDLE m_Handle;
-    SQLSMALLINT m_HType;
-    const CODBC_Reporter* m_ParentReporter;
-    string m_ExtraMsg;
+    CDBHandlerStack*        m_HStack;
+    SQLHANDLE               m_Handle;
+    SQLSMALLINT             m_HType;
+    const CODBC_Reporter*   m_ParentReporter;
+    string                  m_ExtraMsg;
 };
 
 
@@ -126,7 +142,9 @@ private:
 //  CODBCContext::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public impl::CDriverContext
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext :
+    public impl::CDriverContext,
+    public impl::CWinSock
 {
     friend class CDB_Connection;
 
@@ -141,12 +159,7 @@ public:
     // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
     //
 
-    virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
-    virtual bool SetTimeout      (unsigned int nof_secs = 0);
-    virtual bool SetMaxTextImageSize(size_t nof_bytes);
-
     virtual bool IsAbleTo(ECapability cpb) const {return false;}
-
 
     //
     // ODBC specific functionality
@@ -155,9 +168,9 @@ public:
     // the following methods are optional (driver will use the default values
     // if not called), the values will affect the new connections only
 
-    void ODBC_SetPacketSize(SQLUINTEGER packet_size);
+    void SetPacketSize(SQLUINTEGER packet_size);
 
-    virtual SQLHENV ODBC_GetContext(void) const;
+    SQLHENV GetODBCContext(void) const;
     const CODBC_Reporter& GetReporter(void) const
     {
         return m_Reporter;
@@ -167,27 +180,16 @@ public:
         return m_TDSVersion;
     }
 
-    void SetClientCharset(const string& charset)
-    {
-        m_ClientCharset = charset;
-    }
-    const string& GetClientCharset(void) const
-    {
-        return m_ClientCharset;
-    }
-
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
 
 private:
     SQLHENV         m_Context;
     SQLULEN         m_PacketSize;
-    SQLUINTEGER     m_TextImageSize;
     CODBC_Reporter  m_Reporter;
     bool            m_UseDSN;
     CODBCContextRegistry* m_Registry;
     int             m_TDSVersion;
-    string          m_ClientCharset;
 
     SQLHDBC x_ConnectToServer(const string&   srv_name,
                    const string&   usr_name,
@@ -256,9 +258,6 @@ protected:
     virtual bool Refresh(void);
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
 
-    void ODBC_SetTimeout(SQLULEN nof_secs);
-    void ODBC_SetTextImageSize(SQLULEN nof_bytes);
-
     CODBC_LangCmd* xLangCmd(const string&   lang_query,
                             unsigned int    nof_params = 0);
 
@@ -286,7 +285,9 @@ protected:
     }
 
 private:
-    bool x_SendData(CStatementBase& stmt, CDB_Stream& stream);
+    bool x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
+                    CStatementBase& stmt,
+                    CDB_Stream& stream);
 
     SQLHDBC         m_Link;
 
@@ -611,6 +612,7 @@ private:
     void xCancel(void);
 
     SQLLEN  m_ParamPH;
+    const CDB_ITDescriptor::ETDescriptorType m_DescrType;
 };
 
 
@@ -675,6 +677,7 @@ protected:
         m_Stmt.Close();
     }
     bool CheckSIENoD_Text(CDB_Stream* val);
+    bool CheckSIENoD_WText(CDB_Stream* val);
     bool CheckSIENoD_Binary(CDB_Stream* val);
 
 private:
@@ -685,10 +688,10 @@ private:
     unsigned int      m_CmdNum;
 #define ODBC_COLUMN_NAME_SIZE 80
     typedef struct t_SODBC_ColDescr {
-        SQLCHAR     ColumnName[ODBC_COLUMN_NAME_SIZE];
-        SQLULEN     ColumnSize;
-        SQLSMALLINT DataType;
-        SQLSMALLINT DecimalDigits;
+        odbc::TSqlChar  ColumnName[ODBC_COLUMN_NAME_SIZE];
+        SQLULEN         ColumnSize;
+        SQLSMALLINT     DataType;
+        SQLSMALLINT     DecimalDigits;
     } SODBC_ColDescr;
 
     SODBC_ColDescr* m_ColFmt;
@@ -807,6 +810,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/09/13 19:40:55  ssikorsk
+ * Removed methods SetLoginTimeout, SetTimeout, and SetMaxTextImageSize from CODBCContext;
+ * Removed methods ODBC_SetTimeout and ODBC_SetTextImageSize from CODBC_Connection;
+ * + #define UNICODE;
+ * Defined unicode-specific types and constants;
+ *
  * Revision 1.44  2006/08/31 14:58:08  ssikorsk
  * Added ClientCharset to the DriverContext.
  *
