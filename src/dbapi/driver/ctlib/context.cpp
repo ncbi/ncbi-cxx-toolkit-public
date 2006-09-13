@@ -940,7 +940,7 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 
 void CTLibContext::SetClientCharset(const string& charset)
 {
-    CDriverContext::SetClientCharset(charset);
+    impl::CDriverContext::SetClientCharset(charset);
 
     if ( !GetClientCharset().empty() ) {
         cs_locale(CTLIB_GetContext(),
@@ -1239,6 +1239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2006/09/13 22:49:42  ssikorsk
+ * CDriverContext --> impl::CDriverContext
+ *
  * Revision 1.93  2006/09/13 19:53:21  ssikorsk
  * Revamp code to use CWinSock.
  *

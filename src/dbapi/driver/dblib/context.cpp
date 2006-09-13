@@ -359,7 +359,7 @@ void CDBLibContext::SetClientCharset(const string& charset)
     _ASSERT( m_Login );
     _ASSERT( !charset.empty() );
 
-    CDriverContext::SetClientCharset(charset);
+    impl::CDriverContext::SetClientCharset(charset);
 
 #ifndef MS_DBLIB_IN_USE
     DBSETLCHARSET( m_Login, const_cast<char*>(charset.c_str()) );
@@ -1348,6 +1348,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2006/09/13 22:49:42  ssikorsk
+ * CDriverContext --> impl::CDriverContext
+ *
  * Revision 1.90  2006/09/13 19:53:56  ssikorsk
  * Revamp code to use CWinSock.
  *
