@@ -1,7 +1,6 @@
 # $Id$
 
-LIB_PROJ = ncbi_xdbapi_odbc
-SUB_PROJ = odbcw samples
+LIB_PROJ = ncbi_xdbapi_odbcw
 
 REQUIRES = ODBC
 
