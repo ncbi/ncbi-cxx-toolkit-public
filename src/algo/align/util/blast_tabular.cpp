@@ -84,23 +84,35 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
 }
 
 
+CRef<CSeq_id> ExtractSeqId(const string& strid, bool use_local)
+{
+    CRef<CSeq_id> seqid;
+    if(use_local) {
+        seqid.Reset(new CSeq_id);
+        seqid->SetLocal().SetStr(strid);
+    }
+    else {
+        CBioseq::TId ids;
+        CSeq_id::ParseFastaIds(ids, strid);
+        if(ids.size()) {
+            seqid = ids.back();
+        }
+        else {
+            seqid.Reset(NULL);
+        }
+    }
+    return seqid;
+}
 
-CBlastTabular::CBlastTabular(const char* m8)
+
+CBlastTabular::CBlastTabular(const char* m8, bool force_local_ids)
 {
     const char* p0 = m8, *p = p0;
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
     for(p0 = p; *p && !isspace((unsigned char)(*p)); ++p); // get token
     if(*p) {
-
         const string id1 (p0, p - p0);
-        CBioseq::TId ids;
-        CSeq_id::ParseFastaIds(ids, id1);
-        if(ids.size()) {
-            m_Id.first = ids.back();
-        }
-        else {
-            m_Id.first.Reset(NULL);
-        }
+        m_Id.first = ExtractSeqId(id1, force_local_ids);
     }
 
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
@@ -108,14 +120,7 @@ CBlastTabular::CBlastTabular(const char* m8)
     if(*p) {
 
         const string id2 (p0, p - p0);
-        CBioseq::TId ids;
-        CSeq_id::ParseFastaIds(ids, id2);
-        if(ids.size()) {
-            m_Id.second = ids.back();
-        }
-        else {
-            m_Id.second.Reset(NULL);
-        }
+        m_Id.second = ExtractSeqId(id2, force_local_ids);
     }
 
     if(m_Id.first.IsNull() || m_Id.second.IsNull()) {

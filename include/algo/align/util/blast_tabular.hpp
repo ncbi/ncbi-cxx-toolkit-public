@@ -49,7 +49,7 @@ public:
     // c'tors
     CBlastTabular(void) {};
     CBlastTabular(const objects::CSeq_align& seq_align, bool save_xcript = false);
-    CBlastTabular(const char* m8);
+    CBlastTabular(const char* m8, bool force_local_ids = false);
 
     // getters / setters
     void   SetLength(TCoord length);
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/09/13 16:29:06  kapustin
+ * Add local id option when creating from a blast string
+ *
  * Revision 1.6  2006/03/21 16:16:44  kapustin
  * Support edit transcript string
  *
