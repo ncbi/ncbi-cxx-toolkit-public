@@ -64,6 +64,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_sw.h>
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/phi_extend.h>
 #include <algo/blast/core/link_hsps.h>
@@ -284,14 +285,15 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
          
          BlastInitHitListReset(init_hitlist);
          
-         aux_struct->WordFinder(subject, query, query_info, lookup, matrix, 
-                                word_params, aux_struct->ewp, 
-                                aux_struct->offset_pairs, 
-                                kScanSubjectOffsetArraySize,
-                                init_hitlist, ungapped_stats);
-            
-         if (init_hitlist->total == 0)
-            continue;
+         if (aux_struct->WordFinder) {
+            aux_struct->WordFinder(subject, query, query_info, lookup, matrix, 
+                                   word_params, aux_struct->ewp, 
+                                   aux_struct->offset_pairs, 
+                                   kScanSubjectOffsetArraySize,
+                                   init_hitlist, ungapped_stats);
+            if (init_hitlist->total == 0)
+               continue;
+         }
 
          if (score_options->gapped_calculation) {
             Int4 prot_length = 0;
@@ -641,6 +643,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    Boolean mb_lookup = (lookup_wrap->lut_type == MB_LOOKUP_TABLE);
    Boolean phi_lookup = (lookup_wrap->lut_type == PHI_AA_LOOKUP ||
                          lookup_wrap->lut_type == PHI_NA_LOOKUP);
+   Boolean smith_waterman = 
+                 (ext_options->ePrelimGapExt == eSmithWatermanScoreOnly);
    Int4 offset_array_size = GetOffsetArraySize(lookup_wrap);
    Uint4 avg_subj_length;
 
@@ -655,7 +659,9 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
                                     avg_subj_length, &aux_struct->ewp)) != 0)
       return status;
 
-   if (mb_lookup) {
+   if (smith_waterman) {
+      aux_struct->WordFinder = NULL;
+   } else if (mb_lookup) {
       aux_struct->WordFinder = MB_WordFinder;
    } else if (phi_lookup) {
       aux_struct->WordFinder = PHIBlastWordFinder;
@@ -674,6 +680,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    /* Pick which gapped alignment algorithm to use. */
    if (phi_lookup)
       aux_struct->GetGappedScore = PHIGetGappedScore;
+   else if (smith_waterman)
+      aux_struct->GetGappedScore = BLAST_SmithWatermanGetGappedScore;
    else 
       aux_struct->GetGappedScore = BLAST_GetGappedScore;
 
