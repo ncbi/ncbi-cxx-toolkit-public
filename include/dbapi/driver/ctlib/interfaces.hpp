@@ -72,7 +72,9 @@ CS_INT NCBI_DBAPIDRIVER_CTLIB_EXPORT GetCtlibTdsVersion(int version = 0);
 //  CTLibContext::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public impl::CDriverContext
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext :
+    public impl::CDriverContext,
+    public impl::CWinSock
 {
     friend class CDB_Connection;
 
@@ -123,11 +125,7 @@ public:
         return m_TDSVersion;
     }
 
-    void SetClientCharset(const string& charset);
-    const string& GetClientCharset(void) const
-    {
-        return m_ClientCharset;
-    }
+    virtual void SetClientCharset(const string& charset);
 
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
@@ -140,7 +138,6 @@ private:
     CS_INT      m_LoginLoopDelay;
     CS_INT      m_TDSVersion;
     CTLibContextRegistry* m_Registry;
-    string      m_ClientCharset;
 
     CS_CONNECTION* x_ConnectToServer(const string&   srv_name,
                                      const string&   usr_name,
@@ -763,6 +760,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/09/13 19:36:02  ssikorsk
+ * - CTLibContext::m_ClientCharset.
+ *
  * Revision 1.45  2006/08/31 14:58:41  ssikorsk
  * Added ClientCharset and locale to the DriverContext.
  *
