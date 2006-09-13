@@ -60,24 +60,6 @@ bool CMySQLContext::IsAbleTo(ECapability /*cpb*/) const
 }
 
 
-bool CMySQLContext::SetLoginTimeout(unsigned int /*nof_secs*/)
-{
-    return false;
-}
-
-
-bool CMySQLContext::SetTimeout(unsigned int /*nof_secs*/)
-{
-    return false;
-}
-
-
-bool CMySQLContext::SetMaxTextImageSize(size_t /*nof_bytes*/)
-{
-    return false;
-}
-
-
 impl::CConnection*
 CMySQLContext::MakeIConnection(const SConnAttr& conn_attr)
 {
@@ -165,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/09/13 19:59:16  ssikorsk
+ * Deleted implementation of SetLoginTimeout, SetTimeout, and SetMaxTextImageSize with CMySQLContext;
+ *
  * Revision 1.16  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
