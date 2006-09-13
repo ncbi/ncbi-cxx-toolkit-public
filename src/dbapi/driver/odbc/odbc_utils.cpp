@@ -37,11 +37,59 @@
 BEGIN_NCBI_SCOPE
 
 
+CODBCString::CODBCString(SQLCHAR* str,
+                         EEncoding enc) :
+CWString(reinterpret_cast<const char*>(const_cast<const SQLCHAR*>(str)), string::npos, enc)
+{
+}
+
+
+CODBCString::CODBCString(const char* str,
+                         string::size_type size,
+                         EEncoding enc) :
+    CWString(str, size, enc)
+{
+}
+
+
+CODBCString::CODBCString(SQLWCHAR* str) :
+    CWString(reinterpret_cast<const wchar_t*>(const_cast<const SQLWCHAR*>(str)))
+{
+}
+
+
+CODBCString::CODBCString(const wchar_t* str,
+                         wstring::size_type size) :
+    CWString(str, size)
+{
+}
+
+
+CODBCString::CODBCString(const string& str, EEncoding enc) :
+    CWString(str, enc)
+{
+}
+
+
+CODBCString::CODBCString(const wstring& str) :
+    CWString(str)
+{
+}
+
+
+CODBCString::~CODBCString(void)
+{
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/13 20:11:01  ssikorsk
+ * Implemented class CODBCString.
+ *
  * Revision 1.1  2006/07/25 13:52:01  ssikorsk
  * Initial version.
  *
