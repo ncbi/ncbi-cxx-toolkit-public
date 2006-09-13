@@ -59,11 +59,16 @@ class CConnection;
 
 class NCBI_DBAPIDRIVER_EXPORT CDriverContext : public I_DriverContext
 {
+    friend class impl::CConnection;
+
 protected:
     CDriverContext(void);
 
 public:
     virtual ~CDriverContext(void);
+
+    virtual bool SetTimeout(unsigned int nof_secs = 0);
+    virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
     /// Create new connection to specified server (within this context).
     /// It is your responsibility to delete the returned connection object.
@@ -134,7 +139,7 @@ public:
     /// Add message handler "h" to process 'context-wide' (not bound
     /// to any particular connection) error messages.
     virtual void PushCntxMsgHandler(CDB_UserHandler* h,
-                            EOwnership ownership = eNoOwnership) ;
+                            EOwnership ownership = eNoOwnership);
 
     /// Remove message handler "h" and all handlers above it in the stack
     virtual void PopCntxMsgHandler(CDB_UserHandler* h);
@@ -158,8 +163,25 @@ public:
         return m_ConnHandlers;
     }
 
+    virtual void SetClientCharset(const string& charset);
+    const string& GetClientCharset(void) const
+    {
+        return m_ClientCharset;
+    }
+    EEncoding GetClientEncoding(void) const
+    {
+        return m_ClientEncoding;
+    }
+
+    size_t GetMaxTextImageSize(void) const
+    {
+        return m_MaxTextImageSize;
+    }
+
 protected:
     typedef list<CConnection*> TConnPool;
+
+    mutable CFastMutex m_Mtx;
 
     // To allow children of CDriverContext to create CDB_Connection
     CDB_Connection* MakeCDBConnection(CConnection* connection);
@@ -170,24 +192,46 @@ protected:
     void CloseAllConn(void);
     void DeleteAllConn(void);
 
+    const CDBHandlerStack& GetCtxHandlerStack(void) const
+    {
+        return m_CntxHandlers;
+    }
+    CDBHandlerStack& GetCtxHandlerStack(void)
+    {
+        return m_CntxHandlers;
+    }
+
+    void UpdateConnMaxTextImageSize(void) const;
+    void UpdateConnTimeout(void) const;
+
+
+private:
     /// Used connections
-    TConnPool m_NotInUse;
+    TConnPool       m_NotInUse;
     /// Unused(reserve) connections
-    TConnPool m_InUse;
+    TConnPool       m_InUse;
 
     /// Stack of `per-context' err.message handlers
     CDBHandlerStack m_CntxHandlers;
     /// Stacks of `per-connection' err.message handlers
     CDBHandlerStack m_ConnHandlers;
 
-private:
+    string          m_ClientCharset;
+    size_t          m_MaxTextImageSize;
+    EEncoding       m_ClientEncoding;
+
     /// Return unused connection "conn" to the driver context for future
     /// reuse (if "conn_reusable" is TRUE) or utilization
     void x_Recycle(CConnection* conn, bool conn_reusable);
-
-    friend class impl::CConnection;
 };
 
+
+class NCBI_DBAPIDRIVER_EXPORT CWinSock
+{
+protected:
+    CWinSock(void);
+    ~CWinSock(void);
+};
 
 END_SCOPE(impl)
 
@@ -197,6 +241,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/13 19:25:21  ssikorsk
+ * Added new class CWinSock;
+ * Added members m_ClientCharset, m_MaxTextImageSize, and m_ClientEncoding to CDriverContext;
+ *
  * Revision 1.1  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
