@@ -73,20 +73,23 @@ private:
 
 
 CBDB_MultiRowBuffer::CBDB_MultiRowBuffer(size_t buf_size)
+    : m_Data_DBT(new DBT)
+    , m_Buf(new unsigned char(buf_size))
+    , m_BufSize(buf_size)
+    , m_BufPtr(0)
+    , m_LastKey(0)
+    , m_LastData(0)
+    , m_LastKeyLen(0)
+    , m_LastDataLen(0)
 {
-    m_Data_DBT = new DBT;
-    m_Buf = new char[buf_size];
-    m_BufSize = buf_size; 
-    m_BufPtr = 0;
-    m_LastKey = m_LastData = 0;
-    m_LastKeyLen = m_LastDataLen = 0; 
 }
 
 CBDB_MultiRowBuffer::~CBDB_MultiRowBuffer()
 {
-    delete [] (char*)m_BufPtr;
+    delete [] (unsigned char*)m_Buf;
     delete m_Data_DBT;
 }
+
 void CBDB_MultiRowBuffer::InitDBT()
 {
     memset(m_Data_DBT, 0, sizeof(DBT));
@@ -1403,6 +1406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/09/14 15:27:07  dicuccio
+ * Fixed bugs in multi-key access
+ *
  * Revision 1.64  2006/09/12 17:01:16  kuznets
  * Fixed compilation bugs and warnings
  *

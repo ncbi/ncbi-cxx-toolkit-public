@@ -208,15 +208,17 @@ CBDB_FileCursor::~CBDB_FileCursor()
 
 void CBDB_FileCursor::InitMultiFetch(size_t buffer_size)
 {
-    if (m_FetchFlags | DB_RMW) {
+    if (m_FetchFlags & DB_RMW) {
         // it is incorrect to set multi-fetch for update cursor
+        _ASSERT(false);
         return;
     }
-    if (m_MutiRowBuf) delete m_MutiRowBuf;
+    if (m_MutiRowBuf) {
+        delete m_MutiRowBuf;
+        m_MutiRowBuf = NULL;
+    }
     if (buffer_size) {
         m_MutiRowBuf = new CBDB_MultiRowBuffer(buffer_size);
-    } else {
-        buffer_size = 0;
     }
 }
 
@@ -719,6 +721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/09/14 15:27:07  dicuccio
+ * Fixed bugs in multi-key access
+ *
  * Revision 1.23  2006/09/13 18:32:21  joukovv
  * Added (non-functional yet) framework for thread-per-request thread pooling model,
  * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.
