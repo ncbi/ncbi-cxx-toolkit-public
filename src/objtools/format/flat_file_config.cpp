@@ -47,7 +47,7 @@ CFlatFileConfig::CFlatFileConfig
  TFlags flags,
  TView view) :
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
-    m_Flags(flags), m_RefSeqConventions(true)
+    m_Flags(flags), m_RefSeqConventions(false)
 {
     // GFF/GFF3 and FTable always require master style
     if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
@@ -157,6 +157,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/09/14 12:30:42  ludwigf
+* FIXED: Turned RefSeq mode off by default.
+*
 * Revision 1.7  2006/08/31 17:13:00  ludwigf
 * ADDED: Extra mode flag that controls whether codon_recognized becomes a
 *  qualifier or part of the note in the flat file. As implemented, it will
