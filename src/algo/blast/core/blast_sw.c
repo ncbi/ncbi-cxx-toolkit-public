@@ -40,7 +40,10 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_sw.h>
 
+/** swap (pointers to) a pair of sequences */
 #define SWAP_SEQS(A, B) {Uint1 *tmp = (A); (A) = (B); (B) = tmp; }
+
+/** swap two integers */
 #define SWAP_INT(A, B) {Int4 tmp = (A); (A) = (B); (B) = tmp; }
 
 /** Compute the score of the best local alignment between
@@ -269,6 +272,8 @@ enum {
  * @param b_end The alignment end offset on B (plus one) [in]
  * @param best_score Score of the alignment [in]
  * @param hsp_list Collection of alignments found so far [in][out]
+ * @param swapped TRUE if A and B were swapped before the alignment 
+ *               was found [in]
  * @param template_hsp Placeholder alignment, used only to
  *               determine contexts and frames [in]
  * @param score_options Structure containing gap penalties [in]

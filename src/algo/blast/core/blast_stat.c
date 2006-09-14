@@ -4164,6 +4164,8 @@ RPSfindUngappedLambda(const char *matrixName)
  * @param return_sfp a structure to be filled in and returned [in|out]
  * @param range the size of scoreArray and is an upper bound on the
  *       difference between maximum score and minimum score in the matrix [in]
+ * @param alphabet_size Number of letters in the alphabet of the input
+ *                  score matrix [in]
 */
 
 static void
@@ -4408,6 +4410,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.148  2006/09/14 14:49:07  papadopo
+ * doxygen fixes
+ *
  * Revision 1.147  2006/08/22 19:45:06  papadopo
  * 1. Alphabet size must be variable in RPSFillScores
  * 2. In RPSRescalePssm, only initialize the portion of the
