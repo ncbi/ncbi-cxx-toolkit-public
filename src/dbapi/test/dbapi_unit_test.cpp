@@ -2019,7 +2019,7 @@ CDBAPIUnitTest::Test_Variant2(void)
             char_val += 1;
 
             auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
-            auto_stmt->SetParam( CVariant( str_val ), "@val" );
+            auto_stmt->SetParam( CVariant::LongChar(str_val.c_str(), str_val.size() ), "@val" );
             // Execute a statement with parameters ...
             auto_stmt->ExecuteUpdate( sql );
         }
@@ -2082,6 +2082,18 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
         BOOST_CHECK_EQUAL(message, ex.GetMsg());
         BOOST_CHECK_EQUAL(eDiag_Trace, ex.GetSeverity());
         BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
+
+        //
+        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+        BOOST_CHECK_EQUAL(server_name, auto_ex->GetServerName());
+        BOOST_CHECK_EQUAL(user_name, auto_ex->GetUserName());
+        BOOST_CHECK_EQUAL(severity, auto_ex->GetSybaseSeverity());
+
+        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Trace, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eMulti, auto_ex->Type());
     }
 
     {
@@ -2094,7 +2106,16 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 
         BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
         BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Fatal, ex.GetSeverity());
         BOOST_CHECK_EQUAL(CDB_Exception::eDS, ex.Type());
+
+        //
+        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Fatal, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eDS, auto_ex->Type());
     }
 
     {
@@ -2114,6 +2135,16 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
         BOOST_CHECK_EQUAL(message, ex.GetMsg());
         BOOST_CHECK_EQUAL(eDiag_Critical, ex.GetSeverity());
         BOOST_CHECK_EQUAL(CDB_Exception::eRPC, ex.Type());
+        BOOST_CHECK_EQUAL(proc_name, ex.ProcName());
+        BOOST_CHECK_EQUAL(proc_line, ex.ProcLine());
+
+        //
+        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Critical, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eRPC, auto_ex->Type());
     }
 
     {
@@ -2130,11 +2161,20 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
             batch_line);
 
         BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
-        BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
         BOOST_CHECK_EQUAL(message, ex.GetMsg());
         BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
         BOOST_CHECK_EQUAL(CDB_Exception::eSQL, ex.GetErrCode());
         BOOST_CHECK_EQUAL(CDB_Exception::eSQL, ex.Type());
+        BOOST_CHECK_EQUAL(sql_state, ex.SqlState());
+        BOOST_CHECK_EQUAL(batch_line, ex.BatchLine());
+
+        //
+        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eSQL, auto_ex->Type());
     }
 
     {
@@ -2144,7 +2184,15 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
             message);
 
         BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
         BOOST_CHECK_EQUAL(CDB_Exception::eDeadlock, ex.Type());
+
+        //
+        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eDeadlock, auto_ex->Type());
     }
 
     {
@@ -2156,7 +2204,16 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
 
         BOOST_CHECK_EQUAL(msgnumber, ex.GetDBErrCode());
         BOOST_CHECK_EQUAL(message, ex.GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Error, ex.GetSeverity());
         BOOST_CHECK_EQUAL(CDB_Exception::eTimeout, ex.Type());
+
+        //
+        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Error, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eTimeout, auto_ex->Type());
     }
 
     {
@@ -2171,6 +2228,14 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
         BOOST_CHECK_EQUAL(message, ex.GetMsg());
         BOOST_CHECK_EQUAL(eDiag_Warning, ex.GetSeverity());
         BOOST_CHECK_EQUAL(CDB_Exception::eClient, ex.Type());
+
+        //
+        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+        BOOST_CHECK_EQUAL(msgnumber, auto_ex->GetDBErrCode());
+        BOOST_CHECK_EQUAL(message, auto_ex->GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Warning, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eClient, auto_ex->Type());
     }
 
     {
@@ -2181,10 +2246,21 @@ void CDBAPIUnitTest::Test_CDB_Exception(void)
         BOOST_CHECK_EQUAL(0, ex.GetDBErrCode());
         BOOST_CHECK_EQUAL(eDiag_Info, ex.GetSeverity());
         BOOST_CHECK_EQUAL(kEmptyStr, ex.GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Info, ex.GetSeverity());
         BOOST_CHECK_EQUAL(CDB_Exception::eMulti, ex.Type());
+
+        //
+        auto_ptr<CDB_Exception> auto_ex(ex.Clone());
+
+        BOOST_CHECK_EQUAL(0, auto_ex->GetDBErrCode());
+        BOOST_CHECK_EQUAL(eDiag_Info, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(kEmptyStr, auto_ex->GetMsg());
+        BOOST_CHECK_EQUAL(eDiag_Info, auto_ex->GetSeverity());
+        BOOST_CHECK_EQUAL(CDB_Exception::eMulti, auto_ex->Type());
     }
 
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 int
@@ -4702,6 +4778,11 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.95  2006/09/14 18:57:19  ssikorsk
+ * Replaced  CVariant(string) with CVariant::LongChar(string) in order to
+ * prevent truncation of strings;
+ * Improved Test_CDB_Exception;
+ *
  * Revision 1.94  2006/09/13 20:03:50  ssikorsk
  * Added the odbcw driver to the test-suite;
  * Enabled Test_Unicode with the odbcw driver;
