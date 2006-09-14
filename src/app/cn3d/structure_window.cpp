@@ -549,7 +549,7 @@ void StructureWindow::OnSelect(wxCommandEvent& event)
     if (event.GetId() == MID_SELECT_MOLECULE) {
         if (glCanvas->structureSet->objects.size() > 1)
             return;
-        wxString idStr = wxGetTextFromUser("Enter an MMDB molecule ID or PDB code:", "Select molecule");
+        wxString idStr = wxGetTextFromUser("Enter an MMDB molecule ID or PDB chain:", "Select molecule");
         if (idStr.size() == 0)
             return;
         unsigned long num;
@@ -1703,6 +1703,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2006/09/14 19:35:07  thiessen
+* tweak molecule dialog
+*
 * Revision 1.54  2006/08/14 11:52:50  thiessen
 * remember whether input was binary or ascii
 *
