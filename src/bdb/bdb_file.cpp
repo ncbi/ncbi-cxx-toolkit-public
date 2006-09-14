@@ -74,7 +74,7 @@ private:
 
 CBDB_MultiRowBuffer::CBDB_MultiRowBuffer(size_t buf_size)
     : m_Data_DBT(new DBT)
-    , m_Buf(new unsigned char(buf_size))
+    , m_Buf(new unsigned char[buf_size])
     , m_BufSize(buf_size)
     , m_BufPtr(0)
     , m_LastKey(0)
@@ -86,7 +86,7 @@ CBDB_MultiRowBuffer::CBDB_MultiRowBuffer(size_t buf_size)
 
 CBDB_MultiRowBuffer::~CBDB_MultiRowBuffer()
 {
-    delete [] (unsigned char*)m_Buf;
+    delete [] (unsigned char*)(m_Buf);
     delete m_Data_DBT;
 }
 
@@ -1406,6 +1406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/09/14 15:48:30  dicuccio
+ * Fix buffer management
+ *
  * Revision 1.65  2006/09/14 15:27:07  dicuccio
  * Fixed bugs in multi-key access
  *
