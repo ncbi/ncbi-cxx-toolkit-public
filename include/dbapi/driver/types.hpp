@@ -84,11 +84,13 @@ public:
     explicit CWString(const char* str,
                       string::size_type size = string::npos,
                       EEncoding enc = eEncoding_Unknown);
-    explicit CWString(const wchar_t* str,
-                      wstring::size_type size = wstring::npos);
     explicit CWString(const string& str,
                       EEncoding enc = eEncoding_Unknown);
+#ifdef HAVE_WSTRING
+    explicit CWString(const wchar_t* str,
+                      wstring::size_type size = wstring::npos);
     explicit CWString(const wstring& str);
+#endif
 
     ~CWString(void);
 
@@ -111,6 +113,7 @@ public:
 
         return m_Char;
     }
+#ifdef HAVE_WSTRING
     operator wchar_t*(void) const
     {
         if (!(GetAvailableValueType() & eWChar)) {
@@ -127,6 +130,7 @@ public:
 
         return m_WChar;
     }
+#endif
 
 public:
     // str_enc - expected string encoding.
@@ -146,6 +150,7 @@ public:
 
         return m_UTF8String;
     }
+#ifdef HAVE_WSTRING
     const wstring& AsUnicode(EEncoding str_enc = eEncoding_Unknown) const
     {
         if (!(GetAvailableValueType() & eWString)) {
@@ -154,6 +159,7 @@ public:
 
         return m_WString;
     }
+#endif
     size_t GetSymbolNum(void) const;
 
 public:
@@ -161,11 +167,13 @@ public:
     void Assign(const char* str,
                 string::size_type size = string::npos,
                 EEncoding enc = eEncoding_Unknown);
-    void Assign(const wchar_t* str,
-                wstring::size_type size = wstring::npos);
     void Assign(const string& str,
                 EEncoding enc = eEncoding_Unknown);
+#ifdef HAVE_WSTRING
+    void Assign(const wchar_t* str,
+                wstring::size_type size = wstring::npos);
     void Assign(const wstring& str);
+#endif
 
 protected:
     int GetAvailableValueType(void) const
@@ -174,7 +182,9 @@ protected:
     }
 
     void x_MakeString(EEncoding str_enc = eEncoding_Unknown) const;
+#ifdef HAVE_WSTRING
     void x_MakeWString(EEncoding str_enc = eEncoding_Unknown) const;
+#endif
     void x_MakeUTF8String(EEncoding str_enc = eEncoding_Unknown) const;
 
     void x_CalculateEncoding(EEncoding str_enc) const;
@@ -187,9 +197,13 @@ protected:
     mutable int             m_AvailableValueType;
     mutable EEncoding       m_StringEncoding; // Source string encoding.
     mutable const char*     m_Char;
+#ifdef HAVE_WSTRING
     mutable const wchar_t*  m_WChar;
+#endif
     mutable string          m_String;
+#ifdef HAVE_WSTRING
     mutable wstring         m_WString;
+#endif
     mutable CStringUTF8     m_UTF8String;
 };
 
@@ -839,6 +853,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/09/14 13:47:50  ucko
+ * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
+ *
  * Revision 1.23  2006/09/13 19:28:56  ssikorsk
  * Added new classes CWString and CDB_String;
  * Revamp CDB_VarChar, CDB_Char, and CDB_LongChar to inherit from CDB_String;

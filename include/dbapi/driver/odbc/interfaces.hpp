@@ -677,7 +677,9 @@ protected:
         m_Stmt.Close();
     }
     bool CheckSIENoD_Text(CDB_Stream* val);
+#ifdef HAVE_WSTRING
     bool CheckSIENoD_WText(CDB_Stream* val);
+#endif
     bool CheckSIENoD_Binary(CDB_Stream* val);
 
 private:
@@ -810,6 +812,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/09/14 13:47:50  ucko
+ * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
+ *
  * Revision 1.45  2006/09/13 19:40:55  ssikorsk
  * Removed methods SetLoginTimeout, SetTimeout, and SetMaxTextImageSize from CODBCContext;
  * Removed methods ODBC_SetTimeout and ODBC_SetTextImageSize from CODBC_Connection;

@@ -48,8 +48,10 @@ BEGIN_NCBI_SCOPE
 CWString::CWString(void) :
     m_AvailableValueType(0),
     m_StringEncoding(eEncoding_Unknown),
-    m_Char(NULL),
-    m_WChar(NULL)
+    m_Char(NULL)
+#ifdef HAVE_WSTRING
+    , m_WChar(NULL)
+#endif
 {
 }
 
@@ -58,18 +60,24 @@ CWString::CWString(const CWString& str) :
     m_AvailableValueType(str.m_AvailableValueType),
     m_StringEncoding(str.m_StringEncoding),
     m_Char(NULL),
+#ifdef HAVE_WSTRING
     m_WChar(NULL),
+#endif
     m_String(str.m_String),
+#ifdef HAVE_WSTRING
     m_WString(str.m_WString),
+#endif
     m_UTF8String(str.m_UTF8String)
 {
     if (!m_String.empty()) {
         m_Char = m_String.c_str();
     }
 
+#ifdef HAVE_WSTRING
     if (!m_WString.empty()) {
         m_WChar = m_WString.c_str();
     }
+#endif
 }
 
 
@@ -78,8 +86,10 @@ CWString::CWString(const char* str,
                    EEncoding enc) :
     m_AvailableValueType(eChar),
     m_StringEncoding(enc),
-    m_Char(NULL),
-    m_WChar(NULL)
+    m_Char(NULL)
+#ifdef HAVE_WSTRING
+    , m_WChar(NULL)
+#endif
 {
     if (size == string::npos) {
         m_Char = str;
@@ -91,6 +101,7 @@ CWString::CWString(const char* str,
 }
 
 
+#ifdef HAVE_WSTRING
 CWString::CWString(const wchar_t* str,
                    wstring::size_type size) :
     m_AvailableValueType(eWChar),
@@ -106,13 +117,16 @@ CWString::CWString(const wchar_t* str,
         m_AvailableValueType |= eWString;
     }
 }
+#endif
 
 
 CWString::CWString(const string& str, EEncoding enc) :
     m_AvailableValueType(eString),
     m_StringEncoding(enc),
     m_Char(NULL),
+#ifdef HAVE_WSTRING
     m_WChar(NULL),
+#endif
     m_String(str)
 {
     m_Char = m_String.c_str();
@@ -120,6 +134,7 @@ CWString::CWString(const string& str, EEncoding enc) :
 }
 
 
+#ifdef HAVE_WSTRING
 CWString::CWString(const wstring& str) :
     m_AvailableValueType(eWString),
     m_Char(NULL),
@@ -129,6 +144,7 @@ CWString::CWString(const wstring& str) :
     m_WChar = m_WString.c_str();
     m_AvailableValueType |= eWChar;
 }
+#endif
 
 
 CWString::~CWString(void)
@@ -142,18 +158,20 @@ CWString& CWString::operator=(const CWString& str)
         m_AvailableValueType = str.m_AvailableValueType;
         m_StringEncoding = str.m_StringEncoding;
         m_Char = NULL;
-        m_WChar = NULL;
         m_String = str.m_String;
-        m_WString = str.m_WString;
         m_UTF8String = str.m_UTF8String;
 
         if (!m_String.empty()) {
             m_Char = m_String.c_str();
         }
 
+#ifdef HAVE_WSTRING
+        m_WChar = NULL;
+        m_WString = str.m_WString;
         if (!m_WString.empty()) {
             m_WChar = m_WString.c_str();
         }
+#endif
     }
 
     return *this;
@@ -214,6 +232,7 @@ void CWString::x_MakeString(EEncoding str_enc) const
     } else if (m_AvailableValueType & eUTF8String) {
         x_UTF8ToString(str_enc);
         x_MakeString(str_enc);
+#ifdef HAVE_WSTRING
     } else if (m_AvailableValueType & eWString) {
         m_UTF8String = m_WString;
         m_AvailableValueType |= eUTF8String;
@@ -224,9 +243,11 @@ void CWString::x_MakeString(EEncoding str_enc) const
         m_AvailableValueType |= eUTF8String;
         x_UTF8ToString(str_enc);
         x_MakeString(str_enc);
+#endif
     }
 }
 
+#ifdef HAVE_WSTRING
 void CWString::x_MakeWString(EEncoding str_enc) const
 {
     if (m_AvailableValueType & eWString) {
@@ -249,6 +270,7 @@ void CWString::x_MakeWString(EEncoding str_enc) const
         x_MakeWString(str_enc);
     }
 }
+#endif
 
 void CWString::x_MakeUTF8String(EEncoding str_enc) const
 {
@@ -258,12 +280,14 @@ void CWString::x_MakeUTF8String(EEncoding str_enc) const
         x_StringToUTF8(str_enc);
     } else if (m_AvailableValueType & eChar) {
         x_StringToUTF8(str_enc);
+#ifdef HAVE_WSTRING
     } else if (m_AvailableValueType & eWString) {
         m_UTF8String = m_WString;
         m_AvailableValueType |= eUTF8String;
     } else if (m_AvailableValueType & eWChar) {
         m_UTF8String = m_WChar;
         m_AvailableValueType |= eUTF8String;
+#endif
     }
 }
 
@@ -273,14 +297,18 @@ size_t CWString::GetSymbolNum(void) const
 
     if (m_AvailableValueType & eString) {
         num = m_String.size();
+#ifdef HAVE_WSTRING
     } else if (m_AvailableValueType & eWString) {
         num = m_WString.size();
+#endif
     } else if (m_AvailableValueType & eChar) {
         num = strlen(m_Char);
+#ifdef HAVE_WSTRING
     } else if (m_AvailableValueType & eWChar) {
         // ???
         x_MakeWString();
         num = m_WString.size();
+#endif
     } else if (m_AvailableValueType & eUTF8String) {
         num = m_UTF8String.GetSymbolCount();
     }
@@ -293,23 +321,27 @@ void CWString::Clear(void)
     m_AvailableValueType = 0;
     m_StringEncoding = eEncoding_Unknown;
     m_Char = NULL;
+    m_String.erase();
+#ifdef HAVE_WSTRING
     m_WChar = NULL;
-    m_String.clear();
-    m_WString.clear();
-    m_UTF8String.clear();
+    m_WString.erase();
+#endif
+    m_UTF8String.erase();
 }
 
 void CWString::Assign(const char* str,
                       string::size_type size,
                       EEncoding enc)
 {
+#ifdef HAVE_WSTRING
     m_WChar = NULL;
-    m_WString.clear();
-    m_UTF8String.clear();
+    m_WString.erase();
+#endif
+    m_UTF8String.erase();
 
     m_StringEncoding = enc;
     if (size == string::npos) {
-        m_String.clear();
+        m_String.erase();
         m_Char = str;
         m_AvailableValueType = eChar;
     } else {
@@ -319,16 +351,17 @@ void CWString::Assign(const char* str,
     }
 }
 
+#ifdef HAVE_WSTRING
 void CWString::Assign(const wchar_t* str,
                       wstring::size_type size)
 {
     m_StringEncoding = eEncoding_Unknown;
     m_Char = NULL;
-    m_String.clear();
-    m_UTF8String.clear();
+    m_String.erase();
+    m_UTF8String.erase();
 
     if (size == wstring::npos) {
-        m_WString.clear();
+        m_WString.erase();
         m_WChar = str;
         m_AvailableValueType = eWChar;
     } else {
@@ -337,13 +370,16 @@ void CWString::Assign(const wchar_t* str,
         m_AvailableValueType = eWChar | eWString;
     }
 }
+#endif
 
 void CWString::Assign(const string& str,
                       EEncoding enc)
 {
+#ifdef HAVE_WSTRING
     m_WChar = NULL;
-    m_WString.clear();
-    m_UTF8String.clear();
+    m_WString.erase();
+#endif
+    m_UTF8String.erase();
 
     m_StringEncoding = enc;
     m_String = str;
@@ -351,17 +387,19 @@ void CWString::Assign(const string& str,
     m_AvailableValueType = eChar | eString;
 }
 
+#ifdef HAVE_WSTRING
 void CWString::Assign(const wstring& str)
 {
     m_StringEncoding = eEncoding_Unknown;
     m_Char = NULL;
-    m_String.clear();
-    m_UTF8String.clear();
+    m_String.erase();
+    m_UTF8String.erase();
 
     m_WString = str;
     m_WChar = m_WString.c_str();
     m_AvailableValueType = eWChar | eWString;
 }
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2089,6 +2127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/09/14 13:47:51  ucko
+ * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
+ *
  * Revision 1.24  2006/09/13 19:43:30  ssikorsk
  * Implemented CWString and CDB_String;
  * Fixed CDB_VarChar, CDB_Char, and CDB_LongChar;

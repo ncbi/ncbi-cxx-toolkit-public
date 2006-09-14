@@ -278,6 +278,7 @@ bool CODBC_RowResult::CheckSIENoD_Text(CDB_Stream* val)
     return false;
 }
 
+#ifdef HAVE_WSTRING
 bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
 {
     int rc = 0;
@@ -320,6 +321,7 @@ bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
 
     return false;
 }
+#endif
 
 bool CODBC_RowResult::CheckSIENoD_Binary(CDB_Stream* val)
 {
@@ -375,6 +377,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             if ( outlen <= 0) item_buf->AssignNULL();
             else ((CDB_LongBinary*)item_buf)->SetValue(buffer, outlen);
             break;
+#ifdef HAVE_WSTRING
         case eDB_VarChar:
             outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
@@ -390,6 +393,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             if ( outlen <= 0) item_buf->AssignNULL();
             else *((CDB_LongChar*)item_buf) = CODBCString((wchar_t*)buffer).AsUTF8();
             break;
+#endif
         default:
             {
                 string err_message = wrong_type + GetDiagnosticInfo();
@@ -688,12 +692,14 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
 
     case SQL_WLONGVARCHAR:
         switch(item_buf->GetType()) {
+#ifdef HAVE_WSTRING
         case eDB_Text: {
             while (CheckSIENoD_WText((CDB_Stream*)item_buf)) {
                 continue;
             }
             break;
         }
+#endif
         case eDB_Image: {
             while (CheckSIENoD_Binary((CDB_Stream*)item_buf)) {
                 continue;
@@ -745,6 +751,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     int outlen;
 
     switch(m_ColFmt[m_CurrItem].DataType) {
+#ifdef HAVE_WSTRING
     case SQL_WCHAR:
     case SQL_WVARCHAR:{
         wchar_t buffer[4*1024];
@@ -767,6 +774,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             return val;
         }
     }
+#endif
 
     case SQL_VARCHAR:
     case SQL_CHAR: {
@@ -879,6 +887,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         }
     }
 
+#ifdef HAVE_WSTRING
     case SQL_WLONGVARCHAR: {
         CDB_Text* val = new CDB_Text;
 
@@ -888,6 +897,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         }
         return val;
     }
+#endif
 
     case SQL_LONGVARCHAR: {
         CDB_Text* val = new CDB_Text;
@@ -1384,6 +1394,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/09/14 13:47:51  ucko
+ * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
+ *
  * Revision 1.36  2006/09/13 20:08:38  ssikorsk
  * Revamp code to support  unicode version of ODBC API.
  *

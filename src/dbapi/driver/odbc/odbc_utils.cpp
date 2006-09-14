@@ -52,6 +52,7 @@ CODBCString::CODBCString(const char* str,
 }
 
 
+#ifdef HAVE_WSTRING
 CODBCString::CODBCString(SQLWCHAR* str) :
     CWString(reinterpret_cast<const wchar_t*>(const_cast<const SQLWCHAR*>(str)))
 {
@@ -63,6 +64,7 @@ CODBCString::CODBCString(const wchar_t* str,
     CWString(str, size)
 {
 }
+#endif
 
 
 CODBCString::CODBCString(const string& str, EEncoding enc) :
@@ -71,10 +73,12 @@ CODBCString::CODBCString(const string& str, EEncoding enc) :
 }
 
 
+#ifdef HAVE_WSTRING
 CODBCString::CODBCString(const wstring& str) :
     CWString(str)
 {
 }
+#endif
 
 
 CODBCString::~CODBCString(void)
@@ -87,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/14 13:47:51  ucko
+ * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
+ *
  * Revision 1.2  2006/09/13 20:11:01  ssikorsk
  * Implemented class CODBCString.
  *

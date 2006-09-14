@@ -53,11 +53,13 @@ public:
     explicit CODBCString(const char* str,
                          string::size_type size = string::npos,
                          EEncoding enc = eEncoding_Unknown);
+    explicit CODBCString(const string& str, EEncoding enc = eEncoding_Unknown);
+#ifdef HAVE_WSTRING
     explicit CODBCString(SQLWCHAR* str);
     explicit CODBCString(const wchar_t* str,
                          wstring::size_type size = wstring::npos);
-    explicit CODBCString(const string& str, EEncoding enc = eEncoding_Unknown);
     explicit CODBCString(const wstring& str);
+#endif
     ~CODBCString(void);
 
 public:
@@ -102,11 +104,13 @@ public:
 #  define _T(x)       __T(x)
 #endif
 
+#ifdef HAVE_WSTRING
 inline
 wstring operator+(const wstring& str1, const string& str2)
 {
     return str1 + CStringUTF8(str2).AsUnicode();
 }
+#endif
 
 namespace util
 {
@@ -116,11 +120,13 @@ namespace util
         return ::strncmp(str1, str2, count);
     }
 
+#ifdef HAVE_WSTRING
     inline
     int strncmp(const wchar_t* str1, const wchar_t* str2, size_t count)
     {
         return ::wcsncmp(str1, str2, count);
     }
+#endif
 
     inline
     int strncmp(const SQLCHAR* str1, const char* str2, size_t count)
@@ -166,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/14 13:47:51  ucko
+ * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
+ *
  * Revision 1.2  2006/09/13 20:10:35  ssikorsk
  * Added class CODBCString.
  *
