@@ -117,8 +117,6 @@ typedef struct BlastInitialWordParameters {
 
    Int4 x_dropoff_max; /**< largest X-drop cutoff across all contexts */
    Int4 cutoff_score_min; /**< smallest cutoff score across all contexts */
-   Int4 reduced_nucl_cutoff_score; 
-
    BlastUngappedCutoffs *cutoffs;   /**< cutoff values (one per context) */
    ESeedContainerType container_type; /**< How to store offset pairs for initial
                                         seeds? */
