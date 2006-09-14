@@ -3778,6 +3778,11 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(country);
 
     DO_QUAL(focus);
+    DO_QUAL(lat_lon);
+    DO_QUAL(identified_by);
+    DO_QUAL(pcr_primer);
+    DO_QUAL(collection_date);
+    DO_QUAL(collected_by);
 
     if ( !GetContext()->Config().SrcQualsToNote() ) {
         // some note qualifiers appear as regular quals in GBench or Dump mode
@@ -3823,11 +3828,10 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
     DO_QUAL(teleomorph);
     DO_QUAL(breed);
 
-    DO_QUAL(lat_lon);
-    DO_QUAL(collection_date);
-    DO_QUAL(collected_by);
-    DO_QUAL(identified_by);
-    DO_QUAL(pcr_primer);
+//    DO_QUAL(collection_date);
+//    DO_QUAL(collected_by);
+//    DO_QUAL(identified_by);
+//    DO_QUAL(pcr_primer);
     DO_QUAL(genotype);
     x_FormatQual(eSQ_plastid_name, "plastid", qvec);
     
@@ -3876,20 +3880,12 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(teleomorph);
         DO_NOTE(breed);
         
-        DO_NOTE(lat_lon);
-        DO_NOTE(collection_date);
-        DO_NOTE(collected_by);
-        DO_NOTE(identified_by);
-
         DO_NOTE(genotype);
         x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);
         
         x_FormatNoteQual(eSQ_endogenous_virus_name, "endogenous_virus", qvec);
     }
     DO_NOTE(pcr_primer_note);
-//    DO_NOTE(rev_primer_seq);
-//    DO_NOTE(fwd_primer_name);
-//    DO_NOTE(rev_primer_name);
 
     if (!m_WasDesc) {
         x_FormatNoteQual(eSQ_seqfeat_note, "note", qvec);
@@ -3986,6 +3982,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.83  2006/09/14 12:33:20  ludwigf
+* CHANGED: Promoted pcr_primer, collection_date, collected_by, lon_lat, and
+*  identified_by to full (rather than GB-) qualifiers. That means, they will
+*  show as qualifiers rather than notes even in the strict modes.
+*
 * Revision 1.82  2006/09/06 14:13:39  ludwigf
 * CHANGED: We no longer produce separate /fwd_primer_name, ...,
 *  /rev_primer_seq flat file qualifiers. Instead, they are either combined
