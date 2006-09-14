@@ -465,8 +465,8 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
             host = "www.ncbi.nlm.nih.gov",
             path = "/Structure/VA/vastalign.cgi", err;
         CNcbiOstrstream argstr;
-        argstr << "master=" << master->identifier->ToString()
-            << "&slave=" << (*s)->identifier->ToString();
+        argstr << "main=" << master->identifier->ToString()
+            << "&neighbor=" << (*s)->identifier->ToString();
         if (masterFrom <= masterTo && masterFrom < master->Length() && masterTo < master->Length())
             argstr << "&from=" << (masterFrom+1) << "&to=" << (masterTo+1); // URL #'s are 1-based
         string args((string) CNcbiOstrstreamToString(argstr));
@@ -1205,6 +1205,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2006/09/14 16:52:33  thiessen
+* change vastalign args
+*
 * Revision 1.90  2006/08/17 16:03:38  thiessen
 * switch from ReadFasta() to CFastaReader
 *
