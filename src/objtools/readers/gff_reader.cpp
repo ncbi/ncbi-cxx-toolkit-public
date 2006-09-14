@@ -1052,7 +1052,7 @@ CRef<CSeq_id> CGFFReader::x_ResolveSeqName(const string& name)
 CRef<CSeq_id> CGFFReader::x_ResolveNewSeqName(const string& name)
 {
     if (m_Flags & fAllIdsAsLocal) {
-        if (name.compare(0, 4, "lcl|") == 0) {
+        if (NStr::StartsWith(name, "lcl|")) {
             return CRef<CSeq_id>(new CSeq_id(name));
         } else {
             return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, name));
@@ -1154,6 +1154,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2006/09/14 15:16:31  ucko
+* x_ResolveNewSeqName: use NStr::StartsWith rather than string::compare
+* for clarity and to avoid problems from GCC 2.95's nonstandard syntax.
+*
 * Revision 1.26  2006/09/13 14:44:11  dicuccio
 * Force all seq-id creation through the same function (x_ResolveNewSeqName() /
 * x_ResolveSeqName()).  Added options to force numeric IDs to be local IDs, and
