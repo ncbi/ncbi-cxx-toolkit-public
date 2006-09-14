@@ -161,9 +161,19 @@ CDB_Exception::GetErrCodeString(void) const
 CDB_Exception*
 CDB_Exception::Clone(void) const
 {
-    const CDB_Exception& result = dynamic_cast<const CDB_Exception&>( *x_Clone() );
+    return new CDB_Exception(*this);
+}
 
-    return const_cast<CDB_Exception*>(&result);
+CDB_Exception::EType
+CDB_Exception::Type(void) const
+{
+    int err_code = x_GetErrCode();
+
+    if (err_code > eMulti) {
+        err_code = eInvalid;
+    }
+
+    return static_cast<EType>(err_code);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -538,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/09/14 18:52:26  ssikorsk
+ * CDB_Exception: fixed methods Type and Clone.
+ *
  * Revision 1.31  2006/07/28 14:58:40  ssikorsk
  * Added GetSybaseSeverity/SetSybaseSeverity to CDB_Exception.
  *

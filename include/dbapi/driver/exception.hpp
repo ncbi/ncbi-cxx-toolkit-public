@@ -45,6 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 /// Helper macro for default database exception implementation.
 #define NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class, db_err_code) \
     { \
@@ -64,7 +65,10 @@ public: \
         return typeid(*this) == typeid(exception_class) ? \
             (TErrCode)x_GetErrCode() : (TErrCode)CException::eInvalid; \
     } \
-    EType Type(void) const { return static_cast<EType>(GetErrCode());  } \
+    virtual CDB_Exception* Clone(void) const \
+    { \
+        return new exception_class(*this); \
+    } \
 protected: \
     exception_class(void) {} \
     virtual const CException* x_Clone(void) const \
@@ -126,7 +130,7 @@ public:
 public:
     // Duplicate methods. We need them to support the old interface.
 
-    EType Type(void) const { return static_cast<EType>(GetErrCode());  }
+    EType Type(void) const;
     // text representation of the exception type and severity
     virtual const char* TypeString() const { return GetType();         }
     int ErrCode(void) const { return GetDBErrCode();                   }
@@ -513,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/09/14 18:51:56  ssikorsk
+ * CDB_Exception: fixed methods Type and Clone.
+ *
  * Revision 1.31  2006/09/12 14:58:35  ssikorsk
  * Added method CDB_Exception::x_InitCDB;
  * Improved macro NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION;
