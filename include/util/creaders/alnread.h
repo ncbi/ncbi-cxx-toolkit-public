@@ -100,7 +100,7 @@ typedef struct SSequenceInfo {
     char * beginning_gap;
     char * middle_gap;
     char * end_gap;
-    char * alphabet;
+    const char * alphabet;
 } SSequenceInfo, * TSequenceInfoPtr;
 
 extern NCBI_CREADERS_EXPORT TSequenceInfoPtr SequenceInfoNew (void);
@@ -166,6 +166,9 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx (
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/09/14 13:31:00  bollin
+ * make alphabet in SequenceInfo struct const
+ *
  * Revision 1.6  2006/09/13 18:34:41  bollin
  * added flag to indicate whether alignment formatting clues were found
  *
