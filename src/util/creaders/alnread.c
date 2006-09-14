@@ -881,7 +881,6 @@ extern void SequenceInfoFree (TSequenceInfoPtr sip)
     if (sip == NULL) {
         return;
     }
-    free (sip->alphabet);
     free (sip->missing);
     free (sip->beginning_gap);
     free (sip->middle_gap);
@@ -6047,6 +6046,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/09/14 13:32:29  bollin
+ * do not free alphabet in sequence info struct
+ *
  * Revision 1.28  2006/09/13 18:34:59  bollin
  * added flag to indicate whether alignment formatting clues were found
  *
