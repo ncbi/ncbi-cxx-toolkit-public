@@ -57,7 +57,6 @@ extern "C" {
  * Computer Applications in the Biosciences, (1993), 9, pp. 729-734
  * </PRE>
  * @param program_number Blast program requesting traceback [in]
- * @param trace 2-D array of edit actions, size (a_size+1) x (b_size+1) [in]
  * @param A The first sequence [in]
  * @param a_size Length of the first sequence [in]
  * @param B The second sequence [in]
