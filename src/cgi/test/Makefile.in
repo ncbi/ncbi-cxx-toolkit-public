@@ -6,7 +6,7 @@
 # Meta-makefile -- CgiTest test app
 #################################
 
-APP_PROJ = cgitest
+APP_PROJ = cgitest test_multipart_cgi
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
