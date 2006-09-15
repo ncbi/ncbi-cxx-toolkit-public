@@ -799,6 +799,24 @@ static bool s_IsPseudo
     return true;
 }
 
+bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
+{
+    if ( ! feat->CanGetQual() ) {
+        return false;
+    }
+    ITERATE( CSeq_feat::TQual, it, feat->GetQual() ) {
+        if (!(*it)->CanGetQual()  ||  !(*it)->CanGetVal()) {
+            continue;
+        }
+        if ( (*it)->GetQual() != key ) {
+            continue;
+        }
+        value = (*it)->GetVal(); 
+        return true;
+    }
+    return false;
+}
+
 
 void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
 {
@@ -909,6 +927,12 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                     x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(grp->GetDb()));
                 } else if ( overlap_gene->IsSetDbxref() ) {
                     x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(overlap_gene->GetDbxref()));
+                }
+                string old_locus_tag;
+                if ( subtype != CSeqFeatData::eSubtype_repeat_region &&
+                    s_GetGbValue( overlap_gene, "old_locus_tag", old_locus_tag ) ) 
+                {
+                    x_AddQual(eFQ_old_locus_tag, new CFlatStringQVal( old_locus_tag ) );            
                 }
             }
         }
@@ -1807,6 +1831,7 @@ const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals
     const string* locus_tag =
         (gene.IsSetLocus_tag()  &&  !NStr::IsBlank(gene.GetLocus_tag())) ?
         &gene.GetLocus_tag() : 0;
+
     EFeatureQualifier syn_qual = ctx.Config().GeneSynsToNote()  ||  !ctx.IsRefSeq() ?
         eFQ_gene_syn : eFQ_gene_syn_refseq;
 
@@ -1849,6 +1874,7 @@ const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals
             }
         }
     }
+
 
     // /allele
     if (subtype != CSeqFeatData::eSubtype_variation && 
@@ -2243,7 +2269,7 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
             list<string> vals;
             s_ParseParentQual(**it, vals);
             ITERATE (list<string>, i, vals) {
-                x_AddQual(slot, new CFlatStringQVal(*i, CFormatQual::eUnquoted));
+                x_AddQual(slot, new CFlatStringQVal(*i, CFormatQual::eQuoted));
             }
             break;
         }}
@@ -3982,6 +4008,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.84  2006/09/15 13:03:18  ludwigf
+* CHANGED: /old_locus_tag qualifier now legal for just about anything for
+*  which /gene is meaningful.
+*
 * Revision 1.83  2006/09/14 12:33:20  ludwigf
 * CHANGED: Promoted pcr_primer, collection_date, collected_by, lon_lat, and
 *  identified_by to full (rather than GB-) qualifiers. That means, they will
