@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.19 2006/07/10 12:24:34 ivanov Exp $
+# $Id: ignore.lst,v 1.20 2006/09/15 16:22:59 vakatov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -39,3 +39,10 @@ app/asn2asn/asn2asn GCC_344-ReleaseMT--i686-pc-cygwin
 ;; looks like some exception throwing glitch, Eugene looks into it but if it
 ;; cannot be easily fixed, no big problem;  GCC295 is closing to retirement
 objtools/test/objmgr/test_objmgr_loaders_pubseqos GCC_295-Release--i686-pc-linux2.4.23-gnu2.2.5
+
+
+; BLAST
+
+;; an optimizer bug
+objtools/writers/writedb/unit_test/writedb_unit_test GCC_342-ReleaseMT--i386-unknown-freebsd4.10
+objtools/writers/writedb/unit_test/writedb_unit_test GCC_343-Release--i386-pc-solaris2.9
