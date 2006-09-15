@@ -63,14 +63,18 @@ CDriverContext::~CDriverContext(void)
 
 bool CDriverContext::SetTimeout(unsigned int nof_secs)
 {
+    bool success = true;
     CFastMutexGuard mg(m_Mtx);
 
-    if (I_DriverContext::SetLoginTimeout(nof_secs)) {
-        UpdateConnTimeout();
-        return true;
+    try {
+        if (I_DriverContext::SetTimeout(nof_secs)) {
+            UpdateConnTimeout();
+        }
+    } catch (...) {
+        success = false;
     }
 
-    return false;
+    return success;
 }
 
 bool CDriverContext::SetMaxTextImageSize(size_t nof_bytes)
@@ -474,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/15 19:20:35  ssikorsk
+ * Translate exceptions into return code in CDriverContext::SetTimeout.
+ *
  * Revision 1.3  2006/09/13 19:51:58  ssikorsk
  * Implemented SetTimeout, SetMaxTextImageSize with CDriverContext;
  * Implemented SetClientCharset, UpdateConnTimeout, UpdateConnMaxTextImageSize
