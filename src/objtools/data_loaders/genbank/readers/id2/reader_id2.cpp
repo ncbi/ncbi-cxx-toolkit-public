@@ -658,6 +658,11 @@ bool CId2Reader::LoadBlobs(CReaderRequestResult& result,
                            CLoadLockBlob_ids blobs,
                            TContentsMask mask)
 {
+    size_t max_request_size = GetMaxChunksRequestSize();
+    if ( LimitChunksRequests(max_request_size) ) {
+        return CReader::LoadBlobs(result, blobs, mask);
+    }
+
     CID2_Request_Packet packet;
     vector<CLoadLockBlob> blob_locks;
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
