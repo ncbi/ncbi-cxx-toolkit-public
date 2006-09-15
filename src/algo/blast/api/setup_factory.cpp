@@ -173,18 +173,29 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
                                  const CBlastRPSInfo* rps_info)
 {
     BLAST_SequenceBlk* queries = query_data->GetSequenceBlk();
-
+    CBlast_Message blast_msg;
     LookupTableWrap* retval(0);
+
     Int2 status = LookupTableWrapInit(queries,
                                       opts_memento->m_LutOpts,
                                       lookup_segments,
                                       score_blk,
                                       &retval,
-                                      rps_info ? (*rps_info)() : 0);
+                                      rps_info ? (*rps_info)() : 0,
+                                      &blast_msg);
     if (status != 0) {
-        NCBI_THROW(CBlastException, eCoreBlastError,
-                   "LookupTableWrapInit failed (" + 
-                   NStr::IntToString(status) + " error code)");
+         TSearchMessages search_messages;
+         Blast_Message2TSearchMessages(blast_msg.Get(), 
+                                           query_data->GetQueryInfo(), 
+                                           search_messages);
+         string msg;
+         if (search_messages.HasMessages()) {
+              msg = search_messages.ToString();
+         } else {
+              msg = "LookupTableWrapInit failed (" + 
+                   NStr::IntToString(status) + " error code)";
+         }
+         NCBI_THROW(CBlastException, eCoreBlastError, msg);
     }
 
     // For PHI BLAST, save information about pattern occurrences in query in
@@ -192,7 +203,6 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
     if (Blast_ProgramIsPhiBlast(opts_memento->m_ProgramType)) {
         SPHIPatternSearchBlk* phi_lookup_table
             = (SPHIPatternSearchBlk*) retval->lut;
-        CBlast_Message blast_msg;
         status = Blast_SetPHIPatternInfo(opts_memento->m_ProgramType,
                                 phi_lookup_table,
                                 queries,

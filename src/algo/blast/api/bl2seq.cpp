@@ -231,19 +231,28 @@ CBl2Seq::SetupSearch()
 
         // TODO: Check that lookup_segments are not filtering the whole 
         // sequence (SSeqRange set to -1 -1)
-        const string error_msg(blmsg 
+        const string error_msg1(blmsg
                                ? blmsg->message
                                : "BLAST_MainSetUp failed");
         Blast_Message2TSearchMessages(blmsg, mi_clsQueryInfo, m_Messages);
         blmsg = Blast_MessageFree(blmsg);
         if (st != 0) {
-            NCBI_THROW(CBlastException, eCoreBlastError, error_msg);
+            NCBI_THROW(CBlastException, eCoreBlastError, error_msg1);
         }
 
-        LookupTableWrapInit(mi_clsQueries, 
+        st = LookupTableWrapInit(mi_clsQueries, 
                             m_OptsHandle->GetOptions().GetLutOpts(),
                             mi_pLookupSegments, mi_pScoreBlock, 
-                            &mi_pLookupTable, NULL);
+                            &mi_pLookupTable, NULL, &blmsg);
+        const string error_msg2(blmsg 
+                      ? blmsg->message
+                       : "LookupTableWrapInit failed");
+        Blast_Message2TSearchMessages(blmsg, mi_clsQueryInfo, m_Messages);
+        blmsg = Blast_MessageFree(blmsg);
+        if (st != 0) {
+            NCBI_THROW(CBlastException, eCoreBlastError, error_msg2);
+        }
+
         mi_bQuerySetUpDone = true;
     }
 
@@ -343,6 +352,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.94  2006/09/15 13:11:12  madden
+ * Change to LookupTableWrapInit prototype
+ *
  * Revision 1.93  2006/06/15 17:40:21  papadopo
  * PartialRun -> RunWithoutSeqalignGeneration
  *

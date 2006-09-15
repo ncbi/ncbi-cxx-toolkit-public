@@ -592,7 +592,7 @@ void CDbBlast::SetupSearch()
             LookupTableWrapInit(m_iclsQueries, 
                                 kOptions.GetLutOpts(), 
                                 m_ipLookupSegments, m_ipScoreBlock, 
-                                &m_ipLookupTable, m_ipRpsInfo);
+                                &m_ipLookupTable, m_ipRpsInfo, NULL);
         }
 
         /* For PHI BLAST, save information about pattern occurrences in
@@ -799,6 +799,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.97  2006/09/15 13:11:12  madden
+ * Change to LookupTableWrapInit prototype
+ *
  * Revision 1.96  2006/08/18 16:00:25  vakatov
  * // [MSVC]  Suppress tons of self-inflicted 'function deprecated' warnings
  *
