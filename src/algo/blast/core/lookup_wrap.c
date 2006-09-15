@@ -52,12 +52,16 @@ static char const rcsid[] =
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
         BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
-        LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info)
+        LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info,
+        Blast_Message* *error_msg)
 {
    Int2 status = 0;
    Int4 num_table_entries;
    LookupTableWrap* lookup_wrap;
    const Int4 kNucEntriesCutoff = 8500;  /* probably machine dependent */
+
+   if (error_msg)
+      *error_msg = NULL;
 
    /* Construct the lookup table. */
    *lookup_wrap_ptr = lookup_wrap = 
@@ -120,16 +124,10 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       break;
    case PHI_AA_LOOKUP: case PHI_NA_LOOKUP:
        {
-           Blast_Message* error_msg = NULL;
            const Boolean kIsDna = (lookup_options->lut_type == PHI_NA_LOOKUP);
            status = SPHIPatternSearchBlkNew(lookup_options->phi_pattern, kIsDna, sbp,
                              (SPHIPatternSearchBlk* *) &(lookup_wrap->lut),
-                             &error_msg);
-           /** @todo FIXME: this error message must be passed further up!!! */
-           if (error_msg) {
-               Blast_MessagePost(error_msg);
-               Blast_MessageFree(error_msg);
-           }
+                             error_msg);
            break;
        }
    case RPS_LOOKUP_TABLE:
