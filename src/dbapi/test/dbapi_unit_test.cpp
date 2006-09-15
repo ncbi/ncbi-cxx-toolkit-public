@@ -2019,7 +2019,9 @@ CDBAPIUnitTest::Test_Variant2(void)
             char_val += 1;
 
             auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
-            auto_stmt->SetParam( CVariant::LongChar(str_val.c_str(), str_val.size() ), "@val" );
+            // !!! A line below will cause the ftds64_ctlib to crash ....
+//             auto_stmt->SetParam( CVariant::LongChar(str_val.c_str(), str_val.size() ), "@val" );
+            auto_stmt->SetParam( CVariant(str_val), "@val" );
             // Execute a statement with parameters ...
             auto_stmt->ExecuteUpdate( sql );
         }
@@ -4778,6 +4780,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.96  2006/09/15 15:20:05  ssikorsk
+ * Roll back previous fix with CVariant. It caused problems with the
+ * ftds64_ctlib driver and damaged Sybase and MS SQL servers.
+ *
  * Revision 1.95  2006/09/14 18:57:19  ssikorsk
  * Replaced  CVariant(string) with CVariant::LongChar(string) in order to
  * prevent truncation of strings;
