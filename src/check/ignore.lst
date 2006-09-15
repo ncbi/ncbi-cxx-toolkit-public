@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.20 2006/09/15 16:22:59 vakatov Exp $
+# $Id: ignore.lst,v 1.21 2006/09/15 16:45:24 vakatov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -43,6 +43,6 @@ objtools/test/objmgr/test_objmgr_loaders_pubseqos GCC_295-Release--i686-pc-linux
 
 ; BLAST
 
-;; an optimizer bug
+;; an optimizer bug when FAST_CXXFLAGS are used when compiling "writedb" lib
 objtools/writers/writedb/unit_test/writedb_unit_test GCC_342-ReleaseMT--i386-unknown-freebsd4.10
 objtools/writers/writedb/unit_test/writedb_unit_test GCC_343-Release--i386-pc-solaris2.9
