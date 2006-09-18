@@ -2070,6 +2070,14 @@ extern bool SetLogFile(const string& file_name,
                        bool quick_flush,
                        ios::openmode mode)
 {
+    // Check if a non-existing dir is specified
+    if ( !s_IsSpecialLogName(file_name) ) {
+        string dir = CFile(file_name).GetDir();
+        if ( !dir.empty()  &&  !CDir(dir).Exists() ) {
+            return false;
+        }
+    }
+
     CDoubleDiagHandler* double_handler =
         dynamic_cast<CDoubleDiagHandler*>(GetDiagHandler());
     if ( double_handler ) {
@@ -2899,6 +2907,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.133  2006/09/18 15:01:56  grichenk
+ * Fixed log file creation. Check if log dir exists.
+ *
  * Revision 1.132  2006/09/12 20:38:55  grichenk
  * More warnings from SetLogFile().
  * Fixed log file path.

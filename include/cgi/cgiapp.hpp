@@ -232,8 +232,6 @@ protected:
     /// HTTP status set if something is wrong.
     void VerifyCgiContext(CCgiContext& context);
 
-    /// Get log file name.
-    virtual string GetLogFileName(EDiagFileType file_type) const;
     /// Get default path for the log files.
     virtual string GetDefaultLogPath(void) const;
 
@@ -390,6 +388,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2006/09/18 15:01:51  grichenk
+* Fixed log file creation. Check if log dir exists.
+*
 * Revision 1.53  2006/08/08 18:27:50  didenko
 * Added customization to the tracking cookie
 *

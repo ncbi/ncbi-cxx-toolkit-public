@@ -952,10 +952,10 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             bool nocreate_log = reg->GetBool("LOG", "NoCreate", false);
             CFile file_log(logname);
             if (!nocreate_log || file_log.Exists()) {
-                string prevlog = GetLogFileName();
+                string prevlog = m_LogFileName;
                 ios::openmode mode = ios::out |
                                      (truncate_log ? ios::trunc : ios::app);
-                if (x_SetupLogFile(logname,mode)) {
+                if (x_SetupLogFile(logname, mode)) {
                     if (!prevlog.empty()) {
                         CDirEntry(prevlog).Remove();
                     }
@@ -1074,14 +1074,13 @@ bool CNcbiApplication::x_SetupLogFile(const string& name, ios::openmode mode)
 
 
 bool s_SetupLogFile(string logname,
-                    EDiagFileType type,
                     string& path,
                     bool& base_only,
                     bool& try_all)
 {
     if ( CFile::IsAbsolutePath(logname) ) {
         // Try absolute path as-is
-        if ( SetLogFile(logname, type) ) {
+        if ( SetLogFile(logname) ) {
             return true;
         }
         // Failed - try base name only
@@ -1092,18 +1091,17 @@ bool s_SetupLogFile(string logname,
         if ( base_only ) {
             logname = CFile(logname).GetBase();
         }
-        return SetLogFile(CFile::ConcatPath(path, logname), type);
+        return SetLogFile(CFile::ConcatPath(path, logname));
     }
     // Try /default/rel/logname
-    if ( SetLogFile(CFile::ConcatPath(path, logname), type) ) {
+    if ( SetLogFile(CFile::ConcatPath(path, logname)) ) {
         try_all = false;
         return true;
     }
     string norm = CFile::NormalizePath(logname);
     if (norm != logname) {
         // Try to use base name only: /default/logname
-        if ( SetLogFile(CFile::ConcatPath(path, CFile(logname).GetBase()),
-            type) ) {
+        if ( SetLogFile(CFile::ConcatPath(path, CFile(logname).GetBase())) ) {
             base_only = true;
             try_all = false;
             return true;
@@ -1111,15 +1109,14 @@ bool s_SetupLogFile(string logname,
     }
     // Try to start from CWD: ./rel/logname
     string cwd = ".";
-    if ( SetLogFile(CFile::ConcatPath(cwd, logname), type) ) {
+    if ( SetLogFile(CFile::ConcatPath(cwd, logname)) ) {
         try_all = false;
         path = cwd;
         return true;
     }
     if (norm != logname) {
         // Try to use base name with CWD: ./logname
-        if ( SetLogFile(CFile::ConcatPath(cwd, CFile(logname).GetBase()),
-            type) ) {
+        if ( SetLogFile(CFile::ConcatPath(cwd, CFile(logname).GetBase())) ) {
             base_only = true;
             path = cwd;
             try_all = false;
@@ -1138,45 +1135,23 @@ bool CNcbiApplication::x_SetupLogFiles(void)
     bool try_all = true;
     bool success = false;
 
-    if ( !GetSplitLogFile() ) {
-        success =  s_SetupLogFile(GetLogFileName(eDiagFile_All),
-            eDiagFile_All, path, base_only, try_all);
-    }
-    else {
-        success = s_SetupLogFile(GetLogFileName(eDiagFile_Err),
-            eDiagFile_Err, path, base_only, try_all);
-        success = s_SetupLogFile(GetLogFileName(eDiagFile_Log),
-            eDiagFile_Log, path, base_only, try_all)  &&  success;
-        success = s_SetupLogFile(GetLogFileName(eDiagFile_Trace),
-            eDiagFile_Trace, path, base_only, try_all)  &&  success;
-    }
-
-    if (success) {
+    if ( s_SetupLogFile(GetLogFileName(), path, base_only, try_all) ) {
         x_FlushMemoryDiagStream();
+        return true;
     }
-    return success;
+    return false;
 }
 
 
-string CNcbiApplication::GetLogFileName(EDiagFileType file_type) const
+void CNcbiApplication::x_SetupLogFileName(void) const
 {
-    if ( m_LogFileName.empty() ) {
-        m_LogFileName = m_Arguments->GetProgramBasename();
-    }
-    string logname = GetLogFile(file_type);
+    if ( !m_LogFileName.empty() ) return;
+    string logname = GetLogFile(eDiagFile_Log);
     if (logname == "-") {
         logname = kEmptyStr;
     }
-    switch ( file_type ) {
-    case eDiagFile_All:
-    case eDiagFile_Log:
-        return logname.empty() ? m_LogFileName + ".log" : logname;
-    case eDiagFile_Err:
-        return logname.empty() ? m_LogFileName + ".err" : logname;
-    case eDiagFile_Trace:
-        return logname.empty() ? m_LogFileName + ".trace" : logname;
-    }
-    return m_LogFileName;
+    m_LogFileName = !logname.empty() ?
+        logname : m_Arguments->GetProgramBasename() + ".log";
 }
 
 
@@ -1225,6 +1200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.132  2006/09/18 15:01:56  grichenk
+ * Fixed log file creation. Check if log dir exists.
+ *
  * Revision 1.131  2006/09/12 20:38:55  grichenk
  * More warnings from SetLogFile().
  * Fixed log file path.

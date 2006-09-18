@@ -914,22 +914,6 @@ void CCgiApplication::AppStop(int exit_code)
 }
 
 
-string CCgiApplication::GetLogFileName(EDiagFileType file_type) const
-{
-    string logname = GetArguments().GetProgramBasename();
-    switch ( file_type ) {
-    case eDiagFile_All:
-    case eDiagFile_Log:
-        return logname + ".log";
-    case eDiagFile_Err:
-        return logname + ".err";
-    case eDiagFile_Trace:
-        return logname + ".trace";
-    }
-    return logname;
-}
-
-
 const char* kToolkitRcPath = "/etc/toolkitrc";
 const char* kWebDirToPort = "Web_dir_to_port";
 
@@ -1158,6 +1142,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.89  2006/09/18 15:01:55  grichenk
+* Fixed log file creation. Check if log dir exists.
+*
 * Revision 1.88  2006/09/12 15:02:04  grichenk
 * Fixed log file name extensions.
 * Added GetDiagStream().

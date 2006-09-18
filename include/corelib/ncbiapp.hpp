@@ -458,13 +458,6 @@ protected:
     ///   Log file
     const string& GetLogFileName(void) const;
 
-    /// Get the application's log file name. Must be overloaded to
-    /// provide log file names.
-    /// @param file_type
-    ///   Type of log file: err, log or trace.
-    /// @return
-    ///   Log file name for the given type.
-    virtual string GetLogFileName(EDiagFileType file_type) const;
     /// Get the default path for the log files. By default returns
     /// the executable's directory.
     virtual string GetDefaultLogPath(void) const;
@@ -515,6 +508,8 @@ private:
     /// @return
     ///   true on success
     bool x_SetupLogFiles(void);
+
+    void x_SetupLogFileName(void) const;
 
     /// Copy data written to the memory diag stream (if any) to the
     /// log file if CFileDiagHandler is installed.
@@ -619,6 +614,9 @@ inline const CArgDescriptions* CNcbiApplication::GetArgDescriptions(void) const
 
 inline const string& CNcbiApplication::GetLogFileName(void) const
 {
+    if ( m_LogFileName.empty() ) {
+        x_SetupLogFileName();
+    }
     return m_LogFileName;
 }
 
@@ -635,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/09/18 15:01:54  grichenk
+ * Fixed log file creation. Check if log dir exists.
+ *
  * Revision 1.64  2006/09/08 15:33:35  grichenk
  * Flush data from memory stream when switching to log file.
  *
