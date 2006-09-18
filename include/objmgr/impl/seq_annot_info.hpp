@@ -55,6 +55,7 @@ class CTSE_Info;
 class CBioseq_Base_Info;
 class CAnnotObject_Info;
 struct SAnnotObject_Key;
+struct STSEAnnotObjectMapper;
 class CSeq_annot_SNP_Info;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
@@ -126,6 +127,8 @@ public:
     TIndex Add(const CSeq_align& new_obj);
     TIndex Add(const CSeq_graph& new_obj);
 
+    void Update(TIndex index);
+
     const CAnnotObject_Info& GetInfo(TIndex index) const;
 
 protected:
@@ -150,18 +153,25 @@ protected:
     void x_InitGraphList(TGraph& objs, const CSeq_annot_Info& info);
     void x_InitLocsList(TLocs& annot, const CSeq_annot_Info& info);
 
-    void x_InitAnnotKeys(void);
+    void x_InitAnnotKeys(CTSE_Info& tse);
 
-    void x_InitFeatKeys(void);
-    void x_InitAlignKeys(void);
-    void x_InitGraphKeys(void);
-    void x_InitLocsKeys(void);
+    void x_InitFeatKeys(CTSE_Info& tse);
+    void x_InitAlignKeys(CTSE_Info& tse);
+    void x_InitGraphKeys(CTSE_Info& tse);
+    void x_InitLocsKeys(CTSE_Info& tse);
 
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
 
     void x_UnmapAnnotObject(CAnnotObject_Info& info);
     void x_MapAnnotObject(CAnnotObject_Info& info);
+    void x_RemapAnnotObject(CAnnotObject_Info& info);
+
+    void x_Map(const STSEAnnotObjectMapper& mapper,
+               const SAnnotObject_Key& key,
+               const SAnnotObject_Index& index);
+
+    void x_UpdateObjectKeys(CAnnotObject_Info& info, size_t keys_begin);
 
     // Seq-annot object
     CRef<TObject>           m_Object;
@@ -236,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2006/09/18 14:29:29  vasilche
+* Store annots indexing information to allow reindexing after modification.
+*
 * Revision 1.28  2005/09/20 15:45:35  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

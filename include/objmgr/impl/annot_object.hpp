@@ -63,6 +63,38 @@ class CSeq_annot_Info;
 class CTSE_Info;
 class CTSE_Chunk_Info;
 
+struct SAnnotObject_Key
+{
+    bool IsSingle(void) const
+        {
+            return m_Handle;
+        }
+    void SetMultiple(size_t from, size_t to)
+        {
+            m_Handle.Reset();
+            m_Range.SetFrom(from);
+            m_Range.SetToOpen(to);
+        }
+    size_t begin(void) const
+        {
+            _ASSERT(!IsSingle());
+            return m_Range.GetFrom();
+        }
+    size_t end(void) const
+        {
+            _ASSERT(!IsSingle());
+            return m_Range.GetToOpen();
+        }
+    void Reset()
+        {
+            m_Handle.Reset();
+            m_Range.SetFrom(0);
+            m_Range.SetToOpen(0);
+        }
+    CSeq_id_Handle          m_Handle;
+    CRange<TSeqPos>         m_Range;
+};
+
 // General Seq-annot object
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Info
 {
@@ -179,6 +211,36 @@ public:
     static void x_ProcessGraph(vector<CHandleRangeMap>& hrmaps,
                                const CSeq_graph& graph);
 
+    bool HasSingleKey(void) const
+        {
+            return m_Key.IsSingle();
+        }
+    const SAnnotObject_Key& GetKey(void) const
+        {
+            _ASSERT(m_Key.IsSingle());
+            return m_Key;
+        }
+    size_t GetKeysBegin(void) const
+        {
+            return m_Key.begin();
+        }
+    size_t GetKeysEnd(void) const
+        {
+            return m_Key.end();
+        }
+    void SetKey(const SAnnotObject_Key& key)
+        {
+            _ASSERT(key.IsSingle());
+            m_Key = key;
+        }
+    void SetKeys(size_t begin, size_t end)
+        {
+            m_Key.SetMultiple(begin, end);
+        }
+    void ResetKey(void)
+        {
+            m_Key.Reset();
+        }
 
 private:
     friend class CSeq_annot_Info;
@@ -238,6 +300,7 @@ private:
     }                            m_Iter;
     TIndex                       m_ObjectIndex;
     SAnnotTypeSelector           m_Type;     // annot type
+    SAnnotObject_Key             m_Key;      // single key or range of keys
 };
 
 
@@ -470,6 +533,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/09/18 14:29:29  vasilche
+* Store annots indexing information to allow reindexing after modification.
+*
 * Revision 1.24  2006/03/17 18:11:28  vasilche
 * Renamed NCBI_NON_POD_STL_ITERATORS -> NCBI_NON_POD_TYPE_STL_ITERATORS.
 *

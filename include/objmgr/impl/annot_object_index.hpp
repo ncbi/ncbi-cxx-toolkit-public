@@ -62,18 +62,6 @@ class CAnnotObject_Info;
 
 // forward declaration
 
-struct SAnnotObject_Key
-{
-    SAnnotObject_Key(void)
-        : m_AnnotObject_Info(0)
-        {
-        }
-
-    CAnnotObject_Info*      m_AnnotObject_Info;
-    CSeq_id_Handle          m_Handle;
-    CRange<TSeqPos>         m_Range;
-};
-
 struct SAnnotObject_Index
 {
     SAnnotObject_Index(void)
@@ -117,10 +105,13 @@ struct NCBI_XOBJMGR_EXPORT SAnnotObjectsIndex
 
     typedef deque<CAnnotObject_Info>           TObjectInfos;
     typedef vector<SAnnotObject_Key>           TObjectKeys;
-    typedef vector<SAnnotObject_Index>         TObjectIndices;
 
     void SetName(const CAnnotName& name);
     const CAnnotName& GetName(void) const;
+
+    bool IsIndexed(void) const;
+    void SetIndexed(void);
+    void ClearIndex(void);
 
     bool IsEmpty(void) const;
     // reserve space for size annot objects
@@ -137,18 +128,18 @@ struct NCBI_XOBJMGR_EXPORT SAnnotObjectsIndex
 
     void ReserveMapSize(size_t size);
     void AddMap(const SAnnotObject_Key& key, const SAnnotObject_Index& index);
+    void RemoveLastMap(void);
+
     void PackKeys(void);
-    void PackIndices(void);
-    void DropIndices(void);
 
     const TObjectKeys& GetKeys(void) const;
-    const TObjectIndices& GetIndices(void) const;
+    const SAnnotObject_Key& GetKey(size_t i) const;
 
 private:    
     CAnnotName      m_Name;
-    TObjectKeys     m_Keys;
     TObjectInfos    m_Infos;
-    TObjectIndices  m_Indices;
+    bool            m_Indexed;
+    TObjectKeys     m_Keys;
 
     SAnnotObjectsIndex& operator=(const SAnnotObjectsIndex&);
 };
@@ -158,6 +149,21 @@ inline
 const CAnnotName& SAnnotObjectsIndex::GetName(void) const
 {
     return m_Name;
+}
+
+
+inline
+bool SAnnotObjectsIndex::IsIndexed(void) const
+{
+    return m_Indexed;
+}
+
+
+inline
+void SAnnotObjectsIndex::SetIndexed(void)
+{
+    _ASSERT(!IsIndexed());
+    m_Indexed = true;
 }
 
 
@@ -193,10 +199,11 @@ SAnnotObjectsIndex::GetKeys(void) const
 
 
 inline
-const SAnnotObjectsIndex::TObjectIndices&
-SAnnotObjectsIndex::GetIndices(void) const
+const SAnnotObject_Key&
+SAnnotObjectsIndex::GetKey(size_t i) const
 {
-    return m_Indices;
+    _ASSERT(i < m_Keys.size());
+    return m_Keys[i];
 }
 
 
@@ -206,6 +213,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/09/18 14:29:29  vasilche
+* Store annots indexing information to allow reindexing after modification.
+*
 * Revision 1.10  2005/08/23 17:02:55  vasilche
 * Used typedefs for integral members of SAnnotObject_Index.
 * Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.

@@ -430,15 +430,25 @@ void CTSE_Chunk_Info::x_InitObjectIndexList(void)
             _ASSERT(info.GetTypeSelector() == tit->first);
             SAnnotObject_Key key;
             SAnnotObject_Index index;
-            key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
+            index.m_AnnotObject_Info = &info;
+            size_t keys_begin = infos.GetKeys().size();
             ITERATE ( TLocationSet, lit, tit->second ) {
                 key.m_Handle = lit->first;
                 key.m_Range = lit->second;
                 infos.AddMap(key, index);
             }
+            size_t keys_end = infos.GetKeys().size();
+            if ( keys_begin+1 == keys_end &&
+                 infos.GetKey(keys_begin).IsSingle() ) {
+                info.SetKey(infos.GetKey(keys_begin));
+                infos.RemoveLastMap();
+            }
+            else {
+                info.SetKeys(keys_begin, keys_end);
+            }
         }
         infos.PackKeys();
-        infos.PackIndices();
+        infos.SetIndexed();
     }
 }
 
@@ -446,9 +456,22 @@ void CTSE_Chunk_Info::x_InitObjectIndexList(void)
 void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
     x_InitObjectIndexList();
+
+    SAnnotObject_Index index;
     ITERATE ( TObjectIndexList, it, m_ObjectIndexList ) {
-        tse.x_MapAnnotObjects(*it);
-        //tse.MapAnnotObjects(*it);
+        STSEAnnotObjectMapper mapper(tse, it->GetName());
+        ITERATE ( SAnnotObjectsIndex::TObjectInfos, info, it->GetInfos() ) {
+            index.m_AnnotObject_Info = const_cast<CAnnotObject_Info*>(&*info);
+            if ( info->HasSingleKey() ) {
+                mapper.Map(info->GetKey(), index);
+            }
+            else {
+                for ( size_t i = info->GetKeysBegin();
+                      i < info->GetKeysEnd(); ++i ) {
+                    mapper.Map(it->GetKey(i), index);
+                }
+            }
+        }
     }
 }
 
@@ -515,6 +538,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2006/09/18 14:29:29  vasilche
+* Store annots indexing information to allow reindexing after modification.
+*
 * Revision 1.31  2005/11/15 15:54:32  vasilche
 * Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
 *

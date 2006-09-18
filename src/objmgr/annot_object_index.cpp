@@ -39,18 +39,19 @@ BEGIN_SCOPE(objects)
 
 
 SAnnotObjectsIndex::SAnnotObjectsIndex(void)
+    : m_Indexed(false)
 {
 }
 
 
 SAnnotObjectsIndex::SAnnotObjectsIndex(const CAnnotName& name)
-    : m_Name(name)
+    : m_Name(name), m_Indexed(false)
 {
 }
 
 
 SAnnotObjectsIndex::SAnnotObjectsIndex(const SAnnotObjectsIndex& info)
-    : m_Name(info.m_Name)
+    : m_Name(info.m_Name), m_Indexed(false)
 {
 }
 
@@ -62,23 +63,22 @@ SAnnotObjectsIndex::~SAnnotObjectsIndex(void)
 
 void SAnnotObjectsIndex::SetName(const CAnnotName& name)
 {
+    _ASSERT(!IsIndexed());
     m_Name = name;
 }
 
 
 void SAnnotObjectsIndex::Clear(void)
 {
-    m_Indices.clear();
     m_Keys.clear();
-    //m_Infos.clear();
+    m_Indexed = false;
 }
 
 
 void SAnnotObjectsIndex::ReserveMapSize(size_t size)
 {
-    _ASSERT(m_Indices.empty() && m_Keys.empty());
+    _ASSERT(m_Keys.empty());
     m_Keys.reserve(size);
-    m_Indices.reserve(size);
 }
 
 
@@ -92,7 +92,12 @@ void SAnnotObjectsIndex::AddMap(const SAnnotObject_Key& key,
                                 const SAnnotObject_Index& index)
 {
     m_Keys.push_back(key);
-    m_Indices.push_back(index);
+}
+
+
+void SAnnotObjectsIndex::RemoveLastMap(void)
+{
+    m_Keys.pop_back();
 }
 
 
@@ -103,25 +108,15 @@ void SAnnotObjectsIndex::PackKeys(void)
 }
 
 
-void SAnnotObjectsIndex::PackIndices(void)
-{
-    TObjectIndices indices(m_Indices.begin(), m_Indices.end());
-    indices.swap(m_Indices);
-}
-
-
-void SAnnotObjectsIndex::DropIndices(void)
-{
-    m_Indices.clear();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/09/18 14:29:29  vasilche
+* Store annots indexing information to allow reindexing after modification.
+*
 * Revision 1.6  2005/09/20 15:45:36  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

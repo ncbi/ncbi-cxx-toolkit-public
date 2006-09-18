@@ -39,7 +39,6 @@
 #include <objmgr/impl/tse_lock.hpp>
 
 #include <objmgr/edit_saver.hpp>
-//#include <objmgr/annot_name.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/blob_id.hpp>
 #include <objmgr/bio_object_id.hpp>
@@ -164,6 +163,7 @@ private:
     void operator=(const CTSE_SetObjectInfo&);
 };
 
+struct STSEAnnotObjectMapper;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
@@ -292,7 +292,6 @@ public:
     void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(CTSE_Info_Object& object);
-    //void UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
@@ -388,11 +387,13 @@ private:
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& index);
     bool x_UnmapAnnotObject(TRangeMap& rangeMap,
+                            const CAnnotObject_Info& info,
                             const SAnnotObject_Key& key);
     void x_MapAnnotObject(SIdAnnotObjs& objs,
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& index);
     bool x_UnmapAnnotObject(SIdAnnotObjs& objs,
+                            const CAnnotObject_Info& info,
                             const SAnnotObject_Key& key);
     void x_MapAnnotObject(TAnnotObjs& objs,
                           const CAnnotName& name,
@@ -401,14 +402,17 @@ private:
     void x_MapAnnotObject(const CAnnotName& name,
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& index);
-    void x_MapAnnotObjects(const SAnnotObjectsIndex& infos);
 
     bool x_UnmapAnnotObject(TAnnotObjs& objs,
                             const CAnnotName& name,
+                            const CAnnotObject_Info& info,
                             const SAnnotObject_Key& key);
     void x_UnmapAnnotObject(const CAnnotName& name,
+                            const CAnnotObject_Info& info,
                             const SAnnotObject_Key& key);
     void x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos);
+
+    friend class STSEAnnotObjectMapper;
 
     void x_IndexSeqTSE(const CSeq_id_Handle& id);
     void x_UnindexSeqTSE(const CSeq_id_Handle& id);
@@ -417,7 +421,7 @@ private:
 
     void x_DoUpdate(TNeedUpdateFlags flags);
 
-    //    void x_RegisterRemovedIds(const CConstRef<CBioseq>&, CBioseq_Info*);
+    //void x_RegisterRemovedIds(const CConstRef<CBioseq>&, CBioseq_Info*);
     CBioObjectId x_IndexBioseq(CBioseq_Info*);
     CBioObjectId x_IndexBioseq_set(CBioseq_set_Info*);
 
@@ -690,6 +694,37 @@ CRef<IEditSaver> CTSE_Info::GetEditSaver() const
 {
     return m_EditSaver;
 }
+
+
+struct STSEAnnotObjectMapper
+{
+    STSEAnnotObjectMapper(CTSE_Info& tse, const CAnnotName& name)
+        : m_TSE(tse), m_Name(name),
+          m_AnnotObjs(tse.x_SetAnnotObjs(name))
+        {
+        }
+
+    void Map(const SAnnotObject_Key& key,
+             const SAnnotObject_Index& index) const
+        {
+            m_TSE.x_MapAnnotObject(m_AnnotObjs, m_Name, key, index);
+        }
+
+    void Unmap(const SAnnotObject_Key& key,
+               const CAnnotObject_Info& info) const
+        {
+            m_TSE.x_UnmapAnnotObject(m_AnnotObjs, m_Name, info, key);
+            if ( m_AnnotObjs.empty() ) {
+                m_TSE.x_RemoveAnnotObjs(m_Name);
+            }
+        }
+
+private:
+    CTSE_Info& m_TSE;
+    const CAnnotName& m_Name;
+    CTSE_Info::TAnnotObjs& m_AnnotObjs;
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

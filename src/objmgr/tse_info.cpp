@@ -987,18 +987,19 @@ void CTSE_Info::x_MapAnnotObject(TRangeMap& rangeMap,
                                  const SAnnotObject_Key& key,
                                  const SAnnotObject_Index& index)
 {
-    _ASSERT(index.m_AnnotObject_Info == key.m_AnnotObject_Info);
+    //_ASSERT(index.m_AnnotObject_Info == key.m_AnnotObject_Info);
     rangeMap.insert(TRangeMap::value_type(key.m_Range, index));
 }
 
 
 inline
 bool CTSE_Info::x_UnmapAnnotObject(TRangeMap& rangeMap,
+                                   const CAnnotObject_Info& info,
                                    const SAnnotObject_Key& key)
 {
     for ( TRangeMap::iterator it = rangeMap.find(key.m_Range);
           it && it->first == key.m_Range; ++it ) {
-        if ( it->second.m_AnnotObject_Info == key.m_AnnotObject_Info ) {
+        if ( it->second.m_AnnotObject_Info == &info ) {
             rangeMap.erase(it);
             return rangeMap.empty();
         }
@@ -1012,10 +1013,10 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
                                  const SAnnotObject_Key& key,
                                  const SAnnotObject_Index& index)
 {
-    if ( key.m_AnnotObject_Info->IsLocs() ) {
+    if ( index.m_AnnotObject_Info->IsLocs() ) {
         // Locs may contain multiple indexes
         CAnnotObject_Info::TTypeIndexSet idx_set;
-        key.m_AnnotObject_Info->GetLocsTypes(idx_set);
+        index.m_AnnotObject_Info->GetLocsTypes(idx_set);
         ITERATE(CAnnotObject_Info::TTypeIndexSet, idx_rg, idx_set) {
             for (size_t idx = idx_rg->first; idx < idx_rg->second; ++idx) {
                 x_MapAnnotObject(objs.x_GetRangeMap(idx), key, index);
@@ -1024,7 +1025,7 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
     }
     else {
         CAnnotType_Index::TIndexRange idx_rg =
-            CAnnotType_Index::GetTypeIndex(key);
+            CAnnotType_Index::GetTypeIndex(*index.m_AnnotObject_Info);
         for (size_t idx = idx_rg.first; idx < idx_rg.second; ++idx) {
             x_MapAnnotObject(objs.x_GetRangeMap(idx), key, index);
         }
@@ -1033,12 +1034,14 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
 
 
 bool CTSE_Info::x_UnmapAnnotObject(SIdAnnotObjs& objs,
+                                   const CAnnotObject_Info& info,
                                    const SAnnotObject_Key& key)
 {
-    CAnnotType_Index::TIndexRange idx_rg = CAnnotType_Index::GetTypeIndex(key);
+    CAnnotType_Index::TIndexRange idx_rg =
+        CAnnotType_Index::GetTypeIndex(info);
     for (size_t idx = idx_rg.first; idx < idx_rg.second; ++idx) {
         _ASSERT(idx < objs.x_GetRangeMapCount());
-        if ( x_UnmapAnnotObject(objs.x_GetRangeMap(idx), key) ) {
+        if ( x_UnmapAnnotObject(objs.x_GetRangeMap(idx), info, key) ) {
             if ( objs.x_CleanRangeMaps() ) {
                 return objs.m_SNPSet.empty();
             }
@@ -1059,10 +1062,11 @@ void CTSE_Info::x_MapAnnotObject(TAnnotObjs& objs,
 
 bool CTSE_Info::x_UnmapAnnotObject(TAnnotObjs& objs,
                                    const CAnnotName& name,
+                                   const CAnnotObject_Info& info,
                                    const SAnnotObject_Key& key)
 {
     TAnnotObjs::iterator it = objs.find(key.m_Handle);
-    if ( it != objs.end() && x_UnmapAnnotObject(it->second, key) ) {
+    if ( it != objs.end() && x_UnmapAnnotObject(it->second, info, key) ) {
         x_UnindexAnnotTSE(name, key.m_Handle);
         objs.erase(it);
         return objs.empty();
@@ -1095,40 +1099,20 @@ void CTSE_Info::x_UnmapSNP_Table(const CAnnotName& name,
 
 
 void CTSE_Info::x_MapAnnotObject(const CAnnotName& name,
-                          const SAnnotObject_Key& key,
-                          const SAnnotObject_Index& index)
+                                 const SAnnotObject_Key& key,
+                                 const SAnnotObject_Index& index)
 {
     x_MapAnnotObject(x_SetAnnotObjs(name), name, key, index);
 }
 
 
-void CTSE_Info::x_MapAnnotObjects(const SAnnotObjectsIndex& infos)
-{
-    const SAnnotObjectsIndex::TObjectKeys& keys = infos.GetKeys();
-    if ( keys.empty() ) {
-        return;
-    }
-    const SAnnotObjectsIndex::TObjectIndices& values = infos.GetIndices();
-    _ASSERT(values.size() == keys.size());
-
-    const CAnnotName& name = infos.GetName();
-    TAnnotObjs& index = x_SetAnnotObjs(name);
-
-    SAnnotObjectsIndex::TObjectIndices::const_iterator value = values.begin();
-    ITERATE ( SAnnotObjectsIndex::TObjectKeys, key, keys ) {
-        _ASSERT(value != values.end());
-        x_MapAnnotObject(index, name, *key, *value);
-        ++value;
-    }
-}
-
-
 void CTSE_Info::x_UnmapAnnotObject(const CAnnotName& name,
+                                   const CAnnotObject_Info& info,
                                    const SAnnotObject_Key& key)
 {
     TAnnotObjs& index = x_SetAnnotObjs(name);
 
-    x_UnmapAnnotObject(index, name, key);
+    x_UnmapAnnotObject(index, name, info, key);
 
     if ( index.empty() ) {
         x_RemoveAnnotObjs(name);
@@ -1138,17 +1122,20 @@ void CTSE_Info::x_UnmapAnnotObject(const CAnnotName& name,
 
 void CTSE_Info::x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos)
 {
-    const SAnnotObjectsIndex::TObjectKeys& keys = infos.GetKeys();
-    if ( keys.empty() ) {
+    if ( !infos.IsIndexed() ) {
         return;
     }
-
     const CAnnotName& name = infos.GetName();
     TAnnotObjs& index = x_SetAnnotObjs(name);
 
-    ITERATE ( SAnnotObjectsIndex::TObjectKeys, key, keys ) {
-        if ( !key->m_AnnotObject_Info->IsRemoved() ) {
-            x_UnmapAnnotObject(index, name, *key);
+    ITERATE ( SAnnotObjectsIndex::TObjectInfos, it, infos.GetInfos() ) {
+        if ( it->HasSingleKey() ) {
+            x_UnmapAnnotObject(index, name, *it, it->GetKey());
+        }
+        else {
+            for ( size_t i = it->GetKeysBegin(); i < it->GetKeysEnd(); ++i ) {
+                x_UnmapAnnotObject(index, name, *it, infos.GetKey(i));
+            }
         }
     }
 

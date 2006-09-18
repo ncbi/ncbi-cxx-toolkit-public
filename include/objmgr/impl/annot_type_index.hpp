@@ -72,7 +72,6 @@ public:
     static TIndexRange GetIndexRange(const SAnnotTypeSelector& sel,
                                      const SIdAnnotObjs& objs);
     static TIndexRange GetTypeIndex(const CAnnotObject_Info& info);
-    static TIndexRange GetTypeIndex(const SAnnotObject_Key& key);
 
     static SAnnotTypeSelector GetTypeSelector(size_t index);
 
@@ -150,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/09/18 14:29:29  vasilche
+* Store annots indexing information to allow reindexing after modification.
+*
 * Revision 1.3  2006/02/14 15:47:41  grichenk
 * Added methods for collecting types of annotations.
 *

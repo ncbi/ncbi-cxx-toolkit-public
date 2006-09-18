@@ -497,9 +497,7 @@ void CSeq_annot_Info::UpdateAnnotIndex(void) const
 
 void CSeq_annot_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
-    x_InitAnnotKeys();
-    tse.x_MapAnnotObjects(m_ObjectIndex);
-    //m_ObjectIndex.DropIndices();
+    x_InitAnnotKeys(tse);
 
     if ( m_SNP_Info ) {
         m_SNP_Info->x_UpdateAnnotIndex(tse);
@@ -508,39 +506,66 @@ void CSeq_annot_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 }
 
 
-void CSeq_annot_Info::x_InitAnnotKeys(void)
+void CSeq_annot_Info::x_InitAnnotKeys(CTSE_Info& tse)
 {
+    if ( m_ObjectIndex.IsIndexed() ) {
+        return;
+    }
+    m_ObjectIndex.SetName(GetName());
+
     C_Data& data = m_Object->SetData();
     switch ( data.Which() ) {
     case C_Data::e_Ftable:
-        x_InitFeatKeys();
+        x_InitFeatKeys(tse);
         break;
     case C_Data::e_Align:
-        x_InitAlignKeys();
+        x_InitAlignKeys(tse);
         break;
     case C_Data::e_Graph:
-        x_InitGraphKeys();
+        x_InitGraphKeys(tse);
         break;
     case C_Data::e_Locs:
-        x_InitLocsKeys();
+        x_InitLocsKeys(tse);
         break;
     default:
         break;
     }
 
     m_ObjectIndex.PackKeys();
+    m_ObjectIndex.SetIndexed();
 }
 
 
-void CSeq_annot_Info::x_InitFeatKeys(void)
+inline
+void CSeq_annot_Info::x_Map(const STSEAnnotObjectMapper& mapper,
+                            const SAnnotObject_Key& key,
+                            const SAnnotObject_Index& index)
+{
+    m_ObjectIndex.AddMap(key, index);
+    mapper.Map(key, index);
+}
+
+
+void CSeq_annot_Info::x_UpdateObjectKeys(CAnnotObject_Info& info,
+                                         size_t keys_begin)
+{
+    size_t keys_end = m_ObjectIndex.GetKeys().size();
+    _ASSERT(keys_begin <= keys_end);
+    if ( keys_begin + 1 == keys_end &&
+         m_ObjectIndex.GetKey(keys_begin).IsSingle() ) {
+        // one simple key, store it inside CAnnotObject_Info
+        info.SetKey(m_ObjectIndex.GetKey(keys_begin));
+        m_ObjectIndex.RemoveLastMap();
+    }
+    else {
+        info.SetKeys(keys_begin, keys_end);
+    }
+}
+
+
+void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
 {
     _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetFtable().size());
-    if ( !m_ObjectIndex.GetKeys().empty() ) {
-        return;
-    }
-
-    m_ObjectIndex.SetName(GetName());
-
     size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(size_t(object_count*1.1));
 
@@ -548,13 +573,16 @@ void CSeq_annot_Info::x_InitFeatKeys(void)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
+    STSEAnnotObjectMapper mapper(tse, GetName());
+
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
         CAnnotObject_Info& info = *it;
         if ( info.IsRemoved() ) {
             continue;
         }
-        key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
+        size_t keys_begin = m_ObjectIndex.GetKeys().size();
+        index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
 
@@ -581,34 +609,25 @@ void CSeq_annot_Info::x_InitFeatKeys(void)
                     index.m_HandleRange->GetData() = hr;
                     if ( hr.IsCircular() ) {
                         key.m_Range = hr.GetCircularRangeStart();
-                        m_ObjectIndex.AddMap(key, index);
+                        x_Map(mapper, key, index);
                         key.m_Range = hr.GetCircularRangeEnd();
-                        m_ObjectIndex.AddMap(key, index);
-                    }
-                    else {
-                        m_ObjectIndex.AddMap(key, index);
                     }
                 }
                 else {
                     index.m_HandleRange.Reset();
-                    m_ObjectIndex.AddMap(key, index);
                 }
+                x_Map(mapper, key, index);
             }
             ++index.m_AnnotLocationIndex;
         }
+        x_UpdateObjectKeys(info, keys_begin);
     }
 }
 
 
-void CSeq_annot_Info::x_InitGraphKeys(void)
+void CSeq_annot_Info::x_InitGraphKeys(CTSE_Info& tse)
 {
     _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetGraph().size());
-    if ( !m_ObjectIndex.GetKeys().empty() ) {
-        return;
-    }
-
-    m_ObjectIndex.SetName(GetName());
-
     size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(object_count);
 
@@ -616,13 +635,16 @@ void CSeq_annot_Info::x_InitGraphKeys(void)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
+    STSEAnnotObjectMapper mapper(tse, GetName());
+
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
         CAnnotObject_Info& info = *it;
         if ( info.IsRemoved() ) {
             continue;
         }
-        key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
+        size_t keys_begin = m_ObjectIndex.GetKeys().size();
+        index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
         index.m_AnnotLocationIndex = 0;
@@ -646,23 +668,18 @@ void CSeq_annot_Info::x_InitGraphKeys(void)
                     index.m_HandleRange.Reset();
                 }
 
-                m_ObjectIndex.AddMap(key, index);
+                x_Map(mapper, key, index);
             }
             ++index.m_AnnotLocationIndex;
         }
+        x_UpdateObjectKeys(info, keys_begin);
     }
 }
 
 
-void CSeq_annot_Info::x_InitAlignKeys(void)
+void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
 {
     _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetAlign().size());
-    if ( !m_ObjectIndex.GetKeys().empty() ) {
-        return;
-    }
-
-    m_ObjectIndex.SetName(GetName());
-
     size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(object_count);
 
@@ -670,13 +687,16 @@ void CSeq_annot_Info::x_InitAlignKeys(void)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
+    STSEAnnotObjectMapper mapper(tse, GetName());
+
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
         CAnnotObject_Info& info = *it;
         if ( info.IsRemoved() ) {
             continue;
         }
-        key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
+        size_t keys_begin = m_ObjectIndex.GetKeys().size();
+        index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
         index.m_AnnotLocationIndex = 0;
@@ -700,27 +720,22 @@ void CSeq_annot_Info::x_InitAlignKeys(void)
                     index.m_HandleRange.Reset();
                 }
 
-                m_ObjectIndex.AddMap(key, index);
+                x_Map(mapper, key, index);
             }
             ++index.m_AnnotLocationIndex;
         }
+        x_UpdateObjectKeys(info, keys_begin);
     }
 }
 
 
-void CSeq_annot_Info::x_InitLocsKeys(void)
+void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
 {
     _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetLocs().size());
-    if ( !m_ObjectIndex.GetKeys().empty() ) {
-        return;
-    }
-
     // Only one referenced location per annot is allowed
     if ( m_ObjectIndex.GetInfos().size() != 1) {
         return;
     }
-
-    m_ObjectIndex.SetName(GetName());
 
     CAnnotObject_Info& info = m_ObjectIndex.GetInfos().front();
     if ( info.IsRemoved() ) {
@@ -731,7 +746,10 @@ void CSeq_annot_Info::x_InitLocsKeys(void)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
+    STSEAnnotObjectMapper mapper(tse, GetName());
+
+    size_t keys_begin = m_ObjectIndex.GetKeys().size();
+    index.m_AnnotObject_Info = &info;
 
     info.GetMaps(hrmaps);
     index.m_AnnotLocationIndex = 0;
@@ -754,9 +772,10 @@ void CSeq_annot_Info::x_InitLocsKeys(void)
             else {
                 index.m_HandleRange.Reset();
             }
-            m_ObjectIndex.AddMap(key, index);
+            x_Map(mapper, key, index);
         }
     }
+    x_UpdateObjectKeys(info, keys_begin);
 }
 
 
@@ -772,15 +791,17 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
     
-    // remove annotation from TSE index
     SAnnotObject_Key key;
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
+    STSEAnnotObjectMapper mapper(tse, GetName());
+
+    index.m_AnnotObject_Info = &info;
 
     info.GetMaps(hrmaps);
     index.m_AnnotLocationIndex = 0;
+    size_t keys_begin = m_ObjectIndex.GetKeys().size();
     ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
         bool multi_id = hrmit->GetMap().size() > 1;
         ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
@@ -809,17 +830,124 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
                 index.m_HandleRange->GetData() = hr;
                 if ( hr.IsCircular() ) {
                     key.m_Range = hr.GetCircularRangeStart();
-                    m_ObjectIndex.AddMap(key, index);
+                    x_Map(mapper, key, index);
                     key.m_Range = hr.GetCircularRangeEnd();
                 }
             }
             else {
                 index.m_HandleRange.Reset();
             }
-            tse.x_MapAnnotObject(GetName(), key, index);
+            x_Map(mapper, key, index);
         }
         ++index.m_AnnotLocationIndex;
     }
+    x_UpdateObjectKeys(info, keys_begin);
+}
+
+
+void CSeq_annot_Info::x_RemapAnnotObject(CAnnotObject_Info& info)
+{
+    if ( x_DirtyAnnotIndex() ) {
+        return;
+    }
+
+    x_UnmapAnnotObject(info);
+    x_MapAnnotObject(info);
+
+    /*
+    if ( info.IsFeat() &&
+         info.GetFeatSubtype() != info.GetFeatFast()->GetSubtype() ) {
+        x_UnmapAnnotObject(info);
+        x_MapAnnotObject(info);
+        return;
+    }
+
+    SAnnotObject_Key key;
+    SAnnotObject_Index index;
+    vector<CHandleRangeMap> hrmaps;
+
+    index.m_AnnotObject_Info = &info;
+
+    info.GetMaps(hrmaps);
+    index.m_AnnotLocationIndex = 0;
+    size_t keys_begin = m_ObjectIndex.GetKeys().size();
+    ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+        bool multi_id = hrmit->GetMap().size() > 1;
+        ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+            const CHandleRange& hr = hrit->second;
+            key.m_Range = hr.GetOverlappingRange();
+            if ( key.m_Range.Empty() ) {
+                CNcbiOstrstream s;
+                const CSerialObject* obj = 0;
+                obj = dynamic_cast<const CSerialObject*>(info.GetObjectPointer());
+                if ( obj ) {
+                    s << MSerial_AsnText << *obj;
+                }
+                else {
+                    s << "unknown annotation";
+                }
+                ERR_POST("Empty region in "<<s.rdbuf());
+                continue;
+            }
+            key.m_Handle = hrit->first;
+            index.m_Flags = hr.GetStrandsFlag();
+            if ( multi_id ) {
+                index.SetMultiIdFlag();
+            }
+            if ( hr.HasGaps() ) {
+                index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
+                index.m_HandleRange->GetData() = hr;
+                if ( hr.IsCircular() ) {
+                    key.m_Range = hr.GetCircularRangeStart();
+                    x_Map(mapper, key, index);
+                    key.m_Range = hr.GetCircularRangeEnd();
+                }
+            }
+            else {
+                index.m_HandleRange.Reset();
+            }
+            x_Map(mapper, key, index);
+        }
+        ++index.m_AnnotLocationIndex;
+    }
+    x_UpdateObjectKeys(info, keys_begin);
+
+
+    CTSE_Info& tse = GetTSE_Info();
+    CDataSource::TAnnotLockWriteGuard guard;
+    if (HasDataSource())
+        guard.Guard(GetDataSource());
+    CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
+    
+    STSEAnnotObjectMapper mapper(tse, GetName());
+    // replace annotation indexes in TSE
+    
+    size_t old_begin, old_end;
+    if ( info.HasSingleKey() ) {
+        mapper.Unmap(info.GetKey(), info);
+        old_begin = old_end = 0;
+    }
+    else {
+        old_begin = info.GetKeysBegin();
+        old_end = info.GetKeysEnd()
+        for ( size_t i = old_begin; i < old_end; ++i ) {
+            mapper.Unmap(m_ObjectIndex.GetKey(i), info);
+        }
+    }
+    if ( new_count == 1 &&
+         m_ObjectIndex.GetKey(keys_begin).IsSingle() ) {
+        // one simple key, store it inside CAnnotObject_Info
+        info.SetKey(m_ObjectIndex.GetKey(keys_begin));
+        m_ObjectIndex.RemoveLastMap();
+        mapper.Map(info.GetKey(), info);
+    }
+    else {
+        info.SetKeys(keys_begin, keys_end);
+        for ( size_t i = keys_begin; i < keys_end; ++i ) {
+            mapper.Map(m_ObjectIndex.GetKey(i), info);
+        }
+    }
+    */
 }
 
 
@@ -835,22 +963,17 @@ void CSeq_annot_Info::x_UnmapAnnotObject(CAnnotObject_Info& info)
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
     
-    // remove annotation from TSE index
-    SAnnotObject_Key key;
-    key.m_AnnotObject_Info = &info;
-    vector<CHandleRangeMap> hrmaps;
-    info.GetMaps(hrmaps);
-    ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
-        ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
-            const CHandleRange& hr = hrit->second;
-            key.m_Range = hr.GetOverlappingRange();
-            if ( key.m_Range.Empty() ) {
-                continue;
-            }
-            key.m_Handle = hrit->first;
-            tse.x_UnmapAnnotObject(GetName(), key);
+    STSEAnnotObjectMapper mapper(tse, GetName());
+    
+    if ( info.HasSingleKey() ) {
+        mapper.Unmap(info.GetKey(), info);
+    }
+    else {
+        for ( size_t i = info.GetKeysBegin(); i < info.GetKeysEnd(); ++i ) {
+            mapper.Unmap(m_ObjectIndex.GetKey(i), info);
         }
     }
+    info.ResetKey();
 }
 
 
@@ -914,6 +1037,16 @@ namespace {
 }
 
 
+void CSeq_annot_Info::Update(TIndex index)
+{
+    _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
+    CAnnotObject_Info& info = m_ObjectIndex.GetInfos()[index];
+    _ASSERT(info.IsRegular());
+    _ASSERT(&info.GetSeq_annot_Info() == this);
+    x_RemapAnnotObject(info);
+}
+
+
 void CSeq_annot_Info::Remove(TIndex index)
 {
     _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
@@ -921,8 +1054,6 @@ void CSeq_annot_Info::Remove(TIndex index)
     _ASSERT(info.IsRegular());
     _ASSERT(&info.GetSeq_annot_Info() == this);
     x_UnmapAnnotObject(info);
-
-    // everything is const here so there are a lot of const_casts :(
 
     // remove annotation from Seq-annot object
     C_Data& data = m_Object->SetData();
@@ -1131,6 +1262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/09/18 14:29:29  vasilche
+ * Store annots indexing information to allow reindexing after modification.
+ *
  * Revision 1.42  2006/08/07 15:25:10  vasilche
  * Copy all annotations at editing start.
  *

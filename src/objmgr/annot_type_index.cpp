@@ -124,13 +124,6 @@ CAnnotType_Index::GetTypeIndex(const CAnnotObject_Info& info)
     return GetAnnotTypeRange(info.GetAnnotType());
 }
 
-CAnnotType_Index::TIndexRange
-CAnnotType_Index::GetTypeIndex(const SAnnotObject_Key& key)
-{
-    Initialize();
-    return GetTypeIndex(*key.m_AnnotObject_Info);
-}
-
 
 CAnnotType_Index::TIndexRange
 CAnnotType_Index::GetIndexRange(const SAnnotTypeSelector& sel)
@@ -187,6 +180,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2006/09/18 14:29:29  vasilche
+* Store annots indexing information to allow reindexing after modification.
+*
 * Revision 1.7  2006/02/14 15:47:41  grichenk
 * Added methods for collecting types of annotations.
 *
