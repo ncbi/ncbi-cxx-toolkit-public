@@ -1139,6 +1139,7 @@ bool CNcbiApplication::x_SetupLogFiles(void)
         x_FlushMemoryDiagStream();
         return true;
     }
+    m_LogFileName = kEmptyStr;
     return false;
 }
 
@@ -1200,6 +1201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.133  2006/09/18 18:12:06  grichenk
+ * Reset log file name if failed to open logs with default names.
+ *
  * Revision 1.132  2006/09/18 15:01:56  grichenk
  * Fixed log file creation. Check if log dir exists.
  *
