@@ -92,21 +92,31 @@ CODBC_RowResult::CODBC_RowResult(
     , m_EOR(false)
     , m_RowCountPtr( row_count )
 {
+    odbc::TSqlChar column_name_buff[eODBC_Column_Name_Size];
     m_NofCols = nof_cols;
     if(m_RowCountPtr) *m_RowCountPtr = 0;
 
-    SQLSMALLINT actual_name_size, nullable;
+    SQLSMALLINT actual_name_size;
+    SQLSMALLINT nullable;
 
     m_ColFmt = new SODBC_ColDescr[m_NofCols];
     for (unsigned int n = 0; n < m_NofCols; ++n) {
         // SQLDescribeCol takes a pointer to a buffer.
-        switch(SQLDescribeCol(GetHandle(), n + 1, m_ColFmt[n].ColumnName,
-                              ODBC_COLUMN_NAME_SIZE, &actual_name_size,
-                              &m_ColFmt[n].DataType, &m_ColFmt[n].ColumnSize,
-                              &m_ColFmt[n].DecimalDigits, &nullable)) {
+        switch(SQLDescribeCol(GetHandle(),
+                              n + 1,
+                              column_name_buff,
+                              eODBC_Column_Name_Size * sizeof(odbc::TSqlChar),
+                              &actual_name_size,
+                              &m_ColFmt[n].DataType,
+                              &m_ColFmt[n].ColumnSize,
+                              &m_ColFmt[n].DecimalDigits,
+                              &nullable)) {
         case SQL_SUCCESS_WITH_INFO:
             ReportErrors();
         case SQL_SUCCESS:
+            m_ColFmt[n].ColumnName = 
+                CODBCString(column_name_buff, 
+                            actual_name_size / sizeof(odbc::TSqlChar)).AsUTF8();
             continue;
         case SQL_ERROR:
             ReportErrors();
@@ -138,7 +148,7 @@ unsigned int CODBC_RowResult::NofItems() const
 
 const char* CODBC_RowResult::ItemName(unsigned int item_num) const
 {
-    return item_num < m_NofCols ? (char*)m_ColFmt[item_num].ColumnName : 0;
+    return item_num < m_NofCols ? m_ColFmt[item_num].ColumnName.c_str() : 0;
 }
 
 
@@ -301,7 +311,7 @@ bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
                 f = sizeof(buffer)-1;
             }
 
-            f = f/2;
+            f = f / sizeof(wchar_t);
 
             string encoded_value = CODBCString(buffer, f).AsUTF8();
             val->Append(encoded_value.c_str(), encoded_value.size());
@@ -751,9 +761,10 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     int outlen;
 
     switch(m_ColFmt[m_CurrItem].DataType) {
-#ifdef HAVE_WSTRING
     case SQL_WCHAR:
-    case SQL_WVARCHAR:{
+    case SQL_WVARCHAR:
+#ifdef HAVE_WSTRING
+    {
         wchar_t buffer[4*1024];
 
         outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
@@ -887,8 +898,9 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         }
     }
 
+    case SQL_WLONGVARCHAR:
 #ifdef HAVE_WSTRING
-    case SQL_WLONGVARCHAR: {
+    {
         CDB_Text* val = new CDB_Text;
 
         // Code below looks strange, but it completely matches original logic.
@@ -952,7 +964,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
 
     if(is_null) *is_null= false;
 
-    switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, buffer_size, &f)) {
+    switch(SQLGetData(GetHandle(), m_CurrItem + 1, SQL_C_BINARY, buffer, buffer_size, &f)) {
     case SQL_SUCCESS_WITH_INFO:
         switch(f) {
         case SQL_NO_TOTAL:
@@ -1023,11 +1035,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         }
     }
 
-#ifdef UNICODE
-    string base_table = CODBCString(buffer).AsUTF8();
-#else
     string base_table = CODBCString(buffer, odbc::DefStrEncoding).AsUTF8();
-#endif
 
     switch(SQLColAttribute(GetHandle(), item_no + 1,
                            SQL_DESC_BASE_COLUMN_NAME,
@@ -1047,11 +1055,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         }
     }
 
-#ifdef UNICODE
-    string base_column = CODBCString(buffer).AsUTF8();
-#else
     string base_column = CODBCString(buffer, odbc::DefStrEncoding).AsUTF8();
-#endif
 
     SQLLEN column_type = 0;
     switch(SQLColAttribute(GetHandle(), item_no + 1,
@@ -1394,6 +1398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/09/18 15:35:39  ssikorsk
+ * Convert string to UTF8 after a call to SQLDescribeCol.
+ *
  * Revision 1.37  2006/09/14 13:47:51  ucko
  * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
  *
