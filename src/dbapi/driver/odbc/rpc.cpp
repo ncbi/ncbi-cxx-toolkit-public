@@ -68,14 +68,14 @@ bool CODBC_RPCCmd::Send()
 
     // make a language command
     string main_exec_query("declare @STpROCrETURNsTATUS int;\nexec @STpROCrETURNsTATUS=");
-    main_exec_query+= m_Query;
+    main_exec_query += m_Query;
     string param_result_query;
 
     CMemPot bindGuard;
     string q_str;
 
     if(m_Params.NofParams() > 0) {
-        SQLLEN* indicator= (SQLLEN*)
+        SQLLEN* indicator = (SQLLEN*)
                 bindGuard.Alloc(m_Params.NofParams() * sizeof(SQLLEN));
 
         if (!x_AssignParams(q_str, main_exec_query, param_result_query,
@@ -88,22 +88,22 @@ bool CODBC_RPCCmd::Send()
         }
     }
 
-   if(NeedToRecompile()) main_exec_query+= " with recompile";
+   if(NeedToRecompile()) main_exec_query += " with recompile";
 
-   q_str+= main_exec_query + ";\nselect STpROCrETURNsTATUS=@STpROCrETURNsTATUS";
+   q_str += main_exec_query + ";\nselect STpROCrETURNsTATUS=@STpROCrETURNsTATUS";
    if(!param_result_query.empty()) {
-       q_str+= ";\nselect " + param_result_query;
+       q_str += ";\nselect " + param_result_query;
    }
 
     switch(SQLExecDirect(GetHandle(), CODBCString(q_str, odbc::DefStrEncoding), SQL_NTS)) {
     case SQL_SUCCESS:
-        m_hasResults= true;
+        m_hasResults = true;
         break;
 
     case SQL_NO_DATA:
-        m_hasResults= true; /* this is a bug in SQLExecDirect it returns SQL_NO_DATA if
+        m_hasResults = true; /* this is a bug in SQLExecDirect it returns SQL_NO_DATA if
                                status result is the only result of RPC */
-        m_RowCount= 0;
+        m_RowCount = 0;
         break;
 
     case SQL_ERROR:
@@ -117,7 +117,7 @@ bool CODBC_RPCCmd::Send()
 
     case SQL_SUCCESS_WITH_INFO:
         ReportErrors();
-        m_hasResults= true;
+        m_hasResults = true;
         break;
 
     case SQL_STILL_EXECUTING:
@@ -131,7 +131,7 @@ bool CODBC_RPCCmd::Send()
         }
 
     case SQL_INVALID_HANDLE:
-        m_HasFailed= true;
+        m_HasFailed = true;
         {
             string err_message = "The statement handler is invalid (memory corruption suspected)" +
                 GetDiagnosticInfo();
@@ -192,7 +192,7 @@ CDB_Result* CODBC_RPCCmd::Result()
     if (m_Res) {
         delete m_Res;
         m_Res = 0;
-        m_hasResults= xCheck4MoreResults();
+        m_hasResults = xCheck4MoreResults();
     }
 
     if ( !m_WasSent ) {
@@ -201,11 +201,11 @@ CDB_Result* CODBC_RPCCmd::Result()
     }
 
     if(!m_hasResults) {
-        m_WasSent= false;
+        m_WasSent = false;
         return 0;
     }
 
-    SQLSMALLINT nof_cols= 0;
+    SQLSMALLINT nof_cols = 0;
     char n_buff[64];
 
     while(m_hasResults) {
@@ -219,7 +219,7 @@ CDB_Result* CODBC_RPCCmd::Result()
                      "SQLRowCount failed", 420013);
 
             m_RowCount = rc;
-            m_hasResults= xCheck4MoreResults();
+            m_hasResults = xCheck4MoreResults();
             continue;
         }
 
@@ -230,14 +230,14 @@ CDB_Result* CODBC_RPCCmd::Result()
                      "SQLColAttribute failed", 420015);
 
             if(strcmp(n_buff, "STpROCrETURNsTATUS") == 0) {//this is a status result
-                m_HasStatus= true;
-                m_Res= new CODBC_StatusResult(*this);
+                m_HasStatus = true;
+                m_Res = new CODBC_StatusResult(*this);
             }
         }
         if(!m_Res) {
             if(m_HasStatus) {
-                m_HasStatus= false;
-                m_Res= new CODBC_ParamResult(*this, nof_cols);
+                m_HasStatus = false;
+                m_Res = new CODBC_ParamResult(*this, nof_cols);
             }
             else {
                 m_Res = new CODBC_RowResult(*this, nof_cols, &m_RowCount);
@@ -260,7 +260,7 @@ void CODBC_RPCCmd::DumpResults()
 {
     CDB_Result* dbres;
     while(m_WasSent) {
-        dbres= Result();
+        dbres = Result();
         if(dbres) {
             if(GetConnection().GetResultProcessor()) {
                 GetConnection().GetResultProcessor()->ProcessResult(*dbres);
@@ -301,183 +301,19 @@ CODBC_RPCCmd::~CODBC_RPCCmd()
 bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
                                    CMemPot& bind_guard, SQLLEN* indicator)
 {
-    char p_nm[16], tbuf[32];
+    char p_nm[16];
     // check if we do have a named parameters (first named - all named)
-    bool param_named= !m_Params.GetParamName(0).empty();
-    SQLRETURN rc;
+    bool param_named = !m_Params.GetParamName(0).empty();
 
     for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
         if(m_Params.GetParamStatus(n) == 0) continue;
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
-        const char*   type;
 
-        switch (param.GetType()) {
-        case eDB_Int: {
-            CDB_Int& val = dynamic_cast<CDB_Int&> (param);
-            type = "int";
-            indicator[n] = 4;
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_SLONG,
-                             SQL_INTEGER, 4, 0, val.BindVal(), 4, indicator + n);
-            break;
-        }
-        case eDB_SmallInt: {
-            CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
-            type = "smallint";
-            indicator[n] = 2;
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_SSHORT,
-                             SQL_SMALLINT, 2, 0, val.BindVal(), 2, indicator + n);
-            break;
-        }
-        case eDB_TinyInt: {
-            CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
-            type = "tinyint";
-            indicator[n] = 1;
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_UTINYINT,
-                             SQL_TINYINT, 1, 0, val.BindVal(), 1, indicator + n);
-            break;
-        }
-        case eDB_BigInt: {
-            CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
-            type = "numeric";
-            indicator[n] = 8;
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_SBIGINT,
-                             SQL_NUMERIC, 18, 0, val.BindVal(), 18, indicator + n);
-
-            break;
-        }
-        case eDB_Char: {
-            CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-            indicator[n] = SQL_NTS;
-#ifdef UNICODE
-            type = "nvarchar(255)";
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
-                             SQL_WVARCHAR, 255, 0, (void*)val.AsUnicode(odbc::DefStrEncoding), 256 * 2, indicator + n);
-#else
-            type = "varchar(255)";
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                             SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator + n);
-#endif
-            break;
-        }
-        case eDB_VarChar: {
-            CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-            indicator[n] = SQL_NTS;
-#ifdef UNICODE
-            type = "nvarchar(255)";
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
-                             SQL_WVARCHAR, 255, 0, (void*)val.AsUnicode(odbc::DefStrEncoding), 256 * 2, indicator + n);
-#else
-            type = "varchar(255)";
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                             SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator + n);
-#endif
-            break;
-        }
-        case eDB_LongChar: {
-            CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-            indicator[n] = SQL_NTS;
-            type = tbuf;
-#ifdef UNICODE
-            sprintf(tbuf,"nvarchar(%d)", val.Size());
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
-                             SQL_WVARCHAR, val.Size(), 0, (void*)val.AsUnicode(odbc::DefStrEncoding), val.Size() * 2, indicator + n);
-#else
-            sprintf(tbuf,"varchar(%d)", val.Size());
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                             SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.Size(), indicator + n);
-#endif
-            break;
-        }
-        case eDB_Binary: {
-            CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-            type = "varbinary(255)";
-            indicator[n] = val.Size();
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
-                             SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator + n);
-            break;
-        }
-        case eDB_VarBinary: {
-            CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-            type = "varbinary(255)";
-            indicator[n] = val.Size();
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
-                             SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator + n);
-            break;
-        }
-        case eDB_LongBinary: {
-            CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-            sprintf(tbuf,"varbinary(%d)", val.Size());
-            type = tbuf;
-            indicator[n] = val.DataSize();
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
-                             SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator + n);
-            break;
-        }
-        case eDB_Float: {
-            CDB_Float& val = dynamic_cast<CDB_Float&> (param);
-            type = "real";
-            indicator[n] = 4;
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_FLOAT,
-                             SQL_REAL, 4, 0, val.BindVal(), 4, indicator + n);
-            break;
-        }
-        case eDB_Double: {
-            CDB_Double& val = dynamic_cast<CDB_Double&> (param);
-            type = "float";
-            indicator[n] = 8;
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_DOUBLE,
-                             SQL_FLOAT, 8, 0, val.BindVal(), 8, indicator + n);
-            break;
-        }
-        case eDB_SmallDateTime: {
-            CDB_SmallDateTime& val = dynamic_cast<CDB_SmallDateTime&> (param);
-            type = "smalldatetime";
-            SQL_TIMESTAMP_STRUCT* ts = 0;
-            if(!val.IsNULL()) {
-                ts = (SQL_TIMESTAMP_STRUCT*)bind_guard.Alloc(sizeof(SQL_TIMESTAMP_STRUCT));
-                const CTime& t = val.Value();
-                ts->year = t.Year();
-                ts->month = t.Month();
-                ts->day = t.Day();
-                ts->hour = t.Hour();
-                ts->minute = t.Minute();
-                ts->second = 0;
-                ts->fraction = 0;
-                indicator[n] = sizeof(SQL_TIMESTAMP_STRUCT);
-            }
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
-                             SQL_TYPE_TIMESTAMP, 16, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT),
-                             indicator + n);
-            break;
-        }
-        case eDB_DateTime: {
-            CDB_DateTime& val = dynamic_cast<CDB_DateTime&> (param);
-            type = "datetime";
-            SQL_TIMESTAMP_STRUCT* ts = 0;
-            if(!val.IsNULL()) {
-                ts= (SQL_TIMESTAMP_STRUCT*)bind_guard.Alloc(sizeof(SQL_TIMESTAMP_STRUCT));
-                const CTime& t = val.Value();
-                ts->year = t.Year();
-                ts->month = t.Month();
-                ts->day = t.Day();
-                ts->hour = t.Hour();
-                ts->minute = t.Minute();
-                ts->second = t.Second();
-                ts->fraction = t.NanoSecond()/1000000;
-                ts->fraction *= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
-                indicator[n] = sizeof(SQL_TIMESTAMP_STRUCT);
-            }
-            rc = SQLBindParameter(GetHandle(), n + 1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
-                             SQL_TYPE_TIMESTAMP, 23, 3, ts, sizeof(SQL_TIMESTAMP_STRUCT),
-                             indicator + n);
-            break;
-        }
-        default:
+        const string type = Type2String(param);
+        if (!BindParam_ODBC(param, bind_guard, indicator, n)) {
             return false;
         }
-
-        CheckSIE(rc, "SQLBindParameter failed", 420066);
 
         q_exec += n ? ',':' ';
 
@@ -546,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/09/18 15:34:30  ssikorsk
+ * Redesigned CODBC_RPCCmd::x_AssignParams using BindParam_ODBC.
+ *
  * Revision 1.31  2006/09/13 20:09:25  ssikorsk
  * Revamp code to support  unicode version of ODBC API.
  *
