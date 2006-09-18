@@ -210,15 +210,18 @@ SPHIQueryInfoCopy(SPHIQueryInfo* pat_info);
  * @param location Segments in the query sequence where to look for 
  *                 pattern [in]
  * @param is_dna Is this a nucleotide sequence? [in]
- * @param pattern_info Structure containing pattern occurrences. Must be 
- *                     allocated before this call. [out]
+ * @param query_info Used to stort pattern occurrences and get length 
+ *                     of query (for error checking) [out]
+ * @return a negative number is an unknown error, INT4_MAX indicates the
+ *       pattern (illegally) covered the entire query, other non-negative numbers
+ *       indicate the nubmer of pattern occurrences found.
  */
 NCBI_XBLAST_EXPORT
 Int4 PHIGetPatternOccurrences(const SPHIPatternSearchBlk * pattern_blk,
                               const BLAST_SequenceBlk    * query,
                               const BlastSeqLoc          * location, 
                               Boolean                      is_dna,
-                              SPHIQueryInfo              * pattern_info);
+                              BlastQueryInfo*             query_info);
 
 
 #ifdef __cplusplus

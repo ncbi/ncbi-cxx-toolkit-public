@@ -840,11 +840,19 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
     
     /* If pattern is not found in query, return failure status. */
     num_patterns = PHIGetPatternOccurrences(pattern_blk, query, lookup_segments, kIsNa,
-                                  query_info->pattern_info);
+                                  query_info);
     if (num_patterns == 0)
     {
        char buffer[512]; 
        sprintf(buffer, "The pattern %s was not found in the query.", pattern_blk->pattern);
+       if (blast_message)
+           Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, buffer);
+       return -1;
+    }
+    else if (num_patterns == INT4_MAX)
+    {
+       char buffer[512]; 
+       sprintf(buffer, "The pattern (%s) may not cover the entire query.", pattern_blk->pattern);
        if (blast_message)
            Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, buffer);
        return -1;
