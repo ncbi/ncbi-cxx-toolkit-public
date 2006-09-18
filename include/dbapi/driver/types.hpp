@@ -237,6 +237,9 @@ public:
     static const char* GetTypeName(EDB_Type db_type);
 
 protected:
+    void SetNULL(bool flag = true) { m_Null = flag; }
+
+private:
     bool m_Null;
 };
 
@@ -273,12 +276,12 @@ public:
     CDB_Int(const Int4& i) : CDB_Object(false), m_Val(i)  { return; }
 
     CDB_Int& operator= (const Int4& i) {
-        m_Null = false;
+        SetNULL(false);
         m_Val  = i;
         return *this;
     }
 
-    Int4  Value()   const  { return m_Null ? 0 : m_Val; }
+    Int4  Value()   const  { return IsNULL() ? 0 : m_Val; }
     void* BindVal() const  { return (void*) &m_Val; }
 
     virtual EDB_Type    GetType() const;
@@ -298,12 +301,12 @@ public:
     CDB_SmallInt(const Int2& i) : CDB_Object(false), m_Val(i)  { return; }
 
     CDB_SmallInt& operator= (const Int2& i) {
-        m_Null = false;
+        SetNULL(false);
         m_Val = i;
         return *this;
     }
 
-    Int2  Value()   const  { return m_Null ? 0 : m_Val; }
+    Int2  Value()   const  { return IsNULL() ? 0 : m_Val; }
     void* BindVal() const  { return (void*) &m_Val; }
 
     virtual EDB_Type    GetType() const;
@@ -323,12 +326,12 @@ public:
     CDB_TinyInt(const Uint1& i) : CDB_Object(false), m_Val(i)  { return; }
 
     CDB_TinyInt& operator= (const Uint1& i) {
-        m_Null = false;
+        SetNULL(false);
         m_Val = i;
         return *this;
     }
 
-    Uint1 Value()   const  { return m_Null ? 0 : m_Val; }
+    Uint1 Value()   const  { return IsNULL() ? 0 : m_Val; }
     void* BindVal() const  { return (void*) &m_Val; }
 
     virtual EDB_Type    GetType() const;
@@ -348,12 +351,12 @@ public:
     CDB_BigInt(const Int8& i) : CDB_Object(false), m_Val(i)  { return; }
 
     CDB_BigInt& operator= (const Int8& i) {
-        m_Null = false;
+        SetNULL(false);
         m_Val = i;
         return *this;
     }
 
-    Int8 Value() const  { return m_Null ? 0 : m_Val; }
+    Int8 Value() const  { return IsNULL() ? 0 : m_Val; }
     void* BindVal() const  { return (void*) &m_Val; }
 
 
@@ -390,17 +393,17 @@ public:
     // enc - expected source string encoding.
     const wchar_t*  AsUnicode(EEncoding enc) const
     {
-        return m_Null ? NULL : m_WString.AsUnicode(enc).c_str();
+        return IsNULL() ? NULL : m_WString.AsUnicode(enc).c_str();
     }
 #endif
 
     const char* Value(void) const
     {
-        return m_Null ? 0 : static_cast<const char*>(m_WString);
+        return IsNULL() ? 0 : static_cast<const char*>(m_WString);
     }
     size_t Size(void) const
     {
-        return m_Null ? 0 : m_WString.GetSymbolNum();
+        return IsNULL() ? 0 : m_WString.GetSymbolNum();
     }
 
 public:
@@ -444,7 +447,7 @@ public:
                           EEncoding enc = eEncoding_Unknown);
 
     //
-    const char* Value() const  { return m_Null ? 0 : m_Val;  }
+    const char* Value() const  { return IsNULL() ? 0 : m_Val;  }
     size_t      Size()  const  { return m_Size; }
 
     virtual EDB_Type    GetType() const;
@@ -482,7 +485,7 @@ public:
                   EEncoding enc = eEncoding_Unknown);
 
     //
-    const char* Value() const  { return m_Null ? 0 : m_Val; }
+    const char* Value() const  { return IsNULL() ? 0 : m_Val; }
     size_t      Size()  const  { return m_Size; }
 
     virtual EDB_Type    GetType() const;
@@ -523,9 +526,9 @@ public:
                   EEncoding enc = eEncoding_Unknown);
 
     //
-    const char* Value() const  { return m_Null ? 0 : m_Val; }
+    const char* Value() const  { return IsNULL() ? 0 : m_Val; }
     size_t      Size()  const  { return m_Size; }
-    size_t  DataSize()  const  { return m_Null? 0 : strlen(m_Val); }
+    size_t  DataSize()  const  { return IsNULL() ? 0 : strlen(m_Val); }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -549,8 +552,8 @@ public:
     void SetValue(const void* v, size_t l);
 
     //
-    const void* Value() const  { return m_Null ? 0 : (void*) m_Val; }
-    size_t      Size()  const  { return m_Null ? 0 : m_Size; }
+    const void* Value() const  { return IsNULL() ? 0 : (void*) m_Val; }
+    size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -577,7 +580,7 @@ public:
     CDB_Binary& operator= (const CDB_Binary& v);
 
     //
-    const void* Value() const  { return m_Null ? 0 : (void*) m_Val; }
+    const void* Value() const  { return IsNULL() ? 0 : (void*) m_Val; }
     size_t      Size()  const  { return m_Size; }
 
     virtual EDB_Type    GetType() const;
@@ -604,7 +607,7 @@ public:
     CDB_LongBinary& operator= (const CDB_LongBinary& v);
 
     //
-    const void* Value() const  { return m_Null ? 0 : (void*) m_Val; }
+    const void* Value() const  { return IsNULL() ? 0 : (void*) m_Val; }
     size_t      Size()  const  { return m_Size; }
     size_t  DataSize()  const  { return m_DataSize; }
 
@@ -629,7 +632,7 @@ public:
 
     CDB_Float& operator= (const float& i);
 
-    float Value()   const { return m_Null ? 0 : m_Val; }
+    float Value()   const { return IsNULL() ? 0 : m_Val; }
     void* BindVal() const { return (void*) &m_Val; }
 
     virtual EDB_Type    GetType() const;
@@ -651,7 +654,7 @@ public:
     CDB_Double& operator= (const double& i);
 
     //
-    double Value()   const  { return m_Null ? 0 : m_Val; }
+    double Value()   const  { return IsNULL() ? 0 : m_Val; }
     void*  BindVal() const  { return (void*) &m_Val; }
 
     virtual EDB_Type    GetType() const;
@@ -785,7 +788,7 @@ public:
     CDB_Bit& operator= (const int& i);
     CDB_Bit& operator= (const bool& i);
 
-    int   Value()   const  { return m_Null ? 0 : (int) m_Val; }
+    int   Value()   const  { return IsNULL() ? 0 : (int) m_Val; }
     void* BindVal() const  { return (void*) &m_Val; }
 
     virtual EDB_Type    GetType() const;
@@ -853,6 +856,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/09/18 15:20:19  ssikorsk
+ * Made CDB_Object::m_Null private;
+ * Added protected method CDB_Object::SetNULL;
+ *
  * Revision 1.24  2006/09/14 13:47:50  ucko
  * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
  *
