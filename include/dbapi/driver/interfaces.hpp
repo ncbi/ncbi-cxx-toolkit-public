@@ -414,8 +414,10 @@ public:
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
 
-    unsigned int GetLoginTimeout (void) const { return m_LoginTimeout; }
-    unsigned int GetTimeout      (void) const { return m_Timeout;      }
+    /// Methods below may be overrided in order to return a value taken directly
+    /// from the API.
+    virtual unsigned int GetLoginTimeout(void) const { return m_LoginTimeout; }
+    virtual unsigned int GetTimeout     (void) const { return m_Timeout;      }
 
     /// Set maximal size for Text and Image objects. Text and Image objects
     /// exceeding this size will be truncated.
@@ -655,6 +657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/09/18 14:53:00  ssikorsk
+ * Made GetLoginTimeout/GetTimeout virtual.
+ *
  * Revision 1.54  2006/09/13 19:33:19  ssikorsk
  * Removed mutex from I_DriverContext;
  *
