@@ -542,18 +542,10 @@ Blast_EntropyOldFreqNewContext(double * entropy,
 }
 
 
-/**
- * Convert a matrix of target frequencies for the ARND alphabet of
- * true amino acids to a set of target frequencies for the NCBIstdaa
- * alphabet, filling in value for the two-character ambiguities (but
- * not X).
- *
- * @param StdFreq      frequencies in the NCBIstdaa alphabet [output]
- * @param StdAlphsize  the size of the NCBIstdaa alphabet [input]
- * @param freq         frequencies in the ARND alphabet [input]
- */
-static void
-s_TrueAaToStdTargetFreqs(double ** StdFreq, int StdAlphsize, double ** freq)
+/* Documented in composition_adjustment.h. */
+void
+Blast_TrueAaToStdTargetFreqs(double ** StdFreq, int StdAlphsize,
+                             double ** freq)
 {
     /* Note I'm using a rough convention for this routine that uppercase
      * letters refer to quantities in the standard (larger) alphabet
@@ -596,6 +588,9 @@ s_TrueAaToStdTargetFreqs(double ** StdFreq, int StdAlphsize, double ** freq)
             /* Set values for two-character ambiguities */
             StdFreq[A][eBchar] = StdFreq[A][eDchar] + StdFreq[A][eNchar];
             StdFreq[A][eZchar] = StdFreq[A][eEchar] + StdFreq[A][eQchar];
+            if (StdAlphsize > eJchar) {
+                StdFreq[A][eJchar] = StdFreq[A][eIchar] + StdFreq[A][eLchar];
+            }
         }
     }
     /* Add rows to set values for two-character ambiguities */
@@ -604,6 +599,11 @@ s_TrueAaToStdTargetFreqs(double ** StdFreq, int StdAlphsize, double ** freq)
 
     memcpy(StdFreq[eZchar], StdFreq[eEchar], StdAlphsize * sizeof(double));
     Nlm_AddVectors(StdFreq[eZchar], StdAlphsize, 1.0, StdFreq[eQchar]);
+
+    if (StdAlphsize > eJchar) {
+        memcpy(StdFreq[eJchar],StdFreq[eIchar], StdAlphsize * sizeof(double));
+        Nlm_AddVectors(StdFreq[eJchar], StdAlphsize, 1.0, StdFreq[eLchar]);
+    }
 }
 
 
@@ -785,7 +785,7 @@ s_ScoresStdAlphabet(int ** Matrix, int Alphsize,
     s_UnpackLetterProbs(ColProb, Alphsize, col_prob);
     s_SetPairAmbigProbsToSum(ColProb, Alphsize);
 
-    s_TrueAaToStdTargetFreqs(Scores, Alphsize, target_freq);
+    Blast_TrueAaToStdTargetFreqs(Scores, Alphsize, target_freq);
     Blast_CalcFreqRatios(Scores, Alphsize, RowProb, ColProb);
     Blast_FreqRatioToScore(Scores, Alphsize, Alphsize, Lambda);
     s_SetXUOScores(Scores, Alphsize, RowProb, ColProb);

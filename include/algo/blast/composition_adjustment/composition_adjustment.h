@@ -355,6 +355,22 @@ int Blast_EntropyOldFreqNewContext(double * entropy, double * Lambda,
                                    const double col_prob[]);
 
 /**
+ * Convert a matrix of target frequencies for the ARND alphabet of
+ * true amino acids to a set of target frequencies for the NCBIstdaa
+ * alphabet, filling in value for the two-character ambiguities (but
+ * not X).
+ *
+ * @param StdFreq      frequencies in the NCBIstdaa alphabet [output]
+ * @param StdAlphsize  the size of the NCBIstdaa alphabet [input]
+ * @param freq         frequencies in the ARND alphabet [input]
+ */
+NCBI_XBLAST_EXPORT
+void
+Blast_TrueAaToStdTargetFreqs(double ** StdFreq, int StdAlphsize,
+                             double ** freq);
+
+
+/**
  * Convert a matrix of frequency ratios to a matrix of scores.
  * @param matrix            the matrix
  * @param rows              number of rows in the matrix
