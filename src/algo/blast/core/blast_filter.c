@@ -517,6 +517,25 @@ BlastMaskLoc* BlastMaskLocNew(Int4 total)
     return retval;
 }
 
+BlastMaskLoc* BlastMaskLocDup(const BlastMaskLoc* mask_loc)
+{
+    BlastMaskLoc* retval = NULL;
+    Int4 index = 0;
+
+    if ( !mask_loc ) {
+        return NULL;
+    }
+
+    retval = BlastMaskLocNew(mask_loc->total_size);
+
+    for (index = 0; index < mask_loc->total_size; index++) {
+        retval->seqloc_array[index] =
+            BlastSeqLocListDup(mask_loc->seqloc_array[index]);
+    }
+
+    return retval;
+}
+
 BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
 {
    Int4 index;
@@ -578,9 +597,11 @@ Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc,
             for (itr = frame_seqloc; itr; itr = itr->next) {
                 Int4 from, to;
                 SSeqRange* seq_range = itr->ssr;
+                /* masks should be 0-offset */
+                ASSERT(dna_length > seq_range->right);
                 if (frame < 0) {
                     from = (dna_length + frame - seq_range->right)/CODON_LENGTH;
-                    to = (dna_length + frame - seq_range->left)/CODON_LENGTH+1;
+                    to = (dna_length + frame - seq_range->left)/CODON_LENGTH;
                 } else {
                     from = (seq_range->left - frame + 1)/CODON_LENGTH;
                     to = (seq_range->right - frame + 1)/CODON_LENGTH;
