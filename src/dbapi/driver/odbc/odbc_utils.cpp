@@ -39,7 +39,17 @@ BEGIN_NCBI_SCOPE
 
 CODBCString::CODBCString(SQLCHAR* str,
                          EEncoding enc) :
-CWString(reinterpret_cast<const char*>(const_cast<const SQLCHAR*>(str)), string::npos, enc)
+    CWString(reinterpret_cast<const char*>(const_cast<const SQLCHAR*>(str)), string::npos, enc)
+{
+}
+
+
+CODBCString::CODBCString(SQLCHAR* str,
+                         SQLINTEGER size,
+                         EEncoding enc) :
+    CWString(reinterpret_cast<const char*>(const_cast<const SQLCHAR*>(str)),
+             static_cast<string::size_type>(size),
+             enc)
 {
 }
 
@@ -53,15 +63,24 @@ CODBCString::CODBCString(const char* str,
 
 
 #ifdef HAVE_WSTRING
-CODBCString::CODBCString(SQLWCHAR* str) :
+CODBCString::CODBCString(SQLWCHAR* str,
+                         EEncoding /*enc*/) :
     CWString(reinterpret_cast<const wchar_t*>(const_cast<const SQLWCHAR*>(str)))
 {
 }
 
 
 CODBCString::CODBCString(const wchar_t* str,
-                         wstring::size_type size) :
+                         wstring::size_type size,
+                         EEncoding /*enc*/) :
     CWString(str, size)
+{
+}
+
+
+CODBCString::CODBCString(const wstring& str,
+                         EEncoding /*enc*/) :
+    CWString(str)
 {
 }
 #endif
@@ -71,14 +90,6 @@ CODBCString::CODBCString(const string& str, EEncoding enc) :
     CWString(str, enc)
 {
 }
-
-
-#ifdef HAVE_WSTRING
-CODBCString::CODBCString(const wstring& str) :
-    CWString(str)
-{
-}
-#endif
 
 
 CODBCString::~CODBCString(void)
@@ -91,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/18 15:33:53  ssikorsk
+ * Added new constructors to CODBCString.
+ *
  * Revision 1.3  2006/09/14 13:47:51  ucko
  * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
  *
