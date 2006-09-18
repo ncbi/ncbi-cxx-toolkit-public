@@ -128,14 +128,6 @@ NCBI_XBLAST_EXPORT
 BlastSeqLoc*
 BlastSeqLocCombine(BlastSeqLoc* mask_loc, Int4 link_value);
 
-/** Deallocate memory for a BlastMaskLoc structure
- * as well as the BlastSeqLoc's pointed to.
- * @param mask_loc the object to be deleted [in]
- * @return NULL pointer
- */
-NCBI_XBLAST_EXPORT
-BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
-
 /** Allocate memory for a BlastMaskLoc.
  * @param total number of contexts for which SSeqLocs should be allocated 
  * (result of number of queries * number of contexts for given program) [in]
@@ -143,6 +135,26 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
 */
 NCBI_XBLAST_EXPORT
 BlastMaskLoc* BlastMaskLocNew(Int4 total);
+
+/** 
+ * @brief Perform a deep copy of the BlastMaskLoc structure passed to this
+ * function
+ * 
+ * @param mask_loc Source masking location structure [in]
+ * 
+ * @return Deep copy of its argument, or NULL if the argument was NULL or if
+ * not enough memory was available
+ */
+NCBI_XBLAST_EXPORT
+BlastMaskLoc* BlastMaskLocDup(const BlastMaskLoc* mask_loc);
+
+/** Deallocate memory for a BlastMaskLoc structure
+ * as well as the BlastSeqLoc's pointed to.
+ * @param mask_loc the object to be deleted [in]
+ * @return NULL pointer
+ */
+NCBI_XBLAST_EXPORT
+BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
 
 /** Given a BlastMaskLoc with an array of lists of DNA mask locations, 
  * substitutes that array by a new array of per-protein-frame mask location 
