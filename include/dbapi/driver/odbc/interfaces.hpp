@@ -74,9 +74,13 @@ BEGIN_SCOPE(odbc)
 
 #if defined(UNICODE)
     typedef SQLWCHAR TSqlChar;
+    typedef wstring::size_type TStrSize;
+    typedef wchar_t TChar;
     static const EEncoding DefStrEncoding = eEncoding_UTF8;
 #else
     typedef SQLCHAR TSqlChar;
+    typedef string::size_type TStrSize;
+    typedef char TChar;
     static const EEncoding DefStrEncoding = eEncoding_ISO8859_1;
 #endif
 
@@ -352,6 +356,13 @@ public:
     }
 
 protected:
+    string Type2String(const CDB_Object& param) const;
+    bool BindParam_ODBC(const CDB_Object& param,
+                        CMemPot& bind_guard,
+                        SQLLEN* indicator_base,
+                        unsigned int pos) const;
+
+protected:
     SQLLEN  m_RowCount;
     bool    m_WasSent;
     bool    m_HasFailed;
@@ -577,7 +588,15 @@ protected:
     virtual int  RowCount(void) const;
 
 private:
+    SQLHDBC GetHandle(void) const
+    {
+        return m_Cmd;
+    }
     bool x_AssignParams(void* p);
+    static int x_GetBCPDataType(EDB_Type type);
+    static size_t x_GetBCPDataSize(EDB_Type type);
+    static void* x_GetDataTerminator(EDB_Type type);
+    static void* x_GetDataPtr(EDB_Type type, void* pb);
 
     SQLHDBC m_Cmd;
     bool    m_WasBound;
@@ -688,9 +707,10 @@ private:
     bool              m_EOR;
     unsigned int      m_NofCols;
     unsigned int      m_CmdNum;
-#define ODBC_COLUMN_NAME_SIZE 80
+    enum {eODBC_Column_Name_Size = 80};
+
     typedef struct t_SODBC_ColDescr {
-        odbc::TSqlChar  ColumnName[ODBC_COLUMN_NAME_SIZE];
+        string          ColumnName;
         SQLULEN         ColumnSize;
         SQLSMALLINT     DataType;
         SQLSMALLINT     DecimalDigits;
@@ -812,6 +832,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/09/18 15:24:55  ssikorsk
+ * Added method BindParam_ODBC to CStatementBase;
+ * Added methods x_GetBCPDataType, x_GetBCPDataSize, x_GetDataTerminator, and
+ * x_GetDataPtr to CODBC_BCPInCmd;
+ *
  * Revision 1.46  2006/09/14 13:47:50  ucko
  * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
  *
