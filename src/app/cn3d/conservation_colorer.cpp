@@ -358,7 +358,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
     // block Z fit
     blockZFitColors.clear();
     for (b=blocks.begin(); b!=be; ++b) {
-        blockZFitColors[b->first].resize(nRows, Vector(0,0,0));
+        blockZFitColors[b->first].resize(nRows, GlobalColors()->Get(Colors::eConservationMap, 1.0));
         if (blockZFitScores.find(b->first) != blockZFitScores.end()) {  // if this column has scores
             for (row=0; row<nRows; ++row) {                             // normalize colors per column
                 float zScore = blockZFitScores[b->first][row];
@@ -383,7 +383,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
     // block row fit
     blockRowFitColors.clear();
     for (b=blocks.begin(); b!=be; ++b)
-        blockRowFitColors[b->first].resize(nRows, Vector(0,0,0));
+        blockRowFitColors[b->first].resize(nRows, GlobalColors()->Get(Colors::eConservationMap, 1.0));
     if (blocks.size() >= 2) {
         for (row=0; row<nRows; ++row) {
             if (blockRowFitScores.begin()->second[row] != kMin_Float) { // if this row has fit scores
@@ -447,6 +447,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2006/09/18 13:05:33  thiessen
+* tweak coloring in degenerate cases
+*
 * Revision 1.43  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
