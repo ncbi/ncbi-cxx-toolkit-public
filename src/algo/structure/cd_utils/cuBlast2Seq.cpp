@@ -174,36 +174,6 @@ bool CdBlaster::blast(NotifierFunction notifier)
 		totalBlasts = (int)((double)nrows * (((double)nrows-1)/2));
 	}
 	
-	//for obj-mgr interface
-	/*
-	TSeqLocVector AllSeqLocs;
-	AllSeqLocs.reserve(nrows);
-	CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-	for (int i = 0; i < nrows; i++)
-	{
-		CRef<CScope> scope(new CScope(*objmgr));
-		scope->AddDefaults();
-		CRef<CSeq_entry> entry;
-		m_ac->GetSeqEntryForRow(i, entry);
-		//CRef<CSeq_entry> entry(new CSeq_entry);
-		//entry->Assign(*entryRef);
-		scope->AddTopLevelSeqEntry(*entry);
-		CRef< CSeq_id > seqId = entry->SetSeq().SetId().front();
-		//seqId->Assign(*(entry->GetSeq().GetId().front()));
-		//m_ac->GetSeqIDForRow(i, seqId);
-		CRef< CSeq_loc > seqLoc;
-		if (m_useWhole)
-		{
-			seqLoc= new CSeq_loc;
-			seqLoc->SetWhole(*seqId);
-		}
-		else
-			seqLoc = new CSeq_loc(*seqId, m_ac->GetLowerBound(i), m_ac->GetUpperBound(i));
-		SSeqLoc ssloc(seqLoc, scope);
-		AllSeqLocs.push_back(ssloc);
-	}
-	*/
-	
 	CRef<CBlastAdvancedProteinOptionsHandle> options(new CBlastAdvancedProteinOptionsHandle);
 	options->SetEvalueThreshold(10.0);
 	//options->SetPercentIdentity(10.0);
@@ -218,29 +188,6 @@ bool CdBlaster::blast(NotifierFunction notifier)
 	
 	CRef< CSeq_align > nullRef;
 	m_scores.reserve(totalBlasts);
-	//use obj-mgr interface
-	//loop for query rows
-	/*
-	for (int qr = 0; qr < nrows-1; qr++)
-	{
-		TSeqLocVector seqLocVec;
-		for (int sr = qr + 1; sr < nrows; sr++)
-			seqLocVec.push_back(AllSeqLocs[sr]);
-		//int sz = seqLocVec.size();
-		CBl2Seq blaster(AllSeqLocs[qr],seqLocVec,*blastOptions);
-		//TSeqAlignVector hits = blaster.Run();
-		
-		blaster.PartialRun();
-		BlastHSPResults* hspHits = blaster.GetResults(); 
-		int batchSize = (nrows -1) - (qr + 1) + 1;
-		//int batchSize = seqLocVec.size();
-		numBlastsDone += batchSize;
-		notifier(numBlastsDone, totalBlasts);
-		//processBlastHits(hits);
-		processBlastHits(hspHits, batchSize);
-	}
-	*/
-	
 
 	// use objmgr-free interface
 	int numQueries = 0;
@@ -280,36 +227,6 @@ bool CdBlaster::blast(NotifierFunction notifier)
 	}
 	return true;
 }
-/*
-void CdBlaster::processBlastHits(BlastHSPResults* hits, int numSubjects)
-{
-	vector<int> scores(numSubjects, 0);
-	for (int i = 0; i < hits->num_queries; i++) 
-	{
-		//hits for one query against many subjects
-		BlastHitList *hitlist = hits->hitlist_array[i];
-		if (hitlist == NULL)
-			continue;
-		
-		for (int j = 0; j < hitlist->hsplist_count; j++) 
-		{
-			//hits for one query against one subject
-			BlastHSPList *hsplist = hitlist->hsplist_array[j];
-
-			int score = 0;
-			for (int k = 0; k < hsplist->hspcnt; k++) 
-			{
-				//one hit for one query against one subject
-				BlastHSP *hsp = hsplist->hsp_array[k];
-				if (hsp->score > score)
-					score = hsp->score;
-			}
-			scores[hsplist->oid] = score;
-		}
-	}
-	for (int k = 0; k < scores.size(); k++)
-		m_scores.push_back(scores[k]);
-}*/
 	
 int  CdBlaster::psiBlast()
 {
@@ -353,21 +270,9 @@ int  CdBlaster::psiBlast()
 	}
 	CRef<IQueryFactory> subject(new CObjMgrFree_QueryFactory(bioseqset));
 
-	// debugging
-	//string err;
-	//WriteASNToFile("debug_m_psiTargetPssm", *m_psiTargetPssm, false, &err);
-//	WriteASNToFile("debug_bioseqset", *bioseqset, false, &err);
-
 	CPsiBl2Seq blaster(m_psiTargetPssm, subject, options);
 	CRef<CSearchResults> hits = blaster.Run();
 
-	//debug
-	
-	//string err;
-	
-	//if (hits && !WriteASNToFile("psi-bl2seq_hits.txt", *(hits->GetSeqAlign()), false,&err))
-	//	cdLog::Printf(0, "Failed to write to %s because of %s\n", "hits", err.c_str());
-	//end of debug
 	const list< CRef< CSeq_align > >& seqAlignList = hits->GetSeqAlign()->Get();
 	assert (seqAlignList.size() == nrows);
 	for (list< CRef< CSeq_align > >::const_iterator cit = seqAlignList.begin(); cit != seqAlignList.end(); cit++)
@@ -384,51 +289,12 @@ CRef<CSeq_align> CdBlaster::getPairwiseBlastAlignement(int row1, int row2)
 
 double  CdBlaster::getPairwiseScore(int row1, int row2)
 {
-	// improved memory efficiency
 	return(m_scores[getCompositeIndex(row1, row2)]);
-
-	//double score = SCORE_WHEN_NO_SEQ_ALIGN;
-//	double score = 0.0;
-//	CRef< CSeq_align > sa = getPairwiseBlastAlignement(row1, row2);
-//	if (!sa.Empty())
-//	{
-		//debug
-		/*
-		int master = row1;
-		int slave = row2;
-		if (row1 > row2)
-		{
-			master = row2;
-			slave = row1;
-		}
-		const vector< CRef< CSeq_id > >& idVec = sa->GetSegs().GetDenseg().GetIds();
-		CRef< CBioseq > mseq, sseq;
-		m_ac->GetBioseqForRow(master, mseq);
-		m_ac->GetBioseqForRow(slave, sseq);
-		assert(CDUpdater::BioseqHasSeqId(*mseq,*(idVec[0])));
-		assert(CDUpdater::BioseqHasSeqId(*sseq,*(idVec[1])));*/
-
-//		sa->GetNamedScore("score", score);
-//	}/*
-//	else
-//		cdLog::Printf(0, "\nno hit for (%d, %d)\n", row1, row2);*/
-//	return score;
 }
 
 double  CdBlaster::getPairwiseEValue(int row1, int row2)
 {
-	// improved memory efficiency
 	return(m_evals[getCompositeIndex(row1, row2)]);
-
-//	double evalue = E_VAL_WHEN_NO_SEQ_ALIGN;
-//	CRef< CSeq_align > sa = getPairwiseBlastAlignement(row1, row2);
-//	if (!sa.Empty())
-//	{
-//		sa->GetNamedScore("e_value", evalue);
-//	}
-	/*else
-		cdLog::Printf(0, "\nno hit for (%d, %d)\n", row1, row2);*/
-//	return evalue;
 }
 
 double CdBlaster::getPsiBlastScore(int row)
@@ -439,8 +305,6 @@ double CdBlaster::getPsiBlastScore(int row)
 	{
 		sa->GetNamedScore("score", score);
 	}
-	/*else
-		cdLog::Printf(0, "\nno hit for (%d)\n", row);*/
 	return score;
 }
 
@@ -452,8 +316,6 @@ double CdBlaster::getPsiBlastEValue(int row)
 	{
 		sa->GetNamedScore("e_value", evalue);
 	}
-	/*else
-		cdLog::Printf(0, "\nno hit for (%d)\n", row);*/
 	return evalue;
 }
 
@@ -526,62 +388,20 @@ CRef< CBioseq > CdBlaster::truncateBioseq(int row)
 
 void CdBlaster::processBlastHits(int queryRow, CRef<CSearchResults> hits)
 {
-	//debug
-	
-	string err;
-	
-	if (hits && !WriteASNToFile("hits.txt", *(hits->GetSeqAlign()), false,&err))
-		LOG_POST("Failed to write to hits.txt because of "<<err);
-	//end of debug
 	const list< CRef< CSeq_align > >& seqAlignList = hits->GetSeqAlign()->Get();
 	assert (seqAlignList.size() == m_batchSizes[queryRow]);
 	for (list< CRef< CSeq_align > >::const_iterator cit = seqAlignList.begin(); cit != seqAlignList.end(); cit++)
 	{
-
-		// improving memory use.  save scores and evals instead of seq-aligns		
-//		m_alignments.push_back(extractOneSeqAlign(*cit));
 		CRef< CSeq_align > sa = extractOneSeqAlign(*cit);
-		double evalue = E_VAL_WHEN_NO_SEQ_ALIGN;
 		double score = 0.0;
 		if (!sa.Empty()) 
 		{
 			sa->GetNamedScore(m_scoreType, score);
 		}
-		//m_evals.push_back(evalue);
 		m_scores.push_back(score);
 	}
 }
-/*
-void CdBlaster::processBlastHits(TSeqAlignVector& hits)
-{
-	//int nrows = m_ac->GetNumRows();
-	//int sz = hits.size();
-	//cdLog::Printf(0, "hits size=%d\n", sz);
-	//for (int qr = 0; qr < nrows; qr++)
-	//{
-		const list< CRef< CSeq_align > >& seqAlignList = hits[0]->Get();
-		//int sr = 0;
-		for (list< CRef< CSeq_align > >::const_iterator cit = seqAlignList.begin(); cit != seqAlignList.end(); cit++)
-		{
-		//	if (sr > qr)
-		//	{
-				// improving memory use.  save scores and evals instead of seq-aligns		
-				// m_alignments.push_back(extractOneSeqAlign(*cit));
-				CRef< CSeq_align > sa = extractOneSeqAlign(*cit);
-				double evalue = E_VAL_WHEN_NO_SEQ_ALIGN;
-				double score = 0.0;
-				if (!sa.Empty()) 
-				{
-					//sa->GetNamedScore("e_value", evalue);
-					sa->GetNamedScore("score", score);
-				}
-				//m_evals.push_back(evalue);
-				m_scores.push_back(score);
-			//}
-			//sr++;
-		}
-	//}
-}*/
+
 //input seqAlign may actually contain CSeq_align_set
 CRef< CSeq_align > CdBlaster::extractOneSeqAlign(CRef< CSeq_align > seqAlign)
 {
@@ -622,17 +442,6 @@ int CdBlaster::getCompositeIndex(int query, int subject)
 	}
 	return comp;
 }
-/*
-CRef< CSeq_align > CdBlaster::remapSeqAlign(int query, int subject, CRef< CSeq_align > seqAlign)
-{
-	CRef< CSeq_align > saRef;
-	if (seqAlign.Empty())
-		return saRef;
-	cd_utils::BlockModelPair bmp(seqAlign);
-	bmp.getMaster().addOffset(m_offsets[query]);
-	bmp.getSlave().addOffset(m_offsets[subject]);
-	return bmp.toSeqAlign();
-}*/
 
 //  A couple functions to manage extensions at end of aligned range
 bool CdBlaster::IsFootprintValid(int from, int to, int len) {
