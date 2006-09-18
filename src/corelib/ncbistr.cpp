@@ -2224,10 +2224,16 @@ string CStringUTF8::AsSingleByteString(EEncoding encoding) const
 #if defined(HAVE_WSTRING)
 wstring CStringUTF8::AsUnicode(void) const
 {
+    TUnicodeSymbol maxw = (TUnicodeSymbol)numeric_limits<wchar_t>::max();
     wstring result;
     result.reserve( GetSymbolCount()+1 );
     for (const char* src = c_str(); *src; ++src) {
-        result.append(1, Decode(src));
+        TUnicodeSymbol ch = Decode(src);
+        if (ch > maxw) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "Failed to convert symbol to UTF16", 0);
+        }
+        result.append(1, ch);
     }
     return result;
 }
@@ -2541,6 +2547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.182  2006/09/18 15:09:36  gouriano
+ * Check numeric limits when converting UTF8 string to UNICODE
+ *
  * Revision 1.181  2006/09/11 13:07:53  gouriano
  * Added buffer validation into CStringUTF8
  *
