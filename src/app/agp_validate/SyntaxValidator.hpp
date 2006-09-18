@@ -226,6 +226,9 @@ protected:
   int prev_gap_type;
   string prev_line;
 
+  string prev_component_line;
+  int prev_component_line_num;
+
   int  prev_end;
   int  prev_part_num;
   int  prev_line_num;

@@ -169,7 +169,7 @@ bool CAgpSyntaxValidator::ValidateLine(
     if(!prev_line_error_occured) {
       AGP_POST( prev_line_num << ": " << prev_line);
     }
-    AGP_POST("\tWARNING: gap at the end of an object");
+    AGP_POST("\tWARNING: a gap at the end of an object");
   }
   if(last_validation) return m_LineErrorOccured;
 
@@ -227,6 +227,8 @@ bool CAgpSyntaxValidator::ValidateLine(
   }
   else {
     x_OnComponentLine(dl, text_line);
+    prev_component_line = text_line;
+    prev_component_line_num = dl.line_num;
   }
 
   ////
@@ -296,64 +298,22 @@ void CAgpSyntaxValidator::x_OnGapLine(
     error = true;
   }
 
-  //// Check gap context: is it a start of a new object,
-  //// does it follow another gap, is it the end of a scaffold
+  //// Check the gap context: is it a start of a new object,
+  //// does it follow another gap, is it the end of a scaffold.
   if(new_obj) { AGP_WARNING("Object begins with a gap"); }
-  if(IsGapType(prev_component_type)) {
+  else if(IsGapType(prev_component_type)) {
     // Previous line a gap.
     //AGP_POST( prev_line_num << ": " << prev_line);
     post_prev=true;
     AGP_WARNING("Two consequtive gap lines. There may be a gap at the end of "
     "a scaffold, two non scaffold-breaking gaps, etc");
-
-    /*
-    // Check the gap_type.
-    if(prev_gap_type == "fragment") {
-      // two gaps in a row
-
-      if (!new_obj) {
-        if (dl.gap_type == "fragment") {
-          AGP_WARNING("Two fragment gaps in a row.");
-        }
-        else {
-          // Current gap type is a scaffold boundary
-
-          // special error reporting mechanism since
-          // the error is on the previous line.
-          // Directly Log the error messages.
-          if(!prev_line_error_occured) {
-            AGP_POST( prev_line_num << ": " << prev_line);
-          }
-          AGP_POST("\tWARNING: "
-            "Next line is a scaffold-ending gap. "
-            "Current line is a fragment gap. "
-            "A Scaffold should not end with a gap."
-          );
-        }
-      }
-    }
-    else {
-      if (!new_obj) {
-        // Previous line is a a scafold gap
-        // This line is the start of a new scaffold
-        if (dl.gap_type == "fragment") {
-          // Scaffold starts with a fragment gap.
-          AGP_WARNING("Scaffold should not begin with a gap."
-            "(Previous line was a scaffold-ending gap.)" );
-        }
-        else {
-          // Current gap type is a scaffold boundary.
-          //  Two scaffold gaps in a row.
-          AGP_WARNING( "Two scaffold-ending gaps in a row.");
-        }
-      }
-    }
-    */
   }
   else if( endsScaffold ) {
     // 2006/08/28: Previous line is the last component of a scaffold
     m_ScaffoldCount++;
-    if(componentsInLastScaffold==1) m_SingletonCount++;
+    if(componentsInLastScaffold==1) {
+      m_SingletonCount++;
+    }
   }
   if( endsScaffold ) {
     componentsInLastScaffold=0;
@@ -451,14 +411,14 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   if( comp_start >= comp_end ) {
     int tmp = comp_end; comp_end = comp_start; comp_start = tmp;
   }
-  CRange<TSeqPos>  component_range(comp_start, comp_end);
+  TSeqRange component_range(comp_start, comp_end);
   TCompIdSpansPair value_pair(
     dl.component_id, TCompSpans(component_range)
   );
   pair<TCompId2Spans::iterator, bool> id_insert_result =
      m_CompId2Spans.insert(value_pair);
   if (id_insert_result.second == false) {
-    TCompSpans& collection = (id_insert_result.first)->second;
+    TCompSpans& spans = (id_insert_result.first)->second;
 
     // Need not check the span order for these:
     bool isDraft =
@@ -467,16 +427,16 @@ void CAgpSyntaxValidator::x_OnComponentLine(
       dl.component_type=="P";   // Pre Draft
     string str_details="";
 
-    if(collection.IntersectingWith(component_range)) {
+    if(spans.IntersectingWith(component_range)) {
       // To do: (try to) print both lines with overlapping spans
       str_details = "The span overlaps "
         "a previous span for this component.";
     }
     else if ( !isDraft) {
       if( ( dl.orientation=="+" &&
-            comp_start > (int)collection.GetToOpen() ) ||
+            comp_start > (int)spans.GetToOpen() ) ||
           ( dl.orientation=="-" &&
-            comp_end  < (int)collection.GetFrom() )
+            comp_end  < (int)spans.GetFrom() )
       ) {
         // A correct order.
       }
@@ -491,13 +451,13 @@ void CAgpSyntaxValidator::x_OnComponentLine(
         post_prev=true;
       }
       */
-      AGP_WARNING("Duplicate component id found.");
+      AGP_WARNING("Duplicate component id with non-draft type.");
     }
     if( str_details.size() ) {
       AGP_WARNING(str_details);
     }
 
-    collection.CombineWith(component_range);
+    spans.CombineWith(component_range);
   }
 
   //// Check if the line looks more like a gap
@@ -547,7 +507,7 @@ int CAgpSyntaxValidator::x_CheckRange(
     /* Need better means of finding a probable offending line(s).
     post_prev=true;
     */
-    AGP_ERROR( begin_name << " field overlaps the previous "
+    AGP_ERROR( begin_name << " field overlaps a previous "
       "line");
   }
   else if (end < begin) {

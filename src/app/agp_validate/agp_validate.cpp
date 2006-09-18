@@ -275,6 +275,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
           exit (0);
       }
       x_ValidateFile(istr);
+      args['#' + NStr::IntToString(i)].CloseFile();
     }
   }
 }
