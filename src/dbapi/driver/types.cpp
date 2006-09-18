@@ -219,7 +219,7 @@ void CWString::x_StringToUTF8(EEncoding str_enc) const
         if (m_Char) {
             m_UTF8String.Assign(m_Char, m_StringEncoding);
         } else {
-            m_UTF8String.clear();
+            m_UTF8String.erase();
         }
     }
 
@@ -242,7 +242,7 @@ void CWString::x_MakeString(EEncoding str_enc) const
         if (m_Char) {
             m_String.assign(m_Char);
         } else {
-            m_String.clear();
+            m_String.erase();
         }
         m_AvailableValueType |= eString;
     } else if (m_AvailableValueType & eUTF8String) {
@@ -260,7 +260,7 @@ void CWString::x_MakeString(EEncoding str_enc) const
             m_AvailableValueType |= eUTF8String;
             x_UTF8ToString(str_enc);
         } else {
-            m_String.clear();
+            m_String.erase();
             m_AvailableValueType |= eString;
         }
         x_MakeString(str_enc);
@@ -284,7 +284,7 @@ void CWString::x_MakeWString(EEncoding str_enc) const
         if (m_WChar) {
             m_WString.assign(m_WChar);
         } else {
-            m_WString.clear();
+            m_WString.erase();
         }
         m_AvailableValueType |= eWString;
     } else if (m_AvailableValueType & eUTF8String) {
@@ -299,7 +299,7 @@ void CWString::x_MakeWString(EEncoding str_enc) const
             x_StringToUTF8(str_enc);
             x_MakeWString(str_enc);
         } else {
-            m_WString.clear();
+            m_WString.erase();
             m_AvailableValueType |= eWString;
         }
     }
@@ -322,7 +322,7 @@ void CWString::x_MakeUTF8String(EEncoding str_enc) const
         if (m_WChar) {
             m_UTF8String = m_WChar;
         } else {
-            m_UTF8String.clear();
+            m_UTF8String.erase();
         }
         m_AvailableValueType |= eUTF8String;
 #endif
@@ -2181,6 +2181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/09/18 18:01:00  ucko
+ * erase() strings rather than clear()ing them for compatibility with GCC 2.95.
+ *
  * Revision 1.26  2006/09/18 15:26:37  ssikorsk
  * Improved implementation of CWString in case of empty/NULL strings.
  *
