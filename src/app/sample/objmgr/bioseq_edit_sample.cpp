@@ -397,8 +397,7 @@ public:
         SAnnotSelector sel(CSeqFeatData::e_not_set);
         sel.SetResolveAll();
         for (CFeat_CI feat_it(scope, seq_loc, sel); feat_it; ++feat_it) {
-            const CSeq_feat_Handle& fh = feat_it->GetSeq_feat_Handle();
-            fh.Remove();
+            CSeq_feat_EditHandle(feat_it->GetSeq_feat_Handle()).Remove();
             break;
         }
         m_BSeq->Assign(*bioseq_handle.GetCompleteObject());
@@ -766,6 +765,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/18 20:04:01  vasilche
+ * Avoid calling deprecated method.
+ *
  * Revision 1.3  2006/05/01 16:56:45  didenko
  * Attach SeqEntry edit command revamp
  *
