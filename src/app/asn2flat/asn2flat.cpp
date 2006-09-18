@@ -499,24 +499,22 @@ bool CAsn2FlatApp::HandleSeqID( const string& seq_id )
     scope->AddDefaults();
     CBioseq_Handle bsh = scope->GetBioseqHandle( id );
     if ( ! bsh ) {
+        ERR_POST(Fatal << "Unable to obtain data on ID \"" << seq_id.c_str() 
+          << "\"." );
     }
-    CConstRef<CSerialObject> reply_object;
-    reply_object = bsh.GetTopLevelEntry().GetCompleteSeq_entry();
-    
     
     //
     //  ... and use that to generate the flat file:
     //
     CArgs args = GetArgs();
+    CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
     if (!args["nocleanup"]) {
-    
         CCleanup Cleanup;
-        CConstRef<CBioseq> se = bsh.GetCompleteObject();
-        Cleanup.BasicCleanup( const_cast<CBioseq&>(se.GetObject()) );
+        Cleanup.BasicCleanup( seh );
     }
     if ( args["from"]  ||  args["to"] ) {
         CSeq_loc loc;
-        x_GetLocation( bsh.GetTopLevelEntry(), args, loc );
+        x_GetLocation( seh, args, loc );
         m_FFGenerator->Generate(loc, *scope, *m_Os);
     } else {
         try {
@@ -842,6 +840,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2006/09/18 12:54:02  ludwigf
+* FIXED: In -id mode, the code would apply BasicCleanup() to the wrong object.
+*
 * Revision 1.23  2006/04/20 11:39:43  ludwigf
 * FIXED: The utility would never call BasicCleanup when in "-id" mode.
 *
