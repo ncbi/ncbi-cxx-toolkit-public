@@ -94,8 +94,10 @@ CWString::CWString(const char* str,
     if (size == string::npos) {
         m_Char = str;
     } else {
-        m_String.assign(str, size);
-        m_Char = m_String.c_str();
+        if (str) {
+            m_String.assign(str, size);
+            m_Char = m_String.c_str();
+        }
         m_AvailableValueType |= eString;
     }
 }
@@ -112,8 +114,10 @@ CWString::CWString(const wchar_t* str,
     if (size == wstring::npos) {
         m_WChar = str;
     } else {
-        m_WString.assign(str, size);
-        m_WChar = m_WString.c_str();
+        if (str) {
+            m_WString.assign(str, size);
+            m_WChar = m_WString.c_str();
+        }
         m_AvailableValueType |= eWString;
     }
 }
@@ -212,7 +216,11 @@ void CWString::x_StringToUTF8(EEncoding str_enc) const
     if (m_AvailableValueType & eString) {
         m_UTF8String.Assign(m_String, m_StringEncoding);
     } else if (m_AvailableValueType & eChar) {
-        m_UTF8String.Assign(m_Char, m_StringEncoding);
+        if (m_Char) {
+            m_UTF8String.Assign(m_Char, m_StringEncoding);
+        } else {
+            m_UTF8String.clear();
+        }
     }
 
     m_AvailableValueType |= eUTF8String;
@@ -223,11 +231,19 @@ void CWString::x_MakeString(EEncoding str_enc) const
 {
     if (m_AvailableValueType & eString) {
         if (!(m_AvailableValueType & eChar)) {
-            m_Char = m_String.c_str();
+            if (m_String.empty()) {
+                m_Char = NULL;
+            } else {
+                m_Char = m_String.c_str();
+            }
             m_AvailableValueType |= eChar;
         }
     } else if (m_AvailableValueType & eChar) {
-        m_String = m_Char;
+        if (m_Char) {
+            m_String.assign(m_Char);
+        } else {
+            m_String.clear();
+        }
         m_AvailableValueType |= eString;
     } else if (m_AvailableValueType & eUTF8String) {
         x_UTF8ToString(str_enc);
@@ -239,9 +255,14 @@ void CWString::x_MakeString(EEncoding str_enc) const
         x_UTF8ToString(str_enc);
         x_MakeString(str_enc);
     } else if (m_AvailableValueType & eWChar) {
-        m_UTF8String = m_WChar;
-        m_AvailableValueType |= eUTF8String;
-        x_UTF8ToString(str_enc);
+        if (m_WChar) {
+            m_UTF8String = m_WChar;
+            m_AvailableValueType |= eUTF8String;
+            x_UTF8ToString(str_enc);
+        } else {
+            m_String.clear();
+            m_AvailableValueType |= eString;
+        }
         x_MakeString(str_enc);
 #endif
     }
@@ -252,11 +273,19 @@ void CWString::x_MakeWString(EEncoding str_enc) const
 {
     if (m_AvailableValueType & eWString) {
         if (!(m_AvailableValueType & eWChar)) {
-            m_WChar = m_WString.c_str();
+            if (m_WString.empty()) {
+                m_WChar = NULL;
+            } else {
+                m_WChar = m_WString.c_str();
+            }
             m_AvailableValueType |= eWChar;
         }
     } else if (m_AvailableValueType & eWChar) {
-        m_WString = m_WChar;
+        if (m_WChar) {
+            m_WString.assign(m_WChar);
+        } else {
+            m_WString.clear();
+        }
         m_AvailableValueType |= eWString;
     } else if (m_AvailableValueType & eUTF8String) {
         m_WString = m_UTF8String.AsUnicode();
@@ -266,8 +295,13 @@ void CWString::x_MakeWString(EEncoding str_enc) const
         x_StringToUTF8(str_enc);
         x_MakeWString(str_enc);
     } else if (m_AvailableValueType & eChar) {
-        x_StringToUTF8(str_enc);
-        x_MakeWString(str_enc);
+        if (m_Char) {
+            x_StringToUTF8(str_enc);
+            x_MakeWString(str_enc);
+        } else {
+            m_WString.clear();
+            m_AvailableValueType |= eWString;
+        }
     }
 }
 #endif
@@ -285,7 +319,11 @@ void CWString::x_MakeUTF8String(EEncoding str_enc) const
         m_UTF8String = m_WString;
         m_AvailableValueType |= eUTF8String;
     } else if (m_AvailableValueType & eWChar) {
-        m_UTF8String = m_WChar;
+        if (m_WChar) {
+            m_UTF8String = m_WChar;
+        } else {
+            m_UTF8String.clear();
+        }
         m_AvailableValueType |= eUTF8String;
 #endif
     }
@@ -302,12 +340,16 @@ size_t CWString::GetSymbolNum(void) const
         num = m_WString.size();
 #endif
     } else if (m_AvailableValueType & eChar) {
-        num = strlen(m_Char);
+        if (m_Char) {
+            num = strlen(m_Char);
+        }
 #ifdef HAVE_WSTRING
     } else if (m_AvailableValueType & eWChar) {
-        // ???
-        x_MakeWString();
-        num = m_WString.size();
+        if (m_WChar) {
+            // ??? Should be a better solution ...
+            x_MakeWString();
+            num = m_WString.size();
+        }
 #endif
     } else if (m_AvailableValueType & eUTF8String) {
         num = m_UTF8String.GetSymbolCount();
@@ -345,8 +387,13 @@ void CWString::Assign(const char* str,
         m_Char = str;
         m_AvailableValueType = eChar;
     } else {
-        m_String.assign(str, size);
-        m_Char = m_String.c_str();
+        if (str) {
+            m_String.assign(str, size);
+            m_Char = m_String.c_str();
+        } else {
+            m_Char = NULL;
+            m_String.erase();
+        }
         m_AvailableValueType = eChar | eString;
     }
 }
@@ -365,8 +412,13 @@ void CWString::Assign(const wchar_t* str,
         m_WChar = str;
         m_AvailableValueType = eWChar;
     } else {
-        m_WString.assign(str, size);
-        m_WChar = m_WString.c_str();
+        if (str) {
+            m_WString.assign(str, size);
+            m_WChar = m_WString.c_str();
+        } else {
+            m_WChar = NULL;
+            m_WString.erase();
+        }
         m_AvailableValueType = eWChar | eWString;
     }
 }
@@ -413,7 +465,7 @@ CDB_Object::~CDB_Object()
 
 void CDB_Object::AssignNULL()
 {
-    m_Null = true;
+    SetNULL();
 }
 
 
@@ -484,7 +536,7 @@ EDB_Type CDB_Int::GetType() const
 
 CDB_Object* CDB_Int::Clone() const
 {
-    return m_Null ? new CDB_Int : new CDB_Int(m_Val);
+    return IsNULL() ? new CDB_Int : new CDB_Int(m_Val);
 }
 
 void CDB_Int::AssignValue(CDB_Object& v)
@@ -511,7 +563,7 @@ EDB_Type CDB_SmallInt::GetType() const
 
 CDB_Object* CDB_SmallInt::Clone() const
 {
-    return m_Null ? new CDB_SmallInt : new CDB_SmallInt(m_Val);
+    return IsNULL() ? new CDB_SmallInt : new CDB_SmallInt(m_Val);
 }
 
 void CDB_SmallInt::AssignValue(CDB_Object& v)
@@ -536,7 +588,7 @@ EDB_Type CDB_TinyInt::GetType() const
 
 CDB_Object* CDB_TinyInt::Clone() const
 {
-    return m_Null ? new CDB_TinyInt : new CDB_TinyInt(m_Val);
+    return IsNULL() ? new CDB_TinyInt : new CDB_TinyInt(m_Val);
 }
 
 void CDB_TinyInt::AssignValue(CDB_Object& v)
@@ -558,7 +610,7 @@ EDB_Type CDB_BigInt::GetType() const
 
 CDB_Object* CDB_BigInt::Clone() const
 {
-    return m_Null ? new CDB_BigInt : new CDB_BigInt(m_Val);
+    return IsNULL() ? new CDB_BigInt : new CDB_BigInt(m_Val);
 }
 
 void CDB_BigInt::AssignValue(CDB_Object& v)
@@ -594,7 +646,7 @@ CDB_String::CDB_String(const CDB_String& other) :
 CDB_String::CDB_String(const string& s, EEncoding enc) :
     m_WString(s, enc)
 {
-    m_Null = false;
+    SetNULL(false);
 }
 
 
@@ -603,7 +655,7 @@ CDB_String::CDB_String(const char* s,
                        EEncoding enc) :
     m_WString(string(s, size), enc)
 {
-    m_Null = (s == NULL);
+    SetNULL(s == NULL);
 }
 
 
@@ -637,7 +689,7 @@ CDB_String& CDB_String::operator= (const char* s)
 
 void CDB_String::Assign(const CDB_String& other)
 {
-    m_Null = other.m_Null;
+    SetNULL(other.IsNULL());
     m_WString = other.m_WString;
 }
 
@@ -645,7 +697,7 @@ void CDB_String::Assign(const CDB_String& other)
 void CDB_String::Assign(const string& s,
                         EEncoding enc)
 {
-    m_Null = false;
+    SetNULL(false);
     m_WString.Assign(s, enc);
 }
 
@@ -655,14 +707,14 @@ void CDB_String::Assign(const char* s,
                         EEncoding enc)
 {
     if ( s ) {
-        m_Null = false;
+        SetNULL(false);
         if (size == string::npos) {
             m_WString.Assign(string(s), enc);
         } else {
             m_WString.Assign(string(s, size), enc);
         }
     } else {
-        m_Null = true;
+        SetNULL();
     }
 }
 
@@ -757,8 +809,8 @@ EDB_Type CDB_VarChar::GetType() const
 
 CDB_Object* CDB_VarChar::Clone() const
 {
-    return m_Null ? new CDB_VarChar : new CDB_VarChar(m_Val);
-//     return m_Null ? new CDB_VarChar : new CDB_VarChar(static_cast<const char*>(m_WString));
+    return IsNULL() ? new CDB_VarChar : new CDB_VarChar(m_Val);
+//     return IsNULL() ? new CDB_VarChar : new CDB_VarChar(static_cast<const char*>(m_WString));
 }
 
 
@@ -1099,10 +1151,10 @@ void CDB_VarBinary::SetValue(const void* v, size_t l)
     if (v  &&  l) {
         m_Size = l > sizeof(m_Val) ? sizeof(m_Val) : l;
         memcpy(m_Val, v, m_Size);
-        m_Null = false;
+        SetNULL(false);
     }
     else {
-        m_Null = true;
+        SetNULL();
     }
 }
 
@@ -1115,7 +1167,7 @@ EDB_Type CDB_VarBinary::GetType() const
 
 CDB_Object* CDB_VarBinary::Clone() const
 {
-    return m_Null ? new CDB_VarBinary : new CDB_VarBinary(m_Val, m_Size);
+    return IsNULL() ? new CDB_VarBinary : new CDB_VarBinary(m_Val, m_Size);
 }
 
 
@@ -1149,7 +1201,7 @@ CDB_Binary::CDB_Binary(size_t s, const void* v, size_t v_size)
 
 CDB_Binary::CDB_Binary(const CDB_Binary& v)
 {
-    m_Null = v.m_Null;
+    SetNULL(v.IsNULL());
     m_Size = v.m_Size;
     m_Val = new unsigned char[m_Size];
     memcpy(m_Val, v.m_Val, m_Size);
@@ -1163,16 +1215,16 @@ void CDB_Binary::SetValue(const void* v, size_t v_size)
         if (v_size < m_Size) {
             memset(m_Val + v_size, 0, m_Size - v_size);
         }
-        m_Null = false;
+        SetNULL(false);
     } else {
-        m_Null = true;
+        SetNULL();
     }
 }
 
 
 CDB_Binary& CDB_Binary::operator= (const CDB_Binary& v)
 {
-    m_Null = v.m_Null;
+    SetNULL(v.IsNULL());
     size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
     memmove(m_Val, v.m_Val, l);
     if (l < m_Size) {
@@ -1190,7 +1242,7 @@ EDB_Type CDB_Binary::GetType() const
 
 CDB_Object* CDB_Binary::Clone() const
 {
-    return m_Null ? new CDB_Binary(m_Size) : new CDB_Binary(*this);
+    return IsNULL() ? new CDB_Binary(m_Size) : new CDB_Binary(*this);
 }
 
 
@@ -1205,10 +1257,10 @@ void CDB_Binary::AssignValue(CDB_Object& v)
     }
     m_Size= cv.m_Size;
     if(cv.IsNULL()) {
-        m_Null= true;
+        SetNULL();
     }
     else {
-        m_Null= false;
+        SetNULL(false);
         memcpy(m_Val, cv.m_Val, m_Size);
     }
 }
@@ -1245,7 +1297,7 @@ CDB_LongBinary::CDB_LongBinary(size_t s, const void* v, size_t v_size)
 
 CDB_LongBinary::CDB_LongBinary(const CDB_LongBinary& v)
 {
-    m_Null = v.m_Null;
+    SetNULL(v.IsNULL());
     m_Size = v.m_Size;
     m_DataSize= v.m_DataSize;
     m_Val = new unsigned char[m_Size];
@@ -1258,9 +1310,9 @@ void CDB_LongBinary::SetValue(const void* v, size_t v_size)
     if (v  &&  v_size) {
         m_DataSize= (v_size > m_Size) ? m_Size : v_size;
         memcpy(m_Val, v, m_DataSize);
-        m_Null = false;
+        SetNULL(false);
     } else {
-        m_Null = true;
+        SetNULL();
         m_DataSize= 0;
     }
 }
@@ -1268,7 +1320,7 @@ void CDB_LongBinary::SetValue(const void* v, size_t v_size)
 
 CDB_LongBinary& CDB_LongBinary::operator= (const CDB_LongBinary& v)
 {
-    m_Null = v.m_Null;
+    SetNULL(v.IsNULL());
     m_DataSize = (m_Size > v.m_DataSize) ? v.m_DataSize : m_Size;
     if(m_DataSize) {
         memmove(m_Val, v.m_Val, m_DataSize);
@@ -1297,10 +1349,10 @@ void CDB_LongBinary::AssignValue(CDB_Object& v)
         2 );
     register CDB_LongBinary& cv= (CDB_LongBinary&)v;
     if(cv.IsNULL()) {
-        m_Null= true;
+        SetNULL();
     }
     else {
-        m_Null= false;
+        SetNULL(false);
         m_DataSize= (m_Size < cv.m_DataSize)? m_Size : cv.m_DataSize;
         memcpy(m_Val, cv.m_Val, m_DataSize);
     }
@@ -1323,7 +1375,7 @@ CDB_LongBinary::~CDB_LongBinary()
 
 CDB_Float& CDB_Float::operator= (const float& i)
 {
-    m_Null = false;
+    SetNULL(false);
     m_Val  = i;
     return *this;
 }
@@ -1336,7 +1388,7 @@ EDB_Type CDB_Float::GetType() const
 
 CDB_Object* CDB_Float::Clone() const
 {
-    return m_Null ? new CDB_Float : new CDB_Float(m_Val);
+    return IsNULL() ? new CDB_Float : new CDB_Float(m_Val);
 }
 
 void CDB_Float::AssignValue(CDB_Object& v)
@@ -1357,7 +1409,7 @@ void CDB_Float::AssignValue(CDB_Object& v)
 
 CDB_Double& CDB_Double::operator= (const double& i)
 {
-    m_Null = false;
+    SetNULL(false);
     m_Val  = i;
     return *this;
 }
@@ -1369,7 +1421,7 @@ EDB_Type CDB_Double::GetType() const
 
 CDB_Object* CDB_Double::Clone() const
 {
-    return m_Null ? new CDB_Double : new CDB_Double(m_Val);
+    return IsNULL() ? new CDB_Double : new CDB_Double(m_Val);
 }
 
 void CDB_Double::AssignValue(CDB_Object& v)
@@ -1397,9 +1449,9 @@ CDB_Stream::CDB_Stream()
 
 CDB_Stream& CDB_Stream::Assign(const CDB_Stream& v)
 {
-    m_Null = v.m_Null;
+    SetNULL(v.IsNULL());
     m_Store->Truncate();
-    if ( !m_Null ) {
+    if ( !IsNULL() ) {
         char buff[1024];
         CMemStore* s = (CMemStore*) &v.m_Store;
         size_t pos = s->Tell();
@@ -1426,7 +1478,7 @@ size_t CDB_Stream::Read(void* buff, size_t nof_bytes)
 
 size_t CDB_Stream::Append(const void* buff, size_t nof_bytes)
 {
-    if(buff && (nof_bytes > 0)) m_Null = false;
+    if(buff && (nof_bytes > 0)) SetNULL(false);
     return m_Store->Append(buff, nof_bytes);
 }
 
@@ -1444,7 +1496,7 @@ size_t CDB_Stream::Size() const
 void CDB_Stream::Truncate(size_t nof_bytes)
 {
     m_Store->Truncate(nof_bytes);
-    m_Null = (m_Store->GetDataSize() <= 0);
+    SetNULL(m_Store->GetDataSize() <= 0);
 }
 
 void CDB_Stream::AssignValue(CDB_Object& v)
@@ -1482,7 +1534,7 @@ EDB_Type CDB_Image::GetType() const
 CDB_Object* CDB_Image::Clone() const
 {
     CHECK_DRIVER_ERROR(
-        !m_Null,
+        !IsNULL(),
         "Clone for the non NULL image is not supported",
         1 );
 
@@ -1519,7 +1571,7 @@ EDB_Type CDB_Text::GetType() const
 CDB_Object* CDB_Text::Clone() const
 {
     CHECK_DRIVER_ERROR(
-        !m_Null,
+        !IsNULL(),
         "Clone for the non-NULL text is not supported",
         1 );
 
@@ -1538,7 +1590,7 @@ CDB_SmallDateTime::CDB_SmallDateTime(CTime::EInitMode mode)
 {
     m_DBTime.days = 0;
     m_DBTime.time = 0;
-    m_Null = (mode == CTime::eEmpty);
+    SetNULL(mode == CTime::eEmpty);
 }
 
 
@@ -1548,7 +1600,7 @@ CDB_SmallDateTime::CDB_SmallDateTime(const CTime& t)
 {
     m_DBTime.days = 0;
     m_DBTime.time = 0;
-    m_Null = t.IsEmpty();
+    SetNULL(t.IsEmpty());
 }
 
 
@@ -1557,7 +1609,7 @@ CDB_SmallDateTime::CDB_SmallDateTime(Uint2 days, Uint2 minutes)
 {
     m_DBTime.days = days;
     m_DBTime.time = minutes;
-    m_Null        = false;
+    SetNULL(false);
 }
 
 
@@ -1566,7 +1618,8 @@ CDB_SmallDateTime& CDB_SmallDateTime::Assign(Uint2 days, Uint2 minutes)
     m_DBTime.days = days;
     m_DBTime.time = minutes;
     m_Status      = 0x2;
-    m_Null        = false;
+    SetNULL(false);
+
     return *this;
 }
 
@@ -1577,7 +1630,8 @@ CDB_SmallDateTime& CDB_SmallDateTime::operator= (const CTime& t)
     m_DBTime.days = 0;
     m_DBTime.time = 0;
     m_Status = 0x1;
-    m_Null = t.IsEmpty();
+    SetNULL(t.IsEmpty());
+
     return *this;
 }
 
@@ -1619,7 +1673,7 @@ EDB_Type CDB_SmallDateTime::GetType() const
 
 CDB_Object* CDB_SmallDateTime::Clone() const
 {
-    return m_Null ? new CDB_SmallDateTime : new CDB_SmallDateTime(Value());
+    return IsNULL() ? new CDB_SmallDateTime : new CDB_SmallDateTime(Value());
 }
 
 void CDB_SmallDateTime::AssignValue(CDB_Object& v)
@@ -1643,7 +1697,7 @@ CDB_DateTime::CDB_DateTime(CTime::EInitMode mode)
 {
     m_DBTime.days = 0;
     m_DBTime.time = 0;
-    m_Null = (mode == CTime::eEmpty);
+    SetNULL(mode == CTime::eEmpty);
 }
 
 
@@ -1653,7 +1707,7 @@ CDB_DateTime::CDB_DateTime(const CTime& t)
 {
     m_DBTime.days = 0;
     m_DBTime.time = 0;
-    m_Null = t.IsEmpty();
+    SetNULL(t.IsEmpty());
 }
 
 
@@ -1662,7 +1716,7 @@ CDB_DateTime::CDB_DateTime(Int4 d, Int4 s300)
 {
     m_DBTime.days = d;
     m_DBTime.time = s300;
-    m_Null = false;
+    SetNULL(false);
 }
 
 
@@ -1672,7 +1726,7 @@ CDB_DateTime& CDB_DateTime::operator= (const CTime& t)
     m_DBTime.days = 0;
     m_DBTime.time = 0;
     m_Status = 0x1;
-    m_Null = t.IsEmpty();
+    SetNULL(t.IsEmpty());
     return *this;
 }
 
@@ -1682,7 +1736,7 @@ CDB_DateTime& CDB_DateTime::Assign(Int4 d, Int4 s300)
     m_DBTime.days = d;
     m_DBTime.time = s300;
     m_Status = 0x2;
-    m_Null = false;
+    SetNULL(false);
     return *this;
 }
 
@@ -1724,7 +1778,7 @@ EDB_Type CDB_DateTime::GetType() const
 
 CDB_Object* CDB_DateTime::Clone() const
 {
-    return m_Null ? new CDB_DateTime : new CDB_DateTime(Value());
+    return IsNULL() ? new CDB_DateTime : new CDB_DateTime(Value());
 }
 
 void CDB_DateTime::AssignValue(CDB_Object& v)
@@ -1743,7 +1797,7 @@ void CDB_DateTime::AssignValue(CDB_Object& v)
 
 CDB_Bit& CDB_Bit::operator= (const int& i)
 {
-    m_Null = false;
+    SetNULL(false);
     m_Val = i ? 1 : 0;
     return *this;
 }
@@ -1751,7 +1805,7 @@ CDB_Bit& CDB_Bit::operator= (const int& i)
 
 CDB_Bit& CDB_Bit::operator= (const bool& i)
 {
-    m_Null = false;
+    SetNULL(false);
     m_Val = i ? 1 : 0;
     return *this;
 }
@@ -1764,7 +1818,7 @@ EDB_Type CDB_Bit::GetType() const
 
 CDB_Object* CDB_Bit::Clone() const
 {
-    return m_Null ? new CDB_Bit : new CDB_Bit(m_Val ? 1 : 0);
+    return IsNULL() ? new CDB_Bit : new CDB_Bit(m_Val ? 1 : 0);
 }
 
 void CDB_Bit::AssignValue(CDB_Object& v)
@@ -1839,7 +1893,7 @@ CDB_Numeric& CDB_Numeric::Assign(unsigned int precision,
 {
     m_Precision = precision;
     m_Scale     = scale;
-    m_Null      = false;
+    SetNULL(false);
     memcpy(m_Body, arr, sizeof(m_Body));
     return *this;
 }
@@ -1852,7 +1906,7 @@ CDB_Numeric& CDB_Numeric::Assign(unsigned int precision,
 {
     m_Precision = precision;
     m_Scale     = scale;
-    m_Null      = false;
+    SetNULL(false);
     m_Body[0]= is_negative? 1 : 0;
     memcpy(m_Body + 1, arr, sizeof(m_Body) - 1);
     return *this;
@@ -2108,7 +2162,7 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
 
     m_Precision = precision;
     m_Scale     = scale;
-    m_Null      = false;
+    SetNULL(false);
 }
 
 void CDB_Numeric::AssignValue(CDB_Object& v)
@@ -2127,6 +2181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/09/18 15:26:37  ssikorsk
+ * Improved implementation of CWString in case of empty/NULL strings.
+ *
  * Revision 1.25  2006/09/14 13:47:51  ucko
  * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
  *
