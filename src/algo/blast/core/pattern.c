@@ -59,6 +59,7 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/pattern.h>
 #include "pattern_priv.h"
 
@@ -556,18 +557,21 @@ Int4 PHIGetPatternOccurrences(const SPHIPatternSearchBlk * pattern_blk,
                               const BLAST_SequenceBlk    * query,
                               const BlastSeqLoc          * location, 
                               Boolean                      is_dna,
-                              SPHIQueryInfo              * pattern_info)
+                              BlastQueryInfo             * query_info)
 {
    const BlastSeqLoc* loc;
-   Int4 from, to;
-   Int4 loc_length;
-   Uint1* sequence;
    Int4* hitArray;
-   Int4 i, twiceNumHits;
+   EBlastProgramType program = (is_dna ? eBlastTypePhiBlastn : eBlastTypePhiBlastp);
+   SPHIQueryInfo* pattern_info = query_info->pattern_info  = SPHIQueryInfoNew();
    
    hitArray = (Int4 *) calloc(2*query->length, sizeof(Int4));
 
    for(loc=location; loc; loc=loc->next) {
+      Int4 i, twiceNumHits;
+      Int4 from, to;
+      Int4 loc_length;
+      Uint1* sequence;
+
       from = loc->ssr->left;
       to = loc->ssr->right;
       loc_length = to - from + 1;
@@ -577,6 +581,11 @@ Int4 PHIGetPatternOccurrences(const SPHIPatternSearchBlk * pattern_blk,
                                      pattern_blk);
       
       for (i = 0; i < twiceNumHits; i += 2) {
+         if (hitArray[i+1]+from == 0 &&
+              hitArray[i]-hitArray[i+1]+1 == BlastQueryInfoGetQueryLength(query_info, program, 0))
+         {
+            return INT4_MAX;
+         }
          s_PHIBlastAddPatternHit(pattern_info, hitArray[i+1]+from, 
                                  hitArray[i]-hitArray[i+1]+1);
       }
