@@ -224,6 +224,8 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                          x_GetBCPDataType(data_type),
                          i + 1);
 
+            m_HasTextImage = (data_type == eDB_Image || data_type == eDB_Text);
+
             if (r != SUCCEED) {
                 ReportErrors();
                 return false;
@@ -588,6 +590,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/09/18 16:15:33  ssikorsk
+ * Restored setting of m_HasTextImage in CODBC_BCPInCmd::x_AssignParams.
+ *
  * Revision 1.23  2006/09/18 15:29:21  ssikorsk
  * Improved reading data from streams in case of using of UTF8 in CODBC_BCPInCmd::Send.
  *
