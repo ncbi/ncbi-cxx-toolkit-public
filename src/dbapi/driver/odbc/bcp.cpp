@@ -84,99 +84,146 @@ bool CODBC_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 }
 
 
+int
+CODBC_BCPInCmd::x_GetBCPDataType(EDB_Type type)
+{
+    int bcp_datatype = 0;
+
+    switch (type) {
+    case eDB_Int:
+        bcp_datatype = SQLINT4;
+        break;
+    case eDB_SmallInt:
+        bcp_datatype = SQLINT2;
+        break;
+    case eDB_TinyInt:
+        bcp_datatype = SQLINT1;
+        break;
+    case eDB_BigInt:
+        bcp_datatype = SQLNUMERIC;
+        break;
+    case eDB_Char:
+    case eDB_VarChar:
+    case eDB_LongChar:
+#ifdef UNICODE
+        bcp_datatype = SQLNCHAR;
+#else
+        bcp_datatype = SQLCHARACTER;
+#endif
+        break;
+    case eDB_Binary:
+    case eDB_VarBinary:
+    case eDB_LongBinary:
+        bcp_datatype = SQLBINARY;
+        break;
+    case eDB_Float:
+        bcp_datatype = SQLFLT4;
+        break;
+    case eDB_Double:
+        bcp_datatype = SQLFLT8;
+        break;
+    case eDB_SmallDateTime:
+        bcp_datatype = SQLDATETIM4;
+        break;
+    case eDB_DateTime:
+        bcp_datatype = SQLDATETIME;
+        break;
+    case eDB_Text:
+#ifdef UNICODE
+        bcp_datatype = SQLNTEXT;
+#else
+        bcp_datatype = SQLTEXT;
+#endif
+        break;
+    case eDB_Image:
+        bcp_datatype = SQLIMAGE;
+        break;
+    }
+
+    return bcp_datatype;
+}
+
+
+size_t
+CODBC_BCPInCmd::x_GetBCPDataSize(EDB_Type type)
+{
+    switch (type) {
+    case eDB_Char:
+    case eDB_VarChar:
+    case eDB_LongChar:
+    case eDB_Text:
+#ifdef UNICODE
+        return sizeof(WCHAR);
+#else
+        return 1;
+#endif
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+
+void*
+CODBC_BCPInCmd::x_GetDataTerminator(EDB_Type type)
+{
+    switch (type) {
+    case eDB_Char:
+    case eDB_VarChar:
+    case eDB_LongChar:
+    case eDB_Text:
+#ifdef UNICODE
+        return _T("");
+#else
+        return "";
+#endif
+    default:
+        break;
+    }
+
+    return NULL;
+}
+
+
+void*
+CODBC_BCPInCmd::x_GetDataPtr(EDB_Type type, void* pb)
+{
+    switch (type) {
+    case eDB_Text:
+    case eDB_Image:
+        return NULL;
+    default:
+        break;
+    }
+
+    return pb;
+}
+
+
 bool CODBC_BCPInCmd::x_AssignParams(void* pb)
 {
     RETCODE r;
 
     if (!m_WasBound) {
-        for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
+        for (unsigned int i = 0; i < m_Params.NofParams(); ++i) {
             if (m_Params.GetParamStatus(i) == 0) {
-                bcp_bind(m_Cmd, (BYTE*) pb, 0, SQL_NULL_DATA, 0, 0, 0, i+1);
+                bcp_bind(GetHandle(), (BYTE*) pb, 0, SQL_NULL_DATA, 0, 0, 0, i + 1);
                 continue;
             }
 
             CDB_Object& param = *m_Params.GetParam(i);
 
-            switch ( param.GetType() ) {
-            case eDB_Int:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA, 0, 0, SQLINT4, i + 1);
-                break;
-            case eDB_SmallInt:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA, 0, 0, SQLINT2, i + 1);
-                break;
-            case eDB_TinyInt:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA, 0, 0, SQLINT1, i + 1);
-                break;
-            case eDB_BigInt:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA, 0, 0, SQLNUMERIC, i + 1);
-                break;
-            case eDB_Char:
-            case eDB_VarChar:
-            case eDB_LongChar:
-#ifdef UNICODE
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA,(BYTE*) "", sizeof(WCHAR), SQLNCHAR, i + 1);
-#else
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA,(BYTE*) "", 1, SQLCHARACTER, i + 1);
-#endif
-                break;
-#if 0
-            case eDB_VarChar:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA,(BYTE*) "", 1, SQLCHARACTER, i + 1);
-                break;
-            case eDB_Binary:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA, 0, 0, SQLBINARY, i + 1);
-                break;
-#endif
-            case eDB_Binary:
-            case eDB_VarBinary:
-            case eDB_LongBinary:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA, 0, 0, SQLBINARY, i + 1);
-                break;
-            case eDB_Float:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA, 0, 0, SQLFLT4, i + 1);
-                break;
-            case eDB_Double:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
-                             SQL_VARLEN_DATA, 0, 0, SQLFLT8, i + 1);
-                break;
-            case eDB_SmallDateTime:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0, SQL_VARLEN_DATA,
-                             0, 0, SQLDATETIM4,  i + 1);
-                break;
-            case eDB_DateTime:
-                r = bcp_bind(m_Cmd, (BYTE*) pb, 0, SQL_VARLEN_DATA,
-                             0, 0, SQLDATETIME, i + 1);
-                break;
-            case eDB_Text:
-#ifdef UNICODE
-                r = bcp_bind(m_Cmd, 0, 0,
-                             SQL_VARLEN_DATA, (BYTE*) "", sizeof(WCHAR),
-                             SQLNTEXT, i + 1);
-#else
-                r = bcp_bind(m_Cmd, 0, 0,
-                             SQL_VARLEN_DATA, (BYTE*) "", 1,
-                             SQLTEXT, i + 1);
-#endif
-                m_HasTextImage = true;
-                break;
-            case eDB_Image:
-                r = bcp_bind(m_Cmd, 0, 0,
-                             1, 0, 0, SQLIMAGE, i + 1);
-                m_HasTextImage = true;
-                break;
-            default:
-                return false;
-            }
+            EDB_Type data_type = param.GetType();
+            r = bcp_bind(GetHandle(),
+                         static_cast<const LPCBYTE>(x_GetDataPtr(data_type, pb)),
+                         0,
+                         (data_type == eDB_Image ? 1 : SQL_VARLEN_DATA),
+                         static_cast<const LPCBYTE>(x_GetDataTerminator(data_type)),
+                         x_GetBCPDataSize(data_type),
+                         x_GetBCPDataType(data_type),
+                         i + 1);
+
             if (r != SUCCEED) {
                 ReportErrors();
                 return false;
@@ -194,27 +241,27 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         case eDB_Int: {
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
             // DBINT v = (DBINT) val.Value();
-            r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd,  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int4), i + 1)
+                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int4), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
         case eDB_SmallInt: {
             CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
             // DBSMALLINT v = (DBSMALLINT) val.Value();
-            r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd,  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int2), i + 1)
+                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(Int2), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
         case eDB_TinyInt: {
             CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
             // DBTINYINT v = (DBTINYINT) val.Value();
-            r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : sizeof(Uint1), i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : sizeof(Uint1), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
@@ -224,9 +271,9 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             Int8 v8 = val.Value();
             if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                 return false;
-            r = bcp_colptr(m_Cmd, (BYTE*) v, i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) v, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd,  val.IsNULL() ? SQL_NULL_DATA : sizeof(DBNUMERIC), i + 1)
+                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(DBNUMERIC), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
             pb = (void*) (v + 1);
         }
@@ -234,14 +281,14 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         case eDB_Char: {
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
 #ifdef UNICODE
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
 #else
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
 #endif
         }
@@ -249,14 +296,14 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
 #ifdef UNICODE
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
 #else
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
 #endif
         }
@@ -264,41 +311,41 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         case eDB_LongChar: {
             CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
 #ifdef UNICODE
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
 #else
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
 #endif
         }
         break;
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd,
+                bcp_collen(GetHandle(),
                            val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
         case eDB_VarBinary: {
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd,
+                bcp_collen(GetHandle(),
                            val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
         case eDB_LongBinary: {
             CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd,
+                bcp_collen(GetHandle(),
                            val.IsNULL() ? SQL_NULL_DATA : (Int4) val.DataSize(), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
@@ -306,18 +353,18 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         case eDB_Float: {
             CDB_Float& val = dynamic_cast<CDB_Float&> (param);
             //DBREAL v = (DBREAL) val.Value();
-            r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd,  val.IsNULL() ? SQL_NULL_DATA : sizeof(float), i + 1)
+                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(float), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
         case eDB_Double: {
             CDB_Double& val = dynamic_cast<CDB_Double&> (param);
             //DBFLT8 v = (DBFLT8) val.Value();
-            r = bcp_colptr(m_Cmd, (BYTE*) val.BindVal(), i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) val.BindVal(), i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd,  val.IsNULL() ? SQL_NULL_DATA : sizeof(double), i + 1)
+                bcp_collen(GetHandle(),  val.IsNULL() ? SQL_NULL_DATA : sizeof(double), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
@@ -325,11 +372,11 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             CDB_SmallDateTime& val =
                 dynamic_cast<CDB_SmallDateTime&> (param);
             DBDATETIM4* dt = (DBDATETIM4*) pb;
-            DBDATETIME4_days(dt)        = val.GetDays();
+            DBDATETIME4_days(dt)     = val.GetDays();
             DBDATETIME4_mins(dt)     = val.GetMinutes();
-            r = bcp_colptr(m_Cmd, (BYTE*) dt, i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : sizeof(DBDATETIM4), i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : sizeof(DBDATETIM4), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
             pb = (void*) (dt + 1);
         }
@@ -339,21 +386,22 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             DBDATETIME* dt = (DBDATETIME*) pb;
             dt->dtdays     = val.GetDays();
             dt->dttime     = val.Get300Secs();
-            r = bcp_colptr(m_Cmd, (BYTE*) dt, i + 1)
+            r = bcp_colptr(GetHandle(), (BYTE*) dt, i + 1)
                 == SUCCEED &&
-                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : sizeof(DBDATETIME), i + 1)
+                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : sizeof(DBDATETIME), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
             pb = (void*) (dt + 1);
         }
         break;
         case eDB_Text: {
             CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-            r = bcp_collen(m_Cmd, (DBINT) val.Size(), i + 1);
+            // !!!!! Invalid size ... !!!!
+            r = bcp_collen(GetHandle(), (DBINT) val.Size(), i + 1);
         }
         break;
         case eDB_Image: {
             CDB_Image& val = dynamic_cast<CDB_Image&> (param);
-            r = bcp_collen(m_Cmd, (DBINT) val.Size(), i + 1);
+            r = bcp_collen(GetHandle(), (DBINT) val.Size(), i + 1);
         }
         break;
         default:
@@ -380,7 +428,7 @@ bool CODBC_BCPInCmd::Send(void)
         DATABASE_DRIVER_ERROR( err_message, 423004 );
     }
 
-    if (bcp_sendrow(m_Cmd) != SUCCEED) {
+    if (bcp_sendrow(GetHandle()) != SUCCEED) {
         m_HasFailed = true;
         ReportErrors();
         string err_message = "bcp_sendrow failed" + GetDiagnosticInfo();
@@ -391,7 +439,7 @@ bool CODBC_BCPInCmd::Send(void)
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size
 
-        for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
+        for (unsigned int i = 0; i < m_Params.NofParams(); ++i) {
             if (m_Params.GetParamStatus(i) == 0)
                 continue;
 
@@ -402,28 +450,53 @@ bool CODBC_BCPInCmd::Send(void)
                 continue;
 
             CDB_Stream& val = dynamic_cast<CDB_Stream&> (param);
-            size_t s = val.Size();
+
+            size_t left_bytes = val.Size();
+            size_t len = 0;
+            size_t valid_len = 0;
+            size_t invalid_len = 0;
+
             do {
-                size_t l = val.Read(buff, sizeof(buff));
-                if (l > s)
-                    l = s;
-                if (bcp_moretext(m_Cmd, (DBINT) l, (BYTE*) buff) != SUCCEED) {
+                invalid_len = len - valid_len;
+
+                if (valid_len < len) {
+                    // No protection for overlapping for now !!!
+                    strncpy(buff, buff + valid_len, invalid_len);
+                }
+
+                len = val.Read(buff + invalid_len, sizeof(buff) - invalid_len);
+                if (len > left_bytes) {
+                    len = left_bytes;
+                }
+
+                valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+
+                CODBCString odbc_str(buff, len);
+
+                // !!! Decode to UCS2 !!!!
+                if (bcp_moretext(GetHandle(),
+                                 (DBINT) valid_len,
+                                 (LPCBYTE)static_cast<const odbc::TChar*>(odbc_str)
+                                 ) != SUCCEED) {
                     m_HasFailed = true;
                     ReportErrors();
 
                     string err_text;
                     if (param.GetType() == eDB_Text) {
-                        err_text = "bcp_moretext for text failed";
+                        err_text = "bcp_moretext for text failed ";
                     } else {
-                        err_text = "bcp_moretext for image failed";
+                        err_text = "bcp_moretext for image failed ";
                     }
-                    string err_message = "bcp_sendrow failed" + GetDiagnosticInfo();
-                    DATABASE_DRIVER_ERROR( err_message, 423006 );
+                    err_text += GetDiagnosticInfo();
+                    DATABASE_DRIVER_ERROR( err_text, 423006 );
                 }
-                if (!l)
+
+                if (!valid_len) {
                     break;
-                s -= l;
-            } while (s);
+                }
+
+                left_bytes -= valid_len;
+            } while (left_bytes);
         }
     }
 
@@ -440,7 +513,7 @@ bool CODBC_BCPInCmd::WasSent(void) const
 bool CODBC_BCPInCmd::Cancel()
 {
     if (m_WasSent) {
-        DBINT outrow = bcp_done(m_Cmd);
+        DBINT outrow = bcp_done(GetHandle());
         m_WasSent = false;
         return outrow == 0;
     }
@@ -458,7 +531,7 @@ bool CODBC_BCPInCmd::WasCanceled(void) const
 bool CODBC_BCPInCmd::CommitBCPTrans(void)
 {
     if(m_WasSent) {
-        Int4 outrow = bcp_batch(m_Cmd);
+        Int4 outrow = bcp_batch(GetHandle());
         if(outrow == -1) {
             ReportErrors();
             return false;
@@ -472,7 +545,7 @@ bool CODBC_BCPInCmd::CommitBCPTrans(void)
 bool CODBC_BCPInCmd::EndBCP(void)
 {
     if(m_WasSent) {
-        Int4 outrow = bcp_done(m_Cmd);
+        Int4 outrow = bcp_done(GetHandle());
         m_WasSent= false;
         if(outrow == -1) {
             ReportErrors();
@@ -515,6 +588,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/09/18 15:29:21  ssikorsk
+ * Improved reading data from streams in case of using of UTF8 in CODBC_BCPInCmd::Send.
+ *
  * Revision 1.22  2006/09/13 20:05:14  ssikorsk
  * Revamp code to support  unicode version of ODBC API.
  *
