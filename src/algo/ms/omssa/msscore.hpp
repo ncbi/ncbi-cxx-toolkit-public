@@ -761,6 +761,14 @@ public:
      */
     const TMSMZ GetStdDevDelta(void) const;
 
+    /**
+     * calc max abs difference between experimental and theoretical
+     * mass values
+     * 
+     * @return const TMSMZ
+     */
+    const TMSMZ GetMaxDelta(void) const;
+
 private:
     // disallow copy
     CMSSpectrumMatch(const CMSSpectrumMatch& in) {}

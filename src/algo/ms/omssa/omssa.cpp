@@ -333,19 +333,8 @@ RestrictedSearch(false)
 int CSearch::InitBlast(const char *blastdb)
 {
     if (!blastdb) return 0;
-    try {
-        rdfp.Reset(new CSeqDB(blastdb, CSeqDB::eProtein));
-        numseq = rdfp->GetNumOIDs();
-    }
-    catch (const NCBI_NS_STD::exception &e) {
-        ERR_POST(Critical << "Unable to open blast library " << blastdb << " with error:" <<
-                 e.what());
-        return 1;
-    }
-    catch (...) {
-        ERR_POST(Critical << "Unable to open blast library " << blastdb);
-        return 1;
-    }
+    rdfp.Reset(new CSeqDB(blastdb, CSeqDB::eProtein));
+    numseq = rdfp->GetNumOIDs();
     return 0;   
 }
 
@@ -1685,7 +1674,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 }
             }
 
-            double adjust = 2.0 * HitList[iHitList].GetStdDevDelta() / 
+            double adjust = HitList[iHitList].GetMaxDelta() / 
                 MSSCALE2INT(GetSettings()->GetMsmstol());
             if(adjust < GetSettings()->GetAutomassadjust()) 
                 adjust = GetSettings()->GetAutomassadjust();
@@ -1744,7 +1733,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 }
                 else ERR_POST(Info << "M is zero");
             }
-            double eval = 3e3 * pval * N;
+            double eval = 3e2 * pval * N;
 //            _TRACE( " pval=" << pval << " eval=" << eval );
             ScoreList.insert(pair<const double, CMSHit *> 
                              (eval, &(HitList[iHitList])));

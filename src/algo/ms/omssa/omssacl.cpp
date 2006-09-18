@@ -530,7 +530,7 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
 /** progress callback */
 static void OMSSACallback(int TotalSeq, int Completed, void* Anything)
 {
-    ERR_POST(Info << "Sequence=" << Completed << " Percent=" << (double)Completed/TotalSeq <<
+    ERR_POST(Info << "Sequence=" << Completed << " Percent=" << (double)Completed/TotalSeq*100.0 <<
              "%");
 }
 
@@ -616,13 +616,17 @@ int COMSSA::Run()
                                  SearchEngine.GetIterative());
 
 
-    int retval = SearchEngine.InitBlast(SearchSettings->GetDb().c_str());
-    if(retval) {
-        ERR_POST(Fatal << "omssacl: unable to initialize blastdb, error " 
-             << retval);
-        return 1;
+    try {
+        SearchEngine.InitBlast(SearchSettings->GetDb().c_str());
     }
-
+    catch (const NCBI_NS_STD::exception &e) {
+        ERR_POST(Fatal << "Unable to open blast library " << SearchSettings->GetDb() << " with error:" <<
+                 e.what());
+    }
+    catch (...) {
+        ERR_POST(Fatal << "Unable to open blast library " << SearchSettings->GetDb());
+    }
+    
 	_TRACE("omssa: search begin");
 	SearchEngine.Search(*MySearch.SetRequest().begin(),
                         *MySearch.SetResponse().begin(), 

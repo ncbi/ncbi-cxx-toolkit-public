@@ -602,3 +602,17 @@ CMSSpectrumMatch::GetStdDevDelta(void) const
      StdDev = pow((double)StdDev/GetHits(), 0.5);
      return (TMSMZ)StdDev;
 }
+
+
+const TMSMZ 
+CMSSpectrumMatch::GetMaxDelta(void) const
+{
+     TMSMZ Max(0);
+     int i;
+     for (i = 0; i < GetHits(); ++i) {
+         if(abs(GetHitInfo(i).GetDelta()) > Max)
+             Max = abs(GetHitInfo(i).GetDelta());
+     }
+     return Max;
+}
+

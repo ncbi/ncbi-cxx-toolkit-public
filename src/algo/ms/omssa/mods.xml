@@ -1959,4 +1959,65 @@
         <MSModSpec_residues_E>T</MSModSpec_residues_E>
       </MSModSpec_residues>
     </MSModSpec>
+  <MSModSpec>
+       <MSModSpec_mod>
+         <MSMod value="sulfinicacid">162</MSMod>
+       </MSModSpec_mod>
+       <MSModSpec_type>
+         <MSModType value="modaa">0</MSModType>
+       </MSModSpec_type>
+       <MSModSpec_name>oxidation of C to sulfinic acid</MSModSpec_name>
+       <MSModSpec_monomass>31.989829</MSModSpec_monomass>
+       <MSModSpec_averagemass>31.9988</MSModSpec_averagemass>
+       <MSModSpec_n15mass>0</MSModSpec_n15mass>
+       <MSModSpec_residues>
+         <MSModSpec_residues_E>C</MSModSpec_residues_E>
+       </MSModSpec_residues>
+     </MSModSpec>
+  <MSModSpec>
+        <MSModSpec_mod>
+          <MSMod value="arg2orn">163</MSMod>
+        </MSModSpec_mod>
+        <MSModSpec_type>
+          <MSModType value="modaa">0</MSModType>
+        </MSModSpec_type>
+        <MSModSpec_name>arginine to ornithine</MSModSpec_name>
+        <MSModSpec_monomass>-42.021798</MSModSpec_monomass>
+        <MSModSpec_averagemass>-42.0400</MSModSpec_averagemass>
+        <MSModSpec_n15mass>0</MSModSpec_n15mass>
+        <MSModSpec_residues>
+          <MSModSpec_residues_E>R</MSModSpec_residues_E>
+        </MSModSpec_residues>
+      </MSModSpec>
+  <MSModSpec>
+        <MSModSpec_mod>
+          <MSMod value="dehydro">164</MSMod>
+        </MSModSpec_mod>
+        <MSModSpec_type>
+          <MSModType value="modaa">0</MSModType>
+        </MSModSpec_type>
+        <MSModSpec_name>dehydro of S and T</MSModSpec_name>
+        <MSModSpec_monomass>-18.010565</MSModSpec_monomass>
+        <MSModSpec_averagemass>-18.0153</MSModSpec_averagemass>
+        <MSModSpec_n15mass>0</MSModSpec_n15mass>
+        <MSModSpec_residues>
+          <MSModSpec_residues_E>S</MSModSpec_residues_E>
+          <MSModSpec_residues_E>T</MSModSpec_residues_E>
+        </MSModSpec_residues>
+      </MSModSpec>
+  <MSModSpec>
+        <MSModSpec_mod>
+          <MSMod value="carboxykynurenin">165</MSMod>
+        </MSModSpec_mod>
+        <MSModSpec_type>
+          <MSModType value="modaa">0</MSModType>
+        </MSModSpec_type>
+        <MSModSpec_name>carboxykynurenin of W</MSModSpec_name>
+        <MSModSpec_monomass>47.98474389</MSModSpec_monomass>
+        <MSModSpec_averagemass>47.9979141</MSModSpec_averagemass>
+        <MSModSpec_n15mass>0</MSModSpec_n15mass>
+        <MSModSpec_residues>
+          <MSModSpec_residues_E>W</MSModSpec_residues_E>
+        </MSModSpec_residues>
+      </MSModSpec>
 </MSModSpecSet>
