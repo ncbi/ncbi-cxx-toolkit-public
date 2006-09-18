@@ -1898,7 +1898,7 @@ enum EEncoding {
     eEncoding_ISO8859_1,
     eEncoding_Windows_1252
 };
-typedef Uint2 TUnicodeSymbol;
+typedef Uint4 TUnicodeSymbol;
 
 class NCBI_XNCBI_EXPORT CStringUTF8 : public string
 {
@@ -2229,7 +2229,8 @@ public:
 #if defined(HAVE_WSTRING)
     /// Convert to Unicode (UTF-16 with no surrogates).
     ///
-    /// Can throw a CStringException if the string has invalid UTF-8 format.
+    /// Can throw a CStringException if the conversion is impossible
+    /// or the string has invalid UTF-8 format.
     /// Defined only if wstring is supported by the compiler.
     wstring AsUnicode(void) const;
 #endif // HAVE_WSTRING
@@ -3213,6 +3214,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.107  2006/09/18 15:10:08  gouriano
+ * Changed TUnicodeSymbol to 4 bytes
+ *
  * Revision 1.106  2006/09/11 13:08:04  gouriano
  * Added buffer validation into CStringUTF8
  *
