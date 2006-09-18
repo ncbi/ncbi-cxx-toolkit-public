@@ -618,6 +618,8 @@ static double s_GetEstimatedPhiExpect(int score, const BlastQueryInfo* query_inf
 }
 
 /** Estimates a cutoff score for use in preliminary gapped stage of phiblast.
+ * The low score must be at least 1 so that hits matching only the pattern
+ * are not returned.
  * @param ethresh expect value to provide score for [in]
  * @param query_info provides statistical information on pattern [in]
  * @param sbp provides Karlin-Altschul statistical params [in]
@@ -626,7 +628,7 @@ static double s_GetEstimatedPhiExpect(int score, const BlastQueryInfo* query_inf
 static Int4 s_PhiBlastCutoffScore(double ethresh, const BlastQueryInfo* query_info, const BlastScoreBlk* sbp)
 {
 
-        int lowScore = 0;
+        int lowScore = 1;
         int highScore = 100;
         int iteration=0;
         const int kMaxIter=20;
@@ -973,6 +975,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2006/09/18 16:49:16  madden
+ * Minimum score for phiblast is one or more
+ *
  * Revision 1.26  2006/09/01 14:58:37  papadopo
  * 1. Give each valid context its own gapped and ungapped cutoff,
  *    as well as its own ungapped X-drop score
