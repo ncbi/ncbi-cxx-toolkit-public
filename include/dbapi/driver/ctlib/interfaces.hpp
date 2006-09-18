@@ -92,6 +92,9 @@ public:
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
+    virtual unsigned int GetLoginTimeout(void) const;
+    virtual unsigned int GetTimeout     (void) const;
+
     //
     // CTLIB specific functionality
     //
@@ -149,7 +152,7 @@ private:
     // Deinitialize all internal structures.
     void x_Close(bool delete_conn = true);
     bool x_SafeToFinalize(void) const;
-    CS_RETCODE Check(CS_RETCODE rc);
+    CS_RETCODE Check(CS_RETCODE rc) const;
 
     friend class CTLibContextRegistry;
 };
@@ -760,6 +763,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/09/18 15:21:28  ssikorsk
+ * Added methods GetLoginTimeout and GetTimeout to CTLibContext.
+ *
  * Revision 1.46  2006/09/13 19:36:02  ssikorsk
  * - CTLibContext::m_ClientCharset.
  *
