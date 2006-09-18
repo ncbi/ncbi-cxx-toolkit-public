@@ -156,7 +156,7 @@ bool CdBlaster::blast(NotifierFunction notifier)
 				truncatedBioseqs.push_back(bioseqRef);
 			}
 			else
-				truncatedBioseqs.push_back(truncateBioseq((*m_queryRows)[s]));
+				truncatedBioseqs.push_back(truncateBioseq((*m_subjectRows)[s]));
 		}
 	}
 	else
@@ -526,6 +526,13 @@ CRef< CBioseq > CdBlaster::truncateBioseq(int row)
 
 void CdBlaster::processBlastHits(int queryRow, CRef<CSearchResults> hits)
 {
+	//debug
+	
+	string err;
+	
+	if (hits && !WriteASNToFile("hits.txt", *(hits->GetSeqAlign()), false,&err))
+		LOG_POST("Failed to write to hits.txt because of "<<err);
+	//end of debug
 	const list< CRef< CSeq_align > >& seqAlignList = hits->GetSeqAlign()->Get();
 	assert (seqAlignList.size() == m_batchSizes[queryRow]);
 	for (list< CRef< CSeq_align > >::const_iterator cit = seqAlignList.begin(); cit != seqAlignList.end(); cit++)

@@ -54,12 +54,13 @@ struct ResidueCell
 class NCBI_CDUTILS_EXPORT ResidueMatrix : public ColumnReader
 {
 public:
-	ResidueMatrix();
+	ResidueMatrix(unsigned numRows);
 	void read(ColumnResidueProfile& crp);
 	bool getAlignedPair(unsigned row1, unsigned row2, pair< string, string >& seqPair); 
 private:
 	typedef vector< ResidueCell > RowContent;
 	vector< RowContent > m_rows;
+	int m_numRows;
 };
 
 //  This class simply uses the number of AA identities in the specified region
@@ -95,6 +96,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/09/18 19:53:50  cliu
+ * bug fixes
+ *
  * Revision 1.1  2006/08/29 18:43:41  cliu
  * no message
  *

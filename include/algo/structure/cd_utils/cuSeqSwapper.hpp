@@ -56,7 +56,7 @@ private:
 	int m_structurePickingThrehsold;
 	AlignmentCollection m_ac;
 
-	void makeClusters(int identityThreshold, vector< vector<int> * > clusters);
+	void makeClusters(int identityThreshold, vector< vector<int> * >& clusters);
 	void findReplacements(vector<int>& cluster, vector< pair<int,int> >& replacementPairs);
 	void findStructuralPendings(set<int>& rows);
 	void promotePendingRows(set<int>& rows, int* newMaster=0);

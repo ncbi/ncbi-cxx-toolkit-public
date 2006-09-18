@@ -60,7 +60,7 @@ BEGIN_SCOPE(cd_utils)
 	 int getSumCount() const;
 	char getMostFrequentResidue(int& count) const ;
 	bool hasRow(int row) const;
-	void getResiduesByRow(vector<char>& residues)const;
+	void getResiduesByRow(vector<char>& residues, bool byNcbiStd=true)const;
 	//residues will be in Ncbistd
 	unsigned char getResidueByRow(int row);
 	bool isAligned(char residue, int row)const;
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/09/18 19:53:51  cliu
+ * bug fixes
+ *
  * Revision 1.7  2006/08/09 18:41:24  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *

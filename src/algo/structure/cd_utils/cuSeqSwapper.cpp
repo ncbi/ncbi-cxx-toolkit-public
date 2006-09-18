@@ -48,6 +48,23 @@ SeqSwapper::SeqSwapper(CCdCore* cd, int identityThreshold):
 	
 void SeqSwapper::swapSequences()
 {
+	int numNormal = m_cd->GetNumRows();
+	
+	//debug
+	int numLocal = 0;
+	for (int i = 0; i < numNormal; i++)
+	{
+		CRef< CSeq_id > seqId;
+		m_ac.GetSeqIDForRow(i, seqId);
+		if (seqId->IsLocal())
+		{
+			LOG_POST("found local seqId at row "<<i);
+			numLocal++;
+		}
+	}
+	if (numLocal == 0)LOG_POST("Could not find any local seq-id");
+	int num = m_ac.GetNumRows();
+
 	vector< vector<int> * > clusters;
 	makeClusters(m_clusteringThreshold, clusters);
 	vector< pair<int, int> > replacementPairs;
@@ -59,11 +76,18 @@ void SeqSwapper::swapSequences()
 		delete cluster;
 	}
 	set<int> usedPendings;
-	int numNormal = m_cd->GetNumRows();
+	
 	vector<int> selectedNormalRows;
 	int newMaster = -1;
 	for (int p = 0; p < replacementPairs.size(); p++)
 	{
+		//debug
+		CRef< CSeq_id > seqId;
+		m_ac.GetSeqIDForRow(replacementPairs[p].first, seqId);
+		string nid = seqId->AsFastaString();
+		m_ac.GetSeqIDForRow(replacementPairs[p].second, seqId);
+		string pid = seqId->AsFastaString();
+		LOG_POST("replacing "<<nid<<"with "<<pid);
 		//take care of master replacement
 		if (replacementPairs[p].first == 0)
 			newMaster = replacementPairs[p].second - numNormal;
@@ -93,7 +117,7 @@ void SeqSwapper::swapSequences()
 	m_cd->EraseSequences();
 }
 
-void SeqSwapper::makeClusters(int identityThreshold, vector< vector<int> * > clusters)
+void SeqSwapper::makeClusters(int identityThreshold, vector< vector<int> * >& clusters)
 {
 	TreeOptions option;
 	option.clusteringMethod = eSLC;
@@ -111,6 +135,7 @@ void SeqSwapper::makeClusters(int identityThreshold, vector< vector<int> * > clu
 		for (int i = 0; i < nodes.size(); i++)
 		{
 			vector<int>* rowids = new vector<int>;
+			seqtree->getSequenceRowid(nodes[i], *rowids);
 			clusters.push_back(rowids);
 		}
 	}
@@ -124,15 +149,15 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 	vector<int> normal, pending;
 	for (int i = 0; i < cluster.size(); i++)
 	{
-		if (m_ac.IsPending(i))
-			pending.push_back(i);
+		if (m_ac.IsPending(cluster[i]))
+			pending.push_back(cluster[i]);
 		else
 		{
 			//only care about local seq_id for now
 			CRef< CSeq_id > seqId;
-			m_ac.GetSeqIDForRow(i, seqId);
+			m_ac.GetSeqIDForRow(cluster[i], seqId);
 			if (seqId->IsLocal())
-				normal.push_back(i);
+				normal.push_back(cluster[i]);
 		}
 	}
 	if ((normal.size() == 0) || (pending.size() == 0))
@@ -141,7 +166,7 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 	CdBlaster blaster(m_ac);
 	blaster.setQueryRows(&normal);
 	blaster.setSubjectRows(&pending);
-	blaster.setScoreType(CSeq_align::eScore_PercentIdentity);
+	blaster.setScoreType(CSeq_align::eScore_IdentityCount);
 	blaster.blast();
 	//for each normal, find the hightest-scoring (in identity), unused and above the threshold pending
 	set<int> usedPendingIndice;

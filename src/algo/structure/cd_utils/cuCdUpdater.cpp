@@ -70,17 +70,17 @@ string CDUpdateStats::toString(bool detailed)
 	int added = numBlastHits - envSeq.size() - fragmented.size() - overlap.size() 
 		- noSeq.size() - badAlign.size() - numRedundant - oldNewPairs.size();
 	string result = "Total number of sequences added to the pending list of the Cd:" + toString(added)
-		+".\n";
+		+". ";
 	if (numFilteredByOverlap > 0)
 	{
 		result += "Total number of pending sequences  that are not moved to normal alignment because of insufficient overlapping:"
-			+ toString(numFilteredByOverlap) + ".\n";
+			+ toString(numFilteredByOverlap) + ". ";
 	}
 	if (!detailed)
 		return result;
 	result += "Number of Blast Hits = ";
 	result += toString(numBlastHits); 
-	result += "\n";
+	result += ". ";
 	
 	result += toString(envSeq, "Environmental Sequences");
 	result += toString(fragmented, "Sequence Fragments");
@@ -91,15 +91,15 @@ string CDUpdateStats::toString(bool detailed)
 	{
 		result += "Alignments removed due to redundancy:";
 		result += toString(numRedundant);
-		result += "\n";
+		result += ". ";
 	}
 	result += toString(oldNewPairs, "New sequences that can replace old sequences (in  parentheses) already in CD");
-	result += "\n";
+	result += ". ";
 	if (numObsolete > 0)
 	{
 		result += "Numer of obsolete sequences removed:";
 		result += toString(numObsolete);
-		result += "\n";
+		result += ". ";
 	}
 	return result;
 }

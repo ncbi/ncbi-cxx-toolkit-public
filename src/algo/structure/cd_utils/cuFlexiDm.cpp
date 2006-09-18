@@ -46,16 +46,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-ResidueMatrix::ResidueMatrix()
+ResidueMatrix::ResidueMatrix(unsigned numRows)
+: m_numRows(numRows), m_rows(numRows, RowContent())
 {
 }
 
 void ResidueMatrix::read(ColumnResidueProfile& crp)
 {
     vector<char> residues;
-    crp.getResiduesByRow(residues);
-    if (m_rows.size() == 0)
-        m_rows.assign(residues.size(), RowContent());
+    residues.assign(m_numRows, '-');
+    crp.getResiduesByRow(residues, false);
     for (unsigned row = 0; row < residues.size(); row++)
         m_rows[row].push_back(ResidueCell(residues[row], crp.isAligned(row)));
 }
@@ -130,7 +130,7 @@ void FlexiDm::GetPercentIdentities(pProgressFunction pFunc)
         BlockModelPair bmp(m_aligns->getSeqAlign(i));
         rp.addOneRow(bmp, mseq, sseq);
     }
-    ResidueMatrix rm;
+    ResidueMatrix rm(nrows);
     rp.traverseColumnsOnMaster(rm);
 
     int Identity;

@@ -188,13 +188,16 @@ inline double ColumnResidueProfile::reweightColumnByRowWeights(const vector<doub
 	return totalWeight;
 }
 
-//residues will be in Ncbistd
-void ColumnResidueProfile::getResiduesByRow(vector<char>& residues)const
+//residues will be in Ncbistd by default
+void ColumnResidueProfile::getResiduesByRow(vector<char>& residues, bool byNcbiStd)const
 {
 	ResidueRowsMap::const_iterator rit = m_residueRowsMap.begin();
 	for (; rit != m_residueRowsMap.end(); rit++)
 	{
-		residues[rit->second.first] = getNcbiStdCode(rit->first);
+		if (byNcbiStd)
+			residues[rit->second.first] = getNcbiStdCode(rit->first);
+		else
+			residues[rit->second.first] = rit->first;
 	}
 }
 
@@ -958,6 +961,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/09/18 19:54:04  cliu
+ * bug fixes
+ *
  * Revision 1.10  2006/08/02 14:03:34  cliu
  * 28 alphabet
  *
