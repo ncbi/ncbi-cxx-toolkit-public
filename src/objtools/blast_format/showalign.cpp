@@ -1625,7 +1625,9 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         subid=&(avRef->GetSeqId(1));
                         if(!previousId.Empty() && 
                            !subid->Match(*previousId)){
-                            m_Scope.ResetHistory();  //release memory 
+                            m_Scope.RemoveFromHistory(m_Scope.
+                                                      GetBioseqHandle(*previousId));
+                                                      //release memory 
                         }
                         x_DisplayAlnvecInfo(out, alnvecInfo,
                                             previousId.Empty() || 
@@ -3002,6 +3004,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.124  2006/09/18 18:49:07  jianye
+*release only subject after display this hit
+*
 *Revision 1.123  2006/07/26 18:14:07  jianye
 *fix unigene url
 *
