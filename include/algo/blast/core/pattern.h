@@ -36,6 +36,7 @@
  */
 
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_query_info.h>
 
 #ifndef ALGO_BLAST_CORE__PATTERN_H
 #define ALGO_BLAST_CORE__PATTERN_H
