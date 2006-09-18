@@ -313,9 +313,11 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
 
 
 CS_RETCODE
-CTLibContext::Check(CS_RETCODE rc)
+CTLibContext::Check(CS_RETCODE rc) const
 {
-    GetCTLExceptionStorage().Handle(GetCtxHandlerStack());
+    // We need const_cast here because of someone's idea of non-const argument
+    // of Handle()
+    GetCTLExceptionStorage().Handle(const_cast<CDBHandlerStack&>(GetCtxHandlerStack()));
 
     return rc;
 }
@@ -363,19 +365,21 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
-    impl::CDriverContext::SetTimeout(nof_secs);
+    if (impl::CDriverContext::SetTimeout(nof_secs)) {
+        CFastMutexGuard mg(m_Mtx);
 
-    CFastMutexGuard mg(m_Mtx);
+        CS_INT t_out = (CS_INT) GetTimeout();
+        t_out = (t_out == 0 ? CS_NO_LIMIT : t_out);
 
-    CS_INT t_out = (CS_INT) GetTimeout();
-    t_out = (t_out == 0 ? CS_NO_LIMIT : t_out);
+        return Check(ct_config(CTLIB_GetContext(),
+                               CS_SET,
+                               CS_TIMEOUT,
+                               &t_out,
+                               CS_UNUSED,
+                               NULL)) == CS_SUCCEED;
+    }
 
-    return Check(ct_config(CTLIB_GetContext(),
-                           CS_SET,
-                           CS_TIMEOUT,
-                           &t_out,
-                           CS_UNUSED,
-                           NULL)) == CS_SUCCEED;
+    return false;
 }
 
 
@@ -392,6 +396,41 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
                            &ti_size,
                            CS_UNUSED,
                            NULL)) == CS_SUCCEED;
+}
+
+
+unsigned int
+CTLibContext::GetLoginTimeout(void) const
+{
+    CS_INT t_out = 0;
+
+    if (Check(ct_config(CTLIB_GetContext(),
+                           CS_GET,
+                           CS_LOGIN_TIMEOUT,
+                           &t_out,
+                           CS_UNUSED,
+                           NULL)) == CS_SUCCEED) {
+        return t_out;
+    }
+
+    return I_DriverContext::GetLoginTimeout();
+}
+
+
+unsigned int CTLibContext::GetTimeout(void) const
+{
+    CS_INT t_out = 0;
+
+    if (Check(ct_config(CTLIB_GetContext(),
+                        CS_GET,
+                        CS_TIMEOUT,
+                        &t_out,
+                        CS_UNUSED,
+                        NULL)) == CS_SUCCEED) {
+        return t_out;
+    }
+
+    return I_DriverContext::GetTimeout();
 }
 
 
@@ -1239,6 +1278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2006/09/18 15:22:33  ssikorsk
+ * Implemented methods GetLoginTimeout and GetTimeout with CTLibContext.
+ *
  * Revision 1.94  2006/09/13 22:49:42  ssikorsk
  * CDriverContext --> impl::CDriverContext
  *
