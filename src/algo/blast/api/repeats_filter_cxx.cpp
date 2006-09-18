@@ -152,7 +152,9 @@ s_SeqAlignToBlastSeqLoc(const CSeq_align_set& alignment,
         _ASSERT((*dense_seg)->GetSegs().IsDenseg());
         const CDense_seg& seg = (*dense_seg)->GetSegs().GetDenseg();
         const int kNumSegments = seg.GetNumseg();
+#if _DEBUG      /* to eliminate compiler warning in release mode */
         const int kNumDim = seg.GetDim();
+#endif
         _ASSERT(kNumDim == 2);
 
         const CDense_seg::TStarts& starts = seg.GetStarts();
@@ -404,6 +406,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.37  2006/09/18 14:39:14  camacho
+ *  Fix compiler warning
+ *
  *  Revision 1.36  2006/09/01 16:56:37  camacho
  *  Remove unused variable
  *
