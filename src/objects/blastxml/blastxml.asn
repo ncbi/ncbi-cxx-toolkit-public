@@ -1,6 +1,6 @@
---$Id: blastxml.asn,v 6.7 2002/07/17 22:28:13 dondosha Exp $
+--$Id: blastxml.asn,v 6.8 2006/09/18 15:17:51 bealer Exp $
 --
---$Revision: 6.7 $
+--$Revision: 6.8 $
 --**********************************************************************
 --
 --  ASN.1 for simplified BLAST output in XML
@@ -8,6 +8,9 @@
 --
 --
 -- $Log: blastxml.asn,v $
+-- Revision 6.8  2006/09/18 15:17:51  bealer
+-- - Use BigInt type name for db-len integer.
+--
 -- Revision 6.7  2002/07/17 22:28:13  dondosha
 -- Added support for megablast XML output
 --
@@ -68,10 +71,10 @@ Parameters ::= SEQUENCE {
 	pattern VisibleString OPTIONAL,	-- PHI-BLAST pattern
         entrez-query VisibleString OPTIONAL -- Limit of request to Entrez query
 }
-	
+
 Statistics ::= SEQUENCE {
 	db-num INTEGER ,		-- Number of sequences in BLAST db
-	db-len INTEGER ,		-- Length of BLAST db
+	db-len BigInt ,	                -- Length of BLAST db
 	hsp-len INTEGER ,		-- Effective HSP length
 	eff-space REAL,			-- Effective search space
         kappa REAL,                     -- Karlin-Altschul parameter K
