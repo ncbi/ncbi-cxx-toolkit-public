@@ -78,7 +78,8 @@ public:
         fAllSeqIds  = 0x40,  ///< Read Seq-ids past the first ^A (see note)
         fNoSeqData  = 0x80,  ///< Parse the deflines but skip the data
         fRequireID  = 0x100, ///< Reject deflines that lack IDs
-        fDLOptional = 0x200  ///< Don't require a leading defline
+        fDLOptional = 0x200, ///< Don't require a leading defline
+        fIgnoreRange= 0x400  ///< Disregard defline range specifications
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -351,6 +352,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/09/18 20:31:45  ucko
+* CFastaReader: add an fIgnoreRange flag to disregard range information
+* in deflines, as the resulting leading gap confuses some callers.
+*
 * Revision 1.13  2006/06/27 19:03:55  ucko
 * #include <corelib/ncbi_param.hpp> here, not in fasta.cpp!
 * DOXYGENize existing comments, and add some new ones.

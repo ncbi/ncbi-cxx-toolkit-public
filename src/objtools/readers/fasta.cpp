@@ -401,11 +401,13 @@ size_t CFastaReader::ParseRange(const TStr& s)
     if (start > end  ||  s[pos] != ':') {
         return 0;
     }
-    if (start > 0) {
-        SGap gap = { 0, start };
-        m_Gaps.push_back(gap);
+    if ( !TestFlag(fIgnoreRange) ) {
+        if (start > 0) {
+            SGap gap = { 0, start };
+            m_Gaps.push_back(gap);
+        }
+        m_ExpectedEnd = end;
     }
-    m_ExpectedEnd = end;
     return s.length() - pos;
 }
 
@@ -1410,6 +1412,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2006/09/18 20:31:50  ucko
+* CFastaReader: add an fIgnoreRange flag to disregard range information
+* in deflines, as the resulting leading gap confuses some callers.
+*
 * Revision 1.32  2006/08/21 19:59:12  ucko
 * CFastaReader::ReadOneSeq: throw an exception upon encountering EOF
 * when still needing a defline.
