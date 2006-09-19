@@ -234,6 +234,13 @@ public:
     CSeq_align_Handle AddAlign(const CSeq_align& new_obj) const;
     CSeq_graph_Handle AddGraph(const CSeq_graph& new_obj) const;
 
+    // Remove handle from its current Seq-annot and add it here
+    CSeq_feat_EditHandle TakeFeat(const CSeq_feat_EditHandle& handle) const;
+    CSeq_align_Handle TakeAlign(const CSeq_align_Handle& handle) const;
+    CSeq_graph_Handle TakeGraph(const CSeq_graph_Handle& handle) const;
+
+    void TakeAllAnnots(const CSeq_annot_EditHandle& annot) const;
+
 protected:
     friend class CScope_Impl;
     friend class CBioseq_EditHandle;
@@ -361,6 +368,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/09/19 19:22:02  vasilche
+* Implemented TakeFeat() like methods.
+*
 * Revision 1.26  2006/08/07 15:25:05  vasilche
 * CSeq_annot_EditHandle(CSeq_annot_Handle) made public and explicit.
 * Introduced CSeq_feat_EditHandle.

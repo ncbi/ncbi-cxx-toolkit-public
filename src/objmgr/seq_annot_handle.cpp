@@ -287,8 +287,66 @@ CSeq_graph_Handle CSeq_annot_EditHandle::AddGraph(const CSeq_graph& new_obj) con
     typedef CSeq_annot_Add_EditCommand<CSeq_graph_Handle> TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
     return processor.run(new TCommand(*this, new_obj));
-    //    return CSeq_graph_Handle(*this, x_GetInfo().Add(new_obj));
 }
+
+
+CSeq_feat_EditHandle
+CSeq_annot_EditHandle::TakeFeat(const CSeq_feat_EditHandle& handle) const
+{
+    CConstRef<CSeq_feat> obj = handle.GetSeq_feat();
+    handle.Remove();
+    return AddFeat(*obj);
+}
+
+
+CSeq_graph_Handle
+CSeq_annot_EditHandle::TakeGraph(const CSeq_graph_Handle& handle) const
+{
+    CConstRef<CSeq_graph> obj = handle.GetSeq_graph();
+    handle.Remove();
+    return AddGraph(*obj);
+}
+
+
+CSeq_align_Handle
+CSeq_annot_EditHandle::TakeAlign(const CSeq_align_Handle& handle) const
+{
+    CConstRef<CSeq_align> obj = handle.GetSeq_align();
+    handle.Remove();
+    return AddAlign(*obj);
+}
+
+
+void
+CSeq_annot_EditHandle::TakeAllAnnots(const CSeq_annot_EditHandle& annot) const
+{
+    if ( Which() != annot.Which() ) {
+        NCBI_THROW(CAnnotException, eIncomatibleType,
+                   "different Seq-annot types");
+    }
+    switch ( annot.Which() ) {
+    case CSeq_annot::C_Data::e_Ftable:
+        for ( CSeq_annot_ftable_I it(annot); it; ++it ) {
+            TakeFeat(*it);
+        }
+        break;
+    case CSeq_annot::C_Data::e_Graph:
+        NCBI_THROW(CObjMgrException, eNotImplemented,
+                   "taking graphs is not implemented yet");
+        break;
+    case CSeq_annot::C_Data::e_Align:
+        NCBI_THROW(CObjMgrException, eNotImplemented,
+                   "taking aligns is not implemented yet");
+        break;
+    case CSeq_annot::C_Data::e_Locs:
+        NCBI_THROW(CObjMgrException, eNotImplemented,
+                   "taking locs is not implemented yet");
+        break;
+    default:
+        break;
+    }
+}
+
 
 CSeq_feat_EditHandle 
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_feat& new_obj) const
@@ -324,6 +382,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/09/19 19:22:02  vasilche
+* Implemented TakeFeat() like methods.
+*
 * Revision 1.23  2006/08/07 15:25:05  vasilche
 * CSeq_annot_EditHandle(CSeq_annot_Handle) made public and explicit.
 * Introduced CSeq_feat_EditHandle.
