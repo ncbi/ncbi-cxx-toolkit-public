@@ -55,7 +55,7 @@ class CTSE_Info;
 class CBioseq_Base_Info;
 class CAnnotObject_Info;
 struct SAnnotObject_Key;
-struct STSEAnnotObjectMapper;
+class CTSEAnnotObjectMapper;
 class CSeq_annot_SNP_Info;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
@@ -167,7 +167,7 @@ protected:
     void x_MapAnnotObject(CAnnotObject_Info& info);
     void x_RemapAnnotObject(CAnnotObject_Info& info);
 
-    void x_Map(const STSEAnnotObjectMapper& mapper,
+    void x_Map(const CTSEAnnotObjectMapper& mapper,
                const SAnnotObject_Key& key,
                const SAnnotObject_Index& index);
 
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2006/09/19 19:19:48  vasilche
+* struct STSEAnnotObjectMapper -> class CTSEAnnotObjectMapper.
+*
 * Revision 1.29  2006/09/18 14:29:29  vasilche
 * Store annots indexing information to allow reindexing after modification.
 *

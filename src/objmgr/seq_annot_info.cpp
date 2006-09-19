@@ -537,7 +537,7 @@ void CSeq_annot_Info::x_InitAnnotKeys(CTSE_Info& tse)
 
 
 inline
-void CSeq_annot_Info::x_Map(const STSEAnnotObjectMapper& mapper,
+void CSeq_annot_Info::x_Map(const CTSEAnnotObjectMapper& mapper,
                             const SAnnotObject_Key& key,
                             const SAnnotObject_Index& index)
 {
@@ -573,7 +573,7 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    STSEAnnotObjectMapper mapper(tse, GetName());
+    CTSEAnnotObjectMapper mapper(tse, GetName());
 
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
@@ -635,7 +635,7 @@ void CSeq_annot_Info::x_InitGraphKeys(CTSE_Info& tse)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    STSEAnnotObjectMapper mapper(tse, GetName());
+    CTSEAnnotObjectMapper mapper(tse, GetName());
 
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
@@ -687,7 +687,7 @@ void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    STSEAnnotObjectMapper mapper(tse, GetName());
+    CTSEAnnotObjectMapper mapper(tse, GetName());
 
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
@@ -746,7 +746,7 @@ void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    STSEAnnotObjectMapper mapper(tse, GetName());
+    CTSEAnnotObjectMapper mapper(tse, GetName());
 
     size_t keys_begin = m_ObjectIndex.GetKeys().size();
     index.m_AnnotObject_Info = &info;
@@ -795,7 +795,7 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
     SAnnotObject_Index index;
     vector<CHandleRangeMap> hrmaps;
 
-    STSEAnnotObjectMapper mapper(tse, GetName());
+    CTSEAnnotObjectMapper mapper(tse, GetName());
 
     index.m_AnnotObject_Info = &info;
 
@@ -919,7 +919,7 @@ void CSeq_annot_Info::x_RemapAnnotObject(CAnnotObject_Info& info)
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
     
-    STSEAnnotObjectMapper mapper(tse, GetName());
+    CTSEAnnotObjectMapper mapper(tse, GetName());
     // replace annotation indexes in TSE
     
     size_t old_begin, old_end;
@@ -963,7 +963,7 @@ void CSeq_annot_Info::x_UnmapAnnotObject(CAnnotObject_Info& info)
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
     
-    STSEAnnotObjectMapper mapper(tse, GetName());
+    CTSEAnnotObjectMapper mapper(tse, GetName());
     
     if ( info.HasSingleKey() ) {
         mapper.Unmap(info.GetKey(), info);
@@ -1262,6 +1262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/09/19 19:19:48  vasilche
+ * struct STSEAnnotObjectMapper -> class CTSEAnnotObjectMapper.
+ *
  * Revision 1.43  2006/09/18 14:29:29  vasilche
  * Store annots indexing information to allow reindexing after modification.
  *

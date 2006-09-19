@@ -459,7 +459,7 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 
     SAnnotObject_Index index;
     ITERATE ( TObjectIndexList, it, m_ObjectIndexList ) {
-        STSEAnnotObjectMapper mapper(tse, it->GetName());
+        CTSEAnnotObjectMapper mapper(tse, it->GetName());
         ITERATE ( SAnnotObjectsIndex::TObjectInfos, info, it->GetInfos() ) {
             index.m_AnnotObject_Info = const_cast<CAnnotObject_Info*>(&*info);
             if ( info->HasSingleKey() ) {
@@ -538,6 +538,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/09/19 19:19:48  vasilche
+* struct STSEAnnotObjectMapper -> class CTSEAnnotObjectMapper.
+*
 * Revision 1.32  2006/09/18 14:29:29  vasilche
 * Store annots indexing information to allow reindexing after modification.
 *

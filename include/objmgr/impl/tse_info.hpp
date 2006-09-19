@@ -163,7 +163,7 @@ private:
     void operator=(const CTSE_SetObjectInfo&);
 };
 
-struct STSEAnnotObjectMapper;
+class CTSEAnnotObjectMapper;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
@@ -412,7 +412,7 @@ private:
                             const SAnnotObject_Key& key);
     void x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos);
 
-    friend class STSEAnnotObjectMapper;
+    friend class CTSEAnnotObjectMapper;
 
     void x_IndexSeqTSE(const CSeq_id_Handle& id);
     void x_UnindexSeqTSE(const CSeq_id_Handle& id);
@@ -696,9 +696,10 @@ CRef<IEditSaver> CTSE_Info::GetEditSaver() const
 }
 
 
-struct STSEAnnotObjectMapper
+class CTSEAnnotObjectMapper
 {
-    STSEAnnotObjectMapper(CTSE_Info& tse, const CAnnotName& name)
+public:
+    CTSEAnnotObjectMapper(CTSE_Info& tse, const CAnnotName& name)
         : m_TSE(tse), m_Name(name),
           m_AnnotObjs(tse.x_SetAnnotObjs(name))
         {
