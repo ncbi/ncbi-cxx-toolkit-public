@@ -60,6 +60,9 @@
 #include <corelib/ncbitype.h>
 #include <limits.h>
 #include <float.h>
+#ifdef HAVE_WCHAR_H
+#include <wchar.h>
+#endif
 
 
 /** @addtogroup Portability
@@ -99,6 +102,11 @@ const signed   char   kMax_Char   = CHAR_MAX;
 const signed   char   kMin_SChar  = SCHAR_MIN;
 const signed   char   kMax_SChar  = SCHAR_MAX;
 const unsigned char   kMax_UChar  = UCHAR_MAX;
+
+#ifdef HAVE_WCHAR_H
+const wchar_t kMin_WChar = WCHAR_MIN;
+const wchar_t kMax_WChar = WCHAR_MAX;
+#endif
 
 const signed   short  kMin_Short  = SHRT_MIN;
 const signed   short  kMax_Short  = SHRT_MAX;
@@ -227,6 +235,9 @@ const Uint8 kMax_UI8 = NCBI_MAX_UI8;
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2006/09/19 14:54:04  ucko
+ * Ensure that numeric_limits<wchar_t> exists if wchar.h is available.
+ *
  * Revision 1.5  2005/05/13 18:23:30  ivanov
  * Do not use C++ comments in the .h files
  *

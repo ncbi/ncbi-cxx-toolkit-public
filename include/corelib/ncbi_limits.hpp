@@ -118,6 +118,10 @@ NCBI_NUMERIC_LIMITS          (         char,  Char);
 NCBI_NUMERIC_LIMITS          (signed   char, SChar);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned char, UChar);
 
+#ifdef HAVE_WCHAR_H
+NCBI_NUMERIC_LIMITS          (wchar_t, WChar);
+#endif
+
 NCBI_NUMERIC_LIMITS          (signed   short,  Short);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned short, UShort);
 
@@ -204,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2006/09/19 14:54:04  ucko
+ * Ensure that numeric_limits<wchar_t> exists if wchar.h is available.
+ *
  * Revision 1.8  2005/12/05 17:00:02  ucko
  * WorkShop 5.5 (finally) introduced support for std::numeric_limits<long long>.
  *
