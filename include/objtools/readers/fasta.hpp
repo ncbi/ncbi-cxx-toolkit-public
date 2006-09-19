@@ -160,13 +160,14 @@ protected:
     void OpenMask(void);
     void CloseMask(void)
         { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
-    SIZE_TYPE StreamPosition(void) const
+    Int8 StreamPosition(void) const
         { return NcbiStreamposToInt8(m_LineReader->GetPosition()); }
 
     ILineReader&  GetLineReader(void)         { return *m_LineReader; }
-    bool          TestFlag(EFlags flag) const { return GetFlags() & flag; }
+    bool          TestFlag(EFlags flag) const
+        { return (GetFlags() & flag) != 0; }
     bool          TestFlag(EInternalFlags flag) const
-        { return GetFlags() & flag; }
+        { return (GetFlags() & flag) != 0; }
     CBioseq::TId& SetIDs(void)                { return m_CurrentSeq->SetId(); }
 
     enum EPosType {
@@ -352,6 +353,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/09/19 19:19:20  ucko
+* CFastaReader::StreamPosition: change return type to Int8, even if some
+* callers may have to truncate the result.
+* CFastaReader::TestFlag: add redundant syntax to avoid MSVC warnings.
+*
 * Revision 1.14  2006/09/18 20:31:45  ucko
 * CFastaReader: add an fIgnoreRange flag to disregard range information
 * in deflines, as the resulting leading gap confuses some callers.
