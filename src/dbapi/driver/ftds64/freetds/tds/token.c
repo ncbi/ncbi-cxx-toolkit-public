@@ -86,7 +86,7 @@ static const char *tds_pr_op(int op);
 
 /**
  * \addtogroup token
- * \@{ 
+ * \@{
  */
 
 /**
@@ -259,7 +259,7 @@ tds_set_spid(TDSSOCKET * tds)
 		switch (result_type) {
 
 			case TDS_ROWFMT_RESULT:
-				if (tds->res_info->num_cols != 1) 
+				if (tds->res_info->num_cols != 1)
 					return TDS_FAIL;
 				break;
 
@@ -282,15 +282,15 @@ tds_set_spid(TDSSOCKET * tds)
 				break;
 		}
 	}
-	if (rc != TDS_NO_MORE_RESULTS) 
+	if (rc != TDS_NO_MORE_RESULTS)
 		return TDS_FAIL;
 
 	return TDS_SUCCEED;
 }
 
 /**
- * tds_process_login_tokens() is called after sending the login packet 
- * to the server.  It returns the success or failure of the login 
+ * tds_process_login_tokens() is called after sending the login packet
+ * to the server.  It returns the success or failure of the login
  * dependent on the protocol version. 4.2 sends an ACK token only when
  * successful, TDS 5.0 sends it always with a success byte within
  */
@@ -425,7 +425,7 @@ tds_process_auth(TDSSOCKET * tds)
 	where = 32;
 
 	/*
-	 * tds_get_string(tds, domain, domain_len); 
+	 * tds_get_string(tds, domain, domain_len);
 	 * tdsdump_log(TDS_DBG_INFO1, "TDS_AUTH_TOKEN domain %s\n", domain);
 	 * where += strlen(domain);
 	 */
@@ -447,7 +447,7 @@ tds_process_auth(TDSSOCKET * tds)
  * tds_submit_query() and is responsible for calling the routines to
  * populate tds->res_info if appropriate (some query have no result sets)
  * @param tds A pointer to the TDSSOCKET structure managing a client/server operation.
- * @param result_type A pointer to an integer variable which 
+ * @param result_type A pointer to an integer variable which
  *        tds_process_tokens sets to indicate the current type of result.
  *  @par
  *  <b>Values that indicate command status</b>
@@ -555,7 +555,7 @@ tds_process_tokens(TDSSOCKET * tds, TDS_INT * result_type, int *done_flags, unsi
 				rc = tds7_process_result(tds);
 				/*
 				 * handle browse information (if presents)
-				 * TODO copied from below, function or put in results process 
+				 * TODO copied from below, function or put in results process
 				 */
 				marker = tds_get_byte(tds);
 				if (marker != TDS_TABNAME_TOKEN) {
@@ -625,15 +625,15 @@ tds_process_tokens(TDSSOCKET * tds, TDS_INT * result_type, int *done_flags, unsi
 				if (pinfo && pinfo->num_cols > 0) {
 					curcol = pinfo->columns[0];
 					if (tds->internal_sp_called == TDS_SP_CURSOROPEN && tds->cur_cursor) {
-						TDSCURSOR  *cursor = tds->cur_cursor; 
+						TDSCURSOR  *cursor = tds->cur_cursor;
 
 						cursor->cursor_id = *(TDS_INT *) &(pinfo->current_row[curcol->column_offset]);
-						tdsdump_log(TDS_DBG_FUNC, "stored internal cursor id %d\n", 
+						tdsdump_log(TDS_DBG_FUNC, "stored internal cursor id %d\n",
 							    cursor->cursor_id);
 						cursor->srv_status &= ~TDS_CUR_ISTAT_CLOSED;
 						cursor->srv_status |= TDS_CUR_ISTAT_OPEN;
 					}
-					if (tds->internal_sp_called == TDS_SP_PREPARE 
+					if (tds->internal_sp_called == TDS_SP_PREPARE
 					    && tds->cur_dyn && tds->cur_dyn->num_id == 0 && curcol->column_cur_size > 0) {
 						tds->cur_dyn->num_id = *(TDS_INT *) &(pinfo->current_row[curcol->column_offset]);
 					}
@@ -658,7 +658,7 @@ tds_process_tokens(TDSSOCKET * tds, TDS_INT * result_type, int *done_flags, unsi
 		case TDS_ROW_TOKEN:
 			/* overstepped the mark... */
 			if (tds->cur_cursor) {
-				TDSCURSOR  *cursor = tds->cur_cursor; 
+				TDSCURSOR  *cursor = tds->cur_cursor;
 
 				tds->current_results = cursor->res_info;
 				tdsdump_log(TDS_DBG_INFO1, "tds_process_tokens(). set current_results to cursor->res_info\n");
@@ -745,23 +745,24 @@ tds_process_tokens(TDSSOCKET * tds, TDS_INT * result_type, int *done_flags, unsi
 		case TDS_DONEPROC_TOKEN:
 			SET_RETURN(TDS_DONEPROC_RESULT, DONE);
 			rc = tds_process_end(tds, marker, done_flags);
+            tds->rows_affected = saved_rows_affected; /* ssikorsk */
 			switch (tds->internal_sp_called) {
-			case 0: 
-			case TDS_SP_PREPARE: 
-			case TDS_SP_EXECUTE: 
-			case TDS_SP_UNPREPARE: 
+			case 0:
+			case TDS_SP_PREPARE:
+			case TDS_SP_EXECUTE:
+			case TDS_SP_UNPREPARE:
 			case TDS_SP_EXECUTESQL:
 				break;
-			case TDS_SP_CURSOROPEN: 
+			case TDS_SP_CURSOROPEN:
 				*result_type       = TDS_DONE_RESULT;
 				tds->rows_affected = saved_rows_affected;
 				break;
 			case TDS_SP_CURSORCLOSE:
 				tdsdump_log(TDS_DBG_FUNC, "TDS_SP_CURSORCLOSE\n");
 				if (tds->cur_cursor) {
- 
+
 					TDSCURSOR  *cursor = tds->cur_cursor;
- 
+
 					cursor->srv_status &= ~TDS_CUR_ISTAT_OPEN;
 					cursor->srv_status |= TDS_CUR_ISTAT_CLOSED;
 					cursor->srv_status |= TDS_CUR_ISTAT_DECLARED;
@@ -839,7 +840,7 @@ tds_process_tokens(TDSSOCKET * tds, TDS_INT * result_type, int *done_flags, unsi
  *
  * This function was written to avoid direct calls to tds_process_default_tokens
  * (which caused problems such as ignoring query errors).
- * Results are read until idle state or severe failure (do not stop for 
+ * Results are read until idle state or severe failure (do not stop for
  * statement failure).
  * @return see tds_process_tokens for results (TDS_NO_MORE_RESULTS is never returned)
  */
@@ -859,7 +860,7 @@ tds_process_simple_query(TDSSOCKET * tds)
 			case TDS_DONE_RESULT:
 			case TDS_DONEPROC_RESULT:
 			case TDS_DONEINPROC_RESULT:
-				if ((done_flags & TDS_DONE_ERROR) != 0) 
+				if ((done_flags & TDS_DONE_ERROR) != 0)
 					ret = TDS_FAIL;
 				break;
 
@@ -876,7 +877,7 @@ tds_process_simple_query(TDSSOCKET * tds)
 
 /**
  * tds_process_col_name() is one half of the result set under TDS 4.2
- * it contains all the column names, a TDS_COLFMT_TOKEN should 
+ * it contains all the column names, a TDS_COLFMT_TOKEN should
  * immediately follow this token with the datatype/size information
  * This is a 4.2 only function
  */
@@ -981,7 +982,7 @@ tds_add_row_column_size(TDSRESULTINFO * info, TDSCOLUMN * curcol)
 	 * the column_offset is the offset into the row buffer
 	 * where this column begins, text types are no longer
 	 * stored in the row buffer because the max size can
-	 * be too large (2gig) to allocate 
+	 * be too large (2gig) to allocate
 	 */
 	curcol->column_offset = info->row_size;
 	if (is_numeric_type(curcol->column_type)) {
@@ -997,7 +998,7 @@ tds_add_row_column_size(TDSRESULTINFO * info, TDSCOLUMN * curcol)
 
 /**
  * tds_process_col_fmt() is the other half of result set processing
- * under TDS 4.2. It follows tds_process_col_name(). It contains all the 
+ * under TDS 4.2. It follows tds_process_col_name(). It contains all the
  * column type and size information.
  * This is a 4.2 only function
  */
@@ -1113,7 +1114,7 @@ tds_process_colinfo(TDSSOCKET * tds)
 }
 
 /**
- * tds_process_param_result() processes output parameters of a stored 
+ * tds_process_param_result() processes output parameters of a stored
  * procedure. This differs from regular row/compute results in that there
  * is no total number of parameters given, they just show up singly.
  */
@@ -1417,9 +1418,9 @@ tds7_get_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol)
 		    "\tserver's type = %d (%s)\n"
 		    "\tcolumn_varint_size = %d\n"
 		    "\tcolumn_size = %d (%d on server)\n",
-		    curcol->column_name, curcol->column_namelen, 
-		    curcol->column_type, tds_prtype(curcol->column_type), 
-		    curcol->on_server.column_type, tds_prtype(curcol->on_server.column_type), 
+		    curcol->column_name, curcol->column_namelen,
+		    curcol->column_type, tds_prtype(curcol->column_type),
+		    curcol->on_server.column_type, tds_prtype(curcol->on_server.column_type),
 		    curcol->column_varint_size,
 		    curcol->column_size, curcol->on_server.column_size);
 
@@ -1429,7 +1430,7 @@ tds7_get_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol)
 }
 
 /**
- * tds7_process_result() is the TDS 7.0 result set processing routine.  It 
+ * tds7_process_result() is the TDS 7.0 result set processing routine.  It
  * is responsible for populating the tds->res_info structure.
  * This is a TDS 7.0 only function
  */
@@ -1458,7 +1459,7 @@ tds7_process_result(TDSSOCKET * tds)
 	tds->rows_affected = TDS_NO_COUNT;
 
 	if (tds->cur_cursor) {
-		cursor = tds->cur_cursor; 
+		cursor = tds->cur_cursor;
 		if ((cursor->res_info = tds_alloc_results(num_cols)) == NULL)
 			return TDS_FAIL;
 		info = cursor->res_info;
@@ -1570,7 +1571,7 @@ tds_get_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int is_param)
 }
 
 /**
- * tds_process_result() is the TDS 5.0 result set processing routine.  It 
+ * tds_process_result() is the TDS 5.0 result set processing routine.  It
  * is responsible for populating the tds->res_info structure.
  * This is a TDS 5.0 only function
  */
@@ -1594,7 +1595,7 @@ tds_process_result(TDSSOCKET * tds)
 	num_cols = tds_get_smallint(tds);
 
 	if (tds->cur_cursor) {
-		cursor = tds->cur_cursor; 
+		cursor = tds->cur_cursor;
 		if ((cursor->res_info = tds_alloc_results(num_cols)) == NULL)
 			return TDS_FAIL;
 		info = cursor->res_info;
@@ -1629,7 +1630,7 @@ tds_process_result(TDSSOCKET * tds)
 }
 
 /**
- * tds5_process_result() is the new TDS 5.0 result set processing routine.  
+ * tds5_process_result() is the new TDS 5.0 result set processing routine.
  * It is responsible for populating the tds->res_info structure.
  * This is a TDS 5.0 only function
  */
@@ -1663,7 +1664,7 @@ tds5_process_result(TDSSOCKET * tds)
 	num_cols = tds_get_smallint(tds);
 
 	if (tds->cur_cursor) {
-		cursor = tds->cur_cursor; 
+		cursor = tds->cur_cursor;
 		if ((cursor->res_info = tds_alloc_results(num_cols)) == NULL)
 			return TDS_FAIL;
 		info = cursor->res_info;
@@ -1783,7 +1784,7 @@ tds5_process_result(TDSSOCKET * tds)
 
 		tds_add_row_column_size(info, curcol);
 
-		/* 
+		/*
 		 *  Dump all information on this column
 		 */
 		tdsdump_log(TDS_DBG_INFO1, "col %d:\n", col);
@@ -1807,7 +1808,7 @@ tds5_process_result(TDSSOCKET * tds)
 
 /**
  * tds_process_compute() processes compute rows and places them in the row
- * buffer.  
+ * buffer.
  */
 static int
 tds_process_compute(TDSSOCKET * tds, TDS_INT * computeid)
@@ -1864,11 +1865,11 @@ tds_get_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
 	switch (curcol->column_varint_size) {
 	case 4:
 		/*
-		 * TODO finish 
-		 * This strange type has following structure 
-		 * 0 len (int32) -- NULL 
+		 * TODO finish
+		 * This strange type has following structure
+		 * 0 len (int32) -- NULL
 		 * len (int32), type (int8), data -- ints, date, etc
-		 * len (int32), type (int8), 7 (int8), collation, column size (int16) -- [n]char, [n]varchar, binary, varbinary 
+		 * len (int32), type (int8), 7 (int8), collation, column size (int16) -- [n]char, [n]varchar, binary, varbinary
 		 * BLOBS (text/image) not supported
 		 */
 		if (curcol->column_type == SYBVARIANT) {
@@ -1924,22 +1925,22 @@ tds_get_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
 		return TDS_SUCCEED;
 	}
 
-	/* 
+	/*
 	 * We're now set to read the data from the wire.  For varying types (e.g. char/varchar)
-	 * make sure that curcol->column_cur_size reflects the size of the read data, 
-	 * after any charset conversion.  tds_get_char_data() does that for you, 
-	 * but of course tds_get_n() doesn't.  
+	 * make sure that curcol->column_cur_size reflects the size of the read data,
+	 * after any charset conversion.  tds_get_char_data() does that for you,
+	 * but of course tds_get_n() doesn't.
 	 *
 	 * colsize == wire_size, bytes to read
 	 * curcol->column_cur_size == sizeof destination buffer, room to write
 	 */
 	dest = &(current_row[curcol->column_offset]);
 	if (is_numeric_type(curcol->column_type)) {
-		/* 
-		 * Handling NUMERIC datatypes: 
+		/*
+		 * Handling NUMERIC datatypes:
 		 * Since these can be passed around independent
 		 * of the original column they came from, we embed the TDS_NUMERIC datatype in the row buffer
-		 * instead of using the wire representation, even though it uses a few more bytes.  
+		 * instead of using the wire representation, even though it uses a few more bytes.
 		 */
 		TDS_NUMERIC *num = (TDS_NUMERIC *) dest;
 		memset(num, '\0', sizeof(TDS_NUMERIC));
@@ -1965,10 +1966,10 @@ tds_get_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
 		int new_blob_size;
 		assert(blob == (TDSBLOB *) dest); 	/* cf. column_varint_size case 4, above */
 		
-		/* 
+		/*
 		 * Blobs don't use a column's fixed buffer because the official maximum size is 2 GB.
-		 * Instead, they're reallocated as necessary, based on the data's size.  
-		 * Here we allocate memory, if need be.  
+		 * Instead, they're reallocated as necessary, based on the data's size.
+		 * Here we allocate memory, if need be.
 		 */
 		/* TODO this can lead to a big waste of memory */
 		new_blob_size = determine_adjusted_size(curcol->char_conv, colsize);
@@ -2011,7 +2012,7 @@ tds_get_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
 				return TDS_FAIL;
 		} else {	
 			/*
-			 * special case, some servers seem to return more data in some conditions 
+			 * special case, some servers seem to return more data in some conditions
 			 * (ASA 7 returning 4 byte nullable integer)
 			 */
 			int discard_len = 0;
@@ -2119,7 +2120,7 @@ tds_process_row(TDSSOCKET * tds)
  * tokens.
  * \param tds        state information for the socket and the TDS protocol
  * \param marker     TDS token number
- * \param flags_parm filled with bit flags (see TDS_DONE_ constants). 
+ * \param flags_parm filled with bit flags (see TDS_DONE_ constants).
  *        Is NULL nothing is returned
  */
 static TDS_INT
@@ -2189,14 +2190,14 @@ tds_process_end(TDSSOCKET * tds, int marker, int *flags_parm)
 /**
  * tds_client_msg() sends a message to the client application from the CLI or
  * TDS layer. A client message is one that is generated from with the library
- * and not from the server.  The message is sent to the CLI (the 
+ * and not from the server.  The message is sent to the CLI (the
  * err_handler) so that it may forward it to the client application or
  * discard it if no msg handler has been by the application. tds->parent
  * contains a void pointer to the parent of the tds socket. This can be cast
  * back into DBPROCESS or CS_CONNECTION by the CLI and used to determine the
  * proper recipient function for this message.
  * \todo This procedure is deprecated, because the client libraries use differing messages and message numbers.
- * 	The general approach is to emit ct-lib error information and let db-lib and ODBC map that to their number and text.  
+ * 	The general approach is to emit ct-lib error information and let db-lib and ODBC map that to their number and text.
  */
 int
 tds_client_msg(const TDSCONTEXT * tds_ctx, TDSSOCKET * tds, int msgno, int severity, int state, int line, const char *msg_text)
@@ -2223,21 +2224,21 @@ tds_client_msg(const TDSCONTEXT * tds_ctx, TDSSOCKET * tds, int msgno, int sever
 		tds_free_msg(&msg);
 #if 1
 		/*
-		 * error handler may return: 
-		 * INT_EXIT -- Print an error message, and exit application, . returning an error to the OS.  
-		 * INT_CANCEL -- Return FAIL to the db-lib function that caused the error. 
-		 * For SQLETIME errors only, call dbcancel() to try to cancel the current command batch 
-		 * 	and flush any pending results. Break the connection if dbcancel() times out, 
-		 * INT_CONTINUE -- For SQLETIME, wait for one additional time-out period, then call the error handler again. 
-		 *  	Else treat as INT_CANCEL. 
+		 * error handler may return:
+		 * INT_EXIT -- Print an error message, and exit application, . returning an error to the OS.
+		 * INT_CANCEL -- Return FAIL to the db-lib function that caused the error.
+		 * For SQLETIME errors only, call dbcancel() to try to cancel the current command batch
+		 * 	and flush any pending results. Break the connection if dbcancel() times out,
+		 * INT_CONTINUE -- For SQLETIME, wait for one additional time-out period, then call the error handler again.
+		 *  	Else treat as INT_CANCEL.
 		 */
 #else
 		/*
-		 * This was bogus afaict.  
-		 * Definitely, it's a mistake to set the state to TDS_DEAD for information messages when the handler  
-		 * returns INT_CANCEL, at least according to Microsoft's documentation.  
+		 * This was bogus afaict.
+		 * Definitely, it's a mistake to set the state to TDS_DEAD for information messages when the handler
+		 * returns INT_CANCEL, at least according to Microsoft's documentation.
 		 * --jkl
-		 */  
+		 */
 		/*
 		 * message handler returned FAIL/CS_FAIL
 		 * mark socket as dead
@@ -2255,7 +2256,7 @@ tds_client_msg(const TDSCONTEXT * tds_ctx, TDSSOCKET * tds, int msgno, int sever
 }
 
 /**
- * tds_process_env_chg() 
+ * tds_process_env_chg()
  * when ever certain things change on the server, such as database, character
  * set, language, or block size.  A environment change message is generated
  * There is no action taken currently, but certain functions at the CLI level
@@ -2325,9 +2326,9 @@ tds_process_env_chg(TDSSOCKET * tds)
 		new_block_size = atoi(newval);
 		if (new_block_size > tds->env.block_size) {
 			tdsdump_log(TDS_DBG_INFO1, "increasing block size from %s to %d\n", oldval, new_block_size);
-			/* 
-			 * I'm not aware of any way to shrink the 
-			 * block size but if it is possible, we don't 
+			/*
+			 * I'm not aware of any way to shrink the
+			 * block size but if it is possible, we don't
 			 * handle it.
 			 */
 			/* Reallocate buffer if impossible (strange values from server or out of memory) use older buffer */
@@ -2909,7 +2910,7 @@ tds5_get_varint_size(int datatype)
 }
 
 /**
- * tds_process_compute_names() processes compute result sets.  
+ * tds_process_compute_names() processes compute result sets.
  */
 static int
 tds_process_compute_names(TDSSOCKET * tds)
@@ -2944,7 +2945,7 @@ tds_process_compute_names(TDSSOCKET * tds)
 	/*
 	 * compute statement id which this relates
 	 * to. You can have more than one compute
-	 * statement in a SQL statement  
+	 * statement in a SQL statement
 	 */
 
 	compute_id = tds_get_smallint(tds);
@@ -3110,7 +3111,7 @@ tds7_process_compute_result(TDSSOCKET * tds)
 		return TDS_FAIL;
 }
 
-static int 
+static int
 tds_process_cursor_tokens(TDSSOCKET * tds)
 {
 	TDS_SMALLINT hdrsize;
@@ -3138,15 +3139,15 @@ tds_process_cursor_tokens(TDSSOCKET * tds)
 	hdrsize -= 3;
 
 	if (hdrsize == sizeof(TDS_INT))
-		rowcount = tds_get_int(tds); 
+		rowcount = tds_get_int(tds);
 
 	if (tds->cur_cursor) {
-		cursor = tds->cur_cursor; 
+		cursor = tds->cur_cursor;
 		cursor->cursor_id = cursor_id;
 		cursor->srv_status = cursor_status;
 		if ((cursor_status & TDS_CUR_ISTAT_DEALLOC) != 0)
 			tds_free_cursor(tds, cursor);
-	} 
+	}
 	return TDS_SUCCEED;
 }
 
@@ -3361,8 +3362,8 @@ _tds_token_name(unsigned char marker)
 	return "";
 }
 
-/** 
- * Adjust column size according to client's encoding 
+/**
+ * Adjust column size according to client's encoding
  */
 static void
 adjust_character_column_size(const TDSSOCKET * tds, TDSCOLUMN * curcol)
@@ -3396,19 +3397,19 @@ adjust_character_column_size(const TDSSOCKET * tds, TDSCOLUMN * curcol)
 				   "\tServer charset: %s\n"
 				   "\tServer column_size: %d\n"
 				   "\tClient charset: %s\n"
-				   "\tClient column_size: %d\n", 
-				   curcol->char_conv->server_charset.name, 
-				   curcol->on_server.column_size, 
-				   curcol->char_conv->client_charset.name, 
+				   "\tClient column_size: %d\n",
+				   curcol->char_conv->server_charset.name,
+				   curcol->on_server.column_size,
+				   curcol->char_conv->client_charset.name,
 				   curcol->column_size);
 }
 
-/** 
- * Allow for maximum possible size of converted data, 
- * while being careful about integer division truncation. 
- * All character data pass through iconv.  It doesn't matter if the server side 
+/**
+ * Allow for maximum possible size of converted data,
+ * while being careful about integer division truncation.
+ * All character data pass through iconv.  It doesn't matter if the server side
  * is Unicode or not; even Latin1 text need conversion if,
- * for example, the client is UTF-8.  
+ * for example, the client is UTF-8.
  */
 static int
 determine_adjusted_size(const TDSICONV * char_conv, int size)
