@@ -3939,7 +3939,7 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     }
 
     s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
-    s_NoteFinalize(add_period, notestr, ff, eTilde_space);
+    s_NoteFinalize(add_period, notestr, ff, eTilde_newline);
 }
 
 
@@ -4008,6 +4008,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.85  2006/09/19 12:59:42  ludwigf
+* FIXED: Some tildes in the /note qualifier would not get expanded in the
+*  final output.
+*
 * Revision 1.84  2006/09/15 13:03:18  ludwigf
 * CHANGED: /old_locus_tag qualifier now legal for just about anything for
 *  which /gene is meaningful.
