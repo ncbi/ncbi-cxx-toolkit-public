@@ -569,9 +569,13 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
         m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));  
     }
     //prepare defline
+    CSeq_align_set actual_aln_list;
+    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
+                                                     *m_AlnSetRef);
+
     for (CSeq_align_set::Tdata::const_iterator 
-             iter = m_AlnSetRef->Get().begin(); 
-         iter != m_AlnSetRef->Get().end() && num_align < m_NumToShow; 
+             iter = actual_aln_list.Get().begin(); 
+         iter != actual_aln_list.Get().end() && num_align < m_NumToShow; 
          iter++){
         
         subid = &((*iter)->GetSeq_id(1));
@@ -834,6 +838,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.32  2006/09/19 16:36:01  jianye
+*handles disc alignment
+*
 *Revision 1.31  2006/08/24 16:17:51  jianye
 *make id consistent in use_this_gi case
 *
