@@ -790,6 +790,84 @@ CDbBlast::GetFilteredQueryRegions() const
     return retval;
 }
 
+inline void
+CDbBlast::SetQueries(const TSeqLocVector& queries)
+{
+    x_ResetQueryDs();
+    m_tQueries.clear();
+    m_tQueries = queries;
+}
+
+inline const TSeqLocVector&
+CDbBlast::GetQueries() const
+{
+    return m_tQueries;
+}
+
+inline CBlastOptionsHandle&
+CDbBlast::SetOptionsHandle()
+{
+    m_ibQuerySetUpDone = false;
+    return *m_OptsHandle;
+}
+
+inline const CBlastOptionsHandle&
+CDbBlast::GetOptionsHandle() const
+{
+    return *m_OptsHandle;
+}
+
+inline const BlastSeqSrc* CDbBlast::GetSeqSrc() const
+{
+    return m_pSeqSrc;
+}
+
+inline BlastHSPStream* CDbBlast::GetHSPStream() const
+{
+    return m_pHspStream;
+}
+
+inline BlastDiagnostics* CDbBlast::GetDiagnostics() const
+{
+    return m_ipDiagnostics;
+}
+
+inline BlastScoreBlk* CDbBlast::GetScoreBlk() const
+{
+    return m_ipScoreBlock;
+}
+
+inline const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
+{
+    return m_iclsQueryInfo;
+}
+
+inline const CBLAST_SequenceBlk& CDbBlast::GetQueryBlk() const
+{
+    return m_iclsQueries;
+
+}
+
+inline TBlastError& CDbBlast::GetErrorMessage()
+{
+    return m_ivErrors;
+}
+
+inline LookupTableWrap* CDbBlast::GetLookupTable() const
+{
+    return m_ipLookupTable;
+}
+
+inline size_t
+CDbBlast::x_GetNumberOfQueries(void) const
+{
+    if (m_ipQueryData && m_iclsQueryInfo.Get()) {
+        return m_iclsQueryInfo->num_queries;
+    } else {
+        return m_tQueries.size();
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -799,6 +877,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.98  2006/09/19 13:48:38  camacho
+ * Move inline functions to source file
+ *
  * Revision 1.97  2006/09/15 13:11:12  madden
  * Change to LookupTableWrapInit prototype
  *
