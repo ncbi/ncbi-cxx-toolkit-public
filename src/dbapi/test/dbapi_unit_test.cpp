@@ -4455,12 +4455,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc_parameters->depends_on(tc_init);
     add(tc_parameters);
 
-    if (args.GetDriverName() != "ftds64_ctlib") {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
-        tc->depends_on(tc_init);
-        tc->depends_on(tc_parameters);
-        add(tc);
-    }
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
+    tc->depends_on(tc_init);
+    tc->depends_on(tc_parameters);
+    add(tc);
 
     if (
 //         args.GetDriverName() == "ftds63" ||
@@ -4554,6 +4552,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
               args.GetDriverName() == "odbc" ||
               args.GetDriverName() == "odbcw" ||
               args.GetDriverName() == "ftds64_odbc" ||
+              // args.GetDriverName() == "ftds64_ctlib" || This is a big problem !!!!
               args.GetDriverName() == "ftds64_dblib" ) &&
              args.GetServerType() == CTestArguments::eMsSql)
              // args.GetDriverName() == "ctlib" ||
@@ -4596,8 +4595,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         add(tc);
 //     }
 
-    if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ||
-          args.GetDriverName() == "ftds64_dblib" ) &&
+    if ( (args.GetDriverName() == "ftds"
+          || args.GetDriverName() == "ftds63"
+          || args.GetDriverName() == "ftds64_dblib"
+          // || args.GetDriverName() == "ftds64_ctlib" // Need to fix this some day ...
+          // || args.GetDriverName() == "ftds64_odbc"  // This is a big problem ....
+          ) &&
          args.GetServerType() == CTestArguments::eMsSql ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UNIQUE, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -4605,10 +4608,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     // !!! There are still problems ...
-    if ( args.GetDriverName() == "dblib" ||
-         args.GetDriverName() == "ftds" ||
-         args.GetDriverName() == "ftds63" ||
-         args.GetDriverName() == "ftds64_dblib" ) {
+    if ( args.GetDriverName() == "dblib"
+         || args.GetDriverName() == "ftds"
+         || args.GetDriverName() == "ftds63"
+         || args.GetDriverName() == "ftds64_dblib"
+         // || args.GetDriverName() == "ftds64_ctlib" // No BCP at the moment ...
+         // || args.GetDriverName() == "ftds64_odbc" // No BCP at the moment ...
+         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -4700,6 +4706,7 @@ CTestArguments::GetServerType(void) const
     if ( GetServerName() == "STRAUSS" ||
          GetServerName() == "MOZART" ||
          GetServerName() == "OBERON" ||
+         GetServerName() == "SCHUMANN" ||
          GetServerName().compare(0, 6, "BARTOK") == 0 ) {
         return eSybase;
     } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0 ||
@@ -4780,6 +4787,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.97  2006/09/19 16:48:36  ssikorsk
+ * Enable TestGetRowCount with the ftds64_ctlib driver.
+ *
  * Revision 1.96  2006/09/15 15:20:05  ssikorsk
  * Roll back previous fix with CVariant. It caused problems with the
  * ftds64_ctlib driver and damaged Sybase and MS SQL servers.
