@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/types.hpp>
+#include <stdio.h>
 #include <string.h>
 
 #ifdef HAVE_ODBCSS_H
@@ -983,6 +984,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/09/19 00:34:06  ucko
+ * +<stdio.h> for sprintf()
+ *
  * Revision 1.43  2006/09/18 15:31:04  ssikorsk
  * Improved reading data from streams in case of using of UTF8 in CODBC_Connection::x_SendData.
  *
