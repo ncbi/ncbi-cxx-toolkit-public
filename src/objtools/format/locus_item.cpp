@@ -444,6 +444,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
     } else if (is_env_sample) {
         if (tech == CMolInfo::eTech_unknown  ||
             tech == CMolInfo::eTech_standard ||
+            tech == CMolInfo::eTech_htgs_3   ||
             tech == CMolInfo::eTech_other) {
             m_Division = "ENV";
         }
@@ -629,6 +630,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2006/09/19 14:46:04  ludwigf
+* CHANGED: Presence of environmental_sample tag now forces division to ENV
+*  for molinfo eTech_htgs_3.
+*
 * Revision 1.20  2006/03/27 16:32:47  ludwigf
 * CHANGED: Genpept display will now check the associated cdregion's bioseq
 *  for the presence of "patent" seq-ids (This affects the content of the
