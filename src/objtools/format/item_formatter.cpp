@@ -173,7 +173,7 @@ static void s_FormatSecondaryAccessions
     // populate the bins
     CAccessionItem::TExtra_accessions::const_iterator prev = xtra.begin();
     ITERATE (CAccessionItem::TExtra_accessions, it, xtra) {
-        if (!s_IsSuccessor(*it, *prev)) {
+        if (!s_IsSuccessor(*it, *prev) || NStr::EndsWith( *prev, "000000" ) ) {
             bins.push_back(TAccBin());
             curr_bin = &bins.back();
         }
@@ -1358,6 +1358,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2006/09/19 15:30:39  ludwigf
+* CHANGED: Do not merge extra accession numbers ending in "000000". They are
+*  special.
+*
 * Revision 1.34  2006/09/12 19:13:15  ludwigf
 * CHANGED: Rewrote s_FixPages() to more closely resemble the corresponding
 *  function in the C toolkit.
