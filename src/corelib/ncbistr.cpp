@@ -2231,7 +2231,8 @@ wstring CStringUTF8::AsUnicode(void) const
         TUnicodeSymbol ch = Decode(src);
         if (ch > maxw) {
             NCBI_THROW2(CStringException, eConvert,
-                        "Failed to convert symbol to wide character", 0);
+                        "Failed to convert symbol to wide character",
+                        s_DiffPtr(src, c_str()));
         }
         result.append(1, ch);
     }
@@ -2547,6 +2548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.184  2006/09/19 14:27:56  gouriano
+ * Corrected exception thrown in CStringUTF8::AsUnicode
+ *
  * Revision 1.183  2006/09/18 20:49:05  ucko
  * +<corelib/ncbi_limits.hpp> for numeric_limits<>.
  * CStringUTF8::AsUnicode: correct exception text, as wide characters may
