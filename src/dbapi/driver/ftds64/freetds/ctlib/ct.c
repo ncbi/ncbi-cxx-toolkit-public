@@ -1337,7 +1337,9 @@ ct_results(CS_COMMAND * cmd, CS_INT * result_type)
 				 * received immediately prior to the DONE_PROC
 				 */
 
-				if (cmd->results_state == _CS_RES_STATUS) {
+				if (cmd->results_state == _CS_RES_STATUS ||
+                    cmd->results_state == _CS_RES_INIT /* ssikorsk */
+                    ) {
 					if (done_flags & TDS_DONE_ERROR)
 						*result_type = CS_CMD_FAIL;
 					else
