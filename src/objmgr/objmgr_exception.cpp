@@ -91,6 +91,7 @@ const char* CAnnotException::GetErrCodeString(void) const
     case eFindFailed:       return "eFindFailed";
     case eLimitError:       return "eLimitError";
     case eOtherError:       return "eOtherError";
+    case eIncomatibleType:  return "eIncomatibleType";
     default:                return CException::GetErrCodeString();
     }
 }

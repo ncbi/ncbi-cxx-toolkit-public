@@ -108,6 +108,7 @@ public:
         eBadLocation,  ///< Wrong location type while mapping annotations
         eFindFailed,   ///< Seq-id can not be resolved
         eLimitError,   ///< Invalid or unknown limit object
+        eIncomatibleType, ///< Incompatible annotation type (feat/graph/align)
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -230,6 +231,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/09/19 19:21:23  vasilche
+* Added more exception types.
+*
 * Revision 1.16  2006/01/18 19:45:23  ssikorsk
 * Added an extra argument to CException::x_Init
 *
