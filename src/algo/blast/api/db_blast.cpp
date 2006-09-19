@@ -790,7 +790,7 @@ CDbBlast::GetFilteredQueryRegions() const
     return retval;
 }
 
-inline void
+void
 CDbBlast::SetQueries(const TSeqLocVector& queries)
 {
     x_ResetQueryDs();
@@ -798,67 +798,67 @@ CDbBlast::SetQueries(const TSeqLocVector& queries)
     m_tQueries = queries;
 }
 
-inline const TSeqLocVector&
+const TSeqLocVector&
 CDbBlast::GetQueries() const
 {
     return m_tQueries;
 }
 
-inline CBlastOptionsHandle&
+CBlastOptionsHandle&
 CDbBlast::SetOptionsHandle()
 {
     m_ibQuerySetUpDone = false;
     return *m_OptsHandle;
 }
 
-inline const CBlastOptionsHandle&
+const CBlastOptionsHandle&
 CDbBlast::GetOptionsHandle() const
 {
     return *m_OptsHandle;
 }
 
-inline const BlastSeqSrc* CDbBlast::GetSeqSrc() const
+const BlastSeqSrc* CDbBlast::GetSeqSrc() const
 {
     return m_pSeqSrc;
 }
 
-inline BlastHSPStream* CDbBlast::GetHSPStream() const
+BlastHSPStream* CDbBlast::GetHSPStream() const
 {
     return m_pHspStream;
 }
 
-inline BlastDiagnostics* CDbBlast::GetDiagnostics() const
+BlastDiagnostics* CDbBlast::GetDiagnostics() const
 {
     return m_ipDiagnostics;
 }
 
-inline BlastScoreBlk* CDbBlast::GetScoreBlk() const
+BlastScoreBlk* CDbBlast::GetScoreBlk() const
 {
     return m_ipScoreBlock;
 }
 
-inline const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
+const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
 {
     return m_iclsQueryInfo;
 }
 
-inline const CBLAST_SequenceBlk& CDbBlast::GetQueryBlk() const
+const CBLAST_SequenceBlk& CDbBlast::GetQueryBlk() const
 {
     return m_iclsQueries;
 
 }
 
-inline TBlastError& CDbBlast::GetErrorMessage()
+TBlastError& CDbBlast::GetErrorMessage()
 {
     return m_ivErrors;
 }
 
-inline LookupTableWrap* CDbBlast::GetLookupTable() const
+LookupTableWrap* CDbBlast::GetLookupTable() const
 {
     return m_ipLookupTable;
 }
 
-inline size_t
+size_t
 CDbBlast::x_GetNumberOfQueries(void) const
 {
     if (m_ipQueryData && m_iclsQueryInfo.Get()) {
@@ -877,6 +877,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.99  2006/09/19 14:26:11  camacho
+ * Fix to previous commit
+ *
  * Revision 1.98  2006/09/19 13:48:38  camacho
  * Move inline functions to source file
  *
