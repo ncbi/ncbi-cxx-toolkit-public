@@ -66,12 +66,7 @@ CBlobStorage_NetCache::~CBlobStorage_NetCache()
 {
     try {
         Reset();
-    } catch(exception& ex) {
-        ERR_POST( "An exception caught in ~CBlobStorage_NetCache() :" << 
-                  ex.what());
-    } catch(...) {
-        ERR_POST( "An unknown exception caught in ~CBlobStorage_NetCache() :");
-    }
+    } NCBI_CATCH_ALL("CBlobStorage_NetCache::~CBlobStorage_NetCache()");
 }
 
 void CBlobStorage_NetCache::x_Check(const string& where)
@@ -236,7 +231,7 @@ CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
     } else {
         if( key.empty() || !IsKeyValid(key) ) key = CreateEmptyBlob();
         m_CreatedBlobId = key;
-        m_OStream.reset(CFile::CreateTmpFileEx(m_TempDir,sm_OutputBlobCachePrefix));        
+        m_OStream.reset(CFile::CreateTmpFileEx(m_TempDir,sm_OutputBlobCachePrefix));
         if( !m_OStream.get() || !m_OStream->good()) {
             m_OStream.reset();
             NCBI_THROW(CBlobStorageException,
@@ -293,7 +288,7 @@ void CBlobStorage_NetCache::Reset()
                 fstr->flush();
                 fstr->seekg(0);
                 char buf[1024];
-                while( !fstr->eof() ) {
+                while( fstr->good() ) {
                     fstr->read(buf, sizeof(buf));
                     if( writer->Write(buf, fstr->gcount()) != eRW_Success)
                         NCBI_THROW(CBlobStorageException,
@@ -415,6 +410,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2006/09/19 14:34:41  didenko
+ * Code clean up
+ * Catch and log all exceptions in destructors
+ *
  * Revision 6.10  2006/08/24 21:44:08  didenko
  * Fixed bug in CreateOStream method
  *

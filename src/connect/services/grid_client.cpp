@@ -131,8 +131,8 @@ string CGridJobSubmitter::Submit(const string& affinity)
                                                           m_JobMask);
     m_Input.erase();
 
-    if (m_UseProgress)
-        job_key += "|" + progress_msg_key;
+    /*    if (m_UseProgress)
+          job_key += "|" + progress_msg_key;*/
     return job_key;
 }
 
@@ -159,10 +159,13 @@ CNetScheduleClient::EJobStatus CGridJobStatus::GetStatus()
               status == CNetScheduleClient::eDone || 
               status == CNetScheduleClient::eCanceled) ) {
         m_GridClient.RemoveDataBlob(m_Input);
-        if (m_UseProgress)
-            m_GridClient.RemoveDataBlob(m_ProgressMsgKey);
+        if (m_UseProgress) {
+            string key = m_GridClient.GetNSClient().GetProgressMsg(m_JobKey);
+            if (!key.empty())
+                m_GridClient.RemoveDataBlob(key);
+        }
         m_Input.erase();
-        m_ProgressMsgKey.erase();
+        //        m_ProgressMsgKey.erase();
     }
     return status;
 }
@@ -181,17 +184,20 @@ CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
 
 string CGridJobStatus::GetProgressMessage()
 {    
-    if (m_UseProgress)
-        return m_GridClient.GetStorage().GetBlobAsString(m_ProgressMsgKey);
+    if (m_UseProgress) {
+            string key = m_GridClient.GetNSClient().GetProgressMsg(m_JobKey);
+            if (!key.empty())
+                return m_GridClient.GetStorage().GetBlobAsString(key);
+    }
     return kEmptyStr;
 }
 
 void CGridJobStatus::x_SetJobKey(const string& job_key)
 {
-    if (m_UseProgress)
-        NStr::SplitInTwo(job_key, "|", m_JobKey, m_ProgressMsgKey);
-    else 
-        m_JobKey = job_key;
+    //    if (m_UseProgress)
+    //        NStr::SplitInTwo(job_key, "|", m_JobKey, m_ProgressMsgKey);
+    //    else 
+    m_JobKey = job_key;
     m_RStream.reset();
 
     m_Output.erase();
@@ -207,6 +213,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/09/19 14:34:41  didenko
+ * Code clean up
+ * Catch and log all exceptions in destructors
+ *
  * Revision 1.14  2006/07/13 14:27:26  didenko
  * Added access to the job's mask for grid's clients/wnodes
  *

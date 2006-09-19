@@ -56,7 +56,9 @@ public:
 
     ~CBlobStreamHelper()
     {
-        Reset();
+        try {
+            Reset();
+        } NCBI_CATCH_ALL("CBlobStreamHelper::~CBlobStreamHelper()");
     }
 
     CNcbiOstream& GetOStream(const string& fname = "", 
@@ -160,7 +162,10 @@ public:
 
     ~CRemoteAppRequestMB_Impl() 
     {
-        Reset();
+        try {
+            Reset();
+        } NCBI_CATCH_ALL("CRemoteAppRequestMB_Impl::~CRemoteAppRequestMB_Impl()");
+
     }
 
     CNcbiOstream& GetStdInForWrite() 
@@ -475,7 +480,9 @@ public:
     }
     ~CRemoteAppResultMB_Impl()
     {
-        Reset();
+        try {
+            Reset();
+        } NCBI_CATCH_ALL("CRemoteAppResultMB_Impl::~CRemoteAppResultMB_Impl()");
     }    
 
     CNcbiOstream& GetStdOutForWrite() 
@@ -670,6 +677,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/19 14:34:41  didenko
+ * Code clean up
+ * Catch and log all exceptions in destructors
+ *
  * Revision 1.3  2006/09/12 14:59:20  didenko
  * Got rid of memory leaks
  *

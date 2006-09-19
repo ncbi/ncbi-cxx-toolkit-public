@@ -89,6 +89,9 @@ public:
 
     ~CRemoteAppRequestSB_Impl() 
     {
+        try {
+            Reset();
+        } NCBI_CATCH_ALL("CRemoteAppRequestSB_Impl::~CRemoteAppRequestSB_Impl()");
     }
 
     CNcbiOstream& GetStdInForWrite() 
@@ -306,7 +309,12 @@ public:
         m_EmptyStream.setstate(IOS_BASE::eofbit);
     }
 
-    ~CRemoteAppResultSB_Impl() {};
+    ~CRemoteAppResultSB_Impl() 
+    {
+        try {
+            Reset();
+        } NCBI_CATCH_ALL("CRemoteAppResultSB_Impl::~CRemoteAppResultSB_Impl()");
+    }
 
     CNcbiIstream& GetStdOutForRead() 
     { 
@@ -437,6 +445,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/19 14:34:41  didenko
+ * Code clean up
+ * Catch and log all exceptions in destructors
+ *
  * Revision 1.2  2006/07/18 19:43:34  didenko
  * Fixed compilation error on MSVC 8
  *

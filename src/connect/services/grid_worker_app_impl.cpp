@@ -428,7 +428,9 @@ CGridWorkerApp_Impl::CGridWorkerApp_Impl(
 
 CGridWorkerApp_Impl::~CGridWorkerApp_Impl()
 {
-    SetDiagStream(&NcbiCerr);
+    try {
+        SetDiagStream(&NcbiCerr);
+    } NCBI_CATCH_ALL("CGridWorkerApp_Impl::~CGridWorkerApp_Impl()");
 }
 
 void CGridWorkerApp_Impl::Init()
@@ -715,6 +717,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.27  2006/09/19 14:34:41  didenko
+ * Code clean up
+ * Catch and log all exceptions in destructors
+ *
  * Revision 6.26  2006/08/28 19:36:56  didenko
  * Changed threads' order starting
  *

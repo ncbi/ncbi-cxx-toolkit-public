@@ -159,7 +159,7 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
                 m_ProgressWriter->Reset();
             }
             else {
-                ERR_POST("Couldn't send a progress message.");
+                //ERR_POST("Couldn't send a progress message.");
             }
         }
         if (debug_context) {
@@ -390,6 +390,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.27  2006/09/19 14:34:41  didenko
+ * Code clean up
+ * Catch and log all exceptions in destructors
+ *
  * Revision 6.26  2006/06/28 16:01:56  didenko
  * Redone job's exlusivity processing
  *

@@ -74,12 +74,7 @@ CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()
         if (m_BlobOstr) {
             m_Data = s_Flags[1] + m_Data;
         }
-    } catch(exception& ex) {
-        ERR_POST( "An exception caught in ~CStringOrBlobStorageWriter() :" << 
-                  ex.what());
-    } catch(...) {
-        ERR_POST( "An unknown exception caught in ~CStringOrBlobStorageWriter() :");
-    }
+    } NCBI_CATCH_ALL("CStringOrBlobStorageWriter::~CStringOrBlobStorageWriter()");
 }
 
 namespace {
@@ -208,12 +203,7 @@ CStringOrBlobStorageReader::~CStringOrBlobStorageReader()
 {
     try {
         m_Storage.Reset();
-    } catch(exception& ex) {
-        ERR_POST( "An exception caught in ~CStringOrBlobStorageReader() :" << 
-                  ex.what());
-    } catch(...) {
-        ERR_POST( "An unknown exception caught in ~CStringOrBlobStorageReader() :");
-    }
+    } NCBI_CATCH_ALL("CStringOrBlobStorageReader::~CStringOrBlobStorageReader()");
 }
    
 ERW_Result CStringOrBlobStorageReader::Read(void*   buf,
@@ -267,6 +257,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.15  2006/09/19 14:34:41  didenko
+ * Code clean up
+ * Catch and log all exceptions in destructors
+ *
  * Revision 6.14  2006/07/19 16:50:40  didenko
  * m_MaxBuffSize calculation correction
  *

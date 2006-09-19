@@ -162,7 +162,7 @@ private:
 
     CGridClient& m_GridClient;
     string       m_JobKey;
-    string       m_ProgressMsgKey;
+    //string       m_ProgressMsgKey;
     string       m_Output;
     string       m_ErrMsg;
     string       m_Input;
@@ -267,6 +267,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/09/19 14:34:41  didenko
+ * Code clean up
+ * Catch and log all exceptions in destructors
+ *
  * Revision 1.13  2006/07/13 14:27:26  didenko
  * Added access to the job's mask for grid's clients/wnodes
  *
