@@ -1219,7 +1219,8 @@ namespace {
                 if ( cvt1.GetSrc_to() != cvt2.GetSrc_to() ) {
                     return cvt1.GetSrc_to() > cvt2.GetSrc_to();
                 }
-                return &cvt1 < &cvt2;
+                //return &cvt1 < &cvt2;
+                return false;
             }
         bool operator()(const CRef<CSeq_loc_Conversion>& cvt1,
                         const CRef<CSeq_loc_Conversion>& cvt2) const
@@ -1239,7 +1240,8 @@ namespace {
                 if ( cvt1.GetSrc_from() != cvt2.GetSrc_from() ) {
                     return cvt1.GetSrc_from() < cvt2.GetSrc_from();
                 }
-                return &cvt1 < &cvt2;
+                //return &cvt1 < &cvt2;
+                return false;
             }
         bool operator()(const CRef<CSeq_loc_Conversion>& cvt1,
                         const CRef<CSeq_loc_Conversion>& cvt2) const
@@ -1283,12 +1285,13 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
         cvts.push_back(mit->second);
     }
     if ( revert_order ) {
-        sort(cvts.begin(), cvts.end(), FConversions_ReverseLess());
+        reverse(cvts.begin(), cvts.end());
+        stable_sort(cvts.begin(), cvts.end(), FConversions_ReverseLess());
         cvts.erase(unique(cvts.begin(), cvts.end(), FConversions_Equal()),
             cvts.end());
     }
     else {
-        sort(cvts.begin(), cvts.end(), FConversions_Less());
+        stable_sort(cvts.begin(), cvts.end(), FConversions_Less());
         cvts.erase(unique(cvts.begin(), cvts.end(), FConversions_Equal()),
             cvts.end());
     }
@@ -1646,6 +1649,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2006/09/19 19:20:55  vasilche
+* Avoid feature mapping dependency on memory placement.
+*
 * Revision 1.58  2006/07/18 20:22:37  grichenk
 * Fixed another mapping bug
 *
