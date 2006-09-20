@@ -659,10 +659,44 @@ char CSeqDBImpl::GetSeqType() const
 string CSeqDBImpl::GetDate() const
 {
     CHECK_MARKER();
-    if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
-        return x_FixString( vol->GetDate() );
+    
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    
+    if (! m_Date.empty()) {
+        return m_Date;
     }
-    return string();
+    
+    // This is close enough to allow parsing but does not precisely
+    // describe the format normally used for generated dates.
+    
+    string fmt = "b d, Y  H:m P";
+    string date;
+    
+    for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
+        string d = x_FixString( m_VolSet.GetVol(i)->GetDate() );
+        
+        if (date.empty()) {
+            date = d;
+        } else if (d != date) {
+            try {
+                CTime t1(date, fmt);
+                CTime t2(d, fmt);
+                
+                if (t2 > t1) {
+                    date.swap(d);
+                }
+            }
+            catch(CStringException &) {
+                // Here I think it is better to pick any valid date
+                // than to propagate a string exception.
+            }
+        }
+    }
+    
+    m_Date = date;
+    
+    return date;
 }
 
 CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(int oid) const
