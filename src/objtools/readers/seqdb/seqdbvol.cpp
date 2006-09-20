@@ -479,7 +479,8 @@ typedef set< pair<int, int> > TRangeVector;
 static void
 s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(char               * buffer,
                                    int                  length,
-                                   const TRangeVector & ranges)
+                                   const TRangeVector & ranges,
+                                   bool                 sentinel)
 {
     ITERATE(TRangeVector, riter, ranges) {
         int begin = riter->first;
@@ -490,6 +491,11 @@ s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(char               * buffer,
         
         if (end > length)
             end = length;
+        
+        if (sentinel) {
+            begin++;
+            end++;
+        }
         
         char * area = buffer + begin;
         int area_size = end-begin;
