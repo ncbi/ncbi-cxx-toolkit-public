@@ -68,6 +68,7 @@ Contents: Interface for CHit class
 /// </pre>
 
 
+#include <objects/seqalign/Dense_seg.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/align/nw/nw_aligner.hpp>
@@ -126,6 +127,16 @@ public:
              m_SeqRange1(hsp->query.offset, hsp->query.end - 1),
              m_SeqRange2(hsp->subject.offset, hsp->subject.end - 1),
              m_EditScript(hsp->gap_info) { VerifyHit(); }
+ 
+    /// Create an alignment from a Seq-align
+    /// @param seq1_index Numerical identifier for first sequence [in]
+    /// @param seq2_index Numerical identifier for second sequence [in]
+    /// @param score The score of the pairwise alignment [in]
+    /// @param sa Seq-align representing a single pairwise alignment 
+    ///           from a blast hit [in]
+    ///
+    CHit(int seq1_index, int seq2_index, int score,
+         const objects::CDense_seg& denseg);
  
     /// Create an alignment with all specified parameters
     /// @param seq1_index Numerical identifier for first sequence [in]
@@ -252,6 +263,9 @@ END_NCBI_SCOPE
 
 /* ====================================================================
  * $Log$
+ * Revision 1.7  2006/09/20 19:43:51  papadopo
+ * add member to convert from a CDense_seg
+ *
  * Revision 1.6  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers

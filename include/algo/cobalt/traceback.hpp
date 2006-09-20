@@ -39,6 +39,7 @@ Contents: Interface for CEditScript class
 /// @file traceback.hpp
 /// Interface for CEditScript class
 
+#include <objects/seqalign/Dense_seg.hpp>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/align/nw/nw_aligner.hpp>
 
@@ -61,6 +62,11 @@ public:
     ///                    computed by the blast engine [in]
     ///
     CEditScript(GapEditScript *blast_tback);
+
+    /// Generate traceback from a Seq-align
+    /// @param sa Seq-align represnting a single pairwise alignment [in]
+    ///
+    CEditScript(const objects::CDense_seg& denseg);
 
     /// Destructor
     ///
@@ -207,6 +213,9 @@ END_NCBI_SCOPE
 
 /* ====================================================================
  * $Log$
+ * Revision 1.6  2006/09/20 19:43:51  papadopo
+ * add member to convert from a CDense_seg
+ *
  * Revision 1.5  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers
