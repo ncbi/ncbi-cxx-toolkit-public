@@ -88,9 +88,24 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
     bool readOK = false;
     string err;
 
-    if (!isCDD) {
-        ERR_POST(Info << "trying to read input as " <<
-            ((isBinary) ? "binary" : "ascii") << " mime");
+    if (!isMime) {
+//        ERR_POST(Info << "trying to read input as " <<
+//            ((isBinary) ? "binary" : "ascii") << " cdd");
+        CRef < CCdd > cdd(new CCdd);
+        SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
+        asnIstream.seekg(0);
+        readOK = ReadASNFromIstream(asnIstream, *cdd, isBinary, err);
+        SetDiagPostLevel(defaultDiagPostLevel);
+        if (readOK) {
+            newSequences->resize(1);
+            newSequences->front().Reset(&(cdd->SetSequences()));
+            *newAlignments = cdd->GetSeqannot();   // copy the list
+        }
+    }
+
+    if (!readOK) {
+//        ERR_POST(Info << "trying to read input as " <<
+//            ((isBinary) ? "binary" : "ascii") << " mime");
         CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1);
         SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
         asnIstream.seekg(0);
@@ -117,30 +132,11 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
                     *newAlignments = mime->GetGeneral().GetSeq_align_data().GetCdd().GetSeqannot();
                 }
             }
-        } else {
-            ERR_POST(Warning << "error: " << err);
         }
     }
 
     if (!readOK) {
-        ERR_POST(Info << "trying to read input as " <<
-            ((isBinary) ? "binary" : "ascii") << " cdd");
-        CRef < CCdd > cdd(new CCdd);
-        SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-        asnIstream.seekg(0);
-        readOK = ReadASNFromIstream(asnIstream, *cdd, isBinary, err);
-        SetDiagPostLevel(defaultDiagPostLevel);
-        if (readOK) {
-            newSequences->resize(1);
-            newSequences->front().Reset(&(cdd->SetSequences()));
-            *newAlignments = cdd->GetSeqannot();   // copy the list
-        } else {
-            ERR_POST(Warning << "error: " << err);
-        }
-    }
-
-    if (!readOK) {
-        ERR_POST(Error << "Input is not a recognized data type (Ncbi-mime-asn1 or Cdd)");
+        ERR_POST(Error << "Input is not a recognized data type (Ncbi-mime-asn1 or Cdd) : " << err);
         return CAV_ERROR_BAD_ASN;
     }
     if (newSequences->size() == 0 || newAlignments->size() == 0) {
@@ -357,7 +353,7 @@ int CAV_DisplayMultiple(
         from = (options & CAV_LEFTTAILS) ? 0 : display->GetFirstAlignedLoc(),
         to = (options & CAV_RIGHTTAILS) ? display->GetWidth()-1 : display->GetLastAlignedLoc();
     if (options & CAV_SHOW_IDENTITY) conservationThreshhold = AlignmentDisplay::SHOW_IDENTITY;
-    int retval;
+    int retval = CAV_ERROR_BAD_PARAMS;
     if (options & CAV_TEXT || options & CAV_HTML) {
         if (options & CAV_CONDENSED)
             retval = display->DumpCondensed(*outStream, options,
@@ -476,6 +472,9 @@ int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/09/20 16:01:50  thiessen
+* tweak stream reading
+*
 * Revision 1.9  2005/09/19 12:28:57  thiessen
 * fix reporting numbers in validation
 *
