@@ -937,7 +937,8 @@ CTDS_StatusResult::CTDS_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd) :
     m_Offset(0),
     m_1stFetch(true)
 {
-    m_Val = Check(dbretstatus(cmd));
+    m_Val = dbretstatus(cmd);
+    CheckFunctCall();
 }
 
 EDB_ResType CTDS_StatusResult::ResultType() const
@@ -1500,6 +1501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/09/20 20:35:17  ssikorsk
+ * Removed extra check with dbretstatus.
+ *
  * Revision 1.29  2006/08/21 19:56:52  ssikorsk
  * Allow to convert from CDB_LongChar to CDB_VarChar when size of
  * data is less than 256 bytes.

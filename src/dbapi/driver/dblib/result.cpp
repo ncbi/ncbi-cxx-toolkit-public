@@ -1016,7 +1016,8 @@ CDBL_StatusResult::CDBL_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd) :
     m_Offset(0),
     m_1stFetch(true)
 {
-    m_Val = Check(dbretstatus(cmd));
+    m_Val = dbretstatus(cmd);
+    CheckFunctCall();
 }
 
 
@@ -1645,6 +1646,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/09/20 20:34:58  ssikorsk
+ * Removed extra check with dbretstatus.
+ *
  * Revision 1.37  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
