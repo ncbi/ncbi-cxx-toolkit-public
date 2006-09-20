@@ -162,8 +162,9 @@ CDB_Result* CDBL_LangCmd::Result()
 #if !defined(FTDS_LOGIC)
         if ((m_Status & 0x20) != 0) { // check for return parameters from exec
             m_Status ^= 0x20;
-            int n;
-            if ((n = Check(dbnumrets(GetCmd()))) > 0) {
+            int n = dbnumrets(GetCmd());
+            CheckFunctCall();
+            if (n > 0) {
                 SetResultSet( new CDBL_ParamResult(GetConnection(), GetCmd(), n) );
                 m_RowCount= 1;
 
@@ -173,7 +174,9 @@ CDB_Result* CDBL_LangCmd::Result()
 
         if ((m_Status & 0x40) != 0) { // check for ret status
             m_Status ^= 0x40;
-            if (Check(dbhasretstat(GetCmd()))) {
+            DBBOOL has_return_status = dbhasretstat(GetCmd());
+            CheckFunctCall();
+            if (has_return_status) {
                 SetResultSet( new CDBL_StatusResult(GetConnection(), GetCmd()) );
                 m_RowCount= 1;
 
@@ -223,7 +226,8 @@ CDB_Result* CDBL_LangCmd::Result()
     // let's look at return parameters and ret status
     if (m_Status == 2) {
         m_Status = 4;
-        int n = Check(dbnumrets(GetCmd()));
+        int n = dbnumrets(GetCmd());
+        CheckFunctCall();
         if (n > 0) {
             SetResultSet( new CTDS_ParamResult(GetConnection(), GetCmd(), n) );
             m_RowCount = 1;
@@ -234,7 +238,9 @@ CDB_Result* CDBL_LangCmd::Result()
 
     if (m_Status == 4) {
         m_Status = 6;
-        if (Check(dbhasretstat(GetCmd()))) {
+        DBBOOL has_return_status = dbhasretstat(GetCmd());
+        CheckFunctCall();
+        if (has_return_status) {
             SetResultSet( new CTDS_StatusResult(GetConnection(), GetCmd()) );
             m_RowCount = 1;
 
@@ -517,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/09/20 20:36:44  ssikorsk
+ * Removed extra check with dbnumrets and dbhasretstat.
+ *
  * Revision 1.30  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

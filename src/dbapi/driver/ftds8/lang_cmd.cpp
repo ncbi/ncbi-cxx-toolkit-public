@@ -176,7 +176,8 @@ CDB_Result* CTDS_LangCmd::Result()
     // let's look at return parameters and ret status
     if (m_Status == 2) {
         m_Status = 4;
-        int n = Check(dbnumrets(GetCmd()));
+        int n = dbnumrets(GetCmd());
+        CheckFunctCall();
         if (n > 0) {
             m_Res = new CTDS_ParamResult(GetConnection(), GetCmd(), n);
             m_RowCount = 1;
@@ -187,7 +188,9 @@ CDB_Result* CTDS_LangCmd::Result()
 
     if (m_Status == 4) {
         m_Status = 6;
-        if (Check(dbhasretstat(GetCmd()))) {
+        DBBOOL has_return_status = dbhasretstat(GetCmd());
+        CheckFunctCall();
+        if (has_return_status) {
             m_Res = new CTDS_StatusResult(GetConnection(), GetCmd());
             m_RowCount = 1;
 
@@ -467,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/09/20 20:36:52  ssikorsk
+ * Removed extra check with dbnumrets and dbhasretstat.
+ *
  * Revision 1.25  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
