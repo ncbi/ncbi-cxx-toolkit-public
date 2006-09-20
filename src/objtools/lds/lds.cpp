@@ -161,6 +161,12 @@ void CLDS_Database::Create()
     fname = m_LDS_DirName + "obj_seqid_int.idx"; 
     m_db->obj_seqid_int_idx.Open(fname.c_str(), 
                                 CBDB_RawFile::eCreate);
+
+    LOG_POST(Info << "Creating LDS index: " << "file_filename.idx");
+    fname = m_LDS_DirName + "file_filename.idx"; 
+    m_db->file_filename_idx.Open(fname.c_str(),
+                                 CBDB_RawFile::eCreate);
+
 }
 
 
@@ -176,6 +182,7 @@ void CLDS_Database::Sync()
 
     m_db->obj_seqid_txt_idx.Sync();
     m_db->obj_seqid_int_idx.Sync();
+    m_db->file_filename_idx.Sync();
 }
 
 void CLDS_Database::ReOpen()
@@ -256,6 +263,11 @@ void CLDS_Database::Open(EOpenMode omode)
     fname = m_LDS_DirName + "obj_seqid_int.idx"; 
     m_db->obj_seqid_int_idx.Open(fname.c_str(),
                                  om);
+
+    fname = m_LDS_DirName + "file_filename.idx"; 
+    m_db->file_filename_idx.Open(fname.c_str(),
+                                 om);
+
 }
 
 void CLDS_Database::LoadTypeMap()
@@ -337,6 +349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/09/20 19:23:54  kuznets
+ * added index on file names
+ *
  * Revision 1.25  2006/04/13 16:33:53  kuznets
  * Fixed bug in creation of LDS database
  *

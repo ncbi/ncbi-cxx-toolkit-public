@@ -174,6 +174,10 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
             m_FileDB.Insert();
 
+            m_DataBase.GetTables().file_filename_idx.file_id = m_MaxRecId;
+            m_DataBase.GetTables().file_filename_idx.file_name = entry.c_str();
+            m_DataBase.GetTables().file_filename_idx.UpdateInsert();
+
             updated->set(m_MaxRecId);
 
             LOG_POST(Info << "New LDS file found: " << entry);
@@ -249,8 +253,28 @@ void CLDS_File::Delete(const CLDS_Set& record_set)
 {
     CLDS_Set::enumerator en(record_set.first());
     for ( ; en.valid(); ++en) {
+        string fname;
+        {{
+        CBDB_FileCursor cur(m_FileDB);
+        cur.SetCondition(CBDB_FileCursor::eGE);
+        cur.From << *en;
+
+        if (cur.Fetch() == eBDB_Ok) {
+            unsigned id = m_FileDB.file_id;
+            if (id == *en) {
+                fname = m_FileDB.file_name;
+            }
+        }
+        }}
+
         m_FileDB.file_id = *en;
         m_FileDB.Delete();
+
+        if (!fname.empty()) {
+            m_DataBase.GetTables().file_filename_idx.file_name = fname.c_str();
+            m_DataBase.GetTables().file_filename_idx.Delete();
+        }
+
     }
 
 }
@@ -306,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/09/20 19:23:54  kuznets
+ * added index on file names
+ *
  * Revision 1.6  2006/08/29 17:48:03  grichenk
  * Dereference link before checking file stats.
  *

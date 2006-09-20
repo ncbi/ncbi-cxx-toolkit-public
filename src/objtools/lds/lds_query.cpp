@@ -287,6 +287,16 @@ CLDS_Query::CLDS_Query(CLDS_Database& db)
 
 bool CLDS_Query::FindFile(const string& path)
 {
+    {{
+    CBDB_FileCursor cur(m_db.file_filename_idx);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << path;
+    if (cur.Fetch() == eBDB_Ok) {
+        return true;
+    }
+    }}
+
+/*
     CBDB_FileCursor cur(m_db.file_db);
     cur.SetCondition(CBDB_FileCursor::eFirst);
     while (cur.Fetch() == eBDB_Ok) {
@@ -295,6 +305,7 @@ bool CLDS_Query::FindFile(const string& path)
             return true;
         }
     }
+*/
     return false;
 }
 
@@ -656,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/09/20 19:23:54  kuznets
+ * added index on file names
+ *
  * Revision 1.20  2006/01/30 19:42:58  kuznets
  * Fixed bug in searching candidate molecules
  *

@@ -51,6 +51,14 @@ struct NCBI_LDS_EXPORT SLDS_FileDB : public CBDB_File
 };
 
 
+struct NCBI_LDS_EXPORT SLDS_FileNameIDX : public CBDB_File
+{
+    CBDB_FieldString   file_name;
+    CBDB_FieldInt4     file_id;
+
+    SLDS_FileNameIDX();
+};
+
 
 struct NCBI_LDS_EXPORT SLDS_AnnotDB : public CBDB_File
 {
@@ -149,6 +157,8 @@ struct NCBI_LDS_EXPORT SLDS_TablesCollection
     /// object_db index for seq id
     SLDS_TxtIdIDX        obj_seqid_txt_idx; 
     SLDS_IntIdIDX        obj_seqid_int_idx;
+    /// file name index
+    SLDS_FileNameIDX     file_filename_idx;
 };
 
 
@@ -170,6 +180,13 @@ SLDS_FileDB::SLDS_FileDB()
     BindData("file_size", &file_size);
 }
 
+inline
+SLDS_FileNameIDX::SLDS_FileNameIDX()
+{
+    BindKey("file_name", &file_name, 2048);
+
+    BindData("file_id", &file_id);
+}
 
 inline 
 SLDS_AnnotDB::SLDS_AnnotDB()
@@ -257,6 +274,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2006/09/20 19:24:16  kuznets
+* added index on file names
+*
 * Revision 1.17  2005/10/12 12:18:04  kuznets
 * Use 64-bit file sizes and offsets
 *
