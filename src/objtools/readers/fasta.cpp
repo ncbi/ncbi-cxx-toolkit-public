@@ -42,6 +42,7 @@
 #include <util/sequtil/sequtil_convert.hpp>
 
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -52,6 +53,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -251,7 +253,7 @@ CRef<CSeq_entry> CFastaReader::x_ReadSegSet(void)
     ITERATE (CBioseq_set::TSeq_set, it, parts->GetSet().GetSeq_set()) {
         CRef<CSeq_loc>      seg_loc(new CSeq_loc);
         const CBioseq::TId& seg_ids = (*it)->GetSeq().GetId();
-        CRef<CSeq_id>       seg_id  = FindBestChoice(seg_ids, CSeq_id::Score);
+        CRef<CSeq_id>       seg_id = FindBestChoice(seg_ids, CSeq_id::BestRank);
         seg_loc->SetWhole(*seg_id);
         ext.Set().push_back(seg_loc);
     }
@@ -304,7 +306,8 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
 
 void CFastaReader::ParseDefLine(const TStr& s)
 {
-    size_t start = 1, pos, len = s.length(), title_start;
+    size_t start = 1, pos, len = s.length(), range_len = 0, title_start;
+    TSeqPos range_start, range_end;
     do {
         bool has_id = true;
         if (TestFlag(fNoParseID)) {
@@ -315,7 +318,8 @@ void CFastaReader::ParseDefLine(const TStr& s)
                     break;
                 }
             }
-            size_t range_len = ParseRange(TStr(s.data(), start, pos - start));
+            range_len = ParseRange(TStr(s.data(), start, pos - start),
+                                   range_start, range_end);
             has_id = ParseIDs(TStr(s.data(), start, pos - start - range_len));
             title_start = pos + 1;
             // trim leading whitespace from title (is this appropriate?)
@@ -337,7 +341,8 @@ void CFastaReader::ParseDefLine(const TStr& s)
             ParseTitle(TStr(s.data(), title_start, pos - title_start));
         }
         start = pos + 1;
-    } while (TestFlag(fAllSeqIds)  &&  start < len  &&  s[start - 1] == '\1');
+    } while (TestFlag(fAllSeqIds)  &&  start < len  &&  s[start - 1] == '\1'
+             &&  !range_len);
 
     if (GetIDs().empty()) {
         // No [usable] IDs
@@ -347,9 +352,57 @@ void CFastaReader::ParseDefLine(const TStr& s)
                         StreamPosition());
         }
         GenerateID();
+    } else if ( !TestFlag(fForceType) ) {
+        // Does any ID imply a specific type?
+        ITERATE (CBioseq::TId, it, GetIDs()) {
+            CSeq_id::EAccessionInfo acc_info = (*it)->IdentifyAccession();
+            if (acc_info & CSeq_id::fAcc_nuc) {
+                _ASSERT ( !(acc_info & CSeq_id::fAcc_prot) );
+                m_CurrentSeq->SetInst().SetMol(CSeq_inst::eMol_na);
+                break;
+            } else if (acc_info & CSeq_id::fAcc_prot) {
+                m_CurrentSeq->SetInst().SetMol(CSeq_inst::eMol_aa);
+                break;
+            }
+            // XXX - verify that other IDs aren't contradictory?
+        }
     }
 
-    m_BestID = FindBestChoice(GetIDs(), CSeq_id::Score);
+    m_BestID = FindBestChoice(GetIDs(), CSeq_id::BestRank);
+
+    if (range_len) {
+#if 1
+        // generate a new ID, and record its relation to the given one(s).
+        SetIDs().clear();
+        GenerateID();
+        CRef<CSeq_align> sa(new CSeq_align);
+        sa->SetType(CSeq_align::eType_partial); // ?
+        sa->SetDim(2);
+        CDense_seg& ds = sa->SetSegs().SetDenseg();
+        ds.SetNumseg(1);
+        ds.SetIds().push_back(GetIDs().front());
+        ds.SetIds().push_back(m_BestID);
+        ds.SetStarts().push_back(0);
+        ds.SetStarts().push_back(range_start);
+        ds.SetLens().push_back(range_end + 1 - range_start);
+        m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(sa);
+        m_BestID = GetIDs().front();
+        m_ExpectedEnd = range_end - range_start;
+#else
+        // somewhat confusing, and arguably incorrect
+        if (range_start > 0) {
+            SGap gap = { 0, range_start };
+            m_Gaps.push_back(gap);
+        }
+        m_ExpectedEnd = range_end;
+#endif   
+    }
+
+    // store the raw defline in a User-object for reference
+    CRef<CSeqdesc> desc(new CSeqdesc);
+    desc->SetUser().SetType().SetStr("CFastaReader");
+    desc->SetUser().AddField("DefLine", NStr::PrintableString(s));
+    m_CurrentSeq->SetDescr().Set().push_back(desc);
 }
 
 bool CFastaReader::ParseIDs(const TStr& s)
@@ -375,11 +428,12 @@ bool CFastaReader::ParseIDs(const TStr& s)
     return true;
 }
 
-size_t CFastaReader::ParseRange(const TStr& s)
+size_t CFastaReader::ParseRange(const TStr& s, TSeqPos& start, TSeqPos& end)
 {
     bool    on_start = false;
-    TSeqPos start = 0, end = 0, mult = 1;
+    TSeqPos mult = 1;
     size_t  pos;
+    start = end = 0;
     for (pos = s.length() - 1;  pos > 0;  --pos) {
         unsigned char c = s[pos];
         if (c >= '0'  &&  c <= '9') {
@@ -400,13 +454,6 @@ size_t CFastaReader::ParseRange(const TStr& s)
     }
     if (start > end  ||  s[pos] != ':') {
         return 0;
-    }
-    if ( !TestFlag(fIgnoreRange) ) {
-        if (start > 0) {
-            SGap gap = { 0, start };
-            m_Gaps.push_back(gap);
-        }
-        m_ExpectedEnd = end;
     }
     return s.length() - pos;
 }
@@ -570,34 +617,13 @@ void CFastaReader::AssembleSeq(void)
 void CFastaReader::AssignMolType(void)
 {
     CSeq_inst& inst = m_CurrentSeq->SetInst();
-    // Did the user insist on a specific type?
-    if (TestFlag(fForceType)) {
+    // Did the user specify a (default) type?
+    if (TestFlag(fForceType)  ||  !inst.IsSetMol() ) {
         switch (GetFlags() & (fAssumeNuc | fAssumeProt)) {
-        case fAssumeNuc:   inst.SetMol(CSeq_inst::eMol_na);  break;
-        case fAssumeProt:  inst.SetMol(CSeq_inst::eMol_aa);  break;
-        default:           _TROUBLE;
+        case fAssumeNuc:   inst.SetMol(CSeq_inst::eMol_na);  return;
+        case fAssumeProt:  inst.SetMol(CSeq_inst::eMol_aa);  return;
+        default:           _ASSERT(!TestFlag(fForceType));
         }
-        return;
-    }
-    
-    // Does any ID imply a specific type?
-    ITERATE (CBioseq::TId, it, GetIDs()) {
-        CSeq_id::EAccessionInfo acc_info = (*it)->IdentifyAccession();
-        if (acc_info & CSeq_id::fAcc_nuc) {
-            _ASSERT ( !(acc_info & CSeq_id::fAcc_prot) );
-            inst.SetMol(CSeq_inst::eMol_na);
-            return;
-        } else if (acc_info & CSeq_id::fAcc_prot) {
-            inst.SetMol(CSeq_inst::eMol_aa);
-            return;
-        }
-        // XXX - verify that other IDs aren't contradictory?
-    }
-
-    // Did the user specify a default type?
-    switch (GetFlags() & (fAssumeNuc | fAssumeProt)) {
-    case fAssumeNuc:   inst.SetMol(CSeq_inst::eMol_na);  return;
-    case fAssumeProt:  inst.SetMol(CSeq_inst::eMol_aa);  return;
     }
 
     if (m_SeqData.empty()) {
@@ -1412,6 +1438,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2006/09/20 19:27:42  ucko
+* - When a defline specifies a range of locations, give the excerpt a
+*   local ID and an appropriate hist.assembly record to avoid
+*   misrepresenting the parent ID's contents in any fashion.
+* - Store the original defline in a user descriptor in all cases.
+* - Use a more appropriate scoring function to determine the best ID.
+*
 * Revision 1.33  2006/09/18 20:31:50  ucko
 * CFastaReader: add an fIgnoreRange flag to disregard range information
 * in deflines, as the resulting leading gap confuses some callers.
