@@ -99,5 +99,20 @@ void CSeqDBExpert::GetStringBounds(string * low_id,
     m_Impl->Verify();
 }
 
+void CSeqDBExpert::SetOffsetRanges(int                oid,
+                                   const TRangeList & offset_ranges,
+                                   bool               append_ranges,
+                                   bool               cache_data)
+{
+    m_Impl->Verify();
+    
+    m_Impl->SetOffsetRanges(oid,
+                            offset_ranges,
+                            append_ranges,
+                            cache_data);
+    
+    m_Impl->Verify();
+}
+
 END_NCBI_SCOPE
 

@@ -667,6 +667,44 @@ public:
     /// @param count Number of string values in database. [out]
     void GetStringBounds(string * low_id, string * high_id, int * count);
     
+    /// List of sequence offset ranges.
+    typedef set< pair<int, int> > TRangeList;
+    
+    /// Apply a range of offsets to a database sequence.
+    ///
+    /// The GetAmbigSeq() method requires an amount of work (and I/O)
+    /// which is proportional to the size of the sequence data (more
+    /// if ambiguities are present).  In some cases, only certain
+    /// subranges of this data will be utilized.  This method allows
+    /// the user to specify which parts of a sequence are actually
+    /// needed by the user.  (Care should be taken if one SeqDB object
+    /// is shared by several program components.)  (Note that offsets
+    /// above the length of the sequence will not generate an error,
+    /// and are replaced by the sequence length.)
+    ///
+    /// If ranges are specified for a sequence, data areas in
+    /// specified sequences will be accurate, but data outside the
+    /// specified ranges should not be accessed, and no guarantees are
+    /// made about what data they will contain.  If the keep_current
+    /// flag is true, the range will be added to existing ranges.  If
+    /// false, existing ranges will be flushed and replaced by new
+    /// ranges.  To remove ranges, call this method with an empty list
+    /// of ranges; future calls will return the complete sequence.
+    ///
+    /// If the cache_data flag is provided, data for this sequence
+    /// will be kept for the duration of SeqDB's lifetime.  To disable
+    /// caching (and flush cached data) for this sequence, call the
+    /// method again, but specify cache_data to be false.
+    ///
+    /// @param oid           OID of the sequence.
+    /// @param offset_ranges Ranges of sequence data to return.
+    /// @param append_ranges Append new ranges to existing list.
+    /// @param cache_data    Keep sequence data for future callers.
+    void SetOffsetRanges(int                oid,
+                         const TRangeList & offset_ranges,
+                         bool               append_ranges,
+                         bool               cache_data);
+    
 private:
     CLASS_MARKER_FIELD("IMPL")
     

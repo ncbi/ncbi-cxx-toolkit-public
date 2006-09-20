@@ -1164,9 +1164,11 @@ public:
     ///   Amount of memory to allocate in bytes.
     /// @param locked
     ///   The lock hold object for this thread.
+    /// @param clear
+    ///   Specify true to zero out memory contents.
     /// @return
     ///   A pointer to the allocation region of memory.
-    char * Alloc(size_t length, CSeqDBLockHold & locked);
+    char * Alloc(size_t length, CSeqDBLockHold & locked, bool clear = true);
     
     /// Return allocated memory.
     /// 

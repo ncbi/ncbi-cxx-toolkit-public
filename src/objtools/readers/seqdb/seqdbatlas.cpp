@@ -940,7 +940,7 @@ void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
 // This does not attempt to garbage collect, but it will influence
 // garbage collection if it is used enough.
 
-char * CSeqDBAtlas::Alloc(size_t length, CSeqDBLockHold & locked)
+char * CSeqDBAtlas::Alloc(size_t length, CSeqDBLockHold & locked, bool clear)
 {
     // What should/will happen on allocation failure?
     
@@ -964,7 +964,9 @@ char * CSeqDBAtlas::Alloc(size_t length, CSeqDBLockHold & locked)
             throw std::bad_alloc();
         }
         
-        memset(newcp, 0, length);
+        if (clear) {
+            memset(newcp, 0, length);
+        }
     }
     catch(std::bad_alloc) {
         NCBI_THROW(CSeqDBException, eMemErr,

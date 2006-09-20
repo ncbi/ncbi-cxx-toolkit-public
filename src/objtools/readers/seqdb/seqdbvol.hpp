@@ -48,6 +48,90 @@ BEGIN_NCBI_SCOPE
 /// Import definitions from the objects namespace.
 USING_SCOPE(objects);
 
+/// CSeqDBRangeList
+///
+/// This class maintains a list of ranges of sequence offsets that are
+/// desired for performance optimization.  For large sequences that
+/// need to be unpacked, this class describes the subsets of those
+/// sequences that will actually be used.  Each instance of this class
+/// corresponds to sequence data for one OID.
+
+class CSeqDBRangeList : public CObject {
+public:
+    /// Constructor.
+    /// @param atlas The SeqDB memory management layer.
+    CSeqDBRangeList(CSeqDBAtlas & atlas)
+        : m_Atlas     (atlas),
+          m_CacheData (false),
+          m_Sequence  (0),
+          m_Length    (0),
+          m_RefCount  (0)
+    {
+        // Sequence caching is not implemented yet.  It would increase
+        // performance further, but requires some consideration of the
+        // design with respect to locking and correctness.
+    }
+    
+    /// Destructor
+    ~CSeqDBRangeList()
+    {
+        FlushSequence();
+    }
+    
+    /// Returns true if the sequence data is cached.
+    bool IsCached()
+    {
+        return false;
+    }
+    
+    /// List of sequence offset ranges.
+    typedef set< pair<int, int> > TRangeList;
+    
+    /// Set ranges of the sequence that will be used.
+    /// @param ranges Offset ranges of the sequence that are needed.
+    /// @param append_ranges If true, combine new ranges with old.
+    /// @param cache_data If true, SeqDB is allowed to cache data.
+    void SetRanges(const TRangeList & ranges,
+                   bool               append_ranges,
+                   bool               cache_data);
+    
+    /// Get ranges of sequence offsets that will be used.
+    const TRangeList & GetRanges()
+    {
+        return m_Ranges;
+    }
+    
+    /// Flush cached sequence data (if any).
+    void FlushSequence()
+    {
+    }
+    
+    /// Sequences shorter than this will not use ranges in any case.
+    static int ImmediateLength()
+    {
+        return 10240;
+    }
+    
+private:
+    /// Memory management layer.
+    CSeqDBAtlas & m_Atlas;
+    
+    /// Range of offsets needed for this sequence.
+    TRangeList m_Ranges;
+    
+    /// True if caching of sequence data is required for this sequence.
+    bool m_CacheData;
+    
+    /// Pointer to cached sequence data.
+    const char * m_Sequence;
+    
+    /// Length of sequence.
+    int m_Length;
+    
+    /// Number of user-held references to this sequence.
+    int m_RefCount;
+};
+
 /// CSeqDBVol class
 /// 
 /// This object defines access to one database volume.  It aggregates
@@ -59,9 +143,6 @@ USING_SCOPE(objects);
 
 class CSeqDBVol {
 public:
-    /// Type for elements of optional GI list.
-    typedef CSeqDBGiList::SGiOid TGiOid;
-    
     /// Import TIndx definition from the CSeqDBAtlas class.
     typedef CSeqDBAtlas::TIndx   TIndx;
     
@@ -135,20 +216,6 @@ public:
     ///   The length in bases of the sequence
     int GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const;
     
-    /// Get sequence header information
-    /// 
-    /// This method returns the set of Blast-def-line objects stored
-    /// for each sequence.  These contain descriptive information
-    /// related to the sequence.
-    /// 
-    /// @param oid
-    ///   The OID of the sequence
-    /// @param locked
-    ///   The lock holder object for this thread
-    /// @return
-    ///   The set of blast-def-lines describing this sequence
-    CRef<CBlast_def_line_set> GetHdr(int oid, CSeqDBLockHold & locked) const;
-
     /// Get filtered sequence header information
     /// 
     /// This method returns the set of Blast-def-line objects stored
@@ -284,7 +351,7 @@ public:
                     ESeqDBAllocType   alloc_type,
                     SSeqDBSlice     * region,
                     CSeqDBLockHold  & locked) const;
-
+    
     /// Get the Seq-ids associated with a sequence
     /// 
     /// This method returns a list containing all the CSeq_id objects
@@ -575,6 +642,46 @@ public:
                          int            & count,
                          CSeqDBLockHold & locked) const;
     
+    /// List of sequence offset ranges.
+    typedef set< pair<int, int> > TRangeList;
+    
+    /// Apply a range of offsets to a database sequence.
+    ///
+    /// The GetAmbigSeq() method requires an amount of work (and I/O)
+    /// which is proportional to the size of the sequence data (more
+    /// if ambiguities are present).  In some cases, only certain
+    /// subranges of this data will be utilized.  This method allows
+    /// the user to specify which parts of a sequence are actually
+    /// needed by the user.  (Care should be taken if one SeqDB object
+    /// is shared by several program components.)  (Note that offsets
+    /// above the length of the sequence will not generate an error,
+    /// and are replaced by the sequence length.)
+    ///
+    /// If ranges are specified for a sequence, data areas in
+    /// specified sequences will be accurate, but data outside the
+    /// specified ranges should not be accessed, and no guarantees are
+    /// made about what data they will contain.  If the keep_current
+    /// flag is true, the range will be added to existing ranges.  If
+    /// false, existing ranges will be flushed and replaced by new
+    /// ranges.  To remove ranges, call this method with an empty list
+    /// of ranges; future calls will return the complete sequence.
+    ///
+    /// If the cache_data flag is provided, data for this sequence
+    /// will be kept for the duration of SeqDB's lifetime.  To disable
+    /// caching (and flush cached data) for this sequence, call the
+    /// method again, but specify cache_data to be false.
+    ///
+    /// @param oid           OID of the sequence.
+    /// @param offset_ranges Ranges of sequence data to return.
+    /// @param append_ranges Append new ranges to existing list.
+    /// @param cache_data    Keep sequence data for future callers.
+    /// @param locked        Lock holder object for this thread.
+    void SetOffsetRanges(int                oid,
+                         const TRangeList & offset_ranges,
+                         bool               append_ranges,
+                         bool               cache_data,
+                         CSeqDBLockHold   & locked) const;
+    
 private:
     /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;
@@ -615,21 +722,6 @@ private:
     CRef<CBlast_def_line_set>
     x_GetHdrAsn1(int oid,
                  CSeqDBLockHold & locked) const;
-    
-    /// Get binary sequence header information
-    /// 
-    /// This method reads the sequence header information (as binary
-    /// encoded ASN.1) into a supplied char vector.
-    /// 
-    /// @param oid
-    ///   The OID of the sequence
-    /// @param hdr_data
-    ///   The returned binary ASN.1 of the Blast-def-line-set
-    /// @param locked
-    ///   The lock holder object for this thread
-    void x_GetHdrBinary(int              oid,
-                        vector<char>   & hdr_data,
-                        CSeqDBLockHold & locked) const;
     
     /// Get binary sequence header information
     /// 
@@ -948,6 +1040,12 @@ private:
     
     /// The volume GI lists, if any exist.
     mutable TGiLists m_VolumeGiLists;
+    
+    /// Cached/ranged sequence info type.
+    typedef map<int, CRef<CSeqDBRangeList> > TRangeCache;
+    
+    /// Cached/ranged sequence info.
+    mutable TRangeCache m_RangeCache;
 };
 
 END_NCBI_SCOPE

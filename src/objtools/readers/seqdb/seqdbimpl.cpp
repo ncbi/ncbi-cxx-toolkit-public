@@ -46,7 +46,10 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     : m_Atlas           (use_mmap, & m_FlushCB),
       m_DBNames         (db_name_list),
       m_Aliases         (m_Atlas, db_name_list, prot_nucl),
-      m_VolSet          (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl, gi_list),
+      m_VolSet          (m_Atlas,
+                         m_Aliases.GetVolumeNames(),
+                         prot_nucl,
+                         gi_list),
       m_RestrictBegin   (oid_begin),
       m_RestrictEnd     (oid_end),
       m_NextChunkOID    (0),
@@ -1293,6 +1296,30 @@ void CSeqDBImpl::GetStringBounds(string * low_id,
     
     if (! found) {
         NCBI_THROW(CSeqDBException, eArgErr, "No strings found.");
+    }
+}
+
+void CSeqDBImpl::SetOffsetRanges(int                oid,
+                                 const TRangeList & offset_ranges,
+                                 bool               append_ranges,
+                                 bool               cache_data)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    int vol_oid = 0;
+    
+    m_Atlas.Lock(locked);
+    
+    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+        vol->SetOffsetRanges(vol_oid,
+                             offset_ranges,
+                             append_ranges,
+                             cache_data,
+                             locked);
+    } else {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "OID not in valid range.");
     }
 }
 
