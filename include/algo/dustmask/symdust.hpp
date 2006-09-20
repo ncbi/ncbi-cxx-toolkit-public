@@ -224,8 +224,19 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                            value t.
                     \param t the triplet value to add to the right end of the
                              triplet list
+                    \return false, if the new window contains a single triplet value;
+                            true otherwise
                 */
-                void shift_window( triplet_type t );
+                bool shift_window( triplet_type t );
+
+                /** \internal
+                    \brief Shift a single triplet window using a triplet value t.
+                    \param t the triplet value to add to the right end of the
+                             triplet list
+                    \return false, if the new window contains a single triplet value;
+                            true otherwise
+                */
+                bool shift_high( triplet_type t );
 
                 /** \internal
                     \brief Check the condition of Proposition 2 allowing
@@ -239,7 +250,7 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                   return count < triplet_list_.size() && 
                          10*r_w > thresholds_[count];
                 }
-                          
+
             private:
                 
                 /**\internal Implementation type for triplets list. */
@@ -290,8 +301,9 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
 
                 counts_type c_w;             /**<\internal Table of triplet counts for the whole window. */
                 counts_type c_v;             /**<\internal Table of triplet counts for the window suffix. */
-                Uint4 r_w;                   /**<\internal running sum for the whole window. */
-                Uint4 r_v;                   /**<\internal running sum for the window suffix. */
+                Uint4 r_w;                   /**<\internal Running sum for the whole window. */
+                Uint4 r_v;                   /**<\internal Running sum for the window suffix. */
+                Uint4 num_diff;              /**<\internal Number of different triplets values. */
         };
 
         /** \internal
@@ -322,6 +334,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.13  2006/09/20 17:20:49  morgulis
+ * Optimization of a case of long single letter sequences in the same way
+ * it was done in the original DUST.
+ *
  * Revision 1.12  2005/10/31 20:55:14  morgulis
  * Refactoring of the library code to better correspond to the pseudocode
  * in the paper text.

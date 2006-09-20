@@ -43,17 +43,43 @@ CSymDustMasker::triplets::triplets(
     : start_( 0 ), stop_( 0 ), max_size_( window - 2 ), low_k_( low_k ),
       L( 0 ), P( perfect_list ), thresholds_( thresholds ),
       c_w( 64, 0 ), c_v( 64, 0 ),
-      r_w( 0 ), r_v( 0 )
+      r_w( 0 ), r_v( 0 ), num_diff( 0 )
 {}
 
 //------------------------------------------------------------------------------
-void CSymDustMasker::triplets::shift_window( triplet_type t )
+bool CSymDustMasker::triplets::shift_high( triplet_type t )
+{
+    triplet_type s = triplet_list_.back();
+    triplet_list_.pop_back();
+    rem_triplet_info( r_w, c_w, s );
+    if( c_w[s] == 0 ) --num_diff;
+    ++start_;
+
+    triplet_list_.push_front( t );
+    if( c_w[t] == 0 ) ++num_diff;
+    add_triplet_info( r_w, c_w, t );
+    ++stop_;
+
+    if( num_diff <= 1 ) {
+        P.insert( P.begin(), perfect( start_, stop_ + 1, 0, 0 ) );
+        return false;
+    }
+    else return true;
+}
+
+//------------------------------------------------------------------------------
+bool CSymDustMasker::triplets::shift_window( triplet_type t )
 {
     // shift the left end of the window, if necessary
     if( triplet_list_.size() >= max_size_ ) {
+        if( num_diff <= 1 ) {
+            return shift_high( t );
+        }
+
         triplet_type s = triplet_list_.back();
         triplet_list_.pop_back();
         rem_triplet_info( r_w, c_w, s );
+        if( c_w[s] == 0 ) --num_diff;
 
         if( L == start_ ) {
             ++L;
@@ -64,6 +90,7 @@ void CSymDustMasker::triplets::shift_window( triplet_type t )
     }
 
     triplet_list_.push_front( t );
+    if( c_w[t] == 0 ) ++num_diff;
     add_triplet_info( r_w, c_w, t );
     add_triplet_info( r_v, c_v, t );
 
@@ -77,6 +104,12 @@ void CSymDustMasker::triplets::shift_window( triplet_type t )
     }
 
     ++stop_;
+
+    if( triplet_list_.size() >= max_size_ && num_diff <= 1 ) {
+        P.clear();
+        P.insert( P.begin(), perfect( start_, stop_ + 1, 0, 0 ) );
+        return false;
+    }else return true;
 }
 
 //------------------------------------------------------------------------------
@@ -191,7 +224,7 @@ CSymDustMasker::operator()( const sequence_type & seq,
     if( start > stop )
         start = stop;
 
-    if( stop - start > 2 )    // there must be at least one triplet
+    while( stop > 2 + start )    // there must be at least one triplet
     {
         // initializations
         P.clear();
@@ -208,13 +241,25 @@ CSymDustMasker::operator()( const sequence_type & seq,
 
             // shift the window
             t = ((t<<2)&TRIPLET_MASK) + (converter_( *it )&0x3);
-            w.shift_window( t );
-            
-            if( w.needs_processing() ) {
-                w.find_perfect();
-            }
-
             ++it;
+
+            if( w.shift_window( t ) ) {
+                if( w.needs_processing() ) {
+                    w.find_perfect();
+                }
+            }else {
+                while( it != seq_end ) {
+                    save_masked_regions( *res.get(), w.start(), start );
+                    t = ((t<<2)&TRIPLET_MASK) + (converter_( *it )&0x3);
+
+                    if( w.shift_window( t ) ) {
+                        it = seq_end;
+                        break;
+                    }
+
+                    ++it;
+                }
+            }
         }
 
         // append the rest of the perfect intervals to the result
@@ -226,6 +271,9 @@ CSymDustMasker::operator()( const sequence_type & seq,
                 ++wstart;
             }
         }
+
+        if( w.start() > 0 ) start += w.start();
+        else break;
     }
 
     return res;
@@ -270,6 +318,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.17  2006/09/20 17:20:49  morgulis
+ * Optimization of a case of long single letter sequences in the same way
+ * it was done in the original DUST.
+ *
  * Revision 1.16  2005/10/31 20:55:14  morgulis
  * Refactoring of the library code to better correspond to the pseudocode
  * in the paper text.
