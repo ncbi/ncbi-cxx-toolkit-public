@@ -118,7 +118,7 @@ NCBI_NUMERIC_LIMITS          (         char,  Char);
 NCBI_NUMERIC_LIMITS          (signed   char, SChar);
 NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned char, UChar);
 
-#ifdef HAVE_WCHAR_H
+#if defined(HAVE_WCHAR_H)  &&  defined(WCHAR_MIN)
 NCBI_NUMERIC_LIMITS          (wchar_t, WChar);
 #endif
 
@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2006/09/20 14:02:10  ucko
+ * Don't assume wchar.h actually supplies WCHAR_XXX.  (FreeBSD 4's doesn't.)
+ *
  * Revision 1.9  2006/09/19 14:54:04  ucko
  * Ensure that numeric_limits<wchar_t> exists if wchar.h is available.
  *

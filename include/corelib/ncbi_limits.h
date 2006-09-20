@@ -103,7 +103,7 @@ const signed   char   kMin_SChar  = SCHAR_MIN;
 const signed   char   kMax_SChar  = SCHAR_MAX;
 const unsigned char   kMax_UChar  = UCHAR_MAX;
 
-#ifdef HAVE_WCHAR_H
+#if defined(HAVE_WCHAR_H)  &&  defined(WCHAR_MIN)
 const wchar_t kMin_WChar = WCHAR_MIN;
 const wchar_t kMax_WChar = WCHAR_MAX;
 #endif
@@ -235,6 +235,9 @@ const Uint8 kMax_UI8 = NCBI_MAX_UI8;
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2006/09/20 14:02:10  ucko
+ * Don't assume wchar.h actually supplies WCHAR_XXX.  (FreeBSD 4's doesn't.)
+ *
  * Revision 1.6  2006/09/19 14:54:04  ucko
  * Ensure that numeric_limits<wchar_t> exists if wchar.h is available.
  *
