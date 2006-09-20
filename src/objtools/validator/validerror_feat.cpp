@@ -2063,7 +2063,7 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
     mrna = GetBestOverlappingFeat(
         loc,
         CSeqFeatData::eSubtype_mRNA,
-        eOverlap_CheckIntervals,
+        eOverlap_CheckIntRev,
         *m_Scope);
     if ( mrna ) {
         return;
@@ -3051,6 +3051,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2006/09/20 14:20:25  rsmith
+* Fix ValidateBadMRNAOverlap.
+*
 * Revision 1.79  2006/07/07 17:39:12  rsmith
 * fix check of empty Gene-ref
 *
