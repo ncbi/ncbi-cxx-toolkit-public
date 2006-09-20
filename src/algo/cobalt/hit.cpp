@@ -45,6 +45,31 @@ Contents: implementation of CHit class
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
+USING_SCOPE(objects);
+
+CHit::CHit(int seq1_index, int seq2_index, int score, 
+           const CDense_seg& denseg)
+    : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index),
+      m_Score(score), m_EditScript(denseg)
+{
+    _ASSERT(denseg.GetDim() == 2);
+
+    CDense_seg::TNumseg num_seg = denseg.GetNumseg();
+    const CDense_seg::TStarts& starts = denseg.GetStarts();
+    const CDense_seg::TLens& lens = denseg.GetLens();
+    int len1 = 0, len2 = 0;
+                                
+    for (CDense_seg::TNumseg i = 0; i < num_seg; i++) {
+        if (starts[2*i] >= 0)
+            len1 += lens[i];
+        if (starts[2*i+1] >= 0)
+            len2 += lens[i];
+    }   
+    m_SeqRange1 = TRange(starts[0], starts[0] + len1 - 1);
+    m_SeqRange2 = TRange(starts[1], starts[1] + len2 - 1);
+    VerifyHit();
+}   
+
 
 void CHit::AddUpSubHits()
 {
@@ -355,6 +380,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================
  * $Log$
+ * Revision 1.8  2006/09/20 19:41:25  papadopo
+ * add member to initialize a hit from an ASN.1 denseg
+ *
  * Revision 1.7  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers
