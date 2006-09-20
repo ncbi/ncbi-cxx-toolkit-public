@@ -78,8 +78,7 @@ public:
         fAllSeqIds  = 0x40,  ///< Read Seq-ids past the first ^A (see note)
         fNoSeqData  = 0x80,  ///< Parse the deflines but skip the data
         fRequireID  = 0x100, ///< Reject deflines that lack IDs
-        fDLOptional = 0x200, ///< Don't require a leading defline
-        fIgnoreRange= 0x400  ///< Disregard defline range specifications
+        fDLOptional = 0x200  ///< Don't require a leading defline
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -132,7 +131,7 @@ protected:
 
     virtual void   ParseDefLine  (const TStr& s);
     virtual bool   ParseIDs      (const TStr& s);
-    virtual size_t ParseRange    (const TStr& s);
+    virtual size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end);
     virtual void   ParseTitle    (const TStr& s);
     virtual bool   IsValidLocalID(const string& s);
     virtual void   GenerateID    (void);
@@ -353,6 +352,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/09/20 19:26:31  ucko
+* When a defline specifies a range of locations, give the excerpt a
+* local ID and an appropriate hist.assembly record to avoid
+* misrepresenting the parent ID's contents in any fashion.
+*
 * Revision 1.15  2006/09/19 19:19:20  ucko
 * CFastaReader::StreamPosition: change return type to Int8, even if some
 * callers may have to truncate the result.
