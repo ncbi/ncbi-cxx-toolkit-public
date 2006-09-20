@@ -1359,13 +1359,13 @@ int CSeqDBVol::GetAmbigSeq(int                oid,
 /// @param ambchars Packed ambiguity data.
 /// @param sentinel Specify true to include sentinel bytes.
 /// @param ranges List of ranges of sequence data needed.
-tatic void s_MapRangeData(const char         * seq_buffer,
-                          int                  seq_length,
-                          char               * buffer_na8,
-                          int                  buffer_na8_len,
-                          const vector<Int4> & ambchars,
-                          bool                 sentinel,
-                          const TRangeVector & ranges)
+static void s_MapRangeData(const char         * seq_buffer,
+                           int                  seq_length,
+                           char               * buffer_na8,
+                           int                  buffer_na8_len,
+                           const vector<Int4> & ambchars,
+                           bool                 sentinel,
+                           const TRangeVector & ranges)
 {
     // First shot: map each subrange and then copy them into the
     // vector.  Sentinel bytes are handled here.
