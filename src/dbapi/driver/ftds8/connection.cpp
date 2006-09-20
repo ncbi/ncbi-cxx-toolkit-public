@@ -424,14 +424,24 @@ void CTDS_Connection::TDS_SetTimeout(void)
 
 RETCODE CTDS_Connection::Check(RETCODE rc)
 {
-    if (rc == FAIL && DBDEAD(GetDBLibConnection()) == TRUE) {
-        CDB_ClientEx ex(DIAG_COMPILE_INFO,
-                        0,
-                        "Database connection is closed",
-                        eDiag_Error,
-                        220000);
+    if (rc == FAIL) {
+        if (DBDEAD(GetDBLibConnection()) == TRUE) {
+            CDB_ClientEx ex(DIAG_COMPILE_INFO,
+                            0,
+                            "Database connection is closed",
+                            eDiag_Error,
+                            220000);
 
-        GetFTDS8ExceptionStorage().Accept(ex);
+            GetFTDS8ExceptionStorage().Accept(ex);
+        } else {
+            CDB_ClientEx ex(DIAG_COMPILE_INFO,
+                            0,
+                            "FreeTDS/dblib function call failed",
+                            eDiag_Error,
+                            220001);
+
+            GetFTDS8ExceptionStorage().Accept(ex);
+        }
     }
 
     CheckFunctCall();
@@ -522,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/09/20 19:54:19  ssikorsk
+ * Improved CTDS_Connection::Check.
+ *
  * Revision 1.31  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
