@@ -476,6 +476,8 @@ typedef set< pair<int, int> > TRangeVector;
 ///    The size of the buf array.
 /// @param ranges
 ///    The parts of the buf array that are used.
+/// @param sentinel
+///    True if the sequence has sentinel bytes.
 static void
 s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(char               * buffer,
                                    int                  length,
@@ -1534,7 +1536,10 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
                 
                 if (sentinel) {
                     // Translate bytewise, in place.
-                    s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(buffer_na8, buffer_na8_len, range_set);
+                    s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(buffer_na8,
+                                                       buffer_na8_len,
+                                                       range_set,
+                                                       sentinel);
                 }
             } else {
                 SSeqDBSlice range = region ? (*region) : SSeqDBSlice(0, base_length);
