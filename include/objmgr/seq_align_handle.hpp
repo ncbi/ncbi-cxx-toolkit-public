@@ -103,6 +103,8 @@ public:
     /// Replace the Seq-align with new Seq-align object.
     /// All indexes are updated correspondingly.
     void Replace(const CSeq_align& new_obj) const;
+    /// Update index after manual modification of the object
+    void Update(void) const;
 
 private:
     friend class CAlign_CI;
@@ -221,6 +223,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/09/20 14:00:19  vasilche
+* Implemented user API to Update() annotation index.
+*
 * Revision 1.11  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

@@ -258,6 +258,11 @@ void CSeq_feat_EditHandle::Replace(const CSeq_feat& new_feat) const
     processor.run(new TCommand(*this, new_feat));
 }
 
+void CSeq_feat_EditHandle::Update(void) const
+{
+    GetAnnot().x_GetInfo().Update(x_GetAnnotIndex());
+}
+
 void CSeq_feat_EditHandle::x_RealRemove(void) const
 {
     if ( IsPlainFeat() ) {
@@ -497,6 +502,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/09/20 14:00:21  vasilche
+ * Implemented user API to Update() annotation index.
+ *
  * Revision 1.16  2006/08/07 15:25:06  vasilche
  * Introduced CSeq_feat_EditHandle.
  * Introduced CSeq_annot_ftable_CI & CSeq_annot_ftable_I.

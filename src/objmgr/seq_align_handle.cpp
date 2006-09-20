@@ -99,6 +99,11 @@ void CSeq_align_Handle::Replace(const CSeq_align& new_obj) const
     processor.run(new TCommand(*this, new_obj));
 }
 
+void CSeq_align_Handle::Update(void) const
+{
+    GetAnnot().GetEditHandle().x_GetInfo().Update(m_AnnotIndex);
+}
+
 void CSeq_align_Handle::x_RealRemove(void) const
 {
     GetAnnot().GetEditHandle().x_GetInfo().Remove(m_AnnotIndex);
@@ -118,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/09/20 14:00:21  vasilche
+ * Implemented user API to Update() annotation index.
+ *
  * Revision 1.10  2005/11/15 19:22:08  didenko
  * Added transactions and edit commands support
  *

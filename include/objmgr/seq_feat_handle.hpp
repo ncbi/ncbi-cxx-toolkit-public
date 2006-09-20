@@ -566,6 +566,9 @@ public:
     /// All indexes are updated correspondingly.
     void Replace(const CSeq_feat& new_feat) const;
 
+    /// Update index after manual modification of the object
+    void Update(void) const;
+
 protected:
     friend class CSeq_annot_EditHandle;
 
@@ -773,6 +776,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/09/20 14:00:19  vasilche
+* Implemented user API to Update() annotation index.
+*
 * Revision 1.20  2006/08/07 15:25:06  vasilche
 * Introduced CSeq_feat_EditHandle.
 * Introduced CSeq_annot_ftable_CI & CSeq_annot_ftable_I.
