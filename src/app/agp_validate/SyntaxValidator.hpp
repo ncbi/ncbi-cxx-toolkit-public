@@ -1,3 +1,6 @@
+#ifndef AGP_VALIDATE_SyntaxValidator
+#define AGP_VALIDATE_SyntaxValidator
+
 /*  $Id$
  * ===========================================================================
  *
@@ -43,28 +46,13 @@
 #include <util/range_coll.hpp>
 
 #include <iostream>
-
-
-#define START_LINE_VALIDATE_MSG \
-        m_LineErrorOccured = false;
-
-#define AGP_POST(msg) cerr << msg << "\n"
-
-#define END_LINE_VALIDATE_MSG(line_num, line)\
-  AGP_POST( line_num << ": " << line <<\
-    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n");\
-  delete m_ValidateMsg;\
-  m_ValidateMsg = new CNcbiOstrstream;
-
-#define AGP_MSG(severity, msg) \
-        m_LineErrorOccured = true; \
-        *m_ValidateMsg << "\n\t" << severity << ": " <<  msg
-#define AGP_ERROR(msg) agp_error_count++; AGP_MSG("ERROR", msg)
-#define AGP_WARNING(msg) agp_warn_count++; AGP_MSG("WARNING", msg)
+#include "AgpErr.hpp"
 
 #define NO_LOG false
 
 BEGIN_NCBI_SCOPE
+
+extern CAgpErr agpErr;
 
 extern int agp_error_count;
 extern int agp_warn_count;
@@ -85,9 +73,11 @@ struct SDataLine {
   string  linkage;
 };
 
+ // Determines accession naming patterns, count accessions.
 class CAccPatternCounter;
 
-
+// Count how many times a atring value appears;
+// report values and counts ordered by count.
 class CValuesCount : public map<string, int>
 {
 public:
@@ -108,12 +98,11 @@ public:
   CAgpSyntaxValidator();
   ~CAgpSyntaxValidator();
   // former CAgpValidateApplication::x_ValidateSyntaxLine
-  bool ValidateLine(
-    CNcbiOstrstream* msgStream, const SDataLine& dl,
+  void ValidateLine( const SDataLine& dl,
     const string& text_line, bool last_validation=false);
 
   // Note: resets post_prev
-  const string& PreviousLineToPrint();
+  //const string& PreviousLineToPrint();
 
   // static bool GapBreaksScaffold(int type, int linkage);
   static bool IsGapType(const string& type);
@@ -121,7 +110,7 @@ public:
 
   // Temporarily public;
   // prev_line_filename usage is questionable anyway...
-  string prev_line_filename;
+  // string prev_line_filename;
 
 protected:
   // Vars assigned in ValidateLine(),
@@ -213,7 +202,8 @@ protected:
     bool log_error = true);
 
   int x_CheckRange(int line_num, int start, int begin,
-    int end, string begin_name, string end_name);
+    int end, string begin_name, string end_name,
+    CAgpErr::TCode ltCode); // // "Less Than" error Code
   int x_CheckIntField(int line_num, const string& field,
     const string& field_name, bool log_error = true);
 
@@ -222,12 +212,13 @@ protected:
 
   string prev_object;
   string prev_component_type;
-  //string prev_component_id;
   int prev_gap_type;
   string prev_line;
 
-  string prev_component_line;
-  int prev_component_line_num;
+  bool prev_orientation_unknown;
+  //string prev_component_id;
+  //string prev_component_line;
+  //int prev_component_line_num;
 
   int  prev_end;
   int  prev_part_num;
@@ -236,11 +227,12 @@ protected:
   int  componentsInLastScaffold;
 
   // true: print the previous line as well, to illustrate the error better
-  bool post_prev;
+  // bool post_prev;
 
   CAccPatternCounter* objNamePatterns;
 };
 
 END_NCBI_SCOPE
 
+#endif /* AGP_VALIDATE_SyntaxValidator */
 

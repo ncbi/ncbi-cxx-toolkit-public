@@ -38,7 +38,6 @@
 #include "AccessionPatterns.hpp"
 
 USING_NCBI_SCOPE;
-
 BEGIN_NCBI_SCOPE
 
 int agp_error_count=0;
@@ -53,7 +52,8 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   prev_line_num = 0;
   prev_line_error_occured = false;
   componentsInLastScaffold = 0;
-  post_prev = false;
+  //post_prev = false;
+  prev_orientation_unknown=false;
 
   m_ObjCount = 0;
   m_ScaffoldCount = 0;
@@ -125,8 +125,7 @@ CAgpSyntaxValidator::~CAgpSyntaxValidator()
   delete objNamePatterns;
 }
 
-bool CAgpSyntaxValidator::ValidateLine(
-  CNcbiOstrstream* msgStream, const SDataLine& dl,
+void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
   const string& text_line, bool last_validation)
 {
   new_obj = false;
@@ -138,7 +137,7 @@ bool CAgpSyntaxValidator::ValidateLine(
 
   // for compatibility with AGP_WARNING() AGP_ERROR()
   m_LineErrorOccured = false;
-  m_ValidateMsg=msgStream;
+  // m_ValidateMsg=msgStream;
 
   //// Common code for GAPs, components, and one last check at EOF.
   if(last_validation) {
@@ -160,9 +159,9 @@ bool CAgpSyntaxValidator::ValidateLine(
   }
 
   if( new_obj && IsGapType(prev_component_type) ) {
-    // A new scafold.
-    // Previous line is a gap at the end of a scaffold
-
+    // Previous line is a gap at the end of a scaffold & object
+    agpErr.Msg(CAgpErr::W_GapObjEnd, NcbiEmptyString, CAgpErr::AT_PrevLine);
+    /*
     // special error reporting mechanism since the
     //  error is on the previous line. Directly Log
     //  the error messages.
@@ -170,50 +169,52 @@ bool CAgpSyntaxValidator::ValidateLine(
       AGP_POST( prev_line_num << ": " << prev_line);
     }
     AGP_POST("\tWARNING: a gap at the end of an object");
+    */
   }
-  if(last_validation) return m_LineErrorOccured;
+  if(last_validation) return;  // m_LineErrorOccured;
 
   //// Common code for GAPs and components
   if(new_obj) {
     TObjSetResult obj_insert_result = m_ObjIdSet.insert(dl.object);
     if (obj_insert_result.second == false) {
-      AGP_ERROR("Duplicate object: " << dl.object);
+      agpErr.Msg(CAgpErr::E_DuplicateObj, dl.object);
+      //AGP_ERROR("Duplicate object: " << );
     }
 
     objNamePatterns->AddName(dl.object);
   }
 
   obj_begin = x_CheckIntField(
-    dl.line_num, dl.begin, "object_begin"
+    dl.line_num, dl.begin, "object_begin (column 2)"
   );
   if( obj_begin && ( obj_end = x_CheckIntField(
-        dl.line_num, dl.end, "object_end"
+        dl.line_num, dl.end, "object_end (column 3)"
   ))){
     if(new_obj && obj_begin != 1) {
-      AGP_ERROR("First line of an object must have "
-        "object_begin=1");
+      agpErr.Msg(CAgpErr::E_ObjMustBegin1);
+      //AGP_ERROR("First line of an object must have object_begin=1");
     }
 
     obj_range_len = x_CheckRange(
       dl.line_num, prev_end, obj_begin, obj_end,
-      "object_begin", "object_end");
+      "object_begin", "object_end", CAgpErr::E_ObjBeginLtEnd);
     prev_end = obj_end;
   }
 
   if (part_num = x_CheckIntField(
-    dl.line_num, dl.part_num, "part_num"
+    dl.line_num, dl.part_num, "part_num (column 4)"
   )) {
     if(part_num != prev_part_num+1) {
-      post_prev=true;
-      AGP_ERROR("Part number (column 4) != previous "
-        "part number +1");
+      agpErr.Msg( CAgpErr::E_PartNumberNotPlus1 );
+      // post_prev=true;
+      // AGP_ERROR("Part number (column 4) != previous part number +1");
     }
     prev_part_num = part_num;
   }
 
   if(x_CheckValues(
     dl.line_num, m_ComponentTypeValues,
-    dl.component_type, "component_type"
+    dl.component_type, "component_type (column 5)"
   )) {
     m_TypeCompCnt.add( dl.component_type );
   }
@@ -227,8 +228,8 @@ bool CAgpSyntaxValidator::ValidateLine(
   }
   else {
     x_OnComponentLine(dl, text_line);
-    prev_component_line = text_line;
-    prev_component_line_num = dl.line_num;
+    // prev_component_line = text_line;
+    // prev_component_line_num = dl.line_num;
   }
 
   ////
@@ -239,7 +240,7 @@ bool CAgpSyntaxValidator::ValidateLine(
   prev_line_error_occured = m_LineErrorOccured;
   //prev_component_id = dl.component_id;
 
-  return m_LineErrorOccured; // may be set in AGP_WARNING, AGP_ERROR
+  // return m_LineErrorOccured; // may be set in AGP_WARNING, AGP_ERROR
 }
 
 void CAgpSyntaxValidator::x_OnGapLine(
@@ -251,11 +252,14 @@ void CAgpSyntaxValidator::x_OnGapLine(
 
   //// Check the line: gap length, values in gap_type and linkage
   if(gap_len = x_CheckIntField(
-    dl.line_num, dl.gap_length, "gap_length"
+    dl.line_num, dl.gap_length, "gap_length (column 6)"
   )) {
     if (obj_range_len && obj_range_len != gap_len) {
-      AGP_ERROR("Object range length not equal to gap length"
-        ": " << obj_range_len << " != " << gap_len);
+      agpErr.Msg(CAgpErr::E_ObjRangeNeGap, string(": ") +
+        NStr::IntToString(obj_range_len) + " != " +
+        NStr::IntToString(gap_len      ) );
+      // AGP_ERROR("Object range length not equal to gap length"
+      //  ": " << obj_range_len << " != " << gap_len);
       error = true;
     }
   }
@@ -264,12 +268,12 @@ void CAgpSyntaxValidator::x_OnGapLine(
   }
 
   int gap_type = x_CheckValues(
-    dl.line_num, m_GapTypes, dl.gap_type, "gap_type");
+    dl.line_num, m_GapTypes, dl.gap_type, "gap_type (column 7)");
   int linkage = -1;
   bool endsScaffold = true;
   if( gap_type>=0 ) {
     linkage = x_CheckValues(
-        dl.line_num, m_LinkageValues, dl.linkage, "linkage");
+        dl.line_num, m_LinkageValues, dl.linkage, "linkage (column 8)");
 
     if(linkage>=0) {
       string key = dl.gap_type + dl.linkage;
@@ -286,7 +290,8 @@ void CAgpSyntaxValidator::x_OnGapLine(
           // Ok
         }
         else {
-          AGP_WARNING("Invalid linkage=yes for gap_type="<<dl.gap_type);
+          agpErr.Msg(CAgpErr::W_InvalidYes, dl.gap_type);
+          //AGP_WARNING("Invalid linkage=yes for gap_type="<<dl.gap_type);
           error=true;
         }
       }
@@ -300,19 +305,32 @@ void CAgpSyntaxValidator::x_OnGapLine(
 
   //// Check the gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold.
-  if(new_obj) { AGP_WARNING("Object begins with a gap"); }
+  if(new_obj) {
+    agpErr.Msg(CAgpErr::W_GapObjBegin);
+    //AGP_WARNING("Object begins with a gap");
+  }
   else if(IsGapType(prev_component_type)) {
-    // Previous line a gap.
-    //AGP_POST( prev_line_num << ": " << prev_line);
-    post_prev=true;
-    AGP_WARNING("Two consequtive gap lines. There may be a gap at the end of "
-    "a scaffold, two non scaffold-breaking gaps, etc");
+    agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
+      CAgpErr::AT_ThisLine|CAgpErr::AT_PrevLine );
+    //post_prev=true;
+    //AGP_WARNING("Two consequtive gap lines. There may be a gap at the end of "
+    //"a scaffold, two non scaffold-breaking gaps, etc");
   }
   else if( endsScaffold ) {
-    // 2006/08/28: Previous line is the last component of a scaffold
+    // A breaking gap after a component.
+    // Previous line is the last component of a scaffold
     m_ScaffoldCount++;
     if(componentsInLastScaffold==1) {
       m_SingletonCount++;
+    }
+  }
+  else {
+    // a non-breaking gap after a component
+    if(prev_orientation_unknown && componentsInLastScaffold==1) {
+                             // ^^^can probably ASSERT this^^^
+      agpErr.Msg(CAgpErr::E_UnknownOrientation,
+        NcbiEmptyString, CAgpErr::AT_PrevLine);
+      prev_orientation_unknown=false;
     }
   }
   if( endsScaffold ) {
@@ -322,7 +340,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
   //// Check if the line looks more like a component
   //// (i.e. dl.component_type should be != "N" or "U")
   if (error) {
-    // A component line has integers in column 7
+    // A component line would have integers in column 7
     // (component start) and column 8 (component end);
     // +, - or 0 in column 9 (orientation).
     if( x_CheckIntField(
@@ -335,9 +353,11 @@ void CAgpSyntaxValidator::x_OnGapLine(
           dl.line_num, m_OrientaionValues,
           dl.orientation, "orientation", NO_LOG
     ) ) {
-      AGP_WARNING( "Line with component_type=" <<
-        dl.component_type << " appears to be"
-        " a component line and not a gap line.");
+      agpErr.Msg(CAgpErr::W_LooksLikeComp,
+        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        dl.component_type );
+      // AGP_WARNING( "Line with component_type=" << dl.component_type
+      //  << " appears to be a component line and not a gap line.");
     }
   }
 
@@ -355,24 +375,37 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   m_CompCount++;
   componentsInLastScaffold++;
 
+  // A saved potential error
+  if(prev_orientation_unknown) {
+    // Make sure that prev_orientation_unknown
+    // is not a leftover from the preceding singleton.
+    if( componentsInLastScaffold==2 ) {
+      agpErr.Msg(CAgpErr::E_UnknownOrientation,
+        NcbiEmptyString, CAgpErr::AT_PrevLine);
+    }
+    prev_orientation_unknown=false;
+  }
+
   //// Check that component begin & end are integers,
   //// begin < end, component span length == that of the object
   if( (comp_start = x_CheckIntField(
-        dl.line_num,dl.component_start,"component_start"
+        dl.line_num, dl.component_start,
+        "component_start (column 7)"
       )) &&
       (comp_end   = x_CheckIntField(
-        dl.line_num, dl.component_end ,"component_end"
+        dl.line_num, dl.component_end,
+        "component_end (column 8)"
       ))
   ) {
     comp_len = x_CheckRange(
       dl.line_num, 0, comp_start, comp_end,
-      "component_start", "component_end"
+      "component_start", "component_end", CAgpErr::E_CompStartLtEnd
     );
     if( comp_len && obj_range_len &&
         comp_len != obj_range_len
     ) {
-      AGP_ERROR( "Object range length not equal to component"
-        " range length");
+      agpErr.Msg(CAgpErr::E_ObjRangeNeComp);
+      // AGP_ERROR( "Object range length not equal to component range length");
       error = true;
     }
   } else {
@@ -382,26 +415,43 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   //// Orientation: + - 0 na
   if (x_CheckValues(
     dl.line_num, m_OrientaionValues, dl.orientation,
-    "orientation"
+    "orientation (column 9)"
   )) {
     // todo: avoid additional string comparisons;
     // use array for counting; count invalid orientations
 
-    if( dl.orientation == "0") {
-      AGP_ERROR( "Component cannot have an unknown orientation"
-      );
-      m_CompZeroCount++;
-      error = true;
-    }
-    else if (dl.orientation == "+") {
+    if (dl.orientation == "+") {
       m_CompPosCount++;
     }
     else if (dl.orientation == "-") {
       m_CompNegCount++;
     }
     else {
-      m_CompNaCount++;
+      if( dl.orientation == "0") {
+        m_CompZeroCount++;
+        //AGP_ERROR( "Component cannot have an unknown orientation");
+        //error = true;
+      }
+      else {
+        m_CompNaCount++;
+      }
+
+      if(componentsInLastScaffold==1) {
+        // Report an error later if the current scaffold
+        // turns out not a singleton. Only singletons can have
+        // components with unknown orientation.
+        //
+        // Note: previous component != previous line
+        // if there was a non-breaking gap; thus, we check
+        // prev_orientation_unknown for such gaps, too.
+        prev_orientation_unknown=true;
+      }
+      else {
+        // This error is real, not "potential"; report it now.
+        agpErr.Msg(CAgpErr::E_UnknownOrientation);
+      }
     }
+
   } else {
     error = true;
   }
@@ -420,7 +470,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   if (id_insert_result.second == false) {
     TCompSpans& spans = (id_insert_result.first)->second;
 
-    // Need not check the span order for these:
+    // Do not check the span order for these:
     bool isDraft =
       dl.component_type=="A" || // Active Finishing
       dl.component_type=="D" || // Draft HTG
@@ -428,9 +478,10 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     string str_details="";
 
     if(spans.IntersectingWith(component_range)) {
-      // To do: (try to) print both lines with overlapping spans
-      str_details = "The span overlaps "
-        "a previous span for this component.";
+      // To do: print both lines with overlapping spans
+      agpErr.Msg(CAgpErr::W_SpansOverlap);
+      //str_details = "The span overlaps "
+      //  "a previous span for this component.";
     }
     else if ( !isDraft) {
       if( ( dl.orientation=="+" &&
@@ -441,7 +492,8 @@ void CAgpSyntaxValidator::x_OnComponentLine(
         // A correct order.
       }
       else {
-        str_details = "Component span is out of order.";;
+        agpErr.Msg(CAgpErr::W_SpansOrder);
+        //str_details = "Component span appears out of order.";;
       }
     }
 
@@ -451,11 +503,10 @@ void CAgpSyntaxValidator::x_OnComponentLine(
         post_prev=true;
       }
       */
-      AGP_WARNING("Duplicate component id with non-draft type.");
+      agpErr.Msg(CAgpErr::W_DuplicateComp);
+      //AGP_WARNING("Duplicate component id with non-draft type");
     }
-    if( str_details.size() ) {
-      AGP_WARNING(str_details);
-    }
+    // if( str_details.size() ) { AGP_WARNING(str_details); }
 
     spans.CombineWith(component_range);
   }
@@ -466,17 +517,19 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     // Gap line has integer (gap len) in column 6,
     // gap type value in column 7,
     // a yes/no in column 8.
-    if(x_CheckIntField(
-        dl.line_num, dl.gap_length, "gap_length",
-      NO_LOG) && x_CheckValues(
-        dl.line_num, m_GapTypes, dl.gap_type, "gap_type",
-      NO_LOG) && x_CheckValues(
-        dl.line_num, m_LinkageValues, dl.linkage, "linkage",
-      NO_LOG)
-    ) {
-      AGP_WARNING( "Line with component_type="
-        << dl.component_type <<" appears to be a gap line "
-        "and not a component line");
+    if( x_CheckIntField(
+        dl.line_num, dl.gap_length, "gap_length", NO_LOG
+      ) && x_CheckValues(
+        dl.line_num, m_GapTypes, dl.gap_type, "gap_type", NO_LOG
+      ) && x_CheckValues( dl.line_num,
+        m_LinkageValues, dl.linkage, "linkage", NO_LOG
+    ) ) {
+      agpErr.Msg(CAgpErr::W_LooksLikeGap,
+        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        dl.component_type );
+      //AGP_WARNING( "Line with component_type="
+      //  << dl.component_type <<" appears to be a gap line "
+      //  "and not a component line");
     }
   }
 }
@@ -492,26 +545,31 @@ int CAgpSyntaxValidator::x_CheckIntField(
   }
 
   if (field_value <= 0  &&  log_error) {
-    AGP_ERROR( field_name << " field must be a positive "
-    "integer");
+    agpErr.Msg(CAgpErr::E_MustBePositive,
+        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        field_name );
+    //AGP_ERROR( field_name << " field must be a positive integer");
   }
   return field_value;
 }
 
 int CAgpSyntaxValidator::x_CheckRange(
   int line_num, int start, int begin, int end,
-  string begin_name, string end_name)
+  string begin_name, string end_name,
+  CAgpErr::TCode ltCode)
 {
   int length = 0;
   if(begin <= start){
-    /* Need better means of finding a probable offending line(s).
-    post_prev=true;
-    */
-    AGP_ERROR( begin_name << " field overlaps a previous "
-      "line");
+    agpErr.Msg( CAgpErr::E_Overlaps,
+      NcbiEmptyString,
+      CAgpErr::AT_ThisLine|CAgpErr::AT_PrevLine,
+      begin_name );
+    //post_prev=true;
+    //AGP_ERROR( begin_name << " field overlaps a previous line");
   }
   else if (end < begin) {
-    AGP_ERROR(end_name << " is less than " << begin_name );
+    agpErr.Msg(ltCode); // "Less Than" error Code
+    //AGP_ERROR(end_name << " is less than " << begin_name );
   }
   else {
     length = end - begin + 1;
@@ -522,14 +580,18 @@ int CAgpSyntaxValidator::x_CheckRange(
 
 bool CAgpSyntaxValidator::x_CheckValues(
   int line_num,
-  const TValuesSet& values,
+  const TValuesSet& values, // SET
   const string& value,
   const string& field_name,
   bool log_error)
 {
-  if (values.count(value) == 0) {
-    if (log_error)
-      AGP_ERROR("Invalid value for " << field_name);
+  if(values.count(value) == 0) {
+    if(log_error) {
+      agpErr.Msg(CAgpErr::E_InvalidValue,
+        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        field_name );
+      //AGP_ERROR("Invalid value for " << field_name);
+    }
     return false;
   }
   return true;
@@ -537,15 +599,19 @@ bool CAgpSyntaxValidator::x_CheckValues(
 
 int CAgpSyntaxValidator::x_CheckValues(
   int line_num,
-  const TValuesMap& values,
+  const TValuesMap& values, // MAP
   const string& value,
   const string& field_name,
   bool log_error)
 {
   TValuesMap::const_iterator it = values.find(value);
   if( it==values.end() ) {
-    if (log_error)
-      AGP_ERROR("Invalid value for " << field_name);
+    if(log_error) {
+      agpErr.Msg(CAgpErr::E_InvalidValue,
+        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        field_name );
+      // AGP_ERROR("Invalid value for " << field_name);
+    }
     return -1;
   }
   return it->second;
@@ -554,26 +620,15 @@ int CAgpSyntaxValidator::x_CheckValues(
 void CAgpSyntaxValidator::PrintTotals()
 {
   //// Counts of errors and warnings
-  if(agp_error_count==0) {
-    cout << "No errors, ";
-  }
-  else if(agp_error_count==1) {
-    cout << "1 error, ";
-  }
-  else{
-    cout << agp_error_count << " errors, ";
-  }
-  if(agp_warn_count==0) {
-    cout << "no warnings.\n";
-  }
-  else if(agp_warn_count==1) {
-    cout << "1 warning.\n";
-  }
-  else{
-    cout << agp_warn_count << " warnings.\n";
-  }
+  int e_count=agpErr.CountErrors(CAgpErr::E_Last);
+  int w_count=agpErr.CountErrors(CAgpErr::W_Last);
+  cout << "\n";
+  agpErr.PrintErrorCounts(cout, e_count, w_count);
+  cout << "\n";
 
+  //// Prepare component/gap types and counts for later printing
   string s_comp, s_gap;
+
   CValuesCount::pv_vector comp_cnt;
   m_TypeCompCnt.GetSortedValues(comp_cnt);
 
@@ -590,6 +645,7 @@ void CAgpSyntaxValidator::PrintTotals()
     *s+= NStr::IntToString((*it)->second);
   }
 
+  //// Various counts of AGP elements
   cout << "\n"
     "Objects     : " << m_ObjCount << "\n"
     "Scaffolds   : " << m_ScaffoldCount   << "\n"
@@ -627,7 +683,6 @@ void CAgpSyntaxValidator::PrintTotals()
     }
   }
 
-
   cout
   << "\n\t   with linkage: yes\tno"
   << "\n\tclone          : "<<m_TypeGapCnt["cloneyes"          ]
@@ -651,6 +706,7 @@ void CAgpSyntaxValidator::PrintTotals()
   //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
   << "\n";
 
+  //// Patterns in object and component names
   cout << "\nObject names and counts:\n";
   // TO DO:
   //   print not more than 50, not more than 10 with acc.count==1;
@@ -671,6 +727,7 @@ void CAgpSyntaxValidator::PrintTotals()
   }
 }
 
+/*
 const string& CAgpSyntaxValidator::PreviousLineToPrint()
 {
   if(post_prev) {
@@ -679,6 +736,7 @@ const string& CAgpSyntaxValidator::PreviousLineToPrint()
   }
   return NcbiEmptyString;
 }
+*/
 
 bool CAgpSyntaxValidator::IsGapType(const string& type)
 {
@@ -714,7 +772,6 @@ int CValuesCount::x_byCount( value_type* a, value_type* b )
   }
   return a->first < b->first; // by name
 }
-
 
 END_NCBI_SCOPE
 

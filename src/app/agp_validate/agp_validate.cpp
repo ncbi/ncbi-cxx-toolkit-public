@@ -36,6 +36,7 @@
 
 #include <ncbi_pch.hpp>
 #include "SyntaxValidator.hpp"
+//#include "AgpErr.hpp"
 
 // Objects includes
 // todo: move this to a separate .cpp file with semantic validator
@@ -68,9 +69,30 @@
 using namespace ncbi;
 using namespace objects;
 
+//// Legacy macros for semantic validation; to be removed later.
+#define START_LINE_VALIDATE_MSG \
+        m_LineErrorOccured = false;
+
+#define AGP_POST(msg) cerr << msg << "\n"
+
+#define END_LINE_VALIDATE_MSG(line_num, line)\
+  AGP_POST( line_num << ": " << line <<\
+    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n");\
+  delete m_ValidateMsg;\
+  m_ValidateMsg = new CNcbiOstrstream;
+
+#define AGP_MSG(severity, msg) \
+        m_LineErrorOccured = true; \
+        *m_ValidateMsg << "\n\t" << severity << ": " <<  msg
+#define AGP_ERROR(msg) agp_error_count++; AGP_MSG("ERROR", msg)
+#define AGP_WARNING(msg) agp_warn_count++; AGP_MSG("WARNING", msg)
+////////////////////////////////////
+
 BEGIN_NCBI_SCOPE
 
 // USING_NCBI_SCOPE;
+CAgpErr agpErr;
+
 class CAgpValidateApplication : public CNcbiApplication
 {
 private:
@@ -80,6 +102,7 @@ private:
   virtual void Exit(void);
 
   string m_CurrentFileName;
+
   enum EValidationType {
       syntax, semantic
   } m_ValidationType;
@@ -130,11 +153,8 @@ private:
   void x_ValidateUsingFiles(const CArgs& args);
   void x_ValidateFile(CNcbiIstream& istr);
 
-  //
-  // 2006/08/29: syntax validation is now done in CAgpSyntaxValidator
-  //
-  void x_ValidateSyntaxLine(const SDataLine& line,
-    const string& text_line, bool last_validation = false);
+  // void x_ValidateSyntaxLine(const SDataLine& line,
+  //  const string& text_line, bool last_validation = false);
 
   //
   // Semantic validate methods
@@ -267,7 +287,9 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
 
       m_CurrentFileName =
           args['#' + NStr::IntToString(i)].AsString();
-      AGP_POST(m_CurrentFileName<<"\n");
+      if( args.GetNExtra()>1 ) agpErr.StartFile(m_CurrentFileName);
+
+      //AGP_POST(m_CurrentFileName<<"\n");
       CNcbiIstream& istr =
           args['#' + NStr::IntToString(i)].AsInputFile();
       if (!istr) {
@@ -289,16 +311,16 @@ void CAgpValidateApplication::x_ValidateFile(
   vector<string> cols;
   while (NcbiGetlineEOL(istr, line)) {
     line_num++;
-    if (line == "") continue;
-    if (line[0] == '#') continue;
 
     // Strip #comments
     {
       SIZE_TYPE pos = NStr::Find(line, "#");
       if(pos != NPOS) {
+        while( pos>0 && line[pos-1]==' ') pos--;
         line.resize(pos);
       }
     }
+    if (line == "") continue;
 
     cols.clear();
     NStr::Tokenize(line, "\t", cols);
@@ -306,6 +328,10 @@ void CAgpValidateApplication::x_ValidateFile(
     data_line.line_num = line_num;
 
     // 5 common fields for components an gaps.
+
+    // to do: if cols.size() < 7
+    //   skip this entire line, report an error
+
     if (cols.size() > 0) data_line.object         = cols[0];
     if (cols.size() > 1) data_line.begin          = cols[1];
     if (cols.size() > 2) data_line.end            = cols[2];
@@ -332,18 +358,24 @@ void CAgpValidateApplication::x_ValidateFile(
     }
 
     if (m_ValidationType == syntax) {
-      x_ValidateSyntaxLine(data_line, line);
+      // x_ValidateSyntaxLine(data_line, line);
+      m_LineValidator->ValidateLine(data_line, line);
     } else {
       x_ValidateSemanticLine(data_line, line);
     }
+
+    agpErr.LineDone(line, line_num);
   }
 
   // Needed to check if the last line was a gap, or a singleton.
   if (m_ValidationType == syntax) {
-    x_ValidateSyntaxLine(data_line, line, true);
+    // x_ValidateSyntaxLine(data_line, line, true);
+    m_LineValidator->ValidateLine(data_line, line, true);
+    // Do not need to call LineDone() - all the errors reported would be on prev. line
   }
 }
 
+/*
 void CAgpValidateApplication::x_ValidateSyntaxLine(
   const SDataLine& dl,
   const string& text_line,
@@ -369,6 +401,7 @@ void CAgpValidateApplication::x_ValidateSyntaxLine(
   m_LineValidator->prev_line_filename = m_CurrentFileName;
 
 }
+*/
 
 void CAgpValidateApplication::x_ValidateSemanticInit()
 {
