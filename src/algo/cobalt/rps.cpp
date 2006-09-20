@@ -36,9 +36,12 @@ Contents: Use RPS blast to find domain hits
 ******************************************************************************/
 
 #include <ncbi_pch.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <algo/blast/api/blast_rps_options.hpp>
-#include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
+#include <algo/blast/api/local_blast.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/cobalt/cobalt.hpp>
 #include <algorithm>
 
@@ -384,48 +387,71 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
 {
     int num_queries = m_tQueries.size();
 
-    CBlastRPSOptionsHandle rps_opts;
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eRPSBlast));
 
-    // deliberately set the cutoff e-value too high
+    // deliberately set the cutoff e-value too high, to
+    // account for alignments where the gapped score is
+    // very different from the ungapped score
 
-    rps_opts.SetEvalueThreshold(max(m_RPSEvalue, 10.0));
-    rps_opts.SetSegFiltering(false);
+    opts->SetEvalueThreshold(max(m_RPSEvalue, 10.0));
+    opts->SetFilterString("F");
 
     // run RPS blast
 
-    CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(m_RPSdb.c_str(), TRUE));
-    CDbBlast blaster(m_tQueries, seq_src, rps_opts);
-    blaster.RunWithoutSeqalignGeneration();
+    BlastSeqSrc * seq_src(SeqDbBlastSeqSrcInit(m_RPSdb, TRUE));
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(m_tQueries));
+    CLocalBlast blaster(query_factory, opts, seq_src);
+    CSearchResultSet results = blaster.Run();
 
-    // copy out the results
+    // convert the results to the internal format used by
+    // the rest of CMultiAligner
 
-    BlastHSPResults *blast_results = blaster.GetResults();
-    _ASSERT(blast_results);
+    CSeqDB seqdb(m_RPSdb, CSeqDB::eProtein);
+
+    // iterate over queries
+
     for (int i = 0; i < num_queries; i++) {
-        BlastHitList *hitlist = blast_results->hitlist_array[i];
-        if (hitlist == NULL)
-            continue;
 
-        for (int j = 0; j < hitlist->hsplist_count; j++) {
-            BlastHSPList *hsplist = hitlist->hsplist_array[j];
-            _ASSERT(hsplist != NULL);
-            
-            for (int k = 0; k < hsplist->hspcnt; k++) {
+        // iterate over hitlists
 
-                // delete HSPs whose e-value exceeds the cutoff
-                // that was specified. We do *not* give this cutoff
-                // directly to the blast engine because sometimes 
-                // the ungapped version of an alignment does not
-                // exceed the ungapped cutoff score, even though
-                // the gapped version of the alignment would
+        ITERATE(CSeq_align_set::Tdata, itr, results[i].GetSeqAlign()->Get()) {
+            const CSeq_align& hitlist_sa = **itr;
 
-                BlastHSP *hsp = hsplist->hsp_array[k];
-                if (hsp->evalue <= m_RPSEvalue) {
-                    rps_hits.AddToHitList(new CHit(i, hsplist->oid, hsp));
+            // iterate over hits
+
+            ITERATE(CSeq_align_set::Tdata, sitr, 
+                                 hitlist_sa.GetSegs().GetDisc().Get()) {
+
+                const CSeq_align& s = **sitr;
+                const CDense_seg& denseg = s.GetSegs().GetDenseg();
+                int align_score = 0;
+                double evalue = 0;
+
+                // compute the score of the hit
+
+                ITERATE(CSeq_align::TScore, score_itr, s.GetScore()) {
+                    const CScore& curr_score = **score_itr;
+                    if (curr_score.GetId().GetStr() == "score")
+                        align_score = curr_score.GetValue().GetInt();
+                    else if (curr_score.GetId().GetStr() == "e_value")
+                        evalue = curr_score.GetValue().GetReal();
                 }
+
+                // check if the hit is worth saving
+                if (evalue > m_RPSEvalue)
+                    continue;
+
+                // locate the ID of the database sequence that
+                // produced the hit, and save the hit
+
+                int db_oid;
+                seqdb.SeqidToOid(*denseg.GetIds()[1], db_oid);
+                rps_hits.AddToHitList(new CHit(i, db_oid, 
+                                               align_score, denseg));
             }
         }
     }
+
 
     //-------------------------------------------------------
     if (m_Verbose) {
@@ -666,6 +692,9 @@ END_NCBI_SCOPE
 
 /* ====================================================================
  * $Log$
+ * Revision 1.15  2006/09/20 19:42:36  papadopo
+ * remove use of CDbBlast, replace with uniform search API; also parse seqaligns instead of raw C structures
+ *
  * Revision 1.14  2006/06/15 17:43:03  papadopo
  * PartialRun -> RunWithoutSeqalignGeneration
  *
