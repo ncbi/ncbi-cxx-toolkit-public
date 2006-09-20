@@ -43,6 +43,7 @@ Contents: implementation of CEditScript class
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
+USING_SCOPE(objects);
 
 void 
 CEditScript::AddOps(EGapAlignOpType op_type, int num_ops)
@@ -72,6 +73,29 @@ CEditScript::CEditScript(GapEditScript *blast_tback)
 
     for (Int4 i = 0;  i < blast_tback->size;  ++i) {
         AddOps(blast_tback->op_type[i], blast_tback->num[i]);
+    }
+}
+
+
+CEditScript::CEditScript(const CDense_seg& denseg)
+{
+    _ASSERT(denseg.GetDim() == 2);
+
+    CDense_seg::TNumseg num_seg = denseg.GetNumseg();
+    const CDense_seg::TStarts& starts = denseg.GetStarts();
+    const CDense_seg::TLens& lens = denseg.GetLens();
+
+    for (CDense_seg::TNumseg i = 0; i < num_seg; i++) {
+
+        TSignedSeqPos start1 = starts[2*i];
+        TSignedSeqPos start2 = starts[2*i+1];
+
+        if (start1 < 0)
+            AddOps(eGapAlignDel, (int)lens[i]);
+        else if (start2 < 0)
+            AddOps(eGapAlignIns, (int)lens[i]);
+        else
+            AddOps(eGapAlignSub, (int)lens[i]);
     }
 }
 
@@ -474,6 +498,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================
  * $Log$
+ * Revision 1.7  2006/09/20 19:41:44  papadopo
+ * add member to initialize traceback from an ASN.1 denseg
+ *
  * Revision 1.6  2006/03/22 19:23:17  dicuccio
  * Cosmetic changes: adjusted include guards; formatted CVS logs; added export
  * specifiers
