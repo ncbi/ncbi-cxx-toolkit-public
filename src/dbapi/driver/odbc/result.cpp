@@ -114,8 +114,8 @@ CODBC_RowResult::CODBC_RowResult(
         case SQL_SUCCESS_WITH_INFO:
             ReportErrors();
         case SQL_SUCCESS:
-            m_ColFmt[n].ColumnName = 
-                CODBCString(column_name_buff, 
+            m_ColFmt[n].ColumnName =
+                CODBCString(column_name_buff,
                             actual_name_size / sizeof(odbc::TSqlChar)).AsUTF8();
             continue;
         case SQL_ERROR:
@@ -672,14 +672,15 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         case eDB_Numeric: {
             SQL_NUMERIC_STRUCT v;
             SQLHDESC hdesc;
-            SQLGetStmtAttr(GetHandle(), SQL_ATTR_APP_ROW_DESC,&hdesc, 0, NULL);
-            SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_TYPE,(VOID*)SQL_C_NUMERIC,0);
-            SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_PRECISION,
-                    (VOID*)(m_ColFmt[m_CurrItem].ColumnSize),0);
-            SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_SCALE,
-                    reinterpret_cast<VOID*>(m_ColFmt[m_CurrItem].DecimalDigits),0);
+            SQLGetStmtAttr(GetHandle(), SQL_ATTR_APP_ROW_DESC, &hdesc, 0, NULL);
+            SQLSetDescField(hdesc, m_CurrItem + 1, SQL_DESC_TYPE, (VOID*)SQL_C_NUMERIC, 0);
+            SQLSetDescField(hdesc, m_CurrItem + 1, SQL_DESC_PRECISION,
+                    (VOID*)(m_ColFmt[m_CurrItem].ColumnSize), 0);
+            SQLSetDescField(hdesc, m_CurrItem + 1, SQL_DESC_SCALE,
+                    reinterpret_cast<VOID*>(m_ColFmt[m_CurrItem].DecimalDigits), 0);
 
-            outlen = xGetData(SQL_ARD_TYPE, &v, sizeof(SQL_NUMERIC_STRUCT));
+            // outlen = xGetData(SQL_ARD_TYPE, &v, sizeof(SQL_NUMERIC_STRUCT));
+            outlen = xGetData(m_ColFmt[m_CurrItem].DataType, &v, sizeof(SQL_NUMERIC_STRUCT));
             if (outlen <= 0) item_buf->AssignNULL();
             else xConvert2CDB_Numeric((CDB_Numeric*)item_buf, v);
             break;
@@ -1398,6 +1399,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/09/21 20:07:25  ssikorsk
+ * Use concrete datatype instead of SQL_ARD_TYPE with SQLGetData.
+ * FreeTDS odbc has a problem with SQL_ARD_TYPE.
+ *
  * Revision 1.38  2006/09/18 15:35:39  ssikorsk
  * Convert string to UTF8 after a call to SQLDescribeCol.
  *
