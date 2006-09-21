@@ -116,7 +116,7 @@ CODBC_RowResult::CODBC_RowResult(
         case SQL_SUCCESS:
             m_ColFmt[n].ColumnName =
                 CODBCString(column_name_buff,
-                            actual_name_size / sizeof(odbc::TSqlChar)).AsUTF8();
+                            actual_name_size).AsUTF8();
             continue;
         case SQL_ERROR:
             ReportErrors();
@@ -1399,6 +1399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/09/21 20:40:36  ssikorsk
+ * SQLDescribeCol returns num of characters.
+ *
  * Revision 1.39  2006/09/21 20:07:25  ssikorsk
  * Use concrete datatype instead of SQL_ARD_TYPE with SQLGetData.
  * FreeTDS odbc has a problem with SQL_ARD_TYPE.
