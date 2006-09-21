@@ -151,11 +151,11 @@ CAgpErr::CAgpErr()
   // are not out of skew.
   NCBI_ASSERT( string(GetMsg(E_Last))=="",
     "CAgpErr -- GetMsg(E_Last) not empty" );
-  NCBI_ASSERT( string(GetMsg(E_Last-1))!="",
+  NCBI_ASSERT( string(GetMsg( (TCode)(E_Last-1) ))!="",
     "CAgpErr -- GetMsg(E_Last-1) is empty" );
   NCBI_ASSERT( string(GetMsg(W_Last))=="",
     "CAgpErr -- GetMsg(W_Last) not empty" );
-  NCBI_ASSERT( string(GetMsg(W_Last-1))!="",
+  NCBI_ASSERT( string(GetMsg( (TCode)(W_Last-1) ))!="",
     "CAgpErr -- GetMsg(W_Last-1) is empty" );
 }
 
