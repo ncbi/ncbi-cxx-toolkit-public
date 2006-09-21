@@ -158,7 +158,9 @@ CDB_Result* CDBL_RPCCmd::Result()
     }
 
     while ((m_Status & 0x1) != 0) {
-        switch (Check(dbresults(GetCmd()))) {
+        RETCODE rc = Check(dbresults(GetCmd()));
+
+        switch (rc) {
         case SUCCEED:
             if (DBCMDROW(GetCmd()) == SUCCEED) { // we may get rows in this result
 // This optimization is currently unavailable for MS dblib...
@@ -424,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/09/21 16:23:02  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.30  2006/08/22 18:21:04  ssikorsk
  * Added handling of CDB_LongChar to CDBL_RPCCmd::x_AssignParams.
  *

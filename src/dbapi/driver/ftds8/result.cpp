@@ -583,8 +583,9 @@ bool CTDS_BlobResult::Fetch()
 
     STATUS s;
     if (m_CurrItem == 0) {
-        while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0)
-            ;
+        while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0) {
+            continue;
+        }
         switch (s) {
         case 0:
             break;
@@ -598,7 +599,9 @@ bool CTDS_BlobResult::Fetch()
     else {
         m_CurrItem = 0;
     }
+
     s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)));
+
     if (s == NO_MORE_ROWS)
         return false;
     if (s < 0) {
@@ -697,7 +700,8 @@ size_t CTDS_BlobResult::ReadItem(void* buffer, size_t buffer_size,
     }
 
     STATUS s = Check(dbreadtext(GetCmd(),
-                          (void*)((char*)buffer + l), (DBINT)(buffer_size-l)));
+                     (void*)((char*)buffer + l), (DBINT)(buffer_size-l)));
+
     switch (s) {
     case NO_MORE_ROWS:
         m_EOR = true;
@@ -731,8 +735,9 @@ bool CTDS_BlobResult::SkipItem()
         return false;
 
     STATUS s;
-    while ((s = Check(dbreadtext(GetCmd(), m_Buff, sizeof(m_Buff)))) > 0)
+    while ((s = Check(dbreadtext(GetCmd(), m_Buff, sizeof(m_Buff)))) > 0) {
         continue;
+    }
 
     switch (s) {
     case NO_MORE_ROWS:
@@ -937,8 +942,7 @@ CTDS_StatusResult::CTDS_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd) :
     m_Offset(0),
     m_1stFetch(true)
 {
-    m_Val = dbretstatus(cmd);
-    CheckFunctCall();
+    m_Val = Check(dbretstatus(cmd));
 }
 
 EDB_ResType CTDS_StatusResult::ResultType() const
@@ -1501,6 +1505,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/09/21 16:22:40  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.30  2006/09/20 20:35:17  ssikorsk
  * Removed extra check with dbretstatus.
  *

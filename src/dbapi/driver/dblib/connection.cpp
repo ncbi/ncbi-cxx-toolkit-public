@@ -394,7 +394,10 @@ RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
             delete res;
         }
 #endif
-        switch (Check(dbresults(pLink))) {
+
+        RETCODE rc = Check(dbresults(pLink));
+
+        switch (rc) {
         case SUCCEED:
 #if !defined(FTDS_LOGIC)
             x_Status |= 0x60;
@@ -502,7 +505,7 @@ void CTDS_Connection::TDS_SetTimeout(void)
 }
 #endif
 
-RETCODE CDBL_Connection::Check(RETCODE rc)
+RETCODE CDBL_Connection::CheckDead(RETCODE rc)
 {
     if (rc == FAIL) {
         if (DBDEAD(GetDBLibConnection()) == TRUE) {
@@ -612,6 +615,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/09/21 16:19:09  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.39  2006/09/20 19:53:47  ssikorsk
  * Improved CDBL_Connection::Check.
  *

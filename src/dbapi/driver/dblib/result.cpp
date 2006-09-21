@@ -580,8 +580,9 @@ bool CDBL_BlobResult::Fetch()
 
     STATUS s;
     if (m_CurrItem == 0) {
-        while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0)
+        while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0) {
             ;
+        }
         switch (s) {
         case 0:
             break;
@@ -595,6 +596,7 @@ bool CDBL_BlobResult::Fetch()
     else {
         m_CurrItem = 0;
     }
+
     s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)));
     if (s == NO_MORE_ROWS)
         return false;
@@ -649,8 +651,9 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
 
 
     STATUS s;
-    while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0)
+    while ((s = Check(dbreadtext(GetCmd(), m_Buff, (DBINT) sizeof(m_Buff)))) > 0) {
         val->Append(m_Buff, (size_t(s) < sizeof(m_Buff))? size_t(s) : sizeof(m_Buff));
+    }
 
     switch (s) {
     case NO_MORE_ROWS:
@@ -726,8 +729,9 @@ bool CDBL_BlobResult::SkipItem()
         return false;
 
     STATUS s;
-    while ((s = Check(dbreadtext(GetCmd(), m_Buff, sizeof(m_Buff)))) > 0)
+    while ((s = Check(dbreadtext(GetCmd(), m_Buff, sizeof(m_Buff)))) > 0) {
         continue;
+    }
 
     switch (s) {
     case NO_MORE_ROWS:
@@ -1016,8 +1020,7 @@ CDBL_StatusResult::CDBL_StatusResult(CDBL_Connection& conn, DBPROCESS* cmd) :
     m_Offset(0),
     m_1stFetch(true)
 {
-    m_Val = dbretstatus(cmd);
-    CheckFunctCall();
+    m_Val = Check(dbretstatus(cmd));
 }
 
 
@@ -1646,6 +1649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/09/21 16:21:57  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.38  2006/09/20 20:34:58  ssikorsk
  * Removed extra check with dbretstatus.
  *

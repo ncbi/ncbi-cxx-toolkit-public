@@ -321,7 +321,7 @@ private:
         CheckFunctCall();
         return rc;
     }
-    RETCODE Check(RETCODE rc);
+    RETCODE CheckDead(RETCODE rc);
 
     void CheckFunctCall(void);
 
@@ -1065,6 +1065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/09/21 16:18:05  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.50  2006/09/13 19:37:01  ssikorsk
  * SetClientCharset(const char*) -->SetClientCharset(const string&)
  *

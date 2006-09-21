@@ -281,7 +281,6 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
         size -= s;
     }
 
-    //    if (dbsqlok(GetDBLibConnection()) != SUCCEED || dbresults(GetDBLibConnection()) == FAIL) {
     if (Check(dbsqlok(GetDBLibConnection())) != SUCCEED || x_Results(GetDBLibConnection()) == FAIL) {
         DATABASE_DRIVER_ERROR( "dbsqlok/dbresults failed", 110034 );
     }
@@ -344,7 +343,9 @@ RETCODE CTDS_Connection::x_Results(DBPROCESS* pLink)
     impl::CResult* res= 0;
 
     while ((x_Status & 0x1) != 0) {
-        switch (Check(dbresults(pLink))) {
+        RETCODE rc = Check(dbresults(pLink));
+
+        switch (rc) {
         case SUCCEED:
             if (DBCMDROW(pLink) == SUCCEED) { // we may get rows in this result
                 if(!GetResultProcessor()) {
@@ -422,7 +423,7 @@ void CTDS_Connection::TDS_SetTimeout(void)
     GetDBLibConnection()->tds_socket->timeout= (TDS_INT)(Context()->GetTimeout());
 }
 
-RETCODE CTDS_Connection::Check(RETCODE rc)
+RETCODE CTDS_Connection::CheckDead(RETCODE rc)
 {
     if (rc == FAIL) {
         if (DBDEAD(GetDBLibConnection()) == TRUE) {
@@ -490,7 +491,6 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     m_Bytes2go -= nof_bytes;
 
     if (m_Bytes2go <= 0) {
-        //        if (dbsqlok(GetCmd()) != SUCCEED || dbresults(GetCmd()) == FAIL) {
         if (Check(dbsqlok(GetCmd())) != SUCCEED || GetConnection().x_Results(GetCmd()) == FAIL) {
             DATABASE_DRIVER_ERROR( "dbsqlok/results failed", 290002 );
         }
@@ -532,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/09/21 16:19:34  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.32  2006/09/20 19:54:19  ssikorsk
  * Improved CTDS_Connection::Check.
  *

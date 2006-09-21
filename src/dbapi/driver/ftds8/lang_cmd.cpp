@@ -151,7 +151,9 @@ CDB_Result* CTDS_LangCmd::Result()
     }
 
     while ((m_Status & 0x1) != 0) {
-        switch (Check(dbresults(GetCmd()))) {
+        RETCODE rc = Check(dbresults(GetCmd()));
+
+        switch (rc) {
         case SUCCEED:
             if (DBCMDROW(GetCmd()) == SUCCEED) { // we may get rows in this result
                 m_Res = new CTDS_RowResult(GetConnection(), GetCmd(), &m_Status);
@@ -176,8 +178,7 @@ CDB_Result* CTDS_LangCmd::Result()
     // let's look at return parameters and ret status
     if (m_Status == 2) {
         m_Status = 4;
-        int n = dbnumrets(GetCmd());
-        CheckFunctCall();
+        int n = Check(dbnumrets(GetCmd()));
         if (n > 0) {
             m_Res = new CTDS_ParamResult(GetConnection(), GetCmd(), n);
             m_RowCount = 1;
@@ -188,8 +189,7 @@ CDB_Result* CTDS_LangCmd::Result()
 
     if (m_Status == 4) {
         m_Status = 6;
-        DBBOOL has_return_status = dbhasretstat(GetCmd());
-        CheckFunctCall();
+        DBBOOL has_return_status = Check(dbhasretstat(GetCmd()));
         if (has_return_status) {
             m_Res = new CTDS_StatusResult(GetConnection(), GetCmd());
             m_RowCount = 1;
@@ -470,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/09/21 16:21:13  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.26  2006/09/20 20:36:52  ssikorsk
  * Removed extra check with dbnumrets and dbhasretstat.
  *

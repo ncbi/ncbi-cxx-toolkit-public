@@ -162,8 +162,7 @@ CDB_Result* CDBL_LangCmd::Result()
 #if !defined(FTDS_LOGIC)
         if ((m_Status & 0x20) != 0) { // check for return parameters from exec
             m_Status ^= 0x20;
-            int n = dbnumrets(GetCmd());
-            CheckFunctCall();
+            int n = Check(dbnumrets(GetCmd()));
             if (n > 0) {
                 SetResultSet( new CDBL_ParamResult(GetConnection(), GetCmd(), n) );
                 m_RowCount= 1;
@@ -174,8 +173,7 @@ CDB_Result* CDBL_LangCmd::Result()
 
         if ((m_Status & 0x40) != 0) { // check for ret status
             m_Status ^= 0x40;
-            DBBOOL has_return_status = dbhasretstat(GetCmd());
-            CheckFunctCall();
+            DBBOOL has_return_status = Check(dbhasretstat(GetCmd()));
             if (has_return_status) {
                 SetResultSet( new CDBL_StatusResult(GetConnection(), GetCmd()) );
                 m_RowCount= 1;
@@ -184,7 +182,10 @@ CDB_Result* CDBL_LangCmd::Result()
             }
         }
 #endif
-        switch (Check(dbresults(GetCmd()))) {
+
+        RETCODE rc = Check(dbresults(GetCmd()));
+
+        switch (rc) {
         case SUCCEED:
 #if !defined(FTDS_LOGIC)
             m_Status |= 0x60;
@@ -226,8 +227,7 @@ CDB_Result* CDBL_LangCmd::Result()
     // let's look at return parameters and ret status
     if (m_Status == 2) {
         m_Status = 4;
-        int n = dbnumrets(GetCmd());
-        CheckFunctCall();
+        int n = Check(dbnumrets(GetCmd()));
         if (n > 0) {
             SetResultSet( new CTDS_ParamResult(GetConnection(), GetCmd(), n) );
             m_RowCount = 1;
@@ -238,8 +238,7 @@ CDB_Result* CDBL_LangCmd::Result()
 
     if (m_Status == 4) {
         m_Status = 6;
-        DBBOOL has_return_status = dbhasretstat(GetCmd());
-        CheckFunctCall();
+        DBBOOL has_return_status = Check(dbhasretstat(GetCmd()));
         if (has_return_status) {
             SetResultSet( new CTDS_StatusResult(GetConnection(), GetCmd()) );
             m_RowCount = 1;
@@ -523,6 +522,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/09/21 16:20:48  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.31  2006/09/20 20:36:44  ssikorsk
  * Removed extra check with dbnumrets and dbhasretstat.
  *

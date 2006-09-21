@@ -149,7 +149,9 @@ CDB_Result* CTDS_RPCCmd::Result()
     }
 
     while ((m_Status & 0x1) != 0) {
-        switch (Check(dbresults(GetCmd()))) {
+        RETCODE rc = Check(dbresults(GetCmd()));
+
+        switch (rc) {
         case SUCCEED:
             if (DBCMDROW(GetCmd()) == SUCCEED) { // we may get rows in this result
                 m_Res = new CTDS_RowResult(GetConnection(), GetCmd(), &m_Status);
@@ -510,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/09/21 16:23:18  ssikorsk
+ * CDBL_Connection::Check --> CheckDead.
+ *
  * Revision 1.24  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
