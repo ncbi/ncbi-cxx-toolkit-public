@@ -117,12 +117,6 @@ public:
             NewVolume();
         }
     }
-protected:
-    void NewVolume()
-    {
-        m_VolS.push_back(0);
-        m_RecS.push_back(0);
-    }
 
     /// LOBs are getting split into slices based on LOB size,
     /// similar BLOBs go to the compartment with more optimal storage 
@@ -142,6 +136,12 @@ protected:
     }
 
 protected:
+    void NewVolume()
+    {
+        m_VolS.push_back(0);
+        m_RecS.push_back(0);
+    }
+
     TVolumeSize  m_VolS;  ///< Volumes BLOB sizes
     TVolumeRecs  m_RecS;  ///< Volumes record counts
     
@@ -738,6 +738,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/09/21 14:01:41  dicuccio
+ * CBDB_BlobDeMux: made SelectSplit public
+ *
  * Revision 1.10  2006/09/05 15:13:25  dicuccio
  * Modified BDB split store: use up to 64k page sizes, fixed problems with holes
  * in slice detection
