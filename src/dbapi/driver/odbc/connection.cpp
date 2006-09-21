@@ -675,28 +675,28 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
     switch (param.GetType()) {
     case eDB_Int: {
         const CDB_Int& val = dynamic_cast<const CDB_Int&> (param);
-        indicator_base[pos] = 4;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : 4);
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_SLONG,
                          SQL_INTEGER, 4, 0, val.BindVal(), 4, indicator_base + pos);
         break;
     }
     case eDB_SmallInt: {
         const CDB_SmallInt& val = dynamic_cast<const CDB_SmallInt&> (param);
-        indicator_base[pos] = 2;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : 2);
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_SSHORT,
                          SQL_SMALLINT, 2, 0, val.BindVal(), 2, indicator_base + pos);
         break;
     }
     case eDB_TinyInt: {
         const CDB_TinyInt& val = dynamic_cast<const CDB_TinyInt&> (param);
-        indicator_base[pos] = 1;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : 1);
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_UTINYINT,
                          SQL_TINYINT, 1, 0, val.BindVal(), 1, indicator_base + pos);
         break;
     }
     case eDB_BigInt: {
         const CDB_BigInt& val = dynamic_cast<const CDB_BigInt&> (param);
-        indicator_base[pos] = 8;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : 8);
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_SBIGINT,
                          SQL_NUMERIC, 18, 0, val.BindVal(), 18, indicator_base + pos);
 
@@ -704,7 +704,7 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
     }
     case eDB_Char: {
         const CDB_Char& val = dynamic_cast<const CDB_Char&> (param);
-        indicator_base[pos] = SQL_NTS;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : SQL_NTS);
 #ifdef UNICODE
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
                          SQL_WVARCHAR, 255, 0, (void*)val.AsUnicode(odbc::DefStrEncoding), 256 * sizeof(wchar_t), indicator_base + pos);
@@ -716,7 +716,7 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
     }
     case eDB_VarChar: {
         const CDB_VarChar& val = dynamic_cast<const CDB_VarChar&> (param);
-        indicator_base[pos] = SQL_NTS;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : SQL_NTS);
 #ifdef UNICODE
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
                          SQL_WVARCHAR, 255, 0, (void*)val.AsUnicode(odbc::DefStrEncoding), 256 * sizeof(wchar_t), indicator_base + pos);
@@ -728,7 +728,7 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
     }
     case eDB_LongChar: {
         const CDB_LongChar& val = dynamic_cast<const CDB_LongChar&> (param);
-        indicator_base[pos] = SQL_NTS;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : SQL_NTS);
 #ifdef UNICODE
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
                          SQL_WVARCHAR, val.Size(), 0, (void*)val.AsUnicode(odbc::DefStrEncoding), val.Size() * sizeof(wchar_t), indicator_base + pos);
@@ -740,35 +740,35 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
     }
     case eDB_Binary: {
         const CDB_Binary& val = dynamic_cast<const CDB_Binary&> (param);
-        indicator_base[pos] = val.Size();
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : val.Size());
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
                          SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator_base + pos);
         break;
     }
     case eDB_VarBinary: {
         const CDB_VarBinary& val = dynamic_cast<const CDB_VarBinary&> (param);
-        indicator_base[pos] = val.Size();
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : val.Size());
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
                          SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator_base + pos);
         break;
     }
     case eDB_LongBinary: {
         const CDB_LongBinary& val = dynamic_cast<const CDB_LongBinary&> (param);
-        indicator_base[pos] = val.DataSize();
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : val.DataSize());
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
                          SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator_base + pos);
         break;
     }
     case eDB_Float: {
         const CDB_Float& val = dynamic_cast<const CDB_Float&> (param);
-        indicator_base[pos] = 4;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : 4);
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_FLOAT,
                          SQL_REAL, 4, 0, val.BindVal(), 4, indicator_base + pos);
         break;
     }
     case eDB_Double: {
         const CDB_Double& val = dynamic_cast<const CDB_Double&> (param);
-        indicator_base[pos] = 8;
+        indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : 8);
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_DOUBLE,
                          SQL_FLOAT, 8, 0, val.BindVal(), 8, indicator_base + pos);
         break;
@@ -786,7 +786,7 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
             ts->minute = t.Minute();
             ts->second = 0;
             ts->fraction = 0;
-            indicator_base[pos] = sizeof(SQL_TIMESTAMP_STRUCT);
+            indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : sizeof(SQL_TIMESTAMP_STRUCT));
         }
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
                          SQL_TYPE_TIMESTAMP, 16, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT),
@@ -808,7 +808,7 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
             ts->second = t.Second();
             ts->fraction = t.NanoSecond()/1000000;
             ts->fraction *= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
-            indicator_base[pos] = sizeof(SQL_TIMESTAMP_STRUCT);
+            indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : sizeof(SQL_TIMESTAMP_STRUCT));
         }
 
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
@@ -984,6 +984,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/09/21 21:30:45  ssikorsk
+ * Handle NULL values correctly with SQLBindParameter.
+ *
  * Revision 1.44  2006/09/19 00:34:06  ucko
  * +<stdio.h> for sprintf()
  *
