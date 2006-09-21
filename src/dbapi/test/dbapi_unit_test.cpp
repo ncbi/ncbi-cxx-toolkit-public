@@ -2512,6 +2512,16 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         BOOST_CHECK( !rs->Next() );
     }
 
+    // Check column name ...
+    {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version as oops" ) );
+        BOOST_CHECK( rs.get() != NULL );
+        BOOST_CHECK( rs->Next() );
+        BOOST_CHECK( "oops", rs->ItemName(0) );
+    }
+
 //     // TMP
 //     {
 //         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
@@ -4789,6 +4799,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.99  2006/09/21 20:27:14  ssikorsk
+ * Added checking of a column name to Test_SelectStmt.
+ *
  * Revision 1.98  2006/09/21 20:22:47  ssikorsk
  * Improved Test_SelectStmt.
  *
