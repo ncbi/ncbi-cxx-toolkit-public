@@ -292,6 +292,8 @@ bool CLDS_Query::FindFile(const string& path)
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << path;
     if (cur.Fetch() == eBDB_Ok) {
+        m_db.file_db.file_id = m_db.file_filename_idx.file_id;
+        m_db.file_db.Fetch();
         return true;
     }
     }}
@@ -667,6 +669,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/09/21 21:09:27  didenko
+ * Fixed optimization for LDS
+ *
  * Revision 1.21  2006/09/20 19:23:54  kuznets
  * added index on file names
  *

@@ -141,7 +141,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
         CFile aFile(entry);
         Int8 file_size = aFile.GetLength();
 
-        if (ext == ".db") {
+        if (ext == ".db" || ext == ".idx") {
             continue; // Berkeley DB file, no need to index it.
         }
 
@@ -201,7 +201,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
                 ComputeFileChecksum(entry, checksum);
                 crc = checksum.GetChecksum();
 
-                if (crc != m_FileDB.CRC) {
+                if (crc != (Uint4)m_FileDB.CRC) {
                     updated->set(m_FileDB.file_id);
                     UpdateEntry(m_FileDB.file_id, 
                                 entry, 
@@ -330,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/09/21 21:09:27  didenko
+ * Fixed optimization for LDS
+ *
  * Revision 1.7  2006/09/20 19:23:54  kuznets
  * added index on file names
  *
