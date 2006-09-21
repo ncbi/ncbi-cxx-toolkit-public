@@ -366,6 +366,16 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
         x_Push(ConstRef(&bh.GetSeqMap()), bh.GetTSE_Handle(),
                GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);
         m_Selector.PushResolve();
+        if ( (m_Stack.size() & 63) == 0 ) {
+            // check for self-recursion every 64'th stack frame
+            const CSeqMap* top_seq_map = &m_Stack.back().x_GetSeqMap();
+            for ( int i = m_Stack.size()-2; i >= 0; --i ) {
+                if ( &m_Stack[i].x_GetSeqMap() == top_seq_map ) {
+                    NCBI_THROW(CSeqMapException, eSelfReference,
+                               "Self-reference in CSeqMap");
+                }
+            }
+        }
         break;
     }}
     default:
@@ -593,6 +603,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2006/09/21 19:18:15  vasilche
+* Added check for self-references in CSeqMap_CI.
+*
 * Revision 1.42  2006/06/01 15:25:33  vasilche
 * Fixed limit range test.
 *

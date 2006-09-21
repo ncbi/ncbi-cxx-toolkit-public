@@ -68,6 +68,7 @@ const char* CSeqMapException::GetErrCodeString(void) const
     case eInvalidIndex:     return "eInvalidIndex";
     case eNullPointer:      return "eNullPointer";
     case eFail:             return "eFail";
+    case eSelfReference:    return "eSelfReference";
     default:                return CException::GetErrCodeString();
     }
 }

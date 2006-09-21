@@ -79,6 +79,7 @@ public:
         eOutOfRange,       ///< Iterator is out of range
         eInvalidIndex,     ///< Invalid segment index
         eNullPointer,      ///< Attempt to access non-existing object
+        eSelfReference,    ///< Self-reference in seq map is detected
         eFail              ///< Operation failed
     };
     virtual const char* GetErrCodeString(void) const;
@@ -231,6 +232,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/09/21 19:18:15  vasilche
+* Added check for self-references in CSeqMap_CI.
+*
 * Revision 1.17  2006/09/19 19:21:23  vasilche
 * Added more exception types.
 *
