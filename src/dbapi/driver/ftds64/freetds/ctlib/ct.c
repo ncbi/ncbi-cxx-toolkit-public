@@ -1757,7 +1757,7 @@ _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo,
 				srcfmt.maxlength = srclen;
 
 				destfmt.datatype = bindcol->column_bindtype;
-				destfmt.maxlength = bindcol->column_bindlen;
+				destfmt.maxlength = bindcol->column_cur_size; /*ssikorsk*/ /*destfmt.maxlength = bindcol->column_bindlen;*/
 				destfmt.format = bindcol->column_bindfmt;
 
 				/* if convert return FAIL mark error but process other columns */
