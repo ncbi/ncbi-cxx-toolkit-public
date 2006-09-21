@@ -260,7 +260,7 @@ void CWorkerNodeAffinity::ClearAffinity()
 void CWorkerNodeAffinity::ClearAffinity(TNetAddress   addr, 
                                         const string& client_name)
 {
-    TAffMap::iterator it = m_AffinityMap.find(addr);
+    TAffMap::iterator it = m_AffinityMap.find(pair<unsigned, string>(addr, client_name));
     if (it == m_AffinityMap.end()) {
         return;
     }
@@ -274,12 +274,22 @@ void CWorkerNodeAffinity::AddAffinity(TNetAddress   addr,
 {
     SAffinityInfo* ai = GetAffinity(addr, client_name);
     if (ai == 0) {
-        auto_ptr<SAffinityInfo> aff(new SAffinityInfo(client_name));
-        aff->aff_ids.set(aff_id);
-        m_AffinityMap[addr] = aff.release();
-        return;
+        ai = new SAffinityInfo();
+        m_AffinityMap[pair<unsigned, string>(addr, client_name)] = ai;
     }
     ai->aff_ids.set(aff_id);
+}
+
+void CWorkerNodeAffinity::BlacklistJob(TNetAddress   addr, 
+                                       const string& client_name, 
+                                       unsigned      job_id)
+{
+    SAffinityInfo* ai = GetAffinity(addr, client_name);
+    if (ai == 0) {
+        ai = new SAffinityInfo();
+        m_AffinityMap[pair<unsigned, string>(addr, client_name)] = ai;
+    }
+    ai->blacklisted_jobs.set(job_id);
 }
 
 void CWorkerNodeAffinity::OptimizeMemory()
@@ -287,7 +297,7 @@ void CWorkerNodeAffinity::OptimizeMemory()
     NON_CONST_ITERATE(TAffMap, it, m_AffinityMap) {
         SAffinityInfo* ai = it->second;
         ai->aff_ids.optimize();
-        ai->cand_jobs.optimize();
+        ai->candidate_jobs.optimize();
     }
 }
 
@@ -296,17 +306,13 @@ CWorkerNodeAffinity::SAffinityInfo*
 CWorkerNodeAffinity::GetAffinity(TNetAddress   addr, 
                                  const string& client_name)
 {
-    TAffMap::iterator it = m_AffinityMap.find(addr);
-    for (; it != m_AffinityMap.end(); ++it) {
-        SAffinityInfo* ai = it->second;
-        if (NStr::CompareNocase(client_name, ai->client_name) == 0) {
-            return ai;
-        }
-    }
+    TAffMap::iterator it = m_AffinityMap.find(
+        pair<unsigned, string>(addr, client_name));
+    if( it != m_AffinityMap.end()) return it->second;
     return 0;
 }
 
-void CWorkerNodeAffinity::RemoveAffinity(unsigned   aff_id)
+void CWorkerNodeAffinity::RemoveAffinity(unsigned aff_id)
 {
     NON_CONST_ITERATE(TAffMap, it, m_AffinityMap) {
         SAffinityInfo* ai = it->second;
@@ -337,6 +343,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/09/21 21:28:59  joukovv
+ * Consistency of memory state and database strengthened, ability to retry failed
+ * jobs on different nodes (and corresponding queue parameter, failed_retries)
+ * added, overall code regularization performed.
+ *
  * Revision 1.4  2006/06/19 16:15:49  kuznets
  * fixed crash when working with affinity
  *

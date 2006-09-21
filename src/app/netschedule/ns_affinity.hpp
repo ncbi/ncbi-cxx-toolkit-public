@@ -111,17 +111,18 @@ public:
     /// Affinity association information
     struct SAffinityInfo
     {
-        string         client_name;   ///< Client's name
-        bm::bvector<>  aff_ids;       ///< List of affinity tokens
-        bm::bvector<>  cand_jobs;     ///< List of job candidates for this node
+        bm::bvector<>  aff_ids;          ///< List of affinity tokens
+        bm::bvector<>  candidate_jobs;   ///< List of job candidates for this node
+        bm::bvector<>  blacklisted_jobs; ///< List of jobs, blacklisted for node
 
-        SAffinityInfo(const string& client) 
-            : client_name(client), aff_ids(bm::BM_GAP), cand_jobs(bm::BM_GAP)
+        SAffinityInfo() 
+            : aff_ids(bm::BM_GAP), candidate_jobs(bm::BM_GAP),
+              blacklisted_jobs(bm::BM_GAP)
         {}
     };
     typedef unsigned TNetAddress;
     /// Worker node to affinity id map
-    typedef map<TNetAddress, SAffinityInfo*> TAffMap;
+    typedef map<pair<TNetAddress, string>, SAffinityInfo*> TAffMap;
 
 public:
     CWorkerNodeAffinity();
@@ -137,6 +138,10 @@ public:
     void AddAffinity(TNetAddress   addr, 
                      const string& client_name, 
                      unsigned      aff_id);
+
+    void BlacklistJob(TNetAddress   addr, 
+                      const string& client_name,
+                      unsigned      job_id);
 
     /// Remove affinity token association
     void RemoveAffinity(unsigned   aff_id);
@@ -170,6 +175,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/09/21 21:28:59  joukovv
+ * Consistency of memory state and database strengthened, ability to retry failed
+ * jobs on different nodes (and corresponding queue parameter, failed_retries)
+ * added, overall code regularization performed.
+ *
  * Revision 1.3  2006/06/19 16:15:49  kuznets
  * fixed crash when working with affinity
  *

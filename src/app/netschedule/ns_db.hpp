@@ -293,9 +293,11 @@ struct SLockedQueue
     CFastMutex                      aff_map_lock;     ///< worker_aff_map lck
 
     // queue parameters
-    int                             timeout;       ///< Result exp. timeout
-    int                             notif_timeout; ///< Notification interval
-    bool                            delete_done;   ///< Delete done jobs
+    int                             timeout;        ///< Result exp. timeout
+    int                             notif_timeout;  ///< Notification interval
+    bool                            delete_done;    ///< Delete done jobs
+    /// How many attemts to make on different nodes before failure
+    unsigned                        failed_retries;
 
     // List of active worker node listeners waiting for pending jobs
 
@@ -349,6 +351,7 @@ struct SLockedQueue
         : timeout(3600), 
           notif_timeout(7), 
           delete_done(false),
+          failed_retries(0),
           last_notif(0), 
           q_notif("NCBI_JSQ_"),
           run_time_line(0),
@@ -417,6 +420,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/09/21 21:28:59  joukovv
+ * Consistency of memory state and database strengthened, ability to retry failed
+ * jobs on different nodes (and corresponding queue parameter, failed_retries)
+ * added, overall code regularization performed.
+ *
  * Revision 1.4  2006/07/19 15:53:34  kuznets
  * Extended database size to accomodate escaped strings
  *

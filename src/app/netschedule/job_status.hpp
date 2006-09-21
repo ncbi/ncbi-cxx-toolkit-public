@@ -76,29 +76,28 @@ public:
     ///  eFailed    <- (eRunning, eReturned, [eCanceled])
     ///  eDone      <- (eRunning, eReturned, [eCanceled, eFailed])
     ///
+    /// @param updated
+    ///     (out) TRUE if database needs to be updated for job_id. 
+    ///
     /// @return old status. Job may be already canceled (or failed)
-    /// in this case status change is ignored (
+    /// in this case status change is ignored
     /// 
     CNetScheduleClient::EJobStatus
     ChangeStatus(unsigned int                   job_id, 
-                 CNetScheduleClient::EJobStatus status);
+                 CNetScheduleClient::EJobStatus status,
+                 bool*                          updated = NULL);
 
     /// Add closed interval of ids to pending status
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
 
     /// Return job id (job is moved from pending to running)
     /// @return job id, 0 - no pending jobs
-    unsigned GetPendingJob();
+    //unsigned GetPendingJob();
 
     /// Get pending job out of a certain candidate set
     /// Method cleans candidates if they are no longer available 
     /// for scheduling (it means job was already dispatched)
     /// 
-    /// @param done_job_id
-    ///     job id going from running to done status. Ignored if 0.
-    /// @param need_db_update
-    ///     (out) TRUE if database needs to be updated (for done job id). 
-    ///     Update is not needed if database 
     /// @param job_id 
     ///     OUT job id (moved from pending to running)
     ///     job_id is taken out of candidates 
@@ -106,29 +105,14 @@ public:
     /// @return true - if there are any available pending jobs
     ///         false - queue has no pending jobs whatsoever 
     ///         (not just candidates)
-    bool PutDone_GetPending(unsigned int done_job_id,
-                            bool*        need_db_update,
-                            bm::bvector<>* candidate_set,
-                            unsigned*      job_id);
+    bool GetPendingJobFromSet(bm::bvector<>* candidate_set,
+                              unsigned*      job_id);
 
     /// Get any pending job, but it should NOT be in the unwanted list
     /// Presumed, that unwanted jobs are speculatively assigned to other
     /// worker nodes or postponed
-    bool PutDone_GetPending(unsigned int         done_job_id,
-                            bool*                need_db_update,
-                            const bm::bvector<>& unwanted_jobs,
-                            unsigned*            job_id);
-
-
-    /// Set running job to done status, find and return pending job
-    /// @param done_job_id
-    ///     job id going from running to done status. Ignored if 0.
-    /// @param need_db_update
-    ///     (out) TRUE if database needs to be updated (for done job id). 
-    ///     Update is not needed if database 
-    /// @return job_id, 0 - no pending jobs
-    unsigned PutDone_GetPending(unsigned int done_job_id,
-                                bool*        need_db_update);
+    bool GetPendingJob(const bm::bvector<>& unwanted_jobs,
+                       unsigned*            job_id);
 
     /// Reschedule job without status check
     void ForceReschedule(unsigned job_id);
@@ -222,14 +206,15 @@ protected:
         CNetScheduleClient::EJobStatus st3 = CNetScheduleClient::eJobNotFound
         ) const;
 
-    /// Check if job is in specified status and clear it
-    /// @return -1 if no, status value otherwise
-    CNetScheduleClient::EJobStatus 
-    ClearIfStatusNoLock(unsigned int job_id, 
+    /// Check if job is in specified status and switch to new status
+    /// @return TRUE if switched
+    bool
+    SwitchStatusNoLock(unsigned int job_id,
+        CNetScheduleClient::EJobStatus new_st,
         CNetScheduleClient::EJobStatus st1,
         CNetScheduleClient::EJobStatus st2 = CNetScheduleClient::eJobNotFound,
         CNetScheduleClient::EJobStatus st3 = CNetScheduleClient::eJobNotFound
-        ) const;
+        );
 
 
     void ReportInvalidStatus(unsigned int    job_id, 
@@ -239,14 +224,10 @@ protected:
              CNetScheduleClient::EJobStatus  status,
              CNetScheduleClient::EJobStatus  old_status);
 
-    void Return2PendingNoLock();
+    void Returned2PendingNoLock();
     unsigned int GetPendingJobNoLock();
     void FreeUnusedMemNoLock();
     void IncDoneJobs();
-
-    /// Transfer job to done status 
-    void PutDone_NoLock(unsigned int done_job_id,
-                        bool*        need_db_update);
 
 private:
     CNetScheduler_JobStatusTracker(const CNetScheduler_JobStatusTracker&);
@@ -311,9 +292,10 @@ public:
     CNetSchedule_JS_Guard(
         CNetScheduler_JobStatusTracker& strack,
         unsigned int                    job_id,
-        CNetScheduleClient::EJobStatus  status)
+        CNetScheduleClient::EJobStatus  status,
+        bool*                           updated = 0)
      : m_Tracker(strack),
-       m_OldStatus(strack.ChangeStatus(job_id, status)),
+       m_OldStatus(strack.ChangeStatus(job_id, status, updated)),
        m_JobId(job_id)
     {
         _ASSERT(job_id);
@@ -328,7 +310,7 @@ public:
         } 
     }
 
-    void Release() { m_OldStatus = -2; }
+    void Commit() { m_OldStatus = -2; }
 
     CNetScheduleClient::EJobStatus GetOldStatus() const
     {
@@ -351,6 +333,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/09/21 21:28:59  joukovv
+ * Consistency of memory state and database strengthened, ability to retry failed
+ * jobs on different nodes (and corresponding queue parameter, failed_retries)
+ * added, overall code regularization performed.
+ *
  * Revision 1.18  2006/06/07 13:00:01  kuznets
  * Implemented command to get status summary based on affinity token
  *

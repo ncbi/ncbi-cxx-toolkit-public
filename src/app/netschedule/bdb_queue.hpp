@@ -53,7 +53,6 @@ BEGIN_NCBI_SCOPE
 
 
 
-
 /// Batch submit record
 ///
 /// @internal
@@ -71,7 +70,6 @@ struct SNS_BatchSubmitRec
         affinity_id = job_id = 0;
     }
 };
-
 
 
 
@@ -180,15 +178,12 @@ public:
         void PutResultGetJob(unsigned int   done_job_id,
                              int            ret_code,
                              const char*    output,
-                             char*          key_buf,
+                             bool           update_tl,
                              unsigned int   worker_node,
                              unsigned int*  job_id, 
                              char*          input,
                              char*          jout,
                              char*          jerr,
-                             const string&  host,
-                             unsigned       port,
-                             bool           update_tl,
                              const string&  client_name,
                              unsigned*      job_mask);
 
@@ -199,7 +194,13 @@ public:
         void JobFailed(unsigned int  job_id,
                        const string& err_msg,
                        const string& output,
-                       int           ret_code);
+                       int           ret_code,
+                       unsigned int  worker_node,
+                       const string& client_name);
+
+        void GetJobKey(char* key_buf, unsigned job_id,
+                       const string& host, unsigned port);
+
 
         /// Get job with load balancing
         void GetJobLB(unsigned int   worker_node,
@@ -207,8 +208,7 @@ public:
                       char*          input,
                       char*          jout,
                       char*          jerr,
-                      unsigned*      job_mask
-                      );
+                      unsigned*      job_mask);
 
         void GetJob(unsigned int   worker_node,
                     unsigned int*  job_id, 
@@ -218,19 +218,7 @@ public:
                     const string&  client_name,
                     unsigned*      job_mask);
 
-        // Get job and generate key
-        void GetJob(char* key_buf, 
-                    unsigned int   worker_node,
-                    unsigned int*  job_id, 
-                    char*          input,
-                    char*          jout,
-                    char*          jerr,
-                    const string&  host,
-                    unsigned       port,
-                    const string&  client_name,
-                    unsigned*      job_mask);
         void ReturnJob(unsigned int job_id);
-
 
         /// @param expected_status
         ///    If current status is different from expected try to
@@ -395,7 +383,7 @@ public:
 
         void x_DropJob(unsigned job_id);
 
-        /// Put done job, then find the pending job.
+        /// Find the pending job.
         /// This method takes into account jobs available
         /// in the job status matrix and current 
         /// worker node affinity association
@@ -404,11 +392,8 @@ public:
         ///
         /// @return job_id
         unsigned 
-        PutDone_FindPendingJob(const string&  client_name,
-                               unsigned       client_addr,
-                               unsigned int   done_job_id,
-                                bool*         need_db_update,
-                               CFastMutex&    aff_map_lock);
+        FindPendingJob(const string&  client_name,
+                               unsigned       client_addr);
 
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
@@ -574,6 +559,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/09/21 21:28:59  joukovv
+ * Consistency of memory state and database strengthened, ability to retry failed
+ * jobs on different nodes (and corresponding queue parameter, failed_retries)
+ * added, overall code regularization performed.
+ *
  * Revision 1.53  2006/07/19 15:53:34  kuznets
  * Extended database size to accomodate escaped strings
  *

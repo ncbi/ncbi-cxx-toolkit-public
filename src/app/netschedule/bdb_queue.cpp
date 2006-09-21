@@ -424,6 +424,9 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
 
         bool delete_when_done = reg.GetBool(sname, "delete_done", 
                                             false, 0, IRegistry::eReturn);
+        int failed_retries = 
+            reg.GetInt(sname, "failed_retries", 
+                                        0, 0, IRegistry::eReturn);
 
         bool qexists = m_QueueCollection.QueueExists(qname);
 
@@ -454,6 +457,8 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
         SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
         string subm_host = reg.GetString(sname,  "subm_host",  kEmptyStr);
         queue.subm_hosts.SetHosts(subm_host);
+
+        queue.failed_retries = failed_retries;
 
         string wnode_host = reg.GetString(sname, "wnode_host", kEmptyStr);
         queue.wnode_hosts.SetHosts(wnode_host);
@@ -1335,7 +1340,7 @@ CQueueDataBase::CQueue::Submit(const char*   input,
 
     trans.Commit();
 
-    js_guard.Release();
+    js_guard.Commit();
 
     return job_id;
 }
@@ -1529,7 +1534,6 @@ void CQueueDataBase::CQueue::ForceReschedule(unsigned int job_id)
     }    
     }}
 
-
     m_LQueue.status_tracker.ForceReschedule(job_id);
 
 }
@@ -1543,7 +1547,7 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
                                    CNetScheduleClient::eCanceled);
     CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
     if (m_LQueue.status_tracker.IsCancelCode(st)) {
-        js_guard.Release();
+        js_guard.Commit();
         return;
     }
 
@@ -1571,7 +1575,7 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
         // TODO: Integrity error or job just expired?
     }    
     }}
-    js_guard.Release();
+    js_guard.Commit();
 
     RemoveFromTimeLine(job_id);
 }
@@ -1626,9 +1630,13 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                 job_id,
                                 CNetScheduleClient::eDone);
+    if (m_LQueue.delete_done) {
+        m_LQueue.status_tracker.SetStatus(job_id, 
+                            CNetScheduleClient::eJobNotFound);
+    }
     CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
     if (m_LQueue.status_tracker.IsCancelCode(st)) {
-        js_guard.Release();
+        js_guard.Commit();
         return;
     }
     bool rec_updated;
@@ -1654,7 +1662,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
             }}
 
             trans.Commit();
-            js_guard.Release();
+            js_guard.Commit();
         } 
         catch (CBDB_ErrnoException& ex) {
             if (ex.IsDeadLock()) {
@@ -1728,8 +1736,6 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
 
         m_LQueue.monitor.SendString(msg);
     }
-
-    
 }
 
 bool 
@@ -1809,19 +1815,17 @@ CQueueDataBase::CQueue::x_GetLocalCursor(CBDB_Transaction& trans)
     return pcur;
 }
 
+
 void 
 CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
                                         int            ret_code,
                                         const char*    output,
-                                        char*          key_buf,
+                                        bool           update_tl,
                                         unsigned int   worker_node,
                                         unsigned int*  job_id,
                                         char*          input,
                                         char*          jout,
                                         char*          jerr,
-                                        const string&  host,
-                                        unsigned       port,
-                                        bool           update_tl,
                                         const string&  client_name,
                                         unsigned*      job_mask)
 {
@@ -1833,13 +1837,22 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
 
     time_t curr = time(0);
     
+    // 
     bool need_update;
-    unsigned pending_job_id = 
-        PutDone_FindPendingJob(client_name,
-                               worker_node,
-                               done_job_id, &need_update,
-                               m_LQueue.aff_map_lock);
-    bool done_rec_updated=false;
+    CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
+                                done_job_id,
+                                CNetScheduleClient::eDone,
+                                &need_update);
+    // This is a HACK - if js_guard is not commited, it will rollback
+    // to previous state, so it is safe to change status after the guard.
+    if (m_LQueue.delete_done) {
+        m_LQueue.status_tracker.SetStatus(done_job_id, 
+                            CNetScheduleClient::eJobNotFound);
+    }
+    // TODO: implement transaction wrapper (a la js_guard above) for FindPendingJob
+    // TODO: move affinity assignment there as well
+    unsigned pending_job_id = FindPendingJob(client_name, worker_node);
+    bool done_rec_updated = false;
     bool use_db_mutex;
 
     // When working with the same database file concurrently there is
@@ -1924,7 +1937,8 @@ repeat_transaction:
         }
 
         trans.Commit();
-
+        js_guard.Commit();
+        // TODO: commit FindPendingJob guard here
     }
     catch (CBDB_ErrnoException& ex) {
         if (use_db_mutex) {
@@ -1961,16 +1975,11 @@ repeat_transaction:
         throw;
     }
 
-
     if (job_aff_id) {
         CFastMutexGuard aff_guard(m_LQueue.aff_map_lock);
         m_LQueue.worker_aff_map.AddAffinity(worker_node, 
                                             client_name, 
                                             job_aff_id);
-    }
-
-    if (*job_id) {
-        sprintf(key_buf, NETSCHEDULE_JOBMASK, *job_id, host.c_str(), port);
     }
 
     if (update_tl) {
@@ -1993,7 +2002,6 @@ repeat_transaction:
 
         m_LQueue.monitor.SendString(msg);
     }
-
 }
 
 
@@ -2042,9 +2050,17 @@ void CQueueDataBase::CQueue::PutProgressMessage(unsigned int  job_id,
 void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
                                        const string& err_msg,
                                        const string& output,
-                                       int           ret_code)
+                                       int           ret_code,
+                                       unsigned int  worker_node,
+                                       const string& client_name)
 {
-    m_LQueue.status_tracker.SetStatus(job_id, CNetScheduleClient::eFailed);
+    // We first change memory state to "Failed", it is safer because
+    // there is only danger to find job in inconsistent state, and because
+    // Failed is terminal, usually you can not allocate job or do anything
+    // disturbing from this state.
+    CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
+                                   job_id,
+                                   CNetScheduleClient::eFailed);
 
     SQueueDB& db = m_LQueue.db;
     CBDB_Transaction trans(*db.GetEnv(), 
@@ -2055,41 +2071,62 @@ void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
     time_t curr = time(0);
 
     {{
-    CFastMutexGuard guard(m_LQueue.lock);
-    db.SetTransaction(&trans);
+        CFastMutexGuard aff_guard(m_LQueue.aff_map_lock);
+        CFastMutexGuard guard(m_LQueue.lock);
+        db.SetTransaction(&trans);
 
-    CBDB_FileCursor& cur = *GetCursor(trans);
-    CBDB_CursorGuard cg(cur);    
+        CBDB_FileCursor& cur = *GetCursor(trans);
+        CBDB_CursorGuard cg(cur);    
 
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << job_id;
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << job_id;
 
-    if (cur.FetchFirst() != eBDB_Ok) {
-        // TODO: Integrity error or job just expired?
-        return;
-    }
-    time_submit = db.time_submit;
-    subm_addr = db.subm_addr;
-    subm_port = db.subm_port;
-    subm_timeout = db.subm_timeout;
-    
-    db.status = (int) CNetScheduleClient::eFailed;
-    db.time_done = curr;
-    db.err_msg = err_msg;
-    db.output = output;
-    db.ret_code = ret_code;
+        if (cur.FetchFirst() != eBDB_Ok) {
+            // TODO: Integrity error or job just expired?
+            return;
+        }
 
-    cur.Update();
+        db.time_done = curr;
+        db.err_msg = err_msg;
+        db.output = output;
+        db.ret_code = ret_code;
 
+        unsigned run_counter = db.run_counter;
+        if (run_counter <= m_LQueue.failed_retries) {
+            // NB: due to conflict with locking pattern of FindPendingJob we can not
+            // acquire aff_map_lock here! So we aquire it earlier (see above).
+            m_LQueue.worker_aff_map.BlacklistJob(worker_node, client_name, job_id);
+            // Pending status is not a bug here, returned and pending
+            // has the same meaning, but returned jobs are getting delayed
+            // for a little while (eReturned status)
+            db.status = (int) CNetScheduleClient::ePending;
+            // We can do this because js_guard record only old state and
+            // on Commit just releases job.
+            m_LQueue.status_tracker.SetStatus(job_id,
+                CNetScheduleClient::eReturned);
+        } else {
+            db.status = (int) CNetScheduleClient::eFailed;
+        }
+
+        // We don't need to lock affinity map anymore, so to reduce locking
+        // region we can manually release it here.
+        aff_guard.Release();
+
+        time_submit = db.time_submit;
+        subm_addr = db.subm_addr;
+        subm_port = db.subm_port;
+        subm_timeout = db.subm_timeout;
+
+        cur.Update();
     }}
 
     trans.Commit();
+    js_guard.Commit();
 
     RemoveFromTimeLine(job_id);
 
     // check if we need to send a UDP notification
-
-    if ( subm_addr && subm_timeout &&
+    if (subm_addr && subm_timeout &&
         (time_submit + subm_timeout >= (unsigned)curr)) {
 
         char msg[1024];
@@ -2097,9 +2134,8 @@ void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
 
         CFastMutexGuard guard(m_LQueue.us_lock);
 
-        //EIO_Status status = 
-            m_LQueue.udp_socket.Send(msg, strlen(msg)+1, 
-                                     CSocketAPI::ntoa(subm_addr), subm_port);
+        m_LQueue.udp_socket.Send(msg, strlen(msg)+1, 
+                                    CSocketAPI::ntoa(subm_addr), subm_port);
     }
 
     if (m_LQueue.monitor.IsMonitorActive()) {
@@ -2111,6 +2147,8 @@ void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
         msg += err_msg;
         msg += " output=";
         msg += output;
+        if (db.status == (int) CNetScheduleClient::ePending)
+            msg += " rescheduled";
         m_LQueue.monitor.SendString(msg);
     }
 
@@ -2293,7 +2331,7 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
     if ( m_LQueue.status_tracker.IsCancelCode(st) || 
         (st == CNetScheduleClient::eReturned) || 
         (st == CNetScheduleClient::eDone)) {
-        js_guard.Release();
+        js_guard.Commit();
         return;
     }
     {{
@@ -2325,7 +2363,7 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
         // TODO: Integrity error or job just expired?
     }    
     }}
-    js_guard.Release();
+    js_guard.Commit();
     RemoveFromTimeLine(job_id);
 
     if (m_LQueue.monitor.IsMonitorActive()) {
@@ -2655,117 +2693,90 @@ grant_job:
     }
 }
 
+
 unsigned 
-CQueueDataBase::CQueue::PutDone_FindPendingJob(const string&  client_name,
-                                               unsigned       client_addr,
-                                               unsigned int   done_job_id,
-                                               bool*          need_db_update,
-                                               CFastMutex&    aff_map_lock)
+CQueueDataBase::CQueue::FindPendingJob(const string&  client_name,
+                                       unsigned       client_addr)
 {
     unsigned job_id = 0;
 
-    // affinity: get list of job candidates
-    // previous GetPendingJob() call may have precomputed candidate jobids
+    bm::bvector<> blacklisted_jobs;
 
+    // affinity: get list of job candidates
+    // previous FindPendingJob() call may have precomputed candidate jobids
     {{
-        CFastMutexGuard aff_guard(aff_map_lock);
+        CFastMutexGuard aff_guard(m_LQueue.aff_map_lock);
         CWorkerNodeAffinity::SAffinityInfo* ai = 
             m_LQueue.worker_aff_map.GetAffinity(client_addr, client_name);
 
         if (ai != 0) {  // established affinity association
-            while (1) {
-                if (ai->cand_jobs.any()) {  // candidates?
-
-                    bool pending_jobs_avail = 
-                        m_LQueue.status_tracker.PutDone_GetPending(
-                                                        done_job_id, 
-                                                        need_db_update, 
-                                                        &ai->cand_jobs,
-                                                        &job_id);
-                    if (m_LQueue.delete_done) {
-                        m_LQueue.status_tracker.SetStatus(done_job_id, 
-                                         CNetScheduleClient::eJobNotFound);
-                    }
-                    done_job_id = 0;
-                    if (job_id)
-                        return job_id;
-                    if (!pending_jobs_avail) {
-                        return 0;
-                    }
-                }
-                // no candidates immediately available - find candidates                
-                if (ai->aff_ids.any()) { // there is an affinity association
+            blacklisted_jobs = ai->blacklisted_jobs;
+            do {
+                // check for candidates
+                if (!ai->candidate_jobs.any() && ai->aff_ids.any()) {
+                    // there is an affinity association
                     {{
                         CFastMutexGuard guard(m_LQueue.lock);
-                        x_ReadAffIdx_NoLock(ai->aff_ids, &ai->cand_jobs);
+                        x_ReadAffIdx_NoLock(ai->aff_ids, &ai->candidate_jobs);
                     }}
-                    if (!ai->cand_jobs.any()) { // no candidates
+                    if (!ai->candidate_jobs.any()) // no candidates
                         break;
-                    }
-                    m_LQueue.status_tracker.PendingIntersect(&ai->cand_jobs);
-                    ai->cand_jobs.count(); // re-calc count to speed up any()
-                    if (!ai->cand_jobs.any()) {
+                    m_LQueue.status_tracker.PendingIntersect(&ai->candidate_jobs);
+                    ai->candidate_jobs -= blacklisted_jobs;
+                    ai->candidate_jobs.count(); // speed up any()
+                    if (!ai->candidate_jobs.any())
                         break;
-                    }
-                    ai->cand_jobs.optimize(0, bm::bvector<>::opt_free_0);
+                    ai->candidate_jobs.optimize(0, bm::bvector<>::opt_free_0);
                 }
-            } // while
+                if (!ai->candidate_jobs.any())
+                    break;
+                bool pending_jobs_avail = 
+                    m_LQueue.status_tracker.GetPendingJobFromSet(
+                        &ai->candidate_jobs, &job_id);
+                if (job_id)
+                    return job_id;
+                if (!pending_jobs_avail)
+                    return 0;
+            } while (0);
         }
     }}
 
     // no affinity association or there are no more jobs with 
     // established affinity
 
-
     // try to find a vacant(not taken by any other worker node) affinity id
     {{
         bm::bvector<> assigned_aff;
         {{
-        CFastMutexGuard aff_guard(aff_map_lock);
-        m_LQueue.worker_aff_map.GetAllAssignedAffinity(&assigned_aff);
+            CFastMutexGuard aff_guard(m_LQueue.aff_map_lock);
+            m_LQueue.worker_aff_map.GetAllAssignedAffinity(&assigned_aff);
         }}
 
         if (assigned_aff.any()) {
-            // get all jobs belonging to other (already assigned) affinities
-            bm::bvector<> assigned_candidate_jobs;
+            // get all jobs belonging to other (already assigned) affinities,
+            // ORing them with our own blacklisted jobs
+            bm::bvector<> assigned_candidate_jobs(blacklisted_jobs);
             {{
-            CFastMutexGuard guard(m_LQueue.lock);
-            x_ReadAffIdx_NoLock(assigned_aff, &assigned_candidate_jobs);
+                CFastMutexGuard guard(m_LQueue.lock);
+                // x_ReadAffIdx_NoLock actually ORs into second argument
+                x_ReadAffIdx_NoLock(assigned_aff, &assigned_candidate_jobs);
             }}
             // we got list of jobs we do NOT want to schedule
             bool pending_jobs_avail = 
-                m_LQueue.status_tracker.PutDone_GetPending(
-                                                done_job_id, 
-                                                need_db_update, 
-                                                assigned_candidate_jobs,
-                                                &job_id);
-            if (m_LQueue.delete_done) {
-                m_LQueue.status_tracker.SetStatus(done_job_id, 
-                                    CNetScheduleClient::eJobNotFound);
-            }
-            done_job_id = 0;
+                m_LQueue.status_tracker.GetPendingJob(assigned_candidate_jobs,
+                                                     &job_id);
             if (job_id)
                 return job_id;
             if (!pending_jobs_avail) {
                 return 0;
             }
         }
-
     }}
-    
 
-    // we just take the first available job in the queue
-
+    // We just take the first available job in the queue, taking into account
+    // blacklisted jobs as usual.
     _ASSERT(job_id == 0);
-    job_id = 
-        m_LQueue.status_tracker.PutDone_GetPending(done_job_id, 
-                                                   need_db_update);
-    if (m_LQueue.delete_done) {
-        m_LQueue.status_tracker.SetStatus(done_job_id, 
-                                          CNetScheduleClient::eJobNotFound);
-    }
-
-    done_job_id = 0; // paranoiya assignment
+    m_LQueue.status_tracker.GetPendingJob(blacklisted_jobs, &job_id);
 
     return job_id;
 }
@@ -2802,10 +2813,7 @@ get_job_id:
     // previous GetJob() call may have precomputed sutable job ids
     //
 
-    *job_id = PutDone_FindPendingJob(client_name,
-                                     worker_node,
-                                     0, 0, // no done job here
-                                     m_LQueue.aff_map_lock);
+    *job_id = FindPendingJob(client_name, worker_node);
     if (!*job_id) {
         return;
     }
@@ -2882,7 +2890,6 @@ get_job_id:
                                             client_name, 
                                             job_aff_id);
     }
-
 
     // setup the job in the timeline
     if (*job_id && m_LQueue.run_time_line) {
@@ -3041,21 +3048,10 @@ CQueueDataBase::CQueue::x_UpdateDB_GetJobNoLock(
 }
 
 
-void CQueueDataBase::CQueue::GetJob(char*          key_buf, 
-                                    unsigned int   worker_node,
-                                    unsigned int*  job_id,
-                                    char*          input,
-                                    char*          jout,
-                                    char*          jerr,
-                                    const string&  host,
-                                    unsigned       port,
-                                    const string&  client_name,
-                                    unsigned*      job_mask)
+void CQueueDataBase::CQueue::GetJobKey(char* key_buf, unsigned job_id,
+                                       const string& host, unsigned port)
 {
-    GetJob(worker_node, job_id, input, jout, jerr, client_name, job_mask);
-    if (*job_id) {
-        sprintf(key_buf, NETSCHEDULE_JOBMASK, *job_id, host.c_str(), port);
-    }
+    sprintf(key_buf, NETSCHEDULE_JOBMASK, job_id, host.c_str(), port);
 }
 
 bool 
@@ -3858,6 +3854,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2006/09/21 21:28:59  joukovv
+ * Consistency of memory state and database strengthened, ability to retry failed
+ * jobs on different nodes (and corresponding queue parameter, failed_retries)
+ * added, overall code regularization performed.
+ *
  * Revision 1.88  2006/08/28 19:14:45  didenko
  * Fixed a bug in GetJobDescr logic
  *

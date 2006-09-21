@@ -72,7 +72,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.12.3  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.13.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -177,7 +177,7 @@ private:
     unsigned int   x_request_buf[kNetScheduleMaxDBErrSize];
 public:
     SThreadData() { request = (char*) x_request_buf; }  
-    size_t  RequestBufSize() const { return sizeof(x_request_buf); }
+    size_t GetBufSize() const { return sizeof(x_request_buf); }
 };
 
 ///@internal
@@ -515,8 +515,9 @@ static void s_ReadBufToString(BUF buffer, string& str)
 //////////////////////////////////////////////////////////////////////////
 // ConnectionHandler implementation
 
-CNetScheduleHandler::CNetScheduleHandler(
-    CNetScheduleServer* server) : m_Server(server)
+CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
+    : m_Done(false), m_Server(server), m_Monitor(NULL),
+      m_VersionControl(false), m_AdminAccess(false)
 {
 }
 
@@ -537,7 +538,9 @@ void CNetScheduleHandler::Init(CSocket& socket,
 
     m_ThreadData.auth.erase();
 
+    // TODO: move this initialization close to CheckMessage
     m_SeenCR = false;
+
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
 }
 
@@ -623,8 +626,8 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     SThreadData* tdata = GetThreadData(); // Transitional
     bool is_log = m_Server->IsLog();
 
-    BUF_Read(buffer, tdata->request, tdata->RequestBufSize());
-//    JS_CHECK_IO_STATUS(io_st);
+    size_t msg_size = BUF_Read(buffer, tdata->request, tdata->GetBufSize());
+    if (msg_size < tdata->GetBufSize()) tdata->request[msg_size] = '\0';
 
     CSocket& socket = GetSocket();
     // Logging
@@ -653,6 +656,7 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
         socket.SetTimeout(eIO_Read, &to);
         socket.Read(NULL, 1024);
         socket.Close();
+        return;
     }
 
     // program version control
@@ -1183,12 +1187,13 @@ void CNetScheduleHandler::ProcessGet(CSocket& socket)
     }
     unsigned job_id;
     char key_buf[1024];
-    m_Queue->GetJob(key_buf,
-                    m_ThreadData.peer_addr, &job_id,
+    m_Queue->GetJob(m_ThreadData.peer_addr, &job_id,
                     m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
-                    m_Server->GetHost(), m_Server->GetPort(),
                     m_ThreadData.auth, 
                     &m_JobReq.job_mask);
+
+    m_Queue->GetJobKey(key_buf, job_id,
+        m_Server->GetHost(), m_Server->GetPort());
 
     if (job_id) {
         x_MakeGetAnswer(key_buf, m_JobReq.cout, m_JobReq.cerr,
@@ -1233,13 +1238,14 @@ CNetScheduleHandler::ProcessJobExchange(CSocket& socket)
         done_job_id = 0;
     }
     m_Queue->PutResultGetJob(done_job_id, m_JobReq.job_return_code,
-                             m_JobReq.output,
-                             key_buf, m_ThreadData.peer_addr, &job_id,
+                             m_JobReq.output, false /*don't change the timeline*/,
+                             m_ThreadData.peer_addr, &job_id,
                              m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
-                             m_Server->GetHost(), m_Server->GetPort(),
-                             false /*don't change the timeline*/,
                              m_ThreadData.auth,
                              &m_JobReq.job_mask);
+
+    m_Queue->GetJobKey(key_buf, job_id,
+        m_Server->GetHost(), m_Server->GetPort());
 
     if (job_id) {
         x_MakeGetAnswer(key_buf, m_JobReq.cout, m_JobReq.cerr,
@@ -1273,11 +1279,13 @@ void CNetScheduleHandler::ProcessWaitGet(CSocket& socket)
     }
     unsigned job_id;
     char key_buf[1024];
-    m_Queue->GetJob(key_buf,
-                    m_ThreadData.peer_addr, &job_id, 
+    m_Queue->GetJob(m_ThreadData.peer_addr, &job_id, 
                     m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
-                    m_Server->GetHost(), m_Server->GetPort(),
                     m_ThreadData.auth, &m_JobReq.job_mask);
+
+    m_Queue->GetJobKey(key_buf, job_id,
+        m_Server->GetHost(), m_Server->GetPort());
+
     if (job_id) {
         x_MakeGetAnswer(key_buf, m_JobReq.cout, m_JobReq.cerr,
                         m_JobReq.job_mask);
@@ -1330,7 +1338,8 @@ void CNetScheduleHandler::ProcessPutFailure(CSocket& socket)
 {
     unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key_str);
     m_Queue->JobFailed(job_id, m_JobReq.err_msg, m_JobReq.output,
-                       m_JobReq.job_return_code);
+                       m_JobReq.job_return_code,
+                       m_ThreadData.peer_addr, m_ThreadData.auth);
     WriteMsg(socket, "OK:", kEmptyStr.c_str());
 }
 
@@ -2747,9 +2756,9 @@ int CNetScheduleDApp::Run(void)
 
         }
         
-     // attempt to get server gracefully shutdown on signal
-     signal( SIGINT, Threaded_Server_SignalHandler);
-     signal( SIGTERM, Threaded_Server_SignalHandler);    
+        // attempt to get server gracefully shutdown on signal
+        signal( SIGINT, Threaded_Server_SignalHandler);
+        signal( SIGTERM, Threaded_Server_SignalHandler);    
 #endif
                    
         m_ErrLog.reset(new CNetScheduleLogStream("ns_err.log", 25 * 1024 * 1024));     
@@ -2921,6 +2930,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2006/09/21 21:28:59  joukovv
+ * Consistency of memory state and database strengthened, ability to retry failed
+ * jobs on different nodes (and corresponding queue parameter, failed_retries)
+ * added, overall code regularization performed.
+ *
  * Revision 1.97  2006/09/13 18:32:21  joukovv
  * Added (non-functional yet) framework for thread-per-request thread pooling model,
  * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.
