@@ -1697,7 +1697,8 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                     CAnnotObject_Ref annot_ref(snp_annot, *snp_it);
                     //CAnnotObject_Ref annot_ref(snp_annot, index);
                     annot_ref.SetSNP_Point(snp, cvt);
-                    x_AddObject(annot_ref, cvt, 0);
+                    // conversion set cannot process SNPs
+                    x_AddObject(annot_ref);
                     if ( x_NoMoreObjects() ) {
                         return;
                     }
@@ -2288,6 +2289,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2006/09/21 18:48:32  vasilche
+* Disable multu-coversion of SNPs.
+*
 * Revision 1.75  2006/08/30 20:58:14  vasilche
 * Fixed order of multi-id annotations.
 *
