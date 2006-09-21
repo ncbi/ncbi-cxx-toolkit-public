@@ -2829,9 +2829,8 @@ size_t NStr::strftime(char* s, size_t maxsize, const char* format,
                       const struct tm* timeptr)
 {
 #if defined(NCBI_COMPILER_MSVC)
-    string x_format;
-    x_format = Replace(format,   "%T", "%H:%M:%S");
-    x_format = Replace(x_format, "%D", "%m/%d/%y");
+    string x_format = Replace(format, "%T", "%H:%M:%S");
+    ReplaceInPlace(x_format,          "%D", "%m/%d/%y");
     return ::strftime(s, maxsize, x_format.c_str(), timeptr);
 #else
     return ::strftime(s, maxsize, format, timeptr);
@@ -3214,6 +3213,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.108  2006/09/21 18:15:22  lavr
+ * NStr::strftime() to use ReplaceInPlace()
+ *
  * Revision 1.107  2006/09/18 15:10:08  gouriano
  * Changed TUnicodeSymbol to 4 bytes
  *
