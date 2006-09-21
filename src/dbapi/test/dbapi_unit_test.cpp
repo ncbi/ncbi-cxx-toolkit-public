@@ -2480,14 +2480,15 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         rs.reset( auto_stmt->ExecuteQuery( "select qq = 57 + 33" ) );
         BOOST_CHECK( rs.get() != NULL );
 
-        // 2) Retrive only one record.
-        if ( !rs->Next() ) {
-            BOOST_FAIL( msg_record_expected );
-        }
+        // 2) Retrive a record.
+        BOOST_CHECK( rs->Next() );
+        BOOST_CHECK( !rs->Next() );
 
         // 3) Select another recordset with just one record
         rs.reset( auto_stmt->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
         BOOST_CHECK( rs.get() != NULL );
+        BOOST_CHECK( rs->Next() );
+        BOOST_CHECK( !rs->Next() );
     }
 
     // Same as before but uses two differenr connections ...
@@ -2500,14 +2501,15 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         BOOST_CHECK( rs.get() != NULL );
 
         // 2) Retrive only one record.
-        if ( !rs->Next() ) {
-            BOOST_FAIL( msg_record_expected );
-        }
+        BOOST_CHECK( rs->Next() );
+        BOOST_CHECK( !rs->Next() );
 
         // 3) Select another recordset with just one record
         auto_ptr<IStatement> auto_stmt2( m_Conn->CreateStatement() );
         rs.reset( auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
         BOOST_CHECK( rs.get() != NULL );
+        BOOST_CHECK( rs->Next() );
+        BOOST_CHECK( !rs->Next() );
     }
 
 //     // TMP
@@ -4742,7 +4744,7 @@ CTestArguments::SetDatabaseParameters(void)
                      GetDriverName() == "ftds64_dblib") &&
                     GetServerType() == eSybase ) {
             // ftds work with Sybase databases using protocol v42 only ...
-            m_DatabaseParameters["version"] = "50";
+            m_DatabaseParameters["version"] = "100";
         } else if (GetDriverName() == "ftds64_odbc"  &&
                    GetServerType() == eSybase) {
             m_DatabaseParameters["version"] = "50";
@@ -4787,6 +4789,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.98  2006/09/21 20:22:47  ssikorsk
+ * Improved Test_SelectStmt.
+ *
  * Revision 1.97  2006/09/19 16:48:36  ssikorsk
  * Enable TestGetRowCount with the ftds64_ctlib driver.
  *
