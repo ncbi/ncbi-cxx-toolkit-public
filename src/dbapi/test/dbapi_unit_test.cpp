@@ -2519,7 +2519,8 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version as oops" ) );
         BOOST_CHECK( rs.get() != NULL );
         BOOST_CHECK( rs->Next() );
-        BOOST_CHECK( "oops", rs->ItemName(0) );
+        auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
+        BOOST_CHECK_EQUAL( "oops", col_metadata->GetName(1) );
     }
 
 //     // TMP
@@ -4799,6 +4800,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.100  2006/09/21 20:39:06  ssikorsk
+ * Improved column name checking.
+ *
  * Revision 1.99  2006/09/21 20:27:14  ssikorsk
  * Added checking of a column name to Test_SelectStmt.
  *
