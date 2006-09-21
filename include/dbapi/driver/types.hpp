@@ -448,7 +448,7 @@ public:
 
     //
     const char* Value() const  { return IsNULL() ? 0 : m_Val;  }
-    size_t      Size()  const  { return m_Size; }
+    size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -486,7 +486,7 @@ public:
 
     //
     const char* Value() const  { return IsNULL() ? 0 : m_Val; }
-    size_t      Size()  const  { return m_Size; }
+    size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
@@ -527,7 +527,7 @@ public:
 
     //
     const char* Value() const  { return IsNULL() ? 0 : m_Val; }
-    size_t      Size()  const  { return m_Size; }
+    size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
     size_t  DataSize()  const  { return IsNULL() ? 0 : strlen(m_Val); }
 
     virtual EDB_Type    GetType() const;
@@ -856,6 +856,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/09/21 21:15:18  ssikorsk
+ * Return 0 as a data size when value is NULL.
+ *
  * Revision 1.25  2006/09/18 15:20:19  ssikorsk
  * Made CDB_Object::m_Null private;
  * Added protected method CDB_Object::SetNULL;
