@@ -76,6 +76,8 @@ BEGIN_NCBI_SCOPE
 class CAgpErr
 {
 public:
+
+  // When adding entries to enum TCode, also update msg[]
   enum TCode {
     E_DuplicateObj  , E_ObjMustBegin1 , E_PartNumberNotPlus1,
     E_ObjRangeNeGap , E_ObjRangeNeComp, E_UnknownOrientation,
@@ -109,7 +111,7 @@ public:
     const string& substX=NcbiEmptyString);
 
   // Construct a readable message on total error & warning counts
-  static void PrintErrorCounts(CNcbiOstream& ostr, int e_count, int w_count);
+  static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count);
 
   CAgpErr();
 
@@ -177,7 +179,7 @@ public:
   //   E_Last: count errors  W_Last: count warnings
   //   other: errors/warnings of one given type
   // Two arguments: range of TCode-s
-  int CountErrors(TCode from, TCode to=E_First);
+  int CountTotals(TCode from, TCode to=E_First);
 
 private:
   typedef const char* TStr;

@@ -153,9 +153,6 @@ private:
   void x_ValidateUsingFiles(const CArgs& args);
   void x_ValidateFile(CNcbiIstream& istr);
 
-  // void x_ValidateSyntaxLine(const SDataLine& line,
-  //  const string& text_line, bool last_validation = false);
-
   //
   // Semantic validate methods
   //
@@ -213,13 +210,21 @@ void CAgpValidateApplication::Init(void)
   arg_desc->SetConstraint("type", constraint_type);
 
   arg_desc->AddDefaultKey("taxon", "TaxonCheckType",
-    "Type of Taxonomy semanitic check to be preformed",
+    "Type of Taxonomy semanitic check to be performed",
     CArgDescriptions::eString,
     "exact");
   CArgAllow_Strings* constraint_taxon= new CArgAllow_Strings;
   constraint_taxon->Allow("exact");
   constraint_taxon->Allow("species");
   arg_desc->SetConstraint("taxon", constraint_taxon);
+
+  /*
+  d->AddDefaultKey( "skip". "error/warning",
+    "Message or messag code to skip",
+    CArgDescriptions::eString,
+    -- no defaul value, allow multiple ---
+    );
+  */
 
   // file list for file processing
   arg_desc->AddExtra(0,100, "files to be processed",
@@ -300,6 +305,10 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
       args['#' + NStr::IntToString(i)].CloseFile();
     }
   }
+  // Needed to check if the last line was a gap, or a singleton.
+  if (m_ValidationType == syntax) {
+    m_LineValidator->EndOfObject();
+  }
 }
 
 void CAgpValidateApplication::x_ValidateFile(
@@ -366,42 +375,7 @@ void CAgpValidateApplication::x_ValidateFile(
 
     agpErr.LineDone(line, line_num);
   }
-
-  // Needed to check if the last line was a gap, or a singleton.
-  if (m_ValidationType == syntax) {
-    // x_ValidateSyntaxLine(data_line, line, true);
-    m_LineValidator->ValidateLine(data_line, line, true);
-    // Do not need to call LineDone() - all the errors reported would be on prev. line
-  }
 }
-
-/*
-void CAgpValidateApplication::x_ValidateSyntaxLine(
-  const SDataLine& dl,
-  const string& text_line,
-  bool last_validation)
-{
-  // START_LINE_VALIDATE_MSG;
-  bool errorOccured = m_LineValidator->ValidateLine(
-    m_ValidateMsg, dl, text_line, last_validation);
-
-  if(errorOccured) {
-
-    string prev_line = m_LineValidator->PreviousLineToPrint();
-    if(prev_line.size() && dl.line_num>1 ) {
-      // This error is better illustrated by 2 lines of AGP
-      AGP_POST(dl.line_num-1 << ": " << prev_line);
-    }
-
-    END_LINE_VALIDATE_MSG(dl.line_num, text_line);
-  }
-
-  // Transitional code;
-  // prev_line_filename usage is questionable anyway...
-  m_LineValidator->prev_line_filename = m_CurrentFileName;
-
-}
-*/
 
 void CAgpValidateApplication::x_ValidateSemanticInit()
 {

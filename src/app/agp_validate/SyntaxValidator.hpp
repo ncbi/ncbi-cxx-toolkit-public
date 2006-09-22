@@ -98,8 +98,8 @@ public:
   CAgpSyntaxValidator();
   ~CAgpSyntaxValidator();
   // former CAgpValidateApplication::x_ValidateSyntaxLine
-  void ValidateLine( const SDataLine& dl,
-    const string& text_line, bool last_validation=false);
+  void ValidateLine(const SDataLine& dl, const string& text_line);
+  void EndOfObject();
 
   // Note: resets post_prev
   //const string& PreviousLineToPrint();

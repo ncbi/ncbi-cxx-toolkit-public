@@ -40,6 +40,8 @@ USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
 
 //// class CAgpErr - static members and functions
+
+// When adding entries to msg[], also update enum TCode
 const CAgpErr::TStr CAgpErr::msg[]= {
   // Errors
   "duplicate object ",
@@ -48,7 +50,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
 
   "object range length not equal to the gap length",
   "Object range length not equal to component range length",
-  "component cannot have an unknown orientation",
+  "0 or na component orientation may only be used in a singleton scaffold",
 
   "X must be a positive integer",
   "X overlaps a previous line",
@@ -274,7 +276,7 @@ string CAgpErr::SkipMsg(const string& str, bool skip_other)
   */
 }
 
-int CAgpErr::CountErrors(TCode from, TCode to)
+int CAgpErr::CountTotals(TCode from, TCode to)
 {
   if(to==E_First) {
     //// One argument: count errors/warnings/given type
@@ -303,7 +305,7 @@ if(m_MaxRepeat) {
 }
 */
 
-void CAgpErr::PrintErrorCounts(CNcbiOstream& ostr, int e_count, int w_count)
+void CAgpErr::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count)
 {
   if     (e_count==0) ostr << "No errors, ";
   else if(e_count==1) ostr << "1 error, "  ;

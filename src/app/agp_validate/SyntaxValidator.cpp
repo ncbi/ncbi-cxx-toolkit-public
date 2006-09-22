@@ -125,8 +125,19 @@ CAgpSyntaxValidator::~CAgpSyntaxValidator()
   delete objNamePatterns;
 }
 
+void CAgpSyntaxValidator::EndOfObject()
+{
+  if(componentsInLastScaffold==1) m_SingletonCount++;
+  componentsInLastScaffold=0;
+
+  if( IsGapType(prev_component_type) ) agpErr.Msg(
+    // The previous line was a gap at the end of a scaffold & object
+    CAgpErr::W_GapObjEnd, NcbiEmptyString, CAgpErr::AT_PrevLine
+  );
+}
+
 void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
-  const string& text_line, bool last_validation)
+  const string& text_line)
 {
   new_obj = false;
   obj_range_len = 0;
@@ -137,14 +148,9 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
 
   // for compatibility with AGP_WARNING() AGP_ERROR()
   m_LineErrorOccured = false;
-  // m_ValidateMsg=msgStream;
 
-  //// Common code for GAPs, components, and one last check at EOF.
-  if(last_validation) {
-    new_obj = true;  // to check the prev_gap_type below
-    if(componentsInLastScaffold==1) m_SingletonCount++;
-  }
-  else if(dl.object != prev_object) {
+  //// Common code for GAPs and components
+  if(dl.object != prev_object) {
     new_obj = true;
 
     prev_end = 0;
@@ -152,29 +158,9 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     prev_object = dl.object;
     m_ObjCount++;
 
-    // 2006/08/28
-    m_ScaffoldCount++;
-    if(componentsInLastScaffold==1) m_SingletonCount++;
-    componentsInLastScaffold=0;
-  }
+    m_ScaffoldCount++; // to do: detect or avoid scaffold with 0 components?
+    EndOfObject();
 
-  if( new_obj && IsGapType(prev_component_type) ) {
-    // Previous line is a gap at the end of a scaffold & object
-    agpErr.Msg(CAgpErr::W_GapObjEnd, NcbiEmptyString, CAgpErr::AT_PrevLine);
-    /*
-    // special error reporting mechanism since the
-    //  error is on the previous line. Directly Log
-    //  the error messages.
-    if(!prev_line_error_occured) {
-      AGP_POST( prev_line_num << ": " << prev_line);
-    }
-    AGP_POST("\tWARNING: a gap at the end of an object");
-    */
-  }
-  if(last_validation) return;  // m_LineErrorOccured;
-
-  //// Common code for GAPs and components
-  if(new_obj) {
     TObjSetResult obj_insert_result = m_ObjIdSet.insert(dl.object);
     if (obj_insert_result.second == false) {
       agpErr.Msg(CAgpErr::E_DuplicateObj, dl.object);
@@ -319,7 +305,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
   else if( endsScaffold ) {
     // A breaking gap after a component.
     // Previous line is the last component of a scaffold
-    m_ScaffoldCount++;
+    m_ScaffoldCount++; // to do: detect or do not count scaffold with 0 components?
     if(componentsInLastScaffold==1) {
       m_SingletonCount++;
     }
@@ -620,10 +606,10 @@ int CAgpSyntaxValidator::x_CheckValues(
 void CAgpSyntaxValidator::PrintTotals()
 {
   //// Counts of errors and warnings
-  int e_count=agpErr.CountErrors(CAgpErr::E_Last);
-  int w_count=agpErr.CountErrors(CAgpErr::W_Last);
+  int e_count=agpErr.CountTotals(CAgpErr::E_Last);
+  int w_count=agpErr.CountTotals(CAgpErr::W_Last);
   cout << "\n";
-  agpErr.PrintErrorCounts(cout, e_count, w_count);
+  agpErr.PrintTotals(cout, e_count, w_count);
   cout << "\n";
 
   //// Prepare component/gap types and counts for later printing
