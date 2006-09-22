@@ -601,7 +601,6 @@ CStatementBase::CheckSIENd(int rc, const char* msg, unsigned int msg_num) const
 string
 CStatementBase::Type2String(const CDB_Object& param) const
 {
-    char tbuf[64];
     string type_str;
 
     switch (param.GetType()) {
@@ -626,26 +625,18 @@ CStatementBase::Type2String(const CDB_Object& param) const
 #endif
         break;
     case eDB_LongChar:
-        {
-            const CDB_LongChar& val = dynamic_cast<const CDB_LongChar&> (param);
 #ifdef UNICODE
-            sprintf(tbuf,"nvarchar(%d)", val.Size());
+        type_str = "nvarchar(4000)";
 #else
-            sprintf(tbuf,"varchar(%d)", val.Size());
+        type_str = "varchar(8000)";
 #endif
-        }
-        type_str = tbuf;
         break;
     case eDB_Binary:
     case eDB_VarBinary:
         type_str = "varbinary(255)";
         break;
     case eDB_LongBinary:
-        {
-            const CDB_LongBinary& val = dynamic_cast<const CDB_LongBinary&> (param);
-            sprintf(tbuf,"varbinary(%d)", val.Size());
-        }
-        type_str = tbuf;
+        type_str = "varbinary(8000)";
         break;
     case eDB_Float:
         type_str = "real";
@@ -735,7 +726,7 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
                               SQL_PARAM_INPUT,
                               SQL_C_WCHAR,
                               SQL_WLONGVARCHAR,
-                              val.Size(),
+                              4000,
                               0,
                               (void*)val.AsUnicode(odbc::DefStrEncoding),
                               val.DataSize() * sizeof(wchar_t),
@@ -746,7 +737,7 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
                               SQL_PARAM_INPUT,
                               SQL_C_CHAR,
                               SQL_LONGVARCHAR,
-                              val.Size(),
+                              8000,
                               0, (void*)val.Value(),
                               val.DataSize(),
                               indicator_base + pos);
@@ -999,6 +990,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/09/22 18:51:47  ssikorsk
+ * Use 8000 as a max datasize for varchar, varbinary and 4000 for nvarchar.
+ *
  * Revision 1.47  2006/09/22 16:01:44  ssikorsk
  * Use SQL_LONGVARCHAR/SQL_WLONGVARCHAR with CDB_LongChar.
  *
