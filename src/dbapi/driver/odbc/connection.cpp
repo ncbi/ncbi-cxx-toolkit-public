@@ -731,10 +731,10 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
         indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : SQL_NTS);
 #ifdef UNICODE
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
-                         SQL_WVARCHAR, val.Size(), 0, (void*)val.AsUnicode(odbc::DefStrEncoding), val.Size() * sizeof(wchar_t), indicator_base + pos);
+                         SQL_WVARCHAR, val.Size(), 0, (void*)val.AsUnicode(odbc::DefStrEncoding), val.DataSize() * sizeof(wchar_t), indicator_base + pos);
 #else
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                         SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.Size(), indicator_base + pos);
+                         SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.DataSize(), indicator_base + pos);
 #endif
         break;
     }
@@ -984,6 +984,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/09/22 15:30:29  ssikorsk
+ * Use CDB_LongChar::DataSize to retrieve an actual data size.
+ *
  * Revision 1.45  2006/09/21 21:30:45  ssikorsk
  * Handle NULL values correctly with SQLBindParameter.
  *
