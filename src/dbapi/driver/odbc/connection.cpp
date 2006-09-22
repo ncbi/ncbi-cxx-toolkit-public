@@ -730,11 +730,26 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
         const CDB_LongChar& val = dynamic_cast<const CDB_LongChar&> (param);
         indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : SQL_NTS);
 #ifdef UNICODE
-        rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
-                         SQL_WVARCHAR, val.Size(), 0, (void*)val.AsUnicode(odbc::DefStrEncoding), val.DataSize() * sizeof(wchar_t), indicator_base + pos);
+        rc = SQLBindParameter(GetHandle(),
+                              pos + 1,
+                              SQL_PARAM_INPUT,
+                              SQL_C_WCHAR,
+                              SQL_WLONGVARCHAR,
+                              val.Size(),
+                              0,
+                              (void*)val.AsUnicode(odbc::DefStrEncoding),
+                              val.DataSize() * sizeof(wchar_t),
+                              indicator_base + pos);
 #else
-        rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                         SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.DataSize(), indicator_base + pos);
+        rc = SQLBindParameter(GetHandle(),
+                              pos + 1,
+                              SQL_PARAM_INPUT,
+                              SQL_C_CHAR,
+                              SQL_LONGVARCHAR,
+                              val.Size(),
+                              0, (void*)val.Value(),
+                              val.DataSize(),
+                              indicator_base + pos);
 #endif
         break;
     }
@@ -984,6 +999,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/09/22 16:01:44  ssikorsk
+ * Use SQL_LONGVARCHAR/SQL_WLONGVARCHAR with CDB_LongChar.
+ *
  * Revision 1.46  2006/09/22 15:30:29  ssikorsk
  * Use CDB_LongChar::DataSize to retrieve an actual data size.
  *
