@@ -40,6 +40,9 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbifile.hpp>
+
+#include <util/math/matrix.hpp>
 
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_bv_store.hpp>
@@ -83,15 +86,14 @@ public:
 class CBDB_BlobDeMux : public IObjDeMux<unsigned>
 {
 public:
-    typedef vector<double>    TVolumeSize;
-    typedef vector<unsigned>  TVolumeRecs;
+    typedef CNcbiMatrix<double>    TVolumeSize;
+    typedef CNcbiMatrix<unsigned>  TVolumeRecs;
 
 public:
     CBDB_BlobDeMux(double    vol_max = 1.5 * (1024.00*1024.00*1024.00), 
-                  unsigned  rec_max = 3 * 1000000) 
+                   unsigned  rec_max = 3 * 1000000) 
         : m_VolMax(vol_max), m_RecMax(rec_max)
     {
-        NewVolume(); // have at least one volume
     }
 
     /// coordinates:
@@ -101,21 +103,37 @@ public:
     ///
     void GetCoordinates(unsigned blob_size, unsigned* coord)
     {
-        _ASSERT(m_VolS.size());
-        _ASSERT(m_RecS.size());
+        _ASSERT(coord);
+        _ASSERT(m_RecS.GetRows() == m_VolS.GetRows());
+        _ASSERT(m_RecS.GetCols() == m_VolS.GetCols());
 
-        coord[0] = m_RecS.size() - 1;      // current volume number
-        coord[1] = SelectSplit(blob_size);  // size based split
+        coord[1] = CBDB_BlobDeMux::SelectSplit(blob_size);
+        size_t max_col = max((size_t)m_RecS.GetCols(),
+                             (size_t)coord[1] + 1);
+        m_RecS.Resize(m_RecS.GetRows(), max_col);
+        m_VolS.Resize(m_VolS.GetRows(), max_col);
 
-        TVolumeSize::iterator it = m_VolS.end(); --it;
-        double new_size = *it + blob_size;
-        *it = new_size;
+        LOG_POST(Info << "GetCoordinates(" << blob_size << "): slice = "
+                 << coord[1] << " max col = " << max_col);
 
-        ++(m_RecS[coord[0]]);  // inc. number of LOBs in the volume 
-        
-        if (new_size > m_VolMax || m_RecS[coord[0]] > m_RecMax) {
-            NewVolume();
+        for (unsigned i = 0;  i < m_RecS.GetRows();  ++i) {
+            if (m_RecS(i, coord[1]) < m_RecMax  &&
+                m_VolS(i, coord[1]) < m_VolMax) {
+                coord[0] = i;
+                ++m_RecS(i, coord[1]);
+                m_VolS  (i, coord[1]) += blob_size;
+
+                LOG_POST(Info << "GetCoordinates(" << blob_size << "): slice = "
+                         << coord[1] << " plane = " << coord[0]);
+                return;
+            }
         }
+
+        /// not found
+        NewPlane();
+        coord[0] = m_RecS.GetRows() - 1;
+        LOG_POST(Info << "GetCoordinates(" << blob_size << "): slice = "
+                 << coord[1] << " plane = " << coord[0]);
     }
 
     /// LOBs are getting split into slices based on LOB size,
@@ -136,11 +154,13 @@ public:
     }
 
 protected:
-    void NewVolume()
+    void NewPlane()
     {
-        m_VolS.push_back(0);
-        m_RecS.push_back(0);
+        size_t max_col = max((size_t)m_RecS.GetCols(), (size_t)1);
+        m_RecS.Resize(m_RecS.GetRows() + 1, max_col);
+        m_VolS.Resize(m_VolS.GetRows() + 1, max_col);
     }
+
 
     TVolumeSize  m_VolS;  ///< Volumes BLOB sizes
     TVolumeRecs  m_RecS;  ///< Volumes record counts
@@ -157,39 +177,57 @@ class CBDB_BlobDeMuxPersistent : public CBDB_BlobDeMux
 public:
     typedef CBDB_BlobDeMux  TParent;
 public:
-    CBDB_BlobDeMuxPersistent(
+    CBDB_BlobDeMuxPersistent(const string& path,
         double    vol_max = 1.5 * (1024.00*1024.00*1024.00),
         unsigned  rec_max = 3 * 1000000) 
         : CBDB_BlobDeMux(vol_max, rec_max)
-    {}
-
-    void Save(CNcbiOstream& os)
+        , m_Path(path)
     {
-        for (size_t i = 0; i < m_VolS.size(); ++i) {
-            string str1 = NStr::DoubleToString(m_VolS[i], 2);
-            os << str1 << ";" << m_RecS[i] << NcbiEndl;
+        if ( !m_Path.empty()  &&  CFile(m_Path).Exists()) {
+            CNcbiIfstream istr(m_Path.c_str());
+            Load(istr);
         }
     }
 
-    void Load(CNcbiIstream& is)
+    void Save(CNcbiOstream& ostr)
     {
-        m_VolS.resize(0); m_RecS.resize(0);
-        string ln, s1, s2;
-        while (is) {
-            getline(is, ln);
-            if (ln.empty()) {
-                continue;
+        ostr << m_RecS.GetRows() << " " << m_RecS.GetCols() << endl;
+        for (size_t i = 0;  i < m_RecS.GetRows();  ++i) {
+            for (size_t j = 0;  j < m_RecS.GetCols();  ++j) {
+                ostr << m_RecS(i, j) << " ";
             }
-            NStr::SplitInTwo(ln, ";", s1, s2);
-            double d = NStr::StringToDouble(s1);
-            unsigned cnt = NStr::StringToUInt(s2);
-            m_VolS.push_back(d);
-            m_RecS.push_back(cnt);
-        } // while
-        if (m_VolS.size() == 0 || m_RecS.size() == 0) {
-            NewVolume();
+            ostr << endl;
+        }
+        ostr << m_VolS.GetRows() << " " << m_VolS.GetCols() << endl;
+        for (size_t i = 0;  i < m_VolS.GetRows();  ++i) {
+            for (size_t j = 0;  j < m_VolS.GetCols();  ++j) {
+                ostr << m_VolS(i, j) << " ";
+            }
+            ostr << endl;
         }
     }
+
+    void Load(CNcbiIstream& istr)
+    {
+        size_t i, j;
+        istr >> i >> j;
+        m_RecS.Resize(i, j);
+        for (size_t i = 0;  i < m_RecS.GetRows();  ++i) {
+            for (size_t j = 0;  j < m_RecS.GetCols();  ++j) {
+                istr >> m_RecS(i, j);
+            }
+        }
+        istr >> i >> j;
+        m_VolS.Resize(i, j);
+        for (size_t i = 0;  i < m_VolS.GetRows();  ++i) {
+            for (size_t j = 0;  j < m_VolS.GetCols();  ++j) {
+                istr >> m_VolS(i, j);
+            }
+        }
+    }
+
+private:
+    string m_Path;
 };
 
 
@@ -738,6 +776,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/09/22 15:41:21  dicuccio
+ * Provide better implementation of demultiplexer - store data in matrix and find
+ * best spot in matrix to minimize the number of volumes created
+ *
  * Revision 1.11  2006/09/21 14:01:41  dicuccio
  * CBDB_BlobDeMux: made SelectSplit public
  *
