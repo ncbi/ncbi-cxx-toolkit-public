@@ -762,7 +762,7 @@ CStatementBase::BindParam_ODBC(const CDB_Object& param,
         const CDB_LongBinary& val = dynamic_cast<const CDB_LongBinary&> (param);
         indicator_base[pos] = (param.IsNULL() ? SQL_NULL_DATA : val.DataSize());
         rc = SQLBindParameter(GetHandle(), pos + 1, SQL_PARAM_INPUT, SQL_C_BINARY,
-                         SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator_base + pos);
+                         SQL_VARBINARY, 8000, 0, (void*)val.Value(), val.Size(), indicator_base + pos);
         break;
     }
     case eDB_Float: {
@@ -990,6 +990,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/09/22 19:49:29  ssikorsk
+ * Use fixed LongBinary size with SQLBindParameter. Set it to 8000.
+ *
  * Revision 1.48  2006/09/22 18:51:47  ssikorsk
  * Use 8000 as a max datasize for varchar, varbinary and 4000 for nvarchar.
  *
