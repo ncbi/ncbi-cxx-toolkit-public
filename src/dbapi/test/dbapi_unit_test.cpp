@@ -2520,7 +2520,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         BOOST_CHECK( rs.get() != NULL );
         BOOST_CHECK( rs->Next() );
         auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
-        BOOST_CHECK_EQUAL( "oops", col_metadata->GetName(1) );
+        BOOST_CHECK_EQUAL( string("oops"), col_metadata->GetName(1) );
     }
 
 //     // TMP
@@ -4800,6 +4800,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.101  2006/09/22 13:57:46  ucko
+ * Tweak to fix compilation errors under WorkShop.
+ *
  * Revision 1.100  2006/09/21 20:39:06  ssikorsk
  * Improved column name checking.
  *
