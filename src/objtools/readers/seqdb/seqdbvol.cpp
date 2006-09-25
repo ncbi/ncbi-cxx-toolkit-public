@@ -2277,10 +2277,12 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     if (buffer)
         *buffer = 0;
     
-    TIndx start_S = 0;
-    TIndx end_S   = 0;
-    TIndx start_A = 0;
-    TIndx end_A   = 0;
+    TIndx start_S   = 0;
+    TIndx end_S     = 0;
+    TIndx start_A   = 0;
+    TIndx end_A     = 0;
+    TIndx map_begin = 0;
+    TIndx map_end   = 0;
     
     m_Atlas.Lock(locked);
     
@@ -2292,8 +2294,16 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
         // sequences, so we subtract one to remove that.
         
         end_A = start_A = --end_S;
+        
+        _ASSERT(start_S > 0);
+        
+        map_begin = start_S - 1;
+        map_end   = end_A + 1;
     } else {
         amb_ok = m_Idx.GetAmbStartEnd(oid, start_A, end_A);
+        
+        map_begin = start_S;
+        map_end   = end_A;
     }
     
     int s_len = int(end_S - start_S);
@@ -2313,13 +2323,22 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     }
     
     if (buffer) {
-        *buffer = m_Seq.GetRegion(start_S, end_A, true, locked);
+        *buffer = m_Seq.GetRegion(map_begin, map_end, true, locked);
+        *buffer += (start_S - map_begin);
     }
     
-    if (((buffer && *buffer) || a_len) && (! *seq_length)) {
-        NCBI_THROW(CSeqDBException,
-                   eArgErr,
-                   "OID not in valid range.");
+    if (buffer && *buffer) {
+        if (! *seq_length) {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "Could not get sequence data.");
+        }
+    } else {
+        if (((buffer && *buffer) || a_len) && (! *seq_length)) {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "OID not in valid range.");
+        }
     }
 }
 
