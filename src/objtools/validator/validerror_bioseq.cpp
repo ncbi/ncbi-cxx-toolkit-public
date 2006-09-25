@@ -2526,8 +2526,8 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
         if (cds_num != mrna_num) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
                 "mRNA count (" + NStr::IntToString(mrna_num) + 
-                ") does not match CDS (" + NStr::IntToString(cds_num) +
-                ") count for gene", *it->first);
+                ") does not match CDS count (" + NStr::IntToString(cds_num) +
+                ") for gene", *it->first);
         }
     }
 }
@@ -3994,6 +3994,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.99  2006/09/25 17:37:28  dicuccio
+* Propagate changes from production tree
+*
 * Revision 1.98  2005/06/28 17:38:20  shomrat
 * Errors from Seqdesc must contain a context
 *
