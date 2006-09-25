@@ -34,7 +34,7 @@
 
 #include <objtools/readers/fasta.hpp>
 
-#include "sequence_istream_fasta.hpp"
+#include <algo/blast/dbindex/sequence_istream_fasta.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )

@@ -44,8 +44,8 @@
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
 
-#include "sequence_istream_fasta.hpp"
-#include "dbindex.hpp"
+#include <algo/blast/dbindex/sequence_istream_fasta.hpp>
+#include <algo/blast/dbindex/dbindex.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )

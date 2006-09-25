@@ -37,7 +37,7 @@
 #include <corelib/ncbifile.hpp>
 #include <algo/blast/core/blast_extend.h>
 
-#include "dbindex.hpp"
+#include <algo/blast/dbindex/dbindex.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )

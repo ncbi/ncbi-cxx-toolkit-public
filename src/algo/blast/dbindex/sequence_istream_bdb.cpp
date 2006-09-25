@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "sequence_istream_bdb.hpp"
+#include <algo/blast/dbindex/sequence_istream_bdb.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
