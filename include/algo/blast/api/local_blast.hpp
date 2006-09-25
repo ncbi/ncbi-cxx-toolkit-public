@@ -69,6 +69,8 @@ public:
     
     CSearchResultSet Run();
     
+    SInternalData& GetInternalData() { return *m_InternalData; }
+
 private:
     /// Query factory from which to obtain the query sequence data
     CRef<IQueryFactory> m_QueryFactory;
