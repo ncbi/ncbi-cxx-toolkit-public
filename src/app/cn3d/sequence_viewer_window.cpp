@@ -73,8 +73,8 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
     EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_PSSM,   SequenceViewerWindow::OnExport)
     EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
-    EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,            SequenceViewerWindow::OnTaxonomy)
-    EVT_MENU_RANGE(MID_HIGHLIGHT_BLOCKS, MID_RESTRICT_HIGHLIGHTS,   SequenceViewerWindow::OnHighlight)
+    EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,    SequenceViewerWindow::OnTaxonomy)
+    EVT_MENU_RANGE(MID_HIGHLIGHT_BLOCKS, MID_CLEAR_HIGHLIGHTS,  SequenceViewerWindow::OnHighlight)
     EVT_MENU      (MID_SQ_REFINER,                      SequenceViewerWindow::OnRefineAlignment)
 END_EVENT_TABLE()
 
@@ -100,9 +100,10 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_TAXONOMY_ABBR, "&Abbreviated");
     viewMenu->Append(MID_TAXONOMY, "Show Ta&xonomy...", subMenu);
     viewMenu->AppendSeparator();
-    viewMenu->Append(MID_HIGHLIGHT_BLOCKS, "&Highlight blocks");
+    viewMenu->Append(MID_HIGHLIGHT_BLOCKS, "Highlight &blocks");
     viewMenu->Append(MID_EXPAND_HIGHLIGHTS, "Exp&and Highlights to Aligned Columns");
     viewMenu->Append(MID_RESTRICT_HIGHLIGHTS, "Restr&ict Highlights to Row", "", true);
+    viewMenu->Append(MID_CLEAR_HIGHLIGHTS, "Clear &Highlights");
 
     editMenu->AppendSeparator();
     subMenu = new wxMenu;
@@ -508,6 +509,11 @@ void SequenceViewerWindow::OnTaxonomy(wxCommandEvent& event)
 
 void SequenceViewerWindow::OnHighlight(wxCommandEvent& event)
 {
+    if (event.GetId() == MID_CLEAR_HIGHLIGHTS) {
+        GlobalMessenger()->RemoveAllHighlights(true);
+        return;
+    }
+
     if (sequenceViewer->GetCurrentAlignments().size() == 0) return;
 
     if (event.GetId() == MID_HIGHLIGHT_BLOCKS) {
@@ -606,6 +612,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2006/09/25 16:36:59  thiessen
+* add clear highlights menu item
+*
 * Revision 1.66  2006/09/07 02:32:55  thiessen
 * add sort by loop length
 *

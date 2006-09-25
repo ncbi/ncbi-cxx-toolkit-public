@@ -78,6 +78,7 @@ private:
         MID_HIGHLIGHT_BLOCKS,
         MID_EXPAND_HIGHLIGHTS,
         MID_RESTRICT_HIGHLIGHTS,
+        MID_CLEAR_HIGHLIGHTS,
         // edit menu
         MID_DELETE_ROW,
         MID_SORT_ROWS,   // sort rows submenu
@@ -190,6 +191,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/09/25 16:36:59  thiessen
+* add clear highlights menu item
+*
 * Revision 1.35  2006/09/07 02:32:55  thiessen
 * add sort by loop length
 *
