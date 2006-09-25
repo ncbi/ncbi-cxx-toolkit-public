@@ -1219,8 +1219,12 @@ BlastScoreBlkGetCompiledInMatrix(const char* name)
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum62;
     } else if (strcasecmp(name, "BLOSUM45") == 0) {
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum45;
+    } else if (strcasecmp(name, "BLOSUM50") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum50;
     } else if (strcasecmp(name, "BLOSUM80") == 0) {
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum80;
+    } else if (strcasecmp(name, "BLOSUM90") == 0) {
+        psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum90;
     } else if (strcasecmp(name, "PAM30") == 0) {
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam30;
     } else if (strcasecmp(name, "PAM70") == 0) {
@@ -4410,6 +4414,10 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.149  2006/09/25 19:32:44  madden
+ *   Added the BLOSUM50 and BLOSUM90 matrices to
+ *   BlastScoreBlkGetCompiledInMatrix. [from Mike Gertz]
+ *
  * Revision 1.148  2006/09/14 14:49:07  papadopo
  * doxygen fixes
  *
