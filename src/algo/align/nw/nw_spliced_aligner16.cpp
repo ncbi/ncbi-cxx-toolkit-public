@@ -128,7 +128,7 @@ const unsigned char kMaskD        = 0x08;
 CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 {
     // redefine TScore as a floating-point type for this procedure only
-    typedef float TScore;
+    typedef double TScore;
     const TScore cds_penalty_extra = -2e-6;
 
     TScore V = 0;
@@ -677,6 +677,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/09/25 13:55:58  kapustin
+ * Use double precision for internal scores
+ *
  * Revision 1.26  2006/07/18 19:33:39  kapustin
  * Tweak the way in-cds extras are assigned
  *
