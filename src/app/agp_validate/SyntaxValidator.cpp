@@ -603,7 +603,18 @@ void CAgpSyntaxValidator::PrintTotals()
   int e_count=agpErr.CountTotals(CAgpErr::E_Last);
   int w_count=agpErr.CountTotals(CAgpErr::W_Last);
   cout << "\n";
-  agpErr.PrintTotals(cout, e_count, w_count);
+  agpErr.PrintTotals(cout, e_count, w_count, agpErr.m_skipped_count);
+  if(agpErr.m_skipped_count && agpErr.m_MaxRepeat) {
+    cout << " (to print all: -limit 0)";
+  }
+  cout << ".";
+  if(agpErr.m_MaxRepeat) {
+    cout << "\n";
+    agpErr.PrintMessageCounts(cout, CAgpErr::W_First, CAgpErr::W_Last);
+    if(agpErr.m_skipped_count) {
+
+    }
+  }
   cout << "\n";
 
   //// Prepare component/gap types and counts for later printing

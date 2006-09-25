@@ -43,6 +43,8 @@ BEGIN_NCBI_SCOPE
 
 // When adding entries to msg[], also update enum TCode
 const CAgpErr::TStr CAgpErr::msg[]= {
+  kEmptyCStr,
+
   // Errors
   "duplicate object ",
   "first line of an object must have object_begin=1",
@@ -60,7 +62,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "invalid value for X",
   kEmptyCStr, // E_Last
 
-  // Codes 0..19 are reserved for errors
+  // Codes 1..19 are reserved for errors
   // to avoid shifting warning codes in the future
   kEmptyCStr, kEmptyCStr, kEmptyCStr,
   kEmptyCStr, kEmptyCStr, kEmptyCStr,
@@ -95,19 +97,33 @@ bool CAgpErr::MustSkip(TCode code)
 
 void CAgpErr::PrintAllMessages(CNcbiOstream& out)
 {
-  // to do -- print:
-  // Errors:
-  //   (e01) duplicate object
-  //   . . .
-  // Warnings:
-  //   . . .
-  //   (w33) line with component_type X appears to be a component line and not a gap line
-  //         X may be: N (gap), U (gap of unknown size) <== append such lines for a few codes
+  out << "### Errors ###\n";
+  for(int i=E_First; i<E_Last; i++) {
+    out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
+    if(i==E_InvalidValue) {
+      out << " (X: component_type, gap_type, linkage, orientation)";
+    }
+    else if(i==E_MustBePositive) {
+      out << " (X: object_begin, object_end, part_num, gap_length, component_start, component_end)";
+    }
+    else if(i==E_Overlaps) {
+      out << " (X: object_begin, component_start)";
+    }
+
+    out << "\n";
+  }
+
+  out << "### Warnings ###\n";
+  for(int i=W_First; i<W_Last; i++) {
+    out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
+    out << "\n";
+  }
 }
 
 string CAgpErr::GetPrintableCode(int code)
 {
   string res = (code>E_Last) ? "w" : "e";
+  if(code<10) res += "0";
   res += NStr::IntToString(code);
   return res;
 }
@@ -141,6 +157,7 @@ CAgpErr::CAgpErr()
 {
   m_messages = new CNcbiOstrstream();
   m_MaxRepeat = 0; // no limit
+  m_skipped_count=0;
   m_line_num=1;
 
   m_line_num_prev=0;
@@ -168,8 +185,13 @@ void CAgpErr::Msg(TCode code, const string& details,
   int appliesTo, const string& substX)
 {
   m_MsgCount[code]++;
-  if( m_MustSkip[code] ) return;
-  if( m_MaxRepeat>0 && m_MsgCount[code] > m_MaxRepeat ) return;
+
+  if( m_MustSkip[code] ||
+      m_MaxRepeat>0 && m_MsgCount[code] > m_MaxRepeat
+  ) {
+    m_skipped_count++;
+    return;
+  }
 
   if( appliesTo == (AT_PrevLine|AT_ThisLine) ) m_two_lines_involved=true;
 
@@ -223,8 +245,8 @@ void CAgpErr::StartFile(const string& s)
 
 // Initialize m_MustSkip[]
 // Return values:
-//   ""                        no matches found for str
-//   string ending with "\n"   one or more messages that matched
+//   ""                          no matches found for str
+//   string beginning with "  "  one or more messages that matched
 string CAgpErr::SkipMsg(const string& str, bool skip_other)
 {
   string res;
@@ -255,29 +277,20 @@ string CAgpErr::SkipMsg(const string& str, bool skip_other)
   }
 
   // Error or warning codes, substrings of the messages.
-  for( int i=0; i<W_Last; i++ ) {
+  for( int i=E_First; i<W_Last; i++ ) {
     bool matchesCode = ( str==GetPrintableCode(i) );
     if( matchesCode || NStr::Find(msg[i], str) != NPOS) {
       m_MustSkip[i] = !skip_other;
-      res += "  ";
-      res += msg[i];
+      res += "  (";
+      res += GetPrintableCode(i);
+      res += ") ";
+      res += GetMsg((TCode)i);
       res += "\n";
       if(matchesCode) break;
     }
   }
 
-  // Empty: no match;
-  // else: matched messages, one per line (which might either be
-  // skipped, or retained to the exclusion of others).
   return res;
-  /*
-  if(res.size()) {
-    return string("No matches found for \"")+str+"\"";
-  }
-  else {
-    return string("Skipping the following messages:\n")+res;
-  }
-  */
 }
 
 int CAgpErr::CountTotals(TCode from, TCode to)
@@ -297,27 +310,40 @@ int CAgpErr::CountTotals(TCode from, TCode to)
   return count;
 }
 
-/*
-//// Report individual error counts
-//// (only if we had a limit on the number of errors printed).
-if(m_MaxRepeat) {
-  if(out) {
-    *out<< setw(8) << c
-        << " (" << GetPrintableCode(i) << ") "
-        << GetMsg(i) << "\n";
+void CAgpErr::PrintMessageCounts(CNcbiOstream& ostr, TCode from, TCode to)
+{
+  if(to==E_First) {
+    //// One argument: count errors/warnings/given type
+    if     (from==E_Last) { from=E_First; to=E_Last; }
+    else if(from==W_Last) { from=W_First; to=W_Last; }
+    else if(from<W_Last)  { to=(TCode)(from+1); }
+    else {
+      ostr << "Internal error in CAgpErr::PrintMessageCounts().";
+    }
+  }
+  ostr<< setw(7) << "count" << "  description\n"; // code
+  for(int i=from; i<to; i++) {
+    if( m_MsgCount[i] ) {
+      ostr<< setw(7) << m_MsgCount[i] << "  "
+          // << "(" << GetPrintableCode(i) << ") "
+          << GetMsg((TCode)i) << "\n";
+    }
   }
 }
-*/
 
-void CAgpErr::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count)
+void CAgpErr::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count)
 {
   if     (e_count==0) ostr << "No errors, ";
   else if(e_count==1) ostr << "1 error, "  ;
   else                ostr << e_count << " errors, ";
 
-  if     (w_count==0) ostr << "no warnings.";
-  else if(w_count==1) ostr << "1 warning.";
-  else                ostr << w_count << " warnings.";
+  if     (w_count==0) ostr << "no warnings";
+  else if(w_count==1) ostr << "1 warning";
+  else                ostr << w_count << " warnings";
+
+  if(skipped_count) {
+    ostr << "; " << skipped_count << " not printed";
+  }
 }
 
 END_NCBI_SCOPE

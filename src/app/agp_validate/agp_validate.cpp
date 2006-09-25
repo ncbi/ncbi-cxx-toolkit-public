@@ -183,7 +183,19 @@ public:
     "  -type semantics   Check sequence length and taxids using GenBank data\n"
     "  -type syntax      (Default) Check line formatting and data consistency\n"
     "  -taxon species    Allow sequences from different subspecies during semantic check\n"
-    "  -taxon exact      (Default)\n";
+    "  -taxon exact      (Default)\n"
+    "\n"
+    "  -list         List non-fatal errors and warnings.\n"
+    "  -limit COUNT  Print only the first COUNT messages of each type (default=5).\n"
+    "\n"
+    "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
+    "  -only  WHAT   Report only this particular error or warning.\n"
+    "  Multiple -skip or -only are allowed. 'WHAT' may be:\n"
+    "  - error code (e01 .. w20 ...)\n"
+    "  - part of the actual message\n"
+    "  - keyword: all warn[ings] err[ors]\n"
+    "\n"
+    ;
     return str;
     // To do:
     // -taxon "taxname or taxid"
@@ -218,13 +230,22 @@ void CAgpValidateApplication::Init(void)
   constraint_taxon->Allow("species");
   arg_desc->SetConstraint("taxon", constraint_taxon);
 
-  /*
-  d->AddDefaultKey( "skip". "error/warning",
-    "Message or messag code to skip",
+  arg_desc->AddOptionalKey( "skip", "error_or_warning",
+    "Message or message code to skip",
     CArgDescriptions::eString,
-    -- no defaul value, allow multiple ---
-    );
-  */
+    CArgDescriptions::fAllowMultiple);
+
+  arg_desc->AddOptionalKey( "only", "error_or_warning",
+    "Message or message code to print",
+    CArgDescriptions::eString,
+    CArgDescriptions::fAllowMultiple);
+
+  arg_desc->AddDefaultKey("limit", "ErrorCount",
+    "Print at most ErrorCount lines with a particular error",
+    CArgDescriptions::eInteger,
+    "5");
+
+  arg_desc->AddFlag("list", "all possible errors and warnings");
 
   // file list for file processing
   arg_desc->AddExtra(0,100, "files to be processed",
@@ -246,6 +267,10 @@ int CAgpValidateApplication::Run(void)
  //// Get command line arguments
   const CArgs& args = GetArgs();
 
+  if( args["list"].HasValue() ) {
+     CAgpErr::PrintAllMessages(cout);
+     exit(0);
+   }
 
   if (args["type"].AsString() == "syntax") {
     m_ValidationType = syntax;
@@ -260,6 +285,51 @@ int CAgpValidateApplication::Run(void)
   if(args["taxon"].AsString() == "species") {
     m_SpeciesLevelTaxonCheck = true;
   }
+
+
+  const CArgValue::TStringArray* err_warn=NULL;
+  bool onlyNotSkip = args["only"].HasValue();
+  string action;
+  if( args["skip"].HasValue() ) {
+     if( onlyNotSkip ) {
+       cerr << "FATAL ERROR: cannot specify both -only and -skip.\n";
+       exit(1);
+     }
+     err_warn = &( args["skip"].GetStringList() );
+     action="Skipping messages:\n";
+  }
+  else if(onlyNotSkip) {
+    err_warn = &( args["only"].GetStringList() );
+    agpErr.SkipMsg("all");
+    action="Allowed messages:\n";
+  }
+  if(err_warn) {
+    // Inform agpErr what to skip; show messages that we skip.
+    bool needHeading=true; // avoid printing >action when not needed
+    for( CArgValue::TStringArray::const_iterator it =
+      err_warn->begin();  it != err_warn->end(); ++it
+    ) {
+      string res  = agpErr.SkipMsg(*it, onlyNotSkip);
+      if(res=="") {
+        cerr << "WARNING: no matches for " << *it << "\n";
+        needHeading=true;
+      }
+      else {
+        if ( res[0] == ' ' && needHeading) {
+          if(needHeading) cerr << action;
+          cerr << res;
+          needHeading=false;
+        }
+        else {
+          cerr << res << "\n";
+          needHeading=true;
+        }
+      }
+    }
+  }
+
+
+  agpErr.m_MaxRepeat = args["limit"].AsInteger();
 
   //// Process files, print results
   x_ValidateUsingFiles(args);

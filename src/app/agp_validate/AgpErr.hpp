@@ -70,7 +70,6 @@ BEGIN_NCBI_SCOPE
        . . .
      }
    }
-   agpErr.StartFile(""); // Done (make it a separate function?)
 */
 
 class CAgpErr
@@ -79,16 +78,16 @@ public:
 
   // When adding entries to enum TCode, also update msg[]
   enum TCode {
-    E_DuplicateObj  , E_ObjMustBegin1 , E_PartNumberNotPlus1,
+    E_DuplicateObj=1, E_ObjMustBegin1 , E_PartNumberNotPlus1,
     E_ObjRangeNeGap , E_ObjRangeNeComp, E_UnknownOrientation,
     E_MustBePositive, E_Overlaps      , E_ObjBeginLtEnd     ,
     E_CompStartLtEnd, E_InvalidValue  ,
-    E_Last, E_First=0,
+    E_Last, E_First=1,
 
-    W_GapObjEnd=20 , W_GapObjBegin , W_ConseqGaps ,
+    W_GapObjEnd=21 , W_GapObjBegin , W_ConseqGaps ,
     W_InvalidYes   , W_SpansOverlap, W_SpansOrder ,
     W_DuplicateComp, W_LooksLikeGap, W_LooksLikeComp,
-    W_Last, W_First = 20
+    W_Last, W_First = 21
   };
 
   static const char* GetMsg(TCode code);
@@ -98,6 +97,10 @@ public:
 
   // The max number of times to print a given error message.
   int m_MaxRepeat;
+
+  // Warnings + errors skipped,
+  // either because of m_MaxRepeat or MustSkip().
+  int m_skipped_count;
 
   // Print the source line along with filename and line number.
   static void PrintLine   (CNcbiOstream& ostr,
@@ -111,7 +114,7 @@ public:
     const string& substX=NcbiEmptyString);
 
   // Construct a readable message on total error & warning counts
-  static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count);
+  static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
 
   CAgpErr();
 
@@ -165,8 +168,10 @@ public:
 
   // 'fgrep' errors out, or keep just the given errors (skip_other=true)
   // Can also include/exclude by code -- see GetPrintableCode().
-  // Returns a message detailing what would be skipped
-  // (or saying that no matches were found).
+  // Return values:
+  //   ""                          no matches found for str
+  //   string beginning with "  "  one or more messages that matched
+  //   else                        printable message
   // Note: call SkipMsg("all") nefore SkipMsg(smth, true)
   string SkipMsg(const string& str, bool skip_other=false);
 
@@ -180,6 +185,7 @@ public:
   //   other: errors/warnings of one given type
   // Two arguments: range of TCode-s
   int CountTotals(TCode from, TCode to=E_First);
+  void PrintMessageCounts(CNcbiOstream& ostr, TCode from, TCode to=E_First);
 
 private:
   typedef const char* TStr;
