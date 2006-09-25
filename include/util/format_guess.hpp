@@ -71,9 +71,15 @@ public:
     // identifies if the source belongs to nucleotide or protein sequence
     static ESequenceType SequenceType(const char* str, unsigned length);
 
-    // Guess file format structure.
+    /// Guess file format structure.
     EFormat Format(const string& path);
+    /// Format prediction based on an input stream
     EFormat Format(CNcbiIstream& input);
+    
+    /// Format prediction based on memory buffer
+    /// Recommended that buffer should contain at least 1K of data
+    EFormat Format(const unsigned char* buffer, 
+                   size_t               buffer_size);
 
 };
 
@@ -82,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/09/25 14:57:26  kuznets
+ * Added memory based method for format prediction
+ *
  * Revision 1.6  2006/08/17 13:19:57  ludwigf
  * ADDED: Simple test that will identify *some* alignment files.
  *
