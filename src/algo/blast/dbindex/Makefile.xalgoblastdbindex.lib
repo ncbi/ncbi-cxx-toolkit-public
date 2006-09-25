@@ -2,6 +2,12 @@
 
 LIB = xalgoblastdbindex
 
+SRC = sequence_istream_fasta \
+      sequence_istream_bdb \
+      dbindex \
+      dbindex_factory \
+      dbindex_search
+
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
