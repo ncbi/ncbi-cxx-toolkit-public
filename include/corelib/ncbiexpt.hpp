@@ -899,7 +899,7 @@ public:
         { return errno; }
     static const char* GetErrCodeString(int errnum) 
         {
-#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400)
+#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__
             static char buf[128];
             strerror_s(buf,sizeof(buf),errnum);
             return buf;
@@ -1152,6 +1152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/09/25 17:48:38  gouriano
+ * Check if secure lib is enabled before using it
+ *
  * Revision 1.70  2006/07/12 16:17:04  grichenk
  * Added NCBI_EXCEPTION_VAR_EX.
  * SetClass, SetFunction and SetModule return void.
