@@ -744,31 +744,24 @@ CContigAssembly::CAlnStats::CAlnStats(const objects::CDense_seg& ds,
 }
 
 
-struct SDovetails {
-    TSeqPos head;
-    TSeqPos aligned;
-    TSeqPos tail;
-};
-
-
-static void s_GetDovetails(const CAlnVec& vec, vector<SDovetails>& dts)
+static void s_GetTails(const CAlnVec& vec,
+                       vector<CContigAssembly::SAlignStats::STails>& tails)
 {
-    SDovetails dt;
+    CContigAssembly::SAlignStats::STails tls;
     for (int j = 0;  j < vec.GetNumRows();  ++j) {
         TSeqPos start = vec.GetSeqStart(j);
         TSeqPos stop  = vec.GetSeqStop(j);
-        dt.head       = start;
-        dt.tail       = stop;
-        dt.aligned    = stop - start + 1;
 
-        TSeqPos length = vec.GetBioseqHandle(j).GetBioseqLength();
-        dt.tail = length - stop - 1;
+        TSeqPos seq_len = vec.GetBioseqHandle(j).GetBioseqLength();
 
-        LOG_POST(Info << "dovetails: " << dt.head << ", " << dt.tail
-                 << "  align: " << start << "-" << stop
-                 << "  seq: " << length);
-
-        dts.push_back(dt);
+        if (vec.IsPositiveStrand(j)) {
+            tls.left = start;
+            tls.right = seq_len - stop - 1;
+        } else {
+            tls.right = start;
+            tls.left = seq_len - stop - 1;
+        }
+        tails.push_back(tls);
     }
 }
 
@@ -871,21 +864,10 @@ void CContigAssembly::GatherAlignStats(const CAlnVec& vec,
         100.0 * double(identities) / double(align_stats.aligned_length);
 
     ///
-    /// overhangs / dovetails
+    /// overhangs (unaligned tails)
     ///
 
-    vector<SDovetails> dovetails;
-    s_GetDovetails(vec, dovetails);
-
-    if (vec.StrandSign(0) == vec.StrandSign(1)) {
-        align_stats.max_dovetail =
-                max(min(dovetails[0].head, dovetails[1].head),
-                    min(dovetails[0].tail, dovetails[1].tail));
-    } else {
-        align_stats.max_dovetail =
-                max(min(dovetails[0].head, dovetails[1].tail),
-                    min(dovetails[0].tail, dovetails[1].head));
-    }
+    s_GetTails(vec, align_stats.tails);
 
 }
 
@@ -912,6 +894,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/09/25 20:13:42  jcherry
+ * Report all four unaligned tails rather than "max_dovetail"
+ *
  * Revision 1.11  2006/07/19 19:58:23  jcherry
  * Added additional CContigAssembly::GatherAlignStats signatures
  * for convenience

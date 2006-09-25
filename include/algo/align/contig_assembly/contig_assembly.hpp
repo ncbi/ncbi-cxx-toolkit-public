@@ -142,13 +142,20 @@ public:
     /// Alignment characterization
 
     struct SAlignStats {
+
+        // unaligned tails
+        struct STails {
+            TSeqPos left;
+            TSeqPos right;
+        };
+
+        // constructor
         SAlignStats()
                 : total_length(0),
                 aligned_length(0),
                 gap_count(0),
                 mismatches(0),
-                pct_identity(0),
-                max_dovetail(0)
+                pct_identity(0)
         {
         }
 
@@ -167,8 +174,8 @@ public:
         /// % identity (varies from 0 to 100)
         double pct_identity;
 
-        /// dovetails
-        TSeqPos max_dovetail;
+        /// unaligned tails
+        vector<STails> tails;
 
         /// the set of gap lengths for this alignment
         vector<TSeqPos> gaps;
@@ -199,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/09/25 20:13:41  jcherry
+ * Report all four unaligned tails rather than "max_dovetail"
+ *
  * Revision 1.7  2006/07/19 19:58:23  jcherry
  * Added additional CContigAssembly::GatherAlignStats signatures
  * for convenience
