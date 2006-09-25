@@ -198,6 +198,7 @@ private:
   bool m_prev_printed;    // true: previous line was already printed
                           // (probably had another error);
                           // no need to-reprint "fname:linenum:content"
+  bool m_two_lines_involved; // true: do not print "\n" after the previous line
 
   // a stream to Accumulate messages for the current line.
   // (We print right away messages that apply only to the previous line.)

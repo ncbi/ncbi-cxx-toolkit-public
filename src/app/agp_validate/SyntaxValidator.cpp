@@ -49,10 +49,9 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
 
   prev_end = 0;
   prev_part_num = 0;
-  prev_line_num = 0;
-  prev_line_error_occured = false;
+  // prev_line_num = 0;
+  // prev_line_error_occured = false;
   componentsInLastScaffold = 0;
-  //post_prev = false;
   prev_orientation_unknown=false;
 
   m_ObjCount = 0;
@@ -220,13 +219,8 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
 
   ////
   prev_component_type = dl.component_type;
-  prev_line = text_line;
-  prev_line_num = dl.line_num;
-  //prev_line_filename = m_app->m_CurrentFileName;
-  prev_line_error_occured = m_LineErrorOccured;
-  //prev_component_id = dl.component_id;
-
-  // return m_LineErrorOccured; // may be set in AGP_WARNING, AGP_ERROR
+  // prev_line = text_line;
+  // prev_line_error_occured = m_LineErrorOccured;
 }
 
 void CAgpSyntaxValidator::x_OnGapLine(
@@ -347,7 +341,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
     }
   }
 
-  prev_gap_type = gap_type;
+  //prev_gap_type = gap_type;
 }
 
 void CAgpSyntaxValidator::x_OnComponentLine(
@@ -712,17 +706,6 @@ void CAgpSyntaxValidator::PrintTotals()
     << CAccPatternCounter::GetCount(*it) << "\n";
   }
 }
-
-/*
-const string& CAgpSyntaxValidator::PreviousLineToPrint()
-{
-  if(post_prev) {
-    post_prev=false;
-    return prev_line;
-  }
-  return NcbiEmptyString;
-}
-*/
 
 bool CAgpSyntaxValidator::IsGapType(const string& type)
 {

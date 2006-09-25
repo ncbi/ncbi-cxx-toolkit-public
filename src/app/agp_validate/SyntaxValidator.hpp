@@ -97,20 +97,12 @@ class CAgpSyntaxValidator
 public:
   CAgpSyntaxValidator();
   ~CAgpSyntaxValidator();
-  // former CAgpValidateApplication::x_ValidateSyntaxLine
   void ValidateLine(const SDataLine& dl, const string& text_line);
   void EndOfObject();
-
-  // Note: resets post_prev
-  //const string& PreviousLineToPrint();
 
   // static bool GapBreaksScaffold(int type, int linkage);
   static bool IsGapType(const string& type);
   void PrintTotals();
-
-  // Temporarily public;
-  // prev_line_filename usage is questionable anyway...
-  // string prev_line_filename;
 
 protected:
   // Vars assigned in ValidateLine(),
@@ -153,7 +145,6 @@ protected:
   typedef CRangeCollection<TSeqPos> TCompSpans;
   typedef map<string, TCompSpans> TCompId2Spans;
   typedef pair<string, TCompSpans> TCompIdSpansPair;
-  //typedef pair<TCompId2Spans::iterator, bool> TIdMapResult;
 
   TCompId2Spans m_CompId2Spans;
 
@@ -161,8 +152,6 @@ protected:
   typedef set<string> TValuesSet;
   TValuesSet m_ComponentTypeValues;
   TValuesSet m_OrientaionValues;
-  //TValuesSet m_GapTypes;
-  //TValuesSet m_LinkageValues;
 
   // Compared to TValuesSet. provides code optimization by avoiding
   // repetetive string comparisons.
@@ -212,22 +201,21 @@ protected:
 
   string prev_object;
   string prev_component_type;
-  int prev_gap_type;
-  string prev_line;
+  //int prev_gap_type;
+  //string prev_line;
 
+  // Used for the first component in a scaffold;
+  // we do not know whether the scaffold is a singleton,
+  // and whether unlnown orientation is an error.
   bool prev_orientation_unknown;
-  //string prev_component_id;
-  //string prev_component_line;
-  //int prev_component_line_num;
 
+   // End of previous element in object coords (column 3).
+   // Used for checking for intersection.
   int  prev_end;
   int  prev_part_num;
-  int  prev_line_num;
-  bool prev_line_error_occured;
+  // int  prev_line_num;
+  // bool prev_line_error_occured;
   int  componentsInLastScaffold;
-
-  // true: print the previous line as well, to illustrate the error better
-  // bool post_prev;
 
   CAccPatternCounter* objNamePatterns;
 };

@@ -145,6 +145,7 @@ CAgpErr::CAgpErr()
 
   m_line_num_prev=0;
   m_prev_printed=false;
+  m_two_lines_involved=false;
 
   memset(m_MsgCount , 0, sizeof(m_MsgCount ));
   memset(m_MustSkip , 0, sizeof(m_MustSkip ));
@@ -170,6 +171,8 @@ void CAgpErr::Msg(TCode code, const string& details,
   if( m_MustSkip[code] ) return;
   if( m_MaxRepeat>0 && m_MsgCount[code] > m_MaxRepeat ) return;
 
+  if( appliesTo == (AT_PrevLine|AT_ThisLine) ) m_two_lines_involved=true;
+
   if(appliesTo & AT_PrevLine) {
     // Print the previous line if it was not printed
     if(!m_prev_printed) PrintLine(cerr, m_filename_prev, m_line_num_prev, m_line_prev);
@@ -188,7 +191,7 @@ void CAgpErr::Msg(TCode code, const string& details,
 void CAgpErr::LineDone(const string& s, int line_num)
 {
   if( m_messages->pcount() ) {
-    if(m_prev_printed==false) cerr << "\n";
+    if( !m_two_lines_involved ) cerr << "\n";
 
     PrintLine(cerr, m_filename, line_num, s);
     cerr << (string)CNcbiOstrstreamToString(*m_messages);
@@ -202,6 +205,7 @@ void CAgpErr::LineDone(const string& s, int line_num)
   }
   m_line_num_prev = line_num;
   m_line_prev = s;
+  m_two_lines_involved=false;
 }
 
 void CAgpErr::StartFile(const string& s)
