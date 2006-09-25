@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-typedef pair<const char *, const char *> TErrStrs;
+typedef pair<const string, const string> TErrStrs;
 typedef pair<unsigned int, TErrStrs> TErrTypStrs;
 
 const TErrTypStrs sc_ErrStrs [] = {
@@ -996,7 +996,7 @@ CValidErrItem::~CValidErrItem(void)
 }
 
 
-string CValidErrItem::GetErrCode(void) const
+const string& CValidErrItem::GetErrCode(void) const
 {
     return ConvertErrCode(GetErrIndex());
 }
@@ -1050,7 +1050,7 @@ const string& CValidErrItem::GetErrGroup(void) const
 }
 
 
-string CValidErrItem::GetVerbose(void) const
+const string& CValidErrItem::GetVerbose(void) const
 {
     TErrIndex err = GetErrIndex();
     if (err <= eErr_MAX) {
@@ -1085,7 +1085,7 @@ const string& CValidErrItem::ConvertSeverity(EDiagSev sev)
 }
 
 
-string CValidErrItem::ConvertErrCode(unsigned int err_int)
+const string& CValidErrItem::ConvertErrCode(unsigned int err_int)
 {
     TErrIndex err = static_cast<TErrIndex> (err_int);
     if (err <= eErr_MAX) {
@@ -1107,6 +1107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/09/25 12:56:41  dicuccio
+* Return by const reference, not by value
+*
 * Revision 1.3  2006/04/03 17:10:08  rsmith
 * make Err values permanent. Move into objects/valerr
 *

@@ -328,19 +328,19 @@ public:
     // severity with proper type.
     EDiagSev                GetSeverity  (void) const;
     // Error code
-    string                  GetErrCode  (void) const;
+    const string&           GetErrCode  (void) const;
     static unsigned int     GetErrCount(void);
     // Error group (SEQ_FEAT, SEQ_INST etc.)
     const string&           GetErrGroup (void) const;
     // Verbose message
-    string                  GetVerbose  (void) const;
+    const string&           GetVerbose  (void) const;
     // Offending object
     const CSerialObject&    GetObject   (void) const;
     bool                    IsSetObject (void) const;
 
     // Convert Severity from enum to a string representation
     static const string&    ConvertSeverity(EDiagSev sev);
-    static string           ConvertErrCode(unsigned int);
+    static const string&    ConvertErrCode(unsigned int);
 
     bool IsSetContext(void) const;
     const CSeq_entry& GetContext(void) const;
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/09/25 12:56:41  dicuccio
+* Return by const reference, not by value
+*
 * Revision 1.4  2006/04/03 17:10:08  rsmith
 * make Err values permanent. Move into objects/valerr
 *
