@@ -149,8 +149,6 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     const TScore wsleft2   = data->m_esf_L2? 0: m_Ws;    
 
     TScore wg1 = m_Wg, ws1 = m_Ws;
-    TScore wg2 = m_Wg, ws2 = m_Ws;
-
     TScore V1 = wgleft2 + wsleft2 * ibeg;
 
     int lendif = int(N2) - (int(N1) - (m_Shift + int(m_band)));
@@ -159,19 +157,23 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     m_LastCoordSeq1 = m_LastCoordSeq2 = m_TermK = kMax_size_t;
 
     int jbeg0 = ibeg - m_Shift - int(m_band);
+    size_t jendcnt = 0;
     for(int i = ibeg; i < iend && !m_terminate; ++i, ++jbeg0) {
+
+        TScore wg2 = m_Wg, ws2 = m_Ws;
 
         int jbeg = i - m_Shift - int(m_band), 
 	    jend = i - m_Shift + int(m_band) + 1;
 
         if(jbeg < 0) jbeg = 0;
         if(jend > int(N2)) jend = N2;
+        if(jend == int(N2)) ++jendcnt;
 
         const Uint1 ci = seq1[i];
         
         if(i == 0) {
             V2 = wgleft1 + wsleft1 * jbeg;
-            TScore s = V2;
+            TScore s = wgleft1;
             for(size_t j = 0; j < N2; ++j) {
                 s += wsleft1;
                 rowV[j] = s;
@@ -224,7 +226,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
                 V2 += wsleft1;
                 rowF[j] = V2 + wg2 + ws2;
             }
-            else if(j + 1 < jend) {
+            else if(j + 1 < jend || jendcnt > 1) {
                 n0 = rowV[j] + wg2;
                 if(rowF[j] >= n0) {
                     rowF[j] += ws2;
@@ -304,7 +306,7 @@ void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
 
     // Each of the following checks will verify if a corresponding end 
     // is within the band and, if it is not, whether the end-space free
-    // more was specified for that end.
+    // mode was specified for that end.
     // When doing restrained alignment, an exception may be caused by improper
     // adjustment of the band offset.
 
@@ -468,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/09/25 14:08:12  kapustin
+ * CBandAligner::x_Align(): reinit subject gap scores at each line; fix the condition for the subject gapped score evaluation
+ *
  * Revision 1.13  2006/09/12 20:14:11  kapustin
  * Avoid gcc warning - use unsigned literals
  *
