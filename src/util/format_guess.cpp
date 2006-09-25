@@ -32,6 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <util/format_guess.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbistre.hpp>
+#include <corelib/stream_utils.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -730,49 +732,40 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
     return Format(input);
 }
 
-
-CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
+CFormatGuess::EFormat 
+CFormatGuess::Format(const unsigned char* buffer, 
+                     size_t               buffer_size)
 {
-    EFormat format = eUnknown;
-
-    CT_POS_TYPE orig_pos = input.tellg();
-
-    unsigned char buf[1024];
-
-    input.read((char*)buf, sizeof(buf));
-    size_t count = input.gcount();
-    input.clear();  // in case we reached eof
-    input.seekg(orig_pos);
-
-    if (!count) {
+    if (!buffer_size) {
         return eUnknown;
     }
+    EFormat format = eUnknown;
 
-    if ( x_IsInputRepeatMasker( (const char*)buf, count ) ) {
+    if ( x_IsInputRepeatMasker( (const char*)buffer, buffer_size ) ) {
         return eRmo;
     }
-    if ( x_IsInputPhrapAce( (const char*)buf, count ) ) {
+    if ( x_IsInputPhrapAce( (const char*)buffer, buffer_size ) ) {
         return ePhrapAce;
     }
-    if ( x_IsInputGtf( (const char*)buf, count ) ) {
+    if ( x_IsInputGtf( (const char*)buffer, buffer_size ) ) {
         return eGtf;
     }
-    if ( x_IsInputGlimmer3( (const char*)buf, count ) ) {
+    if ( x_IsInputGlimmer3( (const char*)buffer, buffer_size ) ) {
         return eGlimmer3;
     }
-    if ( x_IsInputAgp( (const char*)buf, count ) ) {
+    if ( x_IsInputAgp( (const char*)buffer, buffer_size ) ) {
         return eAgp;
     }
-    if ( x_IsInputNewick( (const char*)buf, count ) ) {
+    if ( x_IsInputNewick( (const char*)buffer, buffer_size ) ) {
         return eNewick;
     }
-    if ( x_IsInputXml( (const char*)buf, count ) ) {
+    if ( x_IsInputXml( (const char*)buffer, buffer_size ) ) {
         return eXml;
     }
-    if ( x_IsInputAlignment( (const char*)buf, count ) ) {
+    if ( x_IsInputAlignment( (const char*)buffer, buffer_size ) ) {
         return eAlignment;
     }
-    if ( x_IsInputBinaryAsn( (const char*)buf, count ) ) {
+    if ( x_IsInputBinaryAsn( (const char*)buffer, buffer_size ) ) {
         return eBinaryASN;
     }
 
@@ -783,26 +776,26 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
     unsigned int i = 0;
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
-    unsigned seq_length = (unsigned)count;
+    unsigned seq_length = (unsigned)buffer_size;
 
     unsigned alpha_content = 0;
 
-    if (buf[0] == '>') { // FASTA ?
-        for (i = 0; (!isLineEnd(buf[i])) && i < count; ++i) {
+    if (buffer[0] == '>') { // FASTA ?
+        for (i = 0; (!isLineEnd(buffer[i])) && i < buffer_size; ++i) {
             // skip the first line (presumed this is free-text information)
-            unsigned char ch = buf[i];
+            unsigned char ch = buffer[i];
             if (isalnum(ch) || isspace(ch)) {
                 ++alpha_content;
             }
         }
-        seq_length = (unsigned)count - i;
+        seq_length = (unsigned)buffer_size - i;
         if (seq_length == 0) {
             return eUnknown;   // No way to tell what format is this...
         }
     }
 
-    for (i = 0; i < count; ++i) {
-        unsigned char ch = buf[i];
+    for (i = 0; i < buffer_size; ++i) {
+        unsigned char ch = buffer[i];
         char upch = toupper(ch);
 
         if (isalnum(ch) || isspace(ch)) {
@@ -822,8 +815,8 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
 
     double dna_content = (double)ATGC_content / (double)seq_length;
     double prot_content = (double)amino_acid_content / (double)seq_length;
-    double a_content = (double)alpha_content / (double)count;
-    if (buf[0] == '>') {
+    double a_content = (double)alpha_content / (double)buffer_size;
+    if (buffer[0] == '>') {
         if (dna_content > 0.7 && a_content > 0.91) {
             return eFasta;  // DNA fasta file
         }
@@ -836,11 +829,11 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
         // extract first line
         char line[1024] = {0,};
         char* ptr = line;
-        for (i = 0; i < count; ++i) {
-            if (isLineEnd(buf[i])) {
+        for (i = 0; i < buffer_size; ++i) {
+            if (isLineEnd(buffer[i])) {
                 break;
             }
-            *ptr = buf[i];
+            *ptr = buffer[i];
             ++ptr;
         }
         // roll it back to last non-space character...
@@ -856,11 +849,31 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
 
 }
 
+
+CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
+{
+    EFormat format = eUnknown;
+
+    CT_POS_TYPE orig_pos = input.tellg();
+
+    unsigned char buf[1024];
+
+    input.read((char*)buf, sizeof(buf));
+    size_t count = input.gcount();
+    input.clear();  // in case we reached eof
+    CStreamUtils::Pushback(input, (const CT_CHAR_TYPE*)buf, (streamsize)count);
+
+    return Format(buf, count);
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/09/25 14:58:06  kuznets
+ * Added memory based method for format prediction. Fixed stream seek
+ *
  * Revision 1.28  2006/08/17 13:20:56  ludwigf
  * ADDED: Simple test that will identify *some* alignment files.
  *
