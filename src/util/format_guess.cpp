@@ -826,23 +826,31 @@ CFormatGuess::Format(const unsigned char* buffer,
     }
 
     if (a_content > 0.80) {  // Text ASN ?
-        // extract first line
-        char line[1024] = {0,};
-        char* ptr = line;
-        for (i = 0; i < buffer_size; ++i) {
-            if (isLineEnd(buffer[i])) {
-                break;
+        // Check for "::=" as second field of first non-blank
+        // line, treating comment-only lines ("--" first non-whitespace)
+        // as blank.
+        // Note: legal ASN.1 text files can fail this because
+        // 1. The "::=" need not be separated from its neigbors
+        //    by whitespace
+        // 2. It need not be on the first non-blank, non-comment line
+        CNcbiIstrstream istr(reinterpret_cast<const char *>(buffer), buffer_size);
+        string line;
+        vector<string> fields;
+        while (!istr.fail()) {
+            NcbiGetline(istr, line, "\n\r");
+            fields.clear();
+            NStr::Tokenize(line, " \t", fields, NStr::eMergeDelims);
+            if (fields.size() > 0) {
+                if (fields[0][0] == '-' && fields[0][1] == '-') {
+                    continue;  // treat comment lines like blank lines
+                }
+                if (fields.size() >= 2) {
+                    if (fields[1] == "::=") {
+                        return eTextASN;
+                    }
+                }
+                break;  // only interested in first such line
             }
-            *ptr = buffer[i];
-            ++ptr;
-        }
-        // roll it back to last non-space character...
-        while (ptr > line) {
-            --ptr;
-            if (!isspace((unsigned char)(*ptr))) break;
-        }
-        if (*ptr == '{') {  // "{" symbol says it's most likely ASN text
-            return eTextASN;
         }
     }
     return format;
@@ -871,6 +879,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/09/26 20:30:49  jcherry
+ * ASN.1 text: look for "::=" instead of "{", and tolerate blank lines and
+ * comment lines at top of file
+ *
  * Revision 1.29  2006/09/25 14:58:06  kuznets
  * Added memory based method for format prediction. Fixed stream seek
  *
