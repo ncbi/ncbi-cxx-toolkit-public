@@ -634,7 +634,8 @@ void CSplign::Run(THitRefs* phitrefs)
             THitRefs comp_hits;
             comps.Get(i, comp_hits);
 
-            SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin, smax);
+            SAlignedCompartment ac = 
+                x_RunOnCompartment(&comp_hits, smin, smax, 0 /* phitrefs */ );
             ac.m_id = ++m_model_id;
             ac.m_segments = m_segments;
             ac.m_error = false;
@@ -658,7 +659,8 @@ void CSplign::Run(THitRefs* phitrefs)
 
 bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
                                      size_t subj_min, size_t subj_max,
-                                     SAlignedCompartment* result)
+                                     SAlignedCompartment* result,
+                                     const THitRefs* phitrefs_all)
 {
     m_mrna.resize(0);
 
@@ -675,7 +677,8 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
 
     bool rv = true;
     try {
-        SAlignedCompartment ac = x_RunOnCompartment(phitrefs, subj_min, subj_max);
+        SAlignedCompartment ac = 
+            x_RunOnCompartment(phitrefs, subj_min, subj_max, phitrefs_all);
         ac.m_id = 1;
         ac.m_segments = m_segments;
         ac.m_error = false;
@@ -719,7 +722,8 @@ size_t CSplign::x_TestPolyA(void)
 // POST: A set of segments packed into the aligned compartment.
 
 CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
-    THitRefs* phitrefs, size_t range_left, size_t range_right)
+    THitRefs* phitrefs, size_t range_left, size_t range_right,
+    const THitRefs* phitrefs_all)
 {    
     SAlignedCompartment rv;
 
@@ -730,7 +734,19 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidRange);
         }
 
-        XFilter(phitrefs);
+        if(phitrefs_all == 0) {
+            XFilter(phitrefs); // use all compartment hits
+        }
+        else {
+            // 1. Mark (reset ids) the compartment hits
+            // 2. Create two sets of 'hot' intervals using non-compartment hits
+            //    of same strand and fitting the genomic span, and also from
+            //    all overlapping intervals of the compartment hits
+            // 3. Filter the compartment hits using the 'hot' intervals as follows:
+            //    a. Drop the hit if 50% or more is covered by the intervals
+            //    b. Truncate covered hit ends
+            //    c. Ignore all other intervals
+        }
 
         if(phitrefs->size() == 0) {
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoHitsAfterFiltering);
@@ -1917,6 +1933,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/09/26 15:29:16  kapustin
+ * Complete alignment information can now be passed to x_RunOnCompartment() for additional filtering of compartment hits
+ *
  * Revision 1.60  2006/08/29 20:21:23  kapustin
  * Iterate seg-level core post-processing until no new exons created
  *

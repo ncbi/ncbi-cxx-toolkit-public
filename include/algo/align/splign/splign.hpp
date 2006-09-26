@@ -183,7 +183,8 @@ public:
     // align as a single compartment within given genomic bounds
     bool AlignSingleCompartment(THitRefs* hitrefs,
                                 size_t range_left, size_t range_right,
-                                SAlignedCompartment* result);
+                                SAlignedCompartment* result,
+                                const THitRefs* hitrefs_all = 0);
 
     // clear sequence vectors and scope - use with caution
     void ClearMem(void);
@@ -253,7 +254,9 @@ protected:
 
     SAlignedCompartment x_RunOnCompartment( THitRefs* hitrefs,
                                             size_t range_left,
-                                            size_t range_right );
+                                            size_t range_right,
+                                            const THitRefs* hitrefs_all = 0);
+
     void   x_Run(const char* seq1, const char* seq2);
     size_t x_TestPolyA(void);
     void   x_SetPattern(THitRefs* hitrefs);
@@ -278,6 +281,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2006/09/26 15:28:43  kapustin
+ * Complete alignment information can now be passed to x_RunOnCompartment() for additional filtering of compartment hits
+ *
  * Revision 1.38  2006/06/27 15:18:16  kapustin
  * +m_cds_*
  *
