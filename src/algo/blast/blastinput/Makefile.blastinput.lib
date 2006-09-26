@@ -1,6 +1,6 @@
 # $Id$
 
-SRC_CXX = blast_input blast_fasta_input
+SRC_CXX = blast_input blast_fasta_input blast_args blast_prog_args
 
 SRC  = $(SRC_CXX)
 
