@@ -37,6 +37,7 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/annot_type_index.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -676,6 +677,12 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             }
             break;
         }
+    default:
+        {
+            LOG_POST(Warning << "Unknown type of Seq-align: "<<
+                     align.GetSegs().Which());
+            break;
+        }
     }
 }
 
@@ -707,6 +714,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2006/09/26 18:05:48  vasilche
+* Replace compilation warning with runtime warning.
+*
 * Revision 1.48  2006/05/05 15:05:19  vasilche
 * Implemented forgotten methods GetObject*().
 *
