@@ -111,7 +111,6 @@ struct NCBI_XOBJMGR_EXPORT SAnnotObjectsIndex
 
     bool IsIndexed(void) const;
     void SetIndexed(void);
-    void ClearIndex(void);
 
     bool IsEmpty(void) const;
     // reserve space for size annot objects
@@ -213,6 +212,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/09/26 13:53:40  vasilche
+* Removed obsolete method declaration.
+*
 * Revision 1.11  2006/09/18 14:29:29  vasilche
 * Store annots indexing information to allow reindexing after modification.
 *
