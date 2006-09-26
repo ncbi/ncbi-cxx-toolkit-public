@@ -41,6 +41,7 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 /// Base class for converting command-line arguments into
 /// blast engine options. Note that because CNcbiApplication
@@ -188,10 +189,10 @@ public:
     ///             will be retrieved [in]
     string GetGilist(const CArgs& args);
 
-    /// Retrieve the strand number of query sequences to search
+    /// Retrieve the strand of query sequences to search
     /// @param args The list of command line args from which data
     ///             will be retrieved [in]
-    int GetStrand(const CArgs& args);
+    objects::ENa_strand GetQueryStrand(const CArgs& args);
 
     /// Retrieve the size of the database to use
     /// @param args The list of command line args from which data
@@ -248,7 +249,7 @@ public:
     /// Retrieve the strand number of query sequences to search
     /// @param args The list of command line args from which data
     ///             will be retrieved [in]
-    int GetStrand(const CArgs& args);
+    objects::ENa_strand GetQueryStrand(const CArgs& args);
 
     /// Retrieve the megablast output type
     /// @param args The list of command line args from which data
@@ -305,6 +306,7 @@ public:
     blast::CBlastOptionsHandle * SetOptions(const CArgs& args);
 };
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 #endif  /* ALGO_BLAST_BLASTINPUT___BLAST_ARGS__HPP */
