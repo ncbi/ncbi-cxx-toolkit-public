@@ -284,9 +284,17 @@ public:
 }
 
 
+// Member of CContigAssembly::SAlignStats
+%template(vector_CContigAssembly_SAlignStats_STails)
+    std::vector<ncbi::CContigAssembly_SAlignStats_STails>;
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/09/26 19:34:19  jcherry
+ * Added vector<CContigAssembly::SAlignStats::STails>
+ *
  * Revision 1.17  2006/08/22 16:35:30  jcherry
  * Added some blast headers, and reordered
  *
