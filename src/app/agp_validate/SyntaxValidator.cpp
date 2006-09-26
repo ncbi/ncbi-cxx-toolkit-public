@@ -47,7 +47,7 @@ int agp_warn_count=0;
 
 CAgpSyntaxValidator::CAgpSyntaxValidator()
 {
-  objNamePatterns = new CAccPatternCounter();
+  //objNamePatterns = new CAccPatternCounter();
 
   prev_end = 0;
   prev_part_num = 0;
@@ -123,7 +123,7 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
 
 CAgpSyntaxValidator::~CAgpSyntaxValidator()
 {
-  delete objNamePatterns;
+  //delete objNamePatterns;
 }
 
 void CAgpSyntaxValidator::EndOfObject()
@@ -170,14 +170,13 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
       //AGP_ERROR("Duplicate object: " << );
     }
 
-    objNamePatterns->AddName(dl.object);
+    //objNamePatterns->AddName(dl.object);
   }
 
   obj_begin = x_CheckIntField(
-    dl.line_num, dl.begin, "object_begin (column 2)"
-  );
+    dl.begin, "object_begin (column 2)" );
   if( obj_begin && ( obj_end = x_CheckIntField(
-        dl.line_num, dl.end, "object_end (column 3)"
+        dl.end, "object_end (column 3)"
   ))){
     if(new_obj && obj_begin != 1) {
       agpErr.Msg(CAgpErr::E_ObjMustBegin1,
@@ -188,13 +187,13 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     }
 
     obj_range_len = x_CheckRange(
-      dl.line_num, prev_end, obj_begin, obj_end,
+      prev_end, obj_begin, obj_end,
       "object_begin", "object_end", CAgpErr::E_ObjBeginLtEnd);
     prev_end = obj_end;
   }
 
   if (part_num = x_CheckIntField(
-    dl.line_num, dl.part_num, "part_num (column 4)"
+    dl.part_num, "part_num (column 4)"
   )) {
     if(part_num != prev_part_num+1) {
       agpErr.Msg( CAgpErr::E_PartNumberNotPlus1, NcbiEmptyString,
@@ -206,7 +205,7 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
   }
 
   if(x_CheckValues(
-    dl.line_num, m_ComponentTypeValues,
+    m_ComponentTypeValues,
     dl.component_type, "component_type (column 5)"
   )) {
     m_TypeCompCnt.add( dl.component_type );
@@ -240,7 +239,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
 
   //// Check the line: gap length, values in gap_type and linkage
   if(gap_len = x_CheckIntField(
-    dl.line_num, dl.gap_length, "gap_length (column 6)"
+    dl.gap_length, "gap_length (column 6)"
   )) {
     if (obj_range_len && obj_range_len != gap_len) {
       agpErr.Msg(CAgpErr::E_ObjRangeNeGap, string(": ") +
@@ -256,12 +255,12 @@ void CAgpSyntaxValidator::x_OnGapLine(
   }
 
   int gap_type = x_CheckValues(
-    dl.line_num, m_GapTypes, dl.gap_type, "gap_type (column 7)");
+    m_GapTypes, dl.gap_type, "gap_type (column 7)");
   int linkage = -1;
   bool endsScaffold = true;
   if( gap_type>=0 ) {
     linkage = x_CheckValues(
-        dl.line_num, m_LinkageValues, dl.linkage, "linkage (column 8)");
+        m_LinkageValues, dl.linkage, "linkage (column 8)");
 
     if(linkage>=0) {
       string key = dl.gap_type + dl.linkage;
@@ -333,13 +332,13 @@ void CAgpSyntaxValidator::x_OnGapLine(
     // (component start) and column 8 (component end);
     // +, - or 0 in column 9 (orientation).
     if( x_CheckIntField(
-          dl.line_num, dl.component_start,
+          dl.component_start,
           "component_start", NO_LOG
         ) && x_CheckIntField(
-          dl.line_num, dl.component_end,
+          dl.component_end,
           "component_end", NO_LOG
         ) && x_CheckValues(
-          dl.line_num, m_OrientaionValues,
+          m_OrientaionValues,
           dl.orientation, "orientation", NO_LOG
     ) ) {
       agpErr.Msg(CAgpErr::W_LooksLikeComp,
@@ -378,16 +377,16 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   //// Check that component begin & end are integers,
   //// begin < end, component span length == that of the object
   if( (comp_start = x_CheckIntField(
-        dl.line_num, dl.component_start,
+        dl.component_start,
         "component_start (column 7)"
       )) &&
       (comp_end   = x_CheckIntField(
-        dl.line_num, dl.component_end,
+        dl.component_end,
         "component_end (column 8)"
       ))
   ) {
     comp_len = x_CheckRange(
-      dl.line_num, 0, comp_start, comp_end,
+      0, comp_start, comp_end,
       "component_start", "component_end", CAgpErr::E_CompStartLtEnd
     );
     if( comp_len && obj_range_len &&
@@ -403,7 +402,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
 
   //// Orientation: + - 0 na
   if (x_CheckValues(
-    dl.line_num, m_OrientaionValues, dl.orientation,
+    m_OrientaionValues, dl.orientation,
     "orientation (column 9)"
   )) {
     // todo: avoid additional string comparisons;
@@ -507,10 +506,10 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     // gap type value in column 7,
     // a yes/no in column 8.
     if( x_CheckIntField(
-        dl.line_num, dl.gap_length, "gap_length", NO_LOG
+        dl.gap_length, "gap_length", NO_LOG
       ) && x_CheckValues(
-        dl.line_num, m_GapTypes, dl.gap_type, "gap_type", NO_LOG
-      ) && x_CheckValues( dl.line_num,
+        m_GapTypes, dl.gap_type, "gap_type", NO_LOG
+      ) && x_CheckValues(
         m_LinkageValues, dl.linkage, "linkage", NO_LOG
     ) ) {
       agpErr.Msg(CAgpErr::W_LooksLikeGap,
@@ -524,7 +523,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
 }
 
 int CAgpSyntaxValidator::x_CheckIntField(
-  int line_num, const string& field,
+  const string& field,
   const string& field_name, bool log_error)
 {
   int field_value = 0;
@@ -543,7 +542,7 @@ int CAgpSyntaxValidator::x_CheckIntField(
 }
 
 int CAgpSyntaxValidator::x_CheckRange(
-  int line_num, int start, int begin, int end,
+  int start, int begin, int end,
   string begin_name, string end_name,
   CAgpErr::TCode ltCode)
 {
@@ -568,7 +567,6 @@ int CAgpSyntaxValidator::x_CheckRange(
 }
 
 bool CAgpSyntaxValidator::x_CheckValues(
-  int line_num,
   const TValuesSet& values, // SET
   const string& value,
   const string& field_name,
@@ -587,7 +585,6 @@ bool CAgpSyntaxValidator::x_CheckValues(
 }
 
 int CAgpSyntaxValidator::x_CheckValues(
-  int line_num,
   const TValuesMap& values, // MAP
   const string& value,
   const string& field_name,
@@ -646,7 +643,7 @@ void CAgpSyntaxValidator::PrintTotals()
   //// Various counts of AGP elements
 
   // w: width for right alignment
-  int w = (int) log10( m_CompId2Spans.size() ) + 1;
+  int w = (int) log10( (double) m_CompId2Spans.size() ) + 1;
   // if(w<3) w=3;
 
   cout << "\n"
@@ -718,17 +715,21 @@ void CAgpSyntaxValidator::PrintTotals()
   //     how many accessions they contain.
 
   // Get a vector with sorted pointers to map values
-  CAccPatternCounter::pv_vector pat_cnt;
-  objNamePatterns->GetSortedValues(pat_cnt);
+  {
+    CAccPatternCounter objNamePatterns;
+    objNamePatterns.AddNames(m_ObjIdSet);
+    CAccPatternCounter::pv_vector pat_cnt;
+    objNamePatterns.GetSortedValues(pat_cnt);
 
-  for(CAccPatternCounter::pv_vector::iterator it =
-      pat_cnt.begin(); it != pat_cnt.end(); ++it
-  ) {
-    cout <<  "\t"
-    << ALIGN_W(CAccPatternCounter::GetCount(*it))
-    << "  "
-    << CAccPatternCounter::GetExpandedPattern(*it)
-    << "\n";
+    for(CAccPatternCounter::pv_vector::iterator it =
+        pat_cnt.begin(); it != pat_cnt.end(); ++it
+    ) {
+      cout <<  "\t"
+      << ALIGN_W(CAccPatternCounter::GetCount(*it))
+      << "  "
+      << CAccPatternCounter::GetExpandedPattern(*it)
+      << "\n";
+    }
   }
 }
 

@@ -420,7 +420,7 @@ void CAgpValidateApplication::x_ValidateFile(
       data_line.part_num       = cols[3];
       data_line.component_type = cols[4];
 
-      // columns with different meaning for components an gaps.
+      // columns with different meaning for components and gaps.
       data_line.component_id   = cols[5];
       data_line.gap_length     = cols[5];
 

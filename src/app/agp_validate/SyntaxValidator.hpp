@@ -74,7 +74,7 @@ struct SDataLine {
 };
 
  // Determines accession naming patterns, count accessions.
-class CAccPatternCounter;
+//class CAccPatternCounter;
 
 // Count how many times a atring value appears;
 // report values and counts ordered by count.
@@ -181,19 +181,19 @@ protected:
   TValuesMap m_LinkageValues;
 
 
-  bool x_CheckValues(int line_num, const TValuesSet& values,
+  bool x_CheckValues(const TValuesSet& values,
     const string& value, const string& field_name,
     bool log_error = true);
   // Returns an integer constant mapped to the allowed text value,
   // -1 if the value is unknowm
-  int x_CheckValues(int line_num, const TValuesMap& values,
+  int x_CheckValues(const TValuesMap& values,
     const string& value, const string& field_name,
     bool log_error = true);
 
-  int x_CheckRange(int line_num, int start, int begin,
+  int x_CheckRange(int start, int begin,
     int end, string begin_name, string end_name,
     CAgpErr::TCode ltCode); // // "Less Than" error Code
-  int x_CheckIntField(int line_num, const string& field,
+  int x_CheckIntField(const string& field,
     const string& field_name, bool log_error = true);
 
   bool m_LineErrorOccured;
@@ -217,7 +217,7 @@ protected:
   // bool prev_line_error_occured;
   int  componentsInLastScaffold;
 
-  CAccPatternCounter* objNamePatterns;
+  //CAccPatternCounter* objNamePatterns;
 };
 
 END_NCBI_SCOPE
