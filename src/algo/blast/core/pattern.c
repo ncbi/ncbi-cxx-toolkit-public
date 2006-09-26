@@ -562,7 +562,9 @@ Int4 PHIGetPatternOccurrences(const SPHIPatternSearchBlk * pattern_blk,
    const BlastSeqLoc* loc;
    Int4* hitArray;
    EBlastProgramType program = (is_dna ? eBlastTypePhiBlastn : eBlastTypePhiBlastp);
-   SPHIQueryInfo* pattern_info = query_info->pattern_info  = SPHIQueryInfoNew();
+   SPHIQueryInfo* pattern_info = query_info->pattern_info;
+
+   ASSERT(pattern_info);
    
    hitArray = (Int4 *) calloc(2*query->length, sizeof(Int4));
 
