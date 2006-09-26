@@ -221,6 +221,12 @@ void CAccPatternCounter::AddName(const string& name)
   ps->AddAccRuns(digrun);
 }
 
+void CAccPatternCounter::AddNames(const TStrSet& names)
+{
+  for(TStrSet::const_iterator it = names.begin();  it != names.end(); ++it) {
+    AddName(*it);
+  }
+}
 
 // Replace "#" in a simple pattern like BCM_Spur_v#.#_Scaffold#
 // with digits or numerical [ranges].

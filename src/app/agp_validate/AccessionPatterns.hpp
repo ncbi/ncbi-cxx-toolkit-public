@@ -42,6 +42,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 
+#include <set>
+
 BEGIN_NCBI_SCOPE
 
 class CPatternStats;
@@ -49,6 +51,9 @@ class CAccPatternCounter : public map<string, CPatternStats*>
 {
 public:
   void AddName(const string& name);
+
+  typedef set<string> TStrSet;
+  void AddNames(const TStrSet& names);
 
   // Replace "#" in a simple pattern like BCM_Spur_v#.#_Scaffold#
   // with digits or numerical [ranges].
