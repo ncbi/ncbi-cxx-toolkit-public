@@ -54,15 +54,18 @@ public:
     
     // constructor
     CAlnError(int category, int line_num, string id, string message);
+
+    /// Copy constructor.
+    CAlnError(const CAlnError& e);
     
     // destructor
     ~CAlnError() {}
     
     // accessors
-    const EAlnErr GetCategory() { return m_Category; }
-    const int     GetLineNum() { return m_LineNum; }
-    const string  GetID() { return m_ID; }
-    const string  GetMessage() { return m_Message; }
+    const EAlnErr GetCategory() const { return m_Category; }
+    const int     GetLineNum() const { return m_LineNum; }
+    const string&  GetID() const { return m_ID; }
+    const string&  GetMessage() const { return m_Message; }
     
 private:
     EAlnErr m_Category;
@@ -317,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/09/26 18:36:34  bollin
+ * added CAlnErrror class
+ *
  * Revision 1.4  2006/09/13 18:37:18  bollin
  * added methods to allow access to errors and warnings from alignment reading,
  * added flag to indicate whether "alignment" being read is a guess - stricter
