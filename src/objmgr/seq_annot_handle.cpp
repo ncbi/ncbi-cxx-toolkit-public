@@ -293,27 +293,36 @@ CSeq_graph_Handle CSeq_annot_EditHandle::AddGraph(const CSeq_graph& new_obj) con
 CSeq_feat_EditHandle
 CSeq_annot_EditHandle::TakeFeat(const CSeq_feat_EditHandle& handle) const
 {
+    CScopeTransaction guard = handle.GetScope().GetTransaction();
     CConstRef<CSeq_feat> obj = handle.GetSeq_feat();
     handle.Remove();
-    return AddFeat(*obj);
+    CSeq_feat_EditHandle ret = AddFeat(*obj);
+    guard.Commit();
+    return ret;
 }
 
 
 CSeq_graph_Handle
 CSeq_annot_EditHandle::TakeGraph(const CSeq_graph_Handle& handle) const
 {
+    CScopeTransaction guard = handle.GetScope().GetTransaction();
     CConstRef<CSeq_graph> obj = handle.GetSeq_graph();
     handle.Remove();
-    return AddGraph(*obj);
+    CSeq_graph_Handle ret = AddGraph(*obj);
+    guard.Commit();
+    return ret;
 }
 
 
 CSeq_align_Handle
 CSeq_annot_EditHandle::TakeAlign(const CSeq_align_Handle& handle) const
 {
+    CScopeTransaction guard = handle.GetScope().GetTransaction();
     CConstRef<CSeq_align> obj = handle.GetSeq_align();
     handle.Remove();
-    return AddAlign(*obj);
+    CSeq_align_Handle ret = AddAlign(*obj);
+    guard.Commit();
+    return ret;
 }
 
 
@@ -324,6 +333,7 @@ CSeq_annot_EditHandle::TakeAllAnnots(const CSeq_annot_EditHandle& annot) const
         NCBI_THROW(CAnnotException, eIncomatibleType,
                    "different Seq-annot types");
     }
+    CScopeTransaction guard = annot.GetScope().GetTransaction();
     switch ( annot.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
         for ( CSeq_annot_ftable_I it(annot); it; ++it ) {
@@ -345,6 +355,7 @@ CSeq_annot_EditHandle::TakeAllAnnots(const CSeq_annot_EditHandle& annot) const
     default:
         break;
     }
+    guard.Commit();
 }
 
 
@@ -382,6 +393,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/09/26 18:03:32  vasilche
+* Use transactions for complex operations.
+*
 * Revision 1.24  2006/09/19 19:22:02  vasilche
 * Implemented TakeFeat() like methods.
 *
