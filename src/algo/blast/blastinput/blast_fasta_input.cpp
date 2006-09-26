@@ -49,10 +49,8 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-USING_SCOPE(blast);
-
 BEGIN_SCOPE(blast)
+USING_SCOPE(objects);
 
 
 CBlastFastaInputSource::CBlastFastaInputSource(CObjectManager& objmgr,
@@ -205,3 +203,10 @@ CBlastFastaInputSource::GetNextSequence()
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
+
+/*---------------------------------------------------------------------
+ * $Log$
+ * Revision 1.4  2006/09/26 21:44:12  papadopo
+ * add to blast scope; add CVS log
+ *
+ *-------------------------------------------------------------------*/

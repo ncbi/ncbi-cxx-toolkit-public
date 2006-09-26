@@ -39,6 +39,7 @@
 #include <algo/blast/api/sseqloc.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 /// Class that centralizes the configuration data for
 /// sequences to be converted
@@ -141,17 +142,20 @@ public:
     ///
     CBlastInputSource(objects::CObjectManager& objmgr);
 
+    /// Retrieve the scope used by the sequences in this object
+    CRef<objects::CScope> GetScope() { return m_Scope; }
+
     /// Destructor
     ///
     virtual ~CBlastInputSource() {}
 
     /// Retrieve a single sequence (in an SSeqLoc container)
     ///
-    virtual blast::SSeqLoc GetNextSSeqLoc() = 0;
+    virtual SSeqLoc GetNextSSeqLoc() = 0;
 
     /// Retrieve a single sequence (in a CBlastSearchQuery container)
     ///
-    virtual CRef<blast::CBlastSearchQuery> GetNextSequence() = 0;
+    virtual CRef<CBlastSearchQuery> GetNextSequence() = 0;
 
     /// Signal whether there are any unread sequence left
     /// @return true if no unread sequences remaining
@@ -185,12 +189,12 @@ public:
     /// Read and convert all the sequences from the source
     /// @return The converted sequences
     ///
-    blast::TSeqLocVector GetAllSeqLocs();
+    TSeqLocVector GetAllSeqLocs();
 
     /// Read and convert all the sequences from the source
     /// @return The converted sequences
     ///
-    CRef<blast::CBlastQueryVector> GetAllSeqs();
+    CRef<CBlastQueryVector> GetAllSeqs();
 
     /// Read and convert the next batch of sequences
     /// @return The next batch of sequence. The size of the batch is
@@ -198,7 +202,7 @@ public:
     ///        many whole sequences whose combined size exceeds m_BatchSize,
     ///        whichever is smaller
     ///
-    blast::TSeqLocVector GetNextSeqLocBatch();
+    TSeqLocVector GetNextSeqLocBatch();
 
     /// Read and convert the next batch of sequences
     /// @return The next batch of sequence. The size of the batch is
@@ -206,7 +210,7 @@ public:
     ///        many whole sequences whose combined size exceeds m_BatchSize,
     ///        whichever is smaller
     ///
-    CRef<blast::CBlastQueryVector> GetNextSeqBatch();
+    CRef<CBlastQueryVector> GetNextSeqBatch();
 
     /// Set the target size of a batch of sequences
     /// @param batch_size The desired total size of all the 
@@ -224,6 +228,14 @@ private:
     TSeqPos m_BatchSize;          ///< total size of one block of sequences
 };
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 #endif  /* ALGO_BLAST_BLASTINPUT___BLAST_INPUT__HPP */
+
+/*---------------------------------------------------------------------
+ * $Log$
+ * Revision 1.3  2006/09/26 21:45:38  papadopo
+ * add to blast scope; add CVS log
+ *
+ *-------------------------------------------------------------------*/

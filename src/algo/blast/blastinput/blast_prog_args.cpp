@@ -37,18 +37,18 @@ Author: Jason Papadopoulos
  * program-specific arguments)
 */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif
+
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/composition_adjustment/composition_constants.h>
 #include <algo/blast/blastinput/blast_args.hpp>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(blast);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif
 
 #define ARG_PROGRAM "p"
 #define ARG_DB "d"
@@ -864,3 +864,13 @@ CMegablastArgs::SetOptions(const CArgs& args)
 
     return opts;
 }
+
+END_SCOPE(blast)
+END_NCBI_SCOPE
+
+/*---------------------------------------------------------------------
+ * $Log$
+ * Revision 1.3  2006/09/26 21:44:12  papadopo
+ * add to blast scope; add CVS log
+ *
+ *-------------------------------------------------------------------*/

@@ -37,6 +37,7 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 /// Class representing a text file containing sequences
 /// in fasta format
@@ -72,11 +73,11 @@ public:
 
     /// Retrieve a single sequence (in an SSeqLoc container)
     ///
-    virtual blast::SSeqLoc GetNextSSeqLoc();
+    virtual SSeqLoc GetNextSSeqLoc();
 
     /// Retrieve a single sequence (in a CBlastSearchQuery container)
     ///
-    virtual CRef<blast::CBlastSearchQuery> GetNextSequence();
+    virtual CRef<CBlastSearchQuery> GetNextSequence();
 
     /// Signal whether there are any unread sequences left
     /// @return true if no unread sequences remaining
@@ -103,6 +104,14 @@ private:
                           vector<CConstRef<objects::CSeq_loc> > *lcase_mask);
 };
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 #endif  /* ALGO_BLAST_BLASTINPUT___BLAST_FASTA_INPUT__HPP */
+
+/*---------------------------------------------------------------------
+ * $Log$
+ * Revision 1.3  2006/09/26 21:45:38  papadopo
+ * add to blast scope; add CVS log
+ *
+ *-------------------------------------------------------------------*/

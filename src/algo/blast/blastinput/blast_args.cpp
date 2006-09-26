@@ -36,16 +36,16 @@ Author: Jason Papadopoulos
  * arguments into blast options
 */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif
+
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(blast);
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 #define ARG_QUERY "i"
 #define ARG_EVALUE "e"
@@ -480,3 +480,13 @@ CBlastArgs::x_SetOptions(const CArgs& args,
     if (args[ARG_CULLING_LIMIT])
         opt.SetCullingLimit(args[ARG_CULLING_LIMIT].AsInteger());
 }
+
+END_SCOPE(blast)
+END_NCBI_SCOPE
+
+/*---------------------------------------------------------------------
+ * $Log$
+ * Revision 1.2  2006/09/26 21:44:12  papadopo
+ * add to blast scope; add CVS log
+ *
+ *-------------------------------------------------------------------*/

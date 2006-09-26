@@ -43,10 +43,8 @@ static char const rcsid[] =
 #include <algo/blast/blastinput/blast_input.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-USING_SCOPE(blast);
-
 BEGIN_SCOPE(blast)
+USING_SCOPE(objects);
 
 
 TSeqLocVector
@@ -148,3 +146,10 @@ CBlastInputSource::CBlastInputSource(CObjectManager& objmgr)
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
+
+/*---------------------------------------------------------------------
+ * $Log$
+ * Revision 1.2  2006/09/26 21:44:12  papadopo
+ * add to blast scope; add CVS log
+ *
+ *-------------------------------------------------------------------*/
