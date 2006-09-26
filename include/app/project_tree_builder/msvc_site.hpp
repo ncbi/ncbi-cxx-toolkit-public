@@ -28,7 +28,7 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
-#include <corelib/ncbireg.hpp>
+#include <app/project_tree_builder/ptb_registry.hpp>
 #include <set>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/resolver.hpp>
@@ -171,7 +171,7 @@ public:
 
     static bool IsLibOk(const SLibInfo& lib_info, bool silent = false);
 private:
-    const CNcbiRegistry& m_Registry;
+    CPtbRegistry m_Registry;
     
     set<string> m_ProvidedThing;
     set<string> m_NotProvidedThing;
@@ -191,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/09/26 18:50:52  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.25  2005/10/31 15:57:59  gouriano
  * Added list of "provided" requirements; so, all of them must be known
  *

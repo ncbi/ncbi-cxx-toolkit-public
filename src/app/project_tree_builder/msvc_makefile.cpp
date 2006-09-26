@@ -140,7 +140,7 @@ const CMsvcMetaMakefile::SPchInfo& CMsvcMetaMakefile::GetPchInfo(void) const
 
     (const_cast<CMsvcMetaMakefile&>(*this)).m_PchInfo.reset(new SPchInfo);
 
-    string use_pch_str = m_MakeFile.GetString("UsePch", "UsePch", "");
+    string use_pch_str = m_MakeFile.GetString("UsePch", "UsePch");
     m_PchInfo->m_UsePch = (NStr::CompareNocase(use_pch_str, "TRUE") == 0);
 
     list<string> projects_with_pch_dirs;
@@ -150,7 +150,7 @@ const CMsvcMetaMakefile::SPchInfo& CMsvcMetaMakefile::GetPchInfo(void) const
         if (key == "DoNotUsePch")
             continue;
 
-        string val = m_MakeFile.GetString("UsePch", key, "");
+        string val = m_MakeFile.GetString("UsePch", key);
         if ( !val.empty() ) {
             string tmp = CDirEntry::ConvertToOSPath(key);
             m_PchInfo->m_PchUsageMap[tmp] = val;
@@ -158,11 +158,11 @@ const CMsvcMetaMakefile::SPchInfo& CMsvcMetaMakefile::GetPchInfo(void) const
     }
 
     string do_not_use_pch_str = 
-        m_MakeFile.GetString("UsePch", "DoNotUsePch", "");
+        m_MakeFile.GetString("UsePch", "DoNotUsePch");
     NStr::Split(do_not_use_pch_str, LIST_SEPARATOR, m_PchInfo->m_DontUsePchList);
 
     m_PchInfo->m_PchUsageDefine = 
-        m_MakeFile.GetString("UsePch", "PchUsageDefine", "");
+        m_MakeFile.GetString("UsePch", "PchUsageDefine");
 
     return *m_PchInfo;
 }
@@ -222,7 +222,7 @@ CMsvcProjectMakefile::CMsvcProjectMakefile(const string& file_path)
 
 string CMsvcProjectMakefile::GetGUID(void) const
 {
-    return m_MakeFile.GetString("Common", "ProjectGUID", "");
+    return m_MakeFile.GetString("Common", "ProjectGUID");
 }
 
 bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
@@ -235,7 +235,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
     if ((start = value.find("$(")) != string::npos && 
         (end   = value.find(")"))  != string::npos  && (end > start)) {
         string raw_define = value.substr(start+2,end-start-2);
-        string new_val = m_MakeFile.GetString("Redefine", raw_define, "");
+        string new_val = m_MakeFile.GetString("Redefine", raw_define);
         if (!new_val.empty()) {
             redef.push_back("$(" + new_val + ")");
             LOG_POST(Info << m_FilePath << " redefines:  " << raw_define << " = " << new_val);
@@ -243,14 +243,14 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef)
         }
     } else if (NStr::StartsWith(value, "@") && NStr::EndsWith(value, "@")) {
         string raw_define = value.substr(1,value.length()-2);
-        string new_val = m_MakeFile.GetString("Redefine", raw_define, "");
+        string new_val = m_MakeFile.GetString("Redefine", raw_define);
         if (!new_val.empty()) {
             redef.push_back("@" + new_val + "@");
             LOG_POST(Info << m_FilePath << " redefines:  " << raw_define << " = " << new_val);
             return true;
         }
     } else {
-        string new_val = m_MakeFile.GetString("Redefine", value, "");
+        string new_val = m_MakeFile.GetString("Redefine", value);
         if (!new_val.empty()) {
             redef.clear();
             NStr::Split(new_val, LIST_SEPARATOR, redef);
@@ -308,7 +308,7 @@ void CMsvcProjectMakefile::Append( list<string>& values, const list<string>& def
 
 bool CMsvcProjectMakefile::IsExcludeProject(bool default_val) const
 {
-    string val = m_MakeFile.GetString("Common", "ExcludeProject", "");
+    string val = m_MakeFile.GetString("Common", "ExcludeProject");
 
     if ( val.empty() )
         return default_val;
@@ -417,7 +417,7 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
     info->clear();
 
     string source_files_str = 
-        m_MakeFile.GetString("CustomBuild", "SourceFiles", "");
+        m_MakeFile.GetString("CustomBuild", "SourceFiles");
     
     list<string> source_files;
     NStr::Split(source_files_str, LIST_SEPARATOR, source_files);
@@ -432,14 +432,14 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
             CDirEntry::NormalizePath(source_file_path_abs);
         build_info.m_CommandLine =
             GetApp().GetSite().ProcessMacros(
-                m_MakeFile.GetString(source_file, "CommandLine", ""));
+                m_MakeFile.GetString(source_file, "CommandLine"));
         build_info.m_Description = 
-            m_MakeFile.GetString(source_file, "Description", "");
+            m_MakeFile.GetString(source_file, "Description");
         build_info.m_Outputs = 
-            m_MakeFile.GetString(source_file, "Outputs", "");
+            m_MakeFile.GetString(source_file, "Outputs");
         build_info.m_AdditionalDependencies = 
             GetApp().GetSite().ProcessMacros(
-                m_MakeFile.GetString(source_file, "AdditionalDependencies", ""));
+                m_MakeFile.GetString(source_file, "AdditionalDependencies"));
 
         if ( !build_info.IsEmpty() )
             info->push_back(build_info);
@@ -702,6 +702,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/09/26 18:50:20  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.24  2006/09/07 15:09:01  gouriano
  * Disable MS Visual Studio-specific code on UNIX
  *

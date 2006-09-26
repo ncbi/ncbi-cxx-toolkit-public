@@ -387,7 +387,7 @@ bool IsSubdir(const string& abs_parent_dir, const string& abs_dir)
 }
 
 
-string GetOpt(const CNcbiRegistry& registry, 
+string GetOpt(const CPtbRegistry& registry, 
               const string& section, 
               const string& opt, 
               const string& config)
@@ -401,7 +401,7 @@ string GetOpt(const CNcbiRegistry& registry,
 }
 
 
-string GetOpt(const CNcbiRegistry& registry, 
+string GetOpt(const CPtbRegistry& registry, 
               const string&        section, 
               const string&        opt, 
               const SConfigInfo&   config)
@@ -1158,6 +1158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/09/26 18:50:20  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.53  2006/09/07 15:09:01  gouriano
  * Disable MS Visual Studio-specific code on UNIX
  *

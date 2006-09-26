@@ -102,7 +102,7 @@ struct PIsExcludedMakefileIn
 private:
     string m_RootSrcDir;
 
-    typedef map<string, AutoPtr<CNcbiRegistry> > TMakefiles;
+    typedef map<string, AutoPtr<CPtbRegistry> > TMakefiles;
     TMakefiles m_Makefiles;
 
     void ProcessDir(const string& dir_name)
@@ -120,8 +120,8 @@ private:
             if ( (*i)->IsFile()        &&
                 name          == "Makefile.in.msvc" ) {
                 m_Makefiles[path] = 
-                    AutoPtr<CNcbiRegistry>
-                         (new CNcbiRegistry(CNcbiIfstream(path.c_str(), 
+                    AutoPtr<CPtbRegistry>
+                         (new CPtbRegistry(CNcbiIfstream(path.c_str(), 
                                             IOS_BASE::in | IOS_BASE::binary)));
             } 
             else if ( (*i)->IsDir() ) {
@@ -143,7 +143,7 @@ private:
                 m_Makefiles.find(path);
             if ( p != m_Makefiles.end() ) {
                 string val = 
-                    (p->second)->GetString("Common", "ExcludeProject", "");
+                    (p->second)->GetString("Common", "ExcludeProject");
                 if (val == "FALSE")
                     return true;
             }
@@ -227,7 +227,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,2,2) );
+    SetVersion( CVersionInfo(1,2,3) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -1172,6 +1172,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2006/09/26 18:50:20  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.85  2006/09/07 15:09:00  gouriano
  * Disable MS Visual Studio-specific code on UNIX
  *

@@ -1,7 +1,4 @@
-#ifndef PROJECT_TREE_BUILDER__MSVC_DLLS_INDO_UTILS__HPP
-#define PROJECT_TREE_BUILDER__MSVC_DLLS_INDO_UTILS__HPP
-
-/* $Id$
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -26,57 +23,69 @@
  *
  * ===========================================================================
  *
- * Author:  Viatcheslav Gorelenkov
+ * Author: Andrei Gourianov
  *
  */
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <corelib/ncbistr.hpp>
 
-#include <corelib/ncbienv.hpp>
+#ifndef __PTB_REGISTRY__
+#define __PTB_REGISTRY__
 
+#include <corelib/ncbireg.hpp>
+#include <map>
+   
 BEGIN_NCBI_SCOPE
 
-
-inline void GetDllsList   (const CPtbRegistry& registry, 
-                           list<string>*        dlls_ids)
+class CPtbRegistry
 {
-    dlls_ids->clear();
+public:
+    CPtbRegistry(void);
+    CPtbRegistry(const CNcbiRegistry& reg);
+    ~CPtbRegistry(void);
 
-    string dlls_ids_str = 
-        registry.GetString("DllBuild", "DLLs");
-    
-    NStr::Split(dlls_ids_str, LIST_SEPARATOR, *dlls_ids);
-}
+    string GetString(const string& section,
+                     const string& name,
+                     const string& default_value = kEmptyStr) const;
 
+    string Get(const string& section,
+               const string& name) const
+    {
+        return GetString(section,name);
+    }
+    bool HasEntry(const string& section) const
+    {
+        return m_Registry->HasEntry(section);
+    }
+    void Read(CNcbiIstream& is)
+    {
+        m_Registry->Read(is);
+    }
+    bool Empty(void) const
+    {
+        return m_Registry->Empty();
+    }
+    void EnumerateEntries(const string& section,
+                          list<string>* entries) const
+    {
+        m_Registry->EnumerateEntries(section,entries);
+    }
 
-
-inline void GetHostedLibs (const CPtbRegistry& registry,
-                           const string&        dll_id,
-                           list<string>*        lib_ids)
-{
-    string hosting_str = registry.GetString(dll_id, "Hosting");
-    NStr::Split(hosting_str, LIST_SEPARATOR, *lib_ids);
-
-}
-
-
+private:
+    mutable map<string,string> m_Cache;
+    CNcbiRegistry* m_Registry;
+    bool m_Autodelete;
+};
 
 END_NCBI_SCOPE
+
+#endif // __PTB_REGISTRY__
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2006/09/26 18:50:52  gouriano
+ * Revision 1.1  2006/09/26 18:50:52  gouriano
  * Added CNcbiRegistry wrapper to speed up the execution
  *
- * Revision 1.2  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.1  2004/04/20 14:07:59  gorelenk
- * Initial revision.
  *
  * ===========================================================================
  */
 
-
-#endif //PROJECT_TREE_BUILDER__MSVC_DLLS_INDO_UTILS__HPP

@@ -72,7 +72,7 @@ void CMsvcDllsInfo::GetBuildConfigs(list<SConfigInfo>* config)
     config->clear();
 
     string configs_str = 
-        m_Registry.GetString("DllBuild", "Configurations", "");
+        m_Registry.GetString("DllBuild", "Configurations");
     list<string> config_names;
     NStr::Split(configs_str, LIST_SEPARATOR, config_names);
     LoadConfigInfoByNames(GetApp().GetConfig(), config_names, config);
@@ -81,7 +81,7 @@ void CMsvcDllsInfo::GetBuildConfigs(list<SConfigInfo>* config)
 
 string CMsvcDllsInfo::GetBuildDefine(void) const
 {
-    return m_Registry.GetString("DllBuild", "BuildDefine", "");
+    return m_Registry.GetString("DllBuild", "BuildDefine");
 }
 
 
@@ -107,10 +107,10 @@ void CMsvcDllsInfo::GetDllInfo(const string& dll_id, SDllInfo* dll_info) const
 
     GetHostedLibs(m_Registry, dll_id, &(dll_info->m_Hosting) );
 
-    string depends_str = m_Registry.GetString(dll_id, "Dependencies", "");
+    string depends_str = m_Registry.GetString(dll_id, "Dependencies");
     NStr::Split(depends_str, LIST_SEPARATOR, dll_info->m_Depends);
 
-    dll_info->m_DllDefine = m_Registry.GetString(dll_id, "DllDefine", "");
+    dll_info->m_DllDefine = m_Registry.GetString(dll_id, "DllDefine");
 }
 
 
@@ -597,6 +597,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/09/26 18:50:20  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.35  2006/07/13 18:01:28  gouriano
  * Exclude 'excluded' projects on UNIX
  *

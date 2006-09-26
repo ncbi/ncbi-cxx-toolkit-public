@@ -1,6 +1,3 @@
-#ifndef PROJECT_TREE_BUILDER__MSVC_DLLS_INDO_UTILS__HPP
-#define PROJECT_TREE_BUILDER__MSVC_DLLS_INDO_UTILS__HPP
-
 /* $Id$
  * ===========================================================================
  *
@@ -26,57 +23,56 @@
  *
  * ===========================================================================
  *
- * Author:  Viatcheslav Gorelenkov
+ * Author:  Andrei Gourianov
  *
  */
-#include <app/project_tree_builder/msvc_prj_defines.hpp>
-#include <corelib/ncbistr.hpp>
 
-#include <corelib/ncbienv.hpp>
+#include <ncbi_pch.hpp>
+#include <app/project_tree_builder/ptb_registry.hpp>
 
 BEGIN_NCBI_SCOPE
 
-
-inline void GetDllsList   (const CPtbRegistry& registry, 
-                           list<string>*        dlls_ids)
+CPtbRegistry::CPtbRegistry(void)
 {
-    dlls_ids->clear();
-
-    string dlls_ids_str = 
-        registry.GetString("DllBuild", "DLLs");
-    
-    NStr::Split(dlls_ids_str, LIST_SEPARATOR, *dlls_ids);
+    m_Registry = new CNcbiRegistry;
+    m_Autodelete = true;
 }
 
-
-
-inline void GetHostedLibs (const CPtbRegistry& registry,
-                           const string&        dll_id,
-                           list<string>*        lib_ids)
+CPtbRegistry::CPtbRegistry(const CNcbiRegistry& reg)
+    : m_Registry(const_cast<CNcbiRegistry*>(&reg)),
+      m_Autodelete(false)
 {
-    string hosting_str = registry.GetString(dll_id, "Hosting");
-    NStr::Split(hosting_str, LIST_SEPARATOR, *lib_ids);
-
 }
 
+CPtbRegistry::~CPtbRegistry(void)
+{
+    if (m_Autodelete) {
+        delete m_Registry;
+    }
+}
 
+string CPtbRegistry::GetString(const string& section,
+                               const string& name,
+                               const string& default_value) const
+{
+    string key(section+name);
+    map<string,string>::const_iterator i = m_Cache.find(key);
+    if (i != m_Cache.end()) {
+        return i->second;
+    }
+    return m_Cache[key] = m_Registry->GetString(section,name,default_value);
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2006/09/26 18:50:52  gouriano
+ * Revision 1.1  2006/09/26 18:50:20  gouriano
  * Added CNcbiRegistry wrapper to speed up the execution
  *
- * Revision 1.2  2004/06/10 15:12:55  gorelenk
- * Added newline at the file end to avoid GCC warning.
- *
- * Revision 1.1  2004/04/20 14:07:59  gorelenk
- * Initial revision.
  *
  * ===========================================================================
  */
 
 
-#endif //PROJECT_TREE_BUILDER__MSVC_DLLS_INDO_UTILS__HPP

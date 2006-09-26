@@ -28,7 +28,7 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
-#include <corelib/ncbireg.hpp>
+#include <app/project_tree_builder/ptb_registry.hpp>
 #include <app/project_tree_builder/proj_item.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -150,7 +150,7 @@ public:
 
 
 protected:
-    CNcbiRegistry m_MakeFile;
+    CPtbRegistry m_MakeFile;
     string        m_MakeFileBaseDir;
     string        m_FilePath;
 
@@ -384,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/09/26 18:50:52  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.15  2006/04/24 16:43:52  gouriano
  * Corrected redefinition of makefile macros
  *

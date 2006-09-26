@@ -447,7 +447,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     }
     if (!GetApp().m_BuildRoot.empty()) {
         string src_dir = CDirEntry::ConcatPath(context.GetSrcRoot(), 
-            GetApp().GetConfig().GetString("ProjectTree", "src", ""));
+            GetApp().GetConfig().Get("ProjectTree", "src"));
         if (CDirEntry(src_dir).Exists()) {
             tool_cmd += " -opm \"";
             tool_cmd += src_dir;
@@ -487,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/09/26 18:50:20  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.49  2006/09/07 15:09:01  gouriano
  * Disable MS Visual Studio-specific code on UNIX
  *

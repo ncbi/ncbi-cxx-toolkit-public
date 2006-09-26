@@ -30,7 +30,7 @@
  *
  */
 
-#include <corelib/ncbireg.hpp>
+#include <app/project_tree_builder/ptb_registry.hpp>
 #include <corelib/ncbienv.hpp>
 #if NCBI_COMPILER_MSVC
 #   include <app/project_tree_builder/msvc71_project__.hpp>
@@ -260,7 +260,7 @@ void EraseIf(C& cont, const P& pred)
 /// if no such option then finally try
 ///     [<section>]
 ///
-string GetOpt(const CNcbiRegistry& registry, 
+string GetOpt(const CPtbRegistry& registry, 
               const string&        section, 
               const string&        opt, 
               const SConfigInfo&   config);
@@ -516,6 +516,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/09/26 18:50:52  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.35  2006/09/07 15:09:24  gouriano
  * Disable MS Visual Studio-specific code on UNIX
  *

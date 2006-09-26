@@ -31,7 +31,7 @@
  */
 
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
-#include <corelib/ncbireg.hpp>
+#include <app/project_tree_builder/ptb_registry.hpp>
 #include <list>
 #include <set>
 #include <app/project_tree_builder/proj_tree.hpp>
@@ -67,7 +67,7 @@ public:
     void AddDllHostedLib(const string& lib_id, const string& host);
 
 private:
-    CNcbiRegistry m_Registry;
+    CPtbRegistry m_Registry;
     map<string,string> m_DllHostedLibs;
 
     //no value-type semantics
@@ -97,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/09/26 18:50:52  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.10  2006/01/04 13:45:16  gouriano
  * Corrected analyzing build configurations for DLL build
  *

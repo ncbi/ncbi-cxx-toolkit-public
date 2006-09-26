@@ -132,7 +132,7 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     string t, try_dir, inc_dir;
     for ( t = try_dir = m_StaticLibRoot; ; try_dir = t) {
         inc_dir = CDirEntry::ConcatPath(try_dir, 
-            GetApp().GetConfig().GetString("ProjectTree", "include", ""));
+            GetApp().GetConfig().Get("ProjectTree", "include"));
         if (CDirEntry(inc_dir).Exists()) {
             m_SrcRoot = CDirEntry(inc_dir).GetDir();
             break;
@@ -345,7 +345,7 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
     if (all_projects) {
         string inc_dir = CDirEntry::ConcatPath(m_SrcRoot, 
-            GetApp().GetConfig().GetString("ProjectTree", "include", ""));
+            GetApp().GetConfig().Get("ProjectTree", "include"));
         if (CDirEntry(inc_dir).Exists()) {
             try {
                 ext_inc = CDirEntry::CreateRelativePath(m_ProjectDir, inc_dir);
@@ -1084,6 +1084,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/09/26 18:50:20  gouriano
+ * Added CNcbiRegistry wrapper to speed up the execution
+ *
  * Revision 1.60  2006/07/13 15:13:29  gouriano
  * Made it work on UNIX - to generate combined makefile
  *
