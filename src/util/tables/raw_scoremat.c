@@ -44,7 +44,7 @@
 #include "sm_pam70.c"
 #include "sm_pam250.c"
 
-static const char kNCBIstdaa[] = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+static const char kNCBIstdaa[] = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ";
 
 
 int NCBISM_GetIndex(const SNCBIPackedScoreMatrix* sm, int aa)
@@ -115,6 +115,9 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/09/26 12:12:24  madden
+ * Add OJ to kNCBIstdaa
+ *
  * Revision 1.5  2006/09/25 19:29:34  madden
  * Added the BLOSUM50 and BLOSUM90 matrices. [from Mike Gertz]
  *
