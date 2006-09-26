@@ -401,12 +401,14 @@ void CAgpValidateApplication::x_ValidateFile(
     }
     if (line == "") continue;
 
+    bool invalid_line=false;
     cols.clear();
     NStr::Tokenize(line, "\t", cols);
     if( cols.size() < 8 || cols.size() > 9 ) {
       // skip this entire line, report an error
       agpErr.Msg(CAgpErr::E_ColumnCount,
         string(", found ") + NStr::IntToString(cols.size()) );
+      invalid_line=true;
     }
     else {
       data_line.line_num = line_num;
@@ -442,7 +444,7 @@ void CAgpValidateApplication::x_ValidateFile(
       }
     }
 
-    agpErr.LineDone(line, line_num);
+    agpErr.LineDone(line, line_num, invalid_line);
   }
 }
 
