@@ -329,9 +329,18 @@ public:
 }
 
 
+// Returned by CObjectsSniffer::GetTopLevelMap
+// Must go in third section to be below nested #define in .cpp file
+%template(vector_CObjectsSniffer_SObjectDescription)
+    std::vector<ncbi::objects::CObjectsSniffer_SObjectDescription>;
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/09/26 13:20:23  jcherry
+ * Added vector<CObjectsSniffer::SObjectDescription>
+ *
  * Revision 1.17  2006/06/29 18:06:03  jcherry
  * Added objtools/cleanup/cleanup_change.hpp
  *
