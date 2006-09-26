@@ -81,6 +81,15 @@ CAlnError::CAlnError(int category, int line_num, string id, string message)
 }
 
 
+CAlnError::CAlnError(const CAlnError& e)
+{
+    m_Category = e.GetCategory();
+    m_LineNum = e.GetLineNum();
+    m_ID = e.GetID();
+    m_Message = e.GetMessage();
+}
+
+
 static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
 {
     CNcbiIstream *is = static_cast<CNcbiIstream *>(user_data);
@@ -464,6 +473,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/09/26 18:36:19  bollin
+ * added CAlnError class
+ *
  * Revision 1.18  2006/09/13 18:38:50  bollin
  * added method to allow access to errors and warnings during alignment reading.
  * Also added flag to indicate whether "alignment" being read is a guess -
