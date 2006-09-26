@@ -59,7 +59,7 @@ void CSMTestApplication::Init(void)
                             CArgDescriptions::eString, "blosum62");
     arg_desc->SetConstraint
         ("sm", &(*new CArgAllow_Strings,
-                 "blosum45", "blosum62", "blosum80", "pam30", "pam70"));
+                 "blosum45", "blosum50", "blosum62", "blosum80", "blosum90", "pam30", "pam70", "pam250"));
 
     arg_desc->AddFlag("dump", "dump whole matrix");
 
@@ -149,14 +149,20 @@ int CSMTestApplication::Run(void)
 
     if        (sm == "blosum45") {
         psm = &NCBISM_Blosum45;
+    } else if (sm == "blosum50") {
+        psm = &NCBISM_Blosum50;
     } else if (sm == "blosum62") {
         psm = &NCBISM_Blosum62;
     } else if (sm == "blosum80") {
         psm = &NCBISM_Blosum80;
+    } else if (sm == "blosum90") {
+        psm = &NCBISM_Blosum90;
     } else if (sm == "pam30") {
         psm = &NCBISM_Pam30;
     } else if (sm == "pam70") {
         psm = &NCBISM_Pam70;
+    } else if (sm == "pam250") {
+        psm = &NCBISM_Pam250;
     } else {
         psm = 0;
         _TROUBLE;
@@ -189,6 +195,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/09/26 12:19:13  madden
+ * Add blosum50, blosum90, and pam250 to tested matrices
+ *
  * Revision 1.6  2005/06/13 18:24:56  lavr
  * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
  *
