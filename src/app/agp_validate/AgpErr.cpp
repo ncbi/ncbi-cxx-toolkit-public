@@ -45,15 +45,15 @@ BEGIN_NCBI_SCOPE
 const CAgpErr::TStr CAgpErr::msg[]= {
   kEmptyCStr,
 
-  // Errors
+  // Errors (codes 1..20)
+  "expecting 8 or 9 tab-separated columns",
   "duplicate object ",
   "first line of an object must have object_begin=1",
   "part number (column 4) != previous part number + 1",
-
   "object range length not equal to the gap length",
+
   "Object range length not equal to component range length",
   "0 or na component orientation may only be used in a singleton scaffold",
-
   "X must be a positive integer",
   "X overlaps a previous line",
   "object_begin is less than object_end",
@@ -61,12 +61,14 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "component_start is less than component_end",
   "invalid value for X",
   kEmptyCStr, // E_Last
+  kEmptyCStr,
+  kEmptyCStr,
 
-  // Codes 1..19 are reserved for errors
-  // to avoid shifting warning codes in the future
-  kEmptyCStr, kEmptyCStr, kEmptyCStr,
-  kEmptyCStr, kEmptyCStr, kEmptyCStr,
-  kEmptyCStr, kEmptyCStr,
+  kEmptyCStr,
+  kEmptyCStr,
+  kEmptyCStr,
+  kEmptyCStr,
+  kEmptyCStr,
 
   // Warnings
   "gap at the end of an object",
@@ -132,7 +134,9 @@ void CAgpErr::PrintLine(CNcbiOstream& ostr,
   const string& filename, int linenum, const string& content)
 {
   if(filename.size()) ostr << filename << ":";
-  ostr << linenum  << ":" << content << "\n";
+  ostr<< linenum  << ":"
+      << ( content.size()<200 ? content : (content.substr(0,160)+"...") )
+      << "\n";
 }
 
 void CAgpErr::PrintMessage(CNcbiOstream& ostr, TCode code,
@@ -184,6 +188,10 @@ CAgpErr::CAgpErr()
 void CAgpErr::Msg(TCode code, const string& details,
   int appliesTo, const string& substX)
 {
+  // Ignore possibly spurious errors generated after
+  // an unacceptable line with wrong # of columns
+  if(m_invalid_prev && (appliesTo&AT_PrevLine) ) return;
+
   m_MsgCount[code]++;
 
   if( m_MustSkip[code] ||
@@ -197,7 +205,8 @@ void CAgpErr::Msg(TCode code, const string& details,
 
   if(appliesTo & AT_PrevLine) {
     // Print the previous line if it was not printed
-    if(!m_prev_printed) PrintLine(cerr, m_filename_prev, m_line_num_prev, m_line_prev);
+    if( !m_prev_printed && m_line_prev.size() )
+      PrintLine(cerr, m_filename_prev, m_line_num_prev, m_line_prev);
     m_prev_printed=true;
   }
   if(appliesTo & AT_ThisLine) {
@@ -210,7 +219,7 @@ void CAgpErr::Msg(TCode code, const string& details,
   }
 }
 
-void CAgpErr::LineDone(const string& s, int line_num)
+void CAgpErr::LineDone(const string& s, int line_num, bool invalid_line)
 {
   if( m_messages->pcount() ) {
     if( !m_two_lines_involved ) cerr << "\n";
@@ -225,8 +234,11 @@ void CAgpErr::LineDone(const string& s, int line_num)
   else {
     m_prev_printed=false;
   }
+
   m_line_num_prev = line_num;
   m_line_prev = s;
+  m_invalid_prev = invalid_line;
+
   m_two_lines_involved=false;
 }
 

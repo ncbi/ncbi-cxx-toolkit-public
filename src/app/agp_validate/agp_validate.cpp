@@ -185,13 +185,13 @@ public:
     "  -taxon species    Allow sequences from different subspecies during semantic check\n"
     "  -taxon exact      (Default)\n"
     "\n"
-    "  -list         List non-fatal errors and warnings.\n"
-    "  -limit COUNT  Print only the first COUNT messages of each type (default=5).\n"
+    "  -list         List possible syntax errors and warnings.\n"
+    "  -limit COUNT  Print only the first COUNT messages of each type (default=10).\n"
     "\n"
     "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
     "  -only  WHAT   Report only this particular error or warning.\n"
     "  Multiple -skip or -only are allowed. 'WHAT' may be:\n"
-    "  - error code (e01 .. w20 ...)\n"
+    "  - error code (e01,.. w21,.. - see '-list')\n"
     "  - part of the actual message\n"
     "  - keyword: all warn[ings] err[ors]\n"
     "\n"
@@ -243,7 +243,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddDefaultKey("limit", "ErrorCount",
     "Print at most ErrorCount lines with a particular error",
     CArgDescriptions::eInteger,
-    "5");
+    "10");
 
   arg_desc->AddFlag("list", "all possible errors and warnings");
 
@@ -403,44 +403,43 @@ void CAgpValidateApplication::x_ValidateFile(
 
     cols.clear();
     NStr::Tokenize(line, "\t", cols);
-
-    data_line.line_num = line_num;
-
-    // 5 common fields for components an gaps.
-
-    // to do: if cols.size() < 7
-    //   skip this entire line, report an error
-
-    if (cols.size() > 0) data_line.object         = cols[0];
-    if (cols.size() > 1) data_line.begin          = cols[1];
-    if (cols.size() > 2) data_line.end            = cols[2];
-    if (cols.size() > 3) data_line.part_num       = cols[3];
-    if (cols.size() > 4) data_line.component_type = cols[4];
-
-    if (cols.size() > 5) {
-        data_line.component_id = cols[5];
-        data_line.gap_length = cols[5];
+    if( cols.size() < 8 || cols.size() > 9 ) {
+      // skip this entire line, report an error
+      agpErr.Msg(CAgpErr::E_ColumnCount,
+        string(", found ") + NStr::IntToString(cols.size()) );
     }
-    if (cols.size() > 6) {
-        data_line.component_start = cols[6];
-        data_line.gap_type = cols[6];
-    }
-    if (cols.size() > 7) {
-        data_line.component_end = cols[7];
-        data_line.linkage = cols[7];
-    }
+    else {
+      data_line.line_num = line_num;
 
-    data_line.orientation = "";
-    if (data_line.component_type != "N") {
-      // Component
-      if (cols.size() > 8) data_line.orientation = cols[8];
-    }
+      // 5 common columns for components and gaps.
+      data_line.object         = cols[0];
+      data_line.begin          = cols[1];
+      data_line.end            = cols[2];
+      data_line.part_num       = cols[3];
+      data_line.component_type = cols[4];
 
-    if (m_ValidationType == syntax) {
-      // x_ValidateSyntaxLine(data_line, line);
-      m_LineValidator->ValidateLine(data_line, line);
-    } else {
-      x_ValidateSemanticLine(data_line, line);
+      // columns with different meaning for components an gaps.
+      data_line.component_id   = cols[5];
+      data_line.gap_length     = cols[5];
+
+      data_line.component_start = cols[6];
+      data_line.gap_type        = cols[6];
+
+      data_line.component_end   = cols[7];
+      data_line.linkage         = cols[7];
+
+      data_line.orientation = "";
+      if (data_line.component_type != "N") {
+        // Component
+        if (cols.size() > 8) data_line.orientation = cols[8];
+      }
+
+      if (m_ValidationType == syntax) {
+        // x_ValidateSyntaxLine(data_line, line);
+        m_LineValidator->ValidateLine(data_line, line);
+      } else {
+        x_ValidateSemanticLine(data_line, line);
+      }
     }
 
     agpErr.LineDone(line, line_num);

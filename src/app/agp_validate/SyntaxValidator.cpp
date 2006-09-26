@@ -37,6 +37,8 @@
 #include "SyntaxValidator.hpp"
 #include "AccessionPatterns.hpp"
 
+#include <math.h>
+
 USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
 
@@ -131,7 +133,8 @@ void CAgpSyntaxValidator::EndOfObject()
 
   if( IsGapType(prev_component_type) ) agpErr.Msg(
     // The previous line was a gap at the end of a scaffold & object
-    CAgpErr::W_GapObjEnd, NcbiEmptyString, CAgpErr::AT_PrevLine
+    CAgpErr::W_GapObjEnd, NcbiEmptyString,
+    AT_ThisLine|AT_PrevLine
   );
 }
 
@@ -162,7 +165,8 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
 
     TObjSetResult obj_insert_result = m_ObjIdSet.insert(dl.object);
     if (obj_insert_result.second == false) {
-      agpErr.Msg(CAgpErr::E_DuplicateObj, dl.object);
+      agpErr.Msg(CAgpErr::E_DuplicateObj, dl.object,
+        AT_ThisLine|AT_PrevLine);
       //AGP_ERROR("Duplicate object: " << );
     }
 
@@ -176,7 +180,10 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
         dl.line_num, dl.end, "object_end (column 3)"
   ))){
     if(new_obj && obj_begin != 1) {
-      agpErr.Msg(CAgpErr::E_ObjMustBegin1);
+      agpErr.Msg(CAgpErr::E_ObjMustBegin1,
+        NcbiEmptyString,
+        AT_ThisLine|AT_PrevLine
+      );
       //AGP_ERROR("First line of an object must have object_begin=1");
     }
 
@@ -190,7 +197,8 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     dl.line_num, dl.part_num, "part_num (column 4)"
   )) {
     if(part_num != prev_part_num+1) {
-      agpErr.Msg( CAgpErr::E_PartNumberNotPlus1 );
+      agpErr.Msg( CAgpErr::E_PartNumberNotPlus1, NcbiEmptyString,
+        AT_ThisLine|AT_PrevLine );
       // post_prev=true;
       // AGP_ERROR("Part number (column 4) != previous part number +1");
     }
@@ -286,12 +294,13 @@ void CAgpSyntaxValidator::x_OnGapLine(
   //// Check the gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold.
   if(new_obj) {
-    agpErr.Msg(CAgpErr::W_GapObjBegin);
+    agpErr.Msg(CAgpErr::W_GapObjBegin, NcbiEmptyString,
+      AT_ThisLine|AT_PrevLine);
     //AGP_WARNING("Object begins with a gap");
   }
   else if(IsGapType(prev_component_type)) {
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
-      CAgpErr::AT_ThisLine|CAgpErr::AT_PrevLine );
+      AT_ThisLine|AT_PrevLine );
     //post_prev=true;
     //AGP_WARNING("Two consequtive gap lines. There may be a gap at the end of "
     //"a scaffold, two non scaffold-breaking gaps, etc");
@@ -309,7 +318,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
     if(prev_orientation_unknown && componentsInLastScaffold==1) {
                              // ^^^can probably ASSERT this^^^
       agpErr.Msg(CAgpErr::E_UnknownOrientation,
-        NcbiEmptyString, CAgpErr::AT_PrevLine);
+        NcbiEmptyString, AT_PrevLine);
       prev_orientation_unknown=false;
     }
   }
@@ -334,7 +343,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
           dl.orientation, "orientation", NO_LOG
     ) ) {
       agpErr.Msg(CAgpErr::W_LooksLikeComp,
-        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        NcbiEmptyString, AT_ThisLine, // defaults
         dl.component_type );
       // AGP_WARNING( "Line with component_type=" << dl.component_type
       //  << " appears to be a component line and not a gap line.");
@@ -361,7 +370,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     // is not a leftover from the preceding singleton.
     if( componentsInLastScaffold==2 ) {
       agpErr.Msg(CAgpErr::E_UnknownOrientation,
-        NcbiEmptyString, CAgpErr::AT_PrevLine);
+        NcbiEmptyString, AT_PrevLine);
     }
     prev_orientation_unknown=false;
   }
@@ -505,7 +514,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
         m_LinkageValues, dl.linkage, "linkage", NO_LOG
     ) ) {
       agpErr.Msg(CAgpErr::W_LooksLikeGap,
-        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        NcbiEmptyString, AT_ThisLine, // defaults
         dl.component_type );
       //AGP_WARNING( "Line with component_type="
       //  << dl.component_type <<" appears to be a gap line "
@@ -526,7 +535,7 @@ int CAgpSyntaxValidator::x_CheckIntField(
 
   if (field_value <= 0  &&  log_error) {
     agpErr.Msg(CAgpErr::E_MustBePositive,
-        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        NcbiEmptyString, AT_ThisLine, // defaults
         field_name );
     //AGP_ERROR( field_name << " field must be a positive integer");
   }
@@ -542,7 +551,7 @@ int CAgpSyntaxValidator::x_CheckRange(
   if(begin <= start){
     agpErr.Msg( CAgpErr::E_Overlaps,
       NcbiEmptyString,
-      CAgpErr::AT_ThisLine|CAgpErr::AT_PrevLine,
+      AT_ThisLine|AT_PrevLine,
       begin_name );
     //post_prev=true;
     //AGP_ERROR( begin_name << " field overlaps a previous line");
@@ -568,7 +577,7 @@ bool CAgpSyntaxValidator::x_CheckValues(
   if(values.count(value) == 0) {
     if(log_error) {
       agpErr.Msg(CAgpErr::E_InvalidValue,
-        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        NcbiEmptyString, AT_ThisLine, // defaults
         field_name );
       //AGP_ERROR("Invalid value for " << field_name);
     }
@@ -588,7 +597,7 @@ int CAgpSyntaxValidator::x_CheckValues(
   if( it==values.end() ) {
     if(log_error) {
       agpErr.Msg(CAgpErr::E_InvalidValue,
-        NcbiEmptyString, CAgpErr::AT_ThisLine, // defaults
+        NcbiEmptyString, AT_ThisLine, // defaults
         field_name );
       // AGP_ERROR("Invalid value for " << field_name);
     }
@@ -597,6 +606,7 @@ int CAgpSyntaxValidator::x_CheckValues(
   return it->second;
 }
 
+#define ALIGN_W(x) setw(w) << (x)
 void CAgpSyntaxValidator::PrintTotals()
 {
   //// Counts of errors and warnings
@@ -610,10 +620,7 @@ void CAgpSyntaxValidator::PrintTotals()
   cout << ".";
   if(agpErr.m_MaxRepeat) {
     cout << "\n";
-    agpErr.PrintMessageCounts(cout, CAgpErr::W_First, CAgpErr::W_Last);
-    if(agpErr.m_skipped_count) {
-
-    }
+    agpErr.PrintMessageCounts(cout, CAgpErr::E_First, CAgpErr::W_Last);
   }
   cout << "\n";
 
@@ -637,12 +644,17 @@ void CAgpSyntaxValidator::PrintTotals()
   }
 
   //// Various counts of AGP elements
+
+  // w: width for right alignment
+  int w = (int) log10( m_CompId2Spans.size() ) + 1;
+  // if(w<3) w=3;
+
   cout << "\n"
-    "Objects     : " << m_ObjCount << "\n"
-    "Scaffolds   : " << m_ScaffoldCount   << "\n"
-    "  singletons: " << m_SingletonCount << "\n\n"
-    "Unique Component Accessions: "<< m_CompId2Spans.size() <<"\n"
-    "Lines with Components      : " << m_CompCount;
+    "Objects     : " << ALIGN_W(m_ObjCount)       << "\n"
+    "Scaffolds   : " << ALIGN_W(m_ScaffoldCount)  << "\n"
+    "  singletons: " << ALIGN_W(m_SingletonCount) << "\n\n"
+    "Unique Component Accessions: "<< ALIGN_W(m_CompId2Spans.size()) <<"\n"
+    "Lines with Components      : " << ALIGN_W(m_CompCount);
 
   if( s_comp.size() ) {
     if( NStr::Find(s_comp, ",")!=NPOS ) {
@@ -655,10 +667,10 @@ void CAgpSyntaxValidator::PrintTotals()
     }
   }
   cout << "\n"
-    "\torientation +      : " << m_CompPosCount   << "\n"
-    "\torientation -      : " << m_CompNegCount   << "\n"
-    "\torientation 0      : " << m_CompZeroCount  << "\n"
-    "\torientation na     : " << m_CompNaCount    << "\n";
+    "\torientation +      : " << ALIGN_W(m_CompPosCount ) << "\n"
+    "\torientation -      : " << ALIGN_W(m_CompNegCount ) << "\n"
+    "\torientation 0      : " << ALIGN_W(m_CompZeroCount) << "\n"
+    "\torientation na     : " << ALIGN_W(m_CompNaCount  ) << "\n";
 
   cout << "\n" << "Gaps: " << m_GapCount;
   // To do: print (N) if all components are of one type,
@@ -675,24 +687,24 @@ void CAgpSyntaxValidator::PrintTotals()
   }
 
   cout
-  << "\n\t   with linkage: yes\tno"
-  << "\n\tclone          : "<<m_TypeGapCnt["cloneyes"          ]
-  << "\t"                   <<m_TypeGapCnt["cloneno"           ]
-  << "\n\tfragment       : "<<m_TypeGapCnt["fragmentyes"       ]
-  << "\t"                   <<m_TypeGapCnt["fragmentno"        ]
-  << "\n\trepeat         : "<<m_TypeGapCnt["repeatyes"         ]
-  << "\t"                   <<m_TypeGapCnt["repeatno"          ]
+  << "\n\t   with linkage: "<<ALIGN_W("yes") << "\t" << ALIGN_W("no")
+  << "\n\tclone          : "<<ALIGN_W(m_TypeGapCnt["cloneyes"          ])
+  << "\t"                   <<ALIGN_W(m_TypeGapCnt["cloneno"           ])
+  << "\n\tfragment       : "<<ALIGN_W(m_TypeGapCnt["fragmentyes"       ])
+  << "\t"                   <<ALIGN_W(m_TypeGapCnt["fragmentno"        ])
+  << "\n\trepeat         : "<<ALIGN_W(m_TypeGapCnt["repeatyes"         ])
+  << "\t"                   <<ALIGN_W(m_TypeGapCnt["repeatno"          ])
   << "\n"
-  << "\n\tcontig         : "<<m_TypeGapCnt["contigyes"         ]
-  << "\t"                   <<m_TypeGapCnt["contigno"          ]
-  << "\n\tcentromere     : "<<m_TypeGapCnt["centromereyes"     ]
-  << "\t"                   <<m_TypeGapCnt["centromereno"      ]
-  << "\n\tshort_arm      : "<<m_TypeGapCnt["short_armyes"      ]
-  << "\t"                   <<m_TypeGapCnt["short_armno"       ]
-  << "\n\theterochromatin: "<<m_TypeGapCnt["heterochromatinyes"]
-  << "\t"                   <<m_TypeGapCnt["heterochromatinno" ]
-  << "\n\ttelomere       : "<<m_TypeGapCnt["telomereyes"       ]
-  << "\t"                   <<m_TypeGapCnt["telomereno"        ]
+  << "\n\tcontig         : "<<ALIGN_W(m_TypeGapCnt["contigyes"         ])
+  << "\t"                   <<ALIGN_W(m_TypeGapCnt["contigno"          ])
+  << "\n\tcentromere     : "<<ALIGN_W(m_TypeGapCnt["centromereyes"     ])
+  << "\t"                   <<ALIGN_W(m_TypeGapCnt["centromereno"      ])
+  << "\n\tshort_arm      : "<<ALIGN_W(m_TypeGapCnt["short_armyes"      ])
+  << "\t"                   <<ALIGN_W(m_TypeGapCnt["short_armno"       ])
+  << "\n\theterochromatin: "<<ALIGN_W(m_TypeGapCnt["heterochromatinyes"])
+  << "\t"                   <<ALIGN_W(m_TypeGapCnt["heterochromatinno" ])
+  << "\n\ttelomere       : "<<ALIGN_W(m_TypeGapCnt["telomereyes"       ])
+  << "\t"                   <<ALIGN_W(m_TypeGapCnt["telomereno"        ])
   //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
   //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
   << "\n";
@@ -713,8 +725,10 @@ void CAgpSyntaxValidator::PrintTotals()
       pat_cnt.begin(); it != pat_cnt.end(); ++it
   ) {
     cout <<  "\t"
-    << CAccPatternCounter::GetExpandedPattern(*it) << "\t"
-    << CAccPatternCounter::GetCount(*it) << "\n";
+    << ALIGN_W(CAccPatternCounter::GetCount(*it))
+    << "  "
+    << CAccPatternCounter::GetExpandedPattern(*it)
+    << "\n";
   }
 }
 

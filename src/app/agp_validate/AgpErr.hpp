@@ -72,21 +72,49 @@ BEGIN_NCBI_SCOPE
    }
 */
 
+enum TAppliesTo{
+  //AT_Unknown=0, -- just print the message without the content line
+  AT_ThisLine=1, // Accumulate messages
+  AT_PrevLine=2  // Print the previous line if it was not printed;
+                  // print the message now
+  // AT_ThisLine|AT_PrevLine -- both lines are involved:
+  // 1) print the previous line now (if it was not printed already)
+  // 2) suppress the error message if the previous line was so bad
+  //    that it did not even reach the syntax validator (wrong # of columns)
+};
+
 class CAgpErr
 {
 public:
 
   // When adding entries to enum TCode, also update msg[]
   enum TCode {
-    E_DuplicateObj=1, E_ObjMustBegin1 , E_PartNumberNotPlus1,
-    E_ObjRangeNeGap , E_ObjRangeNeComp, E_UnknownOrientation,
-    E_MustBePositive, E_Overlaps      , E_ObjBeginLtEnd     ,
-    E_CompStartLtEnd, E_InvalidValue  ,
+    E_ColumnCount=1 ,
+    E_DuplicateObj  ,
+    E_ObjMustBegin1 ,
+    E_PartNumberNotPlus1,
+    E_ObjRangeNeGap ,
+
+    E_ObjRangeNeComp,
+    E_UnknownOrientation,
+    E_MustBePositive,
+    E_Overlaps      ,
+    E_ObjBeginLtEnd ,
+
+    E_CompStartLtEnd,
+    E_InvalidValue  ,
     E_Last, E_First=1,
 
-    W_GapObjEnd=21 , W_GapObjBegin , W_ConseqGaps ,
-    W_InvalidYes   , W_SpansOverlap, W_SpansOrder ,
-    W_DuplicateComp, W_LooksLikeGap, W_LooksLikeComp,
+    W_GapObjEnd=21 ,
+    W_GapObjBegin ,
+    W_ConseqGaps ,
+    W_InvalidYes   ,
+    W_SpansOverlap,
+
+    W_SpansOrder ,
+    W_DuplicateComp,
+    W_LooksLikeGap,
+    W_LooksLikeComp,
     W_Last, W_First = 21
   };
 
@@ -117,15 +145,6 @@ public:
   static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
 
   CAgpErr();
-
-  enum TAppliesTo{
-    //AT_Unknown=0, -- just print the message without the content line
-    AT_ThisLine=1, // Accumulate messages
-    AT_PrevLine=2  // Print the previous line if it was not printed;
-                   // print the message now
-   // AT_ThisLine|AT_PrevLine: both lines are involved;
-   // print the previous line now (if it was not printed already)
-  };
 
   // Can skip unwanted messages, record a message for printing (AT_ThisLine),
   // print it immediately if it applies to the previous line (AT_PrevLine),
@@ -158,7 +177,9 @@ public:
     int appliesTo=AT_ThisLine, const string& substX=NcbiEmptyString);
 
   // Print any accumulated messages.
-  void LineDone(const string& s, int line_num);
+  // invalid_line=true: for the next line, suppress
+  //   CAgpErr::AT_ThisLine|CAgpErr::AT_PrevLine messages
+  void LineDone(const string& s, int line_num, bool invalid_line=false);
 
   // Invoke with "" when done reading all files or cin.
   // NO other invokations are needed when reading from cin,
@@ -205,6 +226,7 @@ private:
                           // (probably had another error);
                           // no need to-reprint "fname:linenum:content"
   bool m_two_lines_involved; // true: do not print "\n" after the previous line
+  bool m_invalid_prev;       // true: suppress errors concerning the previous line
 
   // a stream to Accumulate messages for the current line.
   // (We print right away messages that apply only to the previous line.)
