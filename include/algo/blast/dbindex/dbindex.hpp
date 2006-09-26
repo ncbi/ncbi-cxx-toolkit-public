@@ -477,9 +477,9 @@ class CDbIndex : public CObject
             @sa Search
         */
         virtual CConstRef< CSearchResults > DoSearch(
-                const BLAST_SequenceBlk * query, 
-                const BlastSeqLoc * locs,
-                const SSearchOptions & search_options )
+                const BLAST_SequenceBlk *, 
+                const BlastSeqLoc *,
+                const SSearchOptions & )
         { return CConstRef< CSearchResults >( null ); }
 
         /** Actual result extraction procedure.
@@ -487,8 +487,8 @@ class CDbIndex : public CObject
             @sa ExtractResults
         */
         virtual BlastInitHitList * DoExtractResults( 
-                CConstRef< CSearchResults > all_results, 
-                TSeqNum subject, TSeqNum chunk ) const
+                CConstRef< CSearchResults >, 
+                TSeqNum, TSeqNum ) const
         { return 0; }
 
         /** Actual result checking procedure.
@@ -496,7 +496,7 @@ class CDbIndex : public CObject
             @sa CheckResults
         */
         virtual bool DoCheckResults(
-                CConstRef< CSearchResults > all_results, TSeqNum oid ) const
+                CConstRef< CSearchResults >, TSeqNum ) const
         { return false; }
 
         TSeqNum start_;         /**< OID of the first sequence in the index. */

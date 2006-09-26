@@ -816,7 +816,8 @@ template< typename word_t >
 void CSubjectMap< word_t, OFFSET_RAW >::Commit()
 {
     if( last_chunk_ < chunks_.size() ) {
-        TSeqStore::size_type newsize = chunks_[last_chunk_].seq_start_;
+        TSeqStore::size_type newsize = 
+            (TSeqStore::size_type)(chunks_[last_chunk_].seq_start_);
         seq_store_.resize( newsize );
         chunks_.resize( last_chunk_ );
     }
@@ -898,7 +899,7 @@ class COffsetList< word_t, UNCOMPRESSED >
 //-------------------------------------------------------------------------
 template< typename word_t >
 inline void COffsetList< word_t, UNCOMPRESSED >::Save( 
-        CNcbiOstream & os, unsigned long version ) const
+        CNcbiOstream & os, unsigned long ) const
 {
     for( typename TData::const_iterator cit = data_.begin(); 
             cit != data_.end(); ++cit ) {
@@ -1097,12 +1098,12 @@ COffsetData< word_t, subject_map_t, COMPRESSION >::EncodeAndAddOffset(
         if( start_diff > STRIDE ) start_diff = 0;
         if( end_diff > STRIDE ) end_diff = 0;
         TWord code = (start_diff<<CODE_BITS) + end_diff;
-        hash_table_[nmer].AddData( code, total_ );
+        hash_table_[(THashTable::size_type)nmer].AddData( code, total_ );
         CProgressReporter( REPORT_VERBOSE, report_level_ ) 
             << to_hex_str( code );
     }
 
-    hash_table_[nmer].AddData( offset, total_ );
+    hash_table_[(THashTable::size_type)nmer].AddData( offset, total_ );
     CProgressReporter( REPORT_VERBOSE, report_level_ ) 
         << " " << offset << " " << to_hex_str( nmer ) << "\n";
 }
@@ -1111,7 +1112,7 @@ COffsetData< word_t, subject_map_t, COMPRESSION >::EncodeAndAddOffset(
 template< 
     typename word_t, typename subject_map_t, unsigned long COMPRESSION >
 void COffsetData< word_t, subject_map_t, COMPRESSION >::AddSeqSeg(
-        const Uint1 * seq, TWord seqlen, TSeqPos start, TSeqPos stop )
+        const Uint1 * seq, TWord , TSeqPos start, TSeqPos stop )
 {
     CProgressReporter( REPORT_VERBOSE, report_level_ ) 
         << "SEGMENT: " << start << " " << stop << "\n";

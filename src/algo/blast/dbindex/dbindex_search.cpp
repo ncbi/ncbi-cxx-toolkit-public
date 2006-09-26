@@ -188,13 +188,13 @@ const SIndexHeader< 2 > ReadIndexHeader_2( void * map )
     SIndexHeader< 2 > result;
     result.width_ = WIDTH;
     TWord * ptr = (TWord *)((Uint8 *)map + 2);
-    result.hkey_width_ = *ptr++;
-    result.off_type_ = *ptr++;
-    result.compression_ = *ptr++;
-    result.start_ = *ptr++;
-    result.start_chunk_ = *ptr++;
-    result.stop_ = *ptr++;
-    result.stop_chunk_ = *ptr++;
+    result.hkey_width_  = (unsigned long)(*ptr++);
+    result.off_type_    = (unsigned long)(*ptr++);
+    result.compression_ = (unsigned long)(*ptr++);
+    result.start_       = (TSeqNum)(*ptr++);
+    result.start_chunk_ = (TSeqNum)(*ptr++);
+    result.stop_        = (TSeqNum)(*ptr++);
+    result.stop_chunk_  = (TSeqNum)(*ptr++);
     return result;
 }
 
@@ -397,10 +397,12 @@ COffsetData_Base< word_t, COMPRESSION >::COffsetData_Base(
 {
     ReadWord( is, total_ );
     TWord hash_table_size = ((TWord)1)<<(2*hkey_width_);
-    hash_table_.resize( hash_table_size + 1, 0 );
+    hash_table_.resize( (THashTable::size_type)hash_table_size + 1, 0 );
     TWord * hash_table_start = &hash_table_[0];
-    is.read( (char *)hash_table_start, sizeof( TWord )*hash_table_size );
-    hash_table_[hash_table_size] = total_;
+    is.read( 
+            (char *)hash_table_start, 
+            (std::streamsize)(sizeof( TWord )*hash_table_size) );
+    hash_table_[(THashTable::size_type)hash_table_size] = total_;
 }
 
 //-------------------------------------------------------------------------
@@ -412,7 +414,8 @@ COffsetData_Base< word_t, COMPRESSION >::COffsetData_Base(
     if( *map ) {
         total_ = *(*map)++;
         TWord hash_table_size = ((TWord)1)<<(2*hkey_width_);
-        hash_table_.SetPtr( *map, hash_table_size + 1 );
+        hash_table_.SetPtr( 
+                *map, (THashTable::size_type)(hash_table_size + 1) );
         *map += hash_table_size + 1;
     }
 }
@@ -514,8 +517,12 @@ INLINE
 COffsetIterator< word_t, UNCOMPRESSED >::COffsetIterator(
         const TOffsetData & offset_data, TWord key )
 {
-    start_ = &offset_data.offsets_[0] + offset_data.hash_table_[key];
-    len_ = offset_data.hash_table_[key+1] - offset_data.hash_table_[key];
+    start_ = &offset_data.offsets_[0] + 
+        offset_data.hash_table_[(TOffsetData::THashTable::size_type)key];
+    len_ = 
+        offset_data.hash_table_[
+            (TOffsetData::THashTable::size_type)(key+1)] - 
+        offset_data.hash_table_[(TOffsetData::THashTable::size_type)key];
 }
 
 //-------------------------------------------------------------------------
@@ -535,7 +542,9 @@ COffsetData< word_t, UNCOMPRESSED >::COffsetData(
         CNcbiIstream & is, unsigned long hkey_width )
     : TBase( is, hkey_width ), offsets_( this->total_, 0 )
 {
-    is.read( (char *)(&offsets_[0]), sizeof( TWord )*this->total_ );
+    is.read( 
+            (char *)(&offsets_[0]), 
+            sizeof( TWord )*(std::streamsize)(this->total_) );
 }
 
 //-------------------------------------------------------------------------
@@ -545,7 +554,7 @@ COffsetData< word_t, UNCOMPRESSED >::COffsetData(
     : TBase( map, hkey_width )
 {
     if( *map ) {
-        offsets_.SetPtr( *map, this->total_ );
+        offsets_.SetPtr( *map, (TOffsets::size_type)(this->total_) );
         *map += this->total_;
     }
 }
@@ -651,8 +660,8 @@ void CSubjectMap_Base< word_t, OFF_TYPE >::ReadSeqData(
         CNcbiIstream & is )
 {
     ReadWord( is, total_ );
-    seq_store_.resize( total_, 0 );
-    is.read( (char *)(&seq_store_[0]), total_ );
+    seq_store_.resize( (TSeqStore::size_type)total_, 0 );
+    is.read( (char *)(&seq_store_[0]), (std::streamsize)total_ );
 }
 
 //-------------------------------------------------------------------------
@@ -662,7 +671,7 @@ void CSubjectMap_Base< word_t, OFF_TYPE >::SetSeqDataFromMap(
 {
     if( *map ) {
         total_ = *(*map)++;
-        seq_store_.SetPtr( (Uint1 *)*map, total_ );
+        seq_store_.SetPtr( (Uint1 *)*map, (TSeqStore::size_type)total_ );
         *map += 1 + total_/sizeof( TWord );
     }
 }
@@ -749,7 +758,8 @@ class CSubjectMap< word_t, OFFSET_RAW >
         TSeqNum MapSubject( TSeqNum subject, TSeqNum chunk ) const
         {
             if( subject < this->subjects_.size() ) {
-                TSeqNum result = this->subjects_[subject] + chunk;
+                TSeqNum result = 
+                    (TSeqNum)(this->subjects_[subject]) + chunk;
 
                 if( result < chunks_.size() ) {
                     return result;
@@ -777,9 +787,11 @@ CSubjectMap< word_t, OFFSET_RAW >::CSubjectMap(
                 "bad alignment of subject map data" );
     }
 
-    chunks_.resize( 1 + this->total_/sizeof( TWord ), 0 );
-    chunks_off_.resize( 1 + this->total_/sizeof( TWord ), 0 );
-    is.read( (char *)(&chunks_[0]), this->total_ );
+    chunks_.resize( 
+            (TChunks::size_type)(1 + this->total_/sizeof( TWord )), 0 );
+    chunks_off_.resize( 
+            (TChunks::size_type)(1 + this->total_/sizeof( TWord )), 0 );
+    is.read( (char *)(&chunks_[0]), (std::streamsize)(this->total_) );
 
     for( typename TChunks::size_type i = 0; 
             i < chunks_.size() - 1; ++i ) {
@@ -801,7 +813,7 @@ CSubjectMap< word_t, OFFSET_RAW >::CSubjectMap(
 {
     if( *map ){
         typename TChunks::size_type chunks_size = 
-            1 + this->total_/sizeof( TWord );
+            (TChunks::size_type)(1 + this->total_/sizeof( TWord ));
         chunks_.SetPtr( *map, chunks_size ); 
         chunks_off_.resize( chunks_size );
 
@@ -1608,9 +1620,10 @@ INLINE
 void CSearch< index_impl_t >::ProcessBoundaryOffset( 
         TWord offset, TWord bounds )
 {
-    TSeqPos nmaxleft  = (bounds>>CDbIndex::CODE_BITS);
-    TSeqPos nmaxright = (bounds&((1<<CDbIndex::CODE_BITS) - 1));
-    STrackedSeed seed = { qoff_, offset, index_impl_.hkey_width(), qoff_ };
+    TSeqPos nmaxleft  = (TSeqPos)(bounds>>CDbIndex::CODE_BITS);
+    TSeqPos nmaxright = (TSeqPos)(bounds&((1<<CDbIndex::CODE_BITS) - 1));
+    STrackedSeed seed = 
+        { qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ };
     CTrackedSeeds & subj_seeds = seeds_[subject_];
     subj_seeds.EvalAndUpdate( seed );
 
@@ -1641,7 +1654,8 @@ template< typename index_impl_t >
 INLINE
 void CSearch< index_impl_t >::ProcessOffset( TWord offset )
 {
-    STrackedSeed seed = { qoff_, offset, index_impl_.hkey_width(), qoff_ };
+    STrackedSeed seed = 
+        { qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ };
     CTrackedSeeds & subj_seeds = seeds_[subject_];
 
     if( subj_seeds.EvalAndUpdate( seed ) ) {
@@ -1738,7 +1752,7 @@ void CSearch< index_impl_t >::SearchInt()
                 TSeqPos soff = CDbIndex::MIN_OFFSET + 
                     (TSeqPos)(real_offset - 
                               subj_start_off_)*CDbIndex::STRIDE;
-                SSeedRoot r1 = { qoff_, offset, qstart_, qstop_ };
+                SSeedRoot r1 = { qoff_, (TSeqPos)offset, qstart_, qstop_ };
                 SSeedRoot r2 = { qoff_, soff, qstart_, qstop_ };
                 roots_.Add2( r1, r2, subject_ );
             }else if( !Skip( offset ) ) {
