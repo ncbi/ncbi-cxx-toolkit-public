@@ -37,7 +37,11 @@
 #include <corelib/ncbifile.hpp>
 #include <algo/blast/core/blast_extend.h>
 
+#ifdef LOCAL_SVN
+#include "dbindex.hpp"
+#else
 #include <algo/blast/dbindex/dbindex.hpp>
+#endif
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )

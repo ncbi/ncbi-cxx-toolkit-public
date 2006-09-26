@@ -32,7 +32,11 @@
 
 #include <ncbi_pch.hpp>
 
+#ifdef LOCAL_SVN
+#include "sequence_istream_bdb.hpp"
+#else
 #include <algo/blast/dbindex/sequence_istream_bdb.hpp>
+#endif
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )

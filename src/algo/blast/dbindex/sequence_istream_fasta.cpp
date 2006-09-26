@@ -34,7 +34,11 @@
 
 #include <objtools/readers/fasta.hpp>
 
+#ifdef LOCAL_SVN
+#include "sequence_istream_fasta.hpp"
+#else
 #include <algo/blast/dbindex/sequence_istream_fasta.hpp>
+#endif
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )

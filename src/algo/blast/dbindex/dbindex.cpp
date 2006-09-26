@@ -44,8 +44,17 @@
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
 
+#ifdef LOCAL_SVN
+
+#include "sequence_istream_fasta.hpp"
+#include "dbindex.hpp"
+
+#else
+
 #include <algo/blast/dbindex/sequence_istream_fasta.hpp>
 #include <algo/blast/dbindex/dbindex.hpp>
+
+#endif
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
