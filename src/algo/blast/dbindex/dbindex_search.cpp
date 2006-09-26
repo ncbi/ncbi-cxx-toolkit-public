@@ -397,12 +397,13 @@ COffsetData_Base< word_t, COMPRESSION >::COffsetData_Base(
 {
     ReadWord( is, total_ );
     TWord hash_table_size = ((TWord)1)<<(2*hkey_width_);
-    hash_table_.resize( (THashTable::size_type)hash_table_size + 1, 0 );
+    hash_table_.resize( 
+            (typename THashTable::size_type)hash_table_size + 1, 0 );
     TWord * hash_table_start = &hash_table_[0];
     is.read( 
             (char *)hash_table_start, 
             (std::streamsize)(sizeof( TWord )*hash_table_size) );
-    hash_table_[(THashTable::size_type)hash_table_size] = total_;
+    hash_table_[(typename THashTable::size_type)hash_table_size] = total_;
 }
 
 //-------------------------------------------------------------------------
@@ -415,7 +416,8 @@ COffsetData_Base< word_t, COMPRESSION >::COffsetData_Base(
         total_ = *(*map)++;
         TWord hash_table_size = ((TWord)1)<<(2*hkey_width_);
         hash_table_.SetPtr( 
-                *map, (THashTable::size_type)(hash_table_size + 1) );
+                *map, 
+                (typename THashTable::size_type)(hash_table_size + 1) );
         *map += hash_table_size + 1;
     }
 }
@@ -518,11 +520,13 @@ COffsetIterator< word_t, UNCOMPRESSED >::COffsetIterator(
         const TOffsetData & offset_data, TWord key )
 {
     start_ = &offset_data.offsets_[0] + 
-        offset_data.hash_table_[(TOffsetData::THashTable::size_type)key];
+        offset_data.hash_table_[
+                (typename TOffsetData::THashTable::size_type)key];
     len_ = 
         offset_data.hash_table_[
-            (TOffsetData::THashTable::size_type)(key+1)] - 
-        offset_data.hash_table_[(TOffsetData::THashTable::size_type)key];
+            (typename TOffsetData::THashTable::size_type)(key+1)] - 
+        offset_data.hash_table_[
+                (typename TOffsetData::THashTable::size_type)key];
 }
 
 //-------------------------------------------------------------------------
@@ -554,7 +558,8 @@ COffsetData< word_t, UNCOMPRESSED >::COffsetData(
     : TBase( map, hkey_width )
 {
     if( *map ) {
-        offsets_.SetPtr( *map, (TOffsets::size_type)(this->total_) );
+        offsets_.SetPtr( 
+                *map, (typename TOffsets::size_type)(this->total_) );
         *map += this->total_;
     }
 }
@@ -788,9 +793,13 @@ CSubjectMap< word_t, OFFSET_RAW >::CSubjectMap(
     }
 
     chunks_.resize( 
-            (TChunks::size_type)(1 + this->total_/sizeof( TWord )), 0 );
+            (typename TChunks::size_type)(
+                1 + this->total_/sizeof( TWord )), 
+            0 );
     chunks_off_.resize( 
-            (TChunks::size_type)(1 + this->total_/sizeof( TWord )), 0 );
+            (typename TChunks::size_type)(
+                1 + this->total_/sizeof( TWord )), 
+            0 );
     is.read( (char *)(&chunks_[0]), (std::streamsize)(this->total_) );
 
     for( typename TChunks::size_type i = 0; 
@@ -813,7 +822,8 @@ CSubjectMap< word_t, OFFSET_RAW >::CSubjectMap(
 {
     if( *map ){
         typename TChunks::size_type chunks_size = 
-            (TChunks::size_type)(1 + this->total_/sizeof( TWord ));
+            (typename TChunks::size_type)(
+                1 + this->total_/sizeof( TWord ));
         chunks_.SetPtr( *map, chunks_size ); 
         chunks_off_.resize( chunks_size );
 

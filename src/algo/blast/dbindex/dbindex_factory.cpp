@@ -1098,12 +1098,14 @@ COffsetData< word_t, subject_map_t, COMPRESSION >::EncodeAndAddOffset(
         if( start_diff > STRIDE ) start_diff = 0;
         if( end_diff > STRIDE ) end_diff = 0;
         TWord code = (start_diff<<CODE_BITS) + end_diff;
-        hash_table_[(THashTable::size_type)nmer].AddData( code, total_ );
+        hash_table_[(typename THashTable::size_type)nmer].AddData( 
+                code, total_ );
         CProgressReporter( REPORT_VERBOSE, report_level_ ) 
             << to_hex_str( code );
     }
 
-    hash_table_[(THashTable::size_type)nmer].AddData( offset, total_ );
+    hash_table_[(typename THashTable::size_type)nmer].AddData( 
+            offset, total_ );
     CProgressReporter( REPORT_VERBOSE, report_level_ ) 
         << " " << offset << " " << to_hex_str( nmer ) << "\n";
 }
