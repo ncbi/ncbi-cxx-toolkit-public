@@ -44,6 +44,7 @@ Author: Jason Papadopoulos
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
+USING_SCOPE(objects);
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = "$Id$";
@@ -281,12 +282,22 @@ CBlastallArgs::GetGilist(const CArgs& args)
     return args[ARG_GILIST].AsString();
 }
 
-int
-CBlastallArgs::GetStrand(const CArgs& args)
+ENa_strand
+CBlastallArgs::GetQueryStrand(const CArgs& args)
 {
-    if (!args[ARG_STRAND])
-        return 0;
-    return args[ARG_STRAND].AsInteger();
+    string program = args[ARG_PROGRAM].AsString();
+    if (program == "blastp" || program == "tblastn")
+        return eNa_strand_unknown;
+
+    ENa_strand strand = eNa_strand_both;
+    if (args[ARG_STRAND]) {
+        int number = args[ARG_STRAND].AsInteger();
+        if (number == 1)
+            strand = eNa_strand_plus;
+        else if (number == 2)
+            strand = eNa_strand_minus;
+    }
+    return strand;
 }
 
 double
@@ -764,12 +775,18 @@ CMegablastArgs::GetDBSize(const CArgs& args)
     return args[ARG_DBSIZE].AsDouble();
 }
 
-int
-CMegablastArgs::GetStrand(const CArgs& args)
+ENa_strand
+CMegablastArgs::GetQueryStrand(const CArgs& args)
 {
-    if (!args[ARG_STRAND])
-        return 0;
-    return args[ARG_STRAND].AsInteger();
+    ENa_strand strand = eNa_strand_both;
+    if (args[ARG_STRAND]) {
+        int number = args[ARG_STRAND].AsInteger();
+        if (number == 1)
+            strand = eNa_strand_plus;
+        else if (number == 2)
+            strand = eNa_strand_minus;
+    }
+    return strand;
 }
 
 int
