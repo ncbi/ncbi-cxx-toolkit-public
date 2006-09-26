@@ -171,27 +171,6 @@ private:
     THitRefs              m_hitrefs;         // input hits
     vector<CCompartment>  m_compartments;    // final compartments
     int                   m_iter;            // GetFirst/Next index
-
-    // this structure describes the best target reached 
-    // at a given query coordinate
-    struct SQueryMark {
-
-        TCoord       m_coord;
-        double       m_score;
-        int          m_hit;
-        TCoord       m_LeftBound;
-        
-        SQueryMark(TCoord coord, double score, int hit, TCoord left_bnd):
-            m_coord(coord), 
-            m_score(score), 
-            m_hit(hit), 
-            m_LeftBound(left_bnd) 
-        {}
-        
-        bool operator < (const SQueryMark& rhs) const {
-            return m_coord < rhs.m_coord;
-        }
-    };
     
     struct SHitStatus {
         
@@ -201,12 +180,15 @@ private:
             eOpening
         };
         
-        EType m_type;
-        int   m_prev;
-        
-        SHitStatus(void): m_type(eNone), m_prev(-1) {}
-        SHitStatus(EType type, int prev): m_type(type), m_prev(prev) {}
-        
+        EType  m_type;
+        int    m_prev;
+        double m_score;        
+
+        SHitStatus(void): m_type(eNone), m_prev(-1), m_score(0) 
+        {}
+        SHitStatus(EType type, int prev, double score): 
+            m_type(type), m_prev(prev), m_score(score) 
+        {}
     };    
 };
 
@@ -264,8 +246,11 @@ private:
 
 
 const double kPenaltyPerIntronBase = -1e-7; // a small penalty to prefer
-                                            // more compact models
-                                            // among equal
+                                            // more compact models among equal
+
+const double kPenaltyPerIntronPos  = -1e-9; // a small penalty to favor uniform
+                                            // selection among equivalent chains
+
 template<class THit>
 void CCompartmentFinder<THit>::CCompartment::UpdateMinMax() 
 {
@@ -357,81 +342,58 @@ double GetTotalMatches(
 template<class THit>
 size_t CCompartmentFinder<THit>::Run()
 {
-    const TCoord kMax_TCoord = numeric_limits<TCoord>::max();
     const double kMinusInf = -1e12;
 
     m_compartments.clear();
-    const size_t dimhits = m_hitrefs.size();
+    const int dimhits = m_hitrefs.size();
     if(dimhits == 0) {
         return 0;
     }
     
-    // sort here to make sure that later at every step
-    // all potential sources (hits from where to continue)
-    // are visible
+    // sort the hits to make sure that each hit is placed after:
+    // - hits from which to continue a compartment
+    // - hits from which to open a new compartment
 
     typedef CHitComparator<THit> THitComparator;
     THitComparator sorter (THitComparator::eSubjMaxQueryMax);
     stable_sort(m_hitrefs.begin(), m_hitrefs.end(), sorter);
-    
-    // insert dummy element
-    list<SQueryMark> qmarks; // ordered list of query marks
-    qmarks.clear();
-    qmarks.push_back(SQueryMark(0, 0, -1, kMax_TCoord));
-    const typename list<SQueryMark>::iterator li_b = qmarks.begin();
-    
-    // For every hit:
-    // - find out if its query mark already exists (qm_new)
-    // - for query mark below the current:
-    //   -- check if it could be extended
-    //   -- evaluate extension potential
-    // - for every other qm:
-    //   -- check if its compartment could be terminated
-    //   -- evaluate potential of terminating the compartment
-    //      to open a new one
-    // - select the best potential
-    // - if qm_new, create the new query mark, otherwise
-    //   update the existing one if the new score is higher
-    // - if query mark was created or updated, 
-    //   save the hit's status (previous hit, extension or opening)
-    //
-    
-    vector<SHitStatus> hitstatus (dimhits);
-
-    for(size_t i = 0; i < dimhits; ++i) {
         
-        const typename list<SQueryMark>::iterator li_e = qmarks.end();
+    // For every hit:
+    // - evaluate its best extension potential
+    // - evaluate its best potential to start a new compartment
+    // - select the best variant
+    // - update the hit status array
+    
+    typedef vector<SHitStatus> THitData;
+    THitData hitstatus (dimhits);
+
+    const TCoord subj_min_global (m_hitrefs.front()->GetSubjMin());
+
+    for(int i = 0; i < dimhits; ++i) {
         
         const THitRef& h = m_hitrefs[i];
         const typename THit::TCoord hbox [4] = {
-            h->GetQueryMin(),
-            h->GetQueryMax(),
-            h->GetSubjMin(),
-            h->GetSubjMax()
+            h->GetQueryMin(),  h->GetQueryMax(),
+            h->GetSubjMin(),   h->GetSubjMax()
         };
 
 //#define CF_DBG_TRACE
 #ifdef CF_DBG_TRACE
-        cerr << "***" << *h << endl;
+        cerr << endl << *h << endl;
 #endif
-        typename list<SQueryMark>::iterator li0 
-            = lower_bound(li_b, li_e, SQueryMark(hbox[1], 0, -2, kMax_TCoord));
-        bool qm_new = (li0 == li_e)? true: (hbox[1] < li0->m_coord);
 
         double best_ext_score = kMinusInf;
-        typename list<SQueryMark>::iterator li_best_ext = li_b;
+        int    i_best_ext = -1;
         double best_open_score = kMinusInf;
-        typename list<SQueryMark>::iterator li_best_open = li_b;
+        int    i_best_open = -1;
 
-        double intron_penalty_be = 0.0;
-        
-        for(typename list<SQueryMark>::iterator li = li_b; li != li_e; ++li) {
+        for(int j = i; j >= 0; --j) {
             
             THitRef phc;
             typename THit::TCoord phcbox[4];
-            if(li->m_hit != -1) {
+            if(j != i) {
 
-                phc = m_hitrefs[li->m_hit];
+                phc = m_hitrefs[j];
                 phcbox[0] = phc->GetQueryMin();
                 phcbox[1] = phc->GetQueryMax();
                 phcbox[2] = phc->GetSubjMin();
@@ -451,9 +413,10 @@ size_t CCompartmentFinder<THit>::Run()
                 typename THit::TCoord q0, s0; // possible continuation
                 bool good = false;
                 int subj_space;
-                if(li->m_hit >= 0) {
+                TCoord intron_start (0);
+                if(i != j) {
 
-                    if(phcbox[1] < hbox[1]) {
+                    if(phcbox[1] < hbox[1] && phcbox[0] < hbox[0]) {
 
                         if(hbox[0] <= phcbox[1] && 
                            hbox[2] + phcbox[1] - hbox[0] >= phcbox[3]) {
@@ -477,90 +440,82 @@ size_t CCompartmentFinder<THit>::Run()
                                                    // inside an exon
                         good = subj_space <= int(m_intron_max)
                             && subj_space + max_gap >= q0 - phcbox[1] - 1;
+
+                        if(good) {
+                            intron_start = phcbox[3];
+                        }
                     }
                 }
                 
                 if(good) {
                     
                     const double identity = h->GetIdentity();
-                    const double li_score = li->m_score;
-                    const double intron_penalty = subj_space > 0?
-                        subj_space * kPenaltyPerIntronBase: 0.0;
+                    const double jscore = hitstatus[j].m_score;
+                    const double intron_penalty = (subj_space > 0)?
+                        (kPenaltyPerIntronPos * (intron_start - subj_min_global) 
+                         + subj_space * kPenaltyPerIntronBase):
+                        0.0;
 
-                    const double ext_score = li_score +
-                        identity * (hbox[1] - q0 + 1);
+                    const double ext_score = jscore +
+                        identity * (hbox[1] - q0 + 1) + intron_penalty;
 
-                    if(ext_score + intron_penalty > 
-                       best_ext_score + intron_penalty_be)
-                    {
+                    if(ext_score > best_ext_score) {
                         best_ext_score = ext_score;
-                        li_best_ext = li;
-                        intron_penalty_be = intron_penalty;
+                        i_best_ext = j;
                     }
 #ifdef CF_DBG_TRACE
-                    cerr << "\tGood for extension with score = " 
-                         << ext_score << endl;
+                    cerr << "\tGood for extension with score = " << ext_score << endl;
 #endif
                 }
             }}
             
-            // check if good for closing and opening
-            if(li->m_hit == -1 || hbox[2] > hbox[0] + phcbox[3]) {
+            // check if good to open a new compartment
+            if(i == j || hbox[2] > phcbox[3]) {
 
                 const double identity = h->GetIdentity();
-                const double li_score = li->m_score;
-                double score_open = li_score - m_penalty +
+                const double jscore = (i == j)? 0: hitstatus[j].m_score;
+                double score_open = jscore - m_penalty +
                     identity * (hbox[1] - hbox[0] + 1);
                 if(score_open > best_open_score) {
                     best_open_score = score_open;
-                    li_best_open = li;
+                    i_best_open = (i == j)? -1: j;
                 }
 #ifdef CF_DBG_TRACE
-                    cerr << "\tGood for opening with score = " 
-                         << score_open << endl;
+                cerr << "\tGood for opening with score = " << score_open << endl;
 #endif
             }
-        } // li
+        }
         
         typename SHitStatus::EType hit_type;
         int prev_hit;
         double best_score;
-        TCoord lft_bnd;
         if(best_ext_score > best_open_score) {
 
             hit_type = SHitStatus::eExtension;
-            prev_hit = li_best_ext->m_hit;
+            prev_hit = i_best_ext;
             best_score = best_ext_score;
-            lft_bnd = li_best_ext->m_LeftBound;
         }
         else {
 
             hit_type = SHitStatus::eOpening;
-            prev_hit = li_best_open->m_hit;
+            prev_hit = i_best_open;
             best_score = best_open_score;
-            lft_bnd = hbox[2];
         }
-        
-        bool updated = false;
-        if(qm_new) {
-            qmarks.insert(li0, SQueryMark(hbox[1], best_score, i, lft_bnd));
-            updated = true;
+                
+        hitstatus[i].m_type = hit_type;
+        hitstatus[i].m_prev = prev_hit;
+        hitstatus[i].m_score = best_score;
+
+#ifdef CF_DBG_TRACE
+        cerr << "Status = " << ((hit_type == SHitStatus::eOpening)? "Open": "Extend")
+             << '\t' << best_score << endl;
+        if(prev_hit == -1) {
+            cerr << "[Dummy]" << endl;
         }
         else {
-            
-            const double dif = best_score - li0->m_score;
-            if(dif >= 0.0) { // kludge around optimizer bug - compare the difference
-                li0->m_score = best_score;
-                li0->m_hit = i;
-                updated = true;
-                li0->m_LeftBound = lft_bnd;
-            }
+            cerr << *(m_hitrefs[prev_hit]) << endl;
         }
-        
-        if(updated) {
-            hitstatus[i].m_type = hit_type;
-            hitstatus[i].m_prev = prev_hit;
-        }
+#endif
     }
     
 #ifdef CF_DBG_TRACE
@@ -568,16 +523,13 @@ size_t CCompartmentFinder<THit>::Run()
 #endif
 
     // *** backtrace ***
-    // - find query mark with the highest score
-    // - trace it back until the dummy
-    typename list<SQueryMark>::iterator li_best = li_b;
-    ++li_best;
+    // - find the chain with the highest score and trace it back
+    int ibest = -1;
     double score_best = kMinusInf;
-    for(typename list<SQueryMark>::iterator li = li_best, li_e = qmarks.end();
-        li != li_e; ++li) {
-        if(li->m_score > score_best) {
-            score_best = li->m_score;
-            li_best = li;
+    for(int i = 0, n = hitstatus.size(); i < n; ++i) {
+        if(score_best < hitstatus[i].m_score) {
+            score_best = hitstatus[i].m_score;
+            ibest = i;
         }
     }
     
@@ -585,7 +537,7 @@ size_t CCompartmentFinder<THit>::Run()
         m_MinSingletonMatches: m_MinMatches;
     if(score_best + m_penalty >= min_matches) {
 
-        int i = li_best->m_hit;
+        int i = ibest;
         bool new_compartment = true;
         THitRefs hitrefs;
         while(i != -1) {
@@ -593,6 +545,7 @@ size_t CCompartmentFinder<THit>::Run()
             if(new_compartment) {
                 float mp (GetTotalMatches<THit>(hitrefs));
                 if(mp >= m_MinMatches) {
+                    // save the current compartment
                     m_compartments.push_back(CCompartment());
                     m_compartments.back().SetMembers(hitrefs);
                 }
@@ -641,7 +594,7 @@ CCompartmentFinder<THit>::GetFirst()
 template<class THit>
 void CCompartmentFinder<THit>::OrderCompartments(void) {
   
-    for(int i = 0, dim = m_compartments.size(); i < dim; ++i) {
+    for(size_t i = 0, dim = m_compartments.size(); i < dim; ++i) {
         m_compartments[i].UpdateMinMax();
     }
     
@@ -728,8 +681,7 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
                 - (*ii)->GetSubjMin();
             (*ii)->SetSubjStart(s1);
             (*ii)->SetSubjStop(s0);
-        }
-        
+        }        
         x_Copy2Pending(finder);
     }}
 
@@ -807,6 +759,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/09/26 15:27:00  kapustin
+ * Core implementation redesigned for more accurate target evaluation
+ *
  * Revision 1.10  2006/08/01 15:06:10  kapustin
  * Max intron length up to 1M
  *
