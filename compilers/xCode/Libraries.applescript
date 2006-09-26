@@ -401,7 +401,7 @@ property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_co
 property demo_wcontrols : {name:"demo_wcontrols", path:"gui:widgets:controls:demo", exc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
 property demo_wizard : {name:"demo_wizard", path:"gui:widgets:controls:demo", inc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
 
-property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp", "gbench_monitor.cpp", "gbench_feedback_agent.cpp"}, dep:"ncbi_core ncbi_xcache_netcache ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_services gui_widgets gui_widgets_aln gui_widgets_misc gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
+property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp", "gbench_monitor.cpp", "gbench_feedback_agent.cpp", "gca_nc_request_parser.cpp", "gca_netcached.cpp", "gca_process_ic.cpp", "gca_smng_thread.cpp"}, dep:"ncbi_core ncbi_xcache_netcache ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_services gui_widgets gui_widgets_aln gui_widgets_misc gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
 
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils", req:true}
 property gbench_monitor : {name:"gbench_monitor", path:"gui:gbench", inc:{"gbench_monitor.cpp"}, dep:"ncbi_core ncbi_xcache_netcache", req:true}
@@ -440,6 +440,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2006/09/26 13:06:12  rsmith
+ * exclude gca_* files from gbench
+ *
  * Revision 1.107  2006/09/25 17:37:28  dicuccio
  * Propagate changes from production tree
  *
