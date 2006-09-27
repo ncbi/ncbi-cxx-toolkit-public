@@ -113,8 +113,13 @@ public:
 
     CRef<CSeq_align> GetDstAlign(void) const;
 
-private:
+    size_t GetDim() const;
+    const CSeq_id_Handle& GetRowId(size_t idx) const;
+
     typedef list<SAlignment_Segment>   TSegments;
+    const TSegments& GetSegments() const;
+
+private:
 
     // Segment insertion functions
     SAlignment_Segment& x_PushSeg(int len, size_t dim);
@@ -224,12 +229,22 @@ int SAlignment_Segment::SAlignment_Row::GetSegStart(void) const
 }
 
 
+inline
+const CSeq_align_Mapper::TSegments& CSeq_align_Mapper::GetSegments(void) const
+{
+    return m_Segs;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/09/27 21:27:58  vasilche
+* Added accessors.
+*
 * Revision 1.14  2005/10/18 15:36:47  vasilche
 * Removed trailing comma.
 *

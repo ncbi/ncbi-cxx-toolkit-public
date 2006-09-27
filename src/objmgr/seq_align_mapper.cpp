@@ -1271,12 +1271,34 @@ int CSeq_align_Mapper::x_GetWidth(const CSeq_id& id) const
 }
 
 
+size_t CSeq_align_Mapper::GetDim(void) const
+{
+    if ( m_Segs.empty() ) {
+        return 0;
+    }
+    return m_Segs.begin()->m_Rows.size();
+}
+
+
+const CSeq_id_Handle& CSeq_align_Mapper::GetRowId(size_t idx) const
+{
+    if ( m_Segs.empty() || idx >= m_Segs.begin()->m_Rows.size() ) {
+        NCBI_THROW(CLocMapperException, eOtherError,
+                   "Invalid row index");
+    }
+    return m_Segs.begin()->m_Rows[idx].m_Id;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/09/27 21:27:59  vasilche
+* Added accessors.
+*
 * Revision 1.20  2006/08/21 15:46:42  grichenk
 * Added CMappingRanges for storing mappings.
 * Added CSeq_loc_Mapper(CMappingRanges&) constructor.
