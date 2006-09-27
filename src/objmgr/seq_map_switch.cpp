@@ -324,6 +324,9 @@ SSeqMapSwitchPoint GetSwitchPoint(const CBioseq_Handle& seq,
             }
         }
     }
+
+    NCBI_THROW(CSeqMapException, eInvalidIndex,
+               "Seq-align doesn't refer to segments");
 }
 
 // calculate all sequence switch points using set of Seq-aligns
@@ -368,6 +371,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/09/27 22:41:27  vasilche
+* Added exception in case of error.
+*
 * Revision 1.2  2006/09/27 22:37:40  vasilche
 * GCC 2.95 does not understand BEGIN_SCOPE() without arguments.
 *
