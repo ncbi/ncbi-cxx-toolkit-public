@@ -51,6 +51,7 @@ void SeqSwapper::swapSequences()
 	int numNormal = m_cd->GetNumRows();
 	
 	//debug
+	/*
 	int numLocal = 0;
 	for (int i = 0; i < numNormal; i++)
 	{
@@ -64,15 +65,17 @@ void SeqSwapper::swapSequences()
 	}
 	if (numLocal == 0)LOG_POST("Could not find any local seq-id");
 	int num = m_ac.GetNumRows();
+	*/
 
 	vector< vector<int> * > clusters;
 	makeClusters(m_clusteringThreshold, clusters);
 	vector< pair<int, int> > replacementPairs;
-	
+	set<int> structures;
+
 	for (int i = 0; i < clusters.size(); i++)
 	{
 		vector<int>* cluster = clusters[i];
-		findReplacements(*cluster, replacementPairs);
+		findReplacements(*cluster, replacementPairs, structures);
 		delete cluster;
 	}
 	set<int> usedPendings;
@@ -87,7 +90,7 @@ void SeqSwapper::swapSequences()
 		string nid = seqId->AsFastaString();
 		m_ac.GetSeqIDForRow(replacementPairs[p].second, seqId);
 		string pid = seqId->AsFastaString();
-		LOG_POST("replacing "<<nid<<"with "<<pid);
+		LOG_POST("replacing "<<nid<<" with "<<pid);
 		//take care of master replacement
 		if (replacementPairs[p].first == 0)
 			newMaster = replacementPairs[p].second - numNormal;
@@ -102,8 +105,7 @@ void SeqSwapper::swapSequences()
 		promotePendingRows(usedPendings, &newMaster);
 	else
 		promotePendingRows(usedPendings);
-	set<int> structures;
-	findStructuralPendings(structures);
+	//findStructuralPendings(structures);
 	if (structures.size() > 0)
 		promotePendingRows(structures);
 	if (newMaster > 0)
@@ -126,7 +128,7 @@ void SeqSwapper::makeClusters(int identityThreshold, vector< vector<int> * >& cl
 	if (seqtree)
 	{
 		seqtree->prepare();
-		seqtree->fixRowNumber(m_ac);
+		//seqtree->fixRowNumber(m_ac);
 		double pid = ((double)identityThreshold)/100.0;
 		double distTh = 1.0 -  pid;
 		double distToRoot = seqtree->getMaxDistanceToRoot() - distTh;
@@ -141,16 +143,23 @@ void SeqSwapper::makeClusters(int identityThreshold, vector< vector<int> * >& cl
 	}
 }
 
-void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >& replacementPairs)
+void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >& replacementPairs, set<int>& structs)
 {
 	if (cluster.size() == 0)
 		return;
 	// seperate normal from pending
 	vector<int> normal, pending;
+	set<int> pending3D;
 	for (int i = 0; i < cluster.size(); i++)
 	{
 		if (m_ac.IsPending(cluster[i]))
+		{
 			pending.push_back(cluster[i]);
+			if (m_ac.IsPdb(cluster[i]))
+			{
+				pending3D.insert(cluster[i]);
+			}
+		}
 		else
 		{
 			//only care about local seq_id for now
@@ -187,7 +196,16 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 		{
 			usedPendingIndice.insert(maxIdIndex);
 			replacementPairs.push_back(pair<int, int>(normal[n], pending[maxIdIndex]));
+			set<int>::iterator sit = pending3D.find(pending[maxIdIndex]);
+			if (sit != pending3D.end())
+			{
+				pending3D.erase(sit); //this 3D has been used.
+			}
 		}
+	}
+	if (pending3D.size() > 0)
+	{
+		structs.insert(pending3D.begin(), pending3D.end());
 	}
 }
 
