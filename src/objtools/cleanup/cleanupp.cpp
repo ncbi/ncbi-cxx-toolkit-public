@@ -632,11 +632,11 @@ void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
 
 void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 {
+    x_MoveGeneQuals (bss);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
-    x_MergeAdjacentAnnots(bss);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToProt);
     x_ExtendSingleGeneOnmRNA(bss);
@@ -670,11 +670,12 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
-        x_MergeAdjacentAnnots(bss);
     
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
     
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
+        x_RemoveMarkedGeneXrefs(bss);
+        x_MergeAdjacentAnnots(bss);
     } else {
         CBioseq_EditHandle bsh = seh.GetSeq().GetEditHandle();
         x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
@@ -688,11 +689,12 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
-        x_MergeAdjacentAnnots(bsh);
     
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
     
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
+        x_RemoveMarkedGeneXrefs(bsh);
+        x_MergeAdjacentAnnots(bsh);
     }
 }
 
@@ -700,11 +702,11 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 
 void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 {
+    x_MoveGeneQuals (bsh);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
-    x_MergeAdjacentAnnots(bsh);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToProt);
     x_ExtendSingleGeneOnmRNA(bsh);
@@ -731,16 +733,18 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
-    x_MergeAdjacentAnnots(bsh);
     
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);        
 
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
+    x_RemoveMarkedGeneXrefs(bsh);
+    x_MergeAdjacentAnnots(bsh);
 }
 
 
 void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
 {
+    x_MoveGeneQuals (sa);
     x_ConvertFullLenSourceFeatureToDescriptor(sa);
     x_ConvertFullLenPubFeatureToDescriptor(sa);    
     x_RemoveEmptyFeatures(sa);
@@ -757,6 +761,7 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
     x_CheckCodingRegionEnds(sa);
     
     x_RemoveUnnecessaryGeneXrefs (sa);
+    x_RemoveMarkedGeneXrefs(sa);
 }
 
 
@@ -1078,14 +1083,20 @@ void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_Handle bs)
             && (! (*annot_it).Seq_annot_CanGetDesc()
                 || (*annot_it).Seq_annot_GetDesc().Get().size() == 0)) {
             if (prev_can_merge) {
+                vector<CSeq_feat_EditHandle> sfh; // copy seqfeat handles to not break iterator while moving
                 // merge features from annot_it into prev
                 CFeat_CI feat_ci((*annot_it));
                 while (feat_ci) {
-                    prev.AddFeat(feat_ci->GetOriginalFeature());
+                    sfh.push_back(CSeq_feat_EditHandle (feat_ci->GetSeq_feat_Handle()));
                     ++feat_ci;
+                }
+                // move features to prev annot
+                ITERATE (vector<CSeq_feat_EditHandle>, it, sfh) {
+                  prev.TakeFeat (*it);
                 }
                 // add annot_it to list of annotations to remove
                 sah.push_back((*annot_it).GetEditHandle());
+                
             } else {
                 prev = (*annot_it).GetEditHandle();
             }
@@ -1277,6 +1288,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2006/09/27 15:42:03  bollin
+ * Added step to ExtendedCleanup for moving gene quals to gene xrefs and removing
+ * the gene xrefs from this step at the end of the process on features for which
+ * there is an overlapping gene.
+ *
  * Revision 1.46  2006/08/29 23:36:04  ucko
  * Explicitly qualify is_sorted by objects:: for the sake of older GCC
  * versions, which otherwise complain about ambiguity with std::is_sorted.

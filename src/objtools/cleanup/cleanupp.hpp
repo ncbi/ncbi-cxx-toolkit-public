@@ -293,6 +293,17 @@ private:
     void x_ChangeImpFeatToCDS(CSeq_annot_Handle sa);
     void x_ChangeImpFeatToProt(CSeq_annot_Handle sa);
     
+    void x_MoveGeneQuals(const CSeq_feat& orig_feat);
+    void x_MoveGeneQuals (CSeq_annot_Handle sa);
+    void x_MoveGeneQuals (CSeq_entry_Handle seh);
+    void x_MoveGeneQuals (CBioseq_Handle bs);
+    void x_MoveGeneQuals (CBioseq_set_Handle bs);
+    void x_RemoveMarkedGeneXref(const CSeq_feat& orig_feat);
+    void x_RemoveMarkedGeneXrefs (CSeq_annot_Handle sa);
+    void x_RemoveMarkedGeneXrefs (CSeq_entry_Handle seh);
+    void x_RemoveMarkedGeneXrefs (CBioseq_Handle bs);
+    void x_RemoveMarkedGeneXrefs (CBioseq_set_Handle bs);
+    
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
     
@@ -336,6 +347,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2006/09/27 15:42:03  bollin
+ * Added step to ExtendedCleanup for moving gene quals to gene xrefs and removing
+ * the gene xrefs from this step at the end of the process on features for which
+ * there is an overlapping gene.
+ *
  * Revision 1.41  2006/08/29 14:28:12  rsmith
  * + BasicCleanup(CEMBL_block)
  *

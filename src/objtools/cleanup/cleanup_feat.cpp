@@ -1428,7 +1428,11 @@ void CCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa)
                 const CGene_ref* gene_xref = feat.GetGeneXref();
                 if (gene_xref != NULL && ! gene_xref->IsSuppressed()) {
                     CConstRef<CSeq_feat> overlap = sequence::GetOverlappingGene(feat.GetLocation(), *m_Scope);
-                    if (!overlap.IsNull()) {
+                    if (!overlap.IsNull() && !overlap->GetData().IsGene()) {
+                        // this is weird!
+                        CSeqFeatData::ESubtype stype = overlap->GetData().GetSubtype();
+                    }
+                    if (!overlap.IsNull() && overlap->GetData().IsGene()) {
                         const CGene_ref& overlap_ref = overlap->GetData().GetGene();
                         CFeat_CI other_genes(*m_Scope, overlap->GetLocation(), gene_sel);
                         int num_in_place = 0;
@@ -1948,6 +1952,198 @@ static void ImpFeatToProtRef(SeqFeatArr sfa)
 #endif
 }
 
+static const string sc_ExtendedCleanupGeneQual("EXTENDEDCLEANUPGENEQUAL:");
+
+
+void CCleanup_imp::x_MoveGeneQuals(const CSeq_feat& orig_feat)
+{
+    bool found_gene_qual = false;
+    ITERATE (CSeq_feat::TQual, it, orig_feat.GetQual()) {
+        const CGb_qual& gb_qual = **it;
+        if (gb_qual.CanGetQual()
+            && NStr::Equal(gb_qual.GetQual(), "gene")) {
+            found_gene_qual = true;
+        }
+    }
+    if (found_gene_qual) {
+        // if the feature has a gene qualfier, 
+        //      create a gene xref
+        //      and remove the gene qualifier
+                  
+        CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+        CSeq_feat_EditHandle efh(fh);
+
+        CRef<CSeq_feat> feat(new CSeq_feat);
+        feat->Assign(orig_feat);
+        CSeq_feat::TQual::iterator it = feat->SetQual().begin();
+        CSeq_feat::TQual::iterator it_end = feat->SetQual().end();
+        while (it != it_end) {
+            CGb_qual& gb_qual = **it;
+            if (gb_qual.CanGetQual()
+                && NStr::Equal(gb_qual.GetQual(), "gene")) {
+                // create a gene xref
+                if (gb_qual.CanGetVal()) {
+                    CGene_ref& grp = feat->SetGeneXref ();
+                    grp.SetLocus (sc_ExtendedCleanupGeneQual + gb_qual.GetVal());
+                }
+                //remove the qual
+                it = feat->SetQual().erase(it);
+                it_end = feat->SetQual().end();
+            } else {
+                ++it;
+            }                    
+        }
+        efh.Replace(*feat);
+    }
+}
+
+
+void CCleanup_imp::x_MoveGeneQuals(CSeq_annot_Handle sa)
+{
+    // iterate through features.
+    CFeat_CI feat_ci (sa);
+    
+    while (feat_ci) {
+        if (feat_ci->GetFeatType() == CSeqFeatData::e_Gene
+            || ! feat_ci->IsSetQual()) {
+            // do nothing
+        } else {
+            x_MoveGeneQuals(feat_ci->GetOriginalFeature());
+        }
+        ++feat_ci;
+    }
+}
+
+
+void CCleanup_imp::x_MoveGeneQuals(CSeq_entry_Handle seh)
+{
+    // iterate through features.
+    CFeat_CI feat_ci (seh);
+    
+    while (feat_ci) {
+        if (feat_ci->GetFeatType() == CSeqFeatData::e_Gene
+            || ! feat_ci->IsSetQual()) {
+            // do nothing
+        } else {
+            x_MoveGeneQuals(feat_ci->GetOriginalFeature());
+        }
+        ++feat_ci;
+    }
+}
+
+
+void CCleanup_imp::x_MoveGeneQuals(CBioseq_Handle bs)
+{
+    CSeq_entry_Handle seh = bs.GetSeq_entry_Handle();
+    x_MoveGeneQuals (seh);
+}
+
+
+void CCleanup_imp::x_MoveGeneQuals(CBioseq_set_Handle bss)
+{
+    CSeq_entry_Handle seh = bss.GetParentEntry();
+    x_MoveGeneQuals (seh);
+}
+
+
+void CCleanup_imp::x_RemoveMarkedGeneXref(const CSeq_feat& orig_feat)
+{
+    bool found_flagged_genexref = false;
+    ITERATE (CSeq_feat::TXref, it, orig_feat.GetXref()) {
+        if ((*it)->IsSetData () && (*it)->GetData ().IsGene ()
+            && (*it)->GetData().GetGene().IsSetLocus()
+            && NStr::StartsWith ((*it)->GetData().GetGene().GetLocus(), sc_ExtendedCleanupGeneQual)) {
+            found_flagged_genexref = true;
+        }
+    }
+    // we found a flagged genexref.
+    // either remove the entire genexref, if there is an overlapping gene,
+    // or remove the flag if there is no overlapping gene
+    if (found_flagged_genexref) {   
+        CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+        CSeq_feat_EditHandle efh(fh);
+        CRef<CSeq_feat> feat(new CSeq_feat);
+        feat->Assign(orig_feat);
+
+        CConstRef<CSeq_feat> gene = sequence::GetBestOverlappingFeat(fh.GetLocation(),
+                                                                     CSeqFeatData::eSubtype_gene,
+                                                                     sequence::eOverlap_Contains,
+                                                                     *m_Scope);
+        if (gene) {
+            x_RemoveGeneXref(feat);
+        } else {
+            NON_CONST_ITERATE(CSeq_feat::TXref, it, feat->SetXref ()) {
+                if ((*it)->IsSetData () && (*it)->GetData ().IsGene ()
+                    && (*it)->GetData().GetGene().IsSetLocus()
+                    && NStr::StartsWith ((*it)->GetData().GetGene().GetLocus(), sc_ExtendedCleanupGeneQual)) {
+                    (*it)->SetData ().SetGene ().SetLocus ((*it)->GetData().GetGene().GetLocus().substr(sc_ExtendedCleanupGeneQual.length()));
+                }
+            }
+        }
+        fh.Replace (*feat); 
+    }
+}
+
+
+void CCleanup_imp::x_RemoveMarkedGeneXrefs(CSeq_annot_Handle sa)
+{
+    // iterate through features.
+    CFeat_CI feat_ci (sa);
+    
+    while (feat_ci) {
+        if (feat_ci->GetFeatType() == CSeqFeatData::e_Gene
+            || ! feat_ci->IsSetXref()) {
+            // do nothing
+        } else {
+            x_RemoveMarkedGeneXref(feat_ci->GetOriginalFeature());
+        }
+        ++feat_ci;
+    }
+}
+
+
+void CCleanup_imp::x_RemoveMarkedGeneXrefs (CSeq_entry_Handle seh)
+{
+    // iterate through features.
+    CFeat_CI feat_ci (seh);
+    
+    while (feat_ci) {
+        if (feat_ci->GetFeatType() == CSeqFeatData::e_Gene
+            || ! feat_ci->IsSetXref()) {
+            // do nothing
+        } else {
+            x_RemoveMarkedGeneXref(feat_ci->GetOriginalFeature());
+        }
+        ++feat_ci;
+    }
+}
+
+
+void CCleanup_imp::x_RemoveMarkedGeneXrefs (CBioseq_Handle bs)
+{
+    // iterate through features.
+    CFeat_CI feat_ci (bs);
+    
+    while (feat_ci) {
+        if (feat_ci->GetFeatType() == CSeqFeatData::e_Gene
+            || ! feat_ci->IsSetXref()) {
+            // do nothing
+        } else {
+            x_RemoveMarkedGeneXref(feat_ci->GetOriginalFeature());
+        }
+        ++feat_ci;
+    }
+}
+
+
+void CCleanup_imp::x_RemoveMarkedGeneXrefs (CBioseq_set_Handle bss)
+{
+    CSeq_entry_Handle seh = bss.GetParentEntry();
+    x_RemoveMarkedGeneXrefs (seh);
+}
+
+
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -1957,6 +2153,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2006/09/27 15:42:03  bollin
+ * Added step to ExtendedCleanup for moving gene quals to gene xrefs and removing
+ * the gene xrefs from this step at the end of the process on features for which
+ * there is an overlapping gene.
+ *
  * Revision 1.32  2006/08/30 17:55:48  rsmith
  * Do not set empty comments.
  *
