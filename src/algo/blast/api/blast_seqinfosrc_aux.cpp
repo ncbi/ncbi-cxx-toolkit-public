@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/27 21:03:41  avagyanv
+ * fixed line endings
+ *
  * Revision 1.1  2006/09/27 18:05:27  avagyanv
  * Implementation of auxiliary functions using IBlastSeqInfoSrc
  *
