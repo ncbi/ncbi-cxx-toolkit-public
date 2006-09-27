@@ -83,6 +83,7 @@ struct SSeqMapSwitchPoint
 /* @} */
 
 // calculate switch point for two segments specified by align
+NCBI_XOBJMGR_EXPORT
 SSeqMapSwitchPoint GetSwitchPoint(const CBioseq_Handle& seq,
                                   const CSeq_align& align);
 
@@ -90,10 +91,12 @@ typedef vector<SSeqMapSwitchPoint> TSeqMapSwitchPoints;
 typedef list<CRef<CSeq_align> > TSeqMapSwitchAligns;
 
 // calculate all sequence switch points using set of Seq-aligns
+NCBI_XOBJMGR_EXPORT
 TSeqMapSwitchPoints GetAllSwitchPoints(const CBioseq_Handle& seq,
                                        const TSeqMapSwitchAligns& aligns);
 
 // calculate all sequence switch points using set of Seq-aligns from assembly
+NCBI_XOBJMGR_EXPORT
 vector<SSeqMapSwitchPoint> GetAllSwitchPoints(const CBioseq_Handle& seq);
 
 END_SCOPE(objects)
@@ -102,6 +105,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/09/27 21:51:56  vasilche
+* Added exports.
+*
 * Revision 1.1  2006/09/27 21:28:59  vasilche
 * Added functions to calculate switch points.
 *
