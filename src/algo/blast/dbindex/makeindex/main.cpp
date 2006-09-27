@@ -32,8 +32,18 @@
 
 #include <ncbi_pch.hpp>
 
+#ifdef LOCAL_SVN
+
 #include "../libindexdb/sequence_istream_fasta.hpp"
 #include "../libindexdb/dbindex.hpp"
+
+#else
+
+#include <algo/blast/dbindex/sequence_istream_fasta.hpp>
+#include <algo/blast/dbindex/dbindex.hpp>
+
+#endif
+
 #include "mkindex_app.hpp"
 
 USING_NCBI_SCOPE;
@@ -46,6 +56,9 @@ int main( int argc, char * argv[] )
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2006/09/27 16:55:05  morgulis
+ * Changes needed to make makeindex compile.
+ *
  * Revision 1.1  2006/09/27 15:29:06  morgulis
  * Adding makeindex project.
  *

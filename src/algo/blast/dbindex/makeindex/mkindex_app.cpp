@@ -43,9 +43,20 @@ TODO:
 #include <string>
 #include <sstream>
 
+#ifdef LOCAL_SVN
+
 #include "../libindexdb_new/sequence_istream_fasta.hpp"
 #include "../libindexdb_new/sequence_istream_bdb.hpp"
 #include "../libindexdb_new/dbindex.hpp"
+
+#else
+
+#include <algo/blast/dbindex/sequence_istream_fasta.hpp>
+#include <algo/blast/dbindex/sequence_istream_bdb.hpp>
+#include <algo/blast/dbindex/dbindex.hpp>
+
+#endif
+
 #include "mkindex_app.hpp"
 
 using namespace std;
@@ -147,6 +158,9 @@ int CMkIndexApplication::Run()
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2006/09/27 16:55:05  morgulis
+ * Changes needed to make makeindex compile.
+ *
  * Revision 1.1  2006/09/27 15:29:06  morgulis
  * Adding makeindex project.
  *
