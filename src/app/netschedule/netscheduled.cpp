@@ -292,18 +292,19 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 /// ConnectionHandler for NetScheduler
 
 class CNetScheduleServer;
-class CNetScheduleHandler : public IServer_MessageHandler
+class CNetScheduleHandler : public IServer_LineMessageHandler
 {
 public:
     CNetScheduleHandler(CNetScheduleServer* server);
     // MessageHandler protocol
-    virtual void OnSocketEvent(CSocket& socket, EIO_Event event);
-    virtual void OnTimeout(CSocket& socket);
-    virtual int  CheckMessage(BUF* buffer, const void *data, size_t size);
+    virtual void OnOpen(void) { }
+    virtual void OnWrite(void) { }
+    virtual void OnClose(void);
+    virtual void OnTimeout(void);
     virtual void OnMessage(BUF buffer); 
 
     // Transitional
-    // Move this method to eIO_Open handler
+    // TODO: Move this method to OnOpen handler
     void Init(CSocket& socket, unsigned host_addr, unsigned local_addr);
     SThreadData* GetThreadData() { return &m_ThreadData; }
     CNetScheduleMonitor* GetMonitor(void) { return m_Monitor; }
@@ -379,7 +380,6 @@ private:
     SJS_Request m_JobReq;
     bool m_VersionControl;
     bool m_AdminAccess;
-    bool m_SeenCR;
     void (CNetScheduleHandler::*m_ProcessMessage)(BUF buffer);
 
     /// Quick local timer
@@ -538,51 +538,19 @@ void CNetScheduleHandler::Init(CSocket& socket,
 
     m_ThreadData.auth.erase();
 
-    // TODO: move this initialization close to CheckMessage
-    m_SeenCR = false;
-
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgAuth;
 }
 
 
-void CNetScheduleHandler::OnSocketEvent(CSocket& socket, EIO_Event event)
-{
-    switch (event) {
-    case eIO_Read:
-        IServer_MessageHandler::OnSocketEvent(socket, event);
-        return;
-    case eIO_Close:
-        m_Done = true;
-        break;
-    default:
-        break;
-    }
-}
-
-
-void CNetScheduleHandler::OnTimeout(CSocket& socket)
+void CNetScheduleHandler::OnClose()
 {
     m_Done = true;
 }
 
 
-int CNetScheduleHandler::CheckMessage(BUF* buffer, const void * data, size_t size)
+void CNetScheduleHandler::OnTimeout()
 {
-    size_t n, skip;
-    const char * msg = (const char *) data;
-    skip = 0;
-    if (size && m_SeenCR && msg[0] == '\n') {
-        ++skip;
-    }
-    m_SeenCR = false;
-    for (n = skip; n < size; ++n) {
-        if (msg[n] == '\r' || msg[n] == '\n' || msg[n] == '\0') {
-            m_SeenCR = msg[n] == '\r';
-            break;
-        }
-    }
-    BUF_Write(buffer, msg+skip, n-skip);
-    return size - n - 1;
+    m_Done = true;
 }
 
 
@@ -1630,6 +1598,7 @@ void CNetScheduleHandler::ProcessShutdown(CSocket& socket)
         msg += CTime(CTime::eCurrent).AsString();
         LOG_POST(Info << msg);
         m_Server->SetShutdownFlag();
+        WriteMsg(socket, "OK:", "");
     } else {
         WriteMsg(socket, "ERR:", "Shutdown access denied.");
         LOG_POST(Warning << "Shutdown request denied: " << admin_host);
@@ -2485,7 +2454,7 @@ void CNetScheduleServer::Process(SOCK sock)
         // Process requests
         handler->Init(socket, m_HostNetAddr, m_LocalNetAddr);
         for (unsigned cmd = 0; true; (cmd>=100?cmd=0:++cmd)) {
-            handler->OnSocketEvent(socket, eIO_Read);
+            handler->OnRead();
             if (handler->IsDone()) break;
             // abort permanent connection session if shutdown requested
             //
@@ -2930,6 +2899,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2006/09/27 21:26:06  joukovv
+ * Thread-per-request is finally implemented. Interface changed to enable
+ * streams, line-based message handler added, netscedule adapted.
+ *
  * Revision 1.98  2006/09/21 21:28:59  joukovv
  * Consistency of memory state and database strengthened, ability to retry failed
  * jobs on different nodes (and corresponding queue parameter, failed_retries)

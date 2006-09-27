@@ -31,7 +31,8 @@
  */
 
 /// @file server.hpp
-/// Framework to create multithreaded network servers
+/// Framework to create multithreaded network servers with thread-per-request
+/// scheduling.
 
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_stream.hpp>
@@ -52,6 +53,7 @@ BEGIN_NCBI_SCOPE
 class  IServer_ConnectionFactory;
 struct SServer_Parameters;
 class  CServer_ConnectionPool;
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -117,7 +119,7 @@ public:
     virtual ~IServer_ConnectionHandler() { }
 
     /// Following two methods are guaranteed to be called NOT
-    /// at the same time as OnSocketEvent, so if you implement them
+    /// at the same time as On*, so if you implement them
     /// you should not guard the variables which they can use with
     /// mutexes.
     /// Returns the set of events for which Poll should check.
@@ -128,34 +130,35 @@ public:
         { return kDefaultTimeout; }
 
     /// Runs in response to an external event [asynchronous].
-    /// @param socket
-    ///  is the source of activity.  Leaving it open directs the
-    ///  server to monitor it for further activity, and to close it
-    ///  itself if no such activity occurs before the idle timeout
-    ///  has elapsed.
-    /// @param event
-    ///  is one of
-    ///     - eIO_Open - a client has just established this connection.
-    ///     - eIO_Read - the client has just sent data.
-    ///     - eIO_Write - the client is ready to receive data.
-    ///     - eIO_Close - the connection has spontaneously closed.
-    virtual void OnSocketEvent(CSocket& socket, EIO_Event event) = 0;
+    /// You can get socket by calling GetSocket(), if you close the socket
+    /// this object will be destroyed.
+    /// Individual events are:
+    /// A client has just established this connection.
+    virtual void OnOpen(void) = 0;
+    /// The client has just sent data.
+    virtual void OnRead(void) = 0;
+    /// The client is ready to receive data.
+    virtual void OnWrite(void) = 0;
+    /// The connection has spontaneously closed.
+    virtual void OnClose(void) = 0;
 
     /// Runs when a client has been idle for too long, prior to
     /// closing the connection [synchronous].
-    virtual void OnTimeout(CSocket& socket) { }
+    virtual void OnTimeout(void) { }
 
     /// Runs when there are insufficient resources to queue a
     /// connection, prior to closing it.
-    virtual void OnOverflow(CSocket& socket) { }
+    virtual void OnOverflow(void) { }
 
-    // Get underlying socket
-    CSocket& GetSocket() { return *m_Socket; }
-private:
+    /// Get underlying socket
+    CSocket& GetSocket(void) { return *m_Socket; }
+
+public: // TODO: make it protected. Public is for DEBUG purposes only
     friend class CServer_Connection;
-    CSocket* m_Socket;
-public: // TODO: remove it, for DEBUG purposes only
     void SetSocket(CSocket *socket) { m_Socket = socket; }
+
+private:
+    CSocket* m_Socket;
 };
 
 
@@ -173,7 +176,7 @@ public:
         m_Buffer(0)
     { }
     virtual ~IServer_MessageHandler() { BUF_Destroy(m_Buffer); }
-    virtual void OnSocketEvent(CSocket& socket, EIO_Event event);
+    virtual void OnRead(void);
     // You should implement this look-ahead function to decide, did you get
     // a message in the series of read events. If not, you should return -1.
     // If yes, return number of chars, beyond well formed message. E.g., if
@@ -192,6 +195,25 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// IServer_LineMessageHandler::
+///
+/// TODO:
+class NCBI_XCONNECT_EXPORT IServer_LineMessageHandler :
+    public IServer_MessageHandler
+{
+public:
+    IServer_LineMessageHandler() :
+        IServer_MessageHandler(), m_SeenCR(false)
+    { }
+    virtual int CheckMessage(BUF* buffer, const void *data, size_t size);
+private:
+    bool m_SeenCR;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// IServer_StreamHandler::
 ///
 /// TODO:
@@ -199,11 +221,11 @@ class NCBI_XCONNECT_EXPORT IServer_StreamHandler :
     public IServer_ConnectionHandler
 {
 public:
-    virtual void OnSocketEvent(CSocket& socket, EIO_Event event);
     CNcbiIostream &GetStream();
 private:
     CConn_SocketStream m_Stream;
 };
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -303,6 +325,7 @@ public:
 };
 
 
+
 END_NCBI_SCOPE
 
 
@@ -312,6 +335,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/27 21:26:06  joukovv
+ * Thread-per-request is finally implemented. Interface changed to enable
+ * streams, line-based message handler added, netscedule adapted.
+ *
  * Revision 1.1  2006/09/13 18:32:21  joukovv
  * Added (non-functional yet) framework for thread-per-request thread pooling model,
  * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.

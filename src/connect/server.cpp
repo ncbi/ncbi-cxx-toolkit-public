@@ -47,12 +47,9 @@ typedef CServer_Listener       TListener;
 
 /////////////////////////////////////////////////////////////////////////////
 // IServer_MessageHandler implementation
-void IServer_MessageHandler::OnSocketEvent(CSocket& socket, EIO_Event event)
+void IServer_MessageHandler::OnRead(void)
 {
-    // All other events should be implemented by subclass, only read event
-    // redirected back to IServer_MessageHandler. May be it is easier to
-    // split OnSocketEvent into 4 separate event classes.
-    if (!(event & eIO_Read)) return;
+    CSocket &socket = GetSocket();
     char read_buf[4096];
     size_t n_read;
     EIO_Status status = socket.Read(read_buf, sizeof(read_buf), &n_read);
@@ -60,10 +57,10 @@ void IServer_MessageHandler::OnSocketEvent(CSocket& socket, EIO_Event event)
     case eIO_Success:
         break;
     case eIO_Timeout:
-        this->OnTimeout(socket);
+        this->OnTimeout();
         return;
     case eIO_Closed:
-        this->OnSocketEvent(socket, eIO_Close);
+        this->OnClose();
         return;
     default:
         // TODO: ??? OnError
@@ -83,6 +80,29 @@ void IServer_MessageHandler::OnSocketEvent(CSocket& socket, EIO_Event event)
         buf_ptr += consumed;
         n_read -= consumed;
     }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// IServer_LineMessageHandler implementation
+int IServer_LineMessageHandler::CheckMessage(
+    BUF* buffer, const void * data, size_t size)
+{
+    size_t n, skip;
+    const char * msg = (const char *) data;
+    skip = 0;
+    if (size && m_SeenCR && msg[0] == '\n') {
+        ++skip;
+    }
+    m_SeenCR = false;
+    for (n = skip; n < size; ++n) {
+        if (msg[n] == '\r' || msg[n] == '\n' || msg[n] == '\0') {
+            m_SeenCR = msg[n] == '\r';
+            break;
+        }
+    }
+    BUF_Write(buffer, msg+skip, n-skip);
+    return size - n - 1;
 }
 
 
@@ -111,32 +131,44 @@ public:
     CAcceptRequest(EIO_Event event,
                    CServer_ConnectionPool& conn_pool,
                    const STimeout* timeout,
-                   TListener* listener) :
-        CServerRequest(event, conn_pool, timeout),
-        m_Listener(listener)
-        { }
+                   TListener* listener);
     virtual void Process(void);
 private:
-    TListener* m_Listener;
+    TConnection* m_Connection;
 } ;
+
+CAcceptRequest::CAcceptRequest(EIO_Event event,
+                               CServer_ConnectionPool& conn_pool,
+                               const STimeout* timeout,
+                               TListener* listener) :
+        CServerRequest(event, conn_pool, timeout),
+        m_Connection(NULL)
+{
+    // Accept connection in main thread to avoid race for listening
+    // socket's accept method, but postpone connection's OnOpen for
+    // pool thread because it can be arbitrarily long.
+    static const STimeout kZeroTimeout = { 0, 0 };
+    auto_ptr<CServer_Connection> conn(
+        new CServer_Connection(listener->m_Factory->Create()));
+    if (listener->Accept(*conn, &kZeroTimeout) != eIO_Success)
+        return;
+    conn->SetTimeout(eIO_ReadWrite, m_IdleTimeout);
+    m_Connection = conn.release();
+}
 
 void CAcceptRequest::Process(void)
 {
+    if (!m_Connection) return;
     try {
-        TConnection* conn = m_Listener->OnConnectEvent(m_IdleTimeout);
-        if (conn) {
-            if (m_ConnPool.Add(conn, CServer_ConnectionPool::eActiveSocket)) {
-                conn->OnSocketEvent(eIO_Open);
-                // TODO: check status, and if ready to read 
-                // conn->OnSocketEvent(eIO_Read);
-                m_ConnPool.SetConnType(conn,
-                                       CServer_ConnectionPool::eInactiveSocket);
-            } else {
-                // the connection pool is full
-                conn->OnOverflow();
-                delete conn;
-                return;
-            }
+        if (m_ConnPool.Add(m_Connection,
+                            CServer_ConnectionPool::eActiveSocket)) {
+            m_Connection->OnSocketEvent(eIO_Open);
+            m_ConnPool.SetConnType(m_Connection,
+                                    CServer_ConnectionPool::eInactiveSocket);
+        } else {
+            // the connection pool is full
+            m_Connection->OnOverflow();
+            delete m_Connection;
         }
     } STD_CATCH_ALL("CAcceptRequest::Process");
 }
@@ -158,28 +190,65 @@ private:
     TConnection* m_Connection;
 } ;
 
+
 void CIORequest::Process(void)
 {
     try {
         m_Connection->OnSocketEvent(m_Event);
     } STD_CATCH_ALL("CIORequest::Process");
+    // Return socket to poll vector
     m_ConnPool.SetConnType(m_Connection,
                            CServer_ConnectionPool::eInactiveSocket);
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CServer_Listener
 CStdRequest* TListener::CreateRequest(EIO_Event event,
                                       CServer_ConnectionPool& conn_pool,
                                       const STimeout* timeout)
 {
+    // TODO: Move actual Accept here, postpone notification of newly created socket
     return new CAcceptRequest(event, conn_pool, timeout, this);
 }
 
+
+void TListener::OnOverflow(void) {
+    static const STimeout kZeroTimeout = { 0, 0 };
+    auto_ptr<CServer_Connection> conn(
+        new CServer_Connection(m_Factory->Create()));
+    if (Accept(*conn, &kZeroTimeout) != eIO_Success)
+        return;
+    conn->OnOverflow();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CServer_Connection
 CStdRequest* TConnection::CreateRequest(EIO_Event event,
                                         CServer_ConnectionPool& conn_pool,
                                         const STimeout* timeout)
 {
+    // Pull out socket from poll vector
+    // See CIORequest::Process and CServer_ConnectionPool::GetPollVec
     conn_pool.SetConnType(this, CServer_ConnectionPool::eActiveSocket);
+    //
     return new CIORequest(event, conn_pool, timeout, this);
+}
+
+
+void TConnection::OnSocketEvent(EIO_Event event)
+{
+    if (eIO_Open == event) {
+        m_Handler->OnOpen();
+    } else if (eIO_Close == event) {
+        m_Handler->OnClose();
+    } else {
+        if (eIO_Read & event)
+            m_Handler->OnRead();
+        if (eIO_Write & event)
+            m_Handler->OnWrite();
+    }
 }
 
 
@@ -240,7 +309,7 @@ void CServer::Run(void)
     vector<CSocketAPI::SPoll> polls;
     size_t                    count;
     bool                      wait = false;
-    while ( !ShutdownRequested() ) {
+    while (!ShutdownRequested()) {
         m_ConnectionPool->Clean();
 
         if (wait) {
@@ -276,21 +345,23 @@ void CServer::Run(void)
             TConnBase* conn_base = dynamic_cast<TConnBase*>(it->m_Pollable);
             _ASSERT(conn_base);
             // TODO: replace dynamic_cast with virtual call
-            TListener*   listener = dynamic_cast<TListener*>  (it->m_Pollable);
+            TListener* listener = dynamic_cast<TListener*>(it->m_Pollable);
             if (listener) {
                 listener_activity = true;
             }
             try {
-                threadPool.AcceptRequest(CRef<CStdRequest>
-                     (conn_base->CreateRequest(it->m_REvent,
-                                               *m_ConnectionPool,
-                                               m_Parameters->idle_timeout)));
-                if (threadPool.IsFull()  &&
-                    m_Parameters->temporarily_stop_listening) {
+                CStdRequest* request = conn_base->CreateRequest(
+                    it->m_REvent, *m_ConnectionPool,
+                    m_Parameters->idle_timeout);
+                if (request) {
+                    threadPool.AcceptRequest(CRef<CStdRequest>(request));
+                    if (threadPool.IsFull()  &&
+                        m_Parameters->temporarily_stop_listening) {
 
-                    m_ConnectionPool->StopListening();
-                    wait = true;
-                    break;
+                        m_ConnectionPool->StopListening();
+                        wait = true;
+                        break;
+                    }
                 }
             } catch (CBlockingQueueException&) {
                 // avoid spinning if only regular sockets are active,
@@ -333,6 +404,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.2  2006/09/27 21:26:06  joukovv
+ * Thread-per-request is finally implemented. Interface changed to enable
+ * streams, line-based message handler added, netscedule adapted.
+ *
  * Revision 6.1  2006/09/13 18:32:21  joukovv
  * Added (non-functional yet) framework for thread-per-request thread pooling model,
  * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.

@@ -47,11 +47,22 @@
 
 BEGIN_NCBI_SCOPE
 
+
+class CServer_ControlConnection : public CSocket,
+                                  public IServer_ConnectionBase
+{
+public:
+    virtual CStdRequest* CreateRequest(EIO_Event event,
+                                       CServer_ConnectionPool& connPool,
+                                       const STimeout* timeout);
+};
+
+
 class CServer_ConnectionPool
 {
 public:
-    CServer_ConnectionPool(unsigned int& max_connections) :
-        m_MaxConnections(max_connections) { }
+    CServer_ConnectionPool(unsigned max_connections);
+    ~CServer_ConnectionPool();
 
     typedef IServer_ConnectionBase TConnBase;
     typedef CServer_Connection     TConnection;
@@ -63,8 +74,14 @@ public:
         eListener
     };
 
+    void SetMaxConnections(unsigned max_connections) {
+        m_MaxConnections = max_connections;
+    }
+
     bool Add(TConnBase* conn, EConnType type);
 
+    /// Guard connection from out-of-order packet processing by
+    /// pulling eActiveSocket's from poll vector
     /// Resets the expiration time as a bonus.
     void SetConnType(TConnBase* conn, EConnType type);
 
@@ -88,7 +105,9 @@ private:
     typedef map<TConnBase*, SPerConnInfo> TData;
     volatile TData                        m_Data;
     mutable CMutex                        m_Mutex;
-    unsigned int&                         m_MaxConnections;
+    unsigned int                          m_MaxConnections;
+    CSocket                               m_ControlSocket;
+    mutable CServer_ControlConnection     m_ControlSocketForPoll;
 };
 
 
@@ -101,6 +120,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/09/27 21:26:06  joukovv
+ * Thread-per-request is finally implemented. Interface changed to enable
+ * streams, line-based message handler added, netscedule adapted.
+ *
  * Revision 6.1  2006/09/13 18:32:21  joukovv
  * Added (non-functional yet) framework for thread-per-request thread pooling model,
  * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.

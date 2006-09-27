@@ -125,9 +125,12 @@ void CThreadedClientApp::Init(void)
 
     arg_desc->AddDefaultKey("host", "name", "Host to connect to",
                             CArgDescriptions::eString, "localhost");
-    arg_desc->AddKey("port", "N", "TCP port number on which to listen",
+    arg_desc->AddKey("port", "N", "TCP port number to connect to",
                      CArgDescriptions::eInteger);
     arg_desc->SetConstraint("port", new CArgAllow_Integers(0, 0xFFFF));
+
+    arg_desc->AddDefaultKey("delay", "N", "Average delay in milliseconds",
+        CArgDescriptions::eInteger, "500");
 
     arg_desc->AddDefaultKey("threads", "N", "Number of initial threads",
                             CArgDescriptions::eInteger, "5");
@@ -162,12 +165,13 @@ int CThreadedClientApp::Run(void)
 
     const string&  host = args["host"].AsString();
     unsigned short port = args["port"].AsInteger();
+    int avg_delay = args["delay"].AsInteger();
 
     for (unsigned int i = 0;  i < s_Requests;  ++i) {
         pool.AcceptRequest(CRef<ncbi::CStdRequest>
                            (new CConnectionRequest
-                            (host, port, rng.GetRand(0, 999), eHello)));
-        SleepMilliSec(rng.GetRand(0, 999));
+                            (host, port, rng.GetRand(0, avg_delay*2), eHello)));
+        SleepMilliSec(rng.GetRand(0, avg_delay*2));
     }
 
     // s_Send(host, port, 500, eGoodbye);
@@ -196,6 +200,10 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.11  2006/09/27 21:26:06  joukovv
+ * Thread-per-request is finally implemented. Interface changed to enable
+ * streams, line-based message handler added, netscedule adapted.
+ *
  * Revision 6.10  2004/11/03 16:46:47  ucko
  * Queue the server shutdown request to keep it from occurring prematurely.
  *

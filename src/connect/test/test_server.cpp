@@ -48,45 +48,78 @@ BEGIN_NCBI_SCOPE
 class CTestServer : public CServer
 {
 public:
-    CTestServer() : m_ShutdownRequested(false) { }
+    CTestServer() : m_ShutdownRequested(false), m_HelloCount(0) { }
     virtual bool ShutdownRequested(void) { return m_ShutdownRequested; }
     void RequestShutdown(void) { m_ShutdownRequested = true; }
+    void AddHello();
+    int  CountHellos();
 private:
     volatile bool m_ShutdownRequested;
+    CFastMutex m_HelloMutex;
+    int m_HelloCount;
 };
 
 
+void CTestServer::AddHello()
+{
+    CFastMutexGuard(m_HelloMutex);
+    ++m_HelloCount;
+}
+
+
+int CTestServer::CountHellos()
+{
+    CFastMutexGuard(m_HelloMutex);
+    return m_HelloCount;
+}
+
+
 // ConnectionHandler
-class CTestConnectionHandler : public IServer_ConnectionHandler
+class CTestConnectionHandler : public IServer_LineMessageHandler
 {
 public:
     CTestConnectionHandler(CTestServer* server) :
         m_Server(server)
     {
     }
-    virtual void OnSocketEvent(CSocket &socket, EIO_Event);
+    virtual void OnOpen(void);
+    virtual void OnMessage(BUF buf);
+    virtual void OnWrite(void) { }
+    virtual void OnClose(void) { }
 private:
     CTestServer* m_Server;
 };
 
 
-void CTestConnectionHandler::OnSocketEvent(CSocket &socket, EIO_Event event)
+void CTestConnectionHandler::OnOpen(void)
 {
-    char buf[1024];
-    size_t rd, wr;
     string hello("Hello!\n");
-    string goodbye("Goodbye!\n");
+    CSocket &socket = GetSocket();
 
-    socket.Write(hello.c_str(), hello.size(), &wr);
-    socket.Read(buf, 1023, &rd);
-    if (rd >= 0) {
-        buf[rd] = '\0';
-        printf("got \"%s\"\n", buf);
+    socket.Write(hello.c_str(), hello.size());
+}
+
+
+void CTestConnectionHandler::OnMessage(BUF buf)
+{
+    char data[1024];
+    string goodbye("Goodbye!\n");
+    CSocket &socket = GetSocket();
+
+    size_t msg_size = BUF_Read(buf, data, sizeof(data));
+    if (msg_size >= 0) {
+        data[msg_size] = '\0';
+        if (strncmp(data, "Hello!", strlen("Hello!")) == 0)
+            m_Server->AddHello();
+        printf("got \"%s\"\n", data);
+    } else {
+        printf("got empty buffer\n");
     }
-    socket.Write(goodbye.c_str(), goodbye.size(), &wr);
+    socket.Write(goodbye.c_str(), goodbye.size());
     socket.Close();
-    if (strncmp(buf, "Goodbye!", strlen("Goodbye!")) == 0) {
+    if (strncmp(data, "Goodbye!", strlen("Goodbye!")) == 0) {
         printf("got shutdown request\n");
+        printf("%d Hello's counted\n", m_Server->CountHellos());
         m_Server->RequestShutdown();
     }
 }
@@ -193,6 +226,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/09/27 21:26:06  joukovv
+ * Thread-per-request is finally implemented. Interface changed to enable
+ * streams, line-based message handler added, netscedule adapted.
+ *
  * Revision 6.1  2006/09/13 18:32:22  joukovv
  * Added (non-functional yet) framework for thread-per-request thread pooling model,
  * netscheduled.cpp refactored for this model; bug in bdb_cursor.cpp fixed.
