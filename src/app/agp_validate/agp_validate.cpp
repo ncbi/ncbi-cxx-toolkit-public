@@ -180,7 +180,7 @@ public:
     "USAGE: agp_validate [-options] [input files...]\n"
     "\n"
     "OPTIONS:\n"
-    "  -type semantics   Check sequence length and taxids using GenBank data\n"
+    "  -type semantics   Check sequence lengths and taxids using GenBank data\n"
     "  -type syntax      (Default) Check line formatting and data consistency\n"
     "  -taxon species    Allow sequences from different subspecies during semantic check\n"
     "  -taxon exact      (Default)\n"
@@ -191,9 +191,9 @@ public:
     "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
     "  -only  WHAT   Report only this particular error or warning.\n"
     "  Multiple -skip or -only are allowed. 'WHAT' may be:\n"
-    "  - error code (e01,.. w21,.. - see '-list')\n"
-    "  - part of the actual message\n"
-    "  - keyword: all warn[ings] err[ors]\n"
+    "  - an error code (e01,.. w21,..; see '-list')\n"
+    "  - a part of the actual message\n"
+    "  - a keyword: all, warn[ings], err[ors]\n"
     "\n"
     ;
     return str;

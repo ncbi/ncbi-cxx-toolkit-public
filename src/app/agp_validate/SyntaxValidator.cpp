@@ -605,7 +605,7 @@ void CAgpSyntaxValidator::PrintTotals()
     cout << " (to print all: -limit 0)";
   }
   cout << ".";
-  if(agpErr.m_MaxRepeat) {
+  if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
     cout << "\n";
     agpErr.PrintMessageCounts(cout, CAgpErr::E_First, CAgpErr::W_Last);
   }
