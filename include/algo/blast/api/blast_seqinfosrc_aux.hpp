@@ -81,6 +81,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/27 21:02:10  avagyanv
+ * unix line endings
+ *
  * Revision 1.1  2006/09/27 17:47:03  avagyanv
  * Added a new header file with auxiliary functions dealing with IBlastSeqInfoSrc.
  *
