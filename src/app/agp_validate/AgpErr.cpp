@@ -80,7 +80,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "the span overlaps a previous span for this component",
   "component span appears out of order",
 
-  "duplicate component id with non-draft type",
+  "duplicate component with non-draft type",
   "line with component_type X appears to be a gap line and not a component line",
   "line with component_type X appears to be a component line and not a gap line",
 
@@ -161,6 +161,7 @@ CAgpErr::CAgpErr()
 {
   m_messages = new CNcbiOstrstream();
   m_MaxRepeat = 0; // no limit
+  m_MaxRepeatTopped = false;
   m_skipped_count=0;
   m_line_num=1;
 
@@ -192,21 +193,24 @@ void CAgpErr::Msg(TCode code, const string& details,
   // an unacceptable line with wrong # of columns
   if(m_invalid_prev && (appliesTo&AT_PrevLine) ) return;
 
+  // Suppress some messages while still counting them
   m_MsgCount[code]++;
-
-  if( m_MustSkip[code] ||
-      m_MaxRepeat>0 && m_MsgCount[code] > m_MaxRepeat
-  ) {
+  if( m_MustSkip[code]) {
+    m_skipped_count++;
+    return;
+  }
+  if( m_MaxRepeat>0 && m_MsgCount[code] > m_MaxRepeat) {
+    m_MaxRepeatTopped=true;
     m_skipped_count++;
     return;
   }
 
-  if( appliesTo == (AT_PrevLine|AT_ThisLine) ) m_two_lines_involved=true;
-
   if(appliesTo & AT_PrevLine) {
     // Print the previous line if it was not printed
-    if( !m_prev_printed && m_line_prev.size() )
+    if( !m_prev_printed && m_line_prev.size() ) {
+      if( !m_two_lines_involved ) cerr << "\n";
       PrintLine(cerr, m_filename_prev, m_line_num_prev, m_line_prev);
+    }
     m_prev_printed=true;
   }
   if(appliesTo & AT_ThisLine) {
@@ -217,6 +221,8 @@ void CAgpErr::Msg(TCode code, const string& details,
     // Print it now (useful for appliesTo==AT_PrevLine)
     PrintMessage(cerr, code, details, substX);
   }
+
+  if( appliesTo == (AT_PrevLine|AT_ThisLine) ) m_two_lines_involved=true;
 }
 
 void CAgpErr::LineDone(const string& s, int line_num, bool invalid_line)

@@ -73,8 +73,8 @@ struct SDataLine {
   string  linkage;
 };
 
- // Determines accession naming patterns, count accessions.
-//class CAccPatternCounter;
+ // Determines accession naming patterns, counts accessions.
+class CAccPatternCounter;
 
 // Count how many times a atring value appears;
 // report values and counts ordered by count.
@@ -218,6 +218,7 @@ protected:
   int  componentsInLastScaffold;
 
   //CAccPatternCounter* objNamePatterns;
+  static void x_PrintPatterns(CAccPatternCounter& namePatterns, int w);
 };
 
 END_NCBI_SCOPE

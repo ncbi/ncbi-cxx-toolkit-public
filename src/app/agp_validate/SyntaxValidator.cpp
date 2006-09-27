@@ -37,8 +37,6 @@
 #include "SyntaxValidator.hpp"
 #include "AccessionPatterns.hpp"
 
-#include <math.h>
-
 USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
 
@@ -522,8 +520,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   }
 }
 
-int CAgpSyntaxValidator::x_CheckIntField(
-  const string& field,
+int CAgpSyntaxValidator::x_CheckIntField( const string& field,
   const string& field_name, bool log_error)
 {
   int field_value = 0;
@@ -543,8 +540,7 @@ int CAgpSyntaxValidator::x_CheckIntField(
 
 int CAgpSyntaxValidator::x_CheckRange(
   int start, int begin, int end,
-  string begin_name, string end_name,
-  CAgpErr::TCode ltCode)
+  string begin_name, string end_name, CAgpErr::TCode ltCode)
 {
   int length = 0;
   if(begin <= start){
@@ -566,11 +562,8 @@ int CAgpSyntaxValidator::x_CheckRange(
   return length;
 }
 
-bool CAgpSyntaxValidator::x_CheckValues(
-  const TValuesSet& values, // SET
-  const string& value,
-  const string& field_name,
-  bool log_error)
+bool CAgpSyntaxValidator::x_CheckValues(const TValuesSet& values,
+  const string& value, const string& field_name, bool log_error)
 {
   if(values.count(value) == 0) {
     if(log_error) {
@@ -584,11 +577,8 @@ bool CAgpSyntaxValidator::x_CheckValues(
   return true;
 }
 
-int CAgpSyntaxValidator::x_CheckValues(
-  const TValuesMap& values, // MAP
-  const string& value,
-  const string& field_name,
-  bool log_error)
+int CAgpSyntaxValidator::x_CheckValues(const TValuesMap& values,
+  const string& value, const string& field_name, bool log_error)
 {
   TValuesMap::const_iterator it = values.find(value);
   if( it==values.end() ) {
@@ -611,7 +601,7 @@ void CAgpSyntaxValidator::PrintTotals()
   int w_count=agpErr.CountTotals(CAgpErr::W_Last);
   cout << "\n";
   agpErr.PrintTotals(cout, e_count, w_count, agpErr.m_skipped_count);
-  if(agpErr.m_skipped_count && agpErr.m_MaxRepeat) {
+  if(agpErr.m_MaxRepeatTopped) {
     cout << " (to print all: -limit 0)";
   }
   cout << ".";
@@ -643,16 +633,19 @@ void CAgpSyntaxValidator::PrintTotals()
   //// Various counts of AGP elements
 
   // w: width for right alignment
-  int w = (int) log10( (double) m_CompId2Spans.size() ) + 1;
-  // if(w<3) w=3;
+  int w = NStr::IntToString(m_CompId2Spans.size()).size();
 
   cout << "\n"
     "Objects     : " << ALIGN_W(m_ObjCount)       << "\n"
     "Scaffolds   : " << ALIGN_W(m_ScaffoldCount)  << "\n"
-    "  singletons: " << ALIGN_W(m_SingletonCount) << "\n\n"
-    "Unique Component Accessions: "<< ALIGN_W(m_CompId2Spans.size()) <<"\n"
-    "Lines with Components      : " << ALIGN_W(m_CompCount);
+    "Singletons  : " << ALIGN_W(m_SingletonCount) << "\n\n";
 
+
+  cout<<
+    "Unique Component Accessions: "<< ALIGN_W(m_CompId2Spans.size()) <<"\n";
+
+  cout<<
+    "Lines with Components      : "<< ALIGN_W(m_CompCount);
   if( s_comp.size() ) {
     if( NStr::Find(s_comp, ",")!=NPOS ) {
        // (W: 1234, D: 5678)
@@ -706,30 +699,68 @@ void CAgpSyntaxValidator::PrintTotals()
   //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
   << "\n";
 
-  //// Patterns in object and component names
-  cout << "\nObject names and counts:\n";
-  // TO DO:
-  //   print not more than 50, not more than 10 with acc.count==1;
-  //   instead of the omitted patterns, print:
-  //     how many patterns were omitted,
-  //     how many accessions they contain.
-
-  // Get a vector with sorted pointers to map values
+  cout << "\nObject names   :";
+  // Patterns in object names
   {
     CAccPatternCounter objNamePatterns;
     objNamePatterns.AddNames(m_ObjIdSet);
-    CAccPatternCounter::pv_vector pat_cnt;
-    objNamePatterns.GetSortedValues(pat_cnt);
+    x_PrintPatterns(objNamePatterns, w);
+  }
 
-    for(CAccPatternCounter::pv_vector::iterator it =
-        pat_cnt.begin(); it != pat_cnt.end(); ++it
-    ) {
-      cout <<  "\t"
-      << ALIGN_W(CAccPatternCounter::GetCount(*it))
-      << "  "
-      << CAccPatternCounter::GetExpandedPattern(*it)
-      << "\n";
+  cout << "Component names:";
+  {
+    CAccPatternCounter compNamePatterns;
+    for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
+      it != m_CompId2Spans.end(); ++it)
+    {
+      compNamePatterns.AddName(it->first);
     }
+    x_PrintPatterns(compNamePatterns, w);
+  }
+
+}
+
+// Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
+void CAgpSyntaxValidator::x_PrintPatterns(CAccPatternCounter& namePatterns, int w)
+{
+  const int MaxPatterns=10;
+
+  // Get a vector with sorted pointers to map values
+  CAccPatternCounter::pv_vector pat_cnt;
+  namePatterns.GetSortedValues(pat_cnt);
+
+  if(pat_cnt.size()==1) {
+    // Continue on the same line, do not print counts
+    cout<< " " << CAccPatternCounter::GetExpandedPattern( pat_cnt[0] )
+        << "\n";
+    return;
+  }
+  cout << "\n";
+
+  // Print the patterns
+  int patternsPrinted=0;
+  int accessionsSkipped=0;
+  for(CAccPatternCounter::pv_vector::iterator it =
+      pat_cnt.begin(); it != pat_cnt.end(); ++it
+  ) {
+    // Limit the number of lines to MaxPatterns or 2*MaxPatterns
+    if( ++patternsPrinted<=MaxPatterns || pat_cnt.size()<=2*MaxPatterns ) {
+      cout<<  "\t"
+          << ALIGN_W(CAccPatternCounter::GetCount(*it))
+          << "  "
+          << CAccPatternCounter::GetExpandedPattern(*it)
+          << "\n";
+    }
+    else {
+      accessionsSkipped += CAccPatternCounter::GetCount(*it);
+    }
+  }
+
+  if(accessionsSkipped) {
+    cout<<  "\t"
+        << ALIGN_W(accessionsSkipped)
+        << "  accessions between other " << pat_cnt.size() - 10
+        << " patterns\n";
   }
 }
 

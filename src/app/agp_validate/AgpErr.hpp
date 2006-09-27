@@ -125,6 +125,8 @@ public:
 
   // The max number of times to print a given error message.
   int m_MaxRepeat;
+  // If this turns true, we can inform user about -limit 0 option
+  bool m_MaxRepeatTopped;
 
   // Warnings + errors skipped,
   // either because of m_MaxRepeat or MustSkip().
