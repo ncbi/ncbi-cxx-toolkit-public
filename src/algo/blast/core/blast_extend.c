@@ -911,27 +911,21 @@ DiscMB_ExtendInitialHits(const BlastOffsetPair * offset_pairs,
     return FALSE;
 }
 
-/** Update the word extension structure after scanning of each subject sequence
- * @param ewp The structure holding word extension information [in] [out]
- * @param subject_length The length of the subject sequence that has just been
- *        processed [in]
- */
-static Int2
-s_BlastNaExtendWordExit(Blast_ExtendWord * ewp, Int4 subject_length)
+Int2
+Blast_ExtendWordExit(Blast_ExtendWord * ewp, Int4 subject_length)
 {
     if (!ewp)
         return -1;
 
     if (ewp->diag_table) {
-        if (ewp->diag_table->offset >= INT4_MAX / 2) {
+        if (ewp->diag_table->offset >= INT4_MAX / 4) {
             ewp->diag_table->offset = ewp->diag_table->window;
-            memset(ewp->diag_table->hit_level_array, 0,
-                   ewp->diag_table->diag_array_length * sizeof(DiagStruct));
+            BlastDiagClear(ewp->diag_table);
         } else {
             ewp->diag_table->offset += subject_length + ewp->diag_table->window;
         }
     } else if (ewp->hash_table) {
-        if (ewp->hash_table->offset >= INT4_MAX / 2) {
+        if (ewp->hash_table->offset >= INT4_MAX / 4) {
 			ewp->hash_table->occupancy = 1;
             ewp->hash_table->offset = ewp->hash_table->window;
             memset(ewp->hash_table->backbone, 0,
@@ -1109,7 +1103,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
         start_offset = next_start;
     }
 
-    s_BlastNaExtendWordExit(ewp, subject->length);
+    Blast_ExtendWordExit(ewp, subject->length);
 
     Blast_UngappedStatsUpdate(ungapped_stats, total_hits, hits_extended,
                               init_hitlist->total);
@@ -1363,7 +1357,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk * subject,
         total_hits += hitsfound;
     }
 
-    s_BlastNaExtendWordExit(ewp, subject_length);
+    Blast_ExtendWordExit(ewp, subject_length);
 
     Blast_UngappedStatsUpdate(ungapped_stats, total_hits, hits_extended,
                               init_hitlist->total);
@@ -1413,7 +1407,7 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk * subject,
         start_offset = next_start;
     }
 
-    s_BlastNaExtendWordExit(ewp, subject->length);
+    Blast_ExtendWordExit(ewp, subject->length);
 
     Blast_UngappedStatsUpdate(ungapped_stats, total_hits, hits_extended,
                               init_hitlist->total);

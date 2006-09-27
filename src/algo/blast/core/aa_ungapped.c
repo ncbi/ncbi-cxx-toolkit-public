@@ -34,6 +34,7 @@ static char const rcsid[] =
 #endif                          /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/aa_ungapped.h>
+#include <algo/blast/core/blast_extend.h>
 
 Int2 BlastAaWordFinder(BLAST_SequenceBlk * subject,
                        BLAST_SequenceBlk * query,
@@ -66,14 +67,14 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk * subject,
             }
             cutoffs = word_params->cutoffs + context;
             status = BlastRPSWordFinder_TwoHit(subject, query,
-                                               lut_wrap, ewp->diag_table,
+                                               lut_wrap, ewp,
                                                matrix,
                                                cutoffs->cutoff_score,
                                                cutoffs->x_dropoff,
                                                init_hitlist, ungapped_stats);
         } else {
             status = BlastAaWordFinder_TwoHit(subject, query,
-                                              lut_wrap, ewp->diag_table,
+                                              lut_wrap, ewp,
                                               matrix,
                                               word_params,
                                               query_info,
@@ -91,14 +92,14 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk * subject,
             }
             cutoffs = word_params->cutoffs + context;
             status = BlastRPSWordFinder_OneHit(subject, query,
-                                               lut_wrap, ewp->diag_table,
+                                               lut_wrap, ewp,
                                                matrix,
                                                cutoffs->cutoff_score,
                                                cutoffs->x_dropoff,
                                                init_hitlist, ungapped_stats);
         } else {
             status = BlastAaWordFinder_OneHit(subject, query,
-                                              lut_wrap, ewp->diag_table,
+                                              lut_wrap, ewp,
                                               matrix,
                                               word_params,
                                               query_info,
@@ -117,7 +118,7 @@ Int2
 BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                           const BLAST_SequenceBlk * query,
                           const LookupTableWrap * lookup_wrap,
-                          BLAST_DiagTable * diag,
+                          Blast_ExtendWord * ewp,
                           Int4 ** matrix,
                           Int4 cutoff,
                           Int4 dropoff,
@@ -139,6 +140,7 @@ BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     DiagStruct *diag_array;
     Boolean right_extend;
     Int4 hits_extended = 0;
+    BLAST_DiagTable * diag = ewp->diag_table;
 
     ASSERT(diag != NULL);
 
@@ -258,7 +260,7 @@ BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                                  */
 
     /* increment the offset in the diagonal array */
-    BlastDiagUpdate(diag, subject->length + window);
+    Blast_ExtendWordExit(ewp, subject->length);
 
     Blast_UngappedStatsUpdate(ungapped_stats, totalhits, hits_extended,
                               ungapped_hsps->total);
@@ -269,7 +271,7 @@ Int2
 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                          const BLAST_SequenceBlk * query,
                          const LookupTableWrap * lookup_wrap,
-                         BLAST_DiagTable * diag,
+                         Blast_ExtendWord * ewp,
                          Int4 ** matrix,
                          const BlastInitialWordParameters * word_params,
                          BlastQueryInfo * query_info,
@@ -296,6 +298,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
     Int4 hits_extended = 0;
     Int4 curr_context;
     BlastUngappedCutoffs *cutoffs;
+    BLAST_DiagTable * diag = ewp->diag_table;
 
     ASSERT(diag != NULL);
 
@@ -409,7 +412,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                                  */
 
     /* increment the offset in the diagonal array */
-    BlastDiagUpdate(diag, subject->length + window);
+    Blast_ExtendWordExit(ewp, subject->length);
 
     Blast_UngappedStatsUpdate(ungapped_stats, totalhits, hits_extended,
                               ungapped_hsps->total);
@@ -419,7 +422,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
 Int2 BlastRPSWordFinder_OneHit(const BLAST_SequenceBlk * subject,
                                const BLAST_SequenceBlk * query,
                                const LookupTableWrap * lookup_wrap,
-                               BLAST_DiagTable * diag,
+                               Blast_ExtendWord * ewp,
                                Int4 ** matrix,
                                Int4 cutoff,
                                Int4 dropoff,
@@ -439,6 +442,7 @@ Int2 BlastRPSWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     Int4 diag_offset, diag_coord, diag_mask, diff;
     DiagStruct *diag_array;
     Int4 hits_extended = 0;
+    BLAST_DiagTable * diag = ewp->diag_table;
 
     ASSERT(diag != NULL);
 
@@ -498,7 +502,7 @@ Int2 BlastRPSWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     }                           /* end while */
 
     /* increment the offset in the diagonal array (no windows used) */
-    BlastDiagUpdate(diag, subject->length);
+    Blast_ExtendWordExit(ewp, subject->length);
 
     Blast_UngappedStatsUpdate(ungapped_stats, totalhits, hits_extended,
                               ungapped_hsps->total);
@@ -508,7 +512,7 @@ Int2 BlastRPSWordFinder_OneHit(const BLAST_SequenceBlk * subject,
 Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
                               const BLAST_SequenceBlk * query,
                               const LookupTableWrap * lookup_wrap,
-                              BLAST_DiagTable * diag,
+                              Blast_ExtendWord * ewp,
                               Int4 ** matrix,
                               const BlastInitialWordParameters * word_params,
                               BlastQueryInfo * query_info,
@@ -531,6 +535,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     Int4 diag_offset, diag_coord, diag_mask, diff;
     DiagStruct *diag_array;
     Int4 hits_extended = 0;
+    BLAST_DiagTable * diag = ewp->diag_table;
 
     ASSERT(diag != NULL);
 
@@ -586,7 +591,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
     }                           /* end while */
 
     /* increment the offset in the diagonal array (no windows used) */
-    BlastDiagUpdate(diag, subject->length);
+    Blast_ExtendWordExit(ewp, subject->length);
 
     Blast_UngappedStatsUpdate(ungapped_stats, totalhits, hits_extended,
                               ungapped_hsps->total);
@@ -886,22 +891,6 @@ BlastAaExtendTwoHit(Int4 ** matrix,
     *hsp_len = left_d + right_d;
     return MAX(left_score, right_score);
 }
-
-Int4 BlastDiagUpdate(BLAST_DiagTable * diag, Int4 length)
-{
-    if (diag == NULL)
-        return 0;
-
-    /* BLAST_DiagTable.offset gets compared to DiagStruct.last_hit and
-        that has only 31 bits to use. */
-    if (diag->offset >= INT4_MAX / 4) {
-        BlastDiagClear(diag);
-    } else {
-        diag->offset += length;
-    }
-    return 0;
-}
-
 
 Int4 BlastDiagClear(BLAST_DiagTable * diag)
 {

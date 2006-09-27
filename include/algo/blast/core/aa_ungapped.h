@@ -84,7 +84,7 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
 Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      const BLAST_SequenceBlk* query,
 			      const LookupTableWrap* lookup_wrap,
-			      BLAST_DiagTable* diag,
+			      Blast_ExtendWord * ewp,
 			      Int4 ** matrix,
 			      const BlastInitialWordParameters * word_params,
 			      BlastQueryInfo * query_info,
@@ -109,7 +109,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 Int2 BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 	 		       const BLAST_SequenceBlk* query,
 			       const LookupTableWrap* lookup_wrap,
-			       BLAST_DiagTable* diag,
+			       Blast_ExtendWord * ewp,
 			       Int4 ** matrix,
 			       Int4 cutoff,
 			       Int4 dropoff,
@@ -133,7 +133,7 @@ Int2 BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      const BLAST_SequenceBlk* query,
 			      const LookupTableWrap* lookup_wrap,
-			      BLAST_DiagTable* diag,
+			      Blast_ExtendWord * ewp,
 			      Int4 ** matrix,
 			      const BlastInitialWordParameters * word_params,
 			      BlastQueryInfo * query_info,
@@ -158,7 +158,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 Int2 BlastRPSWordFinder_OneHit(const BLAST_SequenceBlk* subject,
                                const BLAST_SequenceBlk* query,
                                const LookupTableWrap* lookup_wrap,
-                               BLAST_DiagTable* diag,
+                               Blast_ExtendWord * ewp,
                                Int4 ** matrix,
                                Int4 cutoff,
                                Int4 dropoff,
@@ -347,13 +347,6 @@ BlastDiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size);
 */
 BLAST_DiagTable*
 BlastDiagTableFree(BLAST_DiagTable* diag_table);
-
-/** Update the offset for use with a new sequence.
- * @param diag pointer to the diagonal array structure [in]
- * @param length length of the last db sequence searched [in]
- * @return allocated ptr to BLAST_DiagTable.
- */
-Int4 BlastDiagUpdate(BLAST_DiagTable* diag, Int4 length);
 
 /** Reset the diagonal array structure. Used when offset has wrapped around.
  * @param diag pointer to the diagonal array structure [in]

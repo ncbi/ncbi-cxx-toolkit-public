@@ -361,6 +361,14 @@ DiscMB_ExtendInitialHits(const BlastOffsetPair* offset_pairs,
                          Blast_ExtendWord* ewp, 
                          BlastInitHitList* init_hitlist);
 
+/** Update the word extension structure after scanning of each subject sequence
+ * @param ewp The structure holding word extension information [in] [out]
+ * @param subject_length The length of the subject sequence that has just been
+ *        processed [in]
+ */
+Int2 Blast_ExtendWordExit(Blast_ExtendWord * ewp, Int4 subject_length);
+
+
 #ifdef __cplusplus
 }
 #endif
