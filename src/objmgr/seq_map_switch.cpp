@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 
 class CScope;
 
-BEGIN_SCOPE()
+namespace {
 
 struct SSeqPos;
 
@@ -291,7 +291,7 @@ SSeqMapSwitchPoint x_GetSwitchPoint(const CBioseq_Handle& seq,
     return sp;
 }
 
-END_SCOPE()
+} // namespace
 
 class CScope;
 
@@ -368,6 +368,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/09/27 22:37:40  vasilche
+* GCC 2.95 does not understand BEGIN_SCOPE() without arguments.
+*
 * Revision 1.1  2006/09/27 21:28:58  vasilche
 * Added functions to calculate switch points.
 *
