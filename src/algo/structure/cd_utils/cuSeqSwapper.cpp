@@ -101,13 +101,18 @@ void SeqSwapper::swapSequences()
 		}
 	}
 	m_cd->EraseTheseRows(selectedNormalRows);
+	if (structures.size() > 0)
+	{
+		LOG_POST("Adding "<<structures.size()<<" structures");
+		for (set<int>::iterator sit = structures.begin(); sit != structures.end(); sit++)
+			usedPendings.insert(*sit - numNormal);
+	}
 	if (newMaster >= 0)
 		promotePendingRows(usedPendings, &newMaster);
 	else
 		promotePendingRows(usedPendings);
 	//findStructuralPendings(structures);
-	if (structures.size() > 0)
-		promotePendingRows(structures);
+	
 	if (newMaster > 0)
 	{
 		ReMasterCdWithoutUnifiedBlocks(m_cd, newMaster, true);
@@ -128,6 +133,7 @@ void SeqSwapper::makeClusters(int identityThreshold, vector< vector<int> * >& cl
 	if (seqtree)
 	{
 		seqtree->prepare();
+		assert(seqtree->getNumLeaf() == m_ac.GetNumRows());
 		//seqtree->fixRowNumber(m_ac);
 		double pid = ((double)identityThreshold)/100.0;
 		double distTh = 1.0 -  pid;
