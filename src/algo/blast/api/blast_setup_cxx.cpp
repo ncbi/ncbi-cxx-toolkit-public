@@ -792,7 +792,7 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
 
     *buf_var++ = GetSentinelByte(eBlastEncodingProtein);
     if (warnings && replaced_residues.size() > 0) {
-        *warnings += "One or more U, O, or J characters replaced by X at positions ";
+        *warnings += "One or more U or O characters replaced by X at positions ";
         *warnings += NStr::IntToString(replaced_residues[0]);
         for (i = 1; i < replaced_residues.size(); i++) {
             *warnings += ", " + NStr::IntToString(replaced_residues[i]);
@@ -1584,6 +1584,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.128  2006/09/27 17:39:48  papadopo
+ * correct warning message
+ *
  * Revision 1.127  2006/09/12 20:53:45  camacho
  * +BLAST_GetTranslatedProteinLength
  *
