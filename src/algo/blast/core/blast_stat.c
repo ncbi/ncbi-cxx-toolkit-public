@@ -1036,7 +1036,7 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
     long lineno = 0;
     double  xscore;
     register int  index1, index2;
-    int x_index, u_index, o_index, j_index;
+    int x_index, u_index, o_index;
     const char kCommentChar = '#';
     const char* kTokenStr = " \t\n\r";
     
@@ -1153,14 +1153,11 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
     x_index = AMINOACID_TO_NCBISTDAA['X'];
     u_index = AMINOACID_TO_NCBISTDAA['U'];
     o_index = AMINOACID_TO_NCBISTDAA['O'];
-    j_index = AMINOACID_TO_NCBISTDAA['J'];
     for (index1 = 0; index1 < sbp->alphabet_size; index1++) {
         matrix[u_index][index1] = matrix[x_index][index1];
         matrix[index1][u_index] = matrix[index1][x_index];
         matrix[o_index][index1] = matrix[x_index][index1];
         matrix[index1][o_index] = matrix[index1][x_index];
-        matrix[j_index][index1] = matrix[x_index][index1];
-        matrix[index1][j_index] = matrix[index1][x_index];
     }
 
     return 0;
@@ -1248,7 +1245,7 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     SNCBIPackedScoreMatrix* psm;
     Int4** matrix = NULL;
     int i, j;   /* loop indices */
-    int x_index, u_index, o_index, j_index;
+    int x_index, u_index, o_index;
 
     ASSERT(sbp);
     ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
@@ -1274,11 +1271,9 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
             /* skip special characters */
             if (i == AMINOACID_TO_NCBISTDAA['U'] || 
                 i == AMINOACID_TO_NCBISTDAA['O'] ||
-                i == AMINOACID_TO_NCBISTDAA['J'] ||
                 i == AMINOACID_TO_NCBISTDAA['-'] ||
                 j == AMINOACID_TO_NCBISTDAA['U'] || 
                 j == AMINOACID_TO_NCBISTDAA['O'] || 
-                j == AMINOACID_TO_NCBISTDAA['J'] ||
                 j == AMINOACID_TO_NCBISTDAA['-']) {
                 continue;
             }
@@ -1292,14 +1287,11 @@ BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
     x_index = AMINOACID_TO_NCBISTDAA['X'];
     u_index = AMINOACID_TO_NCBISTDAA['U'];
     o_index = AMINOACID_TO_NCBISTDAA['O'];
-    j_index = AMINOACID_TO_NCBISTDAA['J'];
     for (i = 0; i < sbp->alphabet_size; i++) {
         matrix[u_index][i] = matrix[x_index][i];
         matrix[i][u_index] = matrix[i][x_index];
         matrix[o_index][i] = matrix[x_index][i];
         matrix[i][o_index] = matrix[i][x_index];
-        matrix[j_index][i] = matrix[x_index][i];
-        matrix[i][j_index] = matrix[i][x_index];
     }
 
     return status;
@@ -4414,6 +4406,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.150  2006/09/27 18:09:16  papadopo
+ * remove unused variable
+ *
  * Revision 1.149  2006/09/25 19:32:44  madden
  *   Added the BLOSUM50 and BLOSUM90 matrices to
  *   BlastScoreBlkGetCompiledInMatrix. [from Mike Gertz]
