@@ -72,43 +72,6 @@ CRef<TObj> s_DuplicateObject(const TObj & id)
     return id2;
 }
 
-// Declared in blast_seqinfosrc.hpp
-void
-GetSequenceLengthAndId(const IBlastSeqInfoSrc * seqinfo_src,
-                       int                      oid,
-                       CConstRef<CSeq_id>     & seqid,
-                       TSeqPos                * length)
-{
-    _ASSERT(length);
-    list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
-    
-    seqid.Reset(seqid_list.front());
-    *length = seqinfo_src->GetLength(oid);
-
-    return;
-}
-
-void GetFilteredRedundantGis(const IBlastSeqInfoSrc & seqinfo_src,
-                             int                      oid,
-                             vector<int>            & gis)
-{
-    gis.resize(0);
-    
-    if (! seqinfo_src.HasGiList()) {
-        return;
-    }
-    
-    list< CRef<CSeq_id> > seqid_list = seqinfo_src.GetId(oid);
-    
-    ITERATE(list< CRef<CSeq_id> >, id, seqid_list) {
-        if ((**id).IsGi()) {
-            gis.push_back((**id).GetGi());
-        }
-    }
-    
-    sort(gis.begin(), gis.end());
-}
-
 /// Converts a frame into the appropriate strand
 static ENa_strand
 s_Frame2Strand(short frame)
@@ -1693,6 +1656,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2006/09/27 20:39:54  avagyanv
+* removed definitions of GetFilteredRedundantGis and GetSequenceLengthAndId
+*
 * Revision 1.78  2006/09/07 17:15:15  bealer
 * - Duplicate Seq-ids via SerialAssign rather than AsFastaString().
 *
