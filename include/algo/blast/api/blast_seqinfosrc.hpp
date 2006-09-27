@@ -76,20 +76,6 @@ public:
     virtual bool HasGiList() const = 0;
 };
 
-/** Retrieves subject sequence Seq-id and length.
- * @param seqinfo_src Source of subject sequences information [in]
- * @param oid Ordinal id (index) of the subject sequence [in]
- * @param seqid Subject sequence identifier to fill [out]
- * @param length Subject sequence length [out]
- * @note implemented in blast_seqalign.cpp
- */
-NCBI_XBLAST_EXPORT void
-GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, 
-                       int oid,
-                       CConstRef<objects::CSeq_id>& seqid, 
-                       TSeqPos* length);
-
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -99,6 +85,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/09/27 18:01:16  avagyanv
+ * Moved GetSequenceLengthAndId declaration to the blast_seqinfosrc_aux header file
+ *
  * Revision 1.10  2006/05/24 21:01:54  camacho
  * Added missing closing doxygen brackets
  *
