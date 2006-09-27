@@ -45,6 +45,7 @@ static char const rcsid[] =
 #include "blast_objmgr_priv.hpp"
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
+#include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 
 #include <serial/iterator.hpp>
 #include "blast_seqalign.hpp"
@@ -714,6 +715,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2006/09/27 18:07:40  avagyanv
+* Included the blast_seqinfosrc_aux header file
+*
 * Revision 1.75  2006/09/01 14:22:06  camacho
 * Pacify solaris compiler
 *

@@ -39,6 +39,7 @@
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
+#include <algo/blast/api/blast_seqinfosrc_aux.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
@@ -53,21 +54,6 @@ BEGIN_SCOPE(blast)
 
 /// Forward declaration
 class ILocalQueryData; 
-
-/// Get GIs for a sequence in a redundant database.
-///
-/// This function returns a list of GIs corresponding to the specified
-/// OID.  This allows a GI list to be built for those GIs found by a
-/// search and included in the associated database; the returned GIs
-/// will be filtered by any OID and GI list filtering that is applied
-/// to the database (if any).
-///
-/// @param sisrc Source of sequence information. [in]
-/// @param oid OID for which to retrieve GIs.    [in]
-/// @param gis GIs found for the specified oid.  [out]
-void GetFilteredRedundantGis(const IBlastSeqInfoSrc & sisrc,
-                             int                      oid,
-                             vector<int>            & gis);
 
 /// Remaps Seq-align offsets relative to the query Seq-loc. 
 /// Since the query strands were already taken into account when CSeq_align 
@@ -146,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2006/09/27 18:08:12  avagyanv
+* Included the blast_seqinfosrc_aux header file
+*
 * Revision 1.35  2006/07/12 15:02:40  bealer
 * - Produce the filtered GI list for both nucleotide and protein.
 *
