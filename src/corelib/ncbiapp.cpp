@@ -1133,7 +1133,6 @@ bool CNcbiApplication::x_SetupLogFiles(void)
     string path = GetDefaultLogPath();
     bool base_only = false;       // true if must use base name only
     bool try_all = true;
-    bool success = false;
 
     if ( s_SetupLogFile(GetLogFileName(), path, base_only, try_all) ) {
         x_FlushMemoryDiagStream();
@@ -1201,6 +1200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.134  2006/09/27 17:49:56  grichenk
+ * Fixed 'unused variable' warning.
+ *
  * Revision 1.133  2006/09/18 18:12:06  grichenk
  * Reset log file name if failed to open logs with default names.
  *
