@@ -79,7 +79,7 @@ Created by Tom Laudeman, 2005.
 	<xsl:text>,</xsl:text>
 	<xsl:value-of select="ancestor::*/ncbi:MSHits_charge"/>
 	<xsl:text>,</xsl:text>
-	<xsl:value-of select="ancestor::*/ncbi:MSHits_mass div 100"/>
+	<xsl:value-of select="ancestor::*/ncbi:MSHits_mass div 1000"/>
 	<xsl:text>,</xsl:text>
 	<xsl:value-of select="ancestor::*/ncbi:MSHitSet_ids/ncbi:MSHitSet_ids_E"/>
 	<xsl:text>,</xsl:text>

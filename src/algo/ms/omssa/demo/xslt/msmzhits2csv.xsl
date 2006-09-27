@@ -68,7 +68,7 @@ Created by Tom Laudeman, 2005.
 	<xsl:text>,</xsl:text>
 	<xsl:value-of select="ancestor::*/ncbi:MSHits_pepstring"/>
 	<xsl:text>,</xsl:text>
-	<xsl:value-of select="ancestor::*/ncbi:MSHits_mass div 100"/>
+	<xsl:value-of select="ancestor::*/ncbi:MSHits_mass div 1000"/>
 	<xsl:text>,</xsl:text>
 	<xsl:value-of select="ncbi:MSMZHit_ion/ncbi:MSIonType"/>
 	<xsl:text>,</xsl:text>
@@ -78,7 +78,7 @@ Created by Tom Laudeman, 2005.
 	<xsl:text>,</xsl:text>
 	<xsl:value-of select="ncbi:MSMZHit_number"/>
 	<xsl:text>,</xsl:text>
-	<xsl:value-of select="ncbi:MSMZHit_mz div 100"/>
+	<xsl:value-of select="ncbi:MSMZHit_mz div 1000"/>
 	<xsl:text>
 </xsl:text>
 

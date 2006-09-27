@@ -36,7 +36,7 @@ Created by Tom Laudeman, 2005.
 <xsl:apply-templates />
 </xsl:template>
 
-<xsl:template match="ncbi:MSPepHit"><xsl:value-of select="ancestor::*/ncbi:MSHitSet_number"/>,<xsl:value-of select="ancestor::*/ncbi:MSHits_evalue"/>,<xsl:value-of select="ancestor::*/ncbi:MSHits_pepstring"/>,<xsl:value-of select="ancestor::*/ncbi:MSHits_mass div 100"/>,<xsl:value-of select="ncbi:MSPepHit_gi"/>,<xsl:value-of 
+<xsl:template match="ncbi:MSPepHit"><xsl:value-of select="ancestor::*/ncbi:MSHitSet_number"/>,<xsl:value-of select="ancestor::*/ncbi:MSHits_evalue"/>,<xsl:value-of select="ancestor::*/ncbi:MSHits_pepstring"/>,<xsl:value-of select="ancestor::*/ncbi:MSHits_mass div 1000"/>,<xsl:value-of select="ncbi:MSPepHit_gi"/>,<xsl:value-of 
 select="ncbi:MSPepHit_accession"/>,"<xsl:value-of
 select="ncbi:MSPepHit_defline"/>"
 </xsl:template>
