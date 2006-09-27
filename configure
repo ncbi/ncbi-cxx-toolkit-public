@@ -18655,8 +18655,12 @@ if test "$with_z" != "no"; then
     esac
     if test -d "$Z_PATH"; then
        in_path=" in $Z_PATH"
-       test -d "$Z_PATH/include" && Z_INCLUDE="-I$Z_PATH/include"
-       if test -d "$Z_PATH/lib${bit64_sfx}"; then
+       if test -z "$Z_INCLUDE" -a -d "$Z_PATH/include"; then
+          Z_INCLUDE="-I$Z_PATH/include"
+       fi
+       if test -n "$Z_LIBPATH"; then
+          :
+       elif test -d "$Z_PATH/lib${bit64_sfx}"; then
           Z_LIBPATH="-L$Z_PATH/lib${bit64_sfx} ${CONF_f_runpath}$Z_PATH/lib${bit64_sfx}"
        elif test -d "$Z_PATH/lib"; then
           Z_LIBPATH="-L$Z_PATH/lib ${CONF_f_runpath}$Z_PATH/lib"
@@ -18763,8 +18767,12 @@ if test "$with_bz2" != "no"; then
     esac
     if test -d "$BZ2_PATH"; then
        in_path=" in $BZ2_PATH"
-       test -d "$BZ2_PATH/include" && BZ2_INCLUDE="-I$BZ2_PATH/include"
-       if test -d "$BZ2_PATH/lib${bit64_sfx}"; then
+       if test -z "$BZ2_INCLUDE" -a -d "$BZ2_PATH/include"; then
+          BZ2_INCLUDE="-I$BZ2_PATH/include"
+       fi
+       if test -n "$BZ2_LIBPATH"; then
+          :
+       elif test -d "$BZ2_PATH/lib${bit64_sfx}"; then
           BZ2_LIBPATH="-L$BZ2_PATH/lib${bit64_sfx} ${CONF_f_runpath}$BZ2_PATH/lib${bit64_sfx}"
        elif test -d "$BZ2_PATH/lib"; then
           BZ2_LIBPATH="-L$BZ2_PATH/lib ${CONF_f_runpath}$BZ2_PATH/lib"
@@ -18880,8 +18888,12 @@ if test "$with_pcre" != "no"; then
     esac
     if test -d "$PCRE_PATH"; then
        in_path=" in $PCRE_PATH"
-       test -d "$PCRE_PATH/include" && PCRE_INCLUDE="-I$PCRE_PATH/include"
-       if test -d "$PCRE_PATH/lib${bit64_sfx}"; then
+       if test -z "$PCRE_INCLUDE" -a -d "$PCRE_PATH/include"; then
+          PCRE_INCLUDE="-I$PCRE_PATH/include"
+       fi
+       if test -n "$PCRE_LIBPATH"; then
+          :
+       elif test -d "$PCRE_PATH/lib${bit64_sfx}"; then
           PCRE_LIBPATH="-L$PCRE_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PCRE_PATH/lib${bit64_sfx}"
        elif test -d "$PCRE_PATH/lib"; then
           PCRE_LIBPATH="-L$PCRE_PATH/lib ${CONF_f_runpath}$PCRE_PATH/lib"
@@ -19000,8 +19012,12 @@ if test "$with_gnutls" != "no"; then
     esac
     if test -d "$GNUTLS_PATH"; then
        in_path=" in $GNUTLS_PATH"
-       test -d "$GNUTLS_PATH/include" && GNUTLS_INCLUDE="-I$GNUTLS_PATH/include"
-       if test -d "$GNUTLS_PATH/lib${bit64_sfx}"; then
+       if test -z "$GNUTLS_INCLUDE" -a -d "$GNUTLS_PATH/include"; then
+          GNUTLS_INCLUDE="-I$GNUTLS_PATH/include"
+       fi
+       if test -n "$GNUTLS_LIBPATH"; then
+          :
+       elif test -d "$GNUTLS_PATH/lib${bit64_sfx}"; then
           GNUTLS_LIBPATH="-L$GNUTLS_PATH/lib${bit64_sfx} ${CONF_f_runpath}$GNUTLS_PATH/lib${bit64_sfx}"
        elif test -d "$GNUTLS_PATH/lib"; then
           GNUTLS_LIBPATH="-L$GNUTLS_PATH/lib ${CONF_f_runpath}$GNUTLS_PATH/lib"
@@ -19096,8 +19112,12 @@ if test "$with_openssl" != "no"; then
     esac
     if test -d "$OPENSSL_PATH"; then
        in_path=" in $OPENSSL_PATH"
-       test -d "$OPENSSL_PATH/include" && OPENSSL_INCLUDE="-I$OPENSSL_PATH/include"
-       if test -d "$OPENSSL_PATH/lib${bit64_sfx}"; then
+       if test -z "$OPENSSL_INCLUDE" -a -d "$OPENSSL_PATH/include"; then
+          OPENSSL_INCLUDE="-I$OPENSSL_PATH/include"
+       fi
+       if test -n "$OPENSSL_LIBPATH"; then
+          :
+       elif test -d "$OPENSSL_PATH/lib${bit64_sfx}"; then
           OPENSSL_LIBPATH="-L$OPENSSL_PATH/lib${bit64_sfx} ${CONF_f_runpath}$OPENSSL_PATH/lib${bit64_sfx}"
        elif test -d "$OPENSSL_PATH/lib"; then
           OPENSSL_LIBPATH="-L$OPENSSL_PATH/lib ${CONF_f_runpath}$OPENSSL_PATH/lib"
@@ -24046,8 +24066,12 @@ if test "$with_expat" != "no"; then
     esac
     if test -d "$EXPAT_PATH"; then
        in_path=" in $EXPAT_PATH"
-       test -d "$EXPAT_PATH/include" && EXPAT_INCLUDE="-I$EXPAT_PATH/include"
-       if test -d "$EXPAT_PATH/lib${bit64_sfx}"; then
+       if test -z "$EXPAT_INCLUDE" -a -d "$EXPAT_PATH/include"; then
+          EXPAT_INCLUDE="-I$EXPAT_PATH/include"
+       fi
+       if test -n "$EXPAT_LIBPATH"; then
+          :
+       elif test -d "$EXPAT_PATH/lib${bit64_sfx}"; then
           EXPAT_LIBPATH="-L$EXPAT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$EXPAT_PATH/lib${bit64_sfx}"
        elif test -d "$EXPAT_PATH/lib"; then
           EXPAT_LIBPATH="-L$EXPAT_PATH/lib ${CONF_f_runpath}$EXPAT_PATH/lib"
@@ -24149,8 +24173,12 @@ if test "$with_sablot" != "no"; then
     esac
     if test -d "$SABLOT_PATH"; then
        in_path=" in $SABLOT_PATH"
-       test -d "$SABLOT_PATH/include" && SABLOT_INCLUDE="-I$SABLOT_PATH/include"
-       if test -d "$SABLOT_PATH/lib${bit64_sfx}"; then
+       if test -z "$SABLOT_INCLUDE" -a -d "$SABLOT_PATH/include"; then
+          SABLOT_INCLUDE="-I$SABLOT_PATH/include"
+       fi
+       if test -n "$SABLOT_LIBPATH"; then
+          :
+       elif test -d "$SABLOT_PATH/lib${bit64_sfx}"; then
           SABLOT_LIBPATH="-L$SABLOT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SABLOT_PATH/lib${bit64_sfx}"
        elif test -d "$SABLOT_PATH/lib"; then
           SABLOT_LIBPATH="-L$SABLOT_PATH/lib ${CONF_f_runpath}$SABLOT_PATH/lib"
@@ -24365,8 +24393,12 @@ if test "$with_libxslt" != "no"; then
     esac
     if test -d "$LIBXSLT_PATH"; then
        in_path=" in $LIBXSLT_PATH"
-       test -d "$LIBXSLT_PATH/include" && LIBXSLT_INCLUDE="-I$LIBXSLT_PATH/include"
-       if test -d "$LIBXSLT_PATH/lib${bit64_sfx}"; then
+       if test -z "$LIBXSLT_INCLUDE" -a -d "$LIBXSLT_PATH/include"; then
+          LIBXSLT_INCLUDE="-I$LIBXSLT_PATH/include"
+       fi
+       if test -n "$LIBXSLT_LIBPATH"; then
+          :
+       elif test -d "$LIBXSLT_PATH/lib${bit64_sfx}"; then
           LIBXSLT_LIBPATH="-L$LIBXSLT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$LIBXSLT_PATH/lib${bit64_sfx}"
        elif test -d "$LIBXSLT_PATH/lib"; then
           LIBXSLT_LIBPATH="-L$LIBXSLT_PATH/lib ${CONF_f_runpath}$LIBXSLT_PATH/lib"
@@ -24684,7 +24716,7 @@ fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 ### SQLite
-: ${SQLITE_PATH=$NCBI/sqlite}
+: ${SQLITE_PATH=$NCBI/sqlite2}
 if test -d "$SQLITE_PATH"; then
    SQLITE_PATH=`cd $SQLITE_PATH  &&  $smart_pwd`
 fi
@@ -24695,8 +24727,12 @@ if test "$with_sqlite" != "no"; then
     esac
     if test -d "$SQLITE_PATH"; then
        in_path=" in $SQLITE_PATH"
-       test -d "$SQLITE_PATH/include" && SQLITE_INCLUDE="-I$SQLITE_PATH/include"
-       if test -d "$SQLITE_PATH/lib${bit64_sfx}"; then
+       if test -z "$SQLITE_INCLUDE" -a -d "$SQLITE_PATH/include"; then
+          SQLITE_INCLUDE="-I$SQLITE_PATH/include"
+       fi
+       if test -n "$SQLITE_LIBPATH"; then
+          :
+       elif test -d "$SQLITE_PATH/lib${bit64_sfx}"; then
           SQLITE_LIBPATH="-L$SQLITE_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SQLITE_PATH/lib${bit64_sfx}"
        elif test -d "$SQLITE_PATH/lib"; then
           SQLITE_LIBPATH="-L$SQLITE_PATH/lib ${CONF_f_runpath}$SQLITE_PATH/lib"
@@ -24788,6 +24824,9 @@ _ACEOF
 if test -d "$SQLITE3_PATH"; then
    SQLITE3_PATH=`cd $SQLITE3_PATH  &&  $smart_pwd`
 fi
+if test -d "$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"; then
+   SQLITE3_LIBPATH="-L$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib ${CONF_f_runpath}$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"
+fi
 if test "$with_sqlite3" != "no"; then
     case "$with_sqlite3" in
        yes | "" ) ;;
@@ -24795,8 +24834,12 @@ if test "$with_sqlite3" != "no"; then
     esac
     if test -d "$SQLITE3_PATH"; then
        in_path=" in $SQLITE3_PATH"
-       test -d "$SQLITE3_PATH/include" && SQLITE3_INCLUDE="-I$SQLITE3_PATH/include"
-       if test -d "$SQLITE3_PATH/lib${bit64_sfx}"; then
+       if test -z "$SQLITE3_INCLUDE" -a -d "$SQLITE3_PATH/include"; then
+          SQLITE3_INCLUDE="-I$SQLITE3_PATH/include"
+       fi
+       if test -n "$SQLITE3_LIBPATH"; then
+          :
+       elif test -d "$SQLITE3_PATH/lib${bit64_sfx}"; then
           SQLITE3_LIBPATH="-L$SQLITE3_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SQLITE3_PATH/lib${bit64_sfx}"
        elif test -d "$SQLITE3_PATH/lib"; then
           SQLITE3_LIBPATH="-L$SQLITE3_PATH/lib ${CONF_f_runpath}$SQLITE3_PATH/lib"
@@ -24896,8 +24939,12 @@ if test "$with_oechem" != "no"; then
     esac
     if test -d "$OECHEM_PATH"; then
        in_path=" in $OECHEM_PATH"
-       test -d "$OECHEM_PATH/include" && OECHEM_INCLUDE="-I$OECHEM_PATH/include"
-       if test -d "$OECHEM_PATH/lib${bit64_sfx}"; then
+       if test -z "$OECHEM_INCLUDE" -a -d "$OECHEM_PATH/include"; then
+          OECHEM_INCLUDE="-I$OECHEM_PATH/include"
+       fi
+       if test -n "$OECHEM_LIBPATH"; then
+          :
+       elif test -d "$OECHEM_PATH/lib${bit64_sfx}"; then
           OECHEM_LIBPATH="-L$OECHEM_PATH/lib${bit64_sfx} ${CONF_f_runpath}$OECHEM_PATH/lib${bit64_sfx}"
        elif test -d "$OECHEM_PATH/lib"; then
           OECHEM_LIBPATH="-L$OECHEM_PATH/lib ${CONF_f_runpath}$OECHEM_PATH/lib"
@@ -25000,8 +25047,12 @@ if test "$with_jpeg" != "no"; then
     esac
     if test -d "$JPEG_PATH"; then
        in_path=" in $JPEG_PATH"
-       test -d "$JPEG_PATH/include" && JPEG_INCLUDE="-I$JPEG_PATH/include"
-       if test -d "$JPEG_PATH/lib${bit64_sfx}"; then
+       if test -z "$JPEG_INCLUDE" -a -d "$JPEG_PATH/include"; then
+          JPEG_INCLUDE="-I$JPEG_PATH/include"
+       fi
+       if test -n "$JPEG_LIBPATH"; then
+          :
+       elif test -d "$JPEG_PATH/lib${bit64_sfx}"; then
           JPEG_LIBPATH="-L$JPEG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$JPEG_PATH/lib${bit64_sfx}"
        elif test -d "$JPEG_PATH/lib"; then
           JPEG_LIBPATH="-L$JPEG_PATH/lib ${CONF_f_runpath}$JPEG_PATH/lib"
@@ -25104,8 +25155,12 @@ if test "$with_png" != "no"; then
     esac
     if test -d "$PNG_PATH"; then
        in_path=" in $PNG_PATH"
-       test -d "$PNG_PATH/include" && PNG_INCLUDE="-I$PNG_PATH/include"
-       if test -d "$PNG_PATH/lib${bit64_sfx}"; then
+       if test -z "$PNG_INCLUDE" -a -d "$PNG_PATH/include"; then
+          PNG_INCLUDE="-I$PNG_PATH/include"
+       fi
+       if test -n "$PNG_LIBPATH"; then
+          :
+       elif test -d "$PNG_PATH/lib${bit64_sfx}"; then
           PNG_LIBPATH="-L$PNG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PNG_PATH/lib${bit64_sfx}"
        elif test -d "$PNG_PATH/lib"; then
           PNG_LIBPATH="-L$PNG_PATH/lib ${CONF_f_runpath}$PNG_PATH/lib"
@@ -25203,8 +25258,12 @@ if test "$with_tiff" != "no"; then
     esac
     if test -d "$TIFF_PATH"; then
        in_path=" in $TIFF_PATH"
-       test -d "$TIFF_PATH/include" && TIFF_INCLUDE="-I$TIFF_PATH/include"
-       if test -d "$TIFF_PATH/lib${bit64_sfx}"; then
+       if test -z "$TIFF_INCLUDE" -a -d "$TIFF_PATH/include"; then
+          TIFF_INCLUDE="-I$TIFF_PATH/include"
+       fi
+       if test -n "$TIFF_LIBPATH"; then
+          :
+       elif test -d "$TIFF_PATH/lib${bit64_sfx}"; then
           TIFF_LIBPATH="-L$TIFF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$TIFF_PATH/lib${bit64_sfx}"
        elif test -d "$TIFF_PATH/lib"; then
           TIFF_LIBPATH="-L$TIFF_PATH/lib ${CONF_f_runpath}$TIFF_PATH/lib"
@@ -25302,8 +25361,12 @@ if test "$with_ungif" != "no"; then
     esac
     if test -d "$UNGIF_PATH"; then
        in_path=" in $UNGIF_PATH"
-       test -d "$UNGIF_PATH/include" && UNGIF_INCLUDE="-I$UNGIF_PATH/include"
-       if test -d "$UNGIF_PATH/lib${bit64_sfx}"; then
+       if test -z "$UNGIF_INCLUDE" -a -d "$UNGIF_PATH/include"; then
+          UNGIF_INCLUDE="-I$UNGIF_PATH/include"
+       fi
+       if test -n "$UNGIF_LIBPATH"; then
+          :
+       elif test -d "$UNGIF_PATH/lib${bit64_sfx}"; then
           UNGIF_LIBPATH="-L$UNGIF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$UNGIF_PATH/lib${bit64_sfx}"
        elif test -d "$UNGIF_PATH/lib"; then
           UNGIF_LIBPATH="-L$UNGIF_PATH/lib ${CONF_f_runpath}$UNGIF_PATH/lib"
@@ -25400,8 +25463,12 @@ if test "$with_ungif" = "no"; then
     esac
     if test -d "$GIF_PATH"; then
        in_path=" in $GIF_PATH"
-       test -d "$GIF_PATH/include" && GIF_INCLUDE="-I$GIF_PATH/include"
-       if test -d "$GIF_PATH/lib${bit64_sfx}"; then
+       if test -z "$GIF_INCLUDE" -a -d "$GIF_PATH/include"; then
+          GIF_INCLUDE="-I$GIF_PATH/include"
+       fi
+       if test -n "$GIF_LIBPATH"; then
+          :
+       elif test -d "$GIF_PATH/lib${bit64_sfx}"; then
           GIF_LIBPATH="-L$GIF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$GIF_PATH/lib${bit64_sfx}"
        elif test -d "$GIF_PATH/lib"; then
           GIF_LIBPATH="-L$GIF_PATH/lib ${CONF_f_runpath}$GIF_PATH/lib"
@@ -25508,8 +25575,12 @@ if test "$with_xpm" != "no"; then
     esac
     if test -d "$XPM_PATH"; then
        in_path=" in $XPM_PATH"
-       test -d "$XPM_PATH/include" && XPM_INCLUDE="-I$XPM_PATH/include"
-       if test -d "$XPM_PATH/lib${bit64_sfx}"; then
+       if test -z "$XPM_INCLUDE" -a -d "$XPM_PATH/include"; then
+          XPM_INCLUDE="-I$XPM_PATH/include"
+       fi
+       if test -n "$XPM_LIBPATH"; then
+          :
+       elif test -d "$XPM_PATH/lib${bit64_sfx}"; then
           XPM_LIBPATH="-L$XPM_PATH/lib${bit64_sfx} ${CONF_f_runpath}$XPM_PATH/lib${bit64_sfx}"
        elif test -d "$XPM_PATH/lib"; then
           XPM_LIBPATH="-L$XPM_PATH/lib ${CONF_f_runpath}$XPM_PATH/lib"

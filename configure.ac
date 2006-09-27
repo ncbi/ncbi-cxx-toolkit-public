@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.438 2006/09/07 19:40:37 ucko Exp $
+#  $Id: configure.ac,v 1.439 2006/09/27 18:45:37 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -4613,7 +4613,7 @@ fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 ### SQLite
-: ${SQLITE_PATH=$NCBI/sqlite}
+: ${SQLITE_PATH=$NCBI/sqlite2}
 if test -d "$SQLITE_PATH"; then
    SQLITE_PATH=`cd $SQLITE_PATH  &&  $smart_pwd`
 fi
@@ -4624,6 +4624,9 @@ NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
 : ${SQLITE3_PATH=$NCBI/sqlite3}
 if test -d "$SQLITE3_PATH"; then
    SQLITE3_PATH=`cd $SQLITE3_PATH  &&  $smart_pwd`
+fi
+if test -d "$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"; then
+   SQLITE3_LIBPATH="-L$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib ${CONF_f_runpath}$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite3,
  AC_LANG_PROGRAM([#include <sqlite3.h>],
