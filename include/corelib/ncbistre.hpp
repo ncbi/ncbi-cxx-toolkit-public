@@ -341,10 +341,10 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 /// was read entirely, and all its contents reached "os";
 /// "false" if either extraction from "is" or insertion
 /// into "os" failed.
-/// Note that on successful completion, is.eof() is always true.
+/// Note that upon successful completion, is.eof() is always true.
 /// The call may throw exceptions only if they are enabled on
-/// respective streams.
-/// Note that the call is an extension for standard
+/// respective stream(s).
+/// Note that the call is an extension to the standard
 /// istream::operator<<(streambuf*), which severely
 /// lacks error checking (esp. for partial write failures).
 NCBI_XNCBI_EXPORT
@@ -606,6 +606,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/09/27 16:57:32  lavr
+ * CNcbiStreamCopy's remarks touched up
+ *
  * Revision 1.51  2006/09/07 17:47:20  lavr
  * +NcbiStreamCopy()
  *
