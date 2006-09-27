@@ -172,8 +172,12 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
     esac
     if test -d "[$]$2_PATH"; then
        in_path=" in [$]$2_PATH"
-       test -d "[$]$2_PATH/include" && $2_INCLUDE="-I[$]$2_PATH/include"
-       if test -d "[$]$2_PATH/lib${bit64_sfx}"; then
+       if test -z "[$]$2_INCLUDE" -a -d "[$]$2_PATH/include"; then
+          $2_INCLUDE="-I[$]$2_PATH/include"
+       fi
+       if test -n "[$]$2_LIBPATH"; then
+          :
+       elif test -d "[$]$2_PATH/lib${bit64_sfx}"; then
           $2_LIBPATH="-L[$]$2_PATH/lib${bit64_sfx} ${CONF_f_runpath}[$]$2_PATH/lib${bit64_sfx}"
        elif test -d "[$]$2_PATH/lib"; then
           $2_LIBPATH="-L[$]$2_PATH/lib ${CONF_f_runpath}[$]$2_PATH/lib"
