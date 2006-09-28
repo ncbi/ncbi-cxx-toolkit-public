@@ -72,7 +72,6 @@ extern "C" {
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbidll.hpp>
 #  include <crtdbg.h>
-// #  include <psapi.h>
 #  include <stdlib.h>
 #  include <windows.h>
 
@@ -586,6 +585,7 @@ void SleepSec(unsigned long sec, EInterruptOnSignal onsignal)
 #if defined(NCBI_OS_MSWIN)
 
 static bool s_EnableSuppressSystemMessageBox = true;
+static bool s_DoneSuppressSystemMessageBox   = false;
 
 // Handler for "Unhandled" exceptions
 static LONG CALLBACK _SEH_Handler(EXCEPTION_POINTERS* ep)
@@ -624,6 +624,7 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
     if ( (mode & fSuppress_Exception) == fSuppress_Exception ) {
         SetUnhandledExceptionFilter(_SEH_Handler);
     }
+    s_DoneSuppressSystemMessageBox = true;
 #else
     // not implemented
 #endif
@@ -633,6 +634,9 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
 extern void DisableSuppressSystemMessageBox()
 {
 #if defined(NCBI_OS_MSWIN)
+    if ( s_DoneSuppressSystemMessageBox ) {
+        ERR_POST(Critical << "SuppressSystemMessageBox() was already called");
+    }
     s_EnableSuppressSystemMessageBox = false;
 #else
     // not implemented
@@ -646,6 +650,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/09/28 15:48:34  ivanov
+ * DisableSuppressSystemMessageBox -- print a critical error if
+ * SuppressSystemMessageBox() was already called
+ *
  * Revision 1.57  2006/09/11 20:15:44  ivanov
  * Fixed compilation error
  *
