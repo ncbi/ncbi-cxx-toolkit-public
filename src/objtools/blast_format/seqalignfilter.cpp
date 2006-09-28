@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objtools/blast_format/seqalignfilter.h>
+#include <objtools/blast_format/seqalignfilter.hpp>
 
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
@@ -533,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/28 15:44:49  avagyanv
+ * Changed header file from .h to .hpp
+ *
  * Revision 1.1  2006/09/28 15:36:45  avagyanv
  * Implementation of the alignment filtering class
  *
