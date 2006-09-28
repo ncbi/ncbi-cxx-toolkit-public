@@ -358,7 +358,8 @@ static void s_AddFeat(const CBioseq_Handle& handle)
     new_feat->SetTitle(kAddedFeatTitle);
     new_feat->SetData().SetComment();
     new_feat->SetLocation().SetWhole().SetGi(gi);
-    feat_annot.AddFeat(*new_feat);
+    CSeq_feat_EditHandle fh = feat_annot.AddFeat(*new_feat);
+    feat_annot.TakeFeat(fh);
 }
 
 static void s_RemoveFeat(const CBioseq_Handle& handle)
@@ -367,7 +368,7 @@ static void s_RemoveFeat(const CBioseq_Handle& handle)
     for(; feat_it; ++feat_it) {
         const CMappedFeat& feat = *feat_it;
         if (feat.IsSetTitle() && feat.GetTitle() == kAddedFeatTitle) 
-            feat.GetSeq_feat_Handle().Remove();
+            CSeq_feat_EditHandle(feat.GetSeq_feat_Handle()).Remove();
     }
 }
 
@@ -396,7 +397,9 @@ static void s_RemoveAnnot(const CBioseq_Handle& handle)
 
 #define CHECK3(operation, count, message)    \
     if ( Get##operation##Calls() != count )         \
-        THROW( #operation" : wrong calls number. "message )
+        THROW( #operation" : wrong calls number. "message+\
+               NStr::IntToString(Get##operation##Calls())+" <> "+\
+               NStr::IntToString(count))
 
 #define CHECK(operation, count)  CHECK3(operation, count, "")
 
@@ -510,9 +513,9 @@ int CTestApp::Run(void)
         {
             CScopeTransaction tr = scope.GetTransaction();
             s_AddFeat(bioseq);
-            CHECK(AddFeat, 1);
+            CHECK(AddFeat, 2);
         }
-        CHECK(RemoveFeat, 1);
+        CHECK(RemoveFeat, 3);
         s_AddFeat(bioseq);
         {
             CScopeTransaction tr = scope.GetTransaction();
@@ -574,6 +577,9 @@ int main(int argc, const char* argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/09/28 18:45:50  vasilche
+* Fixed warning and add test for TakeAnnot().
+*
 * Revision 1.4  2006/05/01 16:56:45  didenko
 * Attach SeqEntry edit command revamp
 *
