@@ -53,6 +53,7 @@ BEGIN_SCOPE(blast)
 /// @param oid Ordinal id (index) of the subject sequence [in]
 /// @param seqid Subject sequence identifier to fill [out]
 /// @param length Subject sequence length [out]
+NCBI_XBLAST_EXPORT
 void GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, 
                         int oid,
                         CConstRef<objects::CSeq_id>& seqid, 
@@ -69,6 +70,7 @@ void GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src,
 /// @param sisrc Source of sequence information. [in]
 /// @param oid OID for which to retrieve GIs.    [in]
 /// @param gis GIs found for the specified oid.  [out]
+NCBI_XBLAST_EXPORT
 void GetFilteredRedundantGis(const IBlastSeqInfoSrc & sisrc,
                              int                      oid,
                              vector<int>            & gis);
@@ -81,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/28 20:02:25  avagyanv
+ * Added NCBI_XBLAST_EXPORT to function declarations
+ *
  * Revision 1.2  2006/09/27 21:02:10  avagyanv
  * unix line endings
  *
