@@ -160,11 +160,10 @@ public:
     ///
     /// @param full_aln
     ///   Original seqalign set.
-    /// @param fname_gis_to_filter
-    ///   Name of the input file containing the gi list.
     /// @param db
     ///   A CSeqDB object that will be used for gi lookup and equivalence tests.
-    /// @sa FilterBySeqDB().
+    /// @param filtered_aln
+    ///   Output: filtered set of alignments.
     ///
     void FilterBySeqDB(const CSeq_align_set& full_aln,
                         CRef<CSeqDB> db,
@@ -232,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/09/28 16:27:08  avagyanv
+ * Fixed some comments on member functions
+ *
  * Revision 1.2  2006/09/28 15:55:36  avagyanv
  * Fixed whitespace issues
  *
