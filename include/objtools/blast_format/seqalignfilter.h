@@ -34,8 +34,6 @@
 /// Defines the alignment filtering class.
 ///
 
-#include <ncbi_pch.hpp>
-
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -234,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/28 15:35:36  avagyanv
+ * Alginment filtering class
+ *
  * Revision 1.1  2006/09/28 15:31:47  avagyanv
  * Header file containing the alignment filtering class
  *
