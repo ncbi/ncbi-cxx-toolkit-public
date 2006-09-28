@@ -193,26 +193,25 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
                              << it->type_info.GetTypeInfo()->GetName());
                     continue;
                 }
-            } else {
-                // Scan through all candidates
-                for (it = m_Candidates.begin(); it < it_end; ++it) {
-                    if (header == it->type_info.GetTypeInfo()->GetName()) {
-                        it_prev_cand = it;
-
-                        CObjectInfo object_info(it->type_info.GetTypeInfo());
-
-                        input.Read(object_info, CObjectIStream::eNoFileHeader);
-                        m_TopLevelMap.push_back(
-                            SObjectDescription(it->type_info, m_StreamPos));
-
-                        LOG_POST(Info 
-                                 << "ASN.1 text top level object found:" 
-                                 << it->type_info.GetTypeInfo()->GetName());
-                        break;
-                    }
-                } // for
             }
 
+            // Scan through all candidates
+            for (it = m_Candidates.begin(); it < it_end; ++it) {
+                if (header == it->type_info.GetTypeInfo()->GetName()) {
+                    it_prev_cand = it;
+
+                    CObjectInfo object_info(it->type_info.GetTypeInfo());
+
+                    input.Read(object_info, CObjectIStream::eNoFileHeader);
+                    m_TopLevelMap.push_back(
+                        SObjectDescription(it->type_info, m_StreamPos));
+
+                    LOG_POST(Info 
+                                << "ASN.1 text top level object found:" 
+                                << it->type_info.GetTypeInfo()->GetName());
+                    break;
+                }
+            } // for
         } // while
     }
     catch (CEofException& ) {
@@ -272,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.24  2006/09/28 16:16:45  jcherry
+* Check all candidates, not just previously read, after reading the first
+*
 * Revision 1.23  2006/01/09 12:36:58  kuznets
 * Reflect changes in CObjectIStream
 *
