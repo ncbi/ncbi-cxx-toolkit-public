@@ -180,10 +180,10 @@ enum ESuppressSystemMessageBox {
     fSuppress_Runtime   = (1<<1),     ///< Runtime library
     fSuppress_Debug     = (1<<2),     ///< Debug library
     fSuppress_Exception = (1<<3),     ///< Unhandled exceptions
-    fSuppress_All     = fSuppress_System | fSuppress_Runtime | 
-                        fSuppress_Debug  | fSuppress_Exception,
-    fSuppress_Default = fSuppress_System | fSuppress_Runtime | 
-                        fSuppress_Exception
+    fSuppress_All       = fSuppress_System | fSuppress_Runtime | 
+                          fSuppress_Debug  | fSuppress_Exception,
+    fSuppress_Default   = fSuppress_System | fSuppress_Runtime | 
+                          fSuppress_Exception
 };
 /// Binary OR of "ESuppressSystemMessageBox"
 typedef int TSuppressSystemMessageBox;  
@@ -201,7 +201,8 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode =
 ///
 /// NOTE: MS Windows-specific.
 /// If this function is called, all following calls of
-/// SuppressSystemMessageBox() will be ignored.
+/// SuppressSystemMessageBox() will be ignored. If SuppressSystemMessageBox()
+/// was executed before, that this function print out a critical error message.
 /// For example can be used in CGI applications where SuppressSystemMessageBox
 /// always calls in the CCgiApplication constructor.
 /// 
@@ -215,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/09/28 15:49:13  ivanov
+ * Cosmetics
+ *
  * Revision 1.22  2006/09/11 19:50:05  ivanov
  * Added flag fSuppress_Exception to ESuppressSystemMessageBox.
  * Added function DisableSuppressSystemMessageBox().
