@@ -676,7 +676,7 @@ private:
 /// CFastMutex.
 ///
 /// @sa
-///   http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.threads#CMutex
+///   http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.section.ch_core.threads#ch_core.mutexes
 
 class CMutex
 {
@@ -956,6 +956,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/09/28 19:10:40  ucko
+ * Update bv.fcgi URL arguments in documentation.
+ *
  * Revision 1.40  2006/03/24 22:06:37  grichenk
  * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
  *
