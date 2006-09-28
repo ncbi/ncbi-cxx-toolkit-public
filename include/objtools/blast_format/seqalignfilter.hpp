@@ -50,7 +50,7 @@
  * @{
  */
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 /// CSeqAlignFilter
@@ -64,164 +64,164 @@ BEGIN_SCOPE(objects)
 class CSeqAlignFilter
 {
 public:
-	//--- Types ---//
+    //--- Types ---//
 
-	/// EResultsFormat - output options for filtered seqaligns.
-	///
-	/// eMultipleSeqaligns - one seqalign in the original set is replaced with
-	/// zero or more seqaligns in the filtered set, with updated gi's.
-	///
-	/// eCombined - generates one new seqalign with multiple "use_this_gi" entries when more
-	/// than one equivalent gi's are found.
-	///
-	enum EResultsFormat {
-		eMultipleSeqaligns,
-		eCombined
-	};
+    /// EResultsFormat - output options for filtered seqaligns.
+    ///
+    /// eMultipleSeqaligns - one seqalign in the original set is replaced with
+    /// zero or more seqaligns in the filtered set, with updated gi's.
+    ///
+    /// eCombined - generates one new seqalign with multiple "use_this_gi" entries when more
+    /// than one equivalent gi's are found.
+    ///
+    enum EResultsFormat {
+        eMultipleSeqaligns,
+        eCombined
+    };
 
-	//--- Construction/destruction ---//
+    //--- Construction/destruction ---//
 
-	/// Constructor
-	///
-	/// @param eFormat
-	///   EResultsFormat constant to specify how the filtered alignments should be generated.
-	///
-	CSeqAlignFilter(EResultsFormat eFormat = eCombined);
+    /// Constructor
+    ///
+    /// @param eFormat
+    ///   EResultsFormat constant to specify how the filtered alignments should be generated.
+    ///
+    CSeqAlignFilter(EResultsFormat eFormat = eCombined);
 
-	/// Destructor
-	virtual ~CSeqAlignFilter();
+    /// Destructor
+    virtual ~CSeqAlignFilter();
 
-	//--- File-based top-level interface ---//
+    //--- File-based top-level interface ---//
 
-	/// Filter Seqaligns - file-based version.
+    /// Filter Seqaligns - file-based version.
     ///
     /// Filters the given seqalign set by the given gi list and
-	/// stores the new seqalign set in file.
-	///
-	/// @param fname_in_seqaligns
+    /// stores the new seqalign set in file.
+    ///
+    /// @param fname_in_seqaligns
     ///   Name of the input file containging the original seqalign set.
     /// @param fname_out_seqaligns
     ///   Name of the output file for the filtered seqalign set.
     /// @param fname_gis_to_filter
     ///   Name of the input file containing the gi list.
     /// @sa FilterSeqalignsExt(), FilterByGiListFromFile().
-	///
-	void FilterSeqaligns(const string& fname_in_seqaligns,
-						 const string& fname_out_seqaligns,
-						 const string& fname_gis_to_filter);
+    ///
+    void FilterSeqaligns(const string& fname_in_seqaligns,
+                         const string& fname_out_seqaligns,
+                         const string& fname_gis_to_filter);
 
-	/// Filter Seqaligns - extended file-based version.
+    /// Filter Seqaligns - extended file-based version.
     ///
     /// Filters the given seqalign set using a CSeqDB database for advanced lookup of gi's
-	/// and stores the new seqalign set in file. The function may replace a gi of an aligned
-	/// sequence with one or more of its equivalent gi's.
-	///
-	/// @param fname_in_seqaligns
+    /// and stores the new seqalign set in file. The function may replace a gi of an aligned
+    /// sequence with one or more of its equivalent gi's.
+    ///
+    /// @param fname_in_seqaligns
     ///   Name of the input file containging the original seqalign set.
     /// @param fname_out_seqaligns
     ///   Name of the output file for the filtered seqalign set.
     /// @param db
     ///   A CSeqDB object that will be used for gi lookup and equivalence tests.
     /// @sa FilterBySeqDB().
-	///
-	void FilterSeqalignsExt(const string& fname_in_seqaligns,
-							const string& fname_out_seqaligns,
-							CRef<CSeqDB> db);
-
-	//--- Main seqalign filtering functions ---//
-
-	/// Filter Seqaligns using a gi-list stored in file.
     ///
-	/// @param full_aln
+    void FilterSeqalignsExt(const string& fname_in_seqaligns,
+                            const string& fname_out_seqaligns,
+                            CRef<CSeqDB> db);
+
+    //--- Main seqalign filtering functions ---//
+
+    /// Filter Seqaligns using a gi-list stored in file.
+    ///
+    /// @param full_aln
     ///   Original seqalign set.
     /// @param fname_gis_to_filter
     ///   Name of the input file containing the gi list.
     /// @param filtered_aln
     ///   Output: filtered set of alignments.
-	///
-	void FilterByGiListFromFile(const CSeq_align_set& full_aln,
-								const string& fname_gis_to_filter,
-								CSeq_align_set& filtered_aln);
-
-	/// Filter Seqaligns using a list of integers as the gi-list.
     ///
-	/// @param full_aln
+    void FilterByGiListFromFile(const CSeq_align_set& full_aln,
+                                const string& fname_gis_to_filter,
+                                CSeq_align_set& filtered_aln);
+
+    /// Filter Seqaligns using a list of integers as the gi-list.
+    ///
+    /// @param full_aln
     ///   Original seqalign set.
     /// @param list_gis
     ///   List of gi's.
     /// @param filtered_aln
     ///   Output: filtered set of alignments.
-	///
-	void FilterByGiList(const CSeq_align_set& full_aln,
-						const list<int>& list_gis,
-						CSeq_align_set& filtered_aln);
-
-	/// Filter Seqaligns using a SeqDB object.
     ///
-	/// @param full_aln
+    void FilterByGiList(const CSeq_align_set& full_aln,
+                        const list<int>& list_gis,
+                        CSeq_align_set& filtered_aln);
+
+    /// Filter Seqaligns using a SeqDB object.
+    ///
+    /// @param full_aln
     ///   Original seqalign set.
     /// @param fname_gis_to_filter
     ///   Name of the input file containing the gi list.
     /// @param db
     ///   A CSeqDB object that will be used for gi lookup and equivalence tests.
     /// @sa FilterBySeqDB().
-	///
-	void FilterBySeqDB(const CSeq_align_set& full_aln,
-						CRef<CSeqDB> db,
-						CSeq_align_set& filtered_aln);
+    ///
+    void FilterBySeqDB(const CSeq_align_set& full_aln,
+                        CRef<CSeqDB> db,
+                        CSeq_align_set& filtered_aln);
 
-	//--- Auxiliary methods used for seqalign filtering ---//
+    //--- Auxiliary methods used for seqalign filtering ---//
 
-	/// Load a SeqDB database with the given gi-list.
-	CRef<CSeqDB> PrepareSeqDB(const string& fname_db, bool is_prot,
-								const string& fname_gis_to_filter);
+    /// Load a SeqDB database with the given gi-list.
+    CRef<CSeqDB> PrepareSeqDB(const string& fname_db, bool is_prot,
+                                const string& fname_gis_to_filter);
 
-	/// Read a seqalign set from file.
-	void ReadSeqalignSet(const string& fname, CSeq_align_set& aln);
+    /// Read a seqalign set from file.
+    void ReadSeqalignSet(const string& fname, CSeq_align_set& aln);
 
-	/// Write a seqalign to a file.
-	void WriteSeqalignSet(const string& fname, const CSeq_align_set& aln);
+    /// Write a seqalign to a file.
+    void WriteSeqalignSet(const string& fname, const CSeq_align_set& aln);
 
-	/// Read a gi list from a file and, optionally, sort it.
-	void ReadGiList(const string& fname, list<int>& list_gis, bool sorted = false);
+    /// Read a gi list from a file and, optionally, sort it.
+    void ReadGiList(const string& fname, list<int>& list_gis, bool sorted = false);
 
-	/// Read a gi vector from a file and, optionally, sort it.
-	void ReadGiVector(const string& fname, vector<int>& vec_gis, bool sorted = false);
+    /// Read a gi vector from a file and, optionally, sort it.
+    void ReadGiVector(const string& fname, vector<int>& vec_gis, bool sorted = false);
 
 private:
-	//--- Internal methods ---//
+    //--- Internal methods ---//
 
-	/// Create one or more seqalign objects for output, based on the given
-	/// input seqalign and the list of gi's to be included in the output.
-	void x_CreateOusputSeqaligns(CConstRef<CSeq_align> in_aln, int in_gi,
-								CSeq_align_set& out_aln, const vector<int>& out_gi_vec);
+    /// Create one or more seqalign objects for output, based on the given
+    /// input seqalign and the list of gi's to be included in the output.
+    void x_CreateOusputSeqaligns(CConstRef<CSeq_align> in_aln, int in_gi,
+                                CSeq_align_set& out_aln, const vector<int>& out_gi_vec);
 
-	/// Generate the list of gi's based on the old list and the newly available gi's.
-	void x_GenerateNewGis(int main_old_gi,						// in: main gi stored before filtering
-						const vector<int>& vec_old_extra_gis,	// in: extra gi's stored before filtering
-						const vector<int>& vec_out_gis,			// in: list of all gi's to remain after filtering
-						int& main_new_gi,						// out: main gi after filtering
-						vector<int>& vec_new_extra_gis);		// out: extra gi's after filtering
+    /// Generate the list of gi's based on the old list and the newly available gi's.
+    void x_GenerateNewGis(int main_old_gi,                        // in: main gi stored before filtering
+                        const vector<int>& vec_old_extra_gis,    // in: extra gi's stored before filtering
+                        const vector<int>& vec_out_gis,            // in: list of all gi's to remain after filtering
+                        int& main_new_gi,                        // out: main gi after filtering
+                        vector<int>& vec_new_extra_gis);        // out: extra gi's after filtering
 
-	/// Change the gi of one of the sequences referenced in the seqalign object.
-	CRef<CSeq_align> x_UpdateGiInSeqalign(CConstRef<CSeq_align> sa, unsigned int n_row,
-										int old_gi, int new_gi, bool& success);
+    /// Change the gi of one of the sequences referenced in the seqalign object.
+    CRef<CSeq_align> x_UpdateGiInSeqalign(CConstRef<CSeq_align> sa, unsigned int n_row,
+                                        int old_gi, int new_gi, bool& success);
 
-	/// Read the "use_this_gi" entries from a seqalign object.
-	void x_ReadExtraGis(CConstRef<CSeq_align> sa, vector<int>& vec_extra_gis);
+    /// Read the "use_this_gi" entries from a seqalign object.
+    void x_ReadExtraGis(CConstRef<CSeq_align> sa, vector<int>& vec_extra_gis);
 
-	// Write new "use_this_gi" entries to a seqalign object.
-	void x_WriteExtraGis(CRef<CSeq_align> sa, const vector<int>& vec_extra_gis);
+    // Write new "use_this_gi" entries to a seqalign object.
+    void x_WriteExtraGis(CRef<CSeq_align> sa, const vector<int>& vec_extra_gis);
 
-	// Remove all the "use_this_gi" entries from a seqalign object.
-	void x_RemoveExtraGis(CRef<CSeq_align> sa);
+    // Remove all the "use_this_gi" entries from a seqalign object.
+    void x_RemoveExtraGis(CRef<CSeq_align> sa);
 
-	// Add one new "use_this_gi" entry to a seqalign object.
-	bool x_AddUseGiEntryInSeqalign(CRef<CSeq_align> sa, int new_gi);
+    // Add one new "use_this_gi" entry to a seqalign object.
+    bool x_AddUseGiEntryInSeqalign(CRef<CSeq_align> sa, int new_gi);
 
-	//--- Internal data ---//
+    //--- Internal data ---//
 
-	EResultsFormat m_eFormat;
+    EResultsFormat m_eFormat;
 };
 
 END_SCOPE(objects)
@@ -232,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/09/28 15:55:36  avagyanv
+ * Fixed whitespace issues
+ *
  * Revision 1.1  2006/09/28 15:43:29  avagyanv
  * Header file for the alignment filtering class
  *
