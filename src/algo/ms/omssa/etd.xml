@@ -74,5 +74,5 @@
           <MSSearchSettings_nocorrelationscore>1</MSSearchSettings_nocorrelationscore>
           <MSSearchSettings_probfollowingion>0.5</MSSearchSettings_probfollowingion>
           <MSSearchSettings_nmethionine value="true"/>
-          <MSSearchSettings_automassadjust>0.5</MSSearchSettings_automassadjust>
+          <MSSearchSettings_automassadjust>1.0</MSSearchSettings_automassadjust>
        </MSSearchSettings>
