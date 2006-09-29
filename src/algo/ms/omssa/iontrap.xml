@@ -34,7 +34,7 @@
           </MSSearchSettings_enzyme>
           <MSSearchSettings_missedcleave>2</MSSearchSettings_missedcleave>
           <MSSearchSettings_hitlistlen>30</MSSearchSettings_hitlistlen>
-          <MSSearchSettings_db>yeast</MSSearchSettings_db>
+          <MSSearchSettings_db>nr</MSSearchSettings_db>
           <MSSearchSettings_tophitnum>6</MSSearchSettings_tophitnum>
           <MSSearchSettings_minhit>2</MSSearchSettings_minhit>
           <MSSearchSettings_minspectra>4</MSSearchSettings_minspectra>
