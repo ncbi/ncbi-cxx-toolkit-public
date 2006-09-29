@@ -147,8 +147,9 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
     m_TopLevelMap.clear();
 
 
-    if (input.GetDataFormat() == eSerial_AsnText) {
-        ProbeASN1_Text(input);
+    if (input.GetDataFormat() == eSerial_AsnText
+        || input.GetDataFormat() == eSerial_Xml) {
+        ProbeText(input);
     } else {
         ProbeASN1_Bin(input);
     }
@@ -164,11 +165,18 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
 }
 
 
-void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
+void CObjectsSniffer::ProbeText(CObjectIStream& input)
 {
     TCandidates::const_iterator it;
     TCandidates::const_iterator it_prev_cand = m_Candidates.end();
     TCandidates::const_iterator it_end = m_Candidates.end();
+
+    string format_name;  // for LOG_POST messages
+    if (input.GetDataFormat() == eSerial_AsnText) {
+        format_name = "ASN.1 text";
+    } else {
+        format_name = "XML";
+    }
 
     string header;
 
@@ -189,7 +197,7 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
                         SObjectDescription(it->type_info, m_StreamPos));
 
                     LOG_POST(Info 
-                             << "ASN.1 text top level object found:" 
+                             << format_name << " top level object found:" 
                              << it->type_info.GetTypeInfo()->GetName());
                     continue;
                 }
@@ -207,7 +215,7 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
                         SObjectDescription(it->type_info, m_StreamPos));
 
                     LOG_POST(Info 
-                                << "ASN.1 text top level object found:" 
+                                << format_name << " top level object found:" 
                                 << it->type_info.GetTypeInfo()->GetName());
                     break;
                 }
@@ -217,7 +225,8 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
     catch (CEofException& ) {
     }
     catch (CException& e) {
-        LOG_POST(Info << "Exception reading ASN.1 text " << e.what());
+        LOG_POST(Info << "Exception reading "
+                 << format_name << " " << e.what());
     }
 }
 
@@ -271,6 +280,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2006/09/29 13:58:24  jcherry
+* Deal (properly) with XML
+*
 * Revision 1.24  2006/09/28 16:16:45  jcherry
 * Check all candidates, not just previously read, after reading the first
 *

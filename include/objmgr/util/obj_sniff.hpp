@@ -153,7 +153,7 @@ public:
     bool GetDiscardCurrObject() const { return m_DiscardCurrObj; }
 
 protected:
-    void ProbeASN1_Text(CObjectIStream& input);
+    void ProbeText(CObjectIStream& input);
     void ProbeASN1_Bin(CObjectIStream& input);
 
 protected:
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/09/29 13:58:24  jcherry
+ * Deal (properly) with XML
+ *
  * Revision 1.19  2005/12/13 21:21:15  vasilche
  * Fixed order of members initialization.
  *
