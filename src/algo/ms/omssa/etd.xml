@@ -33,7 +33,7 @@
             <MSEnzymes value="trypsin">0</MSEnzymes>
           </MSSearchSettings_enzyme>
           <MSSearchSettings_missedcleave>2</MSSearchSettings_missedcleave>
-          <MSSearchSettings_hitlistlen>30</MSSearchSettings_hitlistlen>
+          <MSSearchSettings_hitlistlen>10</MSSearchSettings_hitlistlen>
           <MSSearchSettings_db>nr</MSSearchSettings_db>
           <MSSearchSettings_tophitnum>20</MSSearchSettings_tophitnum>
           <MSSearchSettings_minhit>2</MSSearchSettings_minhit>
