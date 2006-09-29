@@ -47,22 +47,22 @@ const CAgpErr::TStr CAgpErr::msg[]= {
 
   // Errors (codes 1..20)
   "expecting 8 or 9 tab-separated columns",
+  "column X is empty",
   "duplicate object ",
-  "first line of an object must have object_begin=1",
+  "first line of an object must have object_beg=1",
+  "first line of an object must have part_number=1",
+
   "part number (column 4) != previous part number + 1",
   "object range length not equal to the gap length",
-
-  "Object range length not equal to component range length",
+    "Object range length not equal to component range length",
   "0 or na component orientation may only be used in a singleton scaffold",
   "X must be a positive integer",
-  "X overlaps a previous line",
-  "object_begin is less than object_end",
 
-  "component_start is less than component_end",
+  "X overlaps a previous line",
+  "object_end is less than object_beg",
+  "component_end is less than component_beg",
   "invalid value for X",
   kEmptyCStr, // E_Last
-  kEmptyCStr,
-  kEmptyCStr,
 
   kEmptyCStr,
   kEmptyCStr,
@@ -75,14 +75,14 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "object begins with a gap",
   "two consequtive gap lines (e.g. a gap at the end of "
     "a scaffold, two non scaffold-breaking gaps, ...)",
-
   "invalid linkage \"yes\" for gap_type ",
   "the span overlaps a previous span for this component",
-  "component span appears out of order",
 
+  "component span appears out of order",
   "duplicate component with non-draft type",
   "line with component_type X appears to be a gap line and not a component line",
   "line with component_type X appears to be a component line and not a gap line",
+  "extra <TAB> character at the end of line",
 
   kEmptyCStr // W_Last
 };
@@ -102,14 +102,17 @@ void CAgpErr::PrintAllMessages(CNcbiOstream& out)
   out << "### Errors ###\n";
   for(int i=E_First; i<E_Last; i++) {
     out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
-    if(i==E_InvalidValue) {
+    if(i==E_EmptyColumn) {
+      out << " (X: 1..8)";
+    }
+    else if(i==E_InvalidValue) {
       out << " (X: component_type, gap_type, linkage, orientation)";
     }
     else if(i==E_MustBePositive) {
-      out << " (X: object_begin, object_end, part_num, gap_length, component_start, component_end)";
+      out << " (X: object_beg, object_end, part_num, gap_length, component_beg, component_end)";
     }
     else if(i==E_Overlaps) {
-      out << " (X: object_begin, component_start)";
+      out << " (X: object_beg, component_beg)";
     }
 
     out << "\n";
@@ -133,10 +136,18 @@ string CAgpErr::GetPrintableCode(int code)
 void CAgpErr::PrintLine(CNcbiOstream& ostr,
   const string& filename, int linenum, const string& content)
 {
+  string line=content.size()<200 ? content : content.substr(0,160)+"...";
+
+  // Mark the first space that is not inside a EOL comment
+  SIZE_TYPE posComment = NStr::Find(line, "#");
+  SIZE_TYPE posSpace   = NStr::Find(line, " ", 0, posComment);
+  if(posSpace!=NPOS) {
+    posSpace++;
+    line = line.substr(0, posSpace) + "<<<SPACE!" + line.substr(posSpace);
+  }
+
   if(filename.size()) ostr << filename << ":";
-  ostr<< linenum  << ":"
-      << ( content.size()<200 ? content : (content.substr(0,160)+"...") )
-      << "\n";
+  ostr<< linenum  << ":" << line << "\n";
 }
 
 void CAgpErr::PrintMessage(CNcbiOstream& ostr, TCode code,

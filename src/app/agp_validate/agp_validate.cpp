@@ -377,7 +377,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
   }
   // Needed to check if the last line was a gap, or a singleton.
   if (m_ValidationType == syntax) {
-    m_LineValidator->EndOfObject();
+    m_LineValidator->EndOfObject(true);
   }
 }
 
@@ -388,63 +388,80 @@ void CAgpValidateApplication::x_ValidateFile(
   string  line;
   SDataLine data_line;
   vector<string> cols;
-  while (NcbiGetlineEOL(istr, line)) {
+  //while (NcbiGetlineEOL(istr, line))
+  while (NcbiGetline(istr, line, "\r\n")) // Allow Unix, DOS, Mac EOL characters
+  {
     line_num++;
 
+    string line_orig=line; // With EOL #comments
     // Strip #comments
     {
       SIZE_TYPE pos = NStr::Find(line, "#");
       if(pos != NPOS) {
-        while( pos>0 && line[pos-1]==' ') pos--;
+        while( pos>0 && (line[pos-1]==' ' || line[pos-1]=='\t') ) pos--;
         line.resize(pos);
       }
     }
     if (line == "") continue;
 
-    bool invalid_line=false;
     cols.clear();
     NStr::Tokenize(line, "\t", cols);
-    if( cols.size() < 8 || cols.size() > 9 ) {
+    if( cols.size()==10 && cols[9]=="") {
+      agpErr.Msg(CAgpErr::W_ExtraTab);
+    }
+    else if( cols.size() < 8 || cols.size() > 9 ) {
       // skip this entire line, report an error
       agpErr.Msg(CAgpErr::E_ColumnCount,
         string(", found ") + NStr::IntToString(cols.size()) );
-      invalid_line=true;
+      agpErr.LineDone(line_orig, line_num, true);  // true: invalid_line
+      continue;
     }
-    else {
-      data_line.line_num = line_num;
 
-      // 5 common columns for components and gaps.
-      data_line.object         = cols[0];
-      data_line.begin          = cols[1];
-      data_line.end            = cols[2];
-      data_line.part_num       = cols[3];
-      data_line.component_type = cols[4];
-
-      // columns with different meaning for components and gaps.
-      data_line.component_id   = cols[5];
-      data_line.gap_length     = cols[5];
-
-      data_line.component_start = cols[6];
-      data_line.gap_type        = cols[6];
-
-      data_line.component_end   = cols[7];
-      data_line.linkage         = cols[7];
-
-      data_line.orientation = "";
-      if (data_line.component_type != "N") {
-        // Component
-        if (cols.size() > 8) data_line.orientation = cols[8];
-      }
-
-      if (m_ValidationType == syntax) {
-        // x_ValidateSyntaxLine(data_line, line);
-        m_LineValidator->ValidateLine(data_line, line);
-      } else {
-        x_ValidateSemanticLine(data_line, line);
+    for(int i=0; i<8; i++) {
+      if(cols[i].size()==0) {
+        // skip this entire line, report an error
+        agpErr.Msg(CAgpErr::E_EmptyColumn,
+            NcbiEmptyString, AT_ThisLine, // defaults
+            NStr::IntToString(i+1)
+          );
+        agpErr.LineDone(line_orig, line_num, true);  // true: invalid_line
+        continue;
       }
     }
 
-    agpErr.LineDone(line, line_num, invalid_line);
+    data_line.line_num = line_num;
+
+    // 5 common columns for components and gaps.
+    data_line.object         = cols[0];
+    data_line.begin          = cols[1];
+    data_line.end            = cols[2];
+    data_line.part_num       = cols[3];
+    data_line.component_type = cols[4];
+
+    // columns with different meaning for components and gaps.
+    data_line.component_id   = cols[5];
+    data_line.gap_length     = cols[5];
+
+    data_line.component_beg  = cols[6];
+    data_line.gap_type       = cols[6];
+
+    data_line.component_end   = cols[7];
+    data_line.linkage         = cols[7];
+
+    data_line.orientation = "";
+    if (data_line.component_type != "N") {
+      // Component
+      if (cols.size() > 8) data_line.orientation = cols[8];
+    }
+
+    if (m_ValidationType == syntax) {
+      // x_ValidateSyntaxLine(data_line, line);
+      m_LineValidator->ValidateLine(data_line, line);
+    } else {
+      x_ValidateSemanticLine(data_line, line);
+    }
+
+    agpErr.LineDone(line_orig, line_num);
   }
 }
 

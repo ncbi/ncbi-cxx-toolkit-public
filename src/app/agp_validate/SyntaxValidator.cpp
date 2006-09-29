@@ -124,7 +124,7 @@ CAgpSyntaxValidator::~CAgpSyntaxValidator()
   //delete objNamePatterns;
 }
 
-void CAgpSyntaxValidator::EndOfObject()
+void CAgpSyntaxValidator::EndOfObject(bool afterLastLine)
 {
   if(componentsInLastScaffold==1) m_SingletonCount++;
   componentsInLastScaffold=0;
@@ -132,7 +132,7 @@ void CAgpSyntaxValidator::EndOfObject()
   if( IsGapType(prev_component_type) ) agpErr.Msg(
     // The previous line was a gap at the end of a scaffold & object
     CAgpErr::W_GapObjEnd, NcbiEmptyString,
-    AT_ThisLine|AT_PrevLine
+    afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
   );
 }
 
@@ -145,9 +145,6 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
   int obj_begin = 0;
   int obj_end = 0;
   int part_num = 0;
-
-  // for compatibility with AGP_WARNING() AGP_ERROR()
-  m_LineErrorOccured = false;
 
   //// Common code for GAPs and components
   if(dl.object != prev_object) {
@@ -172,7 +169,7 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
   }
 
   obj_begin = x_CheckIntField(
-    dl.begin, "object_begin (column 2)" );
+    dl.begin, "object_beg (column 2)" );
   if( obj_begin && ( obj_end = x_CheckIntField(
         dl.end, "object_end (column 3)"
   ))){
@@ -181,12 +178,12 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
         NcbiEmptyString,
         AT_ThisLine|AT_PrevLine
       );
-      //AGP_ERROR("First line of an object must have object_begin=1");
+      //AGP_ERROR("First line of an object must have object_beg=1");
     }
 
     obj_range_len = x_CheckRange(
       prev_end, obj_begin, obj_end,
-      "object_begin", "object_end", CAgpErr::E_ObjBeginLtEnd);
+      "object_beg", "object_end", CAgpErr::E_ObjEndLtBegin);
     prev_end = obj_end;
   }
 
@@ -194,8 +191,8 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     dl.part_num, "part_num (column 4)"
   )) {
     if(part_num != prev_part_num+1) {
-      agpErr.Msg( CAgpErr::E_PartNumberNotPlus1, NcbiEmptyString,
-        AT_ThisLine|AT_PrevLine );
+      agpErr.Msg( prev_part_num ? CAgpErr::E_PartNumberNotPlus1 :  CAgpErr::E_PartNumberNot1,
+        NcbiEmptyString, AT_ThisLine|AT_PrevLine );
       // post_prev=true;
       // AGP_ERROR("Part number (column 4) != previous part number +1");
     }
@@ -224,8 +221,6 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
 
   ////
   prev_component_type = dl.component_type;
-  // prev_line = text_line;
-  // prev_line_error_occured = m_LineErrorOccured;
 }
 
 void CAgpSyntaxValidator::x_OnGapLine(
@@ -330,8 +325,8 @@ void CAgpSyntaxValidator::x_OnGapLine(
     // (component start) and column 8 (component end);
     // +, - or 0 in column 9 (orientation).
     if( x_CheckIntField(
-          dl.component_start,
-          "component_start", NO_LOG
+          dl.component_beg,
+          "component_beg", NO_LOG
         ) && x_CheckIntField(
           dl.component_end,
           "component_end", NO_LOG
@@ -375,8 +370,8 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   //// Check that component begin & end are integers,
   //// begin < end, component span length == that of the object
   if( (comp_start = x_CheckIntField(
-        dl.component_start,
-        "component_start (column 7)"
+        dl.component_beg,
+        "component_beg (column 7)"
       )) &&
       (comp_end   = x_CheckIntField(
         dl.component_end,
@@ -385,7 +380,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   ) {
     comp_len = x_CheckRange(
       0, comp_start, comp_end,
-      "component_start", "component_end", CAgpErr::E_CompStartLtEnd
+      "component_beg", "component_end", CAgpErr::E_CompEndLtBeg
     );
     if( comp_len && obj_range_len &&
         comp_len != obj_range_len
@@ -469,9 +464,9 @@ void CAgpSyntaxValidator::x_OnComponentLine(
       //str_details = "The span overlaps "
       //  "a previous span for this component.";
     }
-    else if ( !isDraft) {
+    else if ( !isDraft && (dl.orientation=="+" || dl.orientation=="-") ) {
       if( ( dl.orientation=="+" &&
-            comp_start > (int)spans.GetToOpen() ) ||
+            comp_start > (int)spans.GetTo() ) ||
           ( dl.orientation=="-" &&
             comp_end  < (int)spans.GetFrom() )
       ) {
@@ -611,6 +606,11 @@ void CAgpSyntaxValidator::PrintTotals()
   }
   cout << "\n";
 
+  if(m_ObjCount==0 && m_GapCount==0) {
+    cout << "No valid AGP lines.\n";
+    return;
+  }
+
   //// Prepare component/gap types and counts for later printing
   string s_comp, s_gap;
 
@@ -646,82 +646,88 @@ void CAgpSyntaxValidator::PrintTotals()
 
   cout<<
     "Lines with Components      : "<< ALIGN_W(m_CompCount);
-  if( s_comp.size() ) {
-    if( NStr::Find(s_comp, ",")!=NPOS ) {
-       // (W: 1234, D: 5678)
-      cout << " (" << s_comp << ")";
+  if(m_CompCount) {
+    if( s_comp.size() ) {
+      if( NStr::Find(s_comp, ",")!=NPOS ) {
+        // (W: 1234, D: 5678)
+        cout << " (" << s_comp << ")";
+      }
+      else {
+        // One type of components: (W) or (invalid type)
+        cout << " (" << s_comp.substr( 0, NStr::Find(s_comp, ":") ) << ")";
+      }
     }
-    else {
-      // One type of components: (W) or (invalid type)
-      cout << " (" << s_comp.substr( 0, NStr::Find(s_comp, ":") ) << ")";
-    }
+    cout << "\n"
+      "\torientation +      : " << ALIGN_W(m_CompPosCount ) << "\n"
+      "\torientation -      : " << ALIGN_W(m_CompNegCount ) << "\n"
+      "\torientation 0      : " << ALIGN_W(m_CompZeroCount) << "\n"
+      "\torientation na     : " << ALIGN_W(m_CompNaCount  ) << "\n";
   }
-  cout << "\n"
-    "\torientation +      : " << ALIGN_W(m_CompPosCount ) << "\n"
-    "\torientation -      : " << ALIGN_W(m_CompNegCount ) << "\n"
-    "\torientation 0      : " << ALIGN_W(m_CompZeroCount) << "\n"
-    "\torientation na     : " << ALIGN_W(m_CompNaCount  ) << "\n";
 
   cout << "\n" << "Gaps: " << m_GapCount;
-  // To do: print (N) if all components are of one type,
-  //        or (N: 1234, U: 5678)
-  if( s_gap.size() ) {
-    if( NStr::Find(s_gap, ",")!=NPOS ) {
-       // (N: 1234, N: 5678)
-      cout << " (" << s_gap << ")";
+  if(m_GapCount) {
+    // Print (N) if all components are of one type,
+    //        or (N: 1234, U: 5678)
+    if( s_gap.size() ) {
+      if( NStr::Find(s_gap, ",")!=NPOS ) {
+        // (N: 1234, N: 5678)
+        cout << " (" << s_gap << ")";
+      }
+      else {
+        // One type of gaps: (N)
+        cout << " (" << s_gap.substr( 0, NStr::Find(s_gap, ":") ) << ")";
+      }
     }
-    else {
-      // One type of gaps: (N)
-      cout << " (" << s_gap.substr( 0, NStr::Find(s_gap, ":") ) << ")";
-    }
+
+    cout
+    << "\n\t   with linkage: "<<ALIGN_W("yes") << "\t" << ALIGN_W("no")
+    << "\n\tclone          : "<<ALIGN_W(m_TypeGapCnt["cloneyes"          ])
+    << "\t"                   <<ALIGN_W(m_TypeGapCnt["cloneno"           ])
+    << "\n\tfragment       : "<<ALIGN_W(m_TypeGapCnt["fragmentyes"       ])
+    << "\t"                   <<ALIGN_W(m_TypeGapCnt["fragmentno"        ])
+    << "\n\trepeat         : "<<ALIGN_W(m_TypeGapCnt["repeatyes"         ])
+    << "\t"                   <<ALIGN_W(m_TypeGapCnt["repeatno"          ])
+    << "\n"
+    << "\n\tcontig         : "<<ALIGN_W(m_TypeGapCnt["contigyes"         ])
+    << "\t"                   <<ALIGN_W(m_TypeGapCnt["contigno"          ])
+    << "\n\tcentromere     : "<<ALIGN_W(m_TypeGapCnt["centromereyes"     ])
+    << "\t"                   <<ALIGN_W(m_TypeGapCnt["centromereno"      ])
+    << "\n\tshort_arm      : "<<ALIGN_W(m_TypeGapCnt["short_armyes"      ])
+    << "\t"                   <<ALIGN_W(m_TypeGapCnt["short_armno"       ])
+    << "\n\theterochromatin: "<<ALIGN_W(m_TypeGapCnt["heterochromatinyes"])
+    << "\t"                   <<ALIGN_W(m_TypeGapCnt["heterochromatinno" ])
+    << "\n\ttelomere       : "<<ALIGN_W(m_TypeGapCnt["telomereyes"       ])
+    << "\t"                   <<ALIGN_W(m_TypeGapCnt["telomereno"        ])
+    //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
+    //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
+    << "\n";
   }
 
-  cout
-  << "\n\t   with linkage: "<<ALIGN_W("yes") << "\t" << ALIGN_W("no")
-  << "\n\tclone          : "<<ALIGN_W(m_TypeGapCnt["cloneyes"          ])
-  << "\t"                   <<ALIGN_W(m_TypeGapCnt["cloneno"           ])
-  << "\n\tfragment       : "<<ALIGN_W(m_TypeGapCnt["fragmentyes"       ])
-  << "\t"                   <<ALIGN_W(m_TypeGapCnt["fragmentno"        ])
-  << "\n\trepeat         : "<<ALIGN_W(m_TypeGapCnt["repeatyes"         ])
-  << "\t"                   <<ALIGN_W(m_TypeGapCnt["repeatno"          ])
-  << "\n"
-  << "\n\tcontig         : "<<ALIGN_W(m_TypeGapCnt["contigyes"         ])
-  << "\t"                   <<ALIGN_W(m_TypeGapCnt["contigno"          ])
-  << "\n\tcentromere     : "<<ALIGN_W(m_TypeGapCnt["centromereyes"     ])
-  << "\t"                   <<ALIGN_W(m_TypeGapCnt["centromereno"      ])
-  << "\n\tshort_arm      : "<<ALIGN_W(m_TypeGapCnt["short_armyes"      ])
-  << "\t"                   <<ALIGN_W(m_TypeGapCnt["short_armno"       ])
-  << "\n\theterochromatin: "<<ALIGN_W(m_TypeGapCnt["heterochromatinyes"])
-  << "\t"                   <<ALIGN_W(m_TypeGapCnt["heterochromatinno" ])
-  << "\n\ttelomere       : "<<ALIGN_W(m_TypeGapCnt["telomereyes"       ])
-  << "\t"                   <<ALIGN_W(m_TypeGapCnt["telomereno"        ])
-  //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
-  //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
-  << "\n";
-
-  cout << "\nObject names   :";
-  // Patterns in object names
-  {
-    CAccPatternCounter objNamePatterns;
-    objNamePatterns.AddNames(m_ObjIdSet);
-    x_PrintPatterns(objNamePatterns, w);
-  }
-
-  cout << "Component names:";
-  {
-    CAccPatternCounter compNamePatterns;
-    for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
-      it != m_CompId2Spans.end(); ++it)
+  if(m_ObjCount) {
+    cout << "\nObject names   :";
+    // Patterns in object names
     {
-      compNamePatterns.AddName(it->first);
+      CAccPatternCounter objNamePatterns;
+      objNamePatterns.AddNames(m_ObjIdSet);
+      x_PrintPatterns(objNamePatterns);
     }
-    x_PrintPatterns(compNamePatterns, w);
+
+    cout << "Component names:";
+    {
+      CAccPatternCounter compNamePatterns;
+      for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
+        it != m_CompId2Spans.end(); ++it)
+      {
+        compNamePatterns.AddName(it->first);
+      }
+      x_PrintPatterns(compNamePatterns);
+    }
   }
 
 }
 
 // Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
-void CAgpSyntaxValidator::x_PrintPatterns(CAccPatternCounter& namePatterns, int w)
+void CAgpSyntaxValidator::x_PrintPatterns(CAccPatternCounter& namePatterns)
 {
   const int MaxPatterns=10;
 
@@ -736,6 +742,10 @@ void CAgpSyntaxValidator::x_PrintPatterns(CAccPatternCounter& namePatterns, int 
     return;
   }
   cout << "\n";
+
+  int w = NStr::IntToString(
+      CAccPatternCounter::GetCount(pat_cnt[0])
+    ).size();
 
   // Print the patterns
   int patternsPrinted=0;

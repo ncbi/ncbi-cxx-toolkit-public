@@ -90,18 +90,20 @@ public:
   // When adding entries to enum TCode, also update msg[]
   enum TCode {
     E_ColumnCount=1 ,
+    E_EmptyColumn,
     E_DuplicateObj  ,
     E_ObjMustBegin1 ,
+    E_PartNumberNot1,
+
     E_PartNumberNotPlus1,
     E_ObjRangeNeGap ,
-
     E_ObjRangeNeComp,
     E_UnknownOrientation,
     E_MustBePositive,
-    E_Overlaps      ,
-    E_ObjBeginLtEnd ,
 
-    E_CompStartLtEnd,
+    E_Overlaps      ,
+    E_ObjEndLtBegin ,
+    E_CompEndLtBeg,
     E_InvalidValue  ,
     E_Last, E_First=1,
 
@@ -115,6 +117,7 @@ public:
     W_DuplicateComp,
     W_LooksLikeGap,
     W_LooksLikeComp,
+    W_ExtraTab,
     W_Last, W_First = 21
   };
 

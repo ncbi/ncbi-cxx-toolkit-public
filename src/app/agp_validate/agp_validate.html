@@ -1,0 +1,77 @@
+<head>
+<title>agp_validate utility<title>
+</head>
+<body>
+<CODE>agp_validate</CODE> checks text formatting and consistency,
+and prints various statistics for components, gaps, scaffolds and objects.
+Violations of the following requirements qualify as ERRORS:
+<UL>
+<LI>8 or 9 tab-separated columns (excluding end of line <CODE>#comments</CODE>);
+first 8 columns have non-empty values.</LI>
+<UL><LI>Positive integers in columns
+  2)<CODE>object_beg</CODE>,
+  3)<CODE>object_end</CODE>,
+  4)<CODE>part_num</CODE>, 6b)<CODE>gap_length</CODE>,
+  7a)<CODE>component_beg</CODE>, 8a)<CODE>component_end</CODE>.
+<UL>
+  <li>Object ranges are sequential and non-overlapping.</li>
+  <li><CODE>object_beg</CODE> is less than or equal to <CODE>object_end</CODE>.</li>
+  <li><CODE>component_beg</CODE> is less than or equal to <CODE>component_end</CODE>.</li>
+
+  <li>The length of the span specified for the component (in columns 7a and 8a) matches<BR>
+  the length of the span specified for the object (in column 2 and 3).</li>
+  <li>The length of the gap (in column 6b) matches<BR> the length of the span specified for the object (in columns 2 and 3).</li>
+  <LI>Each object starts with an <CODE>object_beg</CODE> coordinate of 1.</LI>
+  <LI>Each object starts with a <CODE>part_number</CODE> of 1.</LI>
+  <LI>Column 4)<CODE>part_number</CODE> == previous <CODE>part_number + 1</CODE>.</LI>
+</UL>
+<LI>Valid keywords or symbols in columns
+  5)<CODE>component_type</CODE>, 7b)<CODE>gap_type</CODE>,
+  8b)<CODE>linkage</CODE>, 9a)<CODE>orientation</CODE>.
+<UL>
+  <LI><CODE>0</CODE> or <CODE>na</CODE> component orientation is used only in singleton scaffolds
+</UL>
+
+<LI>All lines with the same <CODE>object</CODE> are sequential, and are
+not intermixed with other objects.
+</UL>
+</UL>
+<P>
+WARNINGS are issued for:
+<UL>
+<LI>A gap at the beginning or the end of an object, 2 consequitive gap lines.
+<LI><CODE>linkage yes</CODE> with a <CODE>gap_type</CODE> other than
+<CODE>fragment</CODE>, <CODE>clone</CODE>, <CODE>repeat</CODE>
+<LI>Overlapping spans on a given component id.
+<LI>Non-draft component ids used more than once ("draft" being one of:
+<U>A</U>ctive draft, <U>D</U>raft HTG, <U>P</U>re Draft).
+<LI>Non-draft component ids out of order.
+<LI>Extra tab character at the end of line.
+</UL>
+
+
+Note: you can run <CODE>agp_validate -list</CODE> to see the list of all
+possible error and warning messages.
+
+<P>
+<H3>Questions/Suggestions</H3>
+<LI>Should we print a warning for a telomere gap at the end of file?
+Currently, it is:<BR>
+<CODE>WARNING: gap at the end of an object</CODE>
+<LI>Specify <CODE>agp_validate</CODE> error codes in this document
+   (to make it easier to match requirement clauses and error messages).
+<LI>Chose between "range" and "span", and use one term in this document,
+and in AGP_Specification.html
+
+<H3><CODE>agp_clean</CODE> - a proposed utility to fix simple errors</H3>
+<LI>Strip trailing spaces.
+<LI>Convert 2 character DOS line endings to UNIX "\n".
+<LI>Renumber part numbers.
+<LI>Add versions to GenBank accessions.
+<LI>Convert 0 or na orientattion in non-singleton scaffolds to "+" (?)
+<LI>Optional: strip comments (?).
+
+</body>
+
+
+

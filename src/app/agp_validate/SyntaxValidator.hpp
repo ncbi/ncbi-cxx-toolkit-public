@@ -65,7 +65,7 @@ struct SDataLine {
   string  part_num;
   string  component_type;
   string  component_id;
-  string  component_start;
+  string  component_beg;
   string  component_end;
   string  orientation;
   string  gap_length;
@@ -98,7 +98,7 @@ public:
   CAgpSyntaxValidator();
   ~CAgpSyntaxValidator();
   void ValidateLine(const SDataLine& dl, const string& text_line);
-  void EndOfObject();
+  void EndOfObject(bool afterLastLine=false);
 
   // static bool GapBreaksScaffold(int type, int linkage);
   static bool IsGapType(const string& type);
@@ -196,13 +196,8 @@ protected:
   int x_CheckIntField(const string& field,
     const string& field_name, bool log_error = true);
 
-  bool m_LineErrorOccured;
-  CNcbiOstrstream* m_ValidateMsg;
-
   string prev_object;
   string prev_component_type;
-  //int prev_gap_type;
-  //string prev_line;
 
   // Used for the first component in a scaffold;
   // we do not know whether the scaffold is a singleton,
@@ -218,7 +213,7 @@ protected:
   int  componentsInLastScaffold;
 
   //CAccPatternCounter* objNamePatterns;
-  static void x_PrintPatterns(CAccPatternCounter& namePatterns, int w);
+  static void x_PrintPatterns(CAccPatternCounter& namePatterns);
 };
 
 END_NCBI_SCOPE
