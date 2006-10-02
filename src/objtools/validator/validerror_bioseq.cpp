@@ -2492,7 +2492,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
     TFeatCount cds_count, mrna_count;
 
     SAnnotSelector as;
-    as.IncludedFeatType(CSeqFeatData::e_Cdregion);
+    as.IncludeFeatType(CSeqFeatData::e_Cdregion);
     as.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
 
     CConstRef<CSeq_feat> gene;
@@ -3994,6 +3994,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.100  2006/10/02 14:33:00  rsmith
+* bugzid: 663 Fix problem counting CDS's and mRNA's in validator.
+*
 * Revision 1.99  2006/09/25 17:37:28  dicuccio
 * Propagate changes from production tree
 *
