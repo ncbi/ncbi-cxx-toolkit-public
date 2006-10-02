@@ -55,10 +55,10 @@ public:
     typedef map<string, int> TObjTypeMap;
 
 public:
-
-    CLDS_Database(const string& db_dir_name, 
-                  const string& db_name,
-                  const string& alias);
+    
+    NCBI_DEPRECATED_CTOR(CLDS_Database(const string& db_dir_name, 
+                                       const string& db_name,
+                                       const string& alias));
 
     CLDS_Database(const string& db_dir_name,
                   const string& alias);
@@ -97,17 +97,17 @@ public:
     void LoadTypeMap();
 
     const string& GetDirName(void) const { return m_LDS_DirName; }
-    const string& GetDbName(void) const { return m_LDS_DbName; }
+    NCBI_DEPRECATED string GetDbName(void) const { return ""; }
     
-    CRef<CLDS_DataLoader> GetLoader();
-    void SetLoader( CRef<CLDS_DataLoader> aLoader );
+    NCBI_DEPRECATED CRef<CLDS_DataLoader> GetLoader();
+    NCBI_DEPRECATED void SetLoader( CRef<CLDS_DataLoader> aLoader );
 
 private:
     CLDS_Database(const CLDS_Database&);
     CLDS_Database& operator=(const CLDS_Database&);
 private:
     string                 m_LDS_DirName;
-    string                 m_LDS_DbName;
+    //string                 m_LDS_DbName;
     string                 m_Alias;
 
     auto_ptr<SLDS_TablesCollection> m_db;
@@ -176,6 +176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/10/02 14:32:53  didenko
+ * m_DbName member is deprecated now.
+ *
  * Revision 1.26  2006/04/12 13:30:07  kuznets
  * +ReOpen()
  *

@@ -44,11 +44,11 @@ BEGIN_SCOPE(objects)
 
 
 
+/* DEPRECATED */
 CLDS_Database::CLDS_Database(const string& db_dir_name, 
                              const string& db_name,
                              const string& alias)
-: m_LDS_DirName(db_dir_name),
-  m_LDS_DbName(db_name)
+: m_LDS_DirName(db_dir_name)
 {
     if (alias.empty()) {
         m_Alias = db_dir_name;
@@ -58,11 +58,12 @@ CLDS_Database::CLDS_Database(const string& db_dir_name,
     }
 }
 
+
+
 CLDS_Database::CLDS_Database(const string& db_dir_name,
                              const string& alias)
 : m_LDS_DirName(db_dir_name)
 {
-    m_LDS_DbName = "lds.db";
     if (alias.empty()) {
         m_Alias = db_dir_name;
     }
@@ -74,13 +75,13 @@ CLDS_Database::CLDS_Database(const string& db_dir_name,
 
 CLDS_Database::~CLDS_Database()
 {
-    LOG_POST(Info << "Closing LDS database: " << m_LDS_DbName);
+    LOG_POST(Info << "Closing LDS database: " <<  m_Alias);
 }
 
 void CLDS_Database::Create()
 {
     string fname;
-    LOG_POST(Info << "Creating LDS database: " << m_LDS_DbName);
+    LOG_POST(Info << "Creating LDS database: " <<  m_Alias);
 
     {{
         m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
@@ -284,10 +285,12 @@ void CLDS_Database::LoadTypeMap()
     }
 }
 
+/* DEPRECATED */
 CRef<CLDS_DataLoader> CLDS_Database::GetLoader()
 { 
     return m_Loader; 
 }
+/* DEPRECATED */
 void CLDS_Database::SetLoader( CRef<CLDS_DataLoader> aLoader )
 {
     m_Loader = aLoader;
@@ -349,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/10/02 14:32:53  didenko
+ * m_DbName member is deprecated now.
+ *
  * Revision 1.26  2006/09/20 19:23:54  kuznets
  * added index on file names
  *
