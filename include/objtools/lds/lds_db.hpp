@@ -184,8 +184,9 @@ inline
 SLDS_FileNameIDX::SLDS_FileNameIDX()
 {
     BindKey("file_name", &file_name, 2048);
-
     BindData("file_id", &file_id);
+
+    DisableNull();
 }
 
 inline 
@@ -274,6 +275,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2006/10/02 14:34:01  didenko
+* Added DisbleNull to filename index
+*
 * Revision 1.18  2006/09/20 19:24:16  kuznets
 * added index on file names
 *
