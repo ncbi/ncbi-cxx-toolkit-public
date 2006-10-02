@@ -174,7 +174,7 @@ struct _cs_dynamic
 	char *stmt;
 	CS_DYNAMIC_PARAM *param_list;
 	struct _cs_dynamic *next;
-}; 
+};
 
 /* specific FreeTDS commands */
 #define CS_DYNAMIC_CMD   160
@@ -234,7 +234,7 @@ struct _cs_command_list
 	struct _cs_command *cmd;
 	struct _cs_command_list *next;
 };
- 
+
 struct _cs_blkdesc
 {
 	CS_CONNECTION *con;
@@ -246,6 +246,9 @@ struct _cs_blkdesc
 	CS_INT xfer_init;
 	CS_INT var_cols;
 	TDSRESULTINFO *bindinfo;
+    CS_INT text_sent;
+    CS_INT current_col;
+    CS_INT blob_cols;
 };
 
 
