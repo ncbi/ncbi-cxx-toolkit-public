@@ -34,6 +34,8 @@
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_object.hpp>
 
+#include <memory>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -126,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/10/02 15:31:28  didenko
+ * added <memory> include
+ *
  * Revision 1.1  2006/10/02 14:36:48  didenko
  * Added new class CLDS_Manager to replace CLDS_Managemnt class
  *
