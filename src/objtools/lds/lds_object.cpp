@@ -552,8 +552,9 @@ int CLDS_Object::SaveObject(int file_id,
                         
                         }
                         break;
-                    case CSeq_align::C_Segs::e_Packed:
-                    case CSeq_align::C_Segs::e_Disc:
+                        //                    case CSeq_align::C_Segs::e_Packed:
+                        //                    case CSeq_align::C_Segs::e_Disc:
+                    default:
                         break;
                     }
 
@@ -980,6 +981,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/10/02 14:31:00  didenko
+ * Got rid of compile time warnnings
+ *
  * Revision 1.7  2005/10/20 15:34:08  kuznets
  * Implemented duplicate id check
  *
