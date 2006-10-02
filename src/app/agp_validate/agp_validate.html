@@ -45,33 +45,10 @@ WARNINGS are issued for:
 <LI>Overlapping spans on a given component id.
 <LI>Non-draft component ids used more than once ("draft" being one of:
 <U>A</U>ctive draft, <U>D</U>raft HTG, <U>P</U>re Draft).
-<LI>Non-draft component ids out of order.
+<LI>Non-draft component spans out of order.
 <LI>Extra tab character at the end of line.
 </UL>
 
 
-Note: you can run <CODE>agp_validate -list</CODE> to see the list of all
-possible error and warning messages.
-
-<P>
-<H3>Questions/Suggestions</H3>
-<LI>Should we print a warning for a telomere gap at the end of file?
-Currently, it is:<BR>
-<CODE>WARNING: gap at the end of an object</CODE>
-<LI>Specify <CODE>agp_validate</CODE> error codes in this document
-   (to make it easier to match requirement clauses and error messages).
-<LI>Chose between "range" and "span", and use one term in this document,
-and in AGP_Specification.html
-
-<H3><CODE>agp_clean</CODE> - a proposed utility to fix simple errors</H3>
-<LI>Strip trailing spaces.
-<LI>Convert 2 character DOS line endings to UNIX "\n".
-<LI>Renumber part numbers.
-<LI>Add versions to GenBank accessions.
-<LI>Convert 0 or na orientattion in non-singleton scaffolds to "+" (?)
-<LI>Optional: strip comments (?).
-
+Note: you can run <CODE>agp_validate -list</CODE> to see the list of all errors and warnings.
 </body>
-
-
-
