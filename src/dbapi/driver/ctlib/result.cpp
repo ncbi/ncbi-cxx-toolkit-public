@@ -908,7 +908,9 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
     }
 
     char dummy[4];
-    switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem+1, dummy, 0, 0) ) {
+
+//     switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem+1, dummy, 0, 0) ) {
+    switch ( ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0) ) {
     case CS_END_ITEM:
     case CS_END_DATA:
     case CS_SUCCEED:
@@ -1087,6 +1089,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/10/02 20:00:16  ssikorsk
+ * my_ct_get_data --> ct_get_data in CTL_RowResult::GetImageOrTextDescriptor.
+ *
  * Revision 1.27  2006/08/23 19:57:30  ssikorsk
  * CTL_RowResult::Close: free data structures after a call to ct_cancel.
  *
