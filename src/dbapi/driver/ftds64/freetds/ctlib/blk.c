@@ -55,6 +55,9 @@ static CS_RETCODE _rowxfer_in_init(CS_BLKDESC * blkdesc);
 static CS_RETCODE _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred);
 static CS_RETCODE _blk_rowxfer_out(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred);
 
+#undef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+
 CS_RETCODE
 blk_alloc(CS_CONNECTION * connection, CS_INT version, CS_BLKDESC ** blk_pointer)
 {
@@ -87,7 +90,7 @@ blk_bind(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt, CS_VOID * buff
 
 	if (item == CS_UNUSED) {
 		/* clear all bindings */
-		if (datafmt == NULL && buffer == NULL && datalen == NULL && indicator == NULL ) { 
+		if (datafmt == NULL && buffer == NULL && datalen == NULL && indicator == NULL ) {
 			blkdesc->bind_count = CS_UNUSED;
 			for (i = 0; i < blkdesc->bindinfo->num_cols; i++ ) {
 				colinfo = blkdesc->bindinfo->columns[i];
@@ -111,7 +114,7 @@ blk_bind(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt, CS_VOID * buff
 
 	/* clear bindings for this column */
 
-	if (datafmt == NULL && buffer == NULL && datalen == NULL && indicator == NULL ) { 
+	if (datafmt == NULL && buffer == NULL && datalen == NULL && indicator == NULL ) {
 
 		colinfo = blkdesc->bindinfo->columns[item - 1];
 		colinfo->column_varaddr  = NULL;
@@ -243,7 +246,7 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
 			return CS_FAIL;
 		}
 		
-		if (outrow) 
+		if (outrow)
 			*outrow = tds->rows_affected;
 		
 		tds_submit_query(tds, blkdesc->insert_stmt);
@@ -270,7 +273,7 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
 			return CS_FAIL;
 		}
 		
-		if (outrow) 
+		if (outrow)
 			*outrow = tds->rows_affected;
 		
 		/* free allocated storage in blkdesc & initialise flags, etc. */
@@ -290,6 +293,9 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
 		blkdesc->bind_count = CS_UNUSED;
 		blkdesc->xfer_init = 0;
 		blkdesc->var_cols = 0;
+		blkdesc->text_sent = 0;
+		blkdesc->current_col = 0;
+		blkdesc->blob_cols = 0;
 
 		break;
 
@@ -440,6 +446,7 @@ blk_init(CS_BLKDESC * blkdesc, CS_INT direction, CS_CHAR * tablename, CS_INT tna
 		curcol->column_nullable = resinfo->columns[i]->column_nullable;
 		curcol->column_identity = resinfo->columns[i]->column_identity;
 		curcol->column_timestamp = resinfo->columns[i]->column_timestamp;
+		curcol->column_offset = resinfo->columns[i]->column_offset;
 
 		memcpy(curcol->column_collation, resinfo->columns[i]->column_collation, 5);
 
@@ -448,7 +455,11 @@ blk_init(CS_BLKDESC * blkdesc, CS_INT direction, CS_CHAR * tablename, CS_INT tna
 			((TDS_NUMERIC *) curcol->bcp_column_data->data)->precision = curcol->column_prec;
 			((TDS_NUMERIC *) curcol->bcp_column_data->data)->scale = curcol->column_scale;
 		} else {
-			curcol->bcp_column_data = tds_alloc_bcp_column_data(curcol->on_server.column_size);
+            if (is_blob_type(curcol->column_type)) {
+                curcol->bcp_column_data = tds_alloc_bcp_column_data(0);
+            } else {
+                curcol->bcp_column_data = tds_alloc_bcp_column_data(curcol->on_server.column_size);
+            }
 		}
 	}
 
@@ -484,9 +495,9 @@ blk_props(CS_BLKDESC * blkdesc, CS_INT action, CS_INT property, CS_VOID * buffer
 	int intval;
 
 	switch (property) {
-	case BLK_IDENTITY: 
+	case BLK_IDENTITY:
 		switch (action) {
-		case CS_SET: 
+		case CS_SET:
 			if (buffer) {
 				memcpy(&intval, buffer, sizeof(intval));
 				if (intval == CS_TRUE)
@@ -598,8 +609,275 @@ CS_RETCODE
 blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * outlen)
 {
 
-	tdsdump_log(TDS_DBG_FUNC, "UNIMPLEMENTED blk_textxfer()\n");
-	return CS_FAIL;
+	TDSSOCKET  *tds = blkdesc->con->tds_socket;
+	TDSCOLUMN  *bindcol;
+	TDS_INT	   offset = 0;
+
+	static const unsigned char CHARBIN_NULL[] = { 0xff, 0xff };
+	static const unsigned char GEN_NULL = 0x00;
+	static const unsigned char textptr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+											 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+	};
+	static const unsigned char timestamp[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
+	static const TDS_TINYINT textptr_size = 16;
+
+	unsigned char *record;
+	TDS_INT	 old_record_size;
+	TDS_INT	 new_record_size;
+
+	TDS_INT	     varint_4;
+	TDS_SMALLINT varint_2;
+	TDS_TINYINT  varint_1;
+
+    CS_RETCODE rc = CS_SUCCEED;
+
+	tdsdump_log(TDS_DBG_FUNC, "blk_textxfer(blkdesc, buflen %d, outlen)\n", buflen);
+
+	record = blkdesc->bindinfo->current_row;
+	old_record_size = blkdesc->bindinfo->row_size;
+	new_record_size = 0;
+
+	if (IS_TDS7_PLUS(tds)) {
+
+        bindcol = blkdesc->bindinfo->columns[blkdesc->current_col];
+
+        if ((!blkdesc->identity_insert_on && bindcol->column_identity) ||
+            bindcol->column_timestamp) {
+            return CS_FAIL;
+        }
+
+        /* Calculate data shared between two stages */
+        /* Similar to _blk_get_col_data */
+
+        int         result = 0;
+        CS_INT      null_column = 0;
+        CS_INT      srclen  = 0;
+        CS_INT      destlen  = 0;
+        CS_INT      srctype = 0;
+        CS_SMALLINT *nullind = NULL;
+        CS_INT      *datalen = NULL;
+        CS_CONTEXT  *ctx = blkdesc->con->ctx;
+
+        if (bindcol->column_varaddr != NULL) {
+            return CS_FAIL;
+        }
+
+        if (bindcol->column_nullbind) {
+            nullind = bindcol->column_nullbind;
+        }
+
+        if (bindcol->column_lenbind) {
+            datalen = bindcol->column_lenbind;
+        }
+
+        srctype = bindcol->column_bindtype; 		/* used to pass to cs_convert */
+
+        if (buflen == CS_UNUSED) {
+            switch (srctype) {
+                case CS_LONG_TYPE:	    srclen = 8; break;
+                case CS_FLOAT_TYPE:	    srclen = 8; break;
+                case CS_MONEY_TYPE:	    srclen = 8; break;
+                case CS_DATETIME_TYPE:  srclen = 8; break;
+                case CS_INT_TYPE:	    srclen = 4; break;
+                case CS_REAL_TYPE:	    srclen = 4; break;
+                case CS_MONEY4_TYPE:	srclen = 4; break;
+                case CS_DATETIME4_TYPE: srclen = 4; break;
+                case CS_SMALLINT_TYPE:  srclen = 2; break;
+                case CS_TINYINT_TYPE:   srclen = 1; break;
+                default:
+                    printf("error not fixed length type (%d) and datalen not specified\n", bindcol->column_bindtype);
+                    return CS_FAIL;
+            }
+
+        } else {
+            srclen = buflen;
+        }
+
+        if (blkdesc->text_sent == 0) {
+
+            null_column = (srclen == 0 && *nullind == -1) ? 1: 0;
+
+            bindcol->bcp_column_data->null_column = null_column;
+
+            /* Put a data header */
+
+            if (bindcol->bcp_column_data->null_column) {
+                if (bindcol->column_nullable) {
+                    switch (bindcol->on_server.column_type) {
+                    case XSYBCHAR:
+                    case XSYBVARCHAR:
+                    case XSYBBINARY:
+                    case XSYBVARBINARY:
+                    case XSYBNCHAR:
+                    case XSYBNVARCHAR:
+                        memcpy(record, CHARBIN_NULL, 2);
+                        record +=2;
+                        new_record_size +=2;
+                        break;
+                    default:
+                        *record = GEN_NULL;
+                        record++;
+                        new_record_size ++;
+                        break;
+                    }
+
+                    blkdesc->current_col++; /* This is NULL */
+                    rc = CS_END_DATA;
+                } else {
+                    /* No value or default value available and NULL not allowed. col = %d row = %d. */
+                    _ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 7, 1, 142, "%d, %d",  blkdesc->current_col + 1, offset + 1);
+                    return CS_FAIL;
+                }
+            } else {
+                /* This is not NULL */
+
+                if (buffer == NULL || *buffer == 0 || buflen == 0) {
+                    return CS_FAIL;
+                }
+
+                switch (bindcol->column_varint_size) {
+                case 4:
+                    if (is_blob_type(bindcol->on_server.column_type)) {
+                        *record = textptr_size; record++;
+                        memcpy(record, textptr, 16); record += 16;
+                        memcpy(record, timestamp, 8); record += 8;
+                        new_record_size += 25;
+                    }
+                    // varint_4 = bindcol->bcp_column_data->datalen;
+                    varint_4 = bindcol->column_bindlen;
+#if WORDS_BIGENDIAN
+                    tds_swap_datatype(SYBINT4, (unsigned char *)&varint_4);
+#endif
+                    memcpy(record, &varint_4, 4); record += 4; new_record_size +=4;
+                    break;
+                case 2:
+                    varint_2 = bindcol->bcp_column_data->datalen;
+#if WORDS_BIGENDIAN
+                    tds_swap_datatype(SYBINT2, (unsigned char *)&varint_2);
+#endif
+                    memcpy(record, &varint_2, 2); record += 2; new_record_size +=2;
+                    break;
+                case 1:
+                    varint_1 = bindcol->bcp_column_data->datalen;
+                    if (is_numeric_type(bindcol->on_server.column_type))
+                        varint_1 = tds_numeric_bytes_per_prec[bindcol->column_prec];
+                    else
+                        varint_1 = bindcol->bcp_column_data->datalen;
+                    *record = varint_1; record++; new_record_size++;
+                    break;
+                case 0:
+                    break;
+                }
+
+#if WORDS_BIGENDIAN
+                tds_swap_datatype(bindcol->on_server.column_type, bindcol->bcp_column_data->data);
+#endif
+            }
+
+            tds_put_n(tds, blkdesc->bindinfo->current_row, new_record_size);
+        }
+
+        /* Put actual data */
+        if (!bindcol->bcp_column_data->null_column) {
+            /* Encode data */
+
+            CS_DATAFMT srcfmt;
+            CS_DATAFMT destfmt;
+
+            CS_INT need_to_send = (CS_INT)bindcol->column_bindlen - blkdesc->text_sent;
+            buflen = (buflen > need_to_send) ? need_to_send : buflen;
+
+            srcfmt.datatype = srctype;
+            srcfmt.maxlength = srclen;
+
+            destfmt.datatype  = _ct_get_client_type(bindcol->column_type, bindcol->column_usertype, bindcol->column_size);
+            destfmt.maxlength = buflen;
+            destfmt.precision = bindcol->column_prec;
+            destfmt.scale     = bindcol->column_scale;
+
+            destfmt.format  = CS_FMT_UNUSED;
+
+            if (!is_blob_type(bindcol->on_server.column_type)) {
+                /* if convert return FAIL mark error but process other columns */
+                if ((result = cs_convert(ctx,
+                                         &srcfmt,
+                                         (CS_VOID *) buffer,
+                                         &destfmt,
+                                         (CS_VOID *) bindcol->bcp_column_data->data, /* Destination */
+                                         &destlen
+                                         ) != CS_SUCCEED)) {
+                    tdsdump_log(TDS_DBG_INFO1, "convert failed for %d \n", srcfmt.datatype);
+                    return CS_FAIL;
+                }
+            }
+
+            if (is_numeric_type(bindcol->on_server.column_type)) {
+                CS_NUMERIC *num = (CS_NUMERIC *) blkdesc->bindinfo->current_row;
+                if (IS_TDS7_PLUS(tds)) {
+                    tds_swap_numeric((TDS_NUMERIC *) num);
+                }
+
+                tds_put_n(tds, num->array, tds_numeric_bytes_per_prec[num->precision]);
+
+                blkdesc->text_sent = 0;
+                blkdesc->current_col++;
+                rc = CS_END_DATA;
+            } else if (is_blob_type(bindcol->on_server.column_type)) {
+                buflen = MIN(buflen, bindcol->column_bindlen - blkdesc->text_sent);
+
+                if (buflen) {
+                    tds_put_n(tds, buffer, buflen);
+
+                    blkdesc->text_sent += buflen;
+                    if ((CS_INT)bindcol->column_bindlen == blkdesc->text_sent) {
+                        blkdesc->text_sent = 0;
+                        blkdesc->current_col++;
+                        rc = CS_END_DATA;
+                    }
+                }
+            } else {
+                tds_put_n(tds, bindcol->bcp_column_data->data, bindcol->bcp_column_data->datalen);
+                blkdesc->current_col++;
+                rc = CS_END_DATA;
+            }
+        }
+	}  /* IS_TDS7_PLUS */
+	else {
+            /* handle any text/image data */
+
+            bindcol = blkdesc->bindinfo->columns[blkdesc->current_col];
+            if (is_blob_type(bindcol->column_type)) {
+                if (blkdesc->text_sent == 0) {
+                    /* unknown but zero */
+                    tds_put_smallint(tds, 0);
+                    tds_put_byte(tds, bindcol->column_type);
+                    tds_put_byte(tds, 0xff - blkdesc->blob_cols);
+                    /*
+                     * offset of txptr we stashed during variable
+                     * column processing
+                     */
+                    tds_put_smallint(tds, bindcol->column_textpos);
+                    tds_put_int(tds, bindcol->column_bindlen);
+                }
+
+                buflen = MIN(buflen, bindcol->column_bindlen - blkdesc->text_sent);
+
+                if (buflen) {
+                    tds_put_n(tds, buffer, buflen);
+
+                    blkdesc->text_sent += buflen;
+                    if ((CS_INT)bindcol->column_bindlen == blkdesc->text_sent) {
+                        blkdesc->text_sent = 0;
+                        blkdesc->current_col++;
+                        blkdesc->blob_cols++;
+                        rc = CS_END_DATA;
+                    }
+                }
+            }
+	}
+
+	return rc;
 }
 
 static CS_RETCODE
@@ -669,7 +947,7 @@ _blk_rowxfer_out(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferre
 				}
 				break;
 			}
-		case TDS_NO_MORE_RESULTS: 
+		case TDS_NO_MORE_RESULTS:
 			return CS_END_DATA;
 			break;
 
@@ -678,7 +956,7 @@ _blk_rowxfer_out(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferre
 			return CS_FAIL;
 			break;
 		}
-	} 
+	}
 
 	return CS_SUCCEED;
 }
@@ -689,6 +967,7 @@ _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred
 
 	TDSSOCKET *tds;
 	TDS_INT each_row;
+    CS_RETCODE rc = CS_SUCCEED;
 
 	if (!blkdesc)
 		return CS_FAIL;
@@ -718,13 +997,19 @@ _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred
 			_blk_send_colmetadata(blkdesc);
 		}
 
+        if (tds_set_state(tds, TDS_QUERYING) != TDS_QUERYING) {
+            return CS_FAIL;
+        }
+
 		blkdesc->xfer_init = 1;
-	} 
+	}
 
 	for (each_row = 0; each_row < rows_to_xfer; each_row++ ) {
 
-		if (_blk_build_bcp_record(blkdesc, each_row) == CS_SUCCEED) {
-	
+        rc = _blk_build_bcp_record(blkdesc, each_row);
+
+		if (rc != CS_SUCCEED) {
+            return rc;
 		}
 	}
 
@@ -798,16 +1083,16 @@ _rowxfer_in_init(CS_BLKDESC * blkdesc)
 
 	/*
 	 * In TDS 5 we get the column information as a result set from the "insert bulk" command.
-	 * We're going to ignore it.  
+	 * We're going to ignore it.
 	 */
 	if (tds_process_simple_query(tds) != TDS_SUCCEED) {
 		_ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 5, 1, 140, "");
 		return CS_FAIL;
 	}
 
-	/* 
-	 * Work out the number of "variable" columns.  These are either nullable or of 
-	 * varying length type e.g. varchar.   
+	/*
+	 * Work out the number of "variable" columns.  These are either nullable or of
+	 * varying length type e.g. varchar.
 	 */
 	blkdesc->var_cols = 0;
 
@@ -1032,15 +1317,15 @@ _blk_send_colmetadata(CS_BLKDESC * blkdesc)
 	int i;
 	TDS_SMALLINT num_cols;
 
-	/* 
-	 * Deep joy! For TDS 8 we have to send a colmetadata message followed by row data 
+	/*
+	 * Deep joy! For TDS 8 we have to send a colmetadata message followed by row data
 	 */
 	tds_put_byte(tds, colmetadata_token);	/* 0x81 */
 
 	num_cols = 0;
 	for (i = 0; i < blkdesc->bindinfo->num_cols; i++) {
 		bcpcol = blkdesc->bindinfo->columns[i];
-		if ((!blkdesc->identity_insert_on && bcpcol->column_identity) || 
+		if ((!blkdesc->identity_insert_on && bcpcol->column_identity) ||
 			bcpcol->column_timestamp) {
 			continue;
 		}
@@ -1057,7 +1342,7 @@ _blk_send_colmetadata(CS_BLKDESC * blkdesc)
 		 * identity columns (unless indentity_insert is enabled
 		 */
 
-		if ((!blkdesc->identity_insert_on && bcpcol->column_identity) || 
+		if ((!blkdesc->identity_insert_on && bcpcol->column_identity) ||
 			bcpcol->column_timestamp) {
 			continue;
 		}
@@ -1133,7 +1418,7 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
 	int blob_cols = 0;
 	int var_cols_written = 0;
 
-	int i;
+    CS_RETCODE rc = CS_SUCCEED;
 
 	tdsdump_log(TDS_DBG_FUNC, "_blk_build_bcp_record(offset %d)\n", offset);
 
@@ -1143,105 +1428,112 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
 
 	if (IS_TDS7_PLUS(tds)) {
 
-		for (i = 0; i < blkdesc->bindinfo->num_cols; i++) {
+		for (blkdesc->current_col = 0; blkdesc->current_col < blkdesc->bindinfo->num_cols; ++blkdesc->current_col) {
 	
-			bindcol = blkdesc->bindinfo->columns[i];
+			bindcol = blkdesc->bindinfo->columns[blkdesc->current_col];
 
 			/*
 			 * dont send the (meta)data for timestamp columns, or
 			 * identity columns (unless indentity_insert is enabled
 			 */
 
-			if ((!blkdesc->identity_insert_on && bindcol->column_identity) || 
+			if ((!blkdesc->identity_insert_on && bindcol->column_identity) ||
 				bindcol->column_timestamp) {
 				continue;
 			}
 
-			if ((_blk_get_col_data(blkdesc, bindcol, offset)) != CS_SUCCEED) {
-				tdsdump_log(TDS_DBG_INFO1, "blk_get_colData (column %d) failed\n", i + 1);
-	 			return CS_FAIL;
-			}
-			tdsdump_log(TDS_DBG_INFO1, "gotten column %d length %d null %d\n",
-					i + 1, bindcol->bcp_column_data->datalen, bindcol->bcp_column_data->null_column);
-	
-			if (bindcol->bcp_column_data->null_column) {
-				if (bindcol->column_nullable) {
-					switch (bindcol->on_server.column_type) {
-					case XSYBCHAR:
-					case XSYBVARCHAR:
-					case XSYBBINARY:
-					case XSYBVARBINARY:
-					case XSYBNCHAR:
-					case XSYBNVARCHAR:
-						memcpy(record, CHARBIN_NULL, 2);
-						record +=2;
-						new_record_size +=2;
-						break;
-					default:
-						*record = GEN_NULL;
-						record++;
-						new_record_size ++;
-						break;
-					}
-				} else {
-					/* No value or default value available and NULL not allowed. col = %d row = %d. */
-					_ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 7, 1, 142, "%d, %d",  i + 1, offset + 1);
-					return CS_FAIL;
-				}
-			} else {
+            rc = _blk_get_col_data(blkdesc, bindcol, offset);
 
-				switch (bindcol->column_varint_size) {
-				case 4:
-					if (is_blob_type(bindcol->on_server.column_type)) {
-						*record = textptr_size; record++;
-						memcpy(record, textptr, 16); record += 16;
-						memcpy(record, timestamp, 8); record += 8;
-						new_record_size += 25;
-					}
-					varint_4 = bindcol->bcp_column_data->datalen;
+            if (rc == CS_FAIL) {
+                tdsdump_log(TDS_DBG_INFO1, "blk_get_colData (column %d) failed\n", blkdesc->current_col + 1);
+                return CS_FAIL;
+            }
+
+            if (rc == CS_BLK_HAS_TEXT) {
+                break;
+            }
+
+            tdsdump_log(TDS_DBG_INFO1, "gotten column %d length %d null %d\n",
+                    blkdesc->current_col + 1, bindcol->bcp_column_data->datalen, bindcol->bcp_column_data->null_column);
+
+            if (bindcol->bcp_column_data->null_column) {
+                if (bindcol->column_nullable) {
+                    switch (bindcol->on_server.column_type) {
+                    case XSYBCHAR:
+                    case XSYBVARCHAR:
+                    case XSYBBINARY:
+                    case XSYBVARBINARY:
+                    case XSYBNCHAR:
+                    case XSYBNVARCHAR:
+                        memcpy(record, CHARBIN_NULL, 2);
+                        record +=2;
+                        new_record_size +=2;
+                        break;
+                    default:
+                        *record = GEN_NULL;
+                        record++;
+                        new_record_size ++;
+                        break;
+                    }
+                } else {
+                    /* No value or default value available and NULL not allowed. col = %d row = %d. */
+                    _ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 7, 1, 142, "%d, %d",  blkdesc->current_col + 1, offset + 1);
+                    return CS_FAIL;
+                }
+            } else {
+
+                switch (bindcol->column_varint_size) {
+                case 4:
+                    if (is_blob_type(bindcol->on_server.column_type)) {
+                        *record = textptr_size; record++;
+                        memcpy(record, textptr, 16); record += 16;
+                        memcpy(record, timestamp, 8); record += 8;
+                        new_record_size += 25;
+                    }
+                    varint_4 = bindcol->bcp_column_data->datalen;
 #if WORDS_BIGENDIAN
-					tds_swap_datatype(SYBINT4, (unsigned char *)&varint_4);
+                    tds_swap_datatype(SYBINT4, (unsigned char *)&varint_4);
 #endif
-					memcpy(record, &varint_4, 4); record += 4; new_record_size +=4;
-					break;
-				case 2:
-					varint_2 = bindcol->bcp_column_data->datalen;
+                    memcpy(record, &varint_4, 4); record += 4; new_record_size +=4;
+                    break;
+                case 2:
+                    varint_2 = bindcol->bcp_column_data->datalen;
 #if WORDS_BIGENDIAN
-					tds_swap_datatype(SYBINT2, (unsigned char *)&varint_2);
+                    tds_swap_datatype(SYBINT2, (unsigned char *)&varint_2);
 #endif
-					memcpy(record, &varint_2, 2); record += 2; new_record_size +=2;
-					break;
-				case 1:
-					varint_1 = bindcol->bcp_column_data->datalen;
-					if (is_numeric_type(bindcol->on_server.column_type)) 
-						varint_1 = tds_numeric_bytes_per_prec[bindcol->column_prec];
-					else
-						varint_1 = bindcol->bcp_column_data->datalen;
-					*record = varint_1; record++; new_record_size++;
-					break;
-				case 0:
-					break;
-				}
+                    memcpy(record, &varint_2, 2); record += 2; new_record_size +=2;
+                    break;
+                case 1:
+                    varint_1 = bindcol->bcp_column_data->datalen;
+                    if (is_numeric_type(bindcol->on_server.column_type))
+                        varint_1 = tds_numeric_bytes_per_prec[bindcol->column_prec];
+                    else
+                        varint_1 = bindcol->bcp_column_data->datalen;
+                    *record = varint_1; record++; new_record_size++;
+                    break;
+                case 0:
+                    break;
+                }
 
 #if WORDS_BIGENDIAN
-				tds_swap_datatype(bindcol->on_server.column_type, bindcol->bcp_column_data->data);
+                tds_swap_datatype(bindcol->on_server.column_type, bindcol->bcp_column_data->data);
 #endif
 
-				if (is_numeric_type(bindcol->on_server.column_type)) {
-					CS_NUMERIC *num = (CS_NUMERIC *) bindcol->bcp_column_data->data;
-					if (IS_TDS7_PLUS(tds))
-						tds_swap_numeric((TDS_NUMERIC *) num);
-					memcpy(record, num->array, tds_numeric_bytes_per_prec[num->precision]);
-					record += tds_numeric_bytes_per_prec[num->precision]; 
-					new_record_size += tds_numeric_bytes_per_prec[num->precision];
-				} else {
-					memcpy(record, bindcol->bcp_column_data->data, bindcol->bcp_column_data->datalen);
-					record += bindcol->bcp_column_data->datalen; new_record_size += bindcol->bcp_column_data->datalen;
-				}
+                if (is_numeric_type(bindcol->on_server.column_type)) {
+                    CS_NUMERIC *num = (CS_NUMERIC *) bindcol->bcp_column_data->data;
+                    if (IS_TDS7_PLUS(tds))
+                        tds_swap_numeric((TDS_NUMERIC *) num);
+                    memcpy(record, num->array, tds_numeric_bytes_per_prec[num->precision]);
+                    record += tds_numeric_bytes_per_prec[num->precision];
+                    new_record_size += tds_numeric_bytes_per_prec[num->precision];
+                } else {
+                    memcpy(record, bindcol->bcp_column_data->data, bindcol->bcp_column_data->datalen);
+                    record += bindcol->bcp_column_data->datalen; new_record_size += bindcol->bcp_column_data->datalen;
+                }
 
-			}
-			tdsdump_log(TDS_DBG_INFO1, "old_record_size = %d new size = %d \n",
-					old_record_size, new_record_size);
+            }
+            tdsdump_log(TDS_DBG_INFO1, "old_record_size = %d new size = %d \n",
+                    old_record_size, new_record_size);
 		}
 
 		tds_put_byte(tds, row_token);   /* 0xd1 */
@@ -1264,8 +1556,11 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
 			/* potential variable columns to write */
 
 			if (blkdesc->var_cols) {
-				if ((row_pos = _blk_add_variable_columns(blkdesc, offset, record, row_pos, &var_cols_written)) == CS_FAIL)
-					return CS_FAIL;
+                switch (row_pos = _blk_add_variable_columns(blkdesc, offset, record, row_pos, &var_cols_written)) {
+                case CS_FAIL:
+                case CS_BLK_HAS_TEXT:
+                    return row_pos;
+                }
 			}
 
 			row_size = row_pos;
@@ -1285,19 +1580,27 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
 
 			blob_cols = 0;
 
-			for (i = 0; i < blkdesc->bindinfo->num_cols; i++) {
-				bindcol = blkdesc->bindinfo->columns[i];
+			for (blkdesc->current_col = 0; blkdesc->current_col < blkdesc->bindinfo->num_cols; blkdesc->current_col++) {
+				bindcol = blkdesc->bindinfo->columns[blkdesc->current_col];
 				if (is_blob_type(bindcol->column_type)) {
-					if ((_blk_get_col_data(blkdesc, bindcol, offset)) != CS_SUCCEED) {
-			 			return CS_FAIL;
-					}
+                    rc = _blk_get_col_data(blkdesc, bindcol, offset);
+
+                    if (rc == CS_FAIL) {
+                        tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data (column %d) failed\n", blkdesc->current_col + 1);
+                        return CS_FAIL;
+                    }
+
+                    if (rc == CS_BLK_HAS_TEXT) {
+                        break;
+                    }
+
 					/* unknown but zero */
 					tds_put_smallint(tds, 0);
 					tds_put_byte(tds, bindcol->column_type);
 					tds_put_byte(tds, 0xff - blob_cols);
 					/*
 					 * offset of txptr we stashed during variable
-					 * column processing 
+					 * column processing
 					 */
 					tds_put_smallint(tds, bindcol->column_textpos);
 					tds_put_int(tds, bindcol->bcp_column_data->datalen);
@@ -1308,7 +1611,7 @@ _blk_build_bcp_record(CS_BLKDESC *blkdesc, CS_INT offset)
 			}
 	}
 
-	return CS_SUCCEED;
+	return rc;
 }
 
 static CS_RETCODE
@@ -1384,7 +1687,9 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
 	int last_adjustment_increment = 0;
 	int this_adjustment_increment = 0;
 
-	int i, adjust_table_entries_required;
+	int adjust_table_entries_required;
+    int i;
+    CS_RETCODE rc;
 
 	/*
 	 * Skip over two bytes. These will be used to hold the entire record length
@@ -1397,9 +1702,9 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
 
 	tdsdump_log(TDS_DBG_FUNC, "_blk_add_variable_columns (offset %d)\n", offset);
 
-	for (i = 0; i < blkdesc->bindinfo->num_cols; i++) {
+	for (blkdesc->current_col = 0; blkdesc->current_col < blkdesc->bindinfo->num_cols; blkdesc->current_col++) {
 
-		bcpcol = blkdesc->bindinfo->columns[i];
+		bcpcol = blkdesc->bindinfo->columns[blkdesc->current_col];
 
 		/*
 		 * is this column of "variable" type, i.e. NULLable
@@ -1408,11 +1713,14 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
 
 		if (is_nullable_type(bcpcol->column_type) || bcpcol->column_nullable) {
 
-			tdsdump_log(TDS_DBG_FUNC, "_blk_add_variable_columns column %d is a variable column\n", i + 1);
+			tdsdump_log(TDS_DBG_FUNC, "_blk_add_variable_columns column %d is a variable column\n", blkdesc->current_col + 1);
 
-			if ((_blk_get_col_data(blkdesc, bcpcol, offset)) != CS_SUCCEED) {
-		 		return CS_FAIL;
-			}
+            rc = _blk_get_col_data(blkdesc, bcpcol, offset);
+
+            if (rc == CS_FAIL) {
+                tdsdump_log(TDS_DBG_INFO1, "_blk_add_variable_columns (column %d) failed\n", blkdesc->current_col + 1);
+                return CS_FAIL;
+            }
 
 			/*
 			 * but if its a NOT NULL column, and we have no data
@@ -1421,7 +1729,7 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
 
 			if (!(bcpcol->column_nullable) && bcpcol->bcp_column_data->null_column) {
 				/* No value or default value available and NULL not allowed. col = %d row = %d. */
-				_ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 7, 1, 142, "%d, %d",  i + 1, offset + 1);
+				_ctclient_msg(blkdesc->con, "blk_rowxfer", 2, 7, 1, 142, "%d, %d",  blkdesc->current_col + 1, offset + 1);
 				return CS_FAIL;
 			}
 
@@ -1485,20 +1793,24 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
 
 				row_pos += cpbytes;
 			}
+
+            if (rc == CS_BLK_HAS_TEXT) {
+                break;
+            }
 		}
 	}
 
 	if (num_cols) {	
-		/* 
-		 * If we have written any variable columns to the record, add entries 
-		 * to the offset and adjust tables for the end of data offset (as above). 
+		/*
+		 * If we have written any variable columns to the record, add entries
+		 * to the offset and adjust tables for the end of data offset (as above).
 		 */
 
 		offset_table[offset_pos++] = row_pos % 256;
 
 		/*
-		 * Write the offset data etc. to the end of the record, starting with 
-		 * a count of variable columns (plus 1 for the eod offset)       
+		 * Write the offset data etc. to the end of the record, starting with
+		 * a count of variable columns (plus 1 for the eod offset)
 		 */
 
 		rowbuffer[row_pos++] = num_cols + 1;
@@ -1516,6 +1828,10 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
 
 	*var_cols = num_cols;
 
+    if (rc == CS_BLK_HAS_TEXT) {
+        return rc;
+    }
+
 	if (num_cols == 0) /* we haven't written anything */
 		return start;
 	else
@@ -1523,7 +1839,7 @@ _blk_add_variable_columns(CS_BLKDESC * blkdesc, int offset, unsigned char * rowb
 }
 
 static CS_RETCODE
-_blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset) 
+_blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 {
 	int result = 0;
 
@@ -1543,6 +1859,10 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 	 * retrieve the initial bound column_varaddress
 	 * and increment it if offset specified
 	 */
+
+    if (bindcol->column_varaddr == NULL) {
+        return CS_BLK_HAS_TEXT;
+    }
 
 	src = (unsigned char *) bindcol->column_varaddr;
 	src += offset * bindcol->column_bindlen;
@@ -1604,7 +1924,7 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 			destfmt.format	= CS_FMT_UNUSED;
 	
 			/* if convert return FAIL mark error but process other columns */
-			if ((result = cs_convert(ctx, &srcfmt, (CS_VOID *) src, 
+			if ((result = cs_convert(ctx, &srcfmt, (CS_VOID *) src,
 									&destfmt, (CS_VOID *) bindcol->bcp_column_data->data, &destlen) != CS_SUCCEED)) {
 				tdsdump_log(TDS_DBG_INFO1, "convert failed for %d \n", srcfmt.datatype);
 				return CS_FAIL;
@@ -1621,3 +1941,4 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
 		return CS_FAIL;
 	}
 }
+
