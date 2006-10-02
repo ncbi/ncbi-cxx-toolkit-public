@@ -10,6 +10,6 @@ LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(NETWORK_LIBS) \
 		$(CMPRS_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
-CHECK_CMD = blastinput_unit_test
-CHECK_TIMEOUT = 90
+# CHECK_CMD = blastinput_unit_test
+# CHECK_TIMEOUT = 90
 
