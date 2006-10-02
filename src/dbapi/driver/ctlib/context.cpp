@@ -923,15 +923,19 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 
 
     if (Check(ct_con_props(con, CS_SET, CS_USERNAME, (void*) user_name.c_str(),
-                     CS_NULLTERM, NULL)) != CS_SUCCEED  ||
-        Check(ct_con_props(con, CS_SET, CS_PASSWORD, (void*) passwd.c_str(),
-                     CS_NULLTERM, NULL)) != CS_SUCCEED  ||
-        Check(ct_con_props(con, CS_SET, CS_APPNAME, (void*) GetApplicationName().c_str(),
-                     CS_NULLTERM, NULL)) != CS_SUCCEED ||
-        Check(ct_con_props(con, CS_SET, CS_LOC_PROP, (void*) GetLocale(),
-                     CS_UNUSED, NULL)) != CS_SUCCEED ||
-        Check(ct_con_props(con, CS_SET, CS_HOSTNAME, (void*) hostname,
-                     CS_NULLTERM, NULL)) != CS_SUCCEED) {
+                     CS_NULLTERM, NULL)) != CS_SUCCEED
+        || Check(ct_con_props(con, CS_SET, CS_PASSWORD, (void*) passwd.c_str(),
+                     CS_NULLTERM, NULL)) != CS_SUCCEED
+        || Check(ct_con_props(con, CS_SET, CS_APPNAME, (void*) GetApplicationName().c_str(),
+                     CS_NULLTERM, NULL)) != CS_SUCCEED
+        || Check(ct_con_props(con, CS_SET, CS_LOC_PROP, (void*) GetLocale(),
+                     CS_UNUSED, NULL)) != CS_SUCCEED
+        || Check(ct_con_props(con, CS_SET, CS_HOSTNAME, (void*) hostname,
+                     CS_NULLTERM, NULL)) != CS_SUCCEED
+        // Future development ...
+//         || Check(ct_con_props(con, CS_SET, CS_TDS_VERSION, &m_TDSVersion,
+//                      CS_UNUSED, NULL)) != CS_SUCCEED
+        ) {
         Check(ct_con_drop(con));
         return 0;
     }
@@ -1017,6 +1021,7 @@ CS_INT GetCtlibTdsVersion(int version)
 
     switch ( version ) {
     case 42:
+    case 46:
     case 70:
     case 80:
         return version;
@@ -1278,6 +1283,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2006/10/02 19:59:01  ssikorsk
+ * Handle TDS version 46.
+ *
  * Revision 1.95  2006/09/18 15:22:33  ssikorsk
  * Implemented methods GetLoginTimeout and GetTimeout with CTLibContext.
  *
