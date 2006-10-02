@@ -406,6 +406,8 @@ BLAST_MATRIX_NOMINAL
 
 
 
+#ifdef BLOSUM62_20_ENABLE
+
 #define BLOSUM62_20_VALUES_MAX 65 /**< Number of different combinations supported for BLOSUM62 with 1/20 bit scaling. */
 static array_of_8 blosum62_20_values[BLOSUM62_20_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.03391, 0.125, 0.4544, 0.07462, -3.2},
@@ -542,6 +544,8 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
 };  /**< Quality values for BLOSUM62_20 matrix, each element corresponds to same element number in array blosum62_20_values */
+
+#endif
 
 /** Supported substitution and gap costs with corresponding quality values
  * for nucleotide sequence comparisons.
@@ -2635,8 +2639,10 @@ BlastLoadMatrixValues (void)
    matrix_info = MatrixInfoNew("PAM250", pam250_values, pam250_prefs, PAM250_VALUES_MAX);
    ListNodeAddPointer(&retval, 0, matrix_info);
 
+#ifdef BLOSUM62_20_ENABLE
    matrix_info = MatrixInfoNew("BLOSUM62_20", blosum62_20_values, blosum62_20_prefs, BLOSUM62_20_VALUES_MAX);
    ListNodeAddPointer(&retval, 0, matrix_info);
+#endif
 
    matrix_info = MatrixInfoNew("BLOSUM90", blosum90_values, blosum90_prefs, BLOSUM90_VALUES_MAX);
    ListNodeAddPointer(&retval, 0, matrix_info);
@@ -4406,6 +4412,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.151  2006/10/02 12:33:59  madden
+ * Add ifdef for BLOSUM62_20
+ *
  * Revision 1.150  2006/09/27 18:09:16  papadopo
  * remove unused variable
  *
