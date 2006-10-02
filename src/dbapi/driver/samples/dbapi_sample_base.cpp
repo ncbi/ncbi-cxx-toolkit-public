@@ -136,18 +136,21 @@ CDbapiSampleApp::Init()
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "gateway", \
-                      "odbc", "ftds64_odbc", "ftds64_dblib"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", \
+                      "gateway", "odbc", "odbcw", "ftds64_odbc", \
+                      "ftds64_dblib", "ftds64_ctlib"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "odbc", "ftds64_odbc", "ftds64_dblib"
+                      "odbc", "odbcw", "ftds64_odbc", "ftds64_dblib", \
+                      "ftds64_ctlib"
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ftds", "ftds63", "gateway", \
-                      "odbc", "ftds64_odbc", "ftds64_dblib"
+                      "odbc", "odbcw", "ftds64_odbc", "ftds64_dblib", \
+                      "ftds64_ctlib"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -222,19 +225,31 @@ CDbapiSampleApp::Run()
 
     if ( m_TDSVersion.empty() ) {
         // Setup some driver-specific attributes
-        if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
+        if ( GetDriverName() == "dblib" &&
+             GetServerType() == eSybase ) {
             // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
             // BcpIn to it using protocol version other than "100".
             SetDatabaseParameter("version", "100");
 //         } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
 //             SetDatabaseParameter("version", "100");
-        } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") &&
+        } else if ( GetDriverName() == "ftds" &&
                     GetServerType() == eSybase ) {
             // ftds forks with Sybase databases using protocol v42 only ...
             SetDatabaseParameter("version", "42");
 //         } else if ( GetDriverName() == "ftds63" &&
 //                     GetServerType() == eSybase ) {
 //             SetDatabaseParameter("version", "100");
+        } else if ( (GetDriverName() == "ftds63" ||
+                     GetDriverName() == "ftds64_dblib") &&
+                    GetServerType() == eSybase ) {
+            SetDatabaseParameter("version", "100");
+        } else if ( (GetDriverName() == "ftds64_ctlib" ||
+                     GetDriverName() == "ftds64_dblib") &&
+                    GetServerType() == eMsSql ) {
+            SetDatabaseParameter("version", "80");
+        } else if ( GetDriverName() == "ftds64_odbc" &&
+                    GetServerType() == eSybase ) {
+            SetDatabaseParameter("version", "50");
         }
     } else {
         SetDatabaseParameter("version", m_TDSVersion);
@@ -571,6 +586,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/10/02 20:08:36  ssikorsk
+ * Handle ftds64_odbc and ftds64_ctlib drivers.
+ *
  * Revision 1.24  2006/08/07 15:31:57  ssikorsk
  * Added odbc, ftds64_odbc, ftds64_dblib drivers to a list of available drivers.
  *
