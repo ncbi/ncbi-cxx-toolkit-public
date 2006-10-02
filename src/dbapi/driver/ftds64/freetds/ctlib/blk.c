@@ -632,6 +632,15 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 
     CS_RETCODE rc = CS_SUCCEED;
 
+    int         result = 0;
+    CS_INT      null_column = 0;
+    CS_INT      srclen  = 0;
+    CS_INT      destlen  = 0;
+    CS_INT      srctype = 0;
+    CS_SMALLINT *nullind = NULL;
+    CS_INT      *datalen = NULL;
+    CS_CONTEXT  *ctx = blkdesc->con->ctx;
+
 	tdsdump_log(TDS_DBG_FUNC, "blk_textxfer(blkdesc, buflen %d, outlen)\n", buflen);
 
 	record = blkdesc->bindinfo->current_row;
@@ -649,15 +658,6 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 
         /* Calculate data shared between two stages */
         /* Similar to _blk_get_col_data */
-
-        int         result = 0;
-        CS_INT      null_column = 0;
-        CS_INT      srclen  = 0;
-        CS_INT      destlen  = 0;
-        CS_INT      srctype = 0;
-        CS_SMALLINT *nullind = NULL;
-        CS_INT      *datalen = NULL;
-        CS_CONTEXT  *ctx = blkdesc->con->ctx;
 
         if (bindcol->column_varaddr != NULL) {
             return CS_FAIL;
