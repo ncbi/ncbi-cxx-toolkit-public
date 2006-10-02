@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 // LDS database maintanance(modification).
 //
 
-class NCBI_LDS_EXPORT CLDS_Management
+class NCBI_LDS_EXPORT NCBI_DEPRECATED CLDS_Management
 {
 public:
     CLDS_Management(CLDS_Database& db);
@@ -102,6 +102,22 @@ public:
                      EComputeControlSum control_sum = eComputeControlSum,
                      EDuplicateId       dup_control = eIgnoreDuplicates);
 
+
+    /// Function tries to open the database, if the database does not exist
+    /// creates it and loads all the data.
+    /// Return pointer on new CLDS_Database object 
+    /// (caller is responsible for the destruction).
+    /// is_created parameter receives TRUE if the database was created by 
+    /// the method.
+    static CLDS_Database* 
+        OpenCreateDB(const string&      source_dir,
+                     const string&      db_dir,
+                     const string&      db_name,
+                     bool*              is_created,
+                     ERecurse           recurse = eRecurseSubDirs,
+                     EComputeControlSum control_sum = eComputeControlSum,
+                     EDuplicateId       dup_control = eIgnoreDuplicates);
+
     /// Open the database. Throws an exception if the database cannot be open
     static CLDS_Database* 
         OpenDB(const string& dir_name,
@@ -118,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/02 14:34:58  didenko
+ * CLDS_Management class is deprecated now
+ *
  * Revision 1.2  2005/10/20 15:33:46  kuznets
  * Implemented duplicate id check
  *

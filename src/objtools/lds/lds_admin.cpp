@@ -70,14 +70,15 @@ void CLDS_Management::SyncWithDir(const string&      dir_name,
 
 
 CLDS_Database* 
-CLDS_Management::OpenCreateDB(const string&      dir_name,
+CLDS_Management::OpenCreateDB(const string&      source_dir,
+                              const string&      db_dir,
                               const string&      db_name,
                               bool*              is_created,
                               ERecurse           recurse,
                               EComputeControlSum control_sum,
                               EDuplicateId       dup_control)
 {
-    CLDS_Database* db = new CLDS_Database(dir_name, db_name);
+    auto_ptr<CLDS_Database> db(new CLDS_Database(db_dir, db_name, kEmptyStr));
     try {
         db->Open();
         *is_created = false;
@@ -90,19 +91,33 @@ CLDS_Management::OpenCreateDB(const string&      dir_name,
 
         CLDS_Management admin(*db);
         admin.Create();
-        admin.SyncWithDir(dir_name, recurse, control_sum, dup_control);
+        admin.SyncWithDir(source_dir.empty() ? db_dir : source_dir, 
+                          recurse, control_sum, dup_control);
         *is_created = true;
     }
-    return db;
+    return db.release();
+}
+
+
+CLDS_Database* 
+CLDS_Management::OpenCreateDB(const string&      dir_name,
+                              const string&      db_name,
+                              bool*              is_created,
+                              ERecurse           recurse,
+                              EComputeControlSum control_sum,
+                              EDuplicateId       dup_control)
+{
+    return CLDS_Management::OpenCreateDB(kEmptyStr, dir_name, db_name, 
+                                         is_created,recurse, control_sum,dup_control);
 }
 
 CLDS_Database* 
 CLDS_Management::OpenDB(const string& dir_name,
                         const string& db_name)
 {
-    CLDS_Database* db = new CLDS_Database(dir_name, db_name);
+    auto_ptr<CLDS_Database> db( new CLDS_Database(dir_name, db_name, kEmptyStr) );
     db->Open();
-    return db;
+    return db.release();
 }
 
 
@@ -152,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/10/02 14:34:58  didenko
+ * CLDS_Management class is deprecated now
+ *
  * Revision 1.4  2005/12/21 15:07:22  kuznets
  * warning fixed
  *
