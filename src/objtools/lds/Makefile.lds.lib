@@ -6,7 +6,7 @@ ASN_DEP = seq submit seqset
 
 LIB = lds
 SRC = lds lds_reader lds_query \
-      lds_admin lds_coreobjreader lds_files lds_object
+      lds_admin lds_coreobjreader lds_files lds_object lds_manager
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
