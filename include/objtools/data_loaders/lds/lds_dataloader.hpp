@@ -36,7 +36,7 @@
 #include <objmgr/data_loader.hpp>
 
 #include <objtools/lds/lds_set.hpp>
-#include <objtools/lds/lds_admin.hpp>
+#include <objtools/lds/lds_manager.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -51,8 +51,10 @@ class CLDS_Database;
 
 // Parameter names used by loader factory
 
-const string kCFParam_LDS_Database = "Database"; // = CLDS_Database*
+//const string kCFParam_LDS_Database = "Database"; // = CLDS_Database*
 const string kCFParam_LDS_DbPath   = "DbPath";   // = string
+const string kCFParam_LDS_DbAlias   = "DbAlias";   // = string
+const string kCFParam_LDS_SourcePath   = "SourcePath";   // = string
 const string kCFParam_LDS_RecurseSubDir  = "RecurseSubDir"; // = bool
 const string kCFParam_LDS_ControlSum     = "ControlSum";    // = bool
 
@@ -76,13 +78,14 @@ public:
 
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
+        const string& source_path,
         const string& db_path,
+        const string& db_alias,
+        CLDS_Manager::ERecurse recurse = CLDS_Manager::eRecurseSubDirs,
+        CLDS_Manager::EComputeControlSum csum = 
+                                         CLDS_Manager::eComputeControlSum,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet,
-        CLDS_Management::ERecurse recurse = CLDS_Management::eRecurseSubDirs,
-        CLDS_Management::EComputeControlSum csum = 
-                                         CLDS_Management::eComputeControlSum);
-    static string GetLoaderNameFromArgs(const string& db_path);
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 
     // Public constructor not to break CSimpleClassFactoryImpl code
     CLDS_DataLoader(void);
@@ -92,37 +95,35 @@ public:
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
     
-    void SetDatabase(CLDS_Database& lds_db,
+    void SetDatabase(CLDS_Database& lds_db, EOwnership owner,
                      const string&  dl_name);
 
 // private:
     typedef CSimpleLoaderMaker<CLDS_DataLoader>                TSimpleMaker;
     typedef CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&> TDbMaker;
-    typedef CParamLoaderMaker<CLDS_DataLoader, const string&>  TPathMaker;
     friend class CSimpleLoaderMaker<CLDS_DataLoader>;
     friend class CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&>;
-    friend class CParamLoaderMaker<CLDS_DataLoader, const string&>;
 
 private:
-    class CLDS_LoaderMaker : public TPathMaker
+    class CLDS_LoaderMaker : public TSimpleMaker
     {
-    public: 
-        typedef TPathMaker TParent;
     public:
-        CLDS_LoaderMaker(TParamType                          param,
-                         CLDS_Management::ERecurse           recurse,
-                         CLDS_Management::EComputeControlSum csum) 
-            : TParent(param),
-              m_Recurse(recurse),
-              m_ControlSum(csum)
-        {}
+        CLDS_LoaderMaker(const string& source_path,
+                         const string& db_path,
+                         const string& db_alias,
+                         CLDS_Manager::ERecurse           recurse,
+                         CLDS_Manager::EComputeControlSum csum);
+
         virtual CDataLoader* CreateLoader(void) const;
     private:
-        CLDS_Management::ERecurse            m_Recurse;
-        CLDS_Management::EComputeControlSum  m_ControlSum;
+       
+        string m_SourcePath;
+        string m_DbPath;
+        string m_DbAlias;
+        CLDS_Manager::ERecurse            m_Recurse;
+        CLDS_Manager::EComputeControlSum  m_ControlSum;
     };
     friend class CLDS_LoaderMaker;
-
 
 private:
     CLDS_DataLoader(const string& dl_name);
@@ -134,10 +135,6 @@ private:
     // Construct dataloader, take ownership of  LDS database
     CLDS_DataLoader(const string& dl_name,
                     CLDS_Database* lds_db);
-
-    /// Construct dataloader, with opening its own database
-    CLDS_DataLoader(const string& dl_name,
-                    const string& db_path);
 
     CLDS_Database*      m_LDS_db;        // Reference on the LDS database 
     bool                m_OwnDatabase;   // "TRUE" if datalaoder owns m_LDS_db
@@ -170,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/10/02 14:38:22  didenko
+ * Cleaned up dataloader implementation
+ *
  * Revision 1.21  2005/10/26 14:36:44  vasilche
  * Updated for new CBlobId interface. Fixed load lock logic.
  *

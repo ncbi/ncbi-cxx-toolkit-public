@@ -218,73 +218,69 @@ CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
-
-
 string CLDS_DataLoader::GetLoaderNameFromArgs(CLDS_Database& lds_db)
 {
     const string& alias = lds_db.GetAlias();
     if ( !alias.empty() ) {
         return "LDS_dataloader_" + alias;
     }
-    return "LDS_dataloader_" + lds_db.GetDirName() + "_" + lds_db.GetDbName();
+    return "LDS_dataloader_" + lds_db.GetDirName();
 }
 
+CLDS_DataLoader::CLDS_LoaderMaker::CLDS_LoaderMaker(const string& source_path,
+                                                    const string& db_path,
+                                                    const string& db_alias,
+                                                    CLDS_Manager::ERecurse           recurse,
+                                                    CLDS_Manager::EComputeControlSum csum)
+    : m_SourcePath(source_path), m_DbPath(db_path), m_DbAlias(db_alias),
+      m_Recurse(recurse), m_ControlSum(csum)
+{
+    m_Name = "LDS_dataloader_";
+    m_Name += db_alias.empty() ? db_path : db_alias;
+}
 
 CDataLoader*
 CLDS_DataLoader::CLDS_LoaderMaker::CreateLoader(void) const
 {
     CFastMutexGuard mg(sx_LDS_Lock);
 
-    bool is_created = false;
-    auto_ptr<CLDS_Database> lds_db
-        (CLDS_Management::OpenCreateDB(m_Param, "lds",
-                                        &is_created,
-                                        m_Recurse, m_ControlSum));
-    if ( !is_created ) {
-        CLDS_Management mgmt(*lds_db);
-        mgmt.SyncWithDir(m_Param, m_Recurse, m_ControlSum);
-    }
-    CLDS_DataLoader* dl = new CLDS_DataLoader(m_Name, lds_db.release());
+    CLDS_Manager mgr(m_SourcePath, m_DbPath, m_DbAlias);
+    mgr.Index(m_Recurse, m_ControlSum);
+
+    CLDS_DataLoader* dl = new CLDS_DataLoader(m_Name, mgr.ReleaseDB());
     return dl;
 }
 
-
 CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager& om,
+    const string& source_path,
     const string& db_path,
+    const string& db_alias,
+    CLDS_Manager::ERecurse recurse,
+    CLDS_Manager::EComputeControlSum csum,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority priority,
-    CLDS_Management::ERecurse recurse,
-    CLDS_Management::EComputeControlSum csum
+    CObjectManager::TPriority priority
     )
 {
-    CLDS_LoaderMaker maker(db_path, recurse, csum);
-    //TPathMaker maker(db_path);
+    CLDS_LoaderMaker maker(source_path, db_path, db_alias, recurse, csum);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
 
-
-string CLDS_DataLoader::GetLoaderNameFromArgs(const string& db_path)
-{
-    return "LDS_dataloader_" + db_path;
-}
-
-
 CLDS_DataLoader::CLDS_DataLoader(void)
     : CDataLoader(GetLoaderNameFromArgs()),
-      m_LDS_db(0)
+      m_LDS_db(NULL),
+      m_OwnDatabase(false)
 {
 }
 
 
 CLDS_DataLoader::CLDS_DataLoader(const string& dl_name)
     : CDataLoader(dl_name),
-      m_LDS_db(0)
+      m_LDS_db(NULL),
+      m_OwnDatabase(false)
 {
 }
-
-
 
 CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
                                  CLDS_Database& lds_db)
@@ -301,25 +297,22 @@ CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
    m_OwnDatabase(true)
 {
 }
-
+/*
 CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
-                                 const string& db_path)
+                                 const pair<string,string>& paths)
  : CDataLoader(dl_name),
-   m_LDS_db(new CLDS_Database(db_path, kEmptyStr)),
+   m_LDS_db(NULL),
    m_OwnDatabase(true)
 {
-    try {
-       CFastMutexGuard mg(sx_LDS_Lock);
-
-        m_LDS_db->Open();
-    } 
-    catch(...)
-    {
-        delete m_LDS_db;
-        throw;
-    }
+    ///?? Should a lds db be reindexed here ?????
+    //    auto_ptr<CLDS_Database> lds(new CLDS_Database(db_path, kEmptyStr));
+    CLDS_Manager mgr(paths.first, paths.second);
+    CFastMutexGuard mg(sx_LDS_Lock);
+    //lds->Open();
+    m_LDS_db = mgr.ReleaseDB();
+    
 }
-
+*/
 CLDS_DataLoader::~CLDS_DataLoader()
 {
     if (m_OwnDatabase)
@@ -328,13 +321,15 @@ CLDS_DataLoader::~CLDS_DataLoader()
 
 
 void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
+                                  EOwnership owner,
                                   const string&  dl_name)
 {
     CFastMutexGuard mg(sx_LDS_Lock);
-
+    
     if (m_LDS_db && m_OwnDatabase) {
         delete m_LDS_db;
     }
+    m_OwnDatabase = owner == eTakeOwnership;
     m_LDS_db = &lds_db;
     SetName(dl_name);
 }
@@ -519,21 +514,30 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
     const string& db_path =
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_DbPath, false);
+
+    string source_path =
+        GetParam(GetDriverName(), params,
+                 kCFParam_LDS_SourcePath, false);
+
+    string db_alias =
+        GetParam(GetDriverName(), params,
+                 kCFParam_LDS_DbAlias, false);
+
     string recurse_str =
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_RecurseSubDir, false, "true");
     bool recurse = NStr::StringToBool(recurse_str);
-    CLDS_Management::ERecurse recurse_subdir = 
+    CLDS_Manager::ERecurse recurse_subdir = 
         recurse ? 
-            CLDS_Management::eRecurseSubDirs : CLDS_Management::eDontRecurse;
+            CLDS_Manager::eRecurseSubDirs : CLDS_Manager::eDontRecurse;
 
     string control_sum_str =
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_ControlSum, false, "true");
     bool csum = NStr::StringToBool(control_sum_str);
-    CLDS_Management::EComputeControlSum control_sum =
+    CLDS_Manager::EComputeControlSum control_sum =
        csum ? 
-         CLDS_Management::eComputeControlSum : CLDS_Management::eNoControlSum;
+         CLDS_Manager::eComputeControlSum : CLDS_Manager::eNoControlSum;
               
 // commented out...
 // suspicious code, expected somebody will pass database as a stringified pointer
@@ -553,15 +557,19 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
         }
     }
 */
-    if ( !db_path.empty() ) {
+    if ( !db_path.empty() || !source_path.empty() ) {
+        if (source_path.empty())
+            source_path = db_path;
         // Use db path
         return CLDS_DataLoader::RegisterInObjectManager(
             om,
+            source_path,
             db_path,
-            GetIsDefault(params),
-            GetPriority(params),
+            db_alias,
             recurse_subdir,
-            control_sum).GetLoader();
+            control_sum,
+            GetIsDefault(params),
+            GetPriority(params)).GetLoader();
     }
     // IsDefault and Priority arguments may be specified
     return CLDS_DataLoader::RegisterInObjectManager(
@@ -592,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/10/02 14:38:22  didenko
+ * Cleaned up dataloader implementation
+ *
  * Revision 1.41  2006/05/08 15:54:37  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and
