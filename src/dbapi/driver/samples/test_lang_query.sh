@@ -6,7 +6,8 @@
 ulimit -n 1536 > /dev/null 2>&1
 
 
-driver_list="ctlib dblib ftds ftds63 odbc msdblib"
+# driver_list="ftds64_dblib odbcw"
+driver_list="ctlib dblib ftds ftds63 odbc msdblib ftds64_ctlib"
 # server_list="MS_DEV2 BARTOK BARTOK_12 MSSQL9 STRAUSS"
 server_list="MS_DEV1 OBERON"
 # server_mssql="MS_DEV2 MSSQL9"
@@ -204,7 +205,8 @@ EOF
                 # do not run tests with a boolk copy operations 
                 # on Sybase databases with the "ftds" driver
                 if test \( $driver = "ftds" -a $server = $server_mssql \) -o \
-                        \( $driver != "ftds" -a $driver != "msdblib" \); then
+                        \( $driver != "ftds" -a $driver != "msdblib" -a $driver != "ftds64_ctlib" \) -o \
+                        \( $driver = "ftds64_ctlib" -a $server = $server_mssql \) ;  then
 
                     # Do not run dbapi_testspeed with MOZART and BARTOK
                     cmd="dbapi_bcp -lb random -d $driver -S $server"
@@ -229,8 +231,11 @@ EOF
             fi
 
             # Do not run dbapi_cursor on SunOS Intel
+            cmd="dbapi_cursor -lb random -d $driver -S $server"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
+            elif test $driver = "ftds64_ctlib" -a $server != $server_mssql ; then
+                sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped. still under development.)"
             else
                 # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
                 # MS SQL is already disabled for non-ftds drivers.
