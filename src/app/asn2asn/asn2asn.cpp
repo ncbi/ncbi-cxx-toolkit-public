@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2006/10/02 14:41:33  vasilche
+* Allow conversion of multiple entries in file.
+*
 * Revision 1.48  2005/06/20 21:26:27  vasilche
 * Fix compilation error on MSVC.
 *
@@ -478,6 +481,8 @@ void CAsn2Asn::Init(void)
     d->AddDefaultKey("tc", "threadCount",
                       "perform command in <threadCount> thread",
                       CArgDescriptions::eInteger, "1");
+    d->AddFlag("m",
+               "Input file contains multiple objects");
     
     d->AddFlag("ih",
                "Use read hooks");
@@ -596,6 +601,7 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
     bool usePool = args["P"];
 
     bool quiet = args["q"];
+    bool multi = args["m"];
 
     size_t count = args["c"].AsInteger();
 
@@ -614,102 +620,106 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                                      CObjectOStream::Open(outFormat, outFile,
                                                           eSerial_StdWhenAny));
 
-        if ( inSeqEntry ) { /* read one Seq-entry */
-            if ( skip ) {
-                if ( displayMessages )
-                    NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
-                if ( readHook ) {
-                    {{
-                        CObjectTypeInfo type = CType<CSeq_descr>();
-                        type.SetLocalSkipHook
-                            (*in, new CReadInSkipObjectHook<CSeq_descr>);
-                    }}
-                    {{
-                        CObjectTypeInfo type = CType<CBioseq_set>();
-                        type.FindMember("class").SetLocalSkipHook
-                            (*in, new CReadInSkipClassMemberHook<CBioseq_set::TClass>);
-                    }}
-                    {{
-                        CObjectTypeInfo type = CType<CSeq_inst>();
-                        type.FindMember("topology").SetLocalSkipHook
-                            (*in, new CReadInSkipClassMemberHook<CSeq_inst::TTopology>);
-                    }}
-                    in->Skip(CType<CSeq_entry>());
-                }
-                else {
-                    in->Skip(CType<CSeq_entry>());
-                }
-            }
-            else if ( convert && haveOutput ) {
-                if ( displayMessages )
-                    NcbiCerr << "Copying Seq-entry..." << NcbiEndl;
-                CObjectStreamCopier copier(*in, *out);
-                copier.Copy(CType<CSeq_entry>());
-            }
-            else {
-                TSeqEntry entry;
-                //entry.DoNotDeleteThisObject();
-                if ( displayMessages )
-                    NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
-                *in >> entry;
-                SeqEntryProcess(entry);     /* do any processing */
-                if ( haveOutput ) {
+        for ( ;; ) {
+            if ( inSeqEntry ) { /* read one Seq-entry */
+                if ( skip ) {
                     if ( displayMessages )
-                        NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
-                    *out << entry;
-                }
-            }
-        }
-        else {              /* read Seq-entry's from a Bioseq-set */
-            if ( skip ) {
-                if ( displayMessages )
-                    NcbiCerr << "Skipping Bioseq-set..." << NcbiEndl;
-                in->Skip(CType<CBioseq_set>());
-            }
-            else if ( convert && haveOutput ) {
-                if ( displayMessages )
-                    NcbiCerr << "Copying Bioseq-set..." << NcbiEndl;
-                CObjectStreamCopier copier(*in, *out);
-                copier.Copy(CType<CBioseq_set>());
-            }
-            else {
-                CBioseq_set entries;
-                //entries.DoNotDeleteThisObject();
-                if ( displayMessages )
-                    NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
-                if ( readHook ) {
-                    CObjectTypeInfo bioseqSetType = CType<CBioseq_set>();
-                    bioseqSetType.FindMember("seq-set")
-                        .SetLocalReadHook(*in, new CReadSeqSetHook);
-                    *in >> entries;
-                }
-                else {
-                    *in >> entries;
-                    NON_CONST_ITERATE ( CBioseq_set::TSeq_set, seqi,
-                                        entries.SetSeq_set() ) {
-                        SeqEntryProcess(**seqi);     /* do any processing */
-                    }
-                }
-                if ( haveOutput ) {
-                    if ( displayMessages )
-                        NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
-                    if ( writeHook ) {
-#if 0
-                        CObjectTypeInfo bioseqSetType = CType<CBioseq_set>();
-                        bioseqSetType.FindMember("seq-set")
-                            .SetLocalWriteHook(*out, new CWriteSeqSetHook);
-#else
-                        CObjectTypeInfo seqEntryType = CType<CSeq_entry>();
-                        seqEntryType
-                            .SetLocalWriteHook(*out, new CWriteSeqEntryHook);
-#endif
-                        *out << entries;
+                        NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
+                    if ( readHook ) {
+                        {{
+                            CObjectTypeInfo type = CType<CSeq_descr>();
+                            type.SetLocalSkipHook
+                                (*in, new CReadInSkipObjectHook<CSeq_descr>);
+                        }}
+                        {{
+                            CObjectTypeInfo type = CType<CBioseq_set>();
+                            type.FindMember("class").SetLocalSkipHook
+                                (*in, new CReadInSkipClassMemberHook<CBioseq_set::TClass>);
+                        }}
+                        {{
+                            CObjectTypeInfo type = CType<CSeq_inst>();
+                            type.FindMember("topology").SetLocalSkipHook
+                                (*in, new CReadInSkipClassMemberHook<CSeq_inst::TTopology>);
+                        }}
+                        in->Skip(CType<CSeq_entry>());
                     }
                     else {
-                        *out << entries;
+                        in->Skip(CType<CSeq_entry>());
+                    }
+                }
+                else if ( convert && haveOutput ) {
+                    if ( displayMessages )
+                        NcbiCerr << "Copying Seq-entry..." << NcbiEndl;
+                    CObjectStreamCopier copier(*in, *out);
+                    copier.Copy(CType<CSeq_entry>());
+                }
+                else {
+                    TSeqEntry entry;
+                    //entry.DoNotDeleteThisObject();
+                    if ( displayMessages )
+                        NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
+                    *in >> entry;
+                    SeqEntryProcess(entry);     /* do any processing */
+                    if ( haveOutput ) {
+                        if ( displayMessages )
+                            NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
+                        *out << entry;
                     }
                 }
             }
+            else {              /* read Seq-entry's from a Bioseq-set */
+                if ( skip ) {
+                    if ( displayMessages )
+                        NcbiCerr << "Skipping Bioseq-set..." << NcbiEndl;
+                    in->Skip(CType<CBioseq_set>());
+                }
+                else if ( convert && haveOutput ) {
+                    if ( displayMessages )
+                        NcbiCerr << "Copying Bioseq-set..." << NcbiEndl;
+                    CObjectStreamCopier copier(*in, *out);
+                    copier.Copy(CType<CBioseq_set>());
+                }
+                else {
+                    CBioseq_set entries;
+                    //entries.DoNotDeleteThisObject();
+                    if ( displayMessages )
+                        NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
+                    if ( readHook ) {
+                        CObjectTypeInfo bioseqSetType = CType<CBioseq_set>();
+                        bioseqSetType.FindMember("seq-set")
+                            .SetLocalReadHook(*in, new CReadSeqSetHook);
+                        *in >> entries;
+                    }
+                    else {
+                        *in >> entries;
+                        NON_CONST_ITERATE ( CBioseq_set::TSeq_set, seqi,
+                                            entries.SetSeq_set() ) {
+                            SeqEntryProcess(**seqi);     /* do any processing */
+                        }
+                    }
+                    if ( haveOutput ) {
+                        if ( displayMessages )
+                            NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
+                        if ( writeHook ) {
+#if 0
+                            CObjectTypeInfo bioseqSetType = CType<CBioseq_set>();
+                            bioseqSetType.FindMember("seq-set")
+                                .SetLocalWriteHook(*out, new CWriteSeqSetHook);
+#else
+                            CObjectTypeInfo seqEntryType = CType<CSeq_entry>();
+                            seqEntryType
+                                .SetLocalWriteHook(*out, new CWriteSeqEntryHook);
+#endif
+                            *out << entries;
+                        }
+                        else {
+                            *out << entries;
+                        }
+                    }
+                }
+            }
+            if ( !multi || in->EndOfData() )
+                break;
         }
     }
 }
