@@ -1,0 +1,184 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Maxim Didenko
+ *
+ * File Description:
+ *
+ */
+
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbiargs.hpp>
+
+#include <objtools/lds/lds_manager.hpp>
+
+using namespace ncbi;
+using namespace objects;
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Demo application
+//
+
+
+class CLDSIndexerApplication : public CNcbiApplication
+{
+public:
+    virtual void Init(void);
+    virtual int  Run (void);
+
+private:
+private:
+};
+
+
+
+void CLDSIndexerApplication::Init(void)
+{
+    SetDiagPostLevel(eDiag_Info);
+
+    // Prepare command line descriptions
+    //
+
+    // Create
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+
+    // Program description
+    string prog_description = "LDS Indexer";
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              prog_description, false);
+
+    // Pass argument descriptions to the application
+    //
+
+    arg_desc->AddKey
+        ("source", "path_name",
+         "Paht to the directory with source data files",
+         CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey
+        ("db_path", "path_name",
+         "Path to the directory where LDS database will be created",
+         CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey
+        ("alias", "alias_name",
+         "Alias for LDS database",
+         CArgDescriptions::eString);
+
+    arg_desc->AddFlag
+        ("norecursive",
+         "Search for source files recursively");
+
+    arg_desc->AddFlag
+        ("crc32",
+         "Turn on control sums calculation");
+
+    SetupArgDescriptions(arg_desc.release());
+}
+
+
+int CLDSIndexerApplication::Run(void)
+{
+    string lds_section_name = "lds";
+
+    const CNcbiRegistry& reg = GetConfig();
+
+    string lds_path = reg.Get(lds_section_name,  "Path",
+                                     IRegistry::fTruncate);
+    string lds_alias = reg.Get(lds_section_name, "Alias",
+                                      IRegistry::fTruncate);
+
+    bool recurse_sub_dir = reg.GetBool(lds_section_name, "SubDir", true);
+
+    string source_path = reg.Get(lds_section_name,  "Source",
+                                        IRegistry::fTruncate);
+   
+
+    bool crc32 = 
+        reg.GetBool(lds_section_name, "ControlSum", true);
+    
+        // if ControlSum key is true (default), try an alternative "CRC32" key
+        // (more straightforward synonym for the same setting)
+    if (crc32) {
+        crc32 = reg.GetBool(lds_section_name, "CRC32", true);
+    }
+    
+    const CArgs& args = GetArgs();
+    if (args["source"])
+        source_path = args["source"].AsString();
+
+    if (args["db_path"] )
+        lds_path = args["db_path"].AsString();
+        
+    if (args["norecursive"])
+        recurse_sub_dir = false;
+
+    if (args["crc32"])
+        crc32 = true;
+
+    CLDS_Manager::ERecurse recurse = 
+        (recurse_sub_dir) ? CLDS_Manager::eRecurseSubDirs : 
+                            CLDS_Manager::eDontRecurse;
+
+    CLDS_Manager::EComputeControlSum control_sum =
+        (crc32) ? CLDS_Manager::eComputeControlSum : 
+        CLDS_Manager::eNoControlSum;
+
+    CLDS_Manager manager( source_path, lds_path, lds_alias);
+    manager.Index(recurse, control_sum);
+
+    return 0;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN
+
+
+int main(int argc, const char* argv[])
+{
+    return 
+        CLDSIndexerApplication().AppMain(
+                    argc, argv, 0, eDS_Default );
+}
+
+
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2006/10/02 14:39:59  didenko
+ * Added lds_indexer utility
+ *
+ * ===========================================================================
+ */
