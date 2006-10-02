@@ -46,6 +46,8 @@ USING_NCBI_SCOPE;
 class CGridClientSampleApp : public CGridClientApp
 {
 public:
+    CGridClientSampleApp() 
+        : m_PermanentConnection(false), m_ProgressMessage(false) {}
 
     virtual void Init(void);
     virtual int Run(void);
@@ -59,7 +61,17 @@ public:
 
         return "SampleNodeClient version 1.0.1";
     }
-
+    virtual bool UsePermanentConnection() const
+    {
+        return m_PermanentConnection;
+    }
+    virtual bool UseProgressMessage() const
+    {
+        return m_ProgressMessage;
+    }
+private:
+    bool m_PermanentConnection;
+    bool m_ProgressMessage;
 };
 
 void CGridClientSampleApp::Init(void)
@@ -67,8 +79,6 @@ void CGridClientSampleApp::Init(void)
     // hack!!! It needs to be removed when we know how to deal with unresolved
     // symbols in plugins.
     BlobStorage_RegisterDriver_NetCache(); 
-    // Don't forget to call it
-    CGridClientApp::Init();
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -87,13 +97,19 @@ void CGridClientSampleApp::Init(void)
                              "Number of jobs to submit",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddFlag("pm", 
+                      "Use Progress Messages");
+
+    arg_desc->AddFlag("nopc", 
+                      "Don't Use Permanent Connection");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
 
 int CGridClientSampleApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     int vsize = 100000;
     if (args["vsize"]) {
@@ -104,6 +120,12 @@ int CGridClientSampleApp::Run(void)
     if (args["jobs"]) {
         jobs_number = args["jobs"].AsInteger();
     }
+    m_PermanentConnection = !args["nopc"];
+    m_ProgressMessage = args["pm"];
+
+    // Don't forget to call it
+    CGridClientApp::Init();
+
 
     vector<string> job_keys;
 
@@ -207,6 +229,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/10/02 18:10:58  didenko
+ * added pm and nopc command line parameters
+ *
  * Revision 1.10  2006/06/19 19:41:06  didenko
  * Spelling fix
  *
