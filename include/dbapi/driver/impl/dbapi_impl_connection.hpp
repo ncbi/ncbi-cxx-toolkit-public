@@ -75,6 +75,17 @@ public:
         return m_ResProc;
     }
 
+    CDriverContext& GetCDriverContext(void)
+    {
+        _ASSERT(m_DriverContext);
+        return *m_DriverContext;
+    }
+    const CDriverContext& GetCDriverContext(void) const
+    {
+        _ASSERT(m_DriverContext);
+        return *m_DriverContext;
+    }
+
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
@@ -162,17 +173,6 @@ protected:
     /// Returns: true - if successfully closed an open connection.
     ///          false - if not
     virtual bool Close(void) = 0;
-
-    CDriverContext& GetCDriverContext(void)
-    {
-        _ASSERT(m_DriverContext);
-        return *m_DriverContext;
-    }
-    const CDriverContext& GetCDriverContext(void) const
-    {
-        _ASSERT(m_DriverContext);
-        return *m_DriverContext;
-    }
 
     virtual void SetTimeout(size_t nof_secs);
     virtual void SetTextImageSize(size_t nof_bytes);
@@ -266,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/10/02 19:57:33  ssikorsk
+ * Changed visibility of GetCDriverContext to public.
+ *
  * Revision 1.7  2006/09/13 19:22:21  ssikorsk
  * Added methods SetTimeout and SetTextImageSize.
  *
