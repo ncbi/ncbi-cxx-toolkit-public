@@ -1180,9 +1180,13 @@ CId2Reader::x_ProcessError(CReaderRequestResult& /*result*/,
     case CID2_Error::eSeverity_warning:
         severity = "warning: ";
         error_flags |= fError_warning;
-        if ( error.IsSetMessage() &&
-             error.GetMessage() == "Information in this blob is obsolete" ) {
-            error_flags |= fError_warning_dead;
+        if ( error.IsSetMessage() ) {
+            if ( NStr::FindNoCase(error.GetMessage(), "obsolete") != NPOS ) {
+                error_flags |= fError_warning_dead;
+            }
+            if ( NStr::FindNoCase(error.GetMessage(), "removed") != NPOS ) {
+                error_flags |= fError_warning_suppressed;
+            }
         }
         break;
     case CID2_Error::eSeverity_failed_command:
@@ -1544,6 +1548,10 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     if ( errors & fError_warning_dead ) {
         //ERR_POST("blob.SetBlobState(CBioseq_Handle::fState_dead)");
         blob.SetBlobState(CBioseq_Handle::fState_dead);
+    }
+    if ( errors & fError_warning_suppressed ) {
+        //ERR_POST("blob.SetBlobState(CBioseq_Handle::fState_suppress_perm)");
+        blob.SetBlobState(CBioseq_Handle::fState_suppress_perm);
     }
     if ( reply.GetBlob_id().GetSub_sat() == CID2_Blob_Id::eSub_sat_snp ) {
         m_Dispatcher->GetProcessor(CProcessor::eType_Seq_entry_SNP)
