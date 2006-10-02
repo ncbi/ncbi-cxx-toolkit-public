@@ -436,6 +436,8 @@ ct_con_props(CS_CONNECTION * con, CS_INT action, CS_INT property, CS_VOID * buff
 				tds_set_version(tds_login, 5, 0);
 			} else if (*(int *) buffer == CS_TDS_70) {
 				tds_set_version(tds_login, 7, 0);
+			} else if (*(int *) buffer == CS_TDS_80) {
+				tds_set_version(tds_login, 8, 0);
 			} else {
 				return CS_FAIL;
 			}
@@ -592,6 +594,10 @@ ct_connect(CS_CONNECTION * con, CS_CHAR * servername, CS_INT snamelen)
     case 42:
         connection->major_version = 4;
         connection->minor_version = 2;
+        break;
+    case 46:
+        connection->major_version = 4;
+        connection->minor_version = 6;
         break;
     case 70:
         connection->major_version = 7;
