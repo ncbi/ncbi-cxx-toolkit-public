@@ -3,7 +3,7 @@
 # Meta-makefile ("BLAST" project)
 #################################
 
-SUB_PROJ = composition_adjustment core api
+SUB_PROJ = composition_adjustment core api blastinput
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
