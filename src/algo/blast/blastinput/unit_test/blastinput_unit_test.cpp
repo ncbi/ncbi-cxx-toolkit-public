@@ -54,6 +54,7 @@
 #include <boost/current_function.hpp>
 
 USING_NCBI_SCOPE;
+USING_SCOPE(blast);
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
 
@@ -291,6 +292,9 @@ BOOST_AUTO_UNIT_TEST(s_MultiBatch)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/10/02 17:05:04  papadopo
+ * use blast scope
+ *
  * Revision 1.6  2006/08/30 19:57:55  papadopo
  * remove redundant work
  *
