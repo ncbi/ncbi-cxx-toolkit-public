@@ -38,6 +38,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include <util/random_gen.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
@@ -54,6 +55,8 @@
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/User_object.hpp>
 
 // Object manager includes
 #include <objmgr/scope.hpp>
@@ -66,6 +69,8 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/object_manager.hpp>
 
@@ -285,75 +290,10 @@ typename C::E_Choice GetVariant(const CArgValue& value)
     return E_Choice(NStr::StringToInt(value.AsString()));
 }
 
-#if 0
-void s_Test()
-{
-    string filename("newgiforcdd.CSV");
-	CRef<CObjectManager> x_mgr = CObjectManager::GetInstance();
-	CGBDataLoader::RegisterInObjectManager(*x_mgr);
-	ifstream iff(filename.c_str());
-	string ofilename = filename + ".out";
-	ofstream of(ofilename.c_str());
-    CStopWatch sw;
-    sw.Start();
-	for ( size_t count = 0; iff; ++count ) {
-        if ( count == 1000 ) {
-            NcbiCout << "Processed " << count << " proteins in "
-                 << sw.Elapsed() << " secs" << NcbiEndl;
-            static int block = 0;
-            if ( ++block == 10 && ::getenv("TEST_EXIT") ) {
-                _exit(1);
-            }
-            sw.Start();
-            count = 0;
-        }
-        CScope Scope(*x_mgr);
-        Scope.AddDefaults();
-
-        int gi;
-        iff >> gi;
-        CRef<CSeq_id> gen = CRef<CSeq_id>(new CSeq_id());
-        gen->SetGeneral().SetTag().SetId(gi);
-        gen->SetGeneral().SetDb("ANNOT:CDD");
-        CBioseq_Handle han;
-        try {
-            han = Scope.GetBioseqHandle(*gen);
-            if (!han) 	continue;
-        }
-        catch ( CException& exc ) {
-            ERR_POST("Cannot resolve " <<gen->AsFastaString()<<": "<<
-                     exc.GetMsg());
-            continue;
-        }
-        CFeat_CI iff(han,
-                     SAnnotSelector(CSeqFeatData::e_Region)
-                     .SetSearchExternal(han));
-        for (;iff;++iff) {
-            CConstRef<CSeq_feat>  feat(&iff->GetMappedFeature());
-            if (feat->IsSetDbxref()) {
-                ITERATE (CSeq_feat::TDbxref,t,feat->GetDbxref()) {
-                    string ats_val;
-                    if ((*t)->GetTag().IsStr()) {
-                        ats_val = (*t)->GetTag().GetStr();
-                    }
-                    else {
-                        ats_val = NStr::IntToString((*t)->GetTag().GetId());
-                    }
-                    of << 	gi	<< "\t" << ats_val << "\t";
-                    of<<feat->GetLocation().GetTotalRange().GetFrom()+1<<"\t";
-                    of<<feat->GetLocation().GetTotalRange().GetTo()+1<< endl;
-                }
-            }
-        }
-    }
-}
-#endif
-
 
 int CDemoApp::Run(void)
 {
-    //s_Test();
-
+    SetDiagPostLevel(eDiag_Info);
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
 
@@ -439,6 +379,7 @@ int CDemoApp::Run(void)
     bool used_memory_check = args["used_memory_check"];
     bool get_synonyms = false;
     bool get_ids = true;
+    bool get_blob_id = true;
     set<string> include_named;
     if ( args["named"] ) {
         string names = args["named"].AsString();
@@ -525,6 +466,16 @@ int CDemoApp::Run(void)
         other_loaders = true;
     }
 
+    if ( args["gi"] ) {
+        int gi = args["gi"].AsInteger();
+        CScope  scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        NcbiCout << " gi "<<gi<<" -> acc "<<
+            sequence::GetAccessionForGi(gi,scope,
+                                        sequence::eWithoutAccessionVersion)
+                 << NcbiEndl;
+    }
+
     // Create a new scope.
     CScope scope(*pOm);
     // Add default loaders (GB loader in this demo) to the scope.
@@ -565,7 +516,7 @@ int CDemoApp::Run(void)
             NcbiCout << "    " << it->AsString() << NcbiEndl;
         }
     }
-    if ( gb_loader && !other_loaders ) {
+    if ( get_blob_id && gb_loader && !other_loaders ) {
         try {
             CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
             if ( !blob_id ) {
@@ -584,9 +535,14 @@ int CDemoApp::Run(void)
 
     // Get bioseq handle for the seq-id. Most of requests will use this handle.
     CBioseq_Handle handle = scope.GetBioseqHandle(idh);
+    if ( handle.GetState() ) {
+        // print blob state:
+        NcbiCout << "Bioseq state: 0x" << hex << handle.GetState() << dec
+                 << NcbiEndl;
+    }
     // Check if the handle is valid
     if ( !handle ) {
-        ERR_POST(Fatal << "Bioseq not found: state: " << handle.GetState());
+        ERR_POST(Fatal << "Bioseq not found.");
     }
     if ( get_synonyms ) {
         NcbiCout << "Synonyms:" << NcbiEndl;
@@ -600,6 +556,8 @@ int CDemoApp::Run(void)
     if ( print_tse ) {
         CConstRef<CSeq_entry> entry =
             handle.GetTopLevelEntry().GetCompleteSeq_entry();
+        //CConstRef<CBioseq> entry =
+        //    handle.GetEditHandle().GetCompleteObject();
         NcbiCout << "-------------------- TSE --------------------\n";
         NcbiCout << MSerial_AsnText << *entry << '\n';
         NcbiCout << "-------------------- END --------------------\n";
@@ -833,8 +791,42 @@ int CDemoApp::Run(void)
             }
             CRef<CSeq_loc_Mapper> mapper;
             if ( print_features && print_mapper ) {
-                mapper.Reset(new CSeq_loc_Mapper(handle,
-                                                 CSeq_loc_Mapper::eSeqMap_Up));
+                if ( 0 ) {
+                    CRef<CBioseq> seq(new CBioseq);
+                    CRef<CSeq_id> id(new CSeq_id);
+                    id->SetGi(1);
+                    seq->SetId().push_back(id);
+                    TSeqPos len = handle.GetBioseqLength();
+                    seq->SetInst().SetLength(len);
+                    seq->SetInst().SetMol(handle.GetSequenceType());
+                    scope.AddBioseq(*seq);
+
+                    CRef<CSeq_loc> from_loc(new CSeq_loc);
+                    from_loc->SetInt().SetFrom(0);
+                    from_loc->SetInt().SetTo  (len-1);
+                    //from_loc->SetId(*handle.GetSeqId());
+                    ITERATE ( CBioseq_Handle::TId, it, handle.GetId() ) {
+                        if ( *it != idh ) {
+                            from_loc->SetId(*it->GetSeqId());
+                            break;
+                        }
+                    }
+                
+                    CRef<CSeq_loc> to_loc(new CSeq_loc);
+                    to_loc->SetInt().SetFrom(0);
+                    to_loc->SetInt().SetTo(len-1);
+                    to_loc->SetId(*id);
+
+                    NcbiCout << "Mapping from " << MSerial_AsnText << *from_loc <<
+                        " to " << MSerial_AsnText << *to_loc;
+                    mapper.Reset(new CSeq_loc_Mapper(*from_loc,
+                                                     *to_loc,
+                                                     &scope));
+                }
+                else {
+                    mapper.Reset(new CSeq_loc_Mapper(handle,
+                                                     CSeq_loc_Mapper::eSeqMap_Up));
+                }
             }
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 if ( count_types ) {
@@ -869,11 +861,13 @@ int CDemoApp::Run(void)
                             MSerial_AsnText <<
                             it->GetOriginalFeature().GetLocation();
                         if ( mapper ) {
-                            NcbiCout << "Mapped location:";
-                            NcbiCout << "\n" <<
+                            NcbiCout << "Mapped orig location:\n" <<
                                 MSerial_AsnText <<
                                 *mapper->Map(it->GetOriginalFeature()
                                              .GetLocation());
+                            NcbiCout << "Mapped iter location:\n"<<
+                                MSerial_AsnText <<
+                                *mapper->Map(it->GetLocation());
                         }
                     }
                     else {
@@ -1147,8 +1141,13 @@ int CDemoApp::Run(void)
         }
 
         if ( args["modify"] ) {
-            CTSE_Handle tse = handle.GetTSE_Handle();
-            CBioseq_EditHandle ebh = handle.GetEditHandle();
+            //CTSE_Handle tse = handle.GetTSE_Handle();
+            //CBioseq_EditHandle ebh = handle.GetEditHandle();
+            CRef<CBioseq> newseq(new CBioseq);
+            newseq->Assign(*handle.GetCompleteObject());
+            CSeq_entry_Handle seh = handle.GetParentEntry();
+            seh.GetEditHandle().SelectNone();
+            seh.GetEditHandle().SelectSeq(*newseq);
         }
         if ( used_memory_check ) {
             if ( args["reset_scope"] ) {
@@ -1191,6 +1190,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.113  2006/10/02 14:40:54  vasilche
+* Removed obsolete code. Added printout of bioseq state.
+*
 * Revision 1.112  2006/08/07 15:26:19  vasilche
 * Correctly add TSE from file.
 *
