@@ -136,7 +136,7 @@ void CLDS_Manager::Index(ERecurse           recurse,
 CLDS_Database& CLDS_Manager::GetDB()
 {
     if ( !m_lds_db.get() ) {
-        m_lds_db = x_OpenDB(CLDS_Database::eReadOnly);
+        m_lds_db.reset( x_OpenDB(CLDS_Database::eReadOnly).release());
     }
     return *m_lds_db;
 }
@@ -153,6 +153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/10/03 14:45:26  didenko
+ * gcc 2.95 does not support auto_ptrs assignment. Replaced with reset - release calls
+ *
  * Revision 1.1  2006/10/02 14:36:48  didenko
  * Added new class CLDS_Manager to replace CLDS_Managemnt class
  *
