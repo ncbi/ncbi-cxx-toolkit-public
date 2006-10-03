@@ -62,6 +62,48 @@ bool CTL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 }
 
 
+bool CTL_BCPInCmd::x_IsUnicodeClientAPI(void) const
+{
+    switch (GetConnection().GetCTLibContext().GetTDSVersion()) {
+    case 70:
+    case 80:
+        return true;
+    };
+
+    return false;
+}
+
+
+CS_VOID*
+CTL_BCPInCmd::x_GetValue(const CDB_Char& value) const
+{
+#if defined(HAVE_WSTRING)
+    if (x_IsUnicodeClientAPI()) {
+        return const_cast<CS_VOID*>(
+            static_cast<const CS_VOID*>(value.AsUnicode(eEncoding_UTF8)));
+    }
+#endif
+
+    return const_cast<CS_VOID*>(
+        static_cast<const CS_VOID*>(value.Value()));
+}
+
+
+CS_VOID*
+CTL_BCPInCmd::x_GetValue(const CDB_VarChar& value) const
+{
+#if defined(HAVE_WSTRING)
+    if (x_IsUnicodeClientAPI()) {
+        return const_cast<CS_VOID*>(
+            static_cast<const CS_VOID*>(value.AsUnicode(eEncoding_UTF8)));
+    }
+#endif
+
+    return const_cast<CS_VOID*>(
+        static_cast<const CS_VOID*>(value.Value()));
+}
+
+
 bool CTL_BCPInCmd::x_AssignParams()
 {
     CS_DATAFMT param_fmt;
@@ -140,7 +182,7 @@ bool CTL_BCPInCmd::x_AssignParams()
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
-                                        (CS_VOID*) par.Value(),
+                                          x_GetValue(par),
                                       &m_Bind[i].datalen,
                                       &m_Bind[i].indicator));
             break;
@@ -152,7 +194,7 @@ bool CTL_BCPInCmd::x_AssignParams()
             m_Bind[i].datalen   = (CS_INT) par.Size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       par.IsNULL()? (CS_VOID*)m_Bind[i].buffer :
-                                        (CS_VOID*) par.Value(),
+                                          x_GetValue(par),
                                       &m_Bind[i].datalen,
                                       &m_Bind[i].indicator));
             break;
@@ -268,6 +310,8 @@ bool CTL_BCPInCmd::Send(void)
     unsigned int i;
     CS_INT       datalen = 0;
     CS_SMALLINT  indicator = 0;
+    size_t       len = 0;
+    char         buff[2048];
 
     if ( !m_WasSent ) {
         // we need to init the bcp
@@ -310,33 +354,78 @@ bool CTL_BCPInCmd::Send(void)
     CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 123004 );
 
     switch ( Check(blk_rowxfer(x_GetSybaseCmd())) ) {
-    case CS_BLK_HAS_TEXT:  {
-        char buff[2048];
-        size_t n;
-
+    case CS_BLK_HAS_TEXT:
         for (i = 0;  i < m_Params.NofParams();  i++) {
             if (m_Params.GetParamStatus(i) == 0)
                 continue;
 
             CDB_Object& param = *m_Params.GetParam(i);
 
-            if ((param.GetType() != eDB_Text) &&
-                (param.GetType() != eDB_Image)) {
-                continue;
-            } else {
+            if (param.GetType() == eDB_Text) {
+                size_t valid_len = 0;
+                size_t invalid_len = 0;
                 CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
+
                 for (datalen = (CS_INT) par.Size();  datalen > 0;
-                     datalen -= (CS_INT) n) {
-                    n = par.Read(buff, 2048);
-                    m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) n, 0)) == CS_FAIL);
+                     datalen -= (CS_INT) len)
+                {
+                    len = par.Read(buff + invalid_len, sizeof(buff) - invalid_len);
+
+                    valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+                    invalid_len = len - valid_len;
+
+#if defined(HAVE_WSTRING)
+                    if (x_IsUnicodeClientAPI()) {
+                        CWString unicode_str(buff, valid_len, eEncoding_UTF8);
+
+                        m_HasFailed = (Check(
+                            blk_textxfer(
+                                x_GetSybaseCmd(),
+                                (CS_BYTE*) unicode_str.AsUnicode(eEncoding_UTF8).c_str(),
+                                (CS_INT) unicode_str.GetSymbolNum() * sizeof(wchar_t),
+                                0)
+                            ) == CS_FAIL);
+                    } else {
+                        m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(),
+                                                          (CS_BYTE*) buff,
+                                                          (CS_INT) valid_len,
+                                                          0)
+                                             ) == CS_FAIL);
+                    }
+#else
+                    m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(),
+                                                      (CS_BYTE*) buff,
+                                                      (CS_INT) valid_len,
+                                                      0)
+                                         ) == CS_FAIL);
+#endif
+
+                    CHECK_DRIVER_ERROR(
+                        m_HasFailed,
+                        "blk_textxfer failed for the text/image field", 123005
+                        );
+
+                    if (valid_len < len) {
+                        memmove(buff, buff + valid_len, invalid_len);
+                    }
+                }
+            } else if (param.GetType() == eDB_Image) {
+                CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
+
+                for (datalen = (CS_INT) par.Size();  datalen > 0; datalen -= (CS_INT) len) {
+                    len = par.Read(buff, sizeof(buff));
+
+                    m_HasFailed = (Check(blk_textxfer(x_GetSybaseCmd(), (CS_BYTE*) buff, (CS_INT) len, 0)) == CS_FAIL);
+
                     CHECK_DRIVER_ERROR(
                         m_HasFailed,
                         "blk_textxfer failed for the text/image field", 123005
                         );
                 }
+            } else {
+                continue;
             }
         }
-    }
     case CS_SUCCEED:
         ++m_RowCount;
         return true;
@@ -462,6 +551,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/10/03 17:53:43  ssikorsk
+ * Implemented CTL_BCPInCmd::x_GetValue;
+ * Translate text into unicode when BCPing text data types in case of TDS v70/80;
+ *
  * Revision 1.24  2006/08/10 15:19:27  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *
