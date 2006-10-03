@@ -71,7 +71,7 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
  * @param subject the subject sequence [in]
  * @param query the query sequence [in]
  * @param lookup_wrap the lookup table [in]
- * @param diag the diagonal array structure [in/out]
+ * @param ewp Structure containing the diagonal array
  * @param matrix the substitution matrix [in]
  * @param word_params structure containing per-context cutoff information [in]
  * @param query_info structure containing context ranges [in]
@@ -99,7 +99,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
  * @param subject the subject sequence [in]
  * @param query the query sequence [in]
  * @param lookup_wrap the lookup table [in]
- * @param diag the diagonal array structure [in/out]
+ * @param ewp Structure containing the diagonal array [in]
  * @param matrix the substitution matrix [in]
  * @param cutoff cutoff score for saving ungapped HSPs [in]
  * @param dropoff x dropoff [in]
@@ -121,7 +121,7 @@ Int2 BlastRPSWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
  * @param subject the subject sequence
  * @param query the query sequence
  * @param lookup_wrap the lookup table
- * @param diag the diagonal array structure
+ * @param ewp Structure containing the diagonal array [in]
  * @param matrix the substitution matrix [in]
  * @param word_params structure containing per-context cutoff information [in]
  * @param query_info structure containing context ranges [in]
@@ -148,7 +148,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
  * @param subject the subject sequence
  * @param query the query sequence
  * @param lookup_wrap the lookup table
- * @param diag the diagonal array structure
+ * @param ewp Structure containing the diagonal array [in]
  * @param matrix the substitution matrix [in]
  * @param cutoff cutoff score for saving ungapped HSPs [in]
  * @param dropoff x dropoff [in]
