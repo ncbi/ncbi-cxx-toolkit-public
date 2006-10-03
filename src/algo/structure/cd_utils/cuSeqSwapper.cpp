@@ -49,23 +49,6 @@ SeqSwapper::SeqSwapper(CCdCore* cd, int identityThreshold):
 void SeqSwapper::swapSequences()
 {
 	int numNormal = m_cd->GetNumRows();
-	
-	//debug
-	/*
-	int numLocal = 0;
-	for (int i = 0; i < numNormal; i++)
-	{
-		CRef< CSeq_id > seqId;
-		m_ac.GetSeqIDForRow(i, seqId);
-		if (seqId->IsLocal())
-		{
-			LOG_POST("found local seqId at row "<<i);
-			numLocal++;
-		}
-	}
-	if (numLocal == 0)LOG_POST("Could not find any local seq-id");
-	int num = m_ac.GetNumRows();
-	*/
 
 	vector< vector<int> * > clusters;
 	makeClusters(m_clusteringThreshold, clusters);
@@ -170,6 +153,9 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 		{
 			//only care about local seq_id for now
 			CRef< CSeq_id > seqId;
+			int row = cluster[i];
+			if (row == 1)
+				int gotit =1;
 			m_ac.GetSeqIDForRow(cluster[i], seqId);
 			if (seqId->IsLocal())
 				normal.push_back(cluster[i]);
@@ -189,13 +175,16 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 	{
 		int maxId = 0;
 		int maxIdIndex = -1;
-		for (int p = 0; (p < pending.size()) && (usedPendingIndice.find(p) == usedPendingIndice.end()); p++)
+		for (int p = 0; p < pending.size(); p++)
 		{
-			int pid = (int)blaster.getPairwiseScore(n, p);
-			if ((pid > maxId) && (pid >= m_replacingThreshold))
+			if (usedPendingIndice.find(p) == usedPendingIndice.end())//this pending has not been used
 			{
-				maxId = pid;
-				maxIdIndex = p;
+				int pid = (int)blaster.getPairwiseScore(n, p);
+				if ((pid > maxId) && (pid >= m_replacingThreshold))
+				{
+					maxId = pid;
+					maxIdIndex = p;
+				}
 			}
 		}
 		if ( maxIdIndex >= 0)
