@@ -207,7 +207,10 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
         return fasta_reader.ReadSet();
     } else if (infmt == "gff") {
         return CGFFReader().Read(args["in"].AsInputFile(),
-                                 CGFFReader::fGBQuals);
+                                 CGFFReader::fGBQuals |
+                                 CGFFReader::fMergeExons |
+                                 CGFFReader::fSetProducts |
+                                 CGFFReader::fCreateGeneFeats);
     } else if (infmt == "agp") {
         CRef<CBioseq_set> bss = AgpRead(args["in"].AsInputFile());
         if (bss->GetSeq_set().size() == 1) {
@@ -319,6 +322,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/10/03 13:23:15  dicuccio
+* Tweak GFF import flags
+*
 * Revision 1.11  2006/05/17 14:50:34  ucko
 * Support merging in external Sequin-style feature tables.
 * Switch over to the new FASTA reader.
