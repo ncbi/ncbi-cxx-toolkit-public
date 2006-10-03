@@ -171,7 +171,7 @@ protected:
 /// Generalized converter from an abstract source of
 /// biological sequence data to collections of blast input
 ///
-class NCBI_BLAST_EXPORT CBlastInput : public CObject
+class CBlastInput : public CObject
 {
 public:
     /// Constructor
@@ -235,6 +235,10 @@ END_NCBI_SCOPE
 
 /*---------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/10/03 19:12:24  ivanov
+ * Remove NCBI_BLAST_EXPORT from CBlastInput declaration,
+ * because on MSVC blastinput builds as static lib, not dll.
+ *
  * Revision 1.3  2006/09/26 21:45:38  papadopo
  * add to blast scope; add CVS log
  *
