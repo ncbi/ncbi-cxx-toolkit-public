@@ -392,7 +392,6 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
     int rc;
 
     size_t len = 0;
-    size_t valid_len = 0;
     size_t invalid_len = 0;
 
     while(( len = stream.Read(buff + invalid_len, sizeof(buff) - invalid_len - 1)) != 0 ) {
@@ -400,7 +399,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
         if (descr_type == CDB_ITDescriptor::eText) {
             // Convert string.
 
-            valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+            size_t valid_len = CStringUTF8::GetValidBytesCount(buff, len);
             invalid_len = len - valid_len;
 
             CODBCString odbc_str(buff, valid_len, odbc::DefStrEncoding);
@@ -413,8 +412,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
                             );
 
             if (valid_len < len) {
-                // No protection for overlapping for now !!!
-                strncpy(buff, buff + valid_len, invalid_len);
+                memmove(buff, buff + valid_len, invalid_len);
             }
         } else {
             rc = SQLPutData(stmt.GetHandle(),
@@ -990,6 +988,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/10/03 20:13:25  ssikorsk
+ * strncpy --> memmove;
+ * Get rid of warnings;
+ *
  * Revision 1.49  2006/09/22 19:49:29  ssikorsk
  * Use fixed LongBinary size with SQLBindParameter. Set it to 8000.
  *
