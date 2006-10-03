@@ -134,8 +134,7 @@ public:
     bool AnyPending() const;
 
     /// Returned jobs come back to pending area
-    void Return2Pending();
-
+    void Returned2Pending();
 
     /// Get first job id from DONE status
     unsigned int GetFirstDone() const;
@@ -333,6 +332,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/10/03 14:56:56  joukovv
+ * Delayed job deletion implemented, code restructured preparing to move to
+ * thread-per-request model.
+ *
  * Revision 1.19  2006/09/21 21:28:59  joukovv
  * Consistency of memory state and database strengthened, ability to retry failed
  * jobs on different nodes (and corresponding queue parameter, failed_retries)

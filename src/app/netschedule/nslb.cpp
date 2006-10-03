@@ -155,7 +155,7 @@ CNSLB_Coordinator::CCollectorThread::CCollectorThread(
                          INSLB_Collector&     collector,
                          CNSLB_Coordinator&   parent,
                          unsigned             run_delay)
- : CThreadNonStop(run_delay, run_delay), m_Coll(collector), m_Parent(parent)
+ : CThreadNonStop(run_delay), m_Coll(collector), m_Parent(parent)
 {
 }
 
@@ -456,6 +456,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/10/03 14:56:57  joukovv
+ * Delayed job deletion implemented, code restructured preparing to move to
+ * thread-per-request model.
+ *
  * Revision 1.5  2005/07/25 16:14:31  kuznets
  * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
  *

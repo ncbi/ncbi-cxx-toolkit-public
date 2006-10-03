@@ -46,9 +46,8 @@ class CJobNotificationThread : public CThreadNonStop
 {
 public:
     CJobNotificationThread(CQueueDataBase& qdb,
-                           unsigned run_delay,
-                           unsigned stop_request_poll = 10)
-    : CThreadNonStop(run_delay, stop_request_poll),
+                           unsigned run_delay)
+    : CThreadNonStop(run_delay),
       m_QueueDB(qdb)
     {
     }
@@ -68,6 +67,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/03 14:56:57  joukovv
+ * Delayed job deletion implemented, code restructured preparing to move to
+ * thread-per-request model.
+ *
  * Revision 1.2  2005/03/30 16:04:41  kuznets
  * Added destructor with diagnostic message
  *

@@ -163,9 +163,8 @@ void CQueueCollection::AddQueue(const string& name, SLockedQueue* queue)
 
 
 
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+// CQueueDataBase implementation
 CQueueDataBase::CQueueDataBase()
 : m_Env(0),
   m_StopPurge(false),
@@ -180,6 +179,7 @@ CQueueDataBase::CQueueDataBase()
     m_IdCounter.Set(0);
 }
 
+
 CQueueDataBase::~CQueueDataBase()
 {
     try {
@@ -188,6 +188,7 @@ CQueueDataBase::~CQueueDataBase()
     } catch (exception& )
     {}
 }
+
 
 void CQueueDataBase::Open(const string& path, 
                           unsigned      cache_ram_size,
@@ -307,6 +308,7 @@ void CQueueDataBase::Open(const string& path,
         m_Env->TransactionCheckpoint();
     }
 }
+
 
 static
 CNSLB_ThreasholdCurve* s_ConfigureCurve(const IRegistry& reg, 
@@ -680,6 +682,7 @@ void CQueueDataBase::MountQueue(const string& queue_name,
     
 }
 
+
 void CQueueDataBase::Close()
 {
     StopNotifThread();
@@ -712,6 +715,7 @@ void CQueueDataBase::Close()
     delete m_Env; m_Env = 0;
 }
 
+
 unsigned int CQueueDataBase::GetNextId()
 {
     unsigned int id;
@@ -731,6 +735,7 @@ unsigned int CQueueDataBase::GetNextId()
     return id;
 }
 
+
 unsigned int CQueueDataBase::GetNextIdBatch(unsigned count)
 {
     if (m_IdCounter.Get() >= kMax_I4) {
@@ -741,13 +746,15 @@ unsigned int CQueueDataBase::GetNextIdBatch(unsigned count)
     return id;
 }
 
+
 void CQueueDataBase::TransactionCheckPoint()
 {
     m_Env->TransactionCheckpoint();
     m_Env->CleanLog();
 }
 
-void CQueueDataBase::NotifyListeners()
+
+void CQueueDataBase::NotifyListeners(void)
 {
     const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
     ITERATE(CQueueCollection::TQueueMap, it, qm) {
@@ -758,7 +765,8 @@ void CQueueDataBase::NotifyListeners()
     }
 }
 
-void CQueueDataBase::CheckExecutionTimeout()
+
+void CQueueDataBase::CheckExecutionTimeout(void)
 {
     const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
     ITERATE(CQueueCollection::TQueueMap, it, qm) {
@@ -769,13 +777,127 @@ void CQueueDataBase::CheckExecutionTimeout()
     }    
 }
 
-void CQueueDataBase::Purge()
+
+void CQueueDataBase::Purge(void)
 {
-    unsigned curr_id = m_IdCounter.Get();
+    x_Returned2Pending();
 
-    // Re-submit returned jobs 
+    unsigned global_del_rec = 0;
+
+    // Delete jobs unconditionally, from internal vector.
+    // This is done to spread massive job deletion in time
+    // and thus smooth out peak loads
+    // TODO: determine batch size based on load
+    unsigned n_jobs_to_delete = 500; 
+    unsigned unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
+    global_del_rec += unc_del_rec;
+
+    // check not to rescan the database too often 
+    // when we have low client activity of inserting new jobs.
+    if (m_PurgeLastId + 3000 > m_IdCounter.Get()) {
+        ++m_PurgeSkipCnt;
+
+        // probably nothing to do yet, skip purge execution
+        if (m_PurgeSkipCnt < 10) { // only 10 skips in a row
+            if (unc_del_rec < n_jobs_to_delete) {
+                // If there is no unconditional delete jobs - sleep
+                SleepMilliSec(1000);
+            }
+            return;
+        }
+
+        m_PurgeSkipCnt = 0;        
+    }
+
+    // Delete obsolete job records, based on time stamps 
+    // and expiration timeouts
+    unsigned n_queue_limit = 2000; // determine this based on load
+
+    CNetScheduleClient::EJobStatus statuses_to_delete_from[] = {
+        CNetScheduleClient::eFailed, CNetScheduleClient::eCanceled,
+        CNetScheduleClient::eDone, CNetScheduleClient::ePending
+    };
+    const int kStatusesSize = sizeof(statuses_to_delete_from) /
+                              sizeof(CNetScheduleClient::EJobStatus);
+
+    const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
+    ITERATE(CQueueCollection::TQueueMap, it, qm) {
+        const string qname = it->first;
+        CQueue jq(*this, qname, 0);
+
+        unsigned queue_del_rec = 0;
+        const unsigned batch_size = 100;
+        for (bool stop_flag = false; !stop_flag; ) {
+            // stop if all statuses have less than batch_size jobs to delete
+            stop_flag = true;
+            for (int n = 0; n < kStatusesSize; ++n) {
+                unsigned del_rec = jq.CheckDeleteBatch(batch_size, 
+                                              statuses_to_delete_from[n],
+                                              m_PurgeLastId);
+                stop_flag &= del_rec < batch_size;
+                queue_del_rec += del_rec;
+            }
+
+            // do not delete more than certain number of 
+            // records from the queue in one Purge
+            if (queue_del_rec >= n_queue_limit) {
+                break;
+            } else {
+                SleepMilliSec(200);
+            }
+
+            if (x_CheckStopPurge()) return;
+        }
+        global_del_rec += queue_del_rec;
+
+    } // ITERATE
+
+    m_DeleteChkPointCnt += global_del_rec;
+    if (m_DeleteChkPointCnt > 1000) {
+        m_DeleteChkPointCnt = 0;
+        x_OptimizeAffinity();
+        m_Env->TransactionCheckpoint();
+    }
+
+    m_FreeStatusMemCnt += global_del_rec;
+    x_OptimizeStatusMatrix();
+
+    if (global_del_rec > n_jobs_to_delete + n_queue_limit * qm.size()) {
+        SleepMilliSec(1000);
+    }
+}
+
+unsigned CQueueDataBase::x_PurgeUnconditional(unsigned batch_size) {
+    // Purge unconditional jobs
+    bm::bvector<> jobs_to_delete;
     {{
+        CFastMutexGuard guard(m_JobsToDeleteLock);
+        unsigned job_id = 0;
+        for (int n = 0; n < batch_size &&
+                        (job_id = m_JobsToDelete.extract_next(job_id));
+                        ++n) {
+            jobs_to_delete.set(job_id);
+        }
+    }}
+    if (jobs_to_delete.none()) return 0;
 
+    unsigned del_rec = 0;
+    // We don't have info on job's queue, so we try all queues
+    // NB: it is suboptimal at best - better to extend state matrix with
+    // jobs to delete vector and do this per queue with jobs to be deleted
+    // definitely belonging to given queue.
+    const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
+    ITERATE(CQueueCollection::TQueueMap, it, qm) {
+        const string qname = it->first;
+        CQueue jq(*this, qname, 0);
+        del_rec += jq.DeleteBatch(jobs_to_delete);
+    }
+    return del_rec;
+}
+
+
+void CQueueDataBase::x_Returned2Pending(void)
+{
     const int kR2P_delay = 7; // re-submission delay
     time_t curr = time(0);
 
@@ -785,122 +907,31 @@ void CQueueDataBase::Purge()
         ITERATE(CQueueCollection::TQueueMap, it, qm) {
             const string qname = it->first;
             CQueue jq(*this, qname, 0);
-
-            jq.Return2Pending();
+            jq.Returned2Pending();
         }
     }
-    }}
+}
 
 
-     // check not to rescan the database too often 
-     // when we have low client activity
-
-    if (m_PurgeLastId + 3000 > curr_id) {
-        ++m_PurgeSkipCnt;
-        
-        // probably nothing to do yet, skip purge execution
-
-        if (m_PurgeSkipCnt < 10) { // only 10 skips in a row
-            return;
-        }
-
-        m_PurgeSkipCnt = 0;        
-    }
-
-
-    // Delete obsolete job records, based on time stamps 
-    // and expiration timeouts
-
-    unsigned global_del_rec = 0;
-
+void CQueueDataBase::x_OptimizeAffinity(void)
+{
+    // remove unused affinity elements
     const CQueueCollection::TQueueMap& qm = m_QueueCollection.GetMap();
     ITERATE(CQueueCollection::TQueueMap, it, qm) {
         const string qname = it->first;
         CQueue jq(*this, qname, 0);
-
-        unsigned del_rec, total_del_rec = 0;
-        const unsigned batch_size = 100;
-        do {
-            // ----------------------------------------------
-            // Clean failed jobs
-
-            del_rec = jq.CheckDeleteBatch(batch_size, 
-                                          CNetScheduleClient::eFailed);
-            total_del_rec += del_rec;
-            global_del_rec += del_rec;
-            m_PurgeLastId += del_rec;
-
-            // ----------------------------------------------
-            // Clean canceled jobs
-
-            del_rec = jq.CheckDeleteBatch(batch_size, 
-                                          CNetScheduleClient::eCanceled);
-            total_del_rec += del_rec;
-            global_del_rec += del_rec;
-            m_PurgeLastId += del_rec;
-
-            // ----------------------------------------------
-            // Clean finished jobs
-
-            del_rec = jq.CheckDeleteBatch(batch_size, 
-                                          CNetScheduleClient::eDone);
-            total_del_rec += del_rec;
-            global_del_rec += del_rec;
-            m_PurgeLastId += del_rec;
-
-            // ----------------------------------------------
-            // Clean pending jobs
-
-            del_rec = jq.CheckDeleteBatch(batch_size, 
-                                          CNetScheduleClient::ePending);
-            total_del_rec += del_rec;
-            global_del_rec += del_rec;
-            m_PurgeLastId += del_rec;
-
-            // do not delete more than certain number of 
-            // records from the queue in one Purge
-            if (total_del_rec >= 1000) {
-                SleepMilliSec(200);
-                break;
-            } else {
-                SleepMilliSec(2000);
-            }
-            
-
-            {{
-                CFastMutexGuard guard(m_PurgeLock);
-                if (m_StopPurge) {
-                    m_StopPurge = false;
-                    return;
-                }
-            }}
-
-        } while (del_rec == batch_size);
-
-        m_DeleteChkPointCnt += total_del_rec;
-        if (m_DeleteChkPointCnt > 1000) {
-            m_DeleteChkPointCnt = 0;
-
-            // remove unused affinity elements
-            ITERATE(CQueueCollection::TQueueMap, it, qm) {
-                const string qname = it->first;
-                CQueue jq(*this, qname, 0);
-                jq.ClearAffinityIdx();
-            }
-
-            m_Env->TransactionCheckpoint();
-        }
-
-    } // ITERATE
+        jq.ClearAffinityIdx();
+    }
+}
 
 
-    // optimize status matrix to free some memory
-    //
+void CQueueDataBase::x_OptimizeStatusMatrix(void)
+{
     time_t curr = time(0);
-    m_FreeStatusMemCnt += global_del_rec;
+    // optimize memory every 15 min. or after 1 million of deleted records
     const int kMemFree_Delay = 15 * 60; 
-    // optimize memory every 15 min. or after 1mil of deleted records
-    if ((m_FreeStatusMemCnt > 1000000) ||
+    const unsigned kRecordThreshold = 1000000;
+    if ((m_FreeStatusMemCnt > kRecordThreshold) ||
         (m_LastFreeMem + kMemFree_Delay <= curr)) {
         m_FreeStatusMemCnt = 0;
         m_LastFreeMem = curr;
@@ -910,40 +941,43 @@ void CQueueDataBase::Purge()
             const string qname = it->first;
             CQueue jq(*this, qname, 0);
             jq.FreeUnusedMem();
-            {{
-                CFastMutexGuard guard(m_PurgeLock);
-                if (m_StopPurge) {
-                    m_StopPurge = false;
-                    return;
-                }
-            }}
+            if (x_CheckStopPurge()) return;
         } // ITERATE
     }
-
 }
 
-void CQueueDataBase::StopPurge()
+
+void CQueueDataBase::StopPurge(void)
 {
     CFastMutexGuard guard(m_PurgeLock);
     m_StopPurge = true;
 }
 
-void CQueueDataBase::RunPurgeThread()
+
+bool CQueueDataBase::x_CheckStopPurge(void)
+{
+    CFastMutexGuard guard(m_PurgeLock);
+    bool stop_purge = m_StopPurge;
+    m_StopPurge = false;
+    return stop_purge;
+}
+
+
+void CQueueDataBase::RunPurgeThread(void)
 {
 # ifdef NCBI_THREADS
        LOG_POST(Info << "Starting guard and cleaning thread.");
        m_PurgeThread.Reset(
-           new CJobQueueCleanerThread(*this, 2, 5));
+           new CJobQueueCleanerThread(*this, 1));
        m_PurgeThread->Run();
 # else
         LOG_POST(Warning << 
                  "Cannot run background thread in non-MT configuration.");
 # endif
-
 }
 
 
-void CQueueDataBase::StopPurgeThread()
+void CQueueDataBase::StopPurgeThread(void)
 {
 # ifdef NCBI_THREADS
     if (!m_PurgeThread.Empty()) {
@@ -956,7 +990,7 @@ void CQueueDataBase::StopPurgeThread()
 # endif
 }
 
-void CQueueDataBase::RunNotifThread()
+void CQueueDataBase::RunNotifThread(void)
 {
     if (GetUdpPort() == 0) {
         return;
@@ -965,16 +999,15 @@ void CQueueDataBase::RunNotifThread()
 # ifdef NCBI_THREADS
        LOG_POST(Info << "Starting client notification thread.");
        m_NotifThread.Reset(
-           new CJobNotificationThread(*this, 5, 2));
+           new CJobNotificationThread(*this, 5));
        m_NotifThread->Run();
 # else
         LOG_POST(Warning << 
                  "Cannot run background thread in non-MT configuration.");
 # endif
-
 }
 
-void CQueueDataBase::StopNotifThread()
+void CQueueDataBase::StopNotifThread(void)
 {
 # ifdef NCBI_THREADS
     if (!m_NotifThread.Empty()) {
@@ -991,7 +1024,7 @@ void CQueueDataBase::RunExecutionWatcherThread(unsigned run_delay)
 # ifdef NCBI_THREADS
        LOG_POST(Info << "Starting execution watcher thread.");
        m_ExeWatchThread.Reset(
-           new CJobQueueExecutionWatcherThread(*this, run_delay, 2));
+           new CJobQueueExecutionWatcherThread(*this, run_delay));
        m_ExeWatchThread->Run();
 # else
        LOG_POST(Warning << 
@@ -1000,7 +1033,7 @@ void CQueueDataBase::RunExecutionWatcherThread(unsigned run_delay)
 
 }
 
-void CQueueDataBase::StopExecutionWatcherThread()
+void CQueueDataBase::StopExecutionWatcherThread(void)
 {
 # ifdef NCBI_THREADS
     if (!m_ExeWatchThread.Empty()) {
@@ -1013,10 +1046,8 @@ void CQueueDataBase::StopExecutionWatcherThread()
 }
 
 
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
+// CQueue implementation
 CQueueDataBase::CQueue::CQueue(CQueueDataBase& db, 
                                const string&   queue_name,
                                unsigned        client_host_addr)
@@ -1494,6 +1525,7 @@ CQueueDataBase::CQueue::CountStatus(CNetScheduleClient::EJobStatus st) const
     return m_LQueue.status_tracker.CountStatus(st);
 }
 
+
 void 
 CQueueDataBase::CQueue::StatusStatistics(
     CNetScheduleClient::EJobStatus status,
@@ -1501,6 +1533,7 @@ CQueueDataBase::CQueue::StatusStatistics(
 {
     m_LQueue.status_tracker.StatusStatistics(status, st);
 }
+
 
 void CQueueDataBase::CQueue::ForceReschedule(unsigned int job_id)
 {
@@ -1535,8 +1568,8 @@ void CQueueDataBase::CQueue::ForceReschedule(unsigned int job_id)
     }}
 
     m_LQueue.status_tracker.ForceReschedule(job_id);
-
 }
+
 
 void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 {
@@ -1580,6 +1613,7 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
     RemoveFromTimeLine(job_id);
 }
 
+
 void CQueueDataBase::CQueue::DropJob(unsigned job_id)
 {
     x_DropJob(job_id);
@@ -1592,6 +1626,7 @@ void CQueueDataBase::CQueue::DropJob(unsigned job_id)
         m_LQueue.monitor.SendString(msg);
     }
 }
+
 
 void CQueueDataBase::CQueue::x_DropJob(unsigned job_id)
 {
@@ -1621,6 +1656,7 @@ void CQueueDataBase::CQueue::x_DropJob(unsigned job_id)
     trans.Commit();
     
 }
+
 
 void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                                        int           ret_code,
@@ -1738,6 +1774,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     }
 }
 
+
 bool 
 CQueueDataBase::CQueue::x_UpdateDB_PutResultNoLock(
                                         SQueueDB&            db,
@@ -1777,6 +1814,7 @@ CQueueDataBase::CQueue::x_UpdateDB_PutResultNoLock(
     return true;
 }
 
+
 SQueueDB* CQueueDataBase::CQueue::x_GetLocalDb()
 {
     SQueueDB* pqdb = m_QueueDB.get();
@@ -1794,6 +1832,7 @@ SQueueDB* CQueueDataBase::CQueue::x_GetLocalDb()
     }
     return pqdb;
 }
+
 
 CBDB_FileCursor* 
 CQueueDataBase::CQueue::x_GetLocalCursor(CBDB_Transaction& trans)
@@ -3280,7 +3319,8 @@ void CQueueDataBase::CQueue::x_DeleteDBRec(SQueueDB&  db,
 
 unsigned 
 CQueueDataBase::CQueue::CheckDeleteBatch(unsigned batch_size,
-                                        CNetScheduleClient::EJobStatus status)
+                                        CNetScheduleClient::EJobStatus status,
+                                        unsigned &last_deleted)
 {
     unsigned dcnt;
     for (dcnt = 0; dcnt < batch_size; ++dcnt) {
@@ -3292,9 +3332,50 @@ CQueueDataBase::CQueue::CheckDeleteBatch(unsigned batch_size,
         if (!deleted) {
             break;
         }
+        if (job_id > last_deleted) last_deleted = job_id;
     } // for
     return dcnt;
 }
+
+
+unsigned
+CQueueDataBase::CQueue::DeleteBatch(bm::bvector<>& batch)
+{
+    unsigned del_rec = 0;
+    SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), 
+                        CBDB_Transaction::eTransASync,
+                        CBDB_Transaction::eNoAssociation);
+
+    {{
+        CFastMutexGuard guard(m_LQueue.lock);
+        db.SetTransaction(&trans);
+
+        CBDB_FileCursor& cur = *GetCursor(trans);
+        CBDB_CursorGuard cg(cur);    
+        for (bm::bvector<>::enumerator en = batch.first();
+                en < batch.end();
+                ++en) {
+            unsigned job_id = *en;
+            cur.SetCondition(CBDB_FileCursor::eEQ);
+            cur.From << job_id;
+            if (cur.Delete(CBDB_File::eIgnoreError) == eBDB_Ok) {
+                ++del_rec;
+            }
+        }
+    }}
+    trans.Commit();
+    // monitor this
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tm(CTime::eCurrent);
+        string msg = tm.AsString();
+        msg += " CQueue::DeleteBatch: " +
+                NStr::IntToString(del_rec) + " job(s) deleted";
+        m_LQueue.monitor.SendString(msg);
+    }
+    return del_rec;
+}
+
 
 void CQueueDataBase::CQueue::ClearAffinityIdx()
 {
@@ -3381,29 +3462,12 @@ void CQueueDataBase::CQueue::ClearAffinityIdx()
 }
 
 
-void CQueueDataBase::CQueue::Truncate()
+void CQueueDataBase::CQueue::Truncate(void)
 {
-    SQueueDB& db = m_LQueue.db;
-    
-    CNetScheduler_JobStatusTracker::TBVector del_bv(bm::BM_GAP);
-    
-    m_LQueue.status_tracker.ClearAll(&del_bv);
-    if (del_bv.none()) {
-        return;
-    }
-
-    CFastMutexGuard guard(m_LQueue.lock);
-
-    BDB_batch_delete_recs(db, del_bv.first(), del_bv.end(), 
-                         100, (CFastMutex*)(0));
-
-    // control shot
-    CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync);
-    db.SetTransaction(&trans);
-    db.Truncate();
-    trans.Commit();
+    CFastMutexGuard guard(m_Db.m_JobsToDeleteLock);
+    m_LQueue.status_tracker.ClearAll(&m_Db.m_JobsToDelete);
 }
+
 
 void CQueueDataBase::CQueue::RemoveFromTimeLine(unsigned job_id)
 {
@@ -3420,6 +3484,7 @@ void CQueueDataBase::CQueue::RemoveFromTimeLine(unsigned job_id)
         m_LQueue.monitor.SendString(msg);
     }
 }
+
 
 void 
 CQueueDataBase::CQueue::TimeLineExchange(unsigned remove_job_id, 
@@ -3854,6 +3919,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2006/10/03 14:56:56  joukovv
+ * Delayed job deletion implemented, code restructured preparing to move to
+ * thread-per-request model.
+ *
  * Revision 1.89  2006/09/21 21:28:59  joukovv
  * Consistency of memory state and database strengthened, ability to retry failed
  * jobs on different nodes (and corresponding queue parameter, failed_retries)

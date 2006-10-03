@@ -152,7 +152,7 @@ void CNetScheduler_JobStatusTracker::StatusSnapshot(
 }
 
 
-void CNetScheduler_JobStatusTracker::Return2Pending()
+void CNetScheduler_JobStatusTracker::Returned2Pending()
 {
     CWriteLockGuard guard(m_Lock);
     Returned2PendingNoLock();
@@ -762,6 +762,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/10/03 14:56:56  joukovv
+ * Delayed job deletion implemented, code restructured preparing to move to
+ * thread-per-request model.
+ *
  * Revision 1.31  2006/09/21 21:28:59  joukovv
  * Consistency of memory state and database strengthened, ability to retry failed
  * jobs on different nodes (and corresponding queue parameter, failed_retries)

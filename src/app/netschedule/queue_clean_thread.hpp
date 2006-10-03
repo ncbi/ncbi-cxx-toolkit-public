@@ -46,9 +46,8 @@ class CJobQueueCleanerThread : public CThreadNonStop
 {
 public:
     CJobQueueCleanerThread(CQueueDataBase& qdb,
-                           unsigned run_delay,
-                           unsigned stop_request_poll = 10)
-    : CThreadNonStop(run_delay, stop_request_poll),
+                           unsigned run_delay)
+    : CThreadNonStop(run_delay),
       m_QueueDB(qdb)
     {}
 
@@ -68,9 +67,8 @@ class CJobQueueExecutionWatcherThread : public CThreadNonStop
 {
 public:
     CJobQueueExecutionWatcherThread(CQueueDataBase& qdb,
-                                    unsigned run_delay,
-                                    unsigned stop_request_poll = 10)
-    : CThreadNonStop(run_delay, stop_request_poll),
+                                    unsigned run_delay)
+    : CThreadNonStop(run_delay),
       m_QueueDB(qdb)
     {}
 
@@ -89,6 +87,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/10/03 14:56:57  joukovv
+ * Delayed job deletion implemented, code restructured preparing to move to
+ * thread-per-request model.
+ *
  * Revision 1.3  2005/03/09 17:37:17  kuznets
  * Added node notification thread and execution control timeline
  *

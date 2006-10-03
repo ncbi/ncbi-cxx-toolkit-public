@@ -111,28 +111,28 @@ public:
                     int           run_timeout_precision,
                     const string& program_name,
                     bool          delete_done);
-    void Close();
+    void Close(void);
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
 
     /// Remove old jobs
-    void Purge();
-    void StopPurge();
-    void RunPurgeThread();
-    void StopPurgeThread();
+    void Purge(void);
+    void StopPurge(void);
+    void RunPurgeThread(void);
+    void StopPurgeThread(void);
 
     /// Notify all listeners
-    void NotifyListeners();
-    void RunNotifThread();
-    void StopNotifThread();
+    void NotifyListeners(void);
+    void RunNotifThread(void);
+    void StopNotifThread(void);
 
-    void CheckExecutionTimeout();
+    void CheckExecutionTimeout(void);
     void RunExecutionWatcherThread(unsigned run_delay);
-    void StopExecutionWatcherThread();
+    void StopExecutionWatcherThread(void);
 
 
     void SetUdpPort(unsigned short port) { m_UdpPort = port; }
-    unsigned short GetUdpPort() const { return m_UdpPort; }
+    unsigned short GetUdpPort(void) const { return m_UdpPort; }
 
     /// Main queue entry point
     ///
@@ -265,22 +265,28 @@ public:
         /// @return
         ///    Number of deleted jobs
         unsigned CheckDeleteBatch(unsigned batch_size,
-                                  CNetScheduleClient::EJobStatus status);
+                                  CNetScheduleClient::EJobStatus status,
+                                  unsigned &last_deleted);
+        /// Delete batch jobs
+        /// @return
+        ///    Number of deleted jobs
+        unsigned DeleteBatch(bm::bvector<>& batch);
 
         /// Delete all job ids already deleted (phisically) from the queue
-        void ClearAffinityIdx();
+        void ClearAffinityIdx(void);
 
         /// Remove all jobs
-        void Truncate();
+        void Truncate(void);
 
         /// Remove job from the queue
         void DropJob(unsigned job_id);
 
         /// Free unsued memory (status storage)
-        void FreeUnusedMem() { m_LQueue.status_tracker.FreeUnusedMem(); }
+        void FreeUnusedMem(void) { m_LQueue.status_tracker.FreeUnusedMem(); }
 
         /// All returned jobs come back to pending status
-        void Return2Pending() { m_LQueue.status_tracker.Return2Pending(); }
+        void Returned2Pending(void)
+            { m_LQueue.status_tracker.Returned2Pending(); }
 
         /// @param host_addr
         ///    host address in network BO
@@ -310,14 +316,14 @@ public:
         void SetMonitorSocket(SOCK sock);
 
         /// Return monitor (no ownership transfer)
-        CNetScheduleMonitor* GetMonitor() { return &m_LQueue.monitor; }
+        CNetScheduleMonitor* GetMonitor(void) { return &m_LQueue.monitor; }
 
         /// UDP notification to all listeners
-        void NotifyListeners();
+        void NotifyListeners(void);
 
         /// Check execution timeout.
         /// All jobs failed to execute, go back to pending
-        void CheckExecutionTimeout();
+        void CheckExecutionTimeout(void);
 
         /// Check job expiration
         /// Returns new time if job not yet expired (or ended)
@@ -330,7 +336,7 @@ public:
             CNetScheduler_JobStatusTracker::TBVector::statistics* st) const;
 
         /// Count database records
-        unsigned CountRecs();
+        unsigned CountRecs(void);
 
         void PrintStat(CNcbiOstream & out);
         void PrintNodeStat(CNcbiOstream & out) const;
@@ -416,7 +422,7 @@ public:
 
         /// Delete record using positioned cursor, dumps content
         /// to text file if necessary
-        void x_DeleteDBRec(SQueueDB&  db, 
+        void x_DeleteDBRec(SQueueDB& db, 
                            CBDB_FileCursor& cur);
 
         void x_AssignSubmitRec(unsigned      job_id,
@@ -507,7 +513,7 @@ public:
         auto_ptr<SQueueDB>         m_QueueDB;
         /// Private cursor
         auto_ptr<CBDB_FileCursor>  m_QueueDB_Cursor;
-    };
+    }; // CQueue
 
     const CQueueCollection& GetQueueCollection() const 
     { 
@@ -517,7 +523,6 @@ public:
     /// Force transaction checkpoint
     void TransactionCheckPoint();
 
-
 protected:
     /// get next job id (counter increment)
     unsigned int GetNextId();
@@ -525,8 +530,14 @@ protected:
     /// Returns first id for the batch
     unsigned int GetNextIdBatch(unsigned count);
 
-    friend class CQueue;
 private:
+    friend class CQueue;
+    unsigned x_PurgeUnconditional(unsigned batch_size);
+    void x_Returned2Pending(void);
+    void x_OptimizeStatusMatrix(void);
+    void x_OptimizeAffinity(void);
+    bool x_CheckStopPurge(void);
+
     CBDB_Env*                       m_Env;
     string                          m_Path;
     string                          m_Name;
@@ -540,8 +551,8 @@ private:
 
     bool                 m_StopPurge;         ///< Purge stop flag
     CFastMutex           m_PurgeLock;
-    unsigned int         m_PurgeLastId;       ///< m_MaxId at last Purge
-    unsigned int         m_PurgeSkipCnt;      ///< Number of purge skipped
+    unsigned int         m_PurgeLastId;       ///< max purged job id at last Purge
+    unsigned int         m_PurgeSkipCnt;      ///< Number of purge rounds skipped
     unsigned int         m_DeleteChkPointCnt; ///< trans. checkpnt counter
     unsigned int         m_FreeStatusMemCnt;  ///< Free memory counter
     time_t               m_LastFreeMem;       ///< time of the last memory opt
@@ -550,7 +561,12 @@ private:
 
     CRef<CJobNotificationThread>             m_NotifThread;
     CRef<CJobQueueExecutionWatcherThread>    m_ExeWatchThread;
-};
+
+    /// vector of jobs to be deleted from db unconditionally
+    bm::bvector<> m_JobsToDelete;
+    /// it's lock
+    CFastMutex    m_JobsToDeleteLock;
+}; // CQueueDataBase
 
 
 
@@ -559,6 +575,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/10/03 14:56:56  joukovv
+ * Delayed job deletion implemented, code restructured preparing to move to
+ * thread-per-request model.
+ *
  * Revision 1.54  2006/09/21 21:28:59  joukovv
  * Consistency of memory state and database strengthened, ability to retry failed
  * jobs on different nodes (and corresponding queue parameter, failed_retries)
