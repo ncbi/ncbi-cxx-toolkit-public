@@ -178,6 +178,11 @@ protected:
 public:
     CS_RETCODE Check(CS_RETCODE rc);
     CS_INT GetBLKVersion(void) const;
+    const CTLibContext& GetCTLibContext(void) const
+    {
+        _ASSERT(m_Cntx);
+        return *m_Cntx;
+    }
 
 protected:
     virtual bool IsAlive(void);
@@ -250,6 +255,7 @@ protected:
 
 protected:
     inline CTL_Connection& GetConnection(void);
+    inline const CTL_Connection& GetConnection(void) const;
     inline CS_COMMAND* x_GetSybaseCmd(void) const;
     inline void SetSybaseCmd(CS_COMMAND* cmd);
     inline void DropCmd(impl::CCommand& cmd);
@@ -447,6 +453,9 @@ protected:
 private:
     bool x_AssignParams(void);
     CS_BLKDESC* x_GetSybaseCmd(void) const { return m_Cmd; }
+    bool x_IsUnicodeClientAPI(void) const;
+    CS_VOID* x_GetValue(const CDB_Char& value) const;
+    CS_VOID* x_GetValue(const CDB_VarChar& value) const;
 
 private:
     CS_BLKDESC*     m_Cmd;
@@ -625,6 +634,14 @@ protected:
 inline
 CTL_Connection& CTL_Cmd::GetConnection(void)
 {
+    _ASSERT(m_Connect);
+    return *m_Connect;
+}
+
+inline
+const CTL_Connection& CTL_Cmd::GetConnection(void) const
+{
+    _ASSERT(m_Connect);
     return *m_Connect;
 }
 
@@ -729,6 +746,7 @@ CTL_RowResult* CTL_Cmd::MakeStatusResult(void)
     return new CTL_StatusResult(x_GetSybaseCmd(), GetConnection());
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTL_ITDescriptor::
@@ -763,6 +781,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/10/03 17:49:14  ssikorsk
+ * + CTL_Connection::GetCTLibContext;
+ * + CTL_BCPInCmd::x_GetValue;
+ *
  * Revision 1.47  2006/09/18 15:21:28  ssikorsk
  * Added methods GetLoginTimeout and GetTimeout to CTLibContext.
  *
