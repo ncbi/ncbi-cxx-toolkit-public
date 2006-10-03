@@ -13,4 +13,5 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 REQUIRES = objects
 
+CHECK_CMD =
 CHECK_COPY = data
