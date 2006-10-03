@@ -462,8 +462,7 @@ bool CODBC_BCPInCmd::Send(void)
                 invalid_len = len - valid_len;
 
                 if (valid_len < len) {
-                    // No protection for overlapping for now !!!
-                    strncpy(buff, buff + valid_len, invalid_len);
+                    memmove(buff, buff + valid_len, invalid_len);
                 }
 
                 len = val.Read(buff + invalid_len, sizeof(buff) - invalid_len);
@@ -590,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/10/03 20:12:58  ssikorsk
+ * strncpy --> memmove
+ *
  * Revision 1.24  2006/09/18 16:15:33  ssikorsk
  * Restored setting of m_HasTextImage in CODBC_BCPInCmd::x_AssignParams.
  *
