@@ -69,7 +69,31 @@ CQuerySetUpOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     if (!m_Ptr)
         return;
 
-    ddc.Log("filter_string", m_Ptr->filter_string);
+    if (m_Ptr->filtering_options)
+    {
+       ddc.Log("mask_at_hash", m_Ptr->filtering_options->mask_at_hash);
+       if (m_Ptr->filtering_options->dustOptions)
+       {
+          SDustOptions* dustOptions = m_Ptr->filtering_options->dustOptions;
+          ddc.Log("dust_level", dustOptions->level);
+          ddc.Log("dust_window", dustOptions->window);
+          ddc.Log("dust_linker", dustOptions->linker);
+       }
+       else if (m_Ptr->filtering_options->segOptions)
+       {
+          SSegOptions* segOptions = m_Ptr->filtering_options->segOptions;
+          ddc.Log("seg_window", segOptions->window);
+          ddc.Log("seg_locut", segOptions->locut);
+          ddc.Log("seg_hicut", segOptions->hicut);
+       }
+       else if (m_Ptr->filtering_options->repeatFilterOptions)
+       {
+          ddc.Log("repeat_database", m_Ptr->filtering_options->repeatFilterOptions->database);
+       }
+    }
+    else if (m_Ptr->filter_string)
+       ddc.Log("filter_string", m_Ptr->filter_string);
+
     ddc.Log("strand_option", m_Ptr->strand_option);
     ddc.Log("genetic_code", m_Ptr->genetic_code);
 }
@@ -850,6 +874,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.100  2006/10/03 13:01:30  madden
+ * Added filtering_options to CQuerySetUpOptions::DebugDump
+ *
  * Revision 1.99  2006/06/14 15:58:54  camacho
  * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
  *
