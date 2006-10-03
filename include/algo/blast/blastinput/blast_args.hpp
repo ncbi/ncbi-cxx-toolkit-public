@@ -48,7 +48,7 @@ BEGIN_SCOPE(blast)
 /// owns the actual command line argument values, this class
 /// only sets up CArgDescriptions, then produces blast options
 /// from an external source of argument values
-class CBlastArgs : public CObject
+class NCBI_XBLAST_EXPORT CBlastArgs : public CObject
 {
 public:
     /// Constructor
@@ -163,7 +163,7 @@ protected:
 
 
 /// Handle command line arguments for blastall binary
-class CBlastallArgs : public CBlastArgs
+class NCBI_XBLAST_EXPORT CBlastallArgs : public CBlastArgs
 {
 public:
     /// Constructor
@@ -214,8 +214,9 @@ public:
     blast::CBlastOptionsHandle * SetOptions(const CArgs& args);
 };
 
+
 /// Handle command line arguments for megablast binary
-class CMegablastArgs : public CBlastArgs
+class NCBI_XBLAST_EXPORT CMegablastArgs : public CBlastArgs
 {
 public:
     /// Constructor
@@ -276,7 +277,8 @@ public:
     blast::CBlastOptionsHandle * SetOptions(const CArgs& args);
 };
 
-class CRPSBlastArgs : public CBlastArgs
+
+class NCBI_XBLAST_EXPORT CRPSBlastArgs : public CBlastArgs
 {
 public:
     CRPSBlastArgs();
@@ -305,6 +307,7 @@ public:
     ///             will be retrieved [in]
     blast::CBlastOptionsHandle * SetOptions(const CArgs& args);
 };
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -44,7 +44,7 @@ BEGIN_SCOPE(blast)
 /// Class that centralizes the configuration data for
 /// sequences to be converted
 ///
-class CBlastInputConfig {
+class NCBI_XBLAST_EXPORT CBlastInputConfig {
 
 public:
 
@@ -134,7 +134,7 @@ private:
 
 /// Base class representing a source of biological sequences
 ///
-class CBlastInputSource : public CObject
+class NCBI_XBLAST_EXPORT CBlastInputSource : public CObject
 {
 public:
     /// Constructor
@@ -171,7 +171,7 @@ protected:
 /// Generalized converter from an abstract source of
 /// biological sequence data to collections of blast input
 ///
-class CBlastInput : public CObject
+class NCBI_XBLAST_EXPORT CBlastInput : public CObject
 {
 public:
     /// Constructor
@@ -228,6 +228,7 @@ private:
     TSeqPos m_BatchSize;          ///< total size of one block of sequences
 };
 
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -235,6 +236,10 @@ END_NCBI_SCOPE
 
 /*---------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/10/03 19:42:14  ivanov
+ * Added NCBI_XBLAST_EXPORT export specifier.
+ * MSVC: blastinput added to ncbi_algo.dll.
+ *
  * Revision 1.4  2006/10/03 19:12:24  ivanov
  * Remove NCBI_BLAST_EXPORT from CBlastInput declaration,
  * because on MSVC blastinput builds as static lib, not dll.

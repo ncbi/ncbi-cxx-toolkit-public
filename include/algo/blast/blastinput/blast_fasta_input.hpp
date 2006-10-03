@@ -42,7 +42,7 @@ BEGIN_SCOPE(blast)
 /// Class representing a text file containing sequences
 /// in fasta format
 ///
-class CBlastFastaInputSource : public CBlastInputSource
+class NCBI_XBLAST_EXPORT CBlastFastaInputSource : public CBlastInputSource
 {
 public:
 
@@ -111,6 +111,10 @@ END_NCBI_SCOPE
 
 /*---------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/10/03 19:42:14  ivanov
+ * Added NCBI_XBLAST_EXPORT export specifier.
+ * MSVC: blastinput added to ncbi_algo.dll.
+ *
  * Revision 1.3  2006/09/26 21:45:38  papadopo
  * add to blast scope; add CVS log
  *
