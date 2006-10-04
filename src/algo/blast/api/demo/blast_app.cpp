@@ -57,7 +57,6 @@ environment.
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
-#include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/hspstream_queue.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 #include <algo/blast/api/local_blast.hpp>
