@@ -110,12 +110,11 @@ private:
     /// @param query_factory Contains query related data [in]
     /// @param options BLAST algorithm options [in]
     /// @param pssm PSSM to initialize PSI-BLAST
-    /// @param dbname required for RPS-BLAST to initialize the RPS-BLAST
-    /// related data structures from the RPS-BLAST database [in]
+    /// @param seqsrc Wrapper for source of database sequences [in]
     void x_Init(CRef<IQueryFactory> query_factory,
                 CRef<CBlastOptions> options,
                 CConstRef<objects::CPssmWithParameters> pssm,
-                const string& dbname);
+                BlastSeqSrc* seqsrc);
 
     /// Runs the preliminary search in multi-threaded mode
     int x_LaunchMultiThreadedSearch();
