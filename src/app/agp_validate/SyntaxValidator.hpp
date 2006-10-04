@@ -118,7 +118,8 @@ protected:
 
   int m_ObjCount;
   int m_ScaffoldCount;
-  int m_SingletonCount;
+  int m_SingleCompScaffolds;
+  int m_SingleCompObjects;
   int m_CompCount;
   int m_CompPosCount;
   int m_CompNegCount;
@@ -211,6 +212,7 @@ protected:
   // int  prev_line_num;
   // bool prev_line_error_occured;
   int  componentsInLastScaffold;
+  int  componentsInLastObject;
 
   //CAccPatternCounter* objNamePatterns;
   static void x_PrintPatterns(CAccPatternCounter& namePatterns);

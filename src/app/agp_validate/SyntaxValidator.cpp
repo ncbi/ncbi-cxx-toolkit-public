@@ -52,11 +52,13 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   // prev_line_num = 0;
   // prev_line_error_occured = false;
   componentsInLastScaffold = 0;
+  componentsInLastObject = 0;
   prev_orientation_unknown=false;
 
   m_ObjCount = 0;
   m_ScaffoldCount = 0;
-  m_SingletonCount = 0;
+  m_SingleCompScaffolds = 0;
+  m_SingleCompObjects = 0;
   m_CompCount = 0;
   m_CompPosCount = 0;
   m_CompNegCount = 0;
@@ -126,12 +128,18 @@ CAgpSyntaxValidator::~CAgpSyntaxValidator()
 
 void CAgpSyntaxValidator::EndOfObject(bool afterLastLine)
 {
-  if(componentsInLastScaffold==1) m_SingletonCount++;
+  if(componentsInLastObject==0) agpErr.Msg(
+    CAgpErr::W_ObjNoComp, string(" ") + prev_object,
+    afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
+  );
+  if(componentsInLastScaffold==1) m_SingleCompScaffolds++;
+  if(componentsInLastObject  ==1) m_SingleCompObjects++;
   componentsInLastScaffold=0;
+  componentsInLastObject=0;
 
   if( IsGapType(prev_component_type) ) agpErr.Msg(
     // The previous line was a gap at the end of a scaffold & object
-    CAgpErr::W_GapObjEnd, NcbiEmptyString,
+    CAgpErr::W_GapObjEnd, string(" ")+prev_object,
     afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
   );
 }
@@ -152,11 +160,14 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
 
     prev_end = 0;
     prev_part_num = 0;
-    prev_object = dl.object;
     m_ObjCount++;
 
     m_ScaffoldCount++; // to do: detect or avoid scaffold with 0 components?
-    EndOfObject();
+
+    // Do not call when we are at the first line of the first object
+    if( prev_object.size() ) EndOfObject();
+
+    prev_object = dl.object; // Must be after EndOfObject()
 
     TObjSetResult obj_insert_result = m_ObjIdSet.insert(dl.object);
     if (obj_insert_result.second == false) {
@@ -302,7 +313,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
     // Previous line is the last component of a scaffold
     m_ScaffoldCount++; // to do: detect or do not count scaffold with 0 components?
     if(componentsInLastScaffold==1) {
-      m_SingletonCount++;
+      m_SingleCompScaffolds++;
     }
   }
   else {
@@ -355,6 +366,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
 
   m_CompCount++;
   componentsInLastScaffold++;
+  componentsInLastObject++;
 
   // A saved potential error
   if(prev_orientation_unknown) {
@@ -633,12 +645,15 @@ void CAgpSyntaxValidator::PrintTotals()
   //// Various counts of AGP elements
 
   // w: width for right alignment
-  int w = NStr::IntToString(m_CompId2Spans.size()).size();
+  int w = NStr::IntToString(m_CompId2Spans.size()).size()+1;
 
   cout << "\n"
-    "Objects     : " << ALIGN_W(m_ObjCount)       << "\n"
-    "Scaffolds   : " << ALIGN_W(m_ScaffoldCount)  << "\n"
-    "Singletons  : " << ALIGN_W(m_SingletonCount) << "\n\n";
+    "Objects                : "<<ALIGN_W(m_ObjCount           )<<"\n"
+    "- with single component: "<<ALIGN_W(m_SingleCompObjects  )<<"\n"
+    "\n"
+    "Scaffolds              : "<<ALIGN_W(m_ScaffoldCount      )<<"\n"
+    "- with single component: "<<ALIGN_W(m_SingleCompScaffolds)<<"\n"
+    "\n";
 
 
   cout<<
@@ -711,7 +726,9 @@ void CAgpSyntaxValidator::PrintTotals()
       objNamePatterns.AddNames(m_ObjIdSet);
       x_PrintPatterns(objNamePatterns);
     }
+  }
 
+  if(m_CompId2Spans.size()) {
     cout << "Component names:";
     {
       CAccPatternCounter compNamePatterns;
@@ -723,7 +740,6 @@ void CAgpSyntaxValidator::PrintTotals()
       x_PrintPatterns(compNamePatterns);
     }
   }
-
 }
 
 // Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
@@ -745,7 +761,7 @@ void CAgpSyntaxValidator::x_PrintPatterns(CAccPatternCounter& namePatterns)
 
   int w = NStr::IntToString(
       CAccPatternCounter::GetCount(pat_cnt[0])
-    ).size();
+    ).size()+1;
 
   // Print the patterns
   int patternsPrinted=0;

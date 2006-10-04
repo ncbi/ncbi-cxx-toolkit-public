@@ -118,6 +118,7 @@ public:
     W_LooksLikeGap,
     W_LooksLikeComp,
     W_ExtraTab,
+    W_ObjNoComp,
     W_Last, W_First = 21
   };
 

@@ -54,7 +54,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
 
   "part number (column 4) != previous part number + 1",
   "object range length not equal to the gap length",
-    "Object range length not equal to component range length",
+  "object range length not equal to component range length",
   "0 or na component orientation may only be used in a singleton scaffold",
   "X must be a positive integer",
 
@@ -83,6 +83,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "line with component_type X appears to be a gap line and not a component line",
   "line with component_type X appears to be a component line and not a gap line",
   "extra <TAB> character at the end of line",
+  "no components in object",
 
   kEmptyCStr // W_Last
 };

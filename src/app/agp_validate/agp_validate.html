@@ -8,7 +8,7 @@ Violations of the following requirements qualify as ERRORS:
 <UL>
 <LI>8 or 9 tab-separated columns (excluding end of line <CODE>#comments</CODE>);
 first 8 columns have non-empty values.</LI>
-<UL><LI>Positive integers in columns
+<UL><LI>Positive integers in columns:
   2)<CODE>object_beg</CODE>,
   3)<CODE>object_end</CODE>,
   4)<CODE>part_num</CODE>, 6b)<CODE>gap_length</CODE>,
@@ -29,7 +29,7 @@ first 8 columns have non-empty values.</LI>
   5)<CODE>component_type</CODE>, 7b)<CODE>gap_type</CODE>,
   8b)<CODE>linkage</CODE>, 9a)<CODE>orientation</CODE>.
 <UL>
-  <LI><CODE>0</CODE> or <CODE>na</CODE> component orientation is used only in singleton scaffolds
+  <LI><CODE>0</CODE> or <CODE>na</CODE> component orientation is used only in singleton scaffolds.
 </UL>
 
 <LI>All lines with the same <CODE>object</CODE> are sequential, and are
@@ -41,7 +41,7 @@ WARNINGS are issued for:
 <UL>
 <LI>A gap at the beginning or the end of an object, 2 consequitive gap lines.
 <LI><CODE>linkage yes</CODE> with a <CODE>gap_type</CODE> other than
-<CODE>fragment</CODE>, <CODE>clone</CODE>, <CODE>repeat</CODE>
+<CODE>fragment</CODE>, <CODE>clone</CODE>, <CODE>repeat</CODE>.
 <LI>Overlapping spans on a given component id.
 <LI>Non-draft component ids used more than once ("draft" being one of:
 <U>A</U>ctive draft, <U>D</U>raft HTG, <U>P</U>re Draft).
@@ -50,5 +50,6 @@ WARNINGS are issued for:
 </UL>
 
 
-Note: you can run <CODE>agp_validate -list</CODE> to see the list of all errors and warnings.
+Note: you can run <CODE>agp_validate -list</CODE> to see the list of all
+error messages and warnings.
 </body>
