@@ -154,6 +154,13 @@ Int2 BlastExtendWordNew(const LookupTableWrap* lookup_wrap, Uint4 query_length,
 /** Allocate memory for the BlastInitHitList structure */
 BlastInitHitList* BLAST_InitHitListNew(void);
 
+/** Move the contents of a BlastInitHitList structure. 
+ * @param dst Destination hitlist [in][out]
+ * @param src Source hitlist (gets emptied of hits) [in][out]
+ */
+void BlastInitHitListMove(BlastInitHitList * dst, 
+                          BlastInitHitList * src);
+
 /** Free the ungapped data substructures and reset initial HSP count to 0 */
 void BlastInitHitListReset(BlastInitHitList* init_hitlist);
 
