@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq
+ASN_DEP = seqset
 
 SRC = gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq
 LIB = xalgognomon
