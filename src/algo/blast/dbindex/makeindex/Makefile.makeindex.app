@@ -1,12 +1,12 @@
 APP = makeindex
 SRC = main mkindex_app
 
-LIB = xalgoblastdbindex xblast xnetblastcli xnetblast scoremat seqdb blastdb tables \
+LIB = xalgoblastdbindex xnetblastcli xnetblast scoremat seqdb blastdb tables \
       xobjread xobjutil $(OBJMGR_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-LIBS = $(ORIG_LIBS) $(NETWORK_LIBS) -lz
+LIBS = $(ORIG_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS)
 
-REQUIRES = objects C-Toolkit
+REQUIRES = objects
