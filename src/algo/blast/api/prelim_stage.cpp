@@ -48,6 +48,8 @@ static char const rcsid[] =
 #include "psiblast_aux_priv.hpp"
 #include "blast_seqsrc_adapter_priv.hpp"
 
+#include <algo/blast/api/blast_dbindex.hpp>
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -62,10 +64,9 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        const CSearchDatabase& dbinfo)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
-    x_Init(query_factory, options, CRef<CPssmWithParameters>(), 
-           dbinfo.GetDatabaseName());
-
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(dbinfo);
+    x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
+
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
 }
 
@@ -75,8 +76,7 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
     BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
-    x_Init(query_factory, options, CRef<CPssmWithParameters>(),
-           BlastSeqSrcGetName(seqsrc));
+    x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
 }
 
@@ -86,7 +86,7 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                CConstRef<objects::CPssmWithParameters> pssm)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
-    x_Init(query_factory, options, pssm, BlastSeqSrcGetName(seqsrc));
+    x_Init(query_factory, options, pssm, seqsrc);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
 }
 
@@ -98,8 +98,9 @@ void
 CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CRef<CBlastOptions> options,
                            CConstRef<objects::CPssmWithParameters> pssm,
-                           const string& dbname)
+                           BlastSeqSrc* seqsrc )
 {
+    const string & dbname = BlastSeqSrcGetName(seqsrc);
     TSearchMessages m;
     options->Validate();
 
@@ -142,6 +143,17 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                                      m_InternalData->m_ScoreBlk->GetPointer(),
                                      lookup_segments, 
                                      m_InternalData->m_RpsData);
+
+    // The following call is non trivial only for indexed seed search.
+    GetDbIndexPreSearchFn()(
+            seqsrc,
+            lut,
+            query_data->GetSequenceBlk(),
+            lookup_segments,
+            m_OptsMemento.get()->m_LutOpts,
+            m_OptsMemento.get()->m_InitWordOpts
+    );
+
     m_InternalData->m_LookupTable.Reset
         (new TLookupTableWrap(lut, LookupTableWrapFree));
     lookup_segments = BlastSeqLocFree(lookup_segments);
