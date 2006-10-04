@@ -11,7 +11,8 @@ LIB =   xbma_refiner \
         xcd_utils ncbimime taxon1 \
         xstruct_util \
         xstruct_dp \
-        xblast composition_adjustment seqdb blastdb xnetblastcli xnetblast \
+        xblast xalgoblastdbindex composition_adjustment \
+        seqdb blastdb xnetblastcli xnetblast \
         tables \
         cdd \
         scoremat \
