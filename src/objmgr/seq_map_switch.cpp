@@ -169,23 +169,83 @@ struct SSeq_align_Info
                 }
             }
 
-        TSeqPos GetMatch2(const SSeqPos& pos1, const SSeqPos& pos2) const
-            {
-                if ( Contains(range1, pos1.pos) &&
-                     Contains(range2, pos2.pos) &&
-                     same_strand == (pos1.minus_strand==pos2.minus_strand )) {
-                    return min(GetAdd(range1, pos1), GetAdd(range2, pos2));
+        struct SMatchInfo
+        {
+            SMatchInfo(void)
+                : skip(true), m1(kInvalidSeqPos), m2(kInvalidSeqPos)
+                {
                 }
-                return 0;
+            bool skip;
+            TSeqPos m1, m2;
+            bool operator!(void) const
+                {
+                    return skip &&
+                        (m1 == kInvalidSeqPos || m2 == kInvalidSeqPos);
+                }
+            bool operator<(const SMatchInfo& m) const
+                {
+                    if ( skip != m.skip )
+                        return m.skip;
+                    return m1+m2 < m.m1+m.m2;
+                }
+        };
+
+        typedef SMatchInfo TMatch;
+
+        // returns skip in first, match in second
+        static CRange<int> GetMatchPos(const CRange<TSeqPos>& range,
+                                                  const SSeqPos& pos)
+            {
+                CRange<int> ret;
+                if ( pos.minus_strand ) {
+                    ret.SetFrom(pos.pos - range.GetTo());
+                }
+                else {
+                    ret.SetFrom(range.GetFrom() - pos.pos);
+                }
+                ret.SetLength(range.GetLength());
+                return ret;
+            }
+        TMatch GetMatchOrdered(const SSeqPos& pos1, const SSeqPos& pos2) const
+            {
+                TMatch ret;
+                if ( same_strand != (pos1.minus_strand==pos2.minus_strand) ) {
+                     return ret;
+                }
+                CRange<int> m1 = GetMatchPos(range1, pos1);
+                CRange<int> m2 = GetMatchPos(range2, pos2);
+                _TRACE("range1: "<<range1<<" pos1: "<<pos1<<" m1: "<<m1);
+                _TRACE("range2: "<<range2<<" pos2: "<<pos2<<" m2: "<<m2);
+                if ( m1.GetTo() < 0 || m2.GetTo() < 0 ) {
+                    return ret;
+                }
+                int l1 = m1.GetTo()-max(0, m1.GetFrom());
+                int l2 = m2.GetTo()-max(0, m2.GetFrom());
+                if ( l1 != l2 ) {
+                    return ret;
+                }
+                if ( m1.GetFrom() <= 0 && m2.GetFrom() <= 0 ) {
+                    ret.skip = false;
+                    ret.m1 = ret.m2 = m1.GetTo()+1;
+                }
+                else {
+                    ret.m1 = m1.GetFrom();
+                    ret.m2 = m2.GetFrom();
+                }
+                return ret;
             }
 
-        TSeqPos GetMatch(const SSeqPos& pos1, const SSeqPos& pos2) const
+        TMatch GetMatch(const SSeqPos& pos1, const SSeqPos& pos2) const
             {
-                if ( id1 == pos1.id && id2 == pos2.id )
-                    return GetMatch2(pos1, pos2);
-                if ( id1 == pos2.id && id2 == pos1.id )
-                    return GetMatch2(pos2, pos1);
-                return 0;
+                if ( pos1.id == id1 && pos2.id == id2 ) {
+                    return GetMatchOrdered(pos1, pos2);
+                }
+                if ( pos2.id == id1 && pos1.id == id2 ) {
+                    TMatch ret = GetMatchOrdered(pos2, pos1);
+                    swap(ret.m1, ret.m2);
+                    return ret;
+                }
+                return TMatch();
             }
     };
     typedef vector<SMatch> TMatches;
@@ -211,62 +271,79 @@ struct SSeq_align_Info
         }
 
     TMatchMap match_map;
+
+    typedef SSeqMapSwitchPoint::TDifferences TDifferences;
+    pair<TSeqPos, TSeqPos> x_FindAlignMatch(SSeqPos pos1, // current segment
+                                            SSeqPos pos2, // another segment
+                                            TSeqPos limit, // on current
+                                            TDifferences& diff) const;
 };
 
-TSeqPos x_FindAlignMatch(SSeq_align_Info& info,
-                         SSeqPos pos1, SSeqPos pos2,
-                         TSeqPos limit)
+pair<TSeqPos, TSeqPos>
+SSeq_align_Info::x_FindAlignMatch(SSeqPos pos1,
+                                  SSeqPos pos2,
+                                  TSeqPos limit,
+                                  TDifferences& diff) const
 {
-    TSeqPos ret = 0;
+    pair<TSeqPos, TSeqPos> ret(0, 0);
+    bool exact = true;
+    TSeqPos skip1 = 0, skip2 = 0, offset = 0, skip_pos = kInvalidSeqPos;
     while ( limit ) {
-        TSeqPos add = 0;
-
-        const SSeq_align_Info::TMatches& matches =
-            info.GetMatches(pos1.id, pos2.id);
-        ITERATE ( SSeq_align_Info::TMatches, it, matches ) {
-            add = it->GetMatch(pos1, pos2);
-            if ( add ) {
-                break;
+        _TRACE("pos1="<<pos1<<" pos2="<<pos2);
+        SMatch::TMatch add;
+        TMatchMap::const_iterator miter =
+            match_map.find(GetKey(pos1.id, pos2.id));
+        if ( miter != match_map.end() ) {
+            const TMatches& matches = miter->second;
+            ITERATE ( TMatches, it, matches ) {
+                SMatch::TMatch m = it->GetMatch(pos1, pos2);
+                if ( m < add ) {
+                    add = m;
+                }
             }
         }
-        if ( add == 0 ) {
+        _TRACE("pos1="<<pos1<<" pos2="<<pos2<<" add="<<add.m1<<','<<add.m2);
+        if ( !add ) {
             break;
         }
-        add = min(add, limit);
-        ret += add;
-        limit -= add;
-        pos1 += add;
-        pos2 += add;
-    }
-    return ret;
-}
-
-CSeqMap_CI x_FindSwitchPos(const CBioseq_Handle& seq,
-                           CSeq_id_Handle& id1, CSeq_id_Handle& id2)
-{
-    CSeqMap_CI iter1 = seq.GetSeqMap().begin(&seq.GetScope());
-    for ( ; iter1; ++iter1 ) {
-        if ( iter1.GetType() == CSeqMap::eSeqRef ) {
-            if ( iter1.GetRefSeqid() == id1 ) {
-                break;
+        if ( add.skip ) {
+            if ( skip1 == 0 ) {
+                skip_pos = offset;
             }
-            else if ( iter1.GetRefSeqid() == id2 ) {
-                swap(id1, id2);
-                break;
+            TSeqPos len = min(limit, add.m1);
+            skip1 += add.m1;
+            skip2 += add.m2;
+            pos1 += add.m1;
+            pos2 += add.m2;
+            limit -= len;
+            offset += len;
+            exact = false;
+        }
+        else {
+            if ( skip1 || skip2 ) {
+                diff[skip_pos].second += skip1;
+                diff[skip_pos].first += skip2;
+                ret.first += skip1;
+                skip1 = 0;
+                skip2 = 0;
+                skip_pos = kInvalidSeqPos;
             }
+            _ASSERT(add.m1 == add.m2);
+            TSeqPos len = min(limit, add.m1);
+            ret.first += len;
+            if ( exact ) {
+                ret.second = ret.first;
+            }
+            pos1 += len;
+            pos2 += len;
+            limit -= len;
+            offset += len;
         }
     }
-    if ( !iter1 ) {
-        NCBI_THROW(CSeqMapException, eInvalidIndex,
-                   "Seq-align doesn't refer to segments");
+    ITERATE ( TDifferences, i, diff ) {
+        _TRACE("pos: "<<i->first<<" ins: "<<i->second.first<<" del: "<<i->second.second);
     }
-    CSeqMap_CI iter2 = iter1;
-    if ( !++iter2 || iter2.GetType() != CSeqMap::eSeqRef ||
-         iter2.GetRefSeqid() != id2 ) {
-        NCBI_THROW(CSeqMapException, eInvalidIndex,
-                   "Seq-align doesn't refer to segments");
-    }
-    return iter1;
+    return ret;
 }
 
 SSeqMapSwitchPoint x_GetSwitchPoint(const CBioseq_Handle& seq,
@@ -283,17 +360,75 @@ SSeqMapSwitchPoint x_GetSwitchPoint(const CBioseq_Handle& seq,
     sp.m_MasterPos = pos;
     SSeqPos pos1(iter1, SSeqPos::eEnd);
     SSeqPos pos2(iter2, SSeqPos::eStart);
-    TSeqPos ext2 = x_FindAlignMatch(info, pos1, pos2, iter2.GetLength());
+    pair<TSeqPos, TSeqPos> ext2 =
+        info.x_FindAlignMatch(pos2, pos1, iter2.GetLength(),
+                              sp.m_RightDifferences);
     pos1.Reverse();
     pos2.Reverse();
-    TSeqPos ext1 = x_FindAlignMatch(info, pos1, pos2, iter1.GetLength());
-    sp.m_MasterRange.SetFrom(pos-ext1).SetTo(pos+ext2);
+    pair<TSeqPos, TSeqPos> ext1 =
+        info.x_FindAlignMatch(pos1, pos2, iter1.GetLength(),
+                              sp.m_LeftDifferences);
+    sp.m_MasterRange.SetFrom(pos-ext1.first).SetTo(pos+ext2.first);
+    sp.m_ExactMasterRange.SetFrom(pos-ext1.second).SetTo(pos+ext2.second);
     return sp;
+}
+
+SSeqMapSwitchPoint::TInsertDelete
+x_GetDifferences(const SSeqMapSwitchPoint::TDifferences& diff,
+                 TSeqPos offset, TSeqPos add)
+{
+    SSeqMapSwitchPoint::TInsertDelete ret;
+    SSeqMapSwitchPoint::TDifferences::const_iterator iter = diff.begin();
+    while ( iter != diff.end() && offset >= iter->first ) {
+        if ( offset - iter->first <= iter->second.second ) {
+            TSeqPos ins = min(add, iter->second.first);
+            ret.first += ins;
+            TSeqPos del = offset - iter->first;
+            ret.second += del;
+            break;
+        }
+        else {
+            ret.first += iter->second.first;
+            ret.second += iter->second.second;
+        }
+        ++iter;
+    }
+    return ret;
 }
 
 } // namespace
 
 class CScope;
+
+SSeqMapSwitchPoint::TInsertDelete
+SSeqMapSwitchPoint::GetDifferences(TSeqPos new_pos, TSeqPos add) const
+{
+    if ( new_pos > m_MasterPos ) {
+        return x_GetDifferences(m_RightDifferences, new_pos-m_MasterPos, add);
+    }
+    else if ( new_pos < m_MasterPos ) {
+        return x_GetDifferences(m_LeftDifferences, m_MasterPos-new_pos, add);
+    }
+    else {
+        return TInsertDelete();
+    }
+}
+
+TSeqPos SSeqMapSwitchPoint::GetInsert(TSeqPos pos) const
+{
+    const TDifferences* diff;
+    TSeqPos offset;
+    if ( pos < m_MasterPos ) {
+        diff = &m_LeftDifferences;
+        offset = m_MasterPos - pos;
+    }
+    else {
+        diff = &m_RightDifferences;
+        offset = pos-m_MasterPos;
+    }
+    TDifferences::const_iterator iter = diff->find(offset);
+    return iter == diff->end()? 0: iter->second.first;
+}
 
 // calculate switch point for two segments specified by align
 SSeqMapSwitchPoint GetSwitchPoint(const CBioseq_Handle& seq,
@@ -371,6 +506,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/10/04 19:31:08  vasilche
+* Allow inexact match in segment switch.
+*
 * Revision 1.3  2006/09/27 22:41:27  vasilche
 * Added exception in case of error.
 *

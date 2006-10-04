@@ -40,6 +40,7 @@
 #include <util/range.hpp>
 #include <vector>
 #include <list>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -72,6 +73,33 @@ struct SSeqMapSwitchPoint
 
     // range of possible positions of the switch point
     CRange<TSeqPos> m_MasterRange;
+    // range of possible positions of the switch point with exact segment match
+    CRange<TSeqPos> m_ExactMasterRange;
+
+    // information about changes in sequence
+    //   first - insertions
+    //   second - deletions
+    typedef pair<TSeqPos, TSeqPos> TInsertDelete;
+    // key is offset from the current switch point
+    typedef map<TSeqPos, TInsertDelete> TDifferences;
+    TDifferences m_LeftDifferences, m_RightDifferences;
+
+    // all possible changes
+    TInsertDelete GetDifferences(TSeqPos new_pos, TSeqPos add = 0) const;
+    // possible change in sequence length
+    int GetLengthDifference(TSeqPos new_pos, TSeqPos add = 0) const
+        {
+            TInsertDelete diff = GetDifferences(new_pos, add);
+            return diff.first - diff.second;
+        }
+    // possible change in sequence bases (sum of insertions and deletions)
+    int GetSequenceDifference(TSeqPos new_pos, TSeqPos add = 0) const
+        {
+            TInsertDelete diff = GetDifferences(new_pos, add);
+            return diff.first + diff.second;
+        }
+
+    TSeqPos GetInsert(TSeqPos pos) const;
 
     bool operator<(const SSeqMapSwitchPoint& p) const
         {
@@ -105,6 +133,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/10/04 19:31:07  vasilche
+* Allow inexact match in segment switch.
+*
 * Revision 1.2  2006/09/27 21:51:56  vasilche
 * Added exports.
 *
