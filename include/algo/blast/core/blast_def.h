@@ -181,6 +181,8 @@ typedef struct BLAST_SequenceBlk {
                                 scanning for subject. */
    Boolean lcase_mask_allocated; /**< TRUE if memory has been allocated for 
                                     lcase_mask */
+   Int4 chunk;  /**< Used for indexing only: the chunk number within the 
+                     subject sequence. */
 } BLAST_SequenceBlk;
 
 /** Information about a single pattern occurence in the query. */
