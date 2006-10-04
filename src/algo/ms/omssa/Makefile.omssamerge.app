@@ -16,9 +16,9 @@ APP = omssamerge
 
 SRC = omssamerge
 
-LIB = xomssa omssa blast composition_adjustment seqdb blastdb tables \
-       seqset $(SEQ_LIBS) pub medline biblio general \
-       xser xconnect xregexp $(PCRE_LIB) xutil xncbi
+LIB = xomssa omssa xblast xalgoblastdbindex composition_adjustment tables \
+      seqdb xnetblastcli xnetblast scoremat blastdb xregexp $(PCRE_LIB) \
+      xobjsimple xobjutil xobjread creaders $(OBJMGR_LIBS)
 
-LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
