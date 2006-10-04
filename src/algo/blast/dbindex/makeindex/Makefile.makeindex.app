@@ -1,8 +1,8 @@
 APP = makeindex
 SRC = main mkindex_app
 
-LIB = xalgoblastdbindex xnetblastcli xnetblast scoremat seqdb blastdb tables \
-      xobjread xobjutil $(OBJMGR_LIBS)
+LIB = xalgoblastdbindex blast composition_adjustment seqdb blastdb \
+      xobjread tables $(OBJMGR_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
