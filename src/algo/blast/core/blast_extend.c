@@ -42,6 +42,7 @@ static char const rcsid[] =
                                                    BlastDiagTable{New,Free} */
 #include "blast_inline.h"
 
+#include <algo/blast/core/mb_indexed_lookup.h>
 
 /**
  * Attempt to retrieve information associated with diagonal diag.
@@ -166,15 +167,33 @@ void BlastInitHitListReset(BlastInitHitList * init_hitlist)
     init_hitlist->total = 0;
 }
 
+static void BlastInitHitListClean(BlastInitHitList * hi)
+{
+    BlastInitHitListReset(hi);
+    sfree(hi->init_hsp_array);
+}
+
+void BlastInitHitListMove(BlastInitHitList * dst, 
+                          BlastInitHitList * src)
+{
+    ASSERT(dst != 0);
+    ASSERT(src != 0);
+    ASSERT(!dst->do_not_reallocate);
+
+    BlastInitHitListClean(dst);
+    memmove((void *)dst, (const void *)src, sizeof(BlastInitHitList));
+    src->total = src->allocated = 0;
+    src->init_hsp_array = 0;
+}
+
 BlastInitHitList *BLAST_InitHitListFree(BlastInitHitList * init_hitlist)
 {
     if (init_hitlist == NULL)
         return NULL;
 
-    BlastInitHitListReset(init_hitlist);
-    sfree(init_hitlist->init_hsp_array);
-    sfree(init_hitlist);
-    return NULL;
+   BlastInitHitListClean(init_hitlist);
+   sfree(init_hitlist);
+   return NULL;
 }
 
 /** Callback for sorting an array of initial HSP structures (not pointers to
@@ -513,6 +532,29 @@ s_NuclUngappedExtend(BLAST_SequenceBlk * query,
                                     (new_q - q_start) -
                                     ungapped_data->q_start + 1);
     }
+}
+
+Int2 MB_IndexedWordFinder( 
+        BLAST_SequenceBlk * subject,
+        BLAST_SequenceBlk * query,
+        BlastQueryInfo * query_info,
+        LookupTableWrap * lookup_wrap,
+        Int4 ** matrix,
+        const BlastInitialWordParameters * word_params,
+        Blast_ExtendWord * ewp,
+        BlastOffsetPair * offset_pairs,
+        Int4 max_hits,
+        BlastInitHitList * init_hitlist,
+        BlastUngappedStats * ungapped_stats)
+{ 
+#ifdef _NCBISTD_        /* C toolkit; should never get to here */
+    abort();
+#else                   /* C++ toolkit */
+    Int4 oid = subject->oid;
+    Int4 chunk = subject->chunk;
+    MB_IdbGetResults(lookup_wrap->lut, oid, chunk, init_hitlist);
+#endif
+    return 0;
 }
 
 /** Perform ungapped extension given an offset pair, and save the initial 
