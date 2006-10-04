@@ -13,7 +13,7 @@ APP = omssacl
 SRC = omssacl
 
 LIB = xomssa omssa xblast xalgoblastdbindex composition_adjustment tables \
-      seqdb xnetblastcli xnetblast scoremat blastdb xregexp \
+      seqdb xnetblastcli xnetblast scoremat blastdb xregexp $(PCRE_LIB) \
       xobjsimple xobjutil xobjread creaders $(OBJMGR_LIBS)
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
