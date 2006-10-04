@@ -424,6 +424,25 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
     }
 }
 
+unsigned SeqDB_ncbina8_to_blastna8[] = {
+    15, /* Gap, 0 */
+    0,  /* A,   1 */
+    1,  /* C,   2 */
+    6,  /* M,   3 */
+    2,  /* G,   4 */
+    4,  /* R,   5 */
+    9,  /* S,   6 */
+    13, /* V,   7 */
+    3,  /* T,   8 */
+    8,  /* W,   9 */
+    5,  /* Y,  10 */
+    12, /* H,  11 */
+    7,  /* K,  12 */
+    11, /* D,  13 */
+    10, /* B,  14 */
+    14  /* N,  15 */
+};
+
 /// Convert sequence data from Ncbi-NA8 to Blast-NA8 format
 ///
 /// This uses a translation table to convert nucleotide data.  The
@@ -437,27 +456,8 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
 static void
 s_SeqDBMapNcbiNA8ToBlastNA8(char * buf, int length)
 {
-    Uint1 trans_ncbina8_to_blastna8[] = {
-        15, /* Gap, 0 */
-        0,  /* A,   1 */
-        1,  /* C,   2 */
-        6,  /* M,   3 */
-        2,  /* G,   4 */
-        4,  /* R,   5 */
-        9,  /* S,   6 */
-        13, /* V,   7 */
-        3,  /* T,   8 */
-        8,  /* W,   9 */
-        5,  /* Y,  10 */
-        12, /* H,  11 */
-        7,  /* K,  12 */
-        11, /* D,  13 */
-        10, /* B,  14 */
-        14  /* N,  15 */
-    };
-    
     for(int i = 0; i < length; i++) {
-        buf[i] = trans_ncbina8_to_blastna8[ (size_t) buf[i] ];
+        buf[i] = SeqDB_ncbina8_to_blastna8[ buf[i] & 0xF ];
     }
 }
 
@@ -1379,7 +1379,43 @@ static void s_MapRangeData(const char         * seq_buffer,
     // vector.  Sentinel bytes are handled here.
     
     _ASSERT(buffer_na8_len == (seq_length + (sentinel ? 2 : 0)));
-    int start8 = sentinel ? 1 : 0;
+    int start8 = 0;
+    
+    if (sentinel) {
+        start8 = 1;
+        buffer_na8[0] = (char)0;
+        buffer_na8[buffer_na8_len-1] = (char)0;
+    }
+    
+    if (sentinel) {
+        // Place sentinel bytes around each range; this is done before
+        // any of the range data is mapped so that the range data is
+        // free to replace the sentinel bytes if needed; that would
+        // only happen if ranges are adjacent or overlapping.
+        
+        // I don't know if this is strictly necessary or useful, but
+        // it should make extensions more deterministic.
+        
+        ITERATE(TRangeVector, riter, ranges) {
+            int begin = riter->first;
+            int end = riter->second;
+            
+            if (begin >= seq_length)
+                continue;
+            
+            if (end > seq_length)
+                end = seq_length;
+            
+            // Fetch a sub-range of the data into the sequence buffer.
+            
+            int dest_off = start8 + begin;
+            int dest_end = start8 + end;
+            char * datap = & buffer_na8[0];
+            
+            datap[dest_off - 1] = (char) 0;
+            datap[dest_end] = (char) 0;
+        }
+    }
     
     ITERATE(TRangeVector, riter, ranges) {
         int begin = riter->first;
@@ -1391,9 +1427,7 @@ static void s_MapRangeData(const char         * seq_buffer,
         if (end > seq_length)
             end = seq_length;
         
-        // Fetch a sub-range of the data, then copy it into the larger
-        // sequence.  This could be made more efficient by making the
-        // MapNA2ToNA8 routine work with pointers, or similar.
+        // Fetch a sub-range of the data into the sequence buffer.
         
         SSeqDBSlice slice(begin, end);
         
