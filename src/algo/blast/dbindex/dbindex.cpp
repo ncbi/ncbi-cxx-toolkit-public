@@ -35,7 +35,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <limits>
+#include <corelib/ncbi_limits.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
