@@ -359,7 +359,7 @@ class CDbIndex : public CObject
                 TSeqNum start, 
                 TSeqNum & stop, TSeqNum & stop_chunk,
                 const SOptions & options )
-        { return MakeIndex( input, oname, start, 0, stop, stop_chunk, options ); }
+        { MakeIndex( input, oname, start, 0, stop, stop_chunk, options ); }
 
         /** Create an index object.
 
