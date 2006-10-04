@@ -378,10 +378,13 @@ bool CTL_BCPInCmd::Send(void)
                     if (x_IsUnicodeClientAPI()) {
                         CWString unicode_str(buff, valid_len, eEncoding_UTF8);
 
+                        // Affect parameter calculation order ...
+                        const wchar_t* wchar_str = unicode_str.AsUnicode(eEncoding_UTF8).c_str();
+
                         m_HasFailed = (Check(
                             blk_textxfer(
                                 x_GetSybaseCmd(),
-                                (CS_BYTE*) unicode_str.AsUnicode(eEncoding_UTF8).c_str(),
+                                (CS_BYTE*) wchar_str,
                                 (CS_INT) unicode_str.GetSymbolNum() * sizeof(wchar_t),
                                 0)
                             ) == CS_FAIL);
@@ -551,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/10/04 14:34:09  ssikorsk
+ * Minor fix to affect parameter calculation order.
+ *
  * Revision 1.25  2006/10/03 17:53:43  ssikorsk
  * Implemented CTL_BCPInCmd::x_GetValue;
  * Translate text into unicode when BCPing text data types in case of TDS v70/80;
