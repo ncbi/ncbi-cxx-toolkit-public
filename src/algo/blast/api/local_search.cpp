@@ -44,8 +44,7 @@ static char const rcsid[] =
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
-// CDbBlast and its object manager dependencies
-#include <algo/blast/api/db_blast.hpp>
+// Object manager dependencies
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
