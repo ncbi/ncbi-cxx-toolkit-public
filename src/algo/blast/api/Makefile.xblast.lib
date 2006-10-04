@@ -31,7 +31,6 @@ seqsrc_multiseq \
 seqsrc_seqdb \
 seqsrc_query_factory \
 bl2seq \
-db_blast \
 blast_objmgr_tools \
 hspstream_queue \
 repeats_filter_cxx \
