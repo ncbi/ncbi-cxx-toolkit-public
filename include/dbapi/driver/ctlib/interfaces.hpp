@@ -458,16 +458,15 @@ private:
     CS_VOID* x_GetValue(const CDB_VarChar& value) const;
 
 private:
-    CS_BLKDESC*     m_Cmd;
-
     struct SBcpBind {
         CS_INT      datalen;
         CS_SMALLINT indicator;
         char        buffer[sizeof(CS_NUMERIC)];
     };
 
-    SBcpBind*   m_Bind;
-    int         m_RowCount;
+    CS_BLKDESC*         m_Cmd;
+    AutoArray<SBcpBind> m_Bind;
+    int                 m_RowCount;
 };
 
 
@@ -541,17 +540,17 @@ protected:
 
 protected:
     // data
-    CTL_Connection* m_Connect;
-    CS_COMMAND*     m_Cmd;
-    int             m_CurrItem;
-    bool            m_EOR;
-    unsigned int    m_NofCols;
-    CS_DATAFMT*     m_ColFmt;
-    int             m_BindedCols;
-    CS_VOID**       m_BindItem;
-    CS_INT*         m_Copied;
-    CS_SMALLINT*    m_Indicator;
-    unsigned char   m_BindBuff[2048];
+    CTL_Connection*         m_Connect;
+    CS_COMMAND*             m_Cmd;
+    int                     m_CurrItem;
+    bool                    m_EOR;
+    unsigned int            m_NofCols;
+    AutoArray<CS_DATAFMT>   m_ColFmt;
+    int                     m_BindedCols;
+    AutoArray<CS_VOID*>     m_BindItem;
+    AutoArray<CS_INT>       m_Copied;
+    AutoArray<CS_SMALLINT>  m_Indicator;
+    unsigned char           m_BindBuff[2048];
 
 };
 
@@ -781,6 +780,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/10/04 19:26:10  ssikorsk
+ * Revamp code to use AutoArray where it is possible.
+ *
  * Revision 1.48  2006/10/03 17:49:14  ssikorsk
  * + CTL_Connection::GetCTLibContext;
  * + CTL_BCPInCmd::x_GetValue;

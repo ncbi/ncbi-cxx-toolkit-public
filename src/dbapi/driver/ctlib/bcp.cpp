@@ -51,7 +51,7 @@ CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
     CTL_Cmd(conn, NULL),
     impl::CBaseCmd(table_name, nof_columns),
     m_Cmd(cmd),
-    m_Bind(new SBcpBind[nof_columns]),
+    m_Bind(nof_columns),
     m_RowCount(0)
 {
 }
@@ -538,8 +538,6 @@ CTL_BCPInCmd::Close(void)
 
         Cancel();
 
-        delete[] m_Bind;
-
         Check(blk_drop(x_GetSybaseCmd()));
 
         m_Cmd = NULL;
@@ -554,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/10/04 19:26:57  ssikorsk
+ * Revamp code to use AutoArray where it is possible.
+ *
  * Revision 1.26  2006/10/04 14:34:09  ssikorsk
  * Minor fix to affect parameter calculation order.
  *

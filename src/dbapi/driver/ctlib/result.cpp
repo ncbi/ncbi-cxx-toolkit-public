@@ -50,11 +50,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
     m_CurrItem(-1),
     m_EOR(false),
     m_NofCols(0),
-    m_ColFmt(NULL),
-    m_BindedCols(0),
-    m_BindItem(NULL),
-    m_Copied(NULL),
-    m_Indicator(NULL)
+    m_BindedCols(0)
 {
     CS_INT outlen;
 
@@ -72,7 +68,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
     CS_INT bind_len= 0;
     m_BindedCols= 0;
 
-    m_ColFmt = new CS_DATAFMT[m_NofCols];
+    m_ColFmt = AutoArray<CS_DATAFMT>(m_NofCols);
     for (unsigned int nof_items = 0;  nof_items < m_NofCols;  nof_items++) {
         rc = (Check(ct_describe(x_GetSybaseCmd(),
                                 (CS_INT) nof_items + 1,
@@ -83,9 +79,10 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
         if(bind_len <= 2048) m_BindedCols++;
     }
     if(m_BindedCols) {
-        m_BindItem= new CS_VOID*[m_BindedCols];
-        m_Copied= new CS_INT[m_BindedCols];
-        m_Indicator= new CS_SMALLINT[m_BindedCols];
+        m_BindItem = AutoArray<CS_VOID*>(m_BindedCols);
+        m_Copied = AutoArray<CS_INT>(m_BindedCols);
+        m_Indicator = AutoArray<CS_SMALLINT>(m_BindedCols);
+
         for(int i= 0; i < m_BindedCols; i++) {
           m_BindItem[i]= i? ((unsigned char*)(m_BindItem[i-1])) + m_ColFmt[i-1].maxlength : m_BindBuff;
           rc = (Check(ct_bind(x_GetSybaseCmd(),
@@ -973,18 +970,6 @@ CTL_RowResult::Close(void)
                          &err_code, (CS_INT) sizeof(err_code), 0));
         }
 
-        // Data structures must be freed after ct_cancel has been called.
-        // Otherwise we will have problems with FreeTDS.
-        if ( m_ColFmt ) {
-            delete[] m_ColFmt;
-        }
-
-        if(m_BindedCols) {
-          delete [] m_BindItem;
-          delete [] m_Copied;
-          delete [] m_Indicator;
-        }
-
         m_Cmd = NULL;
     }
 }
@@ -1089,6 +1074,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/10/04 19:27:48  ssikorsk
+ * Revamp code to use AutoArray where it is possible.
+ *
  * Revision 1.28  2006/10/02 20:00:16  ssikorsk
  * my_ct_get_data --> ct_get_data in CTL_RowResult::GetImageOrTextDescriptor.
  *

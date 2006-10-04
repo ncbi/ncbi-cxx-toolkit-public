@@ -312,6 +312,20 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
 }
 
 
+CTLibContext::~CTLibContext()
+{
+    try {
+        x_Close();
+
+        if (m_Locale) {
+            cs_loc_drop(CTLIB_GetContext(), m_Locale);
+            m_Locale = NULL;
+        }
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
+}
+
+
 CS_RETCODE
 CTLibContext::Check(CS_RETCODE rc) const
 {
@@ -471,19 +485,6 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
     }
 
     return false;
-}
-
-CTLibContext::~CTLibContext()
-{
-    try {
-        x_Close();
-
-        if (m_Locale) {
-            cs_loc_drop(CTLIB_GetContext(), m_Locale);
-            m_Locale = NULL;
-        }
-    }
-    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1283,6 +1284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2006/10/04 19:27:22  ssikorsk
+ * Revamp code to use AutoArray where it is possible.
+ *
  * Revision 1.96  2006/10/02 19:59:01  ssikorsk
  * Handle TDS version 46.
  *
