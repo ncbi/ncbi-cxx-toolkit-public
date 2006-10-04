@@ -71,7 +71,7 @@ static const string kGifLegend[] =
     {"Strong", "Moderate", "Weak", "Suspect"};
 static const string kMatchUrlLegend[] =
     {"Strong match", "Moderate match", "Weak match", "Suspect origin"};
-static const string kMatchUrl = "/VecScreen/VecScreen_docs.html";
+
 static const TSeqPos kSupectLength = 50;
 static const TSeqPos kTerminalFexibility = 25;
 
@@ -263,6 +263,7 @@ CVecscreen::CVecscreen(const CSeq_align_set& seqalign, TSeqPos master_length){
     m_ImagePath = "./";
     m_MasterLen = master_length;
     m_FinalSeqalign = new CSeq_align_set;
+    m_HelpDocsUrl = "/VecScreen/VecScreen_docs.html";
     
 }
 
@@ -369,7 +370,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
     //title
     CRef<CHTML_b> b(new CHTML_b);
     b->AppendPlainText("Distribution of Vector Matches on the Query Sequence");
-    b->Print(out);
+    b->Print(out, CNCBINode::eXHTML);
     out << endl << endl;
  
     tbl = new CHTML_table;
@@ -387,7 +388,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
         tc->SetAttribute("width", kMasterPixel/(kNumScales - 1));
         column ++;
     }
-    tbl->Print(out);
+    tbl->Print(out, CNCBINode::eXHTML);
     //the actual bar
     
     column = 0;
@@ -413,35 +414,35 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
             column ++;
         }
     }  
-    tbl->Print(out);
+    tbl->Print(out, CNCBINode::eXHTML);
     out << endl << endl;
     
     //legend
     b = new CHTML_b;
     b->AppendPlainText("Match to Vector: ");
-    b->Print(out);
+    b->Print(out, CNCBINode::eXHTML);
     for(int i = 0; i < kNumSeqalignMatchTypes; i++){
         image = new CHTML_img(m_ImagePath + kGif[i], kBarHeight, kBarHeight);
         image->SetAttribute("border", "1");
-        image->Print(out);
+        image->Print(out, CNCBINode::eXHTML);
         b = new CHTML_b;
         b->AppendPlainText(" " + kGifLegend[i] + "  ");
-        b->Print(out);
+        b->Print(out, CNCBINode::eXHTML);
     }
     out << endl;
     //suspected origin
     b = new CHTML_b;
     b->AppendPlainText("Segment of suspect origin: ");
-    b->Print(out);
+    b->Print(out, CNCBINode::eXHTML);
     image = new CHTML_img(m_ImagePath + kGif[eSuspect], kBarHeight, kBarHeight);
     image->SetAttribute("border", "1");
-    image->Print(out);
+    image->Print(out, CNCBINode::eXHTML);
    
     //footnote
     out << endl << endl;
     b = new CHTML_b;
     b->AppendPlainText("Segments matching vector:  ");
-    b->Print(out);
+    b->Print(out, CNCBINode::eXHTML);
     CRef<CHTML_a> a;
     
     for (int i = 0; i < kNumSeqalignMatchTypes + 1; i ++){
@@ -450,11 +451,11 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
             if((*iter)->type == i){
                 if(is_first){
                     out << endl;
-                    a = new CHTML_a(kMatchUrl + "#" + 
+                    a = new CHTML_a(m_HelpDocsUrl + "#" + 
                                     kGifLegend[(*iter)->type]);
                     a->SetAttribute("TARGET", "VecScreenInfo");
                     a->AppendPlainText(kMatchUrlLegend[(*iter)->type] + ":");
-                    a->Print(out);
+                    a->Print(out, CNCBINode::eXHTML);
                     is_first = false;
                 } else {
                     out << ",";
@@ -473,17 +474,6 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
     out << endl << endl;
 }
 
-
-CRef<CSeq_align_set> CVecscreen::VecscreenDisplay(CNcbiOstream& out){
-    CSeq_align_set actual_aln_list;
-    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
-                                                     *m_SeqalignSetRef);
-    x_MergeSeqalign(actual_aln_list);  
-    x_BuildHtmlBar(out);
-    m_FinalSeqalign->Set().sort(AlnScoreDescendingSort);
-    s_RestoreHspPos(*m_FinalSeqalign);
-    return m_FinalSeqalign;
-}
 
 CRef<CSeq_align_set> CVecscreen::ProcessSeqAlign(void){
     CSeq_align_set actual_aln_list;
@@ -677,6 +667,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.7  2006/10/04 20:05:05  jianye
+*print with xhtml tags and remove VecscreenDisplay
+*
 *Revision 1.6  2005/09/27 16:22:35  zaretska
 *added new functions ProcessSeqAlign() and  VecscreenPrint()
 *
