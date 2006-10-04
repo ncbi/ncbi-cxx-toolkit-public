@@ -344,7 +344,7 @@ class CVectorWrap
 template< typename word_t, unsigned long COMPRESSION >
 class COffsetData_Base
 {
-    protected:
+    public:
 
         typedef word_t TWord;   /**< Alias for the word type. */
 
@@ -353,8 +353,6 @@ class COffsetData_Base
             the corresponding offset lists.
         */
         typedef CVectorWrap< TWord > THashTable;
-
-    public:
 
         /** Type of compression used by this data structure. */
         static const unsigned long COMPRESSION_VALUE = COMPRESSION;
