@@ -495,8 +495,9 @@ s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(char               * buffer,
             end = length;
         
         if (sentinel) {
-            begin++;
-            end++;
+            // begin already points to the preceeding sentinel byte;
+            // we need to point end past the following sentinel byte.
+            end += 2;
         }
         
         char * area = buffer + begin;
