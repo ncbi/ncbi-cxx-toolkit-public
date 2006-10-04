@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/10/04 19:31:40  vasilche
+* Added program arguments.
+*
 * Revision 1.1  2006/09/27 21:29:40  vasilche
 * Added test application for sequence switch points.
 *
@@ -58,26 +61,88 @@ using namespace objects;
 class CTestSeqMapSwitch : public CNcbiApplication
 {
 public:
-    virtual int Run( void);
+    virtual void Init(void);
+    virtual int Run(void);
 };
+
+
+void CTestSeqMapSwitch::Init(void)
+{
+    // Prepare command line descriptions
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+
+    arg_desc->AddDefaultKey("id", "id",
+                            "Seq-id of sequence to process",
+                            CArgDescriptions::eString, "lcl|main");
+    arg_desc->AddDefaultKey("file", "file",
+                            "read Seq-entry from the ASN.1 file",
+                            CArgDescriptions::eInputFile, "entry.asn");
+    arg_desc->AddOptionalKey("pos", "pos",
+                             "process switch at this position",
+                             CArgDescriptions::eInteger);
+
+    string prog_description = "test_seqmap_switch";
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              prog_description, false);
+
+    SetupArgDescriptions(arg_desc.release());
+}
+
 
 int CTestSeqMapSwitch::Run()
 {
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, "entry.asn"));
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    *in >> *entry;
+    const CArgs& args = GetArgs();
+    
     CScope scope(*CObjectManager::GetInstance());
-    scope.AddTopLevelSeqEntry(*entry);
-    CSeq_id id("lcl|main");
+
+    if ( args["file"] ) {
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText,
+                                                         args["file"].AsInputFile()));
+        *in >> *entry;
+        scope.AddTopLevelSeqEntry(*entry);
+    }
+
+    CSeq_id_Handle id;
+    if ( args["id"] ) {
+        CSeq_id seq_id(args["id"].AsString());
+        id = CSeq_id_Handle::GetHandle(seq_id);
+    }
+
     CBioseq_Handle bh = scope.GetBioseqHandle(id);
-    TSeqMapSwitchPoints pp = GetAllSwitchPoints(bh);
-    ITERATE ( TSeqMapSwitchPoints, it, pp ) {
-        const SSeqMapSwitchPoint& p = *it;
-        NcbiCout << "Switch @ " << p.m_MasterPos
-                 << " " << p.m_LeftId.AsString()
-                 << " -> " << p.m_RightId.AsString() << NcbiEndl;
-        NcbiCout << "    range: " << p.m_MasterRange.GetFrom()
-                 << ".." << p.m_MasterRange.GetTo() << NcbiEndl;
+    if ( !bh ) {
+        ERR_POST(Fatal << "no bioseq found");
+    }
+    
+    if ( args["pos"] ) {
+    }
+    else {
+        TSeqMapSwitchPoints pp = GetAllSwitchPoints(bh);
+        ITERATE ( TSeqMapSwitchPoints, it, pp ) {
+            const SSeqMapSwitchPoint& p = *it;
+            NcbiCout << "Switch @ " << p.m_MasterPos
+                     << " " << p.m_LeftId.AsString()
+                     << " -> " << p.m_RightId.AsString() << NcbiEndl;
+            NcbiCout << "    range: " << p.m_MasterRange.GetFrom()
+                     << ".." << p.m_MasterRange.GetTo() << NcbiEndl;
+            NcbiCout << "    exact: " << p.m_ExactMasterRange.GetFrom()
+                     << ".." << p.m_ExactMasterRange.GetTo() << NcbiEndl;
+            TSeqPos pos, add;
+            int diff;
+
+            pos = p.m_MasterRange.GetFrom();
+
+            add = p.GetInsert(pos);
+            diff = p.GetLengthDifference(pos, add);
+            NcbiCout << " if switched @ " << pos << " diff="<<diff << NcbiEndl;
+
+            pos = p.m_MasterRange.GetTo();
+
+            add = p.GetInsert(pos);
+            diff = p.GetLengthDifference(pos, add);
+            NcbiCout << " if switched @ " << pos << " diff="<<diff << NcbiEndl;
+        }
     }
     return 0;
 }
