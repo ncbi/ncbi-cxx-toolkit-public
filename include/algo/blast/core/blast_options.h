@@ -151,6 +151,7 @@ extern "C" {
 #define PHI_AA_LOOKUP 4  /**< protein lookup table specialized for phi-blast */
 #define PHI_NA_LOOKUP 5  /**< nucleotide lookup table for phi-blast */
 #define RPS_LOOKUP_TABLE 6 /**< RPS lookup table (rpsblast and rpstblastn) */
+#define INDEXED_MB_LOOKUP_TABLE 7 /**< use database index as a lookup structure */
 
 /** Defaults for PSI-BLAST options */
 #define PSI_INCLUSION_ETHRESH 0.002 /**< Inclusion threshold for PSI BLAST */
