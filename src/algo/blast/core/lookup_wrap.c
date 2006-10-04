@@ -87,6 +87,11 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
        _BlastAaLookupFinalize((BlastLookupTable*) lookup_wrap->lut);
        }
       break;
+   case INDEXED_MB_LOOKUP_TABLE:
+      /* for indexed megablast, lookup table data is initialized
+         in the API layer, not here */
+      lookup_wrap->lut = NULL;
+      break;
    case NA_LOOKUP_TABLE:
    case MB_LOOKUP_TABLE:
       /* choose either a standard or a megablast lookup table,
@@ -162,6 +167,8 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup)
    if (lookup->lut_type == MB_LOOKUP_TABLE) {
       lookup->lut = (void*) 
          MBLookupTableDestruct((BlastMBLookupTable*)lookup->lut);
+   } else if( lookup->lut_type == INDEXED_MB_LOOKUP_TABLE ) {
+       lookup->lut = NULL;
    } else if (lookup->lut_type == PHI_AA_LOOKUP || 
               lookup->lut_type == PHI_NA_LOOKUP) {
        lookup->lut = (void*)

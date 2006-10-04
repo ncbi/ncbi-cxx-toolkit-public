@@ -155,6 +155,9 @@ s_GetBestExtensionMethod(const LookupTableWrap* lookup_wrap)
          else
                retval = eRightAndLeft;
          break;
+     case INDEXED_MB_LOOKUP_TABLE:
+         retval = eRightAndLeft;
+         break;
    }
    ASSERT(retval != eMaxSeedExtensionMethod);
 
@@ -975,6 +978,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2006/10/04 19:16:15  papadopo
+ * handle indexed megablast lookup table
+ *
  * Revision 1.27  2006/09/18 16:49:16  madden
  * Minimum score for phiblast is one or more
  *
