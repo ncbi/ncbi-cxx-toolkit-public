@@ -577,7 +577,7 @@ void CCleanup_imp::x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_
             if (!src.GetOrg().CanGetOrgname()) {
                 src.SetOrg().ResetOrgname();
             }
-            if (add_src.GetOrg().GetOrgname().CanGetMod()) {
+            if (add_src.GetOrg().GetOrgname().IsSetMod()) {
                 // merge mod
                 ITERATE (COrgName::TMod, it, add_src.GetOrg().GetOrgname().GetMod()) {
                     src.SetOrg().SetOrgname().SetMod().push_back(*it);
@@ -654,7 +654,7 @@ void CCleanup_imp::x_CleanOrgNameStrings(COrgName &on)
     if (on.CanGetDiv()) {
         CleanVisString(on.SetDiv());
     }
-    if (on.CanGetMod()) {
+    if (on.IsSetMod()) {
         NON_CONST_ITERATE(COrgName::TMod, modI, on.SetMod()) {
             CleanVisString ((*modI)->SetSubname());
         }
@@ -773,6 +773,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/10/04 17:46:58  bollin
+ * use COrgname::IsSetMod instead of COrgname::CanGetMod, to avoid creating
+ * empting mod lists for orgname objects
+ *
  * Revision 1.14  2006/10/04 15:32:55  bollin
  * use IsSetMod and IsSetSyn to check for existing Mod and Syn on a COrg_ref,
  * not CanGetMod and CanGetSyn because both will always return true.
