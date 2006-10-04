@@ -7,9 +7,9 @@ SRC = splign_app
 
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw xalgoseq \
       ncbi_xloader_blastdb ncbi_xloader_lds lds bdb \
-      xblast composition_adjustment xalgodustmask xnetblastcli \
-      seqdb  blastdb \
-      xnetblast scoremat xobjsimple xalnmgr xobjutil xobjread tables \
+      xblast xalgoblastdbindex composition_adjustment xalgodustmask \
+      seqdb xnetblastcli xnetblast blastdb \
+      scoremat xobjsimple xalnmgr xobjutil xobjread tables \
       xregexp $(PCRE_LIB) \
       $(OBJMGR_LIBS:%=%$(STATIC))
 #      $(OBJMGR_LIBS)
