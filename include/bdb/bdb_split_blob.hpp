@@ -113,18 +113,12 @@ public:
         m_RecS.Resize(m_RecS.GetRows(), max_col);
         m_VolS.Resize(m_VolS.GetRows(), max_col);
 
-        LOG_POST(Info << "GetCoordinates(" << blob_size << "): slice = "
-                 << coord[1] << " max col = " << max_col);
-
         for (unsigned i = 0;  i < m_RecS.GetRows();  ++i) {
             if (m_RecS(i, coord[1]) < m_RecMax  &&
                 m_VolS(i, coord[1]) < m_VolMax) {
                 coord[0] = i;
                 ++m_RecS(i, coord[1]);
                 m_VolS  (i, coord[1]) += blob_size;
-
-                LOG_POST(Info << "GetCoordinates(" << blob_size << "): slice = "
-                         << coord[1] << " plane = " << coord[0]);
                 return;
             }
         }
@@ -132,8 +126,6 @@ public:
         /// not found
         NewPlane();
         coord[0] = m_RecS.GetRows() - 1;
-        LOG_POST(Info << "GetCoordinates(" << blob_size << "): slice = "
-                 << coord[1] << " plane = " << coord[0]);
     }
 
     /// LOBs are getting split into slices based on LOB size,
@@ -175,8 +167,6 @@ protected:
 class CBDB_BlobDeMuxPersistent : public CBDB_BlobDeMux
 {
 public:
-    typedef CBDB_BlobDeMux  TParent;
-public:
     CBDB_BlobDeMuxPersistent(const string& path,
         double    vol_max = 1.5 * (1024.00*1024.00*1024.00),
         unsigned  rec_max = 3 * 1000000) 
@@ -188,6 +178,21 @@ public:
             Load(istr);
         }
     }
+
+    ~CBDB_BlobDeMuxPersistent()
+    {
+        if ( !m_Path.empty() ) {
+            try {
+                CNcbiOfstream ostr(m_Path.c_str());
+                Save(ostr);
+            }
+            catch (CException& e) {
+                LOG_POST(Error << "CBDB_BlobDeMux::~CBDB_BlobDeMux(): "
+                         "error saving demultiplex data: " << e.what());
+            }
+        }
+    }
+
 
     void Save(CNcbiOstream& ostr)
     {
@@ -776,6 +781,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/10/04 12:26:30  dicuccio
+ * Drop noisy LOG_POST()s.  Added dtor.
+ *
  * Revision 1.12  2006/09/22 15:41:21  dicuccio
  * Provide better implementation of demultiplexer - store data in matrix and find
  * best spot in matrix to minimize the number of volumes created
