@@ -52,7 +52,7 @@ class CSequenceIStreamFasta : public CSequenceIStream
 
         bool stream_allocated_;         /**< Whether to deallocate the stream at destruction. */
         CNcbiIstream * istream_;        /**< Standard IO stream for reading FASTA data. */
-        std::size_t curr_seq_;          /**< Current sequence number. */
+        size_t curr_seq_;          /**< Current sequence number. */
 
         /** Starting positions of sequences withing the FASTA stream. */
         std::vector< pos_type > seq_positions_; 
@@ -68,7 +68,7 @@ class CSequenceIStreamFasta : public CSequenceIStream
             @param pos starting sequence
         */
         CSequenceIStreamFasta( 
-                const std::string & name, std::size_t pos = 0 );
+                const std::string & name, size_t pos = 0 );
 
         /** Object constructor.
             Creates a FASTA sequence stream from the standard IO stream.
@@ -77,7 +77,7 @@ class CSequenceIStreamFasta : public CSequenceIStream
             @param pos starting sequence
         */
         CSequenceIStreamFasta( 
-                CNcbiIstream & input_stream, std::size_t pos = 0 );
+                CNcbiIstream & input_stream, size_t pos = 0 );
 
         /** Object destructor. */
         virtual ~CSequenceIStreamFasta();

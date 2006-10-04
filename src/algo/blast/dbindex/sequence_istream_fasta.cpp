@@ -53,7 +53,7 @@ static const objects::TReadFastaFlags READ_FASTA_FLAGS =
 
 //------------------------------------------------------------------------------
 CSequenceIStreamFasta::CSequenceIStreamFasta( 
-        const std::string & name , std::size_t pos )
+        const std::string & name , size_t pos )
     : stream_allocated_( false ), istream_( 0 ), curr_seq_( 0 ), name_( name )
 {
     istream_ = new CNcbiIfstream( name.c_str() );
@@ -64,7 +64,7 @@ CSequenceIStreamFasta::CSequenceIStreamFasta(
 
 //------------------------------------------------------------------------------
 CSequenceIStreamFasta::CSequenceIStreamFasta( 
-        CNcbiIstream & input_stream, std::size_t pos )
+        CNcbiIstream & input_stream, size_t pos )
     : stream_allocated_( false ), istream_( &input_stream ), curr_seq_( 0 )
 {
     seq_positions_.push_back( 0 );
