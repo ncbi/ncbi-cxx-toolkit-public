@@ -57,7 +57,8 @@ BEGIN_SCOPE(objects)
  * @code
  * CVecscreen vec(align_set, master_length);
  * vec.SetImagePath("images/");
- * CRef<CSeq_align_set> temp_aln = vec.VecscreenDisplay(cout);
+ * CRef<CSeq_align_set> temp_aln = vec.ProcessSeqAlign();
+ * vec.VecscreenPrint(out);
  * @endcode
  */
 
@@ -71,6 +72,12 @@ public:
         eWeak,
         eSuspect,
         eNoMatch
+    };
+
+    ///Match info
+    struct AlnInfo {
+        CRange<TSeqPos> range;
+        MatchType type;
     };
 
     ///Constructors
@@ -89,16 +96,26 @@ public:
         m_ImagePath = path;
     }  
     
-    ///show alignment graphic view and return the processed seqalign
-    ///@param out: stream for display
-    ///@return: the processed seqalign ref
+    ///provide url link to help docs.  Default is 
+    ///"/VecScreen/VecScreen_docs.html"
+    ///@param url: the url
     ///
-    CRef<CSeq_align_set> VecscreenDisplay(CNcbiOstream& out);
-
+    void SetHelpDocsUrl(string url) { 
+        m_HelpDocsUrl = url;
+    }  
+    
+    
     ///Process alignment to show    
     ///@return: the processed seqalign ref
     /// 
     CRef<CSeq_align_set> ProcessSeqAlign(void);
+
+    ///return alignment info list
+    ///@return: the info list
+    ///
+    const list<AlnInfo*>* GetAlnInfoList() const {
+        return &m_AlnInfoList;
+    }
 
     ///show alignment graphic view
     ///@param out: stream for display    
@@ -107,11 +124,6 @@ public:
     
 private:
     
-    ///Internal match info
-    struct AlnInfo {
-        CRange<TSeqPos> range;
-        MatchType type;
-    };
     
     ///the current seqalign
     CConstRef<CSeq_align_set> m_SeqalignSetRef;
@@ -119,6 +131,8 @@ private:
     CRef<CSeq_align_set> m_FinalSeqalign;
     ///gif image file path
     string m_ImagePath;
+    ///help url
+    string m_HelpDocsUrl;
     ///master seq length
     TSeqPos m_MasterLen;
     ///internal match list
@@ -194,6 +208,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.5  2006/10/04 20:06:27  jianye
+*expose internal alninfo list and remove VecscreenDisplay
+*
 *Revision 1.4  2005/12/21 15:18:13  jcherry
 *Added export specifiers
 *
