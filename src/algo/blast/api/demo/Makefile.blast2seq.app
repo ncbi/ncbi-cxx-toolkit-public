@@ -2,7 +2,8 @@ APP = blast2seq
 SRC = blast2seq blast_input
 LIB = xblast composition_adjustment xnetblastcli xnetblast \
       xalgodustmask seqdb blastdb scoremat \
-      xobjsimple xobjutil xobjread creaders tables $(OBJMGR_LIBS)
+      xobjsimple xobjutil xobjread creaders tables \
+      xalgoblastdbindex $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
