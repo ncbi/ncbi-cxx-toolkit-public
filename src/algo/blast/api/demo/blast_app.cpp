@@ -78,6 +78,8 @@ environment.
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 
+#include <algo/blast/api/blast_dbindex.hpp>
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -232,11 +234,14 @@ void CBlastApplication::Init(void)
                             "Range of ordinal ids in the BLAST database.\n"
                              "Format: \"oid1 oid2\"",
                              CArgDescriptions::eString);
-
     arg_desc->AddDefaultKey("threads", "num_threads",
                             "Number of threads to use in preliminary stage"
                             " of the search",
                             CArgDescriptions::eInteger, "1");
+
+    arg_desc->AddDefaultKey( "index", "database_index",
+                             "database index file",
+                             CArgDescriptions::eString, "" );
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -281,6 +286,10 @@ CBlastApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle,
         break;
     default:
         break;
+    }
+
+    if( args["index"].AsString().size() > 0 ) {
+        opt.SetLookupTableType(INDEXED_MB_LOOKUP_TABLE);
     }
 
     if (args["matrix"]) {
@@ -523,6 +532,25 @@ int CBlastApplication::Run(void)
         ERR_POST_EX(CBlastException::eInvalidOptions, 2, 
         "\"-lookup 1\" option must be used if \"-templen\" option is not 0");
         exit(CBlastException::eInvalidOptions);
+    }
+
+    if( args["index"].AsString().size() > 0 && program != eMegablast ) {
+        ERR_POST_EX( CBlastException::eInvalidOptions, 2,
+                "\"-index true\" option can be used only "
+                "with continuous megablast program" );
+    }
+
+    if( args["index"].AsString().size() > 0 ) {
+        // Reset seqsrc.
+        BlastSeqSrc * old_seq_src = seq_src;
+        seq_src = DbIndexSeqSrcInit( args["index"].AsString(), old_seq_src );
+        char * error_str = BlastSeqSrcGetInitError( seq_src );
+
+        if( error_str ) {
+            string msg( error_str );
+            sfree( error_str );
+            NCBI_THROW( CBlastException, eSeqSrcInit, msg );
+        }
     }
 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));
