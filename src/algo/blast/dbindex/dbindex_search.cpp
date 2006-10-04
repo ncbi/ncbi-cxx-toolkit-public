@@ -388,6 +388,8 @@ class COffsetData_Base
         TWord total_;
 
         unsigned long hkey_width_;      /**< Hash key width in bp. */
+
+    public:
         THashTable hash_table_;         /**< The hash table (mapping from
                                              Nmer values to the lists of
                                              offsets. */
@@ -487,7 +489,7 @@ template< typename word_t >
 class COffsetData< word_t, UNCOMPRESSED >
     : public COffsetData_Base< word_t, UNCOMPRESSED >
 {
-    friend class COffsetIterator< word_t, UNCOMPRESSED >;
+    // friend class COffsetIterator< word_t, UNCOMPRESSED >;
 
     typedef COffsetData_Base< word_t, UNCOMPRESSED > TBase;     /**< Base class alias. */
     typedef typename TBase::TWord TWord;                        /**< Forward from TBase for convenience. */
@@ -512,7 +514,7 @@ class COffsetData< word_t, UNCOMPRESSED >
         */
         COffsetData( TWord ** map, unsigned long hkey_width );
 
-    private:
+    // private:
 
         TOffsets offsets_;      /**< Concatenated offset list data. */
 };
