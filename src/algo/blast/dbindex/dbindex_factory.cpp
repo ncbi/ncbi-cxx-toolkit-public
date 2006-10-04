@@ -35,7 +35,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <limits>
+#include <corelib/ncbi_limits.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -1467,7 +1467,7 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
     }
 
     report_progress( REPORT_NORMAL, options.report_level, "Saving.. " );
-    CNcbiOfstream os( oname.c_str(), ios_base::binary );
+    CNcbiOfstream os( oname.c_str(), IOS_BASE::binary );
     SaveHeader< OFF_TYPE, COMPRESSION >( 
             os, options.version, options.hkey_width, 
             start, start_chunk, stop, stop_chunk );
