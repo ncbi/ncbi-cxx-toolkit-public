@@ -38,6 +38,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Seqdesc.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 
@@ -142,6 +143,7 @@ public:
     void ExtendedCleanup(CSeq_annot_Handle sa);
     
     void RenormalizeNucProtSets (CBioseq_set_Handle bsh);
+    void MoveCodingRegionsToNucProtSets (CBioseq_set_Handle bss);
 
 private:
     void Setup(const CSeq_entry& se);
@@ -232,6 +234,7 @@ private:
 
     // Extended Cleanup
     typedef void (CCleanup_imp::*RecurseDescriptor)(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
+    void x_RecurseForDescriptors (const CSeq_entry& se, RecurseDescriptor pmf);
     void x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor pmf);
     void x_RecurseForDescriptors (CBioseq_set_Handle bs, RecurseDescriptor pmf);
     
@@ -241,8 +244,9 @@ private:
     void x_RecurseDescriptorsForMerge (CBioseq_set_Handle bs, IsMergeCandidate is_can, Merge do_merge);
 
     typedef void (CCleanup_imp::*RecurseSeqAnnot)(CSeq_annot_Handle sah);
-    void x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot);
-    void x_RecurseForSeqAnnots (CBioseq_set_Handle bs, RecurseSeqAnnot);
+    void x_RecurseForSeqAnnots (const CSeq_entry& se, RecurseSeqAnnot pmf);
+    void x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot pmf);
+    void x_RecurseForSeqAnnots (CBioseq_set_Handle bs, RecurseSeqAnnot pmf);
     
     void x_MolInfoUpdate(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
     
@@ -254,13 +258,19 @@ private:
     void x_RemoveEmptyFeatures (CSeq_annot_Handle sa);
     
     void x_RemoveMultipleTitles (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
-    
+    void x_RemoveEmptyTitles (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
+
     void x_MergeMultipleDates (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
 
     void x_ExtendedCleanStrings (CSeqdesc& sd);
     void x_ExtendedCleanStrings (COrg_ref& org);
     void x_CleanOrgNameStrings (COrgName& on);
     void x_ExtendedCleanSubSourceList (CBioSource& bs);
+    
+    void x_SetSourceLineage(const CSeq_entry& se, string lineage);
+    void x_SetSourceLineage(CSeq_entry_Handle seh, string lineage);
+    void x_SetSourceLineage(CBioseq_Handle bh, string lineage);
+    void x_SetSourceLineage(CBioseq_set_Handle bh, string lineage);
     
     void x_MergeAdjacentAnnots (CBioseq_Handle bs);
     void x_MergeAdjacentAnnots (CBioseq_set_Handle bss);
@@ -304,6 +314,14 @@ private:
     void x_RemoveMarkedGeneXrefs (CBioseq_Handle bs);
     void x_RemoveMarkedGeneXrefs (CBioseq_set_Handle bs);
     
+    void x_MoveCodingRegionsToNucProtSets (CSeq_entry_Handle seh, CSeq_annot_EditHandle parent_sah);
+
+    void x_RemoveFeaturesBySubtype (const CSeq_entry& se, CSeqFeatData::ESubtype subtype);
+    void x_RemoveFeaturesBySubtype (CBioseq_Handle bs, CSeqFeatData::ESubtype subtype);
+    void x_RemoveFeaturesBySubtype (CBioseq_set_Handle bs, CSeqFeatData::ESubtype subtype);
+    void x_RemoveImpSourceFeatures (CSeq_annot_Handle sa);    
+    void x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa);
+
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
     
@@ -319,6 +337,21 @@ private:
     bool x_IsCitSubPub(const CSeqdesc& sd);
     bool x_CitSubsMatch(CSeqdesc& sd1, CSeqdesc& sd2);
 
+    void x_RemoveCitGenPubDescriptors (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
+    void x_RemoveCitGenPubFeatures (CSeq_annot_Handle sa);
+    
+    CRef<CPub> CCleanup_imp::x_MinimizePub (const CPub& pub);
+    void x_ChangeCitationQualToCitationPub(CBioseq_Handle bs);
+    bool x_ChangeCitSub (CPub& pub);
+    void x_ChangeCitSub (CBioseq_Handle bh);
+    void x_ChangeCitSub (CBioseq_set_Handle bh);
+    void x_ChangeCitSub (CSeq_entry_Handle seh);
+    void x_RemovePubMatch(const CSeq_entry& se, const CPubdesc& pd);
+    void x_MergeAndMovePubs(CBioseq_set_Handle bsh);    
+    void x_RemoveDuplicatePubsFromBioseqsInSet(CBioseq_set_Handle bsh);
+    void x_MergeDuplicatePubsOnSet(CBioseq_set_Handle bsh);    
+    void x_ConvertPubsToAsn4 (CSeq_entry_Handle seh);
+
     void x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_src);
     bool x_IsMergeableBioSource(const CSeqdesc& sd);    
     bool x_MergeDuplicateBioSources(CSeqdesc& sd1, CSeqdesc& sd2);
@@ -326,6 +359,34 @@ private:
     void x_CheckGenbankBlockTechKeywords(CGB_block& gb_block, CMolInfo::TTech tech);
     void x_ChangeGBDiv (CSeq_entry_Handle seh, string div);
     void x_ChangeGenBankBlocks(CSeq_entry_Handle seh);
+
+    bool x_IsDescrSameForAllInPartsSet (CBioseq_set_Handle bss, CSeqdesc::E_Choice desctype, CSeq_descr::Tdata& desc_list);
+    void x_RemoveDescrByType(CBioseq_Handle bh, CSeqdesc::E_Choice desctype);
+    void x_RemoveDescrByType(CBioseq_set_Handle bh, CSeqdesc::E_Choice desctype);
+    void x_RemoveDescrByType(const CSeq_entry& se, CSeqdesc::E_Choice desctype);
+    void x_RemoveDescrForAllInSet (CBioseq_set_Handle bss, CSeqdesc::E_Choice desctype);
+    void x_MoveIdenticalPartDescriptorsToSegSet (CBioseq_set_Handle segset, CBioseq_set_Handle parts, CSeqdesc::E_Choice desctype);
+    bool x_SeqDescMatch (const CSeqdesc& d1, const CSeqdesc& d2);
+    
+    void x_RemoveNucProtSetTitle(CBioseq_set_EditHandle bsh, const CSeq_entry& se);
+    void x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const CSeq_entry& se, CSeqdesc::E_Choice desctype);
+
+    
+    void LoopToAsn3 (CSeq_entry_Handle seh);
+    void LoopToAsn3 (CBioseq_set_Handle bh);
+    void LoopToAsn3(CBioseq_Handle bh);
+    void CheckSegSet (CBioseq_Handle bs);
+    void CheckSegSet(CBioseq_set_Handle bss);
+    void CheckNucProtSet (CBioseq_set_Handle bss);
+    void x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh);
+    void x_StripOldDescriptorsAndFeatures (CBioseq_Handle bh);
+    void x_AddMissingProteinMolInfo(CSeq_entry_Handle seh);
+    void x_GetGenBankTaxonomy(const CSeq_entry& se, string &taxonomy);
+    void x_GetGenBankTaxonomy(CSeq_entry_Handle seh, string& taxonomy);
+    void x_GetGenBankTaxonomy(CBioseq_Handle bs, string &taxonomy);
+    void x_GetGenBankTaxonomy(CBioseq_set_Handle bss, string &taxonomy);
+
+    void x_NormalizeMolInfo(CBioseq_set_Handle bh);
 
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
@@ -347,6 +408,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2006/10/04 14:17:47  bollin
+ * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
+ * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
+ * Replaced deprecated CSeq_feat_Handle.Replace calls with CSeq_feat_EditHandle.Replace calls.
+ * Began implementing C++ version of LoopSeqEntryToAsn3.
+ *
  * Revision 1.42  2006/09/27 15:42:03  bollin
  * Added step to ExtendedCleanup for moving gene quals to gene xrefs and removing
  * the gene xrefs from this step at the end of the process on features for which

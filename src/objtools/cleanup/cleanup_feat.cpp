@@ -63,6 +63,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 
 #include "cleanupp.hpp"
 
@@ -1234,8 +1235,9 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
                     new_gene_loc->SetPartialStop (new_location->IsPartialStop(eExtreme_Biological) | gene_loc.IsPartialStop(eExtreme_Biological), eExtreme_Biological);
                     // Note - C version pushes gene location to segset parts         
   
-                    gene_feat->SetLocation (*new_gene_loc);          
-                    fh.Replace(*gene_feat);
+                    gene_feat->SetLocation (*new_gene_loc);    
+                    CSeq_feat_EditHandle efh(fh);
+                    efh.Replace(*gene_feat);
                 }        
             }
         }
@@ -1244,7 +1246,8 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
     // fix location of coding region
     feat->SetLocation(*new_location);
     
-    ofh.Replace(*feat);
+    CSeq_feat_EditHandle efh(ofh);
+    efh.Replace(*feat);
     return true;
 }
 
@@ -1321,8 +1324,8 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
                     new_loc->SetInt().SetTo(bsh.GetBioseqLength() - 1);
                     new_loc->SetInt().SetStrand(new_gene->GetLocation().GetStrand());
                     new_gene->SetLocation(*new_loc);
-            
-                    fh.Replace(*new_gene);
+                    CSeq_feat_EditHandle efh(fh);
+                    efh.Replace(*new_gene);
                 }
             }
         }  
@@ -1387,7 +1390,8 @@ void CCleanup_imp::x_RemovePseudoProducts (CSeq_annot_Handle sa)
                     }
                     product.GetParentEntry().GetEditHandle().Remove();
                     new_cds->ResetProduct();
-                    fh.Replace(*new_cds);
+                    CSeq_feat_EditHandle efh(fh);
+                    efh.Replace(*new_cds);
                 }
             }
             ++feat_ci;
@@ -1463,7 +1467,8 @@ void CCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa)
                                 CRef<CSeq_feat> new_feat(new CSeq_feat);
                                 new_feat->Assign(feat);
                                 x_RemoveGeneXref(new_feat);
-                                fh.Replace(*new_feat);
+                                CSeq_feat_EditHandle efh(fh);
+                                efh.Replace(*new_feat);
                             }
                         }
                     }
@@ -1656,7 +1661,8 @@ void CCleanup_imp::x_ChangeImpFeatToCDS(CSeq_annot_Handle sa)
                         
         if (changed) {
             CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
-            ofh.Replace(*feat);
+            CSeq_feat_EditHandle efh(ofh);
+            efh.Replace(*feat);
         }
         ++feat_ci;
     }
@@ -1761,7 +1767,8 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
 
                 // TODO
                 // Must move feature to protein SeqAnnot
-                fh.Replace(*feat);
+                CSeq_feat_EditHandle efh(fh);
+                efh.Replace(*feat);
             }   
         }
         
@@ -1954,7 +1961,8 @@ static void ImpFeatToProtRef(SeqFeatArr sfa)
 
 static const string sc_ExtendedCleanupGeneQual("EXTENDEDCLEANUPGENEQUAL:");
 
-
+// The x_MoveGeneQuals and x_RemoveMarkedGeneXrefs functions replace the MarkMovedGeneGbquals and
+// DeleteBadMarkedGeneXrefs functions from the C Toolkit SeriousSeqEntryCleanupEx function.
 void CCleanup_imp::x_MoveGeneQuals(const CSeq_feat& orig_feat)
 {
     bool found_gene_qual = false;
@@ -2080,7 +2088,7 @@ void CCleanup_imp::x_RemoveMarkedGeneXref(const CSeq_feat& orig_feat)
                 }
             }
         }
-        fh.Replace (*feat); 
+        efh.Replace (*feat); 
     }
 }
 
@@ -2143,6 +2151,162 @@ void CCleanup_imp::x_RemoveMarkedGeneXrefs (CBioseq_set_Handle bss)
 }
 
 
+// The following two functions replace the move_cds_ex step in the C Toolkit SeriousSeqEntryCleanupEx function
+// note that the doPseudo argument does not appear - this is because this value is not actually used by move_cds_ex
+// or any of the underlying functions.
+void CCleanup_imp::x_MoveCodingRegionsToNucProtSets (CSeq_entry_Handle seh, CSeq_annot_EditHandle parent_sah)
+{
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+    vector<CSeq_feat_EditHandle> feat_list;
+
+    CFeat_CI feat_ci (seh, sel);
+  
+    while (feat_ci) {
+        if (!feat_ci->IsSetPseudo()
+            && feat_ci->IsSetProduct()
+            && sequence::GetLength(feat_ci->GetLocation(), m_Scope) >= 6) {
+            feat_list.push_back (CSeq_feat_EditHandle (feat_ci->GetSeq_feat_Handle()));
+        }
+        ++feat_ci;
+    }
+ 
+    ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
+        parent_sah.TakeFeat (*it);
+    }
+}
+
+
+void CCleanup_imp::MoveCodingRegionsToNucProtSets (CBioseq_set_Handle bss)
+{
+    // nothing to do if this set has no members
+    if (bss.IsEmptySeq_set()) return;
+    
+    CBioseq_set_EditHandle bsseh = bss.GetEditHandle();
+    // if this is a nuc-prot set, move coding regions from the members to this set
+    if (bss.CanGetClass() && bss.GetClass() == CBioseq_set::eClass_nuc_prot) {
+        CSeq_annot_CI annot_it(bss.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+        bool found_feat_annot = false;
+        for(; annot_it && !found_feat_annot; ++annot_it) {
+            if (annot_it->IsFtable()) {
+                CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+                list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+            
+                ITERATE (list< CRef< CSeq_entry > >, it, set) {
+                    x_MoveCodingRegionsToNucProtSets(m_Scope->GetSeq_entryHandle(**it), annot_it->GetEditHandle());
+                }
+                found_feat_annot = true;
+            }
+        }
+        if (!found_feat_annot) {
+            CRef<CSeq_annot> annot(new CSeq_annot);
+            annot->SetData().SetFtable();
+            bsseh.AttachAnnot(*annot);
+            CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+            list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+            
+            ITERATE (list< CRef< CSeq_entry > >, it, set) {
+                x_MoveCodingRegionsToNucProtSets(m_Scope->GetSeq_entryHandle(**it), 
+                                                 m_Scope->GetSeq_annotEditHandle(*annot));
+            }
+        }
+    } else {
+        CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+        list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+        ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            if ((**it).Which() == CSeq_entry::e_Set) {
+                MoveCodingRegionsToNucProtSets (m_Scope->GetBioseq_setHandle((**it).GetSet()));
+            }
+        }
+    }
+}
+
+
+void CCleanup_imp::x_RemoveFeaturesBySubtype (const CSeq_entry& se, CSeqFeatData::ESubtype subtype)
+{
+    switch (se.Which()) {
+        case CSeq_entry::e_Seq:
+            x_RemoveFeaturesBySubtype(m_Scope->GetBioseqHandle(se.GetSeq()), subtype);
+            break;
+        case CSeq_entry::e_Set:
+            x_RemoveFeaturesBySubtype(m_Scope->GetBioseq_setHandle(se.GetSet()), subtype);
+            break;
+        case CSeq_entry::e_not_set:
+        default:
+            break;
+    }
+}
+
+
+void CCleanup_imp::x_RemoveFeaturesBySubtype (CBioseq_Handle bs, CSeqFeatData::ESubtype subtype)
+{
+    vector<CSeq_feat_EditHandle> feat_list;
+    SAnnotSelector sel(subtype);
+    CFeat_CI feat_ci(bs, subtype);
+    while (feat_ci) {
+        feat_list.push_back (CSeq_feat_EditHandle (feat_ci->GetSeq_feat_Handle()));
+        ++feat_ci;
+    }
+    ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
+        (*it).Remove();
+    }
+}
+
+
+void CCleanup_imp::x_RemoveFeaturesBySubtype (CBioseq_set_Handle bss, CSeqFeatData::ESubtype subtype)
+{
+    vector<CSeq_feat_EditHandle> feat_list;
+    SAnnotSelector sel(subtype);
+    CFeat_CI feat_ci(bss.GetParentEntry(), subtype);
+    while (feat_ci) {
+        feat_list.push_back (CSeq_feat_EditHandle (feat_ci->GetSeq_feat_Handle()));
+        ++feat_ci;
+    }
+    ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
+        (*it).Remove();
+    }
+}
+
+
+void CCleanup_imp::x_RemoveImpSourceFeatures (CSeq_annot_Handle sa) 
+{
+    vector<CSeq_feat_EditHandle> feat_list;
+    if (sa.IsFtable()) {
+        SAnnotSelector sel(CSeqFeatData::e_Imp);
+        CFeat_CI feat_ci(sa, sel);
+        while (feat_ci) {
+            if (NStr::Equal(feat_ci->GetData().GetImp().GetKey(), "source")) {
+                CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
+                feat_list.push_back (CSeq_feat_EditHandle(feat_ci->GetSeq_feat_Handle()));
+            }
+            ++feat_ci;
+        }    
+    }
+    ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
+        (*it).Remove();
+    }    
+}
+
+
+void CCleanup_imp::x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa)
+{
+    if (!sa.IsFtable()) {
+        return;
+    }
+    SAnnotSelector sel(CSeqFeatData::e_Imp);
+    CFeat_CI feat_ci(sa, sel);
+
+    vector<CSeq_feat_EditHandle> feat_list;
+    
+    while (feat_ci) {
+        if (NStr::Equal(feat_ci->GetData().GetImp().GetKey(), "Site-ref")) {
+            feat_list.push_back (CSeq_feat_EditHandle(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature())));
+        }
+        ++feat_ci;
+    }
+    ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
+        (*it).Remove();
+    }    
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -2153,6 +2317,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2006/10/04 14:17:47  bollin
+ * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
+ * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
+ * Replaced deprecated CSeq_feat_Handle.Replace calls with CSeq_feat_EditHandle.Replace calls.
+ * Began implementing C++ version of LoopSeqEntryToAsn3.
+ *
  * Revision 1.33  2006/09/27 15:42:03  bollin
  * Added step to ExtendedCleanup for moving gene quals to gene xrefs and removing
  * the gene xrefs from this step at the end of the process on features for which

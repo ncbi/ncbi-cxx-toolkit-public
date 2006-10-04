@@ -637,6 +637,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
+    // These two steps were EntryChangeImpFeat in the C Toolkit
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToProt);
     x_ExtendSingleGeneOnmRNA(bss);
@@ -649,7 +650,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
                                       &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
     x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
-                                      
+    LoopToAsn3(bss);                                  
+    x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
                                       
     RemoveEmptyFeaturesDescriptorsAndAnnots(bss);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemovePseudoProducts);
@@ -659,6 +662,7 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     
     if (seh.IsSet()) {
         bss = seh.GetSet().GetEditHandle();
+        MoveCodingRegionsToNucProtSets(bss);
         x_ChangeGenBankBlocks (bss.GetParentEntry());
         x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
@@ -720,6 +724,10 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
                                       &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
     x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
                                       &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+    LoopToAsn3(bsh.GetSeq_entry_Handle());
+    x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
+                                          
     RemoveEmptyFeaturesDescriptorsAndAnnots(bsh);
     
     x_ChangeGenBankBlocks (bsh.GetParentEntry());
@@ -765,6 +773,22 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
 }
 
 
+void CCleanup_imp::x_RecurseForSeqAnnots (const CSeq_entry& se, RecurseSeqAnnot pmf)
+{
+    switch (se.Which()) {
+        case CSeq_entry::e_Seq:
+            x_RecurseForSeqAnnots(m_Scope->GetBioseqHandle(se.GetSeq()), pmf);
+            break;
+        case CSeq_entry::e_Set:
+            x_RecurseForSeqAnnots(m_Scope->GetBioseq_setHandle(se.GetSet()), pmf);
+            break;
+        case CSeq_entry::e_not_set:
+        default:
+            break;
+    }
+}
+
+
 void CCleanup_imp::x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot pmf)
 {
     CBioseq_EditHandle bseh = bs.GetEditHandle();
@@ -792,18 +816,8 @@ void CCleanup_imp::x_RecurseForSeqAnnots (CBioseq_set_Handle bss, RecurseSeqAnno
        list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
        
        ITERATE (list< CRef< CSeq_entry > >, it, set) {
-            switch ((**it).Which()) {
-                case CSeq_entry::e_Seq:
-                    x_RecurseForSeqAnnots(m_Scope->GetBioseqHandle((**it).GetSeq()), pmf);
-                    break;
-                case CSeq_entry::e_Set:
-                    x_RecurseForSeqAnnots(m_Scope->GetBioseq_setHandle((**it).GetSet()), pmf);
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
-        }
+           x_RecurseForSeqAnnots (**it, pmf);
+       }
     }
 }
 
@@ -1051,7 +1065,8 @@ void CCleanup_imp::x_RemoveEmptyFeatures (CSeq_annot_Handle sa)
         while (feat_ci) {
             const CSeq_feat &cf = feat_ci->GetOriginalFeature();
             if (IsEmpty(const_cast<CSeq_feat &>(cf))) {
-                feat_ci->GetSeq_feat_Handle().Remove();
+                CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
+                efh.Remove();
             }
             ++feat_ci;
         }    
@@ -1207,7 +1222,8 @@ void CCleanup_imp::x_ConvertFullLenFeatureToDescriptor (CSeq_annot_Handle sa, CS
              
                     CBioseq_EditHandle eh = bh.GetEditHandle();
                     eh.AddSeqdesc(*desc);
-                    (*feat_ci).GetSeq_feat_Handle().Remove();
+                    CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
+                    efh.Remove();
                 }
             }
             ++feat_ci;                
@@ -1281,6 +1297,137 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
 }
 
 
+static bool s_HasBackboneID (CBioseq_Handle bs)
+{
+    ITERATE (CBioseq::TId, it, bs.GetBioseqCore()->GetId()) {
+        if ((*it)->Which() == CSeq_id::e_Gibbsq
+            || (*it)->Which() == CSeq_id::e_Gibbmt) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// was part of ChkSegset in C Toolkit (called by toporg, called by SeqEntryToAsn3Ex)
+void CCleanup_imp::CheckSegSet (CBioseq_Handle bs) 
+{
+    if (!bs.CanGetInst_Repr() 
+        || (bs.GetInst_Repr() != CSeq_inst::eRepr_raw
+            && bs.GetInst_Repr() != CSeq_inst::eRepr_const)
+        || !bs.CanGetInst_Mol()
+        || bs.GetInst_Mol() == CSeq_inst::eMol_aa
+        || ! s_HasBackboneID(bs)) {
+        return;
+    }
+    // look for org_ref features on the bioseq
+    // if we find one that covers the entire sequence, we're fine and we're done
+    // if we find exactly one org_ref feature but it does not cover the entire sequence,
+    // extend it to cover the entire sequence
+    SAnnotSelector sel(CSeqFeatData::e_Org);
+
+    CFeat_CI feat_ci (bs, sel);
+    bool found_one = false;
+    while (feat_ci) {
+        if (found_one) {
+            // more than one org feature - can't fix
+            return;
+        } else if (feat_ci->GetLocation().IsWhole()
+                   || (feat_ci->GetLocation().GetStart(eExtreme_Positional) == 0
+                       && feat_ci->GetLocation().GetStop(eExtreme_Positional) == bs.GetBioseqLength() - 1)) {
+            // found a full-length org feature
+            // nothing to fix
+            return;
+        } else {
+            found_one = true;
+        }
+        ++feat_ci;
+    }
+    if (found_one) {
+        // only one, doesn't cover entire sequence
+        feat_ci.Rewind();
+        const CSeq_feat& feat = feat_ci->GetOriginalFeature();
+        CSeq_feat_Handle fh = feat_ci->GetSeq_feat_Handle();
+        CRef<CSeq_feat> new_feat(new CSeq_feat);
+        new_feat->Assign(feat);
+        CRef<CSeq_id> new_id(new CSeq_id);
+        new_id->Assign(*(new_feat->GetLocation().GetId()));
+        new_feat->SetLocation().SetInt().SetId(*new_id);
+        new_feat->SetLocation().SetInt().SetFrom(0);
+        new_feat->SetLocation().SetInt().SetTo(bs.GetBioseqLength() - 1);
+        CSeq_feat_EditHandle efh(fh);
+        efh.Replace(*new_feat);
+    }    
+}
+
+
+void CCleanup_imp::CheckSegSet(CBioseq_set_Handle bss)
+{
+    if (!bss.CanGetClass()) {
+        return;
+    }
+ 
+    CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+   
+    if (bss.GetClass() != CBioseq_set::eClass_segset) {
+        if (set.empty() || set.size() < 2) {
+            return;
+        }
+  
+        list< CRef< CSeq_entry > >::const_iterator se_it = set.begin();
+        ++se_it;
+        if ((*se_it)->Which() == CSeq_entry::e_Set) {
+            CBioseq_set_Handle parts = m_Scope->GetBioseq_setHandle((*se_it)->GetSet());
+
+            x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Org);
+            x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Mol_type);
+            x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Modif);
+            x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Update_date);
+        }
+	}
+	
+    ITERATE (list< CRef< CSeq_entry > >, it, set) {
+        if ((*it)->Which() == CSeq_entry::e_Set) {
+            CheckSegSet(m_Scope->GetBioseq_setHandle((**it).GetSet()));
+        } else if ((*it)->Which() == CSeq_entry::e_Seq) {
+            CheckSegSet(m_Scope->GetBioseqHandle((**it).GetSeq()));
+        }
+	}
+}
+
+
+void CCleanup_imp::CheckNucProtSet (CBioseq_set_Handle bss)
+{
+    if (!bss.CanGetClass()) {
+        return;
+    }
+ 
+    CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+
+    if (bss.GetClass() == CBioseq_set::eClass_nuc_prot) {
+        list< CRef< CSeq_entry > >::const_iterator se_it = set.begin();
+        
+        CBioseq_set_EditHandle eh (bss);
+
+        // look for old style nps title, remove if based on nucleotide title, also remove exact duplicate
+        x_RemoveNucProtSetTitle(eh, **se_it);
+        
+        // promote descriptors on nuc to nuc-prot set if type not already on nuc-prot set
+        x_ExtractNucProtDescriptors(eh, **se_it, CSeqdesc::e_Modif);
+        x_ExtractNucProtDescriptors(eh, **se_it, CSeqdesc::e_Org);
+        x_ExtractNucProtDescriptors(eh, **se_it, CSeqdesc::e_Update_date);
+
+    }
+    
+    ITERATE (list< CRef< CSeq_entry > >, it, set) {
+        if ((*it)->Which() == CSeq_entry::e_Set) {
+            CheckNucProtSet(m_Scope->GetBioseq_setHandle((**it).GetSet()));
+        }
+	}
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -1288,6 +1435,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2006/10/04 14:17:47  bollin
+ * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
+ * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
+ * Replaced deprecated CSeq_feat_Handle.Replace calls with CSeq_feat_EditHandle.Replace calls.
+ * Began implementing C++ version of LoopSeqEntryToAsn3.
+ *
  * Revision 1.47  2006/09/27 15:42:03  bollin
  * Added step to ExtendedCleanup for moving gene quals to gene xrefs and removing
  * the gene xrefs from this step at the end of the process on features for which

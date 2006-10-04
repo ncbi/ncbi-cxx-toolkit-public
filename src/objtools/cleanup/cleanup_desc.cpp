@@ -49,6 +49,7 @@
 #include <objects/general/Date.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
 
 #include "cleanupp.hpp"
 
@@ -56,6 +57,22 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+
+void CCleanup_imp::x_RecurseForDescriptors (const CSeq_entry& se, RecurseDescriptor pmf)
+{
+    switch (se.Which()) {
+        case CSeq_entry::e_Seq:
+            x_RecurseForDescriptors(m_Scope->GetBioseqHandle(se.GetSeq()), pmf);
+            break;
+        case CSeq_entry::e_Set:
+            x_RecurseForDescriptors(m_Scope->GetBioseq_setHandle(se.GetSet()), pmf);
+            break;
+        case CSeq_entry::e_not_set:
+        default:
+            break;
+    }
+}
 
 
 void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor pmf)
@@ -95,17 +112,7 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescr
        list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
        
        ITERATE (list< CRef< CSeq_entry > >, it, set) {
-            switch ((**it).Which()) {
-                case CSeq_entry::e_Seq:
-                    x_RecurseForDescriptors(m_Scope->GetBioseqHandle((**it).GetSeq()), pmf);
-                    break;
-                case CSeq_entry::e_Set:
-                    x_RecurseForDescriptors(m_Scope->GetBioseq_setHandle((**it).GetSet()), pmf);
-                    break;
-                case CSeq_entry::e_not_set:
-                default:
-                    break;
-            }
+            x_RecurseForDescriptors (**it, pmf);
         }
     }
 }
@@ -474,6 +481,20 @@ void CCleanup_imp::x_RemoveMultipleTitles (CSeq_descr& sdr, CSeq_descr::Tdata& r
 }
 
 
+// removes all empty title descriptors
+// Was part of RemoveEmptyTitleAndPubGenAsOnlyPub in C Toolkit
+void CCleanup_imp::x_RemoveEmptyTitles (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
+{
+    NON_CONST_REVERSE_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((*it)->Which() == CSeqdesc::e_Title ) {
+            if (NStr::IsBlank ((*it)->GetTitle())) {
+                remove_list.push_back(*it);
+            }
+        }
+    }
+}
+
+
 // Retain the most recent create date, remove the others
 // Was MergeMultipleDates in C Toolkit
 void CCleanup_imp::x_MergeMultipleDates (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
@@ -663,6 +684,789 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
 }
 
 
+bool CCleanup_imp::x_SeqDescMatch (const CSeqdesc& d1, const CSeqdesc& d2)
+{
+    if (d1.Equals(d2)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CCleanup_imp::x_IsDescrSameForAllInPartsSet (CBioseq_set_Handle bss, CSeqdesc::E_Choice desctype, CSeq_descr::Tdata& desc_list)
+{
+    if (!bss.CanGetClass() || bss.GetClass() != CBioseq_set::eClass_parts) {
+        return false;
+    }
+    
+    CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+
+    ITERATE (list< CRef< CSeq_entry > >, it, set) {
+        if ((*it)->Which() == CSeq_entry::e_Seq) {
+            CBioseq_EditHandle eh(m_Scope->GetBioseqHandle((*it)->GetSeq()));
+            if (eh.IsSetDescr()) {
+                NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+                    if ((*desc_it)->Which() == desctype ) {
+                        if (desc_list.size() == 0) {
+                            desc_list.push_back(*desc_it);
+                        } else if (!x_SeqDescMatch (**desc_it, **(desc_list.begin()))) {
+                            return false;
+                        }
+                    }
+                }
+            }                        
+        } else if ((*it)->Which() == CSeq_entry::e_Set) {
+            CBioseq_set_EditHandle eh(m_Scope->GetBioseq_setHandle((*it)->GetSet()));
+            if (eh.IsSetDescr()) {
+                NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+                    if ((*desc_it)->Which() == desctype ) {
+                        if (desc_list.size() == 0) {
+                            desc_list.push_back(*desc_it);
+                        } else if (!x_SeqDescMatch (**desc_it, **(desc_list.begin()))) {
+                            return false;
+                        }
+                    }
+                }
+            }                        
+        }
+    }
+    
+    if (desc_list.size() == 0) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+void CCleanup_imp::x_RemoveDescrByType(CBioseq_Handle bh, CSeqdesc::E_Choice desctype)
+{
+    CBioseq_EditHandle eh(bh);
+    if (eh.IsSetDescr()) {
+        CSeq_descr::Tdata desc_list;
+        desc_list.clear();
+        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+            if ((*desc_it)->Which() == desctype ) {
+                desc_list.push_back(*desc_it);
+            }
+        }
+        for (CSeq_descr::Tdata::iterator desc_it = desc_list.begin();
+             desc_it != desc_list.end(); ++desc_it) { 
+            eh.RemoveSeqdesc(**desc_it);
+        }        
+    }                        
+}
+
+
+void CCleanup_imp::x_RemoveDescrByType(CBioseq_set_Handle bh, CSeqdesc::E_Choice desctype)
+{
+    CBioseq_set_EditHandle eh(bh);
+    if (eh.IsSetDescr()) {
+        CSeq_descr::Tdata desc_list;
+        desc_list.clear();
+        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+            if ((*desc_it)->Which() == desctype ) {
+                desc_list.push_back(*desc_it);
+            }
+        }
+        for (CSeq_descr::Tdata::iterator desc_it = desc_list.begin();
+             desc_it != desc_list.end(); ++desc_it) { 
+            eh.RemoveSeqdesc(**desc_it);
+        }        
+    }
+    x_RemoveDescrForAllInSet (bh, desctype);                     
+}
+
+
+void CCleanup_imp::x_RemoveDescrByType(const CSeq_entry& se, CSeqdesc::E_Choice desctype)
+{
+    if (se.Which() == CSeq_entry::e_Seq) {
+        x_RemoveDescrByType(m_Scope->GetBioseqHandle(se.GetSeq()), desctype);
+    } else if (se.Which() == CSeq_entry::e_Set) {
+        x_RemoveDescrByType(m_Scope->GetBioseq_setHandle(se.GetSet()), desctype);
+    }
+}
+
+
+void CCleanup_imp::x_RemoveDescrForAllInSet (CBioseq_set_Handle bss, CSeqdesc::E_Choice desctype)
+{
+    CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+
+    ITERATE (list< CRef< CSeq_entry > >, it, set) {
+        x_RemoveDescrByType((**it), desctype);
+    }
+}
+
+
+void CCleanup_imp::x_MoveIdenticalPartDescriptorsToSegSet (CBioseq_set_Handle segset, CBioseq_set_Handle parts, CSeqdesc::E_Choice desctype)
+{
+    CSeq_descr::Tdata desc_list;
+    
+    desc_list.clear();
+	if (x_IsDescrSameForAllInPartsSet (parts, desctype, desc_list)) {
+	    CSeqdesc_CI desc_it (segset.GetParentEntry(), desctype);
+	    bool remove_from_parts = false;
+        if (!desc_it) {
+            // segset does not already have a descriptor of this type
+            CBioseq_set_EditHandle eh(segset);
+            eh.AddSeqdesc(**(desc_list.begin()));  
+            remove_from_parts = true;          
+        } else if (desctype == CSeqdesc::e_Update_date) {
+            CBioseq_set_EditHandle eh(segset);
+            eh.RemoveSeqdesc (*desc_it);
+            eh.AddSeqdesc(**(desc_list.begin())); 
+            remove_from_parts = true;
+        } else if (desctype != CSeqdesc::e_Mol_type || x_SeqDescMatch(*desc_it, **(desc_list.begin()))) {
+	        remove_from_parts = true;
+	    }
+	    if (remove_from_parts) {
+	        x_RemoveDescrForAllInSet (parts, desctype);
+	    }
+	}
+}
+
+
+static bool s_IsExtractableEGIBBMod (const CSeqdesc::TModif& modif)
+{
+    if (*(modif.begin()) == eGIBB_mod_dna
+        || *(modif.begin()) == eGIBB_mod_rna
+        || *(modif.begin()) == eGIBB_mod_est
+        || *(modif.begin()) == eGIBB_mod_complete
+        || *(modif.begin()) == eGIBB_mod_partial) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+void CCleanup_imp::x_RemoveNucProtSetTitle(CBioseq_set_EditHandle bsh, const CSeq_entry& se)
+{
+    if (!bsh.IsSetDescr()) {
+        // ditch if nuc-prot-set has no descriptors at all
+        return;
+    }
+    CSeqdesc_CI nuc_desc_it (m_Scope->GetSeq_entryHandle(se), CSeqdesc::e_Title);
+    if (!nuc_desc_it) {
+        // ditch if nuc sequence has no descriptors at all
+        return;
+    }
+
+    // look for old style nps title, remove if based on nucleotide title, also remove exact duplicate
+    NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, bsh.SetDescr().Set()) {
+        if ((*desc_it)->Which() == CSeqdesc::e_Title) {
+            string npstitle = (*desc_it)->GetTitle();
+            string nuctitle = nuc_desc_it->GetTitle();
+            int title_len = nuctitle.length();
+            if (NStr::StartsWith(npstitle, nuctitle)
+                && (npstitle.length() == title_len
+                    || NStr::EqualCase (npstitle.substr(title_len), ", and translated products"))) {
+                bsh.RemoveSeqdesc(**desc_it);
+                break;
+            }
+        }
+    }
+}
+
+void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const CSeq_entry& se, CSeqdesc::E_Choice desctype)
+{
+    CSeqdesc_CI it (bsh.GetParentEntry(), desctype);
+  
+    // if nuc-prot set already has one, don't move the lower one up
+    if (it) return;
+    
+    CSeq_descr::Tdata desc_list;
+    if (se.Which() == CSeq_entry::e_Seq) {
+        CBioseq_EditHandle eh(m_Scope->GetBioseqHandle(se.GetSeq()));
+        if (eh.IsSetDescr()) {
+            NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+                if ((*desc_it)->Which() == desctype 
+                    && (desctype != CSeqdesc::e_Modif 
+                        || s_IsExtractableEGIBBMod((*desc_it)->GetModif()))) {
+                    desc_list.push_back(*desc_it);
+                }
+            }
+            for (CSeq_descr::Tdata::iterator desc_it = desc_list.begin();
+                 desc_it != desc_list.end(); ++desc_it) { 
+                bsh.AddSeqdesc(**desc_it);
+                eh.RemoveSeqdesc(**desc_it);
+            }                        
+        }
+    } else if (se.Which() == CSeq_entry::e_Set) {
+        CBioseq_set_EditHandle eh(m_Scope->GetBioseq_setHandle(se.GetSet()));
+        if (eh.IsSetDescr()) {
+            NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+                if ((*desc_it)->Which() == desctype 
+                    && (desctype != CSeqdesc::e_Modif 
+                        || s_IsExtractableEGIBBMod((*desc_it)->GetModif()))) {
+                    desc_list.push_back(*desc_it);
+                }
+            }
+            for (CSeq_descr::Tdata::iterator desc_it = desc_list.begin();
+                 desc_it != desc_list.end(); ++desc_it) { 
+                bsh.AddSeqdesc(**desc_it);
+                eh.RemoveSeqdesc(**desc_it);
+            }                        
+        }
+    }   
+}
+
+
+void CCleanup_imp::x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh)
+{
+    // remove old descriptors
+    x_RemoveDescrByType (bh, CSeqdesc::e_Modif);
+    x_RemoveDescrByType (bh, CSeqdesc::e_Mol_type);
+    x_RemoveDescrByType (bh, CSeqdesc::e_Method);
+    x_RemoveDescrByType (bh, CSeqdesc::e_Org);
+    
+    // remove old features
+    x_RemoveFeaturesBySubtype (bh, CSeqFeatData::eSubtype_org);
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveImpSourceFeatures);
+}
+
+
+void CCleanup_imp::x_StripOldDescriptorsAndFeatures (CBioseq_Handle bh)
+{
+    // remove old descriptors
+    x_RemoveDescrByType (bh, CSeqdesc::e_Modif);
+    x_RemoveDescrByType (bh, CSeqdesc::e_Mol_type);
+    x_RemoveDescrByType (bh, CSeqdesc::e_Method);
+    x_RemoveDescrByType (bh, CSeqdesc::e_Org);
+    
+    // remove old features
+    x_RemoveFeaturesBySubtype (bh, CSeqFeatData::eSubtype_org);
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveImpSourceFeatures);
+}
+
+
+// was FixProtMolInfo in C Toolkit
+void CCleanup_imp::x_AddMissingProteinMolInfo(CSeq_entry_Handle seh)
+{
+    CBioseq_CI bs_ci(seh, CSeq_inst::eMol_aa);
+    
+    while (bs_ci) {
+        CBioseq_EditHandle eh(*bs_ci);
+        bool found = false;
+        if (eh.IsSetDescr()) {
+            NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+                if ((*desc_it)->Which() == CSeqdesc::e_Molinfo) {
+                    if (!(*desc_it)->GetMolinfo().CanGetBiomol()
+                        || (*desc_it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_unknown) {
+                        (*desc_it)->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+                    }
+                    found = true;
+                }
+            }
+        }
+        if (!found) {
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            CRef<CMolInfo> mol(new CMolInfo);
+            mol->SetBiomol(CMolInfo::eBiomol_peptide);
+            desc->SetMolinfo(*mol);
+            eh.AddSeqdesc(*desc);
+        }
+        ++bs_ci;
+    }
+}
+    
+        
+void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
+{
+    // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
+    x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
+    x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubDescriptors);
+    x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubFeatures);
+    CheckSegSet(bh);
+    CheckNucProtSet(bh);
+
+    CSeqdesc_CI src_desc (bh.GetParentEntry(), CSeqdesc::e_Source);
+    if (src_desc) {
+        // this step was called StripOld
+        x_StripOldDescriptorsAndFeatures (bh);
+              
+        // this step was part of ToAsn4
+        x_ConvertPubsToAsn4(bh.GetParentEntry());
+        
+        // this step was also part of ToAsn4
+        string lineage = "";
+        x_GetGenBankTaxonomy(bh, lineage);
+        if (!NStr::IsBlank(lineage)) {
+            x_SetSourceLineage(bh, lineage);
+        }
+        
+        // missing steps
+#if 0
+		CombineBSFeat(sep);
+#endif            
+    } else {
+        // missing steps
+#if 0
+	if (ta.ofp == NULL) {
+		ErrPostStr(SEV_WARNING, ERR_ORGANISM_NotFound, "No information found to create BioSource");
+	}
+	if (ta.mfp == NULL) {
+		ErrPostStr(SEV_WARNING, ERR_ORGANISM_NotFound, "No information found to create MolInfo"); 
+	}
+
+	FixToAsn(sep, (Pointer)(&ta));
+
+	if (ta.ofp != NULL) {
+		ofp = ta.ofp;
+		SeqEntryExplore(sep, (Pointer)ofp, FixOrg);
+	}
+	if (ta.mfp != NULL) {
+		mfp = ta.mfp;
+		SeqEntryExplore(sep, (Pointer)mfp, FixMol);
+	}
+
+/* entry  is converted to asn.1 spec 3.0, now do the checks */
+	retval = INFO_ASNNEW;
+	if(ta.had_biosource) {
+		SeqEntryExplore(sep, NULL, StripOld);
+	}
+	ToAsn4(sep);          /* move pubs and lineage */
+#endif    
+    }
+    
+    // these two steps were EntryChangeImpFeat in the C Toolkit
+    x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
+    x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToProt);
+    // this step was EntryChangeGBSource in the C Toolkit
+    x_ChangeGenBankBlocks(bh.GetParentEntry());
+ 
+    //missing steps
+#if 0
+		if (is_equiv(sep)) {
+			/*do nothing*/
+		}else if (NOT_segment(sep)) {
+			SeqEntryExplore(sep, mult, MergeBSinDescr);
+		} else {
+			SeqEntryExplore(sep, (Pointer) (&bs), CheckBS);
+			if (bs.same == TRUE) {
+				SeqEntryExplore(sep, (Pointer) (&bs), StripBSfromParts);
+			} else {
+				SeqEntryExplore(sep, (Pointer) (&bs), StripBSfromTop);
+			}
+		}
+
+    FixNucProtSet(sep);
+#endif
+    // this step was FixProtMolInfo in the C Toolkit
+    x_AddMissingProteinMolInfo(bh.GetParentEntry());
+
+#if 0    
+    // missing steps
+	SeqEntryExplore (sep, NULL, FuseMolInfos);
+	SeqEntryExplore(sep, NULL, StripProtXref);
+	SeqEntryExplore(sep, (Pointer)(&qm), CheckMaps);
+	/*
+	if (qm.same == TRUE) {
+		SeqEntryExplore(sep, (Pointer)(&qm), StripMaps);
+	} else {
+		SeqEntryExplore(sep, NULL, MapsToGenref);
+	}
+	*/
+	SeqEntryExplore(sep, NULL, MapsToGenref);
+	CheckGeneticCode(sep);
+#endif        
+    
+    x_NormalizeMolInfo (bh);
+}
+
+
+void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
+{
+    // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
+    x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
+    x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubDescriptors);
+    x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubFeatures);
+    CheckSegSet(bh);
+    
+    CSeqdesc_CI src_desc (bh.GetParentEntry(), CSeqdesc::e_Source);
+    if (src_desc) {
+        // this step was called StripOld
+        x_StripOldDescriptorsAndFeatures (bh);
+              
+        // this step was part of ToAsn4
+        x_ConvertPubsToAsn4(bh.GetSeq_entry_Handle());
+        
+        // this step was also part of ToAsn4
+        string lineage = "";
+        x_GetGenBankTaxonomy(bh, lineage);
+        if (!NStr::IsBlank(lineage)) {
+            x_SetSourceLineage(bh, lineage);
+        }
+        
+        //missing steps
+    }
+    
+}
+
+
+void CCleanup_imp::LoopToAsn3 (CSeq_entry_Handle seh)
+{ 
+    if (seh.Which() == CSeq_entry::e_Seq) {
+        LoopToAsn3 (seh.GetSeq());
+    } else if (seh.Which() == CSeq_entry::e_Set) {
+        LoopToAsn3 (seh.GetSet());
+    }
+#if 0  
+    const CSeq_entry& se = *(seh.GetCompleteSeq_entry());
+    
+    // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
+    x_RecurseForDescriptors(se, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
+    x_RecurseForDescriptors(se, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubDescriptors);
+    x_RecurseForSeqAnnots(se, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubFeatures);
+ 
+    if (seh.Which() == CSeq_entry::e_Set) {
+        // these steps were called by toporg
+        CheckSegSet(seh.GetSet());
+        CheckNucProtSet(seh.GetSet());
+    } else if (seh.Which() == CSeq_entry::e_Seq) {
+        // this step was called by toporg
+        CheckSegSet(seh.GetSet());
+    }
+    
+    CSeqdesc_CI src_desc (seh, CSeqdesc::e_Source);
+    if (src_desc) {
+        // this step was called StripOld
+        
+        x_StripOldDescriptorsAndFeatures (seh.GetSet());
+              
+        // this step was part of ToAsn4
+        x_ConvertPubsToAsn4(seh);
+        
+        // this step was also part of ToAsn4
+        string lineage = "";
+        x_GetGenBankTaxonomy(seh, lineage);
+        if (!NStr::IsBlank(lineage)) {
+            x_SetSourceLineage(seh, lineage);
+        }
+
+        
+#if 0
+		CombineBSFeat(sep);
+		if (is_equiv(sep)) {
+			/*do nothing*/
+		}else if (NOT_segment(sep)) {
+			SeqEntryExplore(sep, mult, MergeBSinDescr);
+		} else {
+			SeqEntryExplore(sep, (Pointer) (&bs), CheckBS);
+			if (bs.same == TRUE) {
+				SeqEntryExplore(sep, (Pointer) (&bs), StripBSfromParts);
+			} else {
+				SeqEntryExplore(sep, (Pointer) (&bs), StripBSfromTop);
+			}
+		}
+		FixNucProtSet(sep);
+		EntryChangeImpFeat(sep); 
+		EntryChangeGBSource(sep); 
+		SeqEntryExplore (sep, NULL, FixProtMolInfo);
+		SeqEntryExplore (sep, NULL, FuseMolInfos);
+		SeqEntryExplore(sep, NULL, StripProtXref);
+		SeqEntryExplore(sep, (Pointer)(&qm), CheckMaps);
+
+		SeqEntryExplore(sep, NULL, MapsToGenref);
+		CheckGeneticCode(sep);
+		NormalizeSegSeqMolInfo (sep);
+		if(qm.name != NULL)
+		{
+			MemFree(qm.name);
+		}
+		
+#endif    
+        if (seh.Which() == CSeq_entry::e_Set) { 
+            x_NormalizeMolInfo (CBioseq_set_Handle(seh.GetSet()));
+        }
+    }
+    
+#if 0
+	ToAsn3 ta;
+	OrgFixPtr ofp = NULL;
+	MolFixPtr mfp = NULL;
+	CharPtr porg = NULL;
+	QualMap qm;
+	BSMap bs;
+	ValNodePtr mult = NULL;
+	Int4 retval = INFO_ASNOLD, ret;
+	Int2 update_date_pos;
+	
+	ta.had_biosource = FALSE;
+	ta.had_molinfo = FALSE;
+	ta.ofp = NULL;
+	ta.mfp = NULL;
+	qm.name = NULL;
+	qm.same = TRUE;
+	bs.same = TRUE;
+	bs.bsp = NULL;
+	
+	if (sep == NULL) {
+		return ERR_INPUT;
+	}
+	update_date_pos = GetUpdateDatePos (sep);
+	RemoveEmptyTitleAndPubGenAsOnlyPub (sep);
+	toporg(sep);
+	SeqEntryExplore(sep, (Pointer)(&ta), FindOrg);
+	
+	if (ta.had_biosource) {    
+/* entry is in asn.1 spec 3.0 already do the checks only */
+		retval |= INFO_ASNNEW;
+      	SeqEntryExplore(sep, NULL, StripOld);
+		ToAsn4(sep);   			/* move pubs and lineage */
+		CombineBSFeat(sep);
+		if (is_equiv(sep)) {
+			/*do nothing*/
+		}else if (NOT_segment(sep)) {
+			SeqEntryExplore(sep, mult, MergeBSinDescr);
+		} else {
+			SeqEntryExplore(sep, (Pointer) (&bs), CheckBS);
+			if (bs.same == TRUE) {
+				SeqEntryExplore(sep, (Pointer) (&bs), StripBSfromParts);
+			} else {
+				SeqEntryExplore(sep, (Pointer) (&bs), StripBSfromTop);
+			}
+		}
+		 ret = FixNucProtSet(sep);
+		 retval |= ret;
+		EntryChangeImpFeat(sep); 
+		EntryChangeGBSource(sep); 
+		SeqEntryExplore (sep, NULL, FixProtMolInfo);
+		SeqEntryExplore (sep, NULL, FuseMolInfos);
+		SeqEntryExplore(sep, NULL, StripProtXref);
+		SeqEntryExplore(sep, (Pointer)(&qm), CheckMaps);
+
+		SeqEntryExplore(sep, NULL, MapsToGenref);
+		CheckGeneticCode(sep);
+		NormalizeSegSeqMolInfo (sep);
+		toasn3_free(&ta);
+		RestoreUpdateDatePos (sep, update_date_pos);
+		if(qm.name != NULL)
+		{
+			MemFree(qm.name);
+		}
+		
+		return retval;
+	}
+	if (ta.ofp == NULL) {
+		ErrPostStr(SEV_WARNING, ERR_ORGANISM_NotFound, "No information found to create BioSource");
+	}
+	if (ta.mfp == NULL) {
+		ErrPostStr(SEV_WARNING, ERR_ORGANISM_NotFound, "No information found to create MolInfo"); 
+	}
+
+	FixToAsn(sep, (Pointer)(&ta));
+
+	if (ta.ofp != NULL) {
+		ofp = ta.ofp;
+		SeqEntryExplore(sep, (Pointer)ofp, FixOrg);
+	}
+	if (ta.mfp != NULL) {
+		mfp = ta.mfp;
+		SeqEntryExplore(sep, (Pointer)mfp, FixMol);
+	}
+
+/* entry  is converted to asn.1 spec 3.0, now do the checks */
+	retval = INFO_ASNNEW;
+	if(ta.had_biosource) {
+		SeqEntryExplore(sep, NULL, StripOld);
+	}
+	ToAsn4(sep);          /* move pubs and lineage */
+	if (is_equiv(sep)) {
+			/*do nothing*/
+	} else if (NOT_segment(sep)) {
+		SeqEntryExplore(sep, mult, MergeBSinDescr);
+	} else {
+		SeqEntryExplore(sep, (Pointer) (&bs), CheckBS);
+		if (bs.same == TRUE) {
+			SeqEntryExplore(sep, (Pointer) (&bs), StripBSfromParts);
+		} else {
+			SeqEntryExplore(sep, (Pointer) (&bs), StripBSfromTop);
+		}
+	}
+	ret = FixNucProtSet(sep);
+	retval |= ret;
+	EntryChangeImpFeat(sep); 
+	EntryChangeGBSource(sep); 
+	SeqEntryExplore (sep, NULL, FixProtMolInfo);
+	SeqEntryExplore (sep, NULL, FuseMolInfos);
+	SeqEntryExplore(sep, NULL, StripProtXref);
+	SeqEntryExplore(sep, (Pointer)(&qm), CheckMaps);
+	/*
+	if (qm.same == TRUE) {
+		SeqEntryExplore(sep, (Pointer)(&qm), StripMaps);
+	} else {
+		SeqEntryExplore(sep, NULL, MapsToGenref);
+	}
+	*/
+	SeqEntryExplore(sep, NULL, MapsToGenref);
+	CheckGeneticCode(sep);
+	NormalizeSegSeqMolInfo (sep);
+	toasn3_free(&ta);
+	RestoreUpdateDatePos (sep, update_date_pos);
+	if(qm.name)
+		qm.name=MemFree(qm.name);
+#endif    
+#endif
+}
+
+
+void CCleanup_imp::x_GetGenBankTaxonomy(const CSeq_entry& se, string &taxonomy)
+{
+    if (se.Which() == CSeq_entry::e_Seq) {
+        x_GetGenBankTaxonomy(m_Scope->GetBioseqHandle(se.GetSeq()), taxonomy);
+    } else if (se.Which() == CSeq_entry::e_Set) {
+        x_GetGenBankTaxonomy(m_Scope->GetBioseq_setHandle(se.GetSet()), taxonomy);
+    }
+}
+
+
+void CCleanup_imp::x_GetGenBankTaxonomy(CSeq_entry_Handle seh, string& taxonomy)
+{
+    x_GetGenBankTaxonomy(*(seh.GetCompleteSeq_entry()), taxonomy);
+}
+
+
+void CCleanup_imp::x_GetGenBankTaxonomy(CBioseq_Handle bh, string &taxonomy)
+{
+    if (!bh.CanGetInst_Repr()
+        || (bh.GetInst_Repr() != CSeq_inst::eRepr_raw
+            && bh.GetInst_Repr() != CSeq_inst::eRepr_const)) {
+        return;
+    }
+    CBioseq_EditHandle eh(bh);
+    if (eh.IsSetDescr()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+            if ((*desc_it)->Which() == CSeqdesc::e_Genbank
+                && (*desc_it)->GetGenbank().CanGetTaxonomy()) {
+                taxonomy = (*desc_it)->GetGenbank().GetTaxonomy();
+                (*desc_it)->SetGenbank().ResetTaxonomy();
+            }
+        }
+    }
+}
+
+
+void CCleanup_imp::x_GetGenBankTaxonomy(CBioseq_set_Handle bh, string &taxonomy)
+{
+    CBioseq_set_EditHandle eh(bh);
+    if (eh.IsSetDescr()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+            if ((*desc_it)->Which() == CSeqdesc::e_Genbank
+                && (*desc_it)->GetGenbank().CanGetTaxonomy()) {
+                taxonomy = (*desc_it)->GetGenbank().GetTaxonomy();
+                (*desc_it)->SetGenbank().ResetTaxonomy();
+            }
+        }
+    }
+    
+    ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
+        x_GetGenBankTaxonomy(m_Scope->GetSeq_entryHandle(**it), taxonomy);
+    }    
+}
+
+
+// this function should find the highest level for which all of the
+// mol-info descriptors on sequences and sets below this level are
+// consistent, put the mol-info on this level, and remove all mol-info
+// descriptors below this level
+// was NormalizeSegSeqMolInfo in C Toolkit
+void CCleanup_imp::x_NormalizeMolInfo(CBioseq_set_Handle bh)
+{
+    bool is_consistent = true;
+    int num_found = 0;
+    CRef<CMolInfo> mol(new CMolInfo);
+    CSeqdesc_CI desc_it(bh.GetParentEntry(), CSeqdesc::e_Molinfo);
+    while (desc_it && is_consistent) {
+        if (num_found == 0) {
+            //biomol
+            if (desc_it->GetMolinfo().CanGetBiomol()) {
+                mol->SetBiomol(desc_it->GetMolinfo().GetBiomol());
+            }
+            //completeness
+            if (desc_it->GetMolinfo().CanGetCompleteness()) {
+                mol->SetCompleteness(desc_it->GetMolinfo().GetCompleteness());
+            }
+            //tech
+            if (desc_it->GetMolinfo().CanGetTech()) {
+                mol->SetTech(desc_it->GetMolinfo().GetTech());
+            }
+            //techexp
+            if (desc_it->GetMolinfo().CanGetTechexp()) {
+                mol->SetTechexp(desc_it->GetMolinfo().GetTechexp());
+            }
+        } else {
+            //biomol
+            if (mol->CanGetBiomol()) {
+                if (!desc_it->GetMolinfo().CanGetBiomol()
+                    || mol->GetBiomol() != desc_it->GetMolinfo().GetBiomol()) {
+                    is_consistent = false;
+                }
+            } else if (desc_it->GetMolinfo().CanGetBiomol()) {
+                is_consistent = false;
+            }
+            //completeness
+            if (mol->CanGetCompleteness()) {
+                if (!desc_it->GetMolinfo().CanGetCompleteness()
+                    || mol->GetCompleteness() != desc_it->GetMolinfo().GetCompleteness()) {
+                    is_consistent = false;
+                }
+            } else if (desc_it->GetMolinfo().CanGetCompleteness()) {
+                is_consistent = false;
+            }
+             //tech
+            if (mol->CanGetTech()) {
+                if (!desc_it->GetMolinfo().CanGetTech()
+                    || mol->GetTech() != desc_it->GetMolinfo().GetTech()) {
+                    is_consistent = false;
+                }
+            } else if (desc_it->GetMolinfo().CanGetTech()) {
+                is_consistent = false;
+            }
+             //techexp
+            if (mol->CanGetTechexp()) {
+                if (!desc_it->GetMolinfo().CanGetTechexp()
+                    || !NStr::Equal(mol->GetTechexp(), desc_it->GetMolinfo().GetTechexp())) {
+                    is_consistent = false;
+                }
+            } else if (desc_it->GetMolinfo().CanGetTechexp()) {
+                is_consistent = false;
+            }
+        }
+        ++desc_it;
+        num_found++;
+    }
+           
+    if (is_consistent) {
+        bool need_to_move = false;
+        // is one molinfo already on this set?
+        CSeqdesc_CI this_set_desc(bh.GetParentEntry(), CSeqdesc::e_Molinfo, 1);
+        if (!this_set_desc) {
+            need_to_move = true;
+        }
+        if (num_found > 1 || need_to_move) {
+            ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
+                x_RemoveDescrByType((**it), CSeqdesc::e_Molinfo);
+            }
+        }
+        if (need_to_move) {
+            CBioseq_set_EditHandle eh(bh);
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            desc->SetMolinfo(*mol);
+            eh.AddSeqdesc(*desc);
+        }
+    } else {
+        ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
+            if ((*it)->Which() == CSeq_entry::e_Set) {
+                x_NormalizeMolInfo(m_Scope->GetBioseq_setHandle((*it)->GetSet()));
+            }
+        }
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -671,6 +1475,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/10/04 14:17:47  bollin
+ * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
+ * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
+ * Replaced deprecated CSeq_feat_Handle.Replace calls with CSeq_feat_EditHandle.Replace calls.
+ * Began implementing C++ version of LoopSeqEntryToAsn3.
+ *
  * Revision 1.5  2006/08/04 12:11:20  bollin
  * fixed crash bug in extended cleanup
  *

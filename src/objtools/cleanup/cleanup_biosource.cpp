@@ -711,6 +711,60 @@ void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
 }
 
 
+void CCleanup_imp::x_SetSourceLineage(const CSeq_entry& se, string lineage)
+{
+    if (se.Which() == CSeq_entry::e_Seq) {
+        x_SetSourceLineage(m_Scope->GetBioseqHandle(se.GetSeq()), lineage);
+    } else if (se.Which() == CSeq_entry::e_Set) {
+        x_SetSourceLineage(m_Scope->GetBioseq_setHandle(se.GetSet()), lineage);
+    }
+}
+
+
+void CCleanup_imp::x_SetSourceLineage(CSeq_entry_Handle seh, string lineage)
+{
+    x_SetSourceLineage(*(seh.GetCompleteSeq_entry()), lineage);
+}
+
+
+void CCleanup_imp::x_SetSourceLineage(CBioseq_Handle bh, string lineage)
+{
+    if (!bh.CanGetInst_Repr()
+        || (bh.GetInst_Repr() != CSeq_inst::eRepr_raw
+            && bh.GetInst_Repr() != CSeq_inst::eRepr_const)) {
+        return;
+    }
+    CBioseq_EditHandle eh(bh);
+    if (eh.IsSetDescr()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+            if ((*desc_it)->Which() == CSeqdesc::e_Source
+                && (*desc_it)->GetSource().CanGetOrg()) {
+                (*desc_it)->SetOrg().SetOrgname().SetLineage (lineage);
+            }
+        }
+    }
+}
+
+
+void CCleanup_imp::x_SetSourceLineage(CBioseq_set_Handle bh, string lineage)
+{
+    CBioseq_set_EditHandle eh(bh);
+    if (eh.IsSetDescr()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+            if ((*desc_it)->Which() == CSeqdesc::e_Source
+                && (*desc_it)->GetSource().CanGetOrg()) {
+                (*desc_it)->SetOrg().SetOrgname().SetLineage (lineage);
+            }
+        }
+    }
+    
+    ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
+        x_SetSourceLineage(m_Scope->GetSeq_entryHandle(**it), lineage);
+    }    
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -719,6 +773,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/10/04 14:17:46  bollin
+ * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
+ * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
+ * Replaced deprecated CSeq_feat_Handle.Replace calls with CSeq_feat_EditHandle.Replace calls.
+ * Began implementing C++ version of LoopSeqEntryToAsn3.
+ *
  * Revision 1.12  2006/08/01 00:22:15  ucko
  * Qualify is_sorted by objects::, to avoid confusion with std::is_sorted.
  *
