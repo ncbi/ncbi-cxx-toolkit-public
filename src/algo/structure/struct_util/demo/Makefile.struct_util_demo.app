@@ -16,7 +16,7 @@ LIB = xstruct_util \
       seqdb blastdb xnetblastcli xnetblast \
       xalgodustmask \
       tables xobjsimple xobjutil \
-      xobjread
+      xobjread creaders
       ncbimime \
       cdd \
       scoremat \
