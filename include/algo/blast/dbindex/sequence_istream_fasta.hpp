@@ -48,7 +48,7 @@ class CSequenceIStreamFasta : public CSequenceIStream
     private:
 
         /** Alias for the standard IO stream position type. */
-        typedef CNcbiIstream::pos_type pos_type;
+        typedef CT_POS_TYPE pos_type;
 
         bool stream_allocated_;         /**< Whether to deallocate the stream at destruction. */
         CNcbiIstream * istream_;        /**< Standard IO stream for reading FASTA data. */
