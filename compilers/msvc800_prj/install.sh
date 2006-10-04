@@ -14,8 +14,10 @@ target="${2:-//u/coremake/public/cxx.last}"
 compiler="${3:-msvc800}"
 compiler="${compiler}_prj"
 
-
-if test -n "$3" ; then
+# Real number of argument is 2.
+# The 3th argument don not used here (32|64-bit architecture),
+# but is needed for master installation script.
+if test -n "$4" ; then
   echo "USAGE:  `basename $script` [build_dir] [install_dir]"
 fi
 
