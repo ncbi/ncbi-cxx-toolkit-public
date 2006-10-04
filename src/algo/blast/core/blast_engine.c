@@ -72,6 +72,8 @@ static char const rcsid[] =
 #include <algo/blast/core/phi_gapalign.h>
 #include <algo/blast/core/phi_lookup.h>
 
+#include <algo/blast/core/mb_indexed_lookup.h>
+
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
 NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 2;
 NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 15;
@@ -286,11 +288,13 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
          BlastInitHitListReset(init_hitlist);
          
          if (aux_struct->WordFinder) {
+            subject->chunk = chunk;
             aux_struct->WordFinder(subject, query, query_info, lookup, matrix, 
                                    word_params, aux_struct->ewp, 
                                    aux_struct->offset_pairs, 
                                    kScanSubjectOffsetArraySize,
                                    init_hitlist, ungapped_stats);
+            
             if (init_hitlist->total == 0)
                continue;
          }
@@ -641,6 +645,7 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE ||
                      lookup_wrap->lut_type == RPS_LOOKUP_TABLE);
    Boolean mb_lookup = (lookup_wrap->lut_type == MB_LOOKUP_TABLE);
+   Boolean indexed_mb_lookup = (lookup_wrap->lut_type == INDEXED_MB_LOOKUP_TABLE);
    Boolean phi_lookup = (lookup_wrap->lut_type == PHI_AA_LOOKUP ||
                          lookup_wrap->lut_type == PHI_NA_LOOKUP);
    Boolean smith_waterman = 
@@ -663,6 +668,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
       aux_struct->WordFinder = NULL;
    } else if (mb_lookup) {
       aux_struct->WordFinder = MB_WordFinder;
+   } else if (indexed_mb_lookup) {
+      aux_struct->WordFinder = MB_IndexedWordFinder;
    } else if (phi_lookup) {
       aux_struct->WordFinder = PHIBlastWordFinder;
    } else if (blastp) {
