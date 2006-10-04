@@ -5,6 +5,7 @@ algo/align/util$
 algo/blast/api$
 algo/blast/composition_adjustment$
 algo/blast/core$
+algo/blast/dbindex$
 algo/dustmask$
 algo/gnomon$
 algo/phy_tree

@@ -27,6 +27,7 @@ objects/taxon1$
 objtools/readers$
 objtools/readers/seqdb$
 algo/blast/composition_adjustment$
+algo/blast/dbindex$
 algo/blast/api$
 algo/structure/bma_refine$
 algo/structure/cd_utils$
