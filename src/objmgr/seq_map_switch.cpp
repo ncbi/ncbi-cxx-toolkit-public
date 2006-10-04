@@ -214,8 +214,8 @@ struct SSeq_align_Info
                 }
                 CRange<int> m1 = GetMatchPos(range1, pos1);
                 CRange<int> m2 = GetMatchPos(range2, pos2);
-                _TRACE("range1: "<<range1<<" pos1: "<<pos1<<" m1: "<<m1);
-                _TRACE("range2: "<<range2<<" pos2: "<<pos2<<" m2: "<<m2);
+                //_TRACE("range1: "<<range1<<" pos1: "<<pos1<<" m1: "<<m1);
+                //_TRACE("range2: "<<range2<<" pos2: "<<pos2<<" m2: "<<m2);
                 if ( m1.GetTo() < 0 || m2.GetTo() < 0 ) {
                     return ret;
                 }
@@ -506,6 +506,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/10/04 20:03:35  ucko
+* SMatch::GetMatchOrdered: comment out uncompilable _TRACE statements
+* (CRange<> objects aren't directly printable at present).
+*
 * Revision 1.4  2006/10/04 19:31:08  vasilche
 * Allow inexact match in segment switch.
 *
