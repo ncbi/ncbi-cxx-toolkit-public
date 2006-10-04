@@ -637,7 +637,7 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
         } else if (org.CanGetTaxname()) {
             src = org.GetTaxname();
         }
-        if (org.CanGetMod()) {
+        if (org.IsSetMod()) {
             list<string>::const_iterator it = org.GetMod().begin();
             while (it != org.GetMod().end()) {
                 src += " ";
@@ -1475,6 +1475,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/10/04 15:32:55  bollin
+ * use IsSetMod and IsSetSyn to check for existing Mod and Syn on a COrg_ref,
+ * not CanGetMod and CanGetSyn because both will always return true.
+ *
  * Revision 1.6  2006/10/04 14:17:47  bollin
  * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
  * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).

@@ -552,7 +552,7 @@ void CCleanup_imp::x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_
     // merge in OrgRef
     if (add_src.CanGetOrg() && src.CanGetOrg()) {
         // merge modifiers
-        if (add_src.GetOrg().CanGetMod()) {
+        if (add_src.GetOrg().IsSetMod()) {
             ITERATE (COrg_ref::TMod, it, add_src.GetOrg().GetMod()) {
                 src.SetOrg().SetMod().push_back(*it);
             }
@@ -566,7 +566,7 @@ void CCleanup_imp::x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_
             add_src.SetOrg().ResetDb();
         }
         // merge syn
-        if (add_src.GetOrg().CanGetSyn()) {
+        if (add_src.GetOrg().IsSetSyn()) {
             ITERATE (COrg_ref::TSyn, it, add_src.GetOrg().GetSyn()) {
                 src.SetOrg().SetSyn().push_back(*it);
             }
@@ -666,10 +666,10 @@ void CCleanup_imp::x_ExtendedCleanStrings (COrg_ref &org)
 {
     EXTENDED_CLEAN_STRING_MEMBER(org, Taxname);
     EXTENDED_CLEAN_STRING_MEMBER(org, Common);
-    if (org.CanGetMod()) {
+    if (org.IsSetMod()) {
         CleanVisStringList (org.SetMod());
     }
-    if (org.CanGetSyn()) {
+    if (org.IsSetSyn()) {
         CleanVisStringList (org.SetSyn());
     }
     if (org.CanGetOrgname()) {
@@ -773,6 +773,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/10/04 15:32:55  bollin
+ * use IsSetMod and IsSetSyn to check for existing Mod and Syn on a COrg_ref,
+ * not CanGetMod and CanGetSyn because both will always return true.
+ *
  * Revision 1.13  2006/10/04 14:17:46  bollin
  * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
  * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
