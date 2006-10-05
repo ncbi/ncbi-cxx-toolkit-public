@@ -173,8 +173,15 @@ public:
     // if not called), the values will affect the new connections only
 
     void SetPacketSize(SQLUINTEGER packet_size);
+    SQLUINTEGER GetPacketSize(void) const
+    {
+        return m_PacketSize;
+    }
 
-    SQLHENV GetODBCContext(void) const;
+    SQLHENV GetODBCContext(void) const
+    {
+        return m_Context;
+    }
     const CODBC_Reporter& GetReporter(void) const
     {
         return m_Reporter;
@@ -183,6 +190,13 @@ public:
     {
         return m_TDSVersion;
     }
+
+    bool GetUseDSN(void) const
+    {
+        return m_UseDSN;
+    }
+
+    bool CheckSIE(int rc, SQLHDBC con);
 
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
@@ -195,18 +209,12 @@ private:
     CODBCContextRegistry* m_Registry;
     int             m_TDSVersion;
 
-    SQLHDBC x_ConnectToServer(const string&   srv_name,
-                   const string&   usr_name,
-                   const string&   passwd,
-                   TConnectionMode mode);
     void xReportConError(SQLHDBC con);
 
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);
     void x_SetRegistry(CODBCContextRegistry* registry);
     void x_Close(bool delete_conn = true);
-    static string x_MakeFreeTDSVersion(int version);
-    bool CheckSIE(int rc, SQLHDBC con);
 
 
     friend class CODBCContextRegistry;
@@ -233,9 +241,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public impl::CConnection
 
 protected:
     CODBC_Connection(CODBCContext& cntx,
-                     SQLHDBC conn,
-                     bool reusable,
-                     const string& pool_name);
+                     const I_DriverContext::SConnAttr& conn_attr);
     virtual ~CODBC_Connection(void);
 
 protected:
@@ -292,8 +298,9 @@ private:
     bool x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
                     CStatementBase& stmt,
                     CDB_Stream& stream);
+    static string x_MakeFreeTDSVersion(int version);
 
-    SQLHDBC         m_Link;
+    const SQLHDBC   m_Link;
 
     CODBC_Reporter  m_Reporter;
 };
@@ -832,6 +839,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/10/05 19:53:07  ssikorsk
+ * Moved connection logic from CODBCContext to CODBC_Connection.
+ *
  * Revision 1.47  2006/09/18 15:24:55  ssikorsk
  * Added method BindParam_ODBC to CStatementBase;
  * Added methods x_GetBCPDataType, x_GetBCPDataSize, x_GetDataTerminator, and

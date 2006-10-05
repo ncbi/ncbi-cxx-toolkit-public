@@ -339,30 +339,7 @@ CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
 {
     CFastMutexGuard mg(m_Mtx);
 
-    SQLHDBC con = x_ConnectToServer(conn_attr.srv_name,
-                                    conn_attr.user_name,
-                                    conn_attr.passwd,
-                                    conn_attr.mode);
-
-    if (!con) {
-        string err;
-
-        err += "Cannot connect to the server '" + conn_attr.srv_name;
-        err += "' as user '" + conn_attr.user_name + "'" + m_Reporter.GetExtraMsg();
-        DATABASE_DRIVER_ERROR( err, 100011 );
-    }
-
-    CODBC_Connection* t_con = new CODBC_Connection(*this,
-                                                   con,
-                                                   conn_attr.reusable,
-                                                   conn_attr.pool_name);
-    t_con->SetServerName(conn_attr.srv_name);
-    t_con->SetUserName(conn_attr.user_name);
-    t_con->SetPassword(conn_attr.passwd);
-    t_con->SetBCPable((conn_attr.mode & fBcpIn) != 0);
-    t_con->SetSecureLogin((conn_attr.mode & fPasswordEncrypted) != 0);
-
-    return t_con;
+    return new CODBC_Connection(*this, conn_attr);
 }
 
 CODBCContext::~CODBCContext()
@@ -423,41 +400,6 @@ void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 }
 
 
-SQLHENV CODBCContext::GetODBCContext(void) const
-{
-    return m_Context;
-}
-
-
-string CODBCContext::x_MakeFreeTDSVersion(int version)
-{
-    string str_version = "TDS_Version=";
-
-    switch ( version )
-    {
-    case 42:
-        str_version += "4.2;Port=2158";
-        break;
-    case 46:
-        str_version += "4.6";
-        break;
-    case 50:
-        str_version += "5.0;Port=2158";
-        break;
-    case 70:
-        str_version += "7.0";
-        break;
-    case 80:
-        str_version += "8.0";
-        break;
-    default:
-        DATABASE_DRIVER_ERROR( "Invalid TDS version with the FreeTDS driver.", 100000 );
-    }
-
-    return str_version;
-}
-
-
 bool CODBCContext::CheckSIE(int rc, SQLHDBC con)
 {
     switch(rc) {
@@ -477,152 +419,6 @@ bool CODBCContext::CheckSIE(int rc, SQLHDBC con)
     return false;
 }
 
-
-SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
-                                        const string&   user_name,
-                                        const string&   passwd,
-                                        TConnectionMode mode)
-{
-    // This is a private method. We do not have to make it thread-safe.
-    // This will be made in public methods.
-
-    SQLHDBC con;
-    SQLRETURN r;
-
-    r = SQLAllocHandle(SQL_HANDLE_DBC, m_Context, &con);
-    if((r != SQL_SUCCESS) && (r != SQL_SUCCESS_WITH_INFO))
-        return 0;
-
-    if(GetTimeout()) {
-        SQLSetConnectAttr(con, SQL_ATTR_CONNECTION_TIMEOUT, (SQLPOINTER)GetTimeout(), 0);
-    }
-
-    if(GetLoginTimeout()) {
-        SQLSetConnectAttr(con, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER)GetLoginTimeout(), 0);
-    }
-
-    if(m_PacketSize) {
-        SQLSetConnectAttr(con, SQL_ATTR_PACKET_SIZE, (SQLPOINTER)m_PacketSize, 0);
-    }
-
-#ifdef SQL_COPT_SS_BCP
-    if((mode & fBcpIn) != 0) {
-        SQLSetConnectAttr(con, SQL_COPT_SS_BCP, (SQLPOINTER) SQL_BCP_ON, SQL_IS_INTEGER);
-    }
-#endif
-
-
-    string extra_msg = " SERVER: " + srv_name + "; USER: " + user_name;
-    m_Reporter.SetExtraMsg( extra_msg );
-
-    if(!m_UseDSN) {
-        const string conn_str_suffix(srv_name +
-                                     ";UID=" +
-                                     user_name +
-                                     ";PWD=" +
-                                     passwd);
-#ifndef FTDS_IN_USE
-        // Default connection string ...
-        string connect_str("DRIVER={SQL Server};SERVER=");
-        CNcbiApplication* app = CNcbiApplication::Instance();
-
-        if (app) {
-            enum EState {eStInitial, eStSingleQuote};
-            vector<string> driver_names;
-            const IRegistry& registry = app->GetConfig();
-            const string odbc_driver_name =
-                registry.GetString("ODBC", "DRIVER_NAME", "'SQL Server'");
-
-            NStr::Tokenize(odbc_driver_name, " ", driver_names);
-            EState state = eStInitial;
-            string driver_name;
-
-            ITERATE(vector<string>, it, driver_names) {
-                bool complete_deriver_name = false;
-                const string cur_str(*it);
-
-                // Check for quotes ...
-                if (state == eStInitial) {
-                    if (cur_str[0] == '\'') {
-                        if (cur_str[cur_str.size() - 1] == '\'') {
-                            // Skip quote ...
-                            driver_name = it->substr(1, cur_str.size() - 2);
-                            complete_deriver_name = true;
-                        } else {
-                            // Skip quote ...
-                            driver_name = it->substr(1);
-                            state = eStSingleQuote;
-                        }
-                    } else {
-                        driver_name = cur_str;
-                        complete_deriver_name = true;
-                    }
-                } else if (state == eStSingleQuote) {
-                    if (cur_str[cur_str.size() - 1] == '\'') {
-                        // Final quote ...
-                        driver_name += " " + cur_str.substr(0, cur_str.size() - 1);
-                        state = eStInitial;
-                        complete_deriver_name = true;
-                    } else {
-                        driver_name += " " + cur_str;
-                    }
-                }
-
-                if (complete_deriver_name) {
-                    string conn_str("DRIVER={" + driver_name + "};SERVER=");
-                    conn_str += conn_str_suffix;
-
-                    if (CheckSIE(SQLDriverConnect(con,
-                                                  0,
-                                                  CODBCString(conn_str, odbc::DefStrEncoding),
-                                                  SQL_NTS,
-                                                  0,
-                                                  0,
-                                                  0,
-                                                  SQL_DRIVER_NOPROMPT),
-                                 con)) {
-                        return con;
-                    }
-
-                    ERR_POST(Warning << "Cannot initialize ODBC driver '" <<
-                             driver_name << "'.");
-                }
-            }
-        }
-
-        // Connection strings for SQL Native Client 2005.
-        // string connect_str("DRIVER={SQL Native Client};MultipleActiveResultSets=true;SERVER=");
-        // string connect_str("DRIVER={SQL Native Client};SERVER=");
-#else
-        string connect_str("DRIVER={FreeTDS};SERVER=");
-#endif
-        // Ignore non-complete driver name ...
-        // Use default driver name ...
-        connect_str += conn_str_suffix;
-
-#ifdef FTDS_IN_USE
-        connect_str += ";" + x_MakeFreeTDSVersion(GetTDSVersion());
-
-        if (!GetClientCharset().empty()) {
-            connect_str += ";client_charset=" + GetClientCharset();
-        }
-#endif
-
-        r = SQLDriverConnect(con, 0, CODBCString(connect_str, odbc::DefStrEncoding), SQL_NTS,
-                             0, 0, 0, SQL_DRIVER_NOPROMPT);
-    }
-    else {
-        r = SQLConnect(con, CODBCString(srv_name, odbc::DefStrEncoding), SQL_NTS,
-                      CODBCString(user_name, odbc::DefStrEncoding), SQL_NTS,
-                      CODBCString(passwd, odbc::DefStrEncoding), SQL_NTS);
-    }
-
-    if (CheckSIE(r, con)) {
-        return con;
-    }
-
-    return NULL;
-}
 
 void CODBCContext::xReportConError(SQLHDBC con)
 {
@@ -872,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/10/05 19:53:57  ssikorsk
+ * Moved connection logic from CODBCContext to CODBC_Connection.
+ *
  * Revision 1.67  2006/09/13 20:06:56  ssikorsk
  * Revamp code to support  unicode version of ODBC API.
  *

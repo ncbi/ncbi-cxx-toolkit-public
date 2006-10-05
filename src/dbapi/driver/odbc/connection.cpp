@@ -55,23 +55,210 @@ static bool ODBC_xSendDataGetId(CStatementBase& stmt,
                                 SQLPOINTER* id);
 
 CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
-                                   SQLHDBC conn,
-                                   bool reusable,
-                                   const string& pool_name) :
-    impl::CConnection(cntx, false, reusable, pool_name),
-    m_Link(conn),
-    m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx.GetReporter())
+                                   const I_DriverContext::SConnAttr& conn_attr) :
+    impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name),
+    m_Link(NULL),
+    m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter())
 {
+    SQLRETURN rc;
+
+    rc = SQLAllocHandle(SQL_HANDLE_DBC, cntx.GetODBCContext(), const_cast<SQLHDBC*>(&m_Link));
+
+    if((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
+        DATABASE_DRIVER_ERROR( "Cannot allocate a connection hanle.", 100011 );
+    }
+
+    _ASSERT(m_Link);
+    m_Reporter.SetHandle(m_Link);
+
+    if(GetCDriverContext().GetTimeout()) {
+        SQLSetConnectAttr(m_Link, SQL_ATTR_CONNECTION_TIMEOUT, (SQLPOINTER)GetCDriverContext().GetTimeout(), 0);
+    }
+
+    if(GetCDriverContext().GetLoginTimeout()) {
+        SQLSetConnectAttr(m_Link, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER)GetCDriverContext().GetLoginTimeout(), 0);
+    }
+
+    if(cntx.GetPacketSize()) {
+        SQLSetConnectAttr(m_Link, SQL_ATTR_PACKET_SIZE, (SQLPOINTER)cntx.GetPacketSize(), 0);
+    }
+
+#ifdef SQL_COPT_SS_BCP
+    if((conn_attr.mode & fBcpIn) != 0) {
+        SQLSetConnectAttr(m_Link, SQL_COPT_SS_BCP, (SQLPOINTER) SQL_BCP_ON, SQL_IS_INTEGER);
+    }
+#endif
+
+
+    string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
+    m_Reporter.SetExtraMsg( extra_msg );
+
+    if(!cntx.GetUseDSN()) {
+        const string conn_str_suffix(conn_attr.srv_name +
+                                     ";UID=" +
+                                     conn_attr.user_name +
+                                     ";PWD=" +
+                                     conn_attr.passwd);
+#ifndef FTDS_IN_USE
+        // Default connection string ...
+        string connect_str("DRIVER={SQL Server};SERVER=");
+        CNcbiApplication* app = CNcbiApplication::Instance();
+
+        if (app) {
+            enum EState {eStInitial, eStSingleQuote};
+            vector<string> driver_names;
+            const IRegistry& registry = app->GetConfig();
+            const string odbc_driver_name =
+                registry.GetString("ODBC", "DRIVER_NAME", "'SQL Server'");
+
+            NStr::Tokenize(odbc_driver_name, " ", driver_names);
+            EState state = eStInitial;
+            string driver_name;
+
+            ITERATE(vector<string>, it, driver_names) {
+                bool complete_deriver_name = false;
+                const string cur_str(*it);
+
+                // Check for quotes ...
+                if (state == eStInitial) {
+                    if (cur_str[0] == '\'') {
+                        if (cur_str[cur_str.size() - 1] == '\'') {
+                            // Skip quote ...
+                            driver_name = it->substr(1, cur_str.size() - 2);
+                            complete_deriver_name = true;
+                        } else {
+                            // Skip quote ...
+                            driver_name = it->substr(1);
+                            state = eStSingleQuote;
+                        }
+                    } else {
+                        driver_name = cur_str;
+                        complete_deriver_name = true;
+                    }
+                } else if (state == eStSingleQuote) {
+                    if (cur_str[cur_str.size() - 1] == '\'') {
+                        // Final quote ...
+                        driver_name += " " + cur_str.substr(0, cur_str.size() - 1);
+                        state = eStInitial;
+                        complete_deriver_name = true;
+                    } else {
+                        driver_name += " " + cur_str;
+                    }
+                }
+
+                if (complete_deriver_name) {
+                    string conn_str("DRIVER={" + driver_name + "};SERVER=");
+                    conn_str += conn_str_suffix;
+
+                    if (!CheckSIE(SQLDriverConnect(m_Link,
+                                                  0,
+                                                  CODBCString(conn_str, odbc::DefStrEncoding),
+                                                  SQL_NTS,
+                                                  0,
+                                                  0,
+                                                  0,
+                                                  SQL_DRIVER_NOPROMPT),
+                                 m_Link))
+                    {
+                        string err;
+
+                        err += "Cannot initialize ODBC driver '";
+                        err += driver_name;
+
+                        DATABASE_DRIVER_ERROR( err, 100011 );
+                    }
+                }
+            }
+        }
+
+        // Connection strings for SQL Native Client 2005.
+        // string connect_str("DRIVER={SQL Native Client};MultipleActiveResultSets=true;SERVER=");
+        // string connect_str("DRIVER={SQL Native Client};SERVER=");
+#else
+        string connect_str("DRIVER={FreeTDS};SERVER=");
+#endif
+        // Ignore non-complete driver name ...
+        // Use default driver name ...
+        connect_str += conn_str_suffix;
+
+#ifdef FTDS_IN_USE
+        connect_str += ";" + x_MakeFreeTDSVersion(cntx.GetTDSVersion());
+
+        if (!GetCDriverContext().GetClientCharset().empty()) {
+            connect_str += ";client_charset=" + GetCDriverContext().GetClientCharset();
+        }
+#endif
+
+        rc = SQLDriverConnect(m_Link, 0, CODBCString(connect_str, odbc::DefStrEncoding), SQL_NTS,
+                             0, 0, 0, SQL_DRIVER_NOPROMPT);
+    }
+    else {
+        rc = SQLConnect(m_Link, CODBCString(conn_attr.srv_name, odbc::DefStrEncoding), SQL_NTS,
+                      CODBCString(conn_attr.user_name, odbc::DefStrEncoding), SQL_NTS,
+                      CODBCString(conn_attr.passwd, odbc::DefStrEncoding), SQL_NTS);
+    }
+
+    if (!cntx.CheckSIE(rc, m_Link)) {
+        string err;
+
+        err += "Cannot connect to the server '" + conn_attr.srv_name;
+        err += "' as user '" + conn_attr.user_name + "'" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err, 100011 );
+    }
+
+    SetServerName(conn_attr.srv_name);
+    SetUserName(conn_attr.user_name);
+    SetPassword(conn_attr.passwd);
+    SetBCPable((conn_attr.mode & I_DriverContext::fBcpIn) != 0);
+    SetSecureLogin((conn_attr.mode & I_DriverContext::fPasswordEncrypted) != 0);
+
     m_Reporter.SetHandlerStack(GetMsgHandlers());
 }
 
 
-bool CODBC_Connection::IsAlive()
+string CODBC_Connection::x_MakeFreeTDSVersion(int version)
 {
-    SQLINTEGER status;
-    SQLRETURN r= SQLGetConnectAttr(m_Link, SQL_ATTR_CONNECTION_DEAD, &status, SQL_IS_INTEGER, 0);
+    string str_version = "TDS_Version=";
 
-    return ((r == SQL_SUCCESS || r == SQL_SUCCESS_WITH_INFO) && (status == SQL_CD_FALSE));
+    switch ( version )
+    {
+    case 42:
+        str_version += "4.2;Port=2158";
+        break;
+    case 46:
+        str_version += "4.6";
+        break;
+    case 50:
+        str_version += "5.0;Port=2158";
+        break;
+    case 70:
+        str_version += "7.0";
+        break;
+    case 80:
+        str_version += "8.0";
+        break;
+    default:
+        DATABASE_DRIVER_ERROR( "Invalid TDS version with the FreeTDS driver.", 100000 );
+    }
+
+    return str_version;
+}
+
+
+bool CODBC_Connection::IsAlive(void)
+{
+    // FreeTDS odbc driver does not support SQL_ATTR_CONNECTION_DEAD attribute.
+
+#if !defined(FTDS_IN_USE)
+    if (m_Link) {
+        SQLINTEGER status;
+        SQLRETURN r= SQLGetConnectAttr(m_Link, SQL_ATTR_CONNECTION_DEAD, &status, SQL_IS_INTEGER, 0);
+
+        return ((r == SQL_SUCCESS || r == SQL_SUCCESS_WITH_INFO) && (status == SQL_CD_FALSE));
+    }
+#endif
+
+    return (m_Link != NULL);
 }
 
 
@@ -220,6 +407,10 @@ CODBC_Connection::~CODBC_Connection()
 {
     try {
         Close();
+
+        if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
+            ReportErrors();
+        }
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
@@ -246,12 +437,6 @@ bool CODBC_Connection::Close(void)
                 DATABASE_DRIVER_ERROR( err_message, 410009 );
             }
         }
-
-        if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
-            ReportErrors();
-        }
-
-        m_Link = NULL;
 
         return true;
     }
@@ -648,6 +833,17 @@ CStatementBase::Type2String(const CDB_Object& param) const
     case eDB_DateTime:
         type_str = "datetime";
         break;
+    case eDB_Text:
+#ifdef UNICODE
+        type_str = "ntext";
+#else
+        type_str = "text";
+#endif
+    case eDB_Image:
+        type_str = "image";
+        break;
+    default:
+        break;
     }
 
     return type_str;
@@ -988,6 +1184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/10/05 19:54:33  ssikorsk
+ * Moved connection logic from CODBCContext to CODBC_Connection.
+ *
  * Revision 1.50  2006/10/03 20:13:25  ssikorsk
  * strncpy --> memmove;
  * Get rid of warnings;
