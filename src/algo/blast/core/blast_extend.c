@@ -37,12 +37,10 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/mb_lookup.h>
-#include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
-#include <algo/blast/core/aa_ungapped.h>        /* for
-                                                   BlastDiagTable{New,Free} */
-#include "blast_inline.h"
-
 #include <algo/blast/core/mb_indexed_lookup.h>
+#include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
+#include <algo/blast/core/aa_ungapped.h> /* for BlastDiagTable{New,Free} */
+#include "blast_inline.h"
 
 /**
  * Attempt to retrieve information associated with diagonal diag.
@@ -547,13 +545,14 @@ Int2 MB_IndexedWordFinder(
         BlastInitHitList * init_hitlist,
         BlastUngappedStats * ungapped_stats)
 { 
-#ifdef _NCBISTD_        /* C toolkit; should never get to here */
-    abort();
-#else                   /* C++ toolkit */
     Int4 oid = subject->oid;
     Int4 chunk = subject->chunk;
-    MB_IdbGetResults(lookup_wrap->lut, oid, chunk, init_hitlist);
-#endif
+    T_MB_IdbGetResults get_results = 
+                        (T_MB_IdbGetResults)lookup_wrap->read_indexed_db;
+
+    ASSERT(get_results);
+    get_results(lookup_wrap->lut, oid, chunk, init_hitlist);
+
     return 0;
 }
 
