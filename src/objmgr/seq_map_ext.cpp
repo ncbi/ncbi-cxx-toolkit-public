@@ -176,7 +176,7 @@ CSeqMap_Seq_data::CSeqMap_Seq_data(const TObject& obj)
 {
     _ASSERT(obj.IsSetLength());
     x_AddEnd();
-    if ( obj.IsSetSeq_data() ) {
+    if ( obj.IsSetSeq_data() && !obj.GetSeq_data().IsGap() ) {
         x_Add(obj.GetSeq_data(), obj.GetLength());
     }
     else {
@@ -370,6 +370,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/10/05 20:22:53  vasilche
+* Recognize Seq-data.gap.
+*
 * Revision 1.16  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

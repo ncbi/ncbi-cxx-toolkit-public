@@ -843,7 +843,7 @@ CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_loc_equiv& seq)
 
 CSeqMap::CSegment& CSeqMap::x_Add(const CSeq_literal& seq)
 {
-    if ( seq.IsSetSeq_data() ) {
+    if ( seq.IsSetSeq_data() && !seq.GetSeq_data().IsGap() ) {
         return x_Add(seq.GetSeq_data(), seq.GetLength());
     }
     else {
