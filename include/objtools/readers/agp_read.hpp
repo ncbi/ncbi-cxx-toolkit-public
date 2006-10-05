@@ -49,18 +49,21 @@ enum EAgpRead_IdRule
 NCBI_XOBJREAD_EXPORT
 void AgpRead(CNcbiIstream& is,
              vector<CRef<objects::CBioseq> >& bioseqs,
-             EAgpRead_IdRule component_id_rule = eAgpRead_ParseId);
+             EAgpRead_IdRule component_id_rule = eAgpRead_ParseId,
+             bool set_gap_data = false);
 
 /// Same thing, but wrap bioseqs in Seq-entry's.
 NCBI_XOBJREAD_EXPORT
 void AgpRead(CNcbiIstream& is,
              vector<CRef<objects::CSeq_entry> >& entries,
-             EAgpRead_IdRule component_id_rule = eAgpRead_ParseId);
+             EAgpRead_IdRule component_id_rule = eAgpRead_ParseId,
+             bool set_gap_data = false);
 
 /// Return a Bioseq-set containing everything.
 NCBI_XOBJREAD_EXPORT
 CRef<objects::CBioseq_set>
-AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule = eAgpRead_ParseId);
+AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule = eAgpRead_ParseId,
+        bool set_gap_data = false);
 
 END_NCBI_SCOPE
 
@@ -69,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * =========================================================================
  * $Log$
+ * Revision 1.4  2006/10/05 18:29:12  jcherry
+ * Optionally set Seq-gap based on gap type and linkage in file
+ *
  * Revision 1.3  2005/01/26 20:58:48  jcherry
  * More robust and controllable handling of component ids
  *

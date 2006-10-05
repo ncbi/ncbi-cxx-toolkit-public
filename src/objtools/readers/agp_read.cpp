@@ -41,16 +41,20 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/general/Object_id.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-CRef<CBioseq_set> AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule)
+CRef<CBioseq_set> AgpRead(CNcbiIstream& is,
+                          EAgpRead_IdRule component_id_rule,
+                          bool set_gap_data)
 {
     vector<CRef<CSeq_entry> > entries;
-    AgpRead(is, entries, component_id_rule);
+    AgpRead(is, entries, component_id_rule, set_gap_data);
     CRef<CBioseq_set> bioseq_set(new CBioseq_set);
     ITERATE (vector<CRef<CSeq_entry> >, iter, entries) {
         bioseq_set->SetSeq_set().push_back(*iter);
@@ -61,10 +65,11 @@ CRef<CBioseq_set> AgpRead(CNcbiIstream& is, EAgpRead_IdRule component_id_rule)
 
 void AgpRead(CNcbiIstream& is,
              vector<CRef<CSeq_entry> >& entries,
-             EAgpRead_IdRule component_id_rule)
+             EAgpRead_IdRule component_id_rule,
+             bool set_gap_data)
 {
     vector<CRef<CBioseq> > bioseqs;
-    AgpRead(is, bioseqs, component_id_rule);
+    AgpRead(is, bioseqs, component_id_rule, set_gap_data);
     NON_CONST_ITERATE (vector<CRef<CBioseq> >, bioseq, bioseqs) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSeq(**bioseq);
@@ -75,7 +80,8 @@ void AgpRead(CNcbiIstream& is,
 
 void AgpRead(CNcbiIstream& is,
              vector<CRef<CBioseq> >& bioseqs,
-             EAgpRead_IdRule component_id_rule)
+             EAgpRead_IdRule component_id_rule,
+             bool set_gap_data)
 {
     string line;
     vector<string> fields;
@@ -189,6 +195,49 @@ void AgpRead(CNcbiIstream& is,
             if (fields[4] == "U") {
                 delta_seq->SetLiteral().SetFuzz().SetLim();
             }
+            if (set_gap_data) {
+                // Set the new (10/5/06) gap field of Seq-data,
+                // rather than leaving Seq-data unset
+                CSeq_gap::EType type;
+                CSeq_gap::ELinkage linkage;
+
+                const string& type_string = fields[6];
+                if (type_string == "fragment") {
+                    type = CSeq_gap::eType_fragment;
+                } else if (type_string == "split_finished") {
+                    type = CSeq_gap::eType_other;
+                } else if (type_string == "clone") {
+                    type = CSeq_gap::eType_clone;
+                } else if (type_string == "contig") {
+                    type = CSeq_gap::eType_contig;
+                } else if (type_string == "centromere") {
+                    type = CSeq_gap::eType_centromere;
+                } else if (type_string == "short_arm") {
+                    type = CSeq_gap::eType_other;
+                } else if (type_string == "heterochromatin") {
+                    type = CSeq_gap::eType_heterochromatin;
+                } else if (type_string == "telomere") {
+                    type = CSeq_gap::eType_telomere;
+                } else {
+                    throw runtime_error("invalid gap type in column 7: "
+                                        + type_string);
+                }
+
+                const string& linkage_string = fields[7];
+                if (linkage_string == "yes") {
+                    linkage = CSeq_gap::eLinkage_linked;
+                } else if (linkage_string == "no") {
+                    linkage = CSeq_gap::eLinkage_unlinked;
+                } else {
+                    throw runtime_error("invalid linkage in column 8: "
+                                        + linkage_string);
+                }
+
+                delta_seq->SetLiteral().SetSeq_data()
+                           .SetGap().SetType(type);
+                delta_seq->SetLiteral().SetSeq_data()
+                           .SetGap().SetLinkage(linkage);
+            }
             length += gap_len;
         } else if (fields[4].size() == 1 && 
                    fields[4].find_first_of("ADFGPOW") == 0) {
@@ -254,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.17  2006/10/05 18:29:12  jcherry
+ * Optionally set Seq-gap based on gap type and linkage in file
+ *
  * Revision 1.16  2006/08/08 18:48:50  jcherry
  * Interpret '#' anywhere as the start of a comment (not just at the
  * beginning of a line)
