@@ -43,7 +43,7 @@ BEGIN_SCOPE(gnomon)
 class CParse
 {
     public:
-        CParse(const CSeqScores& ss);
+        CParse(const CSeqScores& ss, bool leftanchor, bool rightanchor);
         const CHMM_State* Path() const { return m_path; }
         void PrintInfo() const;
         list<CGene> GetGenes() const;
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/05 15:32:06  souvorov
+ * Implementation of anchors for intergenics
+ *
  * Revision 1.2  2005/11/21 21:33:46  chetvern
  * Splitted CParse::PrintGenes into CGnomonEngine::PartialModelStepBack and PrintGenes function
  *

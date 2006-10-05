@@ -63,7 +63,7 @@ struct SRState
 };
 
 template<class Left, class Right> inline
-bool s_EvaluateNewScore(const Left& left, const Right& right, double& rscore, bool& openrgn)
+bool s_EvaluateNewScore(const Left& left, const Right& right, double& rscore, bool& openrgn, bool rightanchor = false)
 {
 
     rscore = BadScore();
@@ -91,7 +91,7 @@ bool s_EvaluateNewScore(const Left& left, const Right& right, double& rscore, bo
     // this check is frame-dependent and MUST be after BranchScore
     if(right.StopInside()) return false;     
     
-    if(right.NoRightEnd()) scr = right.ClosingLengthScore();
+    if(right.NoRightEnd() && !rightanchor) scr = right.ClosingLengthScore();
     else scr = right.LengthScore();
     if(scr == BadScore()) return true;
     score += scr;
@@ -170,11 +170,11 @@ inline bool s_ForwardStep(const L& left, CIntron& right)
 }
 
 template<class L> 
-inline bool s_ForwardStep(const L& left, CIntergenic& right)
+inline bool s_ForwardStep(const L& left, CIntergenic& right, bool rightanchor)
 {
     double score;
     bool openrgn;
-    if(!s_EvaluateNewScore(left,right,score,openrgn)) return false;
+    if(!s_EvaluateNewScore(left,right,score,openrgn,rightanchor)) return false;
     else if(score == BadScore()) return true;
     
     if(left.Score() != BadScore() && openrgn)
@@ -228,7 +228,7 @@ inline void s_MakeStep(vector<L>& lvec, vector<CIntron>& rvec)
 
 
 template<class L> 
-inline void s_MakeStep(vector<L>& lvec, vector<CIntergenic>& rvec)
+inline void s_MakeStep(vector<L>& lvec, vector<CIntergenic>& rvec, bool rightanchor = false)
 {
     if(lvec.empty()) return;
     CIntergenic& right = rvec.back();
@@ -239,12 +239,12 @@ inline void s_MakeStep(vector<L>& lvec, vector<CIntergenic>& rvec)
     int nearlimit = max(0,rlimit-kTooFarLen);
     while(i >= 0 && lvec[i].Stop() >= nearlimit) 
     {
-        if(!s_ForwardStep(lvec[i--],right)) return;
+        if(!s_ForwardStep(lvec[i--],right,rightanchor)) return;
     }
     if(i < 0) return;
     for(const L* p = &lvec[i]; p !=0; p = p->PrevExon())
     {
-        if(!s_ForwardStep(*p,right)) return;
+        if(!s_ForwardStep(*p,right,rightanchor)) return;
     }
 }
 
@@ -327,20 +327,16 @@ double AddProbabilities(double scr1, double scr2)
     else return scr2+log(1+exp(scr1-scr2));
 }
 
-CParse::CParse(const CSeqScores& ss) : m_seqscr(ss)
-{
-    try
-    {
+CParse::CParse(const CSeqScores& ss, bool leftanchor, bool rightanchor) : m_seqscr(ss) {
+    try {
         m_igplus.reserve(m_seqscr.StartNumber(ePlus)+1);
         m_igminus.reserve(m_seqscr.StopNumber(eMinus)+1);
         m_feminus.reserve(m_seqscr.StartNumber(eMinus)+1);
         m_leplus.reserve(m_seqscr.StopNumber(ePlus)+1);
-        m_seplus.reserve(m_seqscr.StopNumber(ePlus)+1);
+        m_seplus.reserve(m_seqscr.StopNumber(ePlus)+2);
         m_seminus.reserve(m_seqscr.StartNumber(eMinus)+1);
-        for(int k = 0; k < 2; ++k)
-        {
-            for(int phase = 0; phase < 3; ++phase)
-            {
+        for(int k = 0; k < 2; ++k) {
+            for(int phase = 0; phase < 3; ++phase) {
                 m_inplus[k][phase].reserve(m_seqscr.AcceptorNumber(ePlus)+1);
                 m_inminus[k][phase].reserve(m_seqscr.DonorNumber(eMinus)+1);
                 m_feplus[k][phase].reserve(m_seqscr.DonorNumber(ePlus)+1);
@@ -350,60 +346,56 @@ CParse::CParse(const CSeqScores& ss) : m_seqscr(ss)
             }
         }
     }
-    catch(bad_alloc)
-    {
+    catch(bad_alloc) {
         NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CParse");
     }
     
     int len = m_seqscr.SeqLen();
     
-    for(int i = 0; i < len; ++i)
-    {
-        if(m_seqscr.AcceptorScore(i,ePlus) != BadScore())
-        {
+    double BigScore = 10000;
+    if(leftanchor) {
+        m_seplus.push_back(CSingleExon(ePlus,0));
+        m_seplus.back().UpdateScore(BigScore);               // this is a bogus anchor to unforce intergenic start at 0 
+    }
+    
+    for(int i = 0; i < len; ++i) {
+        if(m_seqscr.AcceptorScore(i,ePlus) != BadScore()) {
             s_MakeStep(ePlus,i,m_ieplus,m_feplus,m_inplus,1);
         }
 
-        if(m_seqscr.AcceptorScore(i,eMinus) != BadScore())
-        {
+        if(m_seqscr.AcceptorScore(i,eMinus) != BadScore()) {
             s_MakeStep(eMinus,i,m_inminus,m_ieminus);
             s_MakeStep(eMinus,i,m_igminus,m_leminus);
         }
 
-        if(m_seqscr.DonorScore(i,ePlus) != BadScore())
-        {
+        if(m_seqscr.DonorScore(i,ePlus) != BadScore()) {
             s_MakeStep(ePlus,i,m_inplus,m_ieplus);
             s_MakeStep(ePlus,i,m_igplus,m_feplus);
         }
 
-        if(m_seqscr.DonorScore(i,eMinus) != BadScore())
-        {
+        if(m_seqscr.DonorScore(i,eMinus) != BadScore()) {
             s_MakeStep(eMinus,i,m_leminus,m_ieminus,m_inminus,0);
         }
 
-        if(m_seqscr.StartScore(i,ePlus) != BadScore())
-        {
+        if(m_seqscr.StartScore(i,ePlus) != BadScore()) {
             m_igplus.push_back(CIntergenic(ePlus,i));
             s_MakeStep(m_seplus,m_igplus);
             s_MakeStep(m_seminus,m_igplus);
             s_MakeStep(m_leplus,m_igplus);
             s_MakeStep(m_feminus,m_igplus);
         }
-
-        if(m_seqscr.StartScore(i,eMinus) != BadScore())
-        {
+        
+        if(m_seqscr.StartScore(i,eMinus) != BadScore()) {
             s_MakeStep(eMinus,i,m_inminus,m_feminus);
             s_MakeStep(eMinus,i,m_igminus,m_seminus);
         }
 
-        if(m_seqscr.StopScore(i,ePlus) != BadScore())
-        {
-            s_MakeStep(ePlus,i,m_inplus,m_leplus);
-            s_MakeStep(ePlus,i,m_igplus,m_seplus);
-        }
+        if(m_seqscr.StopScore(i,ePlus) != BadScore()) {
+            s_MakeStep(ePlus,i,m_inplus,m_leplus); 
+            s_MakeStep(ePlus,i,m_igplus,m_seplus); 
+        } 
 
-        if(m_seqscr.StopScore(i,eMinus) != BadScore())
-        {
+        if(m_seqscr.StopScore(i,eMinus) != BadScore()) {
             m_igminus.push_back(CIntergenic(eMinus,i));
             s_MakeStep(m_seplus,m_igminus);
             s_MakeStep(m_seminus,m_igminus);
@@ -412,36 +404,45 @@ CParse::CParse(const CSeqScores& ss) : m_seqscr(ss)
         }
     }
 
-    s_MakeStep(ePlus,-1,m_ieplus,m_feplus,m_inplus,1);        // may be popped
+    m_igplus.push_back(CIntergenic(ePlus,-1));                // never is popped    
+    s_MakeStep(m_seplus,m_igplus,rightanchor);
+    s_MakeStep(m_seminus,m_igplus,rightanchor);
+    s_MakeStep(m_leplus,m_igplus,rightanchor);
+    s_MakeStep(m_feminus,m_igplus,rightanchor);
     
-    s_MakeStep(eMinus,-1,m_leminus,m_ieminus,m_inminus,0);    // may be popped
-
-    m_igplus.push_back(CIntergenic(ePlus,-1));                // never is popped
-    s_MakeStep(m_seplus,m_igplus);
-    s_MakeStep(m_seminus,m_igplus);
-    s_MakeStep(m_leplus,m_igplus);
-    s_MakeStep(m_feminus,m_igplus);
-
-    m_igminus.push_back(CIntergenic(eMinus,-1));               // never is popped
-    s_MakeStep(m_seplus,m_igminus);
-    s_MakeStep(m_seminus,m_igminus);
-    s_MakeStep(m_leplus,m_igminus);
-    s_MakeStep(m_feminus,m_igminus);
+    m_igminus.push_back(CIntergenic(eMinus,-1));               // never is popped   
+    s_MakeStep(m_seplus,m_igminus,rightanchor);
+    s_MakeStep(m_seminus,m_igminus,rightanchor);
+    s_MakeStep(m_leplus,m_igminus,rightanchor);
+    s_MakeStep(m_feminus,m_igminus,rightanchor);
     
     m_igplus.back().UpdateScore(AddProbabilities(m_igplus.back().Score(),m_igminus.back().Score()));
     
     const CHMM_State* p = &m_igplus.back();
-    for(int k = 0; k < 2; ++k)
-    {
-        for(int ph = 0; ph < 3; ++ph)
-        {
-            if(!m_inplus[k][ph].empty() && m_inplus[k][ph].back().NoRightEnd() && m_inplus[k][ph].back().Score() > p->Score()) p = &m_inplus[k][ph].back();
-            if(!m_inminus[k][ph].empty() && m_inminus[k][ph].back().NoRightEnd() && m_inminus[k][ph].back().Score() > p->Score()) p = &m_inminus[k][ph].back();
+
+    if(!rightanchor) {
+        s_MakeStep(ePlus,-1,m_ieplus,m_feplus,m_inplus,1);        // may be popped  
+    
+        s_MakeStep(eMinus,-1,m_leminus,m_ieminus,m_inminus,0);    // may be popped
+
+        for(int k = 0; k < 2; ++k) {
+            for(int ph = 0; ph < 3; ++ph) {
+                if(!m_inplus[k][ph].empty() && m_inplus[k][ph].back().NoRightEnd() && m_inplus[k][ph].back().Score() > p->Score()) p = &m_inplus[k][ph].back();
+                if(!m_inminus[k][ph].empty() && m_inminus[k][ph].back().NoRightEnd() && m_inminus[k][ph].back().Score() > p->Score()) p = &m_inminus[k][ph].back();
+            }
         }
     }
 
     m_path = p;
+
+    if(leftanchor) {                                       // return scores to normal and forget the connection to the left bogus anchor    
+        for(p = m_path ; p != 0; p = p->LeftState()) {
+            const_cast<CHMM_State*>(p)->UpdateScore(p->Score()-BigScore);
+            if(p->LeftState() == &m_seplus[0]) const_cast<CHMM_State*>(p)->ClearLeftState();
+        }
+    }
 }
+
 
 template<class T> void Out(T t, int w, CNcbiOstream& to = cout)
 {
@@ -1150,6 +1151,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.13  2006/10/05 15:32:06  souvorov
+ * Implementation of anchors for intergenics
+ *
  * Revision 1.12  2005/11/22 20:34:58  souvorov
  * Minor change in protein fasta
  *

@@ -139,13 +139,13 @@ double CGnomonEngine::Run(bool repeats, bool leftwall, bool rightwall, double mp
     static TAlignList cls;
 
     return Run( cls, repeats,
-                leftwall, rightwall,
+                leftwall, rightwall, false, false, 
                 mpp
               );
 }
 
 double CGnomonEngine::Run(const TAlignList& cls, //  const TFrameShifts& initial_fshifts,
-                          bool repeats, bool leftwall, bool rightwall, double mpp, double consensuspenalty)
+                          bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty)
 {
     m_Annot.Reset();
     m_data->m_parse.reset();
@@ -163,7 +163,7 @@ double CGnomonEngine::Run(const TAlignList& cls, //  const TFrameShifts& initial
                 );
     //seqscr->CodingScore(RegionStart(),RegionStop(),Strand(),frame);
     CHMM_State::SetSeqScores(*m_data->m_ss);
-    m_data->m_parse.reset( new CParse(*m_data->m_ss) );
+    m_data->m_parse.reset( new CParse(*m_data->m_ss,leftanchor,rightanchor) );
     return m_data->m_parse->Path()->Score();
 }
 
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2006/10/05 15:32:05  souvorov
+ * Implementation of anchors for intergenics
+ *
  * Revision 1.7  2006/03/06 15:52:53  souvorov
  * Changes needed for ChanceOfIntronLongerThan(int l)
  *

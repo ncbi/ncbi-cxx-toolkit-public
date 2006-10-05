@@ -184,6 +184,8 @@ public:
     void SetGeneID(int id) { m_geneid = id; }
     void SetID(int i) { m_id = i; }
     int ID() const { return m_id; }
+    void SetComposite(int i) { m_composite = i; }
+    int Composite() const { return m_composite; }
     void SetName(const string& name) { m_name = name; }
     const string& Name() const { return m_name; }
     unsigned int& Status() { return m_status; }
@@ -286,6 +288,7 @@ private:
     int m_id;
     string m_name;
     unsigned int m_status;
+    int m_composite;
     double m_score;
     TFrameShifts m_fshifts;
 };
@@ -407,6 +410,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/10/05 15:30:58  souvorov
+ * Implementation of anchors for intergenics
+ *
  * Revision 1.20  2006/06/29 19:19:22  souvorov
  * Confirmed start implementation
  *

@@ -267,6 +267,7 @@ class CHMM_State : public CInputModel
         const CHMM_State* LeftState() const { return m_leftstate; }
         const CTerminal* TerminalPtr() const { return m_terminal; }
         void UpdateLeftState(const CHMM_State& left) { m_leftstate = &left; }
+        void ClearLeftState() { m_leftstate = 0; }
         void UpdateScore(double scr) { m_score = scr; }
         int MaxLen() const { return numeric_limits<int>::max(); };
         int MinLen() const;
@@ -503,6 +504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/10/05 15:32:05  souvorov
+ * Implementation of anchors for intergenics
+ *
  * Revision 1.4  2006/03/06 15:52:53  souvorov
  * Changes needed for ChanceOfIntronLongerThan(int l)
  *
