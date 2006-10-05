@@ -118,8 +118,22 @@ public:
     W_LooksLikeGap,
     W_LooksLikeComp,
     W_ExtraTab,
+
     W_ObjNoComp,
-    W_Last, W_First = 21
+    W_Last, W_First = 21,
+
+    G_InvalidCompId=41,
+    G_NotInGenbank,
+    G_NeedVersion,
+    G_CompEndGtLength,
+    G_NoTaxid,
+
+    G_NoOrgRef,
+    G_AboveSpeciesLevel,
+    G_Last,
+    G_First = G_InvalidCompId,
+
+    CODE_Last = G_Last
   };
 
   static const char* GetMsg(TCode code);
@@ -219,8 +233,8 @@ private:
   static const TStr msg[];
 
   // Total # of errors for each type, including skipped ones.
-  int m_MsgCount[W_Last];
-  bool m_MustSkip[W_Last];
+  int m_MsgCount[CODE_Last];
+  bool m_MustSkip[CODE_Last];
 
   string m_filename_prev;
   // Not m_line_num-1 when the previous line:

@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 const CAgpErr::TStr CAgpErr::msg[]= {
   kEmptyCStr,
 
-  // Errors (codes 1..20)
+  // Content Errors (codes 1..20)
   "expecting 8 or 9 tab-separated columns",
   "column X is empty",
   "duplicate object ",
@@ -70,7 +70,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   kEmptyCStr,
   kEmptyCStr,
 
-  // Warnings
+  // Content Warnings
   "gap at the end of an object",
   "object begins with a gap",
   "two consequtive gap lines (e.g. a gap at the end of "
@@ -83,9 +83,30 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "line with component_type X appears to be a gap line and not a component line",
   "line with component_type X appears to be a component line and not a gap line",
   "extra <TAB> character at the end of line",
-  "no components in object",
 
-  kEmptyCStr // W_Last
+  "no components in object",
+  kEmptyCStr, // W_Last
+  kEmptyCStr,
+  kEmptyCStr,
+  kEmptyCStr,
+
+  kEmptyCStr,
+  kEmptyCStr,
+  kEmptyCStr,
+  kEmptyCStr,
+  kEmptyCStr,
+
+  // GenBank-related errors
+  "invalid component_id",
+  "component not in GenBank",
+  "component_id X needs explicit version",
+  "component end greater than sequence length",
+  "cannot retrieve the taxonimc id",
+
+  "cannot retrieve taxonomic data for taxid",
+  "taxid X is above species level",
+  kEmptyCStr  // G_Last
+
 };
 
 const char* CAgpErr::GetMsg(TCode code)
@@ -124,11 +145,19 @@ void CAgpErr::PrintAllMessages(CNcbiOstream& out)
     out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
     out << "\n";
   }
+
+  out << "### Errors for GenBank-based validation (-gb) ###\n";
+  for(int i=G_First; i<G_Last; i++) {
+    out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
+    out << "\n";
+  }
 }
 
 string CAgpErr::GetPrintableCode(int code)
 {
-  string res = (code>E_Last) ? "w" : "e";
+  string res =
+    (code<E_Last) ? "e" :
+    (code<W_Last) ? "w" : "g";
   if(code<10) res += "0";
   res += NStr::IntToString(code);
   return res;
@@ -186,6 +215,10 @@ CAgpErr::CAgpErr()
 
   // A "random check" to make sure enum TCode and msg[]
   // are not out of skew.
+  //cerr << sizeof(msg)/sizeof(msg[0]) << "\n";
+  //cerr << G_Last+1 << "\n";
+  NCBI_ASSERT( sizeof(msg)/sizeof(msg[0])==G_Last+1,
+    "msg[] size  != G_Last+1" );
   NCBI_ASSERT( string(GetMsg(E_Last))=="",
     "CAgpErr -- GetMsg(E_Last) not empty" );
   NCBI_ASSERT( string(GetMsg( (TCode)(E_Last-1) ))!="",
@@ -194,6 +227,10 @@ CAgpErr::CAgpErr()
     "CAgpErr -- GetMsg(W_Last) not empty" );
   NCBI_ASSERT( string(GetMsg( (TCode)(W_Last-1) ))!="",
     "CAgpErr -- GetMsg(W_Last-1) is empty" );
+  NCBI_ASSERT( string(GetMsg(G_Last))=="",
+    "CAgpErr -- GetMsg(G_Last) not empty" );
+  NCBI_ASSERT( string(GetMsg( (TCode)(G_Last-1) ))!="",
+    "CAgpErr -- GetMsg(G_Last-1) is empty" );
 }
 
 
@@ -284,21 +321,21 @@ string CAgpErr::SkipMsg(const string& str, bool skip_other)
   const static char* skipWarn = "Skipping warnings, printing errors.";
 
   // Keywords: all warn* err*
-  int i_from=W_Last;
+  int i_from=CODE_Last;
   int i_to  =0;
   if(str=="all") {
-    i_from=0; i_to=W_Last;
+    i_from=0; i_to=CODE_Last;
     // "-only all" does not make a lot of sense,
     // but we can support it anyway.
     res = skip_other ? "Printing" : "Skipping";
     res+=" all errors and warnings.";
   }
   else if (str.substr(0,4)=="warn" && str.size()<=8 ) { // warn ings
-    i_from=E_Last; i_to=W_Last;
+    i_from=W_First; i_to=W_Last;
     res = skip_other ? skipErr : skipWarn;
   }
   else if (str.substr(0,4)=="err" && str.size()<=6 ) { // err ors
-    i_from=0; i_to=E_Last;
+    i_from=E_First; i_to=E_Last;
     res = skip_other ? skipWarn : skipErr;
   }
   if(i_from<i_to) {
@@ -307,7 +344,7 @@ string CAgpErr::SkipMsg(const string& str, bool skip_other)
   }
 
   // Error or warning codes, substrings of the messages.
-  for( int i=E_First; i<W_Last; i++ ) {
+  for( int i=E_First; i<CODE_Last; i++ ) {
     bool matchesCode = ( str==GetPrintableCode(i) );
     if( matchesCode || NStr::Find(msg[i], str) != NPOS) {
       m_MustSkip[i] = !skip_other;
@@ -326,10 +363,11 @@ string CAgpErr::SkipMsg(const string& str, bool skip_other)
 int CAgpErr::CountTotals(TCode from, TCode to)
 {
   if(to==E_First) {
-    //// One argument: count errors/warnings/given type
+    //// One argument: count errors/warnings/genbank errors/given type
     if     (from==E_Last) { from=E_First; to=E_Last; }
     else if(from==W_Last) { from=W_First; to=W_Last; }
-    else if(from<W_Last)  return m_MsgCount[from];
+    else if(from==G_Last) { from=G_First; to=G_Last; }
+    else if(from<CODE_Last)  return m_MsgCount[from];
     else return -1; // Invalid "from"
   }
 
@@ -343,10 +381,11 @@ int CAgpErr::CountTotals(TCode from, TCode to)
 void CAgpErr::PrintMessageCounts(CNcbiOstream& ostr, TCode from, TCode to)
 {
   if(to==E_First) {
-    //// One argument: count errors/warnings/given type
+    //// One argument: count errors/warnings/genbank errors/given type
     if     (from==E_Last) { from=E_First; to=E_Last; }
     else if(from==W_Last) { from=W_First; to=W_Last; }
-    else if(from<W_Last)  { to=(TCode)(from+1); }
+    else if(from==G_Last) { from=G_First; to=G_Last; }
+    else if(from<CODE_Last)  { to=(TCode)(from+1); }
     else {
       ostr << "Internal error in CAgpErr::PrintMessageCounts().";
     }

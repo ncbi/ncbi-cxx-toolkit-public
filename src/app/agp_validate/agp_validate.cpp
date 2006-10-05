@@ -70,23 +70,7 @@ using namespace ncbi;
 using namespace objects;
 
 //// Legacy macros for semantic validation; to be removed later.
-#define START_LINE_VALIDATE_MSG \
-        m_LineErrorOccured = false;
-
 #define AGP_POST(msg) cerr << msg << "\n"
-
-#define END_LINE_VALIDATE_MSG(line_num, line)\
-  AGP_POST( line_num << ": " << line <<\
-    (string)CNcbiOstrstreamToString(*m_ValidateMsg) << "\n");\
-  delete m_ValidateMsg;\
-  m_ValidateMsg = new CNcbiOstrstream;
-
-#define AGP_MSG(severity, msg) \
-        m_LineErrorOccured = true; \
-        *m_ValidateMsg << "\n\t" << severity << ": " <<  msg
-#define AGP_ERROR(msg) agp_error_count++; AGP_MSG("ERROR", msg)
-#define AGP_WARNING(msg) agp_warn_count++; AGP_MSG("WARNING", msg)
-////////////////////////////////////
 
 BEGIN_NCBI_SCOPE
 
@@ -115,9 +99,6 @@ private:
 
   // In future, may hold other validator types
   CAgpSyntaxValidator* m_LineValidator;
-
-  bool m_LineErrorOccured;
-  CNcbiOstrstream* m_ValidateMsg;
 
 
   // data of an AGP line either
@@ -160,7 +141,7 @@ private:
   void x_ValidateSemanticLine(const SDataLine& line);
 
   // vsap: printableId is used for error messages only
-  int x_GetTaxid(CBioseq_Handle& bioseq_handle);
+  int x_GetTaxid(CBioseq_Handle& bioseq_handle, const SDataLine& dl);
   void x_AddToTaxidMap(int taxid, const SDataLine& dl);
   void x_CheckTaxid();
   int x_GetSpecies(int taxid);
@@ -179,13 +160,13 @@ public:
     "USAGE: agp_validate [-options] [input files...]\n"
     "\n"
     "OPTIONS:\n"
-    "  -type semantics   Check sequence lengths and taxids using GenBank data\n"
-    "  -type syntax      (Default) Check line formatting and data consistency\n"
-    "  -taxon species    Allow sequences from different subspecies during semantic check\n"
-    "  -taxon exact      (Default)\n"
+    "  -gb       Check component accessions, lengths and taxids using GenBank data.\n"
+    "            (This can be very time-consuming, and is done separately from most other checks.)\n"
+    "  -species  Allow components from different subspecies during \"-gb\" check\n"
     "\n"
     "  -list         List possible syntax errors and warnings.\n"
-    "  -limit COUNT  Print only the first COUNT messages of each type (default=10).\n"
+    "  -limit COUNT  Print only the first COUNT messages of each type .\n"
+    "                Default=10 (100 for \"-gb\" check). To print all, use: -limit 0\n"
     "\n"
     "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
     "  -only  WHAT   Report only this particular error or warning.\n"
@@ -211,6 +192,7 @@ void CAgpValidateApplication::Init(void)
     GetArguments().GetProgramBasename(),
     "Validate AGP data", false);
 
+  /*
   arg_desc->AddDefaultKey("type", "ValidationType",
     "Type of validation",
     CArgDescriptions::eString,
@@ -228,6 +210,10 @@ void CAgpValidateApplication::Init(void)
   constraint_taxon->Allow("exact");
   constraint_taxon->Allow("species");
   arg_desc->SetConstraint("taxon", constraint_taxon);
+  */
+  arg_desc->AddFlag("gb"     , "check component accessions, lengths, taxids");
+  arg_desc->AddFlag("species", "allow components from different subspecies");
+
 
   arg_desc->AddOptionalKey( "skip", "error_or_warning",
     "Message or message code to skip",
@@ -254,7 +240,6 @@ void CAgpValidateApplication::Init(void)
 
   m_TaxidComponentTotal = 0;
 
-  m_ValidateMsg = new CNcbiOstrstream;
 }
 
 
@@ -271,17 +256,21 @@ int CAgpValidateApplication::Run(void)
      exit(0);
    }
 
-  if (args["type"].AsString() == "syntax") {
+  //if (args["type"].AsString() == "syntax")
+  if( ! args["gb"].HasValue() )
+  {
     m_ValidationType = syntax;
     m_LineValidator = new CAgpSyntaxValidator();
   }
-  else { // args_type == "semantic"
+  else {
     x_ValidateSemanticInit();
     m_ValidationType = semantic;
   }
 
   m_SpeciesLevelTaxonCheck = false;
-  if(args["taxon"].AsString() == "species") {
+  //if(args["taxon"].AsString() == "species")
+  if( args["species"].HasValue() )
+  {
     m_SpeciesLevelTaxonCheck = true;
   }
 
@@ -458,11 +447,11 @@ void CAgpValidateApplication::x_ValidateFile(
       // x_ValidateSyntaxLine(data_line, line);
       invalid_line = m_LineValidator->ValidateLine(data_line, line);
     } else if( !CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
-      START_LINE_VALIDATE_MSG;
+      //START_LINE_VALIDATE_MSG;
       x_ValidateSemanticLine(data_line);
-      if (m_LineErrorOccured) {
-        END_LINE_VALIDATE_MSG(data_line.line_num, line);
-      }
+      //if (m_LineErrorOccured) {
+      //  END_LINE_VALIDATE_MSG(data_line.line_num, line);
+      //}
     }
 
     agpErr.LineDone(line_orig, line_num, invalid_line);
@@ -497,32 +486,50 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
   }
   //    catch (CSeqIdException::eFormat)
   catch (...) {
-    AGP_ERROR( "Invalid component id: " << dl.component_id);
+    agpErr.Msg(CAgpErr::G_InvalidCompId, string(": ")+dl.component_id);
+    //AGP_ERROR( "Invalid component id: " << dl.component_id);
     return;
   }
 
   CBioseq_Handle bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
   if( !bioseq_handle ) {
-    AGP_ERROR( "Component not in Genbank: "<< dl.component_id);
+    agpErr.Msg(CAgpErr::G_NotInGenbank, string(": ")+dl.component_id);
+    //AGP_ERROR( "Component not in Genbank: "<< dl.component_id);
     return;
   }
 
   // Component out of bounds check
+  int comp_end = CAgpSyntaxValidator::x_CheckIntField(
+    dl.component_end, "component_end (column 8)" );
+  if(comp_end<=0) return;
+
+
   CBioseq_Handle::TInst_Length seq_len =
     bioseq_handle.GetInst_Length();
-  if (NStr::StringToUInt(dl.component_end) > seq_len) {
-      AGP_ERROR( "Component end greater than sequence length: "
-        << dl.component_end << " > "
-        << dl.component_id << " length = "
-        << seq_len << " bp");
+
+  if ( comp_end > (int) seq_len) {
+    string details=": ";
+    details += dl.component_end;
+    details += " > ";
+    details += dl.component_id;
+    details += " length = ";
+    details += NStr::IntToString(seq_len);
+    details += " bp";
+
+    agpErr.Msg(CAgpErr::G_CompEndGtLength, details );
+
+    //AGP_ERROR( "Component end greater than sequence length: "
+    //  << dl.component_end << " > "
+    //  << dl.component_id << " length = "
+    //  << seq_len << " bp");
   }
 
-  int taxid = x_GetTaxid(bioseq_handle);
+  int taxid = x_GetTaxid(bioseq_handle, dl);
   x_AddToTaxidMap(taxid, dl);
 }
 
 int CAgpValidateApplication::x_GetTaxid(
-  CBioseq_Handle& bioseq_handle)
+  CBioseq_Handle& bioseq_handle, const SDataLine& dl)
 {
   int taxid = 0;
   string docsum_taxid = "";
@@ -550,7 +557,10 @@ int CAgpValidateApplication::x_GetTaxid(
       }
     }
     catch(...) {
-      AGP_ERROR("Unable to get Entrez Docsum.");
+      agpErr.Msg(CAgpErr::G_NoTaxid, string(" for ") + dl.component_id);
+      // Cannot get taxid for X
+      //AGP_ERROR("Unable to get Entrez Docsum.");
+      return 0;
     }
   }
 
@@ -562,19 +572,19 @@ int CAgpValidateApplication::x_GetTaxid(
 
 int CAgpValidateApplication::x_GetSpecies(int taxid)
 {
-    TTaxidSpeciesMap::iterator map_it;
-    map_it = m_TaxidSpeciesMap.find(taxid);
-    int species_id;
+  TTaxidSpeciesMap::iterator map_it;
+  map_it = m_TaxidSpeciesMap.find(taxid);
+  int species_id;
 
-    if (map_it == m_TaxidSpeciesMap.end()) {
-        species_id = x_GetTaxonSpecies(taxid);
-        m_TaxidSpeciesMap.insert(
-            TTaxidSpeciesMap::value_type(taxid, species_id) );
-    } else {
-        species_id = map_it->second;
-    }
+  if (map_it == m_TaxidSpeciesMap.end()) {
+    species_id = x_GetTaxonSpecies(taxid);
+    m_TaxidSpeciesMap.insert(
+        TTaxidSpeciesMap::value_type(taxid, species_id) );
+  } else {
+    species_id = map_it->second;
+  }
 
-    return species_id;
+  return species_id;
 }
 
 int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
@@ -585,11 +595,13 @@ int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
   bool is_species = true;
   bool is_uncultured;
   string blast_name;
+  string blast_name0;
 
   int species_id = 0;
   int prev_id = taxid;
 
-  for(int id = taxon.GetParent(taxid);
+
+  for(int id = taxid;
       is_species == true && id > 1;
       id = taxon.GetParent(id)
   ) {
@@ -597,16 +609,31 @@ int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
       id, is_species, is_uncultured, blast_name
     );
     if(org_ref == null) {
-      AGP_ERROR( "GetOrgRef() returned NULL for taxid "
-        << id);
-      break;
+      agpErr.Msg(CAgpErr::G_NoOrgRef,
+        string(" ")+ NStr::IntToString(id) );
+      // AGP_ERROR( "GetOrgRef() returned NULL for taxid "
+      //  << id);
+      return 0;
     }
+    if(id==taxid) blast_name0=blast_name;
 
     if (is_species) {
         prev_id = id;
     } else {
         species_id = prev_id;
     }
+  }
+
+  if(species_id==0) {
+    if(blast_name0.size()) {
+      blast_name0 = NStr::IntToString(taxid) + " (" + blast_name0 + ")";
+    }
+    else{
+      blast_name0 = NStr::IntToString(taxid);
+    }
+    agpErr.Msg(CAgpErr::G_AboveSpeciesLevel,
+      NcbiEmptyString, AT_ThisLine, // defaults
+      blast_name0 );
   }
 
   return species_id;

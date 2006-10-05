@@ -104,6 +104,9 @@ public:
   static bool IsGapType(const string& type);
   void PrintTotals();
 
+  static int x_CheckIntField(const string& field,
+    const string& field_name, bool log_error = true);
+
 protected:
   // Vars assigned in ValidateLine(),
   // further validated in x_OnGapLine() x_OnComponentLine()
@@ -194,8 +197,6 @@ protected:
   static int x_CheckRange(int start, int begin,
     int end, string begin_name, string end_name,
     CAgpErr::TCode ltCode); // // "Less Than" error Code
-  static int x_CheckIntField(const string& field,
-    const string& field_name, bool log_error = true);
 
   string prev_object;
   string prev_component_type;
