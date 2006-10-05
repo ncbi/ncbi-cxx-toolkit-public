@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/types.hpp>
 #include <stdio.h>
@@ -84,8 +85,11 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
     }
 
 #ifdef SQL_COPT_SS_BCP
-    if((conn_attr.mode & fBcpIn) != 0) {
-        SQLSetConnectAttr(m_Link, SQL_COPT_SS_BCP, (SQLPOINTER) SQL_BCP_ON, SQL_IS_INTEGER);
+    if((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
+        SQLSetConnectAttr(m_Link,
+            SQL_COPT_SS_BCP,
+            (SQLPOINTER) SQL_BCP_ON,
+            SQL_IS_INTEGER);
     }
 #endif
 
@@ -150,14 +154,14 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                     string conn_str("DRIVER={" + driver_name + "};SERVER=");
                     conn_str += conn_str_suffix;
 
-                    if (!CheckSIE(SQLDriverConnect(m_Link,
-                                                  0,
-                                                  CODBCString(conn_str, odbc::DefStrEncoding),
-                                                  SQL_NTS,
-                                                  0,
-                                                  0,
-                                                  0,
-                                                  SQL_DRIVER_NOPROMPT),
+                    if (!cntx.CheckSIE(SQLDriverConnect(m_Link,
+                            0,
+                            CODBCString(conn_str, odbc::DefStrEncoding),
+                            SQL_NTS,
+                            0,
+                            0,
+                            0,
+                            SQL_DRIVER_NOPROMPT),
                                  m_Link))
                     {
                         string err;
@@ -1184,6 +1188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/10/05 20:40:52  ssikorsk
+ * + #include <corelib/ncbiapp.hpp>
+ *
  * Revision 1.51  2006/10/05 19:54:33  ssikorsk
  * Moved connection logic from CODBCContext to CODBC_Connection.
  *
