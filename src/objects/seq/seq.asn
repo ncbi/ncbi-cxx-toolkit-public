@@ -1,4 +1,4 @@
---$Revision: 6.13 $
+--$Revision: 6.14 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -345,8 +345,30 @@ Seq-data ::= CHOICE {              -- sequence representations
     ncbi8aa NCBI8aa ,              -- 8 bit extended amino acid codes
     ncbieaa NCBIeaa ,              -- extended ASCII 1 letter aa codes
     ncbipaa NCBIpaa ,              -- amino acid probabilities
-    ncbistdaa NCBIstdaa }          -- consecutive codes for std aas
+    ncbistdaa NCBIstdaa,           -- consecutive codes for std aas
+    gap Seq-gap                    -- gap types
+}
 
+Seq-gap ::= SEQUENCE {
+    type INTEGER {
+        unknown(0),
+        fragment(1),
+        clone(2),
+        scaffold(3),
+        heterochromatin(4),
+        centromere(5),
+        telomere(6),
+        repeat(7),
+        contig(8),
+        other(255)
+    },
+    linkage INTEGER {
+        unlinked(0),
+        linked(1),
+        mate-linked(2),
+        other(255)
+    } OPTIONAL
+}
 
 IUPACna ::= StringStore       -- IUPAC 1 letter codes, no spaces
 IUPACaa ::= StringStore       -- IUPAC 1 letter codes, no spaces
