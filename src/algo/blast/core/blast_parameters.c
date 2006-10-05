@@ -337,8 +337,15 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
       Int4 new_cutoff = 1;
       BlastUngappedCutoffs *curr_cutoffs = parameters->cutoffs + context;
 
-       if (!(query_info->contexts[context].is_valid))
+       if (!(query_info->contexts[context].is_valid)) {
+          /* either this context was never valid, or it was
+             valid at the beginning of the search but is not
+             valid now. The latter means that ungapped
+             alignments can still occur to this context,
+             so we set the cutoff score to be infinite */
+          curr_cutoffs->cutoff_score = INT4_MAX;
           continue;
+       }
 
       /* We calculate the gap_trigger value here and use it as a cutoff 
          to save ungapped alignments in a gapped search. The gap trigger
@@ -823,8 +830,10 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
          Int4 new_cutoff = 1;
          double evalue = options->expect_value;
 
-         if (!(query_info->contexts[context].is_valid))
-             continue;
+         if (!(query_info->contexts[context].is_valid)) {
+            params->cutoffs[context].cutoff_score = INT4_MAX;
+            continue;
+         }
 
          kbp = kbp_array[context];
          ASSERT(s_BlastKarlinBlkIsValid(kbp));
@@ -978,6 +987,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2006/10/05 20:18:49  papadopo
+ * set the alignment cutoff scores to infinity for invalid contexts (resolves RT#15205407)
+ *
  * Revision 1.28  2006/10/04 19:16:15  papadopo
  * handle indexed megablast lookup table
  *
