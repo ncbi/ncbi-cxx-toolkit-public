@@ -971,8 +971,108 @@ void CCleanup_imp::x_AddMissingProteinMolInfo(CSeq_entry_Handle seh)
         ++bs_ci;
     }
 }
+
+
+// was FuseMolInfos in C Toolkit
+void CCleanup_imp::x_FuseMolInfos (CSeq_descr& desc_set, CSeq_descr::Tdata& desc_list)
+{
+    NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, desc_set.Set()) {
+        if ((*desc_it)->Which() == CSeqdesc::e_Molinfo) {
+            if (desc_list.size() > 0) {
+                // biomol
+                if ((!desc_list.front()->GetMolinfo().CanGetBiomol()
+                    || desc_list.front()->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_unknown)
+                    && (*desc_it)->GetMolinfo().CanGetBiomol()
+                    && (*desc_it)->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_unknown) {
+                    desc_list.front()->SetMolinfo().SetBiomol((*desc_it)->GetMolinfo().GetBiomol());
+                }
+                
+                //completeness
+                if ((!desc_list.front()->GetMolinfo().CanGetCompleteness()
+                    || desc_list.front()->GetMolinfo().GetCompleteness() == CMolInfo::eCompleteness_unknown)
+                    && (*desc_it)->GetMolinfo().CanGetCompleteness()
+                    && (*desc_it)->GetMolinfo().GetCompleteness() != CMolInfo::eCompleteness_unknown) {
+                    desc_list.front()->SetMolinfo().SetCompleteness((*desc_it)->GetMolinfo().GetCompleteness());
+                }
+
+                //tech
+                if ((!desc_list.front()->GetMolinfo().CanGetTech()
+                    || desc_list.front()->GetMolinfo().GetTech() == CMolInfo::eTech_unknown)
+                    && (*desc_it)->GetMolinfo().CanGetTech()
+                    && (*desc_it)->GetMolinfo().GetTech() != CMolInfo::eTech_unknown) {
+                    desc_list.front()->SetMolinfo().SetTech((*desc_it)->GetMolinfo().GetTech());
+                }
+
+                //techexp
+                if ((!desc_list.front()->GetMolinfo().CanGetTechexp()
+                    || NStr::IsBlank(desc_list.front()->GetMolinfo().GetTechexp()))
+                    && (*desc_it)->GetMolinfo().CanGetTechexp()
+                    && !NStr::IsBlank((*desc_it)->GetMolinfo().GetTechexp())) {
+                    desc_list.front()->SetMolinfo().SetTechexp((*desc_it)->GetMolinfo().GetTechexp());
+                }
+                
+            }
+            
+            desc_list.push_back (*desc_it);
+        }
+    }
+}
+
+
+void CCleanup_imp::x_FuseMolInfos (CBioseq_Handle bh)
+{
+    if (!bh.IsSetDescr()) {
+        return;
+    }
+
+    CBioseq_EditHandle eh(bh);
+    CSeq_descr::Tdata desc_list;
     
-        
+    x_FuseMolInfos(eh.SetDescr(), desc_list);
+
+    // keep the first MolInfo descriptor
+    desc_list.pop_front();
+    for (CSeq_descr::Tdata::iterator it1 = desc_list.begin();
+        it1 != desc_list.end(); ++it1) { 
+        eh.RemoveSeqdesc(**it1);
+    }        
+}
+    
+
+void CCleanup_imp::x_FuseMolInfos (CBioseq_set_Handle bh)
+{
+    if (!bh.IsSetDescr()) {
+        return;
+    }
+
+    CBioseq_set_EditHandle eh(bh);
+    CSeq_descr::Tdata desc_list;
+    
+    x_FuseMolInfos(eh.SetDescr(), desc_list);
+
+    // keep the first MolInfo descriptor
+    desc_list.pop_front();
+    for (CSeq_descr::Tdata::iterator it1 = desc_list.begin();
+        it1 != desc_list.end(); ++it1) { 
+        eh.RemoveSeqdesc(**it1);
+    }
+    
+    ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
+        x_FuseMolInfos(m_Scope->GetSeq_entryHandle(**it));
+    }           
+}
+
+
+void CCleanup_imp::x_FuseMolInfos (CSeq_entry_Handle seh)
+{
+    if (seh.IsSeq()) {
+        x_FuseMolInfos(seh.GetSeq());
+    } else if (seh.IsSet()) {
+        x_FuseMolInfos(seh.GetSet());
+    }
+}
+    
+                
 void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
 {
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
@@ -1027,8 +1127,17 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
 	if(ta.had_biosource) {
 		SeqEntryExplore(sep, NULL, StripOld);
 	}
-	ToAsn4(sep);          /* move pubs and lineage */
 #endif    
+        // this step was part of ToAsn4
+        x_ConvertPubsToAsn4(bh.GetParentEntry());
+        
+        // this step was also part of ToAsn4
+        string lineage = "";
+        x_GetGenBankTaxonomy(bh, lineage);
+        if (!NStr::IsBlank(lineage)) {
+            x_SetSourceLineage(bh, lineage);
+        }
+
     }
     
     // these two steps were EntryChangeImpFeat in the C Toolkit
@@ -1056,11 +1165,12 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
 #endif
     // this step was FixProtMolInfo in the C Toolkit
     x_AddMissingProteinMolInfo(bh.GetParentEntry());
-
+    // this step was FuseMolInfos in the C Toolkit
+    x_FuseMolInfos(bh);
+    // this stemp was StripProtXrefs in the C Toolkit
+    x_RecurseForSeqAnnots (bh, x_StripProtXrefs);
 #if 0    
     // missing steps
-	SeqEntryExplore (sep, NULL, FuseMolInfos);
-	SeqEntryExplore(sep, NULL, StripProtXref);
 	SeqEntryExplore(sep, (Pointer)(&qm), CheckMaps);
 	/*
 	if (qm.same == TRUE) {
@@ -1475,6 +1585,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/10/05 18:36:51  bollin
+ * Added step to ExtendedCleanup to fuse MolInfo descriptors on the same Bioseq
+ * or Bioseq-set.
+ * Added step to ExtendedCleanup to convert protein xrefs on coding regions to
+ * protein features on the product sequence for the coding regions.
+ *
  * Revision 1.7  2006/10/04 15:32:55  bollin
  * use IsSetMod and IsSetSyn to check for existing Mod and Syn on a COrg_ref,
  * not CanGetMod and CanGetSyn because both will always return true.

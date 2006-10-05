@@ -2309,6 +2309,77 @@ void CCleanup_imp::x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa)
 }
 
 
+static void s_AddFeat(CBioseq_EditHandle bh, CRef<CSeq_feat> new_feat) 
+{
+    CSeq_annot_EditHandle feat_annot;
+    CSeq_annot_CI annot_it(bh);
+    for(; annot_it; ++annot_it) {
+        const CSeq_annot_Handle& annot = *annot_it;
+        if (annot.IsFtable()) {
+            feat_annot = annot.GetEditHandle();
+            break;
+        }
+    }
+    if (feat_annot) {
+        feat_annot.AddFeat(*new_feat);
+    } else {
+        CRef<CSeq_annot> new_annot(new CSeq_annot);
+        new_annot->SetData().SetFtable().push_back(new_feat);
+        bh.AttachAnnot(*new_annot);
+    }
+}
+
+
+// This function was StripProtXref in the C Toolkit
+// Note - in the C Toolkit, this function stopped after
+// finding the first feature on the sequence that was NOT
+// a coding region.  This is believed to be an error,
+// this function will handle all coding region features
+// on every sequence.
+void CCleanup_imp::x_StripProtXrefs(CSeq_annot_Handle sa)
+{
+    if (sa.IsFtable()) {
+        objects::SAnnotSelector cds_sel(CSeqFeatData::eSubtype_cdregion);
+        
+        CFeat_CI feat_ci(sa);
+        while (feat_ci) {
+            if (feat_ci->IsSetProduct()
+                && feat_ci->IsSetXref()) {
+                
+                CBioseq_EditHandle eh(m_Scope->GetBioseqHandle(feat_ci->GetProduct()));
+                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
+                CRef<CSeq_feat> new_feat(new CSeq_feat);
+                new_feat->Assign(feat_ci->GetOriginalFeature());
+                bool change_made = false;                                
+                CSeq_feat::TXref& xrefs = new_feat->SetXref();
+                CSeq_feat::TXref::iterator it = xrefs.begin();
+                while (it != xrefs.end()) {
+                    CSeqFeatXref& xref = **it;
+                    if (xref.IsSetData()  &&  xref.GetData().IsProt()) {
+                        CRef<CSeq_feat> new_prot(new CSeq_feat);
+                        new_prot->SetData().SetProt(xref.SetData().SetProt());
+                        CRef<CSeq_loc> new_prot_loc(new CSeq_loc);
+                        new_prot_loc->Assign(feat_ci->GetProduct());
+                        new_prot->SetLocation(*new_prot_loc);
+                        
+                        s_AddFeat(eh, new_prot);       
+                        change_made = true;
+                        it = xrefs.erase(it);                 
+                    } else {
+                        ++it;
+                    }
+                }
+                if (change_made) {
+                    CSeq_feat_EditHandle efh(fh);
+                    efh.Replace(*new_feat);
+                }
+            }
+            ++feat_ci;
+        } 
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -2317,6 +2388,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2006/10/05 18:36:51  bollin
+ * Added step to ExtendedCleanup to fuse MolInfo descriptors on the same Bioseq
+ * or Bioseq-set.
+ * Added step to ExtendedCleanup to convert protein xrefs on coding regions to
+ * protein features on the product sequence for the coding regions.
+ *
  * Revision 1.34  2006/10/04 14:17:47  bollin
  * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
  * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).

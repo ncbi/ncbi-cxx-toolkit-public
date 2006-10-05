@@ -321,6 +321,7 @@ private:
     void x_RemoveFeaturesBySubtype (CBioseq_set_Handle bs, CSeqFeatData::ESubtype subtype);
     void x_RemoveImpSourceFeatures (CSeq_annot_Handle sa);    
     void x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa);
+    void x_StripProtXrefs(CSeq_annot_Handle sa);
 
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
@@ -380,6 +381,10 @@ private:
     void CheckNucProtSet (CBioseq_set_Handle bss);
     void x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh);
     void x_StripOldDescriptorsAndFeatures (CBioseq_Handle bh);
+    void x_FuseMolInfos (CBioseq::TDescr& desc_set, CSeq_descr::Tdata& desc_list);
+    void x_FuseMolInfos (CBioseq_Handle bh);    
+    void x_FuseMolInfos (CBioseq_set_Handle bh);
+    void x_FuseMolInfos (CSeq_entry_Handle seh);
     void x_AddMissingProteinMolInfo(CSeq_entry_Handle seh);
     void x_GetGenBankTaxonomy(const CSeq_entry& se, string &taxonomy);
     void x_GetGenBankTaxonomy(CSeq_entry_Handle seh, string& taxonomy);
@@ -408,6 +413,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2006/10/05 18:36:52  bollin
+ * Added step to ExtendedCleanup to fuse MolInfo descriptors on the same Bioseq
+ * or Bioseq-set.
+ * Added step to ExtendedCleanup to convert protein xrefs on coding regions to
+ * protein features on the product sequence for the coding regions.
+ *
  * Revision 1.44  2006/10/05 15:15:03  ucko
  * Drop extraneous class name from x_MinimizePub's declaration.
  *
