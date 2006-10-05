@@ -118,17 +118,34 @@ public:
         return m_Locale;
     }
 
-    static bool CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg);
-    static bool CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
-                                    CS_CLIENTMSG* msg);
-    static bool CTLIB_srverr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
-                                     CS_SERVERMSG* msg);
+    static CS_RETCODE CTLIB_cserr_handler(CS_CONTEXT* context,
+                                          CS_CLIENTMSG* msg);
+    static CS_RETCODE CTLIB_cterr_handler(CS_CONTEXT* context,
+                                          CS_CONNECTION* con,
+                                          CS_CLIENTMSG* msg);
+    static CS_RETCODE CTLIB_srverr_handler(CS_CONTEXT* context,
+                                           CS_CONNECTION* con,
+                                           CS_SERVERMSG* msg);
+
     CS_INT GetTDSVersion(void) const
     {
         return m_TDSVersion;
     }
+    CS_INT GetPacketSize(void) const
+    {
+        return m_PacketSize;
+    }
+    CS_INT GetLoginRetryCount(void) const
+    {
+        return m_LoginRetryCount;
+    }
+    CS_INT GetLoginLoopDelay(void) const
+    {
+        return m_LoginLoopDelay;
+    }
 
     virtual void SetClientCharset(const string& charset);
+    CS_RETCODE Check(CS_RETCODE rc) const;
 
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
@@ -142,17 +159,12 @@ private:
     CS_INT      m_TDSVersion;
     CTLibContextRegistry* m_Registry;
 
-    CS_CONNECTION* x_ConnectToServer(const string&   srv_name,
-                                     const string&   usr_name,
-                                     const string&   passwd,
-                                     TConnectionMode mode);
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);
     void x_SetRegistry(CTLibContextRegistry* registry);
     // Deinitialize all internal structures.
     void x_Close(bool delete_conn = true);
     bool x_SafeToFinalize(void) const;
-    CS_RETCODE Check(CS_RETCODE rc) const;
 
     friend class CTLibContextRegistry;
 };
@@ -171,8 +183,8 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
     friend class CTL_Cmd;
 
 protected:
-    CTL_Connection(CTLibContext& cntx, CS_CONNECTION* con,
-                   bool reusable, const string& pool_name);
+    CTL_Connection(CTLibContext& cntx,
+                   const I_DriverContext::SConnAttr& conn_attr);
     virtual ~CTL_Connection(void);
 
 public:
@@ -780,6 +792,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/10/05 19:50:33  ssikorsk
+ * Moved connection logic from CTLibContext to CTL_Connection.
+ *
  * Revision 1.49  2006/10/04 19:26:10  ssikorsk
  * Revamp code to use AutoArray where it is possible.
  *

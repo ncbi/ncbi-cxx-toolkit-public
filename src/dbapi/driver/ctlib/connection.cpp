@@ -52,57 +52,167 @@ BEGIN_NCBI_SCOPE
 
 ////////////////////////////////////////////////////////////////////////////
 CTL_Connection::CTL_Connection(CTLibContext& cntx,
-                               CS_CONNECTION* con,
-                               bool reusable,
-                               const string& pool_name) :
-    impl::CConnection(cntx, false, reusable, pool_name),
+                               const I_DriverContext::SConnAttr& conn_attr) :
+    impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name),
     m_Cntx(&cntx),
-    m_Link(con)
+    m_Link(NULL)
 {
+    // Call Check() from CTLibContext in order to preserve previous behaviour.
+
+    if (cntx.Check(ct_con_alloc(cntx.CTLIB_GetContext(), &m_Link)) != CS_SUCCEED) {
+        DATABASE_DRIVER_ERROR( "Cannot allocate a connection handle.", 100011 );
+    }
+
+    cntx.Check(ct_callback(NULL,
+                           x_GetSybaseConn(),
+                           CS_SET,
+                           CS_CLIENTMSG_CB,
+                           (CS_VOID*) CTLibContext::CTLIB_cterr_handler));
+
+    cntx.Check(ct_callback(NULL,
+                           x_GetSybaseConn(),
+                           CS_SET,
+                           CS_SERVERMSG_CB,
+                           (CS_VOID*) CTLibContext::CTLIB_srverr_handler));
+
+    char hostname[256];
+    if(gethostname(hostname, 256)) {
+      strcpy(hostname, "UNKNOWN");
+    }
+    else hostname[255]= '\0';
+
+
+    if (cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                CS_SET,
+                                CS_USERNAME,
+                                (void*) conn_attr.user_name.c_str(),
+                                CS_NULLTERM,
+                                NULL)) != CS_SUCCEED
+        || cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                   CS_SET,
+                                   CS_PASSWORD,
+                                   (void*) conn_attr.passwd.c_str(),
+                                   CS_NULLTERM,
+                                   NULL)) != CS_SUCCEED
+        || cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                   CS_SET,
+                                   CS_APPNAME,
+                                   (void*) GetCDriverContext().GetApplicationName().c_str(),
+                                   CS_NULLTERM,
+                                   NULL)) != CS_SUCCEED
+        || cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                   CS_SET,
+                                   CS_LOC_PROP,
+                                   (void*) cntx.GetLocale(),
+                                   CS_UNUSED,
+                                   NULL)) != CS_SUCCEED
+        || cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                   CS_SET,
+                                   CS_HOSTNAME,
+                                   (void*) hostname,
+                                   CS_NULLTERM,
+                                   NULL)) != CS_SUCCEED
+        // Future development ...
+//         || cntx.Check(ct_con_props(x_GetSybaseConn(), CS_SET, CS_TDS_VERSION, &m_TDSVersion,
+//                      CS_UNUSED, NULL)) != CS_SUCCEED
+        )
+    {
+        cntx.Check(ct_con_drop(x_GetSybaseConn()));
+        DATABASE_DRIVER_ERROR( "Cannot connection's properties.", 100011 );
+    }
+
+    if ( !GetCDriverContext().GetHostName().empty() ) {
+        cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                CS_SET,
+                                CS_HOSTNAME,
+                                (void*) GetCDriverContext().GetHostName().c_str(),
+                                CS_NULLTERM,
+                                NULL));
+    }
+
+    if (cntx.GetPacketSize() > 0) {
+        CS_INT packet_size = cntx.GetPacketSize();
+
+        cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                CS_SET,
+                                CS_PACKETSIZE,
+                                (void*) &packet_size,
+                                CS_UNUSED,
+                                NULL));
+    }
+
+#if defined(CS_RETRY_COUNT)
+    if (cntx.GetLoginRetryCount() > 0) {
+        CS_INT login_retry_count = cntx.GetLoginRetryCount();
+
+        cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                CS_SET,
+                                CS_RETRY_COUNT,
+                                (void*) &login_retry_count,
+                                CS_UNUSED,
+                                NULL));
+    }
+#endif
+
+#if defined (CS_LOOP_DELAY)
+    if (cntx.GetLoginLoopDelay() > 0) {
+        CS_INT login_loop_delay = cntx.GetLoginLoopDelay();
+
+        cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                CS_SET,
+                                CS_LOOP_DELAY,
+                                (void*) &login_loop_delay,
+                                CS_UNUSED,
+                                NULL));
+    }
+#endif
+
+    CS_BOOL flag = CS_TRUE;
+    if ((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
+        cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                CS_SET,
+                                CS_BULK_LOGIN,
+                                &flag,
+                                CS_UNUSED,
+                                NULL));
+        SetBCPable(true);
+    }
+
+    if ((conn_attr.mode & I_DriverContext::fPasswordEncrypted) != 0) {
+        cntx.Check(ct_con_props(x_GetSybaseConn(),
+                                CS_SET,
+                                CS_SEC_ENCRYPTION,
+                                &flag,
+                                CS_UNUSED,
+                                NULL));
+        SetSecureLogin(true);
+    }
+
+    if (cntx.Check(ct_connect(x_GetSybaseConn(),
+                              const_cast<char*> (conn_attr.srv_name.c_str()),
+                              CS_NULLTERM))
+        != CS_SUCCEED) {
+        cntx.Check(ct_con_drop(x_GetSybaseConn()));
+
+        string err;
+
+        err += "Cannot connect to the server '" + conn_attr.srv_name;
+        err += "' as user '" + conn_attr.user_name + "'";
+        DATABASE_DRIVER_ERROR( err, 100011 );
+    }
+
+
     CTL_Connection* link = this;
-    Check(ct_con_props(x_GetSybaseConn(), CS_SET, CS_USERDATA,
-                 &link, (CS_INT) sizeof(link), NULL));
+    cntx.Check(ct_con_props(x_GetSybaseConn(),
+                            CS_SET,
+                            CS_USERDATA,
+                            &link,
+                            (CS_INT) sizeof(link),
+                            NULL));
 
-    // retrieve the connection attributes
-    CS_INT outlen(0);
-    char   buf[512];
-
-    Check(ct_con_props(x_GetSybaseConn(), CS_GET, CS_SERVERNAME,
-                 buf, (CS_INT) (sizeof(buf) - 1), &outlen));
-    if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
-
-    SetServerName(string(buf, (size_t) outlen));
-
-    Check(ct_con_props(x_GetSybaseConn(), CS_GET, CS_USERNAME,
-                 buf, (CS_INT) (sizeof(buf) - 1), &outlen));
-    if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
-
-    SetUserName(string(buf, (size_t) outlen));
-
-    Check(ct_con_props(x_GetSybaseConn(), CS_GET, CS_PASSWORD,
-                 buf, (CS_INT) (sizeof(buf) - 1), &outlen));
-    if((outlen > 0) && (buf[outlen-1] == '\0')) --outlen;
-
-    SetPassword(string(buf, (size_t) outlen));
-
-    CS_BOOL flag;
-    Check(ct_con_props(x_GetSybaseConn(),
-                       CS_GET,
-                       CS_BULK_LOGIN,
-                       &flag,
-                       CS_UNUSED,
-                       &outlen));
-
-    SetBCPable(flag == CS_TRUE);
-
-    Check(ct_con_props(x_GetSybaseConn(),
-                       CS_GET,
-                       CS_SEC_ENCRYPTION,
-                       &flag,
-                       CS_UNUSED,
-                       &outlen));
-
-    SetSecureLogin(flag == CS_TRUE);
+    SetServerName(conn_attr.srv_name);
+    SetUserName(conn_attr.user_name);
+    SetPassword(conn_attr.passwd);
 }
 
 
@@ -713,6 +823,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/10/05 19:52:16  ssikorsk
+ * Moved connection logic from CTLibContext to CTL_Connection.
+ *
  * Revision 1.44  2006/08/31 15:03:04  ssikorsk
  * Get rid of warnings.
  *

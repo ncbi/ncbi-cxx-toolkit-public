@@ -178,34 +178,6 @@ CTLibContextRegistry::StaticClearAll(void)
 //  CTLibContext::
 //
 
-extern "C"
-{
-    CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context,
-                                                CS_CLIENTMSG* msg)
-    {
-        return CTLibContext::CTLIB_cserr_handler(context, msg)
-            ? CS_SUCCEED : CS_FAIL;
-    }
-
-    CS_RETCODE CS_PUBLIC s_CTLIB_cterr_callback(CS_CONTEXT* context,
-                                                CS_CONNECTION* con,
-                                                CS_CLIENTMSG* msg)
-    {
-        return CTLibContext::CTLIB_cterr_handler(context, con, msg)
-            ? CS_SUCCEED : CS_FAIL;
-    }
-
-    CS_RETCODE CS_PUBLIC s_CTLIB_srverr_callback(CS_CONTEXT* context,
-                                                 CS_CONNECTION* con,
-                                                 CS_SERVERMSG* msg)
-    {
-        return CTLibContext::CTLIB_srverr_handler(context, con, msg)
-            ? CS_SUCCEED : CS_FAIL;
-    }
-
-}
-
-
 CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     m_Context(NULL),
     m_Locale(NULL),
@@ -244,7 +216,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
         DATABASE_DRIVER_ERROR( "cs_config failed", 100006 );
     }
 
-    if (cb == (CS_VOID*)  s_CTLIB_cserr_callback) {
+    if (cb == (CS_VOID*)  CTLIB_cserr_handler) {
         // we did use this context already
         r = Check(cs_config(CTLIB_GetContext(), CS_GET, CS_USERDATA,
                       (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), &outlen));
@@ -256,7 +228,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     else {
         // this is a brand new context
         r = Check(cs_config(CTLIB_GetContext(), CS_SET, CS_MESSAGE_CB,
-                      (CS_VOID*) s_CTLIB_cserr_callback, CS_UNUSED, NULL));
+                      (CS_VOID*) CTLIB_cserr_handler, CS_UNUSED, NULL));
         if (r != CS_SUCCEED) {
             Check(cs_ctx_drop(CTLIB_GetContext()));
             m_Context = 0;
@@ -282,7 +254,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
         }
 
         r = Check(ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_CLIENTMSG_CB,
-                        (CS_VOID*) s_CTLIB_cterr_callback));
+                        (CS_VOID*) CTLIB_cterr_handler));
         if (r != CS_SUCCEED) {
             Check(ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT));
             Check(cs_ctx_drop(CTLIB_GetContext()));
@@ -292,7 +264,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
         }
 
         r = Check(ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_SERVERMSG_CB,
-                        (CS_VOID*) s_CTLIB_srverr_callback));
+                        (CS_VOID*) CTLIB_srverr_handler));
         if (r != CS_SUCCEED) {
             Check(ct_exit(CTLIB_GetContext(), CS_FORCE_EXIT));
             Check(cs_ctx_drop(CTLIB_GetContext()));
@@ -451,25 +423,7 @@ unsigned int CTLibContext::GetTimeout(void) const
 impl::CConnection*
 CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {
-    CS_CONNECTION* con = x_ConnectToServer(conn_attr.srv_name,
-                                           conn_attr.user_name,
-                                           conn_attr.passwd,
-                                           conn_attr.mode);
-
-    if (!con) {
-        string err;
-
-        err += "Cannot connect to the server '" + conn_attr.srv_name;
-        err += "' as user '" + conn_attr.user_name + "'";
-        DATABASE_DRIVER_ERROR( err, 100011 );
-    }
-
-    CTL_Connection* t_con = new CTL_Connection(*this,
-                                               con,
-                                               conn_attr.reusable,
-                                               conn_attr.pool_name);
-
-    return t_con;
+    return new CTL_Connection(*this, conn_attr);
 }
 
 
@@ -586,7 +540,7 @@ CS_CONTEXT* CTLibContext::CTLIB_GetContext() const
 }
 
 
-bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
+CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
 {
     EDiagSev sev = eDiag_Error;
 
@@ -608,11 +562,11 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
 
     GetCTLExceptionStorage().Accept(ex);
 
-    return true;
+    return CS_SUCCEED;
 }
 
 
-bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
+CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                                        CS_CLIENTMSG* msg)
 {
     CS_INT          outlen;
@@ -669,7 +623,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
             ERR_POST((string)CNcbiOstrstreamToString(err_str));
         }
 
-        return true;
+        return CS_SUCCEED;
     }
 
     // Process the message ...
@@ -711,15 +665,15 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                              CS_UNUSED,
                              NULL) != CS_SUCCEED) ||
                 (!status)) {
-                return false;
+                return CS_FAIL;
             }
 
             if(ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN) != CS_SUCCEED) {
-                return false;
+                return CS_FAIL;
             }
         }
         else {
-            return false;
+            return CS_FAIL;
         }
 
         break;
@@ -759,11 +713,11 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
     }
     }
 
-    return true;
+    return CS_SUCCEED;
 }
 
 
-bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
+CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                         CS_CONNECTION* con,
                                         CS_SERVERMSG* msg)
 {
@@ -774,7 +728,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         msg->msgnumber == 5701 ||
         msg->msgnumber == 5703 ||
         msg->msgnumber == 5704) {
-        return true;
+        return CS_SUCCEED;
     }
 
     CS_INT          outlen;
@@ -826,7 +780,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
         ERR_POST((string)CNcbiOstrstreamToString(err_str));
 
-        return true;
+        return CS_SUCCEED;
     }
 
     if ( msg->text ) {
@@ -896,91 +850,9 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         }
     }
 
-    return true;
+    return CS_SUCCEED;
 }
 
-
-
-CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
-                                               const string&   user_name,
-                                               const string&   passwd,
-                                               TConnectionMode mode)
-{
-    CS_CONNECTION* con;
-    if (Check(ct_con_alloc(CTLIB_GetContext(), &con)) != CS_SUCCEED)
-        return 0;
-
-    Check(ct_callback(NULL, con, CS_SET, CS_CLIENTMSG_CB,
-                (CS_VOID*) s_CTLIB_cterr_callback));
-
-    Check(ct_callback(NULL, con, CS_SET, CS_SERVERMSG_CB,
-                (CS_VOID*) s_CTLIB_srverr_callback));
-
-    char hostname[256];
-    if(gethostname(hostname, 256)) {
-      strcpy(hostname, "UNKNOWN");
-    }
-    else hostname[255]= '\0';
-
-
-    if (Check(ct_con_props(con, CS_SET, CS_USERNAME, (void*) user_name.c_str(),
-                     CS_NULLTERM, NULL)) != CS_SUCCEED
-        || Check(ct_con_props(con, CS_SET, CS_PASSWORD, (void*) passwd.c_str(),
-                     CS_NULLTERM, NULL)) != CS_SUCCEED
-        || Check(ct_con_props(con, CS_SET, CS_APPNAME, (void*) GetApplicationName().c_str(),
-                     CS_NULLTERM, NULL)) != CS_SUCCEED
-        || Check(ct_con_props(con, CS_SET, CS_LOC_PROP, (void*) GetLocale(),
-                     CS_UNUSED, NULL)) != CS_SUCCEED
-        || Check(ct_con_props(con, CS_SET, CS_HOSTNAME, (void*) hostname,
-                     CS_NULLTERM, NULL)) != CS_SUCCEED
-        // Future development ...
-//         || Check(ct_con_props(con, CS_SET, CS_TDS_VERSION, &m_TDSVersion,
-//                      CS_UNUSED, NULL)) != CS_SUCCEED
-        ) {
-        Check(ct_con_drop(con));
-        return 0;
-    }
-
-    if ( !GetHostName().empty() ) {
-        Check(ct_con_props(con, CS_SET, CS_HOSTNAME,
-                     (void*) GetHostName().c_str(), CS_NULLTERM, NULL));
-    }
-
-    if (m_PacketSize > 0) {
-        Check(ct_con_props(con, CS_SET, CS_PACKETSIZE,
-                     (void*) &m_PacketSize, CS_UNUSED, NULL));
-    }
-
-#if defined(CS_RETRY_COUNT)
-    if (m_LoginRetryCount > 0) {
-        Check(ct_con_props(con, CS_SET, CS_RETRY_COUNT,
-                     (void*) &m_LoginRetryCount, CS_UNUSED, NULL));
-    }
-#endif
-
-#if defined (CS_LOOP_DELAY)
-    if (m_LoginLoopDelay > 0) {
-        Check(ct_con_props(con, CS_SET, CS_LOOP_DELAY,
-                     (void*) &m_LoginLoopDelay, CS_UNUSED, NULL));
-    }
-#endif
-
-    CS_BOOL flag = CS_TRUE;
-    if ((mode & fBcpIn) != 0) {
-        Check(ct_con_props(con, CS_SET, CS_BULK_LOGIN, &flag, CS_UNUSED, NULL));
-    }
-    if ((mode & fPasswordEncrypted) != 0) {
-        Check(ct_con_props(con, CS_SET, CS_SEC_ENCRYPTION, &flag, CS_UNUSED, NULL));
-    }
-
-    if (Check(ct_connect(con, const_cast<char*> (srv_name.c_str()), CS_NULLTERM))
-        != CS_SUCCEED) {
-        Check(ct_con_drop(con));
-        return 0;
-    }
-
-    return con;
-}
 
 void CTLibContext::SetClientCharset(const string& charset)
 {
@@ -1284,6 +1156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2006/10/05 19:51:50  ssikorsk
+ * Moved connection logic from CTLibContext to CTL_Connection.
+ *
  * Revision 1.97  2006/10/04 19:27:22  ssikorsk
  * Revamp code to use AutoArray where it is possible.
  *
