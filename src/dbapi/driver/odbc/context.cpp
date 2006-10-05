@@ -35,7 +35,6 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-#include <corelib/ncbiapp.hpp>
 
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
@@ -668,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/10/05 20:41:14  ssikorsk
+ * - #include <corelib/ncbiapp.hpp>
+ *
  * Revision 1.68  2006/10/05 19:53:57  ssikorsk
  * Moved connection logic from CODBCContext to CODBC_Connection.
  *
