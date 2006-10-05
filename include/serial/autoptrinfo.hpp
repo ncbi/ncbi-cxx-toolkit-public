@@ -67,7 +67,7 @@ protected:
                             TTypeInfo objectType);
 };
 
-//#include <serial/autoptrinfo.inl>
+//#include <serial/impl/autoptrinfo.inl>
 
 END_NCBI_SCOPE
 
@@ -80,6 +80,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/10/05 19:23:03  gouriano
+* Some headers moved into impl
+*
 * Revision 1.12  2003/04/15 14:14:52  siyan
 * Added doxygen support
 *

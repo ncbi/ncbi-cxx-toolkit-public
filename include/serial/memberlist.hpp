@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <util/lightstr.hpp>
-#include <serial/memberid.hpp>
+//#include <serial/memberid.hpp>
 #include <serial/item.hpp>
 #include <vector>
 #include <map>
@@ -143,7 +143,7 @@ private:
 /* @} */
 
 
-#include <serial/memberlist.inl>
+#include <serial/impl/memberlist.inl>
 
 END_NCBI_SCOPE
 
@@ -153,6 +153,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.26  2004/01/08 17:37:33  gouriano
 * Added possibility to search for container members, that could be empty
 *

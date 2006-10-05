@@ -36,7 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/objecttype.hpp>
-#include <serial/objstack.hpp>
+#include <serial/impl/objstack.hpp>
 #include <serial/objectiter.hpp>
 
 
@@ -479,7 +479,7 @@ void Serial_FilterStdObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObje
 /* @} */
 
 
-//#include <serial/objhook.inl>
+//#include <serial/impl/objhook.inl>
 
 END_NCBI_SCOPE
 
@@ -489,6 +489,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.17  2005/12/13 14:40:43  gouriano
 * Added possibility to scan input stream for objects of std type
 *

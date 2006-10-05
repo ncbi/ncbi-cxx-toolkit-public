@@ -43,7 +43,7 @@
 #include <serial/choice.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
-#include <serial/objistrimpl.hpp>
+#include <serial/impl/objistrimpl.hpp>
 #include <serial/objlist.hpp>
 #include <serial/serialimpl.hpp>
 
@@ -293,6 +293,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.16  2006/10/05 19:24:28  gouriano
+* Some headers moved into impl
+*
 * Revision 1.15  2006/01/30 19:27:46  gouriano
 * Added copying NULL pointers
 *

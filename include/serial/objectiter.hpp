@@ -469,7 +469,7 @@ private:
 /* @} */
 
 
-#include <serial/objectiter.inl>
+#include <serial/impl/objectiter.inl>
 
 END_NCBI_SCOPE
 
@@ -479,6 +479,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.14  2005/03/17 21:07:42  vasilche
 * Removed enforced check for call of IsValid().
 *

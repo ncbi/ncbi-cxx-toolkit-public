@@ -34,8 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/hookdata.hpp>
-#include <serial/hookfunc.hpp>
+#include <serial/impl/hookdata.hpp>
+#include <serial/impl/hookfunc.hpp>
 
 
 /** @addtogroup TypeInfoCPP
@@ -227,7 +227,7 @@ private:
 /* @} */
 
 
-#include <serial/typeinfo.inl>
+#include <serial/impl/typeinfo.inl>
 
 END_NCBI_SCOPE
 
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2006/10/05 19:23:05  gouriano
+* Some headers moved into impl
+*
 * Revision 1.48  2005/10/19 13:49:37  vasilche
 * Fixed MayContainType() for type graph with cycles.
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/10/05 19:24:28  gouriano
+* Some headers moved into impl
+*
 * Revision 1.18  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -99,7 +102,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <serial/objstack.hpp>
+#include <serial/impl/objstack.hpp>
 
 BEGIN_NCBI_SCOPE
 

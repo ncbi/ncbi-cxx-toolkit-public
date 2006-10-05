@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <serial/serialdef.hpp>
+//#include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <map>
 #include <vector>
@@ -165,7 +165,7 @@ private:
 /* @} */
 
 
-#include <serial/objlist.inl>
+#include <serial/impl/objlist.inl>
 
 END_NCBI_SCOPE
 
@@ -175,6 +175,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.17  2003/04/15 16:18:26  siyan
 * Added doxygen support
 *

@@ -178,7 +178,7 @@ private:
 /* @} */
 
 
-#include <serial/classinfo.inl>
+#include <serial/impl/classinfo.inl>
 
 END_NCBI_SCOPE
 
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2006/10/05 19:23:03  gouriano
+* Some headers moved into impl
+*
 * Revision 1.46  2005/10/19 13:49:37  vasilche
 * Fixed MayContainType() for type graph with cycles.
 *

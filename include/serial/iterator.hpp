@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/exception.hpp>
+//#include <serial/exception.hpp>
 #include <serial/objecttype.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/serialbase.hpp>
@@ -975,6 +975,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.37  2005/03/17 21:07:22  vasilche
 * Removed enforced check for call of IsValid().
 *

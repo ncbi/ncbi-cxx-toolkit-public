@@ -32,8 +32,8 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-#include <serial/typeinfo.hpp>
-#include <serial/typeref.hpp>
+//#include <serial/typeinfo.hpp>
+//#include <serial/typeref.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/variant.hpp>
 
@@ -142,7 +142,7 @@ protected:
 /* @} */
 
 
-#include <serial/choice.inl>
+#include <serial/impl/choice.inl>
 
 END_NCBI_SCOPE
 
@@ -152,6 +152,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/10/05 19:23:03  gouriano
+* Some headers moved into impl
+*
 * Revision 1.24  2005/04/26 14:18:49  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

@@ -126,7 +126,7 @@ public:
 /* @} */
 
 
-//#include <serial/serialutil.inl>
+//#include <serial/impl/serialutil.inl>
 
 END_NCBI_SCOPE
 
@@ -136,6 +136,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.5  2003/12/01 19:04:22  grichenk
 * Moved Add and Sub from serialutil to ncbimisc, made them methods
 * of CRawPointer class.

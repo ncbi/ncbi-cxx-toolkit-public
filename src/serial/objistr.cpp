@@ -53,7 +53,7 @@
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/delaybuf.hpp>
-#include <serial/objistrimpl.hpp>
+#include <serial/impl/objistrimpl.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/objlist.hpp>
@@ -1591,6 +1591,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.143  2006/10/05 19:24:28  gouriano
+* Some headers moved into impl
+*
 * Revision 1.142  2006/02/28 19:28:17  gouriano
 * MSVC x64 tuneup
 *

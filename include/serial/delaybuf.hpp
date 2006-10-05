@@ -119,7 +119,7 @@ private:
 /* @} */
 
 
-//#include <serial/delaybuf.inl>
+//#include <serial/impl/delaybuf.inl>
 
 END_NCBI_SCOPE
 
@@ -129,6 +129,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.9  2005/01/24 17:05:48  vasilche
 * Safe boolean operators.
 *

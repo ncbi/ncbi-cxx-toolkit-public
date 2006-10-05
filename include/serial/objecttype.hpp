@@ -192,7 +192,7 @@ pair<TConstObjectPtr, TTypeInfo> ConstRefChoiceInfo(const CRef<C>& obj)
 /* @} */
 
 
-//#include <serial/objecttype.inl>
+//#include <serial/impl/objecttype.inl>
 
 END_NCBI_SCOPE
 
@@ -202,6 +202,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.6  2003/04/15 16:18:16  siyan
 * Added doxygen support
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/10/05 19:24:28  gouriano
+* Some headers moved into impl
+*
 * Revision 1.2  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -73,8 +76,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include <serial/hookdatakey.hpp>
-#include <serial/hookdata.hpp>
+#include <serial/impl/hookdatakey.hpp>
+#include <serial/impl/hookdata.hpp>
 
 #include <algorithm>
 

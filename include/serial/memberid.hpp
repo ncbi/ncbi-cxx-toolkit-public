@@ -108,7 +108,7 @@ private:
 /* @} */
 
 
-#include <serial/memberid.inl>
+#include <serial/impl/memberid.inl>
 
 END_NCBI_SCOPE
 
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.19  2006/01/19 18:22:34  gouriano
 * Added possibility to save bit string data in compressed format
 *

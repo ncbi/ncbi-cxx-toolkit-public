@@ -309,7 +309,7 @@ private:
 /* @} */
 
 
-#include <serial/objostrxml.inl>
+#include <serial/impl/objostrxml.inl>
 
 END_NCBI_SCOPE
 
@@ -319,6 +319,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.44  2006/03/10 14:51:23  gouriano
 * Categorized methods
 *

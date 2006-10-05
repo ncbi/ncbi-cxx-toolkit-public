@@ -181,7 +181,7 @@ typedef ssize_t TPointerOffsetType;
 /* @} */
 
 
-//#include <serial/serialdef.inl>
+//#include <serial/impl/serialdef.inl>
 
 END_NCBI_SCOPE
 
@@ -191,6 +191,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.30  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

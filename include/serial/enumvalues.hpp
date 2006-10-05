@@ -108,7 +108,7 @@ private:
 /* @} */
 
 
-//#include <serial/enumvalues.inl>
+//#include <serial/impl/enumvalues.inl>
 
 END_NCBI_SCOPE
 
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.11  2005/10/24 20:27:18  gouriano
 * Added option to write named integers by value only
 *

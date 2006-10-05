@@ -34,8 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
+//#include <serial/objistr.hpp>
+//#include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/serial.hpp>
 #include <serial/stdtypesimpl.hpp>
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.7  2005/04/26 14:18:49  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

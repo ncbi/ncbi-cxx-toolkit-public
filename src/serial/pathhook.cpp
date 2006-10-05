@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/pathhook.hpp>
-#include <serial/objstack.hpp>
+#include <serial/impl/objstack.hpp>
 #include <serial/item.hpp>
 #include <serial/classinfob.hpp>
 
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/10/05 19:24:28  gouriano
+* Some headers moved into impl
+*
 * Revision 1.3  2004/08/11 16:40:32  vasilche
 * Fast check if there are no path hooks.
 *

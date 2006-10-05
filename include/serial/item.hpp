@@ -33,7 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/serialdef.hpp>
+//#include <serial/serialdef.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/typeref.hpp>
 #include <serial/memberid.hpp>
@@ -98,7 +98,7 @@ private:
 /* @} */
 
 
-#include <serial/item.inl>
+#include <serial/impl/item.inl>
 
 END_NCBI_SCOPE
 
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.8  2003/04/15 14:15:19  siyan
 * Added doxygen support
 *

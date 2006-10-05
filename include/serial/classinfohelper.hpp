@@ -33,7 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/serialdef.hpp>
+//#include <serial/serialdef.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/typeinfoimpl.hpp>
 #include <typeinfo>
@@ -264,7 +264,7 @@ private:
 /* @} */
 
 
-//#include <serial/classinfohelper.inl>
+//#include <serial/impl/classinfohelper.inl>
 
 END_NCBI_SCOPE
 
@@ -274,6 +274,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/10/05 19:23:03  gouriano
+* Some headers moved into impl
+*
 * Revision 1.14  2005/04/29 19:04:17  golikov
 * vasilchenko: do not use memorypool for non cobjects
 *

@@ -71,7 +71,7 @@ public:
 /* @} */
 
 
-//#include <serial/typeinfoimpl.inl>
+//#include <serial/impl/typeinfoimpl.inl>
 
 END_NCBI_SCOPE
 
@@ -81,6 +81,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/10/05 19:23:05  gouriano
+* Some headers moved into impl
+*
 * Revision 1.6  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

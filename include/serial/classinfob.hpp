@@ -34,11 +34,11 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <serial/stdtypeinfo.hpp>
+#include <serial/impl/stdtypeinfo.hpp>
 #include <serial/typeref.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/memberlist.hpp>
-#include <serial/memberid.hpp>
+//#include <serial/memberid.hpp>
 #include <map>
 #include <set>
 #include <memory>
@@ -156,7 +156,7 @@ private:
 /* @} */
 
 
-#include <serial/classinfob.inl>
+#include <serial/impl/classinfob.inl>
 
 END_NCBI_SCOPE
 
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/10/05 19:23:03  gouriano
+* Some headers moved into impl
+*
 * Revision 1.18  2005/10/19 13:49:37  vasilche
 * Fixed MayContainType() for type graph with cycles.
 *

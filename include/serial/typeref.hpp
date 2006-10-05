@@ -155,7 +155,7 @@ private:
 /* @} */
 
 
-#include <serial/typeref.inl>
+#include <serial/impl/typeref.inl>
 
 END_NCBI_SCOPE
 
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/10/05 19:23:05  gouriano
+* Some headers moved into impl
+*
 * Revision 1.16  2005/01/24 17:05:48  vasilche
 * Safe boolean operators.
 *

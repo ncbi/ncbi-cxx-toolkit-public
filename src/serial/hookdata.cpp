@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/10/05 19:24:28  gouriano
+* Some headers moved into impl
+*
 * Revision 1.11  2004/08/10 14:45:42  vakatov
 * Fixed sign/unsign warn on MSVC
 *
@@ -79,8 +82,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include <serial/hookdata.hpp>
-#include <serial/objstack.hpp>
+#include <serial/impl/hookdata.hpp>
+#include <serial/impl/objstack.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -37,13 +37,13 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimempool.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/serialdef.hpp>
-#include <serial/typeinfo.hpp>
+//#include <serial/serialdef.hpp>
+//#include <serial/typeinfo.hpp>
 #include <util/strbuffer.hpp>
 #include <serial/objlist.hpp>
-#include <serial/objstack.hpp>
+//#include <serial/impl/objstack.hpp>
 #include <serial/objhook.hpp>
-#include <serial/hookdatakey.hpp>
+#include <serial/impl/hookdatakey.hpp>
 #include <serial/pathhook.hpp>
 
 
@@ -748,7 +748,7 @@ private:
 /* @} */
 
 
-#include <serial/objistr.inl>
+#include <serial/impl/objistr.inl>
 
 END_NCBI_SCOPE
 
@@ -758,6 +758,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.119  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.118  2006/07/25 13:33:38  gouriano
 * Moved Open methods up
 *

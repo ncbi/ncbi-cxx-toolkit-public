@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/choice.hpp>
 #include <serial/stdtypes.hpp>
-#include <serial/stdtypeinfo.hpp>
+#include <serial/impl/stdtypeinfo.hpp>
 #include <map>
 
 
@@ -94,7 +94,7 @@ public:
     static TTypeInfo GetTypeInfo(void);
 };
 
-//#include <serial/choiceptr.inl>
+//#include <serial/impl/choiceptr.inl>
 
 END_NCBI_SCOPE
 
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/10/05 19:23:03  gouriano
+* Some headers moved into impl
+*
 * Revision 1.26  2005/04/26 14:18:49  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

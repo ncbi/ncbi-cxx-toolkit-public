@@ -119,7 +119,7 @@ CObjectIStream& operator>>(CObjectIStream& in, T& object)
 /* @} */
 
 
-//#include <serial/serial.inl>
+//#include <serial/impl/serial.inl>
 
 END_NCBI_SCOPE
 
@@ -129,6 +129,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.47  2004/08/17 14:39:06  dicuccio
 * Added export specifiers
 *

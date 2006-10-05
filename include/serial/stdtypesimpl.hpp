@@ -34,8 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/stdtypes.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
+//#include <serial/objistr.hpp>
+//#include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/serialutil.hpp>
 
@@ -290,7 +290,7 @@ public:
 /* @} */
 
 
-//#include <serial/stdtypesimpl.inl>
+//#include <serial/impl/stdtypesimpl.inl>
 
 END_NCBI_SCOPE
 
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.15  2006/07/26 19:06:30  ucko
 * Add reflective accessors for BitString and AnyContent values.
 *

@@ -32,7 +32,7 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-#include <serial/typeinfo.hpp>
+//#include <serial/typeinfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/enumvalues.hpp>
 
@@ -115,6 +115,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.17  2005/04/26 14:18:49  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

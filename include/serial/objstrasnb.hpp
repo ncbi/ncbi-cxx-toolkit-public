@@ -139,7 +139,7 @@ public:
     static TByte GetTagClassAndConstructed(TByte byte);
 };
 
-#include <serial/objstrasnb.inl>
+#include <serial/impl/objstrasnb.inl>
 
 END_NCBI_SCOPE
 
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.14  2005/11/29 17:40:03  gouriano
 * Added more check in debug build
 *

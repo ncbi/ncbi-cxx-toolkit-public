@@ -146,7 +146,7 @@ private:
     static TTypeInfo CreateElementTypeInfo(TTypeInfo info);
 };
 
-//#include <serial/stltypesimpl.inl>
+//#include <serial/impl/stltypesimpl.inl>
 
 END_NCBI_SCOPE
 
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.9  2005/11/21 16:18:06  vasilche
 * Implemented serialization of set and map with custom comparator.
 *

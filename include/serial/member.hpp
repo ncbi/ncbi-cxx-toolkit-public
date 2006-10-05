@@ -35,8 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/item.hpp>
-#include <serial/hookdata.hpp>
-#include <serial/hookfunc.hpp>
+#include <serial/impl/hookdata.hpp>
+#include <serial/impl/hookfunc.hpp>
 #include <serial/typeinfo.hpp>
 
 
@@ -232,7 +232,7 @@ private:
 /* @} */
 
 
-#include <serial/member.inl>
+#include <serial/impl/member.inl>
 
 END_NCBI_SCOPE
 
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.34  2006/01/19 18:22:34  gouriano
 * Added possibility to save bit string data in compressed format
 *

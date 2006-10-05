@@ -369,7 +369,7 @@ public:
 /* @} */
 
 
-#include <serial/stdtypes.inl>
+#include <serial/impl/stdtypes.inl>
 
 END_NCBI_SCOPE
 
@@ -379,6 +379,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/10/05 19:23:04  gouriano
+* Some headers moved into impl
+*
 * Revision 1.33  2006/07/26 19:06:30  ucko
 * Add reflective accessors for BitString and AnyContent values.
 *

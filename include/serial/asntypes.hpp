@@ -228,7 +228,7 @@ private:
     TAsnWriteProc m_WriteProc;
 };
 
-//#include <serial/asntypes.inl>
+//#include <serial/impl/asntypes.inl>
 
 END_NCBI_SCOPE
 
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.43  2006/10/05 19:23:03  gouriano
+ * Some headers moved into impl
+ *
  * Revision 1.42  2004/04/27 21:44:56  jcherry
  * Made a couple of typedefs public
  *
