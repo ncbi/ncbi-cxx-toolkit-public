@@ -340,7 +340,7 @@ private:
     void x_RemoveCitGenPubDescriptors (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
     void x_RemoveCitGenPubFeatures (CSeq_annot_Handle sa);
     
-    CRef<CPub> CCleanup_imp::x_MinimizePub (const CPub& pub);
+    CRef<CPub> x_MinimizePub (const CPub& pub);
     void x_ChangeCitationQualToCitationPub(CBioseq_Handle bs);
     bool x_ChangeCitSub (CPub& pub);
     void x_ChangeCitSub (CBioseq_Handle bh);
@@ -408,6 +408,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2006/10/05 15:15:03  ucko
+ * Drop extraneous class name from x_MinimizePub's declaration.
+ *
  * Revision 1.43  2006/10/04 14:17:47  bollin
  * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
  * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
