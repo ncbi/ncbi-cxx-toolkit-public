@@ -48,6 +48,10 @@ extern "C" {
 
 static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args );
 
+static void s_MB_IdbGetResults(
+        void * idb_v,
+        Int4 oid_i, Int4 chunk_i,
+        BlastInitHitList * init_hitlist );
 }
 
 BEGIN_NCBI_SCOPE
@@ -124,6 +128,7 @@ static void IndexedDbPreSearch(
                 _BlastSeqSrcImpl_GetDataStructure( seq_src ) );
     CIndexedDb * idb = idb_tl->idb_.GetPointerOrNull();
     lt_wrap->lut = (void *)idb;
+    lt_wrap->read_indexed_db = (void *)(&s_MB_IdbGetResults);
     idb->PreSearch( queries, locs, lut_options, word_options );
 }
 
@@ -384,7 +389,7 @@ static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args )
     return retval;
 }
 
-void MB_IdbGetResults(
+static void s_MB_IdbGetResults(
         void * idb_v,
         Int4 oid_i, Int4 chunk_i,
         BlastInitHitList * init_hitlist )
@@ -408,6 +413,9 @@ void MB_IdbGetResults(
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/10/05 15:59:21  papadopo
+ * GetResults is static now
+ *
  * Revision 1.1  2006/10/04 19:19:45  papadopo
  * interface for indexed blast databases
  *
