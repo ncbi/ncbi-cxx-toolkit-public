@@ -144,7 +144,7 @@ void CAgpSyntaxValidator::EndOfObject(bool afterLastLine)
   );
 }
 
-void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
+bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
   const string& text_line)
 {
   new_obj = false;
@@ -218,6 +218,9 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
   }
   else {
     m_TypeCompCnt.add( "invalid type" );
+    // true: disable some checks for the next line
+    // to suppress some spurious errors
+    return true;
   }
 
   //// Gap- or component-specific code.
@@ -230,8 +233,10 @@ void CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     // prev_component_line_num = dl.line_num;
   }
 
-  ////
   prev_component_type = dl.component_type;
+
+  // false: allow checks that use both this line and the next
+  return false;
 }
 
 void CAgpSyntaxValidator::x_OnGapLine(

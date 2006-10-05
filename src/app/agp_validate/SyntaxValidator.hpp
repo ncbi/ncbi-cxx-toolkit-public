@@ -97,7 +97,7 @@ class CAgpSyntaxValidator
 public:
   CAgpSyntaxValidator();
   ~CAgpSyntaxValidator();
-  void ValidateLine(const SDataLine& dl, const string& text_line);
+  bool ValidateLine(const SDataLine& dl, const string& text_line);
   void EndOfObject(bool afterLastLine=false);
 
   // static bool GapBreaksScaffold(int type, int linkage);
@@ -182,19 +182,19 @@ protected:
   TValuesMap m_LinkageValues;
 
 
-  bool x_CheckValues(const TValuesSet& values,
+  static bool x_CheckValues(const TValuesSet& values,
     const string& value, const string& field_name,
     bool log_error = true);
   // Returns an integer constant mapped to the allowed text value,
   // -1 if the value is unknowm
-  int x_CheckValues(const TValuesMap& values,
+  static int x_CheckValues(const TValuesMap& values,
     const string& value, const string& field_name,
     bool log_error = true);
 
-  int x_CheckRange(int start, int begin,
+  static int x_CheckRange(int start, int begin,
     int end, string begin_name, string end_name,
     CAgpErr::TCode ltCode); // // "Less Than" error Code
-  int x_CheckIntField(const string& field,
+  static int x_CheckIntField(const string& field,
     const string& field_name, bool log_error = true);
 
   string prev_object;

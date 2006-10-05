@@ -157,8 +157,7 @@ private:
   // Semantic validate methods
   //
   void x_ValidateSemanticInit();
-  void x_ValidateSemanticLine(const SDataLine& line,
-    const string& text_line);
+  void x_ValidateSemanticLine(const SDataLine& line);
 
   // vsap: printableId is used for error messages only
   int x_GetTaxid(CBioseq_Handle& bioseq_handle);
@@ -454,14 +453,19 @@ void CAgpValidateApplication::x_ValidateFile(
       if (cols.size() > 8) data_line.orientation = cols[8];
     }
 
+    bool invalid_line=false;
     if (m_ValidationType == syntax) {
       // x_ValidateSyntaxLine(data_line, line);
-      m_LineValidator->ValidateLine(data_line, line);
-    } else {
-      x_ValidateSemanticLine(data_line, line);
+      invalid_line = m_LineValidator->ValidateLine(data_line, line);
+    } else if( !CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
+      START_LINE_VALIDATE_MSG;
+      x_ValidateSemanticLine(data_line);
+      if (m_LineErrorOccured) {
+        END_LINE_VALIDATE_MSG(data_line.line_num, line);
+      }
     }
 
-    agpErr.LineDone(line_orig, line_num);
+    agpErr.LineDone(line_orig, line_num, invalid_line);
   }
 }
 
@@ -485,12 +489,8 @@ void CAgpValidateApplication::x_ValidateSemanticInit()
 }
 
 void CAgpValidateApplication::x_ValidateSemanticLine(
-  const SDataLine& dl, const string& text_line)
+  const SDataLine& dl)
 {
-  if(dl.component_type == "N") return; // gap
-
-  START_LINE_VALIDATE_MSG;
-
   CSeq_id seq_id;
   try {
       seq_id.Set(dl.component_id);
@@ -498,7 +498,9 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
   //    catch (CSeqIdException::eFormat)
   catch (...) {
     AGP_ERROR( "Invalid component id: " << dl.component_id);
+    return;
   }
+
   CBioseq_Handle bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
   if( !bioseq_handle ) {
     AGP_ERROR( "Component not in Genbank: "<< dl.component_id);
@@ -517,10 +519,6 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
 
   int taxid = x_GetTaxid(bioseq_handle);
   x_AddToTaxidMap(taxid, dl);
-
-  if (m_LineErrorOccured) {
-    END_LINE_VALIDATE_MSG(dl.line_num, text_line);
-  }
 }
 
 int CAgpValidateApplication::x_GetTaxid(
