@@ -190,7 +190,7 @@ namespace std {
 
     // Specialization macro
 
-    %define specialize_std_list(T, CHECK, TO_CPP, FROM_CPP)
+    %define ncbi_specialize_std_list(T, CHECK, TO_CPP, FROM_CPP)
     template<> class list<T > {
 
         %typemap(in) list<T > (std::list<T >* vec) {
@@ -332,42 +332,42 @@ namespace std {
 
 
     // Specializations
-    specialize_std_list(int,
-                        PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_list(unsigned int,
-                        PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_list(short,
-                        PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_list(unsigned short,
-                        PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_list(long,
-                        PyLong_Check, PyLong_AsLong, PyLong_FromLong);
-    specialize_std_list(unsigned long,
-                        PyLong_Check,
-                        PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
-    specialize_std_list(size_t,
-                        PyLong_Check,
-                        PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
+    ncbi_specialize_std_list(int,
+                             PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_list(unsigned int,
+                             PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_list(short,
+                             PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_list(unsigned short,
+                             PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_list(long,
+                             PyLong_Check, PyLong_AsLong, PyLong_FromLong);
+    ncbi_specialize_std_list(unsigned long,
+                             PyLong_Check,
+                             PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
+    ncbi_specialize_std_list(size_t,
+                             PyLong_Check,
+                             PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
 
-    specialize_std_list(char,
-                        PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_list(unsigned char,
-                        PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_list(char,
+                             PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_list(unsigned char,
+                             PyInt_Check, PyInt_AsLong, PyInt_FromLong);
 
-    specialize_std_list(bool,
-                        PyInt_Check, PyInt_AsLong, SWIG_From_bool);
+    ncbi_specialize_std_list(bool,
+                             PyInt_Check, PyInt_AsLong, SWIG_From_bool);
 
-    specialize_std_list(double,
-                        DoubleCheck,
-                        DoubleToCpp, PyFloat_FromDouble);
-    specialize_std_list(float,
-                        DoubleCheck,
-                        DoubleToCpp, PyFloat_FromDouble);
+    ncbi_specialize_std_list(double,
+                             DoubleCheck,
+                             DoubleToCpp, PyFloat_FromDouble);
+    ncbi_specialize_std_list(float,
+                             DoubleCheck,
+                             DoubleToCpp, PyFloat_FromDouble);
 
     // Could do better here (allow std::string proxies in lists/tuples)?
-    specialize_std_list(std::string,
-                        PyString_Check,
-                        StringToCpp, StringFromCpp);
+    ncbi_specialize_std_list(std::string,
+                             PyString_Check,
+                             StringToCpp, StringFromCpp);
 
 
 }  // namespace std
@@ -376,6 +376,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/10/05 16:57:33  jcherry
+ * Prepend "ncbi_" to specialization macros to avoid conflict with swig lib
+ *
  * Revision 1.4  2006/05/12 14:39:16  jcherry
  * Added specialization for size_t.  Added front() and back().
  *

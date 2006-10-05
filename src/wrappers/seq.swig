@@ -635,8 +635,8 @@ objects/seqtest/NCBI_SeqTest_module.hpp
 // Need to specialize std::vector for enums
 namespace std {
 #ifdef SWIGPYTHON
-specialize_std_vector(ncbi::objects::ENa_strand, PyInt_Check, \
-                      PyInt_AsLong, PyInt_FromLong);
+ncbi_specialize_std_vector(ncbi::objects::ENa_strand, PyInt_Check,
+                           PyInt_AsLong, PyInt_FromLong);
 #endif
 }
 %template(vector_ENa_strand) std::vector<ncbi::objects::ENa_strand>;
@@ -655,6 +655,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/10/05 16:57:33  jcherry
+ * Prepend "ncbi_" to specialization macros to avoid conflict with swig lib
+ *
  * Revision 1.6  2005/10/28 15:48:41  jcherry
  * Reflect change to blast ASN.1 spec
  *

@@ -243,7 +243,7 @@ namespace std {
 
     // Specialization macro
 
-    %define specialize_std_vector(T, CHECK, TO_CPP, FROM_CPP)
+    %define ncbi_specialize_std_vector(T, CHECK, TO_CPP, FROM_CPP)
     template<> class vector<T > {
 
         %typemap(in) vector<T > (std::vector<T >* vec) {
@@ -444,42 +444,42 @@ namespace std {
     %ignore vector<bool>::back;
 
     // Specializations
-    specialize_std_vector(int,
-                          PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_vector(unsigned int,
-                          PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_vector(short,
-                          PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_vector(unsigned short,
-                          PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_vector(long,
-                          PyLong_Check, PyLong_AsLong, PyLong_FromLong);
-    specialize_std_vector(unsigned long,
-                          PyLong_Check,
-                          PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
-    specialize_std_vector(size_t,
-                          PyLong_Check,
-                          PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
+    ncbi_specialize_std_vector(int,
+                               PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_vector(unsigned int,
+                               PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_vector(short,
+                               PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_vector(unsigned short,
+                               PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_vector(long,
+                               PyLong_Check, PyLong_AsLong, PyLong_FromLong);
+    ncbi_specialize_std_vector(unsigned long,
+                               PyLong_Check,
+                               PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
+    ncbi_specialize_std_vector(size_t,
+                               PyLong_Check,
+                               PyLong_AsUnsignedLong, PyLong_FromUnsignedLong);
 
-    specialize_std_vector(char,
-                          PyInt_Check, PyInt_AsLong, PyInt_FromLong);
-    specialize_std_vector(unsigned char,
-                          PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_vector(char,
+                               PyInt_Check, PyInt_AsLong, PyInt_FromLong);
+    ncbi_specialize_std_vector(unsigned char,
+                               PyInt_Check, PyInt_AsLong, PyInt_FromLong);
 
-    specialize_std_vector(bool,
-                          PyInt_Check, PyInt_AsLong, SWIG_From_bool);
+    ncbi_specialize_std_vector(bool,
+                               PyInt_Check, PyInt_AsLong, SWIG_From_bool);
 
-    specialize_std_vector(double,
-                          DoubleCheck,
-                          DoubleToCpp, PyFloat_FromDouble);
-    specialize_std_vector(float,
-                          DoubleCheck,
-                          DoubleToCpp, PyFloat_FromDouble);
+    ncbi_specialize_std_vector(double,
+                               DoubleCheck,
+                               DoubleToCpp, PyFloat_FromDouble);
+    ncbi_specialize_std_vector(float,
+                               DoubleCheck,
+                               DoubleToCpp, PyFloat_FromDouble);
 
     // Could do better here (allow std::string proxies in lists/tuples)?
-    specialize_std_vector(std::string,
-                          PyString_Check,
-                          StringToCpp, StringFromCpp);
+    ncbi_specialize_std_vector(std::string,
+                               PyString_Check,
+                               StringToCpp, StringFromCpp);
 
 
 }  // namespace std
@@ -488,6 +488,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/10/05 16:57:33  jcherry
+ * Prepend "ncbi_" to specialization macros to avoid conflict with swig lib
+ *
  * Revision 1.3  2006/05/12 14:39:16  jcherry
  * Added specialization for size_t.  Added front() and back().
  *
