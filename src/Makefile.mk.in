@@ -503,6 +503,11 @@ SOBJMGR_LDEP = seqset seqedit $(SEQ_LIBS) pub medline biblio general \
 SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
 
+BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
+             seqdb xobjsimple xobjutil xobjread creaders \
+             xnetblastcli xnetblast blastdb scoremat tables
+# BLAST additionally needs $(OBJMGR_LIBS) or the equivalent
+
 # Overlapping with qall is poor, so we have a second macro to make it
 # easier to stay out of trouble.
 QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 seqset $(SEQ_LIBS) pub medline biblio \
