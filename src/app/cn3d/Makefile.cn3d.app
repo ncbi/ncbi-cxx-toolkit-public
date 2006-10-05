@@ -70,7 +70,7 @@ SRC =	aaa_dummy_pch \
 	wx_tools
 
 LIB =	xcd_utils xbma_refiner xstruct_util xstruct_dp xstruct_thread \
-	xblast composition_adjustment seqdb xobjread tables \
+	xblast xalgoblastdbindex composition_adjustment seqdb xobjread tables \
 	id1cli id1 cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 blastdb xnetblast \
 	xregexp xser xutil xconnect xncbi $(Z_LIB) $(PCRE_LIB)
