@@ -1731,7 +1731,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
             }
             if(hasAln){
                 //    *out2<<*alnVector[i];
-                mix[i]->Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap 
+                mix[i]->Merge(CAlnMix::fMinGap 
                               | CAlnMix::fQuerySeqMergeOnly 
                               | CAlnMix::fFillUnalignedRegions);  
                 //	*out2<<mix[i]->GetDenseg();
@@ -3004,6 +3004,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.125  2006/10/05 17:30:31  ucko
+*Drop obsolete CAlnMix::fGen2EST flag.
+*
 *Revision 1.124  2006/09/18 18:49:07  jianye
 *release only subject after display this hit
 *
