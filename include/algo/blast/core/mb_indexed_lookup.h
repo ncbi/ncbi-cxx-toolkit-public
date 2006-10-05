@@ -42,17 +42,9 @@
 extern "C" {
 #endif
 
-#ifndef _NCBISTD_       /* C++ toolkit only */
-/** Function used to collect ungapped alignments from a previously
- * indexed nucleotide database. This is only used by the C++ API
- * @param idb Pointer to object representing indexed database [in]
- * @param oid Ordinal ID of the database sequence to scan [in]
- * @param chunk Current chunk of the database sequence [in]
- * @param init_hitlist Container for any hits found [out]
- */
-extern void MB_IdbGetResults(void * idb, Int4 oid, Int4 chunk,
-                             BlastInitHitList * init_hitlist);
-#endif
+/** Function pointer type to retrieve hits from an indexed database */
+typedef void (*T_MB_IdbGetResults)(void * idb, Int4 oid, Int4 chunk,
+                                   BlastInitHitList * init_hitlist);
 
 /** Finds all runs of a specified number of exact matches between 
  * two nucleotide sequences. Assumes the subject sequence is part
