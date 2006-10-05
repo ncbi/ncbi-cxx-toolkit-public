@@ -1168,7 +1168,7 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     // this step was FuseMolInfos in the C Toolkit
     x_FuseMolInfos(bh);
     // this stemp was StripProtXrefs in the C Toolkit
-    x_RecurseForSeqAnnots (bh, x_StripProtXrefs);
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_StripProtXrefs);
 #if 0    
     // missing steps
 	SeqEntryExplore(sep, (Pointer)(&qm), CheckMaps);
@@ -1585,6 +1585,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/10/05 19:17:52  ucko
+ * Properly qualify x_StripProtXrefs when passing it to x_RecurseForSeqAnnots.
+ *
  * Revision 1.8  2006/10/05 18:36:51  bollin
  * Added step to ExtendedCleanup to fuse MolInfo descriptors on the same Bioseq
  * or Bioseq-set.
