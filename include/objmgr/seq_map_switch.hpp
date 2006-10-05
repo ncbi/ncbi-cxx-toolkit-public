@@ -54,7 +54,7 @@ class CSeq_align;
  * @{
  */
 
-struct SSeqMapSwitchPoint
+struct NCBI_XOBJMGR_EXPORT SSeqMapSwitchPoint
 {
     // master sequence
     CBioseq_Handle  m_Master;
@@ -133,6 +133,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/10/05 13:52:53  vasilche
+* Added export.
+*
 * Revision 1.3  2006/10/04 19:31:07  vasilche
 * Allow inexact match in segment switch.
 *
