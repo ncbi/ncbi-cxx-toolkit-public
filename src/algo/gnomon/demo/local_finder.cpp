@@ -130,7 +130,7 @@ int CLocalFinderApp::Run(void)
     }
 
     // run!
-    gnomon.Run(cls,repeats,true,true,10.0);
+    gnomon.Run(cls,repeats,true,true,false,false,10.0);
 
     // dump the annotation
     CRef<CSeq_annot> annot = gnomon.GetAnnot();
@@ -155,6 +155,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/10/05 17:38:20  ucko
+ * Update for recent API changes.
+ *
  * Revision 1.4  2005/09/15 21:22:13  chetvern
  * Updated to match new API
  *
