@@ -1,4 +1,4 @@
---$Revision: 6.2 $
+--$Revision: 6.3 $
 --**********************************************************************
 --
 --  NCBI Sequence Alignment elements
@@ -23,21 +23,22 @@ Seq-align ::= SEQUENCE {
     type ENUMERATED {
         not-set (0) ,
         global (1) ,
-        diags (2) ,		-- unbroken, but not ordered, diagonals
+        diags (2) ,     -- unbroken, but not ordered, diagonals
         partial (3) ,   -- mapping pieces together
-    	disc (4) ,      -- discontinuous alignment
+        disc (4) ,      -- discontinuous alignment
         other (255) } ,
     dim INTEGER OPTIONAL ,     -- dimensionality
     score SET OF Score OPTIONAL ,   -- for whole alignment
     segs CHOICE {                   -- alignment data
         dendiag SEQUENCE OF Dense-diag ,
-        denseg Dense-seg ,
-        std SEQUENCE OF Std-seg ,
-        packed Packed-seg ,
-        disc Seq-align-set,
-        spliced Spliced-seg
+        denseg              Dense-seg ,
+        std     SEQUENCE OF Std-seg ,
+        packed              Packed-seg ,
+        disc                Seq-align-set,
+        spliced             Spliced-seg,
+        sparse              Sparse-seg
     } ,
-	
+    
     -- regions of sequence over which align
     --  was computed
     bounds SET OF Seq-loc OPTIONAL,
@@ -230,12 +231,59 @@ Splice-site ::= SEQUENCE {
 }
 
 
+-- ==========================================================================
+--
+-- Sparse-seg follows the semantics of dense-seg and is more optimal for
+-- representing sparse multiple alignments
+--
+-- ==========================================================================
+
+
+Sparse-seg ::= SEQUENCE {
+    master-id Seq-id OPTIONAL,
+
+    -- pairwise alignments constituting this multiple alignment
+    rows SET OF Sparse-align,
+
+    -- per-row scores
+    row-scores SET OF Score OPTIONAL,
+
+    -- index of extra items
+    ext  SET OF Sparse-seg-ext OPTIONAL
+}
+
+Sparse-align ::= SEQUENCE {
+    first-id Seq-id,
+    second-id Seq-id,
+
+    numseg INTEGER,                      --number of segments
+    first-starts SEQUENCE OF INTEGER ,   --starts on the first sequence [numseg]
+    second-starts SEQUENCE OF INTEGER ,  --starts on the second sequence [numseg]
+    lens SEQUENCE OF INTEGER ,           --lengths of segments [numseg]
+    second-strands SEQUENCE OF Na-strand OPTIONAL ,
+
+    -- per-segment scores
+    seg-scores SET OF Score OPTIONAL
+}
+
+Sparse-seg-ext ::= SEQUENCE {
+    --seg-ext SET OF {
+    --    index INTEGER,
+    --    data User-field
+    -- }
+    index INTEGER
+}
+
+
+
 -- use of Score is discouraged for external ASN.1 specifications
 Score ::= SEQUENCE {
     id Object-id OPTIONAL ,
     value CHOICE {
         real REAL ,
-        int INTEGER  } }
+        int INTEGER
+    }
+}
 
 -- use of Score-set is encouraged for external ASN.1 specifications
 Score-set ::= SET OF Score
