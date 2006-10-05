@@ -30,9 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
+
 #include <objtools/lds/lds_manager.hpp>
 #include <objtools/lds/lds_files.hpp>
 #include <objtools/lds/lds_object.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -147,12 +150,22 @@ CLDS_Database* CLDS_Manager::ReleaseDB()
     return  x_OpenDB(CLDS_Database::eReadOnly).release();
 }
 
+void CLDS_Manager::DeleteDB()
+{
+    CDir dir(m_DbPath);
+    if (dir.Exists())
+        dir.Remove();
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/05 15:02:05  didenko
+ * Added an implementation for DeleteDB method
+ *
  * Revision 1.2  2006/10/03 14:45:26  didenko
  * gcc 2.95 does not support auto_ptrs assignment. Replaced with reset - release calls
  *
