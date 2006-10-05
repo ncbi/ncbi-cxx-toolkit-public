@@ -37,6 +37,7 @@ objtools/lds/lds_coreobjreader.hpp
 objtools/lds/lds_db.hpp
 objtools/lds/lds_expt.hpp
 objtools/lds/lds_files.hpp
+objtools/lds/lds_manager.hpp
 objtools/lds/lds_object.hpp
 objtools/lds/lds_query.hpp
 objtools/lds/lds_reader.hpp
@@ -48,6 +49,9 @@ objtools/lds/lds_util.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/05 16:55:08  jcherry
+ * Added lds_manager.hpp
+ *
  * Revision 1.2  2005/09/23 19:18:02  jcherry
  * Reflect merging of directories/libraries
  *
