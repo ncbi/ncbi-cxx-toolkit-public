@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2006/10/05 19:11:30  gouriano
+* Excluded object.hpp
+*
 * Revision 1.49  2006/10/02 14:41:33  vasilche
 * Allow conversion of multiple entries in file.
 *
@@ -247,7 +250,7 @@ END_NCBI_SCOPE
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <serial/object.hpp>
+#include <serial/objectio.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>

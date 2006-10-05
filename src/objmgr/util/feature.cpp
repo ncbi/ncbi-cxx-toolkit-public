@@ -30,7 +30,6 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/object.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
@@ -668,6 +667,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2006/10/05 19:14:57  gouriano
+* Excluded object.hpp
+*
 * Revision 1.18  2006/05/01 13:32:39  dicuccio
 * Guard against access to unset SeqFeatXref.data
 *

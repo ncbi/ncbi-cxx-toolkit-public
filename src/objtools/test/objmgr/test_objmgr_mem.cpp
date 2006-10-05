@@ -19,7 +19,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/NCBI2na.hpp>
 
-#include <serial/object.hpp>
+#include <serial/objectio.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -216,6 +216,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2006/10/05 19:16:10  gouriano
+* Excluded object.hpp
+*
 * Revision 1.7  2006/02/24 19:28:21  ivanov
 * All test must include <test/test_assert.h>
 *

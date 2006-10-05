@@ -33,7 +33,6 @@
 #include "test_helper.hpp"
 #include <corelib/ncbithr.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-#include <serial/object.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -1501,6 +1500,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2006/10/05 19:13:05  gouriano
+* Excluded object.hpp
+*
 * Revision 1.69  2006/07/12 16:17:32  vasilche
 * Added CSeq_annot_ftable_CI.
 *

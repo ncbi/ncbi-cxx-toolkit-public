@@ -37,7 +37,7 @@
 #include <serial/serialasn.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
-#include <serial/object.hpp>
+#include <serial/objectio.hpp>
 #include <serial/iterator.hpp>
 #include <serial/objhook.hpp>
 #include "cppwebenv.hpp"
@@ -772,6 +772,9 @@ void PrintAsnPointerValue(CNcbiOstream& out, const CConstObjectInfo& object)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/10/05 19:17:01  gouriano
+ * Excluded object.hpp
+ *
  * Revision 1.66  2006/05/03 12:55:23  gouriano
  * Removed conversion of pointer to lonf
  *

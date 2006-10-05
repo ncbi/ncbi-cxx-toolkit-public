@@ -36,7 +36,6 @@
 #include <serial/serial.hpp>
 #include <serial/objhook.hpp>
 #include <serial/iterator.hpp>
-#include <serial/object.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -280,6 +279,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2006/10/05 19:14:57  gouriano
+* Excluded object.hpp
+*
 * Revision 1.25  2006/09/29 13:58:24  jcherry
 * Deal (properly) with XML
 *
