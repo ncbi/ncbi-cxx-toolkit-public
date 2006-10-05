@@ -157,11 +157,6 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
-        ("gen2est", "bool",
-         "Perform Gen2EST Merge",
-         CArgDescriptions::eBoolean, "f");
-
-    arg_desc->AddDefaultKey
         ("gapjoin", "bool",
          "Consolidate segments of equal lens with a gap on the query sequence",
          CArgDescriptions::eBoolean, "f");
@@ -403,10 +398,6 @@ void CAlnMrgApp::SetOptions(void)
         m_MergeFlags |= CAlnMix::fRemoveLeadTrailGaps;
     }
 
-    if (args["gen2est"]  &&  args["gen2est"].AsBoolean()) {
-        m_MergeFlags |= CAlnMix::fGen2EST | CAlnMix::fTruncateOverlaps;
-    }
-
     if (args["minusstrand"]  &&  args["minusstrand"].AsBoolean()) {
         m_MergeFlags |= CAlnMix::fNegativeStrand;
     }
@@ -553,6 +544,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2006/10/05 17:26:17  ucko
+* Drop obsolete gen2est option.
+*
 * Revision 1.38  2006/08/29 19:26:36  todorov
 * + fAllowTranslocation
 *
