@@ -47,6 +47,8 @@ extern "C" {
 typedef struct LookupTableWrap {
    Uint1 lut_type; /**< What kind of a lookup table it is? */
    void* lut; /**< Pointer to the actual lookup table structure */
+   void* read_indexed_db; /** function used to retrieve hits
+                              from an indexed database */
 } LookupTableWrap;
 
 /** Create the lookup table for all query words.
