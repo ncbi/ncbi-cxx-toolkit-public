@@ -39,3 +39,11 @@ present._type  = vector
 ids._type      = vector
 loc._type      = vector
 scores._type   = vector
+
+[Sparse-align]
+starts.E._type = TSeqPos
+lens.E._type   = TSeqPos
+first-starts._type      = vector
+second-starts._type     = vector
+lens._type     = vector
+second-strands._type  = vector
