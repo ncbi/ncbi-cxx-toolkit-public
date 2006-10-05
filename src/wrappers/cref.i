@@ -37,9 +37,9 @@ namespace ncbi {
             if ($1.NotNull()) { // don't dereference a null CRef
                 $1->AddReference();
             }
-#ifdef SWIGPYTHON
-            $result = SWIG_NewPointerObj((void *) $1.ReleaseOrNull(),
-                                         $descriptor(T *), true);
+#if defined(SWIGPYTHON) || defined(SWIGRUBY)
+            $result = SWIG_NewPointerObj((void *) $1.GetPointerOrNull(),
+                                         $descriptor(T *), 1);
 #endif
 #ifdef SWIGPERL
             ST(argvi) = sv_newmortal();
@@ -54,9 +54,9 @@ namespace ncbi {
             if ($1->NotNull()) { // don't dereference a null CRef
                 (*$1)->AddReference();
             }
-#ifdef SWIGPYTHON
+#if defined(SWIGPYTHON) || defined(SWIGRUBY)
             $result = SWIG_NewPointerObj((void *) $1->GetPointerOrNull(),
-                                         $descriptor(T *), true);
+                                         $descriptor(T *), 1);
 #endif
 #ifdef SWIGPERL
             ST(argvi) = sv_newmortal();
@@ -76,8 +76,14 @@ namespace ncbi {
             } else {
 #ifdef SWIGPYTHON
                 PyErr_SetString(PyExc_TypeError, #T " or CRef<" #T "> expected");
-#endif
                 SWIG_fail;
+#endif
+#ifdef SWIGPERL
+                SWIG_fail;
+#endif
+#ifdef SWIGRUBY
+                rb_raise(rb_eArgError, #T " or CRef<" #T "> expected");
+#endif
             }
         }
         %typemap(in)  const CRef<T> & (CRef<T> *pcref, T* pobj, CRef<T> cref) {
@@ -92,8 +98,14 @@ namespace ncbi {
             } else {
 #ifdef SWIGPYTHON
                 PyErr_SetString(PyExc_TypeError, #T " or CRef<" #T "> expected");
-#endif
                 SWIG_fail;
+#endif
+#ifdef SWIGPERL
+                SWIG_fail;
+#endif
+#ifdef SWIGRUBY
+                rb_raise(rb_eArgError, #T " or CRef<" #T "> expected");
+#endif
             }
         }
     public:
@@ -138,6 +150,46 @@ template<class T> PyObject* CRefFromCpp(ncbi::CRef<T> cr, swig_type_info *ty) {
     if (cr.NotNull()) { // don't dereference a null CRef
         cr->AddReference();
     }
+    return SWIG_NewPointerObj((void *) cr.GetPointerOrNull(),
+                              ty, true);
+}
+
+
+%}
+
+#endif
+
+#ifdef SWIGRUBY
+%{
+
+static int CRefCheck(VALUE obj, swig_type_info *ty) {
+    void *ptr;
+    if (SWIG_ConvertPtr(obj, &ptr, ty, 0) == -1) {
+        return 0;
+    } else {
+        // Forbid NULL; correct?
+        return ptr != 0;
+    }
+}
+
+template<class T> ncbi::CRef<T> CRefToCpp(VALUE arg, swig_type_info *ty) {
+    T* pobj;
+    ncbi::CRef<T> rv;
+    if (SWIG_ConvertPtr(arg, (void **) &pobj, 
+                        ty, 0) != -1) {
+        rv.Reset(pobj);
+    } else {
+        //PyErr_SetString(PyExc_TypeError, #T " or CRef<" #T "> expected");
+        //SWIG_fail;
+    }
+    return rv;
+}
+
+
+template<class T> VALUE CRefFromCpp(ncbi::CRef<T> cr, swig_type_info *ty) {
+    if (cr.NotNull()) { // don't dereference a null CRef
+        cr->AddReference();
+    }
     return SWIG_NewPointerObj((void *) cr.ReleaseOrNull(),
                               ty, true);
 }
@@ -145,12 +197,17 @@ template<class T> PyObject* CRefFromCpp(ncbi::CRef<T> cr, swig_type_info *ty) {
 
 %}
 
+#endif
+
+#if defined(SWIGPYTHON) || defined(SWIGRUBY)
+
 %define VECTOR_CREF(cref_name, T)
 #define CRefCheck_XXX(obj) CRefCheck(obj, $descriptor(T*))
 #define CRefToCpp_XXX(obj) CRefToCpp<T>(obj, $descriptor(T*))
 #define CRefFromCpp_XXX(cr) CRefFromCpp(cr, $descriptor(T*))
 namespace std {
-specialize_std_vector(ncbi::CRef<T>, CRefCheck_XXX, CRefToCpp_XXX, CRefFromCpp_XXX);
+ncbi_specialize_std_vector(ncbi::CRef<T>, CRefCheck_XXX,
+                           CRefToCpp_XXX, CRefFromCpp_XXX);
 }
 %template(cref_name) std::vector<ncbi::CRef<T> >;
 #undef CRefCheck_XXX
@@ -163,7 +220,8 @@ specialize_std_vector(ncbi::CRef<T>, CRefCheck_XXX, CRefToCpp_XXX, CRefFromCpp_X
 #define CRefToCpp_XXX(obj) CRefToCpp<T>(obj, $descriptor(T*))
 #define CRefFromCpp_XXX(cr) CRefFromCpp(cr, $descriptor(T*))
 namespace std {
-specialize_std_list(ncbi::CRef<T>, CRefCheck_XXX, CRefToCpp_XXX, CRefFromCpp_XXX);
+ncbi_specialize_std_list(ncbi::CRef<T>, CRefCheck_XXX,
+                         CRefToCpp_XXX, CRefFromCpp_XXX);
 }
 %template(cref_name) std::list<ncbi::CRef<T> >;
 #undef CRefCheck_XXX
@@ -247,6 +305,9 @@ specialize_std_list(ncbi::CRef<T>, CRefCheck_XXX, CRefToCpp_XXX, CRefFromCpp_XXX
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/10/05 19:45:42  jcherry
+ * Reflect renaming of specialization macros, plus Ruby stuff
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
