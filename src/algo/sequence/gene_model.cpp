@@ -86,8 +86,7 @@ void CGeneModel::CreateGeneModelFromAlign(const objects::CSeq_align& align,
     } else {
         CAlnMix mix(scope);
         mix.Add(align);
-        mix.Merge(CAlnMix::fTryOtherMethodOnFail |
-                  CAlnMix::fGapJoin);
+        mix.Merge(CAlnMix::fGapJoin);
 
         /// make sure we only have two rows
         /// anything else represents a mixed-strand case or more than
@@ -385,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/10/05 16:29:22  todorov
+ * Removed the deprecated CAlnMix::fTryOtherMethodOnFail.
+ *
  * Revision 1.9  2006/05/24 14:45:02  ucko
  * Fix usage of CSeqTranslator::Translate per GCC 2.95's legitimate complaints.
  *
