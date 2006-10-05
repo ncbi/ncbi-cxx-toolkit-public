@@ -32,12 +32,12 @@
 
 // Set up reference counting for CObjects
 
-#ifdef SWIGPYTHON
+#if defined(SWIGPYTHON) || defined(SWIGRUBY)
 %define DECLARE_COBJECT(short_name, qual_name)
     // pointers and references
     %typemap(out) qual_name *, qual_name & {
         // always tell SWIG_NewPointerObj we're the owner
-        $result = SWIG_NewPointerObj((void *) $1, $1_descriptor, true);
+        $result = SWIG_NewPointerObj((void *) $1, $1_descriptor, 1);
         if ($1) {
             $1->AddReference();
         }
@@ -49,6 +49,10 @@
         $result = SWIG_NewPointerObj((void *) resultptr, $&1_descriptor, 1);
         resultptr->AddReference();
     }
+#if defined(SWIGRUBY)  // #ifdef doesn't work here
+    // Ruby does not use "out" typemap when creating a new object
+    %feature("ref") qual_name "$this->AddReference();"
+#endif
 
     // make "deletion" in scripting language just decrement ref. count
     %extend qual_name {
@@ -122,6 +126,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/05 17:19:14  jcherry
+ * Ruby support
+ *
  * Revision 1.2  2005/05/12 15:26:01  jcherry
  * Removed __deref__ extension method (was there for backwards compatibiliy
  * with code that expected a CRef proxy)
