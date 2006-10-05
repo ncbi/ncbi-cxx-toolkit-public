@@ -340,12 +340,19 @@ void CPhrap_Seq::x_FillSeqData(CSeq_data& data) const
 
 void CPhrap_Seq::CreateComplementedDescr(CRef<CSeq_descr>& descr) const
 {
-    if ( m_Complemented  &&  FlagSet(fPhrap_NoComplement) ) {
+    if ( m_Complemented ) {
         if ( !descr ) {
             descr.Reset(new CSeq_descr);
         }
         CRef<CSeqdesc> desc(new CSeqdesc);
-        desc->SetComment("Complemented");
+        if ( FlagSet(fPhrap_NoComplement) ) {
+            // Should be complemented, ignored due to options selected
+            desc->SetComment("Complemented flag ignored");
+        }
+        else {
+            // The sequence is complemented
+            desc->SetComment("Complemented");
+        }
         descr->Set().push_back(desc);
     }
 }
@@ -2376,6 +2383,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/10/05 15:13:54  grichenk
+* Mark complemented sequences using descriptors
+*
 * Revision 1.16  2006/04/17 15:39:28  grichenk
 * Fixed fuzz-to on multi-range locations
 *
