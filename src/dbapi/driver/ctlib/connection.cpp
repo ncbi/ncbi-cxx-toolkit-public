@@ -38,13 +38,15 @@
 #include <string.h>
 #include <algorithm>
 
-
 #if defined(NCBI_OS_MSWIN)
-#include <io.h>
+#  include <winsock2.h>
+#  include <io.h>
 inline int close(int fd)
 {
     return _close(fd);
 }
+#else
+#  include <unistd.h>
 #endif
 
 
@@ -823,6 +825,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/10/05 20:40:21  ssikorsk
+ * + #include <winsock2.h> on Windows.
+ *
  * Revision 1.45  2006/10/05 19:52:16  ssikorsk
  * Moved connection logic from CTLibContext to CTL_Connection.
  *
