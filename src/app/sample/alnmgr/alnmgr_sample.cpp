@@ -132,9 +132,7 @@ int CSampleAlnmgrApplication::Run(void)
     for (CTypeIterator<CDense_seg> sa_it = Begin(in_se); sa_it; ++sa_it) {
         mix.Add(*sa_it);
     }
-    mix.Merge(CAlnMix::fGen2EST |
-              CAlnMix::fNegativeStrand |
-              CAlnMix::fTruncateOverlaps);
+    mix.Merge(CAlnMix::fNegativeStrand | CAlnMix::fTruncateOverlaps);
     *asn_out << mix.GetDenseg();
     *asn_out << Separator;
     asn_out->Flush();
@@ -201,6 +199,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/10/05 17:56:17  ucko
+* Drop obsolete CAlnMix::fGen2EST flag.
+*
 * Revision 1.10  2005/03/01 18:42:16  ucko
 * Explicitly include alnvec.hpp, which alnmix.hpp no longer pulls in.
 *
