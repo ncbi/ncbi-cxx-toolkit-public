@@ -92,27 +92,7 @@ CAlnMixMerger::Merge(TMergeFlags flags)
     if ( !m_DS  ||  m_MergeFlags != flags) {
         Reset();
         m_MergeFlags = flags;
-        if (m_MergeFlags & fTryOtherMethodOnFail) {
-            try {
-                x_Merge();
-            } catch(...) {
-                if (m_MergeFlags & fGen2EST) {
-                    m_MergeFlags &= !fGen2EST;
-                } else {
-                    m_MergeFlags |= fGen2EST;
-                }
-                try {
-                    x_Merge();
-                } catch(...) {
-                    NCBI_THROW(CAlnException, eUnknownMergeFailure,
-                               "CAlnMixMerger::x_Merge(): "
-                               "Both Gen2EST and Nucl2Nucl "
-                               "merges failed.");
-                }
-            }
-        } else {
-            x_Merge();
-        }
+        x_Merge();
     }
 }
 
@@ -1279,6 +1259,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2006/10/05 16:35:14  todorov
+* Removed the deprecated CAlnMix::fGen2EST and CAlnMix::fTryOtherMethodOnFail.
+*
 * Revision 1.19  2006/08/29 19:20:19  todorov
 * Added logic for two particular cases when fAllowTranslocation can be
 * used.  The trick is that x_SecondRowFits must not return

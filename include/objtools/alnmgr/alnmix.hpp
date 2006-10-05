@@ -98,19 +98,17 @@ public:
     
 
     enum EMergeFlags {
-        fGen2EST              = 0x0001, // otherwise Nucl2Nucl
-        fTruncateOverlaps     = 0x0002, // otherwise put on separate rows
-        fNegativeStrand       = 0x0004,
-        fTryOtherMethodOnFail = 0x0008,
-        fGapJoin              = 0x0010, // join equal len segs gapped on refseq
-        fMinGap               = 0x0020, // minimize segs gapped on refseq
-        fRemoveLeadTrailGaps  = 0x0040, // Remove all leading or trailing gaps
-        fSortSeqsByScore      = 0x0080, // Better scoring seqs go towards the top
-        fSortInputByScore     = 0x0100, // Process better scoring input alignments first
-        fQuerySeqMergeOnly    = 0x0200, // Only put the query seq on same row, 
+        fTruncateOverlaps     = 0x0001, // otherwise put on separate rows
+        fNegativeStrand       = 0x0002,
+        fGapJoin              = 0x0004, // join equal len segs gapped on refseq
+        fMinGap               = 0x0008, // minimize segs gapped on refseq
+        fRemoveLeadTrailGaps  = 0x0010, // Remove all leading or trailing gaps
+        fSortSeqsByScore      = 0x0020, // Better scoring seqs go towards the top
+        fSortInputByScore     = 0x0040, // Process better scoring input alignments first
+        fQuerySeqMergeOnly    = 0x0080, // Only put the query seq on same row, 
                                         // other seqs from diff densegs go to diff rows
-        fFillUnalignedRegions = 0x0400,
-        fAllowTranslocation   = 0x0800  // allow translocations when truncating overlaps
+        fFillUnalignedRegions = 0x0100,
+        fAllowTranslocation   = 0x0200  // allow translocations when truncating overlaps
     };
     typedef int TMergeFlags;
 
@@ -198,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2006/10/05 16:38:20  todorov
+* Removed the deprecated CAlnMix::fGen2EST and CAlnMix::fTryOtherMethodOnFail.
+*
 * Revision 1.54  2006/03/14 22:41:48  todorov
 * + fRemoveLeadTrailGaps
 *
