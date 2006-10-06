@@ -10,9 +10,7 @@ SRC = blast_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
-        xnetblastcli xnetblast xobjutil xobjsimple xobjread creaders \
-        scoremat seqdb blastdb tables $(OBJMGR_LIBS)
+LIB = $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 # These settings are necessary for optimized WorkShop builds, due to
