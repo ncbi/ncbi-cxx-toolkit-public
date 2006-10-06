@@ -12,16 +12,12 @@ SRC = struct_util_demo
 
 LIB = xstruct_util \
       xstruct_dp \
-      xblast xalgoblastdbindex composition_adjustment \
-      seqdb blastdb xnetblastcli xnetblast \
-      xalgodustmask \
-      tables xobjsimple xobjutil \
-      xobjread creaders \
       ncbimime \
       cdd \
       scoremat \
       cn3d \
       mmdb \
+      $(BLAST_LIBS) \
       $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
