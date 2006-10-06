@@ -81,7 +81,8 @@ public:
         ///< restrict merging to just CDS and mRNA features
         fMergeOnyCdsMrna    = 0x08,
 
-        ///< move protein_id and transcript_id to products for mRNA and CDS features
+        ///< move protein_id and transcript_id to products for mRNA and CDS
+        ///< features
         fSetProducts        = 0x10,
 
         ///< create gene features for mRNAs and CDSs if none exist already
@@ -208,10 +209,13 @@ private:
                 PPtrLess<CConstRef<CSeq_id> > >    TSeqCache;
     typedef map<string, CRef<SRecord>, PNocase>    TDelayedRecords;
 
+    typedef map<string, CRef<CGene_ref> > TGeneRefs;
+
     CRef<CSeq_entry> m_TSE;
     TSeqNameCache    m_SeqNameCache;
     TSeqCache        m_SeqCache;
     TDelayedRecords  m_DelayedRecords;
+    TGeneRefs        m_GeneRefs;
     string           m_DefMol;
     unsigned int     m_LineNumber;
     TFlags           m_Flags;
@@ -230,6 +234,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/10/06 17:32:14  dicuccio
+ * Added code to handle gene refs seamlessly: build map of GFF gene_id ->
+ * gene-ref, re-assign gene refs at the end of processing
+ *
  * Revision 1.10  2006/09/13 14:44:10  dicuccio
  * Force all seq-id creation through the same function (x_ResolveNewSeqName() /
  * x_ResolveSeqName()).  Added options to force numeric IDs to be local IDs, and

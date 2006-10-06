@@ -167,6 +167,39 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
         x_ParseAndPlace(rec);
     }
 
+    ///
+    /// remap gene refs
+    /// we have built a set of gene-id -> gene-ref pairs
+    ///
+    if (m_TSE  &&  m_GeneRefs.size()) {
+        NON_CONST_ITERATE (TGeneRefs, iter, m_GeneRefs) {
+            if ( !iter->second->IsSetLocus()  &&
+                 !iter->second->IsSetLocus_tag()) {
+                iter->second->SetLocus(iter->first);
+            } else if ( !iter->second->IsSetLocus()  ||
+                        iter->second->GetLocus() != iter->first) {
+                iter->second->SetSyn().push_back(iter->first);
+            }
+        }
+
+        CTypeIterator<CSeq_feat> feat_iter(*m_TSE);
+        for ( ;  feat_iter;  ++feat_iter) {
+            const CGene_ref* ref = NULL;
+            if (feat_iter->GetData().IsGene()) {
+                ref = &feat_iter->GetData().GetGene();
+            } else {
+                ref = feat_iter->GetGeneXref();
+            }
+            if (ref  &&  ref->IsSetLocus()) {
+                TGeneRefs::const_iterator iter =
+                    m_GeneRefs.find(ref->GetLocus());
+                if (iter != m_GeneRefs.end()) {
+                    const_cast<CGene_ref*>(ref)->Assign(*iter->second);
+                }
+            }
+        }
+    }
+
     CRef<CSeq_entry> tse(m_TSE); // need to save before resetting.
     x_Reset();
 
@@ -218,7 +251,8 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
             /// genes are identified via a 'gene_id' marker
             typedef map<string, CRef<CSeq_feat> > TGeneMap;
             TGeneMap genes;
-            for (bool has_genes = false;  feat_iter != feat_end  &&  !has_genes;  ++feat_iter) {
+            for (bool has_genes = false;
+                 feat_iter != feat_end  &&  !has_genes;  ++feat_iter) {
                 CSeq_feat& feat = **feat_iter;
 
                 switch (feat.GetData().GetSubtype()) {
@@ -304,6 +338,7 @@ void CGFFReader::x_Reset(void)
     m_SeqNameCache.clear();
     m_SeqCache.clear();
     m_DelayedRecords.clear();
+    m_GeneRefs.clear();
     m_DefMol.erase();
     m_LineNumber = 0;
     m_Version = 2;
@@ -482,6 +517,10 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
         feat->SetData().SetCdregion().SetFrame
             (static_cast<CCdregion::EFrame>(record.frame + 1));
     }
+
+    string gene_id;
+    string gene;
+    string locus_tag;
     ITERATE (SRecord::TAttrs, it, record.attrs) {
         string tag = it->front();
         string value;
@@ -497,20 +536,21 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
             break;
         }
         if (x_GetFlags() & fGBQuals) {
-            if ( !(x_GetFlags() & fNoGTF) ) { // translate
-                if (tag == "transcript_id") {
-                    //continue;
-                } else if (tag == "gene_id") {
-                    tag = "gene";
-                    SIZE_TYPE colon = value.find(':');
-                    if (colon != NPOS) {
-                        value.erase(0, colon + 1);
-                    }
-                } else if (tag == "exon_number") {
-                    tag = "number";
-                } else if (NStr::StartsWith(tag, "insd_")) {
-                    tag.erase(0, 5);
-                }
+            if (tag == "transcript_id") {
+                //continue;
+            } else if (tag == "gene_id") {
+                gene_id = value;
+                continue;
+            } else if (tag == "gene") {
+                gene = value;
+                continue;
+            } else if (tag == "locus_tag") {
+                locus_tag = value;
+                continue;
+            } else if (tag == "exon_number") {
+                tag = "number";
+            } else if (NStr::StartsWith(tag, "insd_")) {
+                tag.erase(0, 5);
             }
 
             CFeature_table_reader::AddFeatQual
@@ -522,6 +562,52 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
             feat->SetQual().push_back(qual);
         }
     }
+
+    if ( !gene_id.empty() ) {
+        SIZE_TYPE colon = gene_id.find(':');
+        if (colon != NPOS) {
+            gene_id.erase(0, colon + 1);
+        }
+
+        TGeneRefs::value_type val(gene_id, CRef<CGene_ref>());
+        TGeneRefs::iterator iter = m_GeneRefs.insert(val).first;
+        if ( !iter->second ) {
+            iter->second.Reset(new CGene_ref);
+        }
+        if ( !gene.empty() ) {
+            if (iter->second->IsSetLocus()  &&
+                iter->second->GetLocus() != gene) {
+                LOG_POST(Warning << "CGFFReader::x_ParseFeatRecord(): "
+                         << "inconsistent gene name: "
+                         << gene << " != " << iter->second->GetLocus()
+                         << ", ignoring second");
+            } else if ( !iter->second->IsSetLocus() ) {
+                iter->second->SetLocus(gene);
+            }
+        }
+        if ( !locus_tag.empty() ) {
+            if (iter->second->IsSetLocus_tag()  &&
+                iter->second->GetLocus_tag() != locus_tag) {
+                LOG_POST(Warning << "CGFFReader::x_ParseFeatRecord(): "
+                         << "inconsistent locus tag: "
+                         << locus_tag << " != " << iter->second->GetLocus_tag()
+                         << ", ignoring second");
+            } else if ( !iter->second->IsSetLocus_tag() ) {
+                iter->second->SetLocus_tag(locus_tag);
+            }
+        }
+
+        // translate
+        CFeature_table_reader::AddFeatQual
+            (feat, "gene_id", gene_id,
+             CFeature_table_reader::fKeepBadKey);
+        if (x_GetFlags() & fGBQuals) {
+            CFeature_table_reader::AddFeatQual
+                (feat, "gene", gene_id,
+                 CFeature_table_reader::fKeepBadKey);
+        }
+    }
+
     return feat;
 }
 
@@ -1154,6 +1240,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/10/06 17:32:14  dicuccio
+* Added code to handle gene refs seamlessly: build map of GFF gene_id ->
+* gene-ref, re-assign gene refs at the end of processing
+*
 * Revision 1.27  2006/09/14 15:16:31  ucko
 * x_ResolveNewSeqName: use NStr::StartsWith rather than string::compare
 * for clarity and to avoid problems from GCC 2.95's nonstandard syntax.
