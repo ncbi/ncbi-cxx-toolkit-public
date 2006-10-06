@@ -14,25 +14,17 @@ SRC = cuFastaToCD
 
 LIB =   xbma_refiner \
         xcd_utils \
+        id1cli id1 \
+        entrez2cli entrez2 \
         xstruct_util \
         xstruct_dp \
-        xblast seqdb blastdb xnetblastcli xnetblast tables \
-        xobjread \
         cdd \
         ncbimime \
         cn3d \
         mmdb \
-        scoremat \
-        seqset $(SEQ_LIBS) \
-        pub \
-        medline \
-        biblio \
         taxon1 \
-        general \
-        xser \
-        xutil \
-        xconnect \
-        xncbi 
+	$(BLAST_LIBS) \
+	$(OBJMGR_LIBS)
 
 
 #CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) 
@@ -42,7 +34,7 @@ LIB =   xbma_refiner \
 
 LDFLAGS = $(FAST_LDFLAGS) 
 
-LIBS = $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 #LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) 
 
