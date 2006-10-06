@@ -171,21 +171,14 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
 
             /// token 4: frame + strand
             ENa_strand strand = eNa_strand_plus;
-            int frame = 0;
             try {
-                frame = NStr::StringToInt(*it++);
+                int frame = NStr::StringToInt(*it++);
                 if (frame > 3  ||  frame < -3) {
                     NCBI_THROW(CException, eUnknown, "frame out of range");
                 }
 
                 if (frame < 0) {
                     strand = eNa_strand_minus;
-                    start_pos -= frame + 1;
-                    stop_pos  -= frame + 1;
-                    frame      = -frame;
-                } else {
-                    start_pos -= frame - 1;
-                    stop_pos  -= frame - 1;
                 }
             }
             catch (CException&) {
@@ -265,24 +258,6 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
             cds_feat->SetLocation().SetId(*idh.GetSeqId());
 
             CCdregion& cdr = cds_feat->SetData().SetCdregion();
-            switch (frame) {
-            case 0:
-            case 1:
-                cdr.SetFrame(CCdregion::eFrame_one);
-                break;
-            case 2:
-                cdr.SetFrame(CCdregion::eFrame_two);
-                break;
-            case 3:
-                cdr.SetFrame(CCdregion::eFrame_three);
-                break;
-
-            default:
-                /// can't happen
-                _ASSERT(false);
-                break;
-            }
-
             if (genetic_code_idx) {
                 CRef<CGenetic_code::C_E> d(new CGenetic_code::C_E);
                 d->SetId(genetic_code_idx);
@@ -345,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/10/06 17:31:27  dicuccio
+ * Always assign frame=1
+ *
  * Revision 1.1  2006/06/15 17:45:03  dicuccio
  * Added reader/parser for Glimmer3 predictions
  *
