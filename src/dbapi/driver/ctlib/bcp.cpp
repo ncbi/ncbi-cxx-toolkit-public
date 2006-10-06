@@ -305,6 +305,31 @@ bool CTL_BCPInCmd::x_AssignParams()
 }
 
 
+#if defined(HAVE_WSTRING)
+static
+string MakeUCS2LE(const wstring& str)
+{
+    string result;
+
+#if defined(WORDS_BIGENDIAN)
+    if (!str.empty()) {
+        result.resize(str.size() * 2);
+        for(wstring::size_type i = 0; i < str.size(); ++i) {
+            wchar_t chracter = str.at(i);
+
+            result.at(i * 2) = (chracter & 0x000000FF);
+            result.at(i * 2 + 1) = (chracter & 0x0000FF00);
+        }
+    }
+#else
+    result.assign((const char*)str.c_str(), str.size() * sizeof(wchar_t));
+#endif
+
+    return result;
+}
+#endif
+
+
 bool CTL_BCPInCmd::Send(void)
 {
     unsigned int i;
@@ -378,14 +403,13 @@ bool CTL_BCPInCmd::Send(void)
                     if (x_IsUnicodeClientAPI()) {
                         CWString unicode_str(buff, valid_len, eEncoding_UTF8);
 
-                        // Affect parameter calculation order ...
-                        const wchar_t* wchar_str = unicode_str.AsUnicode(eEncoding_UTF8).c_str();
+                        string wcharle_str = MakeUCS2LE(unicode_str.AsUnicode(eEncoding_UTF8));
 
                         m_HasFailed = (Check(
                             blk_textxfer(
                                 x_GetSybaseCmd(),
-                                (CS_BYTE*) wchar_str,
-                                (CS_INT) unicode_str.GetSymbolNum() * sizeof(wchar_t),
+                                (CS_BYTE*) wcharle_str.c_str(),
+                                (CS_INT) wcharle_str.size(),
                                 0)
                             ) == CS_FAIL);
                     } else {
@@ -552,6 +576,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/10/06 22:29:48  ssikorsk
+ * Explicitly convert text strings into UCS-2LE encoding for blk_textxfer in case of big endian.
+ *
  * Revision 1.27  2006/10/04 19:26:57  ssikorsk
  * Revamp code to use AutoArray where it is possible.
  *
