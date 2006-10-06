@@ -1,14 +1,11 @@
 # $Id$
 
-ASN_DEP = seq seqalign
+ASN_DEP = seq
 
 APP = demo_contig_assembly
 SRC = demo_contig_assembly
-LIB = xalgocontig_assembly xblast seqdb blastdb composition_adjustment \
-      xobjsimple xnetblastcli xconnect xalgodustmask xnetblast scoremat \
-      seqset xalgoalignnw $(SEQ_LIBS) pub medline biblio general xser \
-      xutil xalgoseq xregexp xncbi $(PCRE_LIB) xobjutil xalnmgr tables \
-      $(OBJMGR_LIBS) 
+LIB = xalgocontig_assembly xalgoalignnw xalgoseq xregexp $(PCRE_LIB) xalnmgr \
+      $(BLAST_LIBS) $(OBJMGR_LIBS) 
 
 
 CXXFLAGS = $(FAST_CXXFLAGS)
