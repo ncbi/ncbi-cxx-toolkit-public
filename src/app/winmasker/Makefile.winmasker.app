@@ -9,8 +9,7 @@ SRC = main win_mask_app win_mask_config win_mask_dup_table \
       win_mask_writer_int win_mask_util win_mask_dust_masker \
       win_mask_sdust_masker
 
-LIB = xalgowinmask xalgodustmask xblast xalgoblastdbindex seqdb \
-      composition_adjustment xnetblastcli xnetblast scoremat blastdb tables \
+LIB = xalgowinmask xalgodustmask blast composition_adjustment tables \
       xobjread creaders xobjutil $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
