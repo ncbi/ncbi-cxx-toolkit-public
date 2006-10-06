@@ -5,11 +5,9 @@ SRC = blastinput_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = blastinput xblast xalgoblastdbindex composition_adjustment \
-      xnetblastcli xnetblast seqdb scoremat blastdb xobjsimple xobjutil \
-      xobjread tables $(OBJMGR_LIBS)
+LIB = blastinput $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(NETWORK_LIBS) \
-		$(CMPRS_LIBS) $(ORIG_LIBS)
+		$(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
 REQUIRES = objects
