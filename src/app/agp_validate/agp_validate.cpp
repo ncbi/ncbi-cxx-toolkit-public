@@ -28,8 +28,8 @@
  *
  * File Description:
  *      Validate AGP data. A command line option to chose either syntactic
- *      or semantic validation. Syntactic validation uses only the information
- *      in the AGP file. Semantic validation queries sequence length and taxid
+ *      or GenBank validation. Syntactic validation uses only the information
+ *      in the AGP file. GenBank validation queries sequence length and taxid
  *      via ObjectManager or CEntrez2Client.
  *
  */
@@ -39,7 +39,7 @@
 //#include "AgpErr.hpp"
 
 // Objects includes
-// todo: move this to a separate .cpp file with semantic validator
+// todo: move this to a separate .cpp file with GenBank validator
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -54,7 +54,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 
 // Object Manager includes
-// todo: move this to a separate .cpp file with semantic validator
+// todo: move this to a separate .cpp file with GenBank validator
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -69,7 +69,6 @@
 using namespace ncbi;
 using namespace objects;
 
-//// Legacy macros for semantic validation; to be removed later.
 #define AGP_POST(msg) cerr << msg << "\n"
 
 BEGIN_NCBI_SCOPE
@@ -88,7 +87,7 @@ private:
   string m_CurrentFileName;
 
   enum EValidationType {
-      syntax, semantic
+      syntax, acc_len_taxid, acc_taxid
   } m_ValidationType;
   bool m_SpeciesLevelTaxonCheck;
 
@@ -127,18 +126,17 @@ private:
   //
   // Validate either from AGP files or from AGP DB
   //  Each line (entry) of AGP data from either source is
-  //  populates a SDataLine. The SDataline is validated
-  //  syntatically or semanticaly.
+  //  populates a SDataLine.
   //
   void x_ValidateUsingDB(const CArgs& args);
   void x_ValidateUsingFiles(const CArgs& args);
   void x_ValidateFile(CNcbiIstream& istr);
 
   //
-  // Semantic validate methods
+  // GenBank validate methods
   //
-  void x_ValidateSemanticInit();
-  void x_ValidateSemanticLine(const SDataLine& line);
+  void x_ValidateGenBankInit();
+  void x_ValidateGenBankLine(const SDataLine& line);
 
   // vsap: printableId is used for error messages only
   int x_GetTaxid(CBioseq_Handle& bioseq_handle, const SDataLine& dl);
@@ -162,6 +160,7 @@ public:
     "OPTIONS:\n"
     "  -gb       Check component accessions, lengths and taxids using GenBank data.\n"
     "            (This can be very time-consuming, and is done separately from most other checks.)\n"
+    "  -g        Check component accessions and taxids (but not lengths); somewhat faster than \"-gb\".\n"
     "  -species  Allow components from different subspecies during \"-gb\" check\n"
     "\n"
     "  -list         List possible syntax errors and warnings.\n"
@@ -177,9 +176,7 @@ public:
     "\n"
     ;
     return str;
-    // To do:
-    // -taxon "taxname or taxid"
-    // -s    both syntAx and semantics
+    // To do: -taxon "taxname or taxid" ?
   }
 };
 
@@ -192,26 +189,8 @@ void CAgpValidateApplication::Init(void)
     GetArguments().GetProgramBasename(),
     "Validate AGP data", false);
 
-  /*
-  arg_desc->AddDefaultKey("type", "ValidationType",
-    "Type of validation",
-    CArgDescriptions::eString,
-    "syntax");
-  CArgAllow_Strings* constraint_type = new CArgAllow_Strings;
-  constraint_type->Allow("syntax");
-  constraint_type->Allow("semantics");
-  arg_desc->SetConstraint("type", constraint_type);
-
-  arg_desc->AddDefaultKey("taxon", "TaxonCheckType",
-    "Type of Taxonomy semanitic check to be performed",
-    CArgDescriptions::eString,
-    "exact");
-  CArgAllow_Strings* constraint_taxon= new CArgAllow_Strings;
-  constraint_taxon->Allow("exact");
-  constraint_taxon->Allow("species");
-  arg_desc->SetConstraint("taxon", constraint_taxon);
-  */
   arg_desc->AddFlag("gb"     , "check component accessions, lengths, taxids");
+  arg_desc->AddFlag("g"     , "check component accessions and taxids");
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
 
@@ -256,15 +235,17 @@ int CAgpValidateApplication::Run(void)
      exit(0);
    }
 
-  //if (args["type"].AsString() == "syntax")
-  if( ! args["gb"].HasValue() )
-  {
-    m_ValidationType = syntax;
-    m_LineValidator = new CAgpSyntaxValidator();
+  if( args["gb"].HasValue() ) {
+    x_ValidateGenBankInit();
+    m_ValidationType = acc_len_taxid;
+  }
+  else if( args["g"].HasValue() ) {
+    x_ValidateGenBankInit();
+    m_ValidationType = acc_taxid;
   }
   else {
-    x_ValidateSemanticInit();
-    m_ValidationType = semantic;
+    m_ValidationType = syntax;
+    m_LineValidator = new CAgpSyntaxValidator();
   }
 
   m_SpeciesLevelTaxonCheck = false;
@@ -317,7 +298,11 @@ int CAgpValidateApplication::Run(void)
   }
 
 
-  agpErr.m_MaxRepeat = args["limit"].AsInteger();
+
+  agpErr.m_MaxRepeat =
+    args["limit"].HasValue() ? args["limit"].AsInteger() :
+    m_ValidationType == syntax ? 10 : 100;
+
 
   //// Process files, print results
   x_ValidateUsingFiles(args);
@@ -448,7 +433,7 @@ void CAgpValidateApplication::x_ValidateFile(
       invalid_line = m_LineValidator->ValidateLine(data_line, line);
     } else if( !CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
       //START_LINE_VALIDATE_MSG;
-      x_ValidateSemanticLine(data_line);
+      x_ValidateGenBankLine(data_line);
       //if (m_LineErrorOccured) {
       //  END_LINE_VALIDATE_MSG(data_line.line_num, line);
       //}
@@ -458,7 +443,7 @@ void CAgpValidateApplication::x_ValidateFile(
   }
 }
 
-void CAgpValidateApplication::x_ValidateSemanticInit()
+void CAgpValidateApplication::x_ValidateGenBankInit()
 {
   // Create object manager
   // * CRef<> here will automatically delete the OM on exit.
@@ -477,7 +462,7 @@ void CAgpValidateApplication::x_ValidateSemanticInit()
   m_Scope->AddDefaults();
 }
 
-void CAgpValidateApplication::x_ValidateSemanticLine(
+void CAgpValidateApplication::x_ValidateGenBankLine(
   const SDataLine& dl)
 {
   CSeq_id seq_id;
@@ -498,30 +483,31 @@ void CAgpValidateApplication::x_ValidateSemanticLine(
     return;
   }
 
-  // Component out of bounds check
-  int comp_end = CAgpSyntaxValidator::x_CheckIntField(
-    dl.component_end, "component_end (column 8)" );
-  if(comp_end<=0) return;
+  if (m_ValidationType == acc_len_taxid) {
+    // Component out of bounds check
+    int comp_end = CAgpSyntaxValidator::x_CheckIntField(
+      dl.component_end, "component_end (column 8)" );
+    if(comp_end<=0) return;
 
+    CBioseq_Handle::TInst_Length seq_len =
+      bioseq_handle.GetInst_Length();
 
-  CBioseq_Handle::TInst_Length seq_len =
-    bioseq_handle.GetInst_Length();
+    if ( comp_end > (int) seq_len) {
+      string details=": ";
+      details += dl.component_end;
+      details += " > ";
+      details += dl.component_id;
+      details += " length = ";
+      details += NStr::IntToString(seq_len);
+      details += " bp";
 
-  if ( comp_end > (int) seq_len) {
-    string details=": ";
-    details += dl.component_end;
-    details += " > ";
-    details += dl.component_id;
-    details += " length = ";
-    details += NStr::IntToString(seq_len);
-    details += " bp";
+      agpErr.Msg(CAgpErr::G_CompEndGtLength, details );
 
-    agpErr.Msg(CAgpErr::G_CompEndGtLength, details );
-
-    //AGP_ERROR( "Component end greater than sequence length: "
-    //  << dl.component_end << " > "
-    //  << dl.component_id << " length = "
-    //  << seq_len << " bp");
+      //AGP_ERROR( "Component end greater than sequence length: "
+      //  << dl.component_end << " > "
+      //  << dl.component_id << " length = "
+      //  << seq_len << " bp");
+    }
   }
 
   int taxid = x_GetTaxid(bioseq_handle, dl);
@@ -534,7 +520,9 @@ int CAgpValidateApplication::x_GetTaxid(
   int taxid = 0;
   string docsum_taxid = "";
 
+  //if(m_ValidationType == acc_len_taxid)
   taxid = sequence::GetTaxId(bioseq_handle);
+
   if (taxid == 0) {
     try {
       CSeq_id_Handle seq_id_handle = sequence::GetId(
@@ -563,6 +551,9 @@ int CAgpValidateApplication::x_GetTaxid(
       return 0;
     }
   }
+  //if(m_ValidationType != acc_len_taxid && taxid==0) {
+  //  taxid = sequence::GetTaxId(bioseq_handle);
+  //}
 
   if (m_SpeciesLevelTaxonCheck) {
     taxid = x_GetSpecies(taxid);
@@ -716,33 +707,3 @@ int main(int argc, const char* argv[])
   );
 }
 
-
-/*
- * ===========================================================================
- * Revision 1.10  2006/08/29 21:31:56  sapojnik
- * "Syntax" validations moved to a separate class CAgpSyntaxValidator
- *
- * Revision 1.9  2006/08/29 18:35:51  sapojnik
- * printing of semantic errors fixed; do not create a new CNcbiOstrstream for each line unless there were errors
- *
- * Revision 1.8  2006/08/29 16:21:04  ucko
- * Allow END_LINE_VALIDATE_MSG to take advantage of CNcbiOstrstreamToString
- * rather than having to reimplement it.
- *
- * Revision 1.7  2006/08/29 16:07:34  sapojnik
- * a workaround for strstream.str() bug; TIdMap* types renamed to TComp(Id|Span)*; counting scaffolds and singletons (does not work right yet); catching unwarranted GAPs at EOF
- *
- * Revision 1.6  2006/08/28 19:52:02  sapojnik
- * A nicer usage message via CArgDesc_agp_validate; more reformatting
- *
- * Revision 1.5  2006/08/28 16:43:15  sapojnik
- * Reformatting, fixing typos, improving error messages and a few names
- *
- * Revision 1.3  2006/08/11 16:46:05  sapojnik
- * Print Unique Component Accessions, do not complain about the order of "-" spans
- *
- * Revision 1.1  2006/03/29 19:51:12  friedman
- * Initial version
- *
- * ===========================================================================
- */
