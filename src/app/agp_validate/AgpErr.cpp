@@ -99,7 +99,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   // GenBank-related errors
   "invalid component_id",
   "component_id not in GenBank",
-  "component_id X is abmiguous without an explicit version",
+  "component_id X is ambiguous without an explicit version",
   "component_end greater than sequence length",
   "cannot retrieve the taxonomic id",
 
