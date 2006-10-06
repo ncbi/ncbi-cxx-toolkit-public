@@ -1,10 +1,6 @@
 APP = blast
 SRC = blast_app blast_input
-LIB = xblastformat xblast composition_adjustment \
-      seqdb xnetblastcli xnetblast xalgodustmask \
-      ncbi_xloader_blastdb scoremat blastdb xalnmgr \
-      xobjsimple xobjutil xobjread creaders connect tables \
-      xalgoblastdbindex $(OBJMGR_LIBS)
+LIB = xblastformat ncbi_xloader_blastdb xalnmgr $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
