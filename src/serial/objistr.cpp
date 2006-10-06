@@ -1133,7 +1133,7 @@ void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
     TMemberIndex index;
     while ( (index = BeginClassMember(classType, *pos)) != kInvalidMember ) {
 
-        if ((prevIndex != kInvalidMember) && (prevIndex > index)) {
+        if ((prevIndex != kInvalidMember) && (prevIndex >= index)) {
             const CMemberInfo *mem_info = classType->GetMemberInfo(index);
             if (mem_info->GetId().HaveNoPrefix()) {
                 UndoClassMember();
@@ -1591,6 +1591,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.144  2006/10/06 18:59:28  gouriano
+* Corrected ReadClassSequential method
+*
 * Revision 1.143  2006/10/05 19:24:28  gouriano
 * Some headers moved into impl
 *
