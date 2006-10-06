@@ -1,9 +1,7 @@
 APP = cobalt
 SRC = cobalt_app
-LIB = cobalt xalgoalignnw xalgophytree fastme biotree xblast xalgoblastdbindex \
-      xalgodustmask composition_adjustment xnetblastcli xnetblast scoremat \
-      ncbi_xloader_blastdb seqdb blastdb xalnmgr xobjsimple xobjutil \
-      xobjread creaders tables $(OBJMGR_LIBS)
+LIB = cobalt xalgoalignnw xalgophytree fastme biotree ncbi_xloader_blastdb \
+      xalnmgr $(BLAST_LIBS) $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
