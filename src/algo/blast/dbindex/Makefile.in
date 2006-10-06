@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = xalgoblastdbindex
-EXPENDABLE_SUB_PROJ = makeindex
+SUB_PROJ = makeindex
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
