@@ -133,7 +133,7 @@ public:
     G_Last,
     G_First = G_InvalidCompId,
 
-    CODE_Last = G_Last
+    CODE_First=1, CODE_Last=G_Last
   };
 
   static const char* GetMsg(TCode code);

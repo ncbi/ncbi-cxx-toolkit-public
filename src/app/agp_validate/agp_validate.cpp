@@ -87,7 +87,10 @@ private:
   string m_CurrentFileName;
 
   enum EValidationType {
-      syntax, acc_len_taxid, acc_taxid
+      VT_Syntax, VT_Acc=1, VT_Len=2, VT_Taxid=4,
+      VT_AccLenTaxid = VT_Acc|VT_Len|VT_Taxid,
+      VT_AccLen   = VT_Acc|VT_Len,
+      VT_AccTaxid = VT_Acc|VT_Taxid
   } m_ValidationType;
   bool m_SpeciesLevelTaxonCheck;
 
@@ -137,13 +140,15 @@ private:
   //
   void x_ValidateGenBankInit();
   void x_ValidateGenBankLine(const SDataLine& line);
+  void x_GenBankPrintTotals();
 
-  // vsap: printableId is used for error messages only
   int x_GetTaxid(CBioseq_Handle& bioseq_handle, const SDataLine& dl);
   void x_AddToTaxidMap(int taxid, const SDataLine& dl);
   void x_CheckTaxid();
   int x_GetSpecies(int taxid);
   int x_GetTaxonSpecies(int taxid);
+
+  int m_GenBankCompLineCount;
 };
 
 // Povide a nicer usage message
@@ -158,14 +163,17 @@ public:
     "USAGE: agp_validate [-options] [input files...]\n"
     "\n"
     "OPTIONS:\n"
-    "  -gb       Check component accessions, lengths and taxids using GenBank data.\n"
-    "            (This can be very time-consuming, and is done separately from most other checks.)\n"
-    "  -g        Check component accessions and taxids (but not lengths); somewhat faster than \"-gb\".\n"
-    "  -species  Allow components from different subspecies during \"-gb\" check\n"
+    "  -alt      Check component Accessions, Lengths and Taxids using GenBank data.\n"
+    "            This can be very time-consuming, and is done separately from most other checks.\n"
+    /*
+    "  -a        Check component Accessions (but not lengths or taxids); faster than \"-alt\".\n"
+    "  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
+    */
+    "  -species  Allow components from different subspecies during Taxid checks.\n"
     "\n"
     "  -list         List possible syntax errors and warnings.\n"
-    "  -limit COUNT  Print only the first COUNT messages of each type .\n"
-    "                Default=10 (100 for \"-gb\" check). To print all, use: -limit 0\n"
+    "  -limit COUNT  Print only the first COUNT messages of each type.\n"
+    "                Default=10. To print all, use: -limit 0\n"
     "\n"
     "  -skip  WHAT   Do not report lines with a particular error or warning message.\n"
     "  -only  WHAT   Report only this particular error or warning.\n"
@@ -182,6 +190,7 @@ public:
 
 void CAgpValidateApplication::Init(void)
 {
+  m_GenBankCompLineCount=0;
   //auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
   auto_ptr<CArgDesc_agp_validate> arg_desc(new CArgDesc_agp_validate);
 
@@ -189,8 +198,12 @@ void CAgpValidateApplication::Init(void)
     GetArguments().GetProgramBasename(),
     "Validate AGP data", false);
 
-  arg_desc->AddFlag("gb"     , "check component accessions, lengths, taxids");
-  arg_desc->AddFlag("g"     , "check component accessions and taxids");
+  // component_id  checks that involve GenBank: Accession Length Taxid
+  arg_desc->AddFlag("alt", "");
+  arg_desc->AddFlag("al" , "");
+  arg_desc->AddFlag("at" , "");
+  arg_desc->AddFlag("a" , "");
+
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
 
@@ -212,7 +225,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("list", "all possible errors and warnings");
 
   // file list for file processing
-  arg_desc->AddExtra(0,100, "files to be processed",
+  arg_desc->AddExtra(0, 100, "files to be processed",
                       CArgDescriptions::eInputFile);
   // Setup arg.descriptions for this application
   SetupArgDescriptions(arg_desc.release());
@@ -235,17 +248,18 @@ int CAgpValidateApplication::Run(void)
      exit(0);
    }
 
-  if( args["gb"].HasValue() ) {
-    x_ValidateGenBankInit();
-    m_ValidationType = acc_len_taxid;
-  }
-  else if( args["g"].HasValue() ) {
-    x_ValidateGenBankInit();
-    m_ValidationType = acc_taxid;
-  }
+  if     ( args["alt"].HasValue() ) m_ValidationType = VT_AccLenTaxid;
+  /*
+  else if( args["al" ].HasValue() ) m_ValidationType = VT_AccLen;
+  else if( args["at" ].HasValue() ) m_ValidationType = VT_AccTaxid;
+  else if( args["a"  ].HasValue() ) m_ValidationType = VT_Acc;
+  */
   else {
-    m_ValidationType = syntax;
+    m_ValidationType = VT_Syntax;
     m_LineValidator = new CAgpSyntaxValidator();
+  }
+  if(m_ValidationType & VT_Acc) {
+    x_ValidateGenBankInit();
   }
 
   m_SpeciesLevelTaxonCheck = false;
@@ -300,17 +314,19 @@ int CAgpValidateApplication::Run(void)
 
 
   agpErr.m_MaxRepeat =
-    args["limit"].HasValue() ? args["limit"].AsInteger() :
-    m_ValidationType == syntax ? 10 : 100;
+    args["limit"].HasValue() ? args["limit"].AsInteger() : 10;
+    //m_ValidationType == VT_Syntax ? 10 : 100;
 
 
   //// Process files, print results
   x_ValidateUsingFiles(args);
-  if(m_ValidationType == syntax) {
+  if(m_ValidationType == VT_Syntax) {
     m_LineValidator->PrintTotals();
   }
-  else {
+  else if(m_ValidationType & VT_Taxid) {
+    cout << "\n";
     x_CheckTaxid();
+    x_GenBankPrintTotals();
   }
 
   return 0;
@@ -349,7 +365,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
     }
   }
   // Needed to check if the last line was a gap, or a singleton.
-  if (m_ValidationType == syntax) {
+  if (m_ValidationType == VT_Syntax) {
     m_LineValidator->EndOfObject(true);
   }
 }
@@ -428,15 +444,10 @@ void CAgpValidateApplication::x_ValidateFile(
     }
 
     bool invalid_line=false;
-    if (m_ValidationType == syntax) {
-      // x_ValidateSyntaxLine(data_line, line);
+    if (m_ValidationType == VT_Syntax) {
       invalid_line = m_LineValidator->ValidateLine(data_line, line);
     } else if( !CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
-      //START_LINE_VALIDATE_MSG;
       x_ValidateGenBankLine(data_line);
-      //if (m_LineErrorOccured) {
-      //  END_LINE_VALIDATE_MSG(data_line.line_num, line);
-      //}
     }
 
     agpErr.LineDone(line_orig, line_num, invalid_line);
@@ -454,7 +465,12 @@ void CAgpValidateApplication::x_ValidateGenBankInit()
   // Create GenBank data loader and register it with the OM.
   // * The GenBank loader is automatically marked as a default
   // * to be included in scopes during the CScope::AddDefaults()
-  CGBDataLoader::RegisterInObjectManager(*m_ObjectManager);
+  CGBDataLoader::TRegisterLoaderInfo inf =
+    CGBDataLoader::RegisterInObjectManager(*m_ObjectManager);
+  if( ! inf.IsCreated() ) {
+    cerr << "FATAL: cannot connect to GenBank!\n";
+    exit(1);
+  }
 
   // Create a new scope ("attached" to our OM).
   m_Scope.Reset(new CScope(*m_ObjectManager));
@@ -465,6 +481,7 @@ void CAgpValidateApplication::x_ValidateGenBankInit()
 void CAgpValidateApplication::x_ValidateGenBankLine(
   const SDataLine& dl)
 {
+  //// Check the accession
   CSeq_id seq_id;
   try {
       seq_id.Set(dl.component_id);
@@ -472,18 +489,36 @@ void CAgpValidateApplication::x_ValidateGenBankLine(
   //    catch (CSeqIdException::eFormat)
   catch (...) {
     agpErr.Msg(CAgpErr::G_InvalidCompId, string(": ")+dl.component_id);
-    //AGP_ERROR( "Invalid component id: " << dl.component_id);
     return;
   }
 
   CBioseq_Handle bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
   if( !bioseq_handle ) {
     agpErr.Msg(CAgpErr::G_NotInGenbank, string(": ")+dl.component_id);
-    //AGP_ERROR( "Component not in Genbank: "<< dl.component_id);
     return;
   }
 
-  if (m_ValidationType == acc_len_taxid) {
+  m_GenBankCompLineCount++; // component_id is a valid GenBank accession
+
+  //// Warn if no version was supplied and GenBank version is > 1
+  SIZE_TYPE pos_ver = NStr::Find( dl.component_id, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
+  if(pos_ver==NPOS) {
+    string acc_ver = sequence::GetAccessionForId(seq_id, *m_Scope);
+    pos_ver = NStr::Find( acc_ver, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
+    if(pos_ver==NPOS) {
+      cerr << "FATAL: cannot get version for " << dl.component_id << "\n";
+      exit(1);
+    }
+    int ver = NStr::StringToInt( acc_ver.substr(pos_ver+1) );
+    if(ver>1) {
+      agpErr.Msg(CAgpErr::G_NeedVersion,
+        string(" (current version is ")+acc_ver+")",
+        AT_ThisLine,
+        dl.component_id);
+    }
+  }
+
+  if(m_ValidationType & VT_Len) {
     // Component out of bounds check
     int comp_end = CAgpSyntaxValidator::x_CheckIntField(
       dl.component_end, "component_end (column 8)" );
@@ -510,8 +545,32 @@ void CAgpValidateApplication::x_ValidateGenBankLine(
     }
   }
 
-  int taxid = x_GetTaxid(bioseq_handle, dl);
-  x_AddToTaxidMap(taxid, dl);
+  if(m_ValidationType & VT_Taxid) {
+    int taxid = x_GetTaxid(bioseq_handle, dl);
+    x_AddToTaxidMap(taxid, dl);
+  }
+}
+
+void CAgpValidateApplication::x_GenBankPrintTotals()
+{
+  int e_count=agpErr.CountTotals(CAgpErr::CODE_First, CAgpErr::CODE_Last);
+
+  if(m_GenBankCompLineCount) {
+    cout << m_GenBankCompLineCount << " lines with GenBank component accessions";
+  }
+  else{
+    cout << "No GenBank components found";
+  }
+  if(e_count) {
+    if(e_count==1) cout << "; 1 error";
+    else cout << "; " << e_count << " errors";
+    if(agpErr.m_skipped_count) cout << ", " << agpErr.m_skipped_count << " not printed";
+    cout << ":\n";
+    agpErr.PrintMessageCounts(cout, CAgpErr::CODE_First, CAgpErr::CODE_Last);
+  }
+  else {
+    cout << "; no non-GenBank component accessions.\n";
+  }
 }
 
 int CAgpValidateApplication::x_GetTaxid(
@@ -520,7 +579,6 @@ int CAgpValidateApplication::x_GetTaxid(
   int taxid = 0;
   string docsum_taxid = "";
 
-  //if(m_ValidationType == acc_len_taxid)
   taxid = sequence::GetTaxId(bioseq_handle);
 
   if (taxid == 0) {
@@ -546,14 +604,10 @@ int CAgpValidateApplication::x_GetTaxid(
     }
     catch(...) {
       agpErr.Msg(CAgpErr::G_NoTaxid, string(" for ") + dl.component_id);
-      // Cannot get taxid for X
       //AGP_ERROR("Unable to get Entrez Docsum.");
       return 0;
     }
   }
-  //if(m_ValidationType != acc_len_taxid && taxid==0) {
-  //  taxid = sequence::GetTaxId(bioseq_handle);
-  //}
 
   if (m_SpeciesLevelTaxonCheck) {
     taxid = x_GetSpecies(taxid);
@@ -651,7 +705,7 @@ void CAgpValidateApplication::x_AddToTaxidMap(
 
 void CAgpValidateApplication::x_CheckTaxid()
 {
-  if (m_TaxidMap.size() == 1) return;
+  if (m_TaxidMap.size() == 0) return;
 
   int agp_taxid = 0;
   float agp_taxid_percent = 0;
@@ -672,9 +726,9 @@ void CAgpValidateApplication::x_CheckTaxid()
       return;
   }
 
-  //LOG_POST(Error<< "The AGP's taxid is: " << agp_taxid);
-  //LOG_POST_ONCE(Error<< "Components with incorrect taxids:");
-  AGP_POST("The AGP's taxid is: " << agp_taxid);
+  AGP_POST("The AGP taxid is: " << agp_taxid);
+  if (m_TaxidMap.size() == 1) return;
+
   AGP_POST( "Components with incorrect taxids:");
 
   // report components that have an incorrect taxid

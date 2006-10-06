@@ -619,7 +619,7 @@ void CAgpSyntaxValidator::PrintTotals()
   cout << ".";
   if(agpErr.m_MaxRepeat && (e_count+w_count) ) {
     cout << "\n";
-    agpErr.PrintMessageCounts(cout, CAgpErr::E_First, CAgpErr::W_Last);
+    agpErr.PrintMessageCounts(cout, CAgpErr::CODE_First, CAgpErr::CODE_Last);
   }
   cout << "\n";
 

@@ -98,10 +98,10 @@ const CAgpErr::TStr CAgpErr::msg[]= {
 
   // GenBank-related errors
   "invalid component_id",
-  "component not in GenBank",
-  "component_id X needs explicit version",
-  "component end greater than sequence length",
-  "cannot retrieve the taxonimc id",
+  "component_id not in GenBank",
+  "component_id X is abmiguous without an explicit version",
+  "component_end greater than sequence length",
+  "cannot retrieve the taxonomic id",
 
   "cannot retrieve taxonomic data for taxid",
   "taxid X is above species level",
@@ -146,7 +146,7 @@ void CAgpErr::PrintAllMessages(CNcbiOstream& out)
     out << "\n";
   }
 
-  out << "### Errors for GenBank-based validation (-gb) ###\n";
+  out << "### Errors for GenBank-based validation (-alt) ###\n";
   for(int i=G_First; i<G_Last; i++) {
     out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
     out << "\n";
@@ -183,7 +183,6 @@ void CAgpErr::PrintLine(CNcbiOstream& ostr,
 void CAgpErr::PrintMessage(CNcbiOstream& ostr, TCode code,
     const string& details, const string& substX)
 {
-  //string msg = msg[code];
   string msg = GetMsg(code);
   if( substX.size() ) {
     // Substitute X with the real value (usually, column name or value)
@@ -192,8 +191,9 @@ void CAgpErr::PrintMessage(CNcbiOstream& ostr, TCode code,
     msg = msg.substr( 1, msg.size()-2 );
   }
 
-  ostr<< "\t" << (code>E_Last?"WARNING":"ERROR") << ": "
-      << msg << details << "\n";
+  ostr<< "\t" << (
+    (code>=W_First && code<W_Last) ? "WARNING" : "ERROR"
+  ) << ": " << msg << details << "\n";
 }
 
 
