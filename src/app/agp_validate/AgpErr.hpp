@@ -223,6 +223,7 @@ public:
 
   // One argument:
   //   E_Last: count errors  W_Last: count warnings
+  //   G_Last: count GenBank errors
   //   other: errors/warnings of one given type
   // Two arguments: range of TCode-s
   int CountTotals(TCode from, TCode to=E_First);
