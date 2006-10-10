@@ -53,6 +53,12 @@
 #endif
 #include <boost/current_function.hpp>
 
+#ifdef NCBI_OS_DARWIN
+#include <corelib/plugin_manager_store.hpp>
+#include <objmgr/data_loader_factory.hpp>
+#include <objtools/data_loaders/genbank/processors.hpp>
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
@@ -289,9 +295,31 @@ BOOST_AUTO_UNIT_TEST(s_MultiBatch)
     CHECK(source.End());
 }
 
+#ifdef NCBI_OS_DARWIN
+// nonsense to work around linker screwiness (horribly kludgy)
+class CDummyDLF : public CDataLoaderFactory {
+public:
+    CDummyDLF() : CDataLoaderFactory(kEmptyStr) { }
+    CDataLoader* CreateAndRegister(CObjectManager&,
+                                   const TPluginManagerParamTree*) const
+        { return 0; }
+};
+
+void s_ForceSymbolDefinitions(CReadDispatcher& rd)
+{
+    auto_ptr<CDataLoaderFactory> dlf(new CDummyDLF);
+    CRef<CProcessor> pid2(new CProcessor_ID2(rd));
+    CPluginManagerGetterImpl::GetBase(kEmptyStr);
+}
+#endif
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/10/10 16:26:53  ucko
+ * Hack around bogus failures on Darwin, whose linker doesn't entirely
+ * care for the way we build shared libraries.
+ *
  * Revision 1.7  2006/10/02 17:05:04  papadopo
  * use blast scope
  *
