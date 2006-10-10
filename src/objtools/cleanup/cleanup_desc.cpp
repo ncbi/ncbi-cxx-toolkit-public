@@ -390,7 +390,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
 {
     bool changed = false;
     // clean extra accessions
-    if (block.CanGetExtra_accessions()) {
+    if (block.IsSetExtra_accessions()) {
         changed |= CleanVisStringList(block.SetExtra_accessions());
         if (block.GetExtra_accessions().size() == 0) {
             block.ResetExtra_accessions();
@@ -399,7 +399,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     }
                 
     // clean keywords
-    if (block.CanGetKeywords()) {
+    if (block.IsSetKeywords()) {
         changed |= CleanVisStringList(block.SetKeywords());
         if (block.GetKeywords().size() == 0) {
             block.ResetKeywords();
@@ -408,7 +408,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     }
                 
     // clean source
-    if (block.CanGetSource()) {
+    if (block.IsSetSource()) {
         string source = block.GetSource();
         changed |= CleanVisString (source);
         if (NStr::IsBlank (source)) {
@@ -419,7 +419,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
         }
     }
     // clean origin
-    if (block.CanGetOrigin()) {
+    if (block.IsSetOrigin()) {
         string origin = block.GetOrigin();
         changed |= CleanVisString (origin);
         if (NStr::IsBlank (origin)) {
@@ -430,7 +430,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
         }
     }
     //clean date
-    if (block.CanGetDate()) {
+    if (block.IsSetDate()) {
         string date = block.GetDate();
         changed |= CleanVisString (date);
         if (NStr::IsBlank (date)) {
@@ -441,7 +441,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
         }
     }
     //clean div
-    if (block.CanGetDiv()) {
+    if (block.IsSetDiv()) {
         string div = block.GetDiv();
         changed |= CleanVisString (div);
         if (NStr::IsBlank (div)) {
@@ -452,7 +452,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
         }
     }
     //clean taxonomy
-    if (block.CanGetTaxonomy()) {
+    if (block.IsSetTaxonomy()) {
         string tax = block.GetTaxonomy();
         if (NStr::IsBlank (tax)) {
             block.ResetTaxonomy();
@@ -882,7 +882,8 @@ void CCleanup_imp::x_RemoveNucProtSetTitle(CBioseq_set_EditHandle bsh, const CSe
         // ditch if nuc-prot-set has no descriptors at all
         return;
     }
-    CSeqdesc_CI nuc_desc_it (m_Scope->GetSeq_entryHandle(se), CSeqdesc::e_Title);
+    
+    CSeqdesc_CI nuc_desc_it (m_Scope->GetSeq_entryHandle(se), CSeqdesc::e_Title, 1);
     if (!nuc_desc_it) {
         // ditch if nuc sequence has no descriptors at all
         return;
@@ -1600,7 +1601,7 @@ void CCleanup_imp::x_NormalizeMolInfo(CBioseq_set_Handle bh)
         num_found++;
     }
            
-    if (is_consistent) {
+    if (is_consistent && num_found > 0) {
         bool need_to_move = false;
         // is one molinfo already on this set?
         CSeqdesc_CI this_set_desc(bh.GetParentEntry(), CSeqdesc::e_Molinfo, 1);
@@ -1636,6 +1637,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/10/10 19:35:52  bollin
+ * Corrected bug that was incorrectly identifying nuc-prot titles to remove.
+ * Corrected bug that was incorrectly identifying genbank blocks that needed to be changed.
+ *
  * Revision 1.10  2006/10/10 13:49:23  bollin
  * record changes from ExtendedCleanup
  *
