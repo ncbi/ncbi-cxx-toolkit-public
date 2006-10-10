@@ -4,6 +4,9 @@
 <body>
 <CODE>agp_validate</CODE> checks text formatting and consistency,
 and prints various statistics for components, gaps, scaffolds and objects.
+<A href=#alt><CODE>agp_validate -alt</CODE></A> accesses GenBank to check component Accessions,
+Lengths and Taxids.
+<P>
 Violations of the following requirements qualify as ERRORS:
 <UL>
 <LI>8 or 9 tab-separated columns (excluding end of line <CODE>#comments</CODE>);
@@ -47,9 +50,28 @@ WARNINGS are issued for:
 <U>A</U>ctive draft, <U>D</U>raft HTG, <U>P</U>re Draft).
 <LI>Non-draft component spans out of order.
 <LI>Extra tab character at the end of line.
+<LI>No components lines in an object.
 </UL>
-
 
 Note: you can run <CODE>agp_validate -list</CODE> to see the list of all
 error messages and warnings.
+
+<a name=alt><H3>agp_validate -alt</H3>
+Component Accession, Length and Taxid checks require accessing
+GenBank and other NCBI databases. This may be very time-consuming,
+and therefore this is done separately from most checks that rely only
+on file content.
+<P>
+"<CODE>agp_validate -alt</CODE>" can detect the following violations:
+<UL>
+<LI><CODE>component_id</CODE> is not a valid GenBank accession,
+  or is ambiguous because it lacks a version number.
+<LI><CODE>component_end</CODE> is greater than the sequence length.
+<LI>Component has a taxid which is different from a taxid of most
+other components.<BR>
+If components come from several subspecies,
+"<CODE>-species</CODE>" flag might be useful; it allows to ignore the
+differences between subspecies.
+</UL>
+
 </body>
