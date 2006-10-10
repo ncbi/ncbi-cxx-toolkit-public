@@ -620,7 +620,8 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         }
         
         // sort/unique db_xrefs
-        if ( ! is_sorted(dbxref.begin(), dbxref.end(), SDbtagCompare()) ) {
+        if ( ! objects::is_sorted(dbxref.begin(), dbxref.end(),
+                                  SDbtagCompare()) ) {
             ChangeMade(CCleanupChange::eCleanDbxrefs);
             stable_sort(dbxref.begin(), dbxref.end(), SDbtagCompare());
         }
@@ -653,7 +654,8 @@ void CCleanup_imp::BasicCleanup(CSeq_feat& f)
         
         // sort/uniquequalsdb_xrefs
         CSeq_feat::TQual& quals = f.SetQual();
-        if ( ! is_sorted(quals.begin(), quals.end(), SGb_QualCompare()) ) {
+        if ( ! objects::is_sorted(quals.begin(), quals.end(),
+                                  SGb_QualCompare()) ) {
             ChangeMade(CCleanupChange::eCleanDbxrefs);
             stable_sort(quals.begin(), quals.end(), SGb_QualCompare());
         }
@@ -2523,6 +2525,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2006/10/10 15:29:30  ucko
+ * Explicitly qualify is_sorted by objects:: for the sake of GCC 3.0.4,
+ * which otherwise complains about ambiguity with std::is_sorted.
+ *
  * Revision 1.36  2006/10/10 13:48:55  bollin
  * added steps to ExtendedCleanup to convert user object to anticodon and to
  * convert maps to genrefs
