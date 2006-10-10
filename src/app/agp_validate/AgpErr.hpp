@@ -201,8 +201,7 @@ public:
   //   CAgpErr::AT_ThisLine|CAgpErr::AT_PrevLine messages
   void LineDone(const string& s, int line_num, bool invalid_line=false);
 
-  // Invoke with "" when done reading all files or cin.
-  // NO other invokations are needed when reading from cin,
+  // No invocations are needed when reading from cin,
   // or when reading only one file. For multiple files,
   // invoke with the next filename prior to reading it.
   void StartFile(const string& s);
@@ -255,6 +254,21 @@ private:
   string m_filename;
   int m_line_num;
 
+  // For reporting the lines we passed a long time ago
+  // (intersecting component spans, duplicate objects, etc)
+  vector<string> m_InputFiles;
+
+public:
+  // 0: reading from cin or from a single file
+  int GetFileNum()
+  {
+    return m_InputFiles.size();
+  }
+
+  const string& GetFile(int num)
+  {
+    return m_InputFiles[num-1];
+  }
 };
 
 END_NCBI_SCOPE

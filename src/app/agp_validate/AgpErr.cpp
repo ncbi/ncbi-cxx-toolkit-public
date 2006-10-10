@@ -299,15 +299,9 @@ void CAgpErr::LineDone(const string& s, int line_num, bool invalid_line)
 
 void CAgpErr::StartFile(const string& s)
 {
-  if( s.size() ) {
-    m_filename_prev=m_filename;
-    m_filename=s;
-  }
-  else {
-    // End of all files:
-    // Print statistics for all errors,
-    // including statistics for skipped errors?
-  }
+  m_filename_prev=m_filename;
+  m_filename=s;
+  m_InputFiles.push_back(s);
 }
 
 // Initialize m_MustSkip[]

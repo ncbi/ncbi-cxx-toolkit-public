@@ -333,7 +333,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   const SDataLine& dl, const string& text_line)
 {
   bool error = false;
-  int comp_start = 0;
+  int comp_beg = 0;
   int comp_end = 0;
   int comp_len = 0;
 
@@ -354,7 +354,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
 
   //// Check that component begin & end are integers,
   //// begin < end, component span length == that of the object
-  if( (comp_start = x_CheckIntField(
+  if( (comp_beg = x_CheckIntField(
         dl.component_beg,
         "component_beg (column 7)"
       )) &&
@@ -364,7 +364,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
       ))
   ) {
     comp_len = x_CheckRange(
-      0, comp_start, comp_end,
+      0, comp_beg, comp_end,
       "component_beg", "component_end", CAgpErr::E_CompEndLtBeg
     );
     if( comp_len && obj_range_len &&
@@ -415,62 +415,9 @@ void CAgpSyntaxValidator::x_OnComponentLine(
       }
     }
 
-  } else {
+  }
+  else {
     error = true;
-  }
-
-  //// Check that component spans do not overlap
-  //// and are in correct order
-  if( comp_start >= comp_end ) {
-    int tmp = comp_end; comp_end = comp_start; comp_start = tmp;
-  }
-  TSeqRange component_range(comp_start, comp_end);
-  TCompIdSpansPair value_pair(
-    dl.component_id, TCompSpans(component_range)
-  );
-  pair<TCompId2Spans::iterator, bool> id_insert_result =
-     m_CompId2Spans.insert(value_pair);
-  if (id_insert_result.second == false) {
-    TCompSpans& spans = (id_insert_result.first)->second;
-
-    // Do not check the span order for these:
-    bool isDraft =
-      dl.component_type=="A" || // Active Finishing
-      dl.component_type=="D" || // Draft HTG
-      dl.component_type=="P";   // Pre Draft
-    string str_details="";
-
-    if(spans.IntersectingWith(component_range)) {
-      // To do: print both lines with overlapping spans
-      agpErr.Msg(CAgpErr::W_SpansOverlap);
-      //str_details = "The span overlaps "
-      //  "a previous span for this component.";
-    }
-    else if ( !isDraft && (dl.orientation=="+" || dl.orientation=="-") ) {
-      if( ( dl.orientation=="+" &&
-            comp_start > (int)spans.GetTo() ) ||
-          ( dl.orientation=="-" &&
-            comp_end  < (int)spans.GetFrom() )
-      ) {
-        // A correct order.
-      }
-      else {
-        agpErr.Msg(CAgpErr::W_SpansOrder);
-        //str_details = "Component span appears out of order.";;
-      }
-    }
-
-    if(!isDraft) {
-      /* Need better means of finding a probable offending line(s).
-      if(prev_component_id==dl.component_id) {
-        post_prev=true;
-      }
-      */
-      agpErr.Msg(CAgpErr::W_DuplicateComp);
-    }
-    // if( str_details.size() ) { AGP_WARNING(str_details); }
-
-    spans.CombineWith(component_range);
   }
 
   //// Check if the line looks more like a gap
@@ -489,6 +436,46 @@ void CAgpSyntaxValidator::x_OnComponentLine(
       agpErr.Msg(CAgpErr::W_LooksLikeGap,
         NcbiEmptyString, AT_ThisLine, // defaults
         dl.component_type );
+    }
+  }
+  else {
+    //// Check that component spans do not overlap
+    //// and are in correct order
+
+    // Try to insert to the span as a new entry
+    SCompSpan comp_span(
+      comp_beg, comp_end,
+      agpErr.GetFileNum(), dl.line_num);
+    TCompIdSpansPair value_pair( dl.component_id, CCompSpans(comp_span) );
+    pair<TCompId2Spans::iterator, bool> id_insert_result =
+       m_CompId2Spans.insert(value_pair);
+
+    if(id_insert_result.second == false) {
+      // Not inserted - the key already exists.
+      CCompSpans& spans = (id_insert_result.first)->second;
+
+      // Issue at most 1 warning
+      CCompSpans::TCheckSpan check_sp = spans.CheckSpan(
+        comp_beg, comp_end, dl.orientation=="+"
+      );
+      if( check_sp.second == CAgpErr::W_SpansOverlap  ) {
+        agpErr.Msg(CAgpErr::W_SpansOverlap,
+          string(": ")+ check_sp.first->ToString()
+        );
+      }
+      else if(
+        dl.component_type!="A" && // Active Finishing
+        dl.component_type!="D" && // Draft HTG
+        dl.component_type!="P"    // Pre Draft
+      ) {
+        // Non-draft sequence
+        agpErr.Msg(check_sp.second, // W_SpansOrder or W_DuplicateComp
+          string("; preceding span: ")+ check_sp.first->ToString()
+        );
+      }
+
+      // Add the span to the existing entry
+      spans.AddSpan(comp_span);
     }
   }
 }
@@ -783,6 +770,53 @@ int CValuesCount::x_byCount( value_type* a, value_type* b )
     return a->second > b->second; // by count, largest first
   }
   return a->first < b->first; // by name
+}
+
+CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool isPlus)
+{
+  TCheckSpan res( begin(), CAgpErr::W_DuplicateComp );
+
+  for(iterator it = begin();  it != end(); ++it) {
+    // A high priority warning
+    if( it->beg <= span_beg && span_beg <= it->end )
+      return TCheckSpan(it, CAgpErr::W_SpansOverlap);
+
+    // A lower priority error (would even be ignored for draft seqs)
+    if( ( isPlus && span_beg < it->beg) ||
+        (!isPlus && span_end > it->end)
+    ) {
+      res.first  = it;
+      res.second = CAgpErr::W_SpansOrder;
+    }
+  }
+
+  return res;
+}
+
+void CCompSpans::AddSpan(SCompSpan& span)
+{
+  push_back(span);
+  //if(span.beg < beg) beg = span.beg;
+  //if(end < span.end) end = span.end;
+}
+
+
+string SCompSpan::ToString()
+{
+  string s;
+  s += NStr::IntToString(beg);
+  s += "..";
+  s += NStr::IntToString(end);
+  s += " at ";
+  if(file_num) {
+    s += agpErr.GetFile(file_num);
+    s += ":";
+  }
+  else {
+    s += "line ";
+  }
+  s += NStr::IntToString(line_num);
+  return s;
 }
 
 END_NCBI_SCOPE

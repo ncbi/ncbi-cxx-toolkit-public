@@ -89,6 +89,51 @@ private:
   static int x_byCount( value_type* a, value_type* b );
 };
 
+// Spans, file and line numbers for one component
+struct SCompSpan
+{
+  int beg, end, file_num, line_num;
+  SCompSpan(int b, int e,int f, int l)
+  {
+    beg=b;
+    end=e;
+    file_num=f;
+    line_num=l;
+  }
+
+  string ToString();
+};
+
+// To save memoty, this is a vector instead of a map.
+// Multiple spans on one component are uncommon.
+class CCompSpans : public vector<SCompSpan>
+{
+protected:
+  //int beg, end; // the boundary of all spans
+
+public:
+  // Construct a vector with one element
+  CCompSpans(const SCompSpan& src)
+  {
+    push_back(src);
+    //beg = src.beg;
+    //end = src.end;
+  }
+
+  // Returns the first overlapping span and CAgpErr::W_SpansOverlap,
+  // or the first span out of order and CAgpErr::W_SpansOrder,
+  // or back() and CAgpErr::W_DuplicateComp.
+  // The caller can ignore the last 2 warnings for draft seqs.
+  typedef pair<iterator, CAgpErr::TCode> TCheckSpan;
+  TCheckSpan CheckSpan(int span_beg, int span_end, bool isPlus);
+  void AddSpan(SCompSpan& span); // CCompSpans::iterator it,
+
+  // int GetTo  () { return end; }
+  // int GetFrom() { return beg; }
+
+};
+
+
 class CAgpSyntaxValidator
 {
 public:
@@ -142,10 +187,8 @@ protected:
   // keep track of the component and object ids used
   //  in the AGP. Used to detect duplicates and
   //  duplicates with seq range intersections.
-  typedef CRangeCollection<TSeqPos> TCompSpans;
-  typedef map<string, TCompSpans> TCompId2Spans;
-  typedef pair<string, TCompSpans> TCompIdSpansPair;
-
+  typedef map<string, CCompSpans> TCompId2Spans;
+  typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
 
   // proper values for the different fields in the AGP
