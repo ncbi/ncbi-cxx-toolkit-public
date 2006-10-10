@@ -87,8 +87,8 @@ bool CleanDoubleQuote(string& str);
 
 // truncate trailing and leading spaces, trailing semicolons,
 // and redundant semicolons and extra spaces after semicolons
-void CleanVisString(string& str);
-void CleanVisStringList ( list< string >& str_list);
+bool CleanVisString(string& str);
+bool CleanVisStringList ( list< string >& str_list);
 
 bool OnlyPunctuation (string str);
 
@@ -393,6 +393,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/10/10 13:49:23  bollin
+* record changes from ExtendedCleanup
+*
 * Revision 1.14  2006/08/29 19:27:13  rsmith
 * RemoveDupsNoSort reports if it has changed anything.
 * is_sorted w/o a comparison operator argument.

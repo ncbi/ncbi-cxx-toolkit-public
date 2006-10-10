@@ -295,6 +295,8 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Change Keywords",
     "Change Subsource",
     "Change Orgmod",
+    "Change Exception",
+    "Change Comment",
     // Set when fields are rescued
     "Change tRna",
     "Change rRna",
@@ -308,6 +310,24 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Change Seqloc",
     "Change Strand",
     "Change WholeLocation",
+    // set when MolInfo descriptors are affected
+    "Change MolInfo Descriptor",
+    // set when prot-xref is removed
+    "Remove ProtXref",
+    // set when gene-xref is removed
+    "Remove GeneXref",
+    // set when protein feature is added
+    "Add Protein Feature",
+    // set when feature is removed
+    "Remove Feature",
+    // set when feature is moved
+    "Move Feature",
+    // set when qualifier is removed
+    "Remove Qualifier",
+    // set when Gene Xref is created
+    "Add GeneXref",
+    // set when descriptor is removed
+    "Remove Descriptor",
     // set when any other change is made.
     "Change Other",
     "Invalid Change Code"
@@ -321,6 +341,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/10/10 13:49:23  bollin
+* record changes from ExtendedCleanup
+*
 * Revision 1.15  2006/07/26 19:37:04  rsmith
 * add cleanup w/Handles
 *

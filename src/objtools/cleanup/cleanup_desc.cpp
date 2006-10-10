@@ -86,6 +86,7 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor
         for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
             it1 != remove_list.end(); ++it1) { 
             eh.RemoveSeqdesc(**it1);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
         }        
     }
 }
@@ -103,6 +104,7 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescr
         for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
             it1 != remove_list.end(); ++it1) { 
             eh.RemoveSeqdesc(**it1);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
         }        
     }
 
@@ -150,6 +152,7 @@ void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_Handle bh, IsMergeCandid
     for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
         it1 != remove_list.end(); ++it1) { 
         edith.RemoveSeqdesc(**it1);
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
 }
 
@@ -186,6 +189,7 @@ void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_set_Handle bh, IsMergeCa
     for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
         it1 != remove_list.end(); ++it1) { 
         edith.RemoveSeqdesc(**it1);
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
     
     if (bh.GetCompleteBioseq_set()->IsSetSeq_set()) {
@@ -334,6 +338,9 @@ void CCleanup_imp::x_MolInfoUpdate(CSeq_descr& sdr, CSeq_descr::Tdata& remove_li
             remove_list.push_back(*it);
         }
     }
+    if (changed) {
+        ChangeMade(CCleanupChange::eChangeMolInfo);
+    }
 }
 
 
@@ -381,28 +388,32 @@ void CCleanup_imp::x_RemoveEmptyGenbankDesc(CSeq_descr& sdr, CSeq_descr::Tdata& 
 // cleans strings for the GenBankBlock, removes descriptor if block is now empty
 void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
 {
+    bool changed = false;
     // clean extra accessions
     if (block.CanGetExtra_accessions()) {
-        CleanVisStringList(block.SetExtra_accessions());
+        changed |= CleanVisStringList(block.SetExtra_accessions());
         if (block.GetExtra_accessions().size() == 0) {
             block.ResetExtra_accessions();
+            changed = true;
         }
     }
                 
     // clean keywords
     if (block.CanGetKeywords()) {
-        CleanVisStringList(block.SetKeywords());
+        changed |= CleanVisStringList(block.SetKeywords());
         if (block.GetKeywords().size() == 0) {
             block.ResetKeywords();
+            changed = true;
         }
     }
                 
     // clean source
     if (block.CanGetSource()) {
         string source = block.GetSource();
-        CleanVisString (source);
+        changed |= CleanVisString (source);
         if (NStr::IsBlank (source)) {
             block.ResetSource();
+            changed = true;
         } else {
             block.SetSource (source);
         }
@@ -410,9 +421,10 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     // clean origin
     if (block.CanGetOrigin()) {
         string origin = block.GetOrigin();
-        CleanVisString (origin);
+        changed |= CleanVisString (origin);
         if (NStr::IsBlank (origin)) {
             block.ResetOrigin();
+            changed = true;
         } else {
             block.SetOrigin(origin);
         }
@@ -420,9 +432,10 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     //clean date
     if (block.CanGetDate()) {
         string date = block.GetDate();
-        CleanVisString (date);
+        changed |= CleanVisString (date);
         if (NStr::IsBlank (date)) {
             block.ResetDate();
+            changed = true;
         } else {
             block.SetDate(date);
         }
@@ -430,9 +443,10 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     //clean div
     if (block.CanGetDiv()) {
         string div = block.GetDiv();
-        CleanVisString (div);
+        changed |= CleanVisString (div);
         if (NStr::IsBlank (div)) {
             block.ResetDiv();
+            changed = true;
         } else {
             block.SetDiv(div);
         }
@@ -442,9 +456,13 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
         string tax = block.GetTaxonomy();
         if (NStr::IsBlank (tax)) {
             block.ResetTaxonomy();
+            changed = true;
         } else {
             block.SetTaxonomy(tax);
         }
+    }
+    if (changed) {
+        ChangeMade(CCleanupChange::eChangeOther);
     }
 }
 
@@ -553,6 +571,7 @@ void CCleanup_imp::x_CheckGenbankBlockTechKeywords(CGB_block& gb_block, CMolInfo
             || (tech == CMolInfo::eTech_est && NStr::Equal((*it), "EST"))     
             || (tech == CMolInfo::eTech_sts && NStr::Equal((*it), "STS"))) {
             it = gb_block.SetKeywords().erase(it);
+            ChangeMade(CCleanupChange::eRemoveKeyword);
         } else {
             ++it;
         }
@@ -593,6 +612,7 @@ void CCleanup_imp::x_ChangeGBDiv (CSeq_entry_Handle seh, string div)
                         || tech == CMolInfo::eTech_htgs_2
                         || tech == CMolInfo::eTech_htgs_3) {
                         gb_block.ResetDiv();
+                        ChangeMade(CCleanupChange::eChangeOther);
                     }
                 } else if ((tech == CMolInfo::eTech_est && NStr::Equal(gb_div, "EST"))
                            || (tech == CMolInfo::eTech_sts && NStr::Equal(gb_div, "STS"))
@@ -601,10 +621,12 @@ void CCleanup_imp::x_ChangeGBDiv (CSeq_entry_Handle seh, string div)
                                 || tech == CMolInfo::eTech_htgs_2
                                 || tech == CMolInfo::eTech_htgs_3) && NStr::Equal(gb_div, "HTG"))) {
                     gb_block.ResetDiv();
+                    ChangeMade(CCleanupChange::eChangeOther);
                 } else if (tech == CMolInfo::eTech_unknown && NStr::Equal(gb_div, "STS")) {
                     CMolInfo& m = const_cast<CMolInfo&> ((*molinfo).GetMolinfo());
                     m.SetTech(CMolInfo::eTech_sts);
                     gb_block.ResetDiv();
+                    ChangeMade(CCleanupChange::eChangeOther);
                 }
 			}
 			if (!NStr::IsBlank(div)) {
@@ -614,6 +636,7 @@ void CCleanup_imp::x_ChangeGBDiv (CSeq_entry_Handle seh, string div)
 			    } else if (NStr::Equal(gb_div, "UNA")
 			               || NStr::Equal(gb_div, "UNC")) {
 			        gb_block.ResetDiv();
+			        ChangeMade(CCleanupChange::eChangeOther);
 			    }
 			} 
 		}
@@ -625,6 +648,7 @@ void CCleanup_imp::x_ChangeGBDiv (CSeq_entry_Handle seh, string div)
 void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
 {
     CSeqdesc_CI desc_i(seh, CSeqdesc::e_Source);
+    bool changed = false;
     
     if (desc_i && (*desc_i).GetSource().CanGetOrg()) {
         string src;
@@ -643,6 +667,7 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
                 src += " ";
                 src += (*it);
                 ++it;
+                changed = true;
             }
         }
         if (NStr::EndsWith(src, '.')) {
@@ -656,10 +681,12 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
                     string gb_src = (*gbdesc_i).GetGenbank().GetSource();
                     if (NStr::EndsWith(gb_src, '.')) {
                         gb_src = gb_src.substr(0, gb_src.length() - 2);
+                        changed = true;
                     }
                     if (NStr::EqualNocase(src, gb_src)) {
                         CGB_block& gb_block = const_cast<CGB_block&> ((*gbdesc_i).GetGenbank());
                         gb_block.ResetSource();
+                        changed = true;
                     }
                 }
                 ++gbdesc_i;
@@ -680,6 +707,9 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
         } else {
             x_ChangeGBDiv (seh, div);
         }
+    }
+    if (changed) {
+        ChangeMade(CCleanupChange::eChangeOther);
     }
 }
 
@@ -754,6 +784,7 @@ void CCleanup_imp::x_RemoveDescrByType(CBioseq_Handle bh, CSeqdesc::E_Choice des
         for (CSeq_descr::Tdata::iterator desc_it = desc_list.begin();
              desc_it != desc_list.end(); ++desc_it) { 
             eh.RemoveSeqdesc(**desc_it);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
         }        
     }                        
 }
@@ -773,6 +804,7 @@ void CCleanup_imp::x_RemoveDescrByType(CBioseq_set_Handle bh, CSeqdesc::E_Choice
         for (CSeq_descr::Tdata::iterator desc_it = desc_list.begin();
              desc_it != desc_list.end(); ++desc_it) { 
             eh.RemoveSeqdesc(**desc_it);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
         }        
     }
     x_RemoveDescrForAllInSet (bh, desctype);                     
@@ -811,12 +843,14 @@ void CCleanup_imp::x_MoveIdenticalPartDescriptorsToSegSet (CBioseq_set_Handle se
         if (!desc_it) {
             // segset does not already have a descriptor of this type
             CBioseq_set_EditHandle eh(segset);
-            eh.AddSeqdesc(**(desc_list.begin()));  
+            eh.AddSeqdesc(**(desc_list.begin()));
+            ChangeMade(CCleanupChange::eAddDescriptor);
             remove_from_parts = true;          
         } else if (desctype == CSeqdesc::e_Update_date) {
             CBioseq_set_EditHandle eh(segset);
             eh.RemoveSeqdesc (*desc_it);
             eh.AddSeqdesc(**(desc_list.begin())); 
+            ChangeMade(CCleanupChange::eAddDescriptor);
             remove_from_parts = true;
         } else if (desctype != CSeqdesc::e_Mol_type || x_SeqDescMatch(*desc_it, **(desc_list.begin()))) {
 	        remove_from_parts = true;
@@ -864,6 +898,7 @@ void CCleanup_imp::x_RemoveNucProtSetTitle(CBioseq_set_EditHandle bsh, const CSe
                 && (npstitle.length() == title_len
                     || NStr::EqualCase (npstitle.substr(title_len), ", and translated products"))) {
                 bsh.RemoveSeqdesc(**desc_it);
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
                 break;
             }
         }
@@ -891,7 +926,9 @@ void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const
             for (CSeq_descr::Tdata::iterator desc_it = desc_list.begin();
                  desc_it != desc_list.end(); ++desc_it) { 
                 bsh.AddSeqdesc(**desc_it);
+                ChangeMade(CCleanupChange::eAddDescriptor);
                 eh.RemoveSeqdesc(**desc_it);
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
             }                        
         }
     } else if (se.Which() == CSeq_entry::e_Set) {
@@ -907,7 +944,9 @@ void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const
             for (CSeq_descr::Tdata::iterator desc_it = desc_list.begin();
                  desc_it != desc_list.end(); ++desc_it) { 
                 bsh.AddSeqdesc(**desc_it);
+                ChangeMade(CCleanupChange::eAddDescriptor);
                 eh.RemoveSeqdesc(**desc_it);
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
             }                        
         }
     }   
@@ -956,6 +995,7 @@ void CCleanup_imp::x_AddMissingProteinMolInfo(CSeq_entry_Handle seh)
                     if (!(*desc_it)->GetMolinfo().CanGetBiomol()
                         || (*desc_it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_unknown) {
                         (*desc_it)->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+                        ChangeMade(CCleanupChange::eChangeMolInfo);
                     }
                     found = true;
                 }
@@ -967,6 +1007,7 @@ void CCleanup_imp::x_AddMissingProteinMolInfo(CSeq_entry_Handle seh)
             mol->SetBiomol(CMolInfo::eBiomol_peptide);
             desc->SetMolinfo(*mol);
             eh.AddSeqdesc(*desc);
+            ChangeMade(CCleanupChange::eChangeMolInfo);
         }
         ++bs_ci;
     }
@@ -985,6 +1026,7 @@ void CCleanup_imp::x_FuseMolInfos (CSeq_descr& desc_set, CSeq_descr::Tdata& desc
                     && (*desc_it)->GetMolinfo().CanGetBiomol()
                     && (*desc_it)->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_unknown) {
                     desc_list.front()->SetMolinfo().SetBiomol((*desc_it)->GetMolinfo().GetBiomol());
+                    ChangeMade(CCleanupChange::eChangeMolInfo);
                 }
                 
                 //completeness
@@ -993,6 +1035,7 @@ void CCleanup_imp::x_FuseMolInfos (CSeq_descr& desc_set, CSeq_descr::Tdata& desc
                     && (*desc_it)->GetMolinfo().CanGetCompleteness()
                     && (*desc_it)->GetMolinfo().GetCompleteness() != CMolInfo::eCompleteness_unknown) {
                     desc_list.front()->SetMolinfo().SetCompleteness((*desc_it)->GetMolinfo().GetCompleteness());
+                    ChangeMade(CCleanupChange::eChangeMolInfo);
                 }
 
                 //tech
@@ -1001,6 +1044,7 @@ void CCleanup_imp::x_FuseMolInfos (CSeq_descr& desc_set, CSeq_descr::Tdata& desc
                     && (*desc_it)->GetMolinfo().CanGetTech()
                     && (*desc_it)->GetMolinfo().GetTech() != CMolInfo::eTech_unknown) {
                     desc_list.front()->SetMolinfo().SetTech((*desc_it)->GetMolinfo().GetTech());
+                    ChangeMade(CCleanupChange::eChangeMolInfo);
                 }
 
                 //techexp
@@ -1009,6 +1053,7 @@ void CCleanup_imp::x_FuseMolInfos (CSeq_descr& desc_set, CSeq_descr::Tdata& desc
                     && (*desc_it)->GetMolinfo().CanGetTechexp()
                     && !NStr::IsBlank((*desc_it)->GetMolinfo().GetTechexp())) {
                     desc_list.front()->SetMolinfo().SetTechexp((*desc_it)->GetMolinfo().GetTechexp());
+                    ChangeMade(CCleanupChange::eChangeMolInfo);
                 }
                 
             }
@@ -1030,11 +1075,14 @@ void CCleanup_imp::x_FuseMolInfos (CBioseq_Handle bh)
     
     x_FuseMolInfos(eh.SetDescr(), desc_list);
 
-    // keep the first MolInfo descriptor
-    desc_list.pop_front();
-    for (CSeq_descr::Tdata::iterator it1 = desc_list.begin();
-        it1 != desc_list.end(); ++it1) { 
-        eh.RemoveSeqdesc(**it1);
+    if (desc_list.size() > 1) {
+        // keep the first MolInfo descriptor
+        desc_list.pop_front();
+        for (CSeq_descr::Tdata::iterator it1 = desc_list.begin();
+            it1 != desc_list.end(); ++it1) { 
+            eh.RemoveSeqdesc(**it1);
+            ChangeMade(CCleanupChange::eChangeMolInfo);
+        }
     }        
 }
     
@@ -1051,11 +1099,15 @@ void CCleanup_imp::x_FuseMolInfos (CBioseq_set_Handle bh)
     x_FuseMolInfos(eh.SetDescr(), desc_list);
 
     // keep the first MolInfo descriptor
-    desc_list.pop_front();
-    for (CSeq_descr::Tdata::iterator it1 = desc_list.begin();
-        it1 != desc_list.end(); ++it1) { 
-        eh.RemoveSeqdesc(**it1);
-    }
+    if (desc_list.size() > 1) {
+        // keep the first MolInfo descriptor
+        desc_list.pop_front();
+        for (CSeq_descr::Tdata::iterator it1 = desc_list.begin();
+            it1 != desc_list.end(); ++it1) { 
+            eh.RemoveSeqdesc(**it1);
+            ChangeMade(CCleanupChange::eChangeMolInfo);
+        }
+    }        
     
     ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
         x_FuseMolInfos(m_Scope->GetSeq_entryHandle(**it));
@@ -1097,10 +1149,13 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
             x_SetSourceLineage(bh, lineage);
         }
         
-        // missing steps
-#if 0
-		CombineBSFeat(sep);
-#endif            
+        // In the C Toolkit, this step was called CombineBSFeat.
+        // In the C Toolkit, at this point in the function each Seq-Entry was searched for
+        // Source Features that were the full length of the sequence on which they were
+        // located and mergeable.  Since all full-length source features have already
+        // been converted to source descriptors, we can just skip to the merge step.
+        x_RecurseDescriptorsForMerge(bh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
+                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     } else {
         // missing steps
 #if 0
@@ -1167,19 +1222,15 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     x_AddMissingProteinMolInfo(bh.GetParentEntry());
     // this step was FuseMolInfos in the C Toolkit
     x_FuseMolInfos(bh);
-    // this stemp was StripProtXrefs in the C Toolkit
+    // this step was StripProtXrefs in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_StripProtXrefs);
+    // this step was called by CheckMaps in the C Toolkit,
+    // but CheckMaps didn't actually make any other changes
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_ConvertUserObjectToAnticodon);
+    // this step was called MapsToGenref in the C Toolkit
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_MoveMapQualsToGeneMaploc);
 #if 0    
     // missing steps
-	SeqEntryExplore(sep, (Pointer)(&qm), CheckMaps);
-	/*
-	if (qm.same == TRUE) {
-		SeqEntryExplore(sep, (Pointer)(&qm), StripMaps);
-	} else {
-		SeqEntryExplore(sep, NULL, MapsToGenref);
-	}
-	*/
-	SeqEntryExplore(sep, NULL, MapsToGenref);
 	CheckGeneticCode(sep);
 #endif        
     
@@ -1585,6 +1636,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/10/10 13:49:23  bollin
+ * record changes from ExtendedCleanup
+ *
  * Revision 1.9  2006/10/05 19:17:52  ucko
  * Properly qualify x_StripProtXrefs when passing it to x_RecurseForSeqAnnots.
  *

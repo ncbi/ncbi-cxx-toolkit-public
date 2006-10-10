@@ -206,25 +206,34 @@ void TrimInternalSemicolons (string& str)
 }
 
 
-void CleanVisString (string& str)
+bool CleanVisString (string& str)
 {
-    CleanString (str);
+    bool changed;
+    size_t s_len = str.length();
+    changed = CleanString (str);
     TrimInternalSemicolons (str);
+    if (str.length() != s_len) {
+        changed = true;
+    }
+    return changed;
 }
 
 
-void CleanVisStringList ( list< string >& str_list)
+bool CleanVisStringList ( list< string >& str_list)
 {
     list< string > non_blank;
+    bool changed = false;
                    
     non_blank.clear();
     while (str_list.size() > 0) {
         string tmp = str_list.front();
         str_list.pop_front();
-        CleanVisString (tmp);
+        changed |= CleanVisString (tmp);
                         
         if (!NStr::IsBlank (tmp)) {
             non_blank.push_back (tmp);
+        } else {
+            changed = true;
         }
     }
     str_list.clear();
@@ -233,6 +242,7 @@ void CleanVisStringList ( list< string >& str_list)
         non_blank.pop_front();
         str_list.push_back(tmp);
     }
+    return changed;
 }
 
 
@@ -878,6 +888,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/10/10 13:49:23  bollin
+* record changes from ExtendedCleanup
+*
 * Revision 1.11  2006/08/29 14:25:02  rsmith
 * New ways to clean up strings, trailing junk and double to single quotes.
 *
