@@ -38,8 +38,13 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/scope.hpp>
 #include <algo/seqqa/seqtest.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 
 #include <algo/align/contig_assembly/contig_assembly.hpp>
 
@@ -107,12 +112,34 @@ int CDemoContigAssemblyApp::Run()
     ITERATE (list<string>, width_string, width_strings) {
         half_widths.push_back(NStr::StringToUInt(*width_string) / 2);
     }
+    CNcbiOstrstream ostr;
     alns = CContigAssembly::Align(id1, id2, blast_params, min_frac_ident,
-                                  max_end_slop, *scope, &cerr, half_widths);
+                                  max_end_slop, *scope, &ostr, half_widths);
+    cerr << string(CNcbiOstrstreamToString(ostr));
 
+    CSeq_annot annot;
+    annot.SetData().SetAlign();  // in case there are none
     ITERATE (vector<CRef<CSeq_align> >, aln, alns) {
-        cout << MSerial_AsnText << **aln;
+        annot.SetData().SetAlign().push_back(*aln);
     }
+    string title = id1.GetSeqIdString(true) + " x " + id2.GetSeqIdString(true);
+    CRef<CAnnotdesc> desc(new CAnnotdesc);
+    desc->SetTitle(title);
+    annot.SetDesc().Set().push_back(desc);
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetClass("demo_contig_assembly");
+    uo->SetType().SetStr("alignment info");
+    CUser_field& uf = uo->SetField("comment");
+    list<string> lines;
+    NStr::Split(CNcbiOstrstreamToString(ostr), "\n\r", lines);
+    ITERATE(list<string>, line, lines) {
+        uf.SetData().SetStrs().push_back(*line);
+    }
+    desc.Reset(new CAnnotdesc);
+    desc->SetUser(*uo);
+    annot.SetDesc().Set().push_back(desc);
+
+    cout << MSerial_AsnText << annot;
 
     return 0;
 }
@@ -129,6 +156,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/10 21:48:09  jcherry
+ * Write out an annot rather than a series of alignments
+ *
  * Revision 1.2  2006/10/10 20:28:59  jcherry
  * Take bandwidths as a parameter.  Change default minimum identity
  * from 0.98 to 0.985.
