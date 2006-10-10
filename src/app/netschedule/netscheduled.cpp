@@ -72,7 +72,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.13.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.14.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -2726,6 +2726,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.101  2006/10/10 15:22:13  didenko
+ * Changed version number
+ *
  * Revision 1.100  2006/10/03 14:56:57  joukovv
  * Delayed job deletion implemented, code restructured preparing to move to
  * thread-per-request model.
