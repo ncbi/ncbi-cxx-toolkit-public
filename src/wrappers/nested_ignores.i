@@ -29,6 +29,8 @@
  *
  */
 
+%ignore *::CVecscreen_AlnInfo::type;
+
 %ignore *::CReaderCacheManager_SReaderCacheInfo;
 
 // hide util/thread_pool.hpp due to classes nested in CBlockingQueue
@@ -136,6 +138,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/10/10 18:33:31  jcherry
+ * %ignore CVecscreen::AlnInfo::type
+ *
  * Revision 1.15  2006/05/30 18:36:08  jcherry
  * %ignore CReaderCacheManager::SReaderCacheInfo
  *
