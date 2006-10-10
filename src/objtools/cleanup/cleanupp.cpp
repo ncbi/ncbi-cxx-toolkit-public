@@ -960,7 +960,6 @@ void CCleanup_imp::x_ExtendedCleanStrings (CSeqdesc& sd)
 
 void CCleanup_imp::x_ExtendedCleanStrings (CSeq_descr& sdr)
 {
-    CSeq_descr::Tdata& current_list = sdr.Set();
     NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
         x_ExtendedCleanStrings(**it);
         // NOTE: At this point in the C Toolkit, we check for empty
@@ -1435,6 +1434,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.49  2006/10/10 13:46:54  bollin
+ * removed unused variable
+ *
  * Revision 1.48  2006/10/04 14:17:47  bollin
  * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
  * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
