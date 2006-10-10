@@ -54,9 +54,6 @@ BEGIN_NCBI_SCOPE
 
 extern CAgpErr agpErr;
 
-extern int agp_error_count;
-extern int agp_warn_count;
-
 struct SDataLine {
   int     line_num;
   string  object;
@@ -96,7 +93,6 @@ class CAgpSyntaxValidator
 {
 public:
   CAgpSyntaxValidator();
-  ~CAgpSyntaxValidator();
   bool ValidateLine(const SDataLine& dl, const string& text_line);
   void EndOfObject(bool afterLastLine=false);
 
@@ -210,12 +206,9 @@ protected:
    // Used for checking for intersection.
   int  prev_end;
   int  prev_part_num;
-  // int  prev_line_num;
-  // bool prev_line_error_occured;
   int  componentsInLastScaffold;
   int  componentsInLastObject;
 
-  //CAccPatternCounter* objNamePatterns;
   static void x_PrintPatterns(CAccPatternCounter& namePatterns);
 };
 

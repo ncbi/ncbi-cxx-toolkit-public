@@ -36,7 +36,6 @@
 
 #include <ncbi_pch.hpp>
 #include "SyntaxValidator.hpp"
-//#include "AgpErr.hpp"
 
 // Objects includes
 // todo: move this to a separate .cpp file with GenBank validator
@@ -353,7 +352,6 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
           args['#' + NStr::IntToString(i)].AsString();
       if( args.GetNExtra()>1 ) agpErr.StartFile(m_CurrentFileName);
 
-      //AGP_POST(m_CurrentFileName<<"\n");
       CNcbiIstream& istr =
           args['#' + NStr::IntToString(i)].AsInputFile();
       if (!istr) {
@@ -537,11 +535,6 @@ void CAgpValidateApplication::x_ValidateGenBankLine(
       details += " bp";
 
       agpErr.Msg(CAgpErr::G_CompEndGtLength, details );
-
-      //AGP_ERROR( "Component end greater than sequence length: "
-      //  << dl.component_end << " > "
-      //  << dl.component_id << " length = "
-      //  << seq_len << " bp");
     }
   }
 
@@ -604,7 +597,6 @@ int CAgpValidateApplication::x_GetTaxid(
     }
     catch(...) {
       agpErr.Msg(CAgpErr::G_NoTaxid, string(" for ") + dl.component_id);
-      //AGP_ERROR("Unable to get Entrez Docsum.");
       return 0;
     }
   }
@@ -656,8 +648,6 @@ int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
     if(org_ref == null) {
       agpErr.Msg(CAgpErr::G_NoOrgRef,
         string(" ")+ NStr::IntToString(id) );
-      // AGP_ERROR( "GetOrgRef() returned NULL for taxid "
-      //  << id);
       return 0;
     }
     if(id==taxid) blast_name0=blast_name;

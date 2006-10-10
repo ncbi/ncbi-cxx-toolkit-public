@@ -40,17 +40,12 @@
 USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
 
-int agp_error_count=0;
-int agp_warn_count=0;
-
 CAgpSyntaxValidator::CAgpSyntaxValidator()
 {
   //objNamePatterns = new CAccPatternCounter();
 
   prev_end = 0;
   prev_part_num = 0;
-  // prev_line_num = 0;
-  // prev_line_error_occured = false;
   componentsInLastScaffold = 0;
   componentsInLastObject = 0;
   prev_orientation_unknown=false;
@@ -75,8 +70,6 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_TypeGapCnt["repeatyes"] = 0;
   m_TypeGapCnt["repeatno"] = 0;
 
-  //m_TypeGapCnt["split_finishedyes"] = 0;
-  //m_TypeGapCnt["split_finishedno"] = 0;
   m_TypeGapCnt["centromereyes"] = 0;
   m_TypeGapCnt["centromereno"] = 0;
   m_TypeGapCnt["short_armyes"] = 0;
@@ -99,9 +92,6 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_GapTypes["heterochromatin"] = GAP_heterochromatin;
   m_GapTypes["telomere"       ] = GAP_telomere       ;
 
-  //m_GapTypes["scaffold"]=GAP_scaffold);
-  //m_GapTypes["split_finished"]=GAP_split_finished;
-
   m_ComponentTypeValues.insert("A");
   m_ComponentTypeValues.insert("D");
   m_ComponentTypeValues.insert("F");
@@ -119,11 +109,6 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
 
   m_LinkageValues["no" ] = LINKAGE_no;
   m_LinkageValues["yes"] = LINKAGE_yes;
-}
-
-CAgpSyntaxValidator::~CAgpSyntaxValidator()
-{
-  //delete objNamePatterns;
 }
 
 void CAgpSyntaxValidator::EndOfObject(bool afterLastLine)
@@ -173,10 +158,7 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     if (obj_insert_result.second == false) {
       agpErr.Msg(CAgpErr::E_DuplicateObj, dl.object,
         AT_ThisLine|AT_PrevLine);
-      //AGP_ERROR("Duplicate object: " << );
     }
-
-    //objNamePatterns->AddName(dl.object);
   }
 
   obj_begin = x_CheckIntField(
@@ -189,7 +171,6 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
         NcbiEmptyString,
         AT_ThisLine|AT_PrevLine
       );
-      //AGP_ERROR("First line of an object must have object_beg=1");
     }
 
     obj_range_len = x_CheckRange(
@@ -204,8 +185,6 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     if(part_num != prev_part_num+1) {
       agpErr.Msg( prev_part_num ? CAgpErr::E_PartNumberNotPlus1 :  CAgpErr::E_PartNumberNot1,
         NcbiEmptyString, AT_ThisLine|AT_PrevLine );
-      // post_prev=true;
-      // AGP_ERROR("Part number (column 4) != previous part number +1");
     }
     prev_part_num = part_num;
   }
@@ -218,8 +197,8 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
   }
   else {
     m_TypeCompCnt.add( "invalid type" );
-    // true: disable some checks for the next line
-    // to suppress some spurious errors
+    // Returning true to disable some checks for the next line
+    // and suppress certain spurious errors.
     return true;
   }
 
@@ -254,8 +233,6 @@ void CAgpSyntaxValidator::x_OnGapLine(
       agpErr.Msg(CAgpErr::E_ObjRangeNeGap, string(": ") +
         NStr::IntToString(obj_range_len) + " != " +
         NStr::IntToString(gap_len      ) );
-      // AGP_ERROR("Object range length not equal to gap length"
-      //  ": " << obj_range_len << " != " << gap_len);
       error = true;
     }
   }
@@ -287,7 +264,6 @@ void CAgpSyntaxValidator::x_OnGapLine(
         }
         else {
           agpErr.Msg(CAgpErr::W_InvalidYes, dl.gap_type);
-          //AGP_WARNING("Invalid linkage=yes for gap_type="<<dl.gap_type);
           error=true;
         }
       }
@@ -304,14 +280,10 @@ void CAgpSyntaxValidator::x_OnGapLine(
   if(new_obj) {
     agpErr.Msg(CAgpErr::W_GapObjBegin, NcbiEmptyString,
       AT_ThisLine|AT_PrevLine);
-    //AGP_WARNING("Object begins with a gap");
   }
   else if(IsGapType(prev_component_type)) {
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
       AT_ThisLine|AT_PrevLine );
-    //post_prev=true;
-    //AGP_WARNING("Two consequtive gap lines. There may be a gap at the end of "
-    //"a scaffold, two non scaffold-breaking gaps, etc");
   }
   else if( endsScaffold ) {
     // A breaking gap after a component.
@@ -353,12 +325,8 @@ void CAgpSyntaxValidator::x_OnGapLine(
       agpErr.Msg(CAgpErr::W_LooksLikeComp,
         NcbiEmptyString, AT_ThisLine, // defaults
         dl.component_type );
-      // AGP_WARNING( "Line with component_type=" << dl.component_type
-      //  << " appears to be a component line and not a gap line.");
     }
   }
-
-  //prev_gap_type = gap_type;
 }
 
 void CAgpSyntaxValidator::x_OnComponentLine(
@@ -403,7 +371,6 @@ void CAgpSyntaxValidator::x_OnComponentLine(
         comp_len != obj_range_len
     ) {
       agpErr.Msg(CAgpErr::E_ObjRangeNeComp);
-      // AGP_ERROR( "Object range length not equal to component range length");
       error = true;
     }
   } else {
@@ -427,8 +394,6 @@ void CAgpSyntaxValidator::x_OnComponentLine(
     else {
       if( dl.orientation == "0") {
         m_CompZeroCount++;
-        //AGP_ERROR( "Component cannot have an unknown orientation");
-        //error = true;
       }
       else {
         m_CompNaCount++;
@@ -502,7 +467,6 @@ void CAgpSyntaxValidator::x_OnComponentLine(
       }
       */
       agpErr.Msg(CAgpErr::W_DuplicateComp);
-      //AGP_WARNING("Duplicate component id with non-draft type");
     }
     // if( str_details.size() ) { AGP_WARNING(str_details); }
 
@@ -525,9 +489,6 @@ void CAgpSyntaxValidator::x_OnComponentLine(
       agpErr.Msg(CAgpErr::W_LooksLikeGap,
         NcbiEmptyString, AT_ThisLine, // defaults
         dl.component_type );
-      //AGP_WARNING( "Line with component_type="
-      //  << dl.component_type <<" appears to be a gap line "
-      //  "and not a component line");
     }
   }
 }
@@ -545,7 +506,6 @@ int CAgpSyntaxValidator::x_CheckIntField( const string& field,
     agpErr.Msg(CAgpErr::E_MustBePositive,
         NcbiEmptyString, AT_ThisLine, // defaults
         field_name );
-    //AGP_ERROR( field_name << " field must be a positive integer");
   }
   return field_value;
 }
@@ -560,12 +520,9 @@ int CAgpSyntaxValidator::x_CheckRange(
       NcbiEmptyString,
       AT_ThisLine|AT_PrevLine,
       begin_name );
-    //post_prev=true;
-    //AGP_ERROR( begin_name << " field overlaps a previous line");
   }
   else if (end < begin) {
     agpErr.Msg(ltCode); // "Less Than" error Code
-    //AGP_ERROR(end_name << " is less than " << begin_name );
   }
   else {
     length = end - begin + 1;
@@ -582,7 +539,6 @@ bool CAgpSyntaxValidator::x_CheckValues(const TValuesSet& values,
       agpErr.Msg(CAgpErr::E_InvalidValue,
         NcbiEmptyString, AT_ThisLine, // defaults
         field_name );
-      //AGP_ERROR("Invalid value for " << field_name);
     }
     return false;
   }
@@ -598,7 +554,6 @@ int CAgpSyntaxValidator::x_CheckValues(const TValuesMap& values,
       agpErr.Msg(CAgpErr::E_InvalidValue,
         NcbiEmptyString, AT_ThisLine, // defaults
         field_name );
-      // AGP_ERROR("Invalid value for " << field_name);
     }
     return -1;
   }
