@@ -803,6 +803,9 @@ void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
     // check specific mods
     CheckAAMods(Specific, VariableMods, NumMod, SeqChar, MaxNumMod, ModList, 
                 iPepStart, false, Modset);
+    // fix
+    CheckAAMods(Specific, FixedMods, NumMod, SeqChar, MaxNumMod, ModList, 
+                iPepStart, true, Modset);
 }
 
 inline
@@ -1053,6 +1056,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.36  2006/10/10 21:38:48  lewisg
+  take xml spectra input, fix specific fixed mod search
+
   Revision 1.35  2006/08/28 20:03:01  lewisg
   perf improvements - no constref or comparesorted
 

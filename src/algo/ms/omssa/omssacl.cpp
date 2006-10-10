@@ -195,6 +195,8 @@ void COMSSA::Init()
                  CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("fomx", "omxinfile", "omssa omx file",
                   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("fxml", "omxinfile", "omssa xml search request file",
+                   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("o", "textasnoutfile", "filename for text asn.1 formatted search results",
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("ob", "binaryasnoutfile", "filename for binary asn.1 formatted search results",
@@ -217,7 +219,7 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("ta", "autotol", 
                    "automatic mass tolerance adjustment fraction",
                    CArgDescriptions::eDouble, 
-                   "0.5");
+                   "1.0");
     argDesc->AddDefaultKey("tex", "exact", 
                     "threshold in Da above which the mass of neutron should be added in exact mass search",
                     CArgDescriptions::eDouble, 
@@ -344,7 +346,7 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("scorr", "corrscore", 
                      "turn off correlation correction to score (1=off, 0=use correlation)",
                      CArgDescriptions::eInteger, 
-                     "1");
+                     "0");
     argDesc->AddDefaultKey("scorp", "corrprob", 
                       "probability of consecutive ion (used in correlation correction)",
                       CArgDescriptions::eDouble, 
@@ -443,6 +445,10 @@ void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
     else if (args["foms"].AsString().size() != 0) {
         Infile->SetInfile(args["foms"].AsString());
         Infile->SetInfiletype(eMSSpectrumFileType_oms);
+    }
+    else if (args["fxml"].AsString().size() != 0) {
+        Infile->SetInfile(args["fxml"].AsString());
+        Infile->SetInfiletype(eMSSpectrumFileType_xml);
     }
     else ERR_POST(Fatal << "no input file specified");
 
@@ -570,15 +576,30 @@ int COMSSA::Run()
         return 0;
     }
 
+    CMSSearch MySearch;
+
     // which search settings to use
     CRef <CMSSearchSettings> SearchSettings;
 
-    CSearchHelper::CreateSearchSettings(args["pm"].AsString(),
-                                        SearchSettings);
-
-    // use command line to set up search settings
-    if(args["pm"].AsString().size() == 0) 
+    // if search settings to be loaded from param file, create and load
+    if(args["pm"].AsString().size() != 0) {
+        SearchSettings.Reset(new CMSSearchSettings);
+        CSearchHelper::CreateSearchSettings(args["pm"].AsString(),
+                                            SearchSettings);
+    }
+    else if (args["fxml"].AsString().size() != 0) {
+        // load in MSRequest
+        CSearchHelper::ReadSearchRequest(args["fxml"].AsString(),
+                                         eSerial_Xml,
+                                         MySearch);
+        // todo: SearchSettings needs to be set or will be overwritten!
+        SearchSettings.Reset(&((*(MySearch.SetRequest().begin()))->SetSettings()));
+    }
+    else {
+        // use command line to set up search settings if no param file
+        SearchSettings.Reset(new CMSSearchSettings);
         SetSearchSettings(args, SearchSettings);
+    }
 
     CSearchHelper::ValidateSearchSettings(SearchSettings);
 
@@ -588,33 +609,32 @@ int COMSSA::Run()
     if(args["os"]) SearchEngine.SetRankScore() = false;
     else SearchEngine.SetRankScore() = true;
 
-    CMSSearch MySearch;
-
     int FileRetVal(1);
 
-    // load in files
-    if(SearchSettings->GetInfiles().size() == 1) {
-        FileRetVal = 
-            CSearchHelper::LoadAnyFile(MySearch,
-                                       *(SearchSettings->GetInfiles().begin()), SearchEngine);
-        if(FileRetVal == -1) {
-            ERR_POST(Fatal << "omssacl: too many spectra in input file");
+    if(args["fxml"].AsString().size() == 0) {
+        // load in files only if infile specified and not a loaded MSRequest
+        if(SearchSettings->GetInfiles().size() == 1) {
+            FileRetVal = 
+                CSearchHelper::LoadAnyFile(MySearch,
+                                           *(SearchSettings->GetInfiles().begin()), SearchEngine);
+            if(FileRetVal == -1) {
+                ERR_POST(Fatal << "omssacl: too many spectra in input file");
+                return 1;
+            }
+            else if(FileRetVal == 1) {
+                ERR_POST(Fatal << "omssacl: unable to read spectrum file -- incorrect file type?");
+                return 1;
+            }
+        }
+        else {
+            ERR_POST(Fatal << "omssacl: input file not given or too many input files given.");
             return 1;
         }
-        else if(FileRetVal == 1) {
-            ERR_POST(Fatal << "omssacl: unable to read spectrum file -- incorrect file type?");
-            return 1;
-        }
+        
+        // place search settings in search object
+        MySearch.SetUpSearchSettings(SearchSettings, 
+                                     SearchEngine.GetIterative());
     }
-	else {
-	    ERR_POST(Fatal << "omssacl: input file not given or too many input files given.");
-	    return 1;
-	}
-
-    // place search settings in search object
-    MySearch.SetUpSearchSettings(SearchSettings, 
-                                 SearchEngine.GetIterative());
-
 
     try {
         SearchEngine.InitBlast(SearchSettings->GetDb().c_str());

@@ -858,8 +858,19 @@ public:
                            CConstRef <CMSInFile> InFile,
                            CSearch& SearchEngine);
 
-    /**
-     * Read in a complete search
+    /** 
+      * Read in an MSRequest
+      * @param Filename name of file
+      * @param Dataformat xml or asn.1
+      * @param MySearch the search
+      * @return 0 if OK
+      */
+    static int ReadSearchRequest(const string& Filename,
+                                 const ESerialDataFormat DataFormat,
+                                 CMSSearch& MySearch);
+
+    /** 
+     * Read in a complete search (typically for an iterative search)
      * @param Filename name of file
      * @param Dataformat xml or asn.1
      * @param MySearch the search

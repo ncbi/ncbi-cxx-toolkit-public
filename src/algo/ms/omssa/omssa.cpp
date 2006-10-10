@@ -162,6 +162,29 @@ CSearchHelper::ReadFile(const string& Filename,
     return SpectrumSet->LoadFile(FileType, PeakFile);
 }   
 
+int 
+CSearchHelper::ReadSearchRequest(const string& Filename,
+                                 const ESerialDataFormat DataFormat,
+                                 CMSSearch& MySearch)
+{   
+    CRef <CMSRequest> Request (new CMSRequest);
+    MySearch.SetRequest().push_back(Request);
+    CRef <CMSResponse> Response (new CMSResponse);
+    MySearch.SetResponse().push_back(Response);
+
+    auto_ptr<CObjectIStream> 
+        in(CObjectIStream::Open(Filename.c_str(), DataFormat));
+    in->Open(Filename.c_str(), DataFormat);
+    if(in->fail()) {	    
+        ERR_POST(Warning << "omssacl: unable to search file" << 
+                 Filename);
+        return 1;
+    }
+    in->Read(ObjectInfo(*Request));
+    in->Close();
+    return 0;
+}
+
 
 int 
 CSearchHelper::ReadCompleteSearch(const string& Filename,
@@ -172,7 +195,7 @@ CSearchHelper::ReadCompleteSearch(const string& Filename,
         in(CObjectIStream::Open(Filename.c_str(), DataFormat));
     in->Open(Filename.c_str(), DataFormat);
     if(in->fail()) {	    
-        ERR_POST(Warning << "ommsacl: unable to search file" << 
+        ERR_POST(Warning << "omssacl: unable to search file" << 
                  Filename);
         return 1;
     }
@@ -206,6 +229,9 @@ CSearchHelper::LoadAnyFile(CMSSearch& MySearch,
     case eMSSpectrumFileType_omx:
     SearchEngine.SetIterative() = true;
     return CSearchHelper::ReadCompleteSearch(Filename, eSerial_Xml, MySearch);
+    break;
+    case eMSSpectrumFileType_xml:
+    return CSearchHelper::ReadSearchRequest(Filename, eSerial_Xml, MySearch);
     break;
     case eMSSpectrumFileType_asc:
     case eMSSpectrumFileType_pks:
@@ -293,7 +319,6 @@ void
 CSearchHelper::CreateSearchSettings(string FileName,
                                     CRef<CMSSearchSettings> &Settings)
 {
-    Settings.Reset(new CMSSearchSettings);
     if(FileName != "" ) {
         try {
             auto_ptr<CObjectIStream> 
@@ -1243,7 +1268,7 @@ void CSearch::AddModsToHit(CMSHits *Hit, CMSHit *MSHit)
     int i;
     for (i = 0; i < MSHit->GetNumModInfo(); i++) {
         // screen out fixed mods
-        if (MSHit->GetModInfo(i).GetIsFixed() == 1) continue;
+ //       if (MSHit->GetModInfo(i).GetIsFixed() == 1) continue;
         CRef< CMSModHit > ModHit(new CMSModHit);
         ModHit->SetSite() = MSHit->GetModInfo(i).GetSite();
         ModHit->SetModtype() = MSHit->GetModInfo(i).GetModEnum() ;
