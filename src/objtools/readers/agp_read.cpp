@@ -204,8 +204,6 @@ void AgpRead(CNcbiIstream& is,
                 const string& type_string = fields[6];
                 if (type_string == "fragment") {
                     type = CSeq_gap::eType_fragment;
-                } else if (type_string == "split_finished") {
-                    type = CSeq_gap::eType_other;
                 } else if (type_string == "clone") {
                     type = CSeq_gap::eType_clone;
                 } else if (type_string == "contig") {
@@ -213,7 +211,7 @@ void AgpRead(CNcbiIstream& is,
                 } else if (type_string == "centromere") {
                     type = CSeq_gap::eType_centromere;
                 } else if (type_string == "short_arm") {
-                    type = CSeq_gap::eType_other;
+                    type = CSeq_gap::eType_short_arm;
                 } else if (type_string == "heterochromatin") {
                     type = CSeq_gap::eType_heterochromatin;
                 } else if (type_string == "telomere") {
@@ -303,6 +301,10 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.18  2006/10/10 19:30:48  jcherry
+ * Convert short_arm gap type in AGP to new short-arm in ASN.1.
+ * Don't recognize split_finished as gap type.
+ *
  * Revision 1.17  2006/10/05 18:29:12  jcherry
  * Optionally set Seq-gap based on gap type and linkage in file
  *
