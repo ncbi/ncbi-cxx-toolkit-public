@@ -40,6 +40,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+NCBI_XBLAST_EXPORT
 BlastSeqSrc * DbIndexSeqSrcInit( const string & indexname, BlastSeqSrc * db );
 
 typedef void (*DbIndexPreSearchFnType)( 
