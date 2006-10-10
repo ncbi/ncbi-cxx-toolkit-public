@@ -82,7 +82,7 @@ const unsigned long REPORT_VERBOSE = 2UL;       /**< Verbose reporting. */
 
 /** Types of exception the indexing library can throw.
   */
-class CDbIndex_Exception : public CException
+class NCBI_XBLAST_EXPORT CDbIndex_Exception : public CException
 {
     public:
 
@@ -106,7 +106,7 @@ class CDbIndex_Exception : public CException
 
 /** Base class providing high level interface to index objects.
   */
-class CDbIndex : public CObject
+class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 {
     public:
 

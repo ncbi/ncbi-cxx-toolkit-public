@@ -33,6 +33,7 @@
 #ifndef C_SEQUENCE_I_STREAM_BDB_HPP
 #define C_SEQUENCE_I_STREAM_BDB_HPP
 
+#include <algo/blast/core/blast_export.h>
 #include <objtools/readers/seqdb/seqdb.hpp>
 
 #include "sequence_istream.hpp"
@@ -42,7 +43,7 @@ BEGIN_SCOPE( blastdbindex )
 
 /** Sequence stream that reads BLAST nucleotide databases.
 */
-class CSequenceIStreamBlastDB : public CSequenceIStream
+class NCBI_XBLAST_EXPORT CSequenceIStreamBlastDB : public CSequenceIStream
 {
     public:
 

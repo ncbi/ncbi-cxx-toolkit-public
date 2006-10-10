@@ -37,6 +37,7 @@
 #include <vector>
 
 #include <corelib/ncbiobj.hpp>
+#include <algo/blast/core/blast_export.h>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
@@ -46,7 +47,7 @@ BEGIN_SCOPE( blastdbindex )
 /** Class used to abstract reading nucleotide sequences from
     various sources.
 */
-class CSequenceIStream
+class NCBI_XBLAST_EXPORT CSequenceIStream
 {
     protected:
 

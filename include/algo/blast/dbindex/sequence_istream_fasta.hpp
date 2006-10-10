@@ -34,16 +34,14 @@
 #define C_SEQUENCE_I_STREAM_FASTA_HPP
 
 #include <string>
-
 #include <corelib/ncbistre.hpp>
-
 #include "sequence_istream.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
 
 /** Sequence stream for reading FASTA formatted files. */
-class CSequenceIStreamFasta : public CSequenceIStream
+class NCBI_XBLAST_EXPORT CSequenceIStreamFasta : public CSequenceIStream
 {
     private:
 
