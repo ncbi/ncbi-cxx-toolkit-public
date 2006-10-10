@@ -1,4 +1,4 @@
---$Revision: 6.14 $
+--$Revision: 6.15 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -354,7 +354,7 @@ Seq-gap ::= SEQUENCE {
         unknown(0),
         fragment(1),
         clone(2),
-        scaffold(3),
+        short-arm(3),
         heterochromatin(4),
         centromere(5),
         telomere(6),
@@ -365,7 +365,6 @@ Seq-gap ::= SEQUENCE {
     linkage INTEGER {
         unlinked(0),
         linked(1),
-        mate-linked(2),
         other(255)
     } OPTIONAL
 }
