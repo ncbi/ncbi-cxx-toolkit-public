@@ -151,22 +151,7 @@ CSearchResults::GetErrors(int min_severity) const
 CConstRef<CSeq_id>
 CSearchResults::GetSeqId() const
 {
-    CConstRef<CSeq_align_set> align_set = GetSeqAlign();
-    
-    CConstRef<CSeq_id> retval;
-    
-    if (! (align_set.Empty() || align_set->Get().empty())) {
-        // index 0 = query, index 1 = subject
-        const int query_index = 0;
-        
-        CRef<CSeq_align> first_disc_align = align_set->Get().front();
-        _ASSERT(first_disc_align->GetType() == CSeq_align::eType_disc);
-        CRef<CSeq_align> first_align = 
-            first_disc_align->GetSegs().GetDisc().Get().front();
-        retval.Reset(& first_align->GetSeq_id(query_index));
-    }
-    
-    return retval;
+    return m_QueryId;
 }
 
 CConstRef<CSearchResults>
@@ -193,15 +178,57 @@ CSearchResultSet::operator[](const objects::CSeq_id & ident)
     return CRef<CSearchResults>();
 }
 
-CSearchResultSet::CSearchResultSet(TSeqAlignVector             aligns,
+static CConstRef<CSeq_id>
+s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
+{
+    CConstRef<CSeq_id> retval;
+    
+    if (! (align_set.Empty() || align_set->Get().empty())) {
+        // index 0 = query, index 1 = subject
+        const int query_index = 0;
+        
+        CRef<CSeq_align> first_disc_align = align_set->Get().front();
+        _ASSERT(first_disc_align->GetType() == CSeq_align::eType_disc);
+        CRef<CSeq_align> first_align = 
+            first_disc_align->GetSegs().GetDisc().Get().front();
+        retval.Reset(& first_align->GetSeq_id(query_index));
+    }
+    
+    return retval;
+}
+
+CSearchResultSet::CSearchResultSet(vector< CConstRef<CSeq_id> > queries,
+                                   TSeqAlignVector              aligns,
+                                   TSearchMessages              msg_vec)
+{
+    x_Init(queries, aligns, msg_vec);
+}
+
+CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
                                    TSearchMessages msg_vec)
 {
+    vector< CConstRef<CSeq_id> > queries;
+    
+    for(size_t i = 0; i < aligns.size(); i++) {
+        queries.push_back(s_ExtractSeqId(aligns[i]));
+    }
+    
+    x_Init(queries, aligns, msg_vec);
+}
+
+void CSearchResultSet::x_Init(vector< CConstRef<CSeq_id> > queries,
+                              TSeqAlignVector              aligns,
+                              TSearchMessages              msg_vec)
+{
     _ASSERT(aligns.size() == msg_vec.size());
+    _ASSERT(aligns.size() == queries.size());
     
     m_Results.resize(aligns.size());
     
     for(size_t i = 0; i < aligns.size(); i++) {
-        m_Results[i].Reset(new CSearchResults(aligns[i], msg_vec[i]));
+        m_Results[i].Reset(new CSearchResults(queries[i],
+                                              aligns[i],
+                                              msg_vec[i]));
     }
 }
 

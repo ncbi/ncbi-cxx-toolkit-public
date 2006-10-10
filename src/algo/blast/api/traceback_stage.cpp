@@ -291,15 +291,26 @@ CBlastTracebackSearch::Run()
     
     _ASSERT(m_SeqInfoSrc);
     _ASSERT(m_QueryFactory);
-
+    
+    CRef<ILocalQueryData> qdata = m_QueryFactory->MakeLocalQueryData(m_Options);
+    
     TSeqAlignVector aligns =
         LocalBlastResults2SeqAlign(hsp_results,
-           *m_QueryFactory->MakeLocalQueryData(m_Options),
-           *m_SeqInfoSrc,
-           m_OptsMemento->m_ProgramType,
-           m_Options->GetGappedMode(),
-           m_Options->GetOutOfFrameMode(),
-           m_ResultType);
+                                   *qdata,
+                                   *m_SeqInfoSrc,
+                                   m_OptsMemento->m_ProgramType,
+                                   m_Options->GetGappedMode(),
+                                   m_Options->GetOutOfFrameMode(),
+                                   m_ResultType);
+    
+    // Collect query Seq-locs
+    
+    vector< CConstRef<CSeq_id> > qlocs;
+    
+    for(unsigned i = 0; i < aligns.size(); i++) {
+        CConstRef<CSeq_id> id(qdata->GetSeq_loc(i)->GetId());
+        qlocs.push_back(id);
+    }
     
     // The preliminary stage also produces errors and warnings; they
     // should be copied from that code to this class somehow, and
@@ -309,7 +320,7 @@ CBlastTracebackSearch::Run()
         m_Messages.resize(aligns.size());
     }
     
-    return CSearchResultSet(aligns, m_Messages);
+    return CSearchResultSet(qlocs, aligns, m_Messages);
 }
 
 END_SCOPE(blast)

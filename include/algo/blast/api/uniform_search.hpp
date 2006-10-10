@@ -184,9 +184,10 @@ public:
     /// Constructor
     /// @param align alignments for a single query sequence [in]
     /// @param errs error messages for this query sequence [in]
-    CSearchResults(CRef<objects::CSeq_align_set> align, 
-                   const TQueryMessages & errs)
-        : m_Alignment(align), m_Errors(errs)
+    CSearchResults(CConstRef<objects::CSeq_id>     query,
+                   CRef<objects::CSeq_align_set>   align, 
+                   const TQueryMessages          & errs)
+        : m_QueryId(query), m_Alignment(align), m_Errors(errs)
     {
     }
     
@@ -213,6 +214,9 @@ public:
     void SetMaskedQueryRegions(TMaskedQueryRegions& flt_query_regions);
     
 private:
+    /// this query's id
+    CConstRef<objects::CSeq_id> m_QueryId;
+    
     /// alignments for this query
     CRef<objects::CSeq_align_set> m_Alignment;
     
@@ -231,17 +235,28 @@ private:
 
 class NCBI_XBLAST_EXPORT CSearchResultSet {
 public:
-
+    /// List of query ids.
+    typedef vector< CConstRef<objects::CSeq_id> > TQueryIdVector;
+    
     /// size_type type definition
     typedef vector< CRef<CSearchResults> >::size_type size_type;
-
+    
     /// Default constructor
     CSearchResultSet() {}
     
     /// Parametrized constructor
     /// @param aligns vector of all queries' alignments [in]
     /// @param msg_vec vector of all queries' messages [in]
-    CSearchResultSet(TSeqAlignVector aligns, TSearchMessages msg_vec);
+    CSearchResultSet(TSeqAlignVector aligns,
+                     TSearchMessages msg_vec);
+    
+    /// Parametrized constructor
+    /// @param ids vector of all queries' ids [in]
+    /// @param aligns vector of all queries' alignments [in]
+    /// @param msg_vec vector of all queries' messages [in]
+    CSearchResultSet(TQueryIdVector  ids,
+                     TSeqAlignVector aligns,
+                     TSearchMessages msg_vec);
     
     /// Allow array-like access with integer indices to CSearchResults 
     /// contained by this object
@@ -283,10 +298,13 @@ public:
         m_Results.push_back(result);
     }
 private:    
-
+    /// Initialize the result set.
+    void x_Init(vector< CConstRef<objects::CSeq_id> > queries,
+                TSeqAlignVector                       aligns,
+                TSearchMessages                       msg_vec);
+    
     /// Vector of results.
     vector< CRef<CSearchResults> > m_Results;
-
 };
 
 
