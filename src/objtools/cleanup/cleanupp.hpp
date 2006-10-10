@@ -322,6 +322,8 @@ private:
     void x_RemoveImpSourceFeatures (CSeq_annot_Handle sa);    
     void x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa);
     void x_StripProtXrefs(CSeq_annot_Handle sa);
+    void x_ConvertUserObjectToAnticodon(CSeq_annot_Handle sa);
+    void x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa);
 
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs);
     void RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle bs);
@@ -413,6 +415,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2006/10/10 13:48:55  bollin
+ * added steps to ExtendedCleanup to convert user object to anticodon and to
+ * convert maps to genrefs
+ *
  * Revision 1.45  2006/10/05 18:36:52  bollin
  * Added step to ExtendedCleanup to fuse MolInfo descriptors on the same Bioseq
  * or Bioseq-set.

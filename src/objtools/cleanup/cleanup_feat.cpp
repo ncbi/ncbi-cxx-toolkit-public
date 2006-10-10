@@ -49,6 +49,7 @@
 #include <util/static_map.hpp>
 
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/User_object.hpp>
@@ -1411,6 +1412,7 @@ void CCleanup_imp::x_RemoveGeneXref(CRef<CSeq_feat> feat)
         const CSeqFeatXref& xref = **it;
         if ( xref.IsSetData() && xref.GetData().Which() == CSeqFeatData::e_Gene) {
             it = xref_list.erase(it);
+            ChangeMade(CCleanupChange::eRemoveGeneXref);
             break;
         }
     }
@@ -1993,10 +1995,14 @@ void CCleanup_imp::x_MoveGeneQuals(const CSeq_feat& orig_feat)
                 if (gb_qual.CanGetVal()) {
                     CGene_ref& grp = feat->SetGeneXref ();
                     grp.SetLocus (sc_ExtendedCleanupGeneQual + gb_qual.GetVal());
+                    // note - the change is not recorded here, because the genexref may
+                    // be removed later.  The change will be reported in x_RemoveMarkedGeneQuals
+                    // when the ExtendedCleanup tag is removed from the gene xref text
                 }
                 //remove the qual
                 it = feat->SetQual().erase(it);
                 it_end = feat->SetQual().end();
+                ChangeMade(CCleanupChange::eRemoveQualifier);
             } else {
                 ++it;
             }                    
@@ -2085,6 +2091,7 @@ void CCleanup_imp::x_RemoveMarkedGeneXref(const CSeq_feat& orig_feat)
                     && (*it)->GetData().GetGene().IsSetLocus()
                     && NStr::StartsWith ((*it)->GetData().GetGene().GetLocus(), sc_ExtendedCleanupGeneQual)) {
                     (*it)->SetData ().SetGene ().SetLocus ((*it)->GetData().GetGene().GetLocus().substr(sc_ExtendedCleanupGeneQual.length()));
+                    ChangeMade(CCleanupChange::eCreateGeneXref);
                 }
             }
         }
@@ -2172,6 +2179,7 @@ void CCleanup_imp::x_MoveCodingRegionsToNucProtSets (CSeq_entry_Handle seh, CSeq
  
     ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
         parent_sah.TakeFeat (*it);
+        ChangeMade(CCleanupChange::eMoveFeat);
     }
 }
 
@@ -2248,6 +2256,7 @@ void CCleanup_imp::x_RemoveFeaturesBySubtype (CBioseq_Handle bs, CSeqFeatData::E
     }
     ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
         (*it).Remove();
+        ChangeMade(CCleanupChange::eRemoveFeat);
     }
 }
 
@@ -2263,6 +2272,7 @@ void CCleanup_imp::x_RemoveFeaturesBySubtype (CBioseq_set_Handle bss, CSeqFeatDa
     }
     ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
         (*it).Remove();
+        ChangeMade(CCleanupChange::eRemoveFeat);
     }
 }
 
@@ -2283,6 +2293,7 @@ void CCleanup_imp::x_RemoveImpSourceFeatures (CSeq_annot_Handle sa)
     }
     ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
         (*it).Remove();
+        ChangeMade(CCleanupChange::eRemoveFeat);
     }    
 }
 
@@ -2305,6 +2316,7 @@ void CCleanup_imp::x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa)
     }
     ITERATE (vector<CSeq_feat_EditHandle>, it, feat_list) {
         (*it).Remove();
+        ChangeMade(CCleanupChange::eRemoveFeat);
     }    
 }
 
@@ -2341,41 +2353,164 @@ void CCleanup_imp::x_StripProtXrefs(CSeq_annot_Handle sa)
     if (sa.IsFtable()) {
         objects::SAnnotSelector cds_sel(CSeqFeatData::eSubtype_cdregion);
         
-        CFeat_CI feat_ci(sa);
+        CFeat_CI feat_ci(sa, cds_sel);
         while (feat_ci) {
             if (feat_ci->IsSetProduct()
                 && feat_ci->IsSetXref()) {
-                
-                CBioseq_EditHandle eh(m_Scope->GetBioseqHandle(feat_ci->GetProduct()));
-                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
-                CRef<CSeq_feat> new_feat(new CSeq_feat);
-                new_feat->Assign(feat_ci->GetOriginalFeature());
-                bool change_made = false;                                
-                CSeq_feat::TXref& xrefs = new_feat->SetXref();
-                CSeq_feat::TXref::iterator it = xrefs.begin();
-                while (it != xrefs.end()) {
-                    CSeqFeatXref& xref = **it;
-                    if (xref.IsSetData()  &&  xref.GetData().IsProt()) {
-                        CRef<CSeq_feat> new_prot(new CSeq_feat);
-                        new_prot->SetData().SetProt(xref.SetData().SetProt());
-                        CRef<CSeq_loc> new_prot_loc(new CSeq_loc);
-                        new_prot_loc->Assign(feat_ci->GetProduct());
-                        new_prot->SetLocation(*new_prot_loc);
+                try {
+                    CBioseq_EditHandle eh(m_Scope->GetBioseqHandle(feat_ci->GetProduct()));
+                    CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
+                    CRef<CSeq_feat> new_feat(new CSeq_feat);
+                    new_feat->Assign(feat_ci->GetOriginalFeature());
+                    bool change_made = false;                                
+                    CSeq_feat::TXref& xrefs = new_feat->SetXref();
+                    CSeq_feat::TXref::iterator it = xrefs.begin();
+                    while (it != xrefs.end()) {
+                        CSeqFeatXref& xref = **it;
+                        if (xref.IsSetData()  &&  xref.GetData().IsProt()) {
+                            CRef<CSeq_feat> new_prot(new CSeq_feat);
+                            new_prot->SetData().SetProt(xref.SetData().SetProt());
+                            CRef<CSeq_loc> new_prot_loc(new CSeq_loc);
+                            new_prot_loc->Assign(feat_ci->GetProduct());
+                            new_prot->SetLocation(*new_prot_loc);
                         
-                        s_AddFeat(eh, new_prot);       
-                        change_made = true;
-                        it = xrefs.erase(it);                 
-                    } else {
-                        ++it;
+                            s_AddFeat(eh, new_prot);    
+                            ChangeMade(CCleanupChange::eAddProtFeat);   
+                            change_made = true;
+                            it = xrefs.erase(it);                 
+                        } else {
+                            ++it;
+                        }
                     }
-                }
-                if (change_made) {
-                    CSeq_feat_EditHandle efh(fh);
-                    efh.Replace(*new_feat);
+                    if (change_made) {
+                        CSeq_feat_EditHandle efh(fh);
+                        efh.Replace(*new_feat);
+                        ChangeMade(CCleanupChange::eRemoveProtXref);
+                    }
+                } catch (...) {
+                    // skip this one
                 }
             }
             ++feat_ci;
         } 
+    }
+}
+
+
+// This function includes code that was GetAnticodonFromObject in the C Toolkit
+void CCleanup_imp::x_ConvertUserObjectToAnticodon(CSeq_annot_Handle sa)
+{
+    if (sa.IsFtable()) {
+        return;
+    }
+    
+    objects::SAnnotSelector trna_sel(CSeqFeatData::eSubtype_tRNA);
+        
+    CFeat_CI feat_ci(sa, trna_sel);
+    while (feat_ci) {
+        if (!feat_ci->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon()
+            && feat_ci->IsSetExt()
+            && feat_ci->GetExt().IsSetClass()
+            && NStr::EqualNocase(feat_ci->GetExt().GetClass(), "NCBI")
+            && feat_ci->GetExt().CanGetData()
+            && feat_ci->GetExt().GetData().front()->CanGetData()
+            && feat_ci->GetExt().GetData().front()->GetData().IsInt()
+            && feat_ci->GetExt().GetData().front()->GetData().GetInts().size() > 1) {
+        
+            CSeq_feat_EditHandle efh(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+            CRef<CSeq_feat> new_feat(new CSeq_feat);
+            new_feat->Assign(feat_ci->GetOriginalFeature());
+            CRef<CSeq_id> id (new CSeq_id);
+            id->Assign(*(new_feat->GetLocation().GetId()));
+        
+            CRef<CSeq_loc> anticodon_loc(new CSeq_loc(*id, 
+                                                      feat_ci->GetExt().GetData().front()->GetData().GetInts()[0],
+                                                      feat_ci->GetExt().GetData().front()->GetData().GetInts()[1],
+                                                      feat_ci->GetLocation().GetStrand()));
+        
+            new_feat->SetData().SetRna().SetExt().SetTRNA().SetAnticodon(*anticodon_loc);
+        
+            // remove the first user object
+            new_feat->SetExt().SetData().erase(new_feat->SetExt().SetData().begin());
+            if (new_feat->GetExt().GetData().size() == 0) {
+                new_feat->SetExt().ResetData();
+            }
+            efh.Replace(*new_feat);
+            ChangeMade(CCleanupChange::eChangeAnticodon);
+        }
+        
+        ++feat_ci;
+    }
+}
+
+
+// this function was MapsToGenRef in the C Toolkit
+// For every gene feature, it checks all of the features whose locations are 
+// contained in the gene feature location for map qualifiers.
+// If all of the features with map qualifiers have the same map qualifier value,
+// if the gene feature has no map loc, the map value will be copied to the gene
+// feature maploc.  If all of the features with map qualifiers have the same map
+// qualifier value, the map qualifiers will be removed.
+void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
+{
+    objects::SAnnotSelector gene_sel(CSeqFeatData::eSubtype_gene);
+    CFeat_CI gene_ci(sa, gene_sel);
+    while (gene_ci) {
+        CFeat_CI overlapped_feat_ci (*m_Scope, gene_ci->GetOriginalFeature().GetLocation());
+        string map = "";
+        bool   same = true;
+        bool   any = false;
+        while (overlapped_feat_ci && same) {
+            if (overlapped_feat_ci->IsSetQual()) {
+                ITERATE (CSeq_feat::TQual, qual_it, overlapped_feat_ci->GetQual()) {
+                    if ((*qual_it)->CanGetQual() 
+                        && NStr::Equal((*qual_it)->GetQual(), "map")
+                        && (*qual_it)->CanGetVal()) {
+                        if (any) {
+                            if (!NStr::Equal(map, (*qual_it)->GetVal())) {
+                                same = false;
+                            }
+                        } else {
+                            any = true;
+                            map = (*qual_it)->GetVal();
+                        }
+                    }
+                }
+            }
+            ++overlapped_feat_ci;
+        }
+        if (any && same) {
+            if(!gene_ci->GetData().GetGene().IsSetMaploc()
+               || NStr::IsBlank(gene_ci->GetData().GetGene().GetMaploc())) {
+                CSeq_feat_EditHandle efh(gene_ci->GetSeq_feat_Handle());
+                CRef<CSeq_feat> new_feat(new CSeq_feat);
+                new_feat->Assign(gene_ci->GetOriginalFeature());
+                new_feat->SetData().SetGene().SetMaploc(map);
+                efh.Replace(*new_feat);
+                ChangeMade(CCleanupChange::eChangeOther);                    
+            }
+            overlapped_feat_ci.Rewind();
+            while (overlapped_feat_ci) {
+                bool changed = false;
+                if (overlapped_feat_ci->IsSetQual()) {
+                    CSeq_feat_EditHandle efh(gene_ci->GetSeq_feat_Handle());
+                    CRef<CSeq_feat> new_feat(new CSeq_feat);
+                    new_feat->Assign(overlapped_feat_ci->GetOriginalFeature());
+                    CSeq_feat::TQual::iterator qual_it = new_feat->SetQual().begin();
+                    while (qual_it != new_feat->SetQual().end()) {
+                        if ((*qual_it)->CanGetQual() 
+                            && NStr::Equal((*qual_it)->GetQual(), "map")) {
+                            qual_it = new_feat->SetQual().erase(qual_it);
+                        } else {
+                            ++qual_it;
+                        }
+                    }
+                }
+                ++overlapped_feat_ci;   
+            }
+            
+        }
+        ++gene_ci;
     }
 }
 
@@ -2388,6 +2523,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2006/10/10 13:48:55  bollin
+ * added steps to ExtendedCleanup to convert user object to anticodon and to
+ * convert maps to genrefs
+ *
  * Revision 1.35  2006/10/05 18:36:51  bollin
  * Added step to ExtendedCleanup to fuse MolInfo descriptors on the same Bioseq
  * or Bioseq-set.
