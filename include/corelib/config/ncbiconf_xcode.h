@@ -24,6 +24,12 @@
 /* Define to 1 if you have the `atoll' function. */
 #define HAVE_ATOLL 1
 
+/* Define to 1 if your C compiler supports __attribute__((destructor)) */
+#define HAVE_ATTRIBUTE_DESTRUCTOR 1
+
+/* Define to 1 if you have the `basename' function. */
+#define HAVE_BASENAME 1
+
 /* Define to 1 if NCBI C++ API for BerkeleyDB is available. */
 #define HAVE_BDB 1
 
@@ -73,6 +79,9 @@
 /* Define to 1 if FreeType is available. */
 /* #undef HAVE_FREETYPE */
 
+/* Define to 1 if you have the `fseeko' function. */
+#define HAVE_FSEEKO 1
+
 /* Define to 1 if you have the <fstream> header file. */
 #define HAVE_FSTREAM 1
 
@@ -95,6 +104,9 @@
 /* If you have the `gethostbyname_r' function, define to the number of
    arguments it takes (normally 5 or 6). */
 /* #undef HAVE_GETHOSTBYNAME_R */
+
+/* Define to 1 if you have the `gethostent_r' function. */
+/* #undef HAVE_GETHOSTENT_R */
 
 /* Define to 1 if you have the `getipnodebyaddr' function. */
 #define HAVE_GETIPNODEBYADDR 1
@@ -120,6 +132,9 @@
 /* If you have the `getpwuid_r' function, define to the number of arguments it
    takes (normally 4 or 5). */
 #define HAVE_GETPWUID_R 5
+
+/* Define to 1 if you have the `getrusage' function. */
+#define HAVE_GETRUSAGE 1
 
 /* If you have the `getservbyname_r' function, define to the number of
    arguments it takes (normally 5 or 6). */
@@ -190,12 +205,15 @@
 /* Define to 1 if you have libglut. */
 /* #undef HAVE_LIBGLUT */
 
+/* Define to 1 if libgnutls is available. */
+/* #undef HAVE_LIBGNUTLS */
+
 /* Define to 1 if ICONV is available, either in its own library or as part of
    the standard libraries. */
 #define HAVE_LIBICONV 1
 
 /* Define to 1 if libjpeg is available. */
-#define HAVE_LIBJPEG 1
+/* #undef HAVE_LIBJPEG */
 
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
@@ -203,6 +221,9 @@
 
 /* Define to 1 if liboechem is available. */
 /* #undef HAVE_LIBOECHEM */
+
+/* Define to 1 if libssl is available. */
+/* #undef HAVE_LIBOPENSSL */
 
 /* Define to 1 if you have libOSMesa. */
 /* #undef HAVE_LIBOSMESA */
@@ -229,6 +250,9 @@
 
 /* Define to 1 if libsqlite is available. */
 #define HAVE_LIBSQLITE 1
+
+/* Define to 1 if libsqlite3 is available. */
+/* #undef HAVE_LIBSQLITE3 */
 
 /* Define to 1 if the NCBI SSS DB library is available. */
 /* #undef HAVE_LIBSSSDB */
@@ -323,11 +347,17 @@
 /* Define to 1 if the ORBacus CORBA package is available. */
 /* #undef HAVE_ORBACUS */
 
+/* Define to 1 if you have the <paths.h> header file. */
+#define HAVE_PATHS_H 1
+
 /* Define to 1 if you have the <poll.h> header file. */
 #define HAVE_POLL_H 1
 
 /* Define to 1 if you have the `pthread_atfork' function. */
 /* #undef HAVE_PTHREAD_ATFORK */
+
+/* Define to 1 if pthread mutexes are available. */
+#define HAVE_PTHREAD_MUTEX 1
 
 /* Define to 1 if you have the `pthread_setconcurrency' function. */
 #define HAVE_PTHREAD_SETCONCURRENCY 1
@@ -342,17 +372,32 @@
    takes (normally 2 or 3). */
 #define HAVE_READDIR_R 3
 
+/* Define to 1 if you have the `readpassphrase' function. */
+#define HAVE_READPASSPHRASE 1
+
 /* Define to 1 if you have the `sched_yield' function. */
 #define HAVE_SCHED_YIELD 1
 
+/* Define to 1 if you have the `select' function. */
+#define HAVE_SELECT 1
+
 /* Define to 1 if you have `union semun'. */
 #define HAVE_SEMUN 1
+
+/* Define to 1 if you have the <signal.h> header file. */
+#define HAVE_SIGNAL_H 1
 
 /* Define to 1 if `sin_len' is a member of `struct sockaddr_in'. */
 #define HAVE_SIN_LEN 1
 
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
+
+/* Define to 1 if you have the `SQLGetPrivateProfileString' function. */
+/* #undef HAVE_SQLGETPRIVATEPROFILESTRING */
+
+/* Define to 1 if the system has the type `SQLLEN'. */
+#define HAVE_SQLLEN 1
 
 /* Define to 1 if you have the `statfs' function. */
 #define HAVE_STATFS 1
@@ -381,6 +426,12 @@
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
 
+/* Define to 1 if you have the `strlcat' function. */
+#define HAVE_STRLCAT 1
+
+/* Define to 1 if you have the `strlcpy' function. */
+#define HAVE_STRLCPY 1
+
 /* Define to 1 if you have the `strndup' function. */
 /* #undef HAVE_STRNDUP */
 
@@ -395,6 +446,12 @@
 
 /* Define to 1 if you have the `strtok_r' function. */
 #define HAVE_STRTOK_R 1
+
+/* Define to 1 if `tm_zone' is member of `struct tm'. */
+#define HAVE_STRUCT_TM_TM_ZONE 1
+
+/* Define to 1 if `__tm_zone' is member of `struct tm'. */
+/* #undef HAVE_STRUCT_TM___TM_ZONE */
 
 /* Define to 1 if SYBASE has reentrant libraries. */
 /* #undef HAVE_SYBASE_REENTRANT */
@@ -600,6 +657,9 @@
    pointers as restricted in the C99 sense. */
 #define NCBI_RESTRICT_CXX __restrict__
 
+/* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
+/* #undef NCBI_SQLCOLATTRIBUTE_SQLLEN */
+
 /* Define to 1 if prototypes can use exception specifications. */
 #define NCBI_USE_THROW_SPEC 1
 
@@ -620,6 +680,13 @@
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "0.0"
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#define RETSIGTYPE void
+
+/* Define to 1 if the `select' function updates its timeout when interrupted
+   by a signal. */
+/* #undef SELECT_UPDATES_TIMEOUT */
 
 /* The size of a `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
