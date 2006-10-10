@@ -192,7 +192,7 @@ public:
     /// CreateLookupTable [in|out]
     /// @param search_messages Error/warning messages [in|out]
     /// @param masked_query_regions Regions of the query which were masked
-    /// including those masked outside the CORE). If non-NULL they will be
+    /// including those masked outside the CORE. If non-NULL they will be
     /// populated and caller assumes ownership of the object [in|out]
     /// @param rps_info RPS-BLAST data structures as obtained from
     /// CreateRpsStructures [in]
