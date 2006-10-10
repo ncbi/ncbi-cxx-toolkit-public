@@ -71,9 +71,12 @@ void CDemoContigAssemblyApp::Init()
                              "Similar to what would be given to "
                              "command-line blast (single quotes respected)",
                              CArgDescriptions::eString, "-F F -e 1e-5");
+    arg_descr->AddDefaultKey("bandwidth", "bandwidth",
+                             "list of bandwidths to try in banded alignment",
+                             CArgDescriptions::eString, "401");
     arg_descr->AddDefaultKey("min_frac_ident", "fraction",
                              "minumum acceptable fraction identity",
-                             CArgDescriptions::eDouble, "0.98");
+                             CArgDescriptions::eDouble, "0.985");
     arg_descr->AddDefaultKey("max_end_slop", "base_pairs",
                              "maximum allowable unaligned bases at ends",
                              CArgDescriptions::eInteger, "10");
@@ -98,8 +101,14 @@ int CDemoContigAssemblyApp::Run()
     double min_frac_ident = args["min_frac_ident"].AsDouble();
     int max_end_slop = args["max_end_slop"].AsInteger();
     vector<CRef<CSeq_align> > alns;
+    vector<unsigned int> half_widths;
+    list<string> width_strings;
+    NStr::Split(args["bandwidth"].AsString(), " \t\n\r", width_strings);
+    ITERATE (list<string>, width_string, width_strings) {
+        half_widths.push_back(NStr::StringToUInt(*width_string) / 2);
+    }
     alns = CContigAssembly::Align(id1, id2, blast_params, min_frac_ident,
-                                  max_end_slop, *scope, &cerr);
+                                  max_end_slop, *scope, &cerr, half_widths);
 
     ITERATE (vector<CRef<CSeq_align> >, aln, alns) {
         cout << MSerial_AsnText << **aln;
@@ -120,6 +129,10 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/10/10 20:28:59  jcherry
+ * Take bandwidths as a parameter.  Change default minimum identity
+ * from 0.98 to 0.985.
+ *
  * Revision 1.1  2005/06/16 17:30:23  jcherry
  * Initial version
  *
