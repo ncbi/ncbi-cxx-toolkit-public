@@ -86,6 +86,27 @@ public:
         eChangeSeqloc,
         eChangeStrand,
         eChangeWholeLocation,
+        // set when MolInfo descriptors are affected
+        eChangeMolInfo,
+        // set when prot-xref is removed
+        eRemoveProtXref,
+        // set when gene-xref is removed
+        eRemoveGeneXref,
+        // set when protein feature is added
+        eAddProtFeat,
+        // set when feature is removed
+        eRemoveFeat,
+        // set when feature is moved,
+        eMoveFeat,
+        // set when qualifier is removed
+        eRemoveQualifier,
+        // set when gene xref is created
+        eCreateGeneXref,
+        // set when descriptor is removed
+        eRemoveDescriptor,
+        // set when keyword is removed
+        eRemoveKeyword,
+        eAddDescriptor,
         // set when any other change is made.
         eChangeOther,
         
@@ -121,6 +142,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/10/10 13:45:51  bollin
+ * added change flags for Extended Cleanup
+ *
  * Revision 1.2  2006/07/26 19:35:27  rsmith
  * add new change types.
  *
