@@ -119,7 +119,6 @@ algo/blast/api/blast_rps_options.hpp
 algo/blast/api/blast_seqinfosrc.hpp
 algo/blast/api/blast_types.hpp
 algo/blast/api/blastx_options.hpp
-algo/blast/api/db_blast.hpp
 algo/blast/api/disc_nucl_options.hpp
 algo/blast/api/effsearchspace_calc.hpp
 algo/blast/api/hspstream_queue.hpp
@@ -292,6 +291,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/10/10 18:32:12  jcherry
+ * Removed algo/blast/api/db_blast.hpp (gone)
+ *
  * Revision 1.18  2006/09/26 19:34:19  jcherry
  * Added vector<CContigAssembly::SAlignStats::STails>
  *
