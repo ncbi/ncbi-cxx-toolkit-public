@@ -1,9 +1,0 @@
-# $Id$
-
-# Meta-makefile("UTIL/MSVC" project)
-#################################
-
-APP_PROJ = msvc_one2all
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
