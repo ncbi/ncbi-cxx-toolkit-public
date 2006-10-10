@@ -1093,6 +1093,10 @@ bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
         return false;
     }
     
+    if (!product) {
+        return false;
+    }
+    
     if (product.GetBioseqLength() + 1 == translation_len && remainder == 0) {
         return false;
     }
@@ -2503,9 +2507,14 @@ void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
                         if ((*qual_it)->CanGetQual() 
                             && NStr::Equal((*qual_it)->GetQual(), "map")) {
                             qual_it = new_feat->SetQual().erase(qual_it);
+                            changed = true;
                         } else {
                             ++qual_it;
                         }
+                    }
+                    if (changed) {
+                        efh.Replace(*new_feat);
+                        ChangeMade(CCleanupChange::eRemoveQualifier);
                     }
                 }
                 ++overlapped_feat_ci;   
@@ -2525,6 +2534,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2006/10/10 15:34:39  bollin
+ * corrected bug in x_CheckCodingRegionEnds - need to check product handle
+ *
  * Revision 1.37  2006/10/10 15:29:30  ucko
  * Explicitly qualify is_sorted by objects:: for the sake of GCC 3.0.4,
  * which otherwise complains about ambiguity with std::is_sorted.
