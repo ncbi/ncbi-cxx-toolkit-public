@@ -216,6 +216,8 @@ void AgpRead(CNcbiIstream& is,
                     type = CSeq_gap::eType_heterochromatin;
                 } else if (type_string == "telomere") {
                     type = CSeq_gap::eType_telomere;
+                } else if (type_string == "repeat") {
+                    type = CSeq_gap::eType_repeat;
                 } else {
                     throw runtime_error("invalid gap type in column 7: "
                                         + type_string);
@@ -301,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.19  2006/10/10 19:34:33  jcherry
+ * Support "repeat" gap type
+ *
  * Revision 1.18  2006/10/10 19:30:48  jcherry
  * Convert short_arm gap type in AGP to new short-arm in ASN.1.
  * Don't recognize split_finished as gap type.
