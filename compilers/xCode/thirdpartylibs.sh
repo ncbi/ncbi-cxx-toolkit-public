@@ -18,9 +18,10 @@ if [ -f $TEMP ]; then
   exit -1
 fi
 
+# jpegsrc.v6b*http://www.ijg.org/files
+
 LIBS="
  giflib-4.1.4*http://superb-east.dl.sourceforge.net/sourceforge/libungif
- jpegsrc.v6b*http://www.ijg.org/files
  libpng-1.2.8-config*superb-east.dl.sourceforge.net/sourceforge/libpng
  tiff-3.7.1*ftp://ftp.remotesensing.org/libtiff/old
  sqlite-2.8.16*http://www.sqlite.org

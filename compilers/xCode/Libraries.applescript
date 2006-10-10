@@ -38,7 +38,7 @@ global AllApplications -- All GUI applications to build
 
 (* Libraries for linking (note the extra space before the lib name! )*)
 property Z_LIBS : "z"
-property IMG_LIBS : " jpeg png tiff gif z"
+property IMG_LIBS : " png tiff gif z" -- jpeg
 property FLTK_LIBS : " fltk_images fltk_gl fltk"
 property BDB_LIBS : " db"
 property SQLITE_LIBS : " sqlite"
@@ -440,6 +440,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2006/10/10 11:57:12  lebedev
+ * Disabled libjpeg
+ *
  * Revision 1.108  2006/09/26 13:06:12  rsmith
  * exclude gca_* files from gbench
  *

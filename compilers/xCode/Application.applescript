@@ -219,7 +219,7 @@ on clicked theObject
 			end if
 			
 			if theObject is equal to button "ChoosePCRE" then
-				my ChooseFolder("Select PCRE and Image libraries (GIF, JPEG, TIFF & PNG) installation", "pathPCRE")
+				my ChooseFolder("Select PCRE and Image libraries (GIF, TIFF & PNG) installation", "pathPCRE")
 			end if
 			
 			if theObject is equal to button "ChooseOUT" then
@@ -637,9 +637,9 @@ on ValidatePaths()
 		return "Lib TIFF installation was not found at " & ThePCREPath
 	end if
 	
-	if x_NoSuchPath(ThePCREPath & "/include/jpeglib.h") then
-		return "Lib JPEG installation was not found at " & ThePCREPath
-	end if
+	--if x_NoSuchPath(ThePCREPath & "/include/jpeglib.h") then
+	--	return "Lib JPEG installation was not found at " & ThePCREPath
+	--end if
 	
 	if x_NoSuchPath(ThePCREPath & "/include/png.h") then
 		return "Lib PNG installation was not found at " & ThePCREPath
@@ -736,6 +736,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/10/10 11:57:12  lebedev
+ * Disabled libjpeg
+ *
  * Revision 1.20  2006/05/04 18:00:38  lebedev
  * Add hpp files to the resulting project, so the Xcode CodeSense will work
  *
