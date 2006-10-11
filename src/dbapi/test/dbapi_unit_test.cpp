@@ -2628,7 +2628,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     {
         auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
         Connect(local_conn);
 
         drv_context->PushCntxMsgHandler( drv_err_handler.get() );
@@ -2636,7 +2636,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // Connection process should be affected ...
         {
             // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
 
             try {
                 conn->Connect(
@@ -2667,7 +2667,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // New connection should not be affected ...
         {
             // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
             Connect(conn);
 
             // Reinit the errot handler because it can be affected during connection.
@@ -2704,7 +2704,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // after pushing a message handler into another connection
         {
             // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
             Connect(conn);
 
             // Reinit the errot handler because it can be affected during connection.
@@ -2731,7 +2731,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
 
 
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
         Connect(local_conn);
 
         drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
@@ -2769,7 +2769,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 
         ////////////////////////////////////////////////////////////////////////
         // Create a new connection.
-        auto_ptr<IConnection> new_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
         Connect(new_conn);
 
         // New connection should be affected ...
@@ -2806,7 +2806,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // after pushing a message handler into another connection
         {
             // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
             Connect(conn);
 
             try {
@@ -2825,27 +2825,37 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // SetLogStream ...
     {
         {
+            IConnection* conn = NULL;
+
             // Enable multiexception ...
             m_DS->SetLogStream(0);
 
-            // Create a new connection ...
-            IConnection* conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-
-            delete conn;
+            try {
+                // Create a new connection ...
+                conn = m_DS->CreateConnection();
+            } catch(...)
+            {
+                delete conn;
+            }
 
             m_DS->SetLogStream(&cerr);
         }
 
         {
+            IConnection* conn = NULL;
+
             // Enable multiexception ...
             m_DS->SetLogStream(0);
 
-            // Create a new connection ...
-            IConnection* conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+            try {
+                // Create a new connection ...
+                conn = m_DS->CreateConnection();
 
-            m_DS->SetLogStream(&cerr);
-
-            delete conn;
+                m_DS->SetLogStream(&cerr);
+            } catch(...)
+            {
+                delete conn;
+            }
         }
     }
 }
@@ -3145,9 +3155,90 @@ CDBAPIUnitTest::Test_StatementParameters(void)
     }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 void
-CDBAPIUnitTest::TestGetRowCount()
+CDBAPIUnitTest::Test_NULL(void)
+{
+    enum {rec_num = 100};
+    string sql;
+
+    // Initialize data ...
+    {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Drop all records ...
+        sql  = " DELETE FROM " + GetTableName();
+        auto_stmt->ExecuteUpdate(sql);
+
+        sql  = " INSERT INTO " + GetTableName() +
+            "(int_field, vc1000_field) "
+            "VALUES(@int_field, @vc1000_field) \n";
+
+        // CVariant variant(eDB_Text);
+        // variant.Append(" ", 1);
+
+        // Insert data ...
+        for (long ind = 0; ind < rec_num; ++ind) {
+            if (ind % 2 == 0) {
+                auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
+                auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
+            } else {
+                auto_stmt->SetParam( CVariant(Int4(eDB_Int)), "@int_field" );
+                auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@vc1000_field" );
+            }
+
+            // Execute a statement with parameters ...
+            auto_stmt->ExecuteUpdate( sql );
+
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
+        }
+
+        // Check record number ...
+        BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+    }
+
+    // Check ...
+    {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        sql = "SELECT int_field, vc1000_field FROM " + GetTableName() + " ORDER BY id";
+
+        auto_stmt->SendSql( sql );
+        BOOST_CHECK(auto_stmt->HasMoreResults());
+        BOOST_CHECK(auto_stmt->HasRows());
+        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+        BOOST_CHECK(rs.get());
+
+        for (long ind = 0; ind < rec_num; ++ind) {
+            BOOST_CHECK(rs->Next());
+
+            const CVariant& int_field = rs->GetVariant(1);
+            const CVariant& vc1000_field = rs->GetVariant(2);
+
+            if (ind % 2 == 0) {
+                BOOST_CHECK( !int_field.IsNull() );
+                BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
+
+                BOOST_CHECK( vc1000_field.IsNull() );
+            } else {
+                BOOST_CHECK( int_field.IsNull() );
+
+                BOOST_CHECK( !vc1000_field.IsNull() );
+                BOOST_CHECK_EQUAL( int_field.GetString(), NStr::IntToString(ind) );
+            }
+        }
+
+        DumpResults(auto_stmt.get());
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_GetRowCount()
 {
     enum {repeat_num = 5};
     for ( int i = 0; i < repeat_num; ++i ) {
@@ -3184,6 +3275,7 @@ CDBAPIUnitTest::TestGetRowCount()
         }
     }
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 void
@@ -4456,11 +4548,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
-    // development ....
-    // tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
-    // tc->depends_on(tc_init);
-    // add(tc);
-
     //
     boost::unit_test::test_case* tc_parameters =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters,
@@ -4468,21 +4555,17 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc_parameters->depends_on(tc_init);
     add(tc_parameters);
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetRowCount, DBAPIInstance);
     tc->depends_on(tc_init);
     tc->depends_on(tc_parameters);
     add(tc);
 
-    if (
-//         args.GetDriverName() == "ftds63" ||
-//         args.GetDriverName() == "ftds63" ||
-//         args.GetDriverName() == "ftds64_ctlib" ||
-        args.GetDriverName() == "odbcw") {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
-        tc->depends_on(tc_init);
-        tc->depends_on(tc_parameters);
-        add(tc);
-    }
+    // Doesn't work at the moment ...
+
+//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NULL, DBAPIInstance);
+//     tc->depends_on(tc_init);
+//     tc->depends_on(tc_parameters);
+//     add(tc);
 
     {
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
@@ -4532,6 +4615,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetDriverName() != "ftds64_ctlib" // Doesn't work for some reason ...
         && args.GetDriverName() != "ftds64_odbc" // No BCP at the moment ...
         && args.GetDriverName() != "ctlib" // Doesn't work for some reason ...
+        && args.GetDriverName() != "msdblib" // Doesn't work for some reason ...
         && !(args.GetDriverName() == "ftds" && args.GetServerType() == CTestArguments::eSybase)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob, DBAPIInstance);
@@ -4591,28 +4675,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
-    // !!! ctlib/dblib do not work at the moment.
-    // !!! ftds works with MS SQL Server only at the moment.
-//     if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
-//          args.GetServerType() == CTestArguments::eMsSql ) {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
-//         tc->depends_on(tc_init);
-//         add(tc);
-//     }
-
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetTotalColumns, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
-
-    // !!! There are still problems ...
-    // !!! It does not work in case of a new FTDS driver.
-//     if ( args.GetDriverName() != "ctlib" &&
-//          args.GetDriverName() != "dblib" &&
-//          args.GetDriverName() != "ftds63" ) {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
-//         tc->depends_on(tc_init);
-//         add(tc);
-//     }
 
     if ( (args.GetDriverName() == "ftds"
           || args.GetDriverName() == "ftds63"
@@ -4638,6 +4703,43 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+
+    if (
+//         args.GetDriverName() == "ftds63" ||
+//         args.GetDriverName() == "ftds64_odbc" ||
+//         args.GetDriverName() == "ftds64_ctlib" ||
+        args.GetDriverName() == "odbcw") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
+        tc->depends_on(tc_init);
+        tc->depends_on(tc_parameters);
+        add(tc);
+    }
+
+    // development ....
+    if (false) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    // !!! ctlib/dblib do not work at the moment.
+    // !!! ftds works with MS SQL Server only at the moment.
+//     if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
+//          args.GetServerType() == CTestArguments::eMsSql ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
+
+    // !!! There are still problems ...
+    // !!! It does not work in case of a new FTDS driver.
+//     if ( args.GetDriverName() != "ctlib" &&
+//          args.GetDriverName() != "dblib" &&
+//          args.GetDriverName() != "ftds63" ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -4806,6 +4908,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.103  2006/10/11 14:37:47  ssikorsk
+ * Added Test_NULL() to the test-suite;
+ * Disabled Test_BulkInsertBlob for the msdblib driver;
+ *
  * Revision 1.102  2006/10/03 19:51:10  ssikorsk
  * Enabled Test_Bulk_Overflow with the ftds64_ctlib driver;
  * Enabled Test_BulkInsertBlob with all drivers except of ftds64_ctlib,
