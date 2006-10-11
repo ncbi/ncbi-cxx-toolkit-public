@@ -57,6 +57,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Annot_descr.hpp>
 #include <vector>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -1511,8 +1512,10 @@ bool CCleanup_imp::x_ChangeNoteQualToComment(CSeq_feat& feat)
                     comment += "; ";
                     comment += note;
                 }
+                ChangeMade(CCleanupChange::eChangeComment);
             }
             it = feat.SetQual().erase(it);
+            ChangeMade(CCleanupChange::eRemoveQualifier);
             rval = true;
         } else {
             ++it;
@@ -1715,68 +1718,100 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
                                                               sequence::eOverlap_CheckIntRev,
                                                               *m_Scope);
             if (!cds.IsNull() && cds->CanGetProduct()) {
-                // get location for feature on protein sequence                                                                  
-                CSeq_loc_Mapper mapper(*cds,
-                                       CSeq_loc_Mapper::eLocationToProduct,
-                                       m_Scope);
-                CRef<CSeq_loc> product_loc = mapper.Map(feat_ci->GetLocation());
+                CBioseq_Handle product_h = m_Scope->GetBioseqHandle(cds->GetProduct());
+                if (product_h) {
+
+                    // get location for feature on protein sequence                                                                  
+                    CSeq_loc_Mapper mapper(*cds,
+                                           CSeq_loc_Mapper::eLocationToProduct,
+                                           m_Scope);
+                    CRef<CSeq_loc> product_loc = mapper.Map(feat_ci->GetLocation());
             
-                product_loc->SetPartialStart (feat_ci->GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
-                product_loc->SetPartialStop (feat_ci->GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);
+                    product_loc->SetPartialStart (feat_ci->GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
+                    product_loc->SetPartialStop (feat_ci->GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);
                                                                                
-                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+                    CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, orig_feat);
                 
-                CRef<CSeq_feat> feat(new CSeq_feat);
-                feat->Assign(orig_feat);
+                    CRef<CSeq_feat> feat(new CSeq_feat);
+                    feat->Assign(orig_feat);
                 
-                feat->SetLocation(*product_loc);
+                    feat->SetLocation(*product_loc);
+                    ChangeMade(CCleanupChange::eChangeFeatureLocation);
               
-                if (NStr::Equal(key, "mat_peptide") 
-                    || NStr::Equal(key, "sig_peptide")
-                    || NStr::Equal(key, "transit_peptide")) {
-                    feat->SetData().Reset();
-                    CProt_ref& prot_ref = feat->SetData().SetProt();
-                    if (NStr::Equal(key, "mat_peptide")) {
-                        prot_ref.SetProcessed(CProt_ref::eProcessed_mature);
-                        // copy product qualifiers to product names
-                        if (feat->IsSetQual()) {
-                            CSeq_feat::TQual::iterator it = feat->SetQual().begin();
-                            while (it != feat->SetQual().end()) {
-                                if (NStr::Equal((*it)->GetQual(), "product")) {
-                                    prot_ref.SetName().push_back((*it)->GetVal());
-                                    it = feat->SetQual().erase(it);
-                                } else {
-                                    ++it;
+                    if (NStr::Equal(key, "mat_peptide") 
+                        || NStr::Equal(key, "sig_peptide")
+                        || NStr::Equal(key, "transit_peptide")) {
+                        feat->SetData().Reset();
+                        CProt_ref& prot_ref = feat->SetData().SetProt();
+                        if (NStr::Equal(key, "mat_peptide")) {
+                            prot_ref.SetProcessed(CProt_ref::eProcessed_mature);
+                            // copy product qualifiers to product names
+                            if (feat->IsSetQual()) {
+                                CSeq_feat::TQual::iterator it = feat->SetQual().begin();
+                                while (it != feat->SetQual().end()) {
+                                    if (NStr::Equal((*it)->GetQual(), "product")) {
+                                        prot_ref.SetName().push_back((*it)->GetVal());
+                                        it = feat->SetQual().erase(it);
+                                        ChangeMade(CCleanupChange::eRemoveQualifier);
+                                    } else {
+                                        ++it;
+                                    }
                                 }
                             }
+                        } else if (NStr::Equal(key, "sig_peptide")) {
+                            prot_ref.SetProcessed(CProt_ref::eProcessed_signal_peptide);
+                        } else if (NStr::Equal(key, "transit_peptide")) {
+                            prot_ref.SetProcessed(CProt_ref::eProcessed_transit_peptide);
                         }
-                    } else if (NStr::Equal(key, "sig_peptide")) {
-                        prot_ref.SetProcessed(CProt_ref::eProcessed_signal_peptide);
-                    } else if (NStr::Equal(key, "transit_peptide")) {
-                        prot_ref.SetProcessed(CProt_ref::eProcessed_transit_peptide);
-                    }
                     
-                    if (feat->CanGetComment() 
-                        && NStr::Equal(feat->GetComment(), "putative", NStr::eNocase)
-                        && (NStr::Equal(key, "sig_peptide") || !prot_ref.CanGetName() || prot_ref.GetName().empty())) {
-                        prot_ref.SetName().push_back(feat->GetComment());
+                        if (feat->CanGetComment() 
+                            && NStr::Equal(feat->GetComment(), "putative", NStr::eNocase)
+                            && (NStr::Equal(key, "sig_peptide") || !prot_ref.CanGetName() || prot_ref.GetName().empty())) {
+                            prot_ref.SetName().push_back(feat->GetComment());
+                            feat->ResetComment();
+                        }
+                    } else if (is_bond) {
+                        feat->SetData().Reset();
+                        feat->SetData().SetSite(site_type);
                         feat->ResetComment();
+                        // TODO
+                        // for any bond features, strip NULLs from the location
+                    } else if (is_site) {
+                        feat->SetData().Reset();
+                        feat->SetData().SetBond(bond_type);
                     }
-                } else if (is_bond) {
-                    feat->SetData().Reset();
-                    feat->SetData().SetSite(site_type);
-                    feat->ResetComment();
-                    // TODO
-                    // for any bond features, strip NULLs from the location
-                } else if (is_site) {
-                    feat->SetData().Reset();
-                    feat->SetData().SetBond(bond_type);
-                }
 
-                // TODO
-                // Must move feature to protein SeqAnnot
-                CSeq_feat_EditHandle efh(fh);
-                efh.Replace(*feat);
+                    // TODO
+                    // Must move feature to protein SeqAnnot
+                
+                
+                    CSeq_feat_EditHandle efh(fh);
+                    efh.Replace(*feat);
+                    ChangeMade(CCleanupChange::eConvertFeature);
+                
+                    // Move feature to protein SeqAnnot
+                    CSeq_annot_CI annot_it(product_h.GetSeq_entry_Handle(), CSeq_annot_CI::eSearch_entry);
+                    while (annot_it && 
+                           (! (*annot_it).IsFtable()
+                            || ((*annot_it).Seq_annot_CanGetId() && (*annot_it).Seq_annot_GetId().size() != 0)
+                            || ((*annot_it).Seq_annot_CanGetName() && !NStr::IsBlank((*annot_it).Seq_annot_GetName()))
+                            || ((*annot_it).Seq_annot_CanGetDb() && (*annot_it).Seq_annot_GetDb() != 0)
+                            || ((*annot_it).Seq_annot_CanGetDesc() && (*annot_it).Seq_annot_GetDesc().Get().size() != 0))) {
+                        ++annot_it;
+                    }
+                    if (annot_it) {
+                        CSeq_annot_EditHandle annot_eh = (*annot_it).GetEditHandle();
+                        annot_eh.TakeFeat(efh);
+                    } else {
+                        CBioseq_EditHandle product_eh(product_h);
+                        CRef<CSeq_annot> new_annot(new CSeq_annot);
+                        new_annot->SetData().SetFtable();                        
+                        product_eh.AttachAnnot(*new_annot);
+                        CSeq_annot_EditHandle annot_eh = m_Scope->GetSeq_annotEditHandle(*new_annot);
+                        annot_eh.TakeFeat(efh);
+                    }
+                    ChangeMade(CCleanupChange::eMoveFeat);
+                }
             }   
         }
         
@@ -2534,6 +2569,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2006/10/11 14:46:05  bollin
+ * Record more changes made by ExtendedCleanup.
+ *
  * Revision 1.38  2006/10/10 15:34:39  bollin
  * corrected bug in x_CheckCodingRegionEnds - need to check product handle
  *

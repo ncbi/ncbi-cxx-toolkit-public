@@ -328,6 +328,10 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Add GeneXref",
     // set when descriptor is removed
     "Remove Descriptor",
+    "Convert Feature to Descriptor",
+    "Collapse Set",
+    "Change Feature Location",
+    "Remove Annotation",
     // set when any other change is made.
     "Change Other",
     "Invalid Change Code"
@@ -341,6 +345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/10/11 14:46:05  bollin
+* Record more changes made by ExtendedCleanup.
+*
 * Revision 1.16  2006/10/10 13:49:23  bollin
 * record changes from ExtendedCleanup
 *

@@ -1066,6 +1066,7 @@ void CCleanup_imp::x_RemoveEmptyFeatures (CSeq_annot_Handle sa)
             if (IsEmpty(const_cast<CSeq_feat &>(cf))) {
                 CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
                 efh.Remove();
+                ChangeMade(CCleanupChange::eRemoveFeat);
             }
             ++feat_ci;
         }    
@@ -1107,6 +1108,7 @@ void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_Handle bs)
                 // move features to prev annot
                 ITERATE (vector<CSeq_feat_EditHandle>, it, sfh) {
                   prev.TakeFeat (*it);
+                  ChangeMade(CCleanupChange::eMoveFeat);
                 }
                 // add annot_it to list of annotations to remove
                 sah.push_back((*annot_it).GetEditHandle());
@@ -1122,6 +1124,7 @@ void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_Handle bs)
     // move annots from one place to another without copying their contents
     ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
         (*it).Remove();
+        ChangeMade(CCleanupChange::eRemoveAnnot);
     }
    
 }
@@ -1147,14 +1150,21 @@ void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_set_Handle bs)
             && (! (*annot_it).Seq_annot_CanGetDesc()
                 || (*annot_it).Seq_annot_GetDesc().Get().size() == 0)) {
             if (prev_can_merge) {
+                vector<CSeq_feat_EditHandle> sfh; // copy seqfeat handles to not break iterator while moving
                 // merge features from annot_it into prev
                 CFeat_CI feat_ci((*annot_it));
                 while (feat_ci) {
-                    prev.AddFeat(feat_ci->GetOriginalFeature());
+                    sfh.push_back(CSeq_feat_EditHandle (feat_ci->GetSeq_feat_Handle()));
                     ++feat_ci;
+                }
+                // move features to prev annot
+                ITERATE (vector<CSeq_feat_EditHandle>, it, sfh) {
+                  prev.TakeFeat (*it);
+                  ChangeMade(CCleanupChange::eMoveFeat);
                 }
                 // add annot_it to list of annotations to remove
                 sah.push_back((*annot_it).GetEditHandle());
+                
             } else {
                 prev = (*annot_it).GetEditHandle();
             }
@@ -1166,6 +1176,7 @@ void CCleanup_imp::x_MergeAdjacentAnnots (CBioseq_set_Handle bs)
     // move annots from one place to another without copying their contents
     ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
         (*it).Remove();
+        ChangeMade(CCleanupChange::eRemoveAnnot);
     }
 
     // now operate on members of set
@@ -1223,6 +1234,7 @@ void CCleanup_imp::x_ConvertFullLenFeatureToDescriptor (CSeq_annot_Handle sa, CS
                     eh.AddSeqdesc(*desc);
                     CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
                     efh.Remove();
+                    ChangeMade (CCleanupChange::eConvertFeatureToDescriptor);
                 }
             }
             ++feat_ci;                
@@ -1270,6 +1282,7 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
             CSeq_entry_EditHandle seh = bsh.GetEditHandle().GetParentEntry();
             
             seh.CollapseSet();
+            ChangeMade(CCleanupChange::eCollapseSet);
             if (seh.IsSetDescr()) {
                 CSeq_descr::Tdata remove_list;
 
@@ -1281,6 +1294,7 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
                     for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                         it1 != remove_list.end(); ++it1) { 
                         eh.RemoveSeqdesc(**it1);
+                        ChangeMade(CCleanupChange::eRemoveDescriptor);
                     }        
                 } else if (seh.IsSet()) {
                     CBioseq_set_EditHandle eh = seh.GetSet().GetEditHandle();
@@ -1288,6 +1302,7 @@ void CCleanup_imp::RenormalizeNucProtSets (CBioseq_set_Handle bsh)
                     for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                         it1 != remove_list.end(); ++it1) { 
                         eh.RemoveSeqdesc(**it1);
+                        ChangeMade(CCleanupChange::eRemoveDescriptor);
                     }        
                 }
             }
@@ -1355,6 +1370,7 @@ void CCleanup_imp::CheckSegSet (CBioseq_Handle bs)
         new_feat->SetLocation().SetInt().SetTo(bs.GetBioseqLength() - 1);
         CSeq_feat_EditHandle efh(fh);
         efh.Replace(*new_feat);
+        ChangeMade(CCleanupChange::eChangeFeatureLocation);
     }    
 }
 
@@ -1434,6 +1450,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.50  2006/10/11 14:46:05  bollin
+ * Record more changes made by ExtendedCleanup.
+ *
  * Revision 1.49  2006/10/10 13:46:54  bollin
  * removed unused variable
  *
