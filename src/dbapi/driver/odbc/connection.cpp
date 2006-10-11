@@ -63,129 +63,70 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
 {
     SQLRETURN rc;
 
-    rc = SQLAllocHandle(SQL_HANDLE_DBC, cntx.GetODBCContext(), const_cast<SQLHDBC*>(&m_Link));
+    rc = SQLAllocHandle(SQL_HANDLE_DBC,
+                        cntx.GetODBCContext(),
+                        const_cast<SQLHDBC*>(&m_Link));
 
     if((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
         DATABASE_DRIVER_ERROR( "Cannot allocate a connection hanle.", 100011 );
     }
 
-    _ASSERT(m_Link);
-    m_Reporter.SetHandle(m_Link);
+    x_SetupErrorReporter(conn_attr);
 
-    if(GetCDriverContext().GetTimeout()) {
-        SQLSetConnectAttr(m_Link, SQL_ATTR_CONNECTION_TIMEOUT, (SQLPOINTER)GetCDriverContext().GetTimeout(), 0);
-    }
+    x_SetConnAttributesBefore(cntx, conn_attr);
 
-    if(GetCDriverContext().GetLoginTimeout()) {
-        SQLSetConnectAttr(m_Link, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER)GetCDriverContext().GetLoginTimeout(), 0);
-    }
+    x_Connect(cntx, conn_attr);
 
-    if(cntx.GetPacketSize()) {
-        SQLSetConnectAttr(m_Link, SQL_ATTR_PACKET_SIZE, (SQLPOINTER)cntx.GetPacketSize(), 0);
-    }
-
-#ifdef SQL_COPT_SS_BCP
-    if((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
-        SQLSetConnectAttr(m_Link,
-            SQL_COPT_SS_BCP,
-            (SQLPOINTER) SQL_BCP_ON,
-            SQL_IS_INTEGER);
-    }
-#endif
+    x_SetConnAttributesAfter(conn_attr);
+}
 
 
+void
+CODBC_Connection::x_SetupErrorReporter(const I_DriverContext::SConnAttr& conn_attr)
+{
     string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
+
+    _ASSERT(m_Link);
+
+    m_Reporter.SetHandle(m_Link);
+    m_Reporter.SetHandlerStack(GetMsgHandlers());
     m_Reporter.SetExtraMsg( extra_msg );
+}
+
+void CODBC_Connection::x_Connect(
+    CODBCContext& cntx,
+    const I_DriverContext::SConnAttr& conn_attr) const
+{
+    SQLRETURN rc;
 
     if(!cntx.GetUseDSN()) {
+        string connect_str;
         const string conn_str_suffix(conn_attr.srv_name +
                                      ";UID=" +
                                      conn_attr.user_name +
                                      ";PWD=" +
                                      conn_attr.passwd);
+
 #ifndef FTDS_IN_USE
-        // Default connection string ...
-        string connect_str("DRIVER={SQL Server};SERVER=");
         CNcbiApplication* app = CNcbiApplication::Instance();
-
-        if (app) {
-            enum EState {eStInitial, eStSingleQuote};
-            vector<string> driver_names;
-            const IRegistry& registry = app->GetConfig();
-            const string odbc_driver_name =
-                registry.GetString("ODBC", "DRIVER_NAME", "'SQL Server'");
-
-            NStr::Tokenize(odbc_driver_name, " ", driver_names);
-            EState state = eStInitial;
-            string driver_name;
-
-            ITERATE(vector<string>, it, driver_names) {
-                bool complete_deriver_name = false;
-                const string cur_str(*it);
-
-                // Check for quotes ...
-                if (state == eStInitial) {
-                    if (cur_str[0] == '\'') {
-                        if (cur_str[cur_str.size() - 1] == '\'') {
-                            // Skip quote ...
-                            driver_name = it->substr(1, cur_str.size() - 2);
-                            complete_deriver_name = true;
-                        } else {
-                            // Skip quote ...
-                            driver_name = it->substr(1);
-                            state = eStSingleQuote;
-                        }
-                    } else {
-                        driver_name = cur_str;
-                        complete_deriver_name = true;
-                    }
-                } else if (state == eStSingleQuote) {
-                    if (cur_str[cur_str.size() - 1] == '\'') {
-                        // Final quote ...
-                        driver_name += " " + cur_str.substr(0, cur_str.size() - 1);
-                        state = eStInitial;
-                        complete_deriver_name = true;
-                    } else {
-                        driver_name += " " + cur_str;
-                    }
-                }
-
-                if (complete_deriver_name) {
-                    string conn_str("DRIVER={" + driver_name + "};SERVER=");
-                    conn_str += conn_str_suffix;
-
-                    if (!cntx.CheckSIE(SQLDriverConnect(m_Link,
-                            0,
-                            CODBCString(conn_str, odbc::DefStrEncoding),
-                            SQL_NTS,
-                            0,
-                            0,
-                            0,
-                            SQL_DRIVER_NOPROMPT),
-                                 m_Link))
-                    {
-                        string err;
-
-                        err += "Cannot initialize ODBC driver '";
-                        err += driver_name;
-
-                        DATABASE_DRIVER_ERROR( err, 100011 );
-                    }
-                }
-            }
-        }
 
         // Connection strings for SQL Native Client 2005.
         // string connect_str("DRIVER={SQL Native Client};MultipleActiveResultSets=true;SERVER=");
         // string connect_str("DRIVER={SQL Native Client};SERVER=");
+
+        if (app) {
+            const string driver_name = x_GetDriverName(app->GetConfig());
+
+            connect_str = "DRIVER={" + driver_name + "};SERVER=";
+        } else {
+            connect_str = "DRIVER={SQL Server};SERVER=";
+        }
+
+        connect_str += conn_str_suffix;
 #else
-        string connect_str("DRIVER={FreeTDS};SERVER=");
-#endif
-        // Ignore non-complete driver name ...
-        // Use default driver name ...
+        connect_str = "DRIVER={FreeTDS};SERVER=";
         connect_str += conn_str_suffix;
 
-#ifdef FTDS_IN_USE
         connect_str += ";" + x_MakeFreeTDSVersion(cntx.GetTDSVersion());
 
         if (!GetCDriverContext().GetClientCharset().empty()) {
@@ -193,13 +134,23 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
         }
 #endif
 
-        rc = SQLDriverConnect(m_Link, 0, CODBCString(connect_str, odbc::DefStrEncoding), SQL_NTS,
-                             0, 0, 0, SQL_DRIVER_NOPROMPT);
+        rc = SQLDriverConnect(m_Link,
+                              0,
+                              CODBCString(connect_str, odbc::DefStrEncoding),
+                              SQL_NTS,
+                              0,
+                              0,
+                              0,
+                              SQL_DRIVER_NOPROMPT);
     }
     else {
-        rc = SQLConnect(m_Link, CODBCString(conn_attr.srv_name, odbc::DefStrEncoding), SQL_NTS,
-                      CODBCString(conn_attr.user_name, odbc::DefStrEncoding), SQL_NTS,
-                      CODBCString(conn_attr.passwd, odbc::DefStrEncoding), SQL_NTS);
+        rc = SQLConnect(m_Link,
+                        CODBCString(conn_attr.srv_name, odbc::DefStrEncoding),
+                        SQL_NTS,
+                        CODBCString(conn_attr.user_name, odbc::DefStrEncoding),
+                        SQL_NTS,
+                        CODBCString(conn_attr.passwd, odbc::DefStrEncoding),
+                        SQL_NTS);
     }
 
     if (!cntx.CheckSIE(rc, m_Link)) {
@@ -209,14 +160,105 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
         err += "' as user '" + conn_attr.user_name + "'" + m_Reporter.GetExtraMsg();
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
+}
 
+
+void
+CODBC_Connection::x_SetConnAttributesBefore(
+    const CODBCContext& cntx,
+    const I_DriverContext::SConnAttr& conn_attr)
+{
+    if(GetCDriverContext().GetTimeout()) {
+        SQLSetConnectAttr(m_Link,
+                          SQL_ATTR_CONNECTION_TIMEOUT,
+                          (SQLPOINTER)GetCDriverContext().GetTimeout(),
+                          0);
+    }
+
+    if(GetCDriverContext().GetLoginTimeout()) {
+        SQLSetConnectAttr(m_Link,
+                          SQL_ATTR_LOGIN_TIMEOUT,
+                          (SQLPOINTER)GetCDriverContext().GetLoginTimeout(),
+                          0);
+    }
+
+    if(cntx.GetPacketSize()) {
+        SQLSetConnectAttr(m_Link,
+                          SQL_ATTR_PACKET_SIZE,
+                          (SQLPOINTER)cntx.GetPacketSize(),
+                          0);
+    }
+
+#ifdef SQL_COPT_SS_BCP
+    if((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
+        SQLSetConnectAttr(m_Link,
+                          SQL_COPT_SS_BCP,
+                          (SQLPOINTER) SQL_BCP_ON,
+                          SQL_IS_INTEGER);
+    }
+#endif
+}
+
+
+void
+CODBC_Connection::x_SetConnAttributesAfter(const I_DriverContext::SConnAttr& conn_attr)
+{
     SetServerName(conn_attr.srv_name);
     SetUserName(conn_attr.user_name);
     SetPassword(conn_attr.passwd);
     SetBCPable((conn_attr.mode & I_DriverContext::fBcpIn) != 0);
     SetSecureLogin((conn_attr.mode & I_DriverContext::fPasswordEncrypted) != 0);
+}
 
-    m_Reporter.SetHandlerStack(GetMsgHandlers());
+string
+CODBC_Connection::x_GetDriverName(const IRegistry& registry)
+{
+    enum EState {eStInitial, eStSingleQuote};
+    vector<string> driver_names;
+    const string odbc_driver_name =
+        registry.GetString("ODBC", "DRIVER_NAME", "'SQL Server'");
+
+    NStr::Tokenize(odbc_driver_name, " ", driver_names);
+    EState state = eStInitial;
+    string driver_name;
+
+    ITERATE(vector<string>, it, driver_names) {
+        bool complete_deriver_name = false;
+        const string cur_str(*it);
+
+        // Check for quotes ...
+        if (state == eStInitial) {
+            if (cur_str[0] == '\'') {
+                if (cur_str[cur_str.size() - 1] == '\'') {
+                    // Skip quote ...
+                    driver_name = it->substr(1, cur_str.size() - 2);
+                    complete_deriver_name = true;
+                } else {
+                    // Skip quote ...
+                    driver_name = it->substr(1);
+                    state = eStSingleQuote;
+                }
+            } else {
+                driver_name = cur_str;
+                complete_deriver_name = true;
+            }
+        } else if (state == eStSingleQuote) {
+            if (cur_str[cur_str.size() - 1] == '\'') {
+                // Final quote ...
+                driver_name += " " + cur_str.substr(0, cur_str.size() - 1);
+                state = eStInitial;
+                complete_deriver_name = true;
+            } else {
+                driver_name += " " + cur_str;
+            }
+        }
+
+        if (complete_deriver_name) {
+            return driver_name;
+        }
+    }
+
+    return driver_name;
 }
 
 
@@ -1188,6 +1230,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/10/11 15:59:03  ssikorsk
+ * Implemented methods x_GetDriverName, x_SetConnAttributesBefore,
+ * x_SetConnAttributesAfter, x_Connect, x_SetupErrorReporter with CODBC_Connection;
+ * Revamped CODBC_Connection to use new methods;
+ *
  * Revision 1.52  2006/10/05 20:40:52  ssikorsk
  * + #include <corelib/ncbiapp.hpp>
  *
