@@ -299,6 +299,13 @@ private:
                     CStatementBase& stmt,
                     CDB_Stream& stream);
     static string x_MakeFreeTDSVersion(int version);
+    static string x_GetDriverName(const IRegistry& registry);
+    void x_SetConnAttributesBefore(const CODBCContext& cntx,
+                                   const I_DriverContext::SConnAttr& conn_attr);
+    void x_SetConnAttributesAfter(const I_DriverContext::SConnAttr& conn_attr);
+    void x_Connect(CODBCContext& cntx,
+                   const I_DriverContext::SConnAttr& conn_attr) const;
+    void x_SetupErrorReporter(const I_DriverContext::SConnAttr& conn_attr);
 
     const SQLHDBC   m_Link;
 
@@ -839,6 +846,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/10/11 15:57:57  ssikorsk
+ * Added private methods x_GetDriverName, x_SetConnAttributesBefore,
+ * x_SetConnAttributesAfter, x_Connect, x_SetupErrorReporter to CODBC_Connection.
+ *
  * Revision 1.48  2006/10/05 19:53:07  ssikorsk
  * Moved connection logic from CODBCContext to CODBC_Connection.
  *
