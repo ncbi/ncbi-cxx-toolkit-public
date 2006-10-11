@@ -291,14 +291,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 
 
 void CBandAligner::x_CheckParameters(const SAlignInOut* data) const
-{    
-    if( m_Shift >= 0 && data->m_len1 <= m_Shift + m_band || 
-        m_Shift < 0 && data->m_len2 <= m_band - m_Shift )
-    {
-        NCBI_THROW(CAlgoAlignException, eBadParameter, 
-                   "Shift + band exceeds sequence lengths.");
-    }
-
+{
     if(data->m_len1 < 2 || data->m_len2 < 2) {        
         NCBI_THROW(CAlgoAlignException, eBadParameter, 
                    "Input sequence interval too small.");        
@@ -470,8 +463,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/10/11 19:35:25  kapustin
+ * CBandAligner::x_CheckParameters(): remove the requirement for the band to sit entirely within the matrix
+ *
  * Revision 1.14  2006/09/25 14:08:12  kapustin
- * CBandAligner::x_Align(): reinit subject gap scores at each line; fix the condition for the subject gapped score evaluation
+ * CBandAligner::x_Align(): reinit subject gap scores at each line; 
+ * fix the condition for the subject gapped score evaluation
  *
  * Revision 1.13  2006/09/12 20:14:11  kapustin
  * Avoid gcc warning - use unsigned literals
