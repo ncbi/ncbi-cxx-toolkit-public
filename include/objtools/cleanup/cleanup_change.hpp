@@ -107,6 +107,11 @@ public:
         // set when keyword is removed
         eRemoveKeyword,
         eAddDescriptor,
+        eConvertFeatureToDescriptor,
+        eCollapseSet,
+        eChangeFeatureLocation,
+        eRemoveAnnot,
+        eConvertFeature,
         // set when any other change is made.
         eChangeOther,
         
@@ -142,6 +147,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/10/11 14:46:39  bollin
+ * added more flags for ExtendedCleanup
+ *
  * Revision 1.3  2006/10/10 13:45:51  bollin
  * added change flags for Extended Cleanup
  *
