@@ -151,7 +151,7 @@ public:
 
     // Testing Approach for Members
     // Test particular methods.
-    void TestGetRowCount();
+    void Test_GetRowCount();
     void CheckGetRowCount(
         int row_count,
         ETransBehavior tb = eNoTrans,
@@ -163,6 +163,7 @@ public:
 
     void Test_StatementParameters(void);
     void Test_UserErrorHandler(void);
+    void Test_NULL();
 
     void Test_SelectStmt(void);
     void Test_SelectStmtXML(void);
@@ -239,6 +240,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2006/10/11 14:36:55  ssikorsk
+ * 			       Added Test_NULL() to the test-suite.
+ *
  * Revision 1.43  2006/09/13 20:01:00  ssikorsk
  * Added method Connect to CDBAPIUnitTest.
  *
