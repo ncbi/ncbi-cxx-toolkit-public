@@ -279,7 +279,7 @@ odbc_parse_connect_string(const char *connect_string, const char *connect_string
 		} else if (strcasecmp(option, "APP") == 0) {
 			dest_s = &connection->app_name;
 		} else if (strcasecmp(option, "WSID") == 0) {
-			dest_s = &connection->host_name;
+			dest_s = &connection->client_host_name;
 		} else if (strcasecmp(option, "LANGUAGE") == 0) {
 			dest_s = &connection->language;
 		} else if (strcasecmp(option, "Port") == 0) {
