@@ -32,7 +32,7 @@
           <MSSearchSettings_enzyme>
             <MSEnzymes value="trypsin">0</MSEnzymes>
           </MSSearchSettings_enzyme>
-          <MSSearchSettings_missedcleave>2</MSSearchSettings_missedcleave>
+          <MSSearchSettings_missedcleave>1</MSSearchSettings_missedcleave>
           <MSSearchSettings_hitlistlen>10</MSSearchSettings_hitlistlen>
           <MSSearchSettings_db>nr</MSSearchSettings_db>
           <MSSearchSettings_tophitnum>6</MSSearchSettings_tophitnum>
@@ -60,7 +60,7 @@
           <MSSearchSettings_searchctermproduct>0</MSSearchSettings_searchctermproduct>
           <MSSearchSettings_maxproductions>100</MSSearchSettings_maxproductions>
           <MSSearchSettings_minnoenzyme>4</MSSearchSettings_minnoenzyme>
-          <MSSearchSettings_maxnoenzyme>0</MSSearchSettings_maxnoenzyme>
+          <MSSearchSettings_maxnoenzyme>40</MSSearchSettings_maxnoenzyme>
           <MSSearchSettings_exactmass>1446.94</MSSearchSettings_exactmass>
           <MSSearchSettings_settingid>0</MSSearchSettings_settingid>
           <MSSearchSettings_iterativesettings>
