@@ -184,6 +184,7 @@ public:
     void Create_Destroy(void);
     void Multiple_Close(void);
     void Test_Unicode(void);
+    void Test_Iskhakov(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -240,6 +241,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2006/10/12 19:24:42  ssikorsk
+ * + Test_Iskhakov
+ *
  * Revision 1.44  2006/10/11 14:36:55  ssikorsk
  * 			       Added Test_NULL() to the test-suite.
  *

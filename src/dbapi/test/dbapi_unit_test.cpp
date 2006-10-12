@@ -589,6 +589,51 @@ void CDBAPIUnitTest::Test_Unicode(void)
     }
 }
 
+
+// Based on Soussov's API.
+void CDBAPIUnitTest::Test_Iskhakov(void)
+{
+    string sql;
+
+    auto_ptr<CDB_Connection> auto_conn(
+        m_DS->GetDriverContext()->Connect(
+            "LINK_OS",
+            "anyone",
+            "allowed",
+            0)
+        );
+    BOOST_CHECK( auto_conn.get() != NULL );
+
+    sql  = "get_iodesc_for_link pubmed_pubmed";
+
+    auto_ptr<CDB_LangCmd> auto_stmt( auto_conn->LangCmd(sql) );
+    BOOST_CHECK( auto_stmt.get() != NULL );
+
+    bool rc = auto_stmt->Send();
+    BOOST_CHECK( rc );
+
+	auto_ptr<I_ITDescriptor> descr;
+
+	while(auto_stmt -> HasMoreResults()) {
+		auto_ptr<CDB_Result> rs(auto_stmt -> Result());
+
+		if (rs.get() == NULL) {
+			continue;
+		}
+
+		if (rs->ResultType() != eDB_RowResult) {
+			continue;
+		}
+
+		while(rs->Fetch()) {
+			rs->ReadItem(NULL, 0);
+
+			descr.reset(rs->GetImageOrTextDescriptor());
+		}
+	}
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Create_Destroy(void)
@@ -4715,6 +4760,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if (args.GetServerType() == CTestArguments::eSybase &&
+        args.GetDriverName() != "ftds"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
     // development ....
     if (false) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
@@ -4908,6 +4961,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.104  2006/10/12 19:24:50  ssikorsk
+ * + Test_Iskhakov
+ *
  * Revision 1.103  2006/10/11 14:37:47  ssikorsk
  * Added Test_NULL() to the test-suite;
  * Disabled Test_BulkInsertBlob for the msdblib driver;
