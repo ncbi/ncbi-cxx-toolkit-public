@@ -21,6 +21,8 @@
 #include <config.h>
 #endif /* HAVE_CONFIG_H */
 
+#include <stdarg.h>
+
 #if TIME_WITH_SYS_TIME
 # if HAVE_SYS_TIME_H
 #  include <sys/time.h>
@@ -38,7 +40,6 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
-#include <stdarg.h>
 
 #if HAVE_STDLIB_H
 #include <stdlib.h>
@@ -151,6 +152,7 @@ tds_set_state(TDSSOCKET * tds, TDS_STATE state)
 		/* TODO check this code, copied from tds_submit_prepare */
 		tds_free_all_results(tds);
 		tds->rows_affected = TDS_NO_COUNT;
+		/* 0.95 tds_release_cursor(tds, tds->cur_cursor); */
 		tds->cur_cursor = NULL;
 		tds->internal_sp_called = 0;
 

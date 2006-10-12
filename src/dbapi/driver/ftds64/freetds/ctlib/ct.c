@@ -467,8 +467,8 @@ ct_con_props(CS_CONNECTION * con, CS_INT action, CS_INT property, CS_VOID * buff
 			break;
 		case CS_HOSTNAME:
 			if (out_len)
-				*out_len = tds_dstr_len(&tds_login->host_name);
-			tds_strlcpy((char *) buffer, tds_dstr_cstr(&tds_login->host_name), buflen);
+				*out_len = tds_dstr_len(&tds_login->client_host_name);
+			tds_strlcpy((char *) buffer, tds_dstr_cstr(&tds_login->client_host_name), buflen);
 			break;
 		case CS_SERVERNAME:
 			if (out_len)
@@ -1064,13 +1064,17 @@ ct_send(CS_COMMAND * cmd)
 				/* FIXME what happen if tds_cursor_dealloc return TDS_FAIL ?? */
 				ret = tds_cursor_close(tds, cursor);
 				cmd->cursor = NULL;
+				/* 0.95
+				tds_release_cursor(tds, cursor);
+				cmd->cursor = cursor = NULL;
+				*/
 			} else {
 				ret = tds_cursor_close(tds, cursor);
 				cursor->status.close = _CS_CURS_TYPE_SENT;
 			}
 		}
 
-		if (cursor->status.dealloc == _CS_CURS_TYPE_REQUESTED) {
+		if (cursor && cursor->status.dealloc == _CS_CURS_TYPE_REQUESTED) {
 			/* FIXME what happen if tds_cursor_dealloc return TDS_FAIL ?? */
 			ret = tds_cursor_dealloc(tds, cursor);
 			cmd->cursor = NULL;
@@ -1641,6 +1645,7 @@ _ct_fetch_cursor(CS_COMMAND * cmd, CS_INT type, CS_INT offset, CS_INT option, CS
 		return CS_FAIL;
 	}
 
+	/* if (tds_cursor_fetch(tds, cursor, TDS_CURSOR_FETCH_NEXT, 0) == CS_SUCCEED) { 0.95 */
 	if ( tds_cursor_fetch(tds, cursor) == CS_SUCCEED) {
 		cursor->status.fetch = _CS_CURS_TYPE_SENT;
 	}
@@ -2438,14 +2443,16 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 		ret = CS_FAIL;
 		switch (action) {
 			case CS_GET: {
-				if (buffer && buflen && outlen) {
+				if (buffer && buflen > 0 && outlen) {
 					const TDS_COMPILETIME_SETTINGS *settings= tds_get_compiletime_settings();
 					*outlen= snprintf((char*)buffer, buflen, "%s (%s, default tds version=%s)",
 						settings->freetds_version,
 						(settings->threadsafe ? "threadsafe" : "non-threadsafe"),
 						settings->tdsver
 					);
-					((char*)buffer)[buflen]= 0;
+					((char*)buffer)[buflen - 1]= 0;
+					if (*outlen < 0)
+						*outlen = strlen((char*) buffer);
 					ret = CS_SUCCEED;
 				}
 				break;
@@ -2460,9 +2467,12 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 		ret = CS_FAIL;
 		switch (action) {
 			case CS_GET: {
-				if (buffer && buflen && outlen) {
+				if (buffer && buflen > 0 && outlen) {
 					const TDS_COMPILETIME_SETTINGS *settings= tds_get_compiletime_settings();
 					*outlen= snprintf(buffer, buflen, "%s", settings->freetds_version);
+					((char*)buffer)[buflen - 1]= 0;
+					if (*outlen < 0)
+						*outlen = strlen((char*) buffer);
 					ret = CS_SUCCEED;
 				}
 				break;
@@ -4227,7 +4237,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
 		tds_set_param_type(tds, pcol, temp_type);
 
 		if (temp_datalen == CS_NULLTERM && temp_value)
-			temp_datalen = strlen(temp_value);
+			temp_datalen = strlen((const char*) temp_value);
 
 		pcol->column_prec = p->precision;
 		pcol->column_scale = p->scale;
@@ -4337,9 +4347,10 @@ _ct_fill_param(CS_INT cmd_type, CS_PARAM * param, CS_DATAFMT * datafmt, CS_VOID 
 	param->status = datafmt->status;
 	tdsdump_log(TDS_DBG_INFO1, " _ct_fill_param() status = %d \n", param->status);
 
-	/* translate datafmt.datatype, e.g. CS_SMALLINT_TYPE */
-	/* to Server type, e.g. SYBINT2                      */
-
+	/*
+	 * translate datafmt.datatype, e.g. CS_SMALLINT_TYPE
+	 * to Server type, e.g. SYBINT2
+	 */
 	param->type = _ct_get_server_type(datafmt->datatype);
 
 	if (is_numeric_type(param->type)) {

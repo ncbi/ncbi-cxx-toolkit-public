@@ -724,7 +724,7 @@ typedef struct tds_login
 	DSTR language;		/* ie us-english */
 	DSTR server_charset;	/*  ie iso_1 */
 	TDS_INT connect_timeout;
-	DSTR host_name;
+	DSTR client_host_name;
 	DSTR app_name;
 	DSTR user_name;
 	DSTR password;
@@ -750,7 +750,7 @@ typedef struct tds_connection
 	DSTR language;
 	DSTR server_charset;	/**< charset of server */
 	TDS_INT connect_timeout;
-	DSTR host_name;	    /**< client hostname */
+	DSTR client_host_name;
 	DSTR app_name;
 	DSTR user_name;	    /**< account for login */
 	DSTR password;	    /**< password of account login */
@@ -870,6 +870,8 @@ typedef struct tds_column
 	TDS_CHAR column_name[TDS_SYSNAME_SIZE];
 
 	TDS_INT column_offset;		/**< offset into row buffer for store data */
+	/* unsigned char *column_data; v0.65 */
+	/* void (*column_data_free)(struct tds_column *column); v0.65 */
 	unsigned int column_nullable:1;
 	unsigned int column_writeable:1;
 	unsigned int column_identity:1;
@@ -922,6 +924,7 @@ typedef struct tds_result_info
 	TDS_INT row_size;
 	TDS_INT ref_count;
 	unsigned char *current_row;
+	/* void (*row_free)(struct tds_result_info* result, unsigned char *row); v0.65 */
 
 	TDS_SMALLINT rows_exist;
 	/* TODO remove ?? used only in dblib */
@@ -1026,9 +1029,28 @@ typedef struct _tds_cursor_status
 	TDS_CURSOR_STATE dealloc;
 } TDS_CURSOR_STATUS;
 
+typedef enum _tds_cursor_operation
+{
+	TDS_CURSOR_POSITION = 0,
+	TDS_CURSOR_UPDATE = 1,
+	TDS_CURSOR_DELETE = 2,
+	TDS_CURSOR_INSERT = 4
+} TDS_CURSOR_OPERATION;
+
+typedef enum _tds_cursor_fetch
+{
+	TDS_CURSOR_FETCH_NEXT = 1,
+	TDS_CURSOR_FETCH_PREV,
+	TDS_CURSOR_FETCH_FIRST,
+	TDS_CURSOR_FETCH_LAST,
+	TDS_CURSOR_FETCH_ABSOLUTE,
+	TDS_CURSOR_FETCH_RELATIVE
+} TDS_CURSOR_FETCH;
+
 typedef struct _tds_cursor 
 {
 	struct _tds_cursor *next;	/**< next in linked list, keep first */
+	TDS_INT ref_count; /* v0.65 */
 	TDS_INT length;			/**< total length of the remaining datastream */
 	TDS_TINYINT cursor_name_len;	/**< length of cursor name > 0 and <= 30  */
 	char *cursor_name;		/**< name of the cursor */
@@ -1046,6 +1068,7 @@ typedef struct _tds_cursor
 	TDS_CURSOR_STATUS status;
 	TDS_SMALLINT srv_status;
 	TDSRESULTINFO *res_info;
+	TDS_INT type, concurrency;
 } TDSCURSOR;
 
 /*
@@ -1187,6 +1210,9 @@ void tds_free_param_results(TDSPARAMINFO * param_info);
 void tds_free_param_result(TDSPARAMINFO * param_info);
 void tds_free_msg(TDSMESSAGE * message);
 void tds_free_cursor(TDSSOCKET * tds, TDSCURSOR * cursor);
+/* void tds_free_cursor(TDSSOCKET * tds, TDSCURSOR * cursor); */
+void tds_cursor_deallocated(TDSSOCKET *tds, TDSCURSOR *cursor);
+void tds_release_cursor(TDSSOCKET *tds, TDSCURSOR *cursor);
 void tds_free_bcp_column_data(BCPCOLDATA * coldata);
 
 int tds_put_n(TDSSOCKET * tds, const void *buf, int n);
@@ -1263,7 +1289,7 @@ TDSCURSOR * tds_alloc_cursor(TDSSOCKET * tds, const char *name, TDS_INT namelen,
 void tds_free_row(const TDSRESULTINFO * res_info, unsigned char *row);
 
 /* login.c */
-int tds7_send_auth(TDSSOCKET * tds, const unsigned char *challenge);
+int tds7_send_auth(TDSSOCKET * tds, const unsigned char *challenge, TDS_UINT flags);
 void tds_set_packet(TDSLOGIN * tds_login, int packet_size);
 void tds_set_port(TDSLOGIN * tds_login, int port);
 void tds_set_passwd(TDSLOGIN * tds_login, const char *password);
@@ -1302,8 +1328,11 @@ int tds_cursor_declare(TDSSOCKET * tds, TDSCURSOR * cursor, int *send);
 int tds_cursor_setrows(TDSSOCKET * tds, TDSCURSOR * cursor, int *send);
 int tds_cursor_open(TDSSOCKET * tds, TDSCURSOR * cursor, int *send);
 int tds_cursor_fetch(TDSSOCKET * tds, TDSCURSOR * cursor);
+/* int tds_cursor_fetch(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_FETCH fetch_type, TDS_INT i_row); 0.95 */
 int tds_cursor_close(TDSSOCKET * tds, TDSCURSOR * cursor);
 int tds_cursor_dealloc(TDSSOCKET * tds, TDSCURSOR * cursor);
+int tds_cursor_update(TDSSOCKET * tds, TDSCURSOR * cursor, TDS_CURSOR_OPERATION op, TDS_INT i_row);
+int tds_cursor_setname(TDSSOCKET * tds, TDSCURSOR * cursor);
 
 int tds_multiple_init(TDSSOCKET *tds, TDSMULTIPLE *multiple, TDS_MULTIPLE_TYPE type);
 int tds_multiple_done(TDSSOCKET *tds, TDSMULTIPLE *multiple);
@@ -1366,6 +1395,7 @@ void tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...
 #endif
 ;
 extern int tds_debug_flags;
+unsigned int tds_gettime_ms(void);
 
 /* net.c */
 int tds_open_socket(TDSSOCKET * tds, const char *ip_addr, unsigned int port, int timeout);
@@ -1395,7 +1425,7 @@ typedef struct tds_answer
 	unsigned char lm_resp[24];
 	unsigned char nt_resp[24];
 } TDSANSWER;
-void tds_answer_challenge(const char *passwd, const unsigned char *challenge, TDSANSWER * answer);
+void tds_answer_challenge(const char *passwd, const unsigned char *challenge, TDS_UINT *flags, TDSANSWER * answer);
 
 #define IS_TDS42(x) (x->major_version==4 && x->minor_version==2)
 #define IS_TDS46(x) (x->major_version==4 && x->minor_version==6)

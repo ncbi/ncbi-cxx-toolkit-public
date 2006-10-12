@@ -130,7 +130,7 @@ tds_timestamp_str(char *str, int maxlen)
     strcat(str, usecs);
 #endif
 
-    return str;
+	return str;
 }
 
 /*
@@ -304,14 +304,17 @@ tds_gethostbyaddr_r(const char *addr, int len, int type, struct hostent *result,
     return result;
 
 #elif defined(HAVE_FUNC_GETHOSTBYADDR_R_5)
-    struct hostent_data *data = (struct hostent_data *) buffer;
+	struct hostent_data *data = (struct hostent_data *) buffer;
 
-    memset(buffer, 0, buflen);
-    if (gethostbyaddr_r(addr, len, type, result, data)) {
-        *h_errnop = 0;
-        result = NULL;
-    }
-    return result;
+	memset(buffer, 0, buflen);
+	if (gethostbyaddr_r(addr, len, type, result, data)) {
+		*h_errnop = 0;
+		result = NULL;
+	}
+	return result;
+
+#elif defined(TDS_NO_THREADSAFE)
+	return gethostbyaddr(addr, len, type);
 
 #else
 #error gethostbyaddr_r style unknown
@@ -375,6 +378,8 @@ tds_getservbyname_r(const char *name, const char *proto, struct servent *result,
     freeaddrinfo(res);
     return result;
 
+#elif defined(TDS_NO_THREADSAFE)
+	return getservbyname(name, proto);
 #else
 #error getservbyname_r style unknown
 #endif

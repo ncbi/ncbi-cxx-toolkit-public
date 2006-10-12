@@ -487,8 +487,8 @@ tds_config_login(TDSCONNECTION * connection, TDSLOGIN * login)
 		tdsdump_log(TDS_DBG_INFO1, "tds_config_login: %s is %s.\n", "client_charset",
 			    tds_dstr_cstr(&connection->client_charset));
 	}
-	if (!tds_dstr_isempty(&login->host_name)) {
-		tds_dstr_copy(&connection->host_name, tds_dstr_cstr(&login->host_name));
+	if (!tds_dstr_isempty(&login->client_host_name)) {
+		tds_dstr_copy(&connection->client_host_name, tds_dstr_cstr(&login->client_host_name));
 		/*
 		 * DBSETLHOST and it's equivilants are commentary fields
 		 * they don't affect connection->ip_addr (the server) but they show

@@ -58,8 +58,8 @@ static int tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection);
 void
 tds_set_version(TDSLOGIN * tds_login, short major_ver, short minor_ver)
 {
-	tds_login->major_version = major_ver;
-	tds_login->minor_version = minor_ver;
+	tds_login->major_version = (TDS_TINYINT)major_ver;
+	tds_login->minor_version = (TDS_TINYINT)minor_ver;
 }
 
 void
@@ -97,7 +97,7 @@ tds_set_user(TDSLOGIN * tds_login, const char *username)
 void
 tds_set_host(TDSLOGIN * tds_login, const char *hostname)
 {
-	tds_dstr_copy(&tds_login->host_name, hostname);
+	tds_dstr_copy(&tds_login->client_host_name, hostname);
 }
 
 void
@@ -106,14 +106,31 @@ tds_set_app(TDSLOGIN * tds_login, const char *application)
 	tds_dstr_copy(&tds_login->app_name, application);
 }
 
+/**
+ * \brief Set the servername in a TDSLOGIN structure
+ *
+ * Normally copies \a server into \tds_login.  If \a server does not point to a plausible name, the environment 
+ * variables TDSQUERY and DSQUERY are used, in that order.  If they don't exist, the "default default" servername
+ * is "SYBASE" (although the utility of that choice is a bit murky).  
+ *
+ * \param tds_login	points to a TDSLOGIN structure
+ * \param server	the servername, or NULL, or a zero-length string
+ * \todo open the log file earlier, so these messages can be seen.  
+ */
 void
 tds_set_server(TDSLOGIN * tds_login, const char *server)
 {
 	if (!server || strlen(server) == 0) {
+		server = getenv("TDSQUERY");
+		tdsdump_log(TDS_DBG_INFO1, "Setting 'server_name' to '%s' from $TDSQUERY.\n", server);
+	}
+	if (!server || strlen(server) == 0) {
 		server = getenv("DSQUERY");
-		if (!server || strlen(server) == 0) {
-			server = "SYBASE";
-		}
+		tdsdump_log(TDS_DBG_INFO1, "Setting 'server_name' to '%s' from $DSQUERY.\n", server);
+	}
+	if (!server || strlen(server) == 0) {
+		server = "SYBASE";
+		tdsdump_log(TDS_DBG_INFO1, "Setting 'server_name' to '%s' (compiled-in default).\n", server);
 	}
 	tds_dstr_copy(&tds_login->server_name, server);
 }
@@ -188,7 +205,7 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 #endif
 
 	/* set up iconv */
-	if (connection->client_charset) {
+	if (!tds_dstr_isempty(&connection->client_charset)) {
 		tds_iconv_open(tds, tds_dstr_cstr(&connection->client_charset));
 	}
 
@@ -204,10 +221,10 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 	tds->query_timeout = connect_timeout ? connect_timeout : connection->query_timeout;
 	/* end */
 
-	/* verify that ip_addr is not NULL */
+	/* verify that ip_addr is not empty */
 	if (tds_dstr_isempty(&connection->ip_addr)) {
 		tdsdump_log(TDS_DBG_ERROR, "IP address pointer is empty\n");
-		if (connection->server_name) {
+		if (!tds_dstr_isempty(&connection->server_name)) {
 			tdsdump_log(TDS_DBG_ERROR, "Server %s not found!\n", tds_dstr_cstr(&connection->server_name));
 		} else {
 			tdsdump_log(TDS_DBG_ERROR, "No server specified!\n");
@@ -359,7 +376,7 @@ tds_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 	 * do this, (well...mine was a kludge actually) so here's mostly his
 	 */
 
-	tds_put_login_string(tds, tds_dstr_cstr(&connection->host_name), TDS_MAX_LOGIN_STR_SZ);	/* client host name */
+	tds_put_login_string(tds, tds_dstr_cstr(&connection->client_host_name), TDS_MAX_LOGIN_STR_SZ);	/* client host name */
 	tds_put_login_string(tds, tds_dstr_cstr(&connection->user_name), TDS_MAX_LOGIN_STR_SZ);	/* account name */
 	tds_put_login_string(tds, tds_dstr_cstr(&connection->password), TDS_MAX_LOGIN_STR_SZ);	/* account password */
 	tds_put_login_string(tds, "37876", TDS_MAX_LOGIN_STR_SZ);	/* host process */
@@ -390,7 +407,7 @@ tds_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 			len = 0;
 		tds_put_byte(tds, 0);
 		tds_put_byte(tds, len);
-		tds_put_n(tds, connection->password, len);
+		tds_put_n(tds, tds_dstr_cstr(&connection->password), len);
 		tds_put_n(tds, NULL, 253 - len);
 		tds_put_byte(tds, len + 2);
 	}
@@ -453,7 +470,7 @@ tds_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 
 
 int
-tds7_send_auth(TDSSOCKET * tds, const unsigned char *challenge)
+tds7_send_auth(TDSSOCKET * tds, const unsigned char *challenge, TDS_UINT flags)
 {
 	int current_pos;
 	TDSANSWER answer;
@@ -476,7 +493,7 @@ tds7_send_auth(TDSSOCKET * tds, const unsigned char *challenge)
 	/* parse a bit of config */
 	user_name = tds_dstr_cstr(&connection->user_name);
 	user_name_len = user_name ? strlen(user_name) : 0;
-	host_name_len = tds_dstr_len(&connection->host_name);
+	host_name_len = tds_dstr_len(&connection->client_host_name);
 	password_len = tds_dstr_len(&connection->password);
 
 	/* parse domain\username */
@@ -531,13 +548,13 @@ tds7_send_auth(TDSSOCKET * tds, const unsigned char *challenge)
 	tds_put_int(tds, current_pos + (24 * 2));
 
 	/* flags */
-	tds_put_int(tds, 0x8201);
+	tds_answer_challenge(tds_dstr_cstr(&connection->password), challenge, &flags, &answer);
+	tds_put_int(tds, flags);
 
 	tds_put_string(tds, domain, domain_len);
 	tds_put_string(tds, user_name, user_name_len);
-	tds_put_string(tds, tds_dstr_cstr(&connection->host_name), host_name_len);
+	tds_put_string(tds, tds_dstr_cstr(&connection->client_host_name), host_name_len);
 
-	tds_answer_challenge(tds_dstr_cstr(&connection->password), challenge, &answer);
 	tds_put_n(tds, answer.lm_resp, 24);
 	tds_put_n(tds, answer.nt_resp, 24);
 
@@ -587,7 +604,7 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 	const char *user_name = tds_dstr_cstr(&connection->user_name);
 	const char *p;
 	int user_name_len = strlen(user_name);
-	int host_name_len = tds_dstr_len(&connection->host_name);
+	int host_name_len = tds_dstr_len(&connection->client_host_name);
 	int app_name_len = tds_dstr_len(&connection->app_name);
 	size_t password_len = tds_dstr_len(&connection->password);
 	int server_name_len = tds_dstr_len(&connection->server_name);
@@ -718,7 +735,7 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 	tds_put_smallint(tds, 0);
 
 	/* FIXME here we assume single byte, do not use *2 to compute bytes, convert before !!! */
-	tds_put_string(tds, tds_dstr_cstr(&connection->host_name), host_name_len);
+	tds_put_string(tds, tds_dstr_cstr(&connection->client_host_name), host_name_len);
 	if (!domain_login) {
 		TDSICONV *char_conv = tds->char_convs[client2ucs2];
 		tds_put_string(tds, tds_dstr_cstr(&connection->user_name), user_name_len);
@@ -748,7 +765,7 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 		/* sequence 1 client -> server */
 		tds_put_int(tds, 1);
 		/* flags */
-		tds_put_int(tds, 0xb201);
+		tds_put_int(tds, 0x08b201);
 
 		/* domain info */
 		tds_put_smallint(tds, domain_len);
@@ -760,8 +777,14 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 		tds_put_smallint(tds, host_name_len);
 		tds_put_int(tds, 32);
 
+		/*
+		 * here XP put version like 05 01 28 0a (5.1.2600),
+		 * similar to GetVersion result
+		 * and some unknown bytes like 00 00 00 0f
+		 */
+
 		/* hostname and domain */
-		tds_put_n(tds, connection->host_name, host_name_len);
+		tds_put_n(tds, tds_dstr_cstr(&connection->client_host_name), host_name_len);
 		tds_put_n(tds, domain, domain_len);
 	}
 
@@ -895,3 +918,4 @@ tds8_do_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 	return ret;
 #endif
 }
+

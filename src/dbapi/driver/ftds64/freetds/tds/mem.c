@@ -96,10 +96,9 @@ tds_alloc_dynamic(TDSSOCKET * tds, const char *id)
 			return curr;
 		}
 
-	dyn = (TDSDYNAMIC *) malloc(sizeof(TDSDYNAMIC));
+	dyn = (TDSDYNAMIC *) calloc(1, sizeof(TDSDYNAMIC));
 	if (!dyn)
 		return NULL;
-	memset(dyn, 0, sizeof(TDSDYNAMIC));
 
 	/* insert into list */
 	dyn->next = tds->dyns;
@@ -540,12 +539,11 @@ tds_alloc_context(void * parent)
 	if (!locale)
 		return NULL;
 
-	context = (TDSCONTEXT *) malloc(sizeof(TDSCONTEXT));
+	context = (TDSCONTEXT *) calloc(1, sizeof(TDSCONTEXT));
 	if (!context) {
 		tds_free_locale(locale);
 		return NULL;
 	}
-	memset(context, '\0', sizeof(TDSCONTEXT));
 	context->locale = locale;
 	context->parent = parent;
 
@@ -574,7 +572,7 @@ tds_alloc_locale(void)
 
 	return locale;
 }
-static const unsigned char defaultcaps[] = { 0x01, 0x09, 0x00, 0x00, 0x06, 0x6D, 0x7F, 0xFF, 0xFF, 0xFF, 0xFE,
+static const unsigned char defaultcaps[] = { 0x01, 0x09, 0x00, 0x08, 0x06, 0x6D, 0x7F, 0xFF, 0xFF, 0xFF, 0xFE,
 	0x02, 0x09, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x68, 0x00, 0x00, 0x00
 };
 
@@ -594,7 +592,7 @@ tds_alloc_connection(TDSLOCALE * locale)
 	tds_dstr_init(&connection->server_name);
 	tds_dstr_init(&connection->language);
 	tds_dstr_init(&connection->server_charset);
-	tds_dstr_init(&connection->host_name);
+	tds_dstr_init(&connection->client_host_name);
 	tds_dstr_init(&connection->app_name);
 	tds_dstr_init(&connection->user_name);
 	tds_dstr_init(&connection->password);
@@ -630,7 +628,7 @@ tds_alloc_connection(TDSLOCALE * locale)
 	memset(hostname, '\0', sizeof(hostname));
 	gethostname(hostname, sizeof(hostname));
 	hostname[sizeof(hostname) - 1] = '\0';	/* make sure it's truncated */
-	if (!tds_dstr_copy(&connection->host_name, hostname))
+	if (!tds_dstr_copy(&connection->client_host_name, hostname))
 		goto Cleanup;
 
 	memcpy(connection->capabilities, defaultcaps, TDS_MAX_CAPABILITY);
@@ -648,6 +646,7 @@ tds_alloc_cursor(TDSSOCKET *tds, const char *name, TDS_INT namelen, const char *
 
 	TEST_MALLOC(cursor, TDSCURSOR);
 	memset(cursor, '\0', sizeof(TDSCURSOR));
+	cursor->ref_count = 1;
 
 	if ( tds->cursors == NULL ) {
 		tds->cursors = cursor;
@@ -661,6 +660,8 @@ tds_alloc_cursor(TDSSOCKET *tds, const char *name, TDS_INT namelen, const char *
 		}
 		pcursor->next = cursor;
 	}
+	/* take into account reference in tds list */
+	++cursor->ref_count;
 
 	TEST_CALLOC(cursor->cursor_name, char, namelen + 1);
 
@@ -675,8 +676,14 @@ tds_alloc_cursor(TDSSOCKET *tds, const char *name, TDS_INT namelen, const char *
 	return cursor;
 
       Cleanup:
-	if (cursor)
+ 	if (cursor)
 		tds_free_cursor(tds, cursor);
+		
+   /* 0.95
+	if (cursor)
+		tds_cursor_deallocated(tds, cursor);
+	tds_release_cursor(tds, cursor);
+	*/
 	return NULL;
 }
 
@@ -744,6 +751,82 @@ tds_free_cursor(TDSSOCKET *tds, TDSCURSOR *cursor)
 	free(victim);
 }
 
+void
+tds_cursor_deallocated(TDSSOCKET *tds, TDSCURSOR *cursor)
+{
+	TDSCURSOR *victim = NULL;
+	TDSCURSOR *prev = NULL;
+	TDSCURSOR *next = NULL;
+
+	tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : freeing cursor_id %d\n", cursor->cursor_id);
+
+	if (tds->cur_cursor == cursor) {
+		tds_release_cursor(tds, cursor);
+		tds->cur_cursor = NULL;
+	}
+
+	victim = tds->cursors;
+
+	if (victim == NULL) {
+		tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : no allocated cursors %d\n", cursor->cursor_id);
+		return;
+	}
+
+	for (;;) {
+		if (victim == cursor)
+			break;
+		prev = victim;
+		victim = victim->next;
+		if (victim == NULL) {
+			tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : cannot find cursor_id %d\n", cursor->cursor_id);
+			return;
+		}
+	}
+
+	tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : cursor_id %d found\n", cursor->cursor_id);
+
+	next = victim->next;
+
+	tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : relinking list\n");
+
+	if (prev)
+		prev->next = next;
+	else
+		tds->cursors = next;
+
+	tdsdump_log(TDS_DBG_FUNC, "tds_cursor_deallocated() : relinked list\n");
+
+	tds_release_cursor(tds, cursor);
+}
+
+
+void
+tds_release_cursor(TDSSOCKET *tds, TDSCURSOR *cursor)
+{
+	if (!cursor || --cursor->ref_count > 0)
+		return;
+
+	tdsdump_log(TDS_DBG_FUNC, "tds_release_cursor() : freeing cursor_id %d\n", cursor->cursor_id);
+
+	tdsdump_log(TDS_DBG_FUNC, "tds_release_cursor() : freeing cursor results\n");
+	if (tds->current_results == cursor->res_info)
+		tds->current_results = NULL;
+	tds_free_results(cursor->res_info);
+
+	if (cursor->cursor_name) {
+		tdsdump_log(TDS_DBG_FUNC, "tds_release_cursor() : freeing cursor name\n");
+		free(cursor->cursor_name);
+	}
+
+	if (cursor->query) {
+		tdsdump_log(TDS_DBG_FUNC, "tds_release_cursor() : freeing cursor query\n");
+		free(cursor->query);
+	}
+
+	tdsdump_log(TDS_DBG_FUNC, "tds_release_cursor() : cursor_id %d freed\n", cursor->cursor_id);
+	free(cursor);
+}
+
 TDSLOGIN *
 tds_alloc_login(void)
 {
@@ -757,7 +840,7 @@ tds_alloc_login(void)
 	tds_dstr_init(&tds_login->server_addr);
 	tds_dstr_init(&tds_login->language);
 	tds_dstr_init(&tds_login->server_charset);
-	tds_dstr_init(&tds_login->host_name);
+	tds_dstr_init(&tds_login->client_host_name);
 	tds_dstr_init(&tds_login->app_name);
 	tds_dstr_init(&tds_login->user_name);
 	tds_dstr_init(&tds_login->password);
@@ -778,7 +861,7 @@ tds_free_login(TDSLOGIN * login)
 		tds_dstr_free(&login->server_addr);
 		tds_dstr_free(&login->language);
 		tds_dstr_free(&login->server_charset);
-		tds_dstr_free(&login->host_name);
+		tds_dstr_free(&login->client_host_name);
 		tds_dstr_free(&login->app_name);
 		tds_dstr_free(&login->user_name);
 		tds_dstr_free(&login->library);
@@ -848,6 +931,7 @@ tds_free_socket(TDSSOCKET * tds)
 			tds_free_dynamic(tds, tds->dyns);
 		while (tds->cursors)
 			tds_free_cursor(tds, tds->cursors);
+			/* tds_cursor_deallocated(tds, tds->cursors); 0.95 */
 		if (tds->in_buf)
 			free(tds->in_buf);
 		if (tds->out_buf)
@@ -883,7 +967,7 @@ void
 tds_free_connection(TDSCONNECTION * connection)
 {
 	tds_dstr_free(&connection->server_name);
-	tds_dstr_free(&connection->host_name);
+	tds_dstr_free(&connection->client_host_name);
 	tds_dstr_free(&connection->language);
 	tds_dstr_free(&connection->server_charset);
 	tds_dstr_free(&connection->ip_addr);

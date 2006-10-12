@@ -109,25 +109,27 @@ tds_set_param_type(TDSSOCKET * tds, TDSCOLUMN * curcol, TDS_SERVER_TYPE type)
 	case SYBINT2:
 	case SYBINT4:
 	case SYBINT8:
-		type = SYBINTN;
-		goto nullable;
+		curcol->on_server.column_type = SYBINTN;
+		curcol->column_varint_size = 1;
+		curcol->column_cur_size = -1;
+		break;
 	case SYBMONEY4:
 	case SYBMONEY:
-		type = SYBMONEYN;
-		goto nullable;
+		curcol->on_server.column_type = SYBMONEYN;
+		curcol->column_varint_size = 1;
+		curcol->column_cur_size = -1;
+		break;
 	case SYBDATETIME:
 	case SYBDATETIME4:
-		type = SYBDATETIMN;
-		goto nullable;
+		curcol->on_server.column_type = SYBDATETIMN;
+		curcol->column_varint_size = 1;
+		curcol->column_cur_size = -1;
+		break;
 	case SYBFLT8:
 	case SYBREAL:
-		type = SYBFLTN;
-	nullable:
-		if (IS_TDS7_PLUS(tds)) {
-			curcol->on_server.column_type = type;
-			curcol->column_varint_size = 1;
-			curcol->column_cur_size = -1;
-		}
+		curcol->on_server.column_type = SYBFLTN;
+		curcol->column_varint_size = 1;
+		curcol->column_cur_size = -1;
 		break;
 	default:
 		break;

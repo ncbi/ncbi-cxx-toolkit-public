@@ -22,6 +22,7 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <stdio.h>
+#include <assert.h>
 
 #if HAVE_STDLIB_H
 #include <stdlib.h>

@@ -518,15 +518,13 @@ blk_props(CS_BLKDESC * blkdesc, CS_INT action, CS_INT property, CS_VOID * buffer
 			break;
 		default:
 			_ctclient_msg(blkdesc->con, "blk_props", 2, 5, 1, 141, "%s, %d", "action", action);
-			return CS_FAIL;
 			break;
 		}
 		break;
 
 	default:
 		_ctclient_msg(blkdesc->con, "blk_props", 2, 5, 1, 141, "%s, %d", "property", property);
-		return CS_FAIL;
-
+		break;
 	}
 	return CS_FAIL;
 }
