@@ -251,6 +251,8 @@ connect/services/netschedule_storage.hpp
 connect/services/netservice_client.hpp
 connect/services/ns_client_factory.hpp
 connect/threaded_server.hpp
+// pathhook.hpp must come early to avoid %include within %import
+serial/pathhook.hpp
 serial/aliasinfo.hpp
 serial/asntypes.hpp
 serial/autoptrinfo.hpp
@@ -264,18 +266,12 @@ serial/delaybuf.hpp
 serial/enumerated.hpp
 serial/enumvalues.hpp
 serial/exception.hpp
-serial/hookdata.hpp
-serial/hookdataimpl.hpp
-serial/hookdatakey.hpp
-serial/hookfunc.hpp
 serial/item.hpp
 serial/iterator.hpp
-serial/iteratorbase.hpp
 serial/member.hpp
 serial/memberid.hpp
 serial/memberlist.hpp
 serial/objcopy.hpp
-serial/object.hpp
 serial/objectinfo.hpp
 serial/objectio.hpp
 serial/objectiter.hpp
@@ -284,18 +280,14 @@ serial/objhook.hpp
 serial/objistr.hpp
 serial/objistrasn.hpp
 serial/objistrasnb.hpp
-serial/objistrimpl.hpp
 serial/objistrxml.hpp
 serial/objlist.hpp
 serial/objostr.hpp
 serial/objostrasn.hpp
 serial/objostrasnb.hpp
 serial/objostrxml.hpp
-serial/objstack.hpp
 serial/objstrasnb.hpp
-serial/objstrb.hpp
 serial/pack_string.hpp
-serial/pathhook.hpp
 serial/ptrinfo.hpp
 serial/rpcbase.hpp
 serial/serial.hpp
@@ -306,7 +298,6 @@ serial/serialdef.hpp
 serial/serialimpl.hpp
 serial/serializable.hpp
 serial/serialutil.hpp
-serial/stdtypeinfo.hpp
 serial/stdtypes.hpp
 serial/stdtypesimpl.hpp
 serial/stltypes.hpp
@@ -384,6 +375,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/10/12 16:00:52  jcherry
+ * Dropped headers that have been moved from serial to serial/impl
+ *
  * Revision 1.19  2006/08/17 20:22:47  jcherry
  * Added some headers from util/
  *
