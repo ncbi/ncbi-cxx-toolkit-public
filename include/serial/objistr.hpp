@@ -37,11 +37,8 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimempool.hpp>
 #include <corelib/ncbiutil.hpp>
-//#include <serial/serialdef.hpp>
-//#include <serial/typeinfo.hpp>
 #include <util/strbuffer.hpp>
-#include <serial/objlist.hpp>
-//#include <serial/impl/objstack.hpp>
+#include <serial/impl/objlist.hpp>
 #include <serial/objhook.hpp>
 #include <serial/impl/hookdatakey.hpp>
 #include <serial/pathhook.hpp>
@@ -758,6 +755,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.120  2006/10/12 15:08:25  gouriano
+* Some header files moved into impl
+*
 * Revision 1.119  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

@@ -35,7 +35,7 @@
 #include <serial/objistrasn.hpp>
 #include <serial/member.hpp>
 #include <serial/enumvalues.hpp>
-#include <serial/memberlist.hpp>
+#include <serial/impl/memberlist.hpp>
 #include <serial/objhook.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
@@ -1551,6 +1551,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2006/10/12 15:09:11  gouriano
+* Some header files moved into impl
+*
 * Revision 1.108  2006/10/05 19:24:28  gouriano
 * Some headers moved into impl
 *

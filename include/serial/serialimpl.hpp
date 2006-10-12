@@ -36,18 +36,12 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
-//#include <serial/typeinfo.hpp>
-//#include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
-//#include <serial/ptrinfo.hpp>
 #include <serial/enumerated.hpp>
 #include <serial/classinfo.hpp>
-//#include <serial/choice.hpp>
 #include <serial/choiceptr.hpp>
 #include <serial/autoptrinfo.hpp>
-//#include <serial/serialbase.hpp>
-//#include <serial/exception.hpp>
-#include <serial/classinfohelper.hpp>
+#include <serial/impl/classinfohelper.hpp>
 
 
 /** @addtogroup GenClassSupport

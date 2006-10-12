@@ -51,12 +51,12 @@
 #include <serial/aliasinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/enumvalues.hpp>
-#include <serial/memberlist.hpp>
+#include <serial/impl/memberlist.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/impl/objistrimpl.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
-#include <serial/objlist.hpp>
+#include <serial/impl/objlist.hpp>
 #include <serial/choiceptr.hpp>
 #include <serial/serialimpl.hpp>
 #include <serial/pack_string.hpp>
@@ -1591,6 +1591,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.145  2006/10/12 15:09:11  gouriano
+* Some header files moved into impl
+*
 * Revision 1.144  2006/10/06 18:59:28  gouriano
 * Corrected ReadClassSequential method
 *

@@ -68,8 +68,6 @@ struct CLessTypeInfo
 /* @} */
 
 
-//#include <serial/impl/stdtypeinfo.inl>
-
 END_NCBI_SCOPE
 
 #endif  /* STDTYPEINFO__HPP */
@@ -78,6 +76,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/10/12 15:07:28  gouriano
+* Some header files moved into impl
+*
 * Revision 1.1  2006/10/05 19:23:37  gouriano
 * Moved from parent folder
 *

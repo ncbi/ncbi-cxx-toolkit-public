@@ -192,8 +192,6 @@ pair<TConstObjectPtr, TTypeInfo> ConstRefChoiceInfo(const CRef<C>& obj)
 /* @} */
 
 
-//#include <serial/impl/objecttype.inl>
-
 END_NCBI_SCOPE
 
 #endif  /* OBJECTTYPE__HPP */
@@ -202,6 +200,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2006/10/12 15:08:25  gouriano
+* Some header files moved into impl
+*
 * Revision 1.7  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

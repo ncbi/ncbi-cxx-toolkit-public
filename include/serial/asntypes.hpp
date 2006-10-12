@@ -41,7 +41,7 @@
 #include <serial/continfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/typeref.hpp>
-#include <serial/serialasndef.hpp>
+#include <serial/impl/serialasndef.hpp>
 
 
 /** @addtogroup TypeInfoC
@@ -228,8 +228,6 @@ private:
     TAsnWriteProc m_WriteProc;
 };
 
-//#include <serial/impl/asntypes.inl>
-
 END_NCBI_SCOPE
 
 #endif  /* HAVE_NCBI_C */
@@ -243,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.44  2006/10/12 15:08:23  gouriano
+ * Some header files moved into impl
+ *
  * Revision 1.43  2006/10/05 19:23:03  gouriano
  * Some headers moved into impl
  *

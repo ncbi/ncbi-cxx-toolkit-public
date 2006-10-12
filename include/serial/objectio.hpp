@@ -33,7 +33,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-//#include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 
 
@@ -279,6 +278,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/10/12 15:08:24  gouriano
+* Some header files moved into impl
+*
 * Revision 1.10  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

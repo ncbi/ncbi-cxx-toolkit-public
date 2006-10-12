@@ -39,7 +39,7 @@
 #include <serial/choice.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/continfo.hpp>
-#include <serial/memberlist.hpp>
+#include <serial/impl/memberlist.hpp>
 #include <serial/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -2311,6 +2311,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2006/10/12 15:09:11  gouriano
+* Some header files moved into impl
+*
 * Revision 1.89  2006/05/12 12:52:18  gouriano
 * Corrected reading XML attributes of choice
 *

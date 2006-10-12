@@ -38,7 +38,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/memberid.hpp>
-#include <serial/memberlist.hpp>
+#include <serial/impl/memberlist.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/objhook.hpp>
 #include <serial/classinfo.hpp>
@@ -1442,6 +1442,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2006/10/12 15:09:12  gouriano
+* Some header files moved into impl
+*
 * Revision 1.94  2006/09/11 13:14:14  gouriano
 * Corrected field precision
 *

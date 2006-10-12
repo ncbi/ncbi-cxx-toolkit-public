@@ -34,7 +34,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-//#include <serial/exception.hpp>
 #include <serial/objecttype.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/serialbase.hpp>
@@ -975,6 +974,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2006/10/12 15:08:24  gouriano
+* Some header files moved into impl
+*
 * Revision 1.38  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

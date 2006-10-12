@@ -37,8 +37,7 @@
 #include <serial/impl/stdtypeinfo.hpp>
 #include <serial/typeref.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/memberlist.hpp>
-//#include <serial/memberid.hpp>
+#include <serial/impl/memberlist.hpp>
 #include <map>
 #include <set>
 #include <memory>
@@ -164,6 +163,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2006/10/12 15:08:23  gouriano
+* Some header files moved into impl
+*
 * Revision 1.19  2006/10/05 19:23:03  gouriano
 * Some headers moved into impl
 *

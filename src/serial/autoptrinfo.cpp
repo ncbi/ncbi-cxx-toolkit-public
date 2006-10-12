@@ -28,8 +28,107 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
+*/
+
+#include <ncbi_pch.hpp>
+#include <serial/autoptrinfo.hpp>
+#include <serial/impl/typemap.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
+#include <serial/serialutil.hpp>
+
+BEGIN_NCBI_SCOPE
+
+static CTypeInfoMap s_AutoPointerTypeInfo_map;
+
+CAutoPointerTypeInfo::CAutoPointerTypeInfo(TTypeInfo type)
+    : CParent(type->GetName(), type)
+{
+    SetReadFunction(&ReadAutoPtr);
+    SetWriteFunction(&WriteAutoPtr);
+    SetCopyFunction(&CopyAutoPtr);
+    SetSkipFunction(&SkipAutoPtr);
+}
+
+const string& CAutoPointerTypeInfo::GetModuleName(void) const
+{
+    return GetPointedType()->GetModuleName();
+}
+
+TTypeInfo CAutoPointerTypeInfo::GetTypeInfo(TTypeInfo base)
+{
+    return s_AutoPointerTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
+}
+
+CTypeInfo* CAutoPointerTypeInfo::CreateTypeInfo(TTypeInfo base)
+{
+    return new CAutoPointerTypeInfo(base);
+}
+
+void CAutoPointerTypeInfo::WriteAutoPtr(CObjectOStream& out,
+                                        TTypeInfo objectType,
+                                        TConstObjectPtr objectPtr)
+{
+    const CAutoPointerTypeInfo* autoPtrType =
+        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
+
+    TConstObjectPtr dataPtr = autoPtrType->GetObjectPointer(objectPtr);
+    if ( dataPtr == 0 )
+        out.ThrowError(out.fIllegalCall, "null auto pointer");
+
+    TTypeInfo dataType = autoPtrType->GetPointedType();
+    if ( dataType->GetRealTypeInfo(dataPtr) != dataType )
+        out.ThrowError(out.fIllegalCall,"auto pointers have different type");
+    out.WriteObject(dataPtr, dataType);
+}
+
+void CAutoPointerTypeInfo::ReadAutoPtr(CObjectIStream& in,
+                                       TTypeInfo objectType,
+                                       TObjectPtr objectPtr)
+{
+    const CAutoPointerTypeInfo* autoPtrType =
+        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
+
+    TObjectPtr dataPtr = autoPtrType->GetObjectPointer(objectPtr);
+    TTypeInfo dataType = autoPtrType->GetPointedType();
+    if ( dataPtr == 0 ) {
+        autoPtrType->SetObjectPointer(objectPtr, dataPtr = dataType->Create());
+    }
+    else if ( dataType->GetRealTypeInfo(dataPtr) != dataType ) {
+        in.ThrowError(in.fIllegalCall,"auto pointers have different type");
+    }
+    in.ReadObject(dataPtr, dataType);
+}
+
+void CAutoPointerTypeInfo::CopyAutoPtr(CObjectStreamCopier& copier,
+                                       TTypeInfo objectType)
+{
+    const CAutoPointerTypeInfo* autoPtrType =
+        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
+
+    if (!copier.CopyNullPointer()) {
+        autoPtrType->GetPointedType()->CopyData(copier);
+    }
+}
+
+void CAutoPointerTypeInfo::SkipAutoPtr(CObjectIStream& in,
+                                       TTypeInfo objectType)
+{
+    const CAutoPointerTypeInfo* autoPtrType =
+        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
+
+    autoPtrType->GetPointedType()->SkipData(in);
+}
+
+END_NCBI_SCOPE
+
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/10/12 15:09:11  gouriano
+* Some header files moved into impl
+*
 * Revision 1.21  2006/01/30 19:27:46  gouriano
 * Added copying NULL pointers
 *
@@ -128,96 +227,3 @@
 *
 * ===========================================================================
 */
-
-#include <ncbi_pch.hpp>
-#include <serial/autoptrinfo.hpp>
-#include <serial/typemap.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objcopy.hpp>
-#include <serial/serialutil.hpp>
-
-BEGIN_NCBI_SCOPE
-
-static CTypeInfoMap s_AutoPointerTypeInfo_map;
-
-CAutoPointerTypeInfo::CAutoPointerTypeInfo(TTypeInfo type)
-    : CParent(type->GetName(), type)
-{
-    SetReadFunction(&ReadAutoPtr);
-    SetWriteFunction(&WriteAutoPtr);
-    SetCopyFunction(&CopyAutoPtr);
-    SetSkipFunction(&SkipAutoPtr);
-}
-
-const string& CAutoPointerTypeInfo::GetModuleName(void) const
-{
-    return GetPointedType()->GetModuleName();
-}
-
-TTypeInfo CAutoPointerTypeInfo::GetTypeInfo(TTypeInfo base)
-{
-    return s_AutoPointerTypeInfo_map.GetTypeInfo(base, &CreateTypeInfo);
-}
-
-CTypeInfo* CAutoPointerTypeInfo::CreateTypeInfo(TTypeInfo base)
-{
-    return new CAutoPointerTypeInfo(base);
-}
-
-void CAutoPointerTypeInfo::WriteAutoPtr(CObjectOStream& out,
-                                        TTypeInfo objectType,
-                                        TConstObjectPtr objectPtr)
-{
-    const CAutoPointerTypeInfo* autoPtrType =
-        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
-
-    TConstObjectPtr dataPtr = autoPtrType->GetObjectPointer(objectPtr);
-    if ( dataPtr == 0 )
-        out.ThrowError(out.fIllegalCall, "null auto pointer");
-
-    TTypeInfo dataType = autoPtrType->GetPointedType();
-    if ( dataType->GetRealTypeInfo(dataPtr) != dataType )
-        out.ThrowError(out.fIllegalCall,"auto pointers have different type");
-    out.WriteObject(dataPtr, dataType);
-}
-
-void CAutoPointerTypeInfo::ReadAutoPtr(CObjectIStream& in,
-                                       TTypeInfo objectType,
-                                       TObjectPtr objectPtr)
-{
-    const CAutoPointerTypeInfo* autoPtrType =
-        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
-
-    TObjectPtr dataPtr = autoPtrType->GetObjectPointer(objectPtr);
-    TTypeInfo dataType = autoPtrType->GetPointedType();
-    if ( dataPtr == 0 ) {
-        autoPtrType->SetObjectPointer(objectPtr, dataPtr = dataType->Create());
-    }
-    else if ( dataType->GetRealTypeInfo(dataPtr) != dataType ) {
-        in.ThrowError(in.fIllegalCall,"auto pointers have different type");
-    }
-    in.ReadObject(dataPtr, dataType);
-}
-
-void CAutoPointerTypeInfo::CopyAutoPtr(CObjectStreamCopier& copier,
-                                       TTypeInfo objectType)
-{
-    const CAutoPointerTypeInfo* autoPtrType =
-        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
-
-    if (!copier.CopyNullPointer()) {
-        autoPtrType->GetPointedType()->CopyData(copier);
-    }
-}
-
-void CAutoPointerTypeInfo::SkipAutoPtr(CObjectIStream& in,
-                                       TTypeInfo objectType)
-{
-    const CAutoPointerTypeInfo* autoPtrType =
-        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
-
-    autoPtrType->GetPointedType()->SkipData(in);
-}
-
-END_NCBI_SCOPE

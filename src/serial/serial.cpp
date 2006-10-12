@@ -28,113 +28,6 @@
 * File Description:
 *   Serialization classes.
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.29  2005/10/03 14:14:11  gouriano
-* Register class module in addition to class name
-*
-* Revision 1.28  2005/02/24 14:39:04  gouriano
-* Added PreRead/PostWrite hooks
-*
-* Revision 1.27  2004/05/17 21:03:03  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.26  2003/08/14 20:03:58  vasilche
-* Avoid memory reallocation when reading over preallocated object.
-* Simplified CContainerTypeInfo iterators interface.
-*
-* Revision 1.25  2003/04/10 20:13:39  vakatov
-* Rollback the "uninitialized member" verification -- it still needs to
-* be worked upon...
-*
-* Revision 1.23  2003/03/06 21:48:41  grichenk
-* Removed type-info cleanup code
-*
-* Revision 1.22  2002/11/14 21:01:11  gouriano
-* modified AddMember to use CClassTypeInfoBase
-*
-* Revision 1.21  2002/11/05 17:45:10  grichenk
-* Reset object before reading
-*
-* Revision 1.20  2002/10/25 15:05:44  vasilche
-* Moved more code to libxcser library.
-*
-* Revision 1.19  2002/09/19 20:05:44  vasilche
-* Safe initialization of static mutexes
-*
-* Revision 1.18  2002/09/05 21:22:51  vasilche
-* Added mutex for module names set
-*
-* Revision 1.17  2001/08/24 13:48:02  grichenk
-* Prevented some memory leaks
-*
-* Revision 1.16  2000/11/07 17:25:41  vasilche
-* Fixed encoding of XML:
-*     removed unnecessary apostrophes in OCTET STRING
-*     removed unnecessary content in NULL
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-*
-* Revision 1.15  2000/10/13 20:22:56  vasilche
-* Fixed warnings on 64 bit compilers.
-* Fixed missing typename in templates.
-*
-* Revision 1.14  2000/09/26 17:38:23  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.13  2000/09/18 20:00:25  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.12  2000/09/01 13:16:20  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.11  2000/08/15 19:44:51  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.10  2000/07/11 20:36:19  vasilche
-* File included in all generated headers made lighter.
-* Nonnecessary code moved to serialimpl.hpp.
-*
-* Revision 1.9  2000/07/03 18:42:47  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.8  2000/06/16 16:31:22  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.7  2000/02/01 21:47:23  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Added buffering to CObjectIStreamAsn.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-*
-* Revision 1.6  1999/12/28 21:04:25  vasilche
-* Removed three more implicit virtual destructors.
-*
-* Revision 1.5  1999/12/17 19:05:04  vasilche
-* Simplified generation of GetTypeInfo methods.
-*
-* Revision 1.4  1999/11/22 21:04:41  vasilche
-* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
-*
-* Revision 1.3  1999/06/04 20:51:49  vasilche
-* First compilable version of serialization.
-*
-* Revision 1.2  1999/05/19 19:56:57  vasilche
-* Commit just in case.
-*
-* Revision 1.1  1999/03/25 19:12:04  vasilche
-* Beginning of serialization library.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -148,7 +41,7 @@
 #include <serial/choice.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
-#include <serial/memberlist.hpp>
+#include <serial/impl/memberlist.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -568,3 +461,116 @@ void RegisterTypeInfoObject(CTypeInfo* /*object*/)
 }
 
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.30  2006/10/12 15:09:12  gouriano
+* Some header files moved into impl
+*
+* Revision 1.29  2005/10/03 14:14:11  gouriano
+* Register class module in addition to class name
+*
+* Revision 1.28  2005/02/24 14:39:04  gouriano
+* Added PreRead/PostWrite hooks
+*
+* Revision 1.27  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.26  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
+* Revision 1.25  2003/04/10 20:13:39  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
+*
+* Revision 1.23  2003/03/06 21:48:41  grichenk
+* Removed type-info cleanup code
+*
+* Revision 1.22  2002/11/14 21:01:11  gouriano
+* modified AddMember to use CClassTypeInfoBase
+*
+* Revision 1.21  2002/11/05 17:45:10  grichenk
+* Reset object before reading
+*
+* Revision 1.20  2002/10/25 15:05:44  vasilche
+* Moved more code to libxcser library.
+*
+* Revision 1.19  2002/09/19 20:05:44  vasilche
+* Safe initialization of static mutexes
+*
+* Revision 1.18  2002/09/05 21:22:51  vasilche
+* Added mutex for module names set
+*
+* Revision 1.17  2001/08/24 13:48:02  grichenk
+* Prevented some memory leaks
+*
+* Revision 1.16  2000/11/07 17:25:41  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
+* Revision 1.15  2000/10/13 20:22:56  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
+* Revision 1.14  2000/09/26 17:38:23  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
+* Revision 1.13  2000/09/18 20:00:25  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.12  2000/09/01 13:16:20  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.11  2000/08/15 19:44:51  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.10  2000/07/11 20:36:19  vasilche
+* File included in all generated headers made lighter.
+* Nonnecessary code moved to serialimpl.hpp.
+*
+* Revision 1.9  2000/07/03 18:42:47  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.8  2000/06/16 16:31:22  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.7  2000/02/01 21:47:23  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
+* Revision 1.6  1999/12/28 21:04:25  vasilche
+* Removed three more implicit virtual destructors.
+*
+* Revision 1.5  1999/12/17 19:05:04  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
+* Revision 1.4  1999/11/22 21:04:41  vasilche
+* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
+*
+* Revision 1.3  1999/06/04 20:51:49  vasilche
+* First compilable version of serialization.
+*
+* Revision 1.2  1999/05/19 19:56:57  vasilche
+* Commit just in case.
+*
+* Revision 1.1  1999/03/25 19:12:04  vasilche
+* Beginning of serialization library.
+*
+* ===========================================================================
+*/

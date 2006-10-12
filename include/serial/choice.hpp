@@ -32,8 +32,6 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-//#include <serial/typeinfo.hpp>
-//#include <serial/typeref.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/variant.hpp>
 
@@ -152,6 +150,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2006/10/12 15:08:23  gouriano
+* Some header files moved into impl
+*
 * Revision 1.25  2006/10/05 19:23:03  gouriano
 * Some headers moved into impl
 *

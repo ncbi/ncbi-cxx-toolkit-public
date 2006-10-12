@@ -34,8 +34,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
-//#include <serial/objistr.hpp>
-//#include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/serial.hpp>
 #include <serial/stdtypesimpl.hpp>
@@ -218,6 +216,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/10/12 15:08:28  gouriano
+* Some header files moved into impl
+*
 * Revision 1.8  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

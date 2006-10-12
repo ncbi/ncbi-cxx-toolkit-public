@@ -38,7 +38,7 @@
 #if HAVE_NCBI_C
 
 #include <serial/serialimpl.hpp>
-#include <serial/serialasndef.hpp>
+#include <serial/impl/serialasndef.hpp>
 
 
 /** @addtogroup TypeInfoC

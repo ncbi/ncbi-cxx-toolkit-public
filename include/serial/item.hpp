@@ -33,7 +33,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-//#include <serial/serialdef.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/typeref.hpp>
 #include <serial/memberid.hpp>
@@ -108,6 +107,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/10/12 15:08:23  gouriano
+* Some header files moved into impl
+*
 * Revision 1.9  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

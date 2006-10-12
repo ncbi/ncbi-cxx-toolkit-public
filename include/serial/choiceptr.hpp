@@ -94,8 +94,6 @@ public:
     static TTypeInfo GetTypeInfo(void);
 };
 
-//#include <serial/impl/choiceptr.inl>
-
 END_NCBI_SCOPE
 
 #endif  /* CHOICEPTR__HPP */
@@ -106,6 +104,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/10/12 15:08:23  gouriano
+* Some header files moved into impl
+*
 * Revision 1.27  2006/10/05 19:23:03  gouriano
 * Some headers moved into impl
 *

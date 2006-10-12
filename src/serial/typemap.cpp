@@ -28,30 +28,12 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2004/05/17 21:03:04  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.2  2000/11/07 17:25:42  vasilche
-* Fixed encoding of XML:
-*     removed unnecessary apostrophes in OCTET STRING
-*     removed unnecessary content in NULL
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-*
-* Revision 1.1  2000/10/13 16:28:41  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <serial/typemap.hpp>
-#include <serial/typemapimpl.hpp>
+#include <serial/impl/typemap.hpp>
+#include <serial/impl/typemapimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -148,3 +130,27 @@ TTypeInfo CTypeInfoMap2Data::GetTypeInfo(TTypeInfo arg1, TTypeInfo arg2,
 }
 
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2006/10/12 15:09:12  gouriano
+* Some header files moved into impl
+*
+* Revision 1.3  2004/05/17 21:03:04  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.2  2000/11/07 17:25:42  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
+* Revision 1.1  2000/10/13 16:28:41  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* ===========================================================================
+*/

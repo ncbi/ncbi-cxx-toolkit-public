@@ -43,11 +43,11 @@
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/typeref.hpp>
-#include <serial/objlist.hpp>
+#include <serial/impl/objlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/enumvalues.hpp>
-#include <serial/memberlist.hpp>
+#include <serial/impl/memberlist.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
@@ -57,7 +57,7 @@
 #include <serial/variant.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
-#include <serial/objlist.hpp>
+#include <serial/impl/objlist.hpp>
 #include <serial/serialimpl.hpp>
 
 #undef _TRACE
@@ -1026,6 +1026,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2006/10/12 15:09:12  gouriano
+* Some header files moved into impl
+*
 * Revision 1.106  2006/02/28 19:28:18  gouriano
 * MSVC x64 tuneup
 *

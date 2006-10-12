@@ -34,8 +34,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/stdtypes.hpp>
-//#include <serial/objistr.hpp>
-//#include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/serialutil.hpp>
 
@@ -290,8 +288,6 @@ public:
 /* @} */
 
 
-//#include <serial/impl/stdtypesimpl.inl>
-
 END_NCBI_SCOPE
 
 #endif  /* STDTYPESIMPL__HPP */
@@ -300,6 +296,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/10/12 15:08:28  gouriano
+* Some header files moved into impl
+*
 * Revision 1.16  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

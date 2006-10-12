@@ -45,7 +45,7 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/classinfob.hpp>
-#include <serial/typemap.hpp>
+#include <serial/impl/typemap.hpp>
 #include <asn.h>
 
 BEGIN_NCBI_SCOPE
@@ -867,6 +867,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2006/10/12 15:09:11  gouriano
+* Some header files moved into impl
+*
 * Revision 1.69  2005/11/07 18:40:49  gouriano
 * Use Int8 in stream position calculations
 *

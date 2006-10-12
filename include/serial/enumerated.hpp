@@ -32,7 +32,6 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-//#include <serial/typeinfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/enumvalues.hpp>
 
@@ -115,6 +114,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/10/12 15:08:23  gouriano
+* Some header files moved into impl
+*
 * Revision 1.18  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

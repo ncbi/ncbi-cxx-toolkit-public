@@ -35,11 +35,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
-//#include <serial/typeinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/stdtypes.hpp>
-//#include <serial/classinfob.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
 #include <vector>
@@ -369,6 +367,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2006/10/12 15:08:24  gouriano
+* Some header files moved into impl
+*
 * Revision 1.14  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

@@ -169,8 +169,6 @@ private:
 /* @} */
 
 
-//#include <serial/impl/objostrasn.inl>
-
 END_NCBI_SCOPE
 
 #endif  /* OBJOSTRASN__HPP */
@@ -179,6 +177,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2006/10/12 15:08:27  gouriano
+* Some header files moved into impl
+*
 * Revision 1.54  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

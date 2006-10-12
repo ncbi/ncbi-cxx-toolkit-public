@@ -34,7 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbithr.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/typeinfoimpl.hpp>
+#include <serial/impl/typeinfoimpl.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -494,6 +494,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2006/10/12 15:09:12  gouriano
+* Some header files moved into impl
+*
 * Revision 1.46  2005/10/19 13:49:37  vasilche
 * Fixed MayContainType() for type graph with cycles.
 *

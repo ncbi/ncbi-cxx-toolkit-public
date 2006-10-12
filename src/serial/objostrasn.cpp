@@ -39,7 +39,7 @@
 #include <serial/objcopy.hpp>
 #include <serial/memberid.hpp>
 #include <serial/enumvalues.hpp>
-#include <serial/memberlist.hpp>
+#include <serial/impl/memberlist.hpp>
 #include <serial/objhook.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>

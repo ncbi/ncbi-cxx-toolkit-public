@@ -67,8 +67,6 @@ protected:
                             TTypeInfo objectType);
 };
 
-//#include <serial/impl/autoptrinfo.inl>
-
 END_NCBI_SCOPE
 
 
@@ -80,6 +78,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/10/12 15:08:23  gouriano
+* Some header files moved into impl
+*
 * Revision 1.13  2006/10/05 19:23:03  gouriano
 * Some headers moved into impl
 *

@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/stdtypesimpl.hpp>
-#include <serial/typeinfoimpl.hpp>
+#include <serial/impl/typeinfoimpl.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -1671,6 +1671,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2006/10/12 15:09:12  gouriano
+* Some header files moved into impl
+*
 * Revision 1.49  2006/07/26 19:06:30  ucko
 * Add reflective accessors for BitString and AnyContent values.
 *

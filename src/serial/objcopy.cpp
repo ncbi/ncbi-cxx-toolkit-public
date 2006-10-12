@@ -44,7 +44,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/impl/objistrimpl.hpp>
-#include <serial/objlist.hpp>
+#include <serial/impl/objlist.hpp>
 #include <serial/serialimpl.hpp>
 
 #undef _TRACE
@@ -293,6 +293,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.17  2006/10/12 15:09:11  gouriano
+* Some header files moved into impl
+*
 * Revision 1.16  2006/10/05 19:24:28  gouriano
 * Some headers moved into impl
 *
