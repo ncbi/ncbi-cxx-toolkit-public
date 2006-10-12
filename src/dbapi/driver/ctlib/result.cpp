@@ -874,7 +874,7 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
     CS_INT outlen = 0;
 
     if((buffer == 0) && (buffer_size == 0)) {
-    buffer= (void*)(&buffer_size);
+        buffer= (void*)(&buffer_size);
     }
 
     switch ( my_ct_get_data(x_GetSybaseCmd(), m_CurrItem+1, buffer, (CS_INT) buffer_size,
@@ -920,6 +920,10 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 
 
     auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
+
+#if defined(FTDS_IN_USE)
+    Check(ct_get_data(x_GetSybaseCmd(), m_CurrItem + 1, dummy, 0, 0));
+#endif
 
     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
                                   CS_GET,
@@ -1074,6 +1078,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/10/12 20:55:20  ssikorsk
+ * Explicitly call ct_get_data before ct_data_info in case of FreeTDS ctlib v. 0.64.
+ *
  * Revision 1.30  2006/10/12 18:22:21  ssikorsk
  * Rolled back my_ct_get_data in CTL_RowResult::GetImageOrTextDescriptor.
  *
