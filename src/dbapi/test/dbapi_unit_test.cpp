@@ -269,7 +269,7 @@ CDBAPIUnitTest::TestInit(void)
 
         sql  = " CREATE TABLE " + GetTableName() + "( \n";
         sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-        sql += "    int_field INT NOT NULL, \n";
+        sql += "    int_field INT NULL, \n";
         sql += "    vc1000_field VARCHAR(1000) NULL, \n";
         sql += "    text_field TEXT NULL \n";
         sql += " )";
@@ -3205,7 +3205,7 @@ CDBAPIUnitTest::Test_StatementParameters(void)
 void
 CDBAPIUnitTest::Test_NULL(void)
 {
-    enum {rec_num = 100};
+    enum {rec_num = 10};
     string sql;
 
     // Initialize data ...
@@ -3229,7 +3229,43 @@ CDBAPIUnitTest::Test_NULL(void)
                 auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
                 auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
             } else {
-                auto_stmt->SetParam( CVariant(Int4(eDB_Int)), "@int_field" );
+                auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
+                auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@vc1000_field" );
+            }
+
+            // Execute a statement with parameters ...
+            auto_stmt->ExecuteUpdate( sql );
+
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
+        }
+
+        // Check record number ...
+        BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+    }
+
+    if (false) {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Drop all records ...
+        sql  = " DELETE FROM DBAPI_Sample..dbapi_unit_test";
+        auto_stmt->ExecuteUpdate(sql);
+
+        sql  = " INSERT INTO DBAPI_Sample..dbapi_unit_test"
+            "(int_field, vc1000_field) "
+            "VALUES(@int_field, @vc1000_field) \n";
+
+        // CVariant variant(eDB_Text);
+        // variant.Append(" ", 1);
+
+        // Insert data ...
+        for (long ind = 0; ind < rec_num; ++ind) {
+            if (ind % 2 == 0) {
+                auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
+                auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
+            } else {
+                auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
                 auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@vc1000_field" );
             }
 
@@ -3246,7 +3282,7 @@ CDBAPIUnitTest::Test_NULL(void)
     }
 
     // Check ...
-    {
+    if (true) {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
         sql = "SELECT int_field, vc1000_field FROM " + GetTableName() + " ORDER BY id";
@@ -3272,7 +3308,7 @@ CDBAPIUnitTest::Test_NULL(void)
                 BOOST_CHECK( int_field.IsNull() );
 
                 BOOST_CHECK( !vc1000_field.IsNull() );
-                BOOST_CHECK_EQUAL( int_field.GetString(), NStr::IntToString(ind) );
+                BOOST_CHECK_EQUAL( vc1000_field.GetString(), NStr::IntToString(ind) );
             }
         }
 
@@ -4607,10 +4643,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // Doesn't work at the moment ...
 
-//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NULL, DBAPIInstance);
-//     tc->depends_on(tc_init);
-//     tc->depends_on(tc_parameters);
-//     add(tc);
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NULL, DBAPIInstance);
+    tc->depends_on(tc_init);
+    tc->depends_on(tc_parameters);
+    add(tc);
 
     {
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
@@ -4961,6 +4997,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.105  2006/10/12 22:08:40  ssikorsk
+ * Enabled Test_NULL.
+ *
  * Revision 1.104  2006/10/12 19:24:50  ssikorsk
  * + Test_Iskhakov
  *
