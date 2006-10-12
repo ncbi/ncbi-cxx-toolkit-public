@@ -273,11 +273,13 @@ public:
         if (!parent.HasParentEntry())
             return false;
         CBioseq_set_Handle bioseq_set_handle = parent.GetParentBioseq_set();
-        /*        {
-        auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
+        {
+            if (m_RemoveMode !=  CBioseq_EditHandle::eKeepSeq_entry )  {
+                auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
                                                            "bseq0.ss") );
-        *oss << *bioseq_set_handle.GetCompleteObject();
-        }*/
+                *oss << *bioseq_set_handle.GetCompleteObject();
+            }
+        }
         bioseq_handle.GetEditHandle().Remove(m_RemoveMode);
         CBioseq_CI iter(bioseq_set_handle, CSeq_inst::eMol_not_set, 
                         CBioseq_CI::eLevel_Mains);
@@ -293,12 +295,15 @@ public:
             return false;
         m_BSet.Reset(new CBioseq_set);
         m_BSet->Assign(*bioseq_set_handle.GetCompleteObject());
-        /*
-        auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
-                                                           "bseq1.ss") );
-        oss->SetVerifyData(eSerialVerifyData_Never);
-        *oss << *m_BSet;
-        */
+        
+        if (m_RemoveMode !=  CBioseq_EditHandle::eKeepSeq_entry )  {
+            auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
+                                                               "bseq1.ss") );
+            //oss->SetVerifyData(eSerialVerifyData_Never);
+            *oss << *m_BSet;
+        }
+        if (!m_BSet->Equals(*bioseq_set_handle.GetCompleteObject()))
+            throw "dfsdffsd";
         return true;
     }
     virtual bool Check(CScope& scope, CNcbiOstream* os)
@@ -312,12 +317,13 @@ public:
         CBioseq_set_Handle bioseq_set_handle = bioseq_handle.GetParentEntry().
             GetParentBioseq_set();
         CConstRef<CBioseq_set> bset = bioseq_set_handle.GetCompleteObject();
-        /*
-        auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
-                                                           "bseq2.ss") );
-        oss->SetVerifyData(eSerialVerifyData_Never);
-        *oss << *bset;
-        */
+        
+        if (m_RemoveMode !=  CBioseq_EditHandle::eKeepSeq_entry )  {
+            auto_ptr<CObjectOStream> oss( CObjectOStream::Open(eSerial_AsnText,
+                                                               "bseq2.ss") );
+            //oss->SetVerifyData(eSerialVerifyData_Never);
+            *oss << *bset;
+        }
         if (m_BSet->Equals(*bset))
             return true;
         return false;
@@ -392,6 +398,7 @@ public:
         CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(m_SeqId);     
         if (!bioseq_handle)
             return false;
+        CBioseq_EditHandle beh = bioseq_handle.GetEditHandle();
         CSeq_loc seq_loc;
         seq_loc.SetWhole().SetGi(m_SeqId.GetGi());
         SAnnotSelector sel(CSeqFeatData::e_not_set);
@@ -765,6 +772,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/10/12 14:45:00  didenko
+ * Fixed problem with CRemoveFeatChecker
+ *
  * Revision 1.4  2006/09/18 20:04:01  vasilche
  * Avoid calling deprecated method.
  *
