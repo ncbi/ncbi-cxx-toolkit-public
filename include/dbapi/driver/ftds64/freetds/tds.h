@@ -1244,7 +1244,6 @@ TDSLOCALE *tds_get_locale(void);
 unsigned char *tds_alloc_row(TDSRESULTINFO * res_info);
 unsigned char *tds_alloc_compute_row(TDSCOMPUTEINFO * res_info);
 BCPCOLDATA * tds_alloc_bcp_column_data(int column_size);
-int tds_alloc_get_string(TDSSOCKET * tds, char **string, int len);
 unsigned char *tds7_crypt_pass(const unsigned char *clear_pass, int len, unsigned char *crypt_pass);
 TDSDYNAMIC *tds_lookup_dynamic(TDSSOCKET * tds, char *id);
 const char *tds_prtype(int token);
