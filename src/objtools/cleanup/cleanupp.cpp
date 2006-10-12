@@ -1211,31 +1211,24 @@ void CCleanup_imp::x_ConvertFullLenFeatureToDescriptor (CSeq_annot_Handle sa, CS
         CFeat_CI feat_ci(sa);
         while (feat_ci) {
             const CSeq_feat& cf = feat_ci->GetOriginalFeature();
-            if (cf.CanGetData() && cf.GetData().Which()  == choice) {
-                // Create a location that covers the entire sequence and do
-                // a comparison.  Can't just check for the location type 
-                // of the feature to be "whole" because an interval could
-                // start at 0 and end at the end of the Bioseq.
-                CRef<CSeq_loc> loc(new CSeq_loc);
-                loc->SetWhole().Assign(*(cf.GetLocation().GetId()));
-                if (sequence::Compare(*loc, cf.GetLocation(), m_Scope) == sequence::eSame) {
-                    CBioseq_Handle bh = m_Scope->GetBioseqHandle(cf.GetLocation());                
-                    CRef<CSeqdesc> desc(new CSeqdesc);
+            if (cf.CanGetData() && cf.GetData().Which()  == choice
+                && IsFeatureFullLength(cf, m_Scope)) {
+                CBioseq_Handle bh = m_Scope->GetBioseqHandle(cf.GetLocation());                
+                CRef<CSeqdesc> desc(new CSeqdesc);
              
-                    if (choice == CSeqFeatData::e_Biosrc) {
-                        desc->Select(CSeqdesc::e_Source);
-                        desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));
-                    } else if (choice == CSeqFeatData::e_Pub) {
-                        desc->Select(CSeqdesc::e_Pub);
-                        desc->SetPub(const_cast< CPubdesc& >(cf.GetData().GetPub()));
-                    }
-             
-                    CBioseq_EditHandle eh = bh.GetEditHandle();
-                    eh.AddSeqdesc(*desc);
-                    CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
-                    efh.Remove();
-                    ChangeMade (CCleanupChange::eConvertFeatureToDescriptor);
+                if (choice == CSeqFeatData::e_Biosrc) {
+                    desc->Select(CSeqdesc::e_Source);
+                    desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));
+                } else if (choice == CSeqFeatData::e_Pub) {
+                    desc->Select(CSeqdesc::e_Pub);
+                    desc->SetPub(const_cast< CPubdesc& >(cf.GetData().GetPub()));
                 }
+            
+                CBioseq_EditHandle eh = bh.GetEditHandle();
+                eh.AddSeqdesc(*desc);
+                CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
+                efh.Remove();
+                ChangeMade (CCleanupChange::eConvertFeatureToDescriptor);
             }
             ++feat_ci;                
         }
@@ -1450,6 +1443,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2006/10/12 17:29:39  bollin
+ * Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
+ *
  * Revision 1.50  2006/10/11 14:46:05  bollin
  * Record more changes made by ExtendedCleanup.
  *

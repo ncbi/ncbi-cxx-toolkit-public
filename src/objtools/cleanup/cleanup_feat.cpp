@@ -849,10 +849,13 @@ void CCleanup_imp::BasicCleanup(CImp_feat& imf)
 
 // changes "reasons cited in publication" in feature exception text
 // to "reasons given in citation"
-void CCleanup_imp::x_CorrectExceptText (string& except_text)
+bool CCleanup_imp::x_CorrectExceptText (string& except_text)
 {
     if (NStr::Equal(except_text, "reasons cited in publication")) {
         except_text = "reasons given in citation";
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -860,7 +863,9 @@ void CCleanup_imp::x_CorrectExceptText (string& except_text)
 void CCleanup_imp::x_CorrectExceptText(CSeq_feat& feat)
 {
     if (feat.IsSetExcept_text()) {
-        x_CorrectExceptText(feat.SetExcept_text());
+        if (x_CorrectExceptText(feat.SetExcept_text())) {
+            ChangeMade(CCleanupChange::eChangeException);
+        }
     }    
 }
 
@@ -1317,9 +1322,8 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
 
         if (gene_it->GetLocation().GetId()) {
             CBioseq_Handle gene_bsh = m_Scope->GetBioseqHandle(gene_it->GetLocation());
-            if (gene_bsh == bsh) {
+            if (gene_bsh == bsh && !IsFeatureFullLength(gene_it->GetOriginalFeature(), m_Scope)) {
                 CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, gene_it->GetOriginalFeature());
-        
                 if (!fh.GetSeq_feat().IsNull()) {
                     CRef<CSeq_feat> new_gene(new CSeq_feat);
                     new_gene->Assign(gene_it->GetOriginalFeature());
@@ -1334,6 +1338,7 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
                     new_gene->SetLocation(*new_loc);
                     CSeq_feat_EditHandle efh(fh);
                     efh.Replace(*new_gene);
+                    ChangeMade(CCleanupChange::eChangeFeatureLocation);
                 }
             }
         }  
@@ -1776,15 +1781,25 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
                         feat->ResetComment();
                         // TODO
                         // for any bond features, strip NULLs from the location
+                        CRef<CSeq_loc> new_loc(new CSeq_loc);
+                        bool changed = false;
+                        for ( CSeq_loc_CI loc_iter(feat->GetLocation()); loc_iter; ++loc_iter ) {
+                            if (loc_iter.GetSeq_loc().IsNull()) {
+                                changed = true;
+                            } else {
+                                new_loc->SetMix().AddSeqLoc(loc_iter.GetSeq_loc());
+                            }
+                        }
+                        if (changed) {
+                            feat->SetLocation(*new_loc);
+                            ChangeMade(CCleanupChange::eChangeFeatureLocation);
+                        }   
+                        
                     } else if (is_site) {
                         feat->SetData().Reset();
                         feat->SetData().SetBond(bond_type);
                     }
 
-                    // TODO
-                    // Must move feature to protein SeqAnnot
-                
-                
                     CSeq_feat_EditHandle efh(fh);
                     efh.Replace(*feat);
                     ChangeMade(CCleanupChange::eConvertFeature);
@@ -2569,6 +2584,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2006/10/12 17:29:39  bollin
+ * Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
+ *
  * Revision 1.39  2006/10/11 14:46:05  bollin
  * Record more changes made by ExtendedCleanup.
  *

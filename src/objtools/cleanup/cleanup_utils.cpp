@@ -880,6 +880,23 @@ bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2)
 }
 
 
+bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope)
+{
+    // Create a location that covers the entire sequence and do
+    // a comparison.  Can't just check for the location type 
+    // of the feature to be "whole" because an interval could
+    // start at 0 and end at the end of the Bioseq.
+
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetWhole().Assign(*(cf.GetLocation().GetId()));
+    if (sequence::Compare(*loc, cf.GetLocation(), scope) == sequence::eSame) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -888,6 +905,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/10/12 17:29:39  bollin
+* Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
+*
 * Revision 1.12  2006/10/10 13:49:23  bollin
 * record changes from ExtendedCleanup
 *

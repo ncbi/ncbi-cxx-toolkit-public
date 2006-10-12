@@ -38,6 +38,7 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objmgr/scope.hpp>
 
@@ -385,6 +386,8 @@ bool is_sorted(Iter first, Iter last)
 }
 
 
+bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope);
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -393,6 +396,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/10/12 17:29:39  bollin
+* Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
+*
 * Revision 1.15  2006/10/10 13:49:23  bollin
 * record changes from ExtendedCleanup
 *

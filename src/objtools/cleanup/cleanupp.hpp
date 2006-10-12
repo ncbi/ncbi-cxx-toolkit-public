@@ -279,7 +279,7 @@ private:
     void x_ConvertFullLenSourceFeatureToDescriptor (CSeq_annot_Handle sah);
     void x_ConvertFullLenPubFeatureToDescriptor (CSeq_annot_Handle sah);
 
-    void x_CorrectExceptText (string& except_text);
+    bool x_CorrectExceptText (string& except_text);
     void x_CorrectExceptText( CSeq_feat& feat);
     void x_CorrectExceptText (CSeq_annot_Handle sa);
 
@@ -415,6 +415,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2006/10/12 17:29:39  bollin
+ * Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
+ *
  * Revision 1.46  2006/10/10 13:48:55  bollin
  * added steps to ExtendedCleanup to convert user object to anticodon and to
  * convert maps to genrefs
