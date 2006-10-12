@@ -68,15 +68,17 @@ CCdFromFasta::CCdFromFasta(const Fasta2CdParams& params)
     InitializeParameters(&params);
 }
     
-CCdFromFasta::CCdFromFasta(const string& fastaFile, const Fasta2CdParams& params) 
+CCdFromFasta::CCdFromFasta(const string& fastaFile, const Fasta2CdParams& params, CBasicFastaWrapper* fastaIOWrapper)
 {
 
     m_fastaInputErrorMsg = "";
+    m_fastaIO = fastaIOWrapper;
     InitializeParameters(&params);
     ImportAlignmentData(fastaFile);
 
 }
 
+    
 void CCdFromFasta::InitializeParameters(const Fasta2CdParams* params)
 {
     bool isNull = (!params);
@@ -87,7 +89,8 @@ void CCdFromFasta::InitializeParameters(const Fasta2CdParams* params)
     SetName(m_parameters.cdName);
 
     //  SetAcccession will make a new accession object since none exists.
-    SetAccession(m_parameters.cdAcc);
+    //  Force the CD to have version zero.
+    SetAccession(m_parameters.cdAcc, 0);
 
     m_parameters.useLocalIds = (isNull) ? false : params->useLocalIds;
     m_parameters.useAsIs = (isNull) ? true : params->useAsIs;
@@ -101,14 +104,21 @@ void CCdFromFasta::InitializeParameters(const Fasta2CdParams* params)
 
 bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
 {
+    bool cleanUpFastaIO = (m_fastaIO == NULL);
     unsigned int len, masterIndex, nSeq = 1;
     string test, err;
     TReadFastaFlags fastaFlags = fReadFasta_AssumeProt;
-    CBasicFastaWrapper fastaIO(fastaFlags, false);
 
+    if (m_fastaIO == NULL) {
+        m_fastaIO = new CBasicFastaWrapper(fastaFlags, false);
+        if (!m_fastaIO) {
+            m_fastaInputErrorMsg = "Unable to create fasta file I/O object\n";
+            return false;
+        }
+    }
 
     if (m_parameters.useLocalIds) fastaFlags |= fReadFasta_NoParseID;
-    fastaIO.SetFastaFlags(fastaFlags);
+    m_fastaIO->SetFastaFlags(fastaFlags);
 
 //    fastaFlags |= fReadFasta_AllSeqIds;
 //    fastaFlags |= fReadFasta_RequireID;
@@ -118,6 +128,7 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
 
     if (fastaFile.size() == 0) {
         m_fastaInputErrorMsg = "Unable to open file:  filename has size zero (?) \n";
+        if (cleanUpFastaIO) delete m_fastaIO;
         return false;
     }
 
@@ -127,14 +138,15 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
     //  This parses the fasta file and constructs a Seq-annot object.  Alignment coordinates
     //  are indexed to the *DEGAPPED* FASTA-input sequences cached in 'fastaSeqAnnot'.  Note 
     //  that the Seq-entry in the 'fastaIO' object remains unaltered.
-    if (!fastaSeqAnnot.MakeSeqAnnotFromFasta(ifs, fastaIO, m_parameters.masterMethod, m_parameters.masterIndex)) {
-        m_fastaInputErrorMsg = "Unable to extract an alignment from file " + fastaFile + "\n" + fastaIO.GetError() + "\n";
+    if (!fastaSeqAnnot.MakeSeqAnnotFromFasta(ifs, *m_fastaIO, m_parameters.masterMethod, m_parameters.masterIndex)) {
+        m_fastaInputErrorMsg = "Unable to extract an alignment from file " + fastaFile + "\n" + m_fastaIO->GetError() + "\n";
+        if (cleanUpFastaIO) delete m_fastaIO;
         return false;
     }
 
     //  Put the sequence data into the CD, after removing any gap characters.
     CRef < CSeq_entry > se(new CSeq_entry);
-    se->Assign(*fastaIO.GetSeqEntry());
+    se->Assign(*m_fastaIO->GetSeqEntry());
 
     //  Degap the sequence data *after* the seq-annot was made,
     //  and do some post-processing of the Bioseqs.
@@ -146,7 +158,17 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
         CBioseq& bs = (*i)->SetSeq();
         CSeqAnnotFromFasta::PurgeNonAlphaFromSequence(bs);
 
-        if (bs.SetDescr().Set().size() == 0 || !bs.SetDescr().Set().front()->IsTitle()) continue;
+        //  Avoid writing out an empty 'descr' field.  (Calling bs.SetDescr()
+        //  w/o passing the test automatically creates an empty 'descr' field!)
+        if (!bs.IsSetDescr()) continue;
+
+        if (bs.SetDescr().Set().size() == 0) {
+            cerr << "sequence " << nSeq << ":  resetting description field due to no entries" << endl;
+            bs.ResetDescr();
+            continue;
+        }
+
+        if (!bs.SetDescr().Set().front()->IsTitle()) continue;
 
         //  For some cases, the description can come in w/ bad character...
         //  remove trailing non-printing characters from the description.
@@ -169,6 +191,8 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
     CRef<CSeq_annot> alignment(fastaSeqAnnot.GetSeqAnnot());
     SetSeqannot().push_back(alignment);
 
+    if (cleanUpFastaIO) delete m_fastaIO;
+
     return true;
 }
 
@@ -176,6 +200,16 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
 bool CCdFromFasta::AddComment(const string& comment)
 {
     bool result = (comment.length() > 0);
+
+    //  Don't add an identical comment.
+    if (result && IsSetDescription()) {
+        for (TDescription::Tdata::const_iterator cit = GetDescription().Get().begin(); result && cit != GetDescription().Get().end(); ++cit) {
+            if ((*cit)->IsComment() && (*cit)->GetComment() == comment) {
+                result = false;
+            }
+        }
+    }
+
     if (result) {
         CRef<CCdd_descr> descr(new CCdd_descr);
         descr->SetComment(comment);
@@ -206,10 +240,39 @@ bool CCdFromFasta::AddPmidReference(unsigned int pmid)
     return AddCddDescr(descr);
 }
 
-bool CCdFromFasta::AddSource(const string& source)
+bool CCdFromFasta::RemoveCddDescrsOfType(int cddDescrChoice)
+{
+    if (cddDescrChoice <= CCdd_descr::e_not_set || cddDescrChoice >= CCdd_descr::e_MaxChoice) return false;
+
+    unsigned int count = 0;
+    bool reachedEnd = false;
+    CCdd_descr_set::Tdata::iterator i, iEnd;
+    if (IsSetDescription()) {
+        while (!reachedEnd) {
+            i = SetDescription().Set().begin();
+            iEnd = SetDescription().Set().end();
+            for (; i != iEnd; i++) {
+                if ((*i)->Which() == cddDescrChoice) {
+                    ++count;
+                    SetDescription().Set().erase(i);
+                    break;
+                }
+            }
+            reachedEnd = (i == iEnd);
+        }
+    }
+    return (count > 0);
+}
+
+
+bool CCdFromFasta::AddSource(const string& source, bool removeExisting)
 {
     bool result = (source.length() > 0);
+
     if (result) {
+        if (removeExisting)
+            RemoveCddDescrsOfType(CCdd_descr::e_Source);
+
         CRef<CCdd_descr> descr(new CCdd_descr);
         descr->SetSource(source);
         result = AddCddDescr(descr);
@@ -303,6 +366,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/10/12 15:08:48  lanczyck
+ * deprecate use of old ReadFasta method in favor of CFastaReader class
+ *
  * Revision 1.3  2006/09/01 15:32:46  lanczyck
  * bug fix: swapped name and accession
  *

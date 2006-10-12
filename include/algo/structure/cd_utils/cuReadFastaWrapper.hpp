@@ -116,13 +116,15 @@ protected:
 /// Concrete implementations of the CFastaIOWrapper virtual class
 
 
-//  Uses the 'ReadFasta' C++-Toolkit function as a reader.
+//  Uses the CFastaReader class to read the file, unless 'oldMethod' is set in which
+//  case 'ReadFasta' C++-Toolkit function is used as a reader instead.
 //  By default, the CSeq_entry *always* has a CBioseq_set, even if there's only one bioseq.
 class NCBI_CDUTILS_EXPORT CBasicFastaWrapper : public CFastaIOWrapper {
 
 public:
 
-    CBasicFastaWrapper(TReadFastaFlags fastaFlags, bool cacheRawFasta) : CFastaIOWrapper(cacheRawFasta) {
+    CBasicFastaWrapper(TReadFastaFlags fastaFlags, bool cacheRawFasta, bool useOldReader = false) : CFastaIOWrapper(cacheRawFasta) {
+        m_useOldReader = useOldReader;
         m_readFastaFlags = fastaFlags;
         m_seqEntry.Reset();
     }
@@ -131,7 +133,8 @@ public:
 
     bool ReadAsSeqEntry(CNcbiIstream& iStream, CRef< CSeq_entry >& seqEntry);
 
-    //  Use 'ReadFasta' with the flags currently set.
+    //  Use CFastaReader with the flags currently set; if m_useOldReader is true, this 
+    //  simply calls Old_ReadFile.
     //  Saves the Fasta from the file as 'm_activeFastaString'.  If m_cacheRawFasta is
     //  true then it is also saved as 'm_rawFastaString' which will not be manipulated.
     virtual bool ReadFile(CNcbiIstream& iStream);
@@ -148,9 +151,16 @@ public:
         m_readFastaFlags &= (0xFFFFFFFF^flagsToUnset);
     }
 
-private:
+    bool GetUseOldReader() const  { return m_useOldReader;}
+    void SetUseOldReader(bool useOldReader) { m_useOldReader = useOldReader;}
 
+protected:
+
+    bool m_useOldReader;
     TReadFastaFlags m_readFastaFlags;
+
+    //  Use 'ReadFasta' method with the flags currently set.
+//    bool Old_ReadFile(CNcbiIstream& iStream);  //  removed as of rev 1.4
 };
 
 
@@ -162,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/10/12 15:08:34  lanczyck
+ * deprecate use of old ReadFasta method in favor of CFastaReader class
+ *
  * Revision 1.3  2006/09/07 17:34:14  lanczyck
  * fixes so can read in file w/ a single sequence
  *

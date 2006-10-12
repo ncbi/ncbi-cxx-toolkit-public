@@ -72,25 +72,33 @@ bool CBasicFastaWrapper::ReadAsSeqEntry(CNcbiIstream& iStream, CRef< CSeq_entry 
 
 bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream) 
 {
-    bool result = (iStream);
+    bool result = (iStream.good());
 
     if (!result) {
         m_error = "Read Error:  invalid stream.\n";
+//    } else if (m_useOldReader) {
+//        result = Old_ReadFile(iStream);
     } else {
 
-        
         CNcbiOstrstream oss;
         oss << iStream.rdbuf();
+        iStream.seekg(0);  
 
         m_activeFastaString = oss.str();
         if (m_cacheRawFasta) m_rawFastaString = m_activeFastaString;
 
         //  temporarily turn off warning messages (in case of '.' in *.a2m files)
-         EDiagSev originalDiagSev = SetDiagPostLevel(eDiag_Error);  
+        EDiagSev originalDiagSev = SetDiagPostLevel(eDiag_Error);  
 
-        iStream.seekg(0);  
-		try{
-            m_seqEntry = ReadFasta(iStream, m_readFastaFlags);
+	    try{
+            if (m_useOldReader) {
+                m_seqEntry = ReadFasta(iStream, m_readFastaFlags);
+            } else {
+                CStreamLineReader lineReader(iStream);
+                CFastaReader fastaReader(lineReader, m_readFastaFlags);
+                //CCounterManager counterMgr(reader.SetIDGenerator(), NULL);
+                m_seqEntry = fastaReader.ReadSet();
+            }
 
             //  If there is only one sequence in the fasta, the Seq-entry returned is a Bioseq and not a Bioseq-set.
             //  In that case, change the Bioseq to a Bioseq-set so caller doesn't have to manage multiple Seq-entry choices.
@@ -102,8 +110,7 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
                 m_seqEntry->SetSet().SetSeq_set().push_back(bioseqFromFasta);
             }
 
-
-		} catch (...) {
+	    } catch (...) {
             result = false;
             m_seqEntry.Reset();
         }
@@ -113,8 +120,8 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
             m_error = "Read Error:  empty seq entry.\n";
         }
         SetDiagPostLevel(originalDiagSev);
-    }
 
+    }
     return result;
 }
 
@@ -124,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/10/12 15:08:48  lanczyck
+ * deprecate use of old ReadFasta method in favor of CFastaReader class
+ *
  * Revision 1.3  2006/09/07 17:35:24  lanczyck
  * fixes so can read in file w/ a single sequence
  *

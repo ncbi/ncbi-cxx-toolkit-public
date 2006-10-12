@@ -41,6 +41,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
+class CBasicFastaWrapper;
+
 class NCBI_CDUTILS_EXPORT CCdFromFasta : public CCdCore
 {
 
@@ -68,7 +70,7 @@ public:
 
     CCdFromFasta();
     CCdFromFasta(const Fasta2CdParams& params);
-    CCdFromFasta(const string& fastaFile, const Fasta2CdParams& params);
+    CCdFromFasta(const string& fastaFile, const Fasta2CdParams& params, CBasicFastaWrapper* fastaIOWrapper = NULL);
     virtual ~CCdFromFasta(void);
 
     void SetParameters(const Fasta2CdParams& params) {InitializeParameters(&params);}
@@ -77,7 +79,7 @@ public:
     //  These add a specific type of Cdd-descr to the CD
     bool AddComment(const string& comment);
     bool AddPmidReference(unsigned int pmid);
-    bool AddSource(const string& source);
+    bool AddSource(const string& source, bool removeExistingSources = true);
     bool AddCreateDate();  //  uses the current time
 
     // update any existing source-ids with this one
@@ -85,10 +87,16 @@ public:
 
     void WriteToFile(const string& outputFile) const;
 
+    bool   WasInputError() const { return m_fastaInputErrorMsg.length() > 0; }
+    string GetFastaInputErrorMsg() const { return m_fastaInputErrorMsg;}
+
 private:
 
     string m_fastaInputErrorMsg;
     Fasta2CdParams m_parameters;
+
+    //  Fasta I/O object that uses NCBI C++ toolkit ReadFasta and CFastaReader classes.
+    CBasicFastaWrapper* m_fastaIO;
 
     //  Also sets the accession and shortname.
     void InitializeParameters(const Fasta2CdParams* params = NULL);
@@ -96,6 +104,8 @@ private:
     //  Return true only if 'descr' was added.
     bool AddCddDescr(CRef< CCdd_descr >& descr);
 
+    //  Removes any CCdd_descr of the specified choice type.
+    bool RemoveCddDescrsOfType(int cddDescrChoice);
 
     // Prohibit copy constructor and assignment operator
     CCdFromFasta(const CCdFromFasta& value);
@@ -114,6 +124,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/10/12 15:08:34  lanczyck
+ * deprecate use of old ReadFasta method in favor of CFastaReader class
+ *
  * Revision 1.2  2006/08/09 18:41:23  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
