@@ -1268,7 +1268,7 @@ void CSearch::AddModsToHit(CMSHits *Hit, CMSHit *MSHit)
     int i;
     for (i = 0; i < MSHit->GetNumModInfo(); i++) {
         // screen out fixed mods
- //       if (MSHit->GetModInfo(i).GetIsFixed() == 1) continue;
+        if (MSHit->GetModInfo(i).GetIsFixed() == 1) continue;
         CRef< CMSModHit > ModHit(new CMSModHit);
         ModHit->SetSite() = MSHit->GetModInfo(i).GetSite();
         ModHit->SetModtype() = MSHit->GetModInfo(i).GetModEnum() ;
@@ -1758,7 +1758,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 }
                 else ERR_POST(Info << "M is zero");
             }
-            double eval = 3e2 * pval * N;
+            double eval = 3e3 * pval * N;
 //            _TRACE( " pval=" << pval << " eval=" << eval );
             ScoreList.insert(pair<const double, CMSHit *> 
                              (eval, &(HitList[iHitList])));
