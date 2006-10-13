@@ -792,8 +792,8 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
        (*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
        (*options)->lut_type = MB_LOOKUP_TABLE;
        (*options)->max_positions = INT4_MAX;
-       /* Discontig mb scanning default is one byte at at time. */
-       (*options)->full_byte_scan = TRUE; 
+       /* Discontig mb scanning default is one base at a time. */
+       (*options)->full_byte_scan = FALSE; 
        break;
    case eBlastTypeRpsBlast: case eBlastTypeRpsTblastn:
        (*options)->word_size = BLAST_WORDSIZE_PROT;
@@ -1327,6 +1327,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.188  2006/10/13 15:47:49  camacho
+ * Set the default full_byte_scan to false for disco megablast
+ *
  * Revision 1.187  2006/09/13 15:08:37  papadopo
  * validate Smith-Waterman options
  *
