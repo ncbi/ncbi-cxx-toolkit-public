@@ -189,7 +189,7 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
         
         CRef<CSeq_align> first_disc_align = align_set->Get().front();
 
-        if (first_disc_align->GetType() == CSeq_align::eType_disc) {
+        if (first_disc_align->GetType() != CSeq_align::eType_disc) {
             // temporary fix for remote blast
             return retval;
         }
