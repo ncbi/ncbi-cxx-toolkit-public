@@ -66,7 +66,7 @@ static void tds_free_compute_result(TDSCOMPUTEINFO * comp_info);
 /**
  * \ingroup libtds
  * \defgroup mem Memory allocation
- * Allocate or free resources. Allocation can fail only on out of memory. 
+ * Allocate or free resources. Allocation can fail only on out of memory.
  * In such case they return NULL and leave the state as before call.
  */
 
@@ -96,9 +96,10 @@ tds_alloc_dynamic(TDSSOCKET * tds, const char *id)
 			return curr;
 		}
 
-	dyn = (TDSDYNAMIC *) calloc(1, sizeof(TDSDYNAMIC));
-	if (!dyn)
-		return NULL;
+        dyn = (TDSDYNAMIC *) malloc(sizeof(TDSDYNAMIC));
+        if (!dyn)
+            return NULL;
+        memset(dyn, 0, sizeof(TDSDYNAMIC));
 
 	/* insert into list */
 	dyn->next = tds->dyns;
@@ -163,14 +164,14 @@ tds_free_dynamic(TDSSOCKET * tds, TDSDYNAMIC * dyn)
 /**
  * \fn TDSPARAMINFO *tds_alloc_param_result(TDSPARAMINFO *old_param)
  * \brief Adds a output parameter to TDSPARAMINFO.
- * \param old_param a pointer to the TDSPARAMINFO structure containing the 
+ * \param old_param a pointer to the TDSPARAMINFO structure containing the
  * current set of output parameter, or NULL if none exists.
  * \return a pointer to the new TDSPARAMINFO structure.
  *
  * tds_alloc_param_result() works a bit differently than the other alloc result
- * functions.  Output parameters come in individually with no total number 
+ * functions.  Output parameters come in individually with no total number
  * given in advance, so we simply call this func every time with get a
- * TDS_PARAM_TOKEN and let it realloc the columns struct one bigger. 
+ * TDS_PARAM_TOKEN and let it realloc the columns struct one bigger.
  * tds_free_all_results() usually cleans up after us.
  */
 TDSPARAMINFO *
@@ -242,7 +243,7 @@ tds_free_param_result(TDSPARAMINFO * param_info)
 		TDS_ZERO_FREE(param_info->columns);
 
 	/*
-	 * NOTE some informations should be freed too but when this function 
+	 * NOTE some informations should be freed too but when this function
 	 * is called are not used. I hope to remove the need for this
 	 * function ASAP
 	 * A better way is to support different way to allocate and get
@@ -288,7 +289,11 @@ tds_alloc_param_row(TDSPARAMINFO * info, TDSCOLUMN * curparam)
 
 	/* make sure the row buffer is big enough */
 	if (info->current_row) {
-		row = (unsigned char *) realloc(info->current_row, row_size);
+        if (row_size > 0 && row_size > info->row_size) {
+            row = (unsigned char *) realloc(info->current_row, row_size);
+        } else {
+            row = info->current_row;
+        }
 	} else {
 		row = (unsigned char *) malloc(row_size);
 	}
@@ -539,11 +544,12 @@ tds_alloc_context(void * parent)
 	if (!locale)
 		return NULL;
 
-	context = (TDSCONTEXT *) calloc(1, sizeof(TDSCONTEXT));
+	context = (TDSCONTEXT *) malloc(sizeof(TDSCONTEXT));
 	if (!context) {
 		tds_free_locale(locale);
 		return NULL;
 	}
+	memset(context, '\0', sizeof(TDSCONTEXT));
 	context->locale = locale;
 	context->parent = parent;
 
@@ -882,7 +888,7 @@ tds_alloc_socket(TDSCONTEXT * context, int bufsize)
 
 	tds_socket->parent = NULL;
 	/*
-	 * TDS 7.0: 
+	 * TDS 7.0:
 	 * 0x02 indicates ODBC driver
 	 * 0x01 means change to initial language must succeed
 	 */
