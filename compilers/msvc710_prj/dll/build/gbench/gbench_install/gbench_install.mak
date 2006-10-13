@@ -155,7 +155,7 @@ INTERNAL_PLUGINS = \
 # Resource files
 #
 RESOURCES = \
-        share\gbench\about.png        	    \
+        share\gbench\about.png              \
         share\gbench\annot_folder.png       \
         share\gbench\annot_item.png         \
         share\gbench\attachment_item.png    \
@@ -166,13 +166,13 @@ RESOURCES = \
         share\gbench\close_container.png    \
         share\gbench\doc_item.png           \
         share\gbench\doc_item_disabled.png  \
-        share\gbench\export.png        	    \
+        share\gbench\export.png             \
         share\gbench\folder.png             \
         share\gbench\forward.png            \
         share\gbench\gbench_about.png       \
-        share\gbench\help.png        	    \
+        share\gbench\help.png               \
         share\gbench\history_folder.png     \
-        share\gbench\import.png        	    \
+        share\gbench\import.png             \
         share\gbench\mouse_mode_def.png        \
         share\gbench\mouse_mode_pan.png        \
         share\gbench\mouse_mode_zoom_in.png    \
@@ -180,13 +180,13 @@ RESOURCES = \
         share\gbench\mouse_mode_zoom_rect.png  \
         share\gbench\project_item.png       \
         share\gbench\radio.png              \
-        share\gbench\search.png        	    \
+        share\gbench\search.png             \
         share\gbench\splash.png             \
         share\gbench\splitter_2x2.png       \
         share\gbench\splitter_horz.png      \
         share\gbench\splitter_vert.png      \
         share\gbench\tab_control.png        \
-        share\gbench\tool.png        	    \
+        share\gbench\tool.png               \
         share\gbench\view_item.png          \
         share\gbench\viewer_item.png        \
         share\gbench\wm_menu.png        \
@@ -212,6 +212,7 @@ RESOURCES = \
         etc\gbench_cache_agent.ini          \
         \
         etc\dialogs\feat_edit               \
+        etc\dialogs\feat_edit_res           \
         \
         etc\align_scores\aa-shapely-colors  \
         etc\align_scores\aa-rasmol-colors   \
@@ -348,6 +349,9 @@ $(GBENCH)/plugins/plugin-cache : $(PLUGINS) $(GBENCH)\bin\gbench_plugin_scan.exe
 
 ###############################################################
 # $Log$
+# Revision 1.4  2006/10/13 15:54:33  katargir
+# MAGIC Add feat_edit_res
+#
 # Revision 1.3  2006/06/27 17:59:00  dicuccio
 # MAGIC added installation for ncbi_gbench_contig
 #
