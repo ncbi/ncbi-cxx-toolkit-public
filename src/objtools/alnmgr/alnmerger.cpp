@@ -762,15 +762,14 @@ CAlnMixMerger::x_Merge()
                         start2_i--;
                         
                         // point this segment's row start iterator
-#if _DEBUG && _ALNMGR_DEBUG                        
                         if (start_i->second->m_StartIts.find(seq2) !=
                             start_i->second->m_StartIts.end()) {
+                            // consistency check fails
                             NCBI_THROW(CAlnException, eMergeFailure,
                                        "CAlnMixMerger::x_Merge(): "
                                        "Internal error: "
                                        "Start iterator already exists for seq2.");
                         }
-#endif
                         start_i->second->m_StartIts[seq2] = start2_i;
 #if _DEBUG && _ALNMGR_DEBUG                        
                         start_i->second->StartItsConsistencyCheck(*seq2,
@@ -1259,6 +1258,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2006/10/13 15:35:24  todorov
+* Stripped off the conditional compilation directives of a consistency
+* check for segment's start iterators.  The code has negligible
+* performance impact but on the upside it detects problems very early.
+* Early failure is better than one after a long wait and huge memory and
+* cpu usage.
+*
 * Revision 1.20  2006/10/05 16:35:14  todorov
 * Removed the deprecated CAlnMix::fGen2EST and CAlnMix::fTryOtherMethodOnFail.
 *
