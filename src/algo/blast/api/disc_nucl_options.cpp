@@ -58,7 +58,7 @@ CDiscNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetTemplateType(0);
     SetTemplateLength(21);
     SetWordSize(BLAST_WORDSIZE_NUCL);
-    SetFullByteScan(true);
+    SetFullByteScan(false);
 }
 
 void 
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/10/13 16:04:58  camacho
+ * Full byte scan defaults to false in discontig. megablast
+ *
  * Revision 1.13  2005/12/22 14:02:15  papadopo
  * remove variable-wordsize-related code
  *

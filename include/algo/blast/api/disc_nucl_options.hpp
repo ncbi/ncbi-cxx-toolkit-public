@@ -69,7 +69,6 @@ public:
     /// @param length TemplateLength [in]
     void SetTemplateLength(unsigned char length) 
     {
-        m_Opts->SetFullByteScan(true);
         m_Opts->SetMBTemplateLength(length);
     }
 
@@ -145,6 +144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/10/13 16:04:52  camacho
+ * Full byte scan defaults to false in discontig. megablast
+ *
  * Revision 1.18  2005/07/07 16:31:56  camacho
  * Revamping of BLAST exception classes and error codes
  *
