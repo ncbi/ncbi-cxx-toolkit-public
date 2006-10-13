@@ -76,7 +76,7 @@ public:
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                        CRef<CBlastOptions> options,
                        BlastSeqSrc* seqsrc,
-                       CConstRef<objects::CPssmWithParameters> pssm = NULL);
+                       CConstRef<objects::CPssmWithParameters> pssm = null);
 
     ~CBlastPrelimSearch();
 
