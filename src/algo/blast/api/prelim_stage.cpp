@@ -41,8 +41,6 @@ static char const rcsid[] =
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
 
-#include <objects/scoremat/PssmWithParameters.hpp>
-
 #include "prelim_search_runner.hpp"
 #include "blast_aux_priv.hpp"
 #include "psiblast_aux_priv.hpp"
