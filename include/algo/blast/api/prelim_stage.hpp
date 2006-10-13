@@ -38,6 +38,7 @@
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/uniform_search.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -45,11 +46,6 @@
  */
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_SCOPE(objects)
-    class CPssmWithParameters;
-END_SCOPE(objects)
-
 BEGIN_SCOPE(blast)
 
 // Forward declaration
@@ -80,7 +76,7 @@ public:
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                        CRef<CBlastOptions> options,
                        BlastSeqSrc* seqsrc,
-                       CConstRef<objects::CPssmWithParameters> pssm);
+                       CConstRef<objects::CPssmWithParameters> pssm = NULL);
 
     ~CBlastPrelimSearch();
 
