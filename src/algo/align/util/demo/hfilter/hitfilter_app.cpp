@@ -286,7 +286,7 @@ void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
             scores.push_back(score);
 
             CRef<CSeq_align> seq_align (new CSeq_align);
-            seq_align->SetType(CSeq_align::eType_disc);
+            seq_align->SetType(CSeq_align::eType_partial);
             seq_align->SetSegs().SetDenseg(*ds);
             align_list.push_back(seq_align);
         }
@@ -477,6 +477,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/10/16 16:15:20  kapustin
+ * ASN element output type changed from disc to partial
+ *
  * Revision 1.13  2006/06/27 14:25:21  kapustin
  * Introduce retain_overlap (min overlap to retain) parameter
  *
