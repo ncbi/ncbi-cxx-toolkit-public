@@ -58,6 +58,7 @@
 
 #include <objtools/alnmgr/alnmix.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
+#include <objtools/alnmgr/align_asn_reader.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -73,6 +74,9 @@ class CAlnMrgApp : public CNcbiApplication
     void             LoadInputAlignments (void);
     void             PrintMergedAlignment(void);
     void             ViewMergedAlignment (void);
+    void             AddAlignToMix       (const CSeq_align* aln) {
+        m_Mix->Add(*aln, m_AddFlags);
+    }
 
 private:
     CAlnMix::TMergeFlags         m_MergeFlags;
@@ -284,95 +288,6 @@ CScope& CAlnMrgApp::GetScope(void) const
 }
 
 
-void CAlnMrgApp::LoadInputAlignments(void)
-{
-    const CArgs& args = GetArgs();
-
-    string sname = args["in"].AsString();
-    
-    // get the asn type of the top-level object
-    string asn_type = args["b"].AsString();
-    bool binary = asn_type.length();
-    auto_ptr<CObjectIStream> in
-        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
-    if ( !binary ) {
-        // auto-detection is possible in ASN.1 text mode
-        asn_type = in->ReadFileHeader();
-    }
-    
-    CTypesIterator i;
-    CType<CSeq_align>::AddTo(i);
-
-    if (asn_type == "Seq-entry") {
-        CRef<CSeq_entry> se(new CSeq_entry);
-        in->Read(Begin(*se), CObjectIStream::eNoFileHeader);
-        if (m_Scope) {
-            GetScope().AddTopLevelSeqEntry(*se);
-        }
-        for (i = Begin(*se); i; ++i) {
-            if (CType<CSeq_align>::Match(i)) {
-                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
-            }
-        }
-    } else if (asn_type == "Seq-submit") {
-        CRef<CSeq_submit> ss(new CSeq_submit);
-        in->Read(Begin(*ss), CObjectIStream::eNoFileHeader);
-        CType<CSeq_entry>::AddTo(i);
-        int tse_cnt = 0;
-        for (i = Begin(*ss); i; ++i) {
-            if (CType<CSeq_align>::Match(i)) {
-                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
-            } else if (CType<CSeq_entry>::Match(i)) {
-                if ( !(tse_cnt++) ) {
-                    //GetScope().AddTopLevelSeqEntry
-                        (*(CType<CSeq_entry>::Get(i)));
-                }
-            }
-        }
-    } else if (asn_type == "Seq-align") {
-        CRef<CSeq_align> sa(new CSeq_align);
-        in->Read(Begin(*sa), CObjectIStream::eNoFileHeader);
-        for (i = Begin(*sa); i; ++i) {
-            if (CType<CSeq_align>::Match(i)) {
-                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
-            }
-        }
-    } else if (asn_type == "Seq-align-set") {
-        CRef<CSeq_align_set> sas(new CSeq_align_set);
-        in->Read(Begin(*sas), CObjectIStream::eNoFileHeader);
-        for (i = Begin(*sas); i; ++i) {
-            if (CType<CSeq_align>::Match(i)) {
-                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
-            }
-        }
-    } else if (asn_type == "Seq-annot") {
-        CRef<CSeq_annot> san(new CSeq_annot);
-        in->Read(Begin(*san), CObjectIStream::eNoFileHeader);
-        for (i = Begin(*san); i; ++i) {
-            if (CType<CSeq_align>::Match(i)) {
-                m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
-            }
-        }
-    } else if (asn_type == "Dense-seg") {
-        CRef<CDense_seg> ds(new CDense_seg);
-        in->Read(Begin(*ds), CObjectIStream::eNoFileHeader);
-        m_Mix->Add(*ds, m_AddFlags);
-        while (true) {
-            try {
-                CRef<CDense_seg> ds(new CDense_seg);
-                *in >> *ds;
-                m_Mix->Add(*ds, m_AddFlags);
-            } catch(...) {
-                break;
-            }
-        }
-    } else {
-        cerr << "Cannot read: " << asn_type;
-        return;
-    }
-}
-
-
 void CAlnMrgApp::SetOptions(void)
 {
     const CArgs& args = GetArgs();
@@ -505,6 +420,24 @@ void CAlnMrgApp::ViewMergedAlignment(void)
 }
 
 
+void CAlnMrgApp::LoadInputAlignments(void)
+{
+    const CArgs& args = GetArgs();
+    string sname = args["in"].AsString();
+    
+    // get the asn type of the top-level object
+    string asn_type = args["b"].AsString();
+    bool binary = !asn_type.empty();
+    auto_ptr<CObjectIStream> in
+        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
+    
+    CAlignAsnReader reader(&GetScope());
+    reader.Read(in.get(),
+                bind1st(mem_fun(&CAlnMrgApp::AddAlignToMix), this),
+                asn_type);
+}
+
+
 int CAlnMrgApp::Run(void)
 {
     _TRACE("Run()");
@@ -519,6 +452,7 @@ int CAlnMrgApp::Run(void)
     }
     m_Mix->SetTaskProgressCallback(progress_callback.GetPointerOrNull());
     LoadInputAlignments();
+
     m_Mix->Merge(m_MergeFlags);
 
     PrintMergedAlignment();
@@ -544,6 +478,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2006/10/16 20:04:41  todorov
+* Using CAlignAsnReader.
+*
 * Revision 1.39  2006/10/05 17:26:17  ucko
 * Drop obsolete gen2est option.
 *
