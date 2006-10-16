@@ -505,17 +505,6 @@ const CCgiArgs& CUrl::GetArgs(void) const
 // Url encode/decode
 //
 
-// Return integer (0..15) corresponding to the "ch" as a hex digit
-// Return -1 on error
-int s_HexChar(char ch) THROWS_NONE
-{
-    unsigned int rc = ch - '0';
-    if(rc <= 9) return rc;
-    rc = (ch | ' ') - 'a';
-    return rc <= 5? rc + 10 : -1;    
-}
-
-
 extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
 {
     SIZE_TYPE len = str.length();
@@ -533,8 +522,8 @@ extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
             if (pos + 2 > len) {
                 str[p] = str[pos++];
             } else {
-                int n1 = s_HexChar(str[pos+1]);
-                int n2 = s_HexChar(str[pos+2]);
+                int n1 = NStr::HexChar(str[pos+1]);
+                int n2 = NStr::HexChar(str[pos+2]);
                 if (n1 < 0  ||  n1 > 15  || n2 < 0  ||  n2 > 15) {
                     str[p] = str[pos++];
                 } else {
@@ -1158,6 +1147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/10/16 15:12:07  ivanov
+ * s_HexChar() moved to corelib/ncbistr.hpp
+ *
  * Revision 1.17  2006/10/16 14:17:20  ivanov
  * s_HexChar, URL_DecodeInPlace -- added optimization (by Oleg Khovayko)
  *
