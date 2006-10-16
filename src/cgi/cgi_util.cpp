@@ -509,21 +509,19 @@ const CCgiArgs& CUrl::GetArgs(void) const
 // Return -1 on error
 int s_HexChar(char ch) THROWS_NONE
 {
-    if ('0' <= ch  &&  ch <= '9')
-        return ch - '0';
-    if ('a' <= ch  &&  ch <= 'f')
-        return 10 + (ch - 'a');
-    if ('A' <= ch  &&  ch <= 'F')
-        return 10 + (ch - 'A');
-    return -1;
+    unsigned int rc = ch - '0';
+    if(rc <= 9) return rc;
+    rc = (ch | ' ') - 'a';
+    return rc <= 5? rc + 10 : -1;    
 }
 
 
 extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
 {
     SIZE_TYPE len = str.length();
-    if ( !len )
+    if ( !len ) {
         return 0;
+    }
 
     SIZE_TYPE p = 0;
     for (SIZE_TYPE pos = 0;  pos < len;  p++) {
@@ -540,7 +538,7 @@ extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
                 if (n1 < 0  ||  n1 > 15  || n2 < 0  ||  n2 > 15) {
                     str[p] = str[pos++];
                 } else {
-                    str[p] = s_HexChar(str[pos+1])*16 + s_HexChar(str[pos+2]);
+                    str[p] = (n1 << 4) | n2;
                     pos += 3;
                 }
             }
@@ -1160,6 +1158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/10/16 14:17:20  ivanov
+ * s_HexChar, URL_DecodeInPlace -- added optimization (by Oleg Khovayko)
+ *
  * Revision 1.16  2006/09/11 20:07:43  ucko
  * CCgiUserAgent::CCgiUserAgent(void): look in the right place for
  * Fast-CGIs, provided they're using CCgiApplication.
