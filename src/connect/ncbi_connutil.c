@@ -1278,9 +1278,10 @@ extern EIO_Status BUF_StripToPattern
 static int s_HexChar(char ch)
 {
     unsigned int rc = ch - '0';
-    if(rc <= 9) return rc;
+    if (rc <= 9)
+        return rc;
     rc = (ch | ' ') - 'a';
-    return rc <= 5? rc + 10 : -1;    
+    return rc <= 5 ? rc + 10 : -1;
 }
 
 
@@ -1794,6 +1795,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.112  2006/10/16 14:34:55  lavr
+ * Formatting of Khovaiko's addition
+ *
  * Revision 6.111  2006/10/16 14:20:24  ivanov
  * s_HexChar() -- added optimization (by Oleg Khovayko)
  *
