@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/10/16 15:17:13  ivanov
+* Get rid of unused variable compilation warning
+*
 * Revision 1.33  2006/06/13 14:37:19  ucko
 * Fix compilation with GCC 2.95, which (normally) lacks IOS_BASE::failure.
 *
@@ -196,7 +199,7 @@ void CNcbiResource::HandleRequest( CCgiContext& ctx )
 									: (*it)->Clone() );
 		cmd->Execute( ctx );
 #if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 300  ||  defined(_IO_THROW)
-    } catch( IOS_BASE::failure& e ) {
+    } catch( IOS_BASE::failure& /* e */  ) {
         throw;
 #endif
     } catch( std::exception& e ) {
