@@ -76,22 +76,28 @@ CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
     const string section_name("DB_CONNECTION_FACTORY");
 
     // Get current registry ...
-    if (!registry) {
+    if (!registry && CNcbiApplication::Instance()) {
         registry = &CNcbiApplication::Instance()->GetConfig();
     }
 
-    _ASSERT(registry);
-
-    m_MaxNumOfConnAttempts =
-        registry->GetInt(section_name, "MAX_CONN_ATTEMPTS", 1);
-    m_MaxNumOfServerAlternatives =
-        registry->GetInt(section_name, "MAX_SERVER_ALTERNATIVES", 32);
-    m_MaxNumOfDispatches =
-        registry->GetInt(section_name, "MAX_DISPATCHES", 0);
-    m_ConnectionTimeout =
-        registry->GetInt(section_name, "CONNECTION_TIMEOUT", 0);
-    m_LoginTimeout =
-        registry->GetInt(section_name, "LOGIN_TIMEOUT", 0);
+    if (registry) {
+        m_MaxNumOfConnAttempts =
+            registry->GetInt(section_name, "MAX_CONN_ATTEMPTS", 1);
+        m_MaxNumOfServerAlternatives =
+            registry->GetInt(section_name, "MAX_SERVER_ALTERNATIVES", 32);
+        m_MaxNumOfDispatches =
+            registry->GetInt(section_name, "MAX_DISPATCHES", 0);
+        m_ConnectionTimeout =
+            registry->GetInt(section_name, "CONNECTION_TIMEOUT", 0);
+        m_LoginTimeout =
+            registry->GetInt(section_name, "LOGIN_TIMEOUT", 0);
+    } else {
+        m_MaxNumOfConnAttempts = 1;
+        m_MaxNumOfServerAlternatives = 32;
+        m_MaxNumOfDispatches = 0;
+        m_ConnectionTimeout = 0;
+        m_LoginTimeout = 0;
+    }
 }
 
 void
@@ -448,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/10/16 18:54:10  ssikorsk
+ * Handle case with CNcbiApplication::Instance() == NULL in ConfigureFromRegistry.
+ *
  * Revision 1.9  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
