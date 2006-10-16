@@ -2762,9 +2762,12 @@ inline
 int NStr::HexChar(char ch)
 {
     unsigned int rc = ch - '0';
-    if(rc <= 9) return rc;
-    rc = (ch | ' ') - 'a';
-    return rc <= 5? rc + 10 : -1;    
+    if (rc <= 9) {
+        return rc;
+    } else {
+        rc = (ch | ' ') - 'a';
+        return rc <= 5 ? int(rc + 10) : -1;
+    }
 }
 
 inline
@@ -3231,6 +3234,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.110  2006/10/16 15:41:20  ucko
+ * HexChar: clean up formatting, and tweak logic to avoid GCC warnings.
+ *
  * Revision 1.109  2006/10/16 15:10:48  ivanov
  * + NStr::HexChar()
  *
