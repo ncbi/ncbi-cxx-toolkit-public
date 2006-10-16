@@ -1277,13 +1277,10 @@ extern EIO_Status BUF_StripToPattern
  */
 static int s_HexChar(char ch)
 {
-    if ('0' <= ch  &&  ch <= '9')
-        return ch - '0';
-    if ('a' <= ch  &&  ch <= 'f')
-        return 10 + (ch - 'a');
-    if ('A' <= ch  &&  ch <= 'F')
-        return 10 + (ch - 'A');
-    return -1;
+    unsigned int rc = ch - '0';
+    if(rc <= 9) return rc;
+    rc = (ch | ' ') - 'a';
+    return rc <= 5? rc + 10 : -1;    
 }
 
 
@@ -1797,6 +1794,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.111  2006/10/16 14:20:24  ivanov
+ * s_HexChar() -- added optimization (by Oleg Khovayko)
+ *
  * Revision 6.110  2006/06/15 02:44:44  lavr
  * GetUsername, GetVMPageSize, CRC32 moved from here to ncbi_util.c
  *
