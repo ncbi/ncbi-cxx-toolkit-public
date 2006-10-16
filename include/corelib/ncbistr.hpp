@@ -338,6 +338,15 @@ public:
     ///   Pointer value corresponding to its string representation.
     static const void* StringToPtr(const string& str);
 
+    /// Convert character to integer.
+    ///
+    /// @param ch
+    ///   Character to be converted.
+    /// @return
+    ///   Integer (0..15) corresponding to the "ch" as a hex digit.
+    ///   Return -1 on error.
+    static int NStr::HexChar(char ch);
+
     /// Convert Int to String.
     ///
     /// @param value
@@ -528,7 +537,6 @@ public:
                                     char* buf, SIZE_TYPE buf_size,
                                     TNumToStringFlags flags = 0);
 
-public:
     /// Convert pointer to string.
     ///
     /// @param out_str
@@ -2751,6 +2759,15 @@ string NStr::UIntToString(unsigned long value,
 }
 
 inline
+int NStr::HexChar(char ch)
+{
+    unsigned int rc = ch - '0';
+    if(rc <= 9) return rc;
+    rc = (ch | ' ') - 'a';
+    return rc <= 5? rc + 10 : -1;    
+}
+
+inline
 bool NStr::MatchesMask(const string& str, const string& mask, ECase use_case)
 {
     return MatchesMask(str.c_str(), mask.c_str(), use_case);
@@ -2836,6 +2853,7 @@ size_t NStr::strftime(char* s, size_t maxsize, const char* format,
     return ::strftime(s, maxsize, format, timeptr);
 #endif
 }
+
 
 inline
 int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
@@ -3213,6 +3231,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.109  2006/10/16 15:10:48  ivanov
+ * + NStr::HexChar()
+ *
  * Revision 1.108  2006/09/21 18:15:22  lavr
  * NStr::strftime() to use ReplaceInPlace()
  *
