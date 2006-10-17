@@ -50,7 +50,7 @@ USING_SCOPE(objects);
 class CAlignAsnReader
 {
 public:
-    CAlignAsnReader(CScope* scope = null) :
+    CAlignAsnReader(CScope* scope = NULL) :
         m_Scope(scope),
         m_Verbose(false)
     {
@@ -178,6 +178,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/10/17 00:04:58  ucko
+* Default scope to NULL, as null is appropriate only for initializing CRef.
+*
 * Revision 1.1  2006/10/16 20:03:29  todorov
 * Initial revision.
 *
