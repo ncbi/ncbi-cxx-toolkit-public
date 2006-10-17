@@ -345,7 +345,7 @@ public:
     /// @return
     ///   Integer (0..15) corresponding to the "ch" as a hex digit.
     ///   Return -1 on error.
-    static int NStr::HexChar(char ch);
+    static int HexChar(char ch);
 
     /// Convert Int to String.
     ///
@@ -3234,6 +3234,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.111  2006/10/17 14:02:32  ucko
+ * Drop extraneous NStr:: qualifier from HexChar's declaration to fix
+ * compilation under GCC 4.1.x.
+ *
  * Revision 1.110  2006/10/16 15:41:20  ucko
  * HexChar: clean up formatting, and tweak logic to avoid GCC warnings.
  *
