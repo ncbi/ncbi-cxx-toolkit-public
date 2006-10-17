@@ -69,8 +69,9 @@ void ColumnResidueProfile::addOccurence(char residue, int row, bool aligned)
 		 m_residuesByRow.resize(row, 0);
 	 }
 	 assert(m_residuesByRow.size() == row);
-     ResidueRowsMap::iterator& it = m_residueRowsMap.insert(ResidueRowsMap::value_type(residue, RowStatusPair(row, aligned)));
-     m_residuesByRow.push_back(&it);
+     ResidueRowsMap::iterator* it = new ResidueRowsMap::iterator();
+     *it =  m_residueRowsMap.insert(ResidueRowsMap::value_type(residue, RowStatusPair(row, aligned)));
+     m_residuesByRow.push_back(it);
 	 //m_rows.insert(row);
 }
 
@@ -961,6 +962,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/10/17 20:28:32  cliu
+ * To further fix the addOccurence method to make it safe.
+ *
  * Revision 1.13  2006/10/17 19:57:19  ucko
  * Tweak ColumnResidueProfile::addOccurence to fix compilation under WorkShop.
  *
