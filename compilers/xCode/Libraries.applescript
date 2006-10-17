@@ -213,7 +213,7 @@ property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entr
 --property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
 property gui_dlg_registry : {name:"gui_dlg_registry", path:"gui:dialogs:registry"}
 --property gui_dlg_progress : {name:"gui_dlg_progress", path:"gui:dialogs:progress"}
-property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp", "seq_feat_remove_dlg.cpp", "feature_editor.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
+property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp", "seq_feat_remove_dlg.cpp", "feature_editor.cpp", "edit_resource_file.cpp", "edit_table_model.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
 property gui_dlg_edit : {name:"gui_dlg_edit", path:"gui:dialogs:edit"}
 property gui_dlg_feat_search : {name:"gui_dlg_feat_search", path:"gui:dialogs:feat_search"}
 property gui_dlg_seq_goto : {name:"gui_dlg_seq_goto", path:"gui:dialogs:seq_goto"}
@@ -441,6 +441,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.111  2006/10/17 12:22:07  lebedev
+ * gui_dialogs updated
+ *
  * Revision 1.110  2006/10/10 13:33:49  lebedev
  * blast/dbindex added
  *
