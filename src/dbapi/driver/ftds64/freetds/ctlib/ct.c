@@ -1717,6 +1717,8 @@ _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo,
 	tdsdump_log(TDS_DBG_FUNC, "_ct_bind_data()\n");
 
 	for (i = 0; i < resinfo->num_cols; i++) {
+        datalen = NULL;
+        nullind = NULL;
 
 		curcol = resinfo->columns[i];
 		bindcol = bindinfo->columns[i];
