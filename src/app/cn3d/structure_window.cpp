@@ -81,6 +81,7 @@
 #include "animation_controls.hpp"
 #include "cn3d_cache.hpp"
 #include "dist_select_dialog.hpp"
+#include "data_manager.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -1377,6 +1378,27 @@ void StructureWindow::SetColoringMenuFlag(int which)
     menuBar->Check(MID_ELEMENT, (which == MID_ELEMENT));
 }
 
+static EModel_type GetModelTypeFromUser(wxWindow *parent)
+{
+    wxString choices[3];
+    EModel_type models[3];
+    choices[0] = "Single model";
+    models[0] = eModel_type_ncbi_all_atom;
+    choices[1] = "Alpha only";
+    models[1] = eModel_type_ncbi_backbone;
+    choices[2] = "PDB model(s)";
+    models[2] = eModel_type_pdb_model;
+
+    wxSingleChoiceDialog dialog(parent, "Please select which type of model you'd like to load",
+        "Select model", 3, choices, NULL, (wxCAPTION | wxSYSTEM_MENU | wxOK | wxCENTRE));
+    if (dialog.ShowModal() != wxID_OK) {
+        ERRORMSG("Oops, somehow dialog failed to return OK");
+        return eModel_type_ncbi_all_atom;
+    }
+
+    return models[dialog.GetSelection()];
+}
+
 bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmentWindow, CNcbi_mime_asn1 *mimeData)
 {
     SetCursor(*wxHOURGLASS_CURSOR);
@@ -1398,21 +1420,8 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         glCanvas->Refresh(false);
     }
 
-    // get current structure limit
-    int structureLimit = kMax_Int;
-    if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, &structureLimit))
-        WARNINGMSG("Can't get structure limit from registry");
-
-    // use passed-in data if present, otherwise load from file
-    if (mimeData) {
-        glCanvas->structureSet = new StructureSet(mimeData, structureLimit, glCanvas->renderer);
-        userDir = GetWorkingDir();
-        currentFile = "";
-        currentFileIsBinary = false;
-    }
-
-    else {
-        // set up various paths relative to given filename
+    // set up various paths relative to given filename
+    if (filename) {
         if (wxIsAbsolutePath(filename))
             userDir = string(wxPathOnly(filename).c_str()) + wxFILE_SEP_PATH;
         else if (wxPathOnly(filename) == "")
@@ -1420,6 +1429,19 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         else
             userDir = GetWorkingDir() + wxPathOnly(filename).c_str() + wxFILE_SEP_PATH;
         INFOMSG("user dir: " << userDir.c_str());
+    } else {
+        userDir = GetWorkingDir();
+    }
+    if (mimeData)
+        currentFileIsBinary = false; // don't know
+
+    // get current structure limit
+    int structureLimit = kMax_Int;
+    if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, &structureLimit))
+        WARNINGMSG("Can't get structure limit from registry");
+
+    // use passed-in data if present, otherwise load from file
+    if (!mimeData) {
 
         // try to decide if what ASN type this is, and if it's binary or ascii
         CNcbiIstream *inStream = new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary);
@@ -1437,14 +1459,18 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
 
         static const string
             asciiMimeFirstWord = "Ncbi-mime-asn1",
-            asciiCDDFirstWord = "Cdd";
-        bool isMime = false, isCDD = false;
+            asciiCDDFirstWord = "Cdd",
+            asciiBiostrucFirstWord = "Biostruc";
+        bool isMime = false, isCDD = false, isBiostruc = false;
         currentFileIsBinary = true;
         if (firstWord == asciiMimeFirstWord) {
             isMime = true;
             currentFileIsBinary = false;
         } else if (firstWord == asciiCDDFirstWord) {
             isCDD = true;
+            currentFileIsBinary = false;
+        } else if (firstWord == asciiBiostrucFirstWord) {
+            isBiostruc = true;
             currentFileIsBinary = false;
         }
 
@@ -1453,7 +1479,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         // around for output later on
         bool readOK = false;
         string err;
-        if (!isCDD) {
+        if (!isCDD && !isBiostruc) {
             TRACEMSG("trying to read file '" << filename << "' as " <<
                 ((currentFileIsBinary) ? "binary" : "ascii") << " mime");
             CNcbi_mime_asn1 *mime = new CNcbi_mime_asn1();
@@ -1470,7 +1496,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
                 delete mime;
             }
         }
-        if (!readOK) {
+        if (!readOK && !isMime && !isBiostruc) {
             TRACEMSG("trying to read file '" << filename << "' as " <<
                 ((currentFileIsBinary) ? "binary" : "ascii") << " cdd");
             CCdd *cdd = new CCdd();
@@ -1484,11 +1510,30 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
                 delete cdd;
             }
         }
+        if (!readOK && !isMime && !isCDD) {
+            TRACEMSG("trying to read file '" << filename << "' as " <<
+                ((currentFileIsBinary) ? "binary" : "ascii") << " biostruc");
+            CRef < CBiostruc > biostruc(new CBiostruc());
+            SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
+            readOK = ReadASNFromFile(filename, biostruc.GetPointer(), currentFileIsBinary, &err);
+            SetDiagPostLevel(eDiag_Info);
+            if (readOK) {
+                mimeData = CreateMimeFromBiostruc(biostruc, GetModelTypeFromUser(this));
+            } else {
+                TRACEMSG("error: " << err);
+            }
+        }
         if (!readOK) {
             ERRORMSG("File not found, not readable, or is not a recognized data type");
             SetCursor(wxNullCursor);
             return false;
         }
+    }
+
+    // use passed-in or constructed data if present
+    if (mimeData) {
+        glCanvas->structureSet = new StructureSet(mimeData, structureLimit, glCanvas->renderer);
+        currentFile = ""; // don't remember file name since we have rearranged the data; make user choose a new one
     }
 
     if (!glCanvas->structureSet->MonitorAlignments()) {
@@ -1576,21 +1621,7 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
         if (id.size() == 0)
             return;
 
-        wxArrayString choiceStrs;
-        choiceStrs.Add("single");
-        choiceStrs.Add("alpha");
-        choiceStrs.Add("PDB");
-        wxString modelStr = wxGetSingleChoice(
-            "Please select which type of model you'd like to load", "Select model", choiceStrs);
-        if (modelStr.size() == 0)
-            return;
-        EModel_type model = eModel_type_ncbi_all_atom;
-        if (modelStr == "alpha")
-            model = eModel_type_ncbi_backbone;
-        else if (modelStr == "PDB")
-            model = eModel_type_pdb_model;
-
-        CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), model);
+        CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), GetModelTypeFromUser(this));
         if (mime)
             LoadData(NULL, false, false, mime);
     }
@@ -1703,6 +1734,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2006/10/17 12:51:07  thiessen
+* read raw biostruc files w/o command-line params
+*
 * Revision 1.55  2006/09/14 19:35:07  thiessen
 * tweak molecule dialog
 *

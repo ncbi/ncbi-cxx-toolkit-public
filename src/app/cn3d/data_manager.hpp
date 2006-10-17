@@ -49,6 +49,10 @@
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/mmdb2/Model_type.hpp>
+#include <objects/mmdb2/Biostruc_model.hpp>
+#include <objects/mmdb2/Model_type.hpp>
+#include <objects/mmdb1/Biostruc_graph.hpp>
+#include <objects/mmdb1/Molecule_graph.hpp>
 
 #include <list>
 #include <vector>
@@ -173,6 +177,11 @@ public:
     unsigned int GetDataChanged(void) const { return dataChanged; }
 };
 
+extern ncbi::objects::CNcbi_mime_asn1 * CreateMimeFromBiostruc(const string& filename,
+    ncbi::objects::EModel_type model);
+extern ncbi::objects::CNcbi_mime_asn1 * CreateMimeFromBiostruc(ncbi::CRef < ncbi::objects::CBiostruc >& biostruc,
+    ncbi::objects::EModel_type model);
+
 END_SCOPE(Cn3D)
 
 #endif // CN3D_DATA_MANAGER__HPP
@@ -180,6 +189,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/10/17 12:51:07  thiessen
+* read raw biostruc files w/o command-line params
+*
 * Revision 1.16  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

@@ -42,10 +42,6 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
-#include <objects/mmdb2/Biostruc_model.hpp>
-#include <objects/mmdb2/Model_type.hpp>
-#include <objects/mmdb1/Biostruc_graph.hpp>
-#include <objects/mmdb1/Molecule_graph.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <algorithm>
@@ -70,6 +66,7 @@
 #include "messenger.hpp"
 #include "alignment_manager.hpp"
 #include "cn3d_cache.hpp"
+#include "data_manager.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -340,77 +337,6 @@ void Cn3DApp::InitRegistry(void)
     LoadRegistry();
 }
 
-static CNcbi_mime_asn1 * CreateMimeFromBiostruc(const wxString& filename, EModel_type model)
-{
-    // read Biostruc
-    CRef < CBiostruc > biostruc(new CBiostruc());
-    string err;
-    SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
-    bool okay = (ReadASNFromFile(filename.c_str(), biostruc.GetPointer(), true, &err) ||
-                 ReadASNFromFile(filename.c_str(), biostruc.GetPointer(), false, &err));
-    SetDiagPostLevel(eDiag_Info);
-    if (!okay) {
-        ERRORMSG("This file is not a valid Biostruc");
-        return NULL;
-    }
-
-    // remove all but desired model coordinates
-    CRef < CBiostruc_model > desiredModel;
-    CBiostruc::TModel::const_iterator m, me = biostruc->GetModel().end();
-    for (m=biostruc->GetModel().begin(); m!=me; ++m) {
-        if ((*m)->GetType() == model) {
-            desiredModel = *m;
-            break;
-        }
-    }
-    if (desiredModel.Empty()) {
-        ERRORMSG("Ack! There's no appropriate model in this Biostruc");
-        return NULL;
-    }
-    biostruc->ResetModel();
-    biostruc->SetModel().push_back(desiredModel);
-
-    // package Biostruc inside a mime object
-    CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1());
-    CRef < CBiostruc_seq > strucseq(new CBiostruc_seq());
-    mime->SetStrucseq(*strucseq);
-    strucseq->SetStructure(*biostruc);
-
-    // get list of gi's to import
-    vector < int > gis;
-    CBiostruc_graph::TMolecule_graphs::const_iterator g,
-        ge = biostruc->GetChemical_graph().GetMolecule_graphs().end();
-    for (g=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); g!=ge; ++g) {
-        if ((*g)->IsSetSeq_id() && (*g)->GetSeq_id().IsGi())
-            gis.push_back((*g)->GetSeq_id().GetGi());
-    }
-    if (gis.size() == 0) {
-        ERRORMSG("Can't find any sequence gi identifiers in this Biostruc");
-        return NULL;
-    }
-
-    // fetch sequences and store in mime
-    CRef < CSeq_entry > seqs(new CSeq_entry());
-    strucseq->SetSequences().push_back(seqs);
-    CRef < CBioseq_set > seqset(new CBioseq_set());
-    seqs->SetSet(*seqset);
-    for (unsigned int i=0; i<gis.size(); ++i) {
-        wxString id;
-        id.Printf("%i", gis[i]);
-        CRef < CBioseq > bioseq = FetchSequenceViaHTTP(id.c_str());
-        if (bioseq.NotEmpty()) {
-            CRef < CSeq_entry > seqentry(new CSeq_entry());
-            seqentry->SetSeq(*bioseq);
-            seqset->SetSeq_set().push_back(seqentry);
-        } else {
-            ERRORMSG("Failed to retrieve all Bioseqs");
-            return NULL;
-        }
-    }
-
-    return mime.Release();
-}
-
 bool Cn3DApp::OnInit(void)
 {
     INFOMSG("Welcome to Cn3D " << CN3D_VERSION_STRING << "!");
@@ -548,7 +474,7 @@ bool Cn3DApp::OnInit(void)
         INFOMSG("command line file: " << filename.c_str());
         // if -o is present, assume param is a Biostruc file
         if (model != eModel_type_other) {   // -o present
-            CNcbi_mime_asn1 *mime = CreateMimeFromBiostruc(filename, model);
+            CNcbi_mime_asn1 *mime = CreateMimeFromBiostruc(filename.c_str(), model);
             if (mime)
                 structureWindow->LoadData(NULL, commandLine.Found("f"), commandLine.Found("n"), mime);
         } else {
@@ -638,6 +564,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2006/10/17 12:51:07  thiessen
+* read raw biostruc files w/o command-line params
+*
 * Revision 1.31  2006/01/05 15:51:20  thiessen
 * tweaks
 *
