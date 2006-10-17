@@ -74,8 +74,9 @@ class CAlnMrgApp : public CNcbiApplication
     void             LoadInputAlignments (void);
     void             PrintMergedAlignment(void);
     void             ViewMergedAlignment (void);
-    void             AddAlignToMix       (const CSeq_align* aln) {
+    bool             AddAlignToMix       (const CSeq_align* aln) {
         m_Mix->Add(*aln, m_AddFlags);
+        return true;
     }
 
 private:
@@ -478,6 +479,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2006/10/17 00:09:57  ucko
+* Tweak AddAlignToMix to fix compilation under MIPSpro, whose STL
+* implementation has trouble handling functors that return void.
+*
 * Revision 1.40  2006/10/16 20:04:41  todorov
 * Using CAlignAsnReader.
 *
