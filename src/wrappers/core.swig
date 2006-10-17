@@ -251,8 +251,15 @@ connect/services/netschedule_storage.hpp
 connect/services/netservice_client.hpp
 connect/services/ns_client_factory.hpp
 connect/threaded_server.hpp
-// pathhook.hpp must come early to avoid %include within %import
+
+// these must come early to avoid %include within %import
 serial/pathhook.hpp
+serial/item.hpp
+serial/memberid.hpp
+
+// need this for CClassTypeInfoBase::CIteratorb base class
+serial/impl/memberlist.hpp
+
 serial/aliasinfo.hpp
 serial/asntypes.hpp
 serial/autoptrinfo.hpp
@@ -260,17 +267,13 @@ serial/choice.hpp
 serial/choiceptr.hpp
 serial/classinfo.hpp
 serial/classinfob.hpp
-serial/classinfohelper.hpp
 serial/continfo.hpp
 serial/delaybuf.hpp
 serial/enumerated.hpp
 serial/enumvalues.hpp
 serial/exception.hpp
-serial/item.hpp
 serial/iterator.hpp
 serial/member.hpp
-serial/memberid.hpp
-serial/memberlist.hpp
 serial/objcopy.hpp
 serial/objectinfo.hpp
 serial/objectio.hpp
@@ -281,18 +284,15 @@ serial/objistr.hpp
 serial/objistrasn.hpp
 serial/objistrasnb.hpp
 serial/objistrxml.hpp
-serial/objlist.hpp
 serial/objostr.hpp
 serial/objostrasn.hpp
 serial/objostrasnb.hpp
 serial/objostrxml.hpp
-serial/objstrasnb.hpp
 serial/pack_string.hpp
 serial/ptrinfo.hpp
 serial/rpcbase.hpp
 serial/serial.hpp
 serial/serialasn.hpp
-serial/serialasndef.hpp
 serial/serialbase.hpp
 serial/serialdef.hpp
 serial/serialimpl.hpp
@@ -304,9 +304,6 @@ serial/stltypes.hpp
 serial/stltypesimpl.hpp
 serial/timetypeinfo.hpp
 serial/typeinfo.hpp
-serial/typeinfoimpl.hpp
-serial/typemap.hpp
-serial/typemapimpl.hpp
 // looks dead; no .cpp, destructor not defined
 //serial/typemapper.hpp
 serial/typeref.hpp
@@ -375,6 +372,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/10/17 16:29:45  jcherry
+ * Reflect movement of more headers from serial to serial/impl
+ *
  * Revision 1.20  2006/10/12 16:00:52  jcherry
  * Dropped headers that have been moved from serial to serial/impl
  *
