@@ -188,14 +188,10 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
         const int query_index = 0;
         
         CRef<CSeq_align> first_disc_align = align_set->Get().front();
-
-        if (first_disc_align->GetType() != CSeq_align::eType_disc) {
-            // temporary fix for remote blast
-            return retval;
-        }
-
+        
         CRef<CSeq_align> first_align = 
             first_disc_align->GetSegs().GetDisc().Get().front();
+        
         retval.Reset(& first_align->GetSeq_id(query_index));
     }
     
