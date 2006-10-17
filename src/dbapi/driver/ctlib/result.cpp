@@ -195,24 +195,44 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
                                          CS_VOID* buffer,
                                          CS_INT buflen, CS_INT *outlen)
 {
-  if(item > m_BindedCols)
-    return Check(ct_get_data(cmd, item, buffer, buflen, outlen));
+    if(item > m_BindedCols) {
+        return Check(ct_get_data(cmd, item, buffer, buflen, outlen));
+    }
 
-  --item;
+    --item;
 
-  if((m_Indicator[item] < 0) || ((CS_INT)m_Indicator[item] >= m_Copied[item])) {
-    if(outlen) *outlen= 0;
-    return CS_END_ITEM;
-  }
+    CS_SMALLINT   indicator = m_Indicator[item];
+    CS_INT        copied = m_Copied[item];
 
-  if(!buffer || (buflen < 1)) return CS_SUCCEED;
+    //   if((m_Indicator[item] < 0) || ((CS_INT)m_Indicator[item] >= m_Copied[item])) {
+    if(indicator < 0) {
+        // Value is NULL ...
+        if(outlen) {
+            *outlen = 0;
+        }
 
-  CS_INT n= m_Copied[item] - m_Indicator[item];
-  if(buflen > n) buflen= n;
-  memcpy(buffer, (char*)(m_BindItem[item]) + m_Indicator[item], buflen);
-  if(outlen) *outlen= buflen;
+        return CS_END_ITEM;
+    }
+
+    if(!buffer || (buflen < 1)) {
+        return CS_SUCCEED;
+    }
+
+    CS_INT n = copied - indicator;
+
+    if(buflen > n) {
+        buflen = n;
+    }
+
+    memcpy(buffer, (char*)(m_BindItem[item]) + indicator, buflen);
+
+    if(outlen) {
+        *outlen = buflen;
+    }
+
     m_Indicator[item] += static_cast<CS_SMALLINT>(buflen);
-  return (n == buflen)? CS_END_ITEM : CS_SUCCEED;
+
+    return (n == buflen) ? CS_END_ITEM : CS_SUCCEED;
 }
 
 // Aux. for CTL_RowResult::GetItem()
@@ -1078,6 +1098,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/10/17 21:31:38  ssikorsk
+ * Improved handling of "indicator" and "copied" flags in my_ct_get_data.
+ *
  * Revision 1.31  2006/10/12 20:55:20  ssikorsk
  * Explicitly call ct_get_data before ct_data_info in case of FreeTDS ctlib v. 0.64.
  *
