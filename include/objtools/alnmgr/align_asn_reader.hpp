@@ -31,7 +31,7 @@
 *   Reading Seq-aligns from an ASN.1 input stream.
 *
 *   The stream can be in any CObjectIStream format: text or binary
-*   ASN.1 or XML.  If binary, since the type of object cannot be
+*   ASN.1, or XML.  If binary, since the type of object cannot be
 *   automatically recognized, the top_level_asn_object needs to be
 *   provided.
 *
@@ -62,7 +62,7 @@ public:
 
     template <class TCallback>
     void Read(CObjectIStream * obj_in_stream, //< The object stream to read from
-              TCallback callback,             //< Callback for each const CSeq_align&
+              TCallback callback,             //< Callback for each const CSeq_align*
               const string& top_level_asn_object = kEmptyStr) //< In case of binary ASN.1 or need to force the type
     {
         while ( !obj_in_stream->EndOfData() ) {
@@ -151,7 +151,10 @@ public:
                 callback(sa);
             } else {
                 if (obj.empty()) {
-                    cerr << "What is the asn type?" << endl;
+                    NCBI_THROW(CException, eUnknown,
+                               "ReadFileHeader() returned empty.  "
+                               "Binary ASN.1 file?  "
+                               "Please supply the top_level_asn_object.");
                 } else {
                     cerr << "Don't know how to extract alignments from: " << obj << endl;
                     cerr << "Do you know?  Please contact us at aln-mgr@ncbi.nlm.nih.gov." << endl;
@@ -178,6 +181,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/10/17 16:50:06  todorov
+* Added an exception.
+*
 * Revision 1.2  2006/10/17 00:04:58  ucko
 * Default scope to NULL, as null is appropriate only for initializing CRef.
 *
