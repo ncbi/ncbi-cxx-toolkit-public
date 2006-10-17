@@ -58,7 +58,7 @@
 
 #include <objtools/alnmgr/alnmix.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
-#include <objtools/alnmgr/align_asn_reader.hpp>
+#include <objtools/alnmgr/aln_asn_reader.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -67,14 +67,14 @@ USING_SCOPE(objects);
 
 class CAlnMrgApp : public CNcbiApplication
 {
-    virtual void     Init                (void);
-    virtual int      Run                 (void);
-    CScope&          GetScope            (void)             const;
-    void             SetOptions          (void);
-    void             LoadInputAlignments (void);
-    void             PrintMergedAlignment(void);
-    void             ViewMergedAlignment (void);
-    bool             AddAlignToMix       (const CSeq_align* aln) {
+    virtual void     Init          (void);
+    virtual int      Run           (void);
+    CScope&          GetScope      (void)             const;
+    void             SetOptions    (void);
+    void             LoadInputAlns (void);
+    void             PrintMergedAln(void);
+    void             ViewMergedAln (void);
+    bool             AddAlnToMix   (const CSeq_align* aln) {
         m_Mix->Add(*aln, m_AddFlags);
         return true;
     }
@@ -359,7 +359,7 @@ void CAlnMrgApp::SetOptions(void)
     }
 }
 
-void CAlnMrgApp::PrintMergedAlignment(void)
+void CAlnMrgApp::PrintMergedAln(void)
 {
     const CArgs& args = GetArgs();
     auto_ptr<CObjectOStream> asn_out 
@@ -377,7 +377,7 @@ void CAlnMrgApp::PrintMergedAlignment(void)
 }
 
 
-void CAlnMrgApp::ViewMergedAlignment(void)
+void CAlnMrgApp::ViewMergedAln(void)
 {
     const CArgs& args = GetArgs();
 
@@ -421,7 +421,7 @@ void CAlnMrgApp::ViewMergedAlignment(void)
 }
 
 
-void CAlnMrgApp::LoadInputAlignments(void)
+void CAlnMrgApp::LoadInputAlns(void)
 {
     const CArgs& args = GetArgs();
     string sname = args["in"].AsString();
@@ -432,9 +432,9 @@ void CAlnMrgApp::LoadInputAlignments(void)
     auto_ptr<CObjectIStream> in
         (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
     
-    CAlignAsnReader reader(&GetScope());
+    CAlnAsnReader reader(&GetScope());
     reader.Read(in.get(),
-                bind1st(mem_fun(&CAlnMrgApp::AddAlignToMix), this),
+                bind1st(mem_fun(&CAlnMrgApp::AddAlnToMix), this),
                 asn_type);
 }
 
@@ -452,13 +452,13 @@ int CAlnMrgApp::Run(void)
         progress_callback.Reset(new CAlnMrgTaskProgressCallback);
     }
     m_Mix->SetTaskProgressCallback(progress_callback.GetPointerOrNull());
-    LoadInputAlignments();
+    LoadInputAlns();
 
     m_Mix->Merge(m_MergeFlags);
 
-    PrintMergedAlignment();
+    PrintMergedAln();
     if ( args["v"] ) {
-        ViewMergedAlignment();
+        ViewMergedAln();
     }
     return 0;
 }
@@ -479,6 +479,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2006/10/17 19:30:31  todorov
+* Renamed a few methods and file includes.
+*
 * Revision 1.41  2006/10/17 00:09:57  ucko
 * Tweak AddAlignToMix to fix compilation under MIPSpro, whose STL
 * implementation has trouble handling functors that return void.
