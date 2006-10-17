@@ -113,8 +113,7 @@ public:
                     CScope& scope) :
         m_Scope(scope),
         m_AlnCount(aln_id_vec.size()),
-        m_IsQueryAnchoredSet(false),
-        m_IsQueryAnchored(false),
+        m_IsQueryAnchoredTestDone(false),
         m_NucProtBitmapsInitialized(false)
     {
         typedef typename TAlnSeqIdVector::value_type::value_type TSeqIdPtr;
@@ -149,60 +148,63 @@ public:
     /// Determine if the alignments are "query-anchored" i.e. if
     /// there's at least one common sequence present in all of them
     bool IsQueryAnchored() const {
-        if ( !m_IsQueryAnchoredSet ) {
+        if ( !m_IsQueryAnchoredTestDone ) {
             ITERATE(TSeqIdAlnMap, it, m_Bitmap) {
                 _ASSERT(it->second.count() <= m_AlnCount);
                 if (it->second.count() == m_AlnCount) {
-                    m_IsQueryAnchored = true;
-                    return m_IsQueryAnchored;
+                    m_AnchorHandle = it->first;
+                    return m_AnchorHandle;
                 }
             }
-            m_IsQueryAnchored = false;
         }
-        return m_IsQueryAnchored;
+        return m_AnchorHandle;
+    }
+
+    CBioseq_Handle GetAnchorHandle() const {
+        return m_AnchorHandle;
     }
 
     /// Number of alignments
-    size_t AlnCount() const {
+    size_t GetAlnCount() const {
         return m_AlnCount;
     }
 
     /// Number of seqs
-    size_t SeqCount() const {
+    size_t GetSeqCount() const {
         return m_Bitmap.size();
     }
 
     /// Number of seqs aligned to itself
-    size_t SelfAlignedSeqCount() const {
+    size_t GetSelfAlignedSeqCount() const {
         return m_SelfAlignedBitmap.size();
     }
 
     /// Number of aligns containing at least one nuc seq
-    size_t AlnWithNucCount() const {
+    size_t GetAlnWithNucCount() const {
         x_InitNucProtBitmaps();
         return m_NucleotideBitmap.count();
     }
 
     /// Number of aligns containing at least one prot seq
-    size_t AlnWithProtCount() const {
+    size_t GetAlnWithProtCount() const {
         x_InitNucProtBitmaps();
         return m_ProteinBitmap.count();
     }
 
     /// Number of aligns containing nuc seqs only
-    size_t NucOnlyAlnCount() const {
+    size_t GetNucOnlyAlnCount() const {
         x_InitNucProtBitmaps();
         return (m_NucleotideBitmap & (~(m_NucleotideBitmap & m_ProteinBitmap))).count();
     }
 
     /// Number of aligns containing prot seqs only
-    size_t ProtOnlyAlnCount() const {
+    size_t GetProtOnlyAlnCount() const {
         x_InitNucProtBitmaps();
         return (m_ProteinBitmap & (~(m_ProteinBitmap & m_NucleotideBitmap))).count();
     }
 
     /// Number of aligns containing both nuc and prot seqs
-    size_t TranslatedAlnCount() const {
+    size_t GetTranslatedAlnCount() const {
         x_InitNucProtBitmaps();
         return (m_ProteinBitmap & m_NucleotideBitmap).count();
     }
@@ -241,8 +243,8 @@ private:
     CScope& m_Scope;
     size_t m_AlnCount;
 
-    mutable bool m_IsQueryAnchoredSet;
-    mutable bool m_IsQueryAnchored;
+    mutable bool m_IsQueryAnchoredTestDone;
+    mutable CBioseq_Handle m_AnchorHandle;
 
     mutable bool m_NucProtBitmapsInitialized;
     mutable TBitVector m_ProteinBitmap;
@@ -259,6 +261,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/10/17 21:53:31  todorov
+* + GetAnchorHandle
+* Renamed all accessors with Get*
+*
 * Revision 1.1  2006/10/17 19:23:57  todorov
 * Initial revision.
 *
