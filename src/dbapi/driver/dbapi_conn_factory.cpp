@@ -152,9 +152,15 @@ unsigned int
 CDBConnectionFactory::CalculateConnectionTimeout
 (const I_DriverContext& ctx) const
 {
-    return (GetConnectionTimeout() ?
-            GetConnectionTimeout() :
-            ctx.GetTimeout());
+    unsigned int timeout = 3;
+
+    if (GetConnectionTimeout()) {
+        timeout = GetConnectionTimeout();
+    } else if (ctx.GetTimeout()) {
+        timeout = ctx.GetTimeout();
+    }
+
+    return timeout;
 }
 
 unsigned int
@@ -454,6 +460,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/10/17 22:10:17  ssikorsk
+ * Set timeout to 3 sec. in CDBConnectionFactory::CalculateConnectionTimeout
+ * if it wasn't set anywhere.
+ *
  * Revision 1.10  2006/10/16 18:54:10  ssikorsk
  * Handle case with CNcbiApplication::Instance() == NULL in ConfigureFromRegistry.
  *
