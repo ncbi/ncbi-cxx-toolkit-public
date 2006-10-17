@@ -59,12 +59,12 @@ BEGIN_SCOPE(cd_utils)
 	 inline double reweightColumnByRowWeights(const vector<double>& rowWeights, char& heaviestResidue)const;
 	 int getSumCount() const;
 	char getMostFrequentResidue(int& count) const ;
-	bool hasRow(int row) const;
+	//bool hasRow(int row) const;
 	void getResiduesByRow(vector<char>& residues, bool byNcbiStd=true)const;
 	//residues will be in Ncbistd
 	unsigned char getResidueByRow(int row);
 	bool isAligned(char residue, int row)const;
-	bool isAligned(int row)const;
+	bool isAligned(int row);
 	bool isAllRowsAligned()const;
 	void setIndexByConsensus(int col) {m_indexByConsensus = col;};
 	int getIndexByConsensus()const {return m_indexByConsensus;};
@@ -74,11 +74,13 @@ BEGIN_SCOPE(cd_utils)
 
 	double calcInformationContent();
  private:
-	 ResidueRowsMap::iterator findRow(int row);
-	 ResidueRowsMap::const_iterator findRow(int row)const;
-	 set<int> m_rows;
+	 inline ResidueRowsMap::iterator* findRow(int row);
+	// inline ResidueRowsMap::const_iterator* findRow(int row)const;
+	 //set<int> m_rows;
+	 bool m_masterIn;
 	 ResidueRowsMap m_residueRowsMap;
-
+	 //to speed up findRow
+     vector<ResidueRowsMap::iterator*> m_residuesByRow;
 	 static map<char, double> m_backgroundResFreq;
 	 static void useDefaultBackgroundResFreq();
 	 double getBackgroundResFreq(char res);
@@ -92,7 +94,7 @@ BEGIN_SCOPE(cd_utils)
 	ColumnAddress(int posOnMaster, int gap=0);
 	ColumnAddress();
 	~ColumnAddress();
-	bool operator<(const ColumnAddress& rhs) const;
+	inline bool operator<(const ColumnAddress& rhs) const;
 
 	int mPos;
 	int gap;
@@ -205,6 +207,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/10/17 18:15:11  cliu
+ * speed it up
+ *
  * Revision 1.8  2006/09/18 19:53:51  cliu
  * bug fixes
  *

@@ -5,6 +5,7 @@
 #include <algo/structure/cd_utils/cuCdFamily.hpp>
 #include <algo/structure/cd_utils/cuRowSourceTable.hpp>
 #include <algo/structure/cd_utils/cuBlock.hpp>
+#include <algo/structure/cd_utils/cuSequenceTable.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -22,7 +23,10 @@ public:
 	AlignmentCollection();
 	void AddAlignment(CCdCore* cd, CCdCore::AlignmentUsage alignUse=CCdCore::USE_PENDING_ALIGNMENT, bool uniqueSeqId=false,bool scoped=true);
 	void AddAlignment(const AlignmentCollection& ac);
-	void setSeqStore(CCdCore* sourceCD);
+	
+	void AddSequence(CCdCore* cd);
+	void AddSequence(const AlignmentCollection& ac);
+
 	int getNumFamilies() const { return m_numFamilies;}
 	void setNumFamilies(int num) { m_numFamilies = num;}
 	void clear() {m_firstCd = 0; m_seqAligns.clear(); m_rowSources.clear();}
@@ -63,15 +67,15 @@ public:
 	int mapRow(const AlignmentCollection& ac, int row) const;
 	void getAllRowsForCD(CCdCore* cd, vector<int>& colRows)const;
 	bool GetSpeciesForRow(int row, string& species) const;
-	bool  GetBioseqForRow(int rowId, CRef< CBioseq >& bioseq) const;
+	bool  GetBioseqForRow(int rowId, CRef< CBioseq >& bioseq);
 	int GetRowsWithSameSeqID(int rowToMatch, vector<int>& rows, bool inclusive = true) const;
 	int GetRowsWithSeqID(const CRef< CSeq_id >& SeqID, vector<int>& rows) const;
-	bool IsStruct(int row) const;
-    bool IsPdb(int row) const;
-	void GetAllSequences(vector<string>& sequences) const;
-	string GetSequenceForRow(int row) const;
-	void GetAlignedResiduesForRow(int row, char*&)const ;
-	void GetAlignedResiduesForAll(char** & ppAlignedResidues, bool forceRecompute)const ;
+	bool IsStruct(int row);
+    bool IsPdb(int row)const;
+	void GetAllSequences(vector<string>& sequences);
+	string GetSequenceForRow(int row);
+	void GetAlignedResiduesForRow(int row, char*&);
+	void GetAlignedResiduesForAll(char** & ppAlignedResidues, bool forceRecompute) ;
 	bool isInstanceOf(MultipleAlignment* ma);
 	void getNormalRowsNotInChild(vector<int>& childless, bool excludeMaster=false) const;
 	//void makeGuideAlignment(int row, Multiple
@@ -92,8 +96,11 @@ protected:
 	RowSourceTable m_rowSources;
 	CCdCore* m_firstCd;
 	int m_numFamilies;
-	CCdCore* m_seqStore;
 	string m_err;
+	
+	//buffer sequence data to speed up
+	vector<CRef< CBioseq > > m_bioseqs;
+	SequenceTable m_seqTable;
 
 	void addPendingAlignment(CCdCore* cd, bool uniqueSeqId=false, bool scoped=true);
 	void addNormalAlignment(CCdCore* cd, bool uniqueSeqId=false, bool scoped=true);
@@ -115,7 +122,7 @@ public:
 	bool setAlignment(const AlignmentCollection& ac, int row);
 	bool isBlockAligned() const;
 	//void setAlignment(const MultipleAlignment& malign);
-	int appendAlignment(const MultipleAlignment& malign,bool includeUnScoped=true);
+	int appendAlignment(MultipleAlignment& malign,bool includeUnScoped=true);
 	bool findParentalEquivalent(const cd_utils::BlockModel& bar, int& pRow, bool inputAsChild=true) const;
 	bool findParentalCastible(const cd_utils::BlockModel& bar, int& pRow) const;
 	bool locateChildRow(const cd_utils::BlockModel& childRow, int& pRow) const;

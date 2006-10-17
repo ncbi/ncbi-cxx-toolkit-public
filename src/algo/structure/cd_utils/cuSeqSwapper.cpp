@@ -153,9 +153,9 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 		{
 			//only care about local seq_id for now
 			CRef< CSeq_id > seqId;
-			int row = cluster[i];
+			/*int row = cluster[i];
 			if (row == 1)
-				int gotit =1;
+				int gotit =1;*/
 			m_ac.GetSeqIDForRow(cluster[i], seqId);
 			if (seqId->IsLocal())
 				normal.push_back(cluster[i]);

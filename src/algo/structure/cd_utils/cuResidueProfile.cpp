@@ -43,7 +43,7 @@ unsigned char ColumnResidueProfile::getNcbiStdCode(char eaa)
 }
 
 ColumnResidueProfile::ColumnResidueProfile()
-: m_residueTypeCount(0), m_residueRowsMap(), m_rows(), m_indexByConsensus(-1)
+: m_residueTypeCount(0), m_residueRowsMap(), m_masterIn(false), m_indexByConsensus(-1)
  //m_backgroundResFreq()
 {
 }
@@ -55,42 +55,43 @@ ColumnResidueProfile::~ColumnResidueProfile()
 void ColumnResidueProfile::addOccurence(char residue, int row, bool aligned)
 {
 	//this deals with columns on the master which can be added more than once
-	 if (hasRow(row))
+	 if (row == 0) 
 	 {
-		 return;
+		 if (m_masterIn)
+			 return;
+		 else
+			 m_masterIn = true;
 	 }
 	 if (m_residueRowsMap.count(residue) == 0) //first time to see this residue
 		 m_residueTypeCount++;
-	 m_residueRowsMap.insert(ResidueRowsMap::value_type(residue, RowStatusPair(row, aligned)));
-	 m_rows.insert(row);
+	 if (m_residuesByRow.size() < row)
+	 {
+		 m_residuesByRow.resize(row, 0);
+	 }
+	 assert(m_residuesByRow.size() == row);
+	m_residuesByRow.push_back(
+		&m_residueRowsMap.insert(ResidueRowsMap::value_type(residue, RowStatusPair(row, aligned))) );
+	 //m_rows.insert(row);
 }
 
+/*
 bool ColumnResidueProfile::hasRow(int row) const
 {
 	return m_rows.find(row) != m_rows.end();
+}*/
+
+ColumnResidueProfile::ResidueRowsMap::iterator* ColumnResidueProfile::findRow(int row)
+{
+	if (row > (m_residuesByRow.size()-1))
+		return 0;
+	else
+		return m_residuesByRow[row];
 }
 
-ColumnResidueProfile::ResidueRowsMap::iterator ColumnResidueProfile::findRow(int row)
+/*ColumnResidueProfile::ResidueRowsMap::const_iterator* ColumnResidueProfile::findRow(int row)const
 {
-	ResidueRowsMap::iterator it = m_residueRowsMap.begin();
-	for (; it != m_residueRowsMap.end(); it++)
-	{
-		if (it->second.first == row)
-			return it;
-	}
-	return m_residueRowsMap.end();
-}
-
-ColumnResidueProfile::ResidueRowsMap::const_iterator ColumnResidueProfile::findRow(int row)const
-{
-	ResidueRowsMap::const_iterator it = m_residueRowsMap.begin();
-	for (; it != m_residueRowsMap.end(); it++)
-	{
-		if (it->second.first == row)
-			return it;
-	}
-	return m_residueRowsMap.end();
-}
+	return m_residuesByRow[row];
+}*/
 
 int ColumnResidueProfile::getSumCount() const
 {
@@ -204,10 +205,10 @@ void ColumnResidueProfile::getResiduesByRow(vector<char>& residues, bool byNcbiS
 //residues will be in Ncbistd
 unsigned char ColumnResidueProfile::getResidueByRow(int row)
 {
-	ResidueRowsMap::iterator rit = findRow(row);
-	if (rit !=  m_residueRowsMap.end())
+	ResidueRowsMap::iterator* rit = findRow(row);
+	if (rit)
 	{
-		return getNcbiStdCode(rit->first);
+		return getNcbiStdCode((*rit)->first);
 	}
 	else
 		return getNcbiStdCode('-');
@@ -226,11 +227,11 @@ bool ColumnResidueProfile::isAligned(char residue, int row)const
 	return false;
 }
 
-bool ColumnResidueProfile::isAligned(int row)const
+bool ColumnResidueProfile::isAligned(int row)
 {
-	ResidueRowsMap::const_iterator cit = findRow(row);
-	if (cit != m_residueRowsMap.end())
-		return cit->second.second;
+	ResidueRowsMap::iterator* cit = findRow(row);
+	if (cit)
+		return (*cit)->second.second;
 	else
 		return false;
 }
@@ -382,9 +383,8 @@ void ResidueProfiles::addOneRow(BlockModelPair& bmp, const string& mSeq, const s
 			int mPos = mBlocks[bn].getStart() + i;
 			int sPos = sBlocks[bn].getStart() + i;
 			ColumnAddress col(mPos);
-			m_profiles[col].addOccurence(sSeq[sPos], m_totalRows, true);
-			//if (!(m_profiles[col].hasRow(masterRow)))
 			m_profiles[col].addOccurence(mSeq[mPos], masterRow, true);
+			m_profiles[col].addOccurence(sSeq[sPos], m_totalRows, true);
 		}
 		//add the unaligned region to the c-term unless it is the last block
 		if (bn != (mBlocks.size() -1))
@@ -961,6 +961,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/10/17 18:14:55  cliu
+ * speed it up
+ *
  * Revision 1.11  2006/09/18 19:54:04  cliu
  * bug fixes
  *

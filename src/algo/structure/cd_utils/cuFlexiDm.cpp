@@ -62,11 +62,13 @@ void ResidueMatrix::read(ColumnResidueProfile& crp)
 
 bool ResidueMatrix::getAlignedPair(unsigned row1, unsigned row2, pair< string, string >& seqPair)
 {
-    if (row1 > m_rows.size() || row2 > m_rows.size())
-        return false;
+    /*if (row1 > m_rows.size() || row2 > m_rows.size())
+        return false;*/
     RowContent& rc1 = m_rows[row1];
     RowContent& rc2 = m_rows[row2];
-    assert(rc1.size() == rc2.size());
+	seqPair.first.reserve(rc1.size());
+	seqPair.second.reserve(rc2.size());
+    //assert(rc1.size() == rc2.size());
     for (int i = 0; i < rc1.size(); i++)
     {
         if (rc1[i].aligned && rc2[i].aligned)
@@ -133,35 +135,31 @@ void FlexiDm::GetPercentIdentities(pProgressFunction pFunc)
     ResidueMatrix rm(nrows);
     rp.traverseColumnsOnMaster(rm);
 
-    int Identity;
-    char Res1, Res2;
-
+    int Identity, TotalAligned;
     int count = 0;
     int total = (int)((double)nrows * (((double)nrows-1)/2));
-    pair<string, string> seqPair;
+
     // for each row in the alignment
     for (int j=0; j<nrows; j++) 
     {
         m_Array[j][j] = 0.0;
+		ResidueMatrix::RowContent& rc1 = rm.getRow(j);
         // for each other row in the alignment
         for (int k=j+1; k<nrows; k++) 
-        {
-            Identity = 0;
-            seqPair.first.erase();
-            seqPair.second.erase();
-            rm.getAlignedPair(j,k, seqPair);
-            // for each column of the alignment +/- extensions
-            for (int i = 0; i < seqPair.first.size(); i++) 
-            {
-                Res1 = seqPair.first[i];
-                Res2 = seqPair.second[i];
-                // calculate percent of identical residues
-                if (Res1 == Res2 && Res1 != 0) 
-                {
-                    Identity++;
-                }
-            }
-            m_Array[j][k] = GetDistance(Identity, seqPair.first.size());
+        {			 
+			Identity = 0;
+			TotalAligned = 0;
+			ResidueMatrix::RowContent& rc2 = rm.getRow(k);
+		    for (int i = 0; i < rc1.size(); i++)
+			{
+				if (rc1[i].aligned && rc2[i].aligned)
+				{
+					TotalAligned++;
+					if (rc1[i].residue == rc2[i].residue)
+						Identity++;
+				}
+			}
+            m_Array[j][k] = GetDistance(Identity, TotalAligned);
             m_Array[k][j] = m_Array[j][k]; 
         }
         count += nrows - (j+1);

@@ -9,14 +9,15 @@ BEGIN_SCOPE(cd_utils)
 //AlignmentCollection--------------------------------------------------
 
 AlignmentCollection::AlignmentCollection(CCdCore* cd, CCdCore::AlignmentUsage alignUse, bool uniqueSeqId,bool scoped)
- : m_firstCd(0), m_seqAligns(), m_rowSources(), m_seqStore(0)
+ : m_firstCd(0), m_seqAligns(), m_rowSources(), m_seqTable()
 {
 	AddAlignment(cd,alignUse, uniqueSeqId, scoped);
     m_numFamilies = 1;
+
 }
 
 AlignmentCollection::AlignmentCollection()
-: m_firstCd(0), m_seqAligns(), m_rowSources(), m_seqStore(0)
+: m_firstCd(0), m_seqAligns(), m_rowSources(), m_seqTable()
 {
     m_numFamilies = 1;
 }
@@ -32,6 +33,7 @@ void AlignmentCollection::AddAlignment(CCdCore* cd, CCdCore::AlignmentUsage alig
 		addNormalAlignment(cd, uniqueSeqId,scoped);
 	if(usePending)
 		addPendingAlignment(cd, uniqueSeqId,scoped);
+	AddSequence(cd);
 }
 
 void AlignmentCollection::AddAlignment(const AlignmentCollection& ac)
@@ -46,11 +48,17 @@ void AlignmentCollection::AddAlignment(const AlignmentCollection& ac)
 		for (int j = 0; j < srcs.size(); j++)
 			m_rowSources.addEntry(m_seqAligns.size() - 1, srcs[j], ac.isCDInScope(srcs[j].cd));
 	}
+	AddSequence(ac);
 }
 
-void AlignmentCollection::setSeqStore(CCdCore* sourceCD)
+void AlignmentCollection::AddSequence(CCdCore* cd)
 {
-	m_seqStore = sourceCD;
+	m_seqTable.addSequences(cd->SetSequences());
+}
+
+void AlignmentCollection::AddSequence(const AlignmentCollection& ac)
+{
+	m_seqTable.addSequences(ac.m_seqTable);
 }
 
 void AlignmentCollection::addPendingAlignment(CCdCore* cd, bool uniqueSeqId, bool scoped)
@@ -425,13 +433,27 @@ void AlignmentCollection::getAllRowsForCD(CCdCore* cd, vector<int>& colRows)cons
 }
 
 //  get the bioseq for the designated alignment row (for editing)
-bool   AlignmentCollection::GetBioseqForRow(int row, CRef< CBioseq >& bioseq)  const
+bool   AlignmentCollection::GetBioseqForRow(int row, CRef< CBioseq >& bioseq)
 {
-	CRef< CSeq_id >  SeqID;
-	GetSeqIDForRow(row, SeqID);
-	CCdCore* myCd = m_rowSources.findEntry(row).cd;
-    int seqIndex = myCd->GetSeqIndex(SeqID);
-    return myCd->GetBioseqForIndex(seqIndex, bioseq);
+	if(m_bioseqs.size() == 0)
+		m_bioseqs.assign(GetNumRows(), CRef< CBioseq >());
+	if (m_bioseqs[row].Empty())
+	{
+		CRef< CSeq_id >  SeqID;
+		GetSeqIDForRow(row, SeqID);
+		bool gotit = m_seqTable.findSequence(SeqID, bioseq);
+		/*
+		CCdCore* myCd = m_rowSources.findEntry(row).cd;
+		int seqIndex = myCd->GetSeqIndex(SeqID);
+		bool gotit = myCd->GetBioseqForIndex(seqIndex, bioseq);*/
+		m_bioseqs[row] = bioseq;
+		return gotit;
+	}
+	else
+	{
+		bioseq = m_bioseqs[row];
+		return true;
+	}
 }
 
 bool AlignmentCollection::GetSpeciesForRow(int row, string& species) const
@@ -479,13 +501,7 @@ bool AlignmentCollection::GetSeqEntryForRow(int row, CRef<CSeq_entry>& seqEntry)
 {
 	CRef<CSeq_id> seqID;
 	GetSeqIDForRow(row, seqID);
-	CCdCore* myCd = 0;
-	if (m_seqStore)
-		myCd = m_seqStore;
-	else
-		myCd = m_rowSources.findEntry(row).cd;
-	int seqIndex = myCd->GetSeqIndex(seqID);
-	return myCd->GetSeqEntryForIndex(seqIndex, seqEntry);
+	return m_seqTable.findSequence(seqID, seqEntry);
 }
 
 //  Return all rows with the same Seq_id; if 'inclusive' = true, the
@@ -589,7 +605,7 @@ void AlignmentCollection::EraseRows(CCdCore * pCD,vector < int > & rows)
     }
 }*/
 
-void AlignmentCollection::GetAllSequences(vector<string>& sequences) const
+void AlignmentCollection::GetAllSequences(vector<string>& sequences)
 {
     sequences.clear();
 	int numRow = GetNumRows();
@@ -599,21 +615,16 @@ void AlignmentCollection::GetAllSequences(vector<string>& sequences) const
     }
 }
 
-string AlignmentCollection::GetSequenceForRow(int row) const
+string AlignmentCollection::GetSequenceForRow(int row)
 {
-	CRef<CSeq_id> seqID;
-	GetSeqIDForRow(row, seqID);
-	CCdCore* myCd = 0;
-	if (m_seqStore)
-		myCd = m_seqStore;
-	else
-		myCd = m_rowSources.findEntry(row).cd;
-	int seqIndex = myCd->GetSeqIndex(seqID);
-
-	return myCd->GetSequenceStringByIndex(seqIndex);
+	CRef< CBioseq > bioseq;
+	string seq;
+	GetBioseqForRow(row, bioseq);
+	GetNcbieaaString(*bioseq, seq);
+	return seq;
 }
 
-void AlignmentCollection::GetAlignedResiduesForRow(int row, char*& aseq) const
+void AlignmentCollection::GetAlignedResiduesForRow(int row, char*& aseq)
 {
 	string seq = GetSequenceForRow(row);
 	if(aseq == 0)
@@ -674,7 +685,7 @@ bool AlignmentCollection::IsNonOverlapping(const CRef< CSeq_align >& align, int&
 }
 
 
-void AlignmentCollection::GetAlignedResiduesForAll(char** & ppAlignedResidues, bool forceRecompute) const
+void AlignmentCollection::GetAlignedResiduesForAll(char** & ppAlignedResidues, bool forceRecompute)
 {
 //-------------------------------------------------------------------------
 // allocate space for, and make, an array of all aligned residues
@@ -701,7 +712,7 @@ void AlignmentCollection::GetAlignedResiduesForAll(char** & ppAlignedResidues, b
     }
 }
 
-bool AlignmentCollection::IsStruct(int row) const
+bool AlignmentCollection::IsStruct(int row)
 {
 	CRef< CBioseq > bioSeq;
 	GetBioseqForRow(row, bioSeq);
@@ -738,6 +749,10 @@ MultipleAlignment::MultipleAlignment()
 
 bool MultipleAlignment::setAlignment(const CDFamily& family)
 {
+	vector<CCdCore*> cds;
+	family.getAllCD(cds);
+	for (int i = 0; i < cds.size(); i++)
+		AddSequence(cds[i]);
 	CDFamilyIterator cit = family.begin();
 	return setAlignment(family, cit);
 }
@@ -764,6 +779,7 @@ bool MultipleAlignment::setAlignment(const CDFamily& family, CDFamilyIterator& s
 			result = false;
 		}
 		m_err += tmp.m_err;
+
 	}
 	return result;
 }
@@ -816,7 +832,7 @@ bool MultipleAlignment::isBlockAligned() const
 }
 
 //-1, no child master in the parent
-int MultipleAlignment::appendAlignment(const MultipleAlignment& malign, bool includeUnScoped)
+int MultipleAlignment::appendAlignment(MultipleAlignment& malign, bool includeUnScoped)
 {
 	int added = 0;
 	int num = malign.m_blockTable.size();

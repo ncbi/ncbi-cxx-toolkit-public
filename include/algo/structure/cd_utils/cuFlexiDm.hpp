@@ -57,8 +57,10 @@ public:
 	ResidueMatrix(unsigned numRows);
 	void read(ColumnResidueProfile& crp);
 	bool getAlignedPair(unsigned row1, unsigned row2, pair< string, string >& seqPair); 
-private:
 	typedef vector< ResidueCell > RowContent;
+	RowContent& getRow(int row) {return m_rows[row];}
+private:
+	
 	vector< RowContent > m_rows;
 	int m_numRows;
 };
@@ -96,6 +98,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/10/17 18:15:11  cliu
+ * speed it up
+ *
  * Revision 1.2  2006/09/18 19:53:50  cliu
  * bug fixes
  *
