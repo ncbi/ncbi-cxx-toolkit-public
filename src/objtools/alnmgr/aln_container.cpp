@@ -56,20 +56,23 @@ CAlnCollection::insert(const CSeq_align& seq_align)
         break;
     case TSegs::e_not_set:
         NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                   "CSeq_alignCollection::insert(): Seq-align.segs not set.");
+                   "Seq-align.segs not set.");
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
-                   "CSeq_alignCollection does not support "
-                   "this type of alignment.");
+                   "Unsupported alignment type.");
     }
 }
 
 
 /*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/10/17 19:21:10  todorov
- * Initial revision.
- *
- * ===========================================================================
- */
+* ===========================================================================
+*
+* $Log$
+* Revision 1.2  2006/10/17 20:05:09  todorov
+* Fixed exception text.
+*
+* Revision 1.1  2006/10/17 19:21:10  todorov
+* Initial revision.
+*
+* ===========================================================================
+*/
