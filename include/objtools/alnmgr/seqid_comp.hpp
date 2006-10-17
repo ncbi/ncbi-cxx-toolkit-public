@@ -39,6 +39,7 @@
 
 #include <objects/seqalign/seqalign_exception.hpp>
 
+#include <objmgr/scope.hpp>
 
 /// Implementation includes
 
@@ -99,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/17 21:25:32  todorov
+* + #include <objmgr/scope.hpp>
+*
 * Revision 1.1  2006/10/17 19:24:15  todorov
 * Initial revision.
 *
