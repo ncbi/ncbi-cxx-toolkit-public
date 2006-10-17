@@ -63,8 +63,9 @@ public:
     virtual int  Run          (void);
     CScope&      GetScope     (void) const;
     void         LoadInputAlns(void);
-    void         InsertAln    (const CSeq_align* aln) {
+    bool         InsertAln    (const CSeq_align* aln) {
         m_AlnContainer.insert(*aln);
+        return true;
     }
 
 private:
@@ -174,6 +175,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/17 21:11:50  todorov
+* InsertAln returns bool for portability.
+*
 * Revision 1.1  2006/10/17 19:26:50  todorov
 * Initial revision.
 *
