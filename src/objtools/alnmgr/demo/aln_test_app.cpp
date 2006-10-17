@@ -152,14 +152,19 @@ int CAlnTestApp::Run(void)
     cout << "QueryAnchoredTest:" 
          << id_aln_bitmap.IsQueryAnchored() << endl;
 
-    cout << "Number of alignments: " << id_aln_bitmap.AlnCount() << endl;
-    cout << "Number of alignments containing nuc seqs:" << id_aln_bitmap.AlnWithNucCount() << endl;
-    cout << "Number of alignments containing prot seqs:" << id_aln_bitmap.AlnWithProtCount() << endl;
-    cout << "Number of alignments containing nuc seqs only:" << id_aln_bitmap.NucOnlyAlnCount() << endl;
-    cout << "Number of alignments containing prot seqs only:" << id_aln_bitmap.ProtOnlyAlnCount() << endl;
-    cout << "Number of alignments containing both nuc and prot seqs:" << id_aln_bitmap.TranslatedAlnCount() << endl;
-    cout << "Number of sequences:" << id_aln_bitmap.SeqCount() << endl;
-    cout << "Number of self-aligned sequences:" << id_aln_bitmap.SelfAlignedSeqCount() << endl;
+    if (id_aln_bitmap.IsQueryAnchored()) {
+        cout << "Query seq-id:" 
+             << id_aln_bitmap.GetAnchorHandle().GetSeqId()->AsFastaString() << endl;
+    }
+
+    cout << "Number of alignments: " << id_aln_bitmap.GetAlnCount() << endl;
+    cout << "Number of alignments containing nuc seqs:" << id_aln_bitmap.GetAlnWithNucCount() << endl;
+    cout << "Number of alignments containing prot seqs:" << id_aln_bitmap.GetAlnWithProtCount() << endl;
+    cout << "Number of alignments containing nuc seqs only:" << id_aln_bitmap.GetNucOnlyAlnCount() << endl;
+    cout << "Number of alignments containing prot seqs only:" << id_aln_bitmap.GetProtOnlyAlnCount() << endl;
+    cout << "Number of alignments containing both nuc and prot seqs:" << id_aln_bitmap.GetTranslatedAlnCount() << endl;
+    cout << "Number of sequences:" << id_aln_bitmap.GetSeqCount() << endl;
+    cout << "Number of self-aligned sequences:" << id_aln_bitmap.GetSelfAlignedSeqCount() << endl;
 
     return 0;
 }
@@ -175,6 +180,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/10/17 21:54:55  todorov
+* Printing the query seq-id.
+*
 * Revision 1.2  2006/10/17 21:11:50  todorov
 * InsertAln returns bool for portability.
 *
