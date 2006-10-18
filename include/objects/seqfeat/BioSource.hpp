@@ -59,6 +59,12 @@ public:
     // Get the appropriate gene code from this BioSource.
     int GetGenCode(void) const;
 
+    // function for getting genome value from organelle name
+    static CBioSource::EGenome GetGenomeByOrganelle (string organelle, NStr::ECase use_case = NStr::eCase, bool starts_with = false);
+
+    // function for getting organelle name from genome value
+    static string GetOrganelleByGenome (unsigned int genome);
+    
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);
@@ -89,6 +95,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/10/18 17:37:38  bollin
+* Added functions for getting organelle name from genome value and genome value
+* from organelle name.
+*
 * Revision 1.4  2006/03/14 20:21:51  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *

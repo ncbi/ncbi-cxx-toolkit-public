@@ -44,6 +44,7 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <algorithm>
 #include <set>
+#include <util/static_map.hpp>
 
 // generated classes
 
@@ -90,6 +91,91 @@ int CBioSource::GetGenCode(void) const
     }
 }
 
+typedef pair <const char *, const CBioSource::EGenome> TGenomeKey;
+
+static const TGenomeKey genome_key_to_subtype [] = {
+    TGenomeKey ( "apicoplast",                CBioSource::eGenome_apicoplast       ),
+    TGenomeKey ( "chloroplast",               CBioSource::eGenome_chloroplast      ),
+    TGenomeKey ( "chromoplast",               CBioSource::eGenome_chromoplast      ),
+    TGenomeKey ( "cyanelle",                  CBioSource::eGenome_cyanelle         ),
+    TGenomeKey ( "endogenous_virus",          CBioSource::eGenome_endogenous_virus ),
+    TGenomeKey ( "extrachrom",                CBioSource::eGenome_extrachrom       ),
+    TGenomeKey ( "genomic",                   CBioSource::eGenome_genomic          ),
+    TGenomeKey ( "hydrogenosome",             CBioSource::eGenome_hydrogenosome    ),
+    TGenomeKey ( "insertion_seq",             CBioSource::eGenome_insertion_seq    ),
+    TGenomeKey ( "kinetoplast",               CBioSource::eGenome_kinetoplast      ),
+    TGenomeKey ( "leucoplast",                CBioSource::eGenome_leucoplast       ),
+    TGenomeKey ( "macronuclear",              CBioSource::eGenome_macronuclear     ),
+    TGenomeKey ( "mitochondrion",             CBioSource::eGenome_mitochondrion    ),
+    TGenomeKey ( "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast      ),
+    TGenomeKey ( "nucleomorph",               CBioSource::eGenome_nucleomorph      ),
+    TGenomeKey ( "plasmid",                   CBioSource::eGenome_plasmid          ),
+    TGenomeKey ( "plastid",                   CBioSource::eGenome_plastid          ),
+    TGenomeKey ( "plastid:apicoplast",        CBioSource::eGenome_apicoplast       ),
+    TGenomeKey ( "plastid:chloroplast",       CBioSource::eGenome_chloroplast      ),
+    TGenomeKey ( "plastid:chromoplast",       CBioSource::eGenome_chromoplast      ),
+    TGenomeKey ( "plastid:cyanelle",          CBioSource::eGenome_cyanelle         ),
+    TGenomeKey ( "plastid:leucoplast",        CBioSource::eGenome_leucoplast       ),
+    TGenomeKey ( "plastid:proplastid",        CBioSource::eGenome_proplastid       ),
+    TGenomeKey ( "proplastid",                CBioSource::eGenome_proplastid       ),
+    TGenomeKey ( "proviral",                  CBioSource::eGenome_proviral         ),
+    TGenomeKey ( "transposon",                CBioSource::eGenome_transposon       ),
+    TGenomeKey ( "unknown",                   CBioSource::eGenome_unknown          ),
+    TGenomeKey ( "virion",                    CBioSource::eGenome_virion           )
+};
+
+
+typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PNocase_CStr> TGenomeMap;
+static const TGenomeMap sm_GenomeKeys (genome_key_to_subtype, sizeof (genome_key_to_subtype));
+
+CBioSource::EGenome CBioSource::GetGenomeByOrganelle (string organelle, NStr::ECase use_case, bool starts_with)
+{
+    CBioSource::EGenome gtype = CBioSource::eGenome_unknown;
+    
+    if (use_case == NStr::eCase && !starts_with) {
+        TGenomeMap::const_iterator g_iter = sm_GenomeKeys.find (organelle.c_str ());
+        if (g_iter != sm_GenomeKeys.end ()) {
+            gtype = g_iter->second;
+        }
+    } else {
+        TGenomeMap::const_iterator g_iter = sm_GenomeKeys.begin();
+        if (starts_with) {
+            string match;
+            while (g_iter != sm_GenomeKeys.end() && gtype == CBioSource::eGenome_unknown) {
+                match = g_iter->first;
+                if (NStr::StartsWith(organelle, match.c_str(), use_case)) {
+                    if (organelle.length() == match.length()
+                        || (match.length() < organelle.length() && isspace (organelle[match.length()]))) {
+                        gtype = g_iter->second;
+                    }
+                }
+                ++g_iter;
+            }
+        } else {
+            while (g_iter != sm_GenomeKeys.end() && gtype == CBioSource::eGenome_unknown) {
+                if (NStr::Equal(organelle, g_iter->first, use_case)) {
+                    gtype = g_iter->second;
+                }
+                ++g_iter;
+            }
+        }
+    }
+    return gtype;
+}
+
+
+string CBioSource::GetOrganelleByGenome (unsigned int genome)
+{
+    string organelle = "";
+    TGenomeMap::const_iterator g_iter = sm_GenomeKeys.begin();
+    while (g_iter != sm_GenomeKeys.end() && g_iter->second != genome) {
+        ++g_iter;
+    }
+    if (g_iter != sm_GenomeKeys.end()) {
+        organelle = g_iter->first;
+    }
+    return organelle;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -100,6 +186,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.8  2006/10/18 17:37:42  bollin
+* Added functions for getting organelle name from genome value and genome value
+* from organelle name.
+*
 * Revision 6.7  2006/03/14 20:21:52  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *
