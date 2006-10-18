@@ -513,7 +513,7 @@ bool CZipCompression::CompressFile(const string& src_file,
     string errmsg  = cf.GetErrorDescription();
     // Close file
     cf.Close();
-    // Restore previous error info
+    // Set error information
     SetError(errcode, errmsg.c_str());
     return false;
 }
@@ -537,7 +537,7 @@ bool CZipCompression::DecompressFile(const string& src_file,
     string errmsg  = cf.GetErrorDescription();
     // Restore previous error info
     cf.Close();
-    // Restore previous error info
+    // Set error information
     SetError(errcode, errmsg.c_str());
     return false;
 }
@@ -1118,6 +1118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/10/18 14:21:04  ivanov
+ * Comments changes
+ *
  * Revision 1.28  2006/06/15 18:23:57  ivanov
  * Added CZipCompression::EstimateCompressionBufferSize().
  * Replace locals z_stream with class member STREAM.

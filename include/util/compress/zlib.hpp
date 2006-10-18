@@ -107,14 +107,15 @@ const int kZlibDefaultCompression = -1;
 class NCBI_XUTIL_EXPORT CZipCompression : public CCompression
 {
 public:
-    /// Zip stream processing flags.
+    /// Data processing flags.
+    /// @sa EFlags
     enum EFlags {
         ///< Check & skip file header for decompression stream
         fCheckFileHeader = (1<<1), 
         ///< Use .gz file format to write into compression stream
         ///< (the archive also can store file name and file modification
         ///< date in this format)
-        fWriteGZipFormat = (1<<2)  
+        fWriteGZipFormat = (1<<2)
     };
 
     /// Constructor.
@@ -546,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/10/18 14:19:26  ivanov
+ * Comments changes
+ *
  * Revision 1.17  2006/06/15 18:22:37  ivanov
  * Added CZipCompression::EstimateCompressionBufferSize().
  * Added doxygen comments.
