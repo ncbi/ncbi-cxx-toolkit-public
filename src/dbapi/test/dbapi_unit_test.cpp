@@ -38,6 +38,7 @@
 #include <dbapi/driver/drivers.hpp>
 
 #include "dbapi_unit_test.hpp"
+#include <dbapi/driver/dbapi_svc_mapper.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -198,6 +199,8 @@ void
 CDBAPIUnitTest::TestInit(void)
 {
     try {
+        DBLB_INSTALL_DEFAULT();
+
         if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
             m_max_varchar_size = 8000;
         } else {
@@ -237,32 +240,6 @@ CDBAPIUnitTest::TestInit(void)
         Connect(m_Conn);
 
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
-
-//         {
-//             auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("TestProc") );
-//
-//             auto_stmt->SendSql();
-//             while(auto_stmt->HasMoreResults()) {
-//                 if( auto_stmt->HasRows() ) {
-//                     auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
-//
-//                     switch( rs->GetResultType() ) {
-//                     case eDB_RowResult:
-//                         while(rs->Next()) {
-//                             // retrieve row results
-//                         }
-//                         break;
-//                     case eDB_ParamResult:
-//                         while(rs->Next()) {
-//                             // Retrieve parameter row
-//                         }
-//                         break;
-//                     default:
-//                         break;
-//                     }
-//                 }
-//             }
-//         }
 
         // Create a test table ...
         string sql;
@@ -2325,6 +2302,27 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
     return cur_rec_num;
 }
 
+int
+CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt)
+{
+    int rec_num = 0;
+
+    BOOST_CHECK(auto_stmt->HasMoreResults());
+    BOOST_CHECK(auto_stmt->HasRows());
+    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+    if (rs.get() != NULL) {
+
+        while (rs->Next()) {
+            ++rec_num;
+        }
+    }
+
+    DumpResults(auto_stmt.get());
+
+    return rec_num;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Cursor(void)
@@ -2566,6 +2564,30 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         BOOST_CHECK( rs->Next() );
         auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
         BOOST_CHECK_EQUAL( string("oops"), col_metadata->GetName(1) );
+    }
+
+    // Check resultset ...
+    {
+        int num = 0;
+        string sql = "select user_id(), convert(varchar(64), user_name()), "
+            "convert(nvarchar(64), user_name())";
+
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // 1) Select recordset with just one record
+        auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( sql ) );
+        BOOST_CHECK( rs.get() != NULL );
+
+        while (rs->Next()) {
+            BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
+            BOOST_CHECK(rs->GetVariant(2).GetString().size() > 0);
+            BOOST_CHECK(rs->GetVariant(3).GetString().size() > 0);
+            ++num;
+        }
+
+        BOOST_CHECK_EQUAL(num, 1);
+
+        DumpResults(auto_stmt.get());
     }
 
 //     // TMP
@@ -3086,6 +3108,57 @@ CDBAPIUnitTest::Test_Procedure(void)
         int status = auto_stmt->GetReturnStatus();
         status = status; // Get rid of warnings.
     }
+
+
+    // Test returned recordset ...
+    {
+        {
+            int num = 0;
+            // Execute it first time ...
+            auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("sp_databases", 3) );
+
+            auto_stmt->Execute();
+
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get() != NULL);
+
+            while (rs->Next()) {
+                BOOST_CHECK(rs->GetVariant(1).GetString().size() > 0);
+                BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
+                BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), true);
+                ++num;
+            }
+
+            BOOST_CHECK(num > 0);
+
+            DumpResults(auto_stmt.get());
+        }
+
+        {
+            int num = 0;
+            auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("sp_server_info", 3) );
+
+            auto_stmt->Execute();
+
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get() != NULL);
+
+            while (rs->Next()) {
+                BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
+                BOOST_CHECK(rs->GetVariant(2).GetString().size() > 0);
+                BOOST_CHECK(rs->GetVariant(3).GetString().size() > 0);
+                ++num;
+            }
+
+            BOOST_CHECK(num > 0);
+
+            DumpResults(auto_stmt.get());
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3212,37 +3285,67 @@ CDBAPIUnitTest::Test_NULL(void)
     {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-        // Drop all records ...
-        sql  = " DELETE FROM " + GetTableName();
-        auto_stmt->ExecuteUpdate(sql);
+        {
+            // Drop all records ...
+            sql  = " DELETE FROM " + GetTableName();
+            auto_stmt->ExecuteUpdate(sql);
 
-        sql  = " INSERT INTO " + GetTableName() +
-            "(int_field, vc1000_field) "
-            "VALUES(@int_field, @vc1000_field) \n";
+            sql  = " INSERT INTO " + GetTableName() +
+                "(int_field, vc1000_field) "
+                "VALUES(@int_field, @vc1000_field) \n";
 
-        // CVariant variant(eDB_Text);
-        // variant.Append(" ", 1);
+            // CVariant variant(eDB_Text);
+            // variant.Append(" ", 1);
 
-        // Insert data ...
-        for (long ind = 0; ind < rec_num; ++ind) {
-            if (ind % 2 == 0) {
-                auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
-                auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
-            } else {
-                auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
-                auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@vc1000_field" );
+            // Insert data ...
+            for (long ind = 0; ind < rec_num; ++ind) {
+                if (ind % 2 == 0) {
+                    auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
+                    auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
+                } else {
+                    auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
+                    auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@vc1000_field" );
+                }
+
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
             }
 
-            // Execute a statement with parameters ...
-            auto_stmt->ExecuteUpdate( sql );
-
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
+            // Check record number ...
+            BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
         }
 
-        // Check record number ...
-        BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+        {
+            // Drop all records ...
+            sql  = " DELETE FROM #test_unicode_table";
+            auto_stmt->ExecuteUpdate(sql);
+
+            sql  = " INSERT INTO #test_unicode_table"
+                "(nvc255_field) VALUES(@nvc255_field)";
+
+            // Insert data ...
+            for (long ind = 0; ind < rec_num; ++ind) {
+                if (ind % 2 == 0) {
+                    auto_stmt->SetParam( CVariant(eDB_VarChar), "@nvc255_field" );
+                } else {
+                    auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@nvc255_field" );
+                }
+
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+            }
+
+            // Check record number ...
+            BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+        }
     }
 
     if (false) {
@@ -3285,34 +3388,91 @@ CDBAPIUnitTest::Test_NULL(void)
     if (true) {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-        sql = "SELECT int_field, vc1000_field FROM " + GetTableName() + " ORDER BY id";
+        {
+            sql = "SELECT int_field, vc1000_field FROM " + GetTableName() + " ORDER BY id";
 
-        auto_stmt->SendSql( sql );
-        BOOST_CHECK(auto_stmt->HasMoreResults());
-        BOOST_CHECK(auto_stmt->HasRows());
-        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-        BOOST_CHECK(rs.get());
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get());
 
-        for (long ind = 0; ind < rec_num; ++ind) {
-            BOOST_CHECK(rs->Next());
+            for (long ind = 0; ind < rec_num; ++ind) {
+                BOOST_CHECK(rs->Next());
 
-            const CVariant& int_field = rs->GetVariant(1);
-            const CVariant& vc1000_field = rs->GetVariant(2);
+                const CVariant& int_field = rs->GetVariant(1);
+                const CVariant& vc1000_field = rs->GetVariant(2);
 
-            if (ind % 2 == 0) {
-                BOOST_CHECK( !int_field.IsNull() );
-                BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
+                if (ind % 2 == 0) {
+                    BOOST_CHECK( !int_field.IsNull() );
+                    BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
 
-                BOOST_CHECK( vc1000_field.IsNull() );
-            } else {
-                BOOST_CHECK( int_field.IsNull() );
+                    BOOST_CHECK( vc1000_field.IsNull() );
+                } else {
+                    BOOST_CHECK( int_field.IsNull() );
 
-                BOOST_CHECK( !vc1000_field.IsNull() );
-                BOOST_CHECK_EQUAL( vc1000_field.GetString(), NStr::IntToString(ind) );
+                    BOOST_CHECK( !vc1000_field.IsNull() );
+                    BOOST_CHECK_EQUAL( vc1000_field.GetString(), NStr::IntToString(ind) );
+                }
             }
+
+            DumpResults(auto_stmt.get());
         }
 
-        DumpResults(auto_stmt.get());
+        {
+            sql = "SELECT nvc255_field FROM #test_unicode_table ORDER BY id";
+
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get());
+
+            for (long ind = 0; ind < rec_num; ++ind) {
+                BOOST_CHECK(rs->Next());
+
+                const CVariant& nvc255_field = rs->GetVariant(1);
+
+                if (ind % 2 == 0) {
+                    BOOST_CHECK( nvc255_field.IsNull() );
+                } else {
+                    BOOST_CHECK( !nvc255_field.IsNull() );
+                    BOOST_CHECK_EQUAL( nvc255_field.GetString(), NStr::IntToString(ind) );
+                }
+            }
+
+            DumpResults(auto_stmt.get());
+        }
+    }
+
+    // Check NULL with stored procedures ...
+    {
+        {
+            auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("sp_server_info", 1) );
+
+            // Set parameter to NULL ...
+            auto_stmt->SetParam( CVariant(eDB_Int), "@attribute_id" );
+            auto_stmt->Execute();
+
+            if (m_args.GetServerType() == CTestArguments::eSybase) {
+                BOOST_CHECK_EQUAL( 30, GetNumOfRecords(auto_stmt) );
+            } else {
+                BOOST_CHECK_EQUAL( 29, GetNumOfRecords(auto_stmt) );
+            }
+
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
+
+            // Set parameter to 1 ...
+            auto_stmt->SetParam( CVariant( Int4(1) ), "@attribute_id" );
+            auto_stmt->Execute();
+
+            BOOST_CHECK_EQUAL( 1, GetNumOfRecords(auto_stmt) );
+        }
+
+        {
+        }
     }
 }
 
@@ -4547,6 +4707,114 @@ CDBAPIUnitTest::Test_Variant(void)
     }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_NCBI_LS(void)
+{
+    {
+        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+        BOOST_CHECK( auto_conn.get() != NULL );
+
+        auto_conn->SetMode(IConnection::eBulkInsert);
+
+        auto_conn->Connect(
+            "anyone",
+            "allowed",
+            "MSSQL57",
+            "NCBI_LS"
+            );
+
+        auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("FindAccountMatchAll", 20) );
+
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@first" );
+        auto_stmt->SetParam( CVariant("a%"), "@last" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
+//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
+//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
+//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone3" );
+
+        auto_stmt->Execute();
+
+        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+
+        auto_stmt->Execute();
+
+        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+    }
+
+    {
+        int sid = 0;
+        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+        BOOST_CHECK( auto_conn.get() != NULL );
+
+        auto_conn->Connect(
+            "anyone",
+            "allowed",
+            "MSSQL57",
+            "NCBI_LS"
+            );
+
+        {
+            auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+
+            auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "SELECT sID FROM Session" ) );
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+            sid = rs->GetVariant(1).GetInt4();
+            BOOST_CHECK( sid > 0 );
+        }
+
+        {
+            int num = 0;
+            auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("getAcc4Sid", 2) );
+
+            auto_stmt->SetParam( CVariant(Int4(sid)), "@sid" );
+            auto_stmt->SetParam( CVariant(Int2(1)), "@need_info" );
+
+            auto_stmt->Execute();
+
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get() != NULL);
+
+            while (rs->Next()) {
+                BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
+                BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
+                BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), false);
+                BOOST_CHECK(rs->GetVariant(4).GetString().size() > 0);
+                BOOST_CHECK(rs->GetVariant(5).GetString().size() > 0);
+                ++num;
+            }
+
+            BOOST_CHECK(num > 0);
+
+            DumpResults(auto_stmt.get());
+        }
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
@@ -4804,6 +5072,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if (args.GetServerType() == CTestArguments::eMsSql &&
+        args.GetDriverName() != "ftds64_odbc"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NCBI_LS, DBAPIInstance);
+        add(tc);
+    }
+
     // development ....
     if (false) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
@@ -4997,6 +5272,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.106  2006/10/18 18:39:05  ssikorsk
+ * Implemented and enabled Test_NCBI_LS
+ *
  * Revision 1.105  2006/10/12 22:08:40  ssikorsk
  * Enabled Test_NULL.
  *
