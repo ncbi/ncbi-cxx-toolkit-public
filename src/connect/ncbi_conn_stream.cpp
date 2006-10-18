@@ -132,7 +132,7 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* a_net_info,
         ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(0);
     if (!net_info)
         return 0;
-    if (url && !ConnNetInfo_ParseURL(net_info, url))
+    if (url  &&  !ConnNetInfo_ParseURL(net_info, url))
         return 0;
     if (host) {
         strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
@@ -142,7 +142,7 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* a_net_info,
         strncpy0(net_info->path, path, sizeof(net_info->path) - 1);
     if (args)
         strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
-    if (timeout && timeout != kDefaultTimeout) {
+    if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
@@ -167,8 +167,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             port,
                                             path.c_str(),
                                             args.c_str(),
-                                            user_header.empty()
-                                            ? 0 : user_header.c_str(),
+                                            user_header.c_str(),
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -178,16 +177,18 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
 
 
 CConn_HttpStream::CConn_HttpStream(const string&       url,
+                                   const SConnNetInfo* net_info,
+                                   const string&       user_header,
                                    THCC_Flags          flags,
                                    const STimeout*     timeout,
                                    streamsize          buf_size)
-    : CConn_IOStream(s_HttpConnectorBuilder(0,
+    : CConn_IOStream(s_HttpConnectorBuilder(net_info,
                                             url.c_str(),
                                             0,
                                             0,
                                             0,
                                             0,
-                                            0,
+                                            user_header.c_str(),
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -430,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2006/10/18 17:24:48  lavr
+ * CConn_HttpStream(url,...) ctor to take net_info and user_header
+ *
  * Revision 6.58  2006/08/18 15:55:12  lavr
  * Warn if unable to connect to a service
  *
