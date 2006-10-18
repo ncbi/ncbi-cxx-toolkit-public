@@ -148,6 +148,19 @@ CSearchResults::GetErrors(int min_severity) const
     return errs;
 }
 
+bool
+CSearchResults::HasAlignments() const
+{
+    if (m_Alignment.Empty()) {
+        return false;
+    }
+    // this are the results for a single query...
+    _ASSERT(m_Alignment->Get().size() == 1);    
+    // ... which are stored in a discontinuous Seq-align
+    _ASSERT(m_Alignment->Get().front()->GetSegs().IsDisc());
+    return m_Alignment->Get().front()->GetSegs().GetDisc().Get().size() != 0;
+}
+
 CConstRef<CSeq_id>
 CSearchResults::GetSeqId() const
 {
