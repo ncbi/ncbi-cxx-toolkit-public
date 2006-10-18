@@ -38,9 +38,10 @@
 #  include <process.h>
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
+#  include <errno.h>
 #  include <sys/types.h>
 #  include <sys/wait.h>
-#  include <errno.h>
+#  include <fcntl.h>
 #elif defined(NCBI_OS_MAC)
 #  error "Class CExec defined only for MS Windows and UNIX platforms"
 #endif
@@ -130,14 +131,31 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
         }
         return -1;
     }
+    
+    // Create temporary pipe to get status of execution
+    // of the child process
+    int status_pipe[2];
+    if (pipe(status_pipe) < 0) {
+        NCBI_THROW(CExecException, eSpawn,
+                   "CExec:: Failed to create status pipe");
+    }
+    fcntl(status_pipe[0], F_SETFL, 
+    fcntl(status_pipe[0], F_GETFL, 0) & ~O_NONBLOCK);
+    fcntl(status_pipe[1], F_SETFD, 
+    fcntl(status_pipe[1], F_GETFD, 0) | FD_CLOEXEC);
+    
     // Fork child process
     pid_t pid;
     switch (pid = fork()) {
-    case -1:
+    case (pid_t)(-1):
         // fork failed
         return -1;
     case 0:
-        // Here we're the child
+        // Now we are in the child process
+        
+        // Close unused pipe handle
+        close(status_pipe[0]);
+        
         if (mode == CExec::eDetach) {
             freopen("/dev/null", "r", stdin);
             freopen("/dev/null", "a", stdout);
@@ -158,8 +176,35 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
                             const_cast<char**>(envp));
             break;
         }
+        // Error executing exec*(), report error code to parent process
+        int errcode = errno;
+        write(status_pipe[1], &errcode, sizeof(errcode));
+        close(status_pipe[1]);
         _exit(status);
     }
+    
+    // Check status pipe.
+    // If it have some data, this is an errno from the child process.
+    // If EOF in status pipe, that child executed successful.
+    // Retry if either blocked or interrupted
+    
+    close(status_pipe[1]);    
+   
+    // Try to read errno from forked process
+    int errcode;
+    size_t n;
+    while ((n = read(status_pipe[0], &errcode, sizeof(errcode))) < 0) {
+        if (errno != EINTR)
+            break;
+    }
+    close(status_pipe[0]);
+    if (n > 0) {
+        // Child could not run -- rip it and exit with error
+        waitpid(pid, 0, 0);
+        errno = n >= sizeof(errcode) ? errcode : 0;        
+        return -1;
+    }
+        
     // The "pid" contains the childs pid
     if ( mode == CExec::eWait ) {
         return CExec::Wait(pid);
@@ -560,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/10/18 12:43:06  ivanov
+ * s_SpawnUnix() - added a check that child process has actually started
+ *
  * Revision 1.39  2006/06/19 13:59:37  ivanov
  * + CExec::QuoteArg()
  *
