@@ -551,7 +551,8 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
     if ( !IsAlias() ) {
         AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
                                                               ClassName(),
-                                                              GetNamespaceName()));
+                                                              GetNamespaceName(),
+                                                              Comments()));
         AutoPtr<CTypeStrings> dType = GetFullCType();
         bool nonempty = false, noprefix = false;
         const CUniSequenceDataType* uniseq =
@@ -569,7 +570,8 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
         AutoPtr<CTypeStrings> dType = GetFullCType();
         AutoPtr<CAliasTypeStrings> code(new CAliasTypeStrings(GlobalName(),
                                                               ClassName(),
-                                                              *dType.release()));
+                                                              *dType.release(),
+                                                              Comments()));
         code->SetNamespaceName( GetNamespaceName());
         return AutoPtr<CTypeStrings>(code.release());
     }
@@ -606,14 +608,16 @@ AutoPtr<CTypeStrings> CDataType::GetRefCType(void) const
     if ( !IsAlias() ) {
         return AutoPtr<CTypeStrings>(new CClassRefTypeStrings(ClassName(),
                                                               Namespace(),
-                                                              FileName()));
+                                                              FileName(),
+                                                              Comments()));
     }
     else {
         AutoPtr<CTypeStrings> dType = GetFullCType();
         AutoPtr<CAliasRefTypeStrings> code(new CAliasRefTypeStrings(ClassName(),
                                                                     Namespace(),
                                                                     FileName(),
-                                                                    *dType.release()));
+                                                                    *dType.release(),
+                                                                    Comments()));
         return AutoPtr<CTypeStrings>(code.release());
     }
 }
@@ -713,6 +717,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.91  2006/10/18 13:12:37  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.90  2006/08/03 19:16:54  gouriano
 * Get rid of crashes when parsing incomplete DTD or schema
 *

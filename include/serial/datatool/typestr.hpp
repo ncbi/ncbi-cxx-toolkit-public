@@ -31,8 +31,114 @@
 * File Description:
 *   C++ class info: includes, used classes, C++ code etc.
 *
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
+#include <serial/datatool/comments.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class CClassContext;
+class CNamespace;
+
+class CTypeStrings {
+public:
+    CTypeStrings(void) {}
+    CTypeStrings(const CComments& comments);
+    virtual ~CTypeStrings(void);
+
+    const string& GetModuleName(void) const
+        {
+            return m_ModuleName;
+        }
+    string GetDoxygenModuleName(void) const
+        {
+            return NStr::Replace(m_ModuleName,"-","_");
+        }
+    void SetModuleName(const string& name);
+    void SetNamespaceName(const string& name)
+    {
+        m_NamespaceName = name;
+    }
+    const string& GetNamespaceName(void) const
+    {
+        return m_NamespaceName;
+    }
+
+    // kind of C++ representation
+    enum EKind {
+        eKindStd, // standard type
+        eKindEnum, // enum
+        eKindString, // std::string
+        eKindPointer, // plain pointer
+        eKindRef, // CRef<>
+        eKindObject, // class (CHOICE, SET, SEQUENCE) inherited from CObject
+        eKindClass, // any other class (CHOICE, SET, SEQUENCE)
+        eKindContainer, // stl container
+        eKindOther
+    };
+    virtual EKind GetKind(void) const = 0;
+
+    virtual string GetCType(const CNamespace& ns) const = 0;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                                    const string& methodPrefix) const = 0;
+    virtual bool HaveSpecialRef(void) const;
+    virtual string GetRef(const CNamespace& ns) const = 0;
+
+    // for external types
+    virtual const CNamespace& GetNamespace(void) const;
+
+    // for enum types
+    virtual const string& GetEnumName(void) const;
+
+    virtual bool CanBeKey(void) const;
+    virtual bool CanBeCopied(void) const;
+    virtual bool NeedSetFlag(void) const;
+
+    static void AdaptForSTL(AutoPtr<CTypeStrings>& type);
+
+    virtual string NewInstance(const string& init,
+                               const string& place = kEmptyStr) const;
+
+    virtual string GetInitializer(void) const;
+    virtual string GetDestructionCode(const string& expr) const;
+    virtual string GetIsSetCode(const string& var) const;
+    virtual string GetResetCode(const string& var) const;
+    virtual string GetDefaultCode(const string& var) const;
+
+    virtual void GenerateCode(CClassContext& ctx) const;
+    virtual void GenerateUserHPPCode(CNcbiOstream& out) const;
+    virtual void GenerateUserCPPCode(CNcbiOstream& out) const;
+
+    virtual void GenerateTypeCode(CClassContext& ctx) const;
+    virtual void GeneratePointerTypeCode(CClassContext& ctx) const;
+    
+    void BeginClassDeclaration(CClassContext& ctx) const;
+    void PrintHPPComments(CNcbiOstream& out) const
+    {
+        m_Comments.PrintHPPClass(out);
+    }
+    const CComments& Comments(void) const
+    {
+        return m_Comments;
+    }
+
+private:
+    string m_ModuleName;
+    string m_NamespaceName;
+    CComments m_Comments;
+};
+
+END_NCBI_SCOPE
+
+#endif
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/10/18 13:13:02  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.15  2006/05/09 15:16:14  gouriano
 * Added XML namespace definition possibility
 *
@@ -110,91 +216,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiutil.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CClassContext;
-class CNamespace;
-
-class CTypeStrings {
-public:
-    CTypeStrings(void);
-    virtual ~CTypeStrings(void);
-
-    const string& GetModuleName(void) const
-        {
-            return m_ModuleName;
-        }
-    string GetDoxygenModuleName(void) const
-        {
-            return NStr::Replace(m_ModuleName,"-","_");
-        }
-    void SetModuleName(const string& name);
-    void SetNamespaceName(const string& name)
-    {
-        m_NamespaceName = name;
-    }
-    const string& GetNamespaceName(void) const
-    {
-        return m_NamespaceName;
-    }
-
-    // kind of C++ representation
-    enum EKind {
-        eKindStd, // standard type
-        eKindEnum, // enum
-        eKindString, // std::string
-        eKindPointer, // plain pointer
-        eKindRef, // CRef<>
-        eKindObject, // class (CHOICE, SET, SEQUENCE) inherited from CObject
-        eKindClass, // any other class (CHOICE, SET, SEQUENCE)
-        eKindContainer, // stl container
-        eKindOther
-    };
-    virtual EKind GetKind(void) const = 0;
-
-    virtual string GetCType(const CNamespace& ns) const = 0;
-    virtual string GetPrefixedCType(const CNamespace& ns,
-                                    const string& methodPrefix) const = 0;
-    virtual bool HaveSpecialRef(void) const;
-    virtual string GetRef(const CNamespace& ns) const = 0;
-
-    // for external types
-    virtual const CNamespace& GetNamespace(void) const;
-
-    // for enum types
-    virtual const string& GetEnumName(void) const;
-
-    virtual bool CanBeKey(void) const;
-    virtual bool CanBeCopied(void) const;
-    virtual bool NeedSetFlag(void) const;
-
-    static void AdaptForSTL(AutoPtr<CTypeStrings>& type);
-
-    virtual string NewInstance(const string& init,
-                               const string& place = kEmptyStr) const;
-
-    virtual string GetInitializer(void) const;
-    virtual string GetDestructionCode(const string& expr) const;
-    virtual string GetIsSetCode(const string& var) const;
-    virtual string GetResetCode(const string& var) const;
-    virtual string GetDefaultCode(const string& var) const;
-
-    virtual void GenerateCode(CClassContext& ctx) const;
-    virtual void GenerateUserHPPCode(CNcbiOstream& out) const;
-    virtual void GenerateUserCPPCode(CNcbiOstream& out) const;
-
-    virtual void GenerateTypeCode(CClassContext& ctx) const;
-    virtual void GeneratePointerTypeCode(CClassContext& ctx) const;
-
-private:
-    string m_ModuleName;
-    string m_NamespaceName;
-};
-
-END_NCBI_SCOPE
-
-#endif

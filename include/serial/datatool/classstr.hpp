@@ -67,17 +67,20 @@ public:
         bool simple;
         const CDataType* dataType;
         bool nonEmpty;
+        CComments comments;
         SMemberInfo(const string& name, const AutoPtr<CTypeStrings>& type,
                     const string& pointerType,
                     bool optional, const string& defaultValue,
                     bool delayed, int tag,
                     bool noPrefx, bool attlst, bool noTg, bool simpl,
-                    const CDataType* dataTp, bool nEmpty);
+                    const CDataType* dataTp, bool nEmpty,
+                    const CComments& comments);
     };
     typedef list<SMemberInfo> TMembers;
 
     CClassTypeStrings(const string& externalName, const string& className,
-                      const string& namespaceName);
+                      const string& namespaceName,
+                      const CComments& comments);
     ~CClassTypeStrings(void);
 
     void SetClassNamespace(const CNamespace& ns);
@@ -100,12 +103,12 @@ public:
                    bool optional, const string& defaultValue,
                    bool delayed, int tag,
                    bool noPrefix, bool attlist, bool noTag, bool simple,
-                   const CDataType* dataType, bool nonEmpty);
+                   const CDataType* dataType, bool nonEmpty, const CComments& comments);
     void AddMember(const AutoPtr<CTypeStrings>& type, int tag, bool nonEmpty, bool noPrefix)
         {
             AddMember(NcbiEmptyString, type, NcbiEmptyString,
                       false, NcbiEmptyString, false, tag,
-                      noPrefix,false,false,false,0,nonEmpty);
+                      noPrefix,false,false,false,0,nonEmpty,CComments());
         }
 
     string GetCType(const CNamespace& ns) const;
@@ -171,7 +174,8 @@ class CClassRefTypeStrings : public CTypeStrings
 {
 public:
     CClassRefTypeStrings(const string& className, const CNamespace& ns,
-                         const string& fileName);
+                         const string& fileName,
+                         const CComments& comments);
 
     string GetClassName(void) const;
     string GetCType(const CNamespace& ns) const;
@@ -199,6 +203,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2006/10/18 13:13:02  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.26  2006/05/09 15:16:14  gouriano
 * Added XML namespace definition possibility
 *

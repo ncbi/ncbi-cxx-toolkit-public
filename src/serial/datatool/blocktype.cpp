@@ -534,7 +534,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 {
     bool isRootClass = GetParentType() == 0;
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(
-        GlobalName(), ClassName(), GetNamespaceName()));
+        GlobalName(), ClassName(), GetNamespaceName(), Comments()));
     bool haveUserClass = isRootClass;
 /*
     bool isObject;
@@ -563,7 +563,8 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
                         optional, defaultCode, delayed,
                         (*i)->GetType()->GetTag(),
                         (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
-                        (*i)->SimpleType(),(*i)->GetType(),false);
+                        (*i)->SimpleType(),(*i)->GetType(),false,
+                        (*i)->Comments());
         (*i)->GetType()->SetTypeStr(&(*code));
     }
     SetTypeStr(&(*code));
@@ -575,7 +576,8 @@ AutoPtr<CTypeStrings> CDataContainerType::GetRefCType(void) const
 {
     return AutoPtr<CTypeStrings>(new CClassRefTypeStrings(ClassName(),
                                                           Namespace(),
-                                                          FileName()));
+                                                          FileName(),
+                                                          Comments()));
 }
 
 const char* CDataSetType::GetASNKeyword(void) const
@@ -792,6 +794,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.70  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.69  2006/08/03 17:21:10  gouriano
 * Preserve comments when parsing schema
 *

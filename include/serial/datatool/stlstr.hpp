@@ -31,69 +31,6 @@
 * File Description:
 *   C++ class info: includes, used classes, C++ code etc.
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2006/05/09 15:16:14  gouriano
-* Added XML namespace definition possibility
-*
-* Revision 1.10  2003/04/29 18:29:34  gouriano
-* object data member initialization verification
-*
-* Revision 1.9  2000/08/25 15:58:48  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.8  2000/07/11 20:36:02  vasilche
-* Removed unnecessary generation of namespace references for enum members.
-* Removed obsolete methods.
-*
-* Revision 1.7  2000/06/16 16:31:13  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.6  2000/04/17 19:11:05  vasilche
-* Fixed failed assertion.
-* Removed redundant namespace specifications.
-*
-* Revision 1.5  2000/04/07 19:26:13  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.4  2000/03/07 14:06:06  vasilche
-* Added generation of reference counted objects.
-*
-* Revision 1.3  2000/02/03 20:16:20  vasilche
-* Fixed bug in type info generation for templates.
-*
-* Revision 1.2  2000/02/02 16:23:41  vasilche
-* Added missing namespace macros to generated files.
-*
-* Revision 1.1  2000/02/01 21:46:23  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.5  2000/01/10 19:46:47  vasilche
-* Fixed encoding/decoding of REAL type.
-* Fixed encoding/decoding of StringStore.
-* Fixed encoding/decoding of NULL type.
-* Fixed error reporting.
-* Reduced object map (only classes).
-*
-* Revision 1.4  1999/12/01 17:36:28  vasilche
-* Fixed CHOICE processing.
-*
-* Revision 1.3  1999/11/16 15:41:17  vasilche
-* Added plain pointer choice.
-* By default we use C pointer instead of auto_ptr.
-* Start adding initializers.
-*
-* Revision 1.2  1999/11/15 19:36:21  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <serial/datatool/typestr.hpp>
@@ -225,7 +162,8 @@ class CVectorTypeStrings : public CTypeStrings
     typedef CTypeStrings CParent;
 public:
     CVectorTypeStrings(const string& charType,
-                       const string& namespaceName);
+                       const string& namespaceName,
+                       const CComments& comments);
     ~CVectorTypeStrings(void);
 
     EKind GetKind(void) const;
@@ -246,3 +184,71 @@ private:
 END_NCBI_SCOPE
 
 #endif
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.12  2006/10/18 13:13:02  gouriano
+* Added comments into typestrings and generated code
+*
+* Revision 1.11  2006/05/09 15:16:14  gouriano
+* Added XML namespace definition possibility
+*
+* Revision 1.10  2003/04/29 18:29:34  gouriano
+* object data member initialization verification
+*
+* Revision 1.9  2000/08/25 15:58:48  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.8  2000/07/11 20:36:02  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
+* Revision 1.7  2000/06/16 16:31:13  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.6  2000/04/17 19:11:05  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
+* Revision 1.5  2000/04/07 19:26:13  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.4  2000/03/07 14:06:06  vasilche
+* Added generation of reference counted objects.
+*
+* Revision 1.3  2000/02/03 20:16:20  vasilche
+* Fixed bug in type info generation for templates.
+*
+* Revision 1.2  2000/02/02 16:23:41  vasilche
+* Added missing namespace macros to generated files.
+*
+* Revision 1.1  2000/02/01 21:46:23  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.5  2000/01/10 19:46:47  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
+* Revision 1.4  1999/12/01 17:36:28  vasilche
+* Fixed CHOICE processing.
+*
+* Revision 1.3  1999/11/16 15:41:17  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
+* Revision 1.2  1999/11/15 19:36:21  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/

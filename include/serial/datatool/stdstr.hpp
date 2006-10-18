@@ -31,8 +31,113 @@
 * File Description:
 *   C++ class info: includes, used classes, C++ code etc.
 *
+*/
+
+#include <serial/datatool/typestr.hpp>
+#include <serial/datatool/namespace.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class CStdTypeStrings : public CTypeStrings
+{
+public:
+    CStdTypeStrings(const string& type, const CComments& comments);
+
+    EKind GetKind(void) const;
+
+    string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
+    string GetRef(const CNamespace& ns) const;
+    string GetInitializer(void) const;
+
+private:
+    string m_CType;
+    CNamespace m_Namespace;
+};
+
+class CNullTypeStrings : public CTypeStrings
+{
+public:
+    CNullTypeStrings(const CComments& comments);
+    EKind GetKind(void) const;
+
+    bool HaveSpecialRef(void) const;
+
+    string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
+    string GetRef(const CNamespace& ns) const;
+    string GetInitializer(void) const;
+
+};
+
+class CStringTypeStrings : public CStdTypeStrings
+{
+    typedef CStdTypeStrings CParent;
+public:
+    CStringTypeStrings(const string& type, const CComments& comments);
+
+    EKind GetKind(void) const;
+
+    string GetInitializer(void) const;
+    string GetResetCode(const string& var) const;
+
+    void GenerateTypeCode(CClassContext& ctx) const;
+
+};
+
+class CStringStoreTypeStrings : public CStringTypeStrings
+{
+    typedef CStringTypeStrings CParent;
+public:
+    CStringStoreTypeStrings(const string& type, const CComments& comments);
+
+    bool HaveSpecialRef(void) const;
+
+    string GetRef(const CNamespace& ns) const;
+
+};
+
+class CAnyContentTypeStrings : public CStdTypeStrings
+{
+    typedef CStdTypeStrings CParent;
+public:
+    CAnyContentTypeStrings(const string& type, const CComments& comments);
+
+    EKind GetKind(void) const;
+
+    string GetInitializer(void) const;
+    string GetResetCode(const string& var) const;
+
+    void GenerateTypeCode(CClassContext& ctx) const;
+
+};
+
+class CBitStringTypeStrings : public CStdTypeStrings
+{
+    typedef CStdTypeStrings CParent;
+public:
+    CBitStringTypeStrings(const string& type, const CComments& comments);
+
+    EKind GetKind(void) const;
+
+    string GetInitializer(void) const;
+    string GetResetCode(const string& var) const;
+
+    void GenerateTypeCode(CClassContext& ctx) const;
+
+};
+
+END_NCBI_SCOPE
+
+#endif
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/10/18 13:13:02  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.11  2005/11/29 17:40:57  gouriano
 * Added CBitString class
 *
@@ -99,102 +204,3 @@
 *
 * ===========================================================================
 */
-
-#include <serial/datatool/typestr.hpp>
-#include <serial/datatool/namespace.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CStdTypeStrings : public CTypeStrings
-{
-public:
-    CStdTypeStrings(const string& type);
-
-    EKind GetKind(void) const;
-
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
-    string GetInitializer(void) const;
-
-private:
-    string m_CType;
-    CNamespace m_Namespace;
-};
-
-class CNullTypeStrings : public CTypeStrings
-{
-public:
-    EKind GetKind(void) const;
-
-    bool HaveSpecialRef(void) const;
-
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
-    string GetInitializer(void) const;
-
-};
-
-class CStringTypeStrings : public CStdTypeStrings
-{
-    typedef CStdTypeStrings CParent;
-public:
-    CStringTypeStrings(const string& type);
-
-    EKind GetKind(void) const;
-
-    string GetInitializer(void) const;
-    string GetResetCode(const string& var) const;
-
-    void GenerateTypeCode(CClassContext& ctx) const;
-
-};
-
-class CStringStoreTypeStrings : public CStringTypeStrings
-{
-    typedef CStringTypeStrings CParent;
-public:
-    CStringStoreTypeStrings(const string& type);
-
-    bool HaveSpecialRef(void) const;
-
-    string GetRef(const CNamespace& ns) const;
-
-};
-
-class CAnyContentTypeStrings : public CStdTypeStrings
-{
-    typedef CStdTypeStrings CParent;
-public:
-    CAnyContentTypeStrings(const string& type);
-
-    EKind GetKind(void) const;
-
-    string GetInitializer(void) const;
-    string GetResetCode(const string& var) const;
-
-    void GenerateTypeCode(CClassContext& ctx) const;
-
-};
-
-class CBitStringTypeStrings : public CStdTypeStrings
-{
-    typedef CStdTypeStrings CParent;
-public:
-    CBitStringTypeStrings(const string& type);
-
-    EKind GetKind(void) const;
-
-    string GetInitializer(void) const;
-    string GetResetCode(const string& var) const;
-
-    void GenerateTypeCode(CClassContext& ctx) const;
-
-};
-
-END_NCBI_SCOPE
-
-#endif

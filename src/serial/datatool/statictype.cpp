@@ -152,7 +152,7 @@ AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
     string type = GetAndVerifyVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStdTypeStrings(type));
+    return AutoPtr<CTypeStrings>(new CStdTypeStrings(type,Comments()));
 }
 
 const char* CNullDataType::GetASNKeyword(void) const
@@ -198,7 +198,7 @@ CTypeRef CNullDataType::GetTypeInfo(void)
 
 AutoPtr<CTypeStrings> CNullDataType::GetFullCType(void) const
 {
-    return AutoPtr<CTypeStrings>(new CNullTypeStrings());
+    return AutoPtr<CTypeStrings>(new CNullTypeStrings(Comments()));
 }
 
 const char* CNullDataType::GetDefaultCType(void) const
@@ -494,7 +494,7 @@ AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
     string type = GetAndVerifyVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStringTypeStrings(type));
+    return AutoPtr<CTypeStrings>(new CStringTypeStrings(type,Comments()));
 }
 
 const char* CStringDataType::GetDefaultCType(void) const
@@ -534,7 +534,7 @@ AutoPtr<CTypeStrings> CStringStoreDataType::GetFullCType(void) const
     string type = GetAndVerifyVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type));
+    return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type,Comments()));
 }
 
 const char* CBitStringDataType::GetASNKeyword(void) const
@@ -567,7 +567,7 @@ bool CBitStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 
 AutoPtr<CTypeStrings> CBitStringDataType::GetFullCType(void) const
 {
-    return AutoPtr<CTypeStrings>(new CBitStringTypeStrings( GetDefaultCType() ));
+    return AutoPtr<CTypeStrings>(new CBitStringTypeStrings( GetDefaultCType(), Comments() ));
 }
 
 const char* CBitStringDataType::GetDefaultCType(void) const
@@ -648,7 +648,7 @@ AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
     string charType = GetVar("_char");
     if ( charType.empty() )
         charType = "char";
-    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType, GetNamespaceName()));
+    return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType, GetNamespaceName(), Comments()));
 }
 
 bool COctetStringDataType::x_AsBitString(void) const
@@ -807,7 +807,7 @@ AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
     string type = GetAndVerifyVar("_type");
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CAnyContentTypeStrings(type));
+    return AutoPtr<CTypeStrings>(new CAnyContentTypeStrings(type,Comments()));
 }
 
 const char* CAnyContentDataType::GetDefaultCType(void) const
@@ -837,6 +837,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.49  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.48  2006/07/24 18:57:39  gouriano
 * Preserve comments when parsing DTD
 *

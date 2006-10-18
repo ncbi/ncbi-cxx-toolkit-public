@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,6,5) );
+    SetVersion( CVersionInfo(1,7,0) );
 }
 
 void CDataTool::Init(void)
@@ -650,6 +650,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.102  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.101  2006/08/03 17:21:10  gouriano
 * Preserve comments when parsing schema
 *

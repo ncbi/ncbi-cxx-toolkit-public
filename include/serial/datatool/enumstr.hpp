@@ -31,8 +31,92 @@
 * File Description:
 *   C++ class info: includes, used classes, C++ code etc.
 *
+*/
+
+#include <serial/datatool/typestr.hpp>
+#include <serial/datatool/namespace.hpp>
+#include <memory>
+#include <list>
+
+BEGIN_NCBI_SCOPE
+
+class CEnumDataTypeValue;
+
+class CEnumTypeStrings : public CTypeStrings
+{
+    typedef CTypeStrings CParent;
+public:
+    typedef list<CEnumDataTypeValue> TValues;
+    CEnumTypeStrings(const string& externalName, const string& enumName,
+                     const string& cType, bool isInteger,
+                     const TValues& values, const string& valuesPrefix,
+                     const CComments& comments);
+
+    const string& GetExternalName(void) const
+        {
+            return m_ExternalName;
+        }
+
+    void SetEnumNamespace(const CNamespace& ns);
+
+    EKind GetKind(void) const;
+    const string& GetEnumName(void) const;
+
+    string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
+    string GetRef(const CNamespace& ns) const;
+    string GetInitializer(void) const;
+
+    void GenerateTypeCode(CClassContext& ctx) const;
+
+private:
+    string m_ExternalName;
+    string m_EnumName;
+    string m_CType;
+    bool m_IsInteger;
+    const TValues& m_Values;
+    string m_ValuesPrefix;
+};
+
+class CEnumRefTypeStrings : public CTypeStrings
+{
+    typedef CTypeStrings CParent;
+public:
+    CEnumRefTypeStrings(const string& enumName,
+                        const string& cName,
+                        const CNamespace& ns,
+                        const string& fileName,
+                        const CComments& comments);
+
+    EKind GetKind(void) const;
+    const CNamespace& GetNamespace(void) const;
+    const string& GetEnumName(void) const;
+
+    string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
+    string GetRef(const CNamespace& ns) const;
+    string GetInitializer(void) const;
+
+    void GenerateTypeCode(CClassContext& ctx) const;
+
+private:
+    string m_EnumName;
+    string m_CType;
+    CNamespace m_Namespace;
+    string m_FileName;
+};
+
+END_NCBI_SCOPE
+
+#endif
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/10/18 13:13:02  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.10  2003/04/29 18:29:33  gouriano
 * object data member initialization verification
 *
@@ -94,80 +178,3 @@
 *
 * ===========================================================================
 */
-
-#include <serial/datatool/typestr.hpp>
-#include <serial/datatool/namespace.hpp>
-#include <memory>
-#include <list>
-
-BEGIN_NCBI_SCOPE
-
-class CEnumDataTypeValue;
-
-class CEnumTypeStrings : public CTypeStrings
-{
-    typedef CTypeStrings CParent;
-public:
-    typedef list<CEnumDataTypeValue> TValues;
-    CEnumTypeStrings(const string& externalName, const string& enumName,
-                     const string& cType, bool isInteger,
-                     const TValues& values, const string& valuesPrefix);
-
-    const string& GetExternalName(void) const
-        {
-            return m_ExternalName;
-        }
-
-    void SetEnumNamespace(const CNamespace& ns);
-
-    EKind GetKind(void) const;
-    const string& GetEnumName(void) const;
-
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
-    string GetInitializer(void) const;
-
-    void GenerateTypeCode(CClassContext& ctx) const;
-
-private:
-    string m_ExternalName;
-    string m_EnumName;
-    string m_CType;
-    bool m_IsInteger;
-    const TValues& m_Values;
-    string m_ValuesPrefix;
-};
-
-class CEnumRefTypeStrings : public CTypeStrings
-{
-    typedef CTypeStrings CParent;
-public:
-    CEnumRefTypeStrings(const string& enumName,
-                        const string& cName,
-                        const CNamespace& ns,
-                        const string& fileName);
-
-    EKind GetKind(void) const;
-    const CNamespace& GetNamespace(void) const;
-    const string& GetEnumName(void) const;
-
-    string GetCType(const CNamespace& ns) const;
-    string GetPrefixedCType(const CNamespace& ns,
-                            const string& methodPrefix) const;
-    string GetRef(const CNamespace& ns) const;
-    string GetInitializer(void) const;
-
-    void GenerateTypeCode(CClassContext& ctx) const;
-
-private:
-    string m_EnumName;
-    string m_CType;
-    CNamespace m_Namespace;
-    string m_FileName;
-};
-
-END_NCBI_SCOPE
-
-#endif

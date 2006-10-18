@@ -372,7 +372,8 @@ AutoPtr<CTypeStrings> CEnumDataType::GetRefCType(void) const
     return AutoPtr<CTypeStrings>(new CEnumRefTypeStrings(enumInfo.enumName,
                                                          enumInfo.cType,
                                                          Namespace(),
-                                                         FileName()));
+                                                         FileName(),
+                                                         Comments()));
 }
 
 AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
@@ -381,7 +382,7 @@ AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
     AutoPtr<CEnumTypeStrings> 
         e(new CEnumTypeStrings(GlobalName(), enumInfo.enumName,
                                enumInfo.cType, IsInteger(),
-                               m_Values, enumInfo.valuePrefix));
+                               m_Values, enumInfo.valuePrefix, Comments()));
     return AutoPtr<CTypeStrings>(e.release());
 }
 
@@ -420,6 +421,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.37  2006/08/03 17:21:10  gouriano
 * Preserve comments when parsing schema
 *

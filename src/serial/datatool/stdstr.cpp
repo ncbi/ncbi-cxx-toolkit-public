@@ -28,8 +28,191 @@
 * File Description:
 *   Type info for class generation: includes, used classes, C code etc.
 *
+*/
+
+#include <ncbi_pch.hpp>
+#include <serial/datatool/stdstr.hpp>
+#include <serial/datatool/classctx.hpp>
+
+BEGIN_NCBI_SCOPE
+
+CStdTypeStrings::CStdTypeStrings(const string& type, const CComments& comments)
+    : m_CType(type), CTypeStrings(comments)
+{
+    SIZE_TYPE colon = type.rfind("::");
+    if ( colon != NPOS ) {
+        m_CType = type.substr(colon + 2);
+        m_Namespace = type.substr(0, colon);
+    }
+}
+
+CTypeStrings::EKind CStdTypeStrings::GetKind(void) const
+{
+    return eKindStd;
+}
+
+string CStdTypeStrings::GetCType(const CNamespace& ns) const
+{
+    if ( m_Namespace )
+        return ns.GetNamespaceRef(m_Namespace)+m_CType;
+    else
+        return m_CType;
+}
+
+string CStdTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                         const string& /*methodPrefix*/) const
+{
+    return GetCType(ns);
+}
+
+string CStdTypeStrings::GetRef(const CNamespace& ns) const
+{
+    return "STD, ("+GetCType(ns)+')';
+}
+
+string CStdTypeStrings::GetInitializer(void) const
+{
+    return "0";
+}
+
+CNullTypeStrings::CNullTypeStrings(const CComments& comments)
+    : CTypeStrings(comments)
+{
+}
+
+CTypeStrings::EKind CNullTypeStrings::GetKind(void) const
+{
+    return eKindStd;
+}
+
+bool CNullTypeStrings::HaveSpecialRef(void) const
+{
+    return true;
+}
+
+string CNullTypeStrings::GetCType(const CNamespace& /*ns*/) const
+{
+    return "bool";
+}
+
+string CNullTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                          const string& /*methodPrefix*/) const
+{
+    return GetCType(ns);
+}
+
+string CNullTypeStrings::GetRef(const CNamespace& /*ns*/) const
+{
+    return "null, ()";
+}
+
+string CNullTypeStrings::GetInitializer(void) const
+{
+    return "true";
+}
+
+CStringTypeStrings::CStringTypeStrings(const string& type,
+    const CComments& comments)
+    : CParent(type,comments)
+{
+}
+
+CTypeStrings::EKind CStringTypeStrings::GetKind(void) const
+{
+    return eKindString;
+}
+
+string CStringTypeStrings::GetInitializer(void) const
+{
+    return string();
+}
+
+string CStringTypeStrings::GetResetCode(const string& var) const
+{
+    return var+".erase();\n";
+}
+
+void CStringTypeStrings::GenerateTypeCode(CClassContext& ctx) const
+{
+    ctx.HPPIncludes().insert("<string>");
+}
+
+CStringStoreTypeStrings::CStringStoreTypeStrings(const string& type,
+    const CComments& comments)
+    : CParent(type,comments)
+{
+}
+
+bool CStringStoreTypeStrings::HaveSpecialRef(void) const
+{
+    return true;
+}
+
+string CStringStoreTypeStrings::GetRef(const CNamespace& /*ns*/) const
+{
+    return "StringStore, ()";
+}
+
+CAnyContentTypeStrings::CAnyContentTypeStrings(const string& type,
+    const CComments& comments)
+    : CParent(type,comments)
+{
+}
+
+CTypeStrings::EKind CAnyContentTypeStrings::GetKind(void) const
+{
+    return eKindOther;
+}
+
+string CAnyContentTypeStrings::GetInitializer(void) const
+{
+    return string();
+}
+
+string CAnyContentTypeStrings::GetResetCode(const string& var) const
+{
+    return var+".Reset();\n";
+}
+
+void CAnyContentTypeStrings::GenerateTypeCode(CClassContext& /*ctx*/) const
+{
+}
+
+
+CBitStringTypeStrings::CBitStringTypeStrings(const string& type,
+    const CComments& comments)
+    : CParent(type,comments)
+{
+}
+
+CTypeStrings::EKind CBitStringTypeStrings::GetKind(void) const
+{
+    return eKindOther;
+}
+
+string CBitStringTypeStrings::GetInitializer(void) const
+{
+    return string();
+}
+
+string CBitStringTypeStrings::GetResetCode(const string& var) const
+{
+//    return var+".clear();\n";
+    return var+".resize(0);\n";
+}
+
+void CBitStringTypeStrings::GenerateTypeCode(CClassContext& ctx) const
+{
+    ctx.HPPIncludes().insert("<vector>");
+}
+
+END_NCBI_SCOPE
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.15  2005/11/29 17:41:36  gouriano
 * Added CBitString class
 *
@@ -122,172 +305,3 @@
 *
 * ===========================================================================
 */
-
-#include <ncbi_pch.hpp>
-#include <serial/datatool/stdstr.hpp>
-#include <serial/datatool/classctx.hpp>
-
-BEGIN_NCBI_SCOPE
-
-CStdTypeStrings::CStdTypeStrings(const string& type)
-    : m_CType(type)
-{
-    SIZE_TYPE colon = type.rfind("::");
-    if ( colon != NPOS ) {
-        m_CType = type.substr(colon + 2);
-        m_Namespace = type.substr(0, colon);
-    }
-}
-
-CTypeStrings::EKind CStdTypeStrings::GetKind(void) const
-{
-    return eKindStd;
-}
-
-string CStdTypeStrings::GetCType(const CNamespace& ns) const
-{
-    if ( m_Namespace )
-        return ns.GetNamespaceRef(m_Namespace)+m_CType;
-    else
-        return m_CType;
-}
-
-string CStdTypeStrings::GetPrefixedCType(const CNamespace& ns,
-                                         const string& /*methodPrefix*/) const
-{
-    return GetCType(ns);
-}
-
-string CStdTypeStrings::GetRef(const CNamespace& ns) const
-{
-    return "STD, ("+GetCType(ns)+')';
-}
-
-string CStdTypeStrings::GetInitializer(void) const
-{
-    return "0";
-}
-
-CTypeStrings::EKind CNullTypeStrings::GetKind(void) const
-{
-    return eKindStd;
-}
-
-bool CNullTypeStrings::HaveSpecialRef(void) const
-{
-    return true;
-}
-
-string CNullTypeStrings::GetCType(const CNamespace& /*ns*/) const
-{
-    return "bool";
-}
-
-string CNullTypeStrings::GetPrefixedCType(const CNamespace& ns,
-                                          const string& /*methodPrefix*/) const
-{
-    return GetCType(ns);
-}
-
-string CNullTypeStrings::GetRef(const CNamespace& /*ns*/) const
-{
-    return "null, ()";
-}
-
-string CNullTypeStrings::GetInitializer(void) const
-{
-    return "true";
-}
-
-CStringTypeStrings::CStringTypeStrings(const string& type)
-    : CParent(type)
-{
-}
-
-CTypeStrings::EKind CStringTypeStrings::GetKind(void) const
-{
-    return eKindString;
-}
-
-string CStringTypeStrings::GetInitializer(void) const
-{
-    return string();
-}
-
-string CStringTypeStrings::GetResetCode(const string& var) const
-{
-    return var+".erase();\n";
-}
-
-void CStringTypeStrings::GenerateTypeCode(CClassContext& ctx) const
-{
-    ctx.HPPIncludes().insert("<string>");
-}
-
-CStringStoreTypeStrings::CStringStoreTypeStrings(const string& type)
-    : CParent(type)
-{
-}
-
-bool CStringStoreTypeStrings::HaveSpecialRef(void) const
-{
-    return true;
-}
-
-string CStringStoreTypeStrings::GetRef(const CNamespace& /*ns*/) const
-{
-    return "StringStore, ()";
-}
-
-CAnyContentTypeStrings::CAnyContentTypeStrings(const string& type)
-    : CParent(type)
-{
-}
-
-CTypeStrings::EKind CAnyContentTypeStrings::GetKind(void) const
-{
-    return eKindOther;
-}
-
-string CAnyContentTypeStrings::GetInitializer(void) const
-{
-    return string();
-}
-
-string CAnyContentTypeStrings::GetResetCode(const string& var) const
-{
-    return var+".Reset();\n";
-}
-
-void CAnyContentTypeStrings::GenerateTypeCode(CClassContext& /*ctx*/) const
-{
-}
-
-
-CBitStringTypeStrings::CBitStringTypeStrings(const string& type)
-    : CParent(type)
-{
-}
-
-CTypeStrings::EKind CBitStringTypeStrings::GetKind(void) const
-{
-    return eKindOther;
-}
-
-string CBitStringTypeStrings::GetInitializer(void) const
-{
-    return string();
-}
-
-string CBitStringTypeStrings::GetResetCode(const string& var) const
-{
-//    return var+".clear();\n";
-    return var+".resize(0);\n";
-}
-
-void CBitStringTypeStrings::GenerateTypeCode(CClassContext& ctx) const
-{
-    ctx.HPPIncludes().insert("<vector>");
-}
-
-END_NCBI_SCOPE

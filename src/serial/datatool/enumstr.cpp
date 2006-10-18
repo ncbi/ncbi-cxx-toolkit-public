@@ -43,10 +43,12 @@ CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
                                    const string& enumName,
                                    const string& cType, bool isInteger,
                                    const TValues& values,
-                                   const string& valuePrefix)
+                                   const string& valuePrefix,
+                                   const CComments& comments)
     : m_ExternalName(externalName), m_EnumName(enumName),
       m_CType(cType), m_IsInteger(isInteger),
-      m_Values(values), m_ValuesPrefix(valuePrefix)
+      m_Values(values), m_ValuesPrefix(valuePrefix),
+      CParent(comments)
 {
 }
 
@@ -90,16 +92,36 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     string methodPrefix = ctx.GetMethodPrefix();
     bool inClass = !methodPrefix.empty();
     {
+        // alignments
+        size_t maxlen = 0, maxwidth=0;
+        ITERATE ( TValues, i, m_Values ) {
+            maxlen = max(maxlen,i->GetName().size());
+            size_t w = 0;
+            TEnumValueType val = i->GetValue();
+            if (val < 0) {
+                ++w; val = -val;
+            }
+            while (val > 0) {
+                ++w; val /= 10;
+            }
+            maxwidth = max(maxwidth,w);
+        }
         // generated enum
         CNcbiOstrstream hpp;
+        PrintHPPComments(hpp);
         hpp <<
             "enum "<<m_EnumName<<" {";
         ITERATE ( TValues, i, m_Values ) {
-            if ( i != m_Values.begin() )
-                hpp << ',';
-            string id = Identifier(i->GetName(), false);
-            hpp << "\n"
-                "    "<<m_ValuesPrefix<<id<<" = "<<i->GetValue();
+            string id = Identifier( i->GetName(), false );
+            hpp << "\n    " << m_ValuesPrefix << id;
+            hpp << string( maxlen - i->GetName().size(),' ' ) << " = ";
+            hpp.width( maxwidth );
+            hpp << i->GetValue();
+            TValues::const_iterator next = i;
+            if ( ++next != m_Values.end() ) {
+                hpp.put(',');
+            }
+            i->GetComments().PrintHPPEnum(hpp);
         }
         hpp << "\n"
             "};\n"
@@ -159,10 +181,12 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 CEnumRefTypeStrings::CEnumRefTypeStrings(const string& enumName,
                                          const string& cType,
                                          const CNamespace& ns,
-                                         const string& fileName)
+                                         const string& fileName,
+                                         const CComments& comments)
     : m_EnumName(enumName),
       m_CType(cType), m_Namespace(ns),
-      m_FileName(fileName)
+      m_FileName(fileName),
+      CParent(comments)
 {
 }
 
@@ -229,6 +253,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.21  2005/03/16 14:36:42  gouriano
 * Handle custom data types for enums more accurately
 *

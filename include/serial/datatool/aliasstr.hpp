@@ -31,19 +31,6 @@
 * File Description:
 *   C++ aliased type info: includes, used classes, C++ code etc.
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2005/04/26 14:18:50  vasilche
-* Allow allocation of objects in CObjectMemoryPool.
-*
-* Revision 1.2  2004/09/07 14:09:45  grichenk
-* Fixed assignment of default value to aliased types
-*
-* Revision 1.1  2003/10/21 13:45:23  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 #include <serial/datatool/typestr.hpp>
@@ -58,7 +45,8 @@ class CAliasTypeStrings : public CTypeStrings
 public:
     CAliasTypeStrings(const string& externalName,
                       const string& className,
-                      CTypeStrings& ref_type);
+                      CTypeStrings& ref_type,
+                      const CComments& comments);
     ~CAliasTypeStrings(void);
 
     EKind GetKind(void) const;
@@ -105,7 +93,8 @@ public:
     CAliasRefTypeStrings(const string& className,
                          const CNamespace& ns,
                          const string& fileName,
-                         CTypeStrings& ref_type);
+                         CTypeStrings& ref_type,
+                         const CComments& comments);
 
     EKind GetKind(void) const;
 
@@ -146,3 +135,21 @@ private:
 END_NCBI_SCOPE
 
 #endif
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2006/10/18 13:13:01  gouriano
+* Added comments into typestrings and generated code
+*
+* Revision 1.3  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
+* Revision 1.2  2004/09/07 14:09:45  grichenk
+* Fixed assignment of default value to aliased types
+*
+* Revision 1.1  2003/10/21 13:45:23  grichenk
+* Initial revision
+*
+*
+* ===========================================================================
+*/

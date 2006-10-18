@@ -190,21 +190,21 @@ const CNamespace& CFileCode::GetNamespace(void) const
 
 void CFileCode::AddHPPCode(const CNcbiOstrstream& code)
 {
-    m_CurrentClass->hppCode =
+    m_CurrentClass->hppCode +=
         CNcbiOstrstreamToString(const_cast<CNcbiOstrstream&>(code));
 }
 
 
 void CFileCode::AddINLCode(const CNcbiOstrstream& code)
 {
-    m_CurrentClass->inlCode = 
+    m_CurrentClass->inlCode += 
         CNcbiOstrstreamToString(const_cast<CNcbiOstrstream&>(code));
 }
 
 
 void CFileCode::AddCPPCode(const CNcbiOstrstream& code)
 {
-    m_CurrentClass->cppCode = 
+    m_CurrentClass->cppCode += 
         CNcbiOstrstreamToString(const_cast<CNcbiOstrstream&>(code));
 }
 
@@ -897,6 +897,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.52  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.51  2005/09/29 14:45:22  gouriano
 * Added generation of module classes registration code
 *

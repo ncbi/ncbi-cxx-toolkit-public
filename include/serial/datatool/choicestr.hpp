@@ -31,8 +31,94 @@
 * File Description:
 *   C++ class info: includes, used classes, C++ code etc.
 *
+*/
+
+#include <serial/datatool/typestr.hpp>
+#include <serial/datatool/classstr.hpp>
+#include <corelib/ncbiutil.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class CChoiceTypeStrings : public CClassTypeStrings
+{
+    typedef CClassTypeStrings CParent;
+public:
+    enum EMemberType {
+        eSimpleMember,
+        eStringMember,
+        ePointerMember,
+        eObjectPointerMember,
+        eBufferMember
+    };
+    struct SVariantInfo {
+        string externalName;
+        string cName;
+        EMemberType memberType;
+        AutoPtr<CTypeStrings> type;
+        bool delayed;
+        bool in_union;
+        int memberTag;
+        bool noPrefix;
+        bool attlist;
+        bool noTag;
+        bool simple;
+        const CDataType* dataType;
+        CComments comments;
+
+        SVariantInfo(const string& name, const AutoPtr<CTypeStrings>& type,
+                     bool delayed, bool in_union,
+                     int tag, bool noPrefx, bool attlst, bool noTg,
+                     bool simpl, const CDataType* dataTp, const CComments& commnts);
+    };
+    typedef list<SVariantInfo> TVariants;
+
+    CChoiceTypeStrings(const string& externalName, const string& className,
+                       const string& namespaceName, const CComments& comments);
+    ~CChoiceTypeStrings(void);
+
+    bool HaveAssignment(void) const
+        {
+            return m_HaveAssignment;
+        }
+
+    void AddVariant(const string& name, const AutoPtr<CTypeStrings>& type,
+                    bool delayed, bool in_union, int tag,
+                    bool noPrefix, bool attlist,
+                    bool noTag, bool simple, const CDataType* dataType,
+                    const CComments& commnts);
+
+protected:
+    void GenerateClassCode(CClassCode& code,
+                           CNcbiOstream& getters,
+                           const string& methodPrefix,
+                           bool haveUserClass,
+                           const string& classPrefix) const;
+    bool x_IsNullType(TVariants::const_iterator i) const;
+    bool x_IsNullWithAttlist(TVariants::const_iterator i) const;
+
+private:
+    TVariants m_Variants;
+    bool m_HaveAssignment;
+};
+
+class CChoiceRefTypeStrings : public CClassRefTypeStrings
+{
+    typedef CClassRefTypeStrings CParent;
+public:
+    CChoiceRefTypeStrings(const string& className, const CNamespace& ns,
+                          const string& fileName, const CComments& comments);
+
+};
+
+END_NCBI_SCOPE
+
+#endif
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/10/18 13:13:02  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.17  2006/05/09 15:16:14  gouriano
 * Added XML namespace definition possibility
 *
@@ -115,82 +201,3 @@
 *
 * ===========================================================================
 */
-
-#include <serial/datatool/typestr.hpp>
-#include <serial/datatool/classstr.hpp>
-#include <corelib/ncbiutil.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CChoiceTypeStrings : public CClassTypeStrings
-{
-    typedef CClassTypeStrings CParent;
-public:
-    enum EMemberType {
-        eSimpleMember,
-        eStringMember,
-        ePointerMember,
-        eObjectPointerMember,
-        eBufferMember
-    };
-    struct SVariantInfo {
-        string externalName;
-        string cName;
-        EMemberType memberType;
-        AutoPtr<CTypeStrings> type;
-        bool delayed;
-        bool in_union;
-        int memberTag;
-        bool noPrefix;
-        bool attlist;
-        bool noTag;
-        bool simple;
-        const CDataType* dataType;
-
-        SVariantInfo(const string& name, const AutoPtr<CTypeStrings>& type,
-                     bool delayed, bool in_union,
-                     int tag, bool noPrefx, bool attlst, bool noTg,
-                     bool simpl, const CDataType* dataTp);
-    };
-    typedef list<SVariantInfo> TVariants;
-
-    CChoiceTypeStrings(const string& externalName, const string& className,
-                       const string& namespaceName);
-    ~CChoiceTypeStrings(void);
-
-    bool HaveAssignment(void) const
-        {
-            return m_HaveAssignment;
-        }
-
-    void AddVariant(const string& name, const AutoPtr<CTypeStrings>& type,
-                    bool delayed, bool in_union, int tag,
-                    bool noPrefix, bool attlist,
-                    bool noTag, bool simple, const CDataType* dataType);
-
-protected:
-    void GenerateClassCode(CClassCode& code,
-                           CNcbiOstream& getters,
-                           const string& methodPrefix,
-                           bool haveUserClass,
-                           const string& classPrefix) const;
-    bool x_IsNullType(TVariants::const_iterator i) const;
-    bool x_IsNullWithAttlist(TVariants::const_iterator i) const;
-
-private:
-    TVariants m_Variants;
-    bool m_HaveAssignment;
-};
-
-class CChoiceRefTypeStrings : public CClassRefTypeStrings
-{
-    typedef CClassRefTypeStrings CParent;
-public:
-    CChoiceRefTypeStrings(const string& className, const CNamespace& ns,
-                          const string& fileName);
-
-};
-
-END_NCBI_SCOPE
-
-#endif

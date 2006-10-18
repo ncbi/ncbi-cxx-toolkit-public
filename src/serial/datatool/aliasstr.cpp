@@ -43,10 +43,12 @@ BEGIN_NCBI_SCOPE
 
 CAliasTypeStrings::CAliasTypeStrings(const string& externalName,
                                      const string& className,
-                                     CTypeStrings& ref_type)
+                                     CTypeStrings& ref_type,
+                                     const CComments& comments)
     : m_ExternalName(externalName),
       m_ClassName(className),
-      m_RefType(&ref_type)
+      m_RefType(&ref_type),
+      TParent(comments)
 {
 }
 
@@ -145,6 +147,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
     string methodPrefix = code.GetMethodPrefix();
     bool is_class = false;
 
+    BeginClassDeclaration(ctx);
     switch ( m_RefType->GetKind() ) {
     case eKindClass:
     case eKindObject:
@@ -338,12 +341,14 @@ void CAliasTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
 CAliasRefTypeStrings::CAliasRefTypeStrings(const string& className,
                                            const CNamespace& ns,
                                            const string& fileName,
-                                           CTypeStrings& ref_type)
+                                           CTypeStrings& ref_type,
+                                           const CComments& comments)
     : m_ClassName(className),
       m_Namespace(ns),
       m_FileName(fileName),
       m_RefType(&ref_type),
-      m_IsObject(m_RefType->GetKind() == eKindObject)
+      m_IsObject(m_RefType->GetKind() == eKindObject),
+      CParent(comments)
 {
 }
 
@@ -458,6 +463,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.12  2005/08/25 16:00:29  gouriano
 * Corrected doxygen-related code generation
 *

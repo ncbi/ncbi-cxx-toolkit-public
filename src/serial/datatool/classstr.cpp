@@ -48,9 +48,11 @@ BEGIN_NCBI_SCOPE
 
 CClassTypeStrings::CClassTypeStrings(const string& externalName,
                                      const string& className,
-                                     const string& namespaceName)
+                                     const string& namespaceName,
+                                     const CComments& comments)
     : m_IsObject(true), m_HaveUserClass(true), m_HaveTypeInfo(true),
-      m_ExternalName(externalName), m_ClassName(className)
+      m_ExternalName(externalName), m_ClassName(className),
+      CParent(comments)
 {
     SetNamespaceName(namespaceName);
 }
@@ -103,13 +105,13 @@ void CClassTypeStrings::AddMember(const string& name,
                                   bool delayed, int tag,
                                   bool noPrefix, bool attlist, bool noTag,
                                   bool simple,const CDataType* dataType,
-                                  bool nonempty)
+                                  bool nonempty, const CComments& comments)
 {
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
                                     optional, defaultValue,
                                     delayed, tag, noPrefix,attlist,noTag,
-                                    simple,dataType,nonempty));
+                                    simple,dataType,nonempty, comments));
 }
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
@@ -118,13 +120,14 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
                                             bool opt, const string& defValue,
                                             bool del, int tag, bool noPrefx,
                                             bool attlst, bool noTg, bool simpl,
-                                            const CDataType* dataTp, bool nEmpty)
+                                            const CDataType* dataTp, bool nEmpty,
+                                            const CComments& commnts)
     : externalName(name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
       type(t), ptrType(pType),
       optional(opt), delayed(del), memberTag(tag),
       defaultValue(defValue), noPrefix(noPrefx), attlist(attlst), noTag(noTg),
-      simple(simpl),dataType(dataTp),nonEmpty(nEmpty)
+      simple(simpl),dataType(dataTp),nonEmpty(nEmpty), comments(commnts)
 {
     if ( cName.empty() ) {
         mName = "m_data";
@@ -256,6 +259,7 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             "\n";
     }
 
+    BeginClassDeclaration(ctx);
     GenerateClassCode(code,
                       code.ClassPublic(),
                       methodPrefix, haveUserClass, ctx.GetMethodPrefix());
@@ -413,9 +417,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 isNull = x_IsNullType(i);
                 isNullWithAtt = x_IsNullWithAttlist(i);
 // IsSetX
+                i->comments.PrintHPPMember(code.ClassPublic());
                 if (CClassCode::GetDoxygenComments()) {
                     code.ClassPublic() <<
-                        "\n"
                         "    /// Check if a value has been assigned to "<<i->cName<<" data member.\n"
                         "    ///\n"
                         "    /// Data member "<<i->cName<<" is ";
@@ -1458,10 +1462,12 @@ void CClassTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
 
 CClassRefTypeStrings::CClassRefTypeStrings(const string& className,
                                            const CNamespace& ns,
-                                           const string& fileName)
+                                           const string& fileName,
+                                           const CComments& comments)
     : m_ClassName(className),
       m_Namespace(ns),
-      m_FileName(fileName)
+      m_FileName(fileName),
+      CTypeStrings(comments)
 {
 }
 
@@ -1518,6 +1524,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2006/10/18 13:12:36  gouriano
+* Added comments into typestrings and generated code
+*
 * Revision 1.76  2006/07/25 15:58:06  gouriano
 * In generated code use typedefs consistently
 *
