@@ -271,7 +271,7 @@ CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters>
  * build the PSSM [in]
  */
 void
-PsiBlastAddAncilliaryPssmData(CPssmWithParameters& pssm, 
+PsiBlastAddAncillaryPssmData(CPssmWithParameters& pssm, 
                               const CBioseq& query, 
                               int gap_open, 
                               int gap_extend)
@@ -348,7 +348,7 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
     pssm->SetPssm().SetFinalData().SetH() =
         pssm_with_scores->GetPssm().GetFinalData().GetH();
 
-    PsiBlastAddAncilliaryPssmData(*pssm, *query, 
+    PsiBlastAddAncillaryPssmData(*pssm, *query, 
                                   opts.GetGapOpeningCost(), 
                                   opts.GetGapExtensionCost());
 }

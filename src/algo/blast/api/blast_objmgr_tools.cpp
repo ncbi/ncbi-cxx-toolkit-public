@@ -563,7 +563,7 @@ TSeqLocVector2Packed_seqint(const TSeqLocVector& sequences)
 
 // Defined in psiblast_aux_priv.cpp
 extern void
-PsiBlastAddAncilliaryPssmData(CPssmWithParameters& pssm, 
+PsiBlastAddAncillaryPssmData(CPssmWithParameters& pssm, 
                               const CBioseq& query, 
                               int gap_open, 
                               int gap_extend);
@@ -599,7 +599,7 @@ PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
     CPssmEngine engine(&input);
     CRef<CPssmWithParameters> retval(engine.Run());
 
-    PsiBlastAddAncilliaryPssmData(*retval, query, 
+    PsiBlastAddAncillaryPssmData(*retval, query, 
                                   opts_handle.GetGapOpeningCost(), 
                                   opts_handle.GetGapExtensionCost());
     return retval;
@@ -715,6 +715,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2006/10/18 21:04:20  camacho
+* Minor spelling correction
+*
 * Revision 1.76  2006/09/27 18:07:40  avagyanv
 * Included the blast_seqinfosrc_aux header file
 *
