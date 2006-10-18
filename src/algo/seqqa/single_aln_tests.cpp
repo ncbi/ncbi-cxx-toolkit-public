@@ -51,6 +51,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <algo/sequence/consensus_splice.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -253,14 +254,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             string splice3;
             vec3.GetSeqData(0, 2, splice3);
 
-            bool consensus_splice;
-            if ((splice5 == "GT" || splice5 == "GC") && splice3 == "AG") {
-                consensus_splice = true;
-            } else if (splice5 == "AT" && splice3 == "AC") {
-                consensus_splice = true;
-            } else {
-                consensus_splice = false;
-            }
+            bool consensus_splice = IsConsensusSplice(splice5, splice3);
             total_splices += 1;
             if (consensus_splice) {
                 ++consensus_splices;
@@ -632,6 +626,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/10/18 15:51:18  jcherry
+ * Moved consensus splice determination into external function
+ *
  * Revision 1.21  2006/07/19 22:29:49  jcherry
  * Fixed copy-and-paste error in previous commit
  *
