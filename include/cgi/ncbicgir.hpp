@@ -33,9 +33,10 @@
  *
  */
 
-#include <corelib/ncbitime.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgi_util.hpp>
+#include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <map>
 
 
@@ -52,9 +53,10 @@ class CCgiSession;
 class NCBI_XCGI_EXPORT CCgiResponse
 {
 public:
-    // 'ctors
-    CCgiResponse(CNcbiOstream* os = 0, int ofd = -1);
-    // (default sets out.stream to "cout", ofd to STDOUT_FILENO)
+    /// @note
+    ///  By default set output stream to "cout" and file descr to STDOUT_FILENO
+    CCgiResponse(CNcbiOstream* os = NULL, int ofd = -1);
+    //
     ~CCgiResponse(void);
 
     // Set/get the "raw CGI" response type
@@ -76,8 +78,10 @@ public:
     string GetHeaderValue (const string& name) const;
     bool   HaveHeaderValue(const string& name) const;
 
-    // Set/get content type [text/html by default if not provided]
-    void   SetContentType(const string& type);
+    /// Set content type (text/html by default if not provided)
+    void SetContentType(const string& type);
+
+    /// Get content type
     string GetContentType(void) const;
 
     // Set filename for undisplayable content; please include an
@@ -85,6 +89,7 @@ public:
     // components (which clients generally discard).
     void   SetFilename(const string& name);
 
+    /// Set the "Location:" HTTP header
     void   SetLocation(const CUrl& url);
 
     // Various styles of multipart responses, none of which is
@@ -111,24 +116,43 @@ public:
     const CCgiCookies& Cookies(void) const;
     CCgiCookies&       Cookies(void);
 
-    // Set/get output stream (NULL here means "no output stream")
-    void          SetOutput(CNcbiOstream* os, int fd = -1);
-    CNcbiOstream* GetOutput(void) const;
-    int           GetOutputFD(void) const;
+    /// Set output stream (NULL here means "no output stream")
+    void SetOutput(CNcbiOstream* os, int fd = -1);
 
-    // Get output stream.  Throw exception if GetOutput() is NULL
+    /// Get output stream (NULL here means "no output stream").
+    /// 
+    /// @attention
+    ///  If the output stream is in a "bad" state and the
+    ///  SetThrowOnBadOutput() is set to TRUE, then:
+    ///   - a warning will be posted
+    ///   - SetThrowOnBadOutput(false) will be called 
+    CNcbiOstream* GetOutput(void) const;
+
+    /// Get file descriptor of the output stream (-1 if not applicable)
+    int GetOutputFD(void) const;
+
+    /// Get output stream.  Throw exception if GetOutput() is NULL.
     CNcbiOstream& out(void) const;
 
-    // Flush output stream
+    /// Flush output stream
     void Flush(void) const;
 
-    // Write HTTP response header to the output stream
+    /// Write HTTP response header to the output stream
     CNcbiOstream& WriteHeader(void) const;
     CNcbiOstream& WriteHeader(CNcbiOstream& os) const;
 
-    void SetTrackingCookie(const string& name, const string& value,
+    void SetTrackingCookie(const string& name,   const string& value,
                            const string& domain, const string& path,
-                           const CTime& exp_time = CTime());
+                           const CTime&  exp_time = CTime());
+
+    /// If set to TRUE then the writes to a "bad" output stream
+    /// will throw exceptions of type std::ios_base::failure.
+    /// @sa GetOutput()
+    void SetThrowOnBadOutput(bool throw_on_bad_output);
+
+public:
+    void x_SetSession(const CCgiSession& session);
+
 protected:
     static const string sm_ContentTypeName;     // Content type header name
     static const string sm_LocationName;        // Location header name
@@ -137,47 +161,47 @@ protected:
     static const string sm_ContentTypeRelated;  // multipart/related
     static const string sm_ContentTypeXMR;      // multipart/x-mixed-replace
     static const string sm_ContentDispoName;    // Content-Disposition
-    static const string sm_FilenamePrefix;      // Syntax preceding the filename
+    static const string sm_FilenamePrefix;      // Syntax preceding the fname
     static const string sm_HTTPStatusName;      // Status header name:   Status
     static const string sm_HTTPStatusDefault;   // Default HTTP status:  200 OK
     static const string sm_BoundaryPrefix;      // Start of multipart boundary
     
     typedef map<string, string, PNocase> TMap;
 
-    bool          m_IsRawCgi;      // The "raw CGI" flag
-    EMultipartMode m_IsMultipart;  // (Three-way) multipart flag
-    bool          m_BetweenParts;  // Did we already print the boundary?
-    string        m_Boundary;      // Multipart boundary
-    TMap          m_HeaderValues;  // Header lines in alphabetical order
-    CCgiCookies   m_Cookies;       // Cookies
-    CNcbiOstream* m_Output;        // Default output stream
-    int           m_OutputFD;      // Output file descriptor, if available.
+    bool           m_IsRawCgi;      // The "raw CGI" flag
+    EMultipartMode m_IsMultipart;   // (Three-way) multipart flag
+    bool           m_BetweenParts;  // Did we already print the boundary?
+    string         m_Boundary;      // Multipart boundary
+    TMap           m_HeaderValues;  // Header lines in alphabetical order
+    CCgiCookies    m_Cookies;       // Cookies
+    CNcbiOstream*  m_Output;        // Default output stream
+    int            m_OutputFD;      // Output file descriptor, if available.
 
     // Prohibit copy constructor and assignment operator
     CCgiResponse(const CCgiResponse&);
     CCgiResponse& operator= (const CCgiResponse&);
 
 private:
-    const CCgiSession* m_Session;
+    const CCgiSession*   m_Session;
     auto_ptr<CCgiCookie> m_TrackingCookie;
 
-public:
-    void x_SetSession(const CCgiSession& session);
-        
+    //
+    NCBI_PARAM_DECL(bool, CGI, ThrowOnBadOutput);
+    typedef NCBI_PARAM_TYPE(CGI, ThrowOnBadOutput) TCGI_ThrowOnBadOutput;
+    TCGI_ThrowOnBadOutput m_ThrowOnBadOutput;
 };
 
 
+
 /* @} */
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
 
-
-/////////////////////////////////////////////////////////////////////////////
-//  CCgiResponse::
-//
 
 inline void CCgiResponse::SetRawCgi(bool is_raw)
 {
@@ -246,17 +270,6 @@ inline CCgiCookies& CCgiResponse::Cookies(void)
     return m_Cookies;
 }
 
-inline void CCgiResponse::SetOutput(CNcbiOstream* out, int fd)
-{
-    m_Output   = out;
-    m_OutputFD = fd;
-}
-
-inline CNcbiOstream* CCgiResponse::GetOutput(void) const
-{
-    return m_Output;
-}
-
 inline int CCgiResponse::GetOutputFD(void) const
 {
     return m_OutputFD;
@@ -281,6 +294,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2006/10/18 18:33:01  vakatov
+ * Allow to throw an exception in case the output becomes bad or closed
+ * ([CGI.ThrowOnBadOutput] parameter)
+ *
  * Revision 1.22  2006/09/12 14:27:45  ucko
  * Add a SetFilename method and an API for producing multipart responses.
  *

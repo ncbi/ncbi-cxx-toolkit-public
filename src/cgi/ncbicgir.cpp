@@ -64,6 +64,9 @@ const string CCgiResponse::sm_HTTPStatusName     = "Status";
 const string CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
 const string CCgiResponse::sm_BoundaryPrefix     = "NCBI_CGI_Boundary_";
 
+NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, false, CCgiResponse);
+
+
 inline bool s_ZeroTime(const tm& date)
 {
     static const tm kZeroTime = { 0 };
@@ -75,11 +78,13 @@ CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
     : m_IsRawCgi(false),
       m_IsMultipart(eMultipart_none),
       m_BetweenParts(false),
-      m_Output(os ? os : &NcbiCout),
-      m_OutputFD(os ? ofd : STDOUT_FILENO), // "os" is NOT a typo
+      m_Output(NULL),
+      m_OutputFD(0),
       m_Session(NULL)
 {
-    return;
+    SetOutput(os ? os  : &NcbiCout,
+              os ? ofd : STDOUT_FILENO  // "os" on this line is NOT a typo
+              );
 }
 
 
@@ -165,12 +170,37 @@ void CCgiResponse::SetStatus(unsigned int code, const string& reason)
 }
 
 
+void CCgiResponse::SetOutput(CNcbiOstream* out, int fd)
+{
+    m_Output   = out;
+    m_OutputFD = fd;
+
+    // Make the output stream to throw on write if it's in a bad state
+    if (m_Output  &&  m_ThrowOnBadOutput.Get()) {
+        m_Output->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+    }
+}
+
+CNcbiOstream* CCgiResponse::GetOutput(void) const
+{
+    if (m_Output  &&
+        (m_Output->rdstate()  &  (IOS_BASE::badbit | IOS_BASE::failbit))
+        != 0  &&
+        m_ThrowOnBadOutput.Get()) {
+        ERR_POST(Critical <<
+                 "CCgiResponse::GetOutput() -- output stream is in bad state");
+        const_cast<CCgiResponse*>(this)->SetThrowOnBadOutput(false);
+    }
+    return m_Output;
+}
+
+
 CNcbiOstream& CCgiResponse::out(void) const
 {
     if ( !m_Output ) {
         THROW1_TRACE(runtime_error, "CCgiResponse::out() on NULL out.stream");
     }
-    return *m_Output;
+    return *GetOutput();
 }
 
 
@@ -311,6 +341,7 @@ void CCgiResponse::Flush(void) const
     out() << NcbiFlush;
 }
 
+
 void CCgiResponse::SetTrackingCookie(const string& name, const string& value,
                                      const string& domain, const string& path,
                                      const CTime& exp_time)
@@ -320,12 +351,26 @@ void CCgiResponse::SetTrackingCookie(const string& name, const string& value,
         m_TrackingCookie->SetExpTime(exp_time);
 }
 
+
+void CCgiResponse::SetThrowOnBadOutput(bool throw_on_bad_output)
+{
+    m_ThrowOnBadOutput.Set(throw_on_bad_output);
+    if (m_Output  &&  throw_on_bad_output) {
+        m_Output->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.28  2006/10/18 18:33:09  vakatov
+* Allow to throw an exception in case the output becomes bad or closed
+* ([CGI.ThrowOnBadOutput] parameter)
+*
 * Revision 1.27  2006/09/12 14:27:52  ucko
 * Add a SetFilename method and an API for producing multipart responses.
 *
