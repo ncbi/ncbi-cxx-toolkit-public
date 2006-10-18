@@ -54,8 +54,10 @@ class CSeq_align;
  * @{
  */
 
-struct NCBI_XOBJMGR_EXPORT SSeqMapSwitchPoint
+class NCBI_XOBJMGR_EXPORT CSeqMapSwitchPoint : public CObject
 {
+public:
+
     // master sequence
     CBioseq_Handle  m_Master;
     // point in master sequence - coordinate of the first base to the right
@@ -100,8 +102,13 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSwitchPoint
         }
 
     TSeqPos GetInsert(TSeqPos pos) const;
+    TSeqPos GetLeftInPlaceInsert(void) const;
+    TSeqPos GetRightInPlaceInsert(void) const;
 
-    bool operator<(const SSeqMapSwitchPoint& p) const
+    void ChangeSwitchPoint(TSeqPos pos, TSeqPos add);
+    void InsertInPlace(TSeqPos add_left, TSeqPos add_right);
+
+    bool operator<(const CSeqMapSwitchPoint& p) const
         {
             _ASSERT(m_Master == p.m_Master);
             return m_MasterPos < p.m_MasterPos;
@@ -112,10 +119,10 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSwitchPoint
 
 // calculate switch point for two segments specified by align
 NCBI_XOBJMGR_EXPORT
-SSeqMapSwitchPoint GetSwitchPoint(const CBioseq_Handle& seq,
-                                  const CSeq_align& align);
+CRef<CSeqMapSwitchPoint> GetSwitchPoint(const CBioseq_Handle& seq,
+                                        const CSeq_align& align);
 
-typedef vector<SSeqMapSwitchPoint> TSeqMapSwitchPoints;
+typedef vector<CRef<CSeqMapSwitchPoint> > TSeqMapSwitchPoints;
 typedef list<CRef<CSeq_align> > TSeqMapSwitchAligns;
 
 // calculate all sequence switch points using set of Seq-aligns
@@ -125,7 +132,7 @@ TSeqMapSwitchPoints GetAllSwitchPoints(const CBioseq_Handle& seq,
 
 // calculate all sequence switch points using set of Seq-aligns from assembly
 NCBI_XOBJMGR_EXPORT
-vector<SSeqMapSwitchPoint> GetAllSwitchPoints(const CBioseq_Handle& seq);
+TSeqMapSwitchPoints GetAllSwitchPoints(const CBioseq_Handle& seq);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -133,6 +140,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/10/18 17:24:32  vasilche
+* SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
+*
 * Revision 1.4  2006/10/05 13:52:53  vasilche
 * Added export.
 *

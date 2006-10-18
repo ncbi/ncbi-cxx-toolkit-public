@@ -272,7 +272,7 @@ struct SSeq_align_Info
 
     TMatchMap match_map;
 
-    typedef SSeqMapSwitchPoint::TDifferences TDifferences;
+    typedef CSeqMapSwitchPoint::TDifferences TDifferences;
     pair<TSeqPos, TSeqPos> x_FindAlignMatch(SSeqPos pos1, // current segment
                                             SSeqPos pos2, // another segment
                                             TSeqPos limit, // on current
@@ -346,12 +346,13 @@ SSeq_align_Info::x_FindAlignMatch(SSeqPos pos1,
     return ret;
 }
 
-SSeqMapSwitchPoint x_GetSwitchPoint(const CBioseq_Handle& seq,
-                                    SSeq_align_Info& info,
-                                    const CSeqMap_CI& iter1,
-                                    const CSeqMap_CI& iter2)
+CRef<CSeqMapSwitchPoint> x_GetSwitchPoint(const CBioseq_Handle& seq,
+                                          SSeq_align_Info& info,
+                                          const CSeqMap_CI& iter1,
+                                          const CSeqMap_CI& iter2)
 {
-    SSeqMapSwitchPoint sp;
+    CRef<CSeqMapSwitchPoint> sp_ref(new CSeqMapSwitchPoint);
+    CSeqMapSwitchPoint& sp = *sp_ref;
     sp.m_Master = seq;
     sp.m_LeftId = iter1.GetRefSeqid();
     sp.m_RightId = iter2.GetRefSeqid();
@@ -370,15 +371,15 @@ SSeqMapSwitchPoint x_GetSwitchPoint(const CBioseq_Handle& seq,
                               sp.m_LeftDifferences);
     sp.m_MasterRange.SetFrom(pos-ext1.first).SetTo(pos+ext2.first);
     sp.m_ExactMasterRange.SetFrom(pos-ext1.second).SetTo(pos+ext2.second);
-    return sp;
+    return sp_ref;
 }
 
-SSeqMapSwitchPoint::TInsertDelete
-x_GetDifferences(const SSeqMapSwitchPoint::TDifferences& diff,
+CSeqMapSwitchPoint::TInsertDelete
+x_GetDifferences(const CSeqMapSwitchPoint::TDifferences& diff,
                  TSeqPos offset, TSeqPos add)
 {
-    SSeqMapSwitchPoint::TInsertDelete ret;
-    SSeqMapSwitchPoint::TDifferences::const_iterator iter = diff.begin();
+    CSeqMapSwitchPoint::TInsertDelete ret;
+    CSeqMapSwitchPoint::TDifferences::const_iterator iter = diff.begin();
     while ( iter != diff.end() && offset >= iter->first ) {
         if ( offset - iter->first <= iter->second.second ) {
             TSeqPos ins = min(add, iter->second.first);
@@ -400,8 +401,8 @@ x_GetDifferences(const SSeqMapSwitchPoint::TDifferences& diff,
 
 class CScope;
 
-SSeqMapSwitchPoint::TInsertDelete
-SSeqMapSwitchPoint::GetDifferences(TSeqPos new_pos, TSeqPos add) const
+CSeqMapSwitchPoint::TInsertDelete
+CSeqMapSwitchPoint::GetDifferences(TSeqPos new_pos, TSeqPos add) const
 {
     if ( new_pos > m_MasterPos ) {
         return x_GetDifferences(m_RightDifferences, new_pos-m_MasterPos, add);
@@ -414,25 +415,92 @@ SSeqMapSwitchPoint::GetDifferences(TSeqPos new_pos, TSeqPos add) const
     }
 }
 
-TSeqPos SSeqMapSwitchPoint::GetInsert(TSeqPos pos) const
+TSeqPos CSeqMapSwitchPoint::GetInsert(TSeqPos pos) const
 {
+    if ( !m_Master ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "switch point is not initialized");
+    }
+    if ( pos < m_MasterRange.GetFrom() || pos > m_MasterRange.GetTo() ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "switch point is not in valid range");
+    }
     const TDifferences* diff;
     TSeqPos offset;
     if ( pos < m_MasterPos ) {
         diff = &m_LeftDifferences;
         offset = m_MasterPos - pos;
     }
-    else {
+    else if ( pos > m_MasterPos ) {
         diff = &m_RightDifferences;
         offset = pos-m_MasterPos;
+    }
+    else {
+        return 0;
     }
     TDifferences::const_iterator iter = diff->find(offset);
     return iter == diff->end()? 0: iter->second.first;
 }
 
+
+TSeqPos CSeqMapSwitchPoint::GetLeftInPlaceInsert(void) const
+{
+    if ( !m_LeftDifferences.empty() &&
+         m_LeftDifferences.begin()->first == 0 ) {
+        return m_LeftDifferences.begin()->second.first;
+    }
+    return 0;
+}
+
+
+TSeqPos CSeqMapSwitchPoint::GetRightInPlaceInsert(void) const
+{
+    if ( !m_RightDifferences.empty() &&
+         m_RightDifferences.begin()->first == 0 ) {
+        return m_RightDifferences.begin()->second.first;
+    }
+    return 0;
+}
+
+
+void CSeqMapSwitchPoint::ChangeSwitchPoint(TSeqPos pos, TSeqPos add)
+{
+    if ( !m_Master ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "switch point is not initialized");
+    }
+    if ( pos < m_MasterRange.GetFrom() || pos > m_MasterRange.GetTo() ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "switch point is not in valid range");
+    }
+    if ( add && add > GetInsert(pos) ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "adding more bases than available");
+    }
+    if ( pos < m_MasterPos ) {
+    }
+    else if ( pos > m_MasterPos ) {
+    }
+}
+
+
+void CSeqMapSwitchPoint::InsertInPlace(TSeqPos add_left, TSeqPos add_right)
+{
+    if ( !m_Master ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "switch point is not initialized");
+    }
+    if ( add_left && add_left > GetLeftInPlaceInsert() ||
+         add_right && add_right > GetRightInPlaceInsert() ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "adding more bases than available");
+    }
+}
+
+
 // calculate switch point for two segments specified by align
-SSeqMapSwitchPoint GetSwitchPoint(const CBioseq_Handle& seq,
-                                  const CSeq_align& align)
+CRef<CSeqMapSwitchPoint> GetSwitchPoint(const CBioseq_Handle& seq,
+                                        const CSeq_align& align)
 {
     SSeq_align_Info info(align, seq.GetScope());
     if ( info.match_map.size() != 1 ) {
@@ -493,7 +561,7 @@ TSeqMapSwitchPoints GetAllSwitchPoints(const CBioseq_Handle& seq,
 }
 
 // calculate all sequence switch points using set of Seq-aligns from assembly
-vector<SSeqMapSwitchPoint> GetAllSwitchPoints(const CBioseq_Handle& seq)
+TSeqMapSwitchPoints GetAllSwitchPoints(const CBioseq_Handle& seq)
 {
     return GetAllSwitchPoints(seq, seq.GetInst_Hist().GetAssembly());
 }
@@ -506,6 +574,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2006/10/18 17:24:32  vasilche
+* SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
+*
 * Revision 1.5  2006/10/04 20:03:35  ucko
 * SMatch::GetMatchOrdered: comment out uncompilable _TRACE statements
 * (CRange<> objects aren't directly printable at present).

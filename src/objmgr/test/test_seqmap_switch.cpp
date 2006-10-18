@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/10/18 17:25:31  vasilche
+* SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
+*
 * Revision 1.2  2006/10/04 19:31:40  vasilche
 * Added program arguments.
 *
@@ -120,7 +123,7 @@ int CTestSeqMapSwitch::Run()
     else {
         TSeqMapSwitchPoints pp = GetAllSwitchPoints(bh);
         ITERATE ( TSeqMapSwitchPoints, it, pp ) {
-            const SSeqMapSwitchPoint& p = *it;
+            const CSeqMapSwitchPoint& p = **it;
             NcbiCout << "Switch @ " << p.m_MasterPos
                      << " " << p.m_LeftId.AsString()
                      << " -> " << p.m_RightId.AsString() << NcbiEndl;
