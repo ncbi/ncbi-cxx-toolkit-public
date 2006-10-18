@@ -253,7 +253,7 @@ SERV_ITER SERV_Open(const char*         service,
                     const SConnNetInfo* net_info)
 {
     return s_Open(service, 0/*not mask*/, types,
-                  preferred_host, 0/*port*/, 0.0/*preference*/,
+                  preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
                   net_info, 0/*skip*/, 0/*n_skip*/,
                   0/*not external*/, 0/*arg*/, 0/*val*/,
                   0/*info*/, 0/*host_info*/);
@@ -268,7 +268,7 @@ SERV_ITER SERV_OpenEx(const char*          service,
                       size_t               n_skip)
 {
     return s_Open(service, 0/*not mask*/, types,
-                  preferred_host, 0/*port*/, 0.0/*preference*/,
+                  preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
                   net_info, skip, n_skip,
                   0/*not external*/, 0/*arg*/, 0/*val*/,
                   0/*info*/, 0/*host_info*/);
@@ -700,6 +700,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.85  2006/10/18 17:23:38  lavr
+ * Elaborated comments
+ *
  * Revision 6.84  2006/06/07 20:19:57  lavr
  * Formatting;  also note that minor revision number has been bumped up to 220
  *
