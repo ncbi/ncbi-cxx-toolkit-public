@@ -221,6 +221,15 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
         { #section, #name, 0, default_value, eParam_Default }
 
 
+/// Similar to NCBI_PARAM_DEF except it adds "scope" (class name or 
+/// namespace) to the parameter's type.
+/// @sa NCBI_PARAM_DECL, NCBI_PARAM_DEF
+#define NCBI_PARAM_DEF_IN_SCOPE(type, section, name, default_value, scope)    \
+    SParamDescription< type >                                  \
+    scope::SNcbiParamDesc_##section##_##name::sm_ParamDescription =  \
+        { #section, #name, 0, default_value, eParam_Default }
+
+
 /// Static array of enum name+value pairs. Must be defined before
 /// NCBI_PARAM_ENUM_DEF
 /// @sa NCBI_PARAM_ENUM_DEF
@@ -433,6 +442,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/10/18 18:30:27  vakatov
+ * + NCBI_PARAM_DEF_IN_SCOPE
+ *
  * Revision 1.9  2006/01/05 20:40:17  grichenk
  * Added explicit environment variable name for params.
  * Added default value caching flag to CParam constructor.
