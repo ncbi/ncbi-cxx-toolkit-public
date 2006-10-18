@@ -49,18 +49,20 @@ SeqSwapper::SeqSwapper(CCdCore* cd, int identityThreshold):
 void SeqSwapper::swapSequences()
 {
 	int numNormal = m_cd->GetNumRows();
-
+	LOG_POST("Clustering");
 	vector< vector<int> * > clusters;
 	makeClusters(m_clusteringThreshold, clusters);
 	vector< pair<int, int> > replacementPairs;
 	set<int> structures;
-
+	LOG_POST("Clustering is done");
+	LOG_POST("Find replacements by BLAST in each cluster");
 	for (int i = 0; i < clusters.size(); i++)
 	{
 		vector<int>* cluster = clusters[i];
 		findReplacements(*cluster, replacementPairs, structures);
 		delete cluster;
 	}
+	LOG_POST("Done with BLAST in each cluster");
 	set<int> usedPendings;
 	
 	vector<int> selectedNormalRows;
