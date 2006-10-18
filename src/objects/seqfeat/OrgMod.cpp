@@ -59,10 +59,23 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str)
     string name = NStr::TruncateSpaces(str);
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
+    
+    if (NStr::Equal(name, "note")) {
+        name = "other";
+    }
 
     return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
 }
 
+
+string COrgMod::GetSubtypeName(COrgMod::TSubtype stype)
+{
+    if (stype == COrgMod::eSubtype_other) {
+        return "note";
+    } else {
+        return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
+    }
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -73,6 +86,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.4  2006/10/18 17:38:42  bollin
+* Added function for getting OrgMod subtype name from subtype value.
+*
 * Revision 6.3  2006/03/14 20:21:52  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *

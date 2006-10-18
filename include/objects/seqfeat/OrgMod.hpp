@@ -65,6 +65,8 @@ public:
     // does case-insesitive search and '_' are converted to '-'.
     // Throws an exception on failure.
     static TSubtype GetSubtypeValue(const string& str);
+    static string GetSubtypeName(TSubtype stype);
+
 	private:
     // Prohibit copy constructor and assignment operator
     COrgMod(const COrgMod& value);
@@ -107,6 +109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/10/18 17:38:39  bollin
+* Added function for getting OrgMod subtype name from subtype value.
+*
 * Revision 1.2  2006/03/14 20:21:51  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *
