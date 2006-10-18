@@ -1069,13 +1069,13 @@ case $srcdir in
 esac
 # Do not use `cd foo && pwd` to compute absolute paths, because
 # the directories may not exist.
-case `$smart_pwd` in
+case $builddir in
 .) ac_abs_builddir="$ac_dir";;
 *)
   case "$ac_dir" in
-  .) ac_abs_builddir=`$smart_pwd`;;
+  .) ac_abs_builddir=$builddir;;
   [\\/]* | ?:[\\/]* ) ac_abs_builddir="$ac_dir";;
-  *) ac_abs_builddir=`$smart_pwd`/"$ac_dir";;
+  *) ac_abs_builddir=$builddir/"$ac_dir";;
   esac;;
 esac
 case $ac_abs_builddir in
@@ -6880,10 +6880,26 @@ case "${build_root}" in
       then
          build_root="$PWD"
       else
-         build_root="`(cd ${build_root}; $smart_pwd)`"
+         ncbi_fix_dir_tmp=`cd $build_root && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $build_root && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            build_root=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) build_root=$ncbi_fix_dir_tmp ;;
+ esac
       fi
    ;;
-   *  ) build_root="`(cd ${build_root}; $smart_pwd)`" ;;
+   *  ) ncbi_fix_dir_tmp=`cd $build_root && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $build_root && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            build_root=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) build_root=$ncbi_fix_dir_tmp ;;
+ esac ;;
 esac
 if test -n "$with_fake_root"; then
    build_root=$with_fake_root/`basename $build_root`
@@ -7239,10 +7255,26 @@ case "${srcdir}" in
       then
         srcdir="$PWD"
       else
-        srcdir="`(cd ${srcdir}; $smart_pwd)`"
+        ncbi_fix_dir_tmp=`cd $srcdir && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $srcdir && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            srcdir=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) srcdir=$ncbi_fix_dir_tmp ;;
+ esac
       fi
    ;;
-   * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
+   * ) ncbi_fix_dir_tmp=`cd $srcdir && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $srcdir && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            srcdir=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) srcdir=$ncbi_fix_dir_tmp ;;
+ esac ;;
 esac
 real_srcdir=$srcdir
 if test -n "$with_fake_root"; then
@@ -19890,7 +19922,15 @@ if test "$with_bdb" != "no" ; then
           ;;
    esac
    if test -d "$BERKELEYDB_PATH"; then
-      BERKELEYDB_PATH=`cd $BERKELEYDB_PATH  &&  $smart_pwd`
+      ncbi_fix_dir_tmp=`cd $BERKELEYDB_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $BERKELEYDB_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            BERKELEYDB_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) BERKELEYDB_PATH=$ncbi_fix_dir_tmp ;;
+ esac
       : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    fi
    if test -z "${BERKELEYDB_LIBPATH}"; then
@@ -23303,7 +23343,15 @@ if test "$with_fastcgi" != "no" ; then
       *        ) FASTCGI_PATH=$NCBI/fcgi-${with_fastcgi} ;;
    esac
    if test -d "$FASTCGI_PATH"; then
-      FASTCGI_PATH=`cd $FASTCGI_PATH  &&  $smart_pwd`
+      ncbi_fix_dir_tmp=`cd $FASTCGI_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $FASTCGI_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            FASTCGI_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) FASTCGI_PATH=$ncbi_fix_dir_tmp ;;
+ esac
    fi
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
@@ -24282,7 +24330,15 @@ if test "$with_libxml" != "no"; then
       *        ) LIBXML_PATH=$with_libxml ;;
    esac
    if test -d "$LIBXML_PATH"; then
-      LIBXML_PATH=`cd $LIBXML_PATH  &&  $smart_pwd`
+      ncbi_fix_dir_tmp=`cd $LIBXML_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $LIBXML_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            LIBXML_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) LIBXML_PATH=$ncbi_fix_dir_tmp ;;
+ esac
       in_path=" in $LIBXML_PATH"
       if test -n "$LIBXML_INCLUDE"; then
          :
@@ -24499,7 +24555,15 @@ if test "$with_xerces" != no; then
       XERCES_PATH=$with_xerces
    fi
    if test -d "$XERCES_PATH"; then
-      XERCES_PATH=`cd $XERCES_PATH && $smart_pwd`
+      ncbi_fix_dir_tmp=`cd $XERCES_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $XERCES_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            XERCES_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+ esac
    fi
    vpath="$XERCES_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    if test -d "$vpath/lib"; then
@@ -24509,9 +24573,27 @@ if test "$with_xerces" != no; then
    else
       vpath="$XERCES_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
       if test -d "$vpath/lib"; then
-         XERCES_PATH=`cd $vpath && $smart_pwd`
+         XERCES_PATH=$vpath
+         ncbi_fix_dir_tmp=`cd $XERCES_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $XERCES_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            XERCES_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+ esac
       elif test -d "$vpath"; then
-         : ${XERCES_LIBPATH=`cd $vpath && $smart_pwd`}
+         XERCES_LIBPATH=$vpath
+         ncbi_fix_dir_tmp=`cd $XERCES_LIBPATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $XERCES_LIBPATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            XERCES_LIBPATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) XERCES_LIBPATH=$ncbi_fix_dir_tmp ;;
+ esac
       fi
    fi
    if test -d $XERCES_PATH; then
@@ -24610,7 +24692,15 @@ if test "$with_xalan" != no; then
       XALAN_PATH=$with_xalan
    fi
    if test -d "$XALAN_PATH"; then
-      XALAN_PATH=`cd $XALAN_PATH && $smart_pwd`
+      ncbi_fix_dir_tmp=`cd $XALAN_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $XALAN_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            XALAN_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+ esac
    fi
    vpath="$XALAN_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    if test -d "$vpath/lib"; then
@@ -24620,9 +24710,27 @@ if test "$with_xalan" != no; then
    else
       vpath="$XALAN_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
       if test -d "$vpath/lib"; then
-         XALAN_PATH=`cd $vpath && $smart_pwd`
+         XALAN_PATH=$vpath
+         ncbi_fix_dir_tmp=`cd $XALAN_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $XALAN_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            XALAN_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+ esac
       elif test -d "$vpath"; then
-         : ${XALAN_LIBPATH=`cd $vpath && $smart_pwd`}
+         XALAN_LIBPATH=$vpath
+         ncbi_fix_dir_tmp=`cd $XALAN_LIBPATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $XALAN_LIBPATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            XALAN_LIBPATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) XALAN_LIBPATH=$ncbi_fix_dir_tmp ;;
+ esac
       fi
    fi
    if test -d $XALAN_PATH; then
@@ -24718,7 +24826,15 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 ### SQLite
 : ${SQLITE_PATH=$NCBI/sqlite2}
 if test -d "$SQLITE_PATH"; then
-   SQLITE_PATH=`cd $SQLITE_PATH  &&  $smart_pwd`
+   ncbi_fix_dir_tmp=`cd $SQLITE_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $SQLITE_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            SQLITE_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) SQLITE_PATH=$ncbi_fix_dir_tmp ;;
+ esac
 fi
 if test "$with_sqlite" != "no"; then
     case "$with_sqlite" in
@@ -24822,7 +24938,15 @@ _ACEOF
 
 : ${SQLITE3_PATH=$NCBI/sqlite3}
 if test -d "$SQLITE3_PATH"; then
-   SQLITE3_PATH=`cd $SQLITE3_PATH  &&  $smart_pwd`
+   ncbi_fix_dir_tmp=`cd $SQLITE3_PATH && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $SQLITE3_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            SQLITE3_PATH=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) SQLITE3_PATH=$ncbi_fix_dir_tmp ;;
+ esac
 fi
 if test -d "$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"; then
    SQLITE3_LIBPATH="-L$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib ${CONF_f_runpath}$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"
@@ -27763,13 +27887,13 @@ case $srcdir in
 esac
 # Do not use `cd foo && pwd` to compute absolute paths, because
 # the directories may not exist.
-case `$smart_pwd` in
+case $builddir in
 .) ac_abs_builddir="$ac_dir";;
 *)
   case "$ac_dir" in
-  .) ac_abs_builddir=`$smart_pwd`;;
+  .) ac_abs_builddir=$builddir;;
   [\\/]* | ?:[\\/]* ) ac_abs_builddir="$ac_dir";;
-  *) ac_abs_builddir=`$smart_pwd`/"$ac_dir";;
+  *) ac_abs_builddir=$builddir/"$ac_dir";;
   esac;;
 esac
 case $ac_abs_builddir in
@@ -28190,13 +28314,13 @@ case $srcdir in
 esac
 # Do not use `cd foo && pwd` to compute absolute paths, because
 # the directories may not exist.
-case `$smart_pwd` in
+case $builddir in
 .) ac_abs_builddir="$ac_dir";;
 *)
   case "$ac_dir" in
-  .) ac_abs_builddir=`$smart_pwd`;;
+  .) ac_abs_builddir=$builddir;;
   [\\/]* | ?:[\\/]* ) ac_abs_builddir="$ac_dir";;
-  *) ac_abs_builddir=`$smart_pwd`/"$ac_dir";;
+  *) ac_abs_builddir=$builddir/"$ac_dir";;
   esac;;
 esac
 case $ac_abs_builddir in

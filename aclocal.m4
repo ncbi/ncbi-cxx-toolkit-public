@@ -35,7 +35,7 @@ case $srcdir in
 esac
 # Do not use `cd foo && pwd` to compute absolute paths, because
 # the directories may not exist.
-AS_SET_CATFILE([ac_abs_builddir],   [`$smart_pwd`],     [$1])
+AS_SET_CATFILE([ac_abs_builddir],   [$builddir],        [$1])
 AS_SET_CATFILE([ac_abs_top_builddir],
                                     [$ac_abs_builddir], [${ac_top_builddir}.])
 AS_SET_CATFILE([ac_abs_top_srcdir], [$ac_dir_in],       [$real_srcdir])
@@ -109,6 +109,18 @@ m4_define([_AS_LINENO_PREPARE],
   exit
 }
 ])# _AS_LINENO_PREPARE
+
+
+AC_DEFUN(NCBI_FIX_DIR,
+[ncbi_fix_dir_tmp=`cd $[$1] && env -u PWD pwd`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp=`cd $[$1] && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
+            $1=$ncbi_fix_dir_tmp
+         fi
+         ;;
+    /*) $1=$ncbi_fix_dir_tmp ;;
+ esac])
 
 
 # Keep track of (un)available features, packages, and projects.

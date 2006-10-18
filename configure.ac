@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.439 2006/09/27 18:45:37 ucko Exp $
+#  $Id: configure.ac,v 1.440 2006/10/18 15:09:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1669,10 +1669,10 @@ case "${build_root}" in
       then
          build_root="$PWD"
       else
-         build_root="`(cd ${build_root}; $smart_pwd)`"
+         NCBI_FIX_DIR(build_root)
       fi
    ;;
-   *  ) build_root="`(cd ${build_root}; $smart_pwd)`" ;;
+   *  ) NCBI_FIX_DIR(build_root) ;;
 esac
 if test -n "$with_fake_root"; then
    build_root=$with_fake_root/`basename $build_root`
@@ -1794,10 +1794,10 @@ case "${srcdir}" in
       then
         srcdir="$PWD"
       else
-        srcdir="`(cd ${srcdir}; $smart_pwd)`"
+        NCBI_FIX_DIR(srcdir)
       fi
    ;;
-   * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
+   * ) NCBI_FIX_DIR(srcdir) ;;
 esac
 real_srcdir=$srcdir
 if test -n "$with_fake_root"; then
@@ -3261,7 +3261,7 @@ if test "$with_bdb" != "no" ; then
           ;;
    esac
    if test -d "$BERKELEYDB_PATH"; then
-      BERKELEYDB_PATH=`cd $BERKELEYDB_PATH  &&  $smart_pwd`
+      NCBI_FIX_DIR(BERKELEYDB_PATH)
       : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    fi
    if test -z "${BERKELEYDB_LIBPATH}"; then
@@ -4066,7 +4066,7 @@ if test "$with_fastcgi" != "no" ; then
       *        ) FASTCGI_PATH=$NCBI/fcgi-${with_fastcgi} ;;
    esac
    if test -d "$FASTCGI_PATH"; then
-      FASTCGI_PATH=`cd $FASTCGI_PATH  &&  $smart_pwd`
+      NCBI_FIX_DIR(FASTCGI_PATH)
    fi
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
@@ -4432,7 +4432,7 @@ if test "$with_libxml" != "no"; then
       *        ) LIBXML_PATH=$with_libxml ;;
    esac
    if test -d "$LIBXML_PATH"; then
-      LIBXML_PATH=`cd $LIBXML_PATH  &&  $smart_pwd`
+      NCBI_FIX_DIR(LIBXML_PATH)
       in_path=" in $LIBXML_PATH"
       if test -n "$LIBXML_INCLUDE"; then
          :
@@ -4502,7 +4502,7 @@ if test "$with_xerces" != no; then
       XERCES_PATH=$with_xerces
    fi
    if test -d "$XERCES_PATH"; then
-      XERCES_PATH=`cd $XERCES_PATH && $smart_pwd`
+      NCBI_FIX_DIR(XERCES_PATH)
    fi
    vpath="$XERCES_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    if test -d "$vpath/lib"; then
@@ -4512,9 +4512,11 @@ if test "$with_xerces" != no; then
    else
       vpath="$XERCES_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
       if test -d "$vpath/lib"; then
-         XERCES_PATH=`cd $vpath && $smart_pwd`
+         XERCES_PATH=$vpath
+         NCBI_FIX_DIR(XERCES_PATH)
       elif test -d "$vpath"; then
-         : ${XERCES_LIBPATH=`cd $vpath && $smart_pwd`}
+         XERCES_LIBPATH=$vpath
+         NCBI_FIX_DIR(XERCES_LIBPATH)
       fi
    fi
    if test -d $XERCES_PATH; then
@@ -4560,7 +4562,7 @@ if test "$with_xalan" != no; then
       XALAN_PATH=$with_xalan
    fi
    if test -d "$XALAN_PATH"; then
-      XALAN_PATH=`cd $XALAN_PATH && $smart_pwd`
+      NCBI_FIX_DIR(XALAN_PATH)
    fi
    vpath="$XALAN_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
    if test -d "$vpath/lib"; then
@@ -4570,9 +4572,11 @@ if test "$with_xalan" != no; then
    else
       vpath="$XALAN_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
       if test -d "$vpath/lib"; then
-         XALAN_PATH=`cd $vpath && $smart_pwd`
+         XALAN_PATH=$vpath
+         NCBI_FIX_DIR(XALAN_PATH)
       elif test -d "$vpath"; then
-         : ${XALAN_LIBPATH=`cd $vpath && $smart_pwd`}
+         XALAN_LIBPATH=$vpath
+         NCBI_FIX_DIR(XALAN_LIBPATH)
       fi
    fi
    if test -d $XALAN_PATH; then
@@ -4615,7 +4619,7 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 ### SQLite
 : ${SQLITE_PATH=$NCBI/sqlite2}
 if test -d "$SQLITE_PATH"; then
-   SQLITE_PATH=`cd $SQLITE_PATH  &&  $smart_pwd`
+   NCBI_FIX_DIR(SQLITE_PATH)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
  AC_LANG_PROGRAM([#include <sqlite.h>],
@@ -4623,7 +4627,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
 
 : ${SQLITE3_PATH=$NCBI/sqlite3}
 if test -d "$SQLITE3_PATH"; then
-   SQLITE3_PATH=`cd $SQLITE3_PATH  &&  $smart_pwd`
+   NCBI_FIX_DIR(SQLITE3_PATH)
 fi
 if test -d "$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"; then
    SQLITE3_LIBPATH="-L$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib ${CONF_f_runpath}$SQLITE3_PATH/${compiler_pfx}${DEBUG_SFX}${MT_SFX}${bit64_sfx}/lib"
