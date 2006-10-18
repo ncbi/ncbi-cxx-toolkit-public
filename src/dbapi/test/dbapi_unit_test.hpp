@@ -185,6 +185,7 @@ public:
     void Multiple_Close(void);
     void Test_Unicode(void);
     void Test_Iskhakov(void);
+    void Test_NCBI_LS(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -215,6 +216,7 @@ protected:
     static void DumpResults(IStatement* const stmt);
     static int GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
                                const string& table_name);
+    static int GetNumOfRecords(const auto_ptr<ICallableStatement>& auto_stmt);
     void Connect(const auto_ptr<IConnection>& conn) const;
 
 private:
@@ -241,6 +243,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2006/10/18 18:38:36  ssikorsk
+ * + Test_NCBI_LS
+ *
  * Revision 1.45  2006/10/12 19:24:42  ssikorsk
  * + Test_Iskhakov
  *
