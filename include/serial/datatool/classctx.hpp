@@ -31,8 +31,46 @@
 * File Description:
 *   Class code generator
 *
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
+#include <set>
+
+BEGIN_NCBI_SCOPE
+
+class CDataType;
+class CChoiceDataType;
+class CFileCode;
+class CNamespace;
+
+class CClassContext
+{
+public:
+    virtual ~CClassContext(void);
+
+    typedef set<string> TIncludes;
+
+    virtual string GetMethodPrefix(void) const = 0;
+    virtual TIncludes& HPPIncludes(void) = 0;
+    virtual TIncludes& CPPIncludes(void) = 0;
+    virtual void AddForwardDeclaration(const string& className,
+                                       const CNamespace& ns) = 0;
+    virtual void AddHPPCode(const CNcbiOstrstream& code) = 0;
+    virtual void AddINLCode(const CNcbiOstrstream& code) = 0;
+    virtual void AddCPPCode(const CNcbiOstrstream& code) = 0;
+    virtual const CNamespace& GetNamespace(void) const = 0;
+};
+
+END_NCBI_SCOPE
+
+#endif
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/10/18 13:01:39  gouriano
+* Moved Log to bottom
+*
 * Revision 1.4  2000/04/17 19:11:04  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -72,36 +110,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
-#include <set>
-
-BEGIN_NCBI_SCOPE
-
-class CDataType;
-class CChoiceDataType;
-class CFileCode;
-class CNamespace;
-
-class CClassContext
-{
-public:
-    virtual ~CClassContext(void);
-
-    typedef set<string> TIncludes;
-
-    virtual string GetMethodPrefix(void) const = 0;
-    virtual TIncludes& HPPIncludes(void) = 0;
-    virtual TIncludes& CPPIncludes(void) = 0;
-    virtual void AddForwardDeclaration(const string& className,
-                                       const CNamespace& ns) = 0;
-    virtual void AddHPPCode(const CNcbiOstrstream& code) = 0;
-    virtual void AddINLCode(const CNcbiOstrstream& code) = 0;
-    virtual void AddCPPCode(const CNcbiOstrstream& code) = 0;
-    virtual const CNamespace& GetNamespace(void) const = 0;
-};
-
-END_NCBI_SCOPE
-
-#endif

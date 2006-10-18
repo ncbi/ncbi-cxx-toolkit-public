@@ -28,22 +28,6 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2005/06/03 17:05:33  lavr
-* Explicit (unsigned char) casts in ctype routines
-*
-* Revision 1.3  2004/05/17 21:03:14  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.2  2001/05/17 15:07:12  lavr
-* Typos corrected
-*
-* Revision 1.1  2000/11/29 17:42:45  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -133,3 +117,24 @@ CNcbiOstream& PrintASNNewLine(CNcbiOstream& out, int indent)
 }
 
 END_NCBI_SCOPE
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2006/10/18 13:11:06  gouriano
+* Moved Log to bottom
+*
+* Revision 1.4  2005/06/03 17:05:33  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
+* Revision 1.3  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.2  2001/05/17 15:07:12  lavr
+* Typos corrected
+*
+* Revision 1.1  2000/11/29 17:42:45  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependency.
+*
+* ===========================================================================
+*/

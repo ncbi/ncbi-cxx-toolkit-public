@@ -28,37 +28,6 @@
 * File Description:
 *   Base class for module sets
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2004/05/17 21:03:14  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.5  2000/08/25 15:59:22  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.4  2000/04/07 19:26:28  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.3  2000/02/01 21:48:02  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.2  1999/12/28 18:55:58  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.1  1999/12/21 17:18:35  vasilche
-* Added CDelayedFostream class which rewrites file only if contents is changed.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -127,3 +96,39 @@ string CModuleContainer::GetNamespaceRef(const CNamespace& ns) const
 }
 
 END_NCBI_SCOPE
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.7  2006/10/18 13:10:25  gouriano
+* Moved Log to bottom
+*
+* Revision 1.6  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.5  2000/08/25 15:59:22  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.4  2000/04/07 19:26:28  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.3  2000/02/01 21:48:02  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.2  1999/12/28 18:55:58  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
+* Revision 1.1  1999/12/21 17:18:35  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
+* ===========================================================================
+*/

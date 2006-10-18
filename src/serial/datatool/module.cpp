@@ -28,141 +28,6 @@
 * File Description:
 *   Data descriptions module: equivalent of ASN.1 module
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.48  2006/07/24 18:57:39  gouriano
-* Preserve comments when parsing DTD
-*
-* Revision 1.47  2006/06/28 19:03:36  gouriano
-* Print type comments when generating schema
-*
-* Revision 1.46  2006/06/19 17:34:06  gouriano
-* Redesigned generation of XML schema
-*
-* Revision 1.45  2006/05/17 20:40:01  ucko
-* Fix compilation errors with older versions of GCC.
-*
-* Revision 1.44  2006/05/16 14:30:13  gouriano
-* Corrected generation of ASN spec - to make sure it is valid
-*
-* Revision 1.43  2006/05/09 15:16:43  gouriano
-* Added XML namespace definition possibility
-*
-* Revision 1.42  2006/04/13 12:58:54  gouriano
-* Added optional file name suffix to modular DTD or schema
-*
-* Revision 1.41  2005/07/11 18:20:37  gouriano
-* Corrected schema module file name
-*
-* Revision 1.40  2005/06/29 15:09:58  gouriano
-* Resolve all module dependencies when generating modular DTD or schema
-*
-* Revision 1.39  2005/06/06 17:40:42  gouriano
-* Added generation of modular XML schema
-*
-* Revision 1.38  2005/06/03 17:05:33  lavr
-* Explicit (unsigned char) casts in ctype routines
-*
-* Revision 1.37  2005/02/02 19:08:36  gouriano
-* Corrected DTD generation
-*
-* Revision 1.36  2004/05/17 21:03:14  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.35  2003/06/16 14:41:05  gouriano
-* added possibility to convert DTD to XML schema
-*
-* Revision 1.34  2003/05/14 14:42:22  gouriano
-* added generation of XML schema
-*
-* Revision 1.33  2003/04/29 18:31:09  gouriano
-* object data member initialization verification
-*
-* Revision 1.32  2003/03/11 20:06:47  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.31  2003/03/10 18:55:18  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.30  2001/05/17 15:07:12  lavr
-* Typos corrected
-*
-* Revision 1.29  2000/11/29 17:42:44  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* Revision 1.28  2000/11/20 17:26:32  vasilche
-* Fixed warnings on 64 bit platforms.
-* Updated names of config variables.
-*
-* Revision 1.27  2000/11/15 20:34:55  vasilche
-* Added user comments to ENUMERATED types.
-* Added storing of user comments to ASN.1 module definition.
-*
-* Revision 1.26  2000/11/14 21:41:25  vasilche
-* Added preserving of ASN.1 definition comments.
-*
-* Revision 1.25  2000/11/08 17:02:51  vasilche
-* Added generation of modular DTD files.
-*
-* Revision 1.24  2000/09/26 17:38:26  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.23  2000/08/25 15:59:22  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.22  2000/07/10 17:32:00  vasilche
-* Macro arguments made more clear.
-* All old ASN stuff moved to serialasn.hpp.
-* Changed prefix of enum info functions to GetTypeInfo_enum_.
-*
-* Revision 1.21  2000/06/16 20:01:30  vasilche
-* Avoid use of unexpected_exception() which is unimplemented on Mac.
-*
-* Revision 1.20  2000/05/24 20:09:29  vasilche
-* Implemented DTD generation.
-*
-* Revision 1.19  2000/04/07 19:26:29  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.18  2000/02/01 21:48:02  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.17  1999/12/30 21:33:40  vasilche
-* Changed arguments - more structured.
-* Added intelligence in detection of source directories.
-*
-* Revision 1.16  1999/12/29 16:01:51  vasilche
-* Added explicit virtual destructors.
-* Resolved overloading of InternalResolve.
-*
-* Revision 1.15  1999/12/28 18:55:59  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.14  1999/12/21 17:18:36  vasilche
-* Added CDelayedFostream class which rewrites file only if contents is changed.
-*
-* Revision 1.13  1999/12/20 21:00:19  vasilche
-* Added generation of sources in different directories.
-*
-* Revision 1.12  1999/11/22 21:04:49  vasilche
-* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
-*
-* Revision 1.11  1999/11/15 19:36:17  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -655,3 +520,143 @@ string CDataTypeModule::ToAsnId(const string& name)
 
 
 END_NCBI_SCOPE
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.49  2006/10/18 13:10:25  gouriano
+* Moved Log to bottom
+*
+* Revision 1.48  2006/07/24 18:57:39  gouriano
+* Preserve comments when parsing DTD
+*
+* Revision 1.47  2006/06/28 19:03:36  gouriano
+* Print type comments when generating schema
+*
+* Revision 1.46  2006/06/19 17:34:06  gouriano
+* Redesigned generation of XML schema
+*
+* Revision 1.45  2006/05/17 20:40:01  ucko
+* Fix compilation errors with older versions of GCC.
+*
+* Revision 1.44  2006/05/16 14:30:13  gouriano
+* Corrected generation of ASN spec - to make sure it is valid
+*
+* Revision 1.43  2006/05/09 15:16:43  gouriano
+* Added XML namespace definition possibility
+*
+* Revision 1.42  2006/04/13 12:58:54  gouriano
+* Added optional file name suffix to modular DTD or schema
+*
+* Revision 1.41  2005/07/11 18:20:37  gouriano
+* Corrected schema module file name
+*
+* Revision 1.40  2005/06/29 15:09:58  gouriano
+* Resolve all module dependencies when generating modular DTD or schema
+*
+* Revision 1.39  2005/06/06 17:40:42  gouriano
+* Added generation of modular XML schema
+*
+* Revision 1.38  2005/06/03 17:05:33  lavr
+* Explicit (unsigned char) casts in ctype routines
+*
+* Revision 1.37  2005/02/02 19:08:36  gouriano
+* Corrected DTD generation
+*
+* Revision 1.36  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.35  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
+* Revision 1.34  2003/05/14 14:42:22  gouriano
+* added generation of XML schema
+*
+* Revision 1.33  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
+* Revision 1.32  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
+* Revision 1.31  2003/03/10 18:55:18  gouriano
+* use new structured exceptions (based on CException)
+*
+* Revision 1.30  2001/05/17 15:07:12  lavr
+* Typos corrected
+*
+* Revision 1.29  2000/11/29 17:42:44  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependency.
+*
+* Revision 1.28  2000/11/20 17:26:32  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
+* Revision 1.27  2000/11/15 20:34:55  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
+* Revision 1.26  2000/11/14 21:41:25  vasilche
+* Added preserving of ASN.1 definition comments.
+*
+* Revision 1.25  2000/11/08 17:02:51  vasilche
+* Added generation of modular DTD files.
+*
+* Revision 1.24  2000/09/26 17:38:26  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
+* Revision 1.23  2000/08/25 15:59:22  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.22  2000/07/10 17:32:00  vasilche
+* Macro arguments made more clear.
+* All old ASN stuff moved to serialasn.hpp.
+* Changed prefix of enum info functions to GetTypeInfo_enum_.
+*
+* Revision 1.21  2000/06/16 20:01:30  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
+* Revision 1.20  2000/05/24 20:09:29  vasilche
+* Implemented DTD generation.
+*
+* Revision 1.19  2000/04/07 19:26:29  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.18  2000/02/01 21:48:02  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.17  1999/12/30 21:33:40  vasilche
+* Changed arguments - more structured.
+* Added intelligence in detection of source directories.
+*
+* Revision 1.16  1999/12/29 16:01:51  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
+* Revision 1.15  1999/12/28 18:55:59  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
+* Revision 1.14  1999/12/21 17:18:36  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
+* Revision 1.13  1999/12/20 21:00:19  vasilche
+* Added generation of sources in different directories.
+*
+* Revision 1.12  1999/11/22 21:04:49  vasilche
+* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
+*
+* Revision 1.11  1999/11/15 19:36:17  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/

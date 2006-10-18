@@ -31,29 +31,6 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2005/01/24 17:05:48  vasilche
-* Safe boolean operators.
-*
-* Revision 1.4  2000/08/25 15:58:47  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.3  2000/04/28 16:58:08  vasilche
-* Added classes CByteSource and CByteSourceReader for generic reading.
-* Added delayed reading of choice variants.
-*
-* Revision 1.2  2000/04/12 15:36:41  vasilche
-* Added -on <namespace> argument to datatool.
-* Removed unnecessary namespace specifications in generated files.
-*
-* Revision 1.1  2000/04/07 19:26:10  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -176,3 +153,31 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CNamespace& ns)
 END_NCBI_SCOPE
 
 #endif  /* NAMESPACE__HPP */
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.6  2006/10/18 13:04:26  gouriano
+* Moved Log to bottom
+*
+* Revision 1.5  2005/01/24 17:05:48  vasilche
+* Safe boolean operators.
+*
+* Revision 1.4  2000/08/25 15:58:47  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.3  2000/04/28 16:58:08  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
+* Revision 1.2  2000/04/12 15:36:41  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
+* Revision 1.1  2000/04/07 19:26:10  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* ===========================================================================
+*/

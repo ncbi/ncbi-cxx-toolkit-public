@@ -31,71 +31,6 @@
 * File Description:
 *   Enumerated type definition
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.15  2006/06/19 17:33:33  gouriano
-* Redesigned generation of XML schema
-*
-* Revision 1.14  2005/08/05 15:12:02  gouriano
-* Allow DEF file tuneups by data type, not only by name
-*
-* Revision 1.13  2005/02/02 19:08:59  gouriano
-* Corrected DTD generation
-*
-* Revision 1.12  2004/05/12 18:33:23  gouriano
-* Added type conversion check (when using _type DEF file directive)
-*
-* Revision 1.11  2003/05/14 14:42:55  gouriano
-* added generation of XML schema
-*
-* Revision 1.10  2001/05/17 15:00:42  lavr
-* Typos corrected
-*
-* Revision 1.9  2000/12/15 15:38:35  vasilche
-* Added support of Int8 and long double.
-* Added support of BigInt ASN.1 extension - mapped to Int8.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.8  2000/11/29 17:42:30  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* Revision 1.7  2000/11/20 17:26:11  vasilche
-* Fixed warnings on 64 bit platforms.
-*
-* Revision 1.6  2000/11/15 20:34:42  vasilche
-* Added user comments to ENUMERATED types.
-* Added storing of user comments to ASN.1 module definition.
-*
-* Revision 1.5  2000/11/14 21:41:12  vasilche
-* Added preserving of ASN.1 definition comments.
-*
-* Revision 1.4  2000/08/25 15:58:46  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.3  2000/05/24 20:08:31  vasilche
-* Implemented DTD generation.
-*
-* Revision 1.2  2000/04/07 19:26:08  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.1  2000/02/01 21:46:17  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.3  1999/12/03 21:42:12  vasilche
-* Fixed conflict of enums in choices.
-*
-* Revision 1.2  1999/11/15 19:36:14  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <serial/datatool/type.hpp>
@@ -209,3 +144,73 @@ public:
 END_NCBI_SCOPE
 
 #endif
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.16  2006/10/18 13:02:56  gouriano
+* Moved Log to bottom
+*
+* Revision 1.15  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
+* Revision 1.14  2005/08/05 15:12:02  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
+* Revision 1.13  2005/02/02 19:08:59  gouriano
+* Corrected DTD generation
+*
+* Revision 1.12  2004/05/12 18:33:23  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
+* Revision 1.11  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
+* Revision 1.10  2001/05/17 15:00:42  lavr
+* Typos corrected
+*
+* Revision 1.9  2000/12/15 15:38:35  vasilche
+* Added support of Int8 and long double.
+* Added support of BigInt ASN.1 extension - mapped to Int8.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.8  2000/11/29 17:42:30  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependency.
+*
+* Revision 1.7  2000/11/20 17:26:11  vasilche
+* Fixed warnings on 64 bit platforms.
+*
+* Revision 1.6  2000/11/15 20:34:42  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
+* Revision 1.5  2000/11/14 21:41:12  vasilche
+* Added preserving of ASN.1 definition comments.
+*
+* Revision 1.4  2000/08/25 15:58:46  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.3  2000/05/24 20:08:31  vasilche
+* Implemented DTD generation.
+*
+* Revision 1.2  2000/04/07 19:26:08  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.1  2000/02/01 21:46:17  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.3  1999/12/03 21:42:12  vasilche
+* Fixed conflict of enums in choices.
+*
+* Revision 1.2  1999/11/15 19:36:14  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/

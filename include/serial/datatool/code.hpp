@@ -31,76 +31,6 @@
 * File Description:
 *   Class code generator
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.13  2005/04/26 14:18:50  vasilche
-* Allow allocation of objects in CObjectMemoryPool.
-*
-* Revision 1.12  2004/05/03 19:31:21  gouriano
-* Made generation of DOXYGEN-style comments optional
-*
-* Revision 1.11  2004/04/29 20:09:44  gouriano
-* Generate DOXYGEN-style comments in C++ headers
-*
-* Revision 1.10  2002/12/23 18:38:52  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
-*
-* Revision 1.9  2002/08/14 17:14:22  grichenk
-* Fixed function name conflict on Win32: renamed
-* GetClassName() -> GetClassNameDT()
-*
-* Revision 1.8  2000/08/25 15:58:46  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.7  2000/04/17 19:11:04  vasilche
-* Fixed failed assertion.
-* Removed redundant namespace specifications.
-*
-* Revision 1.6  2000/04/12 15:36:40  vasilche
-* Added -on <namespace> argument to datatool.
-* Removed unnecessary namespace specifications in generated files.
-*
-* Revision 1.5  2000/04/07 19:26:08  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.4  2000/03/07 20:04:57  vasilche
-* Added NewInstance method to generated classes.
-*
-* Revision 1.3  2000/02/18 14:03:30  vasilche
-* Fixed ?: error.
-*
-* Revision 1.2  2000/02/17 20:05:02  vasilche
-* Inline methods now will be generated in *_Base.inl files.
-* Fixed processing of StringStore.
-* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
-* Enumerated values now will preserve case as in ASN.1 definition.
-*
-* Revision 1.1  2000/02/01 21:46:16  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.15  1999/12/29 16:01:50  vasilche
-* Added explicit virtual destructors.
-* Resolved overloading of InternalResolve.
-*
-* Revision 1.14  1999/11/19 15:48:09  vasilche
-* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
-*
-* Revision 1.13  1999/11/18 17:13:06  vasilche
-* Fixed generation of ENUMERATED CHOICE and VisibleString.
-* Added generation of initializers to zero for primitive types and pointers.
-*
-* Revision 1.12  1999/11/15 19:36:14  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -238,3 +168,78 @@ private:
 END_NCBI_SCOPE
 
 #endif
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.14  2006/10/18 13:02:23  gouriano
+* Moved Log to bottom
+*
+* Revision 1.13  2005/04/26 14:18:50  vasilche
+* Allow allocation of objects in CObjectMemoryPool.
+*
+* Revision 1.12  2004/05/03 19:31:21  gouriano
+* Made generation of DOXYGEN-style comments optional
+*
+* Revision 1.11  2004/04/29 20:09:44  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
+* Revision 1.10  2002/12/23 18:38:52  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.9  2002/08/14 17:14:22  grichenk
+* Fixed function name conflict on Win32: renamed
+* GetClassName() -> GetClassNameDT()
+*
+* Revision 1.8  2000/08/25 15:58:46  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.7  2000/04/17 19:11:04  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
+* Revision 1.6  2000/04/12 15:36:40  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
+* Revision 1.5  2000/04/07 19:26:08  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.4  2000/03/07 20:04:57  vasilche
+* Added NewInstance method to generated classes.
+*
+* Revision 1.3  2000/02/18 14:03:30  vasilche
+* Fixed ?: error.
+*
+* Revision 1.2  2000/02/17 20:05:02  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
+* Revision 1.1  2000/02/01 21:46:16  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.15  1999/12/29 16:01:50  vasilche
+* Added explicit virtual destructors.
+* Resolved overloading of InternalResolve.
+*
+* Revision 1.14  1999/11/19 15:48:09  vasilche
+* Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
+*
+* Revision 1.13  1999/11/18 17:13:06  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
+* Revision 1.12  1999/11/15 19:36:14  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/

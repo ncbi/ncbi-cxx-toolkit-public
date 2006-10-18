@@ -31,88 +31,6 @@
 * File Description:
 *   Type description of compound types: SET, SEQUENCE and CHOICE
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.19  2006/07/24 18:57:13  gouriano
-* Preserve comments when parsing DTD
-*
-* Revision 1.18  2006/06/19 17:33:33  gouriano
-* Redesigned generation of XML schema
-*
-* Revision 1.17  2006/05/23 15:34:55  gouriano
-* Corrected ASN spec generation for XML schema choice type
-*
-* Revision 1.16  2005/10/12 17:00:46  gouriano
-* Replace C_E class name in unisequence types by something more unique
-* Add typedef in generated code to provide backward compatibility
-*
-* Revision 1.15  2005/08/05 15:12:02  gouriano
-* Allow DEF file tuneups by data type, not only by name
-*
-* Revision 1.14  2005/02/02 19:08:59  gouriano
-* Corrected DTD generation
-*
-* Revision 1.13  2003/05/14 14:42:55  gouriano
-* added generation of XML schema
-*
-* Revision 1.12  2002/11/19 19:47:50  gouriano
-* added support of XML attributes of choice variants
-*
-* Revision 1.11  2002/11/14 21:07:11  gouriano
-* added support of XML attribute lists
-*
-* Revision 1.10  2002/10/15 13:53:08  gouriano
-* use "noprefix" flag
-*
-* Revision 1.9  2001/05/17 15:00:42  lavr
-* Typos corrected
-*
-* Revision 1.8  2000/11/29 17:42:29  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* Revision 1.7  2000/11/15 20:34:41  vasilche
-* Added user comments to ENUMERATED types.
-* Added storing of user comments to ASN.1 module definition.
-*
-* Revision 1.6  2000/11/14 21:41:12  vasilche
-* Added preserving of ASN.1 definition comments.
-*
-* Revision 1.5  2000/08/25 15:58:45  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.4  2000/06/16 16:31:12  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.3  2000/05/24 20:08:30  vasilche
-* Implemented DTD generation.
-*
-* Revision 1.2  2000/04/07 19:26:07  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.1  2000/02/01 21:46:14  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.5  1999/12/03 21:42:11  vasilche
-* Fixed conflict of enums in choices.
-*
-* Revision 1.4  1999/12/01 17:36:25  vasilche
-* Fixed CHOICE processing.
-*
-* Revision 1.3  1999/11/15 20:31:38  vasilche
-* Fixed error on GCC
-*
-* Revision 1.2  1999/11/15 19:36:13  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <serial/datatool/type.hpp>
@@ -273,3 +191,90 @@ public:
 END_NCBI_SCOPE
 
 #endif
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.20  2006/10/18 12:59:26  gouriano
+* Moved Log to bottom
+*
+* Revision 1.19  2006/07/24 18:57:13  gouriano
+* Preserve comments when parsing DTD
+*
+* Revision 1.18  2006/06/19 17:33:33  gouriano
+* Redesigned generation of XML schema
+*
+* Revision 1.17  2006/05/23 15:34:55  gouriano
+* Corrected ASN spec generation for XML schema choice type
+*
+* Revision 1.16  2005/10/12 17:00:46  gouriano
+* Replace C_E class name in unisequence types by something more unique
+* Add typedef in generated code to provide backward compatibility
+*
+* Revision 1.15  2005/08/05 15:12:02  gouriano
+* Allow DEF file tuneups by data type, not only by name
+*
+* Revision 1.14  2005/02/02 19:08:59  gouriano
+* Corrected DTD generation
+*
+* Revision 1.13  2003/05/14 14:42:55  gouriano
+* added generation of XML schema
+*
+* Revision 1.12  2002/11/19 19:47:50  gouriano
+* added support of XML attributes of choice variants
+*
+* Revision 1.11  2002/11/14 21:07:11  gouriano
+* added support of XML attribute lists
+*
+* Revision 1.10  2002/10/15 13:53:08  gouriano
+* use "noprefix" flag
+*
+* Revision 1.9  2001/05/17 15:00:42  lavr
+* Typos corrected
+*
+* Revision 1.8  2000/11/29 17:42:29  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependency.
+*
+* Revision 1.7  2000/11/15 20:34:41  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
+* Revision 1.6  2000/11/14 21:41:12  vasilche
+* Added preserving of ASN.1 definition comments.
+*
+* Revision 1.5  2000/08/25 15:58:45  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.4  2000/06/16 16:31:12  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.3  2000/05/24 20:08:30  vasilche
+* Implemented DTD generation.
+*
+* Revision 1.2  2000/04/07 19:26:07  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.1  2000/02/01 21:46:14  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.5  1999/12/03 21:42:11  vasilche
+* Fixed conflict of enums in choices.
+*
+* Revision 1.4  1999/12/01 17:36:25  vasilche
+* Fixed CHOICE processing.
+*
+* Revision 1.3  1999/11/15 20:31:38  vasilche
+* Fixed error on GCC
+*
+* Revision 1.2  1999/11/15 19:36:13  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/

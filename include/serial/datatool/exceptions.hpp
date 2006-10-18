@@ -31,61 +31,6 @@
 * File Description:
 *   datatool exceptions
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2006/01/18 19:45:23  ssikorsk
-* Added an extra argument to CException::x_Init
-*
-* Revision 1.11  2004/09/22 13:32:17  kononenk
-* "Diagnostic Message Filtering" functionality added.
-* Added function SetDiagFilter()
-* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
-* Module, class and function attribute added to CNcbiDiag and CException
-* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
-* 	CDiagCompileInfo + fixes on derived classes and their usage
-* Macro NCBI_MODULE can be used to set default module name in cpp files
-*
-* Revision 1.10  2004/06/16 11:56:19  dicuccio
-* throw() --> THROWS_NONE
-*
-* Revision 1.9  2004/05/12 18:33:23  gouriano
-* Added type conversion check (when using _type DEF file directive)
-*
-* Revision 1.8  2004/04/30 11:27:14  kuznets
-* Use THROWS macro to specify exceptions
-*
-* Revision 1.7  2003/03/10 18:53:15  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.6  2000/04/07 19:26:08  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.5  2000/03/16 17:43:54  vasilche
-* Added missing forward declaration.
-*
-* Revision 1.4  2000/03/16 17:41:13  vasilche
-* Missing USING_NCBI_SCOPE
-*
-* Revision 1.3  2000/03/16 17:27:02  vasilche
-* Added missing include <stdexcept>
-*
-* Revision 1.2  2000/03/15 21:23:59  vasilche
-* Error diagnostic about ambiguous types made more clear.
-*
-* Revision 1.1  2000/02/01 21:46:17  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.3  1999/11/15 19:36:14  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -197,3 +142,63 @@ private:
 END_NCBI_SCOPE
 
 #endif
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.13  2006/10/18 13:03:12  gouriano
+* Moved Log to bottom
+*
+* Revision 1.12  2006/01/18 19:45:23  ssikorsk
+* Added an extra argument to CException::x_Init
+*
+* Revision 1.11  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
+* Revision 1.10  2004/06/16 11:56:19  dicuccio
+* throw() --> THROWS_NONE
+*
+* Revision 1.9  2004/05/12 18:33:23  gouriano
+* Added type conversion check (when using _type DEF file directive)
+*
+* Revision 1.8  2004/04/30 11:27:14  kuznets
+* Use THROWS macro to specify exceptions
+*
+* Revision 1.7  2003/03/10 18:53:15  gouriano
+* use new structured exceptions (based on CException)
+*
+* Revision 1.6  2000/04/07 19:26:08  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.5  2000/03/16 17:43:54  vasilche
+* Added missing forward declaration.
+*
+* Revision 1.4  2000/03/16 17:41:13  vasilche
+* Missing USING_NCBI_SCOPE
+*
+* Revision 1.3  2000/03/16 17:27:02  vasilche
+* Added missing include <stdexcept>
+*
+* Revision 1.2  2000/03/15 21:23:59  vasilche
+* Error diagnostic about ambiguous types made more clear.
+*
+* Revision 1.1  2000/02/01 21:46:17  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.3  1999/11/15 19:36:14  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/

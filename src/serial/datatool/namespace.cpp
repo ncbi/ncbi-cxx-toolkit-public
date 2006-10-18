@@ -28,38 +28,6 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2005/03/28 20:41:24  gouriano
-* Fixed namespace string parsing in CNamespace ctor
-*
-* Revision 1.7  2004/05/17 21:03:14  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.6  2003/03/11 20:06:47  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.5  2000/08/25 15:59:23  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.4  2000/04/28 16:58:17  vasilche
-* Added classes CByteSource and CByteSourceReader for generic reading.
-* Added delayed reading of choice variants.
-*
-* Revision 1.3  2000/04/18 19:24:37  vasilche
-* Added BEGIN_SCOPE and END_SCOPE macros to allow source brawser gather names from namespaces.
-*
-* Revision 1.2  2000/04/12 15:36:52  vasilche
-* Added -on <namespace> argument to datatool.
-* Removed unnecessary namespace specifications in generated files.
-*
-* Revision 1.1  2000/04/07 19:26:30  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -216,3 +184,40 @@ void CNamespace::ToStringTo(string& s) const
 }
 
 END_NCBI_SCOPE
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.9  2006/10/18 13:10:25  gouriano
+* Moved Log to bottom
+*
+* Revision 1.8  2005/03/28 20:41:24  gouriano
+* Fixed namespace string parsing in CNamespace ctor
+*
+* Revision 1.7  2004/05/17 21:03:14  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.6  2003/03/11 20:06:47  kuznets
+* iterate -> ITERATE
+*
+* Revision 1.5  2000/08/25 15:59:23  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.4  2000/04/28 16:58:17  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
+* Revision 1.3  2000/04/18 19:24:37  vasilche
+* Added BEGIN_SCOPE and END_SCOPE macros to allow source brawser gather names from namespaces.
+*
+* Revision 1.2  2000/04/12 15:36:52  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
+* Revision 1.1  2000/04/07 19:26:30  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* ===========================================================================
+*/

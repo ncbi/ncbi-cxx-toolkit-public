@@ -31,8 +31,40 @@
 * File Description:
 *   Type description of CHOICE type
 *
+*/
+
+#include <serial/datatool/blocktype.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class CChoiceDataType : public CDataMemberContainerType
+{
+    typedef CDataMemberContainerType CParent;
+public:
+    virtual void PrintASN(CNcbiOstream& out, int indent) const;
+
+    void FixTypeTree(void) const;
+    bool CheckValue(const CDataValue& value) const;
+
+    virtual const char* XmlMemberSeparator(void) const;
+
+    CTypeInfo* CreateTypeInfo(void);
+    AutoPtr<CTypeStrings> GenerateCode(void) const;
+    AutoPtr<CTypeStrings> GetRefCType(void) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
+    const char* GetASNKeyword(void) const;
+    virtual const char* GetDEFKeyword(void) const;
+};
+
+END_NCBI_SCOPE
+
+#endif
+/*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2006/10/18 13:01:07  gouriano
+* Moved Log to bottom
+*
 * Revision 1.7  2006/05/23 15:34:55  gouriano
 * Corrected ASN spec generation for XML schema choice type
 *
@@ -74,30 +106,3 @@
 *
 * ===========================================================================
 */
-
-#include <serial/datatool/blocktype.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CChoiceDataType : public CDataMemberContainerType
-{
-    typedef CDataMemberContainerType CParent;
-public:
-    virtual void PrintASN(CNcbiOstream& out, int indent) const;
-
-    void FixTypeTree(void) const;
-    bool CheckValue(const CDataValue& value) const;
-
-    virtual const char* XmlMemberSeparator(void) const;
-
-    CTypeInfo* CreateTypeInfo(void);
-    AutoPtr<CTypeStrings> GenerateCode(void) const;
-    AutoPtr<CTypeStrings> GetRefCType(void) const;
-    AutoPtr<CTypeStrings> GetFullCType(void) const;
-    const char* GetASNKeyword(void) const;
-    virtual const char* GetDEFKeyword(void) const;
-};
-
-END_NCBI_SCOPE
-
-#endif
