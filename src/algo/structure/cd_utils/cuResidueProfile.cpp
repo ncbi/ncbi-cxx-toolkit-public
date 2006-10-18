@@ -50,6 +50,8 @@ ColumnResidueProfile::ColumnResidueProfile()
 
 ColumnResidueProfile::~ColumnResidueProfile()
 {
+	for (int i = 0; i < m_residuesByRow.size(); i++)
+		delete m_residuesByRow[i];
 }
 
 void ColumnResidueProfile::addOccurence(char residue, int row, bool aligned)
@@ -962,6 +964,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/10/18 19:52:50  cliu
+ * clean up M-residuesByRow in destructor
+ *
  * Revision 1.14  2006/10/17 20:28:32  cliu
  * To further fix the addOccurence method to make it safe.
  *
