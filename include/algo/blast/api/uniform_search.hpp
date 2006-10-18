@@ -196,6 +196,9 @@ public:
     {
         return m_Alignment;
     }
+
+    /// Return true if there are any alignments for this query
+    bool HasAlignments() const;
     
     /// Accessor for the query's sequence identifier
     CConstRef<objects::CSeq_id> GetSeqId() const;
