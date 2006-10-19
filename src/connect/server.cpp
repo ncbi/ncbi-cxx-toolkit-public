@@ -358,7 +358,7 @@ void CServer::Run(void)
                 } catch (CBlockingQueueException&) {
                     CServer_Request* req =
                         dynamic_cast<CServer_Request*>(request.GetPointer());
-                    printf("case 2\n"); // DEBUG
+                    _TRACE("case 2"); // DEBUG
                     _ASSERT(req);
                     // Queue is full, drop incoming connection.
                     // ??? What should we do if conn_base is CServerConnection?
@@ -400,6 +400,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.4  2006/10/19 23:34:02  ucko
+ * Replace debugging printf() (potentially undeclared) with _TRACE().
+ *
  * Revision 6.3  2006/10/19 20:38:20  joukovv
  * Works in thread-per-request mode. Errors in BDB layer fixed.
  *
