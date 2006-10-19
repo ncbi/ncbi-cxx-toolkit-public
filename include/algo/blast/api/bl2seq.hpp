@@ -126,7 +126,7 @@ public:
     /// Runs the search but does not produce seqalign output
     /// (useful if the raw search results are needed, rather
     /// than a set of complete Seq-aligns)
-    virtual void RunWithoutSeqalignGeneration();
+    NCBI_DEPRECATED virtual void RunWithoutSeqalignGeneration();
 
     /// Retrieves regions filtered on the query/queries
     TSeqLocInfoVector GetFilteredQueryRegions() const;
@@ -311,6 +311,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2006/10/19 17:45:04  camacho
+* Mark RunWithoutSeqalignGeneration as deprecated
+*
 * Revision 1.50  2006/06/15 17:42:24  papadopo
 * PartialRun -> RunWithoutSeqalignGeneration
 *
