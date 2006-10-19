@@ -72,7 +72,7 @@ public:
         if (m_FirstBaseWidth == eUndefinedBaseWidth) {
             NCBI_THROW(CException, eUnknown,
                        "BaseWidths not initialized.  "
-                       "Please SetBaseWidths() !"
+                       "Please SetBaseWidths() !");
         }
         return m_FirstBaseWidth;
     }
@@ -80,7 +80,7 @@ public:
         if (m_SecondBaseWidth == eUndefinedBaseWidth) {
             NCBI_THROW(CException, eUnknown,
                        "BaseWidths not initialized.  "
-                       "Please SetBaseWidths() !"
+                       "Please SetBaseWidths() !");
         }
         return m_SecondBaseWidth;
     }
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/10/19 18:49:47  todorov
+* Fixed a typo.
+*
 * Revision 1.3  2006/10/19 17:21:14  todorov
 * Added exceptions.
 *
