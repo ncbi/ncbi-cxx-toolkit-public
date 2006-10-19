@@ -70,15 +70,15 @@ public:
     /// Accessors
     TBaseWidth GetFirstBaseWidth() const {
         if (m_FirstBaseWidth == eUndefinedBaseWidth) {
-            THROW
+            //THROW;
         }
         return m_FirstBaseWidth;
     }
-    TBaseWidth GetFirstBaseWidth() const {
-        if (m_FirstBaseWidth == eUndefinedBaseWidth) {
-            THROW;
+    TBaseWidth GetSecondBaseWidth() const {
+        if (m_SecondBaseWidth == eUndefinedBaseWidth) {
+            //THROW;
         }
-        return m_FirstBaseWidth;
+        return m_SecondBaseWidth;
     }
     
     /// Calculate a difference
@@ -124,8 +124,8 @@ private:
     };
 
     TAlnRngCollExt m_Extender;
-    int m_FirstWidth;
-    int m_SecondWidth;
+    int m_FirstBaseWidth;
+    int m_SecondBaseWidth;
 };
 
 
@@ -175,6 +175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/19 17:18:05  todorov
+* A few minor fixes.
+*
 * Revision 1.1  2006/10/19 17:07:07  todorov
 * Initial revision.
 *
