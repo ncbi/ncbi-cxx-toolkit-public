@@ -70,13 +70,17 @@ public:
     /// Accessors
     TBaseWidth GetFirstBaseWidth() const {
         if (m_FirstBaseWidth == eUndefinedBaseWidth) {
-            //THROW;
+            NCBI_THROW(CException, eUnknown,
+                       "BaseWidths not initialized.  "
+                       "Please SetBaseWidths() !"
         }
         return m_FirstBaseWidth;
     }
     TBaseWidth GetSecondBaseWidth() const {
         if (m_SecondBaseWidth == eUndefinedBaseWidth) {
-            //THROW;
+            NCBI_THROW(CException, eUnknown,
+                       "BaseWidths not initialized.  "
+                       "Please SetBaseWidths() !"
         }
         return m_SecondBaseWidth;
     }
@@ -175,6 +179,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/10/19 17:21:14  todorov
+* Added exceptions.
+*
 * Revision 1.2  2006/10/19 17:18:05  todorov
 * A few minor fixes.
 *
