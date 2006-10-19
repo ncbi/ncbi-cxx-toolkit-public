@@ -40,7 +40,6 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/seqalign_exception.hpp>
 
-#include <objtools/alnmgr/seqid_comp.hpp>
 #include <objtools/alnmgr/seqids_extractor.hpp>
 
 #include <util/bitset/ncbi_bitset.hpp>
@@ -261,6 +260,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/10/19 17:08:12  todorov
+* - #include <objtools/alnmgr/seqid_comp.hpp>
+*
 * Revision 1.2  2006/10/17 21:53:31  todorov
 * + GetAnchorHandle
 * Renamed all accessors with Get*
