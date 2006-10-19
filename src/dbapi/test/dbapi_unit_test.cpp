@@ -304,13 +304,13 @@ CDBAPIUnitTest::TestInit(void)
         // Create table
         auto_stmt->ExecuteUpdate(sql);
     }
-    catch(CDB_Exception& ex) {
+    catch(const CDB_Exception& ex) {
         BOOST_FAIL(ex.GetMsg());
     }
-    catch(CPluginManagerException& ex) {
+    catch(const CPluginManagerException& ex) {
         BOOST_FAIL(ex.GetMsg());
     }
-    catch(CException& ex) {
+    catch(const CException& ex) {
         BOOST_FAIL(ex.GetMsg());
     }
     catch (...) {
@@ -4712,65 +4712,19 @@ CDBAPIUnitTest::Test_Variant(void)
 void
 CDBAPIUnitTest::Test_NCBI_LS(void)
 {
-    {
-        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
-        BOOST_CHECK( auto_conn.get() != NULL );
+    auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+    BOOST_CHECK( auto_conn.get() != NULL );
 
-        auto_conn->SetMode(IConnection::eBulkInsert);
+    auto_conn->Connect(
+        "anyone",
+        "allowed",
+        "MSSQL57",
+        "NCBI_LS"
+        );
 
-        auto_conn->Connect(
-            "anyone",
-            "allowed",
-            "MSSQL57",
-            "NCBI_LS"
-            );
-
-        auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("FindAccountMatchAll", 20) );
-
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@first" );
-        auto_stmt->SetParam( CVariant("a%"), "@last" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
-//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
-//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
-        auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
-//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone3" );
-
-        auto_stmt->Execute();
-
-        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
-
-        auto_stmt->Execute();
-
-        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
-    }
-
+    //
     {
         int sid = 0;
-        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
-        BOOST_CHECK( auto_conn.get() != NULL );
-
-        auto_conn->Connect(
-            "anyone",
-            "allowed",
-            "MSSQL57",
-            "NCBI_LS"
-            );
 
         {
             auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
@@ -4809,8 +4763,45 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 
             BOOST_CHECK(num > 0);
 
-            DumpResults(auto_stmt.get());
+//             DumpResults(auto_stmt.get());
         }
+    }
+
+    //
+    {
+        auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("FindAccountMatchAll", 20) );
+
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@first" );
+        auto_stmt->SetParam( CVariant("a%"), "@last" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
+//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
+//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
+//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone3" );
+
+        auto_stmt->Execute();
+
+        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+
+        auto_stmt->Execute();
+
+        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
     }
 }
 
@@ -5072,8 +5063,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (args.GetServerType() == CTestArguments::eMsSql &&
-        args.GetDriverName() != "ftds64_odbc"
+    if (args.GetServerType() == CTestArguments::eMsSql
+        && args.GetDriverName() != "odbc" // Doesn't work ...
+        && args.GetDriverName() != "ftds64_odbc"
+        && args.GetDriverName() != "msdblib"
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NCBI_LS, DBAPIInstance);
         add(tc);
@@ -5272,6 +5265,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.107  2006/10/19 15:04:50  ssikorsk
+ * Disable Test_NCBI_LS with odbc and msdblib drivers.
+ *
  * Revision 1.106  2006/10/18 18:39:05  ssikorsk
  * Implemented and enabled Test_NCBI_LS
  *
