@@ -312,6 +312,18 @@ CBlastTracebackSearch::Run()
         qlocs.push_back(id);
     }
     
+    // Collect summary data
+    
+    vector< CRef<CBlastAncillaryData> > summaries;
+    
+    for(unsigned i = 0; i < aligns.size(); i++) {
+        CRef<CBlastAncillaryData> s(new CBlastAncillaryData(
+                                    m_OptsMemento->m_ProgramType, i,
+                                    m_InternalData->m_ScoreBlk->GetPointer(),
+                                    m_InternalData->m_QueryInfo));
+        summaries.push_back(s);
+    }
+    
     // The preliminary stage also produces errors and warnings; they
     // should be copied from that code to this class somehow, and
     // returned here if they have not been returned or reported yet.
@@ -320,7 +332,7 @@ CBlastTracebackSearch::Run()
         m_Messages.resize(aligns.size());
     }
     
-    return CSearchResultSet(qlocs, aligns, m_Messages);
+    return CSearchResultSet(qlocs, aligns, m_Messages, summaries);
 }
 
 END_SCOPE(blast)

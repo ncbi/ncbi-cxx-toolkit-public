@@ -213,27 +213,40 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
 
 CSearchResultSet::CSearchResultSet(vector< CConstRef<CSeq_id> > queries,
                                    TSeqAlignVector              aligns,
+                                   TSearchMessages              msg_vec,
+                                   TAncillaryVector             summaries)
+{
+    x_Init(queries, aligns, msg_vec, summaries);
+}
+
+CSearchResultSet::CSearchResultSet(vector< CConstRef<CSeq_id> > queries,
+                                   TSeqAlignVector              aligns,
                                    TSearchMessages              msg_vec)
 {
-    x_Init(queries, aligns, msg_vec);
+    TAncillaryVector summaries(aligns.size()); // no summaries
+
+    x_Init(queries, aligns, msg_vec, summaries);
 }
 
 CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
                                    TSearchMessages msg_vec)
 {
     vector< CConstRef<CSeq_id> > queries;
+    TAncillaryVector summaries(aligns.size()); // no summaries
     
     for(size_t i = 0; i < aligns.size(); i++) {
         queries.push_back(s_ExtractSeqId(aligns[i]));
     }
     
-    x_Init(queries, aligns, msg_vec);
+    x_Init(queries, aligns, msg_vec, summaries);
 }
 
 void CSearchResultSet::x_Init(vector< CConstRef<CSeq_id> > queries,
                               TSeqAlignVector              aligns,
-                              TSearchMessages              msg_vec)
+                              TSearchMessages              msg_vec,
+                              TAncillaryVector             summaries)
 {
+    _ASSERT(aligns.size() == summaries.size());
     _ASSERT(aligns.size() == msg_vec.size());
     _ASSERT(aligns.size() == queries.size());
     
@@ -242,7 +255,8 @@ void CSearchResultSet::x_Init(vector< CConstRef<CSeq_id> > queries,
     for(size_t i = 0; i < aligns.size(); i++) {
         m_Results[i].Reset(new CSearchResults(queries[i],
                                               aligns[i],
-                                              msg_vec[i]));
+                                              msg_vec[i],
+                                              summaries[i]));
     }
 }
 
