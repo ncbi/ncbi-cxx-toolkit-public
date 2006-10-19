@@ -645,7 +645,7 @@ void CBDB_BufferManager::CopyFrom(const CBDB_BufferManager& buf_mgr)
 void CBDB_BufferManager::CopyPackedFrom(void* data, size_t data_size)
 {
     _ASSERT(data);
-    _ASSERT(data_size < m_BufferSize);
+    _ASSERT(data_size <= m_BufferSize);
 
     memcpy(m_Buffer, data, data_size);
     SetDBT_Size(data_size);
@@ -1045,6 +1045,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/10/19 19:15:11  dicuccio
+ * FIx _ASSERT() in CopyPackedFrom(): comparison should be <=, not <
+ *
  * Revision 1.35  2006/09/12 16:55:14  kuznets
  * Implemented multi-row fetch
  *
