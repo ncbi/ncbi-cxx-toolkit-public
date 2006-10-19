@@ -34,7 +34,6 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <dbapi/dbapi.hpp>
-#include <dbapi/driver/dbapi_svc_mapper.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -226,4 +225,13 @@ int main(int argc, const char* argv[])
 {
     return ncbi::CDbCopyApp().AppMain(argc, argv);
 }
+
+/* ===========================================================================
+ *
+ * $Log$
+ * Revision 1.2  2006/10/19 15:30:59  ssikorsk
+ * Removed dependency on the load-balancer.
+ *
+ * ===========================================================================
+ */
 
