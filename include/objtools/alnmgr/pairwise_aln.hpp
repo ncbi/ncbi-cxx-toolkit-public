@@ -53,24 +53,25 @@ public:
     CPairwiseAln(const TSeq& first_seq,
                  const TSeq& second_seq,
                  bool negative_strand = false,
-                 TAlignColl* align_coll = NULL)
+                 TAlnRngColl* aln_rng_coll = NULL)
         m_First(first_seq),
         m_Second(second_seq),
-        m_AlignColl(align_coll), 
+        m_AlnRngColl(aln_rng_coll), 
         m_NegativeStrand(negative_strand)
     {}
 
     ~CPairwiseAln()
     {
-        delete m_AlignRangeColl;
+        delete m_AlnRngColl;
     }
 
     typedef TSignedSeqPos TPos;
-    typedef CAlignRange<TPos> TAlignRange;
-    typedef CAlignRangeCollection<TAlignRange> TAlignRangeColl;
-    TAlignRangeColl& GetAlignRangeColl() {
-        if (m_AlignRangeColl) {
-            return *m_AlignRangeColl;
+    typedef CAlignRange<TPos> TAlnRng;
+    typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
+
+    TAlnRngColl& GetAlnRngColl() {
+        if (m_AlnRngColl) {
+            return *m_AlnRngColl;
         } else {
             NCBI_THROW(CException, eUnknown,
                        "Align range collection does not exist.");
@@ -91,25 +92,25 @@ private:
     TSeq         m_First;
     TSeq         m_Second;
 
-    TAlignColl*  m_AlignColl;      //< sequence mapping to the alignment
+    TAlnRngColl* m_AlnRngColl;     //< sequence mapping to the alignment
     TSignedRange m_SecondRange;    //< range of the segments on the sequence
     bool         m_NegativeStrand;  
 };
 
 
 /// Pair of rows
-typedef CPairwiseAln<int> CRowPairAln;
+typedef CPairwiseAln<int> CRowAln;
 
 
 /// Query-anchored alignment can be 2 or multi-dimentional
-class CQueryAnchoredAln : public CObject
+class CAnchoredAln : public CObject
 {
     CConstRef<CSeq_align> m_SeqAlign;
     
-    typedef vector<CConstRef<CSeq_id> > TSeqRowVector;
-    TSeqRowVector m_SeqRowVector;
+    typedef vector<CConstRef<CSeq_id> > TRowIdVector;
+    TRowIdVector m_RowIdVector;
 
-    typedef vector<CRowPairAln> TRowPairAlnContainer;
+    typedef vector<CRowAln> TRowAlnContainer;
 };
 
 
@@ -121,6 +122,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/19 17:11:05  todorov
+* Minor refactoring.
+*
 * Revision 1.1  2006/10/17 19:59:36  todorov
 * Initial revision
 *
