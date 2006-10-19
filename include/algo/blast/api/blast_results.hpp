@@ -137,6 +137,7 @@ private:
     Int8 m_SearchSpace;
 };
 
+
 /// Search Results for One Query.
 /// 
 /// This class encapsulates all the search results and related data
@@ -152,9 +153,9 @@ public:
     CSearchResults(CConstRef<objects::CSeq_id>     query,
                    CRef<objects::CSeq_align_set>   align, 
                    const TQueryMessages          & errs,
-                   CRef<CBlastAncillaryData>       summary_data)
+                   CRef<CBlastAncillaryData>       ancillary_data)
         : m_QueryId(query), m_Alignment(align), 
-          m_Errors(errs), m_AncillaryData(summary_data)
+          m_Errors(errs), m_AncillaryData(ancillary_data)
     {
     }
     
@@ -170,7 +171,7 @@ public:
     /// Accessor for the query's sequence identifier
     CConstRef<objects::CSeq_id> GetSeqId() const;
     
-    /// Accessor for the query's search summary
+    /// Accessor for the query's search ancillary
     CRef<CBlastAncillaryData> GetAncillaryData() const
     {
         return m_AncillaryData;
@@ -202,7 +203,7 @@ private:
     /// this query's masked regions
     TMaskedQueryRegions m_Masks;
 
-    /// non-alignment summary data for this query
+    /// non-alignment ancillary data for this query
     CRef<CBlastAncillaryData> m_AncillaryData;
 };
 
@@ -236,19 +237,12 @@ public:
     /// @param ids vector of all queries' ids [in]
     /// @param aligns vector of all queries' alignments [in]
     /// @param msg_vec vector of all queries' messages [in]
-    CSearchResultSet(TQueryIdVector  ids,
-                     TSeqAlignVector aligns,
-                     TSearchMessages msg_vec);
-    
-    /// Parametrized constructor
-    /// @param ids vector of all queries' ids [in]
-    /// @param aligns vector of all queries' alignments [in]
-    /// @param msg_vec vector of all queries' messages [in]
-    /// @param summaries vector of per-query search summary data [in]
+    /// @param ancillary_data vector of per-query search ancillary data [in]
     CSearchResultSet(TQueryIdVector  ids,
                      TSeqAlignVector aligns,
                      TSearchMessages msg_vec,
-                     TAncillaryVector  summaries);
+                     TAncillaryVector  ancillary_data = 
+                     TAncillaryVector());
     
     /// Allow array-like access with integer indices to CSearchResults 
     /// contained by this object
@@ -294,7 +288,7 @@ private:
     void x_Init(vector< CConstRef<objects::CSeq_id> > queries,
                 TSeqAlignVector                       aligns,
                 TSearchMessages                       msg_vec,
-                TAncillaryVector                      summaries);
+                TAncillaryVector                      ancillary_data);
     
     /// Vector of results.
     vector< CRef<CSearchResults> > m_Results;
@@ -308,6 +302,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/19 17:45:36  camacho
+* minor changes
+*
 * Revision 1.1  2006/10/19 15:20:55  papadopo
 * Classes for retrieving results from blast searches
 *

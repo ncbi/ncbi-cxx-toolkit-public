@@ -214,39 +214,33 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
 CSearchResultSet::CSearchResultSet(vector< CConstRef<CSeq_id> > queries,
                                    TSeqAlignVector              aligns,
                                    TSearchMessages              msg_vec,
-                                   TAncillaryVector             summaries)
+                                   TAncillaryVector             ancillary_data)
 {
-    x_Init(queries, aligns, msg_vec, summaries);
-}
-
-CSearchResultSet::CSearchResultSet(vector< CConstRef<CSeq_id> > queries,
-                                   TSeqAlignVector              aligns,
-                                   TSearchMessages              msg_vec)
-{
-    TAncillaryVector summaries(aligns.size()); // no summaries
-
-    x_Init(queries, aligns, msg_vec, summaries);
+    if (ancillary_data.empty()) {
+        ancillary_data.resize(aligns.size());
+    }
+    x_Init(queries, aligns, msg_vec, ancillary_data);
 }
 
 CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
                                    TSearchMessages msg_vec)
 {
     vector< CConstRef<CSeq_id> > queries;
-    TAncillaryVector summaries(aligns.size()); // no summaries
+    TAncillaryVector ancillary_data(aligns.size()); // no ancillary_data
     
     for(size_t i = 0; i < aligns.size(); i++) {
         queries.push_back(s_ExtractSeqId(aligns[i]));
     }
     
-    x_Init(queries, aligns, msg_vec, summaries);
+    x_Init(queries, aligns, msg_vec, ancillary_data);
 }
 
 void CSearchResultSet::x_Init(vector< CConstRef<CSeq_id> > queries,
                               TSeqAlignVector              aligns,
                               TSearchMessages              msg_vec,
-                              TAncillaryVector             summaries)
+                              TAncillaryVector             ancillary_data)
 {
-    _ASSERT(aligns.size() == summaries.size());
+    _ASSERT(aligns.size() == ancillary_data.size());
     _ASSERT(aligns.size() == msg_vec.size());
     _ASSERT(aligns.size() == queries.size());
     
@@ -256,7 +250,7 @@ void CSearchResultSet::x_Init(vector< CConstRef<CSeq_id> > queries,
         m_Results[i].Reset(new CSearchResults(queries[i],
                                               aligns[i],
                                               msg_vec[i],
-                                              summaries[i]));
+                                              ancillary_data[i]));
     }
 }
 
