@@ -118,7 +118,7 @@ class NCBI_XCONNECT_EXPORT IServer_ConnectionHandler
 public:
     virtual ~IServer_ConnectionHandler() { }
 
-    /// Following two methods are guaranteed to be called NOT
+    /// Following three methods are guaranteed to be called NOT
     /// at the same time as On*, so if you implement them
     /// you should not guard the variables which they can use with
     /// mutexes.
@@ -128,6 +128,11 @@ public:
     /// Returns the timeout for this connection
     virtual const STimeout* GetTimeout(void)
         { return kDefaultTimeout; }
+    /// Returns connection handler's perception of whether we open or not.
+    /// It is unsafe to just close underlying socket because of the race,
+    /// emerging due to the fact that the socket can linger for a while.
+    virtual bool IsOpen(void)
+        { return true; }
 
     /// Runs in response to an external event [asynchronous].
     /// You can get socket by calling GetSocket(), if you close the socket
@@ -279,7 +284,7 @@ struct NCBI_XCONNECT_EXPORT SServer_Parameters
     /// Maximum # of open connections
     unsigned int    max_connections;
     /// Temporarily close listener when queue fills?
-    bool          temporarily_stop_listening;
+    bool            temporarily_stop_listening;
     /// Maximum t between exit checks
     const STimeout* accept_timeout;
     /// For how long to keep inactive non-listening sockets open
@@ -335,6 +340,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/19 20:38:20  joukovv
+ * Works in thread-per-request mode. Errors in BDB layer fixed.
+ *
  * Revision 1.2  2006/09/27 21:26:06  joukovv
  * Thread-per-request is finally implemented. Interface changed to enable
  * streams, line-based message handler added, netscedule adapted.

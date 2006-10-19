@@ -89,6 +89,9 @@ public:
     /// which have been idle for too long.
     void Clean(void);
 
+    /// Erase all connections
+    void Erase(void);
+
     void GetPollVec(vector<CSocketAPI::SPoll>& polls) const;
 
     void StopListening(void);
@@ -120,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/10/19 20:38:20  joukovv
+ * Works in thread-per-request mode. Errors in BDB layer fixed.
+ *
  * Revision 6.2  2006/09/27 21:26:06  joukovv
  * Thread-per-request is finally implemented. Interface changed to enable
  * streams, line-based message handler added, netscedule adapted.

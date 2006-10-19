@@ -388,7 +388,8 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
 
     for (unsigned i = 0; i < subm.job_list.size(); ) {
 
-        const unsigned kMax_Batch = 50000;
+        // Batch size should be reasonable not to trigger network timeout
+        const unsigned kMax_Batch = 10000;
 
         unsigned batch_size = subm.job_list.size() - i;
         if (batch_size > kMax_Batch) {
@@ -1919,6 +1920,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/10/19 20:38:20  joukovv
+ * Works in thread-per-request mode. Errors in BDB layer fixed.
+ *
  * Revision 1.63  2006/07/19 16:24:13  didenko
  * Added checking for the length of the output data
  *

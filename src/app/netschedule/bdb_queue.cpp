@@ -3513,12 +3513,11 @@ CQueueDataBase::CQueue::TimeLineExchange(unsigned remove_job_id,
 }
 
 SLockedQueue::TListenerList::iterator
-CQueueDataBase::CQueue::FindListener(
+CQueueDataBase::CQueue::x_FindListener(
                                 unsigned int    host_addr, 
                                 unsigned short  udp_port)
 {
     SLockedQueue::TListenerList&  wnodes = m_LQueue.wnodes;
-    CReadLockGuard guard(m_LQueue.wn_lock);
     NON_CONST_ITERATE(SLockedQueue::TListenerList, it, wnodes) {
         const SQueueListener& ql = *(*it);
         if ((ql.udp_port == udp_port) &&
@@ -3537,11 +3536,11 @@ void CQueueDataBase::CQueue::RegisterNotificationListener(
                                             int             timeout,
                                             const string&   auth)
 {
+    CWriteLockGuard guard(m_LQueue.wn_lock);
     SLockedQueue::TListenerList::iterator it =
-                                FindListener(host_addr, udp_port);
+                                x_FindListener(host_addr, udp_port);
     
     time_t curr = time(0);
-    CWriteLockGuard guard(m_LQueue.wn_lock);
     if (it != m_LQueue.wnodes.end()) {  // update registration timestamp
         SQueueListener& ql = *(*it);
         if ((ql.timeout = timeout)!= 0) {
@@ -3565,9 +3564,9 @@ CQueueDataBase::CQueue::UnRegisterNotificationListener(
                                             unsigned int    host_addr,
                                             unsigned short  udp_port)
 {
-    SLockedQueue::TListenerList::iterator it =
-                                FindListener(host_addr, udp_port);
    CWriteLockGuard guard(m_LQueue.wn_lock);
+   SLockedQueue::TListenerList::iterator it =
+                                x_FindListener(host_addr, udp_port);
    if (it != m_LQueue.wnodes.end()) {
         SQueueListener* node = *it;
         delete node;
@@ -3919,6 +3918,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2006/10/19 20:38:20  joukovv
+ * Works in thread-per-request mode. Errors in BDB layer fixed.
+ *
  * Revision 1.90  2006/10/03 14:56:56  joukovv
  * Delayed job deletion implemented, code restructured preparing to move to
  * thread-per-request model.

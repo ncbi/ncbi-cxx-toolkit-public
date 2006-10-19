@@ -306,13 +306,6 @@ public:
         void ClearAffinity(unsigned int  host_addr,
                            const string& auth);
 
-        /// Find the listener if it is registered
-        /// @return NULL if not found
-        ///
-        SLockedQueue::TListenerList::iterator 
-                        FindListener(unsigned int    host_addr, 
-                                     unsigned short  udp_port);
-
         void SetMonitorSocket(SOCK sock);
 
         /// Return monitor (no ownership transfer)
@@ -386,6 +379,13 @@ public:
                               unsigned add_job_id,
                               time_t   curr);
     private:
+
+        /// Find the listener if it is registered
+        /// @return NULL if not found
+        ///
+        SLockedQueue::TListenerList::iterator 
+                        x_FindListener(unsigned int    host_addr, 
+                                     unsigned short  udp_port);
 
         void x_DropJob(unsigned job_id);
 
@@ -575,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/10/19 20:38:20  joukovv
+ * Works in thread-per-request mode. Errors in BDB layer fixed.
+ *
  * Revision 1.55  2006/10/03 14:56:56  joukovv
  * Delayed job deletion implemented, code restructured preparing to move to
  * thread-per-request model.

@@ -67,7 +67,8 @@ class CServer_Connection : public CSocket, // CPollable
 {
 public:
     CServer_Connection(IServer_ConnectionHandler* handler)
-        : m_Handler(handler) { m_Handler->SetSocket(this); }
+        : m_Handler(handler), m_Open(true)
+        { m_Handler->SetSocket(this); }
     virtual EIO_Event GetEventsToPollFor() 
         { return m_Handler->GetEventsToPollFor(); }
     virtual CStdRequest* CreateRequest(EIO_Event event,
@@ -75,12 +76,12 @@ public:
                                        const STimeout* timeout);
     virtual void OnTimeout(void) { m_Handler->OnTimeout(); }
     virtual void OnOverflow(void) { m_Handler->OnOverflow(); }
-    virtual bool IsOpen(void)
-        { return GetStatus(eIO_Open) == eIO_Success; }
+    virtual bool IsOpen(void);
     // connection-specific methods
     void OnSocketEvent(EIO_Event event);
 private:
     auto_ptr<IServer_ConnectionHandler> m_Handler;
+    bool m_Open;
 } ;
 
 class CServer_Listener : public CListeningSocket, // CPollable
@@ -113,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/10/19 20:38:20  joukovv
+ * Works in thread-per-request mode. Errors in BDB layer fixed.
+ *
  * Revision 6.2  2006/09/27 21:26:06  joukovv
  * Thread-per-request is finally implemented. Interface changed to enable
  * streams, line-based message handler added, netscedule adapted.

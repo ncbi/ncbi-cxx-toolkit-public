@@ -32,7 +32,11 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_buffer.h>
+
 #include "connection_pool.hpp"
+#include "server_connection.hpp"
+#include <connect/server.hpp>
+
 #include "ncbi_core_cxxp.hpp"
 #include <util/thread_pool.hpp>
 
@@ -108,13 +112,15 @@ int IServer_LineMessageHandler::CheckMessage(
 
 /////////////////////////////////////////////////////////////////////////////
 // Abstract class for CAcceptRequest and CIORequest
-class CServerRequest : public CStdRequest
+class CServer_Request : public CStdRequest
 {
 public:
-    CServerRequest(EIO_Event event,
-                   CServer_ConnectionPool& conn_pool,
-                   const STimeout* timeout)
+    CServer_Request(EIO_Event event,
+                    CServer_ConnectionPool& conn_pool,
+                    const STimeout* timeout)
         : m_Event(event), m_ConnPool(conn_pool), m_IdleTimeout(timeout) {}
+
+    virtual void Cancel(void) = 0;
 
 protected:
     EIO_Event                m_Event;
@@ -125,7 +131,7 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 // CAcceptRequest
-class CAcceptRequest : public CServerRequest
+class CAcceptRequest : public CServer_Request
 {
 public:
     CAcceptRequest(EIO_Event event,
@@ -133,6 +139,7 @@ public:
                    const STimeout* timeout,
                    TListener* listener);
     virtual void Process(void);
+    virtual void Cancel(void) { }
 private:
     TConnection* m_Connection;
 } ;
@@ -141,7 +148,7 @@ CAcceptRequest::CAcceptRequest(EIO_Event event,
                                CServer_ConnectionPool& conn_pool,
                                const STimeout* timeout,
                                TListener* listener) :
-        CServerRequest(event, conn_pool, timeout),
+        CServer_Request(event, conn_pool, timeout),
         m_Connection(NULL)
 {
     // Accept connection in main thread to avoid race for listening
@@ -175,17 +182,18 @@ void CAcceptRequest::Process(void)
 
 /////////////////////////////////////////////////////////////////////////////
 // CIORequest
-class CIORequest : public CServerRequest
+class CIORequest : public CServer_Request
 {
 public:
     CIORequest(EIO_Event event,
                CServer_ConnectionPool& conn_pool,
                const STimeout* timeout,
                TConnection* connection) :
-        CServerRequest(event, conn_pool, timeout),
+        CServer_Request(event, conn_pool, timeout),
         m_Connection(connection)
         { }
     virtual void Process(void);
+    virtual void Cancel(void);
 private:
     TConnection* m_Connection;
 } ;
@@ -202,13 +210,20 @@ void CIORequest::Process(void)
 }
 
 
+void CIORequest::Cancel(void)
+{
+    // Return socket to poll vector
+    m_ConnPool.SetConnType(m_Connection,
+                           CServer_ConnectionPool::eInactiveSocket);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CServer_Listener
 CStdRequest* TListener::CreateRequest(EIO_Event event,
                                       CServer_ConnectionPool& conn_pool,
                                       const STimeout* timeout)
 {
-    // TODO: Move actual Accept here, postpone notification of newly created socket
     return new CAcceptRequest(event, conn_pool, timeout, this);
 }
 
@@ -236,6 +251,11 @@ CStdRequest* TConnection::CreateRequest(EIO_Event event,
     return new CIORequest(event, conn_pool, timeout, this);
 }
 
+bool TConnection::IsOpen(void)
+{
+    m_Open = m_Open  &&  GetStatus(eIO_Open) == eIO_Success;
+    return m_Open;
+}
 
 void TConnection::OnSocketEvent(EIO_Event event)
 {
@@ -243,11 +263,18 @@ void TConnection::OnSocketEvent(EIO_Event event)
         m_Handler->OnOpen();
     } else if (eIO_Close == event) {
         m_Handler->OnClose();
+        m_Open = false;
     } else {
         if (eIO_Read & event)
             m_Handler->OnRead();
         if (eIO_Write & event)
             m_Handler->OnWrite();
+        // We don't need here to check GetStatus(eIO_Open), it is in IsOpen
+        // method, but we need to check success of last read/write operations
+        // after them.
+        m_Open = m_Open
+                 &&  GetStatus(eIO_Read)  == eIO_Success
+                 &&  GetStatus(eIO_Write) == eIO_Success;
     }
 }
 
@@ -288,8 +315,8 @@ void CServer::SetParameters(const SServer_Parameters& new_params)
         NCBI_THROW(CServerException, eBadParameters,
                    "CServer::SetParameters: Bad parameters");
     }
-    // TODO: notify m_ConnectionPool about changes in max_connections
     *m_Parameters = new_params;
+    m_ConnectionPool->SetMaxConnections(m_Parameters->max_connections);
 }
 
 
@@ -308,29 +335,8 @@ void CServer::Run(void)
 
     vector<CSocketAPI::SPoll> polls;
     size_t                    count;
-    bool                      wait = false;
     while (!ShutdownRequested()) {
         m_ConnectionPool->Clean();
-
-        if (wait) {
-            unsigned int timeout_sec = kMax_UInt, timeout_nsec = 0;
-            if (m_Parameters->accept_timeout != kDefaultTimeout
-                && m_Parameters->accept_timeout != kInfiniteTimeout) {
-                timeout_sec  = m_Parameters->accept_timeout->sec;
-                timeout_nsec = m_Parameters->accept_timeout->usec * 1000;
-            }
-            try {
-                threadPool.WaitForRoom(timeout_sec, timeout_nsec);
-                wait = false;
-                if (m_Parameters->temporarily_stop_listening) {
-                    m_ConnectionPool->ResumeListening();
-                }
-            } catch (CBlockingQueueException&) {
-                // timed-out
-                // ??? Shouldn't we ProcessTimeout here?
-            }
-            continue;
-        }
 
         m_ConnectionPool->GetPollVec(polls);
         CSocketAPI::Poll(polls, m_Parameters->accept_timeout, &count);
@@ -339,43 +345,33 @@ void CServer::Run(void)
             continue;
         }
 
-        bool listener_activity = false;
         ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
             if (!it->m_REvent) continue;
             TConnBase* conn_base = dynamic_cast<TConnBase*>(it->m_Pollable);
             _ASSERT(conn_base);
-            // TODO: replace dynamic_cast with virtual call
-            TListener* listener = dynamic_cast<TListener*>(it->m_Pollable);
-            if (listener) {
-                listener_activity = true;
-            }
-            try {
-                CStdRequest* request = conn_base->CreateRequest(
-                    it->m_REvent, *m_ConnectionPool,
-                    m_Parameters->idle_timeout);
-                if (request) {
-                    threadPool.AcceptRequest(CRef<CStdRequest>(request));
-                    if (threadPool.IsFull()  &&
-                        m_Parameters->temporarily_stop_listening) {
-
-                        m_ConnectionPool->StopListening();
-                        wait = true;
-                        break;
-                    }
+            CRef<CStdRequest> request(conn_base->CreateRequest(
+                it->m_REvent, *m_ConnectionPool,
+                m_Parameters->idle_timeout));
+            if (request) {
+                try {
+                    threadPool.AcceptRequest(request);
+                } catch (CBlockingQueueException&) {
+                    CServer_Request* req =
+                        dynamic_cast<CServer_Request*>(request.GetPointer());
+                    printf("case 2\n"); // DEBUG
+                    _ASSERT(req);
+                    // Queue is full, drop incoming connection.
+                    // ??? What should we do if conn_base is CServerConnection?
+                    // Should we close it?
+                    req->Cancel();
+                    conn_base->OnOverflow();
                 }
-            } catch (CBlockingQueueException&) {
-                // avoid spinning if only regular sockets are active,
-                // as they simply remain "on hold"
-                wait = !listener_activity;
-                // Queue is full, drop incoming connection.
-                // ??? What should we do if conn_base is CServerConnection?
-                // Should we close it?
-                conn_base->OnOverflow();
             }
         }
     }
 
     m_ConnectionPool->StopListening();
+    m_ConnectionPool->Erase();
     threadPool.KillAllThreads(true);
 }
 
@@ -404,6 +400,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.3  2006/10/19 20:38:20  joukovv
+ * Works in thread-per-request mode. Errors in BDB layer fixed.
+ *
  * Revision 6.2  2006/09/27 21:26:06  joukovv
  * Thread-per-request is finally implemented. Interface changed to enable
  * streams, line-based message handler added, netscedule adapted.

@@ -89,6 +89,11 @@ CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
 
 CServer_ConnectionPool::~CServer_ConnectionPool()
 {
+    Erase();
+}
+
+void CServer_ConnectionPool::Erase(void)
+{
     CMutexGuard guard(m_Mutex);
     TData& data = const_cast<TData&>(m_Data);
     for (TData::iterator next = data.begin(), it = next++;
@@ -131,8 +136,9 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn, EConnType type)
     }
     // Signal poll cycle to re-read poll vector by sending
     // byte to control socket
-    if (type == eInactiveSocket &&
-        eIO_Success == m_ControlSocket.GetStatus(eIO_Open)) {
+    if (type == eInactiveSocket) {
+        // DEBUG if (it != data.end() && !it->first->IsOpen())
+        //     printf("Socket just closed\n");
         m_ControlSocket.Write("", 1, NULL);
     }
 }
@@ -143,21 +149,31 @@ void CServer_ConnectionPool::Clean(void)
     CTime now(CTime::eCurrent, CTime::eGmt);
     CMutexGuard guard(m_Mutex);
     TData& data = const_cast<TData&>(m_Data);
-    if (data.empty()) {
+    if (data.empty())
         return;
-    }
+    int n_cleaned = 0;
+    int n_connections = 0;
     for (TData::iterator next = data.begin(), it = next++;
          next != data.end();
          it = next, ++next) {
-        if (it->second.type != eInactiveSocket) {
+        SPerConnInfo& info = it->second;
+        if (info.type != eListener) ++n_connections;
+        if (info.type != eInactiveSocket) {
             continue;
         }
-        if (!it->first->IsOpen() || it->second.expiration <= now) {
-            it->first->OnTimeout();
+        CServer_Connection* conn = dynamic_cast<CServer_Connection*>(it->first);
+        if (!it->first->IsOpen() || info.expiration <= now) {
+            if (info.expiration <= now)
+                it->first->OnTimeout();
+            else
+                conn->OnSocketEvent(eIO_Close);
             delete it->first;
             data.erase(it);
+            ++n_cleaned;
         }
     }
+    // DEBUG if (n_cleaned)
+    //  printf("Cleaned %d connections out of %d\n", n_cleaned, n_connections);
 }
 
 
@@ -175,7 +191,7 @@ void CServer_ConnectionPool::GetPollVec(vector<CSocketAPI::SPoll>& polls) const
         _ASSERT(pollable);
         // Check that socket is not processing packet - safeguards against
         // out-of-order packet processing by effectively pulling socket from
-        // poll vector until it is done with previous packet. See comment in
+        // poll vector until it is done with previous packet. See comments in
         // server.cpp CServer_Connection::CreateRequest and CIORequest::Process
         if (it->second.type != eActiveSocket) {
             if (!it->first->IsOpen() ) {
@@ -213,6 +229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2006/10/19 20:38:20  joukovv
+* Works in thread-per-request mode. Errors in BDB layer fixed.
+*
 * Revision 6.2  2006/09/27 21:26:06  joukovv
 * Thread-per-request is finally implemented. Interface changed to enable
 * streams, line-based message handler added, netscedule adapted.

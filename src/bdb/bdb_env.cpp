@@ -80,8 +80,8 @@ void CBDB_Env::Close()
 {
     if (m_Env) {
         int ret = m_Env->close(m_Env, 0);
-        BDB_CHECK(ret, "DB_ENV::close");
         m_Env = 0;
+        BDB_CHECK(ret, "DB_ENV::close");
     }
 }
 
@@ -508,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/10/19 20:38:20  joukovv
+ * Works in thread-per-request mode. Errors in BDB layer fixed.
+ *
  * Revision 1.37  2006/03/30 17:27:55  kuznets
  * +SetTransactionMax()
  *
