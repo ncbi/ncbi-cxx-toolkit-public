@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq
+ASN_DEP = seqset
 
 LIB = xalgodustmask
 
