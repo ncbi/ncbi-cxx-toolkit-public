@@ -54,6 +54,7 @@ prelim_stage \
 traceback_stage \
 uniform_search \
 local_search \
+blast_results \
 remote_search \
 remote_services \
 query_data \
