@@ -189,6 +189,8 @@ bool CODBC_RPCCmd::WasCanceled() const
 
 CDB_Result* CODBC_RPCCmd::Result()
 {
+    enum {eNameStrLen = 64};
+
     if (m_Res) {
         delete m_Res;
         m_Res = 0;
@@ -206,7 +208,7 @@ CDB_Result* CODBC_RPCCmd::Result()
     }
 
     SQLSMALLINT nof_cols = 0;
-    char n_buff[64];
+    odbc::TChar buffer[eNameStrLen];
 
     while(m_hasResults) {
         CheckSIE(SQLNumResultCols(GetHandle(), &nof_cols),
@@ -226,10 +228,16 @@ CDB_Result* CODBC_RPCCmd::Result()
         if(nof_cols == 1) { // it could be a status result
             SQLSMALLINT l;
 
-            CheckSIE(SQLColAttribute(GetHandle(), 1, SQL_DESC_LABEL, n_buff, 64, &l, 0),
+            CheckSIE(SQLColAttribute(GetHandle(),
+                                     1,
+                                     SQL_DESC_LABEL,
+                                     buffer,
+                                     sizeof(buffer),
+                                     &l,
+                                     0),
                      "SQLColAttribute failed", 420015);
 
-            if(strcmp(n_buff, "STpROCrETURNsTATUS") == 0) {//this is a status result
+            if(util::strcmp(buffer, _T("STpROCrETURNsTATUS")) == 0) {//this is a status result
                 m_HasStatus = true;
                 m_Res = new CODBC_StatusResult(*this);
             }
@@ -382,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/10/19 16:18:06  ssikorsk
+ * Fixed handling of unicode strings in CODBC_RPCCmd::Result.
+ *
  * Revision 1.32  2006/09/18 15:34:30  ssikorsk
  * Redesigned CODBC_RPCCmd::x_AssignParams using BindParam_ODBC.
  *
