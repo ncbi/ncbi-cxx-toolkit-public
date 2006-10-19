@@ -115,6 +115,11 @@ static bool IsSameTypeInfo( const CSerialObject& obj1,
 %ignore *::UTF8ToAscii;
 %ignore *::UTF8ToAsciiString;
 
+// Python keywords used as variable names in connect/*.h
+#ifdef SWIGPYTHON
+%rename(pass_) pass;  // connect/ncbi_connutil.h
+%rename(from_) from;  // connect/ncbi_sendmail.h
+#endif
 
 %%
 
@@ -223,6 +228,30 @@ util/dictionary.hpp
 util/dictionary_util.hpp
 // weakmap.inl won't compile
 //util/weakmap.hpp
+
+connect/connect_export.h
+connect/ncbi_buffer.h
+connect/ncbi_connection.h
+connect/ncbi_connector.h
+connect/ncbi_connutil.h
+connect/ncbi_core.h
+connect/ncbi_file_connector.h
+connect/ncbi_ftp_connector.h
+connect/ncbi_heapmgr.h
+connect/ncbi_host_info.h
+connect/ncbi_http_connector.h
+connect/ncbi_memory_connector.h
+connect/ncbi_sendmail.h
+connect/ncbi_server_info.h
+connect/ncbi_service.h
+connect/ncbi_service_connector.h
+connect/ncbi_service_misc.h
+connect/ncbi_socket.h
+connect/ncbi_socket_connector.h
+connect/ncbi_socket_unix.h
+connect/ncbi_types.h
+connect/ncbi_util.h
+
 connect/email_diag_handler.hpp
 connect/ncbi_conn_exception.hpp
 connect/ncbi_conn_reader_writer.hpp
@@ -372,6 +401,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/10/19 17:52:09  jcherry
+ * Added connect/*.h
+ *
  * Revision 1.21  2006/10/17 16:29:45  jcherry
  * Reflect movement of more headers from serial to serial/impl
  *
