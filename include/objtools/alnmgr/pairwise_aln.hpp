@@ -37,80 +37,66 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <util/align_range.hpp>
-#include <util/align_range_coll>
+#include <objects/seqalign/Seq_align.hpp>
+
+#include <objtools/alnmgr/diag_rng_coll.hpp>
 
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-/// A pair of sequences
-template <TSeq>
-class CPairwiseAln : public CObject
+/// A pairwise aln is a collection of diag ranges for a pair of rows
+class CPairwiseAln : public CObject, public CDiagRngColl
 {
 public:
-    CPairwiseAln(const TSeq& first_seq,
-                 const TSeq& second_seq,
-                 bool negative_strand = false,
-                 TAlnRngColl* aln_rng_coll = NULL)
-        m_First(first_seq),
-        m_Second(second_seq),
-        m_AlnRngColl(aln_rng_coll), 
-        m_NegativeStrand(negative_strand)
-    {}
+    typedef CSeq_align::TDim TDim;
+    
+    /// Constructors:
+    CPairwiseAln(const CSeq_align& seq_align,
+                 TDim row_1,
+                 TDim row_2);
 
-    ~CPairwiseAln()
-    {
-        delete m_AlnRngColl;
+//     CPairwiseAln(TDim row_1,
+//                  TDim row_2,
+//                  CSeq_id& seq_id_1
+//                  CSeq_id& seq_id_2);
+
+    /// Accessors:
+    const CSeq_align& GetSeqAlign() const {
+        return *m_SeqAlign;
     }
-
-    typedef TSignedSeqPos TPos;
-    typedef CAlignRange<TPos> TAlnRng;
-    typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
-
-    TAlnRngColl& GetAlnRngColl() {
-        if (m_AlnRngColl) {
-            return *m_AlnRngColl;
-        } else {
-            NCBI_THROW(CException, eUnknown,
-                       "Align range collection does not exist.");
-        }
+    const TDim& GetRow1() const {
+        return m_Row1;
     }
-
-    const TSeq& GetFirst() {
-        return m_First;
-    }
-
-    const TSeq& GetSecond() {
-        return m_Second;
+    const TDim& GetRow2() const {
+        return m_Row2;
     }
 
 private:
-    typedef SAlignTools::TSignedRange TSignedRange;
+    CConstRef<CSeq_align> m_SeqAlign;
+    TDim m_Row1;
+    TDim m_Row2;
 
-    TSeq         m_First;
-    TSeq         m_Second;
+    void x_BuildFromDenseg();
+    void x_BuildFromStdseg();
 
-    TAlnRngColl* m_AlnRngColl;     //< sequence mapping to the alignment
-    TSignedRange m_SecondRange;    //< range of the segments on the sequence
-    bool         m_NegativeStrand;  
+    typedef CRange<TSeqPos> TRng;
+    TRng m_Rng;
 };
-
-
-/// Pair of rows
-typedef CPairwiseAln<int> CRowAln;
 
 
 /// Query-anchored alignment can be 2 or multi-dimentional
 class CAnchoredAln : public CObject
 {
+public:
     CConstRef<CSeq_align> m_SeqAlign;
     
-    typedef vector<CConstRef<CSeq_id> > TRowIdVector;
-    TRowIdVector m_RowIdVector;
+    typedef vector<CConstRef<CSeq_id> > TSeqIds;
+    TSeqIds m_SeqIds;
 
-    typedef vector<CRowAln> TRowAlnContainer;
+    typedef vector<CConstRef<CPairwiseAln> > TPairwiseAlns;
+    TPairwiseAlns m_PairwiseAlns;
 };
 
 
@@ -122,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/10/19 20:19:11  todorov
+* CPairwiseAln is a CDiagRngColl now.
+*
 * Revision 1.2  2006/10/19 17:11:05  todorov
 * Minor refactoring.
 *
