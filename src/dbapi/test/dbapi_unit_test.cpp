@@ -4954,6 +4954,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // !!! Need to be fixed !!!
     if (args.GetDriverName() != "ftds64_ctlib" // Doesn't work for some reason ...
         && args.GetDriverName() != "ftds64_odbc" // No BCP at the moment ...
+        && args.GetDriverName() != "odbcw" // No BCP at the moment ...
         && args.GetDriverName() != "ctlib" // Doesn't work for some reason ...
         && args.GetDriverName() != "msdblib" // Doesn't work for some reason ...
         && !(args.GetDriverName() == "ftds" && args.GetServerType() == CTestArguments::eSybase)
@@ -5065,6 +5066,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     if (args.GetServerType() == CTestArguments::eMsSql
         && args.GetDriverName() != "odbc" // Doesn't work ...
+        && args.GetDriverName() != "odbcw" // Doesn't work ...
         && args.GetDriverName() != "ftds64_odbc"
         && args.GetDriverName() != "msdblib"
         ) {
@@ -5265,6 +5267,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.108  2006/10/19 16:23:31  ssikorsk
+ * Disable Test_NCBI_LS and Test_BulkInsertBlob with the odbcw driver.
+ *
  * Revision 1.107  2006/10/19 15:04:50  ssikorsk
  * Disable Test_NCBI_LS with odbc and msdblib drivers.
  *
