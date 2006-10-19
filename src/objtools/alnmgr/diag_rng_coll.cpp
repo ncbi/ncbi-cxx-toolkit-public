@@ -34,7 +34,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objtools/alnmgr/alndiag.hpp>
+#include <objtools/alnmgr/diag_rng_coll.hpp>
 #include <algorithm>
 
 
@@ -207,6 +207,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/19 17:17:36  todorov
+* Include file fix.
+*
 * Revision 1.1  2006/10/19 17:07:23  todorov
 * Initial revision.
 *
