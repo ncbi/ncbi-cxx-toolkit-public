@@ -5008,9 +5008,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    if (args.GetDriverName() != "ftds") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -5267,6 +5269,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.109  2006/10/19 18:45:40  ssikorsk
+ * Disable Test_Procedure with the ftds driver.
+ *
  * Revision 1.108  2006/10/19 16:23:31  ssikorsk
  * Disable Test_NCBI_LS and Test_BulkInsertBlob with the odbcw driver.
  *
