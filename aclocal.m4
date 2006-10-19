@@ -114,9 +114,14 @@ m4_define([_AS_LINENO_PREPARE],
 AC_DEFUN(NCBI_FIX_DIR,
 [ncbi_fix_dir_tmp=`if cd $[$1]; then AS_UNSET(PWD); /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $[$1] && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            $1=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $[$1] && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            $1=$ncbi_fix_dir_tmp2
+         else
+            case "$[$1]" in
+               /*) ;;
+               * ) $1=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) $1=$ncbi_fix_dir_tmp ;;

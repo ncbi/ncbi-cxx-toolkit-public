@@ -6882,9 +6882,14 @@ case "${build_root}" in
       else
          ncbi_fix_dir_tmp=`if cd $build_root; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $build_root && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            build_root=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $build_root && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            build_root=$ncbi_fix_dir_tmp2
+         else
+            case "$build_root" in
+               /*) ;;
+               * ) build_root=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) build_root=$ncbi_fix_dir_tmp ;;
@@ -6893,9 +6898,14 @@ case "${build_root}" in
    ;;
    *  ) ncbi_fix_dir_tmp=`if cd $build_root; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $build_root && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            build_root=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $build_root && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            build_root=$ncbi_fix_dir_tmp2
+         else
+            case "$build_root" in
+               /*) ;;
+               * ) build_root=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) build_root=$ncbi_fix_dir_tmp ;;
@@ -7257,9 +7267,14 @@ case "${srcdir}" in
       else
         ncbi_fix_dir_tmp=`if cd $srcdir; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $srcdir && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            srcdir=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $srcdir && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            srcdir=$ncbi_fix_dir_tmp2
+         else
+            case "$srcdir" in
+               /*) ;;
+               * ) srcdir=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) srcdir=$ncbi_fix_dir_tmp ;;
@@ -7268,9 +7283,14 @@ case "${srcdir}" in
    ;;
    * ) ncbi_fix_dir_tmp=`if cd $srcdir; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $srcdir && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            srcdir=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $srcdir && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            srcdir=$ncbi_fix_dir_tmp2
+         else
+            case "$srcdir" in
+               /*) ;;
+               * ) srcdir=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) srcdir=$ncbi_fix_dir_tmp ;;
@@ -19924,9 +19944,14 @@ if test "$with_bdb" != "no" ; then
    if test -d "$BERKELEYDB_PATH"; then
       ncbi_fix_dir_tmp=`if cd $BERKELEYDB_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $BERKELEYDB_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            BERKELEYDB_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $BERKELEYDB_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            BERKELEYDB_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$BERKELEYDB_PATH" in
+               /*) ;;
+               * ) BERKELEYDB_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) BERKELEYDB_PATH=$ncbi_fix_dir_tmp ;;
@@ -23345,9 +23370,14 @@ if test "$with_fastcgi" != "no" ; then
    if test -d "$FASTCGI_PATH"; then
       ncbi_fix_dir_tmp=`if cd $FASTCGI_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $FASTCGI_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            FASTCGI_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $FASTCGI_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            FASTCGI_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$FASTCGI_PATH" in
+               /*) ;;
+               * ) FASTCGI_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) FASTCGI_PATH=$ncbi_fix_dir_tmp ;;
@@ -24332,9 +24362,14 @@ if test "$with_libxml" != "no"; then
    if test -d "$LIBXML_PATH"; then
       ncbi_fix_dir_tmp=`if cd $LIBXML_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $LIBXML_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            LIBXML_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $LIBXML_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            LIBXML_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$LIBXML_PATH" in
+               /*) ;;
+               * ) LIBXML_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) LIBXML_PATH=$ncbi_fix_dir_tmp ;;
@@ -24557,9 +24592,14 @@ if test "$with_xerces" != no; then
    if test -d "$XERCES_PATH"; then
       ncbi_fix_dir_tmp=`if cd $XERCES_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $XERCES_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            XERCES_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $XERCES_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            XERCES_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$XERCES_PATH" in
+               /*) ;;
+               * ) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) XERCES_PATH=$ncbi_fix_dir_tmp ;;
@@ -24576,9 +24616,14 @@ if test "$with_xerces" != no; then
          XERCES_PATH=$vpath
          ncbi_fix_dir_tmp=`if cd $XERCES_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $XERCES_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            XERCES_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $XERCES_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            XERCES_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$XERCES_PATH" in
+               /*) ;;
+               * ) XERCES_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) XERCES_PATH=$ncbi_fix_dir_tmp ;;
@@ -24587,9 +24632,14 @@ if test "$with_xerces" != no; then
          XERCES_LIBPATH=$vpath
          ncbi_fix_dir_tmp=`if cd $XERCES_LIBPATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $XERCES_LIBPATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            XERCES_LIBPATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $XERCES_LIBPATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            XERCES_LIBPATH=$ncbi_fix_dir_tmp2
+         else
+            case "$XERCES_LIBPATH" in
+               /*) ;;
+               * ) XERCES_LIBPATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) XERCES_LIBPATH=$ncbi_fix_dir_tmp ;;
@@ -24694,9 +24744,14 @@ if test "$with_xalan" != no; then
    if test -d "$XALAN_PATH"; then
       ncbi_fix_dir_tmp=`if cd $XALAN_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $XALAN_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            XALAN_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $XALAN_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            XALAN_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$XALAN_PATH" in
+               /*) ;;
+               * ) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) XALAN_PATH=$ncbi_fix_dir_tmp ;;
@@ -24713,9 +24768,14 @@ if test "$with_xalan" != no; then
          XALAN_PATH=$vpath
          ncbi_fix_dir_tmp=`if cd $XALAN_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $XALAN_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            XALAN_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $XALAN_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            XALAN_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$XALAN_PATH" in
+               /*) ;;
+               * ) XALAN_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) XALAN_PATH=$ncbi_fix_dir_tmp ;;
@@ -24724,9 +24784,14 @@ if test "$with_xalan" != no; then
          XALAN_LIBPATH=$vpath
          ncbi_fix_dir_tmp=`if cd $XALAN_LIBPATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $XALAN_LIBPATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            XALAN_LIBPATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $XALAN_LIBPATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            XALAN_LIBPATH=$ncbi_fix_dir_tmp2
+         else
+            case "$XALAN_LIBPATH" in
+               /*) ;;
+               * ) XALAN_LIBPATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) XALAN_LIBPATH=$ncbi_fix_dir_tmp ;;
@@ -24828,9 +24893,14 @@ test -d SunWS_cache  &&  rm -r SunWS_cache
 if test -d "$SQLITE_PATH"; then
    ncbi_fix_dir_tmp=`if cd $SQLITE_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $SQLITE_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            SQLITE_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $SQLITE_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            SQLITE_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$SQLITE_PATH" in
+               /*) ;;
+               * ) SQLITE_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) SQLITE_PATH=$ncbi_fix_dir_tmp ;;
@@ -24940,9 +25010,14 @@ _ACEOF
 if test -d "$SQLITE3_PATH"; then
    ncbi_fix_dir_tmp=`if cd $SQLITE3_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp=`cd $SQLITE3_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp" -a -d "$ncbi_fix_dir_tmp"; then
-            SQLITE3_PATH=$ncbi_fix_dir_tmp
+    /.*) ncbi_fix_dir_tmp2=`cd $SQLITE3_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            SQLITE3_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$SQLITE3_PATH" in
+               /*) ;;
+               * ) SQLITE3_PATH=$ncbi_fix_dir_tmp ;;
+            esac
          fi
          ;;
     /*) SQLITE3_PATH=$ncbi_fix_dir_tmp ;;
