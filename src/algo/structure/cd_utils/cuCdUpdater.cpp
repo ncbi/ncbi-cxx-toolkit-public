@@ -327,7 +327,8 @@ CDUpdater::CDUpdater(CCdCore* cd, CdUpdateParameters& config)
 
 CDUpdater::~CDUpdater()
 {
-	delete m_guideAlignment;
+	if (m_guideAlignment)
+		delete m_guideAlignment;
 }
 
 int CDUpdater::submitBlast(bool wait)
@@ -645,25 +646,10 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	vector< CRef< CBioseq > > bioseqs;
 	LOG_POST("Got "<<m_stats.numBlastHits<<" blast hits. Start to retrieve sequence data.");
 	retrieveAllSequences(alignments, bioseqs);
-	//debug
-	/*
-    CNcbiOfstream outStream("seqs.txt", IOS_BASE::out | IOS_BASE::binary);
-	string err;
-    if (!outStream) {
-        err = "Cannot open file for writing";
-    }
-	
-	for (int i = 0; i < bioseqs.size(); i++)
-	{
-		if (!WriteASNToStream(outStream, *(bioseqs[i]), false,&err))
-			LOG_POST("Failed to write to %s because of %s\n", "seqs.txt", err.c_str());
-		if (!WriteASNToStream(outStream, *(GetBlastDefline(*bioseqs[i])), false,&err))
-			LOG_POST("Failed to write to %s because of %s\n", "seqs.txt", err.c_str());
-	}
-	*/
-	//end of debug
 	SequenceTable seqTable;
-	CDRefresher refresher(cd);
+	CDRefresher* refresher = 0;
+	if (m_config.replaceOldAcc)
+		refresher = new CDRefresher(cd);
 	vector< CRef< CBioseq > > bioseqVec;
 	for (int i = 0; i < bioseqs.size(); i++)
 	{
@@ -678,8 +664,8 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	/* wxString title = "Updating ";
 	title += cd->GetAccession().c_str();
 	wxProgressDialog progbar(title, "Process BLAST Hits and add them to CD", 100, 0, 
-		wxPD_AUTO_HIDE |wxPD_APP_MODAL);
-	LOG_POST("Process BLAST Hits and add them to %s\n", cd->GetAccession().c_str());*/
+		wxPD_AUTO_HIDE |wxPD_APP_MODAL);*/
+	LOG_POST("Process BLAST Hits and add them to "<<cd->GetAccession());
 	int completed = 0;
 	list< CRef< CSeq_align > >::iterator it = seqAligns.begin();
 	//CID1Client id1Client;
@@ -740,9 +726,11 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 				m_stats.badAlign.push_back(gi);
 				continue;
 			}
-			//trimBioSeq here
-
-			if(passedFilters(cd, *it, seqEntry)) //not framented; not environmental seq
+			
+			bool passed = true;
+			if (!m_config.noFilter)
+				passed = passedFilters(cd, *it, seqEntry);
+			if(passed) //not framented; not environmental seq
 			{
 				// add merge fragment later here
 
@@ -762,7 +750,9 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 						(*it) = saRef;
 				}
 				//check to see if it is necessary to replace old sequences
-				int replacedGi = refresher.refresh(seqAlignRef, seqEntry);
+				int replacedGi = -1;
+				if (m_config.replaceOldAcc)
+					replacedGi = refresher->refresh(seqAlignRef, seqEntry);
 				if (replacedGi > 0)
 				{
 					m_stats.oldNewPairs.push_back(CDUpdateStats::OldNewGiPair(replacedGi, gi));
@@ -837,11 +827,13 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 			cd->EraseTheseRows(oldNonMaster);
 	}*/
 	//progbar.Update(100);
-	cd->EraseSequences(); 
+	//cd->EraseSequences(); 
 	if (m_processPendingThreshold > 0)
 	{
 		m_stats.numFilteredByOverlap = mergePending(cd, m_processPendingThreshold,true);
 	}
+	if (refresher)
+		delete refresher;
 	return true;
 }
 
@@ -878,7 +870,7 @@ int CDUpdater::mergePending(CCdCore* cd, int threshold, bool remaster)
 }
 
 
-int CDUpdater::pickBioseq(CDRefresher& refresher, CRef< CSeq_align > seqAlignRef, 
+int CDUpdater::pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef, 
 						   vector< CRef< CBioseq > >&  bioseqVec)
 {
 	CSeq_align::C_Segs::TDenseg& denseg = seqAlignRef->SetSegs().SetDenseg();
@@ -934,21 +926,21 @@ int CDUpdater::pickBioseq(CDRefresher& refresher, CRef< CSeq_align > seqAlignRef
 	
 	//use the one whose older version is already in CD
 	//this can be used to replace the old one later
-	for (int i = 0; i < bioseqVec.size(); i++)
+	if (refresher)
 	{
-		if (refresher.hasOlderVersion(bioseqVec[i]))
+		for (int i = 0; i < bioseqVec.size(); i++)
 		{
-			const CBioseq::TId& ids = bioseqVec[i]->GetId();
-			CBioseq::TId::const_iterator it = ids.begin(), itend = ids.end();
-			for (; it != itend; ++it) 
+			if (refresher->hasOlderVersion(bioseqVec[i]))
 			{
-				if ((*it)->IsGi()) 
+				const CBioseq::TId& ids = bioseqVec[i]->GetId();
+				CBioseq::TId::const_iterator it = ids.begin(), itend = ids.end();
+				for (; it != itend; ++it) 
 				{
-					//debug
-					//LOG_POST("seqId before =%s\n",seqIdVec[1]->AsFastaString().c_str()); 
-					seqIdVec[1] = (*it); //replace
-					//LOG_POST("seqId After =%s\n",seqIdVec[1]->AsFastaString().c_str()); 
-					return i;
+					if ((*it)->IsGi()) 
+					{
+						seqIdVec[1] = (*it); //replace
+						return i;
+					}
 				}
 			}
 		}

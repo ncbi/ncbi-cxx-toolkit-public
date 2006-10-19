@@ -89,7 +89,9 @@ CdUpdateParameters::CdUpdateParameters()
     excludingTaxNodes(true),
     nonRedundify(false),
     refresh(false),
-    useNRPrefs(false)
+    useNRPrefs(false),
+	noFilter(false),
+	replaceOldAcc(true)
 
 {
 }

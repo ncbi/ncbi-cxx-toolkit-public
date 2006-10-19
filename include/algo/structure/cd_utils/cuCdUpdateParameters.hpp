@@ -128,6 +128,8 @@ public:
 	bool nonRedundify;
 	bool refresh;
     bool useNRPrefs;  //  if true, use BlastDbInfo preferences; otherwise, query Blast server w/o reseting preference values
+	bool noFilter;
+	bool replaceOldAcc;
 };
 
 END_SCOPE(cd_utils)

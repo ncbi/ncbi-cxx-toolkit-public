@@ -155,7 +155,7 @@ public:
 	static bool retrieveSeq(CID1Client& client, CRef<CSeq_id> seqID, 
 		CRef<CSeq_entry>& seqEntry);
 	CDUpdateStats& getStats() {return m_stats;}
-	static int pickBioseq(CDRefresher& refresher, CRef< CSeq_align > seqAlignRef, 
+	static int pickBioseq(CDRefresher* refresher, CRef< CSeq_align > seqAlignRef, 
 						   vector< CRef< CBioseq > >&  bioseqVec);
 	static int GetAllIdsFromSeqEntry(CRef< CSeq_entry > seqEntry, 
 		vector< CRef< CSeq_id > >& slaveIds, bool pdbOnly=false);
