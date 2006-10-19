@@ -47,6 +47,8 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
+#include <objmgr/scope.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -187,6 +189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/19 17:08:33  todorov
+* + #include <objmgr/scope.hpp>
+*
 * Revision 1.1  2006/10/17 19:21:47  todorov
 * Initial revision.
 *
