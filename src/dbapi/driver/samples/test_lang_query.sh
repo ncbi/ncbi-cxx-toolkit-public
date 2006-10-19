@@ -210,7 +210,7 @@ EOF
 
                     # Do not run dbapi_testspeed with MOZART and BARTOK
                     cmd="dbapi_bcp -lb random -d $driver -S $server"
-                    if test $server != "MOZART" -a $server != "BARTOK" ; then 
+                    if test $driver != "ftds64_ctlib" ; then 
                         RunSimpleTest "dbapi_bcp"
                     else
                         sum_list="$sum_list XXX_SEPARATOR #  $cmd (Skipped. It causes deadlocks.)"
