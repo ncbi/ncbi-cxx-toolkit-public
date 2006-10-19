@@ -152,6 +152,21 @@ namespace util
         return strncmp(str1, (const char*)str2, count);
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    inline
+    int strcmp(const char* str1, const char* str2)
+    {
+        return ::strcmp(str1, str2);
+    }
+
+#ifdef HAVE_WSTRING
+    inline
+    int strcmp(const wchar_t* str1, const wchar_t* str2)
+    {
+        return ::wcscmp(str1, str2);
+    }
+#endif
+
 }
 
 
@@ -184,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/10/19 16:44:07  ssikorsk
+ * + util::strcmp
+ *
  * Revision 1.4  2006/09/18 15:33:34  ssikorsk
  * Added new constructors to CODBCString.
  *
