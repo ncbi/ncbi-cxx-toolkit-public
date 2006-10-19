@@ -28,7 +28,8 @@
  */
 
 /** @file blast_results.hpp
- * Container for data returned from a blast search (besides alignments)
+ * Definition of classes which constitute the results of running a BLAST
+ * search
  */
 
 #ifndef ALGO_BLAST_API___BLAST_RESULTS_HPP
@@ -39,13 +40,12 @@
 #include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/api/blast_aux.hpp>
 
-BEGIN_NCBI_SCOPE
-
 /** @addtogroup AlgoBlast
  *
  * @{
  */
 
+BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Class used to return ancillary data from a blast search,
@@ -296,21 +296,7 @@ private:
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
+
 /* @} */
-
-/*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.2  2006/10/19 17:45:36  camacho
-* minor changes
-*
-* Revision 1.1  2006/10/19 15:20:55  papadopo
-* Classes for retrieving results from blast searches
-*
-*
-* ===========================================================================
-*/
-
 
 #endif /* ALGO_BLAST_API___BLAST_RESULTS_HPP */
