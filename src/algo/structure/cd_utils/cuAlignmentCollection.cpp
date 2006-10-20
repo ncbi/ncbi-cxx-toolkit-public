@@ -442,10 +442,12 @@ bool   AlignmentCollection::GetBioseqForRow(int row, CRef< CBioseq >& bioseq)
 		CRef< CSeq_id >  SeqID;
 		GetSeqIDForRow(row, SeqID);
 		bool gotit = m_seqTable.findSequence(SeqID, bioseq);
-		/*
-		CCdCore* myCd = m_rowSources.findEntry(row).cd;
-		int seqIndex = myCd->GetSeqIndex(SeqID);
-		bool gotit = myCd->GetBioseqForIndex(seqIndex, bioseq);*/
+		if(!gotit)
+		{
+			CCdCore* myCd = m_rowSources.findEntry(row).cd;
+			int seqIndex = myCd->GetSeqIndex(SeqID);
+			gotit = myCd->GetBioseqForIndex(seqIndex, bioseq);
+		}
 		m_bioseqs[row] = bioseq;
 		return gotit;
 	}
