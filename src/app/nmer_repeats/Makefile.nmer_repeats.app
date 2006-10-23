@@ -6,7 +6,7 @@
 APP = nmer_repeats
 SRC = nmer_repeats
 LIB = xalgoseq xalnmgr tables xregexp $(PCRE_LIB) xobjread creaders xobjutil \
-      $(OBJMGR_LIBS)
+      taxon1 $(OBJMGR_LIBS)
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)

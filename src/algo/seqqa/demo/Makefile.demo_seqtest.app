@@ -5,7 +5,7 @@ ASN_DEP = seq
 APP = demo_seqtest
 SRC = demo_seqtest
 LIB = xalgoseqqa xalgoseq xobjutil seqtest xalgognomon entrez2cli entrez2 \
-	xalnmgr tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+	xalnmgr tables xregexp taxon1 $(PCRE_LIB) $(OBJMGR_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
