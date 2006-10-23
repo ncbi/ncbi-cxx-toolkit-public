@@ -4269,7 +4269,7 @@ extern int/*bool*/ SOCK_isip(const char* host)
             if (n <= 1  ||  n > 4)
                 return 0/*false*/;
             errno = 0;
-            v = strtol(dot ? dot + 1 : host, 0, &e);
+            v = strtol(dot ? dot + 1 : host, &e, 0);
             if (errno  ||  e != &host[i]  ||  v < 0  ||  v > 255)
                 return 0/*false*/;
             dot = &host[i];
@@ -4595,6 +4595,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.193  2006/10/23 21:16:40  lavr
+ * Fix SOCK_isip() [strtol() has got arguments in order]
+ *
  * Revision 6.192  2006/10/23 20:54:51  lavr
  * +SOCK_isip()
  *
