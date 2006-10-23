@@ -59,11 +59,11 @@ template <class TAlnVector,
 class CAlnSeqIdVector
 {
 public:
-    CAlnSeqIdVector(const TAlnVector& aln_container,
+    CAlnSeqIdVector(const TAlnVector& aln_vector,
                     TSeqIdPtrComp& seq_id_ptr_comp) :
-        m_AlnContainer(aln_container),
+        m_AlnVector(aln_vector),
         m_Comp(seq_id_ptr_comp),
-        m_Size(m_AlnContainer.size()),
+        m_Size(m_AlnVector.size()),
         m_AlnSeqIdVector(m_Size),
         m_SeqIdsExtract(m_Comp)
     {
@@ -75,7 +75,7 @@ public:
     {
         _ASSERT(aln_idx < m_Size);
         if (m_AlnSeqIdVector[aln_idx].empty()) {
-            m_SeqIdsExtract(*m_AlnContainer[aln_idx],
+            m_SeqIdsExtract(*m_AlnVector[aln_idx],
                             m_AlnSeqIdVector[aln_idx]);
             _ASSERT( !m_AlnSeqIdVector[aln_idx].empty() );
         }
@@ -94,7 +94,7 @@ public:
     }
 
 private:
-    const TAlnVector& m_AlnContainer;
+    const TAlnVector& m_AlnVector;
     TSeqIdPtrComp& m_Comp;
     const size_t m_Size;
     mutable TAlnSeqIdVector m_AlnSeqIdVector;
@@ -260,6 +260,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/10/23 17:17:12  todorov
+* name change AlnContainer -> AlnVector, since random access is required.
+*
 * Revision 1.3  2006/10/19 17:08:12  todorov
 * - #include <objtools/alnmgr/seqid_comp.hpp>
 *
