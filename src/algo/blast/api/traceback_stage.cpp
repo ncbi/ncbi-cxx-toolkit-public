@@ -326,12 +326,23 @@ CBlastTracebackSearch::Run()
     
     vector< CRef<CBlastAncillaryData> > summaries;
     
-    for(unsigned i = 0; i < aligns.size(); i++) {
+    if (is_phi) {
         CRef<CBlastAncillaryData> s(new CBlastAncillaryData(
-                                    m_OptsMemento->m_ProgramType, i,
+                                    m_OptsMemento->m_ProgramType, 0,
                                     m_InternalData->m_ScoreBlk->GetPointer(),
                                     m_InternalData->m_QueryInfo));
-        summaries.push_back(s);
+        
+        for(unsigned i = 0; i < aligns.size(); i++) {
+            summaries.push_back(s);
+        }
+    } else {
+        for(unsigned i = 0; i < aligns.size(); i++) {
+            CRef<CBlastAncillaryData> s(new CBlastAncillaryData(
+                                        m_OptsMemento->m_ProgramType, i,
+                                        m_InternalData->m_ScoreBlk->GetPointer(),
+                                        m_InternalData->m_QueryInfo));
+            summaries.push_back(s);
+        }
     }
     
     // The preliminary stage also produces errors and warnings; they
