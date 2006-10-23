@@ -1452,13 +1452,20 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>phosphorylation of C</MSModSpec_name>
+    <MSModSpec_name>phosphorylation with neutral loss on C</MSModSpec_name>
     <MSModSpec_monomass>79.966331</MSModSpec_monomass>
     <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>C</MSModSpec_residues_E>
     </MSModSpec_residues>
+    <MSModSpec_neutralloss>
+        <MSMassSet>
+            <MSMassSet_monomass>97.976896</MSMassSet_monomass>
+            <MSMassSet_averagemass>97.9952</MSMassSet_averagemass>
+            <MSMassSet_n15mass>0</MSMassSet_n15mass>
+        </MSMassSet>
+    </MSModSpec_neutralloss>
   </MSModSpec>
   <MSModSpec>
     <MSModSpec_mod>
@@ -1467,13 +1474,20 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>phosphorylation of D</MSModSpec_name>
+    <MSModSpec_name>phosphorylation with neutral loss on D</MSModSpec_name>
     <MSModSpec_monomass>79.966331</MSModSpec_monomass>
     <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>D</MSModSpec_residues_E>
     </MSModSpec_residues>
+    <MSModSpec_neutralloss>
+        <MSMassSet>
+            <MSMassSet_monomass>97.976896</MSMassSet_monomass>
+            <MSMassSet_averagemass>97.9952</MSMassSet_averagemass>
+            <MSMassSet_n15mass>0</MSMassSet_n15mass>
+        </MSMassSet>
+    </MSModSpec_neutralloss>
   </MSModSpec>
   <MSModSpec>
     <MSModSpec_mod>
@@ -1482,13 +1496,20 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>phosphorylation of H</MSModSpec_name>
+    <MSModSpec_name>phosphorylation with neutral loss on H</MSModSpec_name>
     <MSModSpec_monomass>79.966331</MSModSpec_monomass>
     <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
     <MSModSpec_residues>
       <MSModSpec_residues_E>H</MSModSpec_residues_E>
     </MSModSpec_residues>
+    <MSModSpec_neutralloss>
+        <MSMassSet>
+            <MSMassSet_monomass>97.976896</MSMassSet_monomass>
+            <MSMassSet_averagemass>97.9952</MSMassSet_averagemass>
+            <MSMassSet_n15mass>0</MSMassSet_n15mass>
+        </MSMassSet>
+    </MSModSpec_neutralloss>
   </MSModSpec>
   <MSModSpec>
     <MSModSpec_mod>
@@ -1788,7 +1809,7 @@
      <MSModSpec_type>
        <MSModType value="modaa">0</MSModType>
      </MSModSpec_type>
-     <MSModSpec_name>phosphorylation of S with neutral loss</MSModSpec_name>
+     <MSModSpec_name>phosphorylation with neutral loss on S</MSModSpec_name>
      <MSModSpec_monomass>79.966331</MSModSpec_monomass>
      <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
      <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1810,7 +1831,7 @@
      <MSModSpec_type>
        <MSModType value="modaa">0</MSModType>
      </MSModSpec_type>
-     <MSModSpec_name>phosphorylation of T with neutral loss</MSModSpec_name>
+     <MSModSpec_name>phosphorylation with neutral loss on T</MSModSpec_name>
      <MSModSpec_monomass>79.966331</MSModSpec_monomass>
      <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
      <MSModSpec_n15mass>0</MSModSpec_n15mass>
