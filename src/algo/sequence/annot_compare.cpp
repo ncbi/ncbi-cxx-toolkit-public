@@ -235,7 +235,6 @@ CAnnotCompare::CompareFeats(const CSeq_feat& feat1,
         CSeqVector v2(feat2.GetProduct(), scope2);
         CSeqVector_CI v1_iter = v1.begin();
         CSeqVector_CI v2_iter = v2.begin();
-        TCompareFlags seq_state = 0;
         for ( ;  v1_iter != v1.end()  &&  v2_iter != v2.end();  ++v1_iter, ++v2_iter) {
             if (*v1_iter != *v2_iter) {
                 loc_state |= eSequence_DifferentProduct;
@@ -259,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/10/23 14:54:35  dicuccio
+ * Remove unused variable
+ *
  * Revision 1.1  2006/07/31 18:02:53  dicuccio
  * Initial revision: split out from annotation comparison widget
  *
