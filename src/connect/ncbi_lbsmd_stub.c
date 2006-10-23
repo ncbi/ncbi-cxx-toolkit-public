@@ -57,12 +57,6 @@ extern ESwitch LBSMD_KeepHeapAttached(ESwitch sw/*ignored*/)
     return eOff;
 }
 
-/*ARGSUSED*/ /*DEPRECATED*/
-extern ESwitch LBSM_KeepHeapAttached(ESwitch sw/*ignored*/)
-{
-    return eOff;
-}
-
 
 /*ARGSUSED*/
 extern HEAP LBSMD_GetHeapCopy(TNCBI_Time time/*ignored*/)
@@ -102,6 +96,9 @@ int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2006/10/23 21:17:34  lavr
+ * -LBSM_KeepHeapAttached (has been deprecated a long ago)
+ *
  * Revision 6.10  2006/03/06 20:28:21  lavr
  * Comments;  use proper LBSM_HINFO in all getters
  *
