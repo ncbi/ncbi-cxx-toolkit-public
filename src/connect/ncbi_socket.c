@@ -4250,6 +4250,36 @@ extern int SOCK_ntoa(unsigned int host,
 }
 
 
+extern int/*bool*/ SOCK_isip(const char* host)
+{
+    size_t i, len = strlen(host);
+    const char* dot = 0;
+    int dots = 0;
+
+    if (len > 15)
+        return 0/*longer than the longest 255.255.255.255*/;
+    for (i = 0;  i < len;  i++) {
+        if (host[i] == '.') {
+            size_t n;
+            char* e;
+            long v;
+            if (i == 0  ||  ++dots > 3)
+                return 0/*false*/;
+            n = (size_t)(&host[i] - (dot ? dot : host - 1));
+            if (n <= 1  ||  n > 4)
+                return 0/*false*/;
+            errno = 0;
+            v = strtol(dot ? dot + 1 : host, 0, &e);
+            if (errno  ||  e != &host[i]  ||  v < 0  ||  v > 255)
+                return 0/*false*/;
+            dot = &host[i];
+        } else if (!isdigit((unsigned char) host[i]))
+            return 0/*false*/;
+    }
+    return !(dots < 3);
+}
+
+
 extern unsigned int SOCK_HostToNetLong(unsigned int value)
 {
     return htonl(value);
@@ -4565,6 +4595,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.192  2006/10/23 20:54:51  lavr
+ * +SOCK_isip()
+ *
  * Revision 6.191  2006/09/06 15:25:31  lavr
  * Allow silent closure of sockets after the socket API having been finalized
  *
