@@ -107,6 +107,7 @@
  *
  *  SOCK_gethostname
  *  SOCK_ntoa
+ *  SOCK_isip
  *  SOCK_HostToNetShort
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
@@ -162,38 +163,45 @@ typedef struct SOCK_tag*  SOCK;  /* socket:  handle                     */
 
 
 /******************************************************************************
- *  Multi-Thread safety
+ * Multi-Thread safety
  *
- * If you are using this API in a multi-thread application, and there is
+ * If you are using this API in a multi-threaded application, and there is
  * more than one thread using this API, it is safe to call SOCK_InitializeAPI()
  * explicitly in the beginning of your main thread, before you run any other
  * threads, and to call SOCK_ShutdownAPI() after all threads are exited.
  *
  * As soon as the API is initialized it becomes relatively MT-safe, however
- * you still must not operate with the same LSOCK or SOCK objects from
- * different threads simultaneously.
+ * you still must not operate on same LSOCK or SOCK objects from different
+ * threads simultaneously.
  *
  * A MUCH BETTER WAY of dealing with this issue is to provide your own MT
  * locking callback (see CORE_SetLOCK in "ncbi_core.h"). This will also
  * guarantee the proper MT protection should some other SOCK functions
  * start to access any static data in the future.
+ *
+ * @sa
+ *  CORE_SetLOCK
  */
 
 
 
 /******************************************************************************
- *   Error & Data Logging
+ *  Error & Data Logging
  *
- * @li <b>NOTE:</b>  Use CORE_SetLOG() from "ncbi_core.h" to setup the log handler.
+ * @li <b>NOTE:</b>  Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
+ *
+ * @sa
+ *  CORE_SetLOG
  */
 
-
-/** By default ("log" == eDefault, which is eOff), the data is not logged.
+/** By default ("log" == eDefault, which is eOff), data are not logged.
  * @param log
  *  To start logging the data, call this func with "log" == eOn.
  *  To stop  logging the data, call this func with "log" == eOff.
  * @return
  *  Prior setting.
+ * @sa
+ *  SOCK_SetDataLogging
  */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLoggingAPI
 (ESwitch log
@@ -202,12 +210,15 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLoggingAPI
 
 /** Control the data logging for socket "sock" individually.
  * @param sock
- *  [in]  socket handle 
+ *  [in]  socket handle
  * @param log
+ *  [in]  requested data logging
  *  To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
  *  call this function with "log" == eDefault.
  * @return
- *  Return prior setting.
+ *  Prior setting.
+ * @sa
+ *  SOCK_SetDataLoggingAPI, SOCK_Create, DSOCK_Create
  */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
 (SOCK    sock,
@@ -220,24 +231,30 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
  *   I/O restart on signals
  */
 
-/** By default ("on_off" == eDefault,eOff), I/O is restartable if interrupted.
+/** Control restartability of I/O interrupted by signals.
+ * By default ("on_off" == eDefault,eOff), I/O is restartable if interrupted.
  * @param on_off
- * 
+ *  [in]  eOn to cancel I/O on signals;  eOff to restart
  * @return
  *  Prior setting.
+ * @sa
+ *  SOCK_SetInterruptOnSignal
  */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignalAPI
 (ESwitch on_off
  );
 
 
-/** Control sockets individually. eDefault causes the use of global API flag.
+/** Control restartability of I/O interrupted by signals on a per-socket basis.
+ * eDefault causes the use of global API flag.
  * @param sock
- *  [in]  socket handle 
+ *  [in]  socket handle
  * @param on_off
- *
+ *  [in]  per-socket I/O restart behavior on signals
  * @return
  *  Prior setting.
+ * @sa
+ *  SOCK_SetInterruptOnSignalAPI, SOCK_Create, DSOCK_Create
  */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
 (SOCK    sock,
@@ -250,26 +267,29 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
  *   Address reuse: EXPERIMENTAL and may be removed in the upcoming releases!
  */
 
-
-/* By default ("on_off" == eDefault,eOff), address is not marked for reuse
- * in SOCK, but is always reused for LSOCK.
+/** Control address reuse for socket addresses taken by the API.
+ * By default ("on_off" == eDefault,eOff), address is not marked
+ * for reuse in SOCK, but is always reused for LSOCK.
  * @param on_off
- *
+ *  [in]  whether to turn on (eOn), turn off (eOff), or use default (eDefault)
  * @return
  *  Prior setting.
+ * @sa
+ *  SOCK_SetReuseAddress
  */
 extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
 (ESwitch on_off
  );
 
 
-/** Control sockets individually (Note: only boolean value is available here.)
+/** Control reuse of socket addresses on per-socket basis
+ * Note: only a boolean parameter value is can be used here.
  * @param sock
- *  [in]  socket handle 
+ *  [in]  socket handle
  * @param on_off
- *   
- * @return
- *  No return value is available.
+ *  [in]  whether to reuse the address (true, non-zero) or not (false, zero)
+ * @sa
+ *  SOCK_SetReuseAddressAPI, SOCK_Create, DSOCK_Create
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
 (SOCK         sock,
@@ -281,12 +301,16 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
  *  API Initialization and Shutdown/Cleanup
  */
 
-
-/**
+/** This is a helper call that can improve I/O behavior.
  * @param timeout
- *
+ *  [in]  Break down long waits on I/O into smaller chunks of at most "timeout"
+ *  duration each.  This can help recover "hanging" sockets from indefinite
+ *  wait and allow them to report an exceptional I/O condition.
+ * @sa
+ *  SOCK_Wait, SOCK_Poll
  */
-extern NCBI_XCONNECT_EXPORT const STimeout*SOCK_SetSelectInternalRestartTimeout
+extern NCBI_XCONNECT_EXPORT const STimeout*
+SOCK_SetSelectInternalRestartTimeout
 (const STimeout* timeout);
 
 
@@ -305,49 +329,57 @@ extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
  * @li <b>NOTE:</b>
  *  Usually, SOCK API does not require an explicit initialization -- as it is
  *  guaranteed to initialize itself automagically, in one of API functions,
- *  when necessary. Yet, see the "Multi Thread safety" remark above.
+ *  when necessary.  Yet, see the "Multi Thread safety" remark above.
  * @li <b>NOTE:</b>
  *  This call, when used for the very first time in the application, enqueues
  *  SOCK_ShutdownAPI() to be called upon application exit on plaftorms that
  *  provide this functionality. In any case, the application can opt for
  *  explicit SOCK_ShutdownAPI() call when it is done with all sockets.
+ * @sa
+ *  SOCK_ShutdownAPI
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_InitializeAPI(void);
 
 
 /** Cleanup; destroy all internal/system data & resources used by the SOCK API.
  * ATTENTION:  no function from the SOCK API should be called after this call!
- * @li <b>NOTE:</b> you can safely call it more than once; just, all calls after the first
- *       one will have no result. 
+ * @li <b>NOTE:</b>
+ *  You can safely call it more than once; just, all calls after the first
+ *  one will have no result. 
+ * @sa
+ *  SOCK_InitializeAPI
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 
 
 
 /******************************************************************************
- *  LISTENING SOCKET
+ *  LISTENING SOCKET [SERVER-side]
  */
 
 typedef enum {
-    fLSCE_LogOff     = eOff,      /* logging is inherited in Accept()ed SOCKs*/
-    fLSCE_LogOn      = eOn,       /*                    -"-                  */
-    fLSCE_LogDefault = eDefault,  /*                    -"-                  */
-    fLSCE_BindAny    = 0,         /* bind to 0.0.0.0, default                */
-    fLSCE_BindLocal  = 0x10       /* bind to 127.0.0.1 only                  */
+    fLSCE_LogOff     = eOff,     /** logging is inherited in Accept()ed SOCKs*/
+    fLSCE_LogOn      = eOn,      /**                    -"-                  */
+    fLSCE_LogDefault = eDefault, /**                    -"-                  */
+    fLSCE_BindAny    = 0,        /** bind to 0.0.0.0 (i.e. any), default     */
+    fLSCE_BindLocal  = 0x10      /** bind to 127.0.0.1 only                  */
 } FLSCE_Flags;
 typedef unsigned int TLSCE_Flags;
 
 /** [SERVER-side]  Create and initialize the server-side(listening) socket
  * (socket() + bind() + listen())
- * @li <b>NOTE:</b> on some systems, "backlog" can be silently limited down to 128 (or 5).
  * @param port
- *  [in] the port to listen at
+ *  [in]  the port to listen at
  * @param backlog
- *  [in] maximal # of pending connections
+ *  [in]  maximal # of pending connections
+ *  <b>NOTE:</b> on some systems, "backlog" can be silently limited
+ *  down to 128 (or 5).
  * @param lsock
  *  [out] handle of the created listening socket
  * @param flags
- *  [in] special modifiers
+ *  [in]  special modifiers
+ * @sa
+ *  LSOCK_Create, LSOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
 (unsigned short port,    
@@ -356,13 +388,19 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
  TLSCE_Flags    flags    
  );
 
-/**
+
+/** [SERVER-side]  Create and initialize the server-side(listening) socket
+ * Same as LSOCK_CreateEx called with the last argument provided as 0.
  * @param port
- *  [in] the port to listen at
+ *  [in]  the port to listen at
  * @param backlog
- *  [in] maximal # of pending connections
+ *  [in]  maximal # of pending connections
+ *  <b>NOTE:</b> on some systems, "backlog" can be silently limited
+ *  down to 128 (or 5).
  * @param lsock
  *  [out] handle of the created listening socket
+ * @sa
+ *  LSOCK_CreateEx, LSOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
 (unsigned short port,   
@@ -372,14 +410,17 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
 
 
 /** [SERVER-side]  Accept connection from a client.
- * @li <b>NOTE:</b> the "*timeout" is for this accept() only.  To set I/O timeout,
- *       use SOCK_SetTimeout();  all I/O timeouts are infinite by default.
  * @param lsock
- *  [in] handle of a listening socket
+ *  [in]  handle of a listening socket
  * @param timeout
- *  [in] timeout (infinite if NULL)
+ *  [in]  timeout (infinite if NULL)
+ *  <b>NOTE:</b> the provided "timeout" is for this accept() only.
+ *  To set I/O timeout on the resulted socket use SOCK_SetTimeout();
+ *  all I/O timeouts are infinite by default.
  * @param sock
- *  [out] handle of the created socket
+ *  [out] handle of the accepted socket
+ * @sa
+ *  SOCK_Create, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Accept
 (LSOCK           lsock,    
@@ -390,19 +431,24 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Accept
 
 /** [SERVER-side]  Close the listening socket, destroy relevant internal data.
  * @param lsock
- * 
+ *  [in]  listening socket handle to close
+ * The call invalidates the handle, so its further is not allowed.
+ * @sa
+ *  LSOCK_Create
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Close(LSOCK lsock);
 
 
-/* Get an OS-dependent native socket handle to use by platform-specific API.
- * FYI:  on MS-Windows it will be "SOCKET", on other platforms -- "int".
+/** Get an OS-dependent native socket handle to use by platform-specific API.
+ * FYI: on MS-Windows it will be "SOCKET", on other platforms -- "int".
  * @param lsock
  *  [in]  socket handle 
  * @param handle_buf
- *  Pointer to a memory area to put the socket's native OS handle at
+ *  [in]  pointer to a memory location to store the OS-dependent handle at
  * @param handle_size
  *  The exact(!) size of the expected OS handle
+ * @sa
+ *  SOCK_GetOSHandle
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
 (LSOCK  lsock,
@@ -416,20 +462,20 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
  *  SOCKET
  */
 
-
 /** [CLIENT-side]  Connect client to another(server-side, listening) socket
  * (socket() + connect() [+ select()])
  * Equivalent to SOCK_CreateEx(host, port, timeout, sock, 0, 0, eDefault).
  *
  * @param host
- *  [in] host to connect to 
+ *  [in]  host to connect to 
  * @param port
- *  [in] port to connect to 
+ *  [in]  port to connect to 
  * @param timeout
- *  [in] the connect timeout (infinite if NULL)
+ *  [in]  the connect timeout (infinite if NULL)
  * @param sock
  *  [out] handle of the created socket
- * @sa SOCK_CreateEx()
+ * @sa
+ *  SOCK_CreateEx, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
 (const char*     host,   
@@ -443,20 +489,21 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * (socket() + connect() [+ select()])
  *
  * @param host
- *  [in] Host to connect to 
+ *  [in]  host to connect to 
  * @param port
- *  [in] port to connect to 
+ *  [in]  port to connect to 
  * @param timeout
- *  [in] the connect timeout (infinite if NULL)
+ *  [in]  the connect timeout (infinite if NULL)
  * @param sock
  *  [out] handle of the created socket
  * @param init_data
- *  [in] initial output data segment (may be NULL)
+ *  [in]  initial output data segment (may be NULL)
  * @param init_size
- *  [in] size of initial data segment (may be 0) 
+ *  [in]  size of initial data segment (may be 0) 
  * @param log
- *  [in] whether to do logging on this socket
- * @sa SOCK_Create()
+ *  [in]  whether to do logging on this socket
+ * @sa
+ *  SOCK_Create, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
 (const char*     host,    
@@ -468,26 +515,28 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
  ESwitch         log       
  );
 
-/**
- * @sa SOCK_CreateOnTopEx()
+
+/** SOCK_Close behavior for SOCKs created on top of OS handles.
+ * @sa
+ *  SOCK_Close, SOCK_CreateOnTop, SOCK_CreateOnTopEx
  */
 typedef enum {
-    eSCOT_KeepOnClose,    /** Do not close "handle" on SOCK_Close() */
-    eSCOT_CloseOnClose    /** Do close "handle" on SOCK_Close() */
+    eSCOT_KeepOnClose,    /** Do not close "handle" on SOCK_Close */
+    eSCOT_CloseOnClose    /** Do close "handle" on SOCK_Close     */
 } ESCOT_OnClose;
 
 
 /** [SERVER-side]  Create a socket on top of OS-dependent "handle".
- *
- * Equivalent of SOCK_CreateOnTopEx(handle, handle_size, sock,
- *                                   0, 0, eDefault, eSCOT_CloseOnClose).
+ * Equivalent to SOCK_CreateOnTopEx(handle, handle_size, sock,
+ *                                  0, 0, eDefault, eSCOT_CloseOnClose).
  * @param handle
- *  [in] OS-dependent "handle" to be converted
+ *  [in]  OS-dependent "handle" to be converted
  * @param handle_size
- *  [in] "handle" size
+ *  [in]  "handle" size
  * @param sock
  *  [out] SOCK built on top of OS "handle"
- * @sa SOCK_CreateOnTopEx()
+ * @sa
+ *  SOCK_CreateOnTopEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
 (const void*   handle,      
@@ -497,31 +546,32 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
 
 
 /** [SERVER-side]  Create a socket on top of OS-dependent "handle"
- * (file descriptor on Unix, SOCKET on MS-Windows). Returned socket
+ * (file descriptor on Unix, SOCKET on MS-Windows).  Returned socket
  * is not reopenable to its default peer (SOCK_Reconnect may not specify
  * zeros for the connection point).
  * All timeouts are set to default [infinite] values.
- * SOCK_Close() will close the "handle" only if the "close_on_close"
+ * SOCK_Close will close the "handle" only if the "close_on_close"
  * parameter is passed non-zero (eSCOT_CloseOnClose).
  * @param handle
- *  [in] OS-dependent "handle" to be converted
+ *  [in]  OS-dependent "handle" to be converted
  * @param handle_size
- *  [in] "handle" size
+ *  [in]  "handle" size
  * @param sock
  *  [out] SOCK built on top of OS "handle"
  * @param init_data
- *  [in] initial output data segment (ok NULL)
+ *  [in]  initial output data segment (may be NULL)
  * @param init_size
- *  [in] size of initial data segment (ok 0)  
+ *  [in]  size of the initial data segment (may be 0)
  * @param log
- *  [in] data logging for the resulting SOCK 
+ *  [in]  data logging for the resulting SOCK 
  * @param on_close
- *  [in] if to keep "handle" in SOCK_Close()
+ *  [in]  if to keep "handle" in SOCK_Close
  * @return 
- *  Return eIO_Success on success; otherwise: eIO_Closed if the "handle" does
- *  not refer to an open socket [but e.g. to a normal file or a pipe];
+ *  Return eIO_Success on success;  otherwise: eIO_Closed if the "handle"
+ *  does not refer to an open socket [but e.g. to a normal file or a pipe];
  *  other error codes in case of other errors.
- * @sa SOCK_CreateOnTop()
+ * @sa
+ *  SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
 (const void*   handle,      
@@ -541,8 +591,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
  * HINT:  if "host" is NULL then connect to the same host address as before;
  *        if "port" is zero then connect to the same port # as before.
  *
- * @li <b>NOTE 1:</b> "new" socket inherits the old I/O timeouts.
- * @li <b>NOTE 2:</b> the call is applicable to stream [not datagram] sockets only.
+ * @li <b>NOTE 1:</b> "new" socket inherits old I/O timeouts;
+ * @li <b>NOTE 2:</b> the call is only applicable to stream [not datagram] sockets.
  * @li <b>NOTE 3:</b> "timeout"==NULL is infinite; "timeout"=={0,0} causes no wait for
  *        connection to be established and to return immediately.
  * @li <b>NOTE 4:</b> UNIX sockets can only be reconnected to the same file thus both
@@ -1281,8 +1331,8 @@ extern NCBI_XCONNECT_EXPORT int/**bool*/ SOCK_IsUNIX(SOCK sock);
  *  On error "name" returned emptied (name[0] == '\0').
  */
 extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
-(char*  name,          
- size_t namelen        
+(char*  name,
+ size_t namelen
  );
 
 
@@ -1298,9 +1348,20 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  *  inet_ntoa(). On error "buf" returned emptied (buf[0] == '\0').
  */
 extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
-(unsigned int addr,     
- char*        buf,      
- size_t       buflen    
+(unsigned int addr,
+ char*        buf,
+ size_t       buflen
+ );
+
+
+/**
+ * @param host
+ *  [in] host name to check against being a plain IP address
+ * @return
+ *  Non-zero (true) if given string is an IP address, zero (false) otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip
+(const char* host
  );
 
 
@@ -1437,6 +1498,9 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.62  2006/10/23 20:53:19  lavr
+ * +SOCK_isip;  some inline doc formatting (not yet done completely)
+ *
  * Revision 6.61  2006/03/16 19:12:21  ucko
  * Fix SOCK_CreateOnTopEx's prototype, which accidentally lost one
  * argument in the previous commit.
