@@ -760,7 +760,8 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 				else
 				{
 					cd->AddPendingSeqAlign(*(it));
-					if (cd->GetSeqIndex(seqID) < 0)
+					//just add sequence now.  redundanticy will be removed later
+					//if (cd->GetSeqIndex(seqID) < 0)
 						cd->AddSequence(seqEntry);
 				}
 			}
@@ -768,8 +769,8 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 		else
 			m_stats.noSeq.push_back(gi);
 		completed++;
-		//if ((completed % 100) == 0)
-		//	progbar.Update(100*completed/m_stats.numBlastHits);
+		if ((completed % 500) == 0)
+			LOG_POST("Added "<<completed<<" of "<<m_stats.numBlastHits<<" hits.");
 	}
 
     //  always keep normal rows w/ automatic NR
