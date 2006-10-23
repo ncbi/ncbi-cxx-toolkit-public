@@ -226,9 +226,9 @@ public:
 
     CConn_HttpStream
     (const string&   url,
-     THCC_Flags      flags       = fHCC_AutoReconnect,
-     const STimeout* timeout     = kDefaultTimeout,
-     streamsize      buf_size    = kConn_DefaultBufSize
+     THCC_Flags      flags           = fHCC_AutoReconnect,
+     const STimeout* timeout         = kDefaultTimeout,
+     streamsize      buf_size        = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
@@ -241,7 +241,7 @@ public:
      );
 
     CConn_HttpStream
-    (const SConnNetInfo* net_info    = NULL,
+    (const SConnNetInfo* net_info    = 0,
      const string&       user_header = kEmptyStr,
      THCC_Flags          flags       = fHCC_AutoReconnect,
      const STimeout*     timeout     = kDefaultTimeout,
@@ -430,6 +430,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.46  2006/10/23 20:11:35  lavr
+ * Formatting (indentation)
+ *
  * Revision 6.45  2006/10/23 18:28:03  vakatov
  * Reinstate CConn_HttpStream(url, flags, ....)
  *
