@@ -131,7 +131,13 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
         // index 0 = query, index 1 = subject
         const int query_index = 0;
         
+        if (align_set->Get().empty())
+            return retval;
+        
         CRef<CSeq_align> first_disc_align = align_set->Get().front();
+        
+        if (first_disc_align->GetSegs().GetDisc().Get().empty())
+            return retval;
         
         CRef<CSeq_align> first_align = 
             first_disc_align->GetSegs().GetDisc().Get().front();
