@@ -177,6 +177,25 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
 
 
 CConn_HttpStream::CConn_HttpStream(const string&       url,
+                                   THCC_Flags          flags,
+                                   const STimeout*     timeout,
+                                   streamsize          buf_size)
+    : CConn_IOStream(s_HttpConnectorBuilder(0,
+                                            url.c_str(),
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            flags,
+                                            timeout),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
+CConn_HttpStream::CConn_HttpStream(const string&       url,
                                    const SConnNetInfo* net_info,
                                    const string&       user_header,
                                    THCC_Flags          flags,
@@ -431,6 +450,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2006/10/23 18:28:28  vakatov
+ * Reinstate CConn_HttpStream(url, flags, ....)
+ *
  * Revision 6.59  2006/10/18 17:24:48  lavr
  * CConn_HttpStream(url,...) ctor to take net_info and user_header
  *
