@@ -208,9 +208,18 @@ void CConnection::SetTimeout(size_t nof_secs)
 {
 }
 
+
 void CConnection::SetTextImageSize(size_t nof_bytes)
 {
 }
+
+
+bool
+CConnection::IsMultibyteClientEncoding(void) const
+{
+    return GetCDriverContext().IsMultibyteClientEncoding();
+}
+
 
 END_SCOPE(impl)
 
@@ -219,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/10/23 22:01:36  ssikorsk
+ * + IsMultibyteClientEncoding()
+ *
  * Revision 1.5  2006/09/13 19:48:56  ssikorsk
  * Implemented SetTimeout, SetTextImageSize for CConnection.
  *

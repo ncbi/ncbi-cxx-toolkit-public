@@ -172,6 +172,10 @@ public:
     {
         return m_ClientEncoding;
     }
+    bool IsMultibyteClientEncoding(void) const
+    {
+        return (GetClientEncoding() == eEncoding_UTF8);
+    }
 
     size_t GetMaxTextImageSize(void) const
     {
@@ -241,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/23 22:00:57  ssikorsk
+ * + IsMultibyteClientEncoding()
+ *
  * Revision 1.2  2006/09/13 19:25:21  ssikorsk
  * Added new class CWinSock;
  * Added members m_ClientCharset, m_MaxTextImageSize, and m_ClientEncoding to CDriverContext;
