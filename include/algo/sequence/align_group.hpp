@@ -128,14 +128,6 @@ public:
                        const string&     annot_base_name,
                        objects::CScope&  scope);
 
-    /// Subdivide based on an Entrez query
-    void GroupByEntrezQuery(const TAlignList& aligns,
-                            TAnnotList&       align_groups,
-                            const string&     annot_base_name,
-                            objects::CScope&  scope,
-                            const string&     query,
-                            const string&     db);
-
     /// @}
 
 
@@ -169,6 +161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/10/23 15:05:08  dicuccio
+ * Drop unimplemented function
+ *
  * Revision 1.1  2006/10/23 14:54:10  dicuccio
  * Moved over from gui plugin tree
  *
