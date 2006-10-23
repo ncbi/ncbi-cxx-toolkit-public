@@ -86,6 +86,8 @@ public:
         return *m_DriverContext;
     }
 
+    bool IsMultibyteClientEncoding(void) const;
+
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
@@ -266,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/10/23 22:01:50  ssikorsk
+ * Added IsMultibyteClientEncoding()
+ *
  * Revision 1.8  2006/10/02 19:57:33  ssikorsk
  * Changed visibility of GetCDriverContext to public.
  *
