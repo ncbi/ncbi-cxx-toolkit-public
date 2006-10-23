@@ -709,30 +709,10 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
 
 static int/*bool*/ s_IsSufficientAddress(const char* addr)
 {
-    size_t i, len = strlen(addr);
-    int dots = 0, isip = 1;
-    const char* dot = 0;
-
-    for (i = 0; i < len; i++) {
-        if (addr[i] == '.') {
-            ++dots;
-            if (i  &&  dots <= 3) {
-                if (isip) {
-                    size_t n = (size_t)(&addr[i] - (dot ? dot : addr - 1));
-                    if (n <= 1  ||  n > 4)
-                        isip = 0;
-                }
-            } else
-                isip = 0;
-            dot = &addr[i];
-        } else if (!isdigit((unsigned char) addr[i]))
-            isip = 0;
-    }
-    if (dots < 3)
-        isip = 0;
-    if (dot == &addr[len - 1])
-        --dots;
-    return isip ? 1 : dots < 2 ? 0 : 1;
+    const char*c;
+    return (SOCK_isip(addr)  ||
+            ((c = strchr(addr, '.'))  != 0  &&  c[1]  &&
+             (c = strchr(c + 2, '.')) != 0  &&  c[1]));
 }
 
 
@@ -1795,6 +1775,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.113  2006/10/23 21:19:37  lavr
+ * s_IsSufficientAddress() to take advantage of SOCK_isip()
+ *
  * Revision 6.112  2006/10/16 14:34:55  lavr
  * Formatting of Khovaiko's addition
  *
