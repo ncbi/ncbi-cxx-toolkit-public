@@ -290,7 +290,9 @@ static EIO_Status s_FTPAbort(SFTPConnector*  xxx,
         return status == eIO_Success ? eIO_Unknown : status;
     }
     while (SOCK_Read(xxx->data, 0, 1024*1024/*drain up*/, 0, eIO_ReadPlain)
-           == eIO_Success);
+           == eIO_Success) {
+        continue;
+    }
     if (SOCK_Status(xxx->data, eIO_Read) == eIO_Closed) {
         SOCK_Close(xxx->data);
         xxx->data = 0;
@@ -745,6 +747,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2006/10/23 21:19:07  lavr
+ * Empty while() extended with a dummy continue (to avoid misplaced ; warning)
+ *
  * Revision 1.17  2006/01/27 17:01:19  lavr
  * Replace obsolete call names with current ones
  *
