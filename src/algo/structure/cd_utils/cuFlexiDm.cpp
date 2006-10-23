@@ -124,16 +124,16 @@ bool FlexiDm::ComputeMatrix(pProgressFunction pFunc) {
 void FlexiDm::GetPercentIdentities(pProgressFunction pFunc) 
 {
     int nrows = m_aligns->GetNumRows();
-    ResidueProfiles rp;
+    ResidueProfiles* rp = new ResidueProfiles();
     string mseq = m_aligns->GetSequenceForRow(0);
     for (int i = 1; i < nrows; i++)
     {
         string sseq = m_aligns->GetSequenceForRow(i);
         BlockModelPair bmp(m_aligns->getSeqAlign(i));
-        rp.addOneRow(bmp, mseq, sseq);
+        rp->addOneRow(bmp, mseq, sseq);
     }
-    ResidueMatrix rm(nrows);
-    rp.traverseColumnsOnMaster(rm);
+    ResidueMatrix * rm = new ResidueMatrix(nrows);
+    rp->traverseColumnsOnMaster(*rm);
 
     int Identity, TotalAligned;
     int count = 0;
@@ -143,13 +143,13 @@ void FlexiDm::GetPercentIdentities(pProgressFunction pFunc)
     for (int j=0; j<nrows; j++) 
     {
         m_Array[j][j] = 0.0;
-		ResidueMatrix::RowContent& rc1 = rm.getRow(j);
+		ResidueMatrix::RowContent& rc1 = rm->getRow(j);
         // for each other row in the alignment
         for (int k=j+1; k<nrows; k++) 
         {			 
 			Identity = 0;
 			TotalAligned = 0;
-			ResidueMatrix::RowContent& rc2 = rm.getRow(k);
+			ResidueMatrix::RowContent& rc2 = rm->getRow(k);
 		    for (int i = 0; i < rc1.size(); i++)
 			{
 				if (rc1[i].aligned && rc2[i].aligned)
@@ -166,6 +166,8 @@ void FlexiDm::GetPercentIdentities(pProgressFunction pFunc)
         pFunc(count, total);
     }
     assert(count == total);
+	delete rm;
+	delete rp;
 //    cout << "Total number rows:  " << nrows << "  Alignment length:  " << alignLen << endl;
 }
 

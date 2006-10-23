@@ -132,6 +132,7 @@ void SeqSwapper::makeClusters(int identityThreshold, vector< vector<int> * >& cl
 			clusters.push_back(rowids);
 		}
 	}
+	delete seqtree;
 }
 
 void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >& replacementPairs, set<int>& structs)
