@@ -630,6 +630,7 @@ public:
     /// empty str on err
     static string       gethostname  (void);
     static string       ntoa         (unsigned int  host);
+    bool                isip         (const string& host);
     /// empty str on err
     static string       gethostbyaddr(unsigned int  host);
     /// 0 on error
@@ -881,6 +882,12 @@ inline ESwitch CSocketAPI::SetReuseAddress(ESwitch reuse)
 }
 
 
+inline bool CSocketAPI::isip(const string& host)
+{
+    return bool(SOCK_isip(host.c_str()));
+}
+
+
 inline unsigned int CSocketAPI::HostToNetLong(unsigned int value)
 {
     return SOCK_HostToNetLong(value);
@@ -920,6 +927,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2006/10/23 20:53:46  lavr
+ * +CSocketAPI::isip()
+ *
  * Revision 6.48  2006/04/06 19:04:08  ucko
  * Correct sloppily word-wrapped comments.
  *
