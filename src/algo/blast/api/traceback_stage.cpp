@@ -256,7 +256,9 @@ CBlastTracebackSearch::Run()
 
     // For PHI BLAST we need to pass the pattern search items structure to the
     // traceback code
-    if (Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType)) {
+    bool is_phi = Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType);
+    
+    if (is_phi) {
         _ASSERT(m_InternalData->m_LookupTable);
         _ASSERT(m_DBscanInfo && m_DBscanInfo->m_NumPatOccurInDB != m_DBscanInfo->kNoPhiBlastPattern);
         phi_lookup_table = (SPHIPatternSearchBlk*) 
@@ -307,9 +309,17 @@ CBlastTracebackSearch::Run()
     
     vector< CConstRef<CSeq_id> > qlocs;
     
-    for(unsigned i = 0; i < aligns.size(); i++) {
-        CConstRef<CSeq_id> id(qdata->GetSeq_loc(i)->GetId());
-        qlocs.push_back(id);
+    if (is_phi) {
+        CConstRef<CSeq_id> id(qdata->GetSeq_loc(0)->GetId());
+        
+        for(unsigned i = 0; i < aligns.size(); i++) {
+            qlocs.push_back(id);
+        }
+    } else {
+        for(unsigned i = 0; i < aligns.size(); i++) {
+            CConstRef<CSeq_id> id(qdata->GetSeq_loc(i)->GetId());
+            qlocs.push_back(id);
+        }
     }
     
     // Collect summary data
