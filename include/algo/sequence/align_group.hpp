@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <memory>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -161,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/10/23 20:39:19  ucko
+ * +<memory> for auto_ptr<>
+ *
  * Revision 1.2  2006/10/23 15:05:08  dicuccio
  * Drop unimplemented function
  *
