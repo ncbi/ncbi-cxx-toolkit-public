@@ -112,6 +112,12 @@ public:
         eChangeFeatureLocation,
         eRemoveAnnot,
         eConvertFeature,
+        eRemoveComment,
+        eAddOrgMod,
+        eAddSubSource,
+        eChangeBioSourceGenome,
+        eChangeBioSourceOrigin,
+        eChangeBioSourceOther,
         // set when any other change is made.
         eChangeOther,
         
@@ -147,6 +153,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/10/24 12:12:19  bollin
+ * Added more change flags for ExtendedCleanup
+ *
  * Revision 1.4  2006/10/11 14:46:39  bollin
  * added more flags for ExtendedCleanup
  *
