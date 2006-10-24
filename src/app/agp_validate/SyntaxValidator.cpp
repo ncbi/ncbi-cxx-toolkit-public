@@ -125,7 +125,8 @@ void CAgpSyntaxValidator::EndOfObject(bool afterLastLine)
   if( IsGapType(prev_component_type) ) agpErr.Msg(
     // The previous line was a gap at the end of a scaffold & object
     CAgpErr::W_GapObjEnd, string(" ")+prev_object,
-    afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
+    AT_PrevLine
+    //afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
   );
 }
 
@@ -163,21 +164,34 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
 
   obj_begin = x_CheckIntField(
     dl.begin, "object_beg (column 2)" );
-  if( obj_begin && ( obj_end = x_CheckIntField(
-        dl.end, "object_end (column 3)"
-  ))){
-    if(new_obj && obj_begin != 1) {
+  if(new_obj) {
+    if(obj_begin != 1) {
       agpErr.Msg(CAgpErr::E_ObjMustBegin1,
         NcbiEmptyString,
         AT_ThisLine|AT_PrevLine
       );
     }
-
-    obj_range_len = x_CheckRange(
-      prev_end, obj_begin, obj_end,
-      "object_beg", "object_end", CAgpErr::E_ObjEndLtBegin);
-    prev_end = obj_end;
   }
+  else if(prev_end){
+    if(obj_begin != prev_end+1) {
+      agpErr.Msg(CAgpErr::E_ObjBegNePrevEndPlus1,
+        NcbiEmptyString,
+        AT_ThisLine|AT_PrevLine
+      );
+    }
+  }
+
+  obj_end = x_CheckIntField(dl.end, "object_end (column 3)");
+
+  if( obj_begin && obj_end){
+    if(obj_end < obj_begin) {
+      agpErr.Msg(CAgpErr::E_ObjEndLtBegin);
+    }
+    else {
+      obj_range_len = obj_end - obj_begin + 1;
+    }
+  }
+  prev_end = obj_end;
 
   if (part_num = x_CheckIntField(
     dl.part_num, "part_num (column 4)"
@@ -189,8 +203,7 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     prev_part_num = part_num;
   }
 
-  if(x_CheckValues(
-    m_ComponentTypeValues,
+  if(x_CheckValues( m_ComponentTypeValues,
     dl.component_type, "component_type (column 5)"
   )) {
     m_TypeCompCnt.add( dl.component_type );
@@ -240,13 +253,13 @@ void CAgpSyntaxValidator::x_OnGapLine(
     error = true;
   }
 
-  int gap_type = x_CheckValues(
-    m_GapTypes, dl.gap_type, "gap_type (column 7)");
+  int gap_type = x_CheckValues( m_GapTypes,
+    dl.gap_type, "gap_type (column 7)");
   int linkage = -1;
   bool endsScaffold = true;
   if( gap_type>=0 ) {
-    linkage = x_CheckValues(
-        m_LinkageValues, dl.linkage, "linkage (column 8)");
+    linkage = x_CheckValues( m_LinkageValues,
+      dl.linkage, "linkage (column 8)");
 
     if(linkage>=0) {
       string key = dl.gap_type + dl.linkage;
@@ -263,7 +276,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
           // Ok
         }
         else {
-          agpErr.Msg(CAgpErr::W_InvalidYes, dl.gap_type);
+          agpErr.Msg(CAgpErr::E_InvalidYes, dl.gap_type);
           error=true;
         }
       }
@@ -279,7 +292,8 @@ void CAgpSyntaxValidator::x_OnGapLine(
   //// does it follow another gap, is it the end of a scaffold.
   if(new_obj) {
     agpErr.Msg(CAgpErr::W_GapObjBegin, NcbiEmptyString,
-      AT_ThisLine|AT_PrevLine);
+      AT_ThisLine);
+      // AT_ThisLine|AT_PrevLine);
   }
   else if(IsGapType(prev_component_type)) {
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
@@ -318,8 +332,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
         ) && x_CheckIntField(
           dl.component_end,
           "component_end", NO_LOG
-        ) && x_CheckValues(
-          m_OrientaionValues,
+        ) && x_CheckValues( m_OrientaionValues,
           dl.orientation, "orientation", NO_LOG
     ) ) {
       agpErr.Msg(CAgpErr::W_LooksLikeComp,
@@ -363,10 +376,13 @@ void CAgpSyntaxValidator::x_OnComponentLine(
         "component_end (column 8)"
       ))
   ) {
-    comp_len = x_CheckRange(
-      0, comp_beg, comp_end,
-      "component_beg", "component_end", CAgpErr::E_CompEndLtBeg
-    );
+    if(comp_end < comp_beg) {
+      agpErr.Msg(CAgpErr::E_CompEndLtBeg);
+    }
+    else {
+      comp_len = comp_end - comp_beg + 1;
+    }
+
     if( comp_len && obj_range_len &&
         comp_len != obj_range_len
     ) {
@@ -378,8 +394,7 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   }
 
   //// Orientation: + - 0 na
-  if (x_CheckValues(
-    m_OrientaionValues, dl.orientation,
+  if (x_CheckValues( m_OrientaionValues, dl.orientation,
     "orientation (column 9)"
   )) {
     // todo: avoid additional string comparisons;
@@ -423,15 +438,15 @@ void CAgpSyntaxValidator::x_OnComponentLine(
   //// Check if the line looks more like a gap
   //// (i.e. dl.component_type should be "N" or "U")
   if(error) {
-    // Gap line has integer (gap len) in column 6,
+    // Gap line would have an integer (gap len) in column 6,
     // gap type value in column 7,
     // a yes/no in column 8.
-    if( x_CheckIntField(
-        dl.gap_length, "gap_length", NO_LOG
-      ) && x_CheckValues(
-        m_GapTypes, dl.gap_type, "gap_type", NO_LOG
-      ) && x_CheckValues(
-        m_LinkageValues, dl.linkage, "linkage", NO_LOG
+    if( x_CheckIntField( dl.gap_length,
+        "gap_length", NO_LOG
+      ) && -1 != x_CheckValues( m_GapTypes,
+        dl.gap_type, "gap_type", NO_LOG
+      ) && -1 != x_CheckValues( m_LinkageValues,
+        dl.linkage, "linkage", NO_LOG
     ) ) {
       agpErr.Msg(CAgpErr::W_LooksLikeGap,
         NcbiEmptyString, AT_ThisLine, // defaults
@@ -495,27 +510,6 @@ int CAgpSyntaxValidator::x_CheckIntField( const string& field,
         field_name );
   }
   return field_value;
-}
-
-int CAgpSyntaxValidator::x_CheckRange(
-  int start, int begin, int end,
-  string begin_name, string end_name, CAgpErr::TCode ltCode)
-{
-  int length = 0;
-  if(begin <= start){
-    agpErr.Msg( CAgpErr::E_Overlaps,
-      NcbiEmptyString,
-      AT_ThisLine|AT_PrevLine,
-      begin_name );
-  }
-  else if (end < begin) {
-    agpErr.Msg(ltCode); // "Less Than" error Code
-  }
-  else {
-    length = end - begin + 1;
-  }
-
-  return length;
 }
 
 bool CAgpSyntaxValidator::x_CheckValues(const TValuesSet& values,

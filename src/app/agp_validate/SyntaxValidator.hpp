@@ -233,10 +233,6 @@ protected:
     const string& value, const string& field_name,
     bool log_error = true);
 
-  static int x_CheckRange(int start, int begin,
-    int end, string begin_name, string end_name,
-    CAgpErr::TCode ltCode); // // "Less Than" error Code
-
   string prev_object;
   string prev_component_type;
 

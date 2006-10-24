@@ -148,6 +148,9 @@ private:
   int x_GetTaxonSpecies(int taxid);
 
   int m_GenBankCompLineCount;
+  int m_TotalLineCount;
+  int m_CommentLineCount;
+  int m_EolComments;
 };
 
 // Povide a nicer usage message
@@ -157,7 +160,8 @@ public:
   string& PrintUsage(string& str, bool detailed) const
   {
     str="Validate data in the AGP format:\n"
-    "http://www.ncbi.nlm.nih.gov/Genbank/WGS.agpformat.html\n"
+    "http://www.ncbi.nlm.nih.gov/genome/guide/Assembly/AGP_Specification.html\n"
+    //"http://www.ncbi.nlm.nih.gov/Genbank/WGS.agpformat.html\n"
     "\n"
     "USAGE: agp_validate [-options] [input files...]\n"
     "\n"
@@ -190,6 +194,9 @@ public:
 void CAgpValidateApplication::Init(void)
 {
   m_GenBankCompLineCount=0;
+  m_TotalLineCount=0;
+  m_CommentLineCount=0;
+  m_EolComments=0;
   //auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
   auto_ptr<CArgDesc_agp_validate> arg_desc(new CArgDesc_agp_validate);
 
@@ -375,8 +382,9 @@ void CAgpValidateApplication::x_ValidateFile(
   string  line;
   SDataLine data_line;
   vector<string> cols;
-  //while (NcbiGetlineEOL(istr, line))
-  while (NcbiGetline(istr, line, "\r\n")) // Allow Unix, DOS, Mac EOL characters
+
+  // Allow Unix, DOS, Mac EOL characters
+  while( NcbiGetline(istr, line, "\r\n") )
   {
     line_num++;
 
@@ -384,12 +392,25 @@ void CAgpValidateApplication::x_ValidateFile(
     // Strip #comments
     {
       SIZE_TYPE pos = NStr::Find(line, "#");
-      if(pos != NPOS) {
+      if(pos==0) {
+        m_CommentLineCount++;
+        continue;
+      }
+      else if(pos != NPOS) {
+        m_EolComments++;
         while( pos>0 && (line[pos-1]==' ' || line[pos-1]=='\t') ) pos--;
         line.resize(pos);
       }
     }
-    if (line == "") continue;
+
+    if(line == "") {
+      agpErr.Msg(CAgpErr::E_EmptyLine);
+      // we do not set the 3rd parm invalid_line=true
+      // to avoid suppressing the errors related to the previous line
+      agpErr.LineDone(line_orig, line_num);
+      continue;
+    }
+
 
     cols.clear();
     NStr::Tokenize(line, "\t", cols);
@@ -448,8 +469,14 @@ void CAgpValidateApplication::x_ValidateFile(
       x_ValidateGenBankLine(data_line);
     }
 
+    if(istr.eof()) {
+      agpErr.Msg(CAgpErr::W_NoEolAtEof);
+    }
     agpErr.LineDone(line_orig, line_num, invalid_line);
+
   }
+
+  m_TotalLineCount+=line_num;
 }
 
 void CAgpValidateApplication::x_ValidateGenBankInit()

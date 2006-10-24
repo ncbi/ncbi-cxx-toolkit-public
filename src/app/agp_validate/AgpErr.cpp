@@ -58,14 +58,14 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "0 or na component orientation may only be used in a singleton scaffold",
   "X must be a positive integer",
 
-  "X overlaps a previous line",
+  "object_beg != previous object_end + 1",
   "object_end is less than object_beg",
   "component_end is less than component_beg",
   "invalid value for X",
-  kEmptyCStr, // E_Last
+  "invalid linkage \"yes\" for gap_type ",
 
-  kEmptyCStr,
-  kEmptyCStr,
+  "empty line",
+  kEmptyCStr, // E_Last
   kEmptyCStr,
   kEmptyCStr,
   kEmptyCStr,
@@ -75,7 +75,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "object begins with a gap",
   "two consequtive gap lines (e.g. a gap at the end of "
     "a scaffold, two non scaffold-breaking gaps, ...)",
-  "invalid linkage \"yes\" for gap_type ",
+  "no components in object",
   "the span overlaps a previous span for this component",
 
   "component span appears out of order",
@@ -84,7 +84,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "line with component_type X appears to be a component line and not a gap line",
   "extra <TAB> character at the end of line",
 
-  "no components in object",
+  "missing line separator at the end of file",
   kEmptyCStr, // W_Last
   kEmptyCStr,
   kEmptyCStr,
@@ -133,9 +133,11 @@ void CAgpErr::PrintAllMessages(CNcbiOstream& out)
     else if(i==E_MustBePositive) {
       out << " (X: object_beg, object_end, part_num, gap_length, component_beg, component_end)";
     }
+    /*
     else if(i==E_Overlaps) {
       out << " (X: object_beg, component_beg)";
     }
+    */
 
     out << "\n";
   }

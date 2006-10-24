@@ -101,16 +101,19 @@ public:
     E_UnknownOrientation,
     E_MustBePositive,
 
-    E_Overlaps      ,
+    E_ObjBegNePrevEndPlus1,
     E_ObjEndLtBegin ,
     E_CompEndLtBeg,
     E_InvalidValue  ,
+    E_InvalidYes   ,
+
+    E_EmptyLine,
     E_Last, E_First=1,
 
     W_GapObjEnd=21 ,
     W_GapObjBegin ,
     W_ConseqGaps ,
-    W_InvalidYes   ,
+    W_ObjNoComp,
     W_SpansOverlap,
 
     W_SpansOrder ,
@@ -119,7 +122,7 @@ public:
     W_LooksLikeComp,
     W_ExtraTab,
 
-    W_ObjNoComp,
+    W_NoEolAtEof,
     W_Last, W_First = 21,
 
     G_InvalidCompId=41,
