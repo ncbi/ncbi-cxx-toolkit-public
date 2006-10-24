@@ -220,7 +220,7 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
             }
             ++str;
             break;
-		
+
         case '*':
             c = *mask;
             // Collapse multiple stars
@@ -238,7 +238,7 @@ bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case)
                 ++str;
             }
             return false;
-		
+
         default:
             // Compare nonpattern character in mask and name
             char s = *str++;
@@ -1721,9 +1721,9 @@ string NStr::PrintableString(const string&      str,
                         out.put('f');
                     } else if (*it == '\r') { // carriage return
                         out.put('r');
-					} else if (*it == '\t') { // horizontal tab
+                    } else if (*it == '\t') {     // horizontal tab
                         out.put('t');
-					} else if (*it == '\v') { // vertical tab
+                    } else if (*it == '\v') { // vertical tab
                         out.put('v');
                     } else {
                         // Hex string for non-standard codes
@@ -1735,7 +1735,7 @@ string NStr::PrintableString(const string&      str,
             } while (++it < it_end); // it_end is from ITERATE macro
 
             // Return encoded string
-			return CNcbiOstrstreamToString(out);
+            return CNcbiOstrstreamToString(out);
         }
     }
     // All characters are good - return original string
@@ -2548,6 +2548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.185  2006/10/24 18:44:20  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.184  2006/09/19 14:27:56  gouriano
  * Corrected exception thrown in CStringUTF8::AsUnicode
  *
