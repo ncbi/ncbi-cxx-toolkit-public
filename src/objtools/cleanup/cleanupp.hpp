@@ -240,6 +240,7 @@ private:
     
     typedef bool (CCleanup_imp::*IsMergeCandidate)(const CSeqdesc& sd);
     typedef bool (CCleanup_imp::*Merge)(CSeqdesc& sd1, CSeqdesc& sd2);
+    void x_RecurseDescriptorsForMerge(CSeq_descr& sdr, IsMergeCandidate is_can, Merge do_merge, CSeq_descr::Tdata& remove_list);
     void x_RecurseDescriptorsForMerge (CBioseq_Handle bs, IsMergeCandidate is_can, Merge do_merge);
     void x_RecurseDescriptorsForMerge (CBioseq_set_Handle bs, IsMergeCandidate is_can, Merge do_merge);
 
@@ -357,7 +358,32 @@ private:
 
     void x_MergeDuplicateBioSources (CBioSource& src, CBioSource& add_src);
     bool x_IsMergeableBioSource(const CSeqdesc& sd);    
+    bool x_OkToMergeBioSources(const CBioSource& src1, const CBioSource& src2);
     bool x_MergeDuplicateBioSources(CSeqdesc& sd1, CSeqdesc& sd2);
+    
+    bool x_IdenticalModifierLists (const list< CRef< CSubSource > >& mod_list1,
+                                   const list< CRef< CSubSource > >& mod_list2);
+    bool x_IdenticalModifierLists (const list< CRef< COrgMod > >& mod_list1,
+                                   const list< CRef< COrgMod > >& mod_list2);                                    
+    bool x_IdenticalBioSource(const CBioSource& src1, const CBioSource& src2);
+    bool x_IsBioSourceEmpty (const CBioSource& src);
+    void x_CommonModifierLists (list< CRef< CSubSource > >& mod_list1,
+                                const list< CRef< CSubSource > >& mod_list2);
+    void x_CommonModifierLists (list< CRef< COrgMod > >& mod_list1,
+                                const list< CRef< COrgMod > >& mod_list2);
+    void x_BioSourceCommon(CBioSource& host, const CBioSource& guest);                                
+    
+    void x_FixSegSetSource (CBioseq_set_Handle segset, CBioseq_set_Handle parts);
+    void x_FixSegSetSource (CBioseq_set_Handle bh);
+    
+    bool x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh);
+    bool x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh);
+    void x_ConvertQualifiersToOrgMods(CSeq_feat& sf);
+    void x_ConvertQualifiersToSubSources (CSeq_feat& sf);
+    void x_ConvertMiscQualifiersToBioSource (CSeq_feat& sf);
+    bool x_ConvertOrgAndImpFeatToSource(CSeq_annot_Handle sa);
+    bool x_ConvertOrgAndImpFeatToSource(CBioseq_set_Handle bh);
+    bool x_ConvertOrgAndImpFeatToSource(CBioseq_Handle bh);
 
     void x_CheckGenbankBlockTechKeywords(CGB_block& gb_block, CMolInfo::TTech tech);
     void x_ChangeGBDiv (CSeq_entry_Handle seh, string div);
@@ -365,8 +391,8 @@ private:
 
     bool x_IsDescrSameForAllInPartsSet (CBioseq_set_Handle bss, CSeqdesc::E_Choice desctype, CSeq_descr::Tdata& desc_list);
     void x_RemoveDescrByType(CBioseq_Handle bh, CSeqdesc::E_Choice desctype);
-    void x_RemoveDescrByType(CBioseq_set_Handle bh, CSeqdesc::E_Choice desctype);
-    void x_RemoveDescrByType(const CSeq_entry& se, CSeqdesc::E_Choice desctype);
+    void x_RemoveDescrByType(CBioseq_set_Handle bh, CSeqdesc::E_Choice desctype, bool recurse = true);
+    void x_RemoveDescrByType(const CSeq_entry& se, CSeqdesc::E_Choice desctype, bool recurse = true);
     void x_RemoveDescrForAllInSet (CBioseq_set_Handle bss, CSeqdesc::E_Choice desctype);
     void x_MoveIdenticalPartDescriptorsToSegSet (CBioseq_set_Handle segset, CBioseq_set_Handle parts, CSeqdesc::E_Choice desctype);
     bool x_SeqDescMatch (const CSeqdesc& d1, const CSeqdesc& d2);
@@ -374,14 +400,25 @@ private:
     void x_RemoveNucProtSetTitle(CBioseq_set_EditHandle bsh, const CSeq_entry& se);
     void x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const CSeq_entry& se, CSeqdesc::E_Choice desctype);
 
-    
+    void x_FixMissingSources (CBioseq_Handle bh);
+    void x_FixMissingSources (CBioseq_set_Handle bh);
+    void x_FixMissingSources (const CSeq_entry& se);
+    void x_SetMolInfoWithOldDescriptors(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list, CSeq_descr::Tdata& add_list);    
+    void x_SetMolInfoWithOldDescriptors (CBioseq_Handle bh);    
+    void x_SetMolInfoWithOldDescriptors (CBioseq_set_Handle bh); 
+    bool x_MoveFirstSourceDescriptor(CBioseq_set_EditHandle nps_eh, CBioseq_Handle bh); 
+    bool x_MoveFirstSourceDescriptor(CBioseq_set_EditHandle nps_eh, CBioseq_set_Handle bh); 
+    void x_FixNucProtSources (CBioSource& npsrc, CBioseq_Handle bh);
+    void x_FixNucProtSources (CBioSource& npsrc, CBioseq_set_Handle bh);      
+    void x_FixNucProtSources (CBioseq_set_Handle bh);
+
     void LoopToAsn3 (CSeq_entry_Handle seh);
     void LoopToAsn3 (CBioseq_set_Handle bh);
     void LoopToAsn3(CBioseq_Handle bh);
     void CheckSegSet (CBioseq_Handle bs);
     void CheckSegSet(CBioseq_set_Handle bss);
     void CheckNucProtSet (CBioseq_set_Handle bss);
-    void x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh);
+    void x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh, bool recurse = true);
     void x_StripOldDescriptorsAndFeatures (CBioseq_Handle bh);
     void x_FuseMolInfos (CBioseq::TDescr& desc_set, CSeq_descr::Tdata& desc_list);
     void x_FuseMolInfos (CBioseq_Handle bh);    
@@ -415,6 +452,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2006/10/24 12:15:22  bollin
+ * Added more steps to LoopToAsn3, including steps for creating and combining
+ * MolInfo descriptors and BioSource descriptors.
+ *
  * Revision 1.47  2006/10/12 17:29:39  bollin
  * Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
  *
