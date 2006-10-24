@@ -31,6 +31,7 @@
 #endif /* HAVE_STDLIB_H */
 
 #include <assert.h>
+#include <limits.h>
 
 #include "tds.h"
 #include "tdsconvert.h"
@@ -1877,7 +1878,39 @@ tds5_process_result(TDSSOCKET * tds)
  * buffer.
  */
 static int
-tds_process_compute(TDSSOCKET * tds, TDS_INT * pcomputeid)
+tds_process_compute(TDSSOCKET * tds, TDS_INT * computeid)
+{
+	int i;
+	TDSCOLUMN *curcol;
+	TDSCOMPUTEINFO *info;
+	TDS_INT compute_id;
+
+	CHECK_TDS_EXTRA(tds);
+
+	compute_id = tds_get_smallint(tds);
+
+	for (i = 0;; ++i) {
+		if (i >= tds->num_comp_info)
+			return TDS_FAIL;
+		info = tds->comp_info[i];
+		if (info->computeid == compute_id)
+			break;
+	}
+	tds->current_results = info;
+
+	for (i = 0; i < info->num_cols; i++) {
+		curcol = info->columns[i];
+		if (tds_get_data(tds, curcol, info->current_row, i) != TDS_SUCCEED)
+			return TDS_FAIL;
+	}
+	if (computeid)
+		*computeid = compute_id;
+	return TDS_SUCCEED;
+}
+
+
+static int
+tds_process_compute_095(TDSSOCKET * tds, TDS_INT * pcomputeid)
 {
 	int i;
 	TDSCOLUMN *curcol;
@@ -3014,6 +3047,113 @@ tds_process_compute_names(TDSSOCKET * tds)
 
 	struct namelist *topptr = NULL;
 	struct namelist *curptr = NULL;
+	struct namelist *freeptr = NULL;
+
+	CHECK_TDS_EXTRA(tds);
+
+	hdrsize = tds_get_smallint(tds);
+	remainder = hdrsize;
+	tdsdump_log(TDS_DBG_INFO1, "processing tds5 compute names. remainder = %d\n", remainder);
+
+	/*
+	 * compute statement id which this relates
+	 * to. You can have more than one compute
+	 * statement in a SQL statement
+	 */
+
+	compute_id = tds_get_smallint(tds);
+	remainder -= 2;
+
+	while (remainder) {
+		namelen = tds_get_byte(tds);
+		remainder--;
+		if (topptr == NULL) {
+			if ((topptr = (struct namelist *) malloc(sizeof(struct namelist))) == NULL) {
+				memrc = -1;
+				break;
+			}
+			curptr = topptr;
+			curptr->nextptr = NULL;
+		} else {
+			if ((curptr->nextptr = (struct namelist *) malloc(sizeof(struct namelist))) == NULL) {
+				memrc = -1;
+				break;
+			}
+			curptr = curptr->nextptr;
+			curptr->nextptr = NULL;
+		}
+		if (namelen == 0)
+			strcpy(curptr->name, "");
+		else {
+			namelen = tds_get_string(tds, namelen, curptr->name, sizeof(curptr->name) - 1);
+			curptr->name[namelen] = 0;
+			remainder -= namelen;
+		}
+		curptr->namelen = namelen;
+		num_cols++;
+		tdsdump_log(TDS_DBG_INFO1, "processing tds5 compute names. remainder = %d\n", remainder);
+	}
+
+	tdsdump_log(TDS_DBG_INFO1, "processing tds5 compute names. num_cols = %d\n", num_cols);
+
+	if ((tds->comp_info = tds_alloc_compute_results(tds, num_cols, 0)) == NULL)
+		memrc = -1;
+
+	tdsdump_log(TDS_DBG_INFO1, "processing tds5 compute names. num_comp_info = %d\n", tds->num_comp_info);
+
+	info = tds->comp_info[tds->num_comp_info - 1];
+	tds->current_results = info;
+
+	info->computeid = compute_id;
+
+	curptr = topptr;
+
+	if (memrc == 0) {
+		for (col = 0; col < num_cols; col++) {
+			curcol = info->columns[col];
+
+			assert(strlen(curcol->column_name) == curcol->column_namelen);
+			memcpy(curcol->column_name, curptr->name, curptr->namelen + 1);
+			curcol->column_namelen = curptr->namelen;
+
+			freeptr = curptr;
+			curptr = curptr->nextptr;
+			free(freeptr);
+		}
+		return TDS_SUCCEED;
+	} else {
+		while (curptr != NULL) {
+			freeptr = curptr;
+			curptr = curptr->nextptr;
+			free(freeptr);
+		}
+		return TDS_FAIL;
+	}
+}
+
+
+static int
+tds_process_compute_names_095(TDSSOCKET * tds)
+{
+	int hdrsize;
+	int remainder;
+	int num_cols = 0;
+	int col;
+	int memrc = 0;
+	TDS_SMALLINT compute_id = 0;
+	TDS_TINYINT namelen;
+	TDSCOMPUTEINFO *info;
+	TDSCOLUMN *curcol;
+
+	struct namelist
+	{
+		char name[256];
+		int namelen;
+		struct namelist *nextptr;
+	};
+
+	struct namelist *topptr = NULL;
+	struct namelist *curptr = NULL;
 	struct namelist *nextptr = NULL;
 
 	CHECK_TDS_EXTRA(tds);
@@ -3489,7 +3629,15 @@ determine_adjusted_size(const TDSICONV * char_conv, int size)
 	if (!char_conv)
 		return size;
 
-	size *= char_conv->client_charset.max_bytes_per_char;
+    /* ssikorsk */
+    if (char_conv->client_charset.max_bytes_per_char > 1 &&
+        size * char_conv->client_charset.max_bytes_per_char < size
+        ) {
+        size = INT_MAX;
+    } else {
+        size *= char_conv->client_charset.max_bytes_per_char;
+    }
+
 	if (size % char_conv->server_charset.min_bytes_per_char)
 		size += char_conv->server_charset.min_bytes_per_char;
 	size /= char_conv->server_charset.min_bytes_per_char;
