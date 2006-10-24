@@ -291,9 +291,8 @@ void CAgpSyntaxValidator::x_OnGapLine(
   //// Check the gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold.
   if(new_obj) {
-    agpErr.Msg(CAgpErr::W_GapObjBegin, NcbiEmptyString,
-      AT_ThisLine);
-      // AT_ThisLine|AT_PrevLine);
+    agpErr.Msg(CAgpErr::W_GapObjBegin);
+    // NcbiEmptyString, AT_ThisLine|AT_PrevLine);
   }
   else if(IsGapType(prev_component_type)) {
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
