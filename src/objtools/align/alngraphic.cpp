@@ -73,7 +73,7 @@ static const TSeqPos kDigitWidth = 10;
 static const TSeqPos kDigitHeight = 13;
 
 static const TSeqPos kGapHeight = 1;
-
+static const TSeqPos kGreakHeight = 6;
 static const TSeqPos kNumMark = 6;
 
 static const int kDeflineLength = 55;
@@ -88,6 +88,7 @@ static const string kGifMaster ="query_no_scale.gif";
 static const string kGifScore = "score.gif";
 static const string kGifGrey = "grey.gif";
 static const string kGifScale = "scale.gif";
+static const string kGifBlack = "black.gif";
 
 static string s_GetGif(int bits){
     string gif = NcbiEmptyString;
@@ -418,9 +419,9 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
     //merge range for seq with the same id
     ITERATE(TAlnInfoListList, iter, m_AlninfoListList) {
         (*iter)->sort(FromRangeAscendingSort);
-        x_MergeSameSeq(**iter);  
+        //    x_MergeSameSeq(**iter);  
     }
-
+    
     //merge non-overlapping range list so that they can be put on 
     //the same line to compress the results
     if(m_View & eCompactView){
@@ -591,12 +592,14 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
         CRef<CHTML_img> image;
         CConstRef<CSeq_id> previous_id, current_id;
         CRef<CHTML_a> ad;
-        double temp_value ;
+        double temp_value, temp_value2 ;
         int previous_end = -1;
         int front_margin = 0;
         int bar_length = 0;
         int column = 0;
         double prev_round = 0;
+        
+
         if(!(*iter)->empty()){ //table for starting white spacer
             count ++;
             tbl = new CHTML_table;
@@ -607,23 +610,71 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
             tc->SetAttribute("align", "LEFT");
             tc->SetAttribute("valign", "CENTER");
         }
+
+        bool is_first_segment = true;
         ITERATE(TAlnInfoList, iter2, **iter){ //iter2 = each alignments on one line
             current_id = (*iter2)->id;
             //white space in front of this alignment
             //need to take into account of previous round as
             //even 1 pixel difference would show up
-            temp_value = ((*iter2)->range->GetFrom() - (previous_end + 1))*
-                pixel_factor + prev_round;
+            int from = (*iter2)->range->GetFrom();
+            int stop = (*iter2)->range->GetTo();
+            if (from <= previous_end) { //some hits overlap
+                if (stop > previous_end) {
+                    from = previous_end + 1;
+                    (*iter2)->range->SetFrom(from);
+                } else {
+                    continue;  //this hsp is contained in previous hsp
+                }
+            }
+            
+            int break_len = from - (previous_end + 1); //distance between two hsp
+            bool break_len_added = false;
+            temp_value = break_len*pixel_factor + prev_round;
+            
             //rounding to int this way as round() is not portable
             front_margin = (int)(temp_value + (temp_value < 0.0 ? -0.5 : 0.5));
-           
+            if (front_margin > 0) {
+                prev_round = temp_value - front_margin;
+            } else {
+                prev_round = temp_value;
+            }
+
+            //the alignment box
+            temp_value2 = (*iter2)->range->GetLength()*pixel_factor + 
+                prev_round;
+            bar_length = (int)(temp_value2 + (temp_value2 < 0.0 ? -0.5 : 0.5));
+            
+            //no round if bar itself is more than 0.5 pixel
+            if(bar_length == 0 && (*iter2)->range->GetLength()*pixel_factor >= 0.50){
+                bar_length = 1;
+            }
+          
+            if (bar_length > 0) {
+                prev_round = temp_value2 - bar_length;
+            } else {
+                prev_round = temp_value2;
+            }
+            
+
+            if (!is_first_segment && front_margin == 0 && bar_length > 1) {
+                front_margin = 1;  //show break for every segment that is > 1 pixel
+                bar_length --; //minus the added break len between two segments
+                break_len_added = true;
+            }
+            
             //Need to add white space
             if(front_margin > 0) {
                 //connecting the alignments with the same id
                 if(m_View & eCompactView && !previous_id.Empty() 
                    && previous_id->Match(*current_id)){
-                    image = new CHTML_img(m_ImagePath + kGifGrey, front_margin,
+                    if (break_len_added) {
+                        image = new CHTML_img(m_ImagePath + kGifBlack, front_margin,
+                                              kGreakHeight);
+                    } else {
+                        image = new CHTML_img(m_ImagePath + kGifGrey, front_margin,
                                           kGapHeight);
+                    }
                 } else {
                     
                     image = new CHTML_img(m_ImagePath + kGifWhite, front_margin,
@@ -633,25 +684,13 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                 column ++;
                 tc->SetAttribute("align", "LEFT");
                 tc->SetAttribute("valign", "CENTER");
-                prev_round = temp_value - front_margin;
-            } else {
-                prev_round = temp_value;
             }
             
-            previous_end = (*iter2)->range->GetTo();
+            previous_end = stop;
             previous_id = current_id;
-        
-            temp_value = (*iter2)->range->GetLength()*pixel_factor + 
-                    prev_round;
-
-            bar_length = (int)(temp_value + (temp_value < 0.0 ? -0.5 : 0.5));
-            
-            //no round if bar itself is more than 0.5 pixel
-            if(bar_length == 0 && 
-               !((*iter2)->range->GetLength()*pixel_factor < 0.50)){
-                bar_length = 1;
-            }
+          
             if(bar_length > 0){
+                is_first_segment = false;
                 image = new CHTML_img(m_ImagePath + s_GetGif((int)(*iter2)->bits), 
                                       bar_length, m_BarHeight);
                 image->SetAttribute("border", 0);
@@ -676,10 +715,8 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                 column ++;
                 tc->SetAttribute("valign", "CENTER");
                 tc->SetAttribute("align", "LEFT");     
-                prev_round = temp_value - bar_length;
-            } else {
-                prev_round = temp_value;
             }
+            
         }
         if(!tbl.Empty()){   
             tbl_box_tc->AppendChild(&(*tbl));
@@ -700,6 +737,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.10  2006/10/24 16:42:29  jianye
+*add vertical line to indicate alignment breaks
+*
 *Revision 1.9  2006/01/18 16:40:05  jianye
 *Rounding pixels more strigently
 *
