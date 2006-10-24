@@ -39,6 +39,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 
 #include <objmgr/scope.hpp>
 
@@ -388,6 +389,8 @@ bool is_sorted(Iter first, Iter last)
 
 bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope);
 
+CBioSource::EGenome GenomeByOrganelle(string& organelle, bool strip, NStr::ECase use_case = NStr::eNocase);
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -396,6 +399,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/10/24 12:16:02  bollin
+* Added function for converting a string to a genome value.
+*
 * Revision 1.16  2006/10/12 17:29:39  bollin
 * Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
 *

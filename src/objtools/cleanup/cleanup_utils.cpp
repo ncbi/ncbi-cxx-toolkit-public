@@ -897,6 +897,23 @@ bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope)
 }
 
 
+CBioSource::EGenome GenomeByOrganelle(string& organelle, bool strip, NStr::ECase use_case)
+{
+    string match = "";
+    
+    CBioSource::EGenome genome = CBioSource::GetGenomeByOrganelle (organelle, use_case, true);
+    if (genome != CBioSource::eGenome_unknown) {
+        match = CBioSource::GetOrganelleByGenome (genome);
+        if (strip && !NStr::IsBlank(match)) {
+            organelle = organelle.substr(match.length());
+            NStr::TruncateSpacesInPlace(organelle);
+        }
+    }
+        
+    return genome;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -905,6 +922,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/10/24 12:16:02  bollin
+* Added function for converting a string to a genome value.
+*
 * Revision 1.13  2006/10/12 17:29:39  bollin
 * Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
 *
