@@ -442,7 +442,7 @@ protected:
     ///
     /// Find the path and name of the executable file that this application is
     /// running from. Will be accessible by GetArguments().GetProgramName().
-    /// @param argc	
+    /// @param argc
     ///   Standard argument count "argc".
     /// @param argv
     ///   Standard argument vector "argv".
@@ -633,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/10/24 19:11:55  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.65  2006/09/18 15:01:54  grichenk
  * Fixed log file creation. Check if log dir exists.
  *

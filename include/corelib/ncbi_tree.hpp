@@ -28,7 +28,7 @@
  * Author: Anatoliy Kuznetsov
  *
  * File Description:
- *	 Tree container.
+ *     Tree container.
  *
  */
 
@@ -491,63 +491,60 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
 template<class TTreeNode, class Fun>
 Fun TreeBreadthFirstTraverse(TTreeNode& tree_node, Fun func)
 {
+    ETreeTraverseCode stop_scan;
 
-  ETreeTraverseCode stop_scan;
-
-  stop_scan = func(tree_node);
-  switch(stop_scan) {
-    case eTreeTraverseStop:
-    case eTreeTraverseStepOver:
-      return func;
-     case eTreeTraverse:
-      break;
-  } 
-
-  if(stop_scan)
-    return func;
-
-  TTreeNode* tr = &tree_node;
-  
-  typedef typename TTreeNode::TNodeList_I TTreeNodeIterator;
-
-  TTreeNodeIterator it = tr->SubNodeBegin();
-  TTreeNodeIterator it_end = tr->SubNodeEnd();
-
-  if(it == it_end)
-    return func;
-
-  queue<TTreeNodeIterator> tree_queue;
-
-  while(it != it_end) 
-    tree_queue.push(it++);
- 
-  while(!tree_queue.empty()) {
-
-    it = tree_queue.front(); // get oldest node on queue
-    tr = *it;
-    tree_queue.pop(); // take oldest node off
-    stop_scan = eTreeTraverse;
-    if(tr) {
-      stop_scan = func(*tr);
-      switch(stop_scan) {
+    stop_scan = func(tree_node);
+    switch(stop_scan) {
         case eTreeTraverseStop:
-	  return func;
-        case eTreeTraverse:
         case eTreeTraverseStepOver:
-	  break;
-      } // end switch
-    } // end if
-    // add children (if any) of node to queue
-    if(stop_scan != eTreeTraverseStepOver && !tr->IsLeaf()) { 
-      it = tr->SubNodeBegin();
-      it_end = tr->SubNodeEnd();
-      while(it != it_end)
-	tree_queue.push(it++);
-    } // end if
+            return func;
+        case eTreeTraverse:
+            break;
+    } 
 
-  } // end while
+    if ( stop_scan )
+        return func;
 
-  return func;
+    TTreeNode* tr = &tree_node;
+  
+    typedef typename TTreeNode::TNodeList_I TTreeNodeIterator;
+
+    TTreeNodeIterator it = tr->SubNodeBegin();
+    TTreeNodeIterator it_end = tr->SubNodeEnd();
+
+    if (it == it_end)
+        return func;
+
+    queue<TTreeNodeIterator> tree_queue;
+
+    while (it != it_end) 
+        tree_queue.push(it++);
+ 
+    while (!tree_queue.empty()) {
+
+        it = tree_queue.front(); // get oldest node on queue
+        tr = *it;
+        tree_queue.pop(); // take oldest node off
+        stop_scan = eTreeTraverse;
+        if (tr) {
+            stop_scan = func(*tr);
+            switch(stop_scan) {
+                case eTreeTraverseStop:
+                    return func;
+                case eTreeTraverse:
+                case eTreeTraverseStepOver:
+                    break;
+            }
+        }
+        // Add children (if any) of node to queue
+        if (stop_scan != eTreeTraverseStepOver  &&  !tr->IsLeaf()) { 
+            it = tr->SubNodeBegin();
+            it_end = tr->SubNodeEnd();
+            while (it != it_end)
+                tree_queue.push(it++);
+        }
+    }
+    return func;
 }
 
 
@@ -560,8 +557,7 @@ Fun TreeBreadthFirstTraverse(TTreeNode& tree_node, Fun func)
 
 template<class TValue, class TKeyGetter>
 CTreeNode<TValue, TKeyGetter>::CTreeNode(const TValue& value)
-: m_Parent(0),
-  m_Value(value)
+    : m_Parent(0), m_Value(value)
 {
 }
 
@@ -870,6 +866,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/10/24 19:11:55  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.44  2006/05/01 13:54:22  jcherry
  * Corrected return type of CTree::operator->
  *

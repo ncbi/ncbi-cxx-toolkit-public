@@ -656,6 +656,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/10/24 19:11:55  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.59  2006/06/06 16:44:07  grichenk
  * Added SetDoubleDiagHandler().
  * Added Severity().
@@ -711,7 +714,7 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.44  2004/08/17 14:34:25  dicuccio

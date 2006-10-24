@@ -259,8 +259,8 @@ class auto_ptr
     {
         auto_ptr_ref(auto_ptr<Y>& ptr)
             : m_AutoPtr(ptr)
-		{
-		}
+            {
+            }
         auto_ptr<Y>& m_AutoPtr;
     };
 public:
@@ -948,6 +948,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2006/10/24 19:11:55  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.97  2006/07/17 14:24:17  ucko
  * * pair_base_member::Swap: don't swap the first() elements if they take
  *   up no room, as it should be a no-op but VisualAge gets it wrong.

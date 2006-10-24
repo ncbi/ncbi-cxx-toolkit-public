@@ -131,7 +131,7 @@ public:
 
     /// Current timezone. Used in AsString() method.
     enum {
-	    eCurrentTimeZone = -1
+        eCurrentTimeZone = -1
     };
 
     /// Which format use to get name of month or week of day.
@@ -1090,7 +1090,7 @@ public:
     string AsSmartString(ESmartStringPrecision precision = eSSP_Default,
                          ERound                rounding  = eTrunc,
                          ESmartStringZeroMode  zero_mode = eSSZ_Default)
-			 const;
+                         const;
 
     //
     // Get various components of time span.
@@ -2059,6 +2059,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/10/24 19:11:55  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.62  2006/06/30 14:34:20  ivanov
  * Added inline to CStopWatch::AsSmartString
  *

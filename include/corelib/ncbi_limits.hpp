@@ -163,15 +163,15 @@ BEGIN_NCBI_SCOPE
 template<typename T> 
 inline numeric_limits<T> get_limits(const T&)
 {
-	typename T::TypeIsNotSupported tmp; 
-	return numeric_limits<T>();
+    typename T::TypeIsNotSupported tmp; 
+    return numeric_limits<T>();
 }
 
 /// Macro to declare specilized get_limits
 #  define NCBI_GET_NUMERIC_LIMITS(type) \
     EMPTY_TEMPLATE \
     inline numeric_limits<type> get_limits(const type&) \
-	{ return numeric_limits<type>(); }
+        { return numeric_limits<type>(); }
 
 NCBI_GET_NUMERIC_LIMITS(         char)
 NCBI_GET_NUMERIC_LIMITS(signed   char)
@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2006/10/24 19:11:55  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.10  2006/09/20 14:02:10  ucko
  * Don't assume wchar.h actually supplies WCHAR_XXX.  (FreeBSD 4's doesn't.)
  *

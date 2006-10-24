@@ -72,11 +72,11 @@ inline int GetObject(HGDIOBJ hGdiObj, int cbBuffer, LPVOID lpvObject)
 // DrawText
 #ifdef DrawText
 #undef DrawText
-inline int DrawText(HDC hDC, 
-					LPCTSTR lpString, 
-					int nCount, 
-					LPRECT lpRect,
-					UINT uFormat)
+inline int DrawText(HDC     hDC, 
+                    LPCTSTR lpString, 
+                    int     nCount, 
+                    LPRECT  lpRect,
+                    UINT    uFormat)
 {
 #  ifdef _UNICODE
     return DrawTextW(hDC, lpString, nCount, lpRect, uFormat);

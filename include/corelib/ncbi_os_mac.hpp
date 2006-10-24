@@ -77,14 +77,14 @@ inline
 unsigned char*
 Pstrncpy(unsigned char *dest, const char *src, size_t len)
 {
-	assert(len <= 255);
-	if (len > 255) {
-		len = 255;
-	}
-	dest[0] = static_cast<unsigned char>(len);
-	memcpy(dest + 1, src, len);
-	
-	return dest;
+    assert(len <= 255);
+    if (len > 255) {
+        len = 255;
+    }
+    dest[0] = static_cast<unsigned char>(len);
+    memcpy(dest + 1, src, len);
+
+    return dest;
 }
 
 /* Copy a C string to a Pascal string. */
@@ -92,7 +92,7 @@ inline
 unsigned char*
 Pstrcpy(unsigned char *dest, const char *src)
 {
-	return Pstrncpy(dest, src, std::strlen(src));
+    return Pstrncpy(dest, src, std::strlen(src));
 }
 
 /* Copy a Pascal string to a Pascal string. */
@@ -100,9 +100,9 @@ inline
 unsigned char*
 PstrPcpy(unsigned char *dest, const unsigned char *src)
 {
-	return static_cast<unsigned char *>(
-		std::memcpy(dest, src, static_cast<size_t>(src[0]+1) )
-	);
+    return static_cast<unsigned char *>(
+        std::memcpy(dest, src, static_cast<size_t>(src[0]+1) )
+    );
 }
 
 class PString {
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2006/10/24 19:11:55  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.6  2003/02/27 22:04:20  lebedev
  * COSErrException_Mac changed from runtime_error to exception
  *
