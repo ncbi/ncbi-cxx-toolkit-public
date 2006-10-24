@@ -2576,6 +2576,96 @@ void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
 }
 
 
+bool CCleanup_imp::x_ConvertOrgAndImpFeatToSource(CSeq_annot_Handle sa)
+{
+    bool added_source = false;
+    if (!sa.IsFtable()) {
+        return added_source;
+    }
+    
+    CFeat_CI feat_ci(sa);
+
+    while (feat_ci) {
+        if (feat_ci->GetFeatType() == CSeqFeatData::e_Org) {
+            // convert Org feat to Source feat
+            CRef<CSeq_feat> feat(new CSeq_feat);
+            const CSeq_feat& orig_feat = feat_ci->GetOriginalFeature();
+            feat->Assign(orig_feat);
+            feat->SetData().SetBiosrc().SetOrg(feat->SetData().SetOrg());
+            CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+            CSeq_feat_EditHandle efh(ofh);
+            efh.Replace(*feat);
+            ChangeMade (CCleanupChange::eConvertFeature);
+            added_source = true;
+        } else if (feat_ci->GetFeatType() == CSeqFeatData::e_Imp) {
+            string key = feat_ci->GetOriginalFeature().GetData().GetImp().GetKey();
+            if (!NStr::Equal(key, "source") || !feat_ci->GetOriginalFeature().CanGetQual()) {
+                ++feat_ci;
+                continue;
+            }
+//                   && NStr::Equal(feat_ci->GetData().GetImp().GetKey(), "source")
+//                   && feat_ci->GetOriginalFeature().CanGetQual()) {
+            // convert Imp feat with key "source" and "organism" qualifier
+            // to Source feat
+            CRef<CSeq_feat> feat(new CSeq_feat);
+            const CSeq_feat& orig_feat = feat_ci->GetOriginalFeature();
+            feat->Assign(orig_feat);
+            NON_CONST_ITERATE (CSeq_feat::TQual, it, feat->SetQual()) {
+                CGb_qual& gb_qual = **it;
+                if (gb_qual.CanGetQual() 
+                    && NStr::Equal(gb_qual.GetQual(), "organism")) {
+                    string organism = gb_qual.GetVal();
+                    if (!NStr::IsBlank(organism)) {
+                        CBioSource::EGenome genome = GenomeByOrganelle(organism, true);
+                        if (genome != CBioSource::eGenome_unknown) {
+                            feat->SetData().SetBiosrc().SetGenome (genome);
+                        }
+                        feat->SetData().SetBiosrc().SetOrg().SetTaxname(organism);
+                        feat->SetQual().erase(it);
+                        
+                        // need to process any other qualifiers on the feature
+                        x_ConvertQualifiersToOrgMods (*feat);
+                        x_ConvertQualifiersToSubSources (*feat);
+                        x_ConvertMiscQualifiersToBioSource(*feat);
+                        
+                        CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+                        CSeq_feat_EditHandle efh(ofh);
+                        efh.Replace (*feat);
+                        ChangeMade (CCleanupChange::eConvertFeature);
+                        added_source = true;
+                        break;  // stop iterating through qualifiers
+                    }
+                }
+            }
+        }
+        ++feat_ci;
+    }
+    
+    x_ConvertFullLenSourceFeatureToDescriptor(sa);    
+    return added_source;
+}
+
+
+bool CCleanup_imp::x_ConvertOrgAndImpFeatToSource(CBioseq_set_Handle bh)
+{
+    bool added_source = false;
+    for (CSeq_annot_CI annot_it(bh.GetParentEntry(), CSeq_annot_CI::eSearch_entry); annot_it; ++annot_it) {
+        x_ConvertOrgAndImpFeatToSource(*annot_it);
+    }
+    return added_source;
+}
+
+
+bool CCleanup_imp::x_ConvertOrgAndImpFeatToSource(CBioseq_Handle bh)
+{
+    bool added_source = false;
+    for (CSeq_annot_CI annot_it(bh.GetSeq_entry_Handle(), CSeq_annot_CI::eSearch_entry); annot_it; ++annot_it) {
+        added_source |= x_ConvertOrgAndImpFeatToSource(*annot_it);
+    }
+    return added_source;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -2584,6 +2674,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2006/10/24 12:16:49  bollin
+ * Added functions for converting obsolete Org and imp_source features to
+ * source features.
+ *
  * Revision 1.40  2006/10/12 17:29:39  bollin
  * Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
  *
