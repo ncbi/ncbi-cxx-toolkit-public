@@ -332,6 +332,12 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Collapse Set",
     "Change Feature Location",
     "Remove Annotation",
+    "Remove Comment",
+    "Add BioSource OrgMod",
+    "Add BioSource SubSource",
+    "Change BioSource Genome",
+    "Change BioSource Origin",
+    "Change BioSource Other",
     // set when any other change is made.
     "Change Other",
     "Invalid Change Code"
@@ -345,6 +351,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/10/24 12:13:02  bollin
+* Added more flags for ExtendedCleanup.
+*
 * Revision 1.17  2006/10/11 14:46:05  bollin
 * Record more changes made by ExtendedCleanup.
 *
