@@ -1733,7 +1733,7 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row)
 	return TDS_SUCCEED;
 }
 
-static void
+static int
 tds7_send_execute(TDSSOCKET * tds, TDSDYNAMIC * dyn)
 {
 	TDSCOLUMN *param;
@@ -1769,6 +1769,7 @@ tds7_send_execute(TDSSOCKET * tds, TDSDYNAMIC * dyn)
 		}
 
 	tds->internal_sp_called = TDS_SP_EXECUTE;
+    return TDS_SUCCEED;
 }
 
 /**
