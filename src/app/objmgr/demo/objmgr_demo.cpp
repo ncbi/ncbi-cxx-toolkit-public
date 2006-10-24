@@ -86,7 +86,7 @@
 
 #ifdef HAVE_LDS
 #  include <objtools/data_loaders/lds/lds_dataloader.hpp>
-#  include <objtools/lds/lds_admin.hpp>
+#  include <objtools/lds/lds_manager.hpp>
 #endif
 
 #include <serial/iterator.hpp>
@@ -425,18 +425,19 @@ int CDemoApp::Run(void)
 #ifdef HAVE_LDS
     if ( args["lds_dir"] ) {
         string lds_dir = args["lds_dir"].AsString();
-        CLDS_Management::ERecurse recurse = CLDS_Management::eRecurseSubDirs;
-        CLDS_Management::EComputeControlSum control_sum =
-            CLDS_Management::eComputeControlSum;
-        bool is_created = false;
-        auto_ptr<CLDS_Database> lds_db
-            (CLDS_Management::OpenCreateDB(lds_dir, "lds.db", 
-                                           &is_created,
-                                           recurse, control_sum));
-        if ( !is_created ) {
-            CLDS_Management mgmt(*lds_db);
-            mgmt.SyncWithDir(lds_dir, recurse, control_sum);
+        CLDS_Manager::ERecurse recurse = CLDS_Manager::eRecurseSubDirs;
+        CLDS_Manager::EComputeControlSum control_sum =
+            CLDS_Manager::eComputeControlSum;
+        auto_ptr<CLDS_Database> lds_db;
+        CLDS_Manager manager(lds_dir);
+
+        try {
+            lds_db.reset(manager.ReleaseDB());
+        } catch(CBDB_ErrnoException&) {
+            manager.Index(recurse, control_sum);
+            lds_db.reset(manager.ReleaseDB());
         }
+
         CLDS_DataLoader::RegisterInObjectManager(*pOm, *lds_db,
                                                  CObjectManager::eDefault);
         other_loaders = true;
@@ -1190,6 +1191,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.114  2006/10/24 18:28:05  didenko
+* Moved to the new LDS manager interface
+*
 * Revision 1.113  2006/10/02 14:40:54  vasilche
 * Removed obsolete code. Added printout of bioseq state.
 *
