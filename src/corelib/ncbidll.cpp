@@ -213,11 +213,11 @@ CDll::TEntryPoint CDll::GetEntryPoint(const string& name)
 #elif defined(NCBI_OS_DARWIN)
     NSModule module = (NSModule)m_Handle->handle;
     NSSymbol nssymbol = NSLookupSymbolInModule(module, name.c_str());
-	void* ptr = 0;
+    void* ptr = 0;
     ptr = NSAddressOfSymbol(nssymbol);
-	if (ptr == NULL) {
-		ptr = dlsym (m_Handle->handle, name.c_str());
-	}
+    if (ptr == NULL) {
+        ptr = dlsym (m_Handle->handle, name.c_str());
+    }
 #elif defined(NCBI_OS_UNIX)  &&  defined(HAVE_DLFCN_H)
     void* ptr = 0;
     ptr = dlsym(m_Handle->handle, name.c_str());
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/10/24 18:56:17  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.33  2006/03/08 20:14:52  ssikorsk
  * Renamed method CDllResolver::AddExtraDllPath to x_AddExtraDllPath.
  *

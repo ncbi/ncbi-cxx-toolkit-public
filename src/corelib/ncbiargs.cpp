@@ -1171,7 +1171,7 @@ CArgs::~CArgs(void)
 
 static string s_ComposeNameExtra(size_t idx)
 {
-	return '#' + NStr::UInt8ToString(idx);
+    return '#' + NStr::UInt8ToString(idx);
 }
 
 
@@ -2703,6 +2703,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/10/24 18:56:17  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.70  2006/07/20 16:02:09  grichenk
  * Allow to omit leading '-' in argument name
  *

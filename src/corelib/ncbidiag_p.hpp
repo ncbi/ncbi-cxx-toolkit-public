@@ -353,8 +353,10 @@ END_NCBI_SCOPE
 
 /*
  * ==========================================================================
- *
  * $Log$
+ * Revision 1.7  2006/10/24 18:56:17  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.6  2006/07/27 21:16:51  grichenk
  * Accept both slashes as path start in SetDiagFilter.
  *
@@ -379,7 +381,7 @@ END_NCBI_SCOPE
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * ==========================================================================

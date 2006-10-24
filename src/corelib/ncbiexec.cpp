@@ -519,28 +519,28 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     STARTUPINFO         StartupInfo;
     PROCESS_INFORMATION ProcessInfo;
     const int           kMaxCmdLength = 4096;
-	string              cmdline;
+    string              cmdline;
 
     // Set startup info
-	memset(&StartupInfo, 0, sizeof(StartupInfo));
-	StartupInfo.cb          = sizeof(STARTUPINFO);
-	StartupInfo.dwFlags     = STARTF_USESHOWWINDOW;
-	StartupInfo.wShowWindow = SW_HIDE;
+    memset(&StartupInfo, 0, sizeof(StartupInfo));
+    StartupInfo.cb          = sizeof(STARTUPINFO);
+    StartupInfo.dwFlags     = STARTF_USESHOWWINDOW;
+    StartupInfo.wShowWindow = SW_HIDE;
     DWORD dwCreateFlags     = (mode == eDetach) ? 
                               DETACHED_PROCESS : CREATE_NEW_CONSOLE;
 
-	// Compose command line
+    // Compose command line
     cmdline.reserve(kMaxCmdLength);
-	cmdline = cmdname;
+    cmdline = cmdname;
 
     if (argv) {
-	    cmdline += " "; 
-	    cmdline += argv;
+        cmdline += " "; 
+        cmdline += argv;
         va_list vargs;
         va_start(vargs, argv);
         const char* p = NULL;
         while ( (p = va_arg(vargs, const char*)) ) {
-	        cmdline += " "; 
+            cmdline += " "; 
             cmdline += CExec::QuoteArg(p);
         }
         va_end(vargs);
@@ -550,8 +550,8 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     s_GetRealMode(mode);
 
     // Run program
-	if (CreateProcess(NULL, (LPSTR)cmdline.c_str(), NULL, NULL, FALSE,
-		              dwCreateFlags, NULL, NULL, &StartupInfo, &ProcessInfo))
+    if (CreateProcess(NULL, (LPSTR)cmdline.c_str(), NULL, NULL, FALSE,
+                      dwCreateFlags, NULL, NULL, &StartupInfo, &ProcessInfo))
     {
         if (mode == eOverlay) {
             // destroy ourselves
@@ -605,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/10/24 18:56:17  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.40  2006/10/18 12:43:06  ivanov
  * s_SpawnUnix() - added a check that child process has actually started
  *

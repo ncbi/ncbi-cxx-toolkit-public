@@ -76,13 +76,16 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/10/24 18:56:17  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.11  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.10  2002/09/19 20:05:42  vasilche

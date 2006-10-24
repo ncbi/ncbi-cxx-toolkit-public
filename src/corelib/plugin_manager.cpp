@@ -71,8 +71,8 @@ CPluginManager_DllResolver::~CPluginManager_DllResolver(void)
 
 CDllResolver& 
 CPluginManager_DllResolver::ResolveFile(const TSearchPaths&   paths,
-                                    	const string&         driver_name,
-                                    	const CVersionInfo&   version,
+                                        const string&         driver_name,
+                                        const CVersionInfo&   version,
                                         CDllResolver::TExtraDllPath
                                                               std_path)
 {
@@ -336,6 +336,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/10/24 18:56:17  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.21  2006/03/09 15:12:02  ssikorsk
  * Added CDllResolver::TExtraDllPath std_path argument to
  * the CPluginManager_DllResolver::ResolveFile method.

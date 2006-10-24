@@ -841,7 +841,7 @@ string CTime::AsString(const string& fmt, TSeconds out_tz) const
     // Adjust time for output timezone
     if (out_tz != eCurrentTimeZone) {
 #if defined(TIMEZONE_IS_UNDEFINED)
-	    ERR_POST("Output timezone is unsupported on this platform");
+        ERR_POST("Output timezone is unsupported on this platform");
 #else
         if (out_tz != TimeZone()) {
             t_out = new CTime(*this);
@@ -1637,7 +1637,7 @@ void CTimeSpan::x_Init(const string& str, const string& fmt)
             break;
         default:
             NCBI_THROW(CTimeException, eFormat,
-	               "CTimeSpan:  format is incorrect");
+                       "CTimeSpan:  format is incorrect");
         }
     }
     // Normalize time span
@@ -2171,6 +2171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2006/10/24 18:56:17  ivanov
+ * Cosmetics: replaced tabulation with spaces
+ *
  * Revision 1.76  2006/06/30 14:57:01  ivanov
  * CTimeSpan::AsSmartString() -- fixed processing of nanoseconds-based and
  * eSSP_Precision1 precision levels.
