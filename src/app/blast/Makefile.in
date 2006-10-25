@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("APP" project)
+#################################
+
+APP_PROJ = blastall
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
