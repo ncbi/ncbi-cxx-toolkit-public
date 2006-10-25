@@ -78,7 +78,6 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("Genew", CDbtag::eDbtagType_Genew),
     TDbxrefPair("H-InvDB", CDbtag::eDbtagType_H_InvDB),
     TDbxrefPair("HSSP", CDbtag::eDbtagType_HSSP),
-    TDbxrefPair("NBRC", CDbtag::eDbtagType_IFO),
     TDbxrefPair("IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB),
     TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
     TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
@@ -92,6 +91,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("MGI", CDbtag::eDbtagType_MGI),
     TDbxrefPair("MIM", CDbtag::eDbtagType_MIM),
     TDbxrefPair("MaizeGDB", CDbtag::eDbtagType_MaizeGDB),
+    TDbxrefPair("NBRC", CDbtag::eDbtagType_IFO),
     TDbxrefPair("NextDB", CDbtag::eDbtagType_NextDB),
     TDbxrefPair("PGN", CDbtag::eDbtagType_PGN),
     TDbxrefPair("PID", CDbtag::eDbtagType_PID),
@@ -421,6 +421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.34  2006/10/25 15:41:16  ucko
+ * Put kApprovedDbXrefs back in alphabetical order.
+ *
  * Revision 6.33  2006/10/25 15:00:46  ludwigf
  * CHANGED: Changed eDbtagType_IFO to refer to ( NBRC, www.nbrc.nite.go.jp ).
  *
