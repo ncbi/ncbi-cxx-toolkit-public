@@ -148,7 +148,7 @@ private:
   int x_GetTaxonSpecies(int taxid);
 
   int m_GenBankCompLineCount;
-  int m_TotalLineCount;
+  // int m_InvalidLineCount;
   int m_CommentLineCount;
   int m_EolComments;
 };
@@ -194,7 +194,7 @@ public:
 void CAgpValidateApplication::Init(void)
 {
   m_GenBankCompLineCount=0;
-  m_TotalLineCount=0;
+  // m_InvalidLineCount=0;
   m_CommentLineCount=0;
   m_EolComments=0;
   //auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -328,6 +328,12 @@ int CAgpValidateApplication::Run(void)
   x_ValidateUsingFiles(args);
   if(m_ValidationType == VT_Syntax) {
     m_LineValidator->PrintTotals();
+    if(m_CommentLineCount) {
+      cout << "#Comment line count  : " << m_CommentLineCount << "\n";
+    }
+    if(m_EolComments) {
+      cout << "End of line #comments: " << m_EolComments << "\n";
+    }
   }
   else if(m_ValidationType & VT_Taxid) {
     cout << "\n";
@@ -500,8 +506,6 @@ void CAgpValidateApplication::x_ValidateFile(
 
   NextLine: ;
   }
-
-  m_TotalLineCount+=line_num;
 }
 
 void CAgpValidateApplication::x_ValidateGenBankInit()
@@ -648,7 +652,9 @@ int CAgpValidateApplication::x_GetTaxid(
       }
     }
     catch(...) {
-      agpErr.Msg(CAgpErr::G_NoTaxid, string(" for ") + dl.component_id);
+      agpErr.Msg(CAgpErr::G_TaxError,
+        string(" - cannot retrieve the taxonomic id for ") +
+        dl.component_id);
       return 0;
     }
   }
@@ -698,8 +704,8 @@ int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
       id, is_species, is_uncultured, blast_name
     );
     if(org_ref == null) {
-      agpErr.Msg(CAgpErr::G_NoOrgRef,
-        string(" ")+ NStr::IntToString(id) );
+      agpErr.Msg(CAgpErr::G_TaxError,
+        string(" for taxid ")+ NStr::IntToString(id) );
       return 0;
     }
     if(id==taxid) blast_name0=blast_name;
@@ -716,11 +722,11 @@ int CAgpValidateApplication::x_GetTaxonSpecies(int taxid)
       blast_name0 = NStr::IntToString(taxid) + " (" + blast_name0 + ")";
     }
     else{
-      blast_name0 = NStr::IntToString(taxid);
+      blast_name0 = string("taxid ") + NStr::IntToString(taxid);
     }
-    agpErr.Msg(CAgpErr::G_AboveSpeciesLevel,
-      NcbiEmptyString, AT_ThisLine, // defaults
-      blast_name0 );
+    agpErr.Msg(CAgpErr::G_TaxError,
+      string(" - ") + blast_name0 +
+      " is above species level");
   }
 
   return species_id;

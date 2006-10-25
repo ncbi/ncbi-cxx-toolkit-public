@@ -655,8 +655,9 @@ void CAgpSyntaxValidator::PrintTotals()
     << "\t"                   <<ALIGN_W(m_TypeGapCnt["telomereno"        ])
     //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
     //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
-    << "\n";
+    ;
   }
+  cout << "\n";
 
   if(m_ObjCount) {
     cout << "\nObject names   :";

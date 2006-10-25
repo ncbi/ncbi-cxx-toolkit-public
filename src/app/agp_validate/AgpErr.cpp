@@ -101,11 +101,13 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "component_id not in GenBank",
   "component_id X is ambiguous without an explicit version",
   "component_end greater than sequence length",
-  "cannot retrieve the taxonomic id",
+  "taxonomic data is invalid or unavailable",
 
-  "cannot retrieve taxonomic data for taxid",
-  "taxid X is above species level",
   kEmptyCStr  // G_Last
+
+  // "cannot retrieve the taxonomic id",
+  // "cannot retrieve taxonomic data for taxid",
+  // "taxid X is above species level",
 
 };
 

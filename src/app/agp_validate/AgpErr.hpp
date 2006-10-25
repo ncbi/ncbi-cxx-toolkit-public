@@ -130,12 +130,14 @@ public:
     G_NotInGenbank,
     G_NeedVersion,
     G_CompEndGtLength,
-    G_NoTaxid,
+    G_TaxError,
 
-    G_NoOrgRef,
-    G_AboveSpeciesLevel,
     G_Last,
     G_First = G_InvalidCompId,
+
+    // G_NoTaxid,
+    // G_NoOrgRef,
+    // G_AboveSpeciesLevel,
 
     CODE_First=1, CODE_Last=G_Last
   };
