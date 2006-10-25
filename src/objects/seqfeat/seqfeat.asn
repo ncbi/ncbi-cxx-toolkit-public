@@ -1,4 +1,4 @@
---$Revision: 6.15 $
+--$Revision: 6.16 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -493,6 +493,7 @@ SubSource ::= SEQUENCE {
         rev-primer-seq (34) ,   -- sequence (possibly more than one; semicolon-separated)
         fwd-primer-name (35) ,
         rev-primer-name (36) ,
+        metagenomic (37) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
