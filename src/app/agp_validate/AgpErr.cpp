@@ -46,7 +46,7 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   kEmptyCStr,
 
   // Content Errors (codes 1..20)
-  "expecting 8 or 9 tab-separated columns",
+  "expecting 9 tab-separated columns", // 8 or
   "column X is empty",
   "duplicate object ",
   "first line of an object must have object_beg=1",
@@ -84,9 +84,9 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "line with component_type X appears to be a component line and not a gap line",
   "extra <TAB> character at the end of line",
 
+  "gap line missing column 9 (null)",
   "missing line separator at the end of file",
   kEmptyCStr, // W_Last
-  kEmptyCStr,
   kEmptyCStr,
   kEmptyCStr,
 
@@ -133,11 +133,6 @@ void CAgpErr::PrintAllMessages(CNcbiOstream& out)
     else if(i==E_MustBePositive) {
       out << " (X: object_beg, object_end, part_num, gap_length, component_beg, component_end)";
     }
-    /*
-    else if(i==E_Overlaps) {
-      out << " (X: object_beg, component_beg)";
-    }
-    */
 
     out << "\n";
   }
@@ -145,6 +140,9 @@ void CAgpErr::PrintAllMessages(CNcbiOstream& out)
   out << "### Warnings ###\n";
   for(int i=W_First; i<W_Last; i++) {
     out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
+    if(i==W_GapLineMissingCol9) {
+      out << " (only the total count is printed unless you specify: -only " << GetPrintableCode(i) << ")";
+    }
     out << "\n";
   }
 
@@ -214,6 +212,8 @@ CAgpErr::CAgpErr()
 
   memset(m_MsgCount , 0, sizeof(m_MsgCount ));
   memset(m_MustSkip , 0, sizeof(m_MustSkip ));
+  // likely to be a systematic error, skip it by default
+  m_MustSkip[W_GapLineMissingCol9]=true;
 
   // A "random check" to make sure enum TCode and msg[]
   // are not out of skew.

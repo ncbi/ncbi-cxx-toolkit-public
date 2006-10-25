@@ -122,6 +122,7 @@ public:
     W_LooksLikeComp,
     W_ExtraTab,
 
+    W_GapLineMissingCol9,
     W_NoEolAtEof,
     W_Last, W_First = 21,
 

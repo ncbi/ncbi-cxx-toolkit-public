@@ -389,6 +389,7 @@ void CAgpValidateApplication::x_ValidateFile(
     line_num++;
 
     string line_orig=line; // With EOL #comments
+    bool tabsStripped=false;
     // Strip #comments
     {
       SIZE_TYPE pos = NStr::Find(line, "#");
@@ -398,7 +399,10 @@ void CAgpValidateApplication::x_ValidateFile(
       }
       else if(pos != NPOS) {
         m_EolComments++;
-        while( pos>0 && (line[pos-1]==' ' || line[pos-1]=='\t') ) pos--;
+        while( pos>0 && (line[pos-1]==' ' || line[pos-1]=='\t') ) {
+          if( line[pos-1]=='\t' ) tabsStripped=true;
+          pos--;
+        }
         line.resize(pos);
       }
     }
@@ -433,7 +437,8 @@ void CAgpValidateApplication::x_ValidateFile(
             NStr::IntToString(i+1)
           );
         agpErr.LineDone(line_orig, line_num, true);  // true: invalid_line
-        continue;
+
+        goto NextLine; // cannor use "continue"
       }
     }
 
@@ -457,23 +462,43 @@ void CAgpValidateApplication::x_ValidateFile(
     data_line.linkage         = cols[7];
 
     data_line.orientation = "";
-    if (data_line.component_type != "N") {
-      // Component
-      if (cols.size() > 8) data_line.orientation = cols[8];
+    if( cols.size() > 8 ) {
+      data_line.orientation = cols[8];
+    }
+    else {
+      if( ! CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
+        if(tabsStripped) {
+          agpErr.Msg(CAgpErr::E_EmptyColumn,
+              NcbiEmptyString, AT_ThisLine, // defaults
+              "9");
+        }
+        else {
+          agpErr.Msg(CAgpErr::E_EmptyColumn,
+              NcbiEmptyString, AT_ThisLine, // defaults
+              "8"
+            );
+        }
+      }
+      else if(tabsStripped==false){
+        agpErr.Msg(CAgpErr::W_GapLineMissingCol9);
+      }
     }
 
-    bool invalid_line=false;
-    if (m_ValidationType == VT_Syntax) {
-      invalid_line = m_LineValidator->ValidateLine(data_line, line);
-    } else if( !CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
-      x_ValidateGenBankLine(data_line);
+    {
+      bool invalid_line=false;
+      if (m_ValidationType == VT_Syntax) {
+        invalid_line = m_LineValidator->ValidateLine(data_line, line);
+      } else if( !CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
+        x_ValidateGenBankLine(data_line);
+      }
+
+      if(istr.eof()) {
+        agpErr.Msg(CAgpErr::W_NoEolAtEof);
+      }
+      agpErr.LineDone(line_orig, line_num, invalid_line);
     }
 
-    if(istr.eof()) {
-      agpErr.Msg(CAgpErr::W_NoEolAtEof);
-    }
-    agpErr.LineDone(line_orig, line_num, invalid_line);
-
+  NextLine: ;
   }
 
   m_TotalLineCount+=line_num;
