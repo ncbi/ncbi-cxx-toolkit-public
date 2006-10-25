@@ -78,7 +78,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("Genew", CDbtag::eDbtagType_Genew),
     TDbxrefPair("H-InvDB", CDbtag::eDbtagType_H_InvDB),
     TDbxrefPair("HSSP", CDbtag::eDbtagType_HSSP),
-    TDbxrefPair("IFO", CDbtag::eDbtagType_IFO),
+    TDbxrefPair("NBRC", CDbtag::eDbtagType_IFO),
     TDbxrefPair("IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB),
     TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
     TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
@@ -281,7 +281,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_GeneDB, "http://www.genedb.org/genedb/Dispatcher?formType=navBar&submit=Search+for&organism=All%3Apombe%3Acerevisiae%3Adicty%3Aasp%3Atryp%3Aleish%3Amalaria%3Astyphi%3Aglossina&desc=yes&ohmr=%2F&name="),
     TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=retrieve&dopt=full_report&list_uids="),
     TDbtUrl(CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp"),
-    TDbtUrl(CDbtag::eDbtagType_IFO, "http://www.ifo.or.jp/index_e.html"),
+    TDbtUrl(CDbtag::eDbtagType_IFO, "http://www.nbrc.nite.go.jp/e/index.html"),
     TDbtUrl(CDbtag::eDbtagType_IMGT_GENEDB, "http://imgt.cines.fr/cgi-bin/GENElect.jv?species=Homo+sapiens&query=2+"),
     TDbtUrl(CDbtag::eDbtagType_IMGT_LIGM, "http://imgt.cines.fr:8104/cgi-bin/IMGTlect.jv?query=202+"),
     TDbtUrl(CDbtag::eDbtagType_ISFinder, "http://www-is.biotoul.fr/scripts/is/is_spec.idc?name="),
@@ -421,6 +421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.33  2006/10/25 15:00:46  ludwigf
+ * CHANGED: Changed eDbtagType_IFO to refer to ( NBRC, www.nbrc.nite.go.jp ).
+ *
  * Revision 6.32  2006/08/30 15:06:59  rsmith
  * += influenza sequence database (ISD) to the list of allowed db_xrefs
  *
