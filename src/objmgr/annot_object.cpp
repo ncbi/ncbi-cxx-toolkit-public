@@ -566,11 +566,6 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                 ERR_POST(Warning << "Invalid 'lens' size in denseg");
                 numseg = min(numseg, (int)denseg.GetLens().size());
             }
-            if (denseg.IsSetScores()
-                && numseg != (int)denseg.GetScores().size()) {
-                ERR_POST(Warning << "Invalid 'scores' size in denseg");
-                numseg = min(numseg, (int)denseg.GetScores().size());
-            }
             if (dim != (int)denseg.GetIds().size()) {
                 ERR_POST(Warning << "Invalid 'ids' size in denseg");
                 dim = min(dim, (int)denseg.GetIds().size());
@@ -714,6 +709,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2006/10/25 18:28:22  jcherry
+* Removed unfounded requirement that number of scores in Dense-seg
+* equals number of segments
+*
 * Revision 1.49  2006/09/26 18:05:48  vasilche
 * Replace compilation warning with runtime warning.
 *
