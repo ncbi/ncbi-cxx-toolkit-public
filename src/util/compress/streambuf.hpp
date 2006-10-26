@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CCompressionStreambuf : public CNcbiStreambuf
 {
 public:
-    // 'ctors
+    // Constructor.
     // If read/write stream processor is 0, that read/write operation
     // will fail on this stream.
     CCompressionStreambuf(
@@ -60,15 +60,16 @@ public:
         CCompressionStreamProcessor* read_stream_processor,
         CCompressionStreamProcessor* write_stream_processor
     );
+    // Destructor. Calls processor's End() function.
     virtual ~CCompressionStreambuf(void);
 
     // Get streambuf status
-    bool  IsOkay(void) const;
+    bool IsOkay(void) const;
 
     // Finalize stream's compression/decompression process for read/write.
-    // This function calls a processor's Finish() and End() functions.
-    virtual void Finalize(CCompressionStream::EDirection dir =
-            CCompressionStream::eReadWrite);
+    // This function calls a processor's Finish() function.
+    void Finalize(CCompressionStream::EDirection dir =
+                                     CCompressionStream::eReadWrite);
 
 protected:
     // Streambuf overloaded functions
@@ -83,7 +84,7 @@ protected:
 
 protected:
     // Get compression/stream processor for specified I/O direction.
-    // Return 0 if a processor for the specified direction does not
+    // Return 0 (NULL) if a processor for the specified direction does not
     // installed.
     CCompressionProcessor* GetCompressionProcessor(
          CCompressionStream::EDirection dir) const;
@@ -91,18 +92,25 @@ protected:
          CCompressionStream::EDirection dir) const;
 
     // Get stream processor's status
-    bool IsStreamProcessorOkay(
-         CCompressionStream::EDirection dir) const;
+    bool IsStreamProcessorOkay(CCompressionStream::EDirection dir) const;
 
     // Sync I/O buffers for the specified direction.
-    // Return 0 if the get area is empty and there are no more characters to
-    // output; otherwise, it returns -1 (EOF).
-    virtual int Sync(CCompressionStream::EDirection dir);
+    // Return 0 if no error; otherwise, returns -1 (EOF).
+    int Sync(CCompressionStream::EDirection dir);
+
+    // Finalize stream's compression/decompression processor.
+    // Return 0 if no error; otherwise,  returns -1 (EOF).
+    int Finish(CCompressionStream::EDirection dir);
+
+    // Flush stream processor for the specified direction.
+    // Return 0 if no error; otherwise, returns -1 (EOF).
+    // Helper method for Sync/Finish.
+    int Flush(CCompressionStream::EDirection dir);
 
     // Process a data from the input buffer and put result into the out.buffer
     bool Process(CCompressionStream::EDirection dir);
-    virtual bool ProcessStreamRead(void);
-    virtual bool ProcessStreamWrite(void);
+    bool ProcessStreamRead(void);
+    bool ProcessStreamWrite(void);
 
     // Write data from the out buffer to the underlying stream.
     // NOTE: for writing processor only (m_Writer).
@@ -125,6 +133,18 @@ protected:
 //
 // Inline function
 //
+
+inline 
+void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
+{
+    // Finalize read and write processors
+    if (dir == CCompressionStream::eReadWrite ) {
+        Finish(CCompressionStream::eRead);
+        Finish(CCompressionStream::eWrite);
+        return;
+    }
+    Finish(dir);
+}
 
 inline CCompressionProcessor*
     CCompressionStreambuf::GetCompressionProcessor(
@@ -153,8 +173,9 @@ inline bool CCompressionStreambuf::IsStreamProcessorOkay(
             CCompressionStream::EDirection dir) const
 {
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
-    return IsOkay()  &&  sp  &&  !sp->m_Finalized  && 
-           sp->m_Processor   &&  sp->m_Processor->IsBusy();
+    return IsOkay()  &&  sp  &&   sp->m_Processor  &&
+           sp->m_Processor->IsBusy()  &&
+           sp->m_State != CCompressionStreamProcessor::eDone;
 }
 
 
@@ -170,7 +191,7 @@ inline streambuf* CCompressionStreambuf::setbuf(CT_CHAR_TYPE* /* buf */,
 {
     NCBI_THROW(CCompressionException, eCompression,
                "CCompressionStreambuf::setbuf() not allowed");
-    return this; // notreached
+    return this;  // notreached
 }
 
 
@@ -180,6 +201,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/10/26 15:34:04  ivanov
+ * Added automatic finalization for input streams, if no more data
+ * in the underlying stream
+ *
  * Revision 1.10  2006/04/06 18:11:37  ivanov
  * Finalize() -- fixed bug with possible loss of already processed data
  * in an output streams.

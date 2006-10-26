@@ -74,7 +74,7 @@ BEGIN_NCBI_SCOPE
 //   for sure. By default finalization called in the class destructor, however
 //   it can be done in any time by call Finalize(). After finalization you
 //   can only read from the stream (if it is derived from istream).
-//   If you don't read that some data can be lost.
+//   If you don't read that some data can be lost. 
 //
 // Note:
 //   There is one special aspect of CCompression[I]OStream class. Basically
@@ -105,8 +105,8 @@ class NCBI_XUTIL_EXPORT CCompressionStream : virtual public CNcbiIos
 public:
     /// Stream processing direction.
     enum EDirection {
-        eRead,                      // reading from stream
-        eWrite,                     // writing into stream
+        eRead,                      // Reading from stream
+        eWrite,                     // Writing into stream
         eReadWrite                  // eRead + eWrite
     };
 
@@ -115,17 +115,17 @@ public:
     /// NOTE:  if the reader and writer are in fact one object, it will
     ///        not be deleted twice.
     enum EOwnership {
-        fOwnStream = (1<<1),        // delete the underlying I/O stream
-        fOwnReader = (1<<2),        // delete the reader
-        fOwnWriter = (1<<3),        // delete the writer
+        fOwnStream = (1<<1),        // Delete the underlying I/O stream
+        fOwnReader = (1<<2),        // Delete the reader
+        fOwnWriter = (1<<3),        // Delete the writer
         fOwnProcessor = fOwnReader + fOwnWriter,
         fOwnAll       = fOwnStream + fOwnProcessor
     };
-    typedef int TOwnership;         // bitwise OR of EOwnership
+    typedef int TOwnership;         // Bitwise OR of EOwnership
 
     /// Constructor
     ///
-    /// If read/write stream processor is 0, that read/write operation
+    /// If read/write stream processor is 0 (NULL), that read/write operations
     /// on this stream will be unsuccessful.
     CCompressionStream(CNcbiIos&                    stream,
                        CCompressionStreamProcessor* read_sp,
@@ -145,11 +145,11 @@ protected:
     unsigned long x_GetOutputSize(CCompressionStream::EDirection dir);
 
 protected:
-    CNcbiIos*                    m_Stream;    // underlying stream
-    CCompressionStreambuf*       m_StreamBuf; // stream buffer
-    CCompressionStreamProcessor* m_Reader;    // read processor
-    CCompressionStreamProcessor* m_Writer;    // write processor
-    TOwnership                   m_Ownership; // bitwise OR of EOwnership
+    CNcbiIos*                    m_Stream;    // Underlying stream
+    CCompressionStreambuf*       m_StreamBuf; // Stream buffer
+    CCompressionStreamProcessor* m_Reader;    // Read processor
+    CCompressionStreamProcessor* m_Writer;    // Write processor
+    TOwnership                   m_Ownership; // Bitwise OR of EOwnership
 };
 
 
@@ -161,40 +161,47 @@ protected:
 // Container class for storing a stream's processor read/write info.
 //
 
-class NCBI_XUTIL_EXPORT CCompressionStreamProcessor
+class NCBI_XUTIL_EXPORT CCompressionStreamProcessor 
 {
 public:
-    // If to delete the used compression processor in the destructor
+    /// If to delete the used compression processor in the destructor
     enum EDeleteProcessor {
-        eDelete,            // do      delete processor object 
-        eNoDelete           // do  not delete processor object
+        eDelete,            ///< do     delete processor object 
+        eNoDelete           ///< do not delete processor object
     };
 
-    // 'ctors
+    /// Constructor
     CCompressionStreamProcessor(
         CCompressionProcessor* processor,
         EDeleteProcessor       need_delete  = eNoDelete,
         streamsize             in_bufsize   = kCompressionDefaultBufSize,
         streamsize             out_bufsize  = kCompressionDefaultBufSize
     );
+    /// Destructor
     virtual ~CCompressionStreamProcessor(void);
 
+    /// Stream processor state
+    enum EState {
+        eActive,            ///< processor ready to read/write
+        eFinalize,          ///< Finalize() already done, but End() not yet
+        eDone               ///< End() done, processor cannot process data
+    };
+
 private:
-    CCompressionProcessor* m_Processor;	  // Compression/decompr processor
-    CT_CHAR_TYPE*          m_InBuf;       // Buffer of unprocessed data
-    streamsize             m_InBufSize;   // Unprocessed data buffer size
-    CT_CHAR_TYPE*          m_OutBuf;      // Buffer of processed data
-    streamsize             m_OutBufSize;  // Processed data buffer size 
-    streamsize             m_LastOutAvail;// The size of last data received
-                                          // from compression processor
-    CT_CHAR_TYPE*          m_Begin;       // Begin and end of the pre/post
-    CT_CHAR_TYPE*          m_End;         // processed data in the read/write
-                                          // buffer
-    EDeleteProcessor       m_NeedDelete;  // m_Processor auto-deleting flag
+    CCompressionProcessor* m_Processor;   ///< (De)compression processor.
+    CT_CHAR_TYPE*          m_InBuf;       ///< Buffer of unprocessed data.
+    streamsize             m_InBufSize;   ///< Unprocessed data buffer size.
+    CT_CHAR_TYPE*          m_OutBuf;      ///< Buffer of processed data.
+    streamsize             m_OutBufSize;  ///< Processed data buffer size.
+    streamsize             m_LastOutAvail;///< The size of last data received
+                                          ///< from compression processor.
+    CT_CHAR_TYPE*          m_Begin;       ///< Begin and end of the pre/post
+    CT_CHAR_TYPE*          m_End;         ///< processed data in the buffer.
+    EDeleteProcessor       m_NeedDelete;  ///< m_Processor auto-deleting flag.
     CCompressionProcessor::EStatus
-                           m_LastStatus;  // Last compressor status
-    bool                   m_Finalized;   // True if a Finalize() already done
-                                          // for compression processor  
+                           m_LastStatus;  ///< Last compressor status.
+    EState                 m_State;       ///< Stream processor state.
+
     // Friend classes
     friend class CCompressionStream;
     friend class CCompressionStreambuf;
@@ -218,10 +225,11 @@ public:
           CCompressionStream(stream, stream_processor, 0, ownership)
     {}
     
-    // Return number of processed/output bytes.
+    /// Return number of processed bytes.
     unsigned long GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eRead);
     };
+    /// Return number of output bytes.
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eRead);
     };
@@ -239,10 +247,11 @@ public:
           CCompressionStream(stream, 0, stream_processor, ownership)
     {}
 
-    // Return number of processed/output bytes.
+    /// Return number of processed bytes.
     unsigned long GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eWrite);
     };
+    /// Return number of output bytes.
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eWrite);
     };
@@ -261,10 +270,11 @@ public:
           CCompressionStream(stream, read_sp, write_sp, ownership)
     { }
 
-    // Return number of processed/output bytes.
+    /// Return number of processed bytes.
     unsigned long GetProcessedSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetProcessedSize(dir);
     };
+    /// Return number of output bytes.
     unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetOutputSize(dir);
     };
@@ -280,6 +290,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/10/26 15:34:16  ivanov
+ * Added automatic finalization for input streams, if no more data
+ * in the underlying stream
+ *
  * Revision 1.11  2006/04/06 18:04:18  ivanov
  * Small comments fix
  *

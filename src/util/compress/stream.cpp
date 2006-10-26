@@ -58,8 +58,8 @@ CCompressionStreamProcessor::CCompressionStreamProcessor(
       m_Begin(0),
       m_End(0),
       m_NeedDelete(need_delete),
-      m_LastStatus(CCompressionProcessor::eStatus_Error),
-      m_Finalized(0)
+      m_LastStatus(CCompressionProcessor::eStatus_Success),
+      m_State(eActive)
 {
     return;
 }
@@ -110,9 +110,9 @@ CCompressionStream::~CCompressionStream(void)
     rdbuf(0);
 #endif
     // Delete owned objects
-    if ( m_Stream  &&  m_Ownership & fOwnStream ) {
+    if ( m_Stream   &&   m_Ownership & fOwnStream ) {
 #if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
-       // On GCC 2.9x ios::~ios() is protected
+        // On GCC 2.9x ios::~ios() is protected
 #else
         delete m_Stream;
         m_Stream = 0;
@@ -143,19 +143,18 @@ void CCompressionStream::Finalize(CCompressionStream::EDirection dir)
 unsigned long CCompressionStream::x_GetProcessedSize(
                                   CCompressionStream::EDirection dir)
 {
-    CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader :
-                                                       m_Writer;
+    CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader : m_Writer;
     if (!sp  ||  !sp->m_Processor) {
         return 0;
     }
     return sp->m_Processor->GetProcessedSize();
 }
 
+
 unsigned long CCompressionStream::x_GetOutputSize(
                                   CCompressionStream::EDirection dir)
 {
-    CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader :
-                                                       m_Writer;
+    CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader : m_Writer;
     if (!sp  ||  !sp->m_Processor) {
         return 0;
     }
@@ -169,6 +168,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/10/26 15:34:04  ivanov
+ * Added automatic finalization for input streams, if no more data
+ * in the underlying stream
+ *
  * Revision 1.9  2004/05/17 21:07:25  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
