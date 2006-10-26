@@ -79,20 +79,23 @@ CGene_commentary::CGene_commentary(void)
 
 // some useful CGene_commentary predicate (classes)
     
-class IsGene_commentaryType : public unary_function <CRef<CGene_commentary>, bool>{
+class NCBI_ENTREZGENE_EXPORT
+IsGene_commentaryType : public unary_function <CRef<CGene_commentary>, bool>{
     CGene_commentary::EType _type;
 public:
     IsGene_commentaryType(const CGene_commentary::EType& type) : _type(type) {};
     bool operator () (const CRef<CGene_commentary> comment) const;
 };
-class IsGene_commentaryHeading : public unary_function <CRef<CGene_commentary>, bool>{
+class NCBI_ENTREZGENE_EXPORT
+IsGene_commentaryHeading : public unary_function <CRef<CGene_commentary>, bool>{
     string _heading;
 public:
     IsGene_commentaryHeading(const string& heading) :  _heading (heading) {};
     bool operator() (const CRef<CGene_commentary> comment) const;
 };
 
-class IsGene_commentaryHeadingAndType : public unary_function <CRef<CGene_commentary>, bool>{
+class NCBI_ENTREZGENE_EXPORT
+IsGene_commentaryHeadingAndType : public unary_function <CRef<CGene_commentary>, bool>{
     string _heading;
     CGene_commentary::EType _type;
 public:
@@ -109,6 +112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/26 18:30:14  jcherry
+* Added export specifiers
+*
 * Revision 1.1  2006/09/18 13:56:22  kskatz
 * Added three predicate classes for finding commentaries by heading, type, or both
 *
