@@ -188,13 +188,8 @@ void CODBC_Reporter::ReportErrors(void) const
 
     enum {eMsgStrLen = 1024};
 
-#ifdef UNICODE
-    SQLWCHAR SqlState[6];
-    SQLWCHAR Msg[eMsgStrLen];
-#else
-    SQLCHAR SqlState[6];
-    SQLCHAR Msg[eMsgStrLen];
-#endif
+    odbc::TSqlChar SqlState[6];
+    odbc::TSqlChar Msg[eMsgStrLen];
 
     if( !m_HStack ) {
         return;
@@ -227,7 +222,8 @@ void CODBC_Reporter::ReportErrors(void) const
                                     err_msg.c_str());
                     m_HStack->PostMsg(&dl);
                 }
-                else if(NativeError != 5701 && NativeError != 5703){
+                else if(NativeError != 5701
+                    && NativeError != 5703 ){
                     CDB_SQLEx se(kBlankCompileInfo,
                                 0,
                                 err_msg.c_str(),
@@ -294,6 +290,10 @@ CODBCContext::CODBCContext(SQLLEN version,
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
+
+#ifdef UNICODE
+    SetClientCharset("UTF-8");
+#endif
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
         string err_message = "Cannot allocate a context" + m_Reporter.GetExtraMsg();
@@ -667,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/10/26 14:56:08  ssikorsk
+ * Initialize CODBCContext with client charset set to UTF-8 in case of UNICODE API.
+ *
  * Revision 1.69  2006/10/05 20:41:14  ssikorsk
  * - #include <corelib/ncbiapp.hpp>
  *
