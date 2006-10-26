@@ -626,6 +626,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
     size_t invalid_len = 0;
 
     while(( len = stream.Read(buff + invalid_len, sizeof(buff) - invalid_len - 1)) != 0 ) {
+#ifdef UNICODE
         if (stmt.GetClientEncoding() == eEncoding_UTF8) {
             if (descr_type == CDB_ITDescriptor::eText) {
                 // Convert string.
@@ -652,11 +653,14 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
                                 );
             }
         } else {
+#endif
             rc = SQLPutData(stmt.GetHandle(),
                             (SQLPOINTER)buff,
                             (SQLINTEGER)len // Number of bytes ...
                             );
+#ifdef UNICODE
         }
+#endif
 
         switch( rc ) {
         case SQL_SUCCESS_WITH_INFO:
@@ -1266,6 +1270,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
     int rc;
 
+#ifdef UNICODE
     if (GetClientEncoding() == eEncoding_UTF8) {
         if (m_DescrType == CDB_ITDescriptor::eText) {
             // Convert string.
@@ -1294,11 +1299,14 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
                             );
         }
     } else {
+#endif
         rc = SQLPutData(GetHandle(),
                         (SQLPOINTER)chunk_ptr,
                         (SQLINTEGER)nof_bytes // Number of bytes ...
                         );
+#ifdef HAVE_UNICODE
     }
+#endif
 
     switch( rc ) {
     case SQL_SUCCESS_WITH_INFO:
@@ -1393,6 +1401,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/10/26 19:41:21  ucko
+ * Conditionalize recently added wide-character logic on UNICODE for
+ * compatibility with platforms that lack wide strings.
+ *
  * Revision 1.54  2006/10/26 15:09:38  ssikorsk
  * Use a charset provided by a client instead of a default one;
  * Fefactoring of CStatementBase::x_BindParam_ODBC;
