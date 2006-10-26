@@ -401,7 +401,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
 /* Setup standard arguments:  service, address, and platform.
  * Return non-zero on success; zero on error.
  */
-extern int/*bool*/ ConnNetInfo_SetupStandardArgs
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
 (SConnNetInfo* info
  );
 
@@ -735,6 +735,9 @@ size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2006/10/26 18:54:12  jcherry
+ * Added export specifier
+ *
  * Revision 6.59  2006/08/14 19:08:41  lavr
  * HTTP_REFERER documented as may have added automatically
  *
