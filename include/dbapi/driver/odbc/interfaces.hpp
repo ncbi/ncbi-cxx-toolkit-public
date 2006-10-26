@@ -76,12 +76,10 @@ BEGIN_SCOPE(odbc)
     typedef SQLWCHAR TSqlChar;
     typedef wstring::size_type TStrSize;
     typedef wchar_t TChar;
-    static const EEncoding DefStrEncoding = eEncoding_UTF8;
 #else
     typedef SQLCHAR TSqlChar;
     typedef string::size_type TStrSize;
     typedef char TChar;
-    static const EEncoding DefStrEncoding = eEncoding_ISO8859_1;
 #endif
 
 END_SCOPE(odbc)
@@ -369,12 +367,27 @@ public:
         return CheckRC( SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS) );
     }
 
+    bool IsMultibyteClientEncoding(void) const
+    {
+        return GetConnection().IsMultibyteClientEncoding();
+    }
+    EEncoding GetClientEncoding(void) const
+    {
+        return GetConnection().GetClientEncoding();
+    }
+
 protected:
     string Type2String(const CDB_Object& param) const;
-    bool BindParam_ODBC(const CDB_Object& param,
-                        CMemPot& bind_guard,
-                        SQLLEN* indicator_base,
-                        unsigned int pos) const;
+    bool x_BindParam_ODBC(const CDB_Object& param,
+                          CMemPot& bind_guard,
+                          SQLLEN* indicator_base,
+                          unsigned int pos) const;
+    static SQLSMALLINT x_GetCType(const CDB_Object& param);
+    static SQLSMALLINT x_GetSQLType(const CDB_Object& param);
+    static SQLULEN x_GetMaxDataSize(const CDB_Object& param);
+    static SQLLEN x_GetCurDataSize(const CDB_Object& param);
+    static SQLLEN x_GetIndicator(const CDB_Object& param);
+    SQLPOINTER x_GetData(const CDB_Object& param, CMemPot& bind_guard) const;
 
 protected:
     SQLLEN  m_RowCount;
@@ -662,6 +675,21 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public impl::CResult
     friend class CODBC_Connection;
     friend class CODBC_CursorCmdExpl;
 
+public:
+    CStatementBase& GetStatementBase(void)
+    {
+        return m_Stmt;
+    }
+    const CStatementBase& GetStatementBase(void) const
+    {
+        return m_Stmt;
+    }
+
+    EEncoding GetClientEncoding(void) const
+    {
+        return GetStatementBase().GetClientEncoding();
+    }
+
 protected:
     CODBC_RowResult(
         CStatementBase& stmt,
@@ -695,19 +723,19 @@ protected:
 protected:
     SQLHSTMT GetHandle(void) const
     {
-        return m_Stmt.GetHandle();
+        return GetStatementBase().GetHandle();
     }
     void ReportErrors(void)
     {
-        m_Stmt.ReportErrors();
+        GetStatementBase().ReportErrors();
     }
     string GetDiagnosticInfo(void) const
     {
-        return m_Stmt.GetDiagnosticInfo();
+        return GetStatementBase().GetDiagnosticInfo();
     }
     void Close(void)
     {
-        m_Stmt.Close();
+        GetStatementBase().Close();
     }
     bool CheckSIENoD_Text(CDB_Stream* val);
 #ifdef HAVE_WSTRING
@@ -846,6 +874,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/10/26 15:04:25  ssikorsk
+ * Added methods IsMultibyteClientEncoding, GetClientEncoding, x_GetCType, x_GetSQLType,
+ * x_GetMaxDataSize, x_GetCurDataSize, x_GetIndicator, x_GetData to CStatementBase;
+ * Added methods GetStatementBase, GetClientEncoding to CODBC_RowResult;
+ *
  * Revision 1.49  2006/10/11 15:57:57  ssikorsk
  * Added private methods x_GetDriverName, x_SetConnAttributesBefore,
  * x_SetConnAttributesAfter, x_Connect, x_SetupErrorReporter to CODBC_Connection.
