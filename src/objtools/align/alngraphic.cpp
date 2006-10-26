@@ -332,14 +332,21 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
   
 }
 
-CAlnGraphic::CAlnGraphic(const CSeq_align_set& seqalign, CScope& scope)
-    :m_AlnSet(&seqalign), m_Scope(&scope)  {
+CAlnGraphic::CAlnGraphic(const CSeq_align_set& seqalign, 
+                         CScope& scope,
+                         CRange<TSeqPos>* master_range)
+    :m_AlnSet(&seqalign), m_Scope(&scope), m_MasterRange(master_range) {
     m_NumAlignToShow = 1200;
     m_View = eCompactView;
     m_BarHeight = e_Height4;
     m_ImagePath = "./";
     m_MouseOverFormName = "document.forms[0]";
     m_NumLine = 55;
+    if (m_MasterRange) {
+        if (m_MasterRange->GetFrom() >= m_MasterRange->GetTo()) {
+            m_MasterRange = NULL;
+        }
+    }
 }
 
 CAlnGraphic::~CAlnGraphic(){
@@ -382,7 +389,12 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
             alninfo_list = new TAlnInfoList; 
         }
         //get start and end seq position for master sequence
-        CRange<TSeqPos>* seq_range = new CRange<TSeqPos>((*iter)->GetSeqRange(0));
+        CRange<TSeqPos>* seq_range = new CRange<TSeqPos>((*iter)->GetSeqRange(0));;
+        if (m_MasterRange) {           
+            seq_range->Set(seq_range->GetFrom() - m_MasterRange->GetFrom(),
+                           seq_range->GetTo() - m_MasterRange->GetFrom());
+        } 
+                
         //for minus strand
         if(seq_range->GetFrom() > seq_range->GetTo()){
             seq_range->Set(seq_range->GetTo(), seq_range->GetFrom());
@@ -394,7 +406,11 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
             if(!handle){
                 NCBI_THROW(CException, eUnknown, "Master sequence is not found!");
             }
-            master_len = handle.GetBioseqLength();
+            if (m_MasterRange) {
+                master_len = m_MasterRange->GetLength();
+            } else {
+                master_len = handle.GetBioseqLength();
+            }
             x_DisplayMaster(master_len, &(*center), &(*tbl_box), tbl_box_tc);
         }
         if(!is_first_aln && !subid->Match(*previous_id)) {
@@ -529,26 +545,46 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
 
     //digits 
     //first scale digit
-    string digit_str, previous_digitstr;
+    string digit_str, previous_digitstr, first_digit_str;
     int previous_digit;
+    int first_digit = 0;
     column = 0;
-    image = new CHTML_img(m_ImagePath + kGifWhite, kScoreMargin, m_BarHeight);
+    first_digit = m_MasterRange ? m_MasterRange->GetFrom() : 0;
+    first_digit_str = NStr::IntToString(first_digit);
+
+    image = new CHTML_img(m_ImagePath + kGifWhite, 
+                          kScoreMargin - 
+                          kDigitWidth*((int)(first_digit_str.size()/2)),
+                          m_BarHeight);
     tbl = new CHTML_table;
     tbl->SetCellSpacing(0)->SetCellPadding(0)->SetAttribute("border", "0");
     tc = tbl->InsertAt(0, column, image);
     tc->SetAttribute("align", "LEFT");
     tc->SetAttribute("valign", "CENTER");
     column ++;
-    image = new CHTML_img(m_ImagePath + kDigitGif[0], kDigitWidth, kDigitHeight);
-    tc = tbl->InsertAt(0, column, image);
-    column ++;
-    previous_digit = 0;
-    previous_digitstr = NStr::IntToString(0);
+ 
+    //inserting actual digits
+    for(size_t j = 0; j < first_digit_str.size(); j ++){
+        string one_digit(1, first_digit_str[j]); 
+        int digit = NStr::StringToInt(one_digit);
+        image = new CHTML_img(m_ImagePath + kDigitGif[digit], kDigitWidth, 
+                              kDigitHeight);
+        tc = tbl->InsertAt(0, column, image);
+        tc->SetAttribute("align", "LEFT");
+        tc->SetAttribute("valign", "CENTER");
+        column ++;
+    }  
     
+    previous_digit = first_digit;
+    previous_digitstr = first_digit_str;
+  
     //print scale digits from second mark and on
     for (TSeqPos i = 1; (int)i*round_number <= master_len; i++) {
        
-        digit_str = NStr::IntToString(i*round_number);        
+        digit_str = NStr::IntToString(i*round_number + 
+                                      (m_MasterRange ?
+                                       m_MasterRange->GetFrom() : 0)); 
+
         spacer_length = (int)(pixel_factor*round_number) 
             - kDigitWidth*(previous_digitstr.size() 
                            - previous_digitstr.size()/2) 
@@ -737,6 +773,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.11  2006/10/26 20:57:14  jianye
+*add ability to show only the sub-region of master sequence
+*
 *Revision 1.10  2006/10/24 16:42:29  jianye
 *add vertical line to indicate alignment breaks
 *

@@ -61,7 +61,9 @@ public:
     };
     
     // Constructors
-    CAlnGraphic(const CSeq_align_set& seqalign, CScope& scope);
+    CAlnGraphic(const CSeq_align_set& seqalign, 
+                CScope& scope,
+                CRange<TSeqPos>* master_range = NULL);
 
     // Destructor
     ~CAlnGraphic();
@@ -126,7 +128,10 @@ private:
     string m_ImagePath;
     string m_MouseOverFormName;   //the text input window to show mouseover info
     int m_NumLine;
-   
+    
+    //blast sub-sequence query
+    CRange<TSeqPos>* m_MasterRange; 
+
     TAlnInfoListList m_AlninfoListList;
     void x_DisplayMaster(int master_len, CNCBINode* center, 
                          CHTML_table* tbl_box, CHTML_tc*& tbl_box_tc);
@@ -148,6 +153,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.4  2006/10/26 20:57:09  jianye
+*add ability to show only the sub-region of master sequence
+*
 *Revision 1.3  2004/05/03 17:42:13  jianye
 *Added def directives
 *
