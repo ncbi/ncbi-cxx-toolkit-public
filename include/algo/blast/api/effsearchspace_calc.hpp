@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Auxiliary class to compute the effective search space
-class CEffectiveSearchSpaceCalculator {
+class NCBI_XBLAST_EXPORT CEffectiveSearchSpaceCalculator {
 public:
     /// Constructor
     /// @param query_factory source for query sequence(s) [in]
