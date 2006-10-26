@@ -87,6 +87,7 @@ public:
     }
 
     bool IsMultibyteClientEncoding(void) const;
+    EEncoding GetClientEncoding(void) const;
 
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,
@@ -268,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/10/26 18:13:53  ssikorsk
+ * + CConnection::GetClientEncoding()
+ *
  * Revision 1.9  2006/10/23 22:01:50  ssikorsk
  * Added IsMultibyteClientEncoding()
  *

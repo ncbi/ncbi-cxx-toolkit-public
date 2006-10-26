@@ -221,6 +221,13 @@ CConnection::IsMultibyteClientEncoding(void) const
 }
 
 
+EEncoding
+CConnection::GetClientEncoding(void) const
+{
+    return GetCDriverContext().GetClientEncoding();
+}
+
+
 END_SCOPE(impl)
 
 END_NCBI_SCOPE
@@ -228,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/10/26 18:14:50  ssikorsk
+ * + CConnection::GetClientEncoding()
+ *
  * Revision 1.6  2006/10/23 22:01:36  ssikorsk
  * + IsMultibyteClientEncoding()
  *
