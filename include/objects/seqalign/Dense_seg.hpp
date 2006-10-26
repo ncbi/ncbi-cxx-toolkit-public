@@ -112,7 +112,7 @@ public:
     /// Offset row's coords
     void OffsetRow(TDim row, TSeqPos offset);
 
-    /// @deprecated
+    /// @deprecated (use CSeq_loc_Mapper or CSeq_align_Mapper)
     NCBI_DEPRECATED void RemapToLoc(TDim row, const CSeq_loc& loc,
                                     bool ignore_strand = false);
 
@@ -217,6 +217,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/10/26 19:11:02  todorov
+* Added comment for the deprecated RempaToLoc.
+*
 * Revision 1.17  2006/06/06 22:44:47  todorov
 * Added OffsetRow method.
 * Marked RemapToLoc for deprecation.
