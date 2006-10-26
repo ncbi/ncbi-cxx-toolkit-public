@@ -95,7 +95,7 @@ bool CODBC_RPCCmd::Send()
        q_str += ";\nselect " + param_result_query;
    }
 
-    switch(SQLExecDirect(GetHandle(), CODBCString(q_str, odbc::DefStrEncoding), SQL_NTS)) {
+    switch(SQLExecDirect(GetHandle(), CODBCString(q_str, GetClientEncoding()), SQL_NTS)) {
     case SQL_SUCCESS:
         m_hasResults = true;
         break;
@@ -318,13 +318,13 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
 
-        const string type = Type2String(param);
-        if (!BindParam_ODBC(param, bind_guard, indicator, n)) {
+        if (!x_BindParam_ODBC(param, bind_guard, indicator, n)) {
             return false;
         }
 
         q_exec += n ? ',':' ';
 
+        const string type = Type2String(param);
         if(!param_named) {
             sprintf(p_nm, "@pR%d", n);
             q_exec += p_nm;
@@ -390,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/10/26 15:06:41  ssikorsk
+ * Use a charset provided by a client instead of a default one.
+ *
  * Revision 1.33  2006/10/19 16:18:06  ssikorsk
  * Fixed handling of unicode strings in CODBC_RPCCmd::Result.
  *

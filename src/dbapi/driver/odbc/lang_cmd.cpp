@@ -95,7 +95,7 @@ bool CODBC_LangCmd::Send(void)
         real_query = &m_Query;
     }
 
-    switch(SQLExecDirect(GetHandle(), CODBCString(*real_query, odbc::DefStrEncoding), SQL_NTS)) {
+    switch(SQLExecDirect(GetHandle(), CODBCString(*real_query, GetClientEncoding()), SQL_NTS)) {
     case SQL_SUCCESS:
         m_hasResults = true;
         break;
@@ -286,7 +286,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* ind
         const CDB_Object& param = *m_Params.GetParam(n);
 
         const string type = Type2String(param);
-        if (!BindParam_ODBC(param, bind_guard, indicator, n)) {
+        if (!x_BindParam_ODBC(param, bind_guard, indicator, n)) {
             return false;
         }
 
@@ -342,7 +342,7 @@ void CODBC_LangCmd::SetCursorName(const string& name) const
     CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CURSOR_TYPE, (void*)SQL_CURSOR_FORWARD_ONLY, SQL_NTS),
              "SQLSetStmtAttr(SQL_ATTR_CURSOR_TYPE) failed", 420018);
 
-    CheckSIE(SQLSetCursorName(GetHandle(), CODBCString(name, odbc::DefStrEncoding), name.size()),
+    CheckSIE(SQLSetCursorName(GetHandle(), CODBCString(name, GetClientEncoding()), name.size()),
              "SQLSetCursorName failed", 420016);
 }
 
@@ -361,6 +361,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/10/26 15:07:57  ssikorsk
+ * Use a charset provided by a client instead of a default one.
+ *
  * Revision 1.34  2006/09/18 15:32:43  ssikorsk
  * Redesigned CODBC_LangCmd::x_AssignParams using BindParam_ODBC.
  *

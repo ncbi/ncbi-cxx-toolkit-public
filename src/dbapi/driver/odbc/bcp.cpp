@@ -68,7 +68,7 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
     string extra_msg = "Table Name: " + table_name;
     SetDiagnosticInfo( extra_msg );
 
-    if (bcp_init(cmd, CODBCString(table_name, odbc::DefStrEncoding), 0, 0, DB_IN) != SUCCEED) {
+    if (bcp_init(cmd, CODBCString(table_name, GetClientEncoding()), 0, 0, DB_IN) != SUCCEED) {
         ReportErrors();
         string err_message = "bcp_init failed" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 423001 );
@@ -152,11 +152,7 @@ CODBC_BCPInCmd::x_GetBCPDataSize(EDB_Type type)
     case eDB_VarChar:
     case eDB_LongChar:
     case eDB_Text:
-#ifdef UNICODE
-        return sizeof(WCHAR);
-#else
-        return 1;
-#endif
+        return sizeof(odbc::TChar);
     default:
         break;
     }
@@ -173,11 +169,7 @@ CODBC_BCPInCmd::x_GetDataTerminator(EDB_Type type)
     case eDB_VarChar:
     case eDB_LongChar:
     case eDB_Text:
-#ifdef UNICODE
         return _T("");
-#else
-        return "";
-#endif
     default:
         break;
     }
@@ -282,47 +274,74 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         break;
         case eDB_Char: {
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-#ifdef UNICODE
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+            BYTE* data = NULL;
+
+            if (val.IsNULL()) {
+                data = (BYTE*)pb;
+            } else {
+                if (IsMultibyteClientEncoding()) {
+                    data = (BYTE*)val.AsUnicode(GetClientEncoding());
+                } else {
+                    data = (BYTE*)val.Value();
+                }
+            }
+
+            r = bcp_colptr(GetHandle(),
+                           data,
+                           i + 1)
                 == SUCCEED &&
-                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(),
+                           val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
+                           i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
-#else
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-#endif
         }
         break;
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-#ifdef UNICODE
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+            BYTE* data = NULL;
+
+            if (val.IsNULL()) {
+                data = (BYTE*)pb;
+            } else {
+                if (IsMultibyteClientEncoding()) {
+                    data = (BYTE*)val.AsUnicode(GetClientEncoding());
+                } else {
+                    data = (BYTE*)val.Value();
+                }
+            }
+
+            r = bcp_colptr(GetHandle(),
+                           data,
+                           i + 1)
                 == SUCCEED &&
-                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(),
+                           val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
+                           i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
-#else
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-#endif
         }
         break;
         case eDB_LongChar: {
             CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-#ifdef UNICODE
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.AsUnicode(odbc::DefStrEncoding)) : (BYTE*)pb, i + 1)
+            BYTE* data = NULL;
+
+            if (val.IsNULL()) {
+                data = (BYTE*)pb;
+            } else {
+                if (IsMultibyteClientEncoding()) {
+                    data = (BYTE*)val.AsUnicode(GetClientEncoding());
+                } else {
+                    data = (BYTE*)val.Value();
+                }
+            }
+
+            r = bcp_colptr(GetHandle(),
+                           data,
+                           i + 1)
                 == SUCCEED &&
-                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                bcp_collen(GetHandle(),
+                           val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA,
+                           i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
-#else
-            r = bcp_colptr(GetHandle(), (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
-                == SUCCEED &&
-                bcp_collen(GetHandle(), val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
-                == SUCCEED ? SUCCEED : FAIL;
-#endif
         }
         break;
         case eDB_Binary: {
@@ -589,6 +608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/10/26 15:08:39  ssikorsk
+ * Use a charset provided by a client instead of a default one.
+ *
  * Revision 1.25  2006/10/03 20:12:58  ssikorsk
  * strncpy --> memmove
  *

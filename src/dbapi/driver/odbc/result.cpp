@@ -1012,11 +1012,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
     enum {eNameStrLen = 128};
     SQLSMALLINT slp;
 
-#ifdef UNICODE
-    SQLWCHAR buffer[eNameStrLen];
-#else
-    SQLCHAR buffer[eNameStrLen];
-#endif
+    odbc::TSqlChar buffer[eNameStrLen];
 
     switch(SQLColAttribute(GetHandle(), item_no + 1,
                            SQL_DESC_BASE_TABLE_NAME,
@@ -1036,7 +1032,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         }
     }
 
-    string base_table = CODBCString(buffer, odbc::DefStrEncoding).AsUTF8();
+    string base_table = CODBCString(buffer, GetClientEncoding()).AsUTF8();
 
     switch(SQLColAttribute(GetHandle(), item_no + 1,
                            SQL_DESC_BASE_COLUMN_NAME,
@@ -1056,7 +1052,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         }
     }
 
-    string base_column = CODBCString(buffer, odbc::DefStrEncoding).AsUTF8();
+    string base_column = CODBCString(buffer, GetClientEncoding()).AsUTF8();
 
     SQLLEN column_type = 0;
     switch(SQLColAttribute(GetHandle(), item_no + 1,
@@ -1399,6 +1395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/10/26 15:07:32  ssikorsk
+ * Use a charset provided by a client instead of a default one.
+ *
  * Revision 1.40  2006/09/21 20:40:36  ssikorsk
  * SQLDescribeCol returns num of characters.
  *
