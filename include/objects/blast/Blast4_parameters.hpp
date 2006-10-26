@@ -61,106 +61,106 @@ public:
     /// destructor
     ~CBlast4_parameters(void);
 
-	/// Append Blast4_parameter
-	///
-	/// If node with the specified name exists, the value is substituted
-	///
+    /// Append Blast4_parameter
+    ///
+    /// If node with the specified name exists, the value is substituted
+    ///
     /// @param name
-	///    A string containing Blast4_parameter node name
-	/// @param  value 
-	///   An int conatinig Blast4_parameter value
-	/// @return 
-	///   CRef to created Blast4_parameter    
-	CRef< CBlast4_parameter> Add(const string name,const int &value); 
+    ///    A string containing Blast4_parameter node name
+    /// @param  value 
+    ///   An int conatinig Blast4_parameter value
+    /// @return 
+    ///   CRef to created Blast4_parameter    
+    CRef< CBlast4_parameter> Add(const string name,const int &value); 
 
-	
-	/// Append Blast4_parameter
-	///
-	/// If node with the specified name exists, the value is substituted
-	///
+    
+    /// Append Blast4_parameter
+    ///
+    /// If node with the specified name exists, the value is substituted
+    ///
     /// @param name
-	///    A string containing Blast4_parameter node name
-	/// @param  value 
-	///   A string conatinig Blast4_parameter value
-	/// @return 
-	///   CRef to created Blast4_parameter    
-	CRef< CBlast4_parameter> Add(const string name,const string &value); 
+    ///    A string containing Blast4_parameter node name
+    /// @param  value 
+    ///   A string conatinig Blast4_parameter value
+    /// @return 
+    ///   CRef to created Blast4_parameter    
+    CRef< CBlast4_parameter> Add(const string name,const string &value); 
 
-	/// Append Blast4_parameter
-	///
-	/// If node with the specified name exists, the value is substituted
-	///
+    /// Append Blast4_parameter
+    ///
+    /// If node with the specified name exists, the value is substituted
+    ///
     /// @param name
-	///    A string containing Blast4_parameter node name
-	/// @param  value 
-	///   A boolean containing Blast4_parameter value
-	/// @return 
-	///   CRef to created Blast4_parameter    
-	CRef< CBlast4_parameter> Add(const string name,const bool &value); 
+    ///    A string containing Blast4_parameter node name
+    /// @param  value 
+    ///   A boolean containing Blast4_parameter value
+    /// @return 
+    ///   CRef to created Blast4_parameter    
+    CRef< CBlast4_parameter> Add(const string name,const bool &value); 
 
-	/// Append Blast4_parameter
-	///
-	/// If node with the specified name exists, the value is substituted
-	///
+    /// Append Blast4_parameter
+    ///
+    /// If node with the specified name exists, the value is substituted
+    ///
     /// @param name
-	///    A string containing Blast4_parameter node name
-	/// @param  value 
-	///   A double containing Blast4_parameter value
-	/// @return 
-	///   CRef to created Blast4_parameter    
-	CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const double &value); 
+    ///    A string containing Blast4_parameter node name
+    /// @param  value 
+    ///   A double containing Blast4_parameter value
+    /// @return 
+    ///   CRef to created Blast4_parameter    
+    CRef< CBlast4_parameter> Add(const string name,const double &value); 
 
-	/// Append Blast4_parameter
-	///
-	/// If node with the specified name exists, the value is substituted
-	///
+    /// Append Blast4_parameter
+    ///
+    /// If node with the specified name exists, the value is substituted
+    ///
     /// @param name
-	///    A string containing Blast4_parameter node name
-	/// @param  value 
-	///   A Int8 containing Blast4_parameter value
-	/// @return 
-	///   CRef to created Blast4_parameter    
-	CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const Int8 &value); 
+    ///    A string containing Blast4_parameter node name
+    /// @param  value 
+    ///   A Int8 containing Blast4_parameter value
+    /// @return 
+    ///   CRef to created Blast4_parameter    
+    CRef< CBlast4_parameter> Add(const string name,const Int8 &value); 
 
-	/// Append Blast4_parameter
-	///
-	/// If node with the specified name exists, the value is substituted
-	///
+    /// Append Blast4_parameter
+    ///
+    /// If node with the specified name exists, the value is substituted
+    ///
     /// @param name
-	///    A string containing Blast4_parameter node name
-	/// @param  value 
-	///   A  EBlast4_strand_type containing Blast4_parameter value
-	/// @return 
-	///   CRef to created Blast4_parameter    
-	CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const EBlast4_strand_type &value); 
+    ///    A string containing Blast4_parameter node name
+    /// @param  value 
+    ///   A  EBlast4_strand_type containing Blast4_parameter value
+    /// @return 
+    ///   CRef to created Blast4_parameter    
+    CRef< CBlast4_parameter> Add(const string name,const EBlast4_strand_type &value); 
 
-	/// Append Blast4_parameter
-	///
-	/// If node with the specified name exists, the value is substituted
-	///
+    /// Append Blast4_parameter
+    ///
+    /// If node with the specified name exists, the value is substituted
+    ///
     /// @param name
-	///    A string containing Blast4_parameter node name
-	/// @param  value 
-	///   A  CBlast4_cutoff containing Blast4_parameter value
-	/// @return 
-	///   CRef to created Blast4_parameter    
-	CRef< CBlast4_parameter> CBlast4_parameters::Add(const string name,const CBlast4_cutoff &value); 
+    ///    A string containing Blast4_parameter node name
+    /// @param  value 
+    ///   A  CBlast4_cutoff containing Blast4_parameter value
+    /// @return 
+    ///   CRef to created Blast4_parameter    
+    CRef< CBlast4_parameter> Add(const string name,const CBlast4_cutoff &value); 
 
-	/// Returns Blast4_parameter with specified name 
-	///
+    /// Returns Blast4_parameter with specified name 
+    ///
     /// @param name
-	///  A string containg Blast4_parameter node name	
-	/// @return 
-	///  CRef to CBlast4_parameter list node or empty reference if name does not exist
-    ///	
-	CRef <CBlast4_parameter> CBlast4_parameters::GetParamByName(const string name); 
+    ///  A string containg Blast4_parameter node name   
+    /// @return 
+    ///  CRef to CBlast4_parameter list node or empty reference if name does not exist
+    /// 
+    CRef <CBlast4_parameter> GetParamByName(const string name); 
 
 
 
 private:
     // Prohibit copy constructor and assignment operator
     CBlast4_parameters(const CBlast4_parameters& value);
-    CBlast4_parameters& operator=(const CBlast4_parameters& value);	
+    CBlast4_parameters& operator=(const CBlast4_parameters& value); 
 };
 
 /////////////////// CBlast4_parameters inline methods
@@ -184,6 +184,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/10/26 13:58:23  ucko
+* Drop extraneous CBlast4_parameters:: qualifiers from in-class
+* declarations per GCC 4.1; indent with spaces rather than tabs.
+*
 * Revision 1.1  2006/10/25 15:15:19  zaretska
 * Added Blast4_parameters helper functions
 *
