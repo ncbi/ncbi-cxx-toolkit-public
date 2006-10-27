@@ -1304,7 +1304,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
                         (SQLPOINTER)chunk_ptr,
                         (SQLINTEGER)nof_bytes // Number of bytes ...
                         );
-#ifdef HAVE_UNICODE
+#ifdef UNICODE
     }
 #endif
 
@@ -1401,6 +1401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/10/27 14:37:30  ucko
+ * Fix typo in previous revision (HAVE_UNICODE vs. UNICODE)
+ *
  * Revision 1.55  2006/10/26 19:41:21  ucko
  * Conditionalize recently added wide-character logic on UNICODE for
  * compatibility with platforms that lack wide strings.
