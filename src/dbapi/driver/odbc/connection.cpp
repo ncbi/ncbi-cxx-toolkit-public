@@ -626,7 +626,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
     size_t invalid_len = 0;
 
     while(( len = stream.Read(buff + invalid_len, sizeof(buff) - invalid_len - 1)) != 0 ) {
-#ifdef UNICODE
+#ifdef HAVE_WSTRING
         if (stmt.GetClientEncoding() == eEncoding_UTF8) {
             if (descr_type == CDB_ITDescriptor::eText) {
                 // Convert string.
@@ -658,7 +658,7 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
                             (SQLPOINTER)buff,
                             (SQLINTEGER)len // Number of bytes ...
                             );
-#ifdef UNICODE
+#ifdef HAVE_WSTRING
         }
 #endif
 
@@ -1270,7 +1270,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
     int rc;
 
-#ifdef UNICODE
+#ifdef HAVE_WSTRING
     if (GetClientEncoding() == eEncoding_UTF8) {
         if (m_DescrType == CDB_ITDescriptor::eText) {
             // Convert string.
@@ -1304,7 +1304,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
                         (SQLPOINTER)chunk_ptr,
                         (SQLINTEGER)nof_bytes // Number of bytes ...
                         );
-#ifdef UNICODE
+#ifdef HAVE_WSTRING
     }
 #endif
 
@@ -1401,6 +1401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/10/27 14:39:00  ucko
+ * On second thought, those should probably all be HAVE_WSTRING.
+ *
  * Revision 1.56  2006/10/27 14:37:30  ucko
  * Fix typo in previous revision (HAVE_UNICODE vs. UNICODE)
  *
