@@ -589,9 +589,9 @@ void CSearch::UpdateWithNewPep(int Missed,
             // don't do more than the maximum number of modifications
             if (NumModCount + NumMod[iMissed] >= MAXMOD) break;
 
-            // if n-term protein mod and not at the start of the peptide, don't copy
-            if ((Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modn || 
-                 Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modnaa) &&
+            // if n-term peptide mod and not at the start of the peptide, don't copy
+            if ((Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modnp || 
+                 Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modnpaa) &&
                 PepStart[iMissed] != ModList[Missed-1][iMod].GetSite()) {
                 continue;
             }
