@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seqtest
+ASN_DEP = seqset seqtest
 
 SRC = seqtest xcript_tests prot_prod_tests blastp_tests \
 	single_aln_tests seq_id_tests
