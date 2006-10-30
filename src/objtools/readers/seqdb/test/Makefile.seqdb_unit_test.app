@@ -12,6 +12,3 @@ LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(D
 
 REQUIRES = objects
 CHECK_CMD = seqdb_unit_test
-
-CC_WRAPPER=ccache
-CXX_WRAPPER=ccache
