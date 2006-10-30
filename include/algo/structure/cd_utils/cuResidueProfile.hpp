@@ -177,6 +177,19 @@ private:
 	double calcInformationContent(bool byConsensus=true);
 	const vector< CRef< CSeq_id> > getSeqIdsByRow() const { return m_seqIds;}
 
+     //  Keep track of how many candidate columns failed the weight check against m_frequencyThreshold.
+     //  This is useful to know when trying to decide if two adjacent consensus positions are able
+     //  to be included in the same block.  If there were failures of the weight check between
+     //  those two positions, that means a block can't safely span those two consensus positions
+     //  because a) at least one row in the alignment has residues in the failed columns and b) this 
+     //  requires a block break to avoid erroneously including those skipped residues (which do not 
+     //  map to any column in the consensus) in the block.
+     typedef map<int, unsigned int> UnqualForConsMap;
+     typedef UnqualForConsMap::iterator UnqualForConsIt;
+     typedef UnqualForConsMap::const_iterator UnqualForConsCit;
+     unsigned int GetNumUnqualAfterIndex(int index) const;
+     bool HasUnqualAfterIndex(int index) const;
+
  private:
 	double m_frequencyThreshold;
 	int m_totalRows;
@@ -189,6 +202,12 @@ private:
 
 	set<int> m_colsToSkipOnMaster;
 	set<int> m_colsToSkipOnConsensus;
+
+     //  Number of candidate columns that did not pass m_frequencyThreshold (map value) 
+     //  between consensus index i (map key) and i+1.  Filled in during 'makeConsensus';
+     //  adjusted if 'adjustConsensusAndGuide' called after 'makeConsensus'.
+     //  (index -1 == before first consensus residue)
+     UnqualForConsMap m_numUnqualAfterConsIndex;
 
 	void segsToSet(vector<UnalignedSegReader::Seg>& segs,set<int>& cols);
 
@@ -207,6 +226,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/10/30 18:21:12  lanczyck
+ * add member variable, methods, typedefs to track where columns that failed the frequency threshold testing were
+ *
  * Revision 1.9  2006/10/17 18:15:11  cliu
  * speed it up
  *

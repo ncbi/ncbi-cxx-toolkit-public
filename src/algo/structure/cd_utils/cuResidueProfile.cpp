@@ -546,6 +546,7 @@ const string& ResidueProfiles::makeConsensus()
 	blocksOnMaster.clear();
 	blocksOnConsensus.clear();
 	m_consensus.erase();
+    m_numUnqualAfterConsIndex.clear();
 
 	bool inBlock = false;
 	int startM = 0, endM = 0;
@@ -610,6 +611,11 @@ const string& ResidueProfiles::makeConsensus()
 			cit->second.setIndexByConsensus(m_consensus.size());
 			m_consensus += res;
 		}
+        else 
+        {
+            int consIndex = (int) m_consensus.size() - 1;
+            ++m_numUnqualAfterConsIndex[consIndex];
+        }
 	}
 	if (inBlock) //block goes to the end of the sequence
 	{
@@ -618,6 +624,21 @@ const string& ResidueProfiles::makeConsensus()
 	}
 	assert(m_guideAlignment.isValid());
 	return m_consensus;
+}
+
+unsigned int ResidueProfiles::GetNumUnqualAfterIndex(int index) const
+{
+    unsigned int result = 0;
+    UnqualForConsCit cit = m_numUnqualAfterConsIndex.find(index);
+    if (cit != m_numUnqualAfterConsIndex.end()) {
+        result = cit->second;
+    }
+    return result;
+}
+
+bool ResidueProfiles::HasUnqualAfterIndex(int index) const
+{
+    return (m_numUnqualAfterConsIndex.find(index) != m_numUnqualAfterConsIndex.end());
 }
 
 const string ResidueProfiles::getConsensus(bool inNcbieaa)
@@ -747,6 +768,9 @@ void ResidueProfiles::adjustConsensusAndGuide()
 	string curConsensus = m_consensus;
 	m_consensus.erase();
 
+    UnqualForConsMap curMap = m_numUnqualAfterConsIndex;
+    m_numUnqualAfterConsIndex.clear();
+
 	bool inBlock = false;
 	int startM = 0, endM = 0;
 	int startC = 0;
@@ -804,13 +828,26 @@ void ResidueProfiles::adjustConsensusAndGuide()
 				blockId++;
 			}
 		}
+        int unqualMapIndex = (int) m_consensus.size();
 		if (qualifiedForConsensus)
 		{
 			colProfile.setIndexByConsensus(m_consensus.size());
+            if (curMap.find(conIndex) != curMap.end()) {
+                m_numUnqualAfterConsIndex[unqualMapIndex] += curMap[conIndex];
+            }
 			m_consensus += curConsensus[conIndex];
 		}
 		else
+        {
+            //  use unqualMapIndex - 1 here because need to give conIndex's entries to the last valid
+            //  column in the rebuilt consensus.
+            if (curMap.find(conIndex) != curMap.end()) {
+                m_numUnqualAfterConsIndex[unqualMapIndex - 1] += curMap[conIndex];
+            }
+            ++m_numUnqualAfterConsIndex[unqualMapIndex - 1];
+
 			colProfile.setIndexByConsensus(-2); //use -2 to indicate skiped consensus
+        }
 		cit++;
 	}
 	if (inBlock) //block goes to the end of the sequence
@@ -964,6 +1001,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/10/30 18:24:41  lanczyck
+ * add member variable, methods, typedefs to track where columns that failed the frequency threshold testing were
+ *
  * Revision 1.15  2006/10/18 19:52:50  cliu
  * clean up M-residuesByRow in destructor
  *
