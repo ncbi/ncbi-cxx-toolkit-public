@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = seqdb
-SUB_PROJ = demo
+SUB_PROJ = demo test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
