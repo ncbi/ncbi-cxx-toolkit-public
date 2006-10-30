@@ -1,4 +1,4 @@
---$Revision: 1.7 $
+--$Revision: 1.8 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -21,7 +21,8 @@ EXPORTS ID2S-Chunk-Id, ID2S-Seq-annot-Info;
 IMPORTS Seq-id                                      FROM NCBI-Seqloc
         Seq-entry                                   FROM NCBI-Seqset
         Bioseq, Seq-annot, Seq-descr, Seq-literal   FROM NCBI-Sequence
-        Seq-align                                   FROM NCBI-Seqalign;
+        Seq-align                                   FROM NCBI-Seqalign
+        Feat-id                                     FROM NCBI-Seqfeat;
 
 ----------------------------------------------------------------------------
 -- Blob split info types
@@ -96,7 +97,9 @@ ID2S-Seq-annot-Info ::= SEQUENCE {
         align           NULL OPTIONAL,
         graph           NULL OPTIONAL,
         feat            SET OF ID2S-Feat-type-Info OPTIONAL,
-        seq-loc         ID2S-Seq-loc OPTIONAL
+        seq-loc         ID2S-Seq-loc OPTIONAL,
+        feat-ids        SET OF INTEGER OPTIONAL,
+        xref-feat-ids   SET OF INTEGER OPTIONAL
 }
 
 
