@@ -45,10 +45,10 @@ CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
                                    const TValues& values,
                                    const string& valuePrefix,
                                    const CComments& comments)
-    : m_ExternalName(externalName), m_EnumName(enumName),
+    : CParent(comments),
+      m_ExternalName(externalName), m_EnumName(enumName),
       m_CType(cType), m_IsInteger(isInteger),
-      m_Values(values), m_ValuesPrefix(valuePrefix),
-      CParent(comments)
+      m_Values(values), m_ValuesPrefix(valuePrefix)
 {
 }
 
@@ -183,10 +183,10 @@ CEnumRefTypeStrings::CEnumRefTypeStrings(const string& enumName,
                                          const CNamespace& ns,
                                          const string& fileName,
                                          const CComments& comments)
-    : m_EnumName(enumName),
+    : CParent(comments),
+      m_EnumName(enumName),
       m_CType(cType), m_Namespace(ns),
-      m_FileName(fileName),
-      CParent(comments)
+      m_FileName(fileName)
 {
 }
 
@@ -253,6 +253,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2006/10/30 18:10:23  gouriano
+* Get rid of compiler warnings
+*
 * Revision 1.22  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *

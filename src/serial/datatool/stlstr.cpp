@@ -304,7 +304,7 @@ string CMapTypeStrings::GetResetCode(const string& var) const
 CVectorTypeStrings::CVectorTypeStrings(const string& charType,
                                        const string& namespaceName,
                                        const CComments& comments)
-    : m_CharType(charType), CParent(comments)
+    : CParent(comments), m_CharType(charType)
 {
     SetNamespaceName(namespaceName);
 }
@@ -348,6 +348,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/10/30 18:10:22  gouriano
+* Get rid of compiler warnings
+*
 * Revision 1.18  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *

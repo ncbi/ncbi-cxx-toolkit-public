@@ -50,9 +50,9 @@ CClassTypeStrings::CClassTypeStrings(const string& externalName,
                                      const string& className,
                                      const string& namespaceName,
                                      const CComments& comments)
-    : m_IsObject(true), m_HaveUserClass(true), m_HaveTypeInfo(true),
-      m_ExternalName(externalName), m_ClassName(className),
-      CParent(comments)
+    : CParent(comments),
+      m_IsObject(true), m_HaveUserClass(true), m_HaveTypeInfo(true),
+      m_ExternalName(externalName), m_ClassName(className)
 {
     SetNamespaceName(namespaceName);
 }
@@ -1464,10 +1464,10 @@ CClassRefTypeStrings::CClassRefTypeStrings(const string& className,
                                            const CNamespace& ns,
                                            const string& fileName,
                                            const CComments& comments)
-    : m_ClassName(className),
+    : CTypeStrings(comments),
+      m_ClassName(className),
       m_Namespace(ns),
-      m_FileName(fileName),
-      CTypeStrings(comments)
+      m_FileName(fileName)
 {
 }
 
@@ -1524,6 +1524,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2006/10/30 18:10:22  gouriano
+* Get rid of compiler warnings
+*
 * Revision 1.77  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *

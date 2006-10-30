@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 CStdTypeStrings::CStdTypeStrings(const string& type, const CComments& comments)
-    : m_CType(type), CTypeStrings(comments)
+    : CTypeStrings(comments), m_CType(type)
 {
     SIZE_TYPE colon = type.rfind("::");
     if ( colon != NPOS ) {
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/10/30 18:10:22  gouriano
+* Get rid of compiler warnings
+*
 * Revision 1.16  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *

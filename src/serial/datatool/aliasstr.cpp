@@ -45,10 +45,10 @@ CAliasTypeStrings::CAliasTypeStrings(const string& externalName,
                                      const string& className,
                                      CTypeStrings& ref_type,
                                      const CComments& comments)
-    : m_ExternalName(externalName),
+    : TParent(comments),
+      m_ExternalName(externalName),
       m_ClassName(className),
-      m_RefType(&ref_type),
-      TParent(comments)
+      m_RefType(&ref_type)
 {
 }
 
@@ -343,12 +343,12 @@ CAliasRefTypeStrings::CAliasRefTypeStrings(const string& className,
                                            const string& fileName,
                                            CTypeStrings& ref_type,
                                            const CComments& comments)
-    : m_ClassName(className),
+    : CParent(comments),
+      m_ClassName(className),
       m_Namespace(ns),
       m_FileName(fileName),
       m_RefType(&ref_type),
-      m_IsObject(m_RefType->GetKind() == eKindObject),
-      CParent(comments)
+      m_IsObject(m_RefType->GetKind() == eKindObject)
 {
 }
 
@@ -463,6 +463,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/10/30 18:10:22  gouriano
+* Get rid of compiler warnings
+*
 * Revision 1.13  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *
