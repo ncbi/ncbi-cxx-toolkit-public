@@ -160,6 +160,16 @@ public:
         return m_WString;
     }
 #endif
+    const string& ConvertTo(EEncoding to_enc,
+                            EEncoding from_enc = eEncoding_Unknown) const
+    {
+        if (to_enc == eEncoding_UTF8) {
+            return AsUTF8(from_enc);
+        }
+
+        return AsLatin1(from_enc);
+    }
+
     size_t GetSymbolNum(void) const;
 
 public:
@@ -856,6 +866,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/10/30 15:58:37  ssikorsk
+ * Added CWString::ConvertTo().
+ *
  * Revision 1.26  2006/09/21 21:15:18  ssikorsk
  * Return 0 as a data size when value is NULL.
  *
