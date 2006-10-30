@@ -38,8 +38,6 @@
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/NCBI2na.hpp>
@@ -1367,6 +1365,9 @@ int main(int argc, const char* argv[])
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2006/10/30 16:07:06  ucko
+ * Drop gratuitous #include directives for unused seqset headers.
+ *
  * Revision 1.13  2004/05/19 17:25:27  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
