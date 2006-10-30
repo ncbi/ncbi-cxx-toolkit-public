@@ -103,6 +103,17 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
     out << "}";
 }
 
+void CEnumDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
+{
+    ++indent;
+    ITERATE ( TValues, i, m_Values ) {
+        PrintASNNewLine(out, indent);
+        out << "V:";
+        out << GetFullName() << '.' << i->GetName() << '=' << i->GetValue();
+        i->GetComments().PrintASN(out, indent, CComments::eMultiline);
+    }
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi
@@ -421,6 +432,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.38  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *

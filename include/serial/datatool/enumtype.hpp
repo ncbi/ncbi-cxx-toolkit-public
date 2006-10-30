@@ -86,6 +86,7 @@ public:
     TValue& AddValue(const string& name, TEnumValueType value);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
     void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
@@ -147,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/10/30 18:15:14  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.16  2006/10/18 13:02:56  gouriano
 * Moved Log to bottom
 *

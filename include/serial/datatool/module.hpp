@@ -74,6 +74,7 @@ public:
     void AddImports(const string& module, const list<string>& types);
 
     virtual void PrintASN(CNcbiOstream& out) const;
+    virtual void PrintSpecDump(CNcbiOstream& out) const;
     virtual void PrintXMLSchema(CNcbiOstream& out) const;
     virtual void PrintDTD(CNcbiOstream& out) const;
 
@@ -152,6 +153,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/10/30 18:15:14  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.16  2006/10/18 13:04:26  gouriano
 * Moved Log to bottom
 *

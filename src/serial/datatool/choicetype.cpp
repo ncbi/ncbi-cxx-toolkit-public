@@ -90,6 +90,11 @@ const char* CChoiceDataType::GetASNKeyword(void) const
     return "CHOICE";
 }
 
+string CChoiceDataType::GetSpecKeyword(void) const
+{
+    return GetASNKeyword();
+}
+
 const char* CChoiceDataType::GetDEFKeyword(void) const
 {
     return "_CHOICE_";
@@ -260,6 +265,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.35  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *

@@ -102,6 +102,18 @@ void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
     out << "}";
 }
 
+void CDataMemberContainerType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
+{
+    bool isAttlist = GetDataMember() && GetDataMember()->Attlist();
+    if (!GetParentType() || !isAttlist) {
+        ++indent;
+    }
+    ITERATE ( TMembers, i, m_Members ) {
+        i->get()->PrintSpecDump(out, indent, isAttlist ? "A" : "M");
+    }
+    m_LastComments.PrintASN(out, indent, CComments::eMultiline);
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi
@@ -158,8 +170,8 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                 }
             }
         }
-        if (hasAttlist && GetMembers().size()==2 ||
-            !hasAttlist && GetMembers().size()==1) {
+        if ((hasAttlist && GetMembers().size()==2) ||
+            (!hasAttlist && GetMembers().size()==1)) {
             ITERATE ( TMembers, i, GetMembers() ) {
                 if (i->get()->Attlist()) {
                     continue;
@@ -580,6 +592,19 @@ AutoPtr<CTypeStrings> CDataContainerType::GetRefCType(void) const
                                                           Comments()));
 }
 
+string CDataContainerType::GetSpecKeyword(void) const
+{
+    bool hasAttlist = !m_Members.empty() && m_Members.front()->Attlist();
+    if (( hasAttlist && m_Members.size() == 2) ||
+        (!hasAttlist && m_Members.size() == 1)) {
+        const CDataMember* member = m_Members.back().get();
+        if (!GetParentType() && (member->SimpleType() || member->Notag())) {
+            return member->GetType()->GetSpecKeyword();
+        }
+    }
+    return GetASNKeyword();
+}
+
 const char* CDataSetType::GetASNKeyword(void) const
 {
     return "SET";
@@ -741,6 +766,60 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
     }
 }
 
+void CDataMember::PrintSpecDump(CNcbiOstream& out, int indent, const char* tag) const
+{
+    if (!SimpleType()) {
+        const CDataType* type = GetType();
+        if (!Attlist()) {
+            bool needTitle= !Notag() || (type->IsStdType() || type->IsPrimitive());
+            if (!needTitle) {
+                const CDataMemberContainerType* cont =
+                    dynamic_cast<const CDataMemberContainerType*>(type);
+                if (cont) {
+                    needTitle=true;
+                    const CDataMemberContainerType::TMembers& members = cont->GetMembers();
+                    bool hasAttlist = !members.empty() && members.front()->Attlist();
+                    if (( hasAttlist && members.size() == 2) ||
+                        (!hasAttlist && members.size() == 1)) {
+                        const CDataMember* member = members.back().get();
+                        needTitle = !member->GetType()->IsUniSeq();
+                        if (!needTitle) {
+                            --indent;
+                        }
+                    }
+                } else if (type->IsUniSeq()) {
+                    const CDataType* parent = type->GetParentType();
+                    needTitle = parent->GetDataMember() != 0;
+                    if (!needTitle && parent->IsContainer()) {
+                        cont = dynamic_cast<const CDataMemberContainerType*>(parent);
+                        needTitle = cont->GetMembers().size() == 1;
+                    }
+                    if (!needTitle) {
+                        const CUniSequenceDataType* uni =
+                            dynamic_cast<const CUniSequenceDataType*>(type);
+                        if (uni->GetElementType()->IsContainer()) {
+                            --indent;
+                        }
+                    }
+                }
+            }
+            if (needTitle) {
+                PrintASNNewLine(out, indent);
+                out << tag << ":";
+                out << type->GetFullName() << ',' << type->GetSpecKeyword();
+                if ( GetDefault() ) {
+                    GetDefault()->PrintASN(out << ",DEFAULT=", indent + 1);
+                }
+                else if ( Optional() ) {
+                    out << ",OPTIONAL";
+                }
+            }
+        }
+        type->PrintSpecDump(out, indent);
+    }
+    m_Comments.PrintASN(out, indent,CComments::eNoEOL);
+}
+
 void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent) const
 {
     m_Comments.PrintDTD(out, CComments::eNoEOL); 
@@ -794,6 +873,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.71  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.70  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *

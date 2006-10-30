@@ -55,6 +55,11 @@ void CReferenceDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
     out << CDataTypeModule::ToAsnName(m_UserTypeName);
 }
 
+string CReferenceDataType::GetSpecKeyword(void) const
+{
+    return string("T:") + GetUserTypeName();
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi
@@ -242,6 +247,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.36  2006/08/03 19:16:54  gouriano
 * Get rid of crashes when parsing incomplete DTD or schema
 *

@@ -119,7 +119,11 @@ public:
     void PrintASNTypeComments(CNcbiOstream& out, int indent) const;
     void PrintDTDTypeComments(CNcbiOstream& out, int indent) const;
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
+    virtual void PrintSpecDump(CNcbiOstream& out, int indent) const;
+    virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
     virtual void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const = 0;
+    virtual const char* GetASNKeyword(void) const;
+    virtual string      GetSpecKeyword(void) const;
     virtual string GetSchemaTypeString(void) const;
     void PrintDTD(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out, const CComments& extra) const;
@@ -179,6 +183,9 @@ public:
         {
             return *m_References;
         }
+    bool IsInUniSeq(void) const;
+    bool IsUniSeq(void) const;
+    bool IsContainer(void) const;
 
 /*
     static string GetTemplateHeader(const string& tmpl);
@@ -273,6 +280,7 @@ public:
     {
         return m_Namespace;
     }
+    string GetFullName(void) const;
 
 protected:
     static bool x_IsSavedName(const string& name);
@@ -323,6 +331,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/10/30 18:15:14  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.33  2006/10/18 13:13:02  gouriano
 * Added comments into typestrings and generated code
 *

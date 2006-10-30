@@ -63,6 +63,12 @@ const char* CUniSequenceDataType::GetASNKeyword(void) const
     return "SEQUENCE";
 }
 
+string CUniSequenceDataType::GetSpecKeyword(void) const
+{
+    return string(GetASNKeyword()) + /*" OF "*/' ' +
+           GetElementType()->GetSpecKeyword();
+}
+
 const char* CUniSequenceDataType::GetDEFKeyword(void) const
 {
     return "_SEQUENCE_OF_";
@@ -81,6 +87,12 @@ void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
     out << GetASNKeyword() << " OF ";
     GetElementType()->PrintASNTypeComments(out, indent + 1);
     GetElementType()->PrintASN(out, indent);
+}
+
+void CUniSequenceDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
+{
+    GetElementType()->PrintSpecDump(out, indent);
+    GetElementType()->Comments().PrintASN(out, indent, CComments::eNoEOL);
 }
 
 // XML schema generator submitted by
@@ -458,6 +470,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.46  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.45  2006/08/03 17:21:10  gouriano
 * Preserve comments when parsing schema
 *

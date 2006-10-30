@@ -116,6 +116,34 @@ void CDataType::PrintDTDTypeComments(CNcbiOstream& out, int /*indent*/) const
     m_Comments.PrintDTD(out, CComments::eNoEOL);
 }
 
+const char* CDataType::GetASNKeyword(void) const
+{
+    return "";
+}
+
+void CDataType::PrintSpecDump(CNcbiOstream& out, int indent) const
+{
+    if (!GetParentType()) {
+        PrintASNNewLine(out, indent);
+        out << "T:";
+        out << GetFullName() << ',' << GetSpecKeyword();
+        m_Comments.PrintASN(out, indent, CComments::eNoEOL);
+    }
+    PrintSpecDumpExtra(out, indent);
+    if (!GetParentType()) {
+        PrintASNNewLine(out, indent);
+    }
+}
+
+void CDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
+{
+}
+
+string CDataType::GetSpecKeyword(void) const
+{
+    return GetASNKeyword();
+}
+
 string CDataType::GetSchemaTypeString(void) const
 {
     return kEmptyStr;
@@ -184,6 +212,21 @@ void CDataType::AddReference(const CReferenceDataType* reference)
     if ( !m_References )
         m_References = new TReferences;
     m_References->push_back(reference);
+}
+
+bool CDataType::IsInUniSeq(void) const
+{
+    return dynamic_cast<const CUniSequenceDataType*>(GetParentType()) != 0;
+}
+
+bool CDataType::IsUniSeq(void) const
+{
+    return dynamic_cast<const CUniSequenceDataType*>(this) != 0;
+}
+
+bool CDataType::IsContainer(void) const
+{
+    return dynamic_cast<const CDataMemberContainerType*>(this) != 0;
 }
 
 void CDataType::SetParent(const CDataType* parent, const string& memberName,
@@ -711,12 +754,62 @@ const char* CDataType::GetDEFKeyword(void) const
     return "-";
 }
 
+string CDataType::GetFullName(void) const
+{
+    string name;
+    const CDataType* parent = GetParentType();
+    if (parent) {
+        name = parent->GetFullName();
+        if (!name.empty() && name[name.size()-1] != '.') {
+            name += '.';
+        }
+    }
+    bool notag = false;
+    if (GetDataMember()) {
+        notag = GetDataMember()->Attlist() || GetDataMember()->Notag();
+        if (GetDataMember()->Notag()) {
+            bool special=false;
+            const CDataMemberContainerType* cont =
+                dynamic_cast<const CDataMemberContainerType*>(this);
+            if (cont) {
+                special=true;
+                const CDataMemberContainerType::TMembers& members = cont->GetMembers();
+                bool hasAttlist = !members.empty() && members.front()->Attlist();
+                if (( hasAttlist && members.size() == 2) ||
+                    (!hasAttlist && members.size() == 1)) {
+                    const CDataMember* member = members.back().get();
+                    special = !member->GetType()->IsUniSeq();
+                }
+            } else if (IsUniSeq()) {
+                const CDataType* parent = GetParentType();
+                special = parent->GetDataMember() != 0;
+                if (!special && parent->IsContainer()) {
+                    cont = dynamic_cast<const CDataMemberContainerType*>(parent);
+                    special = cont->GetMembers().size() == 1;
+                }
+            }
+            if (special) {
+                name += '[' + GetMemberName() + ']';
+            }
+        }
+    } else {
+        notag = IsInUniSeq();
+    }
+    if (!notag) {
+        name += GetMemberName();
+    }
+    return name;
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.92  2006/10/30 18:15:41  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.91  2006/10/18 13:12:37  gouriano
 * Added comments into typestrings and generated code
 *

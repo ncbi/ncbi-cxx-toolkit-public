@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,7,0) );
+    SetVersion( CVersionInfo(1,8,0) );
 }
 
 void CDataTool::Init(void)
@@ -102,6 +102,9 @@ void CDataTool::Init(void)
                       CArgDescriptions::eOutputFile);
     d->AddOptionalKey("fxs", "XMLSchemaFile",
                       "write XML Schema file (\"-fxs m\" writes modular Schema file)",
+                      CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("fd", "SpecificationDump",
+                      "write specification dump file (datatool internal format)",
                       CArgDescriptions::eOutputFile);
     d->AddOptionalKey("ms", "moduleSuffix",
                       "suffix of modular DTD or Schema file name",
@@ -253,6 +256,10 @@ bool CDataTool::ProcessModules(void)
 
     if ( const CArgValue& f = args["f"] ) {
         generator.GetMainModules().PrintASN(f.AsOutputFile());
+        f.CloseFile();
+    }
+    if ( const CArgValue& f = args["fd"] ) {
+        generator.GetMainModules().PrintSpecDump(f.AsOutputFile());
         f.CloseFile();
     }
 
@@ -650,6 +657,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.103  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.102  2006/10/18 13:12:36  gouriano
 * Added comments into typestrings and generated code
 *

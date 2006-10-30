@@ -109,17 +109,16 @@ CNcbiOstream& WriteTabbed(CNcbiOstream& out, const string& code,
 
 CNcbiOstream& PrintASNNewLine(CNcbiOstream& out, int indent)
 {
-    out <<
-        '\n';
-    for ( int i = 0; i < indent; ++i )
-        out << "  ";
-    return out;
+    return out << '\n' << string(2*indent,' ');
 }
 
 END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.5  2006/10/18 13:11:06  gouriano
 * Moved Log to bottom
 *

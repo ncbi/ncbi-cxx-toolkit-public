@@ -52,7 +52,8 @@ public:
     AutoPtr<CTypeStrings> GenerateCode(void) const;
     AutoPtr<CTypeStrings> GetRefCType(void) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const;
+    virtual string      GetSpecKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
 };
 
@@ -62,6 +63,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/10/30 18:15:14  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.8  2006/10/18 13:01:07  gouriano
 * Moved Log to bottom
 *

@@ -43,6 +43,7 @@ public:
     CReferenceDataType(const string& n);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual string      GetSpecKeyword(void) const;
     void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
@@ -86,6 +87,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/10/30 18:15:14  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.11  2006/10/18 13:04:26  gouriano
 * Moved Log to bottom
 *

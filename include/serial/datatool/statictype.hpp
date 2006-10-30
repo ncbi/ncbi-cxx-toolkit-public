@@ -49,7 +49,6 @@ public:
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     //virtual string GetDefaultCType(void) const;
     virtual const char* GetDefaultCType(void) const = 0;
-    virtual const char* GetASNKeyword(void) const = 0;
     virtual const char* GetXMLContents(void) const = 0;
     virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
 };
@@ -224,6 +223,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/10/30 18:15:14  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.20  2006/10/18 13:05:06  gouriano
 * Moved Log to bottom
 *

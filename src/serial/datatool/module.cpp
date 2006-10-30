@@ -146,6 +146,13 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
         "\n";
 }
 
+void CDataTypeModule::PrintSpecDump(CNcbiOstream& out) const
+{
+    ITERATE ( TDefinitions, i, m_Definitions ) {
+        i->second->PrintSpecDump(out, 0);
+    }
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
@@ -523,6 +530,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.49  2006/10/18 13:10:25  gouriano
 * Moved Log to bottom
 *

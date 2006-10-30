@@ -43,6 +43,7 @@ public:
     CUniSequenceDataType(const AutoPtr<CDataType>& elementType);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
     void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
@@ -66,7 +67,8 @@ public:
     bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const;
+    virtual string      GetSpecKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
 
     bool IsNonEmpty(void) const
@@ -100,7 +102,7 @@ public:
     CTypeInfo* CreateTypeInfo(void);
     
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    const char* GetASNKeyword(void) const;
+    virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
 };
 
@@ -110,6 +112,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/10/30 18:15:14  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.13  2006/10/18 13:06:26  gouriano
 * Moved Log to bottom
 *

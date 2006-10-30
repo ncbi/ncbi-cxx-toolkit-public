@@ -46,6 +46,7 @@ public:
     ~CDataMember(void);
 
     void PrintASN(CNcbiOstream& out, int indent, bool last) const;
+    void PrintSpecDump(CNcbiOstream& out, int indent, const char* tag) const;
     void PrintXMLSchema(CNcbiOstream& out, int indent) const;
     void PrintDTD(CNcbiOstream& out) const;
 
@@ -122,6 +123,7 @@ public:
     typedef list< AutoPtr<CDataMember> > TMembers;
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
     void PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only=false) const;
     void PrintDTDElement(CNcbiOstream& out, bool contents_only=false) const;
     void PrintDTDExtra(CNcbiOstream& out) const;
@@ -133,7 +135,6 @@ public:
 
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
-    virtual const char* GetASNKeyword(void) const = 0;
     virtual const char* XmlMemberSeparator(void) const = 0;
 
     const TMembers& GetMembers(void) const
@@ -162,6 +163,7 @@ public:
     AutoPtr<CTypeStrings> GenerateCode(void) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     AutoPtr<CTypeStrings> GetRefCType(void) const;
+    virtual string      GetSpecKeyword(void) const;
 
 protected:
     virtual CClassTypeInfo* CreateClassInfo(void);
@@ -194,6 +196,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/10/30 18:15:14  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.20  2006/10/18 12:59:26  gouriano
 * Moved Log to bottom
 *

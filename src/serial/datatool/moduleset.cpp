@@ -90,6 +90,13 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
     m_LastComments.PrintASN(out, 0, CComments::eMultiline);
 }
 
+void CFileModules::PrintSpecDump(CNcbiOstream& out) const
+{
+    ITERATE ( TModules, mi, m_Modules ) {
+        (*mi)->PrintSpecDump(out);
+    }
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 void CFileModules::PrintXMLSchema(CNcbiOstream& out) const
@@ -302,6 +309,13 @@ void CFileSet::PrintASN(CNcbiOstream& out) const
     }
 }
 
+void CFileSet::PrintSpecDump(CNcbiOstream& out) const
+{
+    ITERATE ( TModuleSets, i, m_ModuleSets ) {
+        (*i)->PrintSpecDump(out);
+    }
+}
+
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 void CFileSet::PrintXMLSchema(CNcbiOstream& out) const
@@ -407,6 +421,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2006/10/30 18:15:40  gouriano
+* Added writing data specification in internal format
+*
 * Revision 1.45  2006/10/18 13:10:25  gouriano
 * Moved Log to bottom
 *
