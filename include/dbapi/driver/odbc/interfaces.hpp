@@ -56,7 +56,7 @@
 #  define HAVE_SQLGETPRIVATEPROFILESTRING 1
 #endif
 
-#ifdef UCS2
+#if defined(UCS2) && defined(HAVE_WSTRING)
 #  define UNICODE 1
 #endif
 
@@ -874,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/10/30 15:49:58  ssikorsk
+ * Define UNICODE only if HAVE_WSTRING is defined.
+ *
  * Revision 1.50  2006/10/26 15:04:25  ssikorsk
  * Added methods IsMultibyteClientEncoding, GetClientEncoding, x_GetCType, x_GetSQLType,
  * x_GetMaxDataSize, x_GetCurDataSize, x_GetIndicator, x_GetData to CStatementBase;
