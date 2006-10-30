@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = seqdb_unit_test
+APP_PROJ = writedb_unit_test
 
 REQUIRES = Boost.Test
 
