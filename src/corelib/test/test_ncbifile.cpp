@@ -460,12 +460,8 @@ static void s_TEST_File(void)
         cout << "File creation time     : " << ctime.AsString() << endl;
         cout << "File modification time : " << mtime.AsString() << endl;
         cout << "File last access time  : " << atime.AsString() << endl;
-        assert( f.GetTime(&mtime, 0 , &atime) );
-        CTime mtime_cmp(mtime), mtime_new(mtime), atime_new(atime);
-        // Use mtime_cmp time object to compare modification time of the file,
-        // because mtime_new and SetTime() can be affected by
-        // Daylight Saving Time changes.
-        mtime_cmp.AddDay(-2);
+        assert( f.GetTime(&mtime, &atime) );
+        CTime mtime_new(mtime), atime_new(atime);
         // Account daylight saving time for file local times
         mtime_new.SetTimeZonePrecision(CTime::eDay);
         atime_new.SetTimeZonePrecision(CTime::eDay);
@@ -476,9 +472,11 @@ static void s_TEST_File(void)
         cout << "File creation time     : " << ctime.AsString() << endl;
         cout << "File modification time : " << mtime.AsString() << endl;
         cout << "File last access time  : " << atime.AsString() << endl;
-        // Compare times with second precission (ignoring nanoseconds)
-        assert( mtime - mtime_cmp < CTimeSpan(1,0));
-
+        // Use 1 hour to compare modification times of the file,
+        // because mtime_new and SetTime() can be affected by
+        // Daylight Saving Time changes.
+        assert(mtime - mtime_new <= CTimeSpan(1,0));
+        
         // Remove the file
         assert( f.Remove() );
         assert( !f.Exists() );
@@ -1049,6 +1047,8 @@ public:
 void CTest::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostFlag(eDPF_All);
+    
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
     d->SetUsageContext("test_files",
                        "test file's accessory functions");
@@ -1095,6 +1095,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/10/30 14:19:20  ivanov
+ * Fixed bug in previous revision.
+ * s_TEST_File() -- one more fix for file modification time change tests,
+ * that can be affected by Daylight Saving Time changes.
+ *
  * Revision 1.61  2006/08/12 05:30:44  lavr
  * CDirEntry::{Get|Set}Time[T]: Swap last access time / creation-change time
  *
