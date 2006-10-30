@@ -1,0 +1,6 @@
+
+DBLIST ../seqp
+FIRST_OID 10
+LAST_OID 130
+OIDLIST oddp.msk
+
