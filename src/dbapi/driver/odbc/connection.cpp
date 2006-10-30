@@ -626,41 +626,32 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
     size_t invalid_len = 0;
 
     while(( len = stream.Read(buff + invalid_len, sizeof(buff) - invalid_len - 1)) != 0 ) {
-#ifdef HAVE_WSTRING
-        if (stmt.GetClientEncoding() == eEncoding_UTF8) {
-            if (descr_type == CDB_ITDescriptor::eText) {
-                // Convert string.
+        if (stmt.GetClientEncoding() == eEncoding_UTF8 &&
+            descr_type == CDB_ITDescriptor::eText) {
 
-                size_t valid_len = CStringUTF8::GetValidBytesCount(buff, len);
-                invalid_len = len - valid_len;
+            size_t valid_len = CStringUTF8::GetValidBytesCount(buff, len);
+            invalid_len = len - valid_len;
 
-                CODBCString odbc_str(buff, valid_len, GetClientEncoding());
-                // Force odbc_str to make conversion to wchar_t*.
-                wchar_t* wchar_str = odbc_str;
+            // Encoding is always eEncoding_UTF8 in here.
+            CODBCString odbc_str(buff, valid_len, eEncoding_UTF8);
+            // Force odbc_str to make conversion to odbc::TChar*.
+            odbc::TChar* tchar_str = odbc_str;
 
-                rc = SQLPutData(stmt.GetHandle(),
-                                (SQLPOINTER)wchar_str,
-                                (SQLINTEGER)odbc_str.GetSymbolNum() * sizeof(wchar_t) // Number of bytes ...
-                                );
+            rc = SQLPutData(stmt.GetHandle(),
+                            static_cast<SQLPOINTER>(tchar_str),
+                            static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
+                                                    sizeof(odbc::TChar)) // Number of bytes ...
+                            );
 
-                if (valid_len < len) {
-                    memmove(buff, buff + valid_len, invalid_len);
-                }
-            } else {
-                rc = SQLPutData(stmt.GetHandle(),
-                                (SQLPOINTER)buff,
-                                (SQLINTEGER)len // Number of bytes ...
-                                );
+            if (valid_len < len) {
+                memmove(buff, buff + valid_len, invalid_len);
             }
         } else {
-#endif
             rc = SQLPutData(stmt.GetHandle(),
-                            (SQLPOINTER)buff,
-                            (SQLINTEGER)len // Number of bytes ...
+                            static_cast<SQLPOINTER>(buff),
+                            static_cast<SQLINTEGER>(len) // Number of bytes ...
                             );
-#ifdef HAVE_WSTRING
         }
-#endif
 
         switch( rc ) {
         case SQL_SUCCESS_WITH_INFO:
@@ -676,6 +667,10 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
         default:
             return false;
         }
+    }
+
+    if (invalid_len > 0) {
+        DATABASE_DRIVER_ERROR( "Invalid encoding of a text string.", 410055 );
     }
 
     switch(SQLParamData(stmt.GetHandle(), (SQLPOINTER*)&len)) {
@@ -1269,44 +1264,39 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     if(nof_bytes < 1) return 0;
 
     int rc;
+    int cur_num_of_bytes = nof_bytes;
 
-#ifdef HAVE_WSTRING
-    if (GetClientEncoding() == eEncoding_UTF8) {
-        if (m_DescrType == CDB_ITDescriptor::eText) {
-            // Convert string.
+    if (GetClientEncoding() == eEncoding_UTF8 &&
+        m_DescrType == CDB_ITDescriptor::eText) {
+        size_t valid_len = 0;
 
-            size_t valid_len = 0;
+        valid_len = CStringUTF8::GetValidBytesCount(static_cast<const char*>(chunk_ptr),
+                                                    nof_bytes);
 
-            valid_len = CStringUTF8::GetValidBytesCount(static_cast<const char*>(chunk_ptr),
-                                                        nof_bytes);
-
-            if (valid_len < nof_bytes) {
-                DATABASE_DRIVER_ERROR( "Invalid encoding of a text string.", 410055 );
-            }
-
-            CODBCString odbc_str(static_cast<const char*>(chunk_ptr), nof_bytes, GetClientEncoding());
-            // Force odbc_str to make conversion to wchar_t*.
-            wchar_t* wchar_str = odbc_str;
-
-            rc = SQLPutData(GetHandle(),
-                            (SQLPOINTER)wchar_str,
-                            (SQLINTEGER)odbc_str.GetSymbolNum() * sizeof(wchar_t) // Number of bytes ...
-                            );
-        } else {
-            rc = SQLPutData(GetHandle(),
-                            (SQLPOINTER)chunk_ptr,
-                            (SQLINTEGER)nof_bytes // Number of bytes ...
-                            );
+        if (valid_len == 0) {
+            DATABASE_DRIVER_ERROR( "Invalid encoding of a text string.", 410055 );
         }
-    } else {
-#endif
+
+        // Encoding is always eEncoding_UTF8 in here.
+        CODBCString odbc_str(static_cast<const char*>(chunk_ptr),
+                             valid_len,
+                             eEncoding_UTF8);
+        // Force odbc_str to make conversion to odbc::TChar*.
+        odbc::TChar* tchar_str = odbc_str;
+        nof_bytes = valid_len;
+
         rc = SQLPutData(GetHandle(),
-                        (SQLPOINTER)chunk_ptr,
-                        (SQLINTEGER)nof_bytes // Number of bytes ...
+                        static_cast<SQLPOINTER>(tchar_str),
+                        static_cast<SQLINTEGER>(odbc_str.GetSymbolNum() *
+                                                sizeof(odbc::TChar))
                         );
-#ifdef HAVE_WSTRING
+    } else {
+        rc = SQLPutData(GetHandle(),
+                        const_cast<SQLPOINTER>(chunk_ptr),
+                        static_cast<SQLINTEGER>(nof_bytes)
+                        );
     }
-#endif
+
 
     switch( rc ) {
     case SQL_SUCCESS_WITH_INFO:
@@ -1360,6 +1350,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         }
         break;
     }
+
     return nof_bytes;
 }
 
@@ -1401,6 +1392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/10/30 15:57:04  ssikorsk
+ * Improved reading of data from UTF8 streams and converting it to UCS2/OEM encodings.
+ *
  * Revision 1.57  2006/10/27 14:39:00  ucko
  * On second thought, those should probably all be HAVE_WSTRING.
  *
