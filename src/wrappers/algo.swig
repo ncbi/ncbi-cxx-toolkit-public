@@ -115,6 +115,7 @@ algo/blast/api/blast_nucl_options.hpp
 algo/blast/api/blast_options.hpp
 algo/blast/api/blast_options_handle.hpp
 algo/blast/api/blast_prot_options.hpp
+algo/blast/api/blast_results.hpp
 algo/blast/api/blast_rps_options.hpp
 algo/blast/api/blast_seqinfosrc.hpp
 algo/blast/api/blast_types.hpp
@@ -291,6 +292,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/10/30 16:32:50  jcherry
+ * Added blast_results.hpp (new file)
+ *
  * Revision 1.19  2006/10/10 18:32:12  jcherry
  * Removed algo/blast/api/db_blast.hpp (gone)
  *
