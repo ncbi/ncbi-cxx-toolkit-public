@@ -65,7 +65,7 @@ const char* CUniSequenceDataType::GetASNKeyword(void) const
 
 string CUniSequenceDataType::GetSpecKeyword(void) const
 {
-    return string(GetASNKeyword()) + /*" OF "*/' ' +
+    return string(GetASNKeyword()) + ' ' +
            GetElementType()->GetSpecKeyword();
 }
 
@@ -470,6 +470,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.47  2006/10/30 21:03:34  gouriano
+* Corrected data spec dump formatting
+*
 * Revision 1.46  2006/10/30 18:15:40  gouriano
 * Added writing data specification in internal format
 *

@@ -109,9 +109,9 @@ void CDataMemberContainerType::PrintSpecDumpExtra(CNcbiOstream& out, int indent)
         ++indent;
     }
     ITERATE ( TMembers, i, m_Members ) {
-        i->get()->PrintSpecDump(out, indent, isAttlist ? "A" : "M");
+        i->get()->PrintSpecDump(out, indent, isAttlist ? "A" : "F");
     }
-    m_LastComments.PrintASN(out, indent, CComments::eMultiline);
+    m_LastComments.PrintASN(out, indent, CComments::eNoEOL);
 }
 
 // XML schema generator submitted by
@@ -805,10 +805,11 @@ void CDataMember::PrintSpecDump(CNcbiOstream& out, int indent, const char* tag) 
             }
             if (needTitle) {
                 PrintASNNewLine(out, indent);
-                out << tag << ":";
+                out << tag << ',' <<
+                       type->GetSourceLine() <<",";
                 out << type->GetFullName() << ',' << type->GetSpecKeyword();
                 if ( GetDefault() ) {
-                    GetDefault()->PrintASN(out << ",DEFAULT=", indent + 1);
+                    GetDefault()->PrintASN(out << ",DEFAULT,", indent + 1);
                 }
                 else if ( Optional() ) {
                     out << ",OPTIONAL";
@@ -873,6 +874,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.72  2006/10/30 21:03:33  gouriano
+* Corrected data spec dump formatting
+*
 * Revision 1.71  2006/10/30 18:15:40  gouriano
 * Added writing data specification in internal format
 *

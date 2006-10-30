@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbifile.hpp>
 #include <typeinfo>
 #include <serial/datatool/moduleset.hpp>
 #include <serial/datatool/module.hpp>
@@ -93,6 +94,10 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
 void CFileModules::PrintSpecDump(CNcbiOstream& out) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
+        out << "M,,";
+//todo: line #
+        out << CDirEntry(m_SourceFileName).GetName() << ':'
+            << (*mi)->GetName();
         (*mi)->PrintSpecDump(out);
     }
 }
@@ -421,6 +426,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2006/10/30 21:03:34  gouriano
+* Corrected data spec dump formatting
+*
 * Revision 1.46  2006/10/30 18:15:40  gouriano
 * Added writing data specification in internal format
 *

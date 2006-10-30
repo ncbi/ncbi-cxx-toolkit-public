@@ -57,7 +57,7 @@ void CReferenceDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
 
 string CReferenceDataType::GetSpecKeyword(void) const
 {
-    return string("T:") + GetUserTypeName();
+    return string("/") + GetUserTypeName();
 }
 
 // XML schema generator submitted by
@@ -247,6 +247,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2006/10/30 21:03:34  gouriano
+* Corrected data spec dump formatting
+*
 * Revision 1.37  2006/10/30 18:15:40  gouriano
 * Added writing data specification in internal format
 *

@@ -148,6 +148,15 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 
 void CDataTypeModule::PrintSpecDump(CNcbiOstream& out) const
 {
+    m_Comments.PrintASN(out, 0, CComments::eNoEOL);
+    m_LastComments.PrintASN(out, 0, CComments::eNoEOL);
+    ITERATE ( TDefinitions, i, m_Definitions ) {
+        PrintASNNewLine(out, 1);
+        out << "T," << i->second->GetSourceLine() << ','
+            << GetName() << ':' << i->second->GetMemberName();
+    }
+    PrintASNNewLine(out, 0);
+
     ITERATE ( TDefinitions, i, m_Definitions ) {
         i->second->PrintSpecDump(out, 0);
     }
@@ -530,6 +539,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2006/10/30 21:03:33  gouriano
+* Corrected data spec dump formatting
+*
 * Revision 1.50  2006/10/30 18:15:40  gouriano
 * Added writing data specification in internal format
 *

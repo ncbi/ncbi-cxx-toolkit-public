@@ -125,7 +125,8 @@ void CDataType::PrintSpecDump(CNcbiOstream& out, int indent) const
 {
     if (!GetParentType()) {
         PrintASNNewLine(out, indent);
-        out << "T:";
+        out << 'T' << ',' <<
+            GetSourceLine() <<",";
         out << GetFullName() << ',' << GetSpecKeyword();
         m_Comments.PrintASN(out, indent, CComments::eNoEOL);
     }
@@ -760,8 +761,8 @@ string CDataType::GetFullName(void) const
     const CDataType* parent = GetParentType();
     if (parent) {
         name = parent->GetFullName();
-        if (!name.empty() && name[name.size()-1] != '.') {
-            name += '.';
+        if (!name.empty() && name[name.size()-1] != ':') {
+            name += ':';
         }
     }
     bool notag = false;
@@ -807,6 +808,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.93  2006/10/30 21:03:34  gouriano
+* Corrected data spec dump formatting
+*
 * Revision 1.92  2006/10/30 18:15:41  gouriano
 * Added writing data specification in internal format
 *

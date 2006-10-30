@@ -108,9 +108,9 @@ void CEnumDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
     ++indent;
     ITERATE ( TValues, i, m_Values ) {
         PrintASNNewLine(out, indent);
-        out << "V:";
-        out << GetFullName() << '.' << i->GetName() << '=' << i->GetValue();
-        i->GetComments().PrintASN(out, indent, CComments::eMultiline);
+        out << "V,,";
+        out << GetFullName() << ':' << i->GetName() << ',' << i->GetValue();
+        i->GetComments().PrintASN(out, indent, CComments::eNoEOL);
     }
 }
 
@@ -432,6 +432,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2006/10/30 21:03:33  gouriano
+* Corrected data spec dump formatting
+*
 * Revision 1.39  2006/10/30 18:15:40  gouriano
 * Added writing data specification in internal format
 *
