@@ -116,7 +116,7 @@ CODBC_RowResult::CODBC_RowResult(
         case SQL_SUCCESS:
             m_ColFmt[n].ColumnName =
                 CODBCString(column_name_buff,
-                            actual_name_size).AsUTF8();
+                            actual_name_size).ConvertTo(GetClientEncoding());
             continue;
         case SQL_ERROR:
             ReportErrors();
@@ -313,7 +313,7 @@ bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
 
             f = f / sizeof(wchar_t);
 
-            string encoded_value = CODBCString(buffer, f).AsUTF8();
+            string encoded_value = CODBCString(buffer, f).ConvertTo(GetClientEncoding());
             val->Append(encoded_value.c_str(), encoded_value.size());
         }
         return true;
@@ -391,17 +391,17 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         case eDB_VarChar:
             outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else *((CDB_VarChar*)item_buf) = CODBCString((wchar_t*)buffer).AsUTF8();
+            else *((CDB_VarChar*)item_buf) = CODBCString((wchar_t*)buffer).ConvertTo(GetClientEncoding());
             break;
         case eDB_Char:
             outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else *((CDB_Char*)item_buf) = CODBCString((wchar_t*)buffer).AsUTF8();
+            else *((CDB_Char*)item_buf) = CODBCString((wchar_t*)buffer).ConvertTo(GetClientEncoding());
             break;
         case eDB_LongChar:
             outlen = xGetData(SQL_C_WCHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
-            else *((CDB_LongChar*)item_buf) = CODBCString((wchar_t*)buffer).AsUTF8();
+            else *((CDB_LongChar*)item_buf) = CODBCString((wchar_t*)buffer).ConvertTo(GetClientEncoding());
             break;
 #endif
         default:
@@ -773,7 +773,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
 
         if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
             CDB_VarChar* val = (outlen < 0)
-                ? new CDB_VarChar() : new CDB_VarChar(odbc_str.AsUTF8());
+                ? new CDB_VarChar() : new CDB_VarChar(odbc_str.ConvertTo(GetClientEncoding()));
 
             return val;
         }
@@ -781,7 +781,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             CDB_LongChar* val = (outlen < 0)
                 ? new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize) :
                 new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize,
-                        odbc_str.AsUTF8());
+                        odbc_str.ConvertTo(GetClientEncoding()));
 
             return val;
         }
@@ -1032,7 +1032,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         }
     }
 
-    string base_table = CODBCString(buffer, GetClientEncoding()).AsUTF8();
+    string base_table = CODBCString(buffer, GetClientEncoding()).ConvertTo(GetClientEncoding());
 
     switch(SQLColAttribute(GetHandle(), item_no + 1,
                            SQL_DESC_BASE_COLUMN_NAME,
@@ -1052,7 +1052,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         }
     }
 
-    string base_column = CODBCString(buffer, GetClientEncoding()).AsUTF8();
+    string base_column = CODBCString(buffer, GetClientEncoding()).ConvertTo(GetClientEncoding());
 
     SQLLEN column_type = 0;
     switch(SQLColAttribute(GetHandle(), item_no + 1,
@@ -1395,6 +1395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/10/30 16:00:19  ssikorsk
+ * Convert data to client's encoding instead of UTF8.
+ *
  * Revision 1.41  2006/10/26 15:07:32  ssikorsk
  * Use a charset provided by a client instead of a default one.
  *
