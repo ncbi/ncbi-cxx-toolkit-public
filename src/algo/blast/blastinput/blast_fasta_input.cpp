@@ -104,10 +104,10 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
     TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
                                              m_Scope) - 1;
 
-    if (to >= seq_length || from >= seq_length ||
+    if (to > seq_length || from > seq_length ||
         (to > 0 && to < from)) {
         NCBI_THROW(CObjReaderException, eInvalid, 
-                   "Invalid sequence range");
+                  "Invalid sequence range");
     }
 
     // set sequence range
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 
 /*---------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/10/30 20:27:27  papadopo
+ * correct sanity checks for sequence ranges
+ *
  * Revision 1.4  2006/09/26 21:44:12  papadopo
  * add to blast scope; add CVS log
  *
