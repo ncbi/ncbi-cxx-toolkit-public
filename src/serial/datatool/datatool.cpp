@@ -72,7 +72,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,8,0) );
+    SetVersion( CVersionInfo(1,8,1) );
 }
 
 void CDataTool::Init(void)
@@ -657,6 +657,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.104  2006/10/31 20:01:33  gouriano
+* Added data spec source line info
+*
 * Revision 1.103  2006/10/30 18:15:40  gouriano
 * Added writing data specification in internal format
 *

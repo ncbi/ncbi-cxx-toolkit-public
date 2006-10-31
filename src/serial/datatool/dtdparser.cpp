@@ -299,6 +299,7 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
 {
     DTDElement& node = m_MapElement[ name];
     node.SetName(name);
+    node.SetSourceLine(Lexer().CurrentLine());
     m_Comments = &(node.Comments());
     switch (GetNextToken()) {
     default:
@@ -631,6 +632,7 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
     a.SetName(id_name);
     node.AddAttribute(a);
     DTDAttribute& attrib = node.GetNonconstAttributes().back();
+    attrib.SetSourceLine(Lexer().CurrentLine());
     m_Comments = &(attrib.Comments());
     for (done=false; !done;) {
         switch(GetNextToken()) {
@@ -718,7 +720,7 @@ void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
             ParseError("Unknown token", "token");
             break;
         case T_IDENTIFIER:
-            attrib.AddEnumValue(GetNextTokenText());
+            attrib.AddEnumValue(GetNextTokenText(),Lexer().CurrentLine());
             ConsumeToken();
             break;
         case T_SYMBOL:
@@ -873,8 +875,10 @@ CDataType* DTDParser::x_Type(
             break;
         }
     }
+    type->SetSourceLine(node.GetSourceLine());
     if (uniseq) {
         CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
+        uniType->SetSourceLine(type->GetSourceLine());
         uniType->SetNonEmpty( occ == DTDElement::eOneOrMore);
         uniType->SetNoPrefix(true);
         type = uniType;
@@ -927,6 +931,7 @@ CDataType* DTDParser::TypesBlock(
                 }
                 AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
                 AutoPtr<CDataMember> member(new CDataMember(refname, type));
+                container->SetSourceLine(type->GetSourceLine());
                 if (optional) {
                     member->SetOptional();
                 }
@@ -938,6 +943,7 @@ CDataType* DTDParser::TypesBlock(
             if (uniseq2) {
 
                 CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
+                uniType->SetSourceLine( type->GetSourceLine());
                 uniType->SetNonEmpty( occ == DTDElement::eOneOrMore);
                 type.reset(uniType);
 
@@ -975,6 +981,9 @@ CDataType* DTDParser::CompositeNode(
     AutoPtr<CDataType> type(Type(node, DTDElement::eOne, false, true));
     AutoPtr<CDataMember> member(new CDataMember(node.GetName(),
         uniseq ? (AutoPtr<CDataType>(new CUniSequenceDataType(type))) : type));
+    if (uniseq) {
+        member->GetType()->SetSourceLine( type->GetSourceLine() );
+    }
 
     if ((occ == DTDElement::eZeroOrOne) ||
         (occ == DTDElement::eZeroOrMore)) {
@@ -1064,6 +1073,7 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
         type = new CRealDataType();
         break;
     }
+    type->SetSourceLine(att.GetSourceLine());
     return type;
 }
 
@@ -1075,7 +1085,8 @@ CDataType* DTDParser::EnumeratedBlock(const DTDAttribute& att,
     for (list<string>::const_iterator i = attEnums.begin();
         i != attEnums.end(); ++i, ++v)
     {
-        enumType->AddValue( *i, v);
+        enumType->AddValue( *i, v).SetSourceLine(
+            att.GetEnumValueSourceLine(*i));
     }
     return enumType;
 }
@@ -1286,6 +1297,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.36  2006/10/31 20:01:33  gouriano
+ * Added data spec source line info
+ *
  * Revision 1.35  2006/10/31 16:18:30  gouriano
  * Added source line info
  *

@@ -120,6 +120,9 @@ public:
     DTDAttribute& operator= (const DTDAttribute& other);
     void Merge(const DTDAttribute& other);
 
+    void SetSourceLine(int line);
+    int GetSourceLine(void) const;
+
     void SetName(const string& name);
     const string& GetName(void) const;
 
@@ -134,8 +137,9 @@ public:
     void SetValue(const string& value);
     const string& GetValue(void) const;
 
-    void AddEnumValue(const string& value);
+    void AddEnumValue(const string& value, int line);
     const list<string>& GetEnumValues(void) const;
+    int GetEnumValueSourceLine(const string& value) const;
     
     CComments& Comments(void)
     {
@@ -146,12 +150,14 @@ public:
         return m_Comments;
     }
 private:
+    int m_SourceLine;
     string m_Name;
     string m_TypeName;
     EType m_Type;
     EValueType m_ValueType;
     string m_Value;
     list<string> m_ListEnum;
+    map<string,int> m_ValueSourceLine;
     CComments m_Comments;
 };
 
@@ -185,6 +191,9 @@ public:
         eZeroOrMore,
         eZeroOrOne
     };
+
+    void SetSourceLine(int line);
+    int GetSourceLine(void) const;
 
     void SetName(const string& name);
     const string& GetName(void) const;
@@ -241,6 +250,7 @@ public:
         return m_AttribComments;
     }
 private:
+    int m_SourceLine;
     string m_Name;
     string m_TypeName;
     string m_NamespaceName;
@@ -291,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2006/10/31 20:01:51  gouriano
+ * Added data spec source line info
+ *
  * Revision 1.9  2006/07/24 18:57:13  gouriano
  * Preserve comments when parsing DTD
  *

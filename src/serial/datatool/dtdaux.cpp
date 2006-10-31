@@ -90,17 +90,20 @@ bool DTDEntity::IsExternal(void) const
 
 DTDAttribute::DTDAttribute(void)
 {
+    m_SourceLine = 0;
     m_Type = eUnknown;
     m_ValueType = eImplied;
 }
 DTDAttribute::DTDAttribute(const DTDAttribute& other)
 {
+    m_SourceLine= other.m_SourceLine;
     m_Name      = other.m_Name;
     m_TypeName  = other.m_TypeName;
     m_Type      = other.m_Type;
     m_ValueType = other.m_ValueType;
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
+    m_ValueSourceLine = other.m_ValueSourceLine;
     m_Comments  = other.m_Comments;
 }
 DTDAttribute::~DTDAttribute(void)
@@ -109,12 +112,14 @@ DTDAttribute::~DTDAttribute(void)
 
 DTDAttribute& DTDAttribute::operator= (const DTDAttribute& other)
 {
+    m_SourceLine= other.m_SourceLine;
     m_Name      = other.m_Name;
     m_TypeName  = other.m_TypeName;
     m_Type      = other.m_Type;
     m_ValueType = other.m_ValueType;
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
+    m_ValueSourceLine = other.m_ValueSourceLine;
     m_Comments  = other.m_Comments;
     return *this;
 }
@@ -129,6 +134,17 @@ void DTDAttribute::Merge(const DTDAttribute& other)
     }
     m_Value     = other.m_Value;
     m_ListEnum  = other.m_ListEnum;
+    m_ValueSourceLine = other.m_ValueSourceLine;
+}
+
+void DTDAttribute::SetSourceLine(int line)
+{
+    m_SourceLine = line;
+}
+
+int DTDAttribute::GetSourceLine(void) const
+{
+    return m_SourceLine;
 }
 
 void DTDAttribute::SetName(const string& name)
@@ -177,13 +193,22 @@ const string& DTDAttribute::GetValue(void) const
     return m_Value;
 }
 
-void DTDAttribute::AddEnumValue(const string& value)
+void DTDAttribute::AddEnumValue(const string& value, int line)
 {
     m_ListEnum.push_back(value);
+    m_ValueSourceLine[value] = line;
 }
 const list<string>& DTDAttribute::GetEnumValues(void) const
 {
     return m_ListEnum;
+}
+
+int DTDAttribute::GetEnumValueSourceLine(const string& value) const
+{
+    if (m_ValueSourceLine.find(value) != m_ValueSourceLine.end()) {
+        return m_ValueSourceLine.find(value)->second;
+    }
+    return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -191,6 +216,7 @@ const list<string>& DTDAttribute::GetEnumValues(void) const
 
 DTDElement::DTDElement(void)
 {
+    m_SourceLine = 0;
     m_Type = eUnknown;
     m_Occ  = eOne;
     m_Refd = false;
@@ -200,6 +226,7 @@ DTDElement::DTDElement(void)
 
 DTDElement::DTDElement(const DTDElement& other)
 {
+    m_SourceLine = other.m_SourceLine;
     m_Name     = other.m_Name;
     m_TypeName = other.m_TypeName;
     m_NamespaceName = other.m_NamespaceName;
@@ -219,6 +246,14 @@ DTDElement::~DTDElement(void)
 {
 }
 
+void DTDElement::SetSourceLine(int line)
+{
+    m_SourceLine = line;
+}
+int DTDElement::GetSourceLine(void) const
+{
+    return m_SourceLine;
+}
 
 void DTDElement::SetName(const string& name)
 {
@@ -395,6 +430,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2006/10/31 20:01:33  gouriano
+ * Added data spec source line info
+ *
  * Revision 1.10  2006/07/24 18:57:39  gouriano
  * Preserve comments when parsing DTD
  *

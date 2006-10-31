@@ -317,6 +317,7 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
     TToken tok;
     string name, value;
     bool ref=false, named_type=false;
+    int line = Lexer().CurrentLine();
 
     tok = GetRawAttributeSet();
 
@@ -335,6 +336,7 @@ string XSDParser::ParseElementContent(DTDElement* owner, int& emb)
             m_MapElement[name].SetNamed();
         }
         m_MapElement[name].SetName(m_Value);
+        m_MapElement[name].SetSourceLine(line);
         m_Comments = &(m_MapElement[name].Comments());
     }
     if (GetAttribute("type")) {
@@ -429,6 +431,7 @@ void XSDParser::ParseContent(DTDElement& node)
                 name += "__emb#__";
                 name += NStr::IntToString(emb++);
                 m_MapElement[name].SetName(name);
+                m_MapElement[name].SetSourceLine(Lexer().CurrentLine());
                 m_MapElement[name].SetEmbedded();
                 m_MapElement[name].SetType(DTDElement::eSequence);
                 ParseContainer(m_MapElement[name]);
@@ -444,6 +447,7 @@ void XSDParser::ParseContent(DTDElement& node)
                 name += "__emb#__";
                 name += NStr::IntToString(emb++);
                 m_MapElement[name].SetName(name);
+                m_MapElement[name].SetSourceLine(Lexer().CurrentLine());
                 m_MapElement[name].SetEmbedded();
                 m_MapElement[name].SetType(DTDElement::eChoice);
                 ParseContainer(m_MapElement[name]);
@@ -578,6 +582,7 @@ void XSDParser::ParseAttribute(DTDElement& node)
     DTDAttribute a;
     node.AddAttribute(a);
     DTDAttribute& att = node.GetNonconstAttributes().back();
+    att.SetSourceLine(Lexer().CurrentLine());
     m_Comments = &(att.Comments());
 
     TToken tok = GetRawAttributeSet();
@@ -678,7 +683,7 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
     TToken tok = GetRawAttributeSet();
     att.SetType(DTDAttribute::eEnum);
     if (GetAttribute("value")) {
-        att.AddEnumValue(m_Value);
+        att.AddEnumValue(m_Value, Lexer().CurrentLine());
     }
     if (tok == K_CLOSING) {
         ParseContent(att);
@@ -852,6 +857,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2006/10/31 20:01:33  gouriano
+ * Added data spec source line info
+ *
  * Revision 1.8  2006/08/03 17:21:10  gouriano
  * Preserve comments when parsing schema
  *
