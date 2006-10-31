@@ -113,7 +113,7 @@ static void s_PngReadInit(png_structp& png_ptr,
 //
 static void s_PngWriteInit(png_structp& png_ptr,
                            png_infop&   info_ptr,
-                           const CImage& image,
+                           size_t width, size_t height, size_t depth,
                            CImageIO::ECompress compress)
 {
     png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL,
@@ -131,11 +131,11 @@ static void s_PngWriteInit(png_structp& png_ptr,
     }
 
     png_byte color_type = PNG_COLOR_TYPE_RGB;
-    if (image.GetDepth() == 4) {
+    if (depth == 4) {
         color_type = PNG_COLOR_TYPE_RGBA;
     }
     png_set_IHDR(png_ptr, info_ptr,
-                 image.GetWidth(), image.GetHeight(), 8, color_type,
+                 width, height, 8, color_type,
                  PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_BASE,
                  PNG_FILTER_TYPE_BASE);
@@ -491,7 +491,9 @@ void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
     try {
         // initialize png stuff
-        s_PngWriteInit(png_ptr, info_ptr, image, compress);
+        s_PngWriteInit(png_ptr, info_ptr,
+                       image.GetWidth(), image.GetHeight(), image.GetDepth(),
+                       compress);
 
         // begin writing data
         png_set_write_fn(png_ptr, &ostr, s_PngWrite, s_PngFlush);
@@ -546,7 +548,9 @@ void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
     try {
         // initialize png stuff
-        s_PngWriteInit(png_ptr, info_ptr, image, compress);
+        s_PngWriteInit(png_ptr, info_ptr,
+                       w, h, image.GetDepth(),
+                       compress);
 
         // begin writing data
         png_set_write_fn(png_ptr, &ostr, s_PngWrite, s_PngFlush);
@@ -560,7 +564,7 @@ void CImageIOPng::WriteImage(const CImage& image, CNcbiOstream& ostr,
         // pointer (go figure...)
         unsigned char* from_data = const_cast<unsigned char*>(image.GetData());
         from_data += (y * image.GetWidth() + x) * image.GetDepth();
-        size_t from_stride = image.GetWidth() * image.GetDepth();
+        size_t from_stride = w * image.GetDepth();
 
         // march out h scan lines
         for (size_t i = 0;  i < h;  ++i) {
@@ -643,6 +647,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/10/31 14:12:11  dicuccio
+ * Correctly implement sub-image writing for PNG images
+ *
  * Revision 1.8  2006/06/23 16:18:45  dicuccio
  * Added ability to inspect image's information (size, width, height, depth)
  *
