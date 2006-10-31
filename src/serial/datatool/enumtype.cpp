@@ -108,7 +108,7 @@ void CEnumDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
     ++indent;
     ITERATE ( TValues, i, m_Values ) {
         PrintASNNewLine(out, indent);
-        out << "V,,";
+        out << "V," << i->GetSourceLine() << ',';
         out << GetFullName() << ':' << i->GetName() << ',' << i->GetValue();
         i->GetComments().PrintASN(out, indent, CComments::eNoEOL);
     }
@@ -432,6 +432,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2006/10/31 16:18:30  gouriano
+* Added source line info
+*
 * Revision 1.40  2006/10/30 21:03:33  gouriano
 * Corrected data spec dump formatting
 *

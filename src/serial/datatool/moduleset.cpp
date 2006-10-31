@@ -94,8 +94,7 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
 void CFileModules::PrintSpecDump(CNcbiOstream& out) const
 {
     ITERATE ( TModules, mi, m_Modules ) {
-        out << "M,,";
-//todo: line #
+        out << "M," << mi->get()->GetSourceLine() << ',';
         out << CDirEntry(m_SourceFileName).GetName() << ':'
             << (*mi)->GetName();
         (*mi)->PrintSpecDump(out);
@@ -426,6 +425,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2006/10/31 16:18:30  gouriano
+* Added source line info
+*
 * Revision 1.47  2006/10/30 21:03:34  gouriano
 * Corrected data spec dump formatting
 *

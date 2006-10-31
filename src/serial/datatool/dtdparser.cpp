@@ -102,6 +102,7 @@ void DTDParser::EndCommentBlock()
 AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
 {
     AutoPtr<CDataTypeModule> module(new CDataTypeModule(name));
+    module->SetSourceLine(Lexer().CurrentLine());
 
     try {
         CopyComments(module->Comments());
@@ -1285,6 +1286,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.35  2006/10/31 16:18:30  gouriano
+ * Added source line info
+ *
  * Revision 1.34  2006/08/03 19:16:54  gouriano
  * Get rid of crashes when parsing incomplete DTD or schema
  *

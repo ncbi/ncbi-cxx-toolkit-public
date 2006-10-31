@@ -77,6 +77,7 @@ AutoPtr<CDataTypeModule> ASNParser::Module(void)
 {
     string moduleName = ModuleReference();
     AutoPtr<CDataTypeModule> module(new CDataTypeModule(moduleName));
+    module->SetSourceLine(Lexer().CurrentLine());
 
     Consume(K_DEFINITIONS, "DEFINITIONS");
     Consume(T_DEFINE, "::=");
@@ -336,6 +337,7 @@ CEnumDataType* ASNParser::EnumeratedBlock(CEnumDataType* enumType)
     for ( bool more = true; more; ) {
         line = NextTokenLine();
         CEnumDataTypeValue& value = EnumeratedValue(*e);
+        value.SetSourceLine(line);
         more = HaveMoreElements();
         CopyLineComment(line, value.GetComments(), eCombineNext);
     }
@@ -483,6 +485,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2006/10/31 16:18:30  gouriano
+* Added source line info
+*
 * Revision 1.36  2006/10/18 13:10:25  gouriano
 * Moved Log to bottom
 *

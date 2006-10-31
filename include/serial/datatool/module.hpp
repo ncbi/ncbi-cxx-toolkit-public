@@ -51,6 +51,12 @@ public:
     CDataTypeModule(const string& name);
     virtual ~CDataTypeModule();
 
+    void SetSourceLine(int line);
+    int GetSourceLine(void) const
+    {
+        return m_SourceLine;
+    }
+
     class Import {
     public:
         string moduleName;
@@ -127,6 +133,7 @@ public:
     static string ToAsnId(const string& name);
 
 private:
+    int m_SourceLine;
     bool m_Errors;
     string m_Name;
     CComments m_Comments;
@@ -153,6 +160,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/10/31 16:18:44  gouriano
+* Added source line info
+*
 * Revision 1.17  2006/10/30 18:15:14  gouriano
 * Added writing data specification in internal format
 *

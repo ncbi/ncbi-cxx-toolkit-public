@@ -46,12 +46,17 @@ BEGIN_NCBI_SCOPE
 string CDataTypeModule::s_ModuleFileSuffix;
 
 CDataTypeModule::CDataTypeModule(const string& n)
-    : m_Errors(false), m_Name(n)
+    : m_SourceLine(0), m_Errors(false), m_Name(n)
 {
 }
 
 CDataTypeModule::~CDataTypeModule()
 {
+}
+
+void CDataTypeModule::SetSourceLine(int line)
+{
+    m_SourceLine = line;
 }
 
 void CDataTypeModule::AddDefinition(const string& name,
@@ -539,6 +544,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2006/10/31 16:18:30  gouriano
+* Added source line info
+*
 * Revision 1.51  2006/10/30 21:03:33  gouriano
 * Corrected data spec dump formatting
 *
