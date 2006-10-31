@@ -50,6 +50,13 @@
 #endif
 #include <boost/current_function.hpp>
 
+#ifdef NCBI_OS_DARWIN
+#include <util/compress/stream.hpp>
+#include <objects/id1/ID1server_back.hpp>
+#include <objects/id2/ID2_Reply_Data.hpp>
+#include <objmgr/data_loader_factory.hpp>
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
@@ -2227,11 +2234,34 @@ BOOST_AUTO_UNIT_TEST(ExpertIdBoundsNoPig)
     }
 }
 
+#ifdef NCBI_OS_DARWIN
+// nonsense to work around linker screwiness (horribly kludgy)
+class CDummyDLF : public CDataLoaderFactory {
+public:
+    CDummyDLF() : CDataLoaderFactory(kEmptyStr) { }
+    CDataLoader* CreateAndRegister(CObjectManager&,
+                                   const TPluginManagerParamTree*) const
+        { return 0; }
+};
+
+void s_ForceSymbolDefinitions(/* CReadDispatcher& rd */)
+{
+    auto_ptr<CDataLoaderFactory> dlf(new CDummyDLF);
+    auto_ptr<CCompressionStream> cs
+        (new CCompressionStream(NcbiCin, NULL, NULL));
+    CRef<CID1server_back> id1b(new CID1server_back);
+    CRef<CID2_Reply_Data> id2rd(new CID2_Reply_Data);
+}
+#endif
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/10/31 18:36:19  ucko
+ * Hack around bogus failures on Darwin, whose linker doesn't entirely
+ * care for the way we build shared libraries.
+ *
  * Revision 1.1  2006/10/30 20:37:05  bealer
  * - Commit unit test source.
  *
