@@ -43,6 +43,7 @@
 #include <corelib/ncbistre.hpp>
 #include <list>
 #include <map>
+#include <memory>
 #include <stdexcept>
 
 
@@ -1707,6 +1708,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.119  2006/10/31 21:15:04  ucko
+ * #include <memory> for auto_ptr<>, as required by GCC 2.95.
+ *
  * Revision 1.118  2006/10/31 18:41:16  grichenk
  * Redesigned diagnostics setup.
  * Moved the setup function to ncbidiag.cpp.
