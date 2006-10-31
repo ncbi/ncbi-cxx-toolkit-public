@@ -4,7 +4,7 @@
 
 APP = netscheduled
 SRC = netscheduled nslb bdb_queue job_status queue_clean_thread \
-      notif_thread job_time_line ns_affinity
+      notif_thread job_time_line ns_affinity squeue access_list
 
 REQUIRES = MT bdb
 

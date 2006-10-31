@@ -26,18 +26,17 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description:
- *   Net schedule database structure.
+ *   NetSchedule database structure.
  *
  */
 
 /// @file ns_db.hpp
 /// NetSchedule database structure.
 ///
-/// This file collects all BDB data files, index files, and in-memory
-/// structures used in netschedule
+/// This file collects all BDB data files and index files used in netschedule
 ///
 /// @internal
 
@@ -45,23 +44,14 @@
 #include <corelib/ncbicntr.hpp>
 
 #include <util/bitset/ncbi_bitset.hpp>
-#include <util/logrotate.hpp>
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_bv_store.hpp>
 
-#include <map>
-#include <vector>
+#include <connect/services/netschedule_client.hpp>
 
-#include "job_status.hpp"
-#include "job_time_line.hpp"
-#include "queue_vc.hpp"
-#include "access_list.hpp"
-#include "queue_monitor.hpp"
-#include "nslb.hpp"
-#include "ns_affinity.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -201,225 +191,15 @@ struct SAffinityDictTokenIdx : public CBDB_File
 };
 
 
-
-
-/// @internal
-enum ENSLB_RunDelayType
-{
-    eNSLB_Constant,   ///< Constant delay
-    eNSLB_RunTimeAvg  ///< Running time based delay (averaged)
-};
-
-
-/// Types of event notification subscribers
-///
-/// @internal
-enum ENetScheduleListenerType
-{
-    eNS_Worker        = (1 << 0),  ///< Regular worker node
-    eNS_BackupWorker  = (1 << 1)   ///< Backup worker node (second priority notifications)
-};
-
-
-/// @internal
-typedef unsigned TNetScheduleListenerType;
-
-
-/// Queue watcher (client) description. Client is predominantly a worker node
-/// waiting for new jobs.
-///
-/// @internal
-///
-struct SQueueListener
-{
-    unsigned int               host;         ///< host name (network BO)
-    unsigned short             udp_port;     ///< Listening UDP port
-    time_t                     last_connect; ///< Last registration timestamp
-    int                        timeout;      ///< Notification expiration timeout
-    string                     auth;         ///< Authentication string
-    TNetScheduleListenerType   client_type;  ///< Client type mask
-
-    SQueueListener(unsigned int             host_addr,
-                   unsigned short           udp_port_number,
-                   time_t                   curr,
-                   int                      expiration_timeout,
-                   const string&            client_auth,
-                   TNetScheduleListenerType ctype = eNS_Worker)
-    : host(host_addr),
-      udp_port(udp_port_number),
-      last_connect(curr),
-      timeout(expiration_timeout),
-      auth(client_auth),
-      client_type(ctype)
-    {}
-};
-
-/// Runtime queue statistics
-///
-/// @internal
-struct SQueueStatictics
-{
-    double   total_run_time; ///< Accumulated job running time
-    unsigned run_count;      ///< Number of runs
-
-    double   total_turn_around_time; ///< time from subm to completion
-
-    SQueueStatictics() 
-        : total_run_time(0.0), run_count(0), total_turn_around_time(0)
-    {}
-};
-
-
-/// Mutex protected Queue database with job status FSM 
-///
-/// Class holds the queue database (open files and indexes), 
-/// thread sync mutexes and classes auxiliary queue management concepts
-/// (like affinity and job status bit-matrix)
-///
-/// @internal
-///
-struct SLockedQueue
-{
-    SQueueDB                        db;               ///< Main queue database
-    SQueueAffinityIdx               aff_idx;          ///< Q affinity index
-    auto_ptr<CBDB_FileCursor>       cur;              ///< DB cursor
-    CFastMutex                      lock;             ///< db, cursor lock
-    CNetScheduler_JobStatusTracker  status_tracker;   ///< status FSA
-
-    // affinity dictionary does not need a mutex, because 
-    // CAffinityDict is a syncronized class itself (mutex included)
-    CAffinityDict                   affinity_dict;    ///< Affinity tokens
-    CWorkerNodeAffinity             worker_aff_map;   ///< Affinity map
-    CFastMutex                      aff_map_lock;     ///< worker_aff_map lck
-
-    // queue parameters
-    int                             timeout;        ///< Result exp. timeout
-    int                             notif_timeout;  ///< Notification interval
-    bool                            delete_done;    ///< Delete done jobs
-    /// How many attemts to make on different nodes before failure
-    unsigned                        failed_retries;
-
-    // List of active worker node listeners waiting for pending jobs
-
-    typedef vector<SQueueListener*> TListenerList;
-
-    TListenerList                wnodes;       ///< worker node listeners
-    time_t                       last_notif;   ///< last notification time
-    CRWLock                      wn_lock;      ///< wnodes locker
-    string                       q_notif;      ///< Queue notification message
-
-    // Timeline object to control job execution timeout
-    CJobTimeLine*                run_time_line;
-    int                          run_timeout;
-    CRWLock                      rtl_lock;      ///< run_time_line locker
-
-    // datagram notification socket 
-    // (used to notify worker nodes and waiting clients)
-    CDatagramSocket              udp_socket;    ///< UDP notification socket
-    CFastMutex                   us_lock;       ///< UDP socket lock
-
-    /// Client program version control
-    CQueueClientInfoList         program_version_list;
-
-    /// Host access list for job submission
-    CNetSchedule_AccessList      subm_hosts;
-    /// Host access list for job execution (workers)
-    CNetSchedule_AccessList      wnode_hosts;
-
-
-    /// Queue monitor
-    CNetScheduleMonitor          monitor;
-
-    /// Database records when they are deleted can be dumped to an archive
-    /// file for further processing
-    CRotatingLogStream           rec_dump;
-    CFastMutex                   rec_dump_lock;
-    bool                         rec_dump_flag;
-
-    mutable bool                 lb_flag;  ///< Load balancing flag
-    CNSLB_Coordinator*           lb_coordinator;
-
-    ENSLB_RunDelayType           lb_stall_delay_type;
-    unsigned                     lb_stall_time;      ///< job delay (seconds)
-    double                       lb_stall_time_mult; ///< stall coeff
-    CFastMutex                   lb_stall_time_lock;
-
-    SQueueStatictics             qstat;
-    CFastMutex                   qstat_lock;
-
-    SLockedQueue(const string& queue_name) 
-        : timeout(3600), 
-          notif_timeout(7), 
-          delete_done(false),
-          failed_retries(0),
-          last_notif(0), 
-          q_notif("NCBI_JSQ_"),
-          run_time_line(0),
-
-          rec_dump("jsqd_"+queue_name+".dump", 10 * (1024 * 1024)),
-          rec_dump_flag(false),
-          lb_flag(false),
-          lb_coordinator(0),
-          lb_stall_delay_type(eNSLB_Constant),
-          lb_stall_time(6),
-          lb_stall_time_mult(1.0)
-    {
-        _ASSERT(!queue_name.empty());
-        q_notif.append(queue_name);
-    }
-
-    ~SLockedQueue()
-    {
-        NON_CONST_ITERATE(TListenerList, it, wnodes) {
-            SQueueListener* node = *it;
-            delete node;
-        }
-        delete run_time_line;
-        delete lb_coordinator;
-    }
-};
-
-/// Queue database manager
-///
-/// @internal
-///
-class CQueueCollection
-{
-public:
-    typedef map<string, SLockedQueue*> TQueueMap;
-
-public:
-    CQueueCollection();
-    ~CQueueCollection();
-
-    void Close();
-
-    SLockedQueue& GetLockedQueue(const string& qname);
-    bool QueueExists(const string& qname) const;
-
-    /// Collection takes ownership of queue
-    void AddQueue(const string& name, SLockedQueue* queue);
-
-    const TQueueMap& GetMap() const { return m_QMap; }
-
-private:
-    CQueueCollection(const CQueueCollection&);
-    CQueueCollection& operator=(const CQueueCollection&);
-private:
-    TQueueMap              m_QMap;
-    mutable CRWLock        m_Lock;
-};
-
-
-
-
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/10/31 19:35:26  joukovv
+ * Queue creation and reading of its parameters decoupled. Code reorganized to
+ * reduce coupling in general. Preparing for queue-on-demand.
+ *
  * Revision 1.5  2006/09/21 21:28:59  joukovv
  * Consistency of memory state and database strengthened, ability to retry failed
  * jobs on different nodes (and corresponding queue parameter, failed_retries)

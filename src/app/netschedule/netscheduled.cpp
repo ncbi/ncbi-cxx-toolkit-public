@@ -23,11 +23,12 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Network scheduler daemon
  *
  */
+
 #include <ncbi_pch.hpp>
 #include <stdio.h>
 #include <corelib/ncbiapp.hpp>
@@ -59,13 +60,14 @@
 #include "bdb_queue.hpp"
 #include <db.h>
 
+#include "job_status.hpp"
+#include "job_time_line.hpp"
+#include "access_list.hpp"
+
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
 # include <signal.h>
 #endif
-
-#include "job_time_line.hpp"
-#include "access_list.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -122,8 +124,6 @@ struct SThreadData
     string            auth_prog;
     CQueueClientInfo  auth_prog_info;    
 
-    
-    string      queue;
     string      answer;
 
     char        msg_buf[kMaxMessageSize];
@@ -286,6 +286,7 @@ private:
     unsigned                         m_PeerAddr;
     string                           m_AuthString;
     CNetScheduleServer*              m_Server;
+    string                           m_QueueName;
     auto_ptr<CQueueDataBase::CQueue> m_Queue;
     CNetScheduleMonitor*             m_Monitor;
     SJS_Request                      m_JobReq;
@@ -574,16 +575,19 @@ void CNetScheduleHandler::ProcessMsgAuth(BUF buffer)
 
 void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
 {
-    s_ReadBufToString(buffer, m_ThreadData.queue);
+    s_ReadBufToString(buffer, m_QueueName);
 
-    m_Queue.reset(new CQueueDataBase::CQueue(*(m_Server->GetQueueDB()), 
-                                             m_ThreadData.queue,
-                                             m_PeerAddr));
-    m_Monitor = m_Queue->GetMonitor();
+    if (!m_AdminAccess || m_QueueName != "noname") {
+        m_Queue.reset(new CQueueDataBase::CQueue(*(m_Server->GetQueueDB()),
+                                                m_QueueName,
+                                                m_PeerAddr));
+        m_Monitor = m_Queue->GetMonitor();
 
-    if (!m_Queue->IsVersionControl()) {
-        m_VersionControl = true;
+        if (!m_Queue->IsVersionControl()) {
+            m_VersionControl = true;
+        }
     }
+
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
 }
 
@@ -984,23 +988,23 @@ void CNetScheduleHandler::ProcessStatus()
     switch (status) {
     case CNetScheduleClient::eDone:
         {
-        if (m_Queue->GetJobDescr(job_id, &ret_code, 
-                                 m_JobReq.input,
-                                 m_JobReq.output,
-                                 0, 0,
-                                 0, 0, 
-                                 status)) {
-        send_reply:
-            sprintf(szBuf, 
-                    "%i %i \"%s\" \"\" \"%s\"", 
-                    st, ret_code, 
-                    m_JobReq.output,
-                    m_JobReq.input);
-            WriteMsg("OK:", szBuf);
-            return;
-        } else {
-            st = (int)CNetScheduleClient::eJobNotFound;
-        }
+            if (m_Queue->GetJobDescr(job_id, &ret_code, 
+                                    m_JobReq.input,
+                                    m_JobReq.output,
+                                    0, 0,
+                                    0, 0, 
+                                    status)) {
+            send_reply:
+                sprintf(szBuf, 
+                        "%i %i \"%s\" \"\" \"%s\"", 
+                        st, ret_code, 
+                        m_JobReq.output,
+                        m_JobReq.input);
+                WriteMsg("OK:", szBuf);
+                return;
+            } else {
+                st = (int)CNetScheduleClient::eJobNotFound;
+            }
         }
     break;
 
@@ -1008,44 +1012,44 @@ void CNetScheduleHandler::ProcessStatus()
     case CNetScheduleClient::eReturned:
     case CNetScheduleClient::ePending:
         {
-        bool b = m_Queue->GetJobDescr(job_id, 0, 
-                                      m_JobReq.input,
-                                      0,
-                                      0, 0,
-                                      0, 0, 
-                                      status);
+            bool b = m_Queue->GetJobDescr(job_id, 0, 
+                                        m_JobReq.input,
+                                        0,
+                                        0, 0,
+                                        0, 0, 
+                                        status);
 
-        if (b) {
-            m_JobReq.output[0] = 0;
-            goto send_reply;
-        } else {
-            st = (int)CNetScheduleClient::eJobNotFound;
-        }
+            if (b) {
+                m_JobReq.output[0] = 0;
+                goto send_reply;
+            } else {
+                st = (int)CNetScheduleClient::eJobNotFound;
+            }
         }
         break;
 
     case CNetScheduleClient::eFailed:
         {
-        bool b = m_Queue->GetJobDescr(job_id, &ret_code, 
-                                      m_JobReq.input,
-                                      m_JobReq.output,
-                                      m_JobReq.err,
-                                      0,
-                                      0, 0, 
-                                      status);
+            bool b = m_Queue->GetJobDescr(job_id, &ret_code, 
+                                        m_JobReq.input,
+                                        m_JobReq.output,
+                                        m_JobReq.err,
+                                        0,
+                                        0, 0, 
+                                        status);
 
-        if (b) {
-            sprintf(szBuf, 
-                    "%i %i \"%s\" \"%s\" \"%s\"", 
-                    st, ret_code, 
-                    m_JobReq.output,
-                    m_JobReq.err,
-                    m_JobReq.input);
-            WriteMsg("OK:", szBuf);
-            return;
-        } else {
-            st = (int)CNetScheduleClient::eJobNotFound;
-        }
+            if (b) {
+                sprintf(szBuf, 
+                        "%i %i \"%s\" \"%s\" \"%s\"", 
+                        st, ret_code, 
+                        m_JobReq.output,
+                        m_JobReq.err,
+                        m_JobReq.input);
+                WriteMsg("OK:", szBuf);
+                return;
+            } else {
+                st = (int)CNetScheduleClient::eJobNotFound;
+            }
         }
         break;
     default:
@@ -1186,15 +1190,14 @@ void CNetScheduleHandler::ProcessWaitGet()
         return;
     }
     unsigned job_id;
-    char key_buf[1024];
     m_Queue->GetJob(m_PeerAddr, &job_id, 
                     m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
                     m_AuthString, &m_JobReq.job_mask);
 
-    m_Queue->GetJobKey(key_buf, job_id,
-        m_Server->GetHost(), m_Server->GetPort());
-
     if (job_id) {
+        char key_buf[1024];
+        m_Queue->GetJobKey(key_buf, job_id,
+            m_Server->GetHost(), m_Server->GetPort());
         x_MakeGetAnswer(key_buf, m_JobReq.cout, m_JobReq.cerr,
                         m_JobReq.job_mask);
         WriteMsg("OK:", m_ThreadData.answer.c_str());
@@ -2291,7 +2294,7 @@ void CNetScheduleHandler::x_MakeLogMessage()
     lmsg += ';';
     lmsg += m_AuthString;
     lmsg += ';';
-    lmsg += m_ThreadData.queue;
+    lmsg += m_QueueName;
     lmsg += ';';
     lmsg += m_ThreadData.request;
     lmsg += "\n";
@@ -2591,11 +2594,12 @@ int CNetScheduleDApp::Run(void)
 
 
 
-        // mount default queue
-        string qname = "noname";
-        LOG_POST(Info << "Mounting queue: " << qname);
-        qdb->MountQueue(qname, 3600, 7, 3600, 1800, 
-                        kEmptyStr, false/*do not delete done*/);
+        // mount default queue - it is needed for authentication of admin operations
+        // No longer needed for code which does not access m_Queue and m_Monitor
+        // string qname = "noname";
+        // LOG_POST(Info << "Mounting queue: " << qname);
+        // SQueueParameters qparams;
+        // qdb->MountQueue(qname, qparams);
 
 
         // Scan and mount queues
@@ -2700,6 +2704,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.103  2006/10/31 19:35:26  joukovv
+ * Queue creation and reading of its parameters decoupled. Code reorganized to
+ * reduce coupling in general. Preparing for queue-on-demand.
+ *
  * Revision 1.102  2006/10/19 20:38:20  joukovv
  * Works in thread-per-request mode. Errors in BDB layer fixed.
  *

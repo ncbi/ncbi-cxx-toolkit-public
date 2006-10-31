@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description: Network scheduler job status database.
  *
@@ -45,6 +45,8 @@
 
 #include "bdb_queue.hpp"
 
+#include "job_time_line.hpp"
+#include "nslb.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -109,7 +111,8 @@ private:
 
 
 
-
+/////////////////////////////////////////////////////////////////////////////
+// CQueueCollection implementation
 CQueueCollection::CQueueCollection()
 {}
 
@@ -311,52 +314,21 @@ void CQueueDataBase::Open(const string& path,
 
 
 static
-CNSLB_ThreasholdCurve* s_ConfigureCurve(const IRegistry& reg, 
-                                        const string&    sname,
-                                        unsigned         exec_delay)
+CNSLB_ThreasholdCurve* s_ConfigureCurve(const SQueueLBParameters& params,
+                                        unsigned                  exec_delay)
 {
     auto_ptr<CNSLB_ThreasholdCurve> curve;
-    string lb_curve = 
-        reg.GetString(sname, "lb_curve", kEmptyStr);
-
     do {
 
-    if (lb_curve.empty() || 
-        NStr::CompareNocase(lb_curve, "linear") == 0) {
-        double y0 = reg.GetDouble(sname, 
-                                  "lb_curve_high", 
-                                  0.6, 
-                                  0, 
-                                  IRegistry::eReturn);
-        double yN = reg.GetDouble(sname, 
-                                  "lb_curve_linear_low", 
-                                  0.15, 
-                                  0, 
-                                  IRegistry::eReturn);
-        curve.reset(new CNSLB_ThreasholdCurve_Linear(y0, yN));
-        LOG_POST(Info << sname 
-                      << " initializing linear LB curve"
-                      << " y0=" << y0 
-                      << " yN=" << yN);
+    if (params.lb_curve == eLBLinear) {
+        curve.reset(new CNSLB_ThreasholdCurve_Linear(params.lb_curve_high,
+                                                     params.lb_curve_linear_low));
         break;
     }
 
-    if (NStr::CompareNocase(lb_curve, "regression") == 0) {
-        double y0 = reg.GetDouble(sname, 
-                                  "lb_curve_high",
-                                  0.85, 
-                                  0, 
-                                  IRegistry::eReturn);
-        double a = reg.GetDouble(sname, 
-                                  "lb_curve_regression_a",
-                                  -0.2, 
-                                  0, 
-                                  IRegistry::eReturn);
-        curve.reset(new CNSLB_ThreasholdCurve_Regression(y0, a));
-        LOG_POST(Info << sname 
-                      << " initializing regression LB curve."
-                      << " y0=" << y0 
-                      << " a="  << a);
+    if (params.lb_curve == eLBRegression) {
+        curve.reset(new CNSLB_ThreasholdCurve_Regression(params.lb_curve_high,
+                                                params.lb_curve_regression_a));
         break;
     }
 
@@ -367,6 +339,7 @@ CNSLB_ThreasholdCurve* s_ConfigureCurve(const IRegistry& reg,
     }
     return curve.release();
 }
+
 /*
 static
 CNSLB_DecisionModule* s_ConfigureDecision(const IRegistry& reg, 
@@ -408,235 +381,75 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
             continue;
         }
 
-        int timeout = 
-            reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
-        int notif_timeout =
-            reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
-        int run_timeout =
-            reg.GetInt(sname, "run_timeout", 
-                                        timeout, 0, IRegistry::eReturn);
-
-        int run_timeout_precision =
-            reg.GetInt(sname, "run_timeout_precision", 
-                                        run_timeout, 0, IRegistry::eReturn);
-        *min_run_timeout = 
-            std::min(*min_run_timeout, (unsigned)run_timeout_precision);
-
-        string program_name = reg.GetString(sname, "program", kEmptyStr);
-
-        bool delete_when_done = reg.GetBool(sname, "delete_done", 
-                                            false, 0, IRegistry::eReturn);
-        int failed_retries = 
-            reg.GetInt(sname, "failed_retries", 
-                                        0, 0, IRegistry::eReturn);
-
         bool qexists = m_QueueCollection.QueueExists(qname);
 
+        SQueueParameters params;
+        params.Read(reg, sname);
+        *min_run_timeout = 
+            std::min(*min_run_timeout, (unsigned)params.run_timeout_precision);
         if (!qexists) {
             LOG_POST(Info 
-                << "Mounting queue:           " << qname                 << "\n"
-                << "   Timeout:               " << timeout               << "\n"
-                << "   Notification timeout:  " << notif_timeout         << "\n"
-                << "   Run timeout:           " << run_timeout           << "\n"
-                << "   Run timeout precision: " << run_timeout_precision << "\n"
-                << "   Programs:              " << program_name          << "\n"
-                << "   Delete done:           " << delete_when_done      << "\n"
+                << "Mounting queue:           " << qname                        << "\n"
+                << "   Timeout:               " << params.timeout               << "\n"
+                << "   Notification timeout:  " << params.notif_timeout         << "\n"
+                << "   Run timeout:           " << params.run_timeout           << "\n"
+                << "   Run timeout precision: " << params.run_timeout_precision << "\n"
+                << "   Programs:              " << params.program_name          << "\n"
+                << "   Delete when done:      " << params.delete_when_done      << "\n"
             );
-            MountQueue(qname, timeout, 
-                        notif_timeout, 
-                        run_timeout, 
-                        run_timeout_precision,
-                        program_name,
-                        delete_when_done);
+            MountQueue(qname, params);
         } else { // update non-critical queue parameters
-            SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
-            queue.program_version_list.Clear();
-            if (!program_name.empty()) {
-                queue.program_version_list.AddClientInfo(program_name);
-            }
+            UpdateQueue(qname, params);
         }
-
-        SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
-        string subm_host = reg.GetString(sname,  "subm_host",  kEmptyStr);
-        queue.subm_hosts.SetHosts(subm_host);
-
-        queue.failed_retries = failed_retries;
-
-        string wnode_host = reg.GetString(sname, "wnode_host", kEmptyStr);
-        queue.wnode_hosts.SetHosts(wnode_host);
-
-        {{
-        bool dump_db = reg.GetBool(sname, "dump_db", false, 0, IRegistry::eReturn);
-        CFastMutexGuard guard(queue.rec_dump_lock);
-        queue.rec_dump_flag = dump_db;
-        }}
-
 
         // re-load load balancing settings
-        {{
-        bool lb_flag = reg.GetBool(sname, "lb", false, 0, IRegistry::eReturn);
-        SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
-
-        if (lb_flag != queue.lb_flag) {
-
-        string lb_service = reg.GetString(sname, "lb_service", kEmptyStr);
-        int lb_collect_time =
-            reg.GetInt(sname, "lb_collect_time", 5, 0, IRegistry::eReturn);
-
-        if (lb_service.empty()) {
-            if (lb_flag) {
-                LOG_POST(Error << "Queue:" << sname 
-                    << "cannot be load balanced. Missing lb_service ini setting");
-            }
-            queue.lb_flag = false;
-        } else {
-            string lb_unknown_host = 
-                reg.GetString(sname, "lb_unknown_host", kEmptyStr);
-
-            ENSLB_RunDelayType lb_delay_type = eNSLB_Constant;
-            unsigned lb_stall_time = 6;
-            string lb_exec_delay_str = 
-                        reg.GetString(sname, "lb_exec_delay", kEmptyStr);
-            if (NStr::CompareNocase(lb_exec_delay_str, "run_time")) {
-                lb_delay_type = eNSLB_RunTimeAvg;
-            } else {
-                try {
-                    int stall_time = NStr::StringToInt(lb_exec_delay_str);
-                    if (stall_time > 0) {
-                        lb_stall_time = stall_time;
-                    }
-                } 
-                catch(exception& ex)
-                {
-                    ERR_POST("Invalid value of lb_exec_delay " 
-                             << ex.what()
-                             << " Offending value:"
-                             << lb_exec_delay_str
-                             );
-                }
-            }
-
-
-            CNSLB_Coordinator::ENonLbHostsPolicy non_lb_hosts = 
-                CNSLB_Coordinator::eNonLB_Allow;
-            if (NStr::CompareNocase(lb_unknown_host, "deny") == 0) {
-                non_lb_hosts = CNSLB_Coordinator::eNonLB_Deny;
-            } else
-            if (NStr::CompareNocase(lb_unknown_host, "allow") == 0) {
-                non_lb_hosts = CNSLB_Coordinator::eNonLB_Allow;
-            } else
-            if (NStr::CompareNocase(lb_unknown_host, "reserve") == 0) {
-                non_lb_hosts = CNSLB_Coordinator::eNonLB_Reserve;
-            }
-
-
-
-            double lb_stall_time_mult = 
-                  reg.GetDouble(sname, 
-                                "lb_exec_delay_mult",
-                                0.5, 
-                                0, 
-                                IRegistry::eReturn);
-
-
-            if (queue.lb_flag == false) { // LB is OFF
-                LOG_POST(Error << "Queue:" << sname 
-                               << " is load balanced. " << lb_service);
-
-                if (queue.lb_coordinator == 0) {
-                    auto_ptr<CNSLB_ThreasholdCurve>  
-                      deny_curve(s_ConfigureCurve(reg, sname, lb_stall_time));
-
-                    //CNSLB_DecisionModule*   decision_maker = 0;
-
-                    auto_ptr<CNSLB_DecisionModule_DistributeRate> 
-                        decision_distr_rate(
-                            new CNSLB_DecisionModule_DistributeRate);
-
-                    auto_ptr<INSLB_Collector>   
-                        collect(new CNSLB_LBSMD_Collector());
-
-                    auto_ptr<CNSLB_Coordinator> 
-                       coord(new CNSLB_Coordinator(
-                                    lb_service,
-                                    collect.release(),
-                                    deny_curve.release(),
-                                    decision_distr_rate.release(),
-                                    lb_collect_time,
-                                    non_lb_hosts));
-
-                    queue.lb_coordinator = coord.release();
-                    queue.lb_stall_delay_type = lb_delay_type;
-                    queue.lb_stall_time = lb_stall_time;
-                    queue.lb_stall_time_mult = lb_stall_time_mult;
-                    queue.lb_flag = true;
-
-                } else {  // LB is ON
-                    // reconfigure the LB delay
-                    CFastMutexGuard guard(queue.lb_stall_time_lock);
-                    queue.lb_stall_delay_type = lb_delay_type;
-                    if (lb_delay_type == eNSLB_Constant) {
-                        queue.lb_stall_time = lb_stall_time;
-                    }
-                    queue.lb_stall_time_mult = lb_stall_time_mult;
-                }
-            }
-        }
-
-        } // if lb_flag != queue.lb_flag
-
-        }}
-
+        SQueueLBParameters lb_params;
+        lb_params.Read(reg, sname);
+        UpdateQueueLB(qname, lb_params);
     } // ITERATE
-
 }
 
 
-void CQueueDataBase::MountQueue(const string& queue_name, 
-                                int           timeout,
-                                int           notif_timeout,
-                                int           run_timeout,
-                                int           run_timeout_precision,
-                                const string& program_name,
-                                bool          delete_done)
+void CQueueDataBase::MountQueue(const string& qname, 
+                                const SQueueParameters& params)
 {
     _ASSERT(m_Env);
 
-    if (m_QueueCollection.QueueExists(queue_name)) {
+    if (m_QueueCollection.QueueExists(qname)) {
         LOG_POST(Warning << 
-                 "JS: Queue " << queue_name << " already exists.");
+                 "JS: Queue " << qname << " already exists.");
         return;
     }
 
-    auto_ptr<SLockedQueue> q(new SLockedQueue(queue_name));
-    string fname = string("jsq_") + queue_name + string(".db");
+    auto_ptr<SLockedQueue> q(new SLockedQueue(qname));
+    string fname = string("jsq_") + qname + string(".db");
     q->db.SetEnv(*m_Env);
 
     q->db.RevSplitOff();
     q->db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
 
-    fname = string("jsq_") + queue_name + string("_affid.idx");
+    fname = string("jsq_") + qname + string("_affid.idx");
     q->aff_idx.SetEnv(*m_Env);
     q->aff_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
 
-    q->timeout = timeout;
-    q->notif_timeout = notif_timeout;
-    q->delete_done = delete_done;
+    q->timeout = params.timeout;
+    q->notif_timeout = params.notif_timeout;
+    q->delete_done = params.delete_when_done;
     q->last_notif = time(0);
 
-    q->affinity_dict.Open(*m_Env, queue_name);
+    q->affinity_dict.Open(*m_Env, qname);
 
-    m_QueueCollection.AddQueue(queue_name, q.release());
+    m_QueueCollection.AddQueue(qname, q.release());
 
-    SLockedQueue& queue = m_QueueCollection.GetLockedQueue(queue_name);
+    SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
 
-    queue.run_timeout = run_timeout;
-    if (run_timeout) {
-        queue.run_time_line = new CJobTimeLine(run_timeout_precision, 0);
+    queue.run_timeout = params.run_timeout;
+    if (params.run_timeout) {
+        queue.run_time_line =
+            new CJobTimeLine(params.run_timeout_precision, 0);
     }
 
-
-    // scan the queue, restore the state machine
+    // scan the queue, load the state machine from DB
 
     CBDB_FileCursor cur(queue.db);
     cur.SetCondition(CBDB_FileCursor::eGE);
@@ -663,8 +476,7 @@ void CQueueDataBase::MountQueue(const string& queue_name,
             // in the background control thread
             queue.run_time_line->AddObjectToSlot(0, job_id);
         }
-    } // while
-
+    }
 
     queue.udp_socket.SetReuseAddress(eOn);
     unsigned short udp_port = GetUdpPort();
@@ -673,13 +485,128 @@ void CQueueDataBase::MountQueue(const string& queue_name,
     }
 
     // program version control
-    if (!program_name.empty()) {
-        queue.program_version_list.AddClientInfo(program_name);
+    if (!params.program_name.empty()) {
+        queue.program_version_list.AddClientInfo(params.program_name);
     }
+
+    queue.subm_hosts.SetHosts(params.subm_hosts);
+    queue.failed_retries = params.failed_retries;
+    queue.wnode_hosts.SetHosts(params.wnode_hosts);
+    queue.rec_dump_flag = params.dump_db;
 
 
     LOG_POST(Info << "Queue records = " << recs);
-    
+}
+
+void CQueueDataBase::UpdateQueue(const string& qname,
+                                 const SQueueParameters& params)
+{
+    SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
+
+    queue.program_version_list.Clear();
+    if (!params.program_name.empty()) {
+        queue.program_version_list.AddClientInfo(params.program_name);
+    }
+    queue.subm_hosts.SetHosts(params.subm_hosts);
+    queue.failed_retries = params.failed_retries;
+    queue.wnode_hosts.SetHosts(params.wnode_hosts);
+    {{
+        CFastMutexGuard guard(queue.rec_dump_lock);
+        queue.rec_dump_flag = params.dump_db;
+    }}
+}
+
+void CQueueDataBase::UpdateQueueLB(const string& qname,
+                                   const SQueueLBParameters& params)
+{
+    SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
+
+    if (params.lb_flag == queue.lb_flag) return;
+
+    if (params.lb_service.empty()) {
+        if (params.lb_flag) {
+            LOG_POST(Error << "Queue:" << qname 
+                << "cannot be load balanced. Missing lb_service ini setting");
+        }
+        queue.lb_flag = false;
+    } else {
+        ENSLB_RunDelayType lb_delay_type = eNSLB_Constant;
+        unsigned lb_stall_time = 6;
+        if (NStr::CompareNocase(params.lb_exec_delay_str, "run_time")) {
+            lb_delay_type = eNSLB_RunTimeAvg;
+        } else {
+            try {
+                int stall_time =
+                    NStr::StringToInt(params.lb_exec_delay_str);
+                if (stall_time > 0) {
+                    lb_stall_time = stall_time;
+                }
+            } 
+            catch(exception& ex)
+            {
+                ERR_POST("Invalid value of lb_exec_delay " 
+                        << ex.what()
+                        << " Offending value:"
+                        << params.lb_exec_delay_str
+                        );
+            }
+        }
+
+        CNSLB_Coordinator::ENonLbHostsPolicy non_lb_hosts = 
+            CNSLB_Coordinator::eNonLB_Allow;
+        if (NStr::CompareNocase(params.lb_unknown_host, "deny") == 0) {
+            non_lb_hosts = CNSLB_Coordinator::eNonLB_Deny;
+        } else
+        if (NStr::CompareNocase(params.lb_unknown_host, "allow") == 0) {
+            non_lb_hosts = CNSLB_Coordinator::eNonLB_Allow;
+        } else
+        if (NStr::CompareNocase(params.lb_unknown_host, "reserve") == 0) {
+            non_lb_hosts = CNSLB_Coordinator::eNonLB_Reserve;
+        }
+
+        if (queue.lb_flag == false) { // LB is OFF
+            LOG_POST(Error << "Queue:" << qname 
+                        << " is load balanced. " << params.lb_service);
+
+            if (queue.lb_coordinator == 0) {
+                auto_ptr<CNSLB_ThreasholdCurve> 
+                deny_curve(s_ConfigureCurve(params, lb_stall_time));
+
+                //CNSLB_DecisionModule*   decision_maker = 0;
+
+                auto_ptr<CNSLB_DecisionModule_DistributeRate> 
+                    decision_distr_rate(
+                        new CNSLB_DecisionModule_DistributeRate);
+
+                auto_ptr<INSLB_Collector>   
+                    collect(new CNSLB_LBSMD_Collector());
+
+                auto_ptr<CNSLB_Coordinator> 
+                coord(new CNSLB_Coordinator(
+                                params.lb_service,
+                                collect.release(),
+                                deny_curve.release(),
+                                decision_distr_rate.release(),
+                                params.lb_collect_time,
+                                non_lb_hosts));
+
+                queue.lb_coordinator = coord.release();
+                queue.lb_stall_delay_type = lb_delay_type;
+                queue.lb_stall_time = lb_stall_time;
+                queue.lb_stall_time_mult = params.lb_stall_time_mult;
+                queue.lb_flag = true;
+
+            } else {  // LB is ON
+                // reconfigure the LB delay
+                CFastMutexGuard guard(queue.lb_stall_time_lock);
+                queue.lb_stall_delay_type = lb_delay_type;
+                if (lb_delay_type == eNSLB_Constant) {
+                    queue.lb_stall_time = lb_stall_time;
+                }
+                queue.lb_stall_time_mult = params.lb_stall_time_mult;
+            }
+        }
+    }
 }
 
 
@@ -794,7 +721,7 @@ void CQueueDataBase::Purge(void)
 
     // check not to rescan the database too often 
     // when we have low client activity of inserting new jobs.
-    if (m_PurgeLastId + 3000 > m_IdCounter.Get()) {
+    if (m_PurgeLastId + 3000 > (unsigned) m_IdCounter.Get()) {
         ++m_PurgeSkipCnt;
 
         // probably nothing to do yet, skip purge execution
@@ -873,7 +800,7 @@ unsigned CQueueDataBase::x_PurgeUnconditional(unsigned batch_size) {
     {{
         CFastMutexGuard guard(m_JobsToDeleteLock);
         unsigned job_id = 0;
-        for (int n = 0; n < batch_size &&
+        for (unsigned n = 0; n < batch_size &&
                         (job_id = m_JobsToDelete.extract_next(job_id));
                         ++n) {
             jobs_to_delete.set(job_id);
@@ -1654,7 +1581,6 @@ void CQueueDataBase::CQueue::x_DropJob(unsigned job_id)
     }}
 
     trans.Commit();
-    
 }
 
 
@@ -3379,7 +3305,7 @@ CQueueDataBase::CQueue::DeleteBatch(bm::bvector<>& batch)
 
 void CQueueDataBase::CQueue::ClearAffinityIdx()
 {
-    // read the queue database, find the first phisically available job_id,
+    // read the queue database, find the first physically available job_id,
     // then scan all index records, delete all the old (obsolete) record 
     // (job_id) references
 
@@ -3387,23 +3313,23 @@ void CQueueDataBase::CQueue::ClearAffinityIdx()
 
     unsigned first_job_id = 0;
     {{
-    CFastMutexGuard guard(m_LQueue.lock);
-    CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
-                           CBDB_Transaction::eNoAssociation);
+        CFastMutexGuard guard(m_LQueue.lock);
+        CBDB_Transaction trans(*db.GetEnv(), 
+                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eNoAssociation);
 
-    db.SetTransaction(&trans);
+        db.SetTransaction(&trans);
 
-    // get the first phisically available record in the queue database
+        // get the first phisically available record in the queue database
 
-    CBDB_FileCursor& cur = *GetCursor(trans);
-    CBDB_CursorGuard cg(cur);
-    cur.SetCondition(CBDB_FileCursor::eGE);
-    cur.From << 0;
+        CBDB_FileCursor& cur = *GetCursor(trans);
+        CBDB_CursorGuard cg(cur);
+        cur.SetCondition(CBDB_FileCursor::eGE);
+        cur.From << 0;
 
-    if (cur.Fetch() == eBDB_Ok) {
-        first_job_id = db.id;
-    }
+        if (cur.Fetch() == eBDB_Ok) {
+            first_job_id = db.id;
+        }
     }}
 
     if (first_job_id <= 1) {
@@ -3415,24 +3341,23 @@ void CQueueDataBase::CQueue::ClearAffinityIdx()
 
     // get list of all affinity tokens in the index
     {{
-    CFastMutexGuard guard(m_LQueue.lock);
-    CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
-                           CBDB_Transaction::eNoAssociation);
-    m_LQueue.aff_idx.SetTransaction(&trans);
-    CBDB_FileCursor cur(m_LQueue.aff_idx);
-    cur.SetCondition(CBDB_FileCursor::eGE);
-    while (cur.Fetch() == eBDB_Ok) {
-        unsigned aff_id = m_LQueue.aff_idx.aff_id;
-        bv.set(aff_id);
-    }
+        CFastMutexGuard guard(m_LQueue.lock);
+        CBDB_Transaction trans(*db.GetEnv(), 
+                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eNoAssociation);
+        m_LQueue.aff_idx.SetTransaction(&trans);
+        CBDB_FileCursor cur(m_LQueue.aff_idx);
+        cur.SetCondition(CBDB_FileCursor::eGE);
+        while (cur.Fetch() == eBDB_Ok) {
+            unsigned aff_id = m_LQueue.aff_idx.aff_id;
+            bv.set(aff_id);
+        }
     }}
 
     // clear all "hanging references
     bm::bvector<>::enumerator en(bv.first());
     for(; en.valid(); ++en) {
         unsigned aff_id = *en;
-        {{
         CFastMutexGuard guard(m_LQueue.lock);
         CBDB_Transaction trans(*db.GetEnv(), 
                                 CBDB_Transaction::eTransASync,
@@ -3456,9 +3381,7 @@ void CQueueDataBase::CQueue::ClearAffinityIdx()
             m_LQueue.aff_idx.Delete();
         }
         trans.Commit();
-        }}
     } // for
-
 }
 
 
@@ -3918,6 +3841,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2006/10/31 19:35:26  joukovv
+ * Queue creation and reading of its parameters decoupled. Code reorganized to
+ * reduce coupling in general. Preparing for queue-on-demand.
+ *
  * Revision 1.91  2006/10/19 20:38:20  joukovv
  * Works in thread-per-request mode. Errors in BDB layer fixed.
  *

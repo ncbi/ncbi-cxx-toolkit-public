@@ -1,6 +1,3 @@
-#ifndef NETSCHEDULE_ACCESS_LIST__HPP
-#define NETSCHEDULE_ACCESS_LIST__HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -26,81 +23,83 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov, Victor Joukov
+ * Authors:  Victor Joukov
  *
  * File Description:
  *   NetSchedule access list.
- *
  */
+#include <ncbi_pch.hpp>
 
-/// @file access_list.hpp
-/// NetSchedule access lists, configures server-client access rights
-///
-/// @internal
+#include "access_list.hpp"
 
-#include <corelib/ncbidbg.hpp>
-#include <util/bitset/ncbi_bitset.hpp>
-#include <corelib/ncbimtx.hpp>
-
+#include <connect/ncbi_socket.hpp>
 
 BEGIN_NCBI_SCOPE
 
-/// List of hosts allowed
-///
-/// @internal
-class CNetSchedule_AccessList
+bool CNetSchedule_AccessList::IsRestrictionSet() const
 {
-public:
-    CNetSchedule_AccessList()
-    {
+    CReadLockGuard guard(m_Lock);
+    return x_IsRestrictionSet();
+}
+
+/// is host allowed to connect
+bool CNetSchedule_AccessList::IsAllowed(unsigned ha) const
+{
+    CReadLockGuard guard(m_Lock);
+
+    if (!x_IsRestrictionSet()) return true;
+
+    return m_Hosts[ha];
+}
+
+/// Delimited lists of hosts allowed into the system
+void CNetSchedule_AccessList::SetHosts(const string& host_names)
+{
+    vector<string> hosts;
+    NStr::Tokenize(host_names, ";, ", hosts, NStr::eMergeDelims);
+
+    CWriteLockGuard guard(m_Lock);
+    m_Hosts.clear();
+
+    ITERATE(vector<string>, it, hosts) {
+        const string& hn = *it;
+        if (NStr::CompareNocase(hn, "localhost") == 0) {
+            string my_name = CSocketAPI::gethostname();
+            unsigned int ha = CSocketAPI::gethostbyname(my_name);
+            if (ha != 0) {
+                m_Hosts.set(ha);
+            }
+        }
+        unsigned int ha = CSocketAPI::gethostbyname(*it);
+        if (ha != 0) {
+            m_Hosts.set(ha);
+        } else {
+            LOG_POST(Error << "'" << *it << "'" 
+                            << " is not a valid host name. Ignored.");
+        }
+    }        
+}
+
+void CNetSchedule_AccessList::PrintHosts(CNcbiOstream & out) const
+{
+    CReadLockGuard guard(m_Lock);
+
+    THostVector::enumerator en(m_Hosts.first());
+    for(; en.valid(); ++en) {
+        unsigned ha = *en;
+        string host = CSocketAPI::gethostbyaddr(ha);
+        out << host << "\n";
     }
-
-    /// @return TRUE if restriction list set
-    bool IsRestrictionSet() const;
-
-    /// is host allowed to connect
-    bool IsAllowed(unsigned ha) const;
-
-    /// Delimited lists of hosts allowed into the system
-    void SetHosts(const string& host_names);
-
-    void PrintHosts(CNcbiOstream & out) const;
-    
-private:
-    bool x_IsRestrictionSet() const 
-    {
-        return m_Hosts.any();
-    }
-private:
-    typedef bm::bvector<>       THostVector;
-
-private:
-    mutable CRWLock             m_Lock;
-    THostVector                 m_Hosts;
-};
-
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.4  2006/10/31 19:35:26  joukovv
+ * Revision 1.1  2006/10/31 19:35:26  joukovv
  * Queue creation and reading of its parameters decoupled. Code reorganized to
  * reduce coupling in general. Preparing for queue-on-demand.
  *
- * Revision 1.3  2005/08/30 14:18:57  kuznets
- * Improved localhost processing
- *
- * Revision 1.2  2005/06/27 15:53:03  kuznets
- * Print host name not the address
- *
- * Revision 1.1  2005/06/20 13:31:08  kuznets
- * Added access control for job submitters and worker nodes
- *
- *
  * ===========================================================================
  */
-
-#endif 
-

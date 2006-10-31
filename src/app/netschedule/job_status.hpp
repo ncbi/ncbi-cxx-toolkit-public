@@ -41,6 +41,8 @@
 #include <util/bitset/ncbi_bitset.hpp>
 #include <corelib/ncbimtx.hpp>
 
+#include <connect/services/netschedule_client.hpp>
+
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -332,6 +334,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/10/31 19:35:26  joukovv
+ * Queue creation and reading of its parameters decoupled. Code reorganized to
+ * reduce coupling in general. Preparing for queue-on-demand.
+ *
  * Revision 1.20  2006/10/03 14:56:56  joukovv
  * Delayed job deletion implemented, code restructured preparing to move to
  * thread-per-request model.

@@ -27,10 +27,10 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Victor Joukov
  *
  * File Description:
- *   Net schedule job status database.
+ *   NetSchedule job status database.
  *
  */
 
@@ -45,12 +45,45 @@
 #include <corelib/ncbicntr.hpp>
 
 #include <connect/services/netschedule_client.hpp>
+#include "job_status.hpp"
 #include "queue_clean_thread.hpp"
 #include "notif_thread.hpp"
-#include "ns_db.hpp"
+#include "squeue.hpp"
+#include "queue_vc.hpp"
 
 BEGIN_NCBI_SCOPE
 
+
+/// Queue database manager
+///
+/// @internal
+///
+class CQueueCollection
+{
+public:
+    typedef map<string, SLockedQueue*> TQueueMap;
+
+public:
+    CQueueCollection();
+    ~CQueueCollection();
+
+    void Close();
+
+    SLockedQueue& GetLockedQueue(const string& qname);
+    bool QueueExists(const string& qname) const;
+
+    /// Collection takes ownership of queue
+    void AddQueue(const string& name, SLockedQueue* queue);
+
+    const TQueueMap& GetMap() const { return m_QMap; }
+
+private:
+    CQueueCollection(const CQueueCollection&);
+    CQueueCollection& operator=(const CQueueCollection&);
+private:
+    TQueueMap              m_QMap;
+    mutable CRWLock        m_Lock;
+};
 
 
 /// Batch submit record
@@ -104,13 +137,9 @@ public:
 
     void ReadConfig(const IRegistry& reg, unsigned* min_run_timeout);
 
-    void MountQueue(const string& queue_name,
-                    int           timeout,
-                    int           notif_timeout,
-                    int           run_timeout,
-                    int           run_timeout_precision,
-                    const string& program_name,
-                    bool          delete_done);
+    void MountQueue(const string& qname, const SQueueParameters& params);
+    void UpdateQueue(const string& qname, const SQueueParameters& params);
+    void UpdateQueueLB(const string& qname, const SQueueLBParameters& params);
     void Close(void);
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
@@ -575,6 +604,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/10/31 19:35:26  joukovv
+ * Queue creation and reading of its parameters decoupled. Code reorganized to
+ * reduce coupling in general. Preparing for queue-on-demand.
+ *
  * Revision 1.56  2006/10/19 20:38:20  joukovv
  * Works in thread-per-request mode. Errors in BDB layer fixed.
  *

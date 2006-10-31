@@ -41,8 +41,6 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbicntr.hpp>
 
-#include <connect/services/netschedule_client.hpp>
-
 #include <util/bitset/ncbi_bitset.hpp>
 
 #include <bdb/bdb_file.hpp>
@@ -121,9 +119,6 @@ public:
         {}
     };
     typedef unsigned TNetAddress;
-    /// Worker node to affinity id map
-    typedef map<pair<TNetAddress, string>, SAffinityInfo*> TAffMap;
-
 public:
     CWorkerNodeAffinity();
     ~CWorkerNodeAffinity();
@@ -164,6 +159,8 @@ private:
     CWorkerNodeAffinity(const CWorkerNodeAffinity&);
     CWorkerNodeAffinity& operator=(const CWorkerNodeAffinity&);
 private:
+    /// Worker node to affinity id map
+    typedef map<pair<TNetAddress, string>, SAffinityInfo*> TAffMap;
     TAffMap        m_AffinityMap;
 };
 
@@ -175,6 +172,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/10/31 19:35:26  joukovv
+ * Queue creation and reading of its parameters decoupled. Code reorganized to
+ * reduce coupling in general. Preparing for queue-on-demand.
+ *
  * Revision 1.4  2006/09/21 21:28:59  joukovv
  * Consistency of memory state and database strengthened, ability to retry failed
  * jobs on different nodes (and corresponding queue parameter, failed_retries)
