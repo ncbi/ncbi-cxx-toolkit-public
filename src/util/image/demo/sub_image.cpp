@@ -43,7 +43,7 @@ USING_NCBI_SCOPE;
 
 
 
-class CImageTestApp : public CNcbiApplication
+class CSubImageApp : public CNcbiApplication
 {
 public:
     virtual void Init(void);
@@ -57,7 +57,7 @@ public:
 //  Init test for all different types of arguments
 
 
-void CImageTestApp::Init(void)
+void CSubImageApp::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -71,7 +71,7 @@ void CImageTestApp::Init(void)
                                    CArgDescriptions::fBinary);
 
     arg_desc->AddOptionalKey("out", "OutFile",
-                             "File name of resultant JPEG image",
+                             "File name of resultant image",
                              CArgDescriptions::eString);
 
     arg_desc->AddKey("x", "PosX", "Crop X Position",
@@ -89,7 +89,7 @@ void CImageTestApp::Init(void)
 
 
 
-int CImageTestApp::Run(void)
+int CSubImageApp::Run(void)
 {
     CArgs args = GetArgs();
 
@@ -127,7 +127,7 @@ int CImageTestApp::Run(void)
 //  Cleanup
 
 
-void CImageTestApp::Exit(void)
+void CSubImageApp::Exit(void)
 {
     SetDiagStream(0);
 }
@@ -141,7 +141,7 @@ void CImageTestApp::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CImageTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CSubImageApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 
@@ -150,6 +150,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/10/31 14:12:25  dicuccio
+ * Cosmetic changes
+ *
  * Revision 1.7  2006/06/21 13:17:30  dicuccio
  * Revert previous change; open stream in binary mode
  *
