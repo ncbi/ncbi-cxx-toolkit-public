@@ -520,7 +520,7 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_TID        = tid;
     m_ProcPost   = proc_post;
     m_ThrPost    = thr_post;
-    m_Iteration  = iter;
+    m_RequestId  = iter;
 }
 
 
@@ -656,6 +656,10 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/10/31 18:41:16  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 1.60  2006/10/24 19:11:55  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

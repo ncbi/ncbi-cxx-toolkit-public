@@ -86,6 +86,7 @@ CNcbiApplication::CNcbiApplication(void)
 {
     // Initialize UID and start timer
     GetDiagContext().GetUID();
+    GetDiagContext().InitMessages(size_t(-1));
 
     m_DisableArgDesc = false;
     m_HideArgs = 0;
@@ -170,35 +171,12 @@ const CArgs& CNcbiApplication::GetArgs(void) const
 
 SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
 {
-    // dyn.cast to CNcbiOstrstream
-    CNcbiOstrstream* ostr = dynamic_cast<CNcbiOstrstream*>(m_DiagStream.get());
-    if ( !ostr ) {
-        _ASSERT( !m_DiagStream.get() );
-        return 0;
+    if ( os ) {
+        SetDiagStream(os, true, 0, 0, "STREAM");
     }
-
-    // dump all content to "os"
-    SIZE_TYPE n_write = 0;
-    if ( os )
-        n_write = ostr->pcount();
-
-    if ( n_write ) {
-        os->write(ostr->str(), n_write);
-        ostr->freeze(false);
-    }
-
-    // reset output buffer or destroy
-    if ( close_diag ) {
-        if ( IsDiagStream(m_DiagStream.get()) ) {
-            SetDiagStream(0);
-        }
-        m_DiagStream.reset(0);
-    } else {
-        ostr->seekp(0, IOS_BASE::beg);
-    }
-
-    // return # of bytes dumped to "os"
-    return (os  &&  os->good()) ? n_write : 0;
+    GetDiagContext().FlushMessages(*GetDiagHandler());
+    GetDiagContext().DiscardMessages();
+    return 0;
 }
 
 
@@ -323,13 +301,15 @@ int CNcbiApplication::AppMain
             if ( !argv[i] ) {
                 continue;
             }
-            // Log file
-            if ( NStr::strcmp(argv[i], s_ArgLogFile) == 0 ) {
+            // Log file - ignore if diag is eDS_User - the user wants to
+            // take care about logging.
+            if ( diag != eDS_User  &&
+                NStr::strcmp(argv[i], s_ArgLogFile) == 0 ) {
                 if ( !argv[i++] ) {
                     continue;
                 }
-                if (x_SetupLogFile(argv[i])) {
-                    diag = eDS_ToStdlog;
+                if (SetLogFile(argv[i], eDiagFile_All, true, ios::app)) {
+                    diag = eDS_User;
                     is_diag_setup = true;
                 }
                 // Configuration file
@@ -391,8 +371,8 @@ int CNcbiApplication::AppMain
 
     // Setup for diagnostics
     try {
-        if ( !is_diag_setup  &&  !SetupDiag(diag) ) {
-            ERR_POST("Application diagnostic stream's setup failed");
+        if ( !is_diag_setup ) {
+            CDiagContext::SetupDiag(diag);
         }
     } catch (CException& e) {
         NCBI_RETHROW(e, CAppException, eSetupDiag,
@@ -418,12 +398,7 @@ int CNcbiApplication::AppMain
                 LoadConfig(*m_Config, NULL);
             }
 
-            // IsSetOldPostFormat() uses the registry and should not be
-            // called before LoadConfig().
-            if ( !CDiagContext::IsSetOldPostFormat() ) {
-                GetDiagContext().SetProperty(
-                    CDiagContext::kProperty_AppName, appname);
-            }
+            CDiagContext::SetupDiag(diag, m_Config, eDCM_Flush);
 
             // Setup the standard features from the config file.
             // Don't call till after LoadConfig()
@@ -605,69 +580,15 @@ void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
 bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
 {
-    // Setup diagnostic stream
-    switch ( diag ) {
-    case eDS_ToStdout: {
-        SetDiagStream(&NcbiCout);
-        break;
-    }
-    case eDS_ToStderr: {
-        SetDiagStream(&NcbiCerr);
-        break;
-    }
-    case eDS_ToStdlog: {
-        // open log.file
-        if ( CDiagContext::IsSetOldPostFormat() ) {
-            return x_SetupLogFile(m_Arguments->GetProgramName());
-        }
-        else {
-            return x_SetupLogFiles();
-        }
-    }
-    case eDS_ToMemory: {
-        // direct global diagnostics to the memory-resident output stream
-        if ( !m_DiagStream.get() ) {
-            m_DiagStream.reset(new CNcbiOstrstream);
-        }
-        SetDiagStream(m_DiagStream.get());
-        break;
-    }
-    case eDS_Disable: {
-        SetDiagStream(0);
-        break;
-    }
-    case eDS_User: {
-        // dont change current diag.stream
-        break;
-    }
-    case eDS_AppSpecific: {
-        return SetupDiag_AppSpecific();
-    }
-    case eDS_Default: {
-        if ( !IsSetDiagHandler() ) {
-            return CNcbiApplication::SetupDiag(eDS_AppSpecific);
-        }
-        // else eDS_User -- dont change current diag.stream
-        break;
-    }
-    case eDS_ToSyslog:
-        // program can tune via openlog()
-        SetDiagHandler(new CSysLog);
-        break;
-    default: {
-        ERR_POST(Warning << "Unknown EAppDiagStream value");
-        _ASSERT(0);
-        return false;
-    }
-    } // switch ( diag )
-
+    CDiagContext::SetupDiag(diag, 0, eDCM_Flush);
     return true;
 }
 
 
 bool CNcbiApplication::SetupDiag_AppSpecific(void)
 {
-    return SetupDiag(eDS_ToStderr);
+    CDiagContext::SetupDiag(eDS_ToStderr, 0, eDCM_Flush);
+    return true;
 }
 
 
@@ -792,6 +713,9 @@ void CNcbiApplication::x_SetupStdio(void)
 void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 {
     m_ProgramDisplayName = app_name;
+    // Also set app_name property in the diag context
+    GetDiagContext().SetProperty(
+        CDiagContext::kProperty_AppName, app_name);
 }
 
 
@@ -944,26 +868,6 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             return;
     }
 
-    // LOG settings
-    if (m_LogFileName.empty() || reg->GetBool("LOG","IgnoreEnvArg",false)) {
-        string logname = reg->GetString("LOG", "File", kEmptyStr);
-        if (!logname.empty()) {
-            bool truncate_log = reg->GetBool("LOG", "Truncate", false);
-            bool nocreate_log = reg->GetBool("LOG", "NoCreate", false);
-            CFile file_log(logname);
-            if (!nocreate_log || file_log.Exists()) {
-                string prevlog = m_LogFileName;
-                ios::openmode mode = ios::out |
-                                     (truncate_log ? ios::trunc : ios::app);
-                if (x_SetupLogFile(logname, mode)) {
-                    if (!prevlog.empty()) {
-                        CDirEntry(prevlog).Remove();
-                    }
-                }
-            }
-        }
-    }
-
     {{
         CSysLog* syslog = dynamic_cast<CSysLog*>(GetDiagHandler());
         if (syslog) {
@@ -1055,112 +959,6 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 }
 
 
-void CNcbiApplication::x_FlushMemoryDiagStream(void)
-{
-    FlushDiag(GetDiagStream(), false);
-    m_DiagStream.reset();
-}
-
-
-bool CNcbiApplication::x_SetupLogFile(const string& name, ios::openmode mode)
-{
-    if ( !SetLogFile(name, eDiagFile_All, true, mode) ) {
-        return false;
-    }
-    m_LogFileName = name;
-    x_FlushMemoryDiagStream();
-    return true;
-}
-
-
-bool s_SetupLogFile(string logname,
-                    string& path,
-                    bool& base_only,
-                    bool& try_all)
-{
-    if ( CFile::IsAbsolutePath(logname) ) {
-        // Try absolute path as-is
-        if ( SetLogFile(logname) ) {
-            return true;
-        }
-        // Failed - try base name only
-        logname = CFile(logname).GetBase();
-    }
-    if ( !try_all ) {
-        // Do not try to find the correct path/name combination
-        if ( base_only ) {
-            logname = CFile(logname).GetBase();
-        }
-        return SetLogFile(CFile::ConcatPath(path, logname));
-    }
-    // Try /default/rel/logname
-    if ( SetLogFile(CFile::ConcatPath(path, logname)) ) {
-        try_all = false;
-        return true;
-    }
-    string norm = CFile::NormalizePath(logname);
-    if (norm != logname) {
-        // Try to use base name only: /default/logname
-        if ( SetLogFile(CFile::ConcatPath(path, CFile(logname).GetBase())) ) {
-            base_only = true;
-            try_all = false;
-            return true;
-        }
-    }
-    // Try to start from CWD: ./rel/logname
-    string cwd = ".";
-    if ( SetLogFile(CFile::ConcatPath(cwd, logname)) ) {
-        try_all = false;
-        path = cwd;
-        return true;
-    }
-    if (norm != logname) {
-        // Try to use base name with CWD: ./logname
-        if ( SetLogFile(CFile::ConcatPath(cwd, CFile(logname).GetBase())) ) {
-            base_only = true;
-            path = cwd;
-            try_all = false;
-            return true;
-        }
-    }
-    ERR_POST(Warning << "Failed to initialize log file");
-    return false;
-}
-
-
-bool CNcbiApplication::x_SetupLogFiles(void)
-{
-    string path = GetDefaultLogPath();
-    bool base_only = false;       // true if must use base name only
-    bool try_all = true;
-
-    if ( s_SetupLogFile(GetLogFileName(), path, base_only, try_all) ) {
-        x_FlushMemoryDiagStream();
-        return true;
-    }
-    m_LogFileName = kEmptyStr;
-    return false;
-}
-
-
-void CNcbiApplication::x_SetupLogFileName(void) const
-{
-    if ( !m_LogFileName.empty() ) return;
-    string logname = GetLogFile(eDiagFile_Log);
-    if (logname == "-") {
-        logname = kEmptyStr;
-    }
-    m_LogFileName = !logname.empty() ?
-        logname : m_Arguments->GetProgramBasename() + ".log";
-}
-
-
-string CNcbiApplication::GetDefaultLogPath(void) const
-{
-    return CFile(m_Arguments->GetProgramName()).GetDir();
-}
-
-
 void CNcbiApplication::AppStart(void)
 {
     string args;
@@ -1200,6 +998,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.135  2006/10/31 18:41:17  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 1.134  2006/09/27 17:49:56  grichenk
  * Fixed 'unused variable' warning.
  *

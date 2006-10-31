@@ -44,6 +44,7 @@
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/syslog.hpp>
 #include "ncbidiag_p.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -261,9 +262,34 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 //  CDiagContext::
 
 
+struct SDiagMessageData
+{
+    SDiagMessageData(void) : m_UID(0) {}
+    ~SDiagMessageData(void) {}
+
+    string m_Message;
+    string m_File;
+    string m_Module;
+    string m_Class;
+    string m_Function;
+    string m_Prefix;
+    string m_ErrText;
+
+    CDiagContext::TUID m_UID;
+    CTime              m_Time;
+
+    // If the following properties are not set, take them from DiagContext.
+    string m_Host;
+    string m_Client;
+    string m_Session;
+    string m_AppName;
+};
+
+
 CDiagContext::CDiagContext(void)
     : m_UID(0),
-    m_StopWatch(new CStopWatch(CStopWatch::eStart))
+      m_StopWatch(new CStopWatch(CStopWatch::eStart)),
+      m_MaxMessages(100) // limit number of collected messages to 100
 {
 }
 
@@ -363,7 +389,7 @@ void CDiagContext::SetProperty(const string& name, const string& value)
         m_Properties[name] = value;
     }}
     if ( TAutoWrite_Context::GetDefault() ) {
-        x_PrintMessage(eEvent_Extra, name + "=" + value);
+        x_PrintMessage(SDiagMessage::eEvent_Extra, name + "=" + value);
     }
 }
 
@@ -380,43 +406,39 @@ void CDiagContext::PrintProperties(void) const
 {
     CMutexGuard LOCK(s_DiagMutex);
     ITERATE(TProperties, prop, m_Properties) {
-        x_PrintMessage(eEvent_Extra, prop->first + "=" + prop->second);
+        x_PrintMessage(SDiagMessage::eEvent_Extra,
+            prop->first + "=" + prop->second);
     }
 }
 
 
 void CDiagContext::PrintStart(const string& message) const
 {
-    // Write "start" if the context has been initialized
-    x_PrintMessage(eEvent_Start, message);
+    x_PrintMessage(SDiagMessage::eEvent_Start, message);
 }
 
 
 void CDiagContext::PrintStop(void) const
 {
-    // Write "start" if the context has been initialized
-    x_PrintMessage(eEvent_Stop, kEmptyStr);
+    x_PrintMessage(SDiagMessage::eEvent_Stop, kEmptyStr);
 }
 
 
 void CDiagContext::PrintExtra(const string& message) const
 {
-    // Write "start" if the context has been initialized
-    x_PrintMessage(eEvent_Extra, message);
+    x_PrintMessage(SDiagMessage::eEvent_Extra, message);
 }
 
 
 void CDiagContext::PrintRequestStart(const string& message) const
 {
-    // Write "start" if the context has been initialized
-    x_PrintMessage(eEvent_RequestStart, message);
+    x_PrintMessage(SDiagMessage::eEvent_RequestStart, message);
 }
 
 
 void CDiagContext::PrintRequestStop(void) const
 {
-    // Write "start" if the context has been initialized
-    x_PrintMessage(eEvent_RequestStop, kEmptyStr);
+    x_PrintMessage(SDiagMessage::eEvent_RequestStop, kEmptyStr);
 }
 
 
@@ -433,89 +455,160 @@ const char* CDiagContext::kProperty_ReqTime     = "request_time";
 const char* CDiagContext::kProperty_BytesRd     = "bytes_rd";
 const char* CDiagContext::kProperty_BytesWr     = "bytes_wr";
 
+static const char* kDiagTimeFormat = "Y/M/D:h:m:s";
+// Fixed fields' widths
+static const int   kDiagW_PID      = 5;
+static const int   kDiagW_TID      = 3;
+static const int   kDiagW_RID      = 4;
+static const int   kDiagW_SN       = 4;
+static const int   kDiagW_UID      = 16;
+static const int   kDiagW_Client   = 15;
 
-const char* kDiagTimeFormat = "Y/M/D:h:m:s";
-
-void CDiagContext::x_PrintMessage(EEventType event,
-                                  const string& message) const
+void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
+                                  const SDiagMessage* msg) const
 {
+    CDiagBuffer& buf = GetDiagBuffer();
+
+    SDiagMessage::TPID pid = msg ? msg->m_PID : buf.m_PID;
+    SDiagMessage::TTID tid = msg ? msg->m_TID : buf.m_TID;
+    string uid = GetStringUID(msg ? msg->GetUID() : 0);
+    int rid = msg ? msg->m_RequestId : GetDiagRequestId();
+    int psn = msg ? msg->m_ProcPost : CDiagBuffer::GetProcessPostNumber(true);
+    int tsn = msg ? msg->m_ThrPost : ++buf.m_ThreadPostCount;
+    CTime timestamp = msg ? msg->GetTime() : CTime(CTime::eCurrent);
+    string host = s_GetHost();
+    string client = GetProperty(kProperty_ClientIP);
+    string session = GetProperty(kProperty_SessionID);
+    string app = GetProperty(kProperty_AppName);
+
+    if ( msg ) {
+        // When flushing collected messages, m_Messages should be NULL.
+        if ( m_Messages.get() ) {
+            msg->x_SaveProperties(host, client, session, app);
+        }
+        else if ( msg->m_Data ) {
+            // Restore saved properties from the message
+            host = msg->m_Data->m_Host.empty() ?
+                "UNK_HOST" : msg->m_Data->m_Host;
+            client = msg->m_Data->m_Client;
+            session = msg->m_Data->m_Session;
+            app = msg->m_Data->m_AppName;
+        }
+    }
+    if ( client.empty() ) {
+        client = "UNK_CLIENT";
+    }
+    if ( session.empty() ) {
+        session = "UNK_SESSION";
+    }
+    if ( app.empty() ) {
+        app = "UNK_APP";
+    }
+
+    // Print common fields
+    ostr << setfill('0') << setw(kDiagW_PID) << pid << '/'
+        << setw(kDiagW_TID) << tid << '/'
+        << setw(kDiagW_RID) << rid << ' '
+        << setfill(' ') << uid << ' '
+        << setfill('0') << setw(kDiagW_SN) << psn << '/'
+        << setw(kDiagW_SN) << tsn << ' '
+        << timestamp.AsString(kDiagTimeFormat) << ' '
+        << host << ' '
+        << setfill(' ') << setw(kDiagW_Client) << setiosflags(IOS_BASE::left)
+        << client << resetiosflags(IOS_BASE::left) << ' '
+        << session << ' '
+        << app << ' ';
+}
+
+
+void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
+                                  const string&            message) const
+{
+    if ( IsSetOldPostFormat() ) {
+        return;
+    }
     CDiagBuffer& buf = GetDiagBuffer();
     CTime now(CTime::eCurrent);
     CNcbiOstrstream ostr;
-    // Print common fields
-    ostr << setfill('0') << setw(5) << buf.m_PID << "/"
-        << setw(3) << buf.m_TID << "/"
-        << setw(3) << GetFastCGIIteration() << " "
-        << setfill(' ')
-        << GetStringUID() << " "
-        << now.AsString(kDiagTimeFormat) << " ";
-    ostr << s_GetHost() << " ";
+    string prop;
+    bool need_space = false;
 
-    string prop = GetProperty(kProperty_ClientIP);
-    ostr << setw(15) << setiosflags(IOS_BASE::left)
-        << (prop.empty() ? "UNK_CLIENT" : prop)
-        << resetiosflags(IOS_BASE::left) << " ";
-
-    prop = GetProperty(kProperty_SessionID);
-    ostr << (prop.empty() ? "UNK_SESSION" : prop) << " ";
-
-    prop = GetProperty(kProperty_AppName);
-    ostr << (prop.empty() ? "UNK_APP" : prop) << " ";
     switch ( event ) {
-    case eEvent_Start:
-        ostr << "start";
+    case SDiagMessage::eEvent_Start:
+    case SDiagMessage::eEvent_Extra:
+    case SDiagMessage::eEvent_RequestStart:
         break;
-    case eEvent_Stop:
-        ostr << "stop";
+    case SDiagMessage::eEvent_Stop:
         prop = GetProperty(kProperty_ExitSig);
         if ( !prop.empty() ) {
-            ostr << " " << prop;
+            ostr << prop;
+            need_space = true;
         }
         prop = GetProperty(kProperty_ExitCode);
         if ( !prop.empty() ) {
-            ostr << " " << prop;
+            if (need_space) {
+                ostr << " ";
+            }
+            ostr << prop;
+            need_space = true;
         }
-        ostr << " " << m_StopWatch->AsString();
+        if (need_space) {
+            ostr << " ";
+        }
+        ostr << m_StopWatch->AsString();
         break;
-    case eEvent_Extra:
-        ostr << "extra";
-        break;
-    case eEvent_RequestStart:
-        ostr << "request-start";
-        break;
-    case eEvent_RequestStop:
-        ostr << "request-stop";
+    case SDiagMessage::eEvent_RequestStop:
         prop = GetProperty(kProperty_ReqStatus);
         if ( !prop.empty() ) {
-            ostr << " " << prop;
+            ostr << prop;
+            need_space = true;
         }
         prop = GetProperty(kProperty_ReqTime);
         if ( !prop.empty() ) {
-            ostr << " " << prop;
+            if (need_space) {
+                ostr << " ";
+            }
+            ostr << prop;
+            need_space = true;
         }
         prop = GetProperty(kProperty_BytesRd);
         if ( !prop.empty() ) {
-            ostr << " " << prop;
+            if (need_space) {
+                ostr << " ";
+            }
+            ostr << prop;
+            need_space = true;
         }
         prop = GetProperty(kProperty_BytesWr);
         if ( !prop.empty() ) {
-            ostr << " " << prop;
+            if (need_space) {
+                ostr << " ";
+            }
+            ostr << prop;
+            need_space = true;
         }
         break;
     }
     if ( !message.empty() ) {
-        ostr << " " << message;
+        if (need_space) {
+            ostr << " ";
+        }
+        ostr << message;
     }
     SDiagMessage mess(eDiag_Info,
                       ostr.str(), ostr.pcount(),
                       0, 0, // file, line
-                      eDPF_OmitInfoSev | eDPF_OmitSeparator | eDPF_AppLog);
-    if ( CDiagBuffer::sm_Handler ) {
-        CMutexGuard LOCK(s_DiagMutex);
-        if ( CDiagBuffer::sm_Handler ) {
-            CDiagBuffer::sm_Handler->Post(mess);
-        }
-    }
+                      eDPF_OmitInfoSev | eDPF_OmitSeparator | eDPF_AppLog,
+                      NULL,
+                      0, 0, // err code/subcode
+                      NULL,
+                      0, 0, 0, // module/class/function
+                      buf.m_PID, buf.m_TID,
+                      CDiagBuffer::GetProcessPostNumber(true),
+                      ++buf.m_ThreadPostCount,
+                      GetDiagRequestId());
+    mess.m_Event = event;
+    buf.DiagHandler(mess);
     ostr.rdbuf()->freeze(false);
 }
 
@@ -541,6 +634,241 @@ void CDiagContext::SetUsername(const string& username)
 void CDiagContext::SetHostname(const string& hostname)
 {
     SetProperty(kProperty_HostName, hostname);
+}
+
+
+void CDiagContext::InitMessages(size_t max_size)
+{
+    if ( !m_Messages.get() ) {
+        m_Messages.reset(new TMessages);
+    }
+    m_MaxMessages = max_size;
+}
+
+
+void CDiagContext::PushMessage(const SDiagMessage& message)
+{
+    if ( m_Messages.get()  &&  m_Messages->size() < m_MaxMessages) {
+        m_Messages->push_back(message);
+    }
+}
+
+
+void CDiagContext::FlushMessages(CDiagHandler& handler)
+{
+    if ( !m_Messages.get()  ||  m_Messages->empty() ) {
+        return;
+    }
+    auto_ptr<TMessages> tmp(m_Messages.release());
+    //ERR_POST(Message << "***** BEGIN COLLECTED MESSAGES *****");
+    ITERATE(TMessages, it, *tmp.get()) {
+        handler.Post(*it);
+    }
+    //ERR_POST(Message << "***** END COLLECTED MESSAGES *****");
+    m_Messages.reset(tmp.release());
+}
+
+
+void CDiagContext::DiscardMessages(void)
+{
+    m_Messages.reset();
+}
+
+
+// Diagnostics setup
+
+static const char* kLogName_None     = "NONE";
+static const char* kLogName_Unknown  = "UNKNOWN";
+static const char* kLogName_Stdout   = "STDOUT";
+static const char* kLogName_Stderr   = "STDERR";
+static const char* kLogName_Stream   = "STREAM";
+static const char* kLogName_Memory   = "MEMORY";
+
+string GetDefaultLogLocation(CNcbiApplication& app)
+{
+    static const char* kToolkitRcPath = "/etc/toolkitrc";
+    static const char* kWebDirToPort = "Web_dir_to_port";
+
+    string log_path = "/log/";
+
+    string exe_path = CFile(app.GetProgramExecutablePath()).GetDir();
+    CNcbiIfstream is(kToolkitRcPath, ios::binary);
+    CNcbiRegistry reg(is);
+    list<string> entries;
+    reg.EnumerateEntries(kWebDirToPort, &entries);
+    size_t min_pos = exe_path.length();
+    string web_dir;
+    // Find the first dir name corresponding to one of the entries
+    ITERATE(list<string>, it, entries) {
+        if (!it->empty()  &&  (*it)[0] != '/') {
+            // not an absolute path
+            string mask = "/" + *it;
+            if (mask[mask.length() - 1] != '/') {
+                mask += "/";
+            }
+            size_t pos = exe_path.find(mask);
+            if (pos < min_pos) {
+                min_pos = pos;
+                web_dir = *it;
+            }
+        }
+        else {
+            // absolute path
+            if (exe_path.substr(0, it->length()) == *it) {
+                web_dir = *it;
+                break;
+            }
+        }
+    }
+    if ( !web_dir.empty() ) {
+        return log_path + reg.GetString(kWebDirToPort, web_dir, kEmptyStr);
+    }
+    // Could not find a valid web-dir entry, use port or 'srv'
+    const char* port = ::getenv("SERVER_PORT");
+    return port ? log_path + string(port) : log_path + "srv";
+}
+
+
+bool OpenLogFileFromConfig(CNcbiRegistry& config)
+{
+    string logname = config.GetString("LOG", "File", kEmptyStr);
+    // In eDS_User mode do not use config unless IgnoreEnvArg
+    // is set to true.
+    if ( !logname.empty() ) {
+        bool truncate_log = config.GetBool("LOG", "Truncate", false);
+        bool nocreate_log = config.GetBool("LOG", "NoCreate", false);
+        CFile logfile(logname);
+        ios::openmode mode = ios::out |
+            (truncate_log ? ios::trunc : ios::app);
+        if (!nocreate_log || logfile.Exists()) {
+            return SetLogFile(logname, eDiagFile_All, true, mode);
+        }
+    }
+    return false;
+}
+
+
+void CDiagContext::SetupDiag(EAppDiagStream       ds,
+                             CNcbiRegistry*       config,
+                             EDiagCollectMessages collect)
+{
+    // Initialize message collecting
+    if (collect == eDCM_Init) {
+        GetDiagContext().InitMessages();
+    }
+    else if (collect == eDCM_InitNoLimit) {
+        GetDiagContext().InitMessages(size_t(-1));
+    }
+
+    bool log_switched = false;
+    bool try_root_log_first = false;
+    if ( config ) {
+        try_root_log_first = config->GetBool("LOG", "TryRootLogFirst", false)
+            &&  (ds == eDS_ToStdlog  ||  ds == eDS_Default);
+        bool force_config = config->GetBool("LOG", "IgnoreEnvArg", false);
+        if ( force_config ) {
+            try_root_log_first = false;
+        }
+        if (force_config  ||  (ds != eDS_User  &&  !try_root_log_first)) {
+            log_switched = OpenLogFileFromConfig(*config);
+        }
+    }
+
+    if ( !log_switched ) {
+        string old_log_name;
+        CDiagHandler* handler = GetDiagHandler();
+        if ( handler ) {
+            old_log_name = handler->GetLogName();
+        }
+        CNcbiApplication* app = CNcbiApplication::Instance();
+
+        switch ( ds ) {
+        case eDS_ToStdout:
+            if (old_log_name != kLogName_Stdout) {
+                SetDiagHandler(new CStreamDiagHandler(&cout,
+                    true, kLogName_Stdout), true);
+                log_switched = true;
+            }
+            break;
+        case eDS_ToStderr:
+            if (old_log_name != kLogName_Stderr) {
+                SetDiagHandler(new CStreamDiagHandler(&cerr,
+                    true, kLogName_Stderr), true);
+                log_switched = true;
+            }
+            break;
+        case eDS_ToMemory:
+            if (old_log_name != kLogName_Memory) {
+                GetDiagContext().InitMessages(size_t(-1));
+                log_switched = true;
+            }
+            break;
+        case eDS_Disable:
+            if (old_log_name != kLogName_None) {
+                SetDiagStream(0, false, 0, 0, kLogName_None);
+                log_switched = true;
+            }
+            break;
+        case eDS_ToSyslog:
+            if (old_log_name != "SYSLOG") {
+                SetDiagHandler(new CSysLog);
+                log_switched = true;
+            }
+            break;
+        case eDS_User:
+            // log_switched = true;
+            collect = eDCM_Discard;
+            break;
+        case eDS_AppSpecific:
+            if ( app ) {
+                app->SetupDiag_AppSpecific(); /* NCBI_FAKE_WARNING */
+            }
+            collect = eDCM_Discard;
+            break;
+        case eDS_ToStdlog:
+        case eDS_Default:
+            if ( app ) {
+                string log_base =
+                    CFile(app->GetProgramExecutablePath()).GetBase() + ".log";
+                // Try /log/<port>
+                string log_name = CFile::ConcatPath(
+                    GetDefaultLogLocation(*app), log_base);
+                if ( SetLogFile(log_name, eDiagFile_All) ) {
+                    log_switched = true;
+                    break;
+                }
+                if ( try_root_log_first  &&  OpenLogFileFromConfig(*config) ) {
+                    log_switched = true;
+                    break;
+                }
+                // Try cwd/ for eDS_ToStdlog only
+                if (ds == eDS_ToStdlog) {
+                    log_name = CFile::ConcatPath(".", log_base);
+                    log_switched = SetLogFile(log_name, eDiagFile_All);
+                }
+                if ( !log_switched ) {
+                    ERR_POST(Warning << "Failed to open log file " +
+                        CFile::NormalizePath(log_name));
+                }
+            }
+            break;
+        default:
+            ERR_POST(Warning << "Unknown EAppDiagStream value");
+            _ASSERT(0);
+            break;
+        }
+    }
+
+    if (collect == eDCM_Flush) {
+        CDiagHandler* handler = GetDiagHandler();
+        if ( log_switched  &&  handler ) {
+            GetDiagContext().FlushMessages(*handler);
+        }
+        collect = eDCM_Discard;
+    }
+    if (collect == eDCM_Discard) {
+        GetDiagContext().DiscardMessages();
+    }
 }
 
 
@@ -603,14 +931,26 @@ bool           CDiagBuffer::sm_TraceEnabled;     // to be set on first request
 const char*    CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Critical", "Fatal", "Trace" };
 
+
+void* InitDiagHandler(void)
+{
+    CDiagContext::SetupDiag(eDS_ToStderr, 0, eDCM_Init);
+    return 0;
+}
+
+
 // Use s_DefaultHandler only for purposes of comparison, as installing
 // another handler will normally delete it.
-CDiagHandler*      s_DefaultHandler = new CStreamDiagHandler(&NcbiCerr);
+CDiagHandler*      s_DefaultHandler = new CStreamDiagHandler(&NcbiCerr,
+                                                             true,
+                                                             kLogName_Stderr);
 CDiagHandler*      CDiagBuffer::sm_Handler = s_DefaultHandler;
 bool               CDiagBuffer::sm_CanDeleteHandler = true;
 CDiagErrCodeInfo*  CDiagBuffer::sm_ErrCodeInfo = 0;
 bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 
+// For initialization only
+void* s_DiagHandlerInitializer = InitDiagHandler();
 
 CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream),
@@ -643,6 +983,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             CDiagBuffer::sm_Handler->Post(mess);
         }
     }
+    GetDiagContext().PushMessage(mess);
 }
 
 bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
@@ -722,7 +1063,7 @@ void CDiagBuffer::Flush(void)
                           m_PID, m_TID,
                           GetProcessPostNumber(true),
                           ++m_ThreadPostCount,
-                          GetFastCGIIteration());
+                          GetDiagRequestId());
         DiagHandler(mess);
     }
 
@@ -804,157 +1145,65 @@ int CDiagBuffer::GetProcessPostNumber(bool inc)
 //  CDiagMessage::
 
 
-struct SDiagMessageData
+int s_ParseInt(const string& message,
+               size_t&       pos,    // start position
+               size_t        width,  // fixed width or 0
+               char          sep)    // trailing separator (throw if not found)
 {
-    SDiagMessageData(void) : m_UID(0) {}
-    ~SDiagMessageData(void) {}
-
-    string m_Message;
-    string m_File;
-    string m_Module;
-    string m_Class;
-    string m_Function;
-    string m_Prefix;
-    string m_ErrText;
-
-    CDiagContext::TUID m_UID;
-    CTime              m_Time;
-};
-
-
-// Read two integers (the second one is optional) separated by '/'
-// if msg starts with prefix.
-void s_ReadDiagInt(const string& msg,
-                   size_t& pos,
-                   const string& prefix,
-                   int* val1,
-                   int* val2 = 0)
-{
-    if (pos >= msg.length()) {
-        return;
+    if (pos >= message.length()) {
+        NCBI_THROW(CException, eUnknown,
+            "Failed to parse diagnostic message");
     }
-    _ASSERT(val1);
-    *val1 = 0;
-    if (val2) *val2 = 0;
-    size_t plen = prefix.length();
-    if (msg.substr(pos, plen) == prefix) {
-        size_t p = msg.find(' ', pos);
-        if (p == NPOS) {
-            p = msg.length();
-        }
-        string tmp = msg.substr(pos + plen, p - pos - plen);
-        size_t p2 = tmp.find('/');
-        if (p2 == NPOS) {
-            p2 = tmp.length();
-        }
-        *val1 = NStr::StringToInt(tmp.substr(0, p2));
-        if (val2  &&  p2 < tmp.length()) {
-            *val2 = NStr::StringToInt(tmp.substr(p2 + 1, tmp.length()));
-        }
-        pos = p + 1;
-    }
-}
-
-
-bool s_ReadDiagFile(const string& msg,
-                    size_t& pos,
-                    string& file,
-                    size_t& line)
-{
-    if (pos >= msg.length()) {
-        return false;
-    }
-    bool res = false;
-    line = 0;
-    if (msg[pos] == '"') {
-        size_t p_close = msg.find('"', pos + 1);
-        if (p_close == NPOS) {
-            return false;
-        }
-        file = msg.substr(pos + 1, p_close - pos - 1);
-        pos = p_close + 1;
-        if (msg[pos] == ','  ||  msg[pos] == ':') {
-            pos += 2;
-        }
-        res = true;
-    }
-    if (msg.substr(pos, 5) == "line ") {
-        pos += 5;
-        size_t p_colon = msg.find(':', pos);
-        if (p_colon == NPOS) {
-            pos -= 5;
-            return false;
-        }
-        line = NStr::StringToUInt(msg.substr(pos, p_colon - pos));
-        pos = p_colon + 2;
-        res = true;
-    }
-    return res;
-}
-
-
-void s_ReadDiagModule(const string& msg,
-                      size_t& pos,
-                      size_t p_ws,
-                      string& module,
-                      int& err_code,
-                      int& err_subcode,
-                      string& err_text)
-{
-    err_code = 0;
-    err_subcode = 0;
-    string tmp = msg.substr(pos, p_ws - pos);
-    size_t p_open_br = msg.find('(', pos);
-    if (p_open_br != NPOS) {
-        size_t p_close_br = msg.find(')', pos);
-        if (p_close_br == NPOS) {
-            return;
-        }
-        size_t p = msg.find('(', p_open_br + 1);
-        while (p != NPOS  &&  p < p_close_br) {
-            p_close_br = msg.find(')', p_close_br + 1);
-            if (p_close_br == NPOS) {
-                return;
-            }
-            p = msg.find('(', p + 1);
-        }
-        if (p_close_br > p_ws) {
-            // space in the error text
-            p_ws = p_close_br + 1;
-            tmp = msg.substr(pos, p_ws - pos);
-        }
-        if (p_ws < msg.length()  &&  msg[p_ws] != ' ') {
-            return;
-        }
-        p_open_br -= pos;
-        if (p_close_br == NPOS  ||  msg[p_close_br] != ')') {
-            return;
-        }
-        p_close_br -= pos;
-        size_t p_dot = tmp.find('.');
-        if (p_dot != NPOS) {
-            // Try to read error code/subcode
-            try {
-                err_code = NStr::StringToInt(
-                    tmp.substr(p_open_br + 1, p_dot - p_open_br - 1));
-                err_subcode = NStr::StringToInt(
-                    tmp.substr(p_dot + 1, p_close_br - p_dot - 1));
-            }
-            catch (CStringException) {
-                p_dot = NPOS; // try to parse as error text
-            }
-        }
-        if (p_dot == NPOS) {
-            // Read error text
-            err_text =
-                tmp.substr(p_open_br + 1, p_close_br - p_open_br - 1);
+    int ret = 0;
+    if (width > 0) {
+        if (message[pos + width] != sep) {
+            NCBI_THROW(CException, eUnknown,
+                "Missing separator after integer");
         }
     }
     else {
-        p_open_br = tmp.length();
+        width = message.find(sep, pos);
+        if (width == NPOS) {
+            NCBI_THROW(CException, eUnknown,
+                "Missing separator after integer");
+        }
+        width -= pos;
     }
-    module = tmp.substr(0, p_open_br);
-    pos += tmp.length() + 1;
+
+    ret = NStr::StringToInt(message.substr(pos, width));
+    pos += width + 1;
+    return ret;
+}
+
+
+string s_ParseStr(const string& message,
+                  size_t&       pos,             // start position
+                  char          sep,             // separator
+                  bool          optional = false) // do not throw if not found
+{
+    if (pos >= message.length()) {
+        NCBI_THROW(CException, eUnknown,
+            "Failed to parse diagnostic message");
+    }
+    size_t pos1 = pos;
+    pos = message.find(sep, pos1);
+    if (pos == NPOS) {
+        if ( !optional ) {
+            NCBI_THROW(CException, eUnknown,
+                "Failed to parse diagnostic message");
+        }
+        pos = pos1;
+        return kEmptyStr;
+    }
+    if ( pos == pos1 + 1  &&  !optional ) {
+        // The separator is in the next position, no empty string allowed
+        NCBI_THROW(CException, eUnknown,
+            "Failed to parse diagnostic message");
+    }
+    while (pos < message.length()  &&  message[pos] == sep) {
+        pos++;
+    }
+    return message.substr(pos1, pos - pos1 - 1);
 }
 
 
@@ -976,152 +1225,233 @@ SDiagMessage::SDiagMessage(const string& message)
       m_TID(0),
       m_ProcPost(0),
       m_ThrPost(0),
-      m_Iteration(0),
+      m_RequestId(0),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
     size_t pos = 0;
-    size_t len = message.length();
     string tmp;
     m_Data = new SDiagMessageData;
-    // UID
-    if (message[0] == '@') {
-        static const size_t kUID_Length = 16;
-        if (len > kUID_Length + 1  &&
-            message[kUID_Length + 1] == '#') {
-            // Ignore diag-context properties
+
+    try {
+        // Fixed prefix
+        m_PID = s_ParseInt(message, pos, kDiagW_PID, '/');
+        m_TID = s_ParseInt(message, pos, kDiagW_TID, '/');
+        m_RequestId = s_ParseInt(message, pos, kDiagW_RID, ' ');
+
+        if (message[pos + kDiagW_UID] != ' ') {
             return;
         }
-        size_t p = message.find(' ');
-        if (p == NPOS) {
-            p = len;
-        }
-        if (p == kUID_Length + 1) {
-            try {
-                m_Data->m_UID =
-                    NStr::StringToUInt8(message.substr(1, p - 1), 0, 16);
-                pos = p + 1;
-            }
-            catch (CStringException) {
-                // Ignore invalid UID
-            }
-        }
-    }
-    if (pos >= len) {
-        return;
-    }
-    // Date/time
-    try {
-        size_t p = message.find(' ', pos);
-        if (p == NPOS) {
-            p = pos;
-        }
-        tmp = message.substr(pos, p - pos);
+        m_Data->m_UID =
+            NStr::StringToUInt8(message.substr(pos, kDiagW_UID), 0, 16);
+        pos += kDiagW_UID + 1;
+        
+        m_ProcPost = s_ParseInt(message, pos, kDiagW_SN, '/');
+        m_ThrPost = s_ParseInt(message, pos, kDiagW_SN, ' ');
+
+        // Date and time
+        string tmp = s_ParseStr(message, pos, ' ');
         m_Data->m_Time = CTime(tmp, kDiagTimeFormat);
-        pos = p + 1;
-    }
-    catch (CTimeException) {
-        // No date/time;
-    }
-    catch (CStringException) {
-        // No date/time;
-    }
-    try {
-        // PID/TID
-        s_ReadDiagInt(message, pos, "P:", &m_PID, &m_TID);
-    }
-    catch (CStringException) {
-    }
-    try {
-        // Iteration
-        s_ReadDiagInt(message, pos, "I:", &m_Iteration);
-    }
-    catch (CStringException) {
-    }
-    try {
-        // Process/thread post number
-        s_ReadDiagInt(message, pos, "#", &m_ProcPost, &m_ThrPost);
-    }
-    catch (CStringException) {
-    }
-    if (pos >= len) {
-        return;
-    }
+        // Host
+        m_Data->m_Host = s_ParseStr(message, pos, ' ');
+        // Client
+        m_Data->m_Client = s_ParseStr(message, pos, ' ');
+        // Session ID
+        m_Data->m_Session = s_ParseStr(message, pos, ' ');
+        // Application name
+        m_Data->m_AppName = s_ParseStr(message, pos, ' ');
 
-    // Position of the diag message
-    size_t p_sep = message.find("---", pos);
-    if (p_sep == NPOS) {
-        p_sep = len;
-    }
+        // Severity or event type
+        bool have_severity = false;
+        size_t severity_pos = pos;
+        tmp = s_ParseStr(message, pos, ':', true);
+        if ( !tmp.empty() ) {
+            if ( tmp.find("Message[") == 0  &&  tmp.length() == 10 ) {
+                // Get the real severity
+                switch ( tmp[8] ) {
+                case 'T':
+                    m_Severity = eDiag_Trace;
+                    break;
+                case 'I':
+                    m_Severity = eDiag_Info;
+                    break;
+                case 'W':
+                    m_Severity = eDiag_Warning;
+                    break;
+                case 'E':
+                    m_Severity = eDiag_Error;
+                    break;
+                case 'C':
+                    m_Severity = eDiag_Critical;
+                    break;
+                case 'F':
+                    m_Severity = eDiag_Fatal;
+                    break;
+                default:
+                    NCBI_THROW(CException, eUnknown,
+                        "Unknown message severity");
+                }
+                m_Flags |= eDPF_IsMessage;
+                have_severity = true;
+            }
+            else {
+                have_severity =
+                    CNcbiDiag::StrToSeverityLevel(tmp.c_str(), m_Severity);
+            }
+        }
+        if ( have_severity ) {
+            do {
+                pos++;
+            } while (pos < message.length()  &&  message[pos] == ' ');
+        }
+        else {
+            // Check event type rather than severity level
+            pos = severity_pos;
+            tmp = s_ParseStr(message, pos, ' ', true);
+            if (tmp.empty()  &&  severity_pos < message.length()) {
+                tmp = message.substr(severity_pos, message.length());
+                pos = message.length();
+            }
+            if (tmp == GetEventName(eEvent_Start)) {
+                m_Event = eEvent_Start;
+            }
+            else if (tmp == GetEventName(eEvent_Stop)) {
+                m_Event = eEvent_Stop;
+            }
+            else if (tmp == GetEventName(eEvent_RequestStart)) {
+                m_Event = eEvent_RequestStart;
+            }
+            else if (tmp == GetEventName(eEvent_RequestStop)) {
+                m_Event = eEvent_RequestStop;
+            }
+            else if (tmp == GetEventName(eEvent_Extra)) {
+                m_Event = eEvent_Extra;
+            }
+            else {
+                return;
+            }
+            // The rest is the message (do not parse status, bytes etc.)
+            if (pos < message.length()) {
+                m_Data->m_Message = message.substr(pos, message.length());
+                m_Buffer = &m_Data->m_Message[0];
+                m_BufferLen = m_Data->m_Message.length();
+            }
+            m_Format = eFormat_New;
+            return;
+        }
 
-    // Detect and read module and file/line
-    if ( p_sep > pos  &&
-        !s_ReadDiagFile(message, pos, m_Data->m_File, m_Line) ) {
-        // Module may be present or next item is severity/location/text
-        size_t p_ws = message.find(' ', pos);
-        if (p_ws == NPOS) p_ws = len;
-        size_t p_colon = message.find(':', pos);
-        if (p_colon == NPOS) p_colon = len;
-        if (p_ws < p_colon) {
-            // Module is present
-            s_ReadDiagModule(message, pos, p_ws,
-                m_Data->m_Module, m_ErrCode, m_ErrSubCode, m_Data->m_ErrText);
-            m_Module = m_Data->m_Module.empty() ?
-                0 : m_Data->m_Module.c_str();
-            m_ErrText = m_Data->m_ErrText.empty() ?
-                0 : m_Data->m_ErrText.c_str();
-            // Try again to read file/line
-            s_ReadDiagFile(message, pos, m_Data->m_File, m_Line);
+        // <module>, <module>(<err_code>.<err_subcode>) or <module>(<err_text>)
+        size_t mod_pos = pos;
+        tmp = s_ParseStr(message, pos, ' ');
+        size_t lbr = tmp.find("(");
+        if (lbr != NPOS) {
+            if (tmp[tmp.length() - 1] != ')') {
+                // Space(s) inside the error text, try to find closing ')'
+                int open_br = 1;
+                while (pos < message.length()  &&  open_br > 0) {
+                    if (message[pos] == '(') {
+                        open_br++;
+                    }
+                    else if (message[pos] == ')') {
+                        open_br--;
+                    }
+                    pos++;
+                }
+                if (pos >= message.length()  ||  message[pos] != ' ') {
+                    return;
+                }
+                tmp = message.substr(mod_pos, pos - mod_pos);
+                // skip space(s)
+                while (pos < message.length()  &&  message[pos] == ' ') {
+                    pos++;
+                }
+            }
+            m_Data->m_Module = tmp.substr(0, lbr);
+            tmp = tmp.substr(lbr + 1, tmp.length() - lbr - 2);
+            size_t dot_pos = tmp.find('.');
+            if (dot_pos != NPOS) {
+                // Try to parse error code/subcode
+                try {
+                    m_ErrCode = NStr::StringToInt(tmp.substr(0, dot_pos));
+                    m_ErrSubCode = NStr::StringToInt(
+                        tmp.substr(dot_pos + 1, tmp.length()));
+                }
+                catch (CStringException) {
+                    m_ErrCode = 0;
+                    m_ErrSubCode = 0;
+                }
+            }
+            if (!m_ErrCode  &&  !m_ErrSubCode) {
+                m_Data->m_ErrText = tmp;
+                m_ErrText = m_Data->m_ErrText.c_str();
+            }
         }
-    }
-    m_File = m_Data->m_File.empty() ? 0 : m_Data->m_File.c_str();
-    if (pos >= len) {
-        return;
-    }
+        else {
+            m_Data->m_Module = tmp;
+        }
+        if ( !m_Data->m_Module.empty() ) {
+            m_Module = m_Data->m_Module.c_str();
+        }
+        
+        // ["<file>", ][line <line>][:]
+        if (message[pos] != '"') {
+            return;
+        }
+        pos++; // skip "
+        tmp = s_ParseStr(message, pos, '"');
+        m_Data->m_File = tmp;
+        m_File = m_Data->m_File.c_str();
+        if (message.substr(pos, 7) != ", line ") {
+            return;
+        }
+        pos += 7;
+        m_Line = s_ParseInt(message, pos, 0, ':');
+        while (pos < message.length()  &&  message[pos] == ' ') {
+            pos++;
+        }
 
-    // Severity, location
-    size_t p_col = message.find(':', pos);
-    char next_char = p_col + 1 < len ? message[p_col + 1] : 0;
-    // Severity
-    if (p_col < p_sep  &&  next_char == ' ') {
-        string severity = message.substr(pos, p_col - pos);
-        if ( severity == "Message" ) {
-            m_Severity = eDiag_Info;
-            m_Flags |= eDPF_IsMessage;
+        // Class:: Class::Function() ::Function()
+        tmp = s_ParseStr(message, pos, ' ');
+        size_t dcol = tmp.find("::");
+        if (dcol == NPOS) {
+            return;
         }
-        if ( (m_Flags & eDPF_IsMessage) != 0  ||
-            CNcbiDiag::StrToSeverityLevel(severity.c_str(), m_Severity) ) {
-            pos = p_col + 2;
-            p_col = message.find(':', pos);
-            next_char = p_col + 1 < len ? message[p_col + 1] : 0;
+        if (dcol > 0) {
+            m_Data->m_Class = tmp.substr(0, dcol);
+            m_Class = m_Data->m_Class.c_str();
         }
-    }
-    // Location
-    if (p_col < p_sep  &&  next_char == ':') {
-        size_t p_ws = message.find(' ', p_col);
-        if (p_ws == NPOS) {
-            p_ws = len;
+        dcol += 2;
+        if (dcol < tmp.length() - 2) {
+            // Remove "()"
+            if (tmp[tmp.length() - 2] != '(' || tmp[tmp.length() - 1] != ')') {
+                return;
+            }
+            tmp.resize(tmp.length() - 2);
+            m_Data->m_Function = tmp.substr(dcol, tmp.length());
+            m_Function = m_Data->m_Function.c_str();
         }
-        m_Data->m_Class = message.substr(pos, p_col - pos);
-        m_Class = m_Data->m_Class.empty() ?
-            0 : m_Data->m_Class.c_str();
-        if (message[p_ws - 2] == '('  &&  message[p_ws - 1] == ')') {
-            pos = p_col + 2;
-            m_Data->m_Function = message.substr(pos, p_ws - pos - 2);
-            m_Function = m_Data->m_Function.empty() ?
-                0 : m_Data->m_Function.c_str();
-            pos = p_ws + 1;
+        else {
+            return;
         }
-    }
-    // Skip message seperator if any
-    if (p_sep < len  &&  pos == p_sep) {
+
+        if (message.substr(pos, 4) != "--- ") {
+            return;
+        }
         pos += 4;
+
+        // All the rest goes to message - no way to parse prefix/error code.
+        // [<prefix1>::<prefix2>::.....]
+        // <message>
+        // <err_code_message> and <err_code_explanation>
+        m_Data->m_Message = message.substr(pos, message.length());
+        m_Buffer = &m_Data->m_Message[0];
+        m_BufferLen = m_Data->m_Message.length();
     }
-    // All the rest is the message
-    m_Data->m_Message = message.substr(pos, len);
-    m_Buffer = m_Data->m_Message.empty() ?
-        0 : m_Data->m_Message.c_str();
-    m_BufferLen = m_Data->m_Message.length();
+    catch (CException) {
+        return;
+    }
+
+    m_Format = eFormat_New;
 }
 
 
@@ -1130,6 +1460,89 @@ SDiagMessage::~SDiagMessage(void)
     if ( m_Data ) {
         delete m_Data;
     }
+}
+
+
+SDiagMessage::SDiagMessage(const SDiagMessage& message)
+{
+    *this = message;
+}
+
+
+SDiagMessage& SDiagMessage::operator=(const SDiagMessage& message)
+{
+    if (&message != this) {
+        m_Format = message.m_Format;
+        if ( message.m_Data ) {
+            m_Data = new SDiagMessageData(*message.m_Data);
+        }
+        else {
+            m_Data = new SDiagMessageData;
+            if (message.m_Buffer) {
+                m_Data->m_Message =
+                    string(message.m_Buffer, message.m_BufferLen);
+            }
+            if ( message.m_File ) {
+                m_Data->m_File = message.m_File;
+            }
+            if ( message.m_Module ) {
+                m_Data->m_Module = message.m_Module;
+            }
+            if ( message.m_Class ) {
+                m_Data->m_Class = message.m_Class;
+            }
+            if ( message.m_Function ) {
+                m_Data->m_Function = message.m_Function;
+            }
+            if ( message.m_Prefix ) {
+                m_Data->m_Prefix = message.m_Prefix;
+            }
+            if ( message.m_ErrText ) {
+                m_Data->m_ErrText = message.m_ErrText;
+            }
+        }
+        m_Severity = message.m_Severity;
+        m_Line = message.m_Line;
+        m_ErrCode = message.m_ErrCode;
+        m_ErrSubCode = message.m_ErrSubCode;
+        m_Flags = message.m_Flags;
+        m_PID = message.m_PID;
+        m_TID = message.m_TID;
+        m_ProcPost = message.m_ProcPost;
+        m_ThrPost = message.m_ThrPost;
+        m_RequestId = message.m_RequestId;
+        m_Event = message.m_Event;
+
+        m_Buffer = m_Data->m_Message.empty() ? 0 : m_Data->m_Message.c_str();
+        m_BufferLen = m_Data->m_Message.empty() ?
+            0 : m_BufferLen = m_Data->m_Message.length();
+        m_File = m_Data->m_File.empty() ? 0 : m_Data->m_File.c_str();
+        m_Module = m_Data->m_Module.empty() ? 0 : m_Data->m_Module.c_str();
+        m_Class = m_Data->m_Class.empty() ? 0 : m_Data->m_Class.c_str();
+        m_Function = m_Data->m_Function.empty()
+            ? 0 : m_Data->m_Function.c_str();
+        m_Prefix = m_Data->m_Prefix.empty() ? 0 : m_Data->m_Prefix.c_str();
+        m_ErrText = m_Data->m_ErrText.empty() ? 0 : m_Data->m_ErrText.c_str();
+    }
+    return *this;
+}
+
+
+string SDiagMessage::GetEventName(EEventType event)
+{
+    switch ( event ) {
+    case eEvent_Start:
+        return "start";
+    case eEvent_Stop:
+        return "stop";
+    case eEvent_Extra:
+        return "extra";
+    case eEvent_RequestStart:
+        return "request-start";
+    case eEvent_RequestStop:
+        return "request-stop";
+    }
+    return kEmptyStr;
 }
 
 
@@ -1166,6 +1579,8 @@ void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
                                   TDiagWriteFlags flags) const
 {
+    // GetDiagContext().PushMessage(*this);
+
     if (IsSetDiagPostFlag(eDPF_MergeLines, m_Flags)) {
         CNcbiOstrstream ostr;
         string src, dest;
@@ -1380,44 +1795,42 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
 CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
                                        TDiagWriteFlags flags) const
 {
-    // UID
-    bool print_uid = IsSetDiagPostFlag(eDPF_UID, m_Flags);
-    if ( print_uid ) {
-        os << "@" << GetDiagContext().GetStringUID(GetUID()) << " ";
-    }
-    // Date & time
-    if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
-        os << GetTime().AsString(kDiagTimeFormat) << " ";
-    }
-    // PID/TID
-    bool print_pid = IsSetDiagPostFlag(eDPF_PID, m_Flags);
-    if ( print_pid ) {
-        os << "P:" << m_PID;
-        if ( IsSetDiagPostFlag(eDPF_TID, m_Flags) ) {
-            os << "/" << m_TID;
+    GetDiagContext().WriteStdPrefix(os, this);
+
+    // Get error code description
+    bool have_description = false;
+    SDiagErrCodeDescription description;
+    if ((m_ErrCode  ||  m_ErrSubCode)  &&
+        IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags)  &&
+        IsSetDiagErrCodeInfo()) {
+
+        CDiagErrCodeInfo* info = GetDiagErrCodeInfo();
+        if ( info  && 
+             info->GetDescription(ErrCode(m_ErrCode, m_ErrSubCode), 
+                                  &description) ) {
+            have_description = true;
+            if (description.m_Severity != -1)
+                m_Severity = (EDiagSev)description.m_Severity;
         }
-        os << " ";
     }
-    // FastCGI iteration
-    bool print_iter = IsSetDiagPostFlag(eDPF_Iteration, m_Flags);
-    if ( print_iter ) {
-        os << "I:" << m_Iteration << " ";
+
+    // <severity>:
+    if ( IsSetDiagPostFlag(eDPF_AppLog, m_Flags) ) {
+        os << GetEventName(m_Event) << " ";
     }
-    // Post number
-    bool print_proc_post = IsSetDiagPostFlag(eDPF_SerialNo, m_Flags);
-    if ( print_proc_post ) {
-        os << "#" << m_ProcPost;
-        if ( IsSetDiagPostFlag(eDPF_SerialNo_Thread, m_Flags) ) {
-            os << "/" << m_ThrPost;
+    else {
+        string sev = CNcbiDiag::SeverityName(m_Severity);
+        if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
+            os << "Message[" << sev[0] << "]: ";
         }
-        os << " ";
+        else {
+            os << sev << ": ";
+        }
     }
+
     // <module>-<err_code>.<err_subcode> or <module>-<err_text>
     bool have_module = (m_Module && *m_Module) || (m_File && *m_File);
-    bool print_err_id =
-        ( have_module ||
-         m_ErrCode  ||  m_ErrSubCode  ||  m_ErrText)
-        && IsSetDiagPostFlag(eDPF_ErrorID, m_Flags);
+    bool print_err_id = have_module || m_ErrCode || m_ErrSubCode || m_ErrText;
 
     if (print_err_id) {
         if ( have_module ) {
@@ -1432,9 +1845,9 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         }
         os << " ";
     }
+
     // "<file>"
-    bool print_file = (m_File  &&  *m_File  &&
-                       IsSetDiagPostFlag(eDPF_File, m_Flags));
+    bool print_file = m_File  &&  *m_File;
     if ( print_file ) {
         const char* x_file = m_File;
         if ( !IsSetDiagPostFlag(eDPF_LongFilename, m_Flags) ) {
@@ -1445,54 +1858,16 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         }
         os << '"' << x_file << '"';
     }
-
     // , line <line>
-    bool print_line = (m_Line  &&  IsSetDiagPostFlag(eDPF_Line, m_Flags));
-    if ( print_line )
+    if ( m_Line )
         os << (print_file ? ", line " : "line ") << m_Line;
-
     // :
-    if (print_file  ||  print_line)
+    if (print_file  ||  m_Line)
         os << ": ";
 
-    // Get error code description
-    bool have_description = false;
-    SDiagErrCodeDescription description;
-    if ((m_ErrCode  ||  m_ErrSubCode)  &&
-        (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags)  || 
-         IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags)  ||
-         IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags))  &&
-         IsSetDiagErrCodeInfo()) {
-
-        CDiagErrCodeInfo* info = GetDiagErrCodeInfo();
-        if ( info  && 
-             info->GetDescription(ErrCode(m_ErrCode, m_ErrSubCode), 
-                                  &description) ) {
-            have_description = true;
-            if (IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags) && 
-                description.m_Severity != -1 )
-                m_Severity = (EDiagSev)description.m_Severity;
-        }
-    }
-
-    // <severity>:
-    if (IsSetDiagPostFlag(eDPF_Severity, m_Flags)  &&
-        (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev))) {
-        if ( IsSetDiagPostFlag(eDPF_IsMessage, m_Flags) ) {
-            os << "Message: ";
-        }
-        else {
-            os << CNcbiDiag::SeverityName(m_Severity) << ": ";
-        }
-    }
-
     // Class::Function
-    bool print_location =
-        ((m_Class     &&  *m_Class ) ||
-         (m_Function  &&  *m_Function))
-        && IsSetDiagPostFlag(eDPF_Location, m_Flags);
-
-    if (print_location) {
+    bool print_loc = (m_Class && *m_Class ) || (m_Function && *m_Function);
+    if (print_loc) {
         // Class:: Class::Function() ::Function()
         if (m_Class  &&  *m_Class) {
             os << m_Class;
@@ -1502,7 +1877,8 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
             os << m_Function << "() ";
         }
     }
-    if ( !IsSetDiagPostFlag(eDPF_OmitSeparator, m_Flags) ) {
+
+    if ( !IsSetDiagPostFlag(eDPF_OmitSeparator, m_Flags)) {
         os << "--- ";
     }
 
@@ -1530,6 +1906,64 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     }
 
     return os;
+}
+
+
+void SDiagMessage::x_InitData(void) const
+{
+    if ( !m_Data ) {
+        m_Data = new SDiagMessageData;
+    }
+    if (m_Data->m_Message.empty()  &&  m_Buffer) {
+        m_Data->m_Message = string(m_Buffer, m_BufferLen);
+    }
+    if (m_Data->m_File.empty()  &&  m_File) {
+        m_Data->m_File = m_File;
+    }
+    if (m_Data->m_Module.empty()  &&  m_Module) {
+        m_Data->m_Module = m_Module;
+    }
+    if (m_Data->m_Class.empty()  &&  m_Class) {
+        m_Data->m_Class = m_Class;
+    }
+    if (m_Data->m_Function.empty()  &&  m_Function) {
+        m_Data->m_Function = m_Function;
+    }
+    if (m_Data->m_Prefix.empty()  &&  m_Prefix) {
+        m_Data->m_Prefix = m_Prefix;
+    }
+    if (m_Data->m_ErrText.empty()  &&  m_ErrText) {
+        m_Data->m_ErrText = m_ErrText;
+    }
+
+    if ( !m_Data->m_UID ) {
+        m_Data->m_UID = GetDiagContext().GetUID();
+    }
+    if ( m_Data->m_Time.IsEmpty() ) {
+        m_Data->m_Time = CTime(CTime::eCurrent);
+    }
+}
+
+
+void SDiagMessage::x_SaveProperties(const string& host,
+                                    const string& client,
+                                    const string& session,
+                                    const string& app_name) const
+{
+    x_InitData();
+    // Do not update properties if already set
+    if ( m_Data->m_Host.empty() ) {
+        m_Data->m_Host = host;
+    }
+    if ( m_Data->m_Client.empty() ) {
+        m_Data->m_Client = client;
+    }
+    if ( m_Data->m_Session.empty() ) {
+        m_Data->m_Session = session;
+    }
+    if ( m_Data->m_AppName.empty() ) {
+        m_Data->m_AppName = app_name;
+    }
 }
 
 
@@ -1655,22 +2089,54 @@ extern void PopDiagPostPrefix(void)
 }
 
 
-static int& s_GetFastCGIIteration(void)
+// TLS for FastCGI iteration or request ID
+
+static void s_RequestIdTlsDataCleanup(int* old_value, void*)
 {
-    static int s_FastCGIIteration = 0;
-    return s_FastCGIIteration;
+    delete old_value;
 }
 
 
-extern int GetFastCGIIteration(void)
+static bool s_RequestIdTlsDestroyed;
+
+static void s_RequestIdTlsObjectCleanup(void*)
 {
-    return s_GetFastCGIIteration();
+    s_RequestIdTlsDestroyed = true;
 }
 
 
-extern void SetFastCGIIteration(int iter)
+static int& s_GetDiagRequestId(void)
 {
-    s_GetFastCGIIteration() = iter;
+    static CSafeStaticRef< CTls<int> >
+        s_RequestIdTls(s_RequestIdTlsObjectCleanup);
+
+    // Create and use dummy value if TLS is already destroyed
+    if ( s_RequestIdTlsDestroyed ) {
+        static int s_MainRequestId = 0;
+        return s_MainRequestId;
+    }
+
+    // Create thread-specific request ID (if not created yet),
+    // and store it to TLS
+    int* request_id = s_RequestIdTls->GetValue();
+    if ( !request_id ) {
+        request_id = new int(0);
+        s_RequestIdTls->SetValue(request_id, s_RequestIdTlsDataCleanup);
+    }
+
+    return *request_id;
+}
+
+
+extern int GetDiagRequestId(void)
+{
+    return s_GetDiagRequestId();
+}
+
+
+extern void SetDiagRequestId(int id)
+{
+    s_GetDiagRequestId() = id;
 }
 
 
@@ -1751,14 +2217,40 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 }
 
 
+void ReportDiagHandlerSwitch(const string& msg)
+{
+    CDiagContext& ctx = GetDiagContext();
+    if ( ctx.IsSetOldPostFormat() ) {
+        return;
+    }
+    ctx.PrintExtra(msg);
+}
+
+
 extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
 {
     CMutexGuard LOCK(s_DiagMutex);
+    string old_name, new_name;
+    if ( CDiagBuffer::sm_Handler ) {
+        old_name = CDiagBuffer::sm_Handler->GetLogName();
+    }
+    if ( handler ) {
+        new_name = handler->GetLogName();
+        if (new_name != old_name) {
+            ReportDiagHandlerSwitch(
+                "Switching diagnostics to " + new_name);
+        }
+    }
     if ( CDiagBuffer::sm_CanDeleteHandler )
         delete CDiagBuffer::sm_Handler;
     CDiagBuffer::sm_Handler          = handler;
     CDiagBuffer::sm_CanDeleteHandler = can_delete;
+    if (!old_name.empty()  && new_name != old_name) {
+        ReportDiagHandlerSwitch(
+            "Switched diagnostics from " + old_name);
+    }
 }
+
 
 extern bool IsSetDiagHandler(void)
 {
@@ -1816,21 +2308,61 @@ extern CDiagBuffer& GetDiagBuffer(void)
 }
 
 
+string CDiagHandler::GetLogName(void)
+{
+    string name = typeid(*this).name();
+    return name.empty() ? kLogName_Unknown
+        : string(kLogName_Unknown) + "(" + name + ")";
+}
+
+
+void CStreamDiagHandler_Base::WriteMessage(CNcbiOstream& os,
+                                           const SDiagMessage& mess,
+                                           bool quick_flush)
+{
+    if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
+        CNcbiOstrstream str_os;
+        str_os << mess;
+        os.write(str_os.str(), str_os.pcount());
+        str_os.rdbuf()->freeze(false);
+    }
+    else {
+        os << mess;
+    }
+    if (quick_flush) {
+        os << NcbiFlush;
+    }
+}
+
+
+CStreamDiagHandler_Base::CStreamDiagHandler_Base(void)
+    : m_LogName(kLogName_Stream)
+{
+}
+
+
+string CStreamDiagHandler_Base::GetLogName(void)
+{
+    return m_LogName;
+}
+
+
+CStreamDiagHandler::CStreamDiagHandler(CNcbiOstream* os,
+                                       bool          quick_flush,
+                                       const string& stream_name)
+    : m_Stream(os),
+      m_QuickFlush(quick_flush)
+{
+    if ( !stream_name.empty() ) {
+        SetLogName(stream_name);
+    }
+}
+
+
 void CStreamDiagHandler::Post(const SDiagMessage& mess)
 {
     if (m_Stream) {
-        if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
-            CNcbiOstrstream os;
-            os << mess;
-            m_Stream->write(os.str(), os.pcount());
-            os.rdbuf()->freeze(false);
-        }
-        else {
-            (*m_Stream) << mess;
-        }
-        if (m_QuickFlush) {
-            (*m_Stream) << NcbiFlush;
-        }
+        WriteMessage(*m_Stream, mess, m_QuickFlush);
     }
 }
 
@@ -1882,6 +2414,21 @@ CFileDiagHandler::~CFileDiagHandler(void)
 }
 
 
+bool s_CanOpenLogFile(const string& file_name)
+{
+    CDirEntry entry(file_name);
+    if ( !entry.Exists() ) {
+        // Use directory instead, must be writable
+        entry = CDirEntry(entry.GetDir());
+        if ( !entry.Exists() ) {
+            return false;
+        }
+    }
+    CDirEntry::TMode mode = 0;
+    return entry.GetMode(&mode)  &&  (mode & CDirEntry::fWrite) != 0;
+}
+
+
 bool CFileDiagHandler::SetLogFile(const string& file_name,
                                   EDiagFileType file_type,
                                   bool          quick_flush,
@@ -1892,38 +2439,69 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
     case eDiagFile_All:
         {
             // Remove known extension if any
-            CDirEntry entry(file_name);
-            string ext = entry.GetExt();
             string adj_name = file_name;
-            if (ext == ".log"  ||  ext == ".err"  ||  ext == ".trace") {
-                adj_name = entry.GetDir() + entry.GetBase();
+            if ( !special ) {
+                CDirEntry entry(file_name);
+                string ext = entry.GetExt();
+                adj_name = file_name;
+                if (ext == ".log"  ||  ext == ".err"  ||  ext == ".trace") {
+                    adj_name = entry.GetDir() + entry.GetBase();
+                }
             }
-            m_Err.m_FileName = special ? adj_name : adj_name + ".err";
+            string err_name = special ? adj_name : adj_name + ".err";
+            string log_name = special ? adj_name : adj_name + ".log";
+            string trace_name = special ? adj_name : adj_name + ".trace";
+
+            if (!s_CanOpenLogFile(err_name)  ||
+                !s_CanOpenLogFile(log_name)  ||
+                !s_CanOpenLogFile(trace_name)) {
+                return false;
+            }
+
+            m_Err.m_FileName = err_name;
             m_Err.m_Mode = mode;
             m_Err.m_QuickFlush = quick_flush;
-            m_Log.m_FileName = special ? adj_name : adj_name + ".log";
+            m_Log.m_FileName = log_name;
             m_Log.m_Mode = mode;
             m_Log.m_QuickFlush = quick_flush;
-            m_Trace.m_FileName = special ? adj_name : adj_name + ".trace";
+            m_Trace.m_FileName = trace_name;
             m_Trace.m_Mode = mode;
             m_Trace.m_QuickFlush = quick_flush;
             break;
         }
     case eDiagFile_Err:
+        if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
+            return false;
+        }
         m_Err.m_FileName = file_name;
         m_Err.m_Mode = mode;
         m_Err.m_QuickFlush = quick_flush;
         break;
     case eDiagFile_Log:
+        if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
+            return false;
+        }
         m_Log.m_FileName = file_name;
         m_Log.m_Mode = mode;
         m_Log.m_QuickFlush = quick_flush;
         break;
     case eDiagFile_Trace:
+        if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
+            return false;
+        }
         m_Trace.m_FileName = file_name;
         m_Trace.m_Mode = mode;
         m_Trace.m_QuickFlush = quick_flush;
         break;
+    }
+    if (file_name == "") {
+        SetLogName(kLogName_None);
+    }
+    else if (file_name == "-") {
+        SetLogName(kLogName_Stderr);
+    }
+    else {
+        SetLogName(file_name);
     }
     return x_ReopenFiles();
 }
@@ -2023,18 +2601,7 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
     if ( !info->m_Stream ) {
         return;
     }
-    if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
-        CNcbiOstrstream os;
-        os << mess;
-        info->m_Stream->write(os.str(), os.pcount());
-        os.rdbuf()->freeze(false);
-    }
-    else {
-        (*info->m_Stream) << mess;
-    }
-    if (info->m_QuickFlush) {
-        (*info->m_Stream) << NcbiFlush;
-    }
+    WriteMessage(*info->m_Stream, mess, info->m_QuickFlush);
 }
 
 
@@ -2095,11 +2662,11 @@ extern bool SetLogFile(const string& file_name,
         // Check special filenames
         if ( file_name.empty() ) {
             // no output
-            SetDiagStream(0, quick_flush);
+            SetDiagStream(0, quick_flush, 0, 0, kLogName_None);
         }
         else if (file_name == "-") {
             // output to stderr
-            SetDiagStream(&NcbiCerr, quick_flush);
+            SetDiagStream(&NcbiCerr, quick_flush, 0, 0, kLogName_Stderr);
         }
         else {
             // output to file
@@ -2112,7 +2679,8 @@ extern bool SetLogFile(const string& file_name,
                 return false;
             }
             else {
-                SetDiagStream(str, quick_flush, LogFileCleanup, str);
+                SetDiagStream(str, quick_flush, LogFileCleanup, str,
+                    file_name);
             }
         }
     }
@@ -2507,8 +3075,9 @@ public:
     CCompatStreamDiagHandler(CNcbiOstream* os,
                              bool          quick_flush  = true,
                              FDiagCleanup  cleanup      = 0,
-                             void*         cleanup_data = 0)
-        : CStreamDiagHandler(os, quick_flush),
+                             void*         cleanup_data = 0,
+                             const string& stream_name = kEmptyStr)
+        : CStreamDiagHandler(os, quick_flush, stream_name),
           m_Cleanup(cleanup), m_CleanupData(cleanup_data)
         {
         }
@@ -2526,8 +3095,11 @@ private:
 };
 
 
-extern void SetDiagStream(CNcbiOstream* os, bool quick_flush,
-                          FDiagCleanup cleanup, void* cleanup_data)
+extern void SetDiagStream(CNcbiOstream* os,
+                          bool          quick_flush,
+                          FDiagCleanup  cleanup,
+                          void*         cleanup_data,
+                          const string& stream_name)
 {
     // Temp. code to enable CDoubleDiagHandler
     CDoubleDiagHandler* h =
@@ -2537,7 +3109,8 @@ extern void SetDiagStream(CNcbiOstream* os, bool quick_flush,
         return;
     }
     SetDiagHandler(new CCompatStreamDiagHandler(os, quick_flush,
-                                                cleanup, cleanup_data));
+                                                cleanup, cleanup_data,
+                                                stream_name));
 }
 
 
@@ -2570,7 +3143,8 @@ extern CNcbiOstream* GetDiagStream(void)
 
 CDoubleDiagHandler::CDoubleDiagHandler(void)
 {
-    m_StreamHandler.reset(new CStreamDiagHandler(&NcbiCerr));
+    m_StreamHandler.reset(new CStreamDiagHandler(&NcbiCerr,
+        true, kLogName_Stderr));
     m_FileHandler.reset(new CFileDiagHandler());
 }
 
@@ -2633,11 +3207,13 @@ bool CDoubleDiagHandler::SetLogFile(const string& file_name,
         // Check special filenames
         if ( file_name.empty() ) {
             // no output
-            m_FileHandler.reset(new CStreamDiagHandler(0, quick_flush));
+            m_FileHandler.reset(new CStreamDiagHandler(0,
+                quick_flush, kLogName_None));
         }
         else if (file_name == "-") {
             // output to stderr
-            m_FileHandler.reset(new CStreamDiagHandler(&NcbiCerr, quick_flush));
+            m_FileHandler.reset(new CStreamDiagHandler(&NcbiCerr,
+                quick_flush, kLogName_Stderr));
         }
         else {
             // output to file
@@ -2907,6 +3483,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.134  2006/10/31 18:41:17  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 1.133  2006/09/18 15:01:56  grichenk
  * Fixed log file creation. Check if log dir exists.
  *

@@ -56,15 +56,12 @@ public:
     void Init(void);
     int  Run(void);
 private:
-    void x_CheckMessage(TDiagPostFlags flags);
-    void x_CheckMessage(const string& message);
-
-    int        m_Count;
+    void x_CheckMessage(void);
+    void x_CheckMessage(const string& message, bool valid);
 };
 
 
 CDiagParserApp::CDiagParserApp(void)
-    : m_Count(0)
 {
 }
 
@@ -92,32 +89,165 @@ static TDiagPostFlags s_TestFlags[kNumFlags] = {
     eDPF_TID,
     eDPF_SerialNo,
     eDPF_SerialNo_Thread,
-    eDPF_Iteration,
+    eDPF_RequestId,
     eDPF_UID
 };
 
 int CDiagParserApp::Run(void)
 {
-    for (int mask = 0; mask < (1 << kNumFlags); mask++) {
-        TDiagPostFlags flags = 0;
-        for (int bit = 0; bit < kNumFlags; bit++) {
-            if ((mask & (1 << bit)) != 0) {
-                flags += s_TestFlags[bit];
-            }
-        }
-        x_CheckMessage(flags);
-    }
-    x_CheckMessage(eDPF_All);
+    // Valid messages
+    x_CheckMessage("03960/000/0000 2C2D0F7851AB7E40 0005/0005 "
+                "2006/09/27:13:41:56 NCBIPC1204 UNK_CLIENT "
+                "UNK_SESSION cgi_sample.cgi start", true);
+    x_CheckMessage("03960/000/0000 2C2D0F7851AB7E40 0010/0010 "
+                "2006/09/27:13:41:56 NCBIPC1204 UNK_CLIENT "
+                "2C2D0F7851AB7E40_0000SID cgi_sample.cgi "
+                "request-stop 200 0.105005566", true);
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Message[E]: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST(111.222) "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST(error.text) "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST(error text) "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: "
+                "TEST(error text (with extra '(' and ')')) "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Message[E]: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: ::Thread_Run() "
+                "--- Message from thread 6", true);
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Message[E]: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp:: "
+                "--- Message from thread 6", true);
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Message[E]: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::f() "
+                "--- Message from thread 6", true);
+    // Valid non-MT message
+    x_CheckMessage("15176/003 2A763B485350C030 0098 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", true);
+    // Bad messages
+    // Missing () after fuunction
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Message[E]: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run "
+                "--- Message from thread 6", false);
+    // Missing function name
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Message[E]: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::() "
+                "--- Message from thread 6", false);
+    // Missing class::function
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: "
+                "--- Message from thread 6", false);
+    // Missing ) after error text
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST(error text "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    // Missing TID/RqID
+    x_CheckMessage("15176 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    // Missing UID
+    x_CheckMessage("15176/003/0006 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    // ??? (missing Thread_SerialNumber
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    // Missing time
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    // Missing host
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    // Missing client
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 "
+                "UNK_SESSION my_app Error: TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    // Missing severity
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app TEST "
+                "\"/home/user/c++/src/corelib/test/my_app.cpp\", "
+                "line 81: CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    // Missing file, line
+    x_CheckMessage("15176/003/0006 2A763B485350C030 0098/0008 "
+                "2006/10/17:12:59:47 widget3 UNK_CLIENT "
+                "UNK_SESSION my_app Error: TEST "
+                "CMyApp::Thread_Run() "
+                "--- Message from thread 6", false);
+    x_CheckMessage("not a valid message", false);
+    x_CheckMessage("", false);
 
-    x_CheckMessage("");
-    x_CheckMessage("@0123456789AB");
-    x_CheckMessage("01/02/03 4:56:00");
-    x_CheckMessage("Error:");
-    x_CheckMessage("MODULE(error code (text only))");
-    x_CheckMessage("@not_an_UID");
-    x_CheckMessage("@not_an_UID__");
-    x_CheckMessage("21/22/03");
-    x_CheckMessage("simple message");
+    x_CheckMessage();
+
     return 0;
 }
 
@@ -130,24 +260,26 @@ bool CmpStr(const char* val1, const string& val2)
 }
 
 
-void CDiagParserApp::x_CheckMessage(TDiagPostFlags flags)
+void CDiagParserApp::x_CheckMessage(void)
 {
-    SetDiagPostAllFlags(flags);
-    SetFastCGIIteration(m_Count + 1);
+    SetDiagPostFlag(eDPF_LongFilename);
+    SetDiagRequestId(6224);
 
     CDiagCompileInfo info;
     string result;
     auto_ptr<SDiagMessage> msg;
     CTime post_time(CTime::eCurrent);
+    char buffer[4096] = "";
+    ostrstream str(buffer, 4096, ios::out);
     try {
-        char buffer[4096] = "";
-        ostrstream str(buffer, 4096, ios::out);
         SetDiagStream(&str);
-
         info = DIAG_COMPILE_INFO;
-        ERR_POST_EX(123, 45, "Error post message " + NStr::IntToString(++m_Count));
+        ERR_POST_EX(123, 45, "Test error post message");
 
         result = string(str.str(), str.pcount());
+        size_t cr = result.find('\n');
+        _ASSERT(cr != NPOS  &&  cr < result.length() - 1);
+        result = result.substr(cr + 1, result.length());
         msg.reset(new SDiagMessage(result));
     }
     catch (...) {
@@ -156,98 +288,36 @@ void CDiagParserApp::x_CheckMessage(TDiagPostFlags flags)
     }
     SetDiagStream(&NcbiCout);
 
-    if ((flags & eDPF_File) != 0) {
-        _ASSERT(CmpStr(msg->m_File, info.GetFile()));
-    }
-    else {
-        _ASSERT(!msg->m_File);
-    }
+    _ASSERT(CmpStr(msg->m_File, info.GetFile()));
+    _ASSERT(msg->m_Line == size_t(info.GetLine() + 1));
+    _ASSERT(msg->m_Severity == eDiag_Error);
 
-    if ((flags & eDPF_Line) != 0) {
-        _ASSERT(msg->m_Line == size_t(info.GetLine() + 1));
-    }
-    else {
-        _ASSERT(!msg->m_Line);
-    }
+    _ASSERT(CmpStr(msg->m_Module, info.GetModule()));
+    _ASSERT(msg->m_ErrCode == 123);
+    _ASSERT(msg->m_ErrSubCode == 45);
 
-    if ((flags & eDPF_Severity) != 0) {
-        _ASSERT(msg->m_Severity == eDiag_Error);
-    }
-    else {
-        _ASSERT(msg->m_Severity == eDiagSevMin);
-    }
+    _ASSERT(msg->GetTime() >= post_time);
 
-    if ((flags & eDPF_ErrorID) != 0) {
-        _ASSERT(CmpStr(msg->m_Module, info.GetModule()));
-        _ASSERT(msg->m_ErrCode == 123);
-        _ASSERT(msg->m_ErrSubCode == 45);
-    }
-    else {
-        _ASSERT(!msg->m_Module);
-        _ASSERT(msg->m_ErrCode == 0);
-        _ASSERT(msg->m_ErrSubCode == 0);
-    }
+    _ASSERT(CmpStr(msg->m_Class, info.GetClass()));
+    _ASSERT(CmpStr(msg->m_Function, info.GetFunction()));
 
-    if ((flags & eDPF_DateTime) != 0) {
-        _ASSERT(msg->GetTime() >= post_time);
-    }
+    _ASSERT(msg->m_PID);
+    // _ASSERT(msg->m_TID);
 
-    if ((flags & eDPF_ErrCodeMessage) != 0) {
-        //
-    }
+    // We don't know the exact count after some automatic messages
+    _ASSERT(msg->m_ProcPost != 0);
+    _ASSERT(msg->m_ThrPost != 0);
 
-    if ((flags & eDPF_Location) != 0) {
-        _ASSERT(CmpStr(msg->m_Class, info.GetClass()));
-        _ASSERT(CmpStr(msg->m_Function, info.GetFunction()));
-    }
-    else {
-        _ASSERT(!msg->m_Class);
-        _ASSERT(!msg->m_Function);
-    }
+    _ASSERT(msg->m_RequestId == 6224);
 
-    if ((flags & eDPF_PID) != 0) {
-        if ((flags & eDPF_TID) != 0) {
-            _ASSERT(CThread::TID(msg->m_TID) == CThread::GetSelf());
-        }
-        else {
-            _ASSERT(msg->m_TID == 0);
-        }
-    }
-    else {
-        _ASSERT(msg->m_PID == 0);
-    }
-
-    if ((flags & eDPF_SerialNo) != 0) {
-        _ASSERT(msg->m_ProcPost == m_Count);
-        if ((flags & eDPF_SerialNo_Thread) != 0) {
-            _ASSERT(msg->m_ThrPost == m_Count);
-        }
-        else {
-            _ASSERT(msg->m_ThrPost == 0);
-        }
-    }
-    else {
-    }
-
-    if ((flags & eDPF_Iteration) != 0) {
-        _ASSERT(msg->m_Iteration == m_Count);
-    }
-    else {
-        _ASSERT(msg->m_Iteration == 0);
-    }
-
-    if ((flags & eDPF_UID) != 0) {
-        _ASSERT(msg->GetUID() == GetDiagContext().GetUID());
-    }
-    else {
-        _ASSERT(msg->GetUID() == 0);
-    }
+    _ASSERT(msg->GetUID() == GetDiagContext().GetUID());
 }
 
 
-void CDiagParserApp::x_CheckMessage(const string& message)
+void CDiagParserApp::x_CheckMessage(const string& message, bool valid)
 {
     SDiagMessage dmsg(message);
+    _ASSERT(valid  ||  !dmsg.m_Buffer);
 }
 
 
@@ -265,6 +335,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/10/31 18:41:17  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 1.3  2006/07/11 16:39:50  grichenk
  * Reset DiagStream on exceptions
  *

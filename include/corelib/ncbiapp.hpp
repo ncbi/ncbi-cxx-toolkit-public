@@ -113,21 +113,6 @@ public:
 //
 
 
-/// Where to write the application's diagnostics to.
-enum EAppDiagStream {
-    eDS_ToStdout,    ///< To standard output stream
-    eDS_ToStderr,    ///< To standard error stream
-    eDS_ToStdlog,    ///< Add to standard log file (app.name + ".log")
-    eDS_ToMemory,    ///< Keep in a temp.memory buffer, see FlushDiag()
-    eDS_Disable,     ///< Dont write it anywhere
-    eDS_User,        ///< Leave as was previously set (or not set) by user
-    eDS_AppSpecific, ///< Depends on the application type
-    eDS_Default,     ///< "eDS_User" if set, else "eDS_AppSpecific"
-    eDS_ToSyslog     ///< To system log daemon
-};
-
-
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CNcbiApplication --
@@ -305,6 +290,16 @@ public:
     /// Check if it is a test run.
     bool IsDryRun(void) const;
 
+    /// Setup application specific diagnostic stream.
+    ///
+    /// Called from SetupDiag when it is passed the eDS_AppSpecific parameter.
+    /// Currently, this calls SetupDiag(eDS_ToStderr) to setup diagonistic
+    /// stream to the std error channel.
+    /// @return
+    ///   TRUE if successful, FALSE otherwise.
+    /// @deprecated
+    NCBI_DEPRECATED virtual bool SetupDiag_AppSpecific(void);
+
 protected:
     /// Disable argument descriptions.
     ///
@@ -377,16 +372,8 @@ protected:
     /// Setup the application diagnostic stream.
     /// @return
     ///   TRUE if successful,  FALSE otherwise.
-    bool SetupDiag(EAppDiagStream diag);
-
-    /// Setup application specific diagnostic stream.
-    ///
-    /// Called from SetupDiag when it is passed the eDS_AppSpecific parameter.
-    /// Currently, this calls SetupDiag(eDS_ToStderr) to setup diagonistic
-    /// stream to the std error channel.
-    /// @return
-    ///   TRUE if successful, FALSE otherwise.
-    virtual bool SetupDiag_AppSpecific(void);
+    /// @deprecated
+    NCBI_DEPRECATED bool SetupDiag(EAppDiagStream diag);
 
     /// Load settings from the configuration file to the registry.
     ///
@@ -453,15 +440,6 @@ protected:
     string FindProgramExecutablePath(int argc, const char* const* argv,
                                      string* real_path = 0);
 
-    /// Get the application's log file name
-    /// @return
-    ///   Log file
-    const string& GetLogFileName(void) const;
-
-    /// Get the default path for the log files. By default returns
-    /// the executable's directory.
-    virtual string GetDefaultLogPath(void) const;
-
     /// Method to be called before application start.
     /// Can be used to set DiagContext properties to be printed
     /// in the application start message (e.g. host|host_ip_addr,
@@ -493,27 +471,6 @@ private:
     /// @param reg
     ///   Registry to read from. If NULL, use the current registry setting.
     void x_HonorStandardSettings(IRegistry* reg = 0);
-
-    /// Setup log file
-    ///
-    /// @param name
-    ///   Log file name
-    /// @param mode
-    ///   File open mode
-    /// @return
-    ///   Result of the operation
-    bool x_SetupLogFile(const string& name, ios::openmode mode = ios::out);
-
-    /// Setup log files (err, log and trace).
-    /// @return
-    ///   true on success
-    bool x_SetupLogFiles(void);
-
-    void x_SetupLogFileName(void) const;
-
-    /// Copy data written to the memory diag stream (if any) to the
-    /// log file if CFileDiagHandler is installed.
-    void x_FlushMemoryDiagStream(void);
 
     /// Setup C++ standard I/O streams' behaviour.
     ///
@@ -612,14 +569,6 @@ inline const CArgDescriptions* CNcbiApplication::GetArgDescriptions(void) const
 }
 
 
-inline const string& CNcbiApplication::GetLogFileName(void) const
-{
-    if ( m_LogFileName.empty() ) {
-        x_SetupLogFileName();
-    }
-    return m_LogFileName;
-}
-
 inline bool CNcbiApplication::IsDryRun(void) const
 {
     return m_DryRun;
@@ -633,6 +582,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/10/31 18:41:16  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 1.66  2006/10/24 19:11:55  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

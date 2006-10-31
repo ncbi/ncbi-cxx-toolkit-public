@@ -108,6 +108,8 @@ public:
 
     void HonorRegistrySettings(IRegistry* reg = 0);
 
+    string GetLogName(void) { return "SYSLOG"; }
+
 private:
     static int x_TranslateFlags   (TFlags flags);
            int x_TranslateFacility(EFacility facility);
@@ -130,6 +132,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/10/31 18:41:16  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 1.4  2006/08/30 18:05:02  ucko
  * Add an HonorRegistrySettings method to support tuning the default facility.
  *

@@ -685,24 +685,9 @@ void CGridWorkerApp_Impl::RequestShutdown()
 }
 
 
-// This hack is needed to get an access to the protected method GetLogFileName
-// maybe this method should be a public one???
-namespace {
-    class AppHack : public CNcbiApplication {
-    public:
-        static const string& GetLogName(const CNcbiApplication& app)
-        {
-            return static_cast<const AppHack&>(app).GetLogFileName();
-        }
-    };
-}
-    
 string CGridWorkerApp_Impl::GetLogName(void) const
 {
-    string log_name = AppHack::GetLogName(m_App);
-    if (log_name.empty())
-        log_name = m_App.GetProgramDisplayName() + ".log";
-    return log_name;
+    return m_App.GetProgramDisplayName() + ".log";
 }
 
 
@@ -717,6 +702,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.28  2006/10/31 18:41:17  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 6.27  2006/09/19 14:34:41  didenko
  * Code clean up
  * Catch and log all exceptions in destructors

@@ -355,7 +355,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             PushDiagPostPrefix(prefix.c_str());
         }
         // Show PID and iteration # in all of the the diagnostics
-        SetFastCGIIteration(m_Iteration);
+        SetDiagRequestId(m_Iteration);
 
         _TRACE("CCgiApplication::FastCGI: " << m_Iteration
                << " iteration of " << max_iterations);
@@ -628,6 +628,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.66  2006/10/31 18:41:17  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 1.65  2006/09/08 15:34:36  grichenk
  * Turn on iteration number in logs for all CGIs.
  * Do not add '.log' to the log file name.

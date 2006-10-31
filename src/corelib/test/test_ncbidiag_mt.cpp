@@ -149,13 +149,17 @@ bool CTestDiagApp::TestApp_Exit(void)
 int main(int argc, const char* argv[]) 
 {
     CTestDiagApp app;
-    return app.AppMain(argc, argv, 0, eDS_Default, 0);
+    return app.AppMain(argc, argv, 0, eDS_ToStdlog, 0);
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2006/10/31 18:41:17  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 6.8  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *

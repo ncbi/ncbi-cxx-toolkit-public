@@ -164,10 +164,11 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///
 /// @sa
 ///   LOG_POST_EX macro
-#define LOG_POST(message)                            \
-    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error,           \
-      eDPF_Log | eDPF_OmitSeparator).GetRef()        \
-      << message                                     \
+#define LOG_POST(message)                          \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,   \
+      eDiag_Error,                                 \
+      eDPF_Log | eDPF_IsMessage).GetRef()          \
+      << message                                   \
       << NCBI_NS_NCBI::Endm )
 
 /// Error posting with error codes.
@@ -275,7 +276,8 @@ enum EDiagPostFlag {
     eDPF_TID                = 0x2000,  ///< Thread ID
     eDPF_SerialNo           = 0x4000,  ///< Serial # of the post, process-wide
     eDPF_SerialNo_Thread    = 0x8000,  ///< Serial # of the post, in the thread
-    eDPF_Iteration          = 0x10000, ///< fcgi iteration number
+    eDPF_RequestId          = 0x10000, ///< fcgi iteration number or request ID
+    eDPF_Iteration          = 0x10000, ///< @deprecated
     eDPF_UID                = 0x20000, ///< UID of the log
 
     eDPF_ErrCode            = eDPF_ErrorID,  ///< @deprecated
@@ -410,122 +412,8 @@ private:
 };
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CDiagContext --
-///
-/// NCBI diagnostic context. Storage for application-wide properties.
-
-class CStopWatch;
-
-class NCBI_XNCBI_EXPORT CDiagContext
-{
-public:
-    CDiagContext(void);
-    ~CDiagContext(void);
-
-    /// Unique process ID
-    typedef Int8 TUID;
-
-    /// Return (create if not created yet) unique diagnostic ID.
-    TUID GetUID(void) const;
-    /// Return string representation of UID
-    string GetStringUID(TUID uid = 0) const;
-
-    /// Set AutoWrite flag. If set, each property is posted to the current
-    /// app-log stream when a new value is set.
-    void SetAutoWrite(bool value);
-
-    /// Set application context property by name.
-    /// Write property to the log if AutoPrint flag is set.
-    void SetProperty(const string& name, const string& value);
-
-    /// Get application context property by name, return empty string if the
-    /// property is not set.
-    string GetProperty(const string& name) const;
-
-    /// Forced dump of all set properties.
-    void PrintProperties(void) const;
-
-    static const char* kProperty_UserName;
-    static const char* kProperty_HostName;
-    static const char* kProperty_HostIP;
-    static const char* kProperty_ClientIP;
-    static const char* kProperty_SessionID;
-    static const char* kProperty_AppName;
-    static const char* kProperty_ExitSig;
-    static const char* kProperty_ExitCode;
-    static const char* kProperty_ReqStatus;
-    static const char* kProperty_ReqTime;
-    static const char* kProperty_BytesRd;
-    static const char* kProperty_BytesWr;
-
-    /// Print start/stop etc. message. If the following values are set as
-    /// properties, they will be dumped before the message:
-    ///   host | host_ip_addr
-    ///   client_ip
-    ///   session_id
-    ///   app_name
-    /// All messages have the following prefix:
-    ///   PID/TID/ITER UID TIME HOST CLIENT SESSION_ID APP_NAME
-    /// Depending on its type, a message can be prefixed with the following
-    /// properties if they are set:
-    ///   start
-    ///   stop [SIG] [EXIT_CODE] ELAPSED_TIME
-    ///   extra
-    ///   request-start
-    ///   request-stop [STATUS] [REQ_ELAPSED_TIME] [BYTES_RD] [BYTES_WR]
-    void PrintStart(const string& message) const;
-    /// Print exit message.
-    void PrintStop(void) const;
-    /// Print extra message.
-    void PrintExtra(const string& message) const;
-    /// Print request start message (for request-driven applications)
-    void PrintRequestStart(const string& message) const;
-    /// Print request stop message (for request-driven applications)
-    void PrintRequestStop(void) const;
-
-    /// Check old/new format flag (for compatibility only)
-    static bool IsSetOldPostFormat(void);
-    /// Set old/new format flag
-    static void SetOldPostFormat(bool value);
-
-    /// Set username property
-    /// @sa SetDiagUserAndHost
-    void SetUsername(const string& username);
-    /// Set hostname property
-    /// @sa SetDiagUserAndHost
-    void SetHostname(const string& hostname);
-
-private:
-    // Type of event to report
-    enum EEventType {
-        eEvent_Start,        // Application start
-        eEvent_Stop,         // Application exit
-        eEvent_Extra,        // Other application events
-        eEvent_RequestStart, // Start processing request
-        eEvent_RequestStop   // Finish processing request
-    };
-
-    // Initialize UID
-    void x_CreateUID(void) const;
-    // Write message to the log using current handler
-    void x_PrintMessage(EEventType event, const string& message) const;
-
-    typedef map<string, string> TProperties;
-
-    mutable TUID m_UID;
-    TProperties  m_Properties;
-    CStopWatch*  m_StopWatch;
-};
-
-
-/// Get diag context instance
-NCBI_XNCBI_EXPORT CDiagContext& GetDiagContext(void);
-
 //
 class CException;
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -533,6 +421,7 @@ class CException;
 /// CNcbiDiag --
 ///
 /// Define the main NCBI Diagnostic class.
+
 
 class CNcbiDiag
 {
@@ -856,13 +745,27 @@ extern void PushDiagPostPrefix(const char* prefix);
 NCBI_XNCBI_EXPORT
 extern void PopDiagPostPrefix(void);
 
-/// Get iteration number for FastCGI applications. Not MT-safe.
+/// Get iteration number/request ID. Not MT-safe.
 NCBI_XNCBI_EXPORT
-extern int GetFastCGIIteration(void);
+extern int GetDiagRequestId(void);
 
-/// Set iteration number for FastCGI applications. Not MT-safe.
+/// Set iteration number/request ID. Not MT-safe.
 NCBI_XNCBI_EXPORT
-extern void SetFastCGIIteration(int iter);
+extern void SetDiagRequestId(int id);
+
+
+NCBI_DEPRECATED
+inline int GetFastCGIIteration(void)
+{
+    return GetDiagRequestId();
+}
+
+
+NCBI_DEPRECATED
+inline void SetFastCGIIteration(int id)
+{
+    SetDiagRequestId(id);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1003,8 +906,9 @@ struct SDiagMessageData;
 /// NOTE 2:  By default, the errors will be written to standard error stream.
 
 struct NCBI_XNCBI_EXPORT SDiagMessage {
-    typedef int TPID; ///< Process ID
-    typedef int TTID; ///< Thread ID
+    typedef int  TPID;  ///< Process ID
+    typedef int  TTID;  ///< Thread ID
+    typedef Int8 TUID;  ///< Unique process ID
 
     /// Initalize SDiagMessage fields.
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
@@ -1021,9 +925,27 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
                  int         thr_post  = 0,
                  int         iter      = 0);
 
+    /// Copy constructor required to store the messages and flush them when
+    /// the diagnostics setup is finished.
+    SDiagMessage(const SDiagMessage& message);
+
+    /// Assignment of messages
+    SDiagMessage& operator=(const SDiagMessage& message);
+
     /// Parse a string back into SDiagMessage
     SDiagMessage(const string& message);
     ~SDiagMessage(void);
+
+    /// Type of event to report
+    enum EEventType {
+        eEvent_Start,        ///< Application start
+        eEvent_Stop,         ///< Application exit
+        eEvent_Extra,        ///< Other application events
+        eEvent_RequestStart, ///< Start processing request
+        eEvent_RequestStop   ///< Finish processing request
+    };
+
+    static string GetEventName(EEventType event);
 
     mutable EDiagSev m_Severity;   ///< Severity level
     const char*      m_Buffer;     ///< Not guaranteed to be '\0'-terminated!
@@ -1043,16 +965,19 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     TTID             m_TID;        ///< Thread ID
     int              m_ProcPost;   ///< Number of the post in the process
     int              m_ThrPost;    ///< Number of the post in the thread
-    int              m_Iteration;  ///< FastCGI iteration
+    int              m_RequestId;  ///< FastCGI iteration or request ID
+
+    /// If the severity is eDPF_AppLog, m_Event contains event type.
+    EEventType       m_Event;
 
     /// Get UID from current context or parsed from a string
-    CDiagContext::TUID GetUID(void) const;
+    TUID GetUID(void) const;
     /// Get time and date - current or parsed.
     CTime GetTime(void) const;
 
-    // Compose a message string in the standard format(see also "flags"):
-    //    "<file>", line <line>: <severity>: [<prefix>] <message> [EOL]
-    // and put it to string "str", or write to an output stream "os".
+    /// Compose a message string in the standard format(see also "flags"):
+    ///    "<file>", line <line>: <severity>: [<prefix>] <message> [EOL]
+    /// and put it to string "str", or write to an output stream "os".
 
     /// Which write flags should be output in diagnostic message.
     enum EDiagWriteFlags {
@@ -1067,6 +992,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     
     /// Write to stream.
     CNcbiOstream& Write  (CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
+
     /// For compatibility x_Write selects old or new message formatting
     /// depending on DIAG_OLD_POST_FORMAT parameter.
     CNcbiOstream& x_Write(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
@@ -1083,9 +1009,18 @@ private:
     void x_SetFormat(EFormatFlag fmt) const { m_Format = fmt; }
     bool x_IsSetOldFormat(void) const;
     friend class CDoubleDiagHandler;
+    friend class CDiagContext;
 
-    SDiagMessageData* m_Data;
-    mutable EFormatFlag m_Format;
+    // Initialize data with the current values
+    void x_InitData(void) const;
+    // Save current context properties
+    void x_SaveProperties(const string& host,
+                          const string& client,
+                          const string& session,
+                          const string& app_name) const;
+
+    mutable SDiagMessageData* m_Data;
+    mutable EFormatFlag       m_Format;
 };
 
 /// Insert message in output stream.
@@ -1093,6 +1028,173 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
     return mess.Write(os);
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDiagContext --
+///
+/// NCBI diagnostic context. Storage for application-wide properties.
+
+class CStopWatch;
+class CDiagHandler;
+class CNcbiRegistry;
+
+/// Where to write the application's diagnostics to.
+enum EAppDiagStream {
+    eDS_ToStdout,    ///< To standard output stream
+    eDS_ToStderr,    ///< To standard error stream
+    eDS_ToStdlog,    ///< Try standard log file (app.name + ".log") in /log/
+                     ///< and current directory, use stderr if both fail.
+    eDS_ToMemory,    ///< Keep in a temp.memory buffer, see FlushMessages()
+    eDS_Disable,     ///< Dont write it anywhere
+    eDS_User,        ///< Leave as was previously set (or not set) by user
+    eDS_AppSpecific, ///< Call the application's SetupDiag_AppSpecific()
+                     ///< @deprecated
+    eDS_Default,     ///< Try standard log file (app.name + ".log") in the
+                     ///< current directory, use stderr on failure.
+    eDS_ToSyslog     ///< To system log daemon
+};
+
+
+/// Flags to control collecting messages and flushing them to the new
+/// destination when switching diag handlers.
+enum EDiagCollectMessages {
+    eDCM_Init,        ///< Start collecting messages (with limit), do nothing
+                      ///< if already initialized.
+    eDCM_InitNoLimit, ///< Start collecting messages without limit (must stop
+                      ///< collecting later using eDCM_Flush or eDCM_Discard).
+    eDCM_NoChange,    ///< Continue collecting messages if already started.
+    eDCM_Flush,       ///< Flush the collected messages and stop collecting.
+    eDCM_Discard      ///< Discard the collected messages without flushing.
+};
+
+
+class NCBI_XNCBI_EXPORT CDiagContext
+{
+public:
+    CDiagContext(void);
+    ~CDiagContext(void);
+
+    typedef SDiagMessage::TUID TUID;
+
+    /// Return (create if not created yet) unique diagnostic ID.
+    TUID GetUID(void) const;
+    /// Return string representation of UID
+    string GetStringUID(TUID uid = 0) const;
+
+    /// Set AutoWrite flag. If set, each property is posted to the current
+    /// app-log stream when a new value is set.
+    void SetAutoWrite(bool value);
+
+    /// Set application context property by name.
+    /// Write property to the log if AutoPrint flag is set.
+    void SetProperty(const string& name, const string& value);
+
+    /// Get application context property by name, return empty string if the
+    /// property is not set.
+    string GetProperty(const string& name) const;
+
+    /// Forced dump of all set properties.
+    void PrintProperties(void) const;
+
+    static const char* kProperty_UserName;
+    static const char* kProperty_HostName;
+    static const char* kProperty_HostIP;
+    static const char* kProperty_ClientIP;
+    static const char* kProperty_SessionID;
+    static const char* kProperty_AppName;
+    static const char* kProperty_ExitSig;
+    static const char* kProperty_ExitCode;
+    static const char* kProperty_ReqStatus;
+    static const char* kProperty_ReqTime;
+    static const char* kProperty_BytesRd;
+    static const char* kProperty_BytesWr;
+
+    /// Print start/stop etc. message. If the following values are set as
+    /// properties, they will be dumped before the message:
+    ///   host | host_ip_addr
+    ///   client_ip
+    ///   session_id
+    ///   app_name
+    /// All messages have the following prefix:
+    ///   PID/TID/ITER UID TIME HOST CLIENT SESSION_ID APP_NAME
+    /// Depending on its type, a message can be prefixed with the following
+    /// properties if they are set:
+    ///   start
+    ///   stop [SIG] [EXIT_CODE] ELAPSED_TIME
+    ///   extra
+    ///   request-start
+    ///   request-stop [STATUS] [REQ_ELAPSED_TIME] [BYTES_RD] [BYTES_WR]
+    void PrintStart(const string& message) const;
+    /// Print exit message.
+    void PrintStop(void) const;
+    /// Print extra message.
+    void PrintExtra(const string& message) const;
+    /// Print request start message (for request-driven applications)
+    void PrintRequestStart(const string& message) const;
+    /// Print request stop message (for request-driven applications)
+    void PrintRequestStop(void) const;
+
+    /// Check old/new format flag (for compatibility only)
+    static bool IsSetOldPostFormat(void);
+    /// Set old/new format flag
+    static void SetOldPostFormat(bool value);
+
+    /// Set username property
+    /// @sa SetDiagUserAndHost
+    void SetUsername(const string& username);
+    /// Set hostname property
+    /// @sa SetDiagUserAndHost
+    void SetHostname(const string& hostname);
+
+    /// Write standard prefix to the stream. If SDiagMessage is provided,
+    /// take values from the message (PID/TID/RID etc.), otherwise use
+    /// other sources (e.g. current diag buffer).
+    void WriteStdPrefix(CNcbiOstream& ostr,
+                        const SDiagMessage* msg) const;
+
+    /// Start collecting all messages (the collected messages can be flushed
+    /// to a new destination later). Stop collecting messages when max_size
+    /// is reached.
+    void InitMessages(size_t max_size = 100);
+    /// Save new message
+    void PushMessage(const SDiagMessage& message);
+    /// Flush the collected messages to the current diag handler.
+    /// Does not clear the collected messages.
+    void FlushMessages(CDiagHandler& handler);
+    /// Discard the collected messages without printing them.
+    void DiscardMessages(void);
+
+    /// Application-wide diagnostics setup. Attempts to create log files
+    /// or diag streams according to the 'ds' flag. If 'config' is set,
+    /// gets name of the log file from the registry.
+    static void SetupDiag(EAppDiagStream       ds = eDS_Default,
+                          CNcbiRegistry*       config = NULL,
+                          EDiagCollectMessages collect = eDCM_NoChange);
+
+private:
+    // Initialize UID
+    void x_CreateUID(void) const;
+    // Write message to the log using current handler
+    void x_PrintMessage(SDiagMessage::EEventType event,
+                        const string&            message) const;
+
+    typedef map<string, string> TProperties;
+
+    // Saved messages to be flushed after setting up log files
+    typedef list<SDiagMessage> TMessages;
+
+    mutable TUID           m_UID;
+    TProperties            m_Properties;
+    CStopWatch*            m_StopWatch;
+    auto_ptr<TMessages>    m_Messages;
+    size_t                 m_MaxMessages;
+};
+
+
+/// Get diag context instance
+NCBI_XNCBI_EXPORT CDiagContext& GetDiagContext(void);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1109,6 +1211,9 @@ public:
 
     /// Post message to handler.
     virtual void Post(const SDiagMessage& mess) = 0;
+
+    /// Get current diag posts destination
+    virtual string GetLogName(void);
 };
 
 /// Diagnostic handler function type.
@@ -1171,6 +1276,30 @@ NCBI_XNCBI_EXPORT
 extern void SetDiagFilter(EDiagFilter what, const char* filter_str);
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CStreamDiagHandler_Base --
+///
+/// Base class for stream and file based handlers
+
+class NCBI_XNCBI_EXPORT CStreamDiagHandler_Base : public CDiagHandler
+{
+public:
+    CStreamDiagHandler_Base(void);
+
+    virtual string GetLogName(void);
+protected:
+    /// Checks for eDPF_AtomicWrite and uses temporary stream
+    /// to buffer the whole message if necessary.
+    void WriteMessage(CNcbiOstream& os,
+                      const SDiagMessage& mess,
+                      bool quick_flush);
+    void SetLogName(const string& log_name) { m_LogName = log_name; }
+
+private:
+    string m_LogName;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -1178,7 +1307,7 @@ extern void SetDiagFilter(EDiagFilter what, const char* filter_str);
 ///
 /// Specialization of "CDiagHandler" for the stream-based diagnostics.
 
-class NCBI_XNCBI_EXPORT CStreamDiagHandler : public CDiagHandler
+class NCBI_XNCBI_EXPORT CStreamDiagHandler : public CStreamDiagHandler_Base
 {
 public:
     /// Constructor.
@@ -1189,8 +1318,9 @@ public:
     ///   Output stream.
     /// @param quick_flush
     ///   Do stream flush after every message. 
-    CStreamDiagHandler(CNcbiOstream* os, bool quick_flush = true)
-        : m_Stream(os), m_QuickFlush(quick_flush) {}
+    CStreamDiagHandler(CNcbiOstream* os,
+                       bool          quick_flush = true,
+                       const string& stream_name = "");
 
     /// Post message to the handler.
     virtual void Post(const SDiagMessage& mess);
@@ -1226,7 +1356,7 @@ enum EDiagFileType
     eDiagFile_All     ///< All log files
 };
 
-class NCBI_XNCBI_EXPORT CFileDiagHandler : public CDiagHandler
+class NCBI_XNCBI_EXPORT CFileDiagHandler : public CStreamDiagHandler_Base
 {
 public:
     /// Constructor. initializes log file(s) with the arguments.
@@ -1324,7 +1454,8 @@ extern void SetDiagStream
 (CNcbiOstream* os,
  bool          quick_flush  = true,///< Do stream flush after every message
  FDiagCleanup  cleanup      = 0,   ///< Call "cleanup(cleanup_data)" if diag.
- void*         cleanup_data = 0    ///< Stream is changed (see SetDiagHandler)
+ void*         cleanup_data = 0,   ///< Stream is changed (see SetDiagHandler)
+ const string& stream_name  = "STREAM" ///< Stream name (e.g. STDERR, file.log)
  );
 
 // Return TRUE if "os" is the current diag. stream.
@@ -1576,6 +1707,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.118  2006/10/31 18:41:16  grichenk
+ * Redesigned diagnostics setup.
+ * Moved the setup function to ncbidiag.cpp.
+ *
  * Revision 1.117  2006/09/12 15:02:04  grichenk
  * Fixed log file name extensions.
  * Added GetDiagStream().

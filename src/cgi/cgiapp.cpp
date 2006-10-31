@@ -423,8 +423,8 @@ CCgiApplication::CCgiApplication(void)
     SuppressSystemMessageBox();
 
     // Turn on iteration number
-    SetDiagPostFlag(eDPF_Iteration);
-    SetDiagTraceFlag(eDPF_Iteration);
+    SetDiagPostFlag(eDPF_RequestId);
+    SetDiagTraceFlag(eDPF_RequestId);
 
     SetStdioFlags(fBinaryCin | fBinaryCout);
     DisableArgDescriptions();
@@ -684,7 +684,7 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
                                | eDPF_ErrCode | eDPF_ErrSubCode);
 
     if ( !CDiagContext::IsSetOldPostFormat() ) {
-        defaults |= (eDPF_UID | eDPF_PID | eDPF_Iteration |
+        defaults |= (eDPF_UID | eDPF_PID | eDPF_RequestId |
             eDPF_SerialNo | eDPF_ErrorID);
     }
 
@@ -714,7 +714,7 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
         s_FlagMap["tid"]         = eDPF_TID;
         s_FlagMap["serial"]      = eDPF_SerialNo;
         s_FlagMap["serial_thr"]  = eDPF_SerialNo_Thread;
-        s_FlagMap["iteration"]   = eDPF_Iteration;
+        s_FlagMap["iteration"]   = eDPF_RequestId;
         s_FlagMap["uid"]         = eDPF_UID;
     }
     list<string> flags;
@@ -1142,6 +1142,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.90  2006/10/31 18:41:17  grichenk
+* Redesigned diagnostics setup.
+* Moved the setup function to ncbidiag.cpp.
+*
 * Revision 1.89  2006/09/18 15:01:55  grichenk
 * Fixed log file creation. Check if log dir exists.
 *
