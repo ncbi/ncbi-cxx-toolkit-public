@@ -46,6 +46,11 @@ BEGIN_SCOPE(cd_utils)
 class NCBI_CDUTILS_EXPORT CFastaIOWrapper
 {
 
+protected:
+
+    static const char gt;
+    static const char nl;
+
 public:
 
     CFastaIOWrapper(bool cacheRawString = false) {
@@ -63,6 +68,14 @@ public:
         ostream << m_activeFastaString;
         return (m_activeFastaString.length() > 0);
     }
+
+
+    virtual unsigned int GetNumRead() const;   //  uses active string; just counts # of '>'
+    virtual string GetActiveDefline(unsigned int index) const;
+    virtual string GetActiveSequence(unsigned int index) const;
+    virtual string GetRawDefline(unsigned int index) const;  //  returns empty string if raw string not cached
+    virtual string GetRawSequence(unsigned int index) const; //  returns empty string if raw string not cached
+
 
     //  Subclasses have option to fill in a CSeq_entry.
     bool HasSeqEntry() const {return m_seqEntry.NotEmpty();}
@@ -110,6 +123,8 @@ protected:
     bool m_useBioseqSet;  //  if true, force the CSeq_entry to use a Bioseq-set even if only one sequence
     CRef< CSeq_entry > m_seqEntry;
 
+    string GetSubstring(const string& s, unsigned int index, bool isDefline) const;
+
 };
 
 
@@ -139,10 +154,12 @@ public:
     //  true then it is also saved as 'm_rawFastaString' which will not be manipulated.
     virtual bool ReadFile(CNcbiIstream& iStream);
 
+
     //  Use default implementation for these virtuals...
 //    virtual bool Write(CNcbiOstream& ostream, string& err) {};
 //    virtual bool ParseString(const string& fastaString, string& err);
 //    virtual string GetFastaString(bool processedOrRaw = true);
+
 
     void SetFastaFlags(TReadFastaFlags flagsToSet) {
         m_readFastaFlags |= flagsToSet;
@@ -161,6 +178,7 @@ protected:
 
     //  Use 'ReadFasta' method with the flags currently set.
 //    bool Old_ReadFile(CNcbiIstream& iStream);  //  removed as of rev 1.4
+
 };
 
 
@@ -172,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/11/01 17:36:09  lanczyck
+ * add methods to access raw/active fasta strings
+ *
  * Revision 1.4  2006/10/12 15:08:34  lanczyck
  * deprecate use of old ReadFasta method in favor of CFastaReader class
  *

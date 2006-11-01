@@ -60,6 +60,9 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
 
+const char CFastaIOWrapper::gt = '>';
+const char CFastaIOWrapper::nl = '\n';
+
 bool CBasicFastaWrapper::ReadAsSeqEntry(CNcbiIstream& iStream, CRef< CSeq_entry >& seqEntry) 
 {
     bool result = ReadFile(iStream);
@@ -125,12 +128,83 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
     return result;
 }
 
+
+unsigned int CFastaIOWrapper::GetNumRead() const
+{
+    return count(m_activeFastaString.begin(), m_activeFastaString.end(), gt);
+}
+
+string CFastaIOWrapper::GetSubstring(const string& s, unsigned int index, bool isDefline) const
+{
+    string result = "";
+    int nFound = -1;
+    SIZE_TYPE pos = 0, nextPos = 0;
+    while (nextPos != NPOS && nFound < (int) index) {
+        nextPos = s.find(gt, pos);
+        if (nextPos != NPOS) {
+            ++nFound;
+            ++nextPos;  //  advance to next character in the string
+            pos = nextPos;
+        }
+//        cout << "nFound = " << nFound << "; pos = " << pos << "; nextPos = " << nextPos << endl;
+    }
+    if (pos > 0) --pos;
+
+    if (pos != NPOS && nFound == (int) index) {
+        nextPos = s.find(nl, pos);
+        if (nextPos != NPOS) {
+            if (isDefline) {
+                nextPos = nextPos - pos;  //  no +1 as I don't care about the new line
+                result = s.substr(pos, nextPos);
+            } else {
+                pos = nextPos + 1;  //  skip the newline
+                nextPos = s.find(gt, pos);
+                if (nextPos != NPOS) {
+                    nextPos = nextPos - pos - 1;  //  -1 as I don't care about the last new line itself
+                }
+                result = s.substr(pos, nextPos);
+            }
+        }
+    }
+    return result;
+}
+
+string CFastaIOWrapper::GetActiveDefline(unsigned int index) const
+{
+    return GetSubstring(m_activeFastaString, index, true);
+}
+
+string CFastaIOWrapper::GetActiveSequence(unsigned int index) const
+{
+    return GetSubstring(m_activeFastaString, index, false);
+}
+
+string CFastaIOWrapper::GetRawDefline(unsigned int index) const
+{
+    if (!m_cacheRawFasta) 
+        return "";
+    else
+        return GetSubstring(m_rawFastaString, index, true);
+}
+
+string CFastaIOWrapper::GetRawSequence(unsigned int index) const
+{
+    if (!m_cacheRawFasta) 
+        return "";
+    else
+        return GetSubstring(m_rawFastaString, index, false);
+}
+
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/11/01 17:35:50  lanczyck
+ * add methods to access raw/active fasta strings
+ *
  * Revision 1.4  2006/10/12 15:08:48  lanczyck
  * deprecate use of old ReadFasta method in favor of CFastaReader class
  *
