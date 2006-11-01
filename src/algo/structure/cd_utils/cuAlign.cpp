@@ -275,6 +275,39 @@ void SeqAlignSwapMasterSlave(CRef< CSeq_align >& seqAlign, CRef< CSeq_align >& s
     }
 }
 
+//  Assumes CDD-style seq-align using Dendiags with dimension 2.
+bool ChangeSeqIdInSeqAlign(CRef< CSeq_align>& sa, const CRef< CSeq_id >& newSeqId, bool onMaster)
+{
+    bool result = (sa->SetSegs().IsDendiag() && sa->SetSegs().SetDendiag().size() > 0);
+    TDendiag_it ddIt, ddEnd;
+    unsigned int index = (onMaster) ? 0 : 1;
+
+    //  Sanity check the dendiag...
+    if (result) {
+        ddIt  = sa->SetSegs().SetDendiag().begin();
+        ddEnd = sa->SetSegs().SetDendiag().end();
+        for (; ddIt != ddEnd; ++ddIt) {
+            if ((*ddIt)->GetDim() != 2 || (*ddIt)->GetIds().size() != 2) {
+                result = false;
+                break;
+            }
+        }
+    }
+
+    if (result) {
+        ddIt  = sa->SetSegs().SetDendiag().begin();
+        ddEnd = sa->SetSegs().SetDendiag().end();
+        CDense_diag::TIds ids;
+        for (; ddIt != ddEnd; ++ddIt) {
+            ids = (*ddIt)->SetIds();
+            ids[index]->Assign(*newSeqId);
+        }
+    }
+
+    return result;
+}
+
+
 //  convenience function
 int MapPositionToMaster(int childPos, const CSeq_align&  align) {
 
@@ -1560,6 +1593,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/01 17:45:42  lanczyck
+ * add method:  ChangeSeqIdInSeqAlign
+ *
  * Revision 1.3  2006/01/10 16:54:51  lanczyck
  * eliminate unused variable warnings
  *

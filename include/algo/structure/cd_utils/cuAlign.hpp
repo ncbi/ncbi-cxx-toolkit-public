@@ -93,6 +93,10 @@ bool SeqAlignsAreEquivalent(const CRef< CSeq_align >& align1, const CRef< CSeq_a
 NCBI_CDUTILS_EXPORT 
 void SeqAlignSwapMasterSlave(CRef< CSeq_align >& seqAlign, CRef< CSeq_align >& swappedSeqAlign);
 
+//   Replace the indicated seq-id in the CSeq_align with newSeqId.
+NCBI_CDUTILS_EXPORT 
+bool ChangeSeqIdInSeqAlign(CRef< CSeq_align>& sa, const CRef< CSeq_id >& newSeqId, bool onMaster);
+
 //  coordinate mapping functions; return INVALID_POSITION on failure
 NCBI_CDUTILS_EXPORT 
 int  MapPositionToMaster(int childPos, const CSeq_align&  align);
@@ -247,6 +251,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/11/01 17:45:24  lanczyck
+ * add method:  ChangeSeqIdInSeqAlign
+ *
  * Revision 1.2  2006/08/09 18:41:23  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
