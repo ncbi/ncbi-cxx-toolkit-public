@@ -63,6 +63,8 @@ public:
 
 	void skipUnalignedSeg(int threshold);
 	//void columnInclusionThreshold(double percentage){m_inclusionRule = percentage;};
+
+    double GetInclusionRule() const {return m_inclusionRule;}
 	
 	static CRef<CSeq_align_set> degapAlignment(CCdCore* cd);
 	static void degapAlignment(CCdCore* cd, list< CRef< CSeq_align > >& seqAligns);
@@ -91,6 +93,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/11/01 17:34:21  lanczyck
+ * add accessor method for m_inclusionRule
+ *
  * Revision 1.4  2006/08/09 18:41:23  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
