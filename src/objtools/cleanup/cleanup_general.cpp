@@ -92,6 +92,8 @@ void CCleanup_imp::x_TagCleanup(CDbtag::TTag& tag)
 *  LocusID          => GeneID
 *  MaizeDB          => MaizeGDB
 *  GeneW            => HGNC
+*  MGD              => MGI
+*  IFO              => NBRC
 **/
 void CCleanup_imp::x_DbCleanup(string& db)
 {
@@ -113,6 +115,12 @@ void CCleanup_imp::x_DbCleanup(string& db)
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase(db, "GeneW")) {
         db = "HGNC";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
+    } else if (NStr::EqualNocase(db, "MGD")) {
+        db = "MGI";
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
+    } else if (NStr::EqualNocase(db, "IFO")) {
+        db = "NBRC";
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
 }
@@ -561,6 +569,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/11/01 13:57:52  rsmith
+ * dbtags: MGD -> MGI, IFO -> NBRC
+ *
  * Revision 1.4  2006/09/11 17:14:28  ludwigf
  * CHANGED: Do not consider names in paretheses (like nicknames) when making
  *  the list of initials.
