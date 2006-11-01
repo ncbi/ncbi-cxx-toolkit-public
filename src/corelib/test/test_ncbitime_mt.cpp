@@ -34,6 +34,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/test_mt.hpp>
+#include <stdlib.h>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -272,16 +273,25 @@ static void s_TestGMT(int idx)
 
     // Test GetTimeT
     {{  
-        time_t timer=time(0);
-        CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecisionDefault);
-        CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
+        time_t timer = time(0);
+        CTime tgmt(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecisionDefault);
+        CTime tloc(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
         CTime t(timer);
-        tg.SetTimeT(timer);
-        tl.SetTimeT(timer);
+        // Set the same time to all time objects
+        tgmt.SetTimeT(timer);
+        tloc.SetTimeT(timer);
 
-        assert(timer == tg.GetTimeT());
-        assert(timer == tl.GetTimeT());
         assert(timer == t.GetTimeT());
+        assert(timer == tgmt.GetTimeT());
+        // On the day of changing to summer/winter time, the local time
+        // converted to GMT may differ from the value returned by time(0),
+        // because in the common case API don't know is DST in effect for
+        // specified local time or not (see mktime()).
+        time_t l_ = tloc.GetTimeT();
+        if (timer != l_ ) {
+            if ( abs((int)(timer - l_)) > 3600 )
+                assert(timer == l_);
+        }
     }}
 
     // Test TimeZoneDiff (1)
@@ -439,6 +449,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2006/11/01 20:21:52  ivanov
+ * Fixed s_testGMT for cases when DST is changing
+ *
  * Revision 6.10  2006/01/12 15:43:20  ivanov
  * Use LOG_POST instead of cout
  *

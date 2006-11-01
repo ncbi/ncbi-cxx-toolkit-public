@@ -34,6 +34,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -599,18 +600,34 @@ static void s_TestGMT(void)
     {{   
         LOG_POST("\nTest GetTimeT");
 
-        time_t timer=time(0);
-        CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecisionDefault);
-        CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
+        time_t timer = time(0);
+        CTime tgmt(CTime::eCurrent, CTime::eGmt,   CTime::eTZPrecisionDefault);
+        CTime tloc(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
         CTime t(timer);
+        // Set the same time to all time objects
+        tgmt.SetTimeT(timer);
+        tloc.SetTimeT(timer);
+
+        time_t g_ = tgmt.GetTimeT();
+        time_t l_ = tloc.GetTimeT();
+        time_t t_ = t.GetTimeT();
+
         LOG_POST(STR(t));
-        LOG_POST(NStr::Int8ToString(tg.GetTimeT()/3600) + " - " +
-                 NStr::Int8ToString(tl.GetTimeT()/3600) + " - " +
-                 NStr::Int8ToString( t.GetTimeT()/3600) + " - " +
+        LOG_POST(NStr::Int8ToString(g_/3600) + " - " +
+                 NStr::Int8ToString(l_/3600) + " - " +
+                 NStr::Int8ToString(t_/3600) + " - " +
                  NStr::Int8ToString(timer/3600) + "\n");
-        assert(timer == tg.GetTimeT());
-        assert(timer == tl.GetTimeT());
-        assert(timer == t.GetTimeT());
+
+        assert(timer == t_);
+        assert(timer == g_);
+        // On the day of changing to summer/winter time, the local time
+        // converted to GMT may differ from the value returned by time(0),
+        // because in the common case API don't know is DST in effect for
+        // specified local time or not (see mktime()).
+        if (timer != l_) {
+            if ( abs((int)(timer - l_)) > 3600 )
+                assert(timer == l_);
+        }
 
         for (int i = 0; i < 2; i++) {
             CTime tt(2001, 4, 1, i>0 ? 2 : 1, i>0 ? (i-1) : 59, 
@@ -1065,6 +1082,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.32  2006/11/01 20:21:52  ivanov
+ * Fixed s_testGMT for cases when DST is changing
+ *
  * Revision 6.31  2006/06/06 12:21:05  ivanov
  * Use NStr::Int8ToString for time_t values
  *
