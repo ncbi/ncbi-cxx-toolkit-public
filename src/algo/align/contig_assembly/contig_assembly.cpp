@@ -112,6 +112,15 @@ CRef<CSeq_align_set> CContigAssembly::Blastn(const CSeq_id& query_id,
     query_loc.SetWhole().Assign(query_id);
     CSeq_loc subject_loc;
     subject_loc.SetWhole().Assign(subject_id);
+    return Blastn(query_loc, subject_loc, param_string, scope);
+}
+
+
+CRef<CSeq_align_set> CContigAssembly::Blastn(const CSeq_loc& query_loc,
+                                             const CSeq_loc& subject_loc,
+                                             const string& param_string,
+                                             CScope& scope)
+{
     SSeqLoc query_sl(query_loc, scope);
     SSeqLoc subject_sl(subject_loc, scope);
     
@@ -894,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/11/01 21:38:09  jcherry
+ * Added signature of CContigAssembly::Blastn that takes sequence locations
+ *
  * Revision 1.12  2006/09/25 20:13:42  jcherry
  * Report all four unaligned tails rather than "max_dovetail"
  *

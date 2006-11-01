@@ -91,6 +91,11 @@ public:
            const objects::CSeq_id& subject_id,
            const string& param_string, objects::CScope& scope);
 
+    static CRef<objects::CSeq_align_set>
+    Blastn(const objects::CSeq_loc& query_loc,
+           const objects::CSeq_loc& subject_loc,
+           const string& param_string, objects::CScope& scope);
+
     /// Given a set of alignments, pick out a diagonal to use as
     /// the center of a band in a banded alignment.
     static void FindDiagFromAlignSet(const objects::CSeq_align_set& align_set,
@@ -206,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/11/01 21:38:09  jcherry
+ * Added signature of CContigAssembly::Blastn that takes sequence locations
+ *
  * Revision 1.8  2006/09/25 20:13:41  jcherry
  * Report all four unaligned tails rather than "max_dovetail"
  *
