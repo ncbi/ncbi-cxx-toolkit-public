@@ -65,6 +65,7 @@
  <!ATTLIST Tool	TypeLibraryName                 CDATA #IMPLIED>
  <!ATTLIST Tool	HeaderFileName                  CDATA #IMPLIED>
  <!ATTLIST Tool	AdditionalDependencies          CDATA #IMPLIED>
+ <!ATTLIST Tool LargeAddressAware               CDATA #IMPLIED>
  <!ATTLIST Tool	LinkIncremental                 CDATA #IMPLIED>
  <!ATTLIST Tool	GenerateDebugInformation        CDATA #IMPLIED>
  <!ATTLIST Tool	SubSystem                       CDATA #IMPLIED>

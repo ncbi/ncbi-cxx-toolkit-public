@@ -368,6 +368,7 @@ struct ILinkerTool : public ITool
     virtual string AdditionalOptions(void)			  const = 0;
     virtual string OutputFile(void)					  const = 0;
     virtual string LinkIncremental(void)			  const = 0;
+    virtual string LargeAddressAware(void)            const = 0;
     virtual string GenerateDebugInformation(void)	  const = 0;
     virtual string ProgramDatabaseFile(void)		  const = 0;
     virtual string SubSystem(void)					  const = 0;
@@ -549,6 +550,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/11/01 15:45:19  gouriano
+ * Added LargeAddressAware
+ *
  * Revision 1.28  2006/08/04 19:11:48  gouriano
  * Added AdditionalDependencies Linker option
  *

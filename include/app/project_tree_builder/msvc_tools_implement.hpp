@@ -313,6 +313,7 @@ public:
     }
     
     SUPPORT_LINKER_OPTION(LinkIncremental)
+    SUPPORT_LINKER_OPTION(LargeAddressAware)
     SUPPORT_LINKER_OPTION(GenerateDebugInformation)
 
     virtual string ProgramDatabaseFile(void) const
@@ -400,6 +401,7 @@ public:
     SUPPORT_DUMMY_OPTION(AdditionalOptions)
     SUPPORT_DUMMY_OPTION(OutputFile)
     SUPPORT_DUMMY_OPTION(LinkIncremental)
+    SUPPORT_DUMMY_OPTION(LargeAddressAware)
     SUPPORT_DUMMY_OPTION(GenerateDebugInformation)
     SUPPORT_DUMMY_OPTION(ProgramDatabaseFile)
     SUPPORT_DUMMY_OPTION(SubSystem)
@@ -780,6 +782,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/11/01 15:45:19  gouriano
+ * Added LargeAddressAware
+ *
  * Revision 1.27  2006/08/04 19:11:48  gouriano
  * Added AdditionalDependencies Linker option
  *
