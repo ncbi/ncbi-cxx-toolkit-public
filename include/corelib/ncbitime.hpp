@@ -186,8 +186,8 @@ public:
 
     /// Whether to adjust for daylight saving time.
     enum EDaylight {
-        eIgnoreDaylight,   ///< Ignore daylight savings time.
-        eAdjustDaylight,   ///< Adjust for daylight savings time.
+        eIgnoreDaylight,   ///< Ignore daylight saving time.
+        eAdjustDaylight,   ///< Adjust for daylight saving time.
         eDaylightDefault = eAdjustDaylight
     };
 
@@ -616,14 +616,14 @@ public:
     /// Number of days = 1..31
     int DaysInMonth(void) const;
 
-    /// Add specified years and adjust for day light savings time.
+    /// Add specified years and adjust for daylight saving time.
     ///
     /// It is an exact equivalent of calling AddMonth(years * 12).
     /// @sa
     ///   AddMonth
     CTime& AddYear(int years = 1, EDaylight adl = eDaylightDefault);
 
-    /// Add specified months and adjust for day light savings time.
+    /// Add specified months and adjust for daylight saving time.
     ///
     /// Beware that this operation is inherently inconsistent.
     /// In case of different number of days in the months, the day number
@@ -640,36 +640,36 @@ public:
     ///   and where the time zone precision is not eNone. 
     CTime& AddMonth(int months = 1, EDaylight adl = eDaylightDefault);
 
-    /// Add specified days and adjust for day light savings time.
+    /// Add specified days and adjust for daylight saving time.
     ///
     /// @param days
     ///   Days to add. Default is 1 day.
     ///   If negative, it will result in a "subtraction" operation.
     /// @param adl
     ///   Whether to adjust for daylight saving time. Default is to adjust
-    ///   for daylight savings time. This parameter is for eLocal time zone
+    ///   for daylight saving time. This parameter is for eLocal time zone
     ///   and where the time zone precision is not eNone. 
     CTime& AddDay(int days = 1, EDaylight adl = eDaylightDefault);
 
-    /// Add specified hours and adjust for day light savings time.
+    /// Add specified hours and adjust for daylight saving time.
     ///
     /// @param hours
     ///   Hours to add. Default is 1 hour.
     ///   If negative, it will result in a "subtraction" operation.
     /// @param adl
     ///   Whether to adjust for daylight saving time. Default is to adjust
-    ///   for daylight savings time. This parameter is for eLocal time zone
+    ///   for daylight saving time. This parameter is for eLocal time zone
     ///   and where the time zone precision is not eNone. 
     CTime& AddHour(int hours = 1, EDaylight adl = eDaylightDefault);
 
-    /// Add specified minutes and adjust for day light savings time.
+    /// Add specified minutes and adjust for daylight saving time.
     ///
     /// @param minutes
     ///   Minutes to add. Default is 1 minute.
     ///   If negative, it will result in a "subtraction" operation.
     /// @param adl
     ///   Whether to adjust for daylight saving time. Default is to adjust
-    ///   for daylight savings time. This parameter is for eLocal time zone
+    ///   for daylight saving time. This parameter is for eLocal time zone
     ///   and where the time zone precision is not eNone. 
     CTime& AddMinute(int minutes = 1, EDaylight adl = eDaylightDefault);
 
@@ -1429,42 +1429,42 @@ CTime AddYear(const CTime& t, int  years = 1)
 inline
 CTime AddMonth(const CTime& t, int  months = 1)
 {
-    CTime tmp(t);
+    CTime  tmp(t);
     return tmp.AddMonth(months);
 }
 
 inline
 CTime AddDay(const CTime& t, int  days = 1)
 {
-    CTime tmp(t);
+    CTime  tmp(t);
     return tmp.AddDay(days);
 }
 
 inline
 CTime AddHour(const CTime& t, int  hours = 1)
 {
-    CTime tmp(t);
+    CTime  tmp(t);
     return tmp.AddHour(hours);
 }
 
 inline
 CTime AddMinute(const CTime& t, int  minutes = 1)
 {
-    CTime tmp(t);
+    CTime  tmp(t);
     return tmp.AddMinute(minutes);
 }
 
 inline
 CTime AddSecond(const CTime& t, long seconds = 1)
 {
-    CTime tmp(t);
+    CTime  tmp(t);
     return tmp.AddSecond(seconds);
 }
 
 inline
 CTime AddNanoSecond (const CTime& t, long nanoseconds = 1)
 {
-    CTime tmp(t);
+    CTime  tmp(t);
     return tmp.AddNanoSecond(nanoseconds);
 }
 
@@ -1484,14 +1484,14 @@ CTime CurrentTime(
     CTime::ETimeZonePrecision tzp = CTime::eTZPrecisionDefault
     )
 {
-    return CTime(CTime::eCurrent,tz,tzp);
+    return CTime(CTime::eCurrent, tz, tzp);
 }
     
 // Truncate the time to days (see CTime::Truncate)
 inline
 CTime Truncate(const CTime& t)
 {
-    CTime tmp(t);
+    CTime  tmp(t);
     return tmp.Truncate();
 }
 
@@ -1733,7 +1733,8 @@ CTime::ETimeZonePrecision CTime::SetTimeZonePrecision(ETimeZonePrecision val)
 inline 
 TSeconds CTime::TimeZoneDiff(void) const
 {
-    return GetLocalTime().DiffSecond(GetGmtTime());
+    TSeconds seconds = GetLocalTime().DiffSecond(GetGmtTime());
+    return seconds;
 }
 
 inline 
@@ -2059,6 +2060,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/11/01 20:10:47  ivanov
+ * Cosmetics
+ *
  * Revision 1.63  2006/10/24 19:11:55  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

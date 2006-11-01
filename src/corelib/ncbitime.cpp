@@ -196,14 +196,14 @@ static CTime s_Number2Date(unsigned num, const CTime& t)
     }
     // Construct new CTime object
     return
-        CTime (year, month, day, t.Hour(), t.Minute(), t.Second(),
+        CTime(year, month, day, t.Hour(), t.Minute(), t.Second(),
               t.NanoSecond(), t.GetTimeZoneFormat(), t.GetTimeZonePrecision());
 }
 
 
 // Calc <value> + <offset> on module <bound>.
-// Normalized value return in <value> and other part, which above
-// than <bound>, write at <major>.
+// Returns normalized value in <value>. 
+// The <major> will have a remainder after dividing.
 static void s_Offset(long *value, Int8 offset, long bound, int *major)
 {
     Int8 v = *value + offset;
@@ -552,6 +552,7 @@ CTime::CTime(EInitMode mode, ETimeZone tz, ETimeZonePrecision tzp)
 {
     m_Data.tz = tz;
     m_Data.tzprec = tzp;
+
     if (mode == eCurrent) {
         SetCurrent();
     } else {
@@ -590,7 +591,7 @@ void CTime::SetYear(int year)
     if ( m_Data.day > n_days ) {
         m_Data.day = n_days;
     }
-    // additional checks
+    // Additional checks
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -605,7 +606,7 @@ void CTime::SetMonth(int month)
     if ( m_Data.day > n_days ) {
         m_Data.day = n_days;
     }
-    // additional checks
+    // Additional checks
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -621,7 +622,7 @@ void CTime::SetDay(int day)
     } else {
         m_Data.day = day;
     }
-    // additional checks
+    // Additional checks
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -2171,6 +2172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2006/11/01 20:11:08  ivanov
+ * Cosmetics
+ *
  * Revision 1.77  2006/10/24 18:56:17  ivanov
  * Cosmetics: replaced tabulation with spaces
  *
