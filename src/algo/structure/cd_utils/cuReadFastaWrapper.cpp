@@ -54,6 +54,7 @@
 
 #include <algo/structure/cd_utils/cuReadFastaWrapper.hpp>
 //#include "ReadFastaWrapper.hpp"
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -202,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/11/01 21:37:09  ucko
+ * +<algorithm> for count(); get rid of DOS/Windows line endings.
+ *
  * Revision 1.5  2006/11/01 17:35:50  lanczyck
  * add methods to access raw/active fasta strings
  *
