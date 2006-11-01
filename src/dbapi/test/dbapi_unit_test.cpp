@@ -3159,6 +3159,55 @@ CDBAPIUnitTest::Test_Procedure(void)
             DumpResults(auto_stmt.get());
         }
     }
+
+    // Test output parameters ...
+    if (false) {
+        CVariant param(eDB_Int);
+
+//         auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("DBAPI_Sample..TestProc4", 1) );
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_stmt->SetParam( param, "@test_out" );
+
+//         auto_stmt->Execute();
+        auto_stmt->SendSql( "exec DBAPI_Sample..TestProc4 @test_out" );
+
+         while(auto_stmt->HasMoreResults()) {
+             if( auto_stmt->HasRows() ) {
+                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                 switch( rs->GetResultType() ) {
+                 case eDB_RowResult:
+                     while(rs->Next()) {
+                         // retrieve row results
+                     }
+                     break;
+                 case eDB_ParamResult:
+                     while(rs->Next()) {
+                         // Retrieve parameter row
+                     }
+                     break;
+                 default:
+                     break;
+                 }
+             }
+         }
+
+//         BOOST_CHECK(auto_stmt->HasMoreResults());
+//         BOOST_CHECK(auto_stmt->HasRows());
+//         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+//         BOOST_CHECK(rs.get() != NULL);
+//
+//         while (rs->Next()) {
+//             BOOST_CHECK(rs->GetVariant(1).GetString().size() > 0);
+//             BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
+//             BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), true);
+//             ++num;
+//         }
+//
+//         BOOST_CHECK(num > 0);
+
+        DumpResults(auto_stmt.get());
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -5008,11 +5057,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
-    if (args.GetDriverName() != "ftds") {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -5047,11 +5094,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (
+    if (args.GetDriverName() == "odbcw"
 //         args.GetDriverName() == "ftds63" ||
 //         args.GetDriverName() == "ftds64_odbc" ||
-//         args.GetDriverName() == "ftds64_ctlib" ||
-        args.GetDriverName() == "odbcw") {
+//         || args.GetDriverName() == "ftds64_ctlib"
+        ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
         tc->depends_on(tc_init);
         tc->depends_on(tc_parameters);
@@ -5269,6 +5316,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.110  2006/11/01 17:46:37  ssikorsk
+ * Improved Test_Procedure;
+ * Enabled Test_Procedure with the ftds driver.
+ *
  * Revision 1.109  2006/10/19 18:45:40  ssikorsk
  * Disable Test_Procedure with the ftds driver.
  *
