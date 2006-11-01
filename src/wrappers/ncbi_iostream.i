@@ -39,6 +39,28 @@
 
 namespace std {
 
+    typedef long long streamoff;  // depends on stl implementation?
+
+    // This is really instance of template fpos,
+    // and has more methods than those declared here
+    class streampos
+    {
+    public:
+        streampos operator+(streamoff off);
+        streampos operator-(streamoff off);
+        streampos& operator+=(streamoff off);
+        streampos& operator-=(streamoff off);
+        bool operator==(const streampos& rhs);
+        bool operator!=(const streampos& rhs);
+    };
+
+#ifdef SWIGPYTHON
+    %extend streampos
+    {
+        streamoff __int__() {return *self;}  // uses operator streamoff
+    };
+#endif
+
     class ios_base
     {
     public:
@@ -358,6 +380,9 @@ namespace std {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/01 14:34:29  jcherry
+ * Added streamoff and streampos
+ *
  * Revision 1.2  2006/06/12 14:00:15  jcherry
  * "string" -> "std::string"
  *
