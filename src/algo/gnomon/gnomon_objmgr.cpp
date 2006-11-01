@@ -196,7 +196,7 @@ CRef<CSeq_annot> CGnomonEngine::GetAnnot(void)
 }
 
 
-double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_loc& cds, CScope& scope, int *const gccontent)
+double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_loc& cds, CScope& scope, int *const gccontent, double *const startscore)
 {
     *gccontent = 0;
     const CSeq_id* seq_id = cds.GetId();
@@ -237,6 +237,24 @@ double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_l
     for (unsigned int i = 5;  i < seq.size() - 3;  ++i)
         score += cdr.Score(seq, i, i % 3) - ncdr.Score(seq, i);
 
+    if(startscore) {
+        CWMM_Start start(modeldatafilename, *gccontent);
+        int startposition = cds.GetTotalRange().GetFrom();
+        int extrabases = start.Left()+2;
+        CEResidueVec seq;
+        if(startposition < extrabases) {
+            seq.resize(extrabases-startposition, enN);      // fill with Ns if necessery
+        }
+        for(int i = max(0,startposition-extrabases); i < min(startposition+start.Right()+3,(int)xcript_vec.size()); ++i) { 
+            seq.push_back(fromACGT(xcript_vec[i]));
+        }
+        
+        *startscore = start.Score(seq, extrabases+2);
+        if(*startscore != BadScore()) {
+            for(unsigned int i = 5; i < seq.size(); ++i) *startscore -= ncdr.Score(seq, i);
+        }
+    }
+
     return score;
 }
 
@@ -247,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/01 23:12:00  souvorov
+ * Start score evaluation for CCodingPropensity::GetScore
+ *
  * Revision 1.2  2006/09/05 14:56:08  souvorov
  * Minor fix
  *

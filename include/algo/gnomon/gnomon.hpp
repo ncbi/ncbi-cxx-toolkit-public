@@ -113,7 +113,7 @@ class NCBI_XALGOGNOMON_EXPORT CCodingPropensity {
 public:
 
     // calculates CodingPropensity score
-    static double GetScore(const string& modeldatafilename, const CSeq_loc& cds, CScope& scope, int *const gccontent);
+    static double GetScore(const string& modeldatafilename, const CSeq_loc& cds, CScope& scope, int *const gccontent, double *const startscore = 0);
 
 };
 
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/11/01 23:12:36  souvorov
+ * Start score evaluation for CCodingPropensity::GetScore
+ *
  * Revision 1.10  2006/10/05 15:30:58  souvorov
  * Implementation of anchors for intergenics
  *
