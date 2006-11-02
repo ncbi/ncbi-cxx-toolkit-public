@@ -18705,6 +18705,10 @@ fi
 
  LIBS=$saved_LIBS
 
+# Add to orig_LIBS if present, as corelib will use it.
+if test -n "$DEMANGLE_LIBS"; then
+    orig_LIBS="$DEMANGLE_LIBS $orig_LIBS"
+fi
 # We need to include <iconv.h>, since some implementations rename the symbols.
 # This logic adapted from Bruno Haible's iconv.m4.
 echo "$as_me:$LINENO: checking for library containing iconv" >&5

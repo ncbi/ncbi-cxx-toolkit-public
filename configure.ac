@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.441 2006/11/02 17:49:51 ucko Exp $
+#  $Id: configure.ac,v 1.442 2006/11/02 19:24:34 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2769,6 +2769,10 @@ case "$host_os:$libnsl" in
 esac
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
 NCBI_CHECK_LIBS(DEMANGLE, demangle, cplus_demangle)
+# Add to orig_LIBS if present, as corelib will use it.
+if test -n "$DEMANGLE_LIBS"; then
+    orig_LIBS="$DEMANGLE_LIBS $orig_LIBS"
+fi
 dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 # We need to include <iconv.h>, since some implementations rename the symbols.
 # This logic adapted from Bruno Haible's iconv.m4.
