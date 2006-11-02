@@ -1653,7 +1653,14 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         } else if (nm == "EntrezQuery") {
             m_EntrezQuery = v.GetString();
         } else if (nm == "EvalueThreshold") {
-            opts.SetEvalueThreshold(v.GetReal());
+            if (v.IsReal()) {
+                opts.SetEvalueThreshold(v.GetReal());
+            } else if (v.IsCutoff() && v.GetCutoff().IsE_value()) {
+                opts.SetEvalueThreshold(v.GetCutoff().GetE_value());
+            } else {
+                string msg = "EvalueThreshold has unsupported type.";
+                NCBI_THROW(CBlastException, eInvalidArgument, msg);
+            }
         } else {
             found = false;
         }
@@ -1784,6 +1791,14 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
             bo.SetWordSize(v.GetInteger());
         } else if (nm == "WordThreshold") {
             bo.SetWordThreshold(v.GetInteger());
+        } else {
+            found = false;
+        }
+        break;
+        
+    case 'X':
+        if (nm == "XDropoff") {
+            bo.SetXDropoff(v.GetReal());
         } else {
             found = false;
         }
@@ -2028,6 +2043,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2006/11/02 18:49:49  bealer
+* - Allow X-dropoff in eBoth version of BlastOptions.
+* - Check and handle Cutoff type for EvalueThreshold field.
+*
 * Revision 1.49  2006/09/01 14:22:06  camacho
 * Pacify solaris compiler
 *

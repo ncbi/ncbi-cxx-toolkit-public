@@ -493,6 +493,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
         x_SetParam("InclusionThreshold", v);
         return;
         
+    case eBlastOpt_XDropoff:
+        x_SetParam("XDropoff", v);
+        return;
+        
     default:
         break;
     }
@@ -1946,6 +1950,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.85  2006/11/02 18:49:49  bealer
+* - Allow X-dropoff in eBoth version of BlastOptions.
+* - Check and handle Cutoff type for EvalueThreshold field.
+*
 * Revision 1.84  2006/06/26 19:55:53  camacho
 * Use blast4 style names for inclusion threshold
 *
