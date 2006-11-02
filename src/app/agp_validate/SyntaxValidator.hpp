@@ -89,31 +89,82 @@ private:
   static int x_byCount( value_type* a, value_type* b );
 };
 
-// Spans, file and line numbers for one component
-struct SCompSpan
-{
-  int beg, end, file_num, line_num;
-  SCompSpan(int b, int e,int f, int l)
-  {
-    beg=b;
-    end=e;
-    file_num=f;
-    line_num=l;
-  }
+// proper values for the different fields in the AGP
+typedef set<string> TValuesSet;
+// Compared to TValuesSet. provides code optimization by avoiding
+// repetetive string comparisons.
+typedef map<string, int> TValuesMap;
 
-  string ToString();
+// Values for Validatable component columns (7a-9a)
+// plus file number and line number.
+// Use init() for simple syntax validation.
+class CCompVal
+{
+public:
+  int beg, end, ori, file_num, line_num;
+
+  enum {
+    ORI_plus,
+    ORI_minus,
+    ORI_zero,
+    ORI_na,
+
+    ORI_count
+  };
+  static TValuesMap validOri;
+
+  CCompVal();
+
+  bool init(const SDataLine& dl, bool log_errors = true);
+  int getLen() const { return end - beg + 1; }
+
+  string ToString() const;
+};
+
+struct CGapVal
+{
+  int len, type, linkage;
+
+  enum {
+    GAP_contig         ,
+    GAP_clone          ,
+    GAP_fragment       ,
+    GAP_repeat         ,
+
+    GAP_centromere     ,
+    GAP_short_arm      ,
+    GAP_heterochromatin,
+    GAP_telomere       ,
+
+    //GAP_scaffold       ,
+    //GAP_split_finished ,
+
+    GAP_count
+  };
+  // Initialized on the first invokation of the constructor
+  static TValuesMap validType;
+
+  enum {
+    LINKAGE_no ,
+    LINKAGE_yes ,
+    LINKAGE_count
+  };
+  // Initialized on the first invokation of the constructor
+  static TValuesMap validLinkage;
+
+  CGapVal();
+
+  bool init(const SDataLine& dl, bool log_errors = true);
+  int getLen() { return len; }
 };
 
 // To save memoty, this is a vector instead of a map.
 // Multiple spans on one component are uncommon.
-class CCompSpans : public vector<SCompSpan>
+class CCompSpans : public vector<CCompVal>
 {
-protected:
-  //int beg, end; // the boundary of all spans
-
 public:
   // Construct a vector with one element
-  CCompSpans(const SCompSpan& src)
+  CCompSpans(const CCompVal& src)
   {
     push_back(src);
     //beg = src.beg;
@@ -126,13 +177,23 @@ public:
   // The caller can ignore the last 2 warnings for draft seqs.
   typedef pair<iterator, CAgpErr::TCode> TCheckSpan;
   TCheckSpan CheckSpan(int span_beg, int span_end, bool isPlus);
-  void AddSpan(SCompSpan& span); // CCompSpans::iterator it,
+  void AddSpan(const CCompVal& span); // CCompSpans::iterator it,
 
   // int GetTo  () { return end; }
   // int GetFrom() { return beg; }
 
 };
 
+int x_CheckIntField(const string& field,
+  const string& field_name, bool log_error = true);
+bool x_CheckValues(const TValuesSet& values,
+  const string& value, const string& field_name,
+  bool log_error = true);
+// Returns an integer constant mapped to the allowed text value,
+// -1 if the value is unknowm
+int x_CheckValues(const TValuesMap& values,
+  const string& value, const string& field_name,
+  bool log_error = true);
 
 class CAgpSyntaxValidator
 {
@@ -145,31 +206,23 @@ public:
   static bool IsGapType(const string& type);
   void PrintTotals();
 
-  static int x_CheckIntField(const string& field,
-    const string& field_name, bool log_error = true);
-
 protected:
   // Vars assigned in ValidateLine(),
-  // further validated in x_OnGapLine() x_OnComponentLine()
+  // further validated in x_OnGapLine() x_OnCompLine()
   int obj_range_len;
   bool new_obj;
 
   // Private subroutines for ValidateLine()
-  void x_OnGapLine(
-    const SDataLine& dl, const string& text_line);
-  void x_OnComponentLine(
-    const SDataLine& dl, const string& text_line);
+  void x_OnGapLine(const SDataLine& dl, const CGapVal& gap);
+  void x_OnCompLine(const SDataLine& dl, const CCompVal& comp);
 
   int m_ObjCount;
   int m_ScaffoldCount;
   int m_SingleCompScaffolds;
   int m_SingleCompObjects;
   int m_CompCount;
-  int m_CompPosCount;
-  int m_CompNegCount;
-  int m_CompZeroCount;
-  int m_CompNaCount;
   int m_GapCount;
+  int m_CompOri[CCompVal::ORI_count];
 
 
   CValuesCount m_TypeGapCnt;  // column 7: fragment, clone, ...
@@ -191,47 +244,11 @@ protected:
   typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
 
-  // proper values for the different fields in the AGP
-  typedef set<string> TValuesSet;
   TValuesSet m_ComponentTypeValues;
-  TValuesSet m_OrientaionValues;
-
-  // Compared to TValuesSet. provides code optimization by avoiding
-  // repetetive string comparisons.
-  typedef map<string, int> TValuesMap;
-  enum {
-    GAP_contig         ,
-    GAP_clone          ,
-    GAP_fragment       ,
-    GAP_repeat         ,
-
-    GAP_centromere     ,
-    GAP_short_arm      ,
-    GAP_heterochromatin,
-    GAP_telomere       ,
-
-    //GAP_scaffold       ,
-    //GAP_split_finished ,
-
-    GAP_count
-  };
-  enum {
-    LINKAGE_no ,
-    LINKAGE_yes ,
-    LINKAGE_count
-  };
-  TValuesMap m_GapTypes;
-  TValuesMap m_LinkageValues;
 
 
-  static bool x_CheckValues(const TValuesSet& values,
-    const string& value, const string& field_name,
-    bool log_error = true);
-  // Returns an integer constant mapped to the allowed text value,
-  // -1 if the value is unknowm
-  static int x_CheckValues(const TValuesMap& values,
-    const string& value, const string& field_name,
-    bool log_error = true);
+
+
 
   string prev_object;
   string prev_component_type;
@@ -249,6 +266,7 @@ protected:
   int  componentsInLastObject;
 
   static void x_PrintPatterns(CAccPatternCounter& namePatterns);
+
 };
 
 END_NCBI_SCOPE
