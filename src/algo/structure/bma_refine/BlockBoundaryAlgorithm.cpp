@@ -115,6 +115,9 @@ bool SimpleBoundaryExtender::GetNewBoundaries(ExtendableBlock& block, const BMA&
             } else {
                 i = minIndex;
             }
+
+            //  If i == 0, --i makes i = kMax_UInt!!
+            if (i == 0) break;
             --i;
         }
 
@@ -415,6 +418,9 @@ bool GreedyBoundaryExtender::GetNewBoundaries(ExtendableBlock& block, const BMA&
                 newFrom = i;
                 TRACE_MESSAGE_CL("           ==> new N-terminus chosen at " << i);
             }
+
+            //  If i == 0, --i makes i = kMax_UInt!!
+            if (i == 0) break;
             --i;
         }
         newFroms.push_back(newFrom);
@@ -476,6 +482,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/11/02 21:33:20  lanczyck
+* bug fix:  do not decrement unsigned int when it's zero!
+*
 * Revision 1.1  2005/06/28 13:44:23  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *
