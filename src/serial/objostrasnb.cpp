@@ -633,7 +633,11 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     if (!finite(data)) {
         ThrowError(fInvalidData, "invalid double: infinite");
     }
+#if 0
     int shift = int(ceil(log10(fabs(data))));
+#else
+    int shift = 0;
+#endif
     int precision = int(digits - shift);
     if ( precision < 0 )
         precision = 0;
@@ -1240,6 +1244,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.109  2006/11/02 17:00:46  gouriano
+* Corrected writing of double
+*
 * Revision 1.108  2006/10/12 15:09:12  gouriano
 * Some header files moved into impl
 *
