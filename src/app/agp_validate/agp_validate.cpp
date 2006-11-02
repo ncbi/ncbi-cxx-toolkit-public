@@ -174,7 +174,7 @@ public:
     */
     "  -species  Allow components from different subspecies during Taxid checks.\n"
     "\n"
-    "  -list         List possible syntax errors and warnings.\n"
+    "  -list         List error and warning messages.\n"
     "  -limit COUNT  Print only the first COUNT messages of each type.\n"
     "                Default=10. To print all, use: -limit 0\n"
     "\n"
@@ -491,9 +491,9 @@ void CAgpValidateApplication::x_ValidateFile(
     }
 
     {
-      bool invalid_line=false;
+      bool valid=true;
       if (m_ValidationType == VT_Syntax) {
-        invalid_line = m_LineValidator->ValidateLine(data_line, line);
+        valid = m_LineValidator->ValidateLine(data_line, line);
       } else if( !CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
         x_ValidateGenBankLine(data_line);
       }
@@ -501,7 +501,7 @@ void CAgpValidateApplication::x_ValidateFile(
       if(istr.eof()) {
         agpErr.Msg(CAgpErr::W_NoEolAtEof);
       }
-      agpErr.LineDone(line_orig, line_num, invalid_line);
+      agpErr.LineDone(line_orig, line_num, !valid);
     }
 
   NextLine: ;
@@ -574,7 +574,7 @@ void CAgpValidateApplication::x_ValidateGenBankLine(
 
   if(m_ValidationType & VT_Len) {
     // Component out of bounds check
-    int comp_end = CAgpSyntaxValidator::x_CheckIntField(
+    int comp_end = x_CheckIntField(
       dl.component_end, "component_end (column 8)" );
     if(comp_end<=0) return;
 
@@ -613,7 +613,7 @@ void CAgpValidateApplication::x_GenBankPrintTotals()
   if(e_count) {
     if(e_count==1) cout << "; 1 error";
     else cout << "; " << e_count << " errors";
-    if(agpErr.m_skipped_count) cout << ", " << agpErr.m_skipped_count << " not printed";
+    if(agpErr.m_msg_skipped) cout << ", " << agpErr.m_msg_skipped << " not printed";
     cout << ":\n";
     agpErr.PrintMessageCounts(cout, CAgpErr::CODE_First, CAgpErr::CODE_Last);
   }
