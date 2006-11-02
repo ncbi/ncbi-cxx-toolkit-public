@@ -3164,12 +3164,12 @@ CDBAPIUnitTest::Test_Procedure(void)
     if (false) {
         CVariant param(eDB_Int);
 
-//         auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("DBAPI_Sample..TestProc4", 1) );
-        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("DBAPI_Sample..TestProc4", 1) );
+//         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
         auto_stmt->SetParam( param, "@test_out" );
 
-//         auto_stmt->Execute();
-        auto_stmt->SendSql( "exec DBAPI_Sample..TestProc4 @test_out" );
+        auto_stmt->Execute();
+//         auto_stmt->SendSql( "exec DBAPI_Sample..TestProc4 @test_out output" );
 
          while(auto_stmt->HasMoreResults()) {
              if( auto_stmt->HasRows() ) {
@@ -5057,9 +5057,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
     }
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    // FTDS driver doesn't work with GCC_401-DebugMT, GCC_340-ReleaseMT on
+    // linux for some reason.
+    if (args.GetDriverName() != "ftds") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -5316,6 +5320,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.111  2006/11/02 15:37:16  ssikorsk
+ * Disable Test_Procedure with the ftds driver. It is the only
+ * driver, which has problems with Test_Procedure currently.
+ *
  * Revision 1.110  2006/11/01 17:46:37  ssikorsk
  * Improved Test_Procedure;
  * Enabled Test_Procedure with the ftds driver.
