@@ -1454,7 +1454,6 @@ void CTestApplication::Init(void)
 
 int CTestApplication::Run(void)
 {
-    SetupDiag(eDS_ToStdout);
     CExceptionReporter::EnableDefault(false);
 
     s_Compare();
@@ -1497,6 +1496,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.59  2006/11/02 14:01:54  ivanov
+ * Don't use deprecated SetupDiag()
+ *
  * Revision 6.58  2006/08/23 13:33:38  ivanov
  * Added tests for NStr::ReplaceInPlace()
  *
