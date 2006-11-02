@@ -32,17 +32,63 @@
 
 %module(docstring="Interface to the NCBI C++ Toolkit") ncbi
 
+
+#ifdef SWIGRUBY
+// int vs. enum for ios_base::fmtflags
+%ignore std::ios_base::setf;
+%ignore std::ios_base::unsetf;
+%ignore std::ios::clear;
+%ignore std::ios::setstate;
+%ignore std::ios::exceptions;
+// and ios_base::openmode
+%ignore std::ifstream::ifstream(const char *file_name, openmode flags);
+%ignore std::ifstream::open(const char *file_name, openmode flags);
+%ignore std::ofstream::ofstream(const char *file_name, openmode flags);
+%ignore std::ofstream::open(const char *file_name, openmode flags);
+%ignore *::CRotatingLogStreamBuf::CRotatingLogStreamBuf;
+
+// constants with names starting with '_' are forbidden
+%ignore _CPP_BACKWARD_BACKWARD_WARNING_H;
+%ignore _BACKWARD_BACKWARD_WARNING_H;
+
+%ignore *::CSoapServerApplication;  // ??? causes crash in require
+%ignore *::CBlobStorage_NetCache;
+%ignore *::CNetCacheStorageException;
+%ignore *::CBlobStorageFactory_NetCache;
+%ignore *::CSeq_entry_ScopeInfo;
+%ignore *::CBioseq_set_ScopeInfo;
+%ignore *::CSeq_annot_ScopeInfo;
+%ignore *::CGBReaderCacheManager;
+%ignore *::CId1Reader;
+%ignore *::CPubseqReader;
+%ignore *::CBioseq_ScopeInfo;
+#endif
+
+
 namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
 
 %include exception.i
-%exception {
+%{
+// helper function for exception catching
+void HandleException(void) {
     try {
-        $action
+        throw;
     } catch(std::exception& e) {
         // const_cast for Perl
         SWIG_exception(SWIG_RuntimeError, const_cast<char *>(e.what()));
     } catch(...) {
         SWIG_exception(SWIG_RuntimeError, "Unknown error");
+    }
+    fail:
+        return;
+}
+%}
+%exception {
+    try {
+        $action
+    } catch(...) {
+        HandleException();
+        goto fail;
     }
 }
 
@@ -67,6 +113,11 @@ namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
 
 %include ncbi_stl.i
 %include ncbi_iostream.i
+
+#ifdef SWIGPYTHON
+%include std_common.i
+%include std_set.i
+#endif
 
 #ifdef _MSC_VER
 
@@ -154,6 +205,47 @@ object = ncbi_object
 %include serial_manip.i        // MSerial_AsnText, etc.
 
 %include basic_containers.i    // vectors and lists of builtins and strings
+// Make NStr::StringTo* work with std::string and scripting lang. strings
+#ifdef SWIGPYTHON
+    %typemap(in) const ncbi::CTempString & (ncbi::CTempString temp, ncbi::CTempString *s) {
+        if (PyString_Check($input)) {
+            temp = ncbi::CTempString(PyString_AsString($input),
+                                     PyString_Size($input));
+            $1 = &temp;
+        } else if (SWIG_ConvertPtr($input, (void **) &s,
+                                   $1_descriptor, 0) != -1) {
+            $1 = s;
+        } else if (CheckPtrForbidNull($input, $descriptor(std::string *))) {
+            std::string *std_string;
+            SWIG_ConvertPtr($input, (void **) &std_string,
+                            $descriptor(std::string *), 0);
+            temp = ncbi::CTempString(*std_string);
+            $1 = &temp;
+        } else if (CheckPtrForbidNull($input, $descriptor(char *))) {
+            char *char_p;
+            SWIG_ConvertPtr($input, (void **) &char_p,
+                            $descriptor(char *), 0);
+            temp = ncbi::CTempString(char_p);
+            $1 = &temp;
+        } else {
+            SWIG_exception(SWIG_TypeError, "string expected");
+        }
+    }
+
+    %typecheck(SWIG_TYPECHECK_STRING) const ncbi::CTempString & {
+        if (CheckPtrForbidNull($input, $1_descriptor)) {
+            $1 = 1;
+        } else if (PyString_Check($input)) {
+            $1 = 1;
+        } else if (CheckPtrForbidNull($input, $descriptor(std::string *))) {
+            $1 = 1;
+        } else if (CheckPtrForbidNull($input, $descriptor(char *))) {
+            $1 = 1;
+        } else {
+            $1 = 0;
+        }
+    }
+#endif
 %import corelib/ncbiobj.hpp    // Need CConstRef before ncbi_templates.i
 %include ncbi_templates.i      // Some auto-generated %templates
 
@@ -164,6 +256,17 @@ object = ncbi_object
 #endif
 #ifdef SWIGPERL
 %rename (get) *::operator[];
+#endif
+
+# Function to break into debugger
+#ifndef _MSC_VER
+%inline %{
+
+void debugger(void) {
+    asm("int $3");
+}
+
+%}
 #endif
 
 %%
@@ -203,11 +306,29 @@ objtools/simple/simple_om.hpp
 %include additional_scripting_code.i  // lots of important extensions
 %include version.i                    // "version" global string variable
                                       // (auto-generated)
+#ifdef SWIGRUBY
+%init %{
 
+    rb_eval_string("\
+class Ncbi::CSerialObject\n\
+    def TextView()\n\
+        Ncbi::CTextEditor::DisplayText(self.Asn())\n\
+    end\n\
+end\n\
+");
+
+%}
+#endif
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/11/02 22:15:07  jcherry
+ * Exception handling: catch only (...) and handle in a function (reduces
+ * library size by 3-4 Mb).  Deal with fact that NStr methods now take
+ * CTempString.  Added debugger() function for intel linux.  Some use of
+ * standard stl wrapping for Python.  Ruby stuff.
+ *
  * Revision 1.8  2005/12/29 17:50:04  jcherry
  * Move blast formatting stuff to its own file and wrap on all platforms.
  * Fix for auto_ptr nested templates problem on Windows.
