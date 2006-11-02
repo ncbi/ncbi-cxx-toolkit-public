@@ -154,7 +154,9 @@ public:
 
   // Warnings + errors skipped,
   // either because of m_MaxRepeat or MustSkip().
-  int m_skipped_count;
+  int m_msg_skipped;
+  int m_lines_skipped;
+
 
   // Print the source line along with filename and line number.
   static void PrintLine   (CNcbiOstream& ostr,

@@ -205,7 +205,8 @@ CAgpErr::CAgpErr()
   m_messages = new CNcbiOstrstream();
   m_MaxRepeat = 0; // no limit
   m_MaxRepeatTopped = false;
-  m_skipped_count=0;
+  m_msg_skipped=0;
+  m_lines_skipped=0;
   m_line_num=1;
 
   m_line_num_prev=0;
@@ -249,12 +250,12 @@ void CAgpErr::Msg(TCode code, const string& details,
   // Suppress some messages while still counting them
   m_MsgCount[code]++;
   if( m_MustSkip[code]) {
-    m_skipped_count++;
+    m_msg_skipped++;
     return;
   }
   if( m_MaxRepeat>0 && m_MsgCount[code] > m_MaxRepeat) {
     m_MaxRepeatTopped=true;
-    m_skipped_count++;
+    m_msg_skipped++;
     return;
   }
 
@@ -296,7 +297,11 @@ void CAgpErr::LineDone(const string& s, int line_num, bool invalid_line)
 
   m_line_num_prev = line_num;
   m_line_prev = s;
-  m_invalid_prev = invalid_line;
+  if(invalid_line) {
+    m_invalid_prev = true;
+    m_lines_skipped++;
+  }
+
 
   m_two_lines_involved=false;
 }
