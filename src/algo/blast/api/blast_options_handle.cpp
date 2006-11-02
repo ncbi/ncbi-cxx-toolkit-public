@@ -101,7 +101,7 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
 	}
 
     case eBlastp:
-        retval = new CBlastProteinOptionsHandle(locality);
+        retval = new CBlastAdvancedProteinOptionsHandle(locality);
         break;
 
     case eBlastx:
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/11/02 18:14:47  madden
+ * For eBlastp create CBlastAdvancedProteinOptionsHandle
+ *
  * Revision 1.16  2006/05/08 16:48:02  bealer
  * - Defaults mode / eBoth changes.
  *
