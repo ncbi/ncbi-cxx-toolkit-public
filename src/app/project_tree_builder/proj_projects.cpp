@@ -32,6 +32,7 @@
 #include <app/project_tree_builder/proj_tree.hpp>
 
 #include <corelib/ncbienv.hpp>
+//#include <util/regexp.hpp>
 BEGIN_NCBI_SCOPE
 
 //-----------------------------------------------------------------------------
@@ -151,13 +152,24 @@ bool CProjectsLstFileFilter::CmpLstElementWithPath(const SLstElement& elt,
     for (; i != path.end() && p != elt.m_Path.end(); ++i, ++p) {
         const string& elt_i  = *p;
         const string& path_i = *i;
+        if (elt_i == ".*") {
+            ++p;
+            if (p != elt.m_Path.end()) {
+                while (++i != path.end() && *i != *p)
+                    ;
+                if (i != path.end()) {
+                    continue;
+                }
+            }
+            break;
+        }
         if (NStr::CompareNocase(elt_i, path_i) != 0) {
             if (weak) {*weak=false;}
             return false;
         }
     }
     if (weak) {*weak = (i == path.end());}
-    if ( !elt.m_Recursive && path.size() > elt.m_Path.size()) {
+    if ( !elt.m_Recursive && i != path.end() && p == elt.m_Path.end()) {
         return false;
     }
     return p == elt.m_Path.end();
@@ -200,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/11/02 15:32:47  gouriano
+ * Corrected Lst file filter
+ *
  * Revision 1.13  2005/03/30 21:12:19  gouriano
  * Added quotes to LST include file name
  *

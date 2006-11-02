@@ -227,7 +227,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,2,3) );
+    SetVersion( CVersionInfo(1,2,4) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -1172,6 +1172,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2006/11/02 15:34:22  gouriano
+ * Corrected Lst file filter
+ *
  * Revision 1.86  2006/09/26 18:50:20  gouriano
  * Added CNcbiRegistry wrapper to speed up the execution
  *
