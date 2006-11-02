@@ -132,7 +132,13 @@ bool CBasicFastaWrapper::ReadFile(CNcbiIstream& iStream)
 
 unsigned int CFastaIOWrapper::GetNumRead() const
 {
+#ifdef NCBI_COMPILER_WORKSHOP
+    unsigned int n = 0;
+    count(m_activeFastaString.begin(), m_activeFastaString.end(), gt, n);
+    return n;
+#else
     return count(m_activeFastaString.begin(), m_activeFastaString.end(), gt);
+#endif
 }
 
 string CFastaIOWrapper::GetSubstring(const string& s, unsigned int index, bool isDefline) const
@@ -203,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/11/02 01:19:54  ucko
+ * GetNumRead(): support WorkShop's nonstandard (archaic) signature for count().
+ *
  * Revision 1.6  2006/11/01 21:37:09  ucko
  * +<algorithm> for count(); get rid of DOS/Windows line endings.
  *
