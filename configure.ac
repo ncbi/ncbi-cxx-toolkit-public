@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.440 2006/10/18 15:09:48 ucko Exp $
+#  $Id: configure.ac,v 1.441 2006/11/02 17:49:51 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2492,6 +2492,17 @@ if test "$ncbi_cv_type_char_traits" = no; then
 fi
 
 
+AC_CACHE_CHECK([for std::is_sorted<> in <algorithm>], ncbi_cv_func_is_sorted,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <algorithm>]],
+       [[int a[2]; return std::is_sorted(a, a+2) ? 0 : 1;]])],
+       [ncbi_cv_func_is_sorted=yes], [ncbi_cv_func_is_sorted=no])])
+if test "$ncbi_cv_func_is_sorted" = yes; then
+   AC_DEFINE(HAVE_IS_SORTED, 1,
+             [Define to 1 if <algorithm> supplies `std::is_sorted<>'.])
+fi
+
+
 
 AC_CACHE_CHECK([for SysV semaphores], ncbi_cv_sys_semaphores,
    AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <sys/types.h>
@@ -2757,6 +2768,7 @@ case "$host_os:$libnsl" in
      solaris*:-lnsl ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
 esac
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
+NCBI_CHECK_LIBS(DEMANGLE, demangle, cplus_demangle)
 dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 # We need to include <iconv.h>, since some implementations rename the symbols.
 # This logic adapted from Bruno Haible's iconv.m4.
@@ -3598,6 +3610,29 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          ;;
    esac
 
+   BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_regex${BOOST_TAG}-static.a"; then
+       BOOST_REGEX_STATIC_LIBS=-lboost_regex${BOOST_TAG}-static
+   else
+       BOOST_REGEX_STATIC_LIBS=$BOOST_REGEX_LIBS
+   fi
+
+   AC_CACHE_CHECK([for Boost.Regex in $BOOST_PATH], ncbi_cv_lib_boost_regex,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_REGEX_LIBS $RT_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/regex.hpp>]],
+              [[throw boost::regex_error(boost::regex_constants::error_stack);]])],
+          [ncbi_cv_lib_boost_regex=yes], [ncbi_cv_lib_boost_regex=no])])
+
+   AC_CACHE_CHECK([for Boost.Spirit in $BOOST_PATH], ncbi_cv_lib_boost_spirit,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$RT_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/spirit.hpp>]],
+              [[boost::spirit::parse("123", boost::spirit::int_p);]])],
+          [ncbi_cv_lib_boost_spirit=yes], [ncbi_cv_lib_boost_spirit=no])])
+
    BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor${BOOST_TAG}-static.a"; then
        BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}-static
@@ -3621,7 +3656,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
       
    AC_CACHE_CHECK([for Boost.Test in $BOOST_PATH], ncbi_cv_lib_boost_test,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
-      LIBS="$BOOST_LIBPATH -lboost_unit_test_framework${BOOST_TAG} $RT_LIBS $orig_LIBS"
+      LIBS="$BOOST_LIBPATH $BOOST_TEST_UTF_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
           [AC_LANG_SOURCE(
               [[#include <boost/test/unit_test.hpp>
@@ -3633,13 +3668,46 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
                     test->add(BOOST_TEST_CASE(&s_Test1), 0);
                     return test;
                 }]])],
-                [ncbi_cv_lib_boost_test=yes], [ncbi_cv_lib_boost_test=no])])
+          [ncbi_cv_lib_boost_test=yes], [ncbi_cv_lib_boost_test=no])])
+
+   BOOST_THREAD_LIBS=-lboost_thread${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_thread${BOOST_TAG}-static.a"; then
+       BOOST_THREAD_STATIC_LIBS=-lboost_thread${BOOST_TAG}-static
+   else
+       BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
+   fi
+
+   AC_CACHE_CHECK([for Boost.Threads in $BOOST_PATH], ncbi_cv_lib_boost_thread,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_THREAD_LIBS $RT_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/thread.hpp>]],
+              [[boost::mutex m; boost::mutex::scoped_lock l(m);]])],
+          [ncbi_cv_lib_boost_thread=yes], [ncbi_cv_lib_boost_thread=no])])
 else
    BOOST_INCLUDE=
    BOOST_LIBPATH=
    BOOST_TAG=
+   ncbi_cv_lib_boost_regex=no
    ncbi_cv_lib_boost_test=no
+   ncbi_cv_lib_boost_thread=no
 fi
+
+if test "$ncbi_cv_lib_boost_regex" != "no"; then
+   AC_DEFINE(HAVE_BOOST_REGEX, 1,
+             [Define to 1 if the `Boost.Regex' library is available.])
+   NCBI_PACKAGE(Boost.Regex)
+else
+   BOOST_REGEX_LIBS=
+   BOOST_REGEX_STATIC_LIBS=
+fi
+
+if test "$ncbi_cv_lib_boost_spirit" != "no"; then
+   AC_DEFINE(HAVE_BOOST_SPIRIT, 1,
+             [Define to 1 if the `Boost.Spirit' headers are available.])
+   NCBI_PACKAGE(Boost.Spirit)
+fi
+
 if test "$ncbi_cv_lib_boost_test" != "no"; then
    AC_DEFINE(HAVE_BOOST_TEST, 1,
              [Define to 1 if the `Boost.Test' libraries are available.])
@@ -3651,6 +3719,15 @@ else
    BOOST_TEST_TEM_STATIC_LIBS=
    BOOST_TEST_UTF_LIBS=
    BOOST_TEST_UTF_STATIC_LIBS=
+fi
+
+if test "$ncbi_cv_lib_boost_thread" != "no"; then
+   AC_DEFINE(HAVE_BOOST_THREAD, 1,
+             [Define to 1 if the `Boost.Threads' library is available.])
+   NCBI_PACKAGE(Boost.Threads)
+else
+   BOOST_THREAD_LIBS=
+   BOOST_THREAD_STATIC_LIBS=
 fi
 
 
@@ -5352,6 +5429,7 @@ AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(CRYPT_LIBS)
 AC_SUBST(DL_LIBS)
 AC_SUBST(RT_LIBS)
+AC_SUBST(DEMANGLE_LIBS)
 AC_SUBST(ICONV_LIBS)
 AC_SUBST(Z_LIB)
 AC_SUBST(BZ2_LIB)
@@ -5380,12 +5458,16 @@ AC_SUBST(CPPUNIT_LIBS)
 AC_SUBST(BOOST_INCLUDE)
 AC_SUBST(BOOST_LIBPATH)
 AC_SUBST(BOOST_TAG)
+AC_SUBST(BOOST_REGEX_LIBS)
+AC_SUBST(BOOST_REGEX_STATIC_LIBS)
 AC_SUBST(BOOST_TEST_PEM_LIBS)
 AC_SUBST(BOOST_TEST_PEM_STATIC_LIBS)
 AC_SUBST(BOOST_TEST_TEM_LIBS)
 AC_SUBST(BOOST_TEST_TEM_STATIC_LIBS)
 AC_SUBST(BOOST_TEST_UTF_LIBS)
 AC_SUBST(BOOST_TEST_UTF_STATIC_LIBS)
+AC_SUBST(BOOST_THREAD_LIBS)
+AC_SUBST(BOOST_THREAD_STATIC_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)

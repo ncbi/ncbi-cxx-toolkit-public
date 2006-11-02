@@ -34,8 +34,17 @@
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 #undef HAVE_BERKELEY_DB_CXX
 
+/* Define to 1 if the `Boost.Regex' library is available. */
+#undef HAVE_BOOST_REGEX
+
+/* Define to 1 if the `Boost.Spirit' headers are available. */
+#undef HAVE_BOOST_SPIRIT
+
 /* Define to 1 if the `Boost.Test' libraries are available. */
 #undef HAVE_BOOST_TEST
+
+/* Define to 1 if the `Boost.Threads' library is available. */
+#undef HAVE_BOOST_THREAD
 
 /* Define to 1 if CPPUNIT libraries are available. */
 #undef HAVE_CPPUNIT
@@ -164,6 +173,9 @@
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #undef HAVE_IOS_REGISTER_CALLBACK
 
+/* Define to 1 if <algorithm> supplies `std::is_sorted<>'. */
+#undef HAVE_IS_SORTED
+
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
@@ -176,6 +188,10 @@
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBCRYPT
+
+/* Define to 1 if DEMANGLE is available, either in its own library or as part
+   of the standard libraries. */
+#undef HAVE_LIBDEMANGLE
 
 /* Define to 1 if DL is available, either in its own library or as part of the
    standard libraries. */
