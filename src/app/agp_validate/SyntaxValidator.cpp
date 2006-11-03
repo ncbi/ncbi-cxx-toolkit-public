@@ -518,7 +518,7 @@ int x_CheckValues(const TValuesMap& values,
   return it->second;
 }
 
-#define ALIGN_W(x) setw(w) << resetiosflags(ios_base::left) << (x)
+#define ALIGN_W(x) setw(w) << resetiosflags(IOS_BASE::left) << (x)
 void CAgpSyntaxValidator::PrintTotals()
 {
   //// Counts of errors and warnings
@@ -709,7 +709,7 @@ void CAgpSyntaxValidator::x_PrintPatterns(
   }
 
   // Print the total
-  cout<< setw(wPattern+2) << setiosflags(ios_base::left)
+  cout<< setw(wPattern+2) << setiosflags(IOS_BASE::left)
       << strHeader << ": " << ALIGN_W(totalCount) << "\n";
 
   // Print the patterns
@@ -727,7 +727,7 @@ void CAgpSyntaxValidator::x_PrintPatterns(
           << CAccPatternCounter::GetExpandedPattern(*it)
           << "\n";
       */
-      cout<< "  " << setw(wPattern) << setiosflags(ios_base::left)
+      cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left)
           << CAccPatternCounter::GetExpandedPattern(*it)
           << ": " << ALIGN_W( CAccPatternCounter::GetCount(*it) )
           << "\n";
@@ -747,7 +747,7 @@ void CAgpSyntaxValidator::x_PrintPatterns(
     string s = "other ";
     s+=NStr::IntToString(pat_cnt.size() - 10);
     s+=" patterns";
-    cout<< "  " << setw(wPattern) << setiosflags(ios_base::left) << s
+    cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left) << s
         << ": " << ALIGN_W( accessionsSkipped )
         << "\n";
 
