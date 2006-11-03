@@ -196,6 +196,11 @@ CRef<CSeq_annot> CGnomonEngine::GetAnnot(void)
 }
 
 
+//
+//
+// This function deduces the frame from 5p coordinate of the CDS which should be on the 5p codon boundary
+//
+// 
 double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_loc& cds, CScope& scope, int *const gccontent, double *const startscore)
 {
     *gccontent = 0;
@@ -238,20 +243,61 @@ double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_l
         score += cdr.Score(seq, i, i % 3) - ncdr.Score(seq, i);
 
     if(startscore) {
+        //
+        // start evalustion needs 17 bases total (11 before ATG and 3 after)
+        // if there is not enough sequence it will be substituted by Ns which will degrade the score
+        //
+
         CWMM_Start start(modeldatafilename, *gccontent);
-        int startposition = cds.GetTotalRange().GetFrom();
-        int extrabases = start.Left()+2;
-        CEResidueVec seq;
-        if(startposition < extrabases) {
-            seq.resize(extrabases-startposition, enN);      // fill with Ns if necessery
+
+        int totallen = xcript_vec.size();
+        int left, right;
+        int extraNs5p = 0;
+        int extrabases = start.Left()+2;            // (11) extrabases left of ATG needed for start (6) and noncoding (5) evaluation
+        if(cds.GetStrand() == eNa_strand_plus) {
+            int startposition = cds.GetTotalRange().GetFrom();
+            if(startposition < extrabases) {
+                left = 0;
+                extraNs5p = extrabases-startposition;
+            } else {
+                left = startposition-extrabases;
+            }
+            right = min(startposition+2+start.Right(),totallen-1);
+        } else {
+            int startposition = cds.GetTotalRange().GetTo();
+            if(startposition+extrabases >= totallen) {
+                right = totallen-1;
+                extraNs5p = startposition+extrabases-totallen+1;
+            } else {
+                right = startposition+extrabases;
+            }
+            left = max(0,startposition-2-start.Right());
         }
-        for(int i = max(0,startposition-extrabases); i < min(startposition+start.Right()+3,(int)xcript_vec.size()); ++i) { 
-            seq.push_back(fromACGT(xcript_vec[i]));
-        }
+
+
+        CRef<CSeq_loc> startarea(new CSeq_loc());
+        CSeq_interval& d = startarea->SetInt();
+        d.SetStrand(cds.GetStrand());
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(*seq_id);
+        d.SetId(*id);
+        d.SetFrom(left);
+        d.SetTo(right);
         
-        *startscore = start.Score(seq, extrabases+2);
+        CSeqVector sttvec(*startarea, scope);
+        sttvec.SetIupacCoding();
+        CEResidueVec sttseq;
+        sttseq.resize(extraNs5p, enN);                         // fill with Ns if necessery
+        for(unsigned int i = 0; i < sttvec.size(); ++i) {
+            sttseq.push_back(fromACGT(sttvec[i]));
+        }
+        sttseq.resize(5+start.Left()+start.Right(), enN);      // add Ns if necessery
+        
+        *startscore = start.Score(sttseq, extrabases+2);
         if(*startscore != BadScore()) {
-            for(unsigned int i = 5; i < seq.size(); ++i) *startscore -= ncdr.Score(seq, i);
+            for(unsigned int i = 5; i < sttseq.size(); ++i) {
+                *startscore -= ncdr.Score(sttseq, i);
+            }
         }
     }
 
@@ -265,6 +311,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/03 14:55:30  souvorov
+ * Start evaluation for negative strand in CCodingPropensity::GetScore
+ *
  * Revision 1.3  2006/11/01 23:12:00  souvorov
  * Start score evaluation for CCodingPropensity::GetScore
  *
