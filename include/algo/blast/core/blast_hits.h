@@ -523,6 +523,20 @@ NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
         BlastHSPList** combined_hsp_list_ptr, Int4 hsp_num_max);
 
+/** Given two hits and a 'split point', check if the hits can
+ * be merged and do the merge if so. If both hits contain traceback,
+ * The merged HSP has the start offsets of the first hit, the
+ * end offsets of the second, and a merged version of the traceback
+ * from the two hits (assuming they contain traceback)
+ * @param hsp1 The first hit. If merging happens, this hit is
+ *             overwritten with the merged version [in][out]
+ * @param hsp2 The second hit [in]
+ * @param start The subject offset corresponding to the split point [in]
+ * @return TRUE if a merge was performed, FALSE if not
+ */
+NCBI_XBLAST_EXPORT
+Boolean BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start);
+
 /** Merge an HSP list from a chunk of the subject sequence into a previously
  * computed HSP list.
  * @param hsp_list Contains HSPs from the new chunk [in]
@@ -792,4 +806,3 @@ PhiBlastGetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info);
 }
 #endif
 #endif /* !__BLAST_HITS__ */
-
