@@ -51,7 +51,11 @@
 #include <boost/current_function.hpp>
 
 #ifdef NCBI_OS_DARWIN
+#include <corelib/plugin_manager_store.hpp>
+#include <corelib/rwstream.hpp>
+#include <util/compress/reader_zlib.hpp>
 #include <util/compress/stream.hpp>
+#include <serial/objectinfo.hpp>
 #include <objects/id1/ID1server_back.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
 #include <objmgr/data_loader_factory.hpp>
@@ -2244,13 +2248,18 @@ public:
         { return 0; }
 };
 
-void s_ForceSymbolDefinitions(/* CReadDispatcher& rd */)
+void s_ForceSymbolDefinitions(CObjectIStream& ois,
+                              CReadContainerElementHook& rceh)
 {
     auto_ptr<CDataLoaderFactory> dlf(new CDummyDLF);
-    auto_ptr<CCompressionStream> cs
-        (new CCompressionStream(NcbiCin, NULL, NULL));
+    auto_ptr<CRWStream> rws(new CRWStream(NULL));
+    auto_ptr<CCompressionStream> cs(new CCompressionStream(*rws, NULL, NULL));
+    auto_ptr<CNlmZipReader> nzr(new CNlmZipReader(NULL));
+    auto_ptr<CObjectInfo> oi(new CObjectInfo);
+    oi->ReadContainer(ois, rceh);
     CRef<CID1server_back> id1b(new CID1server_back);
     CRef<CID2_Reply_Data> id2rd(new CID2_Reply_Data);
+    CPluginManagerGetterImpl::GetBase(kEmptyStr);
 }
 #endif
 
@@ -2258,6 +2267,9 @@ void s_ForceSymbolDefinitions(/* CReadDispatcher& rd */)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/11/03 19:22:29  ucko
+ * Extend Darwin symbol-definition forcer to fix bind-at-launch mode runs too.
+ *
  * Revision 1.2  2006/10/31 18:36:19  ucko
  * Hack around bogus failures on Darwin, whose linker doesn't entirely
  * care for the way we build shared libraries.
