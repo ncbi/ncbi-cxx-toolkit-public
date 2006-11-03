@@ -1140,80 +1140,45 @@ s_EndDiagCompareHSPs(const void* v1, const void* v2)
 }
 
 
-/** An auxiliary structure used for merging HSPs */
+/** An auxiliary structure used for merging ungapped regions of HSPs */
 typedef struct BlastHSPSegment {
-   struct BlastHSPSegment* next; /**< Next link in the chain. */
-    Int4 q_start, /**< Query start of segment. */
-        s_start;  /**< Subject start of segment. */
-    Int4 length;  /**< length of segments. */
-    Int4 diagonal; /**< diagonal (q_start - s_start). */
-    GapEditScript* esp; /**< pointer to edit script, not owned! */
-    Int4 esp_offset;  /**< element of above esp this node refers to */
+   Int4 q_start; /**< Query start of segment. */
+   Int4 s_start; /**< Subject start of segment. */
+   Int4 length;  /**< length of segment. */
+   Int4 diagonal; /**< diagonal (q_start - s_start). */
+   Int4 esp_offset;  /**< element of an edit script this node refers to */
 } BlastHSPSegment;
 
 
-/** function to create and populate a BlastHSPSegement.
- *  The new segemnt is added to an existing chain unless NULL
+/** function populate a BlastHSPSegment.
  *
  * @param segment object to be allocated and populated [in|out]
  * @param q_start start of match on query [in]
  * @param s_start start of match on subject [in]
- * @param esp GapEditScript for this alignment [in]
  * @param esp_offset relevant element of GapEditScript [in]
  */
 static void
-s_AddHSPSegment(BlastHSPSegment** segment, int q_start, int s_start, GapEditScript* esp, int esp_offset)
+s_AddHSPSegment(BlastHSPSegment* segment, Int4 q_start, 
+                Int4 s_start, Int4 length, Int4 esp_offset)
 {
-    BlastHSPSegment* new = malloc(sizeof(BlastHSPSegment));
-    new->next = NULL;
-    new->q_start = q_start;
-    new->s_start = s_start;
-    new->length = esp->num[esp_offset];
-    new->diagonal = q_start - s_start;
-    new->esp = esp;
-    new->esp_offset = esp_offset;
-    if (*segment)
-    {
-        BlastHSPSegment* var = *segment;
-        while (var->next)
-          var = var->next;
-        var->next = new;
-    }
-    else
-       *segment = new;
-
-    return;
+   segment->q_start = q_start;
+   segment->s_start = s_start;
+   segment->length = length;
+   segment->diagonal = q_start - s_start;
+   segment->esp_offset = esp_offset;
 }
-
-/** Deallocates all segments in chain.
- * Does not free underlying data
- * @param segments linked list of segments
- */
-static BlastHSPSegment*
-s_DeleteAllHSPSegments(BlastHSPSegment* segments)
-{
-    BlastHSPSegment* var = segments; 
-    BlastHSPSegment* next;
-    while (var)
-    {
-       next = var->next;
-       sfree(var);
-       var = next;
-    }
-    return NULL;
-}
-
-
 
 Boolean 
 BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
 {
-   BlastHSPSegment *segment1=NULL, *segment2=NULL;
-   Boolean found = FALSE;
-   GapEditScript* esp;
-   Int4 q_start, s_start;  /* start on query and subject sequences. */
-   Int4 max_s_end = -1, max_q_end = -1;  /* furthest extent of first HSP. */
-   Int4 index; /* loop index. */
+   BlastHSPSegment *segment1, *segment2;
+   Int4 num_segments1, num_segments2;
+   Boolean merged = FALSE;
+   GapEditScript* esp1;
+   GapEditScript* esp2;
+   Int4 q_start, s_start;
+   Int4 max_s_end = -1;  /* furthest extent of first HSP. */
+   Int4 i, j;
 
    if (!hsp1->gap_info || !hsp2->gap_info)
    {
@@ -1242,104 +1207,151 @@ BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
       }
    }
 
-   esp = hsp1->gap_info;
+   /* the merging of edit scripts is somewhat basic; we do not
+      attempt to produce an optimal-scoring edit script from the
+      edit scripts of hsp1 and hsp2. The two edit scripts are only
+      spliced together if each contains an ungapped region, on
+      the same diagonal, and the two ungapped regions overlap */
+
+   /* save each ungapped region of hsp1 that ends beyond
+      the split point; also save the furthest extent on the
+      subject sequence that these regions achieve */
+
+   num_segments1 = 0;
+   esp1 = hsp1->gap_info;
    q_start = hsp1->query.offset;
    s_start = hsp1->subject.offset;
-   for (index=0; index<esp->size; index++)
-   {
-      if (esp->op_type[index] == eGapAlignSub)
-      {
-            if (s_start+(esp->num[index]) > start)  /* End of segment within overlap region. */
-            {
-                s_AddHSPSegment(&segment1, q_start, s_start, esp, index);
-                max_q_end = MAX(max_q_end, q_start+esp->num[index]);
-                max_s_end = MAX(max_s_end, s_start+esp->num[index]);
-            }
-            q_start += esp->num[index];
-            s_start += esp->num[index];
-      } 
-      else if (esp->op_type[index] == eGapAlignIns)
-            q_start += esp->num[index];
-      else if (esp->op_type[index] == eGapAlignDel)
-            s_start += esp->num[index];
+   segment1 = (BlastHSPSegment *)malloc(esp1->size * sizeof(BlastHSPSegment));
+   for (i = 0; i < esp1->size; i++) {
+      Int4 region_size = esp1->num[i];
+
+      switch (esp1->op_type[i]) {
+      case eGapAlignSub:
+         if (s_start + region_size > start) {
+            s_AddHSPSegment(segment1 + num_segments1,
+                            q_start, s_start, region_size, i);
+            max_s_end = MAX(max_s_end, s_start + region_size);
+            num_segments1++;
+         }
+         q_start += region_size;
+         s_start += region_size;
+         break;
+
+      case eGapAlignIns:
+         q_start += region_size;
+         break;
+
+      case eGapAlignDel:
+         s_start += region_size;
+         break;
+
+      default:
+         break;
+      }
    }
 
-   esp = hsp2->gap_info;
+   /* save each ungapped region of hsp2; each such 
+      region automatically starts beyond the split point. 
+      Regions that start beyond the maximum subject offset
+      found in hsp1 above do not need to be tested, since
+      they will never overlap */
+         
+   num_segments2 = 0;
+   esp2 = hsp2->gap_info;
    q_start = hsp2->query.offset;
    s_start = hsp2->subject.offset;
-   for (index=0; index<esp->size; index++)
-   {
-      if (esp->op_type[index] == eGapAlignSub)
-      {
-            if (max_s_end > s_start)
-                s_AddHSPSegment(&segment2, q_start, s_start, esp, index);
-            else 
-                break;
+   segment2 = (BlastHSPSegment *)malloc(esp2->size * sizeof(BlastHSPSegment));
+   for (i = 0; i < esp2->size; i++) {
+      Int4 region_size = esp2->num[i];
 
-            q_start += esp->num[index];
-            s_start += esp->num[index];
-      } 
-      else if (esp->op_type[index] == eGapAlignIns)
-            q_start += esp->num[index];
-      else if (esp->op_type[index] == eGapAlignDel)
-            s_start += esp->num[index];
+      switch (esp2->op_type[i]) {
+      case eGapAlignSub:
+         s_AddHSPSegment(segment2 + num_segments2, 
+                         q_start, s_start, region_size, i);
+         num_segments2++;
+         q_start += region_size;
+         s_start += region_size;
+         break;
+
+      case eGapAlignIns:
+         q_start += region_size;
+         break;
+
+      case eGapAlignDel:
+         s_start += region_size;
+         break;
+
+      default:
+         break;
+      }
+
+      if (s_start >= max_s_end)
+         break;
    }
 
-   if (segment1 && segment2)
-   {
-       BlastHSPSegment *segment1_var=segment1, *segment2_var=segment2;
-       while (segment1_var)
-       {
-           BlastHSPSegment* segment2_var = segment2;
-           while (segment2_var)
-           {
-                if (segment2_var->diagonal == segment1_var->diagonal)
-                {
-                     if (segment1_var->q_start <= segment2_var->q_start 
-                         && (segment1_var->q_start+segment1_var->length) >= segment2_var->q_start)
-                         found = TRUE;  /* start of 2 in extent of 1. */
-                     else if (segment1_var->q_start >= segment2_var->q_start 
-                         && (segment1_var->q_start) <= segment2_var->q_start+segment2_var->length)
-                         found = TRUE;  /* start of 1 in extent of 2. */
-                }
-                if (found)
-                   break;
-                segment2_var = segment2_var->next;
-           }
-           if (found)
-              break;
-           segment1_var = segment1_var->next;
-       }
-
-       if (found == TRUE)
-       { 
-           int end_1 = segment1_var->q_start + segment1_var->length;
-           int end_2 = segment2_var->q_start + segment2_var->length;
-           GapEditScript* esp_temp_1 = segment1_var->esp;
-           GapEditScript* esp_temp_2 = segment2_var->esp;
-           GapEditScript* new_esp = NULL;
-           int new_size = 0;
-
-           /* we use the GapEditScript element pointed to be segment1_var, ignoring the one
-              pointed to by segment2_var as it overlaps with the first.  */
-           esp_temp_1->num[segment1_var->esp_offset] += (end_2 - end_1);
-           new_size = segment1_var->esp_offset + esp_temp_2->size - segment2_var->esp_offset;
-           new_esp = GapEditScriptNew(new_size);
-           GapEditScriptPartialCopy(new_esp, 0, esp_temp_1, 0, segment1_var->esp_offset); 
-           GapEditScriptPartialCopy(new_esp, 1+segment1_var->esp_offset, esp_temp_2, 
-                  segment2_var->esp_offset+1, esp_temp_2->size-1); 
-           hsp1->gap_info = GapEditScriptDelete(hsp1->gap_info);
-           hsp1->gap_info = new_esp;
-           hsp1->query.end = hsp2->query.end;
-           hsp1->subject.end = hsp2->subject.end;
-           hsp1->score = MAX(hsp1->score, hsp2->score);  /* Neither score may be correct, so we use the highest one. */
-       }
+   if (num_segments1 == 0 || num_segments2 == 0) {
+      goto clean_up;
    }
 
-   segment1 = s_DeleteAllHSPSegments(segment1);
-   segment2 = s_DeleteAllHSPSegments(segment2);
+   /* perform an all-against-all search for two ungapped
+      segments, one from each list, that overlap and lie
+      on the same diagonal */
 
-   return found;  
+   for (i = 0; i < num_segments1; i++) {
+      for (j = 0; j < num_segments2; j++) {
+
+         BlastHSPSegment *region1 = segment1 + i;
+         BlastHSPSegment *region2 = segment2 + j;
+
+         if (region1->diagonal == region2->diagonal && (
+              /* test for region 2 starting inside region1 */
+             (region1->q_start <= region2->q_start &&
+              region1->q_start + region1->length >= region2->q_start) ||
+              /* test for region 1 starting inside region2 */
+             (region1->q_start >= region2->q_start && 
+              region1->q_start <= region2->q_start + region2->length) ) ) {
+
+            /* splice the two edit scripts together; first allocate
+               another edit script, large enough to hold the combined
+               set of edit operations */
+            Int4 new_size = region1->esp_offset + 
+                               (esp2->size - region2->esp_offset);
+            GapEditScript* new_esp = GapEditScriptNew(new_size);
+
+            /* copy over the first part of the edit script, including
+               the edit operation that will change */
+
+            GapEditScriptPartialCopy(new_esp, 0, esp1, 0, region1->esp_offset); 
+
+            /* splice region1 and region2 together. The length of the
+               resulting segment must be such that the start offset of
+               region1 and the end offset of region2 do not change */
+
+            new_esp->num[region1->esp_offset] = region2->q_start + 
+                                        region2->length - region1->q_start;
+
+            /* copy the last part of the edit script */
+            GapEditScriptPartialCopy(new_esp, region1->esp_offset + 1, esp2, 
+                                   region2->esp_offset + 1, esp2->size - 1); 
+
+            /* modify the rest of hsp1; note that we don't know
+               the final score without examining sequence data,
+               so just choose the largest score available */
+            hsp1->gap_info = GapEditScriptDelete(hsp1->gap_info);
+            hsp1->gap_info = new_esp;
+            hsp1->query.end = hsp2->query.end;
+            hsp1->subject.end = hsp2->subject.end;
+            hsp1->score = MAX(hsp1->score, hsp2->score);
+            merged = TRUE;
+            goto clean_up;
+         }
+      }
+   }
+
+clean_up:
+   free(segment1);
+   free(segment2);
+   return merged;
 }
 
 /** Maximal diagonal distance between HSP starting offsets, within which HSPs 
