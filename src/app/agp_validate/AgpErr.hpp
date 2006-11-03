@@ -91,24 +91,24 @@ public:
   enum TCode {
     E_ColumnCount=1 ,
     E_EmptyColumn,
-    E_DuplicateObj  ,
-    E_ObjMustBegin1 ,
-    E_PartNumberNot1,
-
-    E_PartNumberNotPlus1,
-    E_ObjRangeNeGap ,
-    E_ObjRangeNeComp,
-    E_UnknownOrientation,
-    E_MustBePositive,
-
-    E_ObjBegNePrevEndPlus1,
-    E_ObjEndLtBegin ,
-    E_CompEndLtBeg,
+    E_EmptyLine,
     E_InvalidValue  ,
     E_InvalidYes   ,
 
-    E_EmptyLine,
-    E_Last, E_First=1,
+    E_MustBePositive,
+    E_ObjEndLtBegin ,
+    E_CompEndLtBeg,
+    E_ObjRangeNeGap ,
+    E_ObjRangeNeComp,
+
+    E_DuplicateObj  ,
+    E_ObjMustBegin1 ,
+    E_PartNumberNot1,
+    E_PartNumberNotPlus1,
+    E_UnknownOrientation,
+
+    E_ObjBegNePrevEndPlus1,
+    E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
     W_GapObjEnd=21 ,
     W_GapObjBegin ,

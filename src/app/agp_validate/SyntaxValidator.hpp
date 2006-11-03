@@ -161,7 +161,8 @@ public:
   CGapVal();
 
   bool init(const SDataLine& dl, bool log_errors = true);
-  int getLen() { return len; }
+  int getLen() const { return len; }
+  bool endsScaffold() const;
 };
 
 // To save memoty, this is a vector instead of a map.

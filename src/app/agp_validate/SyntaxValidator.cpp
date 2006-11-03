@@ -77,7 +77,19 @@ bool CGapVal::init(const SDataLine& dl, bool log_errors)
   linkage = x_CheckValues( validLinkage, dl.linkage, "linkage", log_errors);
   if(len <=0 || -1 == type || -1 == linkage ) return false;
 
+  if(linkage==LINKAGE_yes) {
+    if( type!=GAP_clone && type!=GAP_repeat && type!=GAP_fragment ) {
+      agpErr.Msg(CAgpErr::E_InvalidYes, dl.gap_type);
+      return false;
+    }
+  }
   return true;
+}
+
+bool CGapVal::endsScaffold() const
+{
+  if(type==GAP_fragment) return false;
+  return linkage==LINKAGE_no;
 }
 
 //// class CCompVal
@@ -332,28 +344,12 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
 void CAgpSyntaxValidator::x_OnGapLine(
   const SDataLine& dl, const CGapVal& gap)
 {
+  int i = gap.type;
+  if(gap.linkage==CGapVal::LINKAGE_yes) i+= CGapVal::GAP_count;
+  NCBI_ASSERT( i < sizeof(m_GapTypeCnt)/sizeof(m_GapTypeCnt[0]),
+    "m_GapTypeCnt[] index out of bounds" );
+  m_GapTypeCnt[i]++;
   m_GapCount++;
-  m_GapTypeCnt[
-    gap.type +
-    (gap.linkage==CGapVal::LINKAGE_yes ? CGapVal::GAP_count : 0)
-  ]++;
-
-  //// Check whether  gap_type and linkage combination is valid,
-  //// and if this combination ends the scaffold.
-  bool endsScaffold = true;
-  if(gap.type==CGapVal::GAP_fragment) {
-    endsScaffold=false;
-  }
-  else if(gap.linkage==CGapVal::LINKAGE_yes) {
-    endsScaffold=false;
-    if( gap.type==CGapVal::GAP_clone || gap.type==CGapVal::GAP_repeat ) {
-      // Ok
-    }
-    else {
-      agpErr.Msg(CAgpErr::E_InvalidYes, dl.gap_type);
-    }
-  }
-  // else: endsScaffold remains true
 
   //// Check the gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold.
@@ -365,7 +361,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
       AT_ThisLine|AT_PrevLine );
   }
-  else if( endsScaffold ) {
+  else if( gap.endsScaffold() ) {
     // A breaking gap after a component.
     // Previous line is the last component of a scaffold
     m_ScaffoldCount++; // to do: detect or do not count scaffold with 0 components?
@@ -382,7 +378,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
       prev_orientation_unknown=false;
     }
   }
-  if( endsScaffold ) {
+  if( gap.endsScaffold() ) {
     componentsInLastScaffold=0;
   }
 }
@@ -425,7 +421,7 @@ void CAgpSyntaxValidator::x_OnCompLine(
     }
   }
 
-  //// Component spans do not overlap and are in correct order
+  //// Check: component spans do not overlap and are in correct order
 
   // Try to insert to the span as a new entry
   TCompIdSpansPair value_pair( dl.component_id, CCompSpans(comp) );
