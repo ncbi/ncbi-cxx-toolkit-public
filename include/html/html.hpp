@@ -1227,7 +1227,47 @@ public:
     CHTML_button* SetType(EButtonType type);
     CHTML_button* SetSubmitData(const string& name,
                                 const string& value = kEmptyStr);
-  };
+};
+
+
+// <optgroup> tag. Rarely used alone. See <select> tag.
+class NCBI_XHTML_EXPORT CHTML_optgroup : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+    static const char sm_TagName[];
+public:
+    CHTML_optgroup(const string& label, bool disabled = false);
+    ~CHTML_optgroup(void);
+
+    // Return 'this' to allow chained AppendOption().
+    CHTML_optgroup* AppendOption(const string& value,
+                                 bool selected = false, bool disabled =false);
+    CHTML_optgroup* AppendOption(const string& value, const char* label,
+                                 bool selected = false, bool disabled =false);
+    CHTML_optgroup* AppendOption(const string& value, const string& label,
+                                 bool selected = false, bool disabled =false);
+    CHTML_optgroup* SetDisabled(void);
+};
+
+
+// <option> tag. Rarely used alone. See <select> tag.
+class NCBI_XHTML_EXPORT CHTML_option : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+    static const char sm_TagName[];
+public:
+    CHTML_option(const string& value,
+                 bool selected = false, bool disabled = false);
+    CHTML_option(const string& value, const char* label,
+                 bool selected = false, bool disabled = false);
+    CHTML_option(const string& value, const string& label,
+                 bool selected = false, bool disabled = false);
+    ~CHTML_option(void);
+
+    CHTML_option* SetValue(const string& value);
+    CHTML_option* SetSelected(void);
+    CHTML_option* SetDisabled(void);
+};
 
 
 // <select> tag.
@@ -1241,30 +1281,14 @@ public:
     ~CHTML_select(void);
 
     // Return 'this' to allow chained AppendOption().
-    CHTML_select* AppendOption(const string& value, bool selected = false);
+    CHTML_select* AppendOption(const string& value,
+                               bool selected = false, bool disabled = false);
     CHTML_select* AppendOption(const string& value, const char* label,
-                               bool selected = false);
+                               bool selected = false, bool disabled = false);
     CHTML_select* AppendOption(const string& value, const string& label,
-                               bool selected = false);
+                               bool selected = false, bool disabled = false);
+    CHTML_select* AppendGroup(CHTML_optgroup* group);
     CHTML_select* SetMultiple(void);
-};
-
-
-// <option> tag. Rarely used alone. See <select> tag.
-class NCBI_XHTML_EXPORT CHTML_option : public CHTMLElement
-{
-    typedef CHTMLElement CParent;
-    static const char sm_TagName[];
-public:
-    CHTML_option(const string& value, bool selected = false);
-    CHTML_option(const string& value, const char* label,
-                 bool selected = false);
-    CHTML_option(const string& value, const string& label,
-                 bool selected = false);
-    ~CHTML_option(void);
-
-    CHTML_option* SetValue(const string& value);
-    CHTML_option* SetSelected(void);
 };
 
 
@@ -1652,6 +1676,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2006/11/03 15:06:21  ivanov
+ * Added OPTGROUP tag support
+ *
  * Revision 1.91  2006/08/21 16:05:31  ivanov
  * Added XHTML support.
  *

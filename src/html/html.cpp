@@ -1965,10 +1965,14 @@ CHTML_select::~CHTML_select(void)
     return;
 }
 
-CHTML_select* CHTML_select::SetMultiple(void)
+
+// <optgroup> tag.
+
+const char CHTML_optgroup::sm_TagName[] = "optgroup";
+
+CHTML_optgroup::~CHTML_optgroup(void)
 {
-    SetAttribute("multiple");
-    return this;
+    return;
 }
 
 
@@ -1979,18 +1983,6 @@ const char CHTML_option::sm_TagName[] = "option";
 CHTML_option::~CHTML_option(void)
 {
     return;
-}
-
-CHTML_option* CHTML_option::SetValue(const string& value)
-{
-    SetAttribute("value", value);
-    return this;
-}
-
-CHTML_option* CHTML_option::SetSelected(void)
-{
-    SetAttribute("selected");
-    return this;
 }
 
 
@@ -2456,6 +2448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.131  2006/11/03 15:06:05  ivanov
+ * Added OPTGROUP tag support
+ *
  * Revision 1.130  2006/08/23 14:05:31  ivanov
  * Replace <... nowrap> with <... nowrap="nowrap"> only for XHTML
  * and optional attributes.

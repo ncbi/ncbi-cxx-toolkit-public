@@ -469,37 +469,6 @@ CHTML_a* CHTML_a::SetHref(const string& href)
 }
 
 inline
-CHTML_option::CHTML_option(const string& value, bool selected)
-    : CParent(sm_TagName, value)
-{
-    if ( selected ) {
-        SetSelected();
-    }
-}
-
-inline
-CHTML_option::CHTML_option(const string& value, const string& label,
-                           bool selected)
-    : CParent(sm_TagName, label)
-{
-    SetValue(value);
-    if ( selected ) {
-        SetSelected();
-    }
-}
-
-inline
-CHTML_option::CHTML_option(const string& value, const char* label,
-                           bool selected)
-    : CParent(sm_TagName, label)
-{
-    SetValue(value);
-    if ( selected ) {
-        SetSelected();
-    }
-}
-
-inline
 CHTML_select::CHTML_select(const string& name, bool multiple)
     : CParent(sm_TagName)
 {
@@ -521,25 +490,146 @@ CHTML_select::CHTML_select(const string& name, int size, bool multiple)
 }
 
 inline
-CHTML_select* CHTML_select::AppendOption(const string& value, bool selected)
+CHTML_select* CHTML_select::SetMultiple(void)
 {
-    AppendChild(new CHTML_option(value, selected));
+    SetAttribute("multiple");
+    return this;
+}
+
+inline CHTML_select*
+CHTML_select::AppendOption(const string& value,
+                           bool selected, bool disabled)
+{
+    AppendChild(new CHTML_option(value, selected, disabled));
+    return this;
+}
+
+inline CHTML_select*
+CHTML_select::AppendOption(const string& value,
+                           const string& label,
+                           bool selected, bool disabled)
+{
+    AppendChild(new CHTML_option(value, label, selected, disabled));
+    return this;
+}
+
+inline CHTML_select*
+CHTML_select::AppendOption(const string& value,
+                           const char* label,
+                           bool selected, bool disabled)
+{
+    AppendChild(new CHTML_option(value, label, selected, disabled));
+    return this;
+}
+
+inline CHTML_select*
+CHTML_select::AppendGroup(CHTML_optgroup* group)
+{
+    AppendChild(group);
     return this;
 }
 
 inline
-CHTML_select* CHTML_select::AppendOption(const string& value,
-                                         const string& label, bool selected)
+CHTML_optgroup::CHTML_optgroup(const string& label, bool disabled)
+    : CParent(sm_TagName)
 {
-    AppendChild(new CHTML_option(value, label, selected));
+    SetAttribute("label", label);
+    if ( disabled ) {
+        SetDisabled();
+    }
+}
+
+inline CHTML_optgroup*
+CHTML_optgroup::AppendOption(const string& value,
+                             bool selected, bool disabled)
+{
+    AppendChild(new CHTML_option(value, selected, disabled));
+    return this;
+}
+
+inline CHTML_optgroup*
+CHTML_optgroup::AppendOption(const string& value,
+                             const string& label,
+                             bool selected, bool disabled)
+{
+    AppendChild(new CHTML_option(value, label, selected, disabled));
+    return this;
+}
+
+inline CHTML_optgroup*
+CHTML_optgroup::AppendOption(const string& value,
+                             const char* label,
+                             bool selected, bool disabled)
+{
+    AppendChild(new CHTML_option(value, label, selected, disabled));
     return this;
 }
 
 inline
-CHTML_select* CHTML_select::AppendOption(const string& value,
-                                         const char* label, bool selected)
+CHTML_optgroup* CHTML_optgroup::SetDisabled(void)
 {
-    AppendChild(new CHTML_option(value, label, selected));
+    SetAttribute("disabled");
+    return this;
+}
+
+inline
+CHTML_option::CHTML_option(const string& value, bool selected, bool disabled)
+    : CParent(sm_TagName, value)
+{
+    if ( selected ) {
+        SetSelected();
+    }
+    if ( disabled ) {
+        SetDisabled();
+    }
+}
+
+inline
+CHTML_option::CHTML_option(const string& value, const string& label,
+                           bool selected, bool disabled)
+    : CParent(sm_TagName, label)
+{
+    SetValue(value);
+    if ( selected ) {
+        SetSelected();
+    }
+    if ( disabled ) {
+        SetDisabled();
+    }
+}
+
+inline
+CHTML_option::CHTML_option(const string& value, const char* label,
+                           bool selected, bool disabled)
+    : CParent(sm_TagName, label)
+{
+    SetValue(value);
+    if ( selected ) {
+        SetSelected();
+    }
+    if ( disabled ) {
+        SetDisabled();
+    }
+}
+
+inline
+CHTML_option* CHTML_option::SetValue(const string& value)
+{
+    SetAttribute("value", value);
+    return this;
+}
+
+inline
+CHTML_option* CHTML_option::SetSelected(void)
+{
+    SetAttribute("selected");
+    return this;
+}
+
+inline
+CHTML_option* CHTML_option::SetDisabled(void)
+{
+    SetAttribute("disabled");
     return this;
 }
 
@@ -550,41 +640,41 @@ CHTML_br::CHTML_br(void)
     return;
 }
 
-inline
-CHTML_map* CHTML_map::AddRect(const string& href, int x1, int y1, int x2, int y2,
-                              const string& alt)
+inline CHTML_map*
+CHTML_map::AddRect(const string& href, int x1, int y1, int x2, int y2,
+                   const string& alt)
 {
     AppendChild(new CHTML_area(href, x1, y1, x2, y2, alt));
     return this;
 }
 
-inline
-CHTML_map* CHTML_map::AddCircle(const string& href, int x, int y, int radius,
-                                const string& alt)
+inline CHTML_map*
+CHTML_map::AddCircle(const string& href, int x, int y, int radius,
+                     const string& alt)
 {
     AppendChild(new CHTML_area(href, x, y, radius, alt));
     return this;
 }
 
-inline
-CHTML_map* CHTML_map::AddPolygon(const string& href, int coords[], int count,
-                                 const string& alt)
+inline CHTML_map*
+CHTML_map::AddPolygon(const string& href, int coords[], int count,
+                      const string& alt)
 {
     AppendChild(new CHTML_area(href, coords, count, alt));
     return this;
 }
 
-inline
-CHTML_map* CHTML_map::AddPolygon(const string& href, vector<int> coords,
-                                 const string& alt)
+inline CHTML_map*
+CHTML_map::AddPolygon(const string& href, vector<int> coords,
+                      const string& alt)
 {
     AppendChild(new CHTML_area(href, coords, alt));
     return this;
 }
 
-inline
-CHTML_map* CHTML_map::AddPolygon(const string& href, list<int> coords,
-                                 const string& alt)
+inline CHTML_map*
+CHTML_map::AddPolygon(const string& href, list<int> coords,
+                      const string& alt)
 {
     AppendChild(new CHTML_area(href, coords, alt));
     return this;
@@ -903,6 +993,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/11/03 15:06:21  ivanov
+ * Added OPTGROUP tag support
+ *
  * Revision 1.40  2005/10/19 15:09:41  ivanov
  * CHTML_table -- init current row with -1 value, markink it as undefined
  *
