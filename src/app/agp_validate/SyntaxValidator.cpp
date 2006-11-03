@@ -518,7 +518,7 @@ int x_CheckValues(const TValuesMap& values,
   return it->second;
 }
 
-#define ALIGN_W(x) setw(w) << (x)
+#define ALIGN_W(x) setw(w) << resetiosflags(ios_base::left) << (x)
 void CAgpSyntaxValidator::PrintTotals()
 {
   //// Counts of errors and warnings
@@ -643,17 +643,17 @@ void CAgpSyntaxValidator::PrintTotals()
   cout << "\n";
 
   if(m_ObjCount) {
-    cout << "\nObject names   :";
-    // Patterns in object names
+    // cout << "\nObject names   :";
+    cout << "\n";
     {
       CAccPatternCounter objNamePatterns;
       objNamePatterns.AddNames(m_ObjIdSet);
-      x_PrintPatterns(objNamePatterns);
+      x_PrintPatterns(objNamePatterns, "Object names");
     }
   }
 
   if(m_CompId2Spans.size()) {
-    cout << "Component names:";
+    //cout << "Component names:";
     {
       CAccPatternCounter compNamePatterns;
       for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
@@ -661,13 +661,14 @@ void CAgpSyntaxValidator::PrintTotals()
       {
         compNamePatterns.AddName(it->first);
       }
-      x_PrintPatterns(compNamePatterns);
+      x_PrintPatterns(compNamePatterns, "Component names");
     }
   }
 }
 
 // Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
-void CAgpSyntaxValidator::x_PrintPatterns(CAccPatternCounter& namePatterns)
+void CAgpSyntaxValidator::x_PrintPatterns(
+  CAccPatternCounter& namePatterns, const string& strHeader)
 {
   const int MaxPatterns=10;
 
@@ -686,22 +687,49 @@ void CAgpSyntaxValidator::x_PrintPatterns(CAccPatternCounter& namePatterns)
   cout << "\n";
 
 
+  // Calculate width of columns 1 (pattern) and 2 (count)
   int w = NStr::IntToString(
       CAccPatternCounter::GetCount(pat_cnt[0])
     ).size()+1;
 
-  // Print the patterns
+  int wPattern=strHeader.size()-2;
+  int totalCount=0;
   int patternsPrinted=0;
+  for(CAccPatternCounter::pv_vector::iterator it =
+      pat_cnt.begin(); it != pat_cnt.end(); ++it
+  ) {
+    if( ++patternsPrinted<=MaxPatterns || pat_cnt.size()<=2*MaxPatterns ) {
+      int i = CAccPatternCounter::GetExpandedPattern(*it).size();
+      if( i > wPattern ) wPattern = i;
+    }
+    else {
+      if(w+15>wPattern) wPattern = w+15;
+    }
+    totalCount+=CAccPatternCounter::GetCount(*it);
+  }
+
+  // Print the total
+  cout<< setw(wPattern+2) << setiosflags(ios_base::left)
+      << strHeader << ": " << ALIGN_W(totalCount) << "\n";
+
+  // Print the patterns
+  patternsPrinted=0;
   int accessionsSkipped=0;
   for(CAccPatternCounter::pv_vector::iterator it =
       pat_cnt.begin(); it != pat_cnt.end(); ++it
   ) {
     // Limit the number of lines to MaxPatterns or 2*MaxPatterns
     if( ++patternsPrinted<=MaxPatterns || pat_cnt.size()<=2*MaxPatterns ) {
+      /*
       cout<<  "\t"
           << ALIGN_W(CAccPatternCounter::GetCount(*it))
           << "  "
           << CAccPatternCounter::GetExpandedPattern(*it)
+          << "\n";
+      */
+      cout<< "  " << setw(wPattern) << setiosflags(ios_base::left)
+          << CAccPatternCounter::GetExpandedPattern(*it)
+          << ": " << ALIGN_W( CAccPatternCounter::GetCount(*it) )
           << "\n";
     }
     else {
@@ -710,10 +738,19 @@ void CAgpSyntaxValidator::x_PrintPatterns(CAccPatternCounter& namePatterns)
   }
 
   if(accessionsSkipped) {
+    /*
     cout<<  "\t"
         << ALIGN_W(accessionsSkipped)
-        << "  accessions between other " << pat_cnt.size() - 10
+        << "  other " << pat_cnt.size() - 10
         << " patterns\n";
+    */
+    string s = "other ";
+    s+=NStr::IntToString(pat_cnt.size() - 10);
+    s+=" patterns";
+    cout<< "  " << setw(wPattern) << setiosflags(ios_base::left) << s
+        << ": " << ALIGN_W( accessionsSkipped )
+        << "\n";
+
   }
 }
 

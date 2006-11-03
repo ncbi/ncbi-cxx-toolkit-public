@@ -265,7 +265,7 @@ protected:
   int  componentsInLastScaffold;
   int  componentsInLastObject;
 
-  static void x_PrintPatterns(CAccPatternCounter& namePatterns);
+  static void x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader);
 
 };
 
