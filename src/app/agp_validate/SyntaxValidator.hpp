@@ -121,16 +121,17 @@ public:
   string ToString() const;
 };
 
-struct CGapVal
+class CGapVal
 {
+public:
   int len, type, linkage;
 
   enum {
-    GAP_contig         ,
     GAP_clone          ,
     GAP_fragment       ,
     GAP_repeat         ,
 
+    GAP_contig         ,
     GAP_centromere     ,
     GAP_short_arm      ,
     GAP_heterochromatin,
@@ -139,10 +140,15 @@ struct CGapVal
     //GAP_scaffold       ,
     //GAP_split_finished ,
 
-    GAP_count
+    GAP_count,
+    GAP_yes_count=GAP_repeat+1
   };
-  // Initialized on the first invokation of the constructor
-  static TValuesMap validType;
+
+  typedef const char* TStr;
+  static const TStr typeIntToStr[GAP_count+GAP_yes_count];
+
+  // Initialized on the first invokation of the constructor from typeIntToStr[]
+  static TValuesMap typeStrToInt;
 
   enum {
     LINKAGE_no ,
@@ -225,7 +231,8 @@ protected:
   int m_CompOri[CCompVal::ORI_count];
 
 
-  CValuesCount m_TypeGapCnt;  // column 7: fragment, clone, ...
+  //CValuesCount m_TypeGapCnt;  // column 7: fragment, clone, ...
+  int m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_yes_count];
   CValuesCount m_TypeCompCnt; // column 5: A, D, F, ..., N, U
 
   // Count component types and N/U gap types.

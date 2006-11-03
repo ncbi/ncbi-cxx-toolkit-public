@@ -41,21 +41,27 @@ USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
 
 //// class CGapVal
-TValuesMap CGapVal::validType;
+TValuesMap CGapVal::typeStrToInt;
 TValuesMap CGapVal::validLinkage;
+const CGapVal::TStr CGapVal::typeIntToStr[CGapVal::GAP_count+CGapVal::GAP_yes_count] = {
+  "clone",
+  "fragment",
+  "repeat",
+
+  "contig",
+  "centromere",
+  "short_arm",
+  "heterochromatin",
+  "telomere"
+};
 
 CGapVal::CGapVal()
 {
   // Populate the static maps when invoked for the first time.
-  if( validType.size()==0 ) {
-    validType["contig"         ] = GAP_contig         ;
-    validType["clone"          ] = GAP_clone          ;
-    validType["fragment"       ] = GAP_fragment       ;
-    validType["repeat"         ] = GAP_repeat         ;
-    validType["centromere"     ] = GAP_centromere     ;
-    validType["short_arm"      ] = GAP_short_arm      ;
-    validType["heterochromatin"] = GAP_heterochromatin;
-    validType["telomere"       ] = GAP_telomere       ;
+  if( typeStrToInt.size()==0 ) {
+    for(int i=0; i<GAP_count; i++) {
+      typeStrToInt[ CGapVal::typeIntToStr[i] ] = i;
+    }
 
     validLinkage["no" ] = LINKAGE_no;
     validLinkage["yes"] = LINKAGE_yes;
@@ -67,7 +73,7 @@ CGapVal::CGapVal()
 bool CGapVal::init(const SDataLine& dl, bool log_errors)
 {
   len     = x_CheckIntField( dl.gap_length, "gap_length (column 6)", log_errors);
-  type    = x_CheckValues( validType   , dl.gap_type, "gap_type", log_errors);
+  type    = x_CheckValues( typeStrToInt   , dl.gap_type, "gap_type", log_errors);
   linkage = x_CheckValues( validLinkage, dl.linkage, "linkage", log_errors);
   if(len <=0 || -1 == type || -1 == linkage ) return false;
 
@@ -151,26 +157,7 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
   m_GapCount = 0;
 
   memset(m_CompOri, 0, sizeof(m_CompOri));
-
-  m_TypeGapCnt["contigyes"] = 0;
-  m_TypeGapCnt["contigno"] = 0;
-  m_TypeGapCnt["cloneyes"] = 0;
-  m_TypeGapCnt["cloneno"] = 0;
-  m_TypeGapCnt["fragmentyes"] = 0;
-  m_TypeGapCnt["fragmentno"] = 0;
-  m_TypeGapCnt["repeatyes"] = 0;
-  m_TypeGapCnt["repeatno"] = 0;
-
-  m_TypeGapCnt["centromereyes"] = 0;
-  m_TypeGapCnt["centromereno"] = 0;
-  m_TypeGapCnt["short_armyes"] = 0;
-  m_TypeGapCnt["short_armno"] = 0;
-  m_TypeGapCnt["heterochromatinyes"] = 0;
-  m_TypeGapCnt["heterochromatinno"] = 0;
-  m_TypeGapCnt["telomereyes"] = 0;
-  m_TypeGapCnt["telomereno"] = 0;
-
-  m_TypeGapCnt["invalid gap type"]=0;
+  memset(m_GapTypeCnt, 0, sizeof(m_GapTypeCnt));
 
   m_ComponentTypeValues.insert("A");
   m_ComponentTypeValues.insert("D");
@@ -346,8 +333,10 @@ void CAgpSyntaxValidator::x_OnGapLine(
   const SDataLine& dl, const CGapVal& gap)
 {
   m_GapCount++;
-  string key = dl.gap_type + dl.linkage;
-  m_TypeGapCnt[key]++;
+  m_GapTypeCnt[
+    gap.type +
+    (gap.linkage==CGapVal::LINKAGE_yes ? CGapVal::GAP_count : 0)
+  ]++;
 
   //// Check whether  gap_type and linkage combination is valid,
   //// and if this combination ends the scaffold.
@@ -568,7 +557,7 @@ void CAgpSyntaxValidator::PrintTotals()
   //// Various counts of AGP elements
 
   // w: width for right alignment
-  int w = NStr::IntToString(m_CompId2Spans.size()).size()+1;
+  int w = NStr::IntToString(m_CompId2Spans.size()).size(); // +1;
 
   cout << "\n"
     "Objects                : "<<ALIGN_W(m_ObjCount           )<<"\n"
@@ -598,17 +587,14 @@ void CAgpSyntaxValidator::PrintTotals()
       "\torientation 0  : " << ALIGN_W(m_CompOri[CCompVal::ORI_zero ]) << "\n"
       "\torientation na : " << ALIGN_W(m_CompOri[CCompVal::ORI_na   ]) << "\n";
   }
-  // cout<<
-  //   "Unique Component Accessions: "<< ALIGN_W(m_CompId2Spans.size()) <<"\n";
 
-
-  cout << "\n" << "Gaps: " << m_GapCount;
+  cout << "\n" << "Gaps                   : " << ALIGN_W(m_GapCount);
   if(m_GapCount) {
     // Print (N) if all components are of one type,
     //        or (N: 1234, U: 5678)
     if( s_gap.size() ) {
       if( NStr::Find(s_gap, ",")!=NPOS ) {
-        // (N: 1234, N: 5678)
+        // (N: 1234, U: 5678)
         cout << " (" << s_gap << ")";
       }
       else {
@@ -617,34 +603,60 @@ void CAgpSyntaxValidator::PrintTotals()
       }
     }
 
-    cout
-    << "\n\t   with linkage: "<<ALIGN_W("yes") << "\t" << ALIGN_W("no")
-    << "\n\tclone          : "<<ALIGN_W(m_TypeGapCnt["cloneyes"          ])
-    << "\t"                   <<ALIGN_W(m_TypeGapCnt["cloneno"           ])
-    << "\n\tfragment       : "<<ALIGN_W(m_TypeGapCnt["fragmentyes"       ])
-    << "\t"                   <<ALIGN_W(m_TypeGapCnt["fragmentno"        ])
-    << "\n\trepeat         : "<<ALIGN_W(m_TypeGapCnt["repeatyes"         ])
-    << "\t"                   <<ALIGN_W(m_TypeGapCnt["repeatno"          ])
-    << "\n"
-    << "\n\tcontig         : "<<ALIGN_W(m_TypeGapCnt["contigyes"         ])
-    << "\t"                   <<ALIGN_W(m_TypeGapCnt["contigno"          ])
-    << "\n\tcentromere     : "<<ALIGN_W(m_TypeGapCnt["centromereyes"     ])
-    << "\t"                   <<ALIGN_W(m_TypeGapCnt["centromereno"      ])
-    << "\n\tshort_arm      : "<<ALIGN_W(m_TypeGapCnt["short_armyes"      ])
-    << "\t"                   <<ALIGN_W(m_TypeGapCnt["short_armno"       ])
-    << "\n\theterochromatin: "<<ALIGN_W(m_TypeGapCnt["heterochromatinyes"])
-    << "\t"                   <<ALIGN_W(m_TypeGapCnt["heterochromatinno" ])
-    << "\n\ttelomere       : "<<ALIGN_W(m_TypeGapCnt["telomereyes"       ])
-    << "\t"                   <<ALIGN_W(m_TypeGapCnt["telomereno"        ])
-    //<< "\n\tSplit_finished : "<<m_TypeGapCnt["split_finishedyes" ]
-    //<< "\t"                   <<m_TypeGapCnt["split_finishedno"  ]
-    ;
+    int linkageYesCnt =
+      m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_clone   ]+
+      m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_fragment]+
+      m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_repeat  ];
+    int linkageNoCnt = m_GapCount - linkageYesCnt;
+    /*
+    cout << "\n- linkage yes -------- : "<<ALIGN_W(linkageYesCnt);
+    if(linkageYesCnt) {
+      for(int i=0; i<CGapVal::GAP_yes_count; i++) {
+        cout<< "\n\t"
+            << setw(15) << setiosflags(ios_base::left) << CGapVal::typeIntToStr[i]
+            << ": " << ALIGN_W( m_GapTypeCnt[CGapVal::GAP_count+i] );
+      }
+    }
+
+    cout << "\n- linkage no  -------- : "<<ALIGN_W(linkageNoCnt);
+    if(linkageNoCnt) {
+      for(int i=0; i<CGapVal::GAP_count; i++) {
+        cout<< "\n\t"
+            << setw(15) << setiosflags(ios_base::left) << CGapVal::typeIntToStr[i]
+            << ": " << ALIGN_W( m_GapTypeCnt[i] );
+      }
+    }
+    */
+
+    int doNotBreakCnt= linkageYesCnt + m_GapTypeCnt[CGapVal::GAP_fragment];
+    int breakCnt     = linkageNoCnt  - m_GapTypeCnt[CGapVal::GAP_fragment];
+
+    cout<< "\n- do not break scaffold: "<<ALIGN_W(doNotBreakCnt);
+    if(doNotBreakCnt) {
+      cout<< "\n  clone   , linkage yes: "<<
+            ALIGN_W(m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_clone   ]);
+      cout<< "\n  fragment, linkage yes: "<<
+            ALIGN_W(m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_fragment]);
+      cout<< "\n  fragment, linkage no : "<<
+            ALIGN_W(m_GapTypeCnt[                   CGapVal::GAP_fragment]);
+      cout<< "\n  repeat  , linkage yes: "<<
+            ALIGN_W(m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_repeat  ]);
+    }
+
+    cout<< "\n- break it, linkage no : "<<ALIGN_W(breakCnt);
+    if(breakCnt) {
+      for(int i=0; i<CGapVal::GAP_count; i++) {
+        if(i==CGapVal::GAP_fragment) continue;
+        cout<< "\n\t"
+            << setw(15) << setiosflags(ios_base::left) << CGapVal::typeIntToStr[i]
+            << ": " << ALIGN_W( m_GapTypeCnt[i] );
+      }
+    }
+
   }
   cout << "\n";
 
   if(m_ObjCount) {
-    // cout << "\nObject names   :";
-    cout << "\n";
     {
       CAccPatternCounter objNamePatterns;
       objNamePatterns.AddNames(m_ObjIdSet);
@@ -653,7 +665,6 @@ void CAgpSyntaxValidator::PrintTotals()
   }
 
   if(m_CompId2Spans.size()) {
-    //cout << "Component names:";
     {
       CAccPatternCounter compNamePatterns;
       for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
@@ -720,13 +731,6 @@ void CAgpSyntaxValidator::x_PrintPatterns(
   ) {
     // Limit the number of lines to MaxPatterns or 2*MaxPatterns
     if( ++patternsPrinted<=MaxPatterns || pat_cnt.size()<=2*MaxPatterns ) {
-      /*
-      cout<<  "\t"
-          << ALIGN_W(CAccPatternCounter::GetCount(*it))
-          << "  "
-          << CAccPatternCounter::GetExpandedPattern(*it)
-          << "\n";
-      */
       cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left)
           << CAccPatternCounter::GetExpandedPattern(*it)
           << ": " << ALIGN_W( CAccPatternCounter::GetCount(*it) )
@@ -738,12 +742,6 @@ void CAgpSyntaxValidator::x_PrintPatterns(
   }
 
   if(accessionsSkipped) {
-    /*
-    cout<<  "\t"
-        << ALIGN_W(accessionsSkipped)
-        << "  other " << pat_cnt.size() - 10
-        << " patterns\n";
-    */
     string s = "other ";
     s+=NStr::IntToString(pat_cnt.size() - 10);
     s+=" patterns";

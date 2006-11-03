@@ -328,11 +328,12 @@ int CAgpValidateApplication::Run(void)
   x_ValidateUsingFiles(args);
   if(m_ValidationType == VT_Syntax) {
     m_LineValidator->PrintTotals();
+    if(m_CommentLineCount || m_EolComments) cout << "\n";
     if(m_CommentLineCount) {
-      cout << "#Comment line count  : " << m_CommentLineCount << "\n";
+      cout << "#Comment line count    : " << m_CommentLineCount << "\n";
     }
     if(m_EolComments) {
-      cout << "End of line #comments: " << m_EolComments << "\n";
+      cout << "End of line #comments  : " << m_EolComments << "\n";
     }
   }
   else if(m_ValidationType & VT_Taxid) {
