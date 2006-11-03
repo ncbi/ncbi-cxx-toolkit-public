@@ -122,7 +122,10 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
     }
     /* adjust info before yet another connection attempt */
     if (*redirect) {
-        int status = ConnNetInfo_ParseURL(uuu->net_info, *redirect);
+        int status;
+        *uuu->net_info->path = '\0'; /*path is not inherited*/
+        *uuu->net_info->args = '\0'; /*arguments are not inherited*/
+        status = ConnNetInfo_ParseURL(uuu->net_info, *redirect);
         free(*redirect);
         *redirect = 0;
         if (!status) {
@@ -1066,6 +1069,9 @@ extern void HTTP_SetNcbiMessageHook(FHTTP_NcbiMessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.74  2006/11/03 22:21:50  lavr
+ * Make path and arguments non-inheritable in redirects
+ *
  * Revision 6.73  2006/06/07 20:05:00  lavr
  * Take advantage of newly added SConnNetInfo::http_referer
  *
