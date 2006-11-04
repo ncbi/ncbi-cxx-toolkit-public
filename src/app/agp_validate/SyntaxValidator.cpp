@@ -609,7 +609,7 @@ void CAgpSyntaxValidator::PrintTotals()
     if(linkageYesCnt) {
       for(int i=0; i<CGapVal::GAP_yes_count; i++) {
         cout<< "\n\t"
-            << setw(15) << setiosflags(ios_base::left) << CGapVal::typeIntToStr[i]
+            << setw(15) << setiosflags(IOS_BASE::left) << CGapVal::typeIntToStr[i]
             << ": " << ALIGN_W( m_GapTypeCnt[CGapVal::GAP_count+i] );
       }
     }
@@ -618,7 +618,7 @@ void CAgpSyntaxValidator::PrintTotals()
     if(linkageNoCnt) {
       for(int i=0; i<CGapVal::GAP_count; i++) {
         cout<< "\n\t"
-            << setw(15) << setiosflags(ios_base::left) << CGapVal::typeIntToStr[i]
+            << setw(15) << setiosflags(IOS_BASE::left) << CGapVal::typeIntToStr[i]
             << ": " << ALIGN_W( m_GapTypeCnt[i] );
       }
     }
@@ -644,7 +644,7 @@ void CAgpSyntaxValidator::PrintTotals()
       for(int i=0; i<CGapVal::GAP_count; i++) {
         if(i==CGapVal::GAP_fragment) continue;
         cout<< "\n\t"
-            << setw(15) << setiosflags(ios_base::left) << CGapVal::typeIntToStr[i]
+            << setw(15) << setiosflags(IOS_BASE::left) << CGapVal::typeIntToStr[i]
             << ": " << ALIGN_W( m_GapTypeCnt[i] );
       }
     }
