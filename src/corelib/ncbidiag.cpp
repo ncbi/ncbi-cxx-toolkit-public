@@ -507,17 +507,17 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
 
     // Print common fields
     ostr << setfill('0') << setw(kDiagW_PID) << pid << '/'
-        << setw(kDiagW_TID) << tid << '/'
-        << setw(kDiagW_RID) << rid << ' '
-        << setfill(' ') << uid << ' '
-        << setfill('0') << setw(kDiagW_SN) << psn << '/'
-        << setw(kDiagW_SN) << tsn << ' '
-        << timestamp.AsString(kDiagTimeFormat) << ' '
-        << host << ' '
-        << setfill(' ') << setw(kDiagW_Client) << setiosflags(IOS_BASE::left)
-        << client << resetiosflags(IOS_BASE::left) << ' '
-        << session << ' '
-        << app << ' ';
+         << setw(kDiagW_TID) << tid << '/'
+         << setw(kDiagW_RID) << rid << ' '
+         << setw(0) << setfill(' ') << uid << ' '
+         << setfill('0') << setw(kDiagW_SN) << psn << '/'
+         << setw(kDiagW_SN) << tsn << ' '
+         << setw(0) << timestamp.AsString(kDiagTimeFormat) << ' '
+         << host << ' '
+         << setfill(' ') << setw(kDiagW_Client) << setiosflags(IOS_BASE::left)
+         << setw(0) << client << resetiosflags(IOS_BASE::left) << ' '
+         << session << ' '
+         << app << ' ';
 }
 
 
@@ -528,7 +528,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         return;
     }
     CDiagBuffer& buf = GetDiagBuffer();
-    CTime now(CTime::eCurrent);
     CNcbiOstrstream ostr;
     string prop;
     bool need_space = false;
@@ -847,7 +846,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     log_switched = SetLogFile(log_name, eDiagFile_All);
                 }
                 if ( !log_switched ) {
-                    ERR_POST(Warning << "Failed to open log file " +
+                    ERR_POST(Info << "Failed to open log file " +
                         CFile::NormalizePath(log_name));
                 }
             }
@@ -2555,7 +2554,7 @@ bool CFileDiagHandler::x_ReopenLog(SLogFileInfo& info)
     CNcbiOfstream* str = new CNcbiOfstream(info.m_FileName.c_str(), mode);
     if ( !str->is_open() ) {
         info.SetStream(&NcbiCerr, false, info.m_QuickFlush);
-        ERR_POST(Warning << "Failed to open log file: " << info.m_FileName);
+        ERR_POST(Info << "Failed to open log file: " << info.m_FileName);
         info.m_FileName = "-";
         return false;
     }
@@ -2654,7 +2653,7 @@ extern bool SetLogFile(const string& file_name,
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
-            ERR_POST(Warning <<
+            ERR_POST(Info <<
                 "Failed to set log file for the selected event type: "
                 "split log is disabled");
             return false;
@@ -2674,7 +2673,7 @@ extern bool SetLogFile(const string& file_name,
                 mode);
             if ( !str->is_open() ) {
                 SetLogFile("-", eDiagFile_All, quick_flush);
-                ERR_POST(Warning << "Failed to initialize log: "
+                ERR_POST(Info << "Failed to initialize log: "
                     << file_name);
                 return false;
             }
@@ -2904,6 +2903,13 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
                 text += " (";
                 text += (string) CNcbiOstrstreamToString(os);
                 text += ')';
+            }
+        }
+        {
+            ostrstream os;
+            pex->ReportStackTrace(os, "\n     Stack trace:", "\n      ");
+            if (os.pcount() != 0) {
+                text += (string) CNcbiOstrstreamToString(os);
             }
         }
         string err_type(pex->GetType());
@@ -3199,7 +3205,7 @@ bool CDoubleDiagHandler::SetLogFile(const string& file_name,
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
-            ERR_POST(Warning <<
+            ERR_POST(Info <<
                 "Failed to set log file for the selected event type: "
                 "split log is disabled");
             return false;
@@ -3222,7 +3228,7 @@ bool CDoubleDiagHandler::SetLogFile(const string& file_name,
             if ( !str->is_open() ) {
                 m_FileHandler.reset(
                     new CStreamDiagHandler(&NcbiCerr, quick_flush));
-                ERR_POST(Warning << "Failed to initialize log: " << file_name);
+                ERR_POST(Info << "Failed to initialize log: " << file_name);
                 return false;
             }
             else {
@@ -3483,6 +3489,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.135  2006/11/06 17:43:29  grichenk
+ * Report stack trace for exceptions.
+ * Log file warning changed to info.
+ * Fixed field width in diag messages.
+ *
  * Revision 1.134  2006/10/31 18:41:17  grichenk
  * Redesigned diagnostics setup.
  * Moved the setup function to ncbidiag.cpp.

@@ -40,6 +40,7 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -47,7 +48,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
 
 /////////////////////////////////
 // SetThrowTraceAbort
@@ -96,6 +96,43 @@ extern void DoDbgPrint(const CDiagCompileInfo &info,
 
 
 /////////////////////////////////////////////////////////////////////////////
+// Stack trace control
+
+NCBI_PARAM_ENUM_ARRAY(EDiagSev, EXCEPTION, Stack_Trace_Level)
+{
+    {"Trace",    eDiag_Trace},
+    {"Info",     eDiag_Info},
+    {"Warning",  eDiag_Warning},
+    {"Error",    eDiag_Error},
+    {"Critical", eDiag_Critical},
+    {"Fatal",    eDiag_Fatal}
+};
+
+
+NCBI_PARAM_ENUM_DECL(EDiagSev, EXCEPTION, Stack_Trace_Level);
+NCBI_PARAM_ENUM_DEF_EX(EDiagSev,
+                       EXCEPTION,
+                       Stack_Trace_Level,
+                       eDiag_Critical,
+                       eParam_NoThread, // No per-thread values
+                       EXCEPTION_STACK_TRACE_LEVEL);
+typedef NCBI_PARAM_TYPE(EXCEPTION, Stack_Trace_Level) TStackTraceLevelParam;
+
+static TStackTraceLevelParam s_StackTraceLevel;
+
+void CException::SetStackTraceLevel(EDiagSev level)
+{
+    s_StackTraceLevel.Set(level);
+}
+
+
+EDiagSev CException::GetStackTraceLevel(void)
+{
+    return s_StackTraceLevel.Get();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CException implementation
 
 bool CException::sm_BkgrEnabled = false;
@@ -103,15 +140,16 @@ bool CException::sm_BkgrEnabled = false;
 
 CException::CException(const CDiagCompileInfo& info,
                        const CException* prev_exception,
-                       EErrCode err_code, 
+                       EErrCode err_code,
                        const string& message,
-                       EDiagSev severity )
+                       EDiagSev severity)
 : m_Severity(severity),
   m_ErrCode(err_code),
   m_Predecessor(0),
   m_InReporter(false)
 {
     x_Init(info, message, prev_exception, severity);
+    x_GetStackTrace();
 }
 
 
@@ -246,6 +284,28 @@ void CException::ReportExtra(ostream& /*out*/) const
 }
 
 
+void CException::ReportStackTrace(ostream&      out,
+                                  const string& header,
+                                  const string& separator) const
+{
+    EDiagSev level = GetStackTraceLevel();
+    if ( !m_StackTrace.get()  ||
+        (m_Severity < level  &&  level != eDiag_Trace)) {
+        return;
+    }
+
+    out << header;
+    ITERATE(TStackTrace, it, *m_StackTrace) {
+        out << separator
+            << it->module << " "
+            << it->file << ":"
+            << it->line << " "
+            << it->func << " offset=0x"
+            << NStr::UInt8ToString(it->offs, 0, 16);
+    }
+}
+
+
 const char* CException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
@@ -324,6 +384,9 @@ void CException::x_Assign(const CException& src)
     if (!m_Predecessor && src.m_Predecessor) {
         m_Predecessor = src.m_Predecessor->x_Clone();
     }
+    if ( src.m_StackTrace.get() ) {
+        m_StackTrace.reset(new TStackTrace(*src.m_StackTrace));
+    }
 }
 
 
@@ -340,6 +403,21 @@ void CException::x_InitErrCode(EErrCode err_code)
     if (m_ErrCode != eInvalid && !m_Predecessor) {
         x_ReportToDebugger();
     }
+}
+
+
+void CException::x_GetStackTrace(void)
+{
+    EDiagSev level = GetStackTraceLevel();
+    if ( m_StackTrace.get() ) {
+        return;
+    }
+    if ( level != eDiag_Trace  &&
+        (m_Severity < level  ||  m_Severity == eDiag_Trace) ) {
+        return;
+    }
+    m_StackTrace.reset(new TStackTrace);
+    CStackTrace::GetStackTrace(*m_StackTrace);
 }
 
 
@@ -507,6 +585,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/11/06 17:43:29  grichenk
+ * Report stack trace for exceptions.
+ * Log file warning changed to info.
+ * Fixed field width in diag messages.
+ *
  * Revision 1.48  2006/01/18 19:45:23  ssikorsk
  * Added an extra argument to CException::x_Init
  *
