@@ -55,12 +55,9 @@ public:
     /// Constructors:
     CPairwiseAln(const CSeq_align& seq_align,
                  TDim row_1,
-                 TDim row_2);
-
-//     CPairwiseAln(TDim row_1,
-//                  TDim row_2,
-//                  CSeq_id& seq_id_1
-//                  CSeq_id& seq_id_2);
+                 TDim row_2,
+                 int base_width_1 = 1,
+                 int base_width_2 = 1);
 
     /// Accessors:
     const CSeq_align& GetSeqAlign() const {
@@ -77,6 +74,8 @@ private:
     CConstRef<CSeq_align> m_SeqAlign;
     TDim m_Row1;
     TDim m_Row2;
+    int m_BaseWidth1;
+    int m_BaseWidth2;
 
     void x_BuildFromDenseg();
     void x_BuildFromStdseg();
@@ -108,6 +107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/11/06 19:55:08  todorov
+* Added base widths.
+*
 * Revision 1.3  2006/10/19 20:19:11  todorov
 * CPairwiseAln is a CDiagRngColl now.
 *
