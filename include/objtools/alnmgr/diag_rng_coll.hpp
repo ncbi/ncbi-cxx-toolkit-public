@@ -47,44 +47,9 @@ public:
     typedef CAlignRangeCollection<TAlnRng>       TAlnRngColl;
     typedef CAlignRangeCollExtender<TAlnRngColl> TAlnRngCollExt;
 
-    enum EBaseWidth {
-        eUndefinedBaseWidth = 0,
-        eNucBaseWidth = 1,
-        eProtBaseWidth = 3
-    };
-    typedef int TBaseWidth;
-
-
     /// Constructor
-    CDiagRngColl(TBaseWidth first_base_width = eUndefinedBaseWidth,
-                 TBaseWidth second_base_width = eUndefinedBaseWidth);
+    CDiagRngColl();
 
-    /// Modifiers
-    CDiagRngColl& SetBaseWidths(TBaseWidth first_base_width,
-                                TBaseWidth second_base_width) {
-        m_FirstBaseWidth = first_base_width;
-        m_SecondBaseWidth = second_base_width;
-        return *this;
-    }
-
-    /// Accessors
-    TBaseWidth GetFirstBaseWidth() const {
-        if (m_FirstBaseWidth == eUndefinedBaseWidth) {
-            NCBI_THROW(CException, eUnknown,
-                       "BaseWidths not initialized.  "
-                       "Please SetBaseWidths() !");
-        }
-        return m_FirstBaseWidth;
-    }
-    TBaseWidth GetSecondBaseWidth() const {
-        if (m_SecondBaseWidth == eUndefinedBaseWidth) {
-            NCBI_THROW(CException, eUnknown,
-                       "BaseWidths not initialized.  "
-                       "Please SetBaseWidths() !");
-        }
-        return m_SecondBaseWidth;
-    }
-    
     /// Calculate a difference
     void Diff(const TAlnRngColl& substrahend,
               TAlnRngColl& difference);
@@ -128,8 +93,6 @@ private:
     };
 
     TAlnRngCollExt m_Extender;
-    int m_FirstBaseWidth;
-    int m_SecondBaseWidth;
 };
 
 
@@ -137,9 +100,9 @@ inline
 void CDiagRngColl::TrimFirstFrom(TAlnRng& rng, int trim)
 {
     rng.SetLength(rng.GetLength() - trim);
-    rng.SetFirstFrom(rng.GetFirstFrom() + trim * GetFirstBaseWidth());
+    rng.SetFirstFrom(rng.GetFirstFrom() + trim);
     if (rng.IsDirect()) {
-        rng.SetSecondFrom(rng.GetSecondFrom() + trim * GetSecondBaseWidth());
+        rng.SetSecondFrom(rng.GetSecondFrom() + trim);
     }
 }
 
@@ -147,7 +110,7 @@ inline
 void CDiagRngColl::TrimFirstTo(TAlnRng& rng, int trim)
 {
     if (rng.IsReversed()) {
-        rng.SetSecondFrom(rng.GetSecondFrom() +  trim * GetSecondBaseWidth());
+        rng.SetSecondFrom(rng.GetSecondFrom() +  trim);
     }
     rng.SetLength(rng.GetLength() - trim);
 }
@@ -156,9 +119,9 @@ inline
 void CDiagRngColl::TrimSecondFrom(TAlnRng& rng, int trim)
 {
     rng.SetLength(rng.GetLength() - trim);
-    rng.SetSecondFrom(rng.GetSecondFrom() + trim * GetSecondBaseWidth());
+    rng.SetSecondFrom(rng.GetSecondFrom() + trim);
     if (rng.IsDirect()) {
-        rng.SetFirstFrom(rng.GetFirstFrom() + trim * GetFirstBaseWidth());
+        rng.SetFirstFrom(rng.GetFirstFrom() + trim);
     }
 }
 
@@ -166,7 +129,7 @@ inline
 void CDiagRngColl::TrimSecondTo(TAlnRng& rng, int trim)
 {
     if (rng.IsReversed()) {
-        rng.SetFirstFrom(rng.GetFirstFrom() + trim * GetFirstBaseWidth());
+        rng.SetFirstFrom(rng.GetFirstFrom() + trim);
     }
     rng.SetLength(rng.GetLength() - trim);
 }
@@ -179,6 +142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/11/06 19:56:51  todorov
+* Eliminated basewidths.  Positions are stored in pseudo coords.
+*
 * Revision 1.4  2006/10/19 18:49:47  todorov
 * Fixed a typo.
 *

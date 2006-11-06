@@ -41,12 +41,9 @@
 BEGIN_NCBI_SCOPE
 
 
-CDiagRngColl::CDiagRngColl(TBaseWidth first_base_width,
-                           TBaseWidth second_base_width) :
+CDiagRngColl::CDiagRngColl() :
     TAlnRngColl(TAlnRngColl::fKeepNormalized | TAlnRngColl::fAllowMixedDir),
-    m_Extender(*this),
-    m_FirstBaseWidth(first_base_width),
-    m_SecondBaseWidth(second_base_width)
+    m_Extender(*this)
 {
 };
 
@@ -113,7 +110,7 @@ void CDiagRngColl::x_Diff(const TAlnRng& rng,
             // x--------)
             //  ...---...
             trim = r_it->GetFirstToOpen() - r.GetFirstFrom();
-            TrimFirstFrom(r, trim / GetFirstBaseWidth());
+            TrimFirstFrom(r, trim);
             if ((int) r.GetLength() <= 0) {
                 return;
             }
@@ -137,7 +134,7 @@ void CDiagRngColl::x_Diff(const TAlnRng& rng,
             //     x----)
             // x----...
             tmp_r = r;
-            TrimFirstTo(tmp_r, trim / GetFirstBaseWidth());
+            TrimFirstTo(tmp_r, trim);
             result.insert(tmp_r);
         }
     }
@@ -169,7 +166,7 @@ void CDiagRngColl::x_DiffSecond(const TAlnRng& rng,
             // x--------)
             //  ...---...
             trim = r_it->second->GetSecondToOpen() - r.GetSecondFrom();
-            TrimSecondFrom(r, trim / GetSecondBaseWidth());
+            TrimSecondFrom(r, trim);
             if ((int) r.GetLength() <= 0) {
                 return;
             }
@@ -193,7 +190,7 @@ void CDiagRngColl::x_DiffSecond(const TAlnRng& rng,
             //     x----)
             // x----...
             tmp_r = r;
-            TrimSecondTo(tmp_r, trim / GetSecondBaseWidth());
+            TrimSecondTo(tmp_r, trim);
             result.insert(tmp_r);
         }
     }
@@ -207,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/11/06 19:56:35  todorov
+* Eliminated basewidths.  Positions are stored in pseudo coords.
+*
 * Revision 1.2  2006/10/19 17:17:36  todorov
 * Include file fix.
 *
