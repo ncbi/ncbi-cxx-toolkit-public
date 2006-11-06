@@ -182,27 +182,40 @@ void SeqDB_CombinePath(const CSeqDB_Substring & one,
 }
 
 
+/// File existence test interface.
+class CSeqDB_FileExistence {
+public:
+    /// Destructor
+    virtual ~CSeqDB_FileExistence()
+    {
+    }
+    
+    /// Check if file exists at fully qualified path.
+    /// @param fname Filename.
+    /// @return True if the file was found.
+    virtual bool DoesFileExist(const string & fname) = 0;
+};
+
+
 /// Test whether an index or alias file exists
 ///
 /// The provide filename is combined with both of the extensions
 /// appropriate to the database sequence type, and the resulting
-/// strings are checked for existence in the file system.
+/// strings are checked for existence in the file system.  The
+/// 'access' object defines how to check file existence.
 ///
 /// @param dbname
 ///   Input path and filename
 /// @param dbtype
 ///   Database type, either protein or nucleotide
-/// @param atlas
-///   The memory management layer.
-/// @param locked
-///   The lock holder object for this thread.
+/// @param access
+///   The file access object.
 /// @return
 ///   true if either of the index or alias files is found
 
-static bool s_SeqDB_DBExists(const string   & dbname,
-                             char             dbtype,
-                             CSeqDBAtlas    & atlas,
-                             CSeqDBLockHold & locked)
+static bool s_SeqDB_DBExists(const string         & dbname,
+                             char                   dbtype,
+                             CSeqDB_FileExistence & access)
 {
     string path;
     path.reserve(dbname.size() + 4);
@@ -211,19 +224,20 @@ static bool s_SeqDB_DBExists(const string   & dbname,
     
     path[path.size()-3] = dbtype;
     
-    if (atlas.DoesFileExist(path, locked)) {
+    if (access.DoesFileExist(path)) {
         return true;
     }
     
     path[path.size()-2] = 'i';
     path[path.size()-1] = 'n';
     
-    if (atlas.DoesFileExist(path, locked)) {
+    if (access.DoesFileExist(path)) {
         return true;
     }
     
     return false;
 }
+
 
 /// Returns the character used to seperate path components in the
 /// current operating system or platform.
@@ -268,12 +282,12 @@ static string s_GetPathSplitter()
 ///   The lock holder object for this thread.
 /// @return
 ///   Full pathname, minus extension, or empty string if none found.
-static string s_SeqDB_TryPaths(const string   & blast_paths,
-                               const string   & dbname,
-                               char             dbtype,
-                               bool             exact,
-                               CSeqDBAtlas    & atlas,
-                               CSeqDBLockHold & locked)
+
+static string s_SeqDB_TryPaths(const string         & blast_paths,
+                               const string         & dbname,
+                               char                   dbtype,
+                               bool                   exact,
+                               CSeqDB_FileExistence & access)
 {
     // 1. If this was a vector<CSeqDB_Substring>, the tokenize would
     //    not need to do any allocations (but would need rewriting).
@@ -298,12 +312,12 @@ static string s_SeqDB_TryPaths(const string   & blast_paths,
                           attempt);
         
         if (exact) {
-            if (atlas.DoesFileExist(attempt, locked)) {
+            if (access.DoesFileExist(attempt)) {
                 result = attempt;
                 break;
             }
         } else {
-            if (s_SeqDB_DBExists(attempt, dbtype, atlas, locked)) {
+            if (s_SeqDB_DBExists(attempt, dbtype, access)) {
                 result = attempt;
                 break;
             }
@@ -314,12 +328,12 @@ static string s_SeqDB_TryPaths(const string   & blast_paths,
 }
 
 
-string SeqDB_FindBlastDBPath(const string   & dbname,
-                             char             dbtype,
-                             string         * sp,
-                             bool             exact,
-                             CSeqDBAtlas    & atlas,
-                             CSeqDBLockHold & locked)
+static string
+s_SeqDB_FindBlastDBPath(const string         & dbname,
+                        char                   dbtype,
+                        string               * sp,
+                        bool                   exact,
+                        CSeqDB_FileExistence & access)
 {
     // Local directory first;
     
@@ -347,7 +361,80 @@ string SeqDB_FindBlastDBPath(const string   & dbname,
         *sp = pathology;
     }
     
-    return s_SeqDB_TryPaths(pathology, dbname, dbtype, exact, atlas, locked);
+    return s_SeqDB_TryPaths(pathology, dbname, dbtype, exact, access);
+}
+
+/// Check file existence using CSeqDBAtlas.
+class CSeqDB_AtlasAccessor : public CSeqDB_FileExistence {
+public:
+    /// Constructor.
+    CSeqDB_AtlasAccessor(CSeqDBAtlas    & atlas,
+                         CSeqDBLockHold & locked)
+        : m_Atlas  (atlas),
+          m_Locked (locked)
+    {
+    }
+    
+    /// Test file existence.
+    /// @param fname Fully qualified name of file for which to look.
+    /// @return True iff file exists.
+    virtual bool DoesFileExist(const string & fname)
+    {
+        return m_Atlas.DoesFileExist(fname, m_Locked);
+    }
+    
+private:
+    CSeqDBAtlas    & m_Atlas;
+    CSeqDBLockHold & m_Locked;
+};
+
+
+string SeqDB_FindBlastDBPath(const string   & dbname,
+                             char             dbtype,
+                             string         * sp,
+                             bool             exact,
+                             CSeqDBAtlas    & atlas,
+                             CSeqDBLockHold & locked)
+{
+    CSeqDB_AtlasAccessor access(atlas, locked);
+    
+    return s_SeqDB_FindBlastDBPath(dbname,
+                                   dbtype,
+                                   sp,
+                                   exact,
+                                   access);
+}
+
+
+/// Check file existence using CFile.
+class CSeqDB_SimpleAccessor : public CSeqDB_FileExistence {
+public:
+    /// Constructor.
+    CSeqDB_SimpleAccessor()
+    {
+    }
+    
+    /// Test file existence.
+    /// @param fname Fully qualified name of file for which to look.
+    /// @return True iff file exists.
+    virtual bool DoesFileExist(const string & fname)
+    {
+        // Use the same criteria as the Atlas code would.
+        CFile whole(fname);
+        return whole.GetLength() != (Int8) -1;
+    }
+};
+
+
+string SeqDB_ResolveDbPath(const string & filename)
+{
+    CSeqDB_SimpleAccessor access;
+    
+    return s_SeqDB_FindBlastDBPath(filename,
+                                   '-',
+                                   0,
+                                   true,
+                                   access);
 }
 
 
