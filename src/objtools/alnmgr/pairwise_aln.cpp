@@ -40,6 +40,7 @@
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 
@@ -49,12 +50,19 @@ USING_SCOPE(ncbi::objects);
 
 CPairwiseAln::CPairwiseAln(const CSeq_align& sa,
                            TDim row_1,
-                           TDim row_2) :
+                           TDim row_2,
+                           int base_width_1,
+                           int base_width_2) :
     CDiagRngColl(),
     m_SeqAlign(&sa),
     m_Row1(row_1),
-    m_Row2(row_2)
+    m_Row2(row_2),
+    m_BaseWidth1(base_width_1),
+    m_BaseWidth2(base_width_2)
 {
+    _ASSERT(row_1 != row_2);
+    _ASSERT(sa.GetDim() > max(row_1, row_2));
+
     typedef CSeq_align::TSegs TSegs;
     const TSegs& segs = sa.GetSegs();
 
@@ -80,6 +88,8 @@ CPairwiseAln::CPairwiseAln(const CSeq_align& sa,
     case CSeq_align::TSegs::e_not_set:
         break;
     }
+
+    _ASSERT( !(GetFlags() & fInvalid) );
 }
 
 
@@ -103,31 +113,37 @@ CPairwiseAln::x_BuildFromDenseg()
     for (seg = 0, pos_1 = m_Row1, pos_2 = m_Row2;
          seg < numseg;
          ++seg, pos_1 += dim, pos_2 += dim) {
-        const TSeqPos& from_1 = starts[pos_1];
-        const TSeqPos& from_2 = starts[pos_2];
+        TSignedSeqPos from_1 = starts[pos_1] * m_BaseWidth1;
+        TSignedSeqPos from_2 = starts[pos_2] * m_BaseWidth2;
+        TSeqPos len = lens[seg];
 
-        /// if not a gap
+        /// if not a gap, insert it to the collection
         if (from_1 >= 0  &&  from_2 >= 0)  {
+            /// determinte the strands
             bool direct = true;
             if (strands) {
                 bool minus_1 = (*strands)[pos_1] == eNa_strand_minus;
                 bool minus_2 = (*strands)[pos_2] == eNa_strand_minus;
                 direct = minus_1 == minus_2;
             }
-            insert(TAlnRng(from_1, from_2, lens[seg], direct));
 
-            /// update range
-            if (empty()) {
-                m_Rng.SetFrom(from_1);
-                m_Rng.SetLength(lens[seg]);
-            } else {
-                m_Rng.SetFrom(min(m_Rng.GetFrom(), from_1));
-                m_Rng.SetToOpen(max(m_Rng.GetToOpen(), from_1 + lens[seg]));
+            /// base-width adjustments
+            if (m_BaseWidth1 > 1  ||  m_BaseWidth2 > 1) {
+                if (m_BaseWidth1 > 1) {
+                    from_1 *= m_BaseWidth1;
+                }
+                if (m_BaseWidth2 > 1) {
+                    from_2 *= m_BaseWidth2;
+                }
+                if (m_BaseWidth1 == m_BaseWidth2) {
+                    len *= m_BaseWidth1;
+                }
             }
+
+            /// insert the diag range
+            insert(TAlnRng(from_1, from_2, len, direct));
         }
     }
-
-    _ASSERT( !(GetFlags() & fInvalid) );
 }
 
 
@@ -135,9 +151,34 @@ void
 CPairwiseAln::x_BuildFromStdseg() 
 {
     ITERATE (CSeq_align::TSegs::TStd, 
-             std_i,
+             std_it,
              m_SeqAlign->GetSegs().GetStd()) {
-        *std_i;
+
+        const CStd_seg::TLoc& loc = (*std_it)->GetLoc();
+
+        _ASSERT((TDim) loc.size() > max(m_Row1, m_Row2));
+
+        CSeq_loc::TRange rng_1 = loc[m_Row1]->GetTotalRange();
+        CSeq_loc::TRange rng_2 = loc[m_Row2]->GetTotalRange();
+
+        bool direct = 
+            loc[m_Row1]->IsReverseStrand() == loc[m_Row2]->IsReverseStrand();
+
+        TSeqPos len_1 = rng_1.GetLength();
+        TSeqPos len_2 = rng_2.GetLength();
+
+        if (len_1 > 0  &&  len_2 > 0) {
+
+            bool direct = 
+                loc[m_Row1]->IsReverseStrand() == loc[m_Row2]->IsReverseStrand();
+
+            _ASSERT(len_1 * m_BaseWidth1 == len_2 * m_BaseWidth2);
+
+            insert(TAlnRng(rng_1.GetFrom() * m_BaseWidth1,
+                           rng_2.GetFrom() * m_BaseWidth2,
+                           len_1 * m_BaseWidth1,
+                           direct));
+        }
     }
 }
 
@@ -148,6 +189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/11/06 19:54:54  todorov
+* Added base widths and code for stdseg.
+*
 * Revision 1.1  2006/10/19 20:19:51  todorov
 * Initial revision.
 *
