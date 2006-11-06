@@ -564,6 +564,10 @@
  *  @ingroup OBJUTIL
  */
 
+/** @defgroup ObjUtilSeqAlign Seq-align utilities
+ *  @ingroup OBJUTIL
+ */
+
 /** @defgroup ObjUtilFeature Feature utilities
  *  @ingroup OBJUTIL
  */
