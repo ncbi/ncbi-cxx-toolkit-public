@@ -35,6 +35,7 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/alnmgr/aln_converters.hpp>
+#include <objtools/alnmgr/pairwise_aln.hpp>
 
 #include <objects/seqalign/Sparse_align.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -55,6 +56,45 @@ CAlnToPairwiseAlnConverter::Convert(const CSeq_align& input_seq_align,
     const TSegs& segs = input_seq_align.GetSegs();
 
     switch(segs.Which())    {
+    case CSeq_align::TSegs::e_Dendiag:
+        break;
+    case CSeq_align::TSegs::e_Denseg: {
+        CDense_seg::TDim row;
+        CDense_seg::TNumseg sgmt;
+
+        /// Determine anchor row
+        for (row = 0; row < ds.GetDim(); ++row)   {
+            if ( !(m_Comp(ds.GetIds()[row], m_Hints.GetAnchorId()) ||
+                   m_Comp(m_Hints.GetAnchorId(), ds.GetIds()[row])) ) {
+                anchor_row = row;
+            }
+        }
+         
+        for (row = 0; row < ds.GetDim();  ++row) {
+            if (row != anchor_row) {
+                CConstRef<CPairwiseAln> pairwise_aln
+                    (new CPairwiseAln(sa, anchor_row, row));
+                output_pairwise_align.m_PairwiseAlns.push_back(pairwise_aln);
+            }
+        }
+        break;
+    }
+    case CSeq_align::TSegs::e_Std:
+        x_BuildFromStdseg();
+        break;
+    case CSeq_align::TSegs::e_Packed:
+        break;
+    case CSeq_align::TSegs::e_Disc:
+        ITERATE(CSeq_align_set::Tdata, sa_it, segs.GetDisc().Get()) {
+            ConvertCPairwiseAln(**sa_it, row_1, row_2);
+        }
+        break;
+//     case CSeq_align::TSegs::e_Spliced:
+//     case CSeq_align::TSegs::e_Sparse:
+    case CSeq_align::TSegs::e_not_set:
+        break;
+    }
+
     case TSegs::e_Disc:
         {
             bool first_disc = true;
@@ -90,164 +130,7 @@ CAlnToPairwiseAlnConverter::Convert(const CSeq_align& input_seq_align,
 void 
 CAlnToPairwiseAlnConverter::x_Convert(const CDense_seg& ds)
 {
-    CDense_seg::TDim row;
-    CDense_seg::TNumseg sgmt;
-
-    /// Determine anchor row
-    for (row = 0; row < ds.GetDim(); ++row)   {
-        if ( !(m_Comp(ds.GetIds()[row], m_Hints.GetAnchorId()) ||
-               m_Comp(m_Hints.GetAnchorId(), ds.GetIds()[row])) ) {
-            anchor_row = row;
-        }
-    }
-         
-    for (row = 0; row < ds.GetDim();  ++row) {
-        if (row != anchor_row) {
-            TAlnRngColl aln_rng_coll;
-            x_CreateAlnRngColl(ds, anchor_row, row, aln_rng_coll);
-        }
-    }
 }
-
-
-void
-CAlnToPairwiseAlnConverter::CreateAlnRngColl(const CDense_seg& ds,
-                                             CDense_seg::TDim row_1,
-                                             CDense_seg::TDim row_2,
-                                             TAlnRngColl& coll,
-                                             TAlnRng* rng = 0)
-{
-    _ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
-    _ASSERT(row_2 >=0  &&  row_2 < ds.GetDim());
-
-    typedef CDense_seg::TDim TDim;
-    typedef CDense_seg::TNumseg TNumseg;
-
-    const CDense_seg::TDim dim = ds.GetDim();
-    const CDense_seg::TNumseg numseg = ds.GetNumseg();
-    const CDense_seg::TStarts& starts = ds.GetStarts();
-    const CDense_seg::TLens& lens = ds.GetLens();
-    const CDense_seg::TStrands* strands = 
-        ds.IsSetStrands() ? &ds.GetStrands() : NULL;
-
-    CDense_seg::TNumseg seg;
-    int pos_1, pos_2;
-    for (seg = 0, pos_1 = row_1, pos_2 = row_2;
-         seg < numseg;
-         ++seg) {
-        const TSignedSeqPos& from_1 = starts[pos1];
-        const TSignedSeqPos& from_2 = starts[pos2];
-
-        /// if not a gap
-        if (from_1 >= 0  &&  from_2 >= 0)  {
-            bool direct = true;
-            if (strands) {
-                bool minus_1 = (*strands)[pos_1] == eNa_strand_minus;
-                bool minus_2 = (*strands)[pos_2] == eNa_strand_minus;
-                direct = minus_1 == minus_2;
-            }
-            coll.insert(TAlnRng(from_1, from_2, lens[seg], direct));
-
-            /// update range
-            if (rng) {
-                if(coll.empty())    {
-                    rng.SetFrom(from_1);
-                    rng.SetLength(lens[seg]);
-                } else {
-                    rng.SetFrom(min(range.GetFrom(), from_1));
-                    rng.SetToOpen(max(range.GetToOpen(), from_1 + lens[seg]));
-                }
-            }
-        }
-    }
-
-    _ASSERT( !(coll.GetFlags() & TAlnRngColl::fInvalid) );
-}
-
-
-
-//     ///////////////////
-//     bool plus1 = true;
-//     bool plus2 = true;
-
-//     if ( !ds.GetStrands().empty() ) {
-//         plus1 = ds.GetStrands()[row1] != eNa_strand_minus;
-//         plus2 = ds.GetStrands()[row2] != eNa_strand_minus;
-//     }
-
-//     bool opposite = plus != plus2;
-
-//     const CDense_seg::TDim& dim = ds.GetDim();
-//     const CDense_seg::TNumseg& numseg = ds.GetNumseg();
-//     const CDense_seg::TStarts& starts = ds.GetStarts();
-//     const CDense_seg::TLens& lens = ds.GetLens();
-    
-
-//     TSeqPos rng_len = 0;
-//     TSignedSeqPos rng_start1, rng_start2;
-
-//     CDense_seg::TNumseg seg = (plus1 ? 0 : numseg - 1);
-//     int pos1 = (plus1 ? row1 : dim * numseg - 1 - row1);
-//     int pos2 = (plus2 ? row2 : dim * numseg - 1 - row2);
-
-//     for (;
-//          plus1 ? seg < numseg : seg >= 0;
-//          plus1 ? (++seg, pos1 += dim) : (--seg, pos1 -= dim), 
-//              plus2 ? pos2 += dim : pos2 -= dim) {
-
-//         if (starts[pos1] >= 0) {
-//             if (start[pos2] >= 0) {
-//                 /// both non-gapped 
-//                 if (rng_len) {
-//                     if (rng_start1 + rng_len == starts[pos1]  &&
-//                         (opposite ?
-//                          start2[pos2] + lens[seg] == rng_start2 :
-//                          rng_start2 + rng_len == starts[pos2])) {
-//                         /// rng continues
-//                         rng_len += lens[seg];
-//                         if (opposite) {
-//                             rng_start2 = starts2[pos];
-//                         }
-//                     } else {
-//                         /// rng breaks here and a new rng starts!
-                        
-//                         rng_start1 = starts[pos1];
-//                         rng_start2 = starts[pos2];
-//                         rng_len = lens[seg];
-//                     }
-                    
-//                 } else {
-//                     /// start of a new rng, record it!
-//                     rng_start1 = starts[pos1];
-//                     rng_start2 = starts[pos2];
-//                     rng_len = lens[seg];
-//                 }
-//             } else {
-//                 /// 2nd gapped
-//                 if (rng_len) {
-//                     /// 1st non-gapped, 2nd gapped: end of rng!
-                    
-//                 } else {
-//                     /// 1st non-gapped, 2nd gapped, no rng: skip
-//                     continue;
-//                 }
-//             }
-//         } else if (start[pos2] >= 0) {
-//             if (rng_len) {
-//                 /// close prev rng
-//             }
-//         } else {
-//             /// both gapped, skip this sgmt
-//             continue;
-//         }
-            
-        
-//         }
-//     } else {
-//         for (sgmt = ds.GetNumseg()-1;  sgmt >= ds.GetNumseg();  --sgmt) {
-//         }
-//     }
-// }
 
 
 void
@@ -400,65 +283,6 @@ CAlnVec* BuildDenseAlignment(const CSeq_id& master_id,
 }
 
 
-/// Converter Helper function
-/// Creates an Align Collection from the two rows of a CDense_seg
-SAlignedSeq*  CreateAlignRow(const CDense_seg& dense_seg,
-                                CDense_seg::TDim row_1, 
-                                CDense_seg::TDim row_2)
-{
-    _ASSERT(row_1 >=0  &&  row_1 < dense_seg.GetDim());
-    _ASSERT(row_2 >=0  &&  row_2 < dense_seg.GetDim());
-
-    auto_ptr<SAlignedSeq> aln_seq(new SAlignedSeq());
-    aln_seq->m_SeqId.Reset(dense_seg.GetIds()[row_2]);
-    SAlignedSeq::TSignedRange& range = aln_seq->m_SecondRange;
-   
-    aln_seq->m_AlignColl = new SAlignedSeq::TAlignColl();
-    SAlignedSeq::TAlignColl& coll = *aln_seq->m_AlignColl;    
-
-    typedef CDense_seg::TDim TDim;
-    typedef CDense_seg::TNumseg TNum;
-
-    const CDense_seg::TStarts& starts = dense_seg.GetStarts();
-    const CDense_seg::TLens& lens = dense_seg.GetLens();
-    const CDense_seg::TStrands* strands =
-        dense_seg.IsSetStrands() ? &dense_seg.GetStrands() : NULL;
-
-    // iterate by segements and add aligned segments to the collection
-    TDim n_rows = dense_seg.GetDim();
-    TNum n_seg = dense_seg.GetNumseg();
-    for( TNum i = 0; i < n_seg;  i++ )  {
-        int offset = i * n_rows;
-        int from_1 = starts[row_1 + offset];
-        int from_2 = starts[row_2 + offset];
-
-        if(from_1 != -1  &&  from_2 != -1)  { // not a gap
-            int len = lens[i];
-            bool direct = true;
-            if(strands) {
-                bool minus_1 = (*strands)[row_1 + offset] == eNa_strand_minus;
-                bool minus_2 = (*strands)[row_2 + offset] == eNa_strand_minus;
-                direct = (! minus_1  &&  ! minus_2)  ||  (minus_1 == minus_2);
-            }
-            coll.insert(SAlignTools::TAlignRange(from_1, from_2, len, direct));
-
-            // update range
-            if(coll.empty())    {
-                range.SetFrom(from_1);
-                range.SetLength(len);
-            } else {
-                range.SetFrom(min(range.GetFrom(), from_1));
-                range.SetToOpen(max(range.GetToOpen(), from_1 + len));
-            }
-        }
-    }
-    //LOG_POST("GetAlignColl() rows [" << row_1 << ", " << row_2 << "]" << ",  segments " << coll.size());
-
-    _ASSERT((coll.GetFlags() & SAlignTools::TAlignColl::fInvalid) == 0);
-    return aln_seq.release();
-}
-
-
 /// Creates Align Collection from a CSparse_seg
 void GetAlignColl(const CSparse_align& sparse_align,
                   const CSeq_id& master_id, 
@@ -552,6 +376,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/11/06 19:54:04  todorov
+* CSeqAlignToAnchored converts alignments given hints and using CPairwiseAln.
+*
 * Revision 1.1  2006/10/19 17:23:01  todorov
 * Initial draft.
 *

@@ -37,7 +37,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <objtools/alnmgr/aln_hints.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 
 
@@ -45,50 +44,46 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class CAlnToAnchoredAlnConverter
+class objects::CSeq_align;
+
+
+template <THints>
+class CSeqAlignToAnchored : public binary_function
 {
 public:
-    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnContainer;
+    CSeqAlignToAnchored(const THints& hints) :
+        m_Hints(hints)
+    {
+    };
 
-    CAlnToAnchoredAlnConverter(const CAlnHints& hints) : 
-        m_Hints(hints),
-        m_Comp(m_Hints.m_Comp)
-    {}
+    CRef<CAnchoredAln> operator()(size_t aln_idx) {
+        _ASSERT(m_Hints.IsAnchored());
 
-    template<TAlnContainer>
-    void Convert(const TAlnContainer&   input_aln_container,     
-                 TAnchoredAlnContainer& output_anchored_aln_container)
-    { 
-        ITERATE(typename TAlnContainer, sa_it, input_seq_aln_container) {
-            CRef<CAnchoredAln> anchored_aln;
-            Convert(**sa_it, *anchored_aln);
-            output_anchored_aln_container.push_back(anchored_aln);
+        cosnt CSeq_align& sa = m_Hints.GetAlnForIdx(aln_idx);
+        const TDim& anchor_row = m_Hints.GetAnchorRowForAln(aln_idx++);
+
+        CRef<CAnchoredAln> anchored_aln;
+
+        for (TDim row = 0; row < ;  ++row) {
+            if (row != anchor_row) {
+                CConstRef<CPairwiseAln> pairwise_aln
+                    (new CPairwiseAln(sa,
+                                      anchor_row,
+                                      row,
+                                      GetBaseWidthForAlnRow(aln_idx, anchor_row),
+                                      GetBaseWidthForAlnRow(aln_idx, row)));
+                anchored_aln.push_back(pairwise_aln);
+            }
         }
+        return anchored_aln;
     }
 
-    void  Convert(const CSeq_align& input_aln,
-                  CAnchoredAln&     output_anchored_aln);
-
-    /// TAlnRngColl
-    
-    typedef TSignedSeqPos TPos;
-    typedef CAlignRange<TPos> TAlnRng;
-    typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
-
-    CreateAlnRngColl(const CDense_seg& ds,
-                     CDense_seg::TDim row_1,
-                     CDense_seg::TDim row_2,
-                     TAlnRngColl& coll,
-                     TAlnRng* rng = 0);
-
-
 private:
-    void x_Convert(const CDense_seg& dense_seg);
-    void x_Convert(const CSparse_align& sparse_align);
-    void x_Convert(const CSparse_seg& sparse_seg);
+    typedef typename THints::TDim TDim;
 
-    const CAlnHints& m_Hints;
-    CAlnHints::TSeqIdComp& m_Comp;
+    cosnt THints& m_Hints;
+    typename THints::TSeqIdComp& m_Comp;
+
 };
 
 
@@ -99,6 +94,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/11/06 19:53:50  todorov
+* CSeqAlignToAnchored converts alignments given hints and using CPairwiseAln.
+*
 * Revision 1.1  2006/10/19 17:22:31  todorov
 * Initial revision.
 *
