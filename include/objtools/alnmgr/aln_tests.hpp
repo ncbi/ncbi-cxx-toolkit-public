@@ -45,9 +45,6 @@
 #include <util/bitset/ncbi_bitset.hpp>
 
 
-/// Implementation includes
-
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -59,6 +56,7 @@ template <class TAlnVector,
 class CAlnSeqIdVector
 {
 public:
+    /// Construction
     CAlnSeqIdVector(const TAlnVector& aln_vector,
                     TSeqIdPtrComp& seq_id_ptr_comp) :
         m_AlnVector(aln_vector),
@@ -71,6 +69,7 @@ public:
 
     typedef vector<TSeqIdPtr> TSeqIdVector;
 
+    /// Accessing the seq-ids of a particular seq-align
     const TSeqIdVector& operator[](size_t aln_idx) const
     {
         _ASSERT(aln_idx < m_Size);
@@ -80,6 +79,11 @@ public:
             _ASSERT( !m_AlnSeqIdVector[aln_idx].empty() );
         }
         return m_AlnSeqIdVector[aln_idx];
+    }
+
+    /// Accessing the underlying TAlnVector
+    const TAlnVector& GetAlnVector() const {
+        return m_AlnVector;
     }
 
 private:
@@ -212,7 +216,7 @@ public:
     typedef map<CBioseq_Handle, TBitVector> TSeqIdAlnMap;
 
     /// Get the internally-built structure
-    const TSeqIdAlnMap& Get() const {
+    const TSeqIdAlnMap& GetSeqIdAlnMap() const {
         return m_Bitmap;
     }
 
@@ -260,6 +264,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/11/06 19:59:54  todorov
+* Minor changes.  Added GetAlnVector()
+*
 * Revision 1.4  2006/10/23 17:17:12  todorov
 * name change AlnContainer -> AlnVector, since random access is required.
 *
