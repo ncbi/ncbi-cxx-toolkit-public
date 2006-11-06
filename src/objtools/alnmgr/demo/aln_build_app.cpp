@@ -137,13 +137,17 @@ int CAlnBuildApp::Run(void)
     CONNECT_Init(&GetConfig());
 
     LoadInputAlns();
+
+    /// Create a vector of alignments
     typedef vector<const CSeq_align*> TAlnVector;
     TAlnVector aln_vector(m_AlnContainer.size());
     aln_vector.assign(m_AlnContainer.begin(), m_AlnContainer.end());
 
+    /// Create a comparison functor
     typedef SCompareOrdered<const CSeq_id*> TComp;
     TComp comp;
 
+    /// Create a vector of seq-ids per seq-align
     typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
     TAlnSeqIdVector aln_id_vector(aln_vector, comp);
 
@@ -179,6 +183,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/11/06 19:57:36  todorov
+* Added comments.
+*
 * Revision 1.1  2006/10/19 17:12:41  todorov
 * Initial revision.
 *
