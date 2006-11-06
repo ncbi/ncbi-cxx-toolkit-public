@@ -34,11 +34,6 @@
 BEGIN_NCBI_SCOPE
 
 
-CStackTrace::CStackTrace()
-{
-}
-
-
 void CStackTrace::GetStackTrace(TStack& stack_trace)
 {
 }
@@ -51,6 +46,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/06 18:30:49  ucko
+ * Drop CStackTrace::CStackTrace() [empty, and never declared].
+ *
  * Revision 1.1  2006/11/06 17:37:39  grichenk
  * Initial revision
  *
