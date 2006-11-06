@@ -59,7 +59,7 @@ static int s_StackWalker(uintptr_t int_ptr, int, void* data)
             sf_info.func = buf;
         }
         */
-        sf_info.offs = (unsigned)info.dli_saddr - (unsigned)info.dli_fbase;
+        sf_info.offs = (size_t)info.dli_saddr - (size_t)info.dli_fbase;
         sf_info.module = info.dli_fname;
     } else {
         sf_info.func = NStr::IntToString(int_ptr);
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/06 23:00:58  grichenk
+ * Fixed type casts on 64-bit solaris
+ *
  * Revision 1.1  2006/11/06 17:37:39  grichenk
  * Initial revision
  *
