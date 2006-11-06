@@ -37,29 +37,98 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <objects/seqalign/Seq_align.hpp>
+
 #include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+template <class TAlnSeqIdVector
 class CAlnHints : public CObject
 {
 public:
-    typedef const CSeq_id* TSeqIdPtr;
-    typedef binary_function<TSeqIdPtr, TSeqIdPtr, bool> TSeqIdComp;
-    
-    CAlnHints(const TSeqIdComp& seq_id_comp) :
-        m_Comp(seq_id_comp)
-    {}
+    typedef CSeq_align::TDim TDim;
+    typedef vector<TSeqIdPtr> > TSeqIdVector;
 
-    const CBioseq_Handle& GetAnchorHandle() const {
+
+    /// Constructor
+    CAlnHints(const TAlnVector& aln_vector,
+              TSeqIdPtrComp& seq_id_ptr_comp) :
+        m_AlnVector(aln_vector),
+        m_Comp(seq_id_ptr_comp),
+        m_AlnSeqIdVector(m_AlnVector, m_Comp)
+    {
+    }
+
+
+    /// Access the underlying vector of alignments
+    const TAlnVector& GetAlnVector() const {
+        return m_AlnVector;
+    }
+
+    /// Do the alignments have a common anchor?
+    bool IsAnchored() const {
         return m_AnchorHandle;
     }
 
+    /// Get the anchor bioseq handle
+    const CBioseq_Handle& GetAnchorHandle() const {
+        _ASSERT(IsAnchored());
+        return m_AnchorHandle;
+    }
+
+    /// Get the anchor row within an alignment
+    const TDim& GetAnchorRowForAln(size_t aln_idx) const {
+        _ASSERT(IsAnchored());
+        if (m_AnchorRows.empty()) {
+            m_AnchorRows.resize(m_AlnVector.size());
+        }
+        _ASSERT( !m_AnchorRows.empty() );
+        if (m_AnchorRows[aln_idx] < 0) {
+            /// Determine anchor row
+            const TSeqIdVector& seq_ids = GetSeqIdsForAln(aln_idx);
+            for (size_t row = 0; row < seq_ids.size(); ++row)   {
+                if ( !(comp(ids[row], m_AnchorId) ||
+                       comp(m_AnchorId, ids[row])) ) {
+                    m_AnchorRows[aln_idx] = row;
+                    break;
+                }
+            }
+        }
+        _ASSERT(m_AnchorRows[aln_idx] >= 0);
+        return m_AnchorRows[aln_idx];
+    }
+
+    /// Access a vector of seq-ids for an alignment
+    const TSeqIdVector& GetSeqIdsForAln(size_t aln_idx) const {
+        return m_AlnSeqIdVector[aln_idx];
+    }
+
+    /// What is the dimension of an alignment?
+    const TDim& GetDimForAln(size_t aln_idx) {
+        return m_AlnSeqIdVector[aln_idx].size();
+    }
+
+    const int GetBaseWidthForAlnRow(size_t aln_idx, TDim row) {
+        return 0;
+    }
+
 private:
+    cosnt TAlnVector& m_AlnVector;
+    TSeqIdPtrComp& m_Comp;
+
+    typedef typename CAlnSeqIdVector<TAlnVector,
+                                     TSeqIdPtrComp,
+                                     TSeqIdPtr> TAlnSeqIdVector;
+
+    TAlnSeqIdVector m_AlnSeqIdVector;
+
     CBioseq_Handle m_AnchorHandle;
-    TSeqIdComp& m_Comp;
+    TSeqIdPtr m_AnchorId;
+    vector<TDim> m_AnchorRows;
+
 };
 
 
@@ -70,6 +139,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/11/06 19:58:57  todorov
+* Added aln statistics.
+*
 * Revision 1.1  2006/10/19 17:21:51  todorov
 * Initial revision.
 *
