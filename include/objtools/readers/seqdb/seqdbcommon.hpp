@@ -334,6 +334,21 @@ struct SSeqDBTaxInfo {
     string s_kingdom;
 };
 
+
+/// Resolve a file path using SeqDB's path algorithms.
+///
+/// This finds a file using the same algorithm used by SeqDB to find
+/// blast database filenames.  The filename must include the extension
+/// if any.  Paths which start with '/', '\', or a drive letter
+/// (depending on operating system) will be treated as absolute paths.
+/// If the file is not found an empty string will be returned.
+///
+/// @param filename Name of file to find.
+/// @return Resolved path or empty string if not found.
+
+NCBI_XOBJREAD_EXPORT
+string SeqDB_ResolveDbPath(const string & filename);
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBCOMMON_HPP
