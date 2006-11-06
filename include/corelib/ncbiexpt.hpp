@@ -40,6 +40,7 @@
 
 
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbi_stack.hpp>
 #include <errno.h>
 #include <string.h>
 #include <string>
@@ -561,6 +562,18 @@ public:
     /// "out" stream.
     virtual void ReportExtra(ostream& out) const;
 
+    /// Report stack trace if available.
+    ///
+    /// @param out
+    ///   Output stream.
+    /// @param header
+    ///   Header string to be printed before the stack trace.
+    /// @param separator
+    ///   String to be printed before each element of the stack trace.
+    void ReportStackTrace(ostream&      out,
+                          const string& header,
+                          const string& separator) const;
+
     /// Enable background reporting.
     ///
     /// If background reporting is enabled, then calling what() or ReportAll()
@@ -569,6 +582,11 @@ public:
     ///   The previous state of the flag.
     static bool EnableBackgroundReporting(bool enable);
 
+    /// Set severity level for saving and printing stack trace
+    static void SetStackTraceLevel(EDiagSev level);
+
+    /// Get current severity level for saving and printing stack trace
+    static EDiagSev GetStackTraceLevel(void);
 
     // ---- Attributes ---------
 
@@ -576,7 +594,7 @@ public:
     EDiagSev GetSeverity(void) const { return m_Severity; }
 
     /// Set exception severity.
-    void SetSeverity(EDiagSev severity) { m_Severity = severity; }
+    void SetSeverity(EDiagSev severity);
 
     /// Get class name as a string.
     virtual const char* GetType(void) const;
@@ -650,6 +668,9 @@ protected:
     /// Helper method for getting error code.
     virtual int  x_GetErrCode(void) const { return m_ErrCode; }
 
+    /// Get and store current stack trace
+    void x_GetStackTrace(void);
+
 private:
     EDiagSev    m_Severity;          ///< Severity level for the exception
     string      m_File;              ///< File     to report on
@@ -666,9 +687,20 @@ private:
     mutable bool m_InReporter;       ///< Reporter flag
     static  bool sm_BkgrEnabled;     ///< Background reporting enabled flag
 
+    typedef CStackTrace::TStack TStackTrace;
+    auto_ptr<TStackTrace> m_StackTrace; ///< Saved stack trace
+
     /// Private assignment operator to prohibit assignment.
     CException& operator= (const CException&);
 };
+
+
+inline
+void CException::SetSeverity(EDiagSev severity)
+{
+    m_Severity = severity;
+    x_GetStackTrace(); // May need stack trace with the new severity
+}
 
 
 /// Return valid pointer to uppermost derived class only if "from" is _really_
@@ -1152,6 +1184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/11/06 17:25:03  grichenk
+ * Fixed SParamEnumDescription - added env_var_name.
+ *
  * Revision 1.71  2006/09/25 17:48:38  gouriano
  * Check if secure lib is enabled before using it
  *

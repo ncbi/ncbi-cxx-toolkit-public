@@ -72,6 +72,7 @@ struct SParamEnumDescription
 
     const char*           section;
     const char*           name;
+    const char*           env_var_name;
     const TValue          default_value;
     const TNcbiParamFlags flags;
 
@@ -405,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/11/06 17:25:23  grichenk
+ * Fixed SParamEnumDescription - added env_var_name.
+ *
  * Revision 1.9  2006/01/05 20:40:17  grichenk
  * Added explicit environment variable name for params.
  * Added default value caching flag to CParam constructor.
