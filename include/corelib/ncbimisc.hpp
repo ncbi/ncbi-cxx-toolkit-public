@@ -924,7 +924,7 @@ void swap(NCBI_NS_NCBI::AutoPtr<P,D>& ptr1,
 }
 
 
-#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 340
+#if (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION < 340)  ||  defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COMPILER_MIPSPRO)
 
 #define ArraySize(array) sizeof(array)/sizeof((array)[0])
 
@@ -948,6 +948,10 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2006/11/06 20:50:38  ucko
+ * Also use the macro version of ArraySize on WorkShop and MIPSpro
+ * (in addition to old GCC), as the template can make them choke. :-/
+ *
  * Revision 1.98  2006/10/24 19:11:55  ivanov
  * Cosmetics: replaced tabulation with spaces
  *
