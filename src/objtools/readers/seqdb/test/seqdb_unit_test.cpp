@@ -2238,6 +2238,44 @@ BOOST_AUTO_UNIT_TEST(ExpertIdBoundsNoPig)
     }
 }
 
+BOOST_AUTO_UNIT_TEST(ResolveDbPath)
+{
+    START;
+    
+    typedef pair<bool, string> TStringBool;
+    typedef vector< TStringBool > TStringBoolVec;
+    
+    TStringBoolVec paths;
+    paths.push_back(TStringBool(true, "nt.00.nin"));
+    paths.push_back(TStringBool(true, "Trace/Zea_mays_EST.nal"));
+    paths.push_back(TStringBool(true, "taxdb.bti"));
+    paths.push_back(TStringBool(true, "data/seqp.pin"));
+    paths.push_back(TStringBool(false, "nr.00")); // missing extension 
+    
+    // Try to resolve each of the above paths.
+    
+    ITERATE(TStringBoolVec, iter, paths) {
+        string filename = iter->second;
+        string resolved = SeqDB_ResolveDbPath(filename);
+        bool found = ! resolved.empty();
+        
+        if (iter->first) {
+            int position = resolved.find(filename);
+            
+            // Should be found.
+            CHECK(found);
+            
+            // Resolved names are longer.
+            CHECK(resolved.size() > filename.size());
+            
+            // Filename must occur at end of resolved name.
+            CHECK_EQUAL(position + filename.size(), resolved.size());
+        } else {
+            CHECK(! found);
+        }
+    }
+}
+
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)
 class CDummyDLF : public CDataLoaderFactory {
@@ -2267,6 +2305,9 @@ void s_ForceSymbolDefinitions(CObjectIStream& ois,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/11/06 17:00:01  bealer
+ * - Add test for resolve path.
+ *
  * Revision 1.3  2006/11/03 19:22:29  ucko
  * Extend Darwin symbol-definition forcer to fix bind-at-launch mode runs too.
  *
