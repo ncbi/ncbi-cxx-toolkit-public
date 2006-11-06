@@ -161,7 +161,7 @@ property valerr : {name:"valerr", path:"objects:valerr", inc:{"valerr__.cpp", "v
 property xobjmgr : {name:"xobjmgr", path:"objmgr"}
 property xobjutil : {name:"xobjutil", path:"objmgr:util"}
 property id2_split : {name:"id2_split", path:"objmgr:split", exc:{"split_cache.cpp"}}
-property xalnmgr : {name:"xalnmgr", path:"objtools:alnmgr"}
+property xalnmgr : {name:"xalnmgr", path:"objtools:alnmgr", exc:{"aln_container.cpp", "aln_converters.cpp"}}
 property xcddalignview : {name:"xcddalignview", path:"objtools:cddalignview"}
 property lds : {name:"lds", path:"objtools:lds"}
 --property lds_admin : {name:"lds_admin", path:"objtools:lds:admin"}
@@ -213,7 +213,8 @@ property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entr
 --property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
 property gui_dlg_registry : {name:"gui_dlg_registry", path:"gui:dialogs:registry"}
 --property gui_dlg_progress : {name:"gui_dlg_progress", path:"gui:dialogs:progress"}
-property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp", "seq_feat_remove_dlg.cpp", "feature_editor.cpp", "edit_resource_file.cpp", "edit_table_model.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
+--property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp", "seq_feat_remove_dlg.cpp", "feature_editor.cpp", "edit_resource_file.cpp", "edit_table_model.cpp", ""}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
+property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", exc:{"EditFormGroup.cpp", "EditFormGroup_.cpp", "EditFormInput.cpp", "EditFormInput_.cpp", "EditFormValue.cpp", "EditFormValue_.cpp", "NCBI_GUI_EditForm_module.cpp", "edit_form_builder.cpp", "edit_form_bin.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
 property gui_dlg_edit : {name:"gui_dlg_edit", path:"gui:dialogs:edit"}
 property gui_dlg_feat_search : {name:"gui_dlg_feat_search", path:"gui:dialogs:feat_search"}
 property gui_dlg_seq_goto : {name:"gui_dlg_seq_goto", path:"gui:dialogs:seq_goto"}
@@ -225,7 +226,7 @@ property w_fltk : {name:"w_fltk", path:"gui:widgets:fl"}
 property w_gl : {name:"w_gl", path:"gui:widgets:gl"}
 property w_seq : {name:"w_seq", path:"gui:widgets:seq"}
 property w_data : {name:"w_data", path:"gui:widgets:data"}
-property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data", inc:{"align_ds.cpp", "sparse_alignment.cpp", "sparse_iterator.cpp", "sparse_functions.cpp"}}
+property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data", exc:{"Sparse_align.cpp", "NCBI_Seqalign_ext_module.cpp", "Sparse_align_.cpp", "Sparse_score.cpp", "Sparse_score_.cpp", "Sparse_seg.cpp", "Sparse_seg_.cpp", "Sparse_seg_ext.cpp", "Sparse_seg_ext_.cpp"}}
 property seqalign_ext : {name:"seqalign_ext", path:"gui:widgets:aln_data", inc:{"seqalign_ext__.cpp", "seqalign_ext___.cpp"}, asn1:true, asn1Name:"seqalign_ext"}
 property w_seq_graphic : {name:"w_seq_graphic", path:"gui:widgets:seq_graphic"}
 property w_seq_text : {name:"w_seq_text", path:"gui:widgets:seq_text"}
@@ -441,6 +442,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.112  2006/11/06 14:47:36  lebedev
+ * Libraries updated
+ *
  * Revision 1.111  2006/10/17 12:22:07  lebedev
  * gui_dialogs updated
  *
@@ -772,11 +776,3 @@ end script
  * Initial revision
  * ===========================================================================
  *)
-
-on cell value theObject row theRow table column tableColumn
-	(*Add your script here.*)
-end cell value
-
-on number of rows theObject
-	(*Add your script here.*)
-end number of rows
