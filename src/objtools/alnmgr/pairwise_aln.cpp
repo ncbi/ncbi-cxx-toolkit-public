@@ -83,8 +83,10 @@ CPairwiseAln::CPairwiseAln(const CSeq_align& sa,
             CPairwiseAln(**sa_it, row_1, row_2);
         }
         break;
-//     case CSeq_align::TSegs::e_Spliced:
-//     case CSeq_align::TSegs::e_Sparse:
+    case CSeq_align::TSegs::e_Spliced:
+        break;
+    case CSeq_align::TSegs::e_Sparse:
+        break;
     case CSeq_align::TSegs::e_not_set:
         break;
     }
@@ -161,9 +163,6 @@ CPairwiseAln::x_BuildFromStdseg()
         CSeq_loc::TRange rng_1 = loc[m_Row1]->GetTotalRange();
         CSeq_loc::TRange rng_2 = loc[m_Row2]->GetTotalRange();
 
-        bool direct = 
-            loc[m_Row1]->IsReverseStrand() == loc[m_Row2]->IsReverseStrand();
-
         TSeqPos len_1 = rng_1.GetLength();
         TSeqPos len_2 = rng_2.GetLength();
 
@@ -189,6 +188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/11/06 20:07:46  todorov
+* Fixed warnings.
+*
 * Revision 1.2  2006/11/06 19:54:54  todorov
 * Added base widths and code for stdseg.
 *
