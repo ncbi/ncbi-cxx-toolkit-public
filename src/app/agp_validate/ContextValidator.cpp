@@ -36,6 +36,8 @@
 #include "ContextValidator.hpp"
 #include "AccessionPatterns.hpp"
 
+#include <algorithm>
+
 USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
 
