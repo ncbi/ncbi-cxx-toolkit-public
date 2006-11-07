@@ -86,7 +86,7 @@ void CAgpContextValidator::InvalidLine()
 }
 
 
-bool CAgpContextValidator::ValidateLine(
+void CAgpContextValidator::ValidateLine(
   const SDataLine& dl, const CAgpLine& cl)
 {
   //// Context-sensetive code common for GAPs and components.
@@ -148,9 +148,6 @@ bool CAgpContextValidator::ValidateLine(
   prev_end = cl.obj_end;
   prev_part_num = cl.part_num;
   prev_line_is_gap = cl.is_gap;
-
-  // allow the checks that use both this line and the next
-  return true;
 }
 
 void CAgpContextValidator::x_OnGapLine(

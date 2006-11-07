@@ -89,7 +89,7 @@ class CAgpContextValidator
 {
 public:
   CAgpContextValidator();
-  bool ValidateLine(const SDataLine& dl, const CAgpLine& cl);
+  void ValidateLine(const SDataLine& dl, const CAgpLine& cl);
   void EndOfObject(bool afterLastLine=false);
 
   // Adjust the context after an invalid line

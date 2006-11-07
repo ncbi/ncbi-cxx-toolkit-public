@@ -166,7 +166,6 @@ CAgpLine::CAgpLine()
     componentTypeValues["U"]='U'; // gap of unknown size
     componentTypeValues["W"]='W';
   }
-
 }
 
 bool CAgpLine::init( const SDataLine& dl)
