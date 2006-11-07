@@ -326,19 +326,24 @@ void CAgpErr::StartFile(const string& s)
 //   string beginning with "  "  one or more messages that matched
 string CAgpErr::SkipMsg(const string& str, bool skip_other)
 {
-  string res;
+  string res = skip_other ? "Printing" : "Skipping";
   const static char* skipErr  = "Skipping errors, printing warnings.";
   const static char* skipWarn = "Skipping warnings, printing errors.";
 
-  // Keywords: all warn* err*
+  // Keywords: all warn* err* alt
   int i_from=CODE_Last;
   int i_to  =0;
   if(str=="all") {
     i_from=0; i_to=CODE_Last;
     // "-only all" does not make a lot of sense,
     // but we can support it anyway.
-    res = skip_other ? "Printing" : "Skipping";
     res+=" all errors and warnings.";
+  }
+  else if(str=="alt") {
+    i_from=G_First; i_to=G_Last;
+    // "-only all" does not make a lot of sense,
+    // but we can support it anyway.
+    res+=" Accession/Length/Taxid errors.";
   }
   else if (str.substr(0,4)=="warn" && str.size()<=8 ) { // warn ings
     i_from=W_First; i_to=W_Last;
@@ -354,6 +359,7 @@ string CAgpErr::SkipMsg(const string& str, bool skip_other)
   }
 
   // Error or warning codes, substrings of the messages.
+  res="";
   for( int i=E_First; i<CODE_Last; i++ ) {
     bool matchesCode = ( str==GetPrintableCode(i) );
     if( matchesCode || NStr::Find(msg[i], str) != NPOS) {

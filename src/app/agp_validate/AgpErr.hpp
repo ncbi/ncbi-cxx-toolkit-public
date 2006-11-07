@@ -259,7 +259,6 @@ private:
 
   // a stream to Accumulate messages for the current line.
   // (We print right away messages that apply only to the previous line.)
-  CNcbiOstrstream* m_messages;
   string m_filename;
   int m_line_num;
 
@@ -268,6 +267,18 @@ private:
   vector<string> m_InputFiles;
 
 public:
+  // m_messages is public because:
+  // Genbank validator may stow away the syntax errors for the current line
+  // while it processes a batch of preceding lines without syntax errors;
+  // afterwards, it can put the stowed m_messages back, and print them in the
+  // correct place, following any Genbank validation errors for the batch.
+  //   CNcbiOstrstream* tmp = agpErr.m_messages;
+  //   agpErr.m_messages =  new CNcbiOstrstream();
+  //   << process a batch of preceding lines >>
+  //   agpErr.m_messages = tmp;
+  //   agpErr.LineDone(line_orig, line_num, true);
+  CNcbiOstrstream* m_messages;
+
   // 0: reading from cin or from a single file
   int GetFileNum()
   {
