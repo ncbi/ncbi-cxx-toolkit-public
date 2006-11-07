@@ -188,6 +188,24 @@ CBl2Seq::Run()
     return x_Results2SeqAlign();
 }
 
+CSearchResultSet
+CBl2Seq::RunEx()
+{
+    TSeqAlignVector alignments = Run();
+    TSeqLocInfoVector masks = GetFilteredQueryRegions();
+
+    vector< CConstRef<CSeq_id> > query_ids;
+    query_ids.reserve(alignments.size());
+    for (size_t i = 0; i < m_tQueries.size(); i++) {
+        query_ids.push_back(CConstRef<CSeq_id>(m_tQueries[i].seqloc->GetId()));
+    }
+
+    return BlastBuildSearchResultSet(query_ids, mi_pScoreBlock,
+                                 mi_clsQueryInfo,
+                                 m_OptsHandle->GetOptions().GetProgramType(),
+                                 alignments, m_Messages, &masks);
+}
+
 void
 CBl2Seq::RunWithoutSeqalignGeneration()
 {
@@ -352,6 +370,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.95  2006/11/07 22:08:16  camacho
+ * Refactor construction of CSearchResultSet so that it can be used in CBl2Seq
+ *
  * Revision 1.94  2006/09/15 13:11:12  madden
  * Change to LookupTableWrapInit prototype
  *

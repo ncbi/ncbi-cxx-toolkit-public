@@ -51,6 +51,18 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+CSearchResults::CSearchResults(CConstRef<CSeq_id> query,
+                               CRef<CSeq_align_set> align,
+                               const TQueryMessages& errs,
+                               CRef<CBlastAncillaryData> ancillary_data,
+                               const TMaskedQueryRegions* query_masks)
+: m_QueryId(query), m_Alignment(align), m_Errors(errs), 
+  m_AncillaryData(ancillary_data)
+{
+    if (query_masks)
+        SetMaskedQueryRegions(*query_masks);
+}
+
 void
 CSearchResults::GetMaskedQueryRegions
     (TMaskedQueryRegions& flt_query_regions) const
@@ -60,9 +72,11 @@ CSearchResults::GetMaskedQueryRegions
 
 void
 CSearchResults::SetMaskedQueryRegions
-    (TMaskedQueryRegions& flt_query_regions)
+    (const TMaskedQueryRegions& flt_query_regions)
 {
-    m_Masks = flt_query_regions;
+    m_Masks.clear();
+    copy(flt_query_regions.begin(), flt_query_regions.end(), 
+         back_inserter(m_Masks));
 }
 
 TQueryMessages
@@ -151,12 +165,13 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
 CSearchResultSet::CSearchResultSet(vector< CConstRef<CSeq_id> > queries,
                                    TSeqAlignVector              aligns,
                                    TSearchMessages              msg_vec,
-                                   TAncillaryVector             ancillary_data)
+                                   TAncillaryVector             ancillary_data,
+                                   const TSeqLocInfoVector*     query_masks)
 {
     if (ancillary_data.empty()) {
         ancillary_data.resize(aligns.size());
     }
-    x_Init(queries, aligns, msg_vec, ancillary_data);
+    x_Init(queries, aligns, msg_vec, ancillary_data, query_masks);
 }
 
 CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
@@ -169,13 +184,14 @@ CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
         queries.push_back(s_ExtractSeqId(aligns[i]));
     }
     
-    x_Init(queries, aligns, msg_vec, ancillary_data);
+    x_Init(queries, aligns, msg_vec, ancillary_data, NULL);
 }
 
 void CSearchResultSet::x_Init(vector< CConstRef<CSeq_id> > queries,
                               TSeqAlignVector              aligns,
                               TSearchMessages              msg_vec,
-                              TAncillaryVector             ancillary_data)
+                              TAncillaryVector             ancillary_data,
+                              const TSeqLocInfoVector*     query_masks)
 {
     _ASSERT(aligns.size() == ancillary_data.size());
     _ASSERT(aligns.size() == msg_vec.size());
@@ -184,10 +200,18 @@ void CSearchResultSet::x_Init(vector< CConstRef<CSeq_id> > queries,
     m_Results.resize(aligns.size());
     
     for(size_t i = 0; i < aligns.size(); i++) {
-        m_Results[i].Reset(new CSearchResults(queries[i],
-                                              aligns[i],
-                                              msg_vec[i],
-                                              ancillary_data[i]));
+        if (query_masks) {
+            m_Results[i].Reset(new CSearchResults(queries[i],
+                                                  aligns[i],
+                                                  msg_vec[i],
+                                                  ancillary_data[i],
+                                                  &(*query_masks)[i]));
+        } else {
+            m_Results[i].Reset(new CSearchResults(queries[i],
+                                                  aligns[i],
+                                                  msg_vec[i],
+                                                  ancillary_data[i]));
+        }
     }
 }
 

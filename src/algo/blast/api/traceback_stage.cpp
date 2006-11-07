@@ -304,56 +304,19 @@ CBlastTracebackSearch::Run()
                                    m_Options->GetGappedMode(),
                                    m_Options->GetOutOfFrameMode(),
                                    m_ResultType);
-    
-    // Collect query Seq-locs
-    
-    vector< CConstRef<CSeq_id> > qlocs;
-    
-    if (is_phi) {
-        CConstRef<CSeq_id> id(qdata->GetSeq_loc(0)->GetId());
-        
-        for(unsigned i = 0; i < aligns.size(); i++) {
-            qlocs.push_back(id);
-        }
-    } else {
-        for(unsigned i = 0; i < aligns.size(); i++) {
-            CConstRef<CSeq_id> id(qdata->GetSeq_loc(i)->GetId());
-            qlocs.push_back(id);
-        }
+
+    vector< CConstRef<CSeq_id> > query_ids;
+    query_ids.reserve(aligns.size());
+    for (size_t i = 0; i < qdata->GetNumQueries(); i++) {
+        query_ids.push_back(CConstRef<CSeq_id>(qdata->GetSeq_loc(i)->GetId()));
     }
     
-    // Collect summary data
-    
-    vector< CRef<CBlastAncillaryData> > summaries;
-    
-    if (is_phi) {
-        CRef<CBlastAncillaryData> s(new CBlastAncillaryData(
-                                    m_OptsMemento->m_ProgramType, 0,
-                                    m_InternalData->m_ScoreBlk->GetPointer(),
-                                    m_InternalData->m_QueryInfo));
-        
-        for(unsigned i = 0; i < aligns.size(); i++) {
-            summaries.push_back(s);
-        }
-    } else {
-        for(unsigned i = 0; i < aligns.size(); i++) {
-            CRef<CBlastAncillaryData> s(new CBlastAncillaryData(
-                                        m_OptsMemento->m_ProgramType, i,
-                                        m_InternalData->m_ScoreBlk->GetPointer(),
-                                        m_InternalData->m_QueryInfo));
-            summaries.push_back(s);
-        }
-    }
-    
-    // The preliminary stage also produces errors and warnings; they
-    // should be copied from that code to this class somehow, and
-    // returned here if they have not been returned or reported yet.
-    
-    if (m_Messages.size() < aligns.size()) {
-        m_Messages.resize(aligns.size());
-    }
-    
-    return CSearchResultSet(qlocs, aligns, m_Messages, summaries);
+    return BlastBuildSearchResultSet(query_ids,
+                                     m_InternalData->m_ScoreBlk->GetPointer(),
+                                     m_InternalData->m_QueryInfo,
+                                     m_OptsMemento->m_ProgramType, 
+                                     aligns, 
+                                     m_Messages);
 }
 
 END_SCOPE(blast)

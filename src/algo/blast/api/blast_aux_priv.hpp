@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_results.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 
 /** @addtogroup AlgoBlast
@@ -109,6 +110,16 @@ Blast_Message2TSearchMessages(const Blast_Message* blmsg,
 /// error_code passed as this function's argument
 string
 BlastErrorCode2String(Int2 error_code);
+
+/// Build a CSearchResultSet from internal BLAST data structures
+CSearchResultSet
+BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
+                          const BlastScoreBlk* sbp,
+                          const BlastQueryInfo* qinfo,
+                          EBlastProgramType program,
+                          const TSeqAlignVector& alignments,
+                          TSearchMessages& messages,
+                          const TSeqLocInfoVector* query_masks = NULL);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

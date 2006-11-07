@@ -37,6 +37,7 @@
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/blast_results.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -122,6 +123,10 @@ public:
     /// Discontinuous Seq-aligns are used to allow grouping of multiple HSPs
     /// that correspond to that query-subject alignment.
     virtual TSeqAlignVector Run();
+
+    /// Performs the same functionality as Run(), but it returns a different
+    /// data type
+    CSearchResultSet RunEx();
 
     /// Runs the search but does not produce seqalign output
     /// (useful if the raw search results are needed, rather
@@ -311,6 +316,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2006/11/07 22:08:16  camacho
+* Refactor construction of CSearchResultSet so that it can be used in CBl2Seq
+*
 * Revision 1.51  2006/10/19 17:45:04  camacho
 * Mark RunWithoutSeqalignGeneration as deprecated
 *

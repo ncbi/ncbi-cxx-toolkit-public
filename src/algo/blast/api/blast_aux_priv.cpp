@@ -137,6 +137,58 @@ BlastErrorCode2String(Int2 error_code)
     return retval;
 }
 
+CSearchResultSet
+BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
+                          const BlastScoreBlk* sbp,
+                          const BlastQueryInfo* qinfo,
+                          EBlastProgramType program,
+                          const TSeqAlignVector& alignments,
+                          TSearchMessages& messages,
+                          const TSeqLocInfoVector* query_masks)
+{
+    const bool is_phi = Blast_ProgramIsPhiBlast(program);
+
+    // Collect query Seq-locs
+    
+    vector< CConstRef<CSeq_id> > qlocs;
+    
+    if (is_phi) {
+        qlocs.assign(alignments.size(), query_ids.front());
+    } else {
+        copy(query_ids.begin(), query_ids.end(), back_inserter(qlocs));
+    }
+    
+    // Collect ancillary data
+    
+    vector< CRef<CBlastAncillaryData> > ancillary_data;
+    
+    if (is_phi) {
+        CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, 0, sbp,
+                                                            qinfo));
+        
+        for(unsigned i = 0; i < alignments.size(); i++) {
+            ancillary_data.push_back(s);
+        }
+    } else {
+        for(unsigned i = 0; i < alignments.size(); i++) {
+            CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, i, sbp,
+                                                                qinfo));
+            ancillary_data.push_back(s);
+        }
+    }
+    
+    // The preliminary stage also produces errors and warnings; they
+    // should be copied from that code to this class somehow, and
+    // returned here if they have not been returned or reported yet.
+    
+    if (messages.size() < alignments.size()) {
+        messages.resize(alignments.size());
+    }
+    
+    return CSearchResultSet(qlocs, alignments, messages, ancillary_data,
+                            query_masks);
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

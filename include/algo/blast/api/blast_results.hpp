@@ -153,12 +153,9 @@ public:
     CSearchResults(CConstRef<objects::CSeq_id>     query,
                    CRef<objects::CSeq_align_set>   align, 
                    const TQueryMessages          & errs,
-                   CRef<CBlastAncillaryData>       ancillary_data)
-        : m_QueryId(query), m_Alignment(align), 
-          m_Errors(errs), m_AncillaryData(ancillary_data)
-    {
-    }
-    
+                   CRef<CBlastAncillaryData>       ancillary_data,
+                   const TMaskedQueryRegions     * query_masks = NULL);
+        
     /// Accessor for the Seq-align results
     CConstRef<objects::CSeq_align_set> GetSeqAlign() const
     {
@@ -188,7 +185,7 @@ public:
     /// Mutator for the masked query regions, intended to be used by internal
     /// BLAST APIs to populate this object
     /// @param flt_query_regions the input value [in]
-    void SetMaskedQueryRegions(TMaskedQueryRegions& flt_query_regions);
+    void SetMaskedQueryRegions(const TMaskedQueryRegions& flt_query_regions);
     
 private:
     /// this query's id
@@ -242,7 +239,8 @@ public:
                      TSeqAlignVector aligns,
                      TSearchMessages msg_vec,
                      TAncillaryVector  ancillary_data = 
-                     TAncillaryVector());
+                     TAncillaryVector(),
+                     const TSeqLocInfoVector* masks = NULL);
     
     /// Allow array-like access with integer indices to CSearchResults 
     /// contained by this object
@@ -288,7 +286,8 @@ private:
     void x_Init(vector< CConstRef<objects::CSeq_id> > queries,
                 TSeqAlignVector                       aligns,
                 TSearchMessages                       msg_vec,
-                TAncillaryVector                      ancillary_data);
+                TAncillaryVector                      ancillary_data,
+                const TSeqLocInfoVector*              query_masks);
     
     /// Vector of results.
     vector< CRef<CSearchResults> > m_Results;
