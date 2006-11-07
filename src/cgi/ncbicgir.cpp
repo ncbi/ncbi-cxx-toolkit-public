@@ -64,7 +64,7 @@ const string CCgiResponse::sm_HTTPStatusName     = "Status";
 const string CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
 const string CCgiResponse::sm_BoundaryPrefix     = "NCBI_CGI_Boundary_";
 
-NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, false, CCgiResponse);
+NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, true, CCgiResponse);
 
 
 inline bool s_ZeroTime(const tm& date)
@@ -367,6 +367,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2006/11/07 19:19:56  vakatov
+* By default, throw an exception if the output CGI stream goes bad
+*
 * Revision 1.28  2006/10/18 18:33:09  vakatov
 * Allow to throw an exception in case the output becomes bad or closed
 * ([CGI.ThrowOnBadOutput] parameter)
