@@ -1357,8 +1357,13 @@ TMemberIndex CObjectIStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* choice
         ThrowError(fFormatError, "choice variant id expected");
 
     TMemberIndex index = GetChoiceIndex(choiceType, id);
-    if ( index == kInvalidMember )
-        UnexpectedMember(id, choiceType->GetVariants());
+    if ( index == kInvalidMember ) {
+        if (GetSkipUnknownVariants() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
+        } else {
+            UnexpectedMember(id, choiceType->GetVariants());
+        }
+    }
 
     return index;
 }
@@ -1551,6 +1556,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2006/11/07 19:00:46  gouriano
+* Added option to skip unknown variants
+*
 * Revision 1.109  2006/10/12 15:09:11  gouriano
 * Some header files moved into impl
 *

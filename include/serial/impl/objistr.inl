@@ -509,6 +509,32 @@ ESerialSkipUnknown CObjectIStream::GetSkipUnknownMembers(void)
 }
 
 inline
+void CObjectIStream::SetSkipUnknownVariants(ESerialSkipUnknown skip)
+{
+    if (m_SkipUnknownVariants == eSerialSkipUnknown_Never ||
+        m_SkipUnknownVariants == eSerialSkipUnknown_Always) {
+        return;
+    }
+    m_SkipUnknownVariants = (skip == eSerialSkipUnknown_Default) ?
+                            x_GetSkipUnknownVariantsDefault() : skip;
+}
+
+inline
+ESerialSkipUnknown CObjectIStream::GetSkipUnknownVariants(void)
+{
+    switch (m_SkipUnknownVariants) {
+    case eSerialSkipUnknown_Yes:
+    case eSerialSkipUnknown_Always:
+        return eSerialSkipUnknown_Yes;
+    default:
+    case eSerialSkipUnknown_No:
+    case eSerialSkipUnknown_Never:
+        break;
+    }
+    return eSerialSkipUnknown_No;
+}
+
+inline
 bool CObjectIStream::HaveMoreData(void)
 {
     return m_Input.HasMore();
@@ -580,6 +606,9 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/11/07 19:00:25  gouriano
+* Added option to skip unknown variants
+*
 * Revision 1.1  2006/10/05 19:23:37  gouriano
 * Moved from parent folder
 *

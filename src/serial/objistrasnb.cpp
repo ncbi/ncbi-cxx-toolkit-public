@@ -966,8 +966,14 @@ CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
     TLongTag tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
     ExpectIndefiniteLength();
     TMemberIndex index = choiceType->GetVariants().Find(tag);
-    if ( index == kInvalidMember )
-        UnexpectedMember(tag);
+    if ( index == kInvalidMember ) {
+        if (GetSkipUnknownVariants() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
+        } else {
+            UnexpectedMember(tag);
+        }
+        return index;
+    }
     if (index != kFirstMemberIndex && FetchFrameFromTop(1).GetNotag()) {
         if (index != kFirstMemberIndex+1) {
             UnexpectedMember(tag);
@@ -1095,6 +1101,12 @@ bool CObjectIStreamAsnBinary::SkipAnyContent(void)
 void CObjectIStreamAsnBinary::SkipAnyContentObject(void)
 {
     SkipAnyContent();
+}
+
+void CObjectIStreamAsnBinary::SkipAnyContentVariant(void)
+{
+    SkipAnyContent();
+    ExpectEndOfContent();
 }
 
 void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
@@ -1318,6 +1330,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2006/11/07 19:00:46  gouriano
+* Added option to skip unknown variants
+*
 * Revision 1.91  2006/10/12 15:09:11  gouriano
 * Some header files moved into impl
 *

@@ -69,6 +69,7 @@ public:
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
     bool SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
+    virtual void SkipAnyContentVariant(void);
 
     virtual void ReadBitString(CBitString& obj);
     virtual void SkipBitString(void);
@@ -259,6 +260,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2006/11/07 19:00:06  gouriano
+* Added option to skip unknown variants
+*
 * Revision 1.56  2006/10/12 15:08:27  gouriano
 * Some header files moved into impl
 *

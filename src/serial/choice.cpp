@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2006/11/07 19:00:46  gouriano
+* Added option to skip unknown variants
+*
 * Revision 1.40  2006/05/12 12:52:18  gouriano
 * Corrected reading XML attributes of choice
 *
@@ -447,25 +450,30 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     in.BeginChoice(choiceType);
     BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember )
-        in.ThrowError(in.fFormatError, "choice variant id expected");
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    if (variantInfo->GetId().IsAttlist()) {
-        const CMemberInfo* memberInfo =
-            dynamic_cast<const CMemberInfo*>(
-                choiceType->GetVariants().GetItemInfo(index));
-        memberInfo->ReadMember(in,objectPtr);
-        in.EndChoiceVariant();
-        index = in.BeginChoiceVariant(choiceType);
-        if ( index == kInvalidMember )
+    if ( index == kInvalidMember ) {
+        if (in.GetSkipUnknownVariants() == eSerialSkipUnknown_Yes) {
+            in.SkipAnyContentVariant();
+        } else {
             in.ThrowError(in.fFormatError, "choice variant id expected");
-        variantInfo = choiceType->GetVariantInfo(index);
+        }
+    } else {
+        const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+        if (variantInfo->GetId().IsAttlist()) {
+            const CMemberInfo* memberInfo =
+                dynamic_cast<const CMemberInfo*>(
+                    choiceType->GetVariants().GetItemInfo(index));
+            memberInfo->ReadMember(in,objectPtr);
+            in.EndChoiceVariant();
+            index = in.BeginChoiceVariant(choiceType);
+            if ( index == kInvalidMember )
+                in.ThrowError(in.fFormatError, "choice variant id expected");
+            variantInfo = choiceType->GetVariantInfo(index);
+        }
+        in.SetTopMemberId(variantInfo->GetId());
+
+        variantInfo->ReadVariant(in, objectPtr);
+        in.EndChoiceVariant();
     }
-    in.SetTopMemberId(variantInfo->GetId());
-
-    variantInfo->ReadVariant(in, objectPtr);
-
-    in.EndChoiceVariant();
     END_OBJECT_FRAME_OF(in);
     in.EndChoice();
     END_OBJECT_FRAME_OF(in);

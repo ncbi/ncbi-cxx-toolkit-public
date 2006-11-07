@@ -37,6 +37,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_param.hpp>
 
 #include <exception>
 
@@ -293,6 +294,45 @@ ESerialSkipUnknown CObjectIStream::x_GetSkipUnknownDefault(void)
     return skip;
 }
 
+NCBI_PARAM_ENUM_ARRAY(ESerialSkipUnknown, SERIAL, SKIP_UNKNOWN_VARIANTS)
+{
+    {"NO",     eSerialSkipUnknown_No},
+    {"NEVER",  eSerialSkipUnknown_Never},
+    {"YES",    eSerialSkipUnknown_Yes},
+    {"ALWAYS", eSerialSkipUnknown_Always}
+};
+NCBI_PARAM_ENUM_DECL(ESerialSkipUnknown, SERIAL, SKIP_UNKNOWN_VARIANTS);
+NCBI_PARAM_ENUM_DEF(ESerialSkipUnknown, SERIAL, SKIP_UNKNOWN_VARIANTS, eSerialSkipUnknown_No);
+static NCBI_PARAM_TYPE(SERIAL, SKIP_UNKNOWN_VARIANTS) ms_SkipUnknownVariantsDefault;
+
+void CObjectIStream::SetSkipUnknownVariantsThread(ESerialSkipUnknown skip)
+{
+    ESerialSkipUnknown now = ms_SkipUnknownVariantsDefault.GetThreadDefault();
+    if (now != eSerialSkipUnknown_Never &&
+        now != eSerialSkipUnknown_Always) {
+        ms_SkipUnknownVariantsDefault.SetThreadDefault(
+            (skip == eSerialSkipUnknown_Default) ?
+                ms_SkipUnknownVariantsDefault.GetDefault() : skip );
+    }
+}
+
+void CObjectIStream::SetSkipUnknownVariantsGlobal(ESerialSkipUnknown skip)
+{
+    if (skip == eSerialSkipUnknown_Default) {
+        return;
+    }
+    ESerialSkipUnknown now = ms_SkipUnknownVariantsDefault.GetDefault();
+    if (now != eSerialSkipUnknown_Never &&
+        now != eSerialSkipUnknown_Always) {
+        ms_SkipUnknownVariantsDefault.SetDefault(skip);
+    }
+}
+
+ESerialSkipUnknown CObjectIStream::x_GetSkipUnknownVariantsDefault(void)
+{
+    return ms_SkipUnknownVariantsDefault.GetThreadDefault();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 CObjectIStream::CObjectIStream(ESerialDataFormat format)
@@ -300,6 +340,7 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
       m_DataFormat(format),
       m_VerifyData(x_GetVerifyDataDefault()),
       m_SkipUnknown(x_GetSkipUnknownDefault()),
+      m_SkipUnknownVariants(x_GetSkipUnknownVariantsDefault()),
       m_Fail(fNotOpen),
       m_Flags(fFlagNone)
 {
@@ -1550,6 +1591,11 @@ void CObjectIStream::SkipStringStore(void)
     SkipString();
 }
 
+void CObjectIStream::SkipAnyContentVariant(void)
+{
+    SkipAnyContentObject();
+}
+
 void CObjectIStream::ReadCompressedBitString(CBitString& obj)
 {
     ByteBlock bl(*this);
@@ -1591,6 +1637,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.146  2006/11/07 19:00:46  gouriano
+* Added option to skip unknown variants
+*
 * Revision 1.145  2006/10/12 15:09:11  gouriano
 * Some header files moved into impl
 *

@@ -2038,7 +2038,12 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
     CLightString id = SkipStackTagName(tagName, 1, '_');
     ind = choiceType->GetVariants().Find(id);
     if ( ind == kInvalidMember ) {
-        UnexpectedMember(tagName, choiceType->GetVariants());
+        if (GetSkipUnknownVariants() == eSerialSkipUnknown_Yes) {
+            SetFailFlags(fUnknownValue);
+            UndoClassMember();
+        } else {
+            UnexpectedMember(tagName, choiceType->GetVariants());
+        }
     }
     return ind;
 }
@@ -2311,6 +2316,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2006/11/07 19:00:46  gouriano
+* Added option to skip unknown variants
+*
 * Revision 1.90  2006/10/12 15:09:11  gouriano
 * Some header files moved into impl
 *

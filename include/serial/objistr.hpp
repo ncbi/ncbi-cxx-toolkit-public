@@ -138,6 +138,14 @@ public:
     // For streams created by the current process
     static  void SetSkipUnknownGlobal(ESerialSkipUnknown skip);
 
+    // For this particular stream
+    void SetSkipUnknownVariants(ESerialSkipUnknown skip);
+    ESerialSkipUnknown GetSkipUnknownVariants(void);
+    // For streams created by the current thread
+    static  void SetSkipUnknownVariantsThread(ESerialSkipUnknown skip);
+    // For streams created by the current process
+    static  void SetSkipUnknownVariantsGlobal(ESerialSkipUnknown skip);
+
 //---------------------------------------------------------------------------
 // Stream state
     enum EFailFlags {
@@ -385,6 +393,7 @@ public:
     // any content object
     virtual void ReadAnyContentObject(CAnyContentObject& obj) = 0;
     virtual void SkipAnyContentObject(void) = 0;
+    virtual void SkipAnyContentVariant(void);
 
     virtual void ReadBitString(CBitString& obj) = 0;
     virtual void SkipBitString(void) = 0;
@@ -658,9 +667,12 @@ private:
     static ESerialSkipUnknown ms_SkipUnknownDefault;
     static ESerialSkipUnknown x_GetSkipUnknownDefault(void);
 
+    static ESerialSkipUnknown x_GetSkipUnknownVariantsDefault(void);
+
 
     ESerialVerifyData   m_VerifyData;
     ESerialSkipUnknown m_SkipUnknown;
+    ESerialSkipUnknown m_SkipUnknownVariants;
     AutoPtr<CReadObjectList> m_Objects;
 
     TFailFlags m_Fail;
@@ -755,6 +767,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.121  2006/11/07 19:00:06  gouriano
+* Added option to skip unknown variants
+*
 * Revision 1.120  2006/10/12 15:08:25  gouriano
 * Some header files moved into impl
 *
