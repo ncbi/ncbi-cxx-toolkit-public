@@ -165,7 +165,11 @@ void BlastInitHitListReset(BlastInitHitList * init_hitlist)
     init_hitlist->total = 0;
 }
 
-static void BlastInitHitListClean(BlastInitHitList * hi)
+
+/* empty an init hitlist but do not deallocate the base structure
+ * @param hi list of initial hits to clean [in][out]
+ */
+static void s_BlastInitHitListClean(BlastInitHitList * hi)
 {
     BlastInitHitListReset(hi);
     sfree(hi->init_hsp_array);
@@ -178,7 +182,7 @@ void BlastInitHitListMove(BlastInitHitList * dst,
     ASSERT(src != 0);
     ASSERT(!dst->do_not_reallocate);
 
-    BlastInitHitListClean(dst);
+    s_BlastInitHitListClean(dst);
     memmove((void *)dst, (const void *)src, sizeof(BlastInitHitList));
     src->total = src->allocated = 0;
     src->init_hsp_array = 0;
@@ -189,7 +193,7 @@ BlastInitHitList *BLAST_InitHitListFree(BlastInitHitList * init_hitlist)
     if (init_hitlist == NULL)
         return NULL;
 
-   BlastInitHitListClean(init_hitlist);
+   s_BlastInitHitListClean(init_hitlist);
    sfree(init_hitlist);
    return NULL;
 }

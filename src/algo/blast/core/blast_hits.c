@@ -1152,10 +1152,11 @@ typedef struct BlastHSPSegment {
 
 /** function populate a BlastHSPSegment.
  *
- * @param segment object to be allocated and populated [in|out]
- * @param q_start start of match on query [in]
- * @param s_start start of match on subject [in]
- * @param esp_offset relevant element of GapEditScript [in]
+ * @param segment Object to be allocated and populated [in|out]
+ * @param q_start Start of match on query [in]
+ * @param s_start Start of match on subject [in]
+ * @param length The length of the segment [in]
+ * @param esp_offset Relevant element of GapEditScript [in]
  */
 static void
 s_AddHSPSegment(BlastHSPSegment* segment, Int4 q_start, 

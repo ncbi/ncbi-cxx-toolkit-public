@@ -52,7 +52,7 @@ typedef void (*T_MB_IdbGetResults)(void * idb, Int4 oid, Int4 chunk,
  * @param subject The subject sequence [in]
  * @param query Ignored
  * @param query_info Ignored
- * @param lookup Pointer to the (wrapper) lookup table structure [in]
+ * @param lookup_wrap Pointer to the (wrapper) lookup table structure [in]
  * @param matrix Ignored
  * @param word_params Ignored
  * @param ewp Ignored
