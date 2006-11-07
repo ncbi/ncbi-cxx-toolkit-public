@@ -97,7 +97,8 @@ public:
     
     void SetDatabase(CLDS_Database& lds_db, EOwnership owner,
                      const string&  dl_name);
-
+    
+    CLDS_Database& GetDatabase();
 // private:
     typedef CSimpleLoaderMaker<CLDS_DataLoader>                TSimpleMaker;
     typedef CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&> TDbMaker;
@@ -167,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/11/07 21:13:10  didenko
+ * Added GetDatabase method
+ *
  * Revision 1.22  2006/10/02 14:38:22  didenko
  * Cleaned up dataloader implementation
  *

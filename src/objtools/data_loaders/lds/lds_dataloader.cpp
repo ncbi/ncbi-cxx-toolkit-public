@@ -334,6 +334,13 @@ void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
     SetName(dl_name);
 }
 
+CLDS_Database& CLDS_DataLoader::GetDatabase()
+{
+    if( !m_LDS_db )
+        throw runtime_error("LDS database is not inisialized.");
+    return *m_LDS_db;
+}
+
 CDataLoader::TTSE_LockSet
 CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
                             EChoice /* choice */)
@@ -600,6 +607,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/11/07 21:13:54  didenko
+ * Added GetDatabase method
+ *
  * Revision 1.42  2006/10/02 14:38:22  didenko
  * Cleaned up dataloader implementation
  *
