@@ -45,60 +45,64 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-template <class TAlnSeqIdVector
+template <class TAlnVector,
+          class TSeqIdPtrComp,
+          class TSeqIdPtr = const CSeq_id*>
 class CAlnHints : public CObject
 {
 public:
     typedef CSeq_align::TDim TDim;
+    typedef typename CAlnSeqIdVector<TAlnVector,
+                                     TSeqIdPtrComp,
+                                     TSeqIdPtr> TAlnSeqIdVector;
     typedef vector<TSeqIdPtr> > TSeqIdVector;
-
+    typedef vector<vector<int> > TBaseWidths;
+    typedef vector<vector<TDim> > TAnchorRows;
 
     /// Constructor
     CAlnHints(const TAlnVector& aln_vector,
-              TSeqIdPtrComp& seq_id_ptr_comp) :
+              TSeqIdPtrComp& seq_id_ptr_comp,
+              const TAlnSeqIdVector& aln_seq_id_vector,
+              const TAnchorRows* const anchor_rows = 0,
+              const TBaseWidths* const base_widths = 0) :
         m_AlnVector(aln_vector),
         m_Comp(seq_id_ptr_comp),
-        m_AlnSeqIdVector(m_AlnVector, m_Comp)
+        m_AlnSeqIdVector(aln_seq_id_vector),
+        m_AnchorRows(anchor_rows),
+        m_BaseWidths(base_widths),
+        m_AlnCount(m_AlnVector.size())
     {
+        _ASSERT(m_AlnVector.size() == m_AlnCount);
+        _ASSERT(m_AlnSeqIdVector.size() == m_AlnCount);
+        _ASSERT( !m_AnchorRows  ||  m_AnchorRows->size() == m_AlnCount);
+        _ASSERT( !m_BaseWidths  ||  m_BaseWidths->size() == m_AlnCount);
     }
 
+    /// How many alignments do we have?
+    size_t GetAlnCount() {
+        return m_AlnCount;
+    }
 
     /// Access the underlying vector of alignments
     const TAlnVector& GetAlnVector() const {
         return m_AlnVector;
     }
 
-    /// Do the alignments have a common anchor?
+    /// Do the alignments share a common sequence (anchor)?
     bool IsAnchored() const {
-        return m_AnchorHandle;
-    }
-
-    /// Get the anchor bioseq handle
-    const CBioseq_Handle& GetAnchorHandle() const {
-        _ASSERT(IsAnchored());
-        return m_AnchorHandle;
+        return m_AnchorRows;
     }
 
     /// Get the anchor row within an alignment
     const TDim& GetAnchorRowForAln(size_t aln_idx) const {
-        _ASSERT(IsAnchored());
-        if (m_AnchorRows.empty()) {
-            m_AnchorRows.resize(m_AlnVector.size());
+        if (IsAnchored()) {
+            _ASSERT(IsAnchored());
+            _ASSERT(aln_idx < GetAlnCount());
+            _ASSERT(m_AnchorRows[aln_idx] >= 0);
+            return m_AnchorRows[aln_idx];
+        } else {
+            return -1;
         }
-        _ASSERT( !m_AnchorRows.empty() );
-        if (m_AnchorRows[aln_idx] < 0) {
-            /// Determine anchor row
-            const TSeqIdVector& seq_ids = GetSeqIdsForAln(aln_idx);
-            for (size_t row = 0; row < seq_ids.size(); ++row)   {
-                if ( !(comp(ids[row], m_AnchorId) ||
-                       comp(m_AnchorId, ids[row])) ) {
-                    m_AnchorRows[aln_idx] = row;
-                    break;
-                }
-            }
-        }
-        _ASSERT(m_AnchorRows[aln_idx] >= 0);
-        return m_AnchorRows[aln_idx];
     }
 
     /// Access a vector of seq-ids for an alignment
@@ -108,27 +112,31 @@ public:
 
     /// What is the dimension of an alignment?
     const TDim& GetDimForAln(size_t aln_idx) {
+        _ASSERT(aln_idx < GetAlnCount());
         return m_AlnSeqIdVector[aln_idx].size();
     }
 
+    /// What are the base widths?
     const int GetBaseWidthForAlnRow(size_t aln_idx, TDim row) {
-        return 0;
+        if (m_BaseWidths) {
+            _ASSERT(aln_idx < m_BaseWidths->size());
+            _ASSERT(m_BaseWidths->[aln_idx].size() == GetDimForAln(aln_idx));
+            _ASSERT(row < m_BaseWidths->[aln_idx].size());
+            return m_BaseWidths->[aln_idx][row];
+        } else {
+            return 1;
+        }
     }
 
 private:
     cosnt TAlnVector& m_AlnVector;
     TSeqIdPtrComp& m_Comp;
+    const TAlnSeqIdVector& m_AlnSeqIdVector;
 
-    typedef typename CAlnSeqIdVector<TAlnVector,
-                                     TSeqIdPtrComp,
-                                     TSeqIdPtr> TAlnSeqIdVector;
-
-    TAlnSeqIdVector m_AlnSeqIdVector;
-
-    CBioseq_Handle m_AnchorHandle;
     TSeqIdPtr m_AnchorId;
     vector<TDim> m_AnchorRows;
 
+    const TBaseWidths* const m_BaseWidths;
 };
 
 
@@ -139,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/11/07 20:37:10  todorov
+* Simplified version.
+*
 * Revision 1.2  2006/11/06 19:58:57  todorov
 * Added aln statistics.
 *
