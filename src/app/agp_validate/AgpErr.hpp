@@ -74,9 +74,10 @@ BEGIN_NCBI_SCOPE
 
 enum TAppliesTo{
   //AT_Unknown=0, -- just print the message without the content line
-  AT_ThisLine=1, // Accumulate messages
-  AT_PrevLine=2  // Print the previous line if it was not printed;
-                  // print the message now
+  AT_ThisLine=1,     // Accumulate messages
+  AT_SkipAfterBad=2, // Suppress this error if the previous line was invalid
+  AT_PrevLine    =4  // Print the previous line if it was not printed;
+                     // print the message now
   // AT_ThisLine|AT_PrevLine -- both lines are involved:
   // 1) print the previous line now (if it was not printed already)
   // 2) suppress the error message if the previous line was so bad

@@ -123,7 +123,8 @@ bool CAgpErr::MustSkip(TCode code)
 
 void CAgpErr::PrintAllMessages(CNcbiOstream& out)
 {
-  out << "### Errors within a single line ###\n";
+  out << "### Errors within a single line. Lines with such errors are skipped, ###\n";
+  out << "### i.e. not used for: further checks, object/component/gap counts.  ###\n";
   for(int i=E_First; i<=E_LastToSkipLine; i++) {
     out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
     if(i==E_EmptyColumn) {
@@ -251,7 +252,7 @@ void CAgpErr::Msg(TCode code, const string& details,
 {
   // Ignore possibly spurious errors generated after
   // an unacceptable line with wrong # of columns
-  if(m_invalid_prev && (appliesTo&AT_PrevLine) ) return;
+  if(m_invalid_prev && (appliesTo&AT_SkipAfterBad) && (appliesTo&AT_PrevLine) ) return;
 
   // Suppress some messages while still counting them
   m_MsgCount[code]++;
