@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.442 2006/11/02 19:24:34 ucko Exp $
+#  $Id: configure.ac,v 1.443 2006/11/07 17:10:21 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2764,7 +2764,8 @@ esac
 NCBI_CHECK_LIBS(DL, dl, dlopen)
 # Normally redundant, but needed --with-static-exe.
 # (Too bad there's no libdl.a.)
-case "$host_os:$libnsl" in
+case "$host_os:$compiler:$libnsl" in
+     solaris2.9:WorkShop5*:* ) orig_LIBS="$DL_LIBS $orig_LIBS" ;;
      solaris*:-lnsl ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
 esac
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
