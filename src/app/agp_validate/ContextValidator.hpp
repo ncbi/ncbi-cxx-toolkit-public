@@ -1,5 +1,5 @@
-#ifndef AGP_VALIDATE_SyntaxValidator
-#define AGP_VALIDATE_SyntaxValidator
+#ifndef AGP_VALIDATE_ContextValidator
+#define AGP_VALIDATE_ContextValidator
 
 /*  $Id$
  * ===========================================================================
@@ -27,48 +27,18 @@
  * ===========================================================================
  *
  * Authors:
- *      Lou Friedman, Victor Sapojnikov
+ *      Victor Sapojnikov
  *
  * File Description:
- *      Syntactic validation tests that can be preformed solely by the
- *      information that in the AGP file.
+ *      AGP context-sensetive validation (i.e. information from several lines).
  *
  */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbidiag.hpp>
-#include <corelib/ncbistr.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-#include <util/range_coll.hpp>
-
-#include <iostream>
-#include "AgpErr.hpp"
-
-#define NO_LOG false
+//#include "AgpErr.hpp"
+#include "LineValidator.hpp"
+#include <set>
 
 BEGIN_NCBI_SCOPE
-
-extern CAgpErr agpErr;
-
-struct SDataLine {
-  int     line_num;
-  string  object;
-  string  begin;
-  string  end;
-  string  part_num;
-  string  component_type;
-  string  component_id;
-  string  component_beg;
-  string  component_end;
-  string  orientation;
-  string  gap_length;
-  string  gap_type;
-  string  linkage;
-};
 
  // Determines accession naming patterns, counts accessions.
 class CAccPatternCounter;
@@ -89,83 +59,7 @@ private:
   static int x_byCount( value_type* a, value_type* b );
 };
 
-// proper values for the different fields in the AGP
-typedef set<string> TValuesSet;
-// Compared to TValuesSet. provides code optimization by avoiding
-// repetetive string comparisons.
-typedef map<string, int> TValuesMap;
-
-// Values for Validatable component columns (7a-9a)
-// plus file number and line number.
-// Use init() for simple syntax validation.
-class CCompVal
-{
-public:
-  int beg, end, ori, file_num, line_num;
-
-  enum {
-    ORI_plus,
-    ORI_minus,
-    ORI_zero,
-    ORI_na,
-
-    ORI_count
-  };
-  static TValuesMap validOri;
-
-  CCompVal();
-
-  bool init(const SDataLine& dl, bool log_errors = true);
-  int getLen() const { return end - beg + 1; }
-
-  string ToString() const;
-};
-
-class CGapVal
-{
-public:
-  int len, type, linkage;
-
-  enum {
-    GAP_clone          ,
-    GAP_fragment       ,
-    GAP_repeat         ,
-
-    GAP_contig         ,
-    GAP_centromere     ,
-    GAP_short_arm      ,
-    GAP_heterochromatin,
-    GAP_telomere       ,
-
-    //GAP_scaffold       ,
-    //GAP_split_finished ,
-
-    GAP_count,
-    GAP_yes_count=GAP_repeat+1
-  };
-
-  typedef const char* TStr;
-  static const TStr typeIntToStr[GAP_count+GAP_yes_count];
-
-  // Initialized on the first invokation of the constructor from typeIntToStr[]
-  static TValuesMap typeStrToInt;
-
-  enum {
-    LINKAGE_no ,
-    LINKAGE_yes ,
-    LINKAGE_count
-  };
-  // Initialized on the first invokation of the constructor
-  static TValuesMap validLinkage;
-
-  CGapVal();
-
-  bool init(const SDataLine& dl, bool log_errors = true);
-  int getLen() const { return len; }
-  bool endsScaffold() const;
-};
-
-// To save memoty, this is a vector instead of a map.
+// To save memory, this is a vector instead of a map.
 // Multiple spans on one component are uncommon.
 class CCompSpans : public vector<CCompVal>
 {
@@ -191,32 +85,23 @@ public:
 
 };
 
-int x_CheckIntField(const string& field,
-  const string& field_name, bool log_error = true);
-bool x_CheckValues(const TValuesSet& values,
-  const string& value, const string& field_name,
-  bool log_error = true);
-// Returns an integer constant mapped to the allowed text value,
-// -1 if the value is unknowm
-int x_CheckValues(const TValuesMap& values,
-  const string& value, const string& field_name,
-  bool log_error = true);
-
-class CAgpSyntaxValidator
+class CAgpContextValidator
 {
 public:
-  CAgpSyntaxValidator();
-  bool ValidateLine(const SDataLine& dl, const string& text_line);
+  CAgpContextValidator();
+  bool ValidateLine(const SDataLine& dl, const CAgpLine& cl);
   void EndOfObject(bool afterLastLine=false);
 
-  // static bool GapBreaksScaffold(int type, int linkage);
-  static bool IsGapType(const string& type);
+  // Adjust the context after an invalid line
+  // (to suppress some spurious errors)
+  void InvalidLine();
+
+
   void PrintTotals();
 
 protected:
   // Vars assigned in ValidateLine(),
   // further validated in x_OnGapLine() x_OnCompLine()
-  int obj_range_len;
   bool new_obj;
 
   // Private subroutines for ValidateLine()
@@ -231,8 +116,6 @@ protected:
   int m_GapCount;
   int m_CompOri[CCompVal::ORI_count];
 
-
-  //CValuesCount m_TypeGapCnt;  // column 7: fragment, clone, ...
   int m_GapTypeCnt[CGapVal::GAP_count+CGapVal::GAP_yes_count];
   CValuesCount m_TypeCompCnt; // column 5: A, D, F, ..., N, U
 
@@ -252,14 +135,8 @@ protected:
   typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
 
-  TValuesSet m_ComponentTypeValues;
-
-
-
-
-
   string prev_object;
-  string prev_component_type;
+  bool prev_line_is_gap;
 
   // Used for the first component in a scaffold;
   // we do not know whether the scaffold is a singleton,
@@ -279,5 +156,5 @@ protected:
 
 END_NCBI_SCOPE
 
-#endif /* AGP_VALIDATE_SyntaxValidator */
+#endif /* AGP_VALIDATE_ContextValidator */
 

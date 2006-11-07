@@ -35,7 +35,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "SyntaxValidator.hpp"
+#include "ContextValidator.hpp"
+#include <connect/ncbi_core_cxx.hpp>
 
 // Objects includes
 // todo: move this to a separate .cpp file with GenBank validator
@@ -98,10 +99,7 @@ private:
 
   //CRef<CDb>   m_VolDb;
 
-  // In future, may hold other validator types
-  CAgpSyntaxValidator* m_LineValidator;
-
-
+  CAgpContextValidator* m_ContextValidator;
   // data of an AGP line either
   //  from a file or the agp adb
   // typedef vector<SDataLine> TDataLines;
@@ -262,7 +260,7 @@ int CAgpValidateApplication::Run(void)
   */
   else {
     m_ValidationType = VT_Syntax;
-    m_LineValidator = new CAgpSyntaxValidator();
+    m_ContextValidator = new CAgpContextValidator();
   }
   if(m_ValidationType & VT_Acc) {
     x_ValidateGenBankInit();
@@ -327,7 +325,7 @@ int CAgpValidateApplication::Run(void)
   //// Process files, print results
   x_ValidateUsingFiles(args);
   if(m_ValidationType == VT_Syntax) {
-    m_LineValidator->PrintTotals();
+    m_ContextValidator->PrintTotals();
     if(m_CommentLineCount || m_EolComments) cout << "\n";
     if(m_CommentLineCount) {
       cout << "#Comment line count    : " << m_CommentLineCount << "\n";
@@ -378,7 +376,7 @@ void CAgpValidateApplication::x_ValidateUsingFiles(
   }
   // Needed to check if the last line was a gap, or a singleton.
   if (m_ValidationType == VT_Syntax) {
-    m_LineValidator->EndOfObject(true);
+    m_ContextValidator->EndOfObject(true);
   }
 }
 
@@ -387,7 +385,8 @@ void CAgpValidateApplication::x_ValidateFile(
 {
   int line_num = 0;
   string  line;
-  SDataLine data_line;
+  SDataLine data_line;  // strings
+  CAgpLine  agp_line ;  // successfuly parsed columns with non-contratictory data
   vector<string> cols;
 
   // Allow Unix, DOS, Mac EOL characters
@@ -397,6 +396,8 @@ void CAgpValidateApplication::x_ValidateFile(
 
     string line_orig=line; // With EOL #comments
     bool tabsStripped=false;
+    bool valid=false;
+    bool badCount=false;
     // Strip #comments
     {
       SIZE_TYPE pos = NStr::Find(line, "#");
@@ -416,10 +417,8 @@ void CAgpValidateApplication::x_ValidateFile(
 
     if(line == "") {
       agpErr.Msg(CAgpErr::E_EmptyLine);
-      // we do not set the 3rd parm invalid_line=true
-      // to avoid suppressing the errors related to the previous line
-      agpErr.LineDone(line_orig, line_num);
-      continue;
+      valid=true; // avoid suppressing the errors related to the previous line
+      goto NextLine;
     }
 
 
@@ -432,8 +431,7 @@ void CAgpValidateApplication::x_ValidateFile(
       // skip this entire line, report an error
       agpErr.Msg(CAgpErr::E_ColumnCount,
         string(", found ") + NStr::IntToString(cols.size()) );
-      agpErr.LineDone(line_orig, line_num, true);  // true: invalid_line
-      continue;
+      goto NextLine;
     }
 
     for(int i=0; i<8; i++) {
@@ -443,8 +441,6 @@ void CAgpValidateApplication::x_ValidateFile(
             NcbiEmptyString, AT_ThisLine, // defaults
             NStr::IntToString(i+1)
           );
-        agpErr.LineDone(line_orig, line_num, true);  // true: invalid_line
-
         goto NextLine; // cannor use "continue"
       }
     }
@@ -473,17 +469,17 @@ void CAgpValidateApplication::x_ValidateFile(
       data_line.orientation = cols[8];
     }
     else {
-      if( ! CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
+      if( ! CAgpLine::IsGapType(data_line.component_type) ) {
         if(tabsStripped) {
           agpErr.Msg(CAgpErr::E_EmptyColumn,
-              NcbiEmptyString, AT_ThisLine, // defaults
-              "9");
+            NcbiEmptyString, AT_ThisLine, // defaults
+            "9");
+          badCount=true;
         }
         else {
-          agpErr.Msg(CAgpErr::E_EmptyColumn,
-              NcbiEmptyString, AT_ThisLine, // defaults
-              "8"
-            );
+          agpErr.Msg(CAgpErr::E_ColumnCount,
+            string(", found ") + NStr::IntToString(cols.size()) );
+          badCount=true;
         }
       }
       else if(tabsStripped==false){
@@ -491,21 +487,28 @@ void CAgpValidateApplication::x_ValidateFile(
       }
     }
 
-    {
-      bool valid=true;
-      if (m_ValidationType == VT_Syntax) {
-        valid = m_LineValidator->ValidateLine(data_line, line);
-      } else if( !CAgpSyntaxValidator::IsGapType(data_line.component_type) ) {
+    valid=agp_line.init(data_line);
+    if(badCount) valid=false; // make sure the line is skipped, as we said it is
+    if(valid) {
+      if(m_ValidationType == VT_Syntax) {
+        m_ContextValidator->ValidateLine(data_line, agp_line);
+      }
+      else if( !CAgpLine::IsGapType(data_line.component_type) ) {
         x_ValidateGenBankLine(data_line);
       }
 
       if(istr.eof()) {
         agpErr.Msg(CAgpErr::W_NoEolAtEof);
       }
-      agpErr.LineDone(line_orig, line_num, !valid);
     }
 
-  NextLine: ;
+  NextLine:
+    agpErr.LineDone(line_orig, line_num, !valid);
+    if(!valid && m_ValidationType == VT_Syntax) {
+      // Adjust the context after an invalid line
+      // (to suppress some spurious errors)
+      m_ContextValidator->InvalidLine();
+    }
   }
 }
 
@@ -612,8 +615,8 @@ void CAgpValidateApplication::x_GenBankPrintTotals()
     cout << "No GenBank components found";
   }
   if(e_count) {
-    if(e_count==1) cout << "; 1 error";
-    else cout << "; " << e_count << " errors";
+    if(e_count==1) cout << ".\n1 error";
+    else cout << ".\n" << e_count << " errors";
     if(agpErr.m_msg_skipped) cout << ", " << agpErr.m_msg_skipped << " not printed";
     cout << ":\n";
     agpErr.PrintMessageCounts(cout, CAgpErr::CODE_First, CAgpErr::CODE_Last);

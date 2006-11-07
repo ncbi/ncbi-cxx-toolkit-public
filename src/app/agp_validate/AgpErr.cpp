@@ -128,7 +128,7 @@ void CAgpErr::PrintAllMessages(CNcbiOstream& out)
   for(int i=E_First; i<=E_LastToSkipLine; i++) {
     out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
     if(i==E_EmptyColumn) {
-      out << " (X: 1..8)";
+      out << " (X: 1..9)";
     }
     else if(i==E_InvalidValue) {
       out << " (X: component_type, gap_type, linkage, orientation)";

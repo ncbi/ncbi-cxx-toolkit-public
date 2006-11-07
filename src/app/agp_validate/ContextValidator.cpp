@@ -24,137 +24,24 @@
  * ===========================================================================
  *
  * Authors:
- *      Lou Friedman, Victor Sapojnikov
+ *      Victor Sapojnikov
  *
  * File Description:
- *      Syntactic validation tests that can be preformed solely by the
- *      information in the AGP file.
+ *      AGP context-sensetive validation (i.e. information from several lines).
  *
  *
  */
 
 #include <ncbi_pch.hpp>
-#include "SyntaxValidator.hpp"
+#include "ContextValidator.hpp"
 #include "AccessionPatterns.hpp"
 
 USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
 
-//// class CGapVal
-TValuesMap CGapVal::typeStrToInt;
-TValuesMap CGapVal::validLinkage;
-const CGapVal::TStr CGapVal::typeIntToStr[CGapVal::GAP_count+CGapVal::GAP_yes_count] = {
-  "clone",
-  "fragment",
-  "repeat",
-
-  "contig",
-  "centromere",
-  "short_arm",
-  "heterochromatin",
-  "telomere"
-};
-
-CGapVal::CGapVal()
+//// class CAgpContextValidator
+CAgpContextValidator::CAgpContextValidator()
 {
-  // Populate the static maps when invoked for the first time.
-  if( typeStrToInt.size()==0 ) {
-    for(int i=0; i<GAP_count; i++) {
-      typeStrToInt[ CGapVal::typeIntToStr[i] ] = i;
-    }
-
-    validLinkage["no" ] = LINKAGE_no;
-    validLinkage["yes"] = LINKAGE_yes;
-  }
-}
-
-// Check individual field's values;
-// return false if there are errors.
-bool CGapVal::init(const SDataLine& dl, bool log_errors)
-{
-  len     = x_CheckIntField( dl.gap_length, "gap_length (column 6)", log_errors);
-  type    = x_CheckValues( typeStrToInt   , dl.gap_type, "gap_type", log_errors);
-  linkage = x_CheckValues( validLinkage, dl.linkage, "linkage", log_errors);
-  if(len <=0 || -1 == type || -1 == linkage ) return false;
-
-  if(linkage==LINKAGE_yes) {
-    if( type!=GAP_clone && type!=GAP_repeat && type!=GAP_fragment ) {
-      agpErr.Msg(CAgpErr::E_InvalidYes, dl.gap_type);
-      return false;
-    }
-  }
-  return true;
-}
-
-bool CGapVal::endsScaffold() const
-{
-  if(type==GAP_fragment) return false;
-  return linkage==LINKAGE_no;
-}
-
-//// class CCompVal
-TValuesMap CCompVal::validOri;
-
-CCompVal::CCompVal()
-{
-  // Populate the static maps when invoked for the first time.
-  if( validOri.size()==0 ) {
-    validOri["+" ] = ORI_plus;
-    validOri["-" ] = ORI_minus;
-    validOri["0" ] = ORI_zero;
-    validOri["na"] = ORI_na;
-  }
-
-}
-
-// Check individual field's values and comp_end < comp_end;
-// return false if there are errors;
-// save file and line numbers.
-bool CCompVal::init(const SDataLine& dl, bool log_errors)
-{
-  // Error messages are issued within x_Check* functions
-  beg = x_CheckIntField( dl.component_beg, "component_beg (column 7)", log_errors );
-  end = x_CheckIntField( dl.component_end, "component_end (column 8)", log_errors );
-  ori = x_CheckValues( validOri, dl.orientation,
-    "orientation (column 9)", log_errors);
-  if( beg <= 0 || end <= 0 || -1 == ori ) return false;
-
-  if( end < beg ) {
-    if(log_errors) {
-      agpErr.Msg(CAgpErr::E_CompEndLtBeg);
-    }
-    return false;
-  }
-
-  file_num=agpErr.GetFileNum();
-  line_num=dl.line_num;
-  return true;
-}
-
-string CCompVal::ToString() const
-{
-  string s;
-  s += NStr::IntToString(beg);
-  s += "..";
-  s += NStr::IntToString(end);
-  s += " at ";
-  if(file_num) {
-    s += agpErr.GetFile(file_num);
-    s += ":";
-  }
-  else {
-    s += "line ";
-  }
-  s += NStr::IntToString(line_num);
-  return s;
-}
-
-
-//// class CAgpSyntaxValidator
-CAgpSyntaxValidator::CAgpSyntaxValidator()
-{
-  //objNamePatterns = new CAccPatternCounter();
-
   prev_end = 0;
   prev_part_num = 0;
   componentsInLastScaffold = 0;
@@ -170,20 +57,9 @@ CAgpSyntaxValidator::CAgpSyntaxValidator()
 
   memset(m_CompOri, 0, sizeof(m_CompOri));
   memset(m_GapTypeCnt, 0, sizeof(m_GapTypeCnt));
-
-  m_ComponentTypeValues.insert("A");
-  m_ComponentTypeValues.insert("D");
-  m_ComponentTypeValues.insert("F");
-  m_ComponentTypeValues.insert("G");
-  m_ComponentTypeValues.insert("P");
-  m_ComponentTypeValues.insert("N"); // gap
-  m_ComponentTypeValues.insert("O");
-  m_ComponentTypeValues.insert("U"); // gap of unknown size
-  m_ComponentTypeValues.insert("W");
-
 }
 
-void CAgpSyntaxValidator::EndOfObject(bool afterLastLine)
+void CAgpContextValidator::EndOfObject(bool afterLastLine)
 {
   if(componentsInLastObject==0) agpErr.Msg(
     CAgpErr::W_ObjNoComp, string(" ") + prev_object,
@@ -194,7 +70,7 @@ void CAgpSyntaxValidator::EndOfObject(bool afterLastLine)
   componentsInLastScaffold=0;
   componentsInLastObject=0;
 
-  if( IsGapType(prev_component_type) ) agpErr.Msg(
+  if( prev_line_is_gap ) agpErr.Msg(
     // The previous line was a gap at the end of a scaffold & object
     CAgpErr::W_GapObjEnd, string(" ")+prev_object,
     AT_PrevLine
@@ -202,85 +78,19 @@ void CAgpSyntaxValidator::EndOfObject(bool afterLastLine)
   );
 }
 
-bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
-  const string& text_line)
+void CAgpContextValidator::InvalidLine()
 {
-  //// Simple checks for common columns:
-  //// x_CheckIntField(), x_CheckValues(), obj_beg < obj_end.
-  //// Skip the line if there are such errors.
-
-  // (error messages are issued within x_Check* functions)
-  int obj_begin = x_CheckIntField( dl.begin , "object_beg (column 2)" );
-  int obj_end   = x_CheckIntField( dl.end   , "object_end (column 3)" );
-  int part_num  = x_CheckIntField( dl.part_num, "part_num (column 4)" );
-  bool is_type_valid = x_CheckValues( m_ComponentTypeValues,
-    dl.component_type, "component_type (column 5)");
-
-  if( obj_begin <= 0 || obj_end <= 0 || part_num <=0 || !is_type_valid ) {
-    // suppress possibly spurious errors
-    prev_orientation_unknown=false; return false;
-  }
-
-  if(obj_end < obj_begin) {
-    agpErr.Msg(CAgpErr::E_ObjEndLtBegin);
-    // suppress possibly spurious errors
-    prev_orientation_unknown=false; return false;
-  }
-
-  //// Simple checks for gap- or component-specific  columns:
-  //// x_CheckIntField(), x_CheckValues(), comp_beg < comp_end,
-  //// gap or component length != object range.
-  //// Skip the line if there are such errors.
-
-  bool simpleError = false;
-  CCompVal compSpan;
-  CGapVal gap;
-  bool is_gap = IsGapType(dl.component_type);
-  int obj_range_len = obj_end - obj_begin + 1;
-
-  if(is_gap) {
-    if( !gap.init(dl) ) {
-      simpleError=true;
-
-      if( compSpan.init(dl, NO_LOG) ) {
-        agpErr.Msg(CAgpErr::W_LooksLikeComp,
-          NcbiEmptyString, AT_ThisLine, // defaults
-          dl.component_type );
-      }
-    }
-    else if(gap.getLen() != obj_range_len) {
-      simpleError=true;
-      agpErr.Msg(CAgpErr::E_ObjRangeNeGap, string(": ") +
-        NStr::IntToString(obj_range_len) + " != " +
-        NStr::IntToString(gap.len      ) );
-    }
-  }
-  else {
-    if( !compSpan.init(dl) ) {
-      simpleError=true;
-
-      if( gap.init(dl, NO_LOG) ) {
-        agpErr.Msg(CAgpErr::W_LooksLikeGap,
-          NcbiEmptyString, AT_ThisLine, // defaults
-          dl.component_type );
-      }
-    }
-    else if(compSpan.getLen() != obj_range_len) {
-      simpleError=true;
-      agpErr.Msg(CAgpErr::E_ObjRangeNeComp);
-    }
-  }
-
-  if(simpleError) {
-    // suppress possibly spurious errors
-    prev_orientation_unknown=false; return false;
-  }
+  prev_orientation_unknown=false;
+}
 
 
+bool CAgpContextValidator::ValidateLine(
+  const SDataLine& dl, const CAgpLine& cl)
+{
   //// Context-sensetive code common for GAPs and components.
   //// Checks and statistics.
 
-  // Local variables shared with x_OnGapLine(), x_OnCompLine()
+  // Local variable shared with x_OnGapLine(), x_OnCompLine()
   new_obj = (dl.object != prev_object);
 
   if(new_obj) {
@@ -298,26 +108,26 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
     }
 
     // object_beg and part_num: must be 1
-    if(obj_begin != 1) {
+    if(cl.obj_begin != 1) {
       agpErr.Msg(CAgpErr::E_ObjMustBegin1,
         NcbiEmptyString,
         AT_ThisLine|AT_PrevLine
       );
     }
-    if(part_num != 1) {
+    if(cl.part_num != 1) {
       agpErr.Msg( CAgpErr::E_PartNumberNot1,
         NcbiEmptyString, AT_ThisLine|AT_PrevLine );
     }
   }
   else {
     // object range and part_num: compare to prev line
-    if(obj_begin != prev_end+1) {
+    if(cl.obj_begin != prev_end+1) {
       agpErr.Msg(CAgpErr::E_ObjBegNePrevEndPlus1,
         NcbiEmptyString,
         AT_ThisLine|AT_PrevLine
       );
     }
-    if(part_num != prev_part_num+1) {
+    if(cl.part_num != prev_part_num+1) {
       agpErr.Msg( CAgpErr::E_PartNumberNotPlus1,
         NcbiEmptyString, AT_ThisLine|AT_PrevLine );
     }
@@ -326,22 +136,22 @@ bool CAgpSyntaxValidator::ValidateLine( const SDataLine& dl,
   m_TypeCompCnt.add( dl.component_type );
 
   //// Gap- or component-specific code.
-  if( is_gap ) {
-    x_OnGapLine(dl, gap);
+  if( cl.is_gap ) {
+    x_OnGapLine(dl, cl.gap);
   }
   else {
-    x_OnCompLine(dl, compSpan);
+    x_OnCompLine(dl, cl.compSpan);
   }
 
-  prev_end = obj_end;
-  prev_part_num = part_num;
-  prev_component_type = dl.component_type;
+  prev_end = cl.obj_end;
+  prev_part_num = cl.part_num;
+  prev_line_is_gap = cl.is_gap;
 
   // allow the checks that use both this line and the next
   return true;
 }
 
-void CAgpSyntaxValidator::x_OnGapLine(
+void CAgpContextValidator::x_OnGapLine(
   const SDataLine& dl, const CGapVal& gap)
 {
   int i = gap.type;
@@ -354,10 +164,10 @@ void CAgpSyntaxValidator::x_OnGapLine(
   //// Check the gap context: is it a start of a new object,
   //// does it follow another gap, is it the end of a scaffold.
   if(new_obj) {
-    agpErr.Msg(CAgpErr::W_GapObjBegin);
-    // NcbiEmptyString, AT_ThisLine|AT_PrevLine);
+    agpErr.Msg(CAgpErr::W_GapObjBegin,
+      NcbiEmptyString, AT_ThisLine|AT_SkipAfterBad);
   }
-  else if( IsGapType(prev_component_type) ) {
+  else if( prev_line_is_gap ) {
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
       AT_ThisLine|AT_PrevLine );
   }
@@ -383,7 +193,7 @@ void CAgpSyntaxValidator::x_OnGapLine(
   }
 }
 
-void CAgpSyntaxValidator::x_OnCompLine(
+void CAgpContextValidator::x_OnCompLine(
   const SDataLine& dl, const CCompVal& comp )
 {
   //// Statistics
@@ -457,54 +267,8 @@ void CAgpSyntaxValidator::x_OnCompLine(
   }
 }
 
-int x_CheckIntField( const string& field,
-  const string& field_name, bool log_error)
-{
-  int field_value = 0;
-  try {
-      field_value = NStr::StringToInt(field);
-  } catch (...) {
-  }
-
-  if (field_value <= 0  &&  log_error) {
-    agpErr.Msg(CAgpErr::E_MustBePositive,
-        NcbiEmptyString, AT_ThisLine, // defaults
-        field_name );
-  }
-  return field_value;
-}
-
-bool x_CheckValues(const TValuesSet& values,
-  const string& value, const string& field_name, bool log_error)
-{
-  if(values.count(value) == 0) {
-    if(log_error) {
-      agpErr.Msg(CAgpErr::E_InvalidValue,
-        NcbiEmptyString, AT_ThisLine, // defaults
-        field_name );
-    }
-    return false;
-  }
-  return true;
-}
-
-int x_CheckValues(const TValuesMap& values,
-  const string& value, const string& field_name, bool log_error)
-{
-  TValuesMap::const_iterator it = values.find(value);
-  if( it==values.end() ) {
-    if(log_error) {
-      agpErr.Msg(CAgpErr::E_InvalidValue,
-        NcbiEmptyString, AT_ThisLine, // defaults
-        field_name );
-    }
-    return -1;
-  }
-  return it->second;
-}
-
 #define ALIGN_W(x) setw(w) << resetiosflags(IOS_BASE::left) << (x)
-void CAgpSyntaxValidator::PrintTotals()
+void CAgpContextValidator::PrintTotals()
 {
   //// Counts of errors and warnings
   int e_count=agpErr.CountTotals(CAgpErr::E_Last);
@@ -542,7 +306,7 @@ void CAgpSyntaxValidator::PrintTotals()
     it != comp_cnt.end();
     ++it
   ) {
-    string *s = IsGapType((*it)->first) ? &s_gap : &s_comp;
+    string *s = CAgpLine::IsGapType((*it)->first) ? &s_gap : &s_comp;
 
     if( s->size() ) *s+= ", ";
     *s+= (*it)->first;
@@ -674,7 +438,7 @@ void CAgpSyntaxValidator::PrintTotals()
 }
 
 // Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
-void CAgpSyntaxValidator::x_PrintPatterns(
+void CAgpContextValidator::x_PrintPatterns(
   CAccPatternCounter& namePatterns, const string& strHeader)
 {
   const int MaxPatterns=10;
@@ -746,11 +510,6 @@ void CAgpSyntaxValidator::x_PrintPatterns(
         << "\n";
 
   }
-}
-
-bool CAgpSyntaxValidator::IsGapType(const string& type)
-{
-  return type=="N" || type=="U";
 }
 
 //// class CValuesCount

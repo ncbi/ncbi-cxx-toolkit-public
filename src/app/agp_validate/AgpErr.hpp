@@ -200,7 +200,7 @@ public:
   //
   // The worst mixup could happen when there are 2 errors involving
   // different pairs of lines, typically: (N-1, N) (N-M, N)
-  // To do: check if this is possible in the current SyntaxValidator
+  // To do: check if this is possible in the current ContextValidator
 
   void Msg(TCode code, const string& details=NcbiEmptyString,
     int appliesTo=AT_ThisLine, const string& substX=NcbiEmptyString);
