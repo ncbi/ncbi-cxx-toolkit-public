@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = odbc_sp_who_ftds64 odbc_lang_ftds64
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
