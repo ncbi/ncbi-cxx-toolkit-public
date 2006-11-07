@@ -1,12 +1,6 @@
-#################################
 # $Id$
-# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
-#################################
 
-# Meta-makefile -- CgiTest test app
-#################################
-
-APP_PROJ = cgitest test_multipart_cgi
+APP_PROJ = cgitest test_multipart_cgi cgi_io_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
