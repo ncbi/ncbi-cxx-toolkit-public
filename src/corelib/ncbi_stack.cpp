@@ -32,10 +32,13 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_stack.hpp>
 
+#ifdef NCBI_OS_SOLARIS
+#  include <sys/ucontext.h> // for additional test below
+#endif
 
 #ifdef NCBI_OS_MSWIN
 #  include "ncbi_stack_win32.cpp"
-#elif defined NCBI_OS_SOLARIS
+#elif defined NCBI_OS_SOLARIS  &&  defined(GETUSTACK)
 #  include "ncbi_stack_solaris.cpp"
 #elif defined NCBI_OS_LINUX
 #  include "ncbi_stack_linux.cpp"
@@ -47,6 +50,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/07 15:56:04  ucko
+ * Don't use ncbi_stack_solaris.cpp on versions too old to support walkcontext().
+ *
  * Revision 1.1  2006/11/06 17:37:39  grichenk
  * Initial revision
  *
