@@ -31,7 +31,6 @@
  */
 
 #include "ncbi_lbsmd.h"
-#include <connect/ncbi_service_misc.h>
 
 
 /*ARGSUSED*/
@@ -104,6 +103,9 @@ int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2006/11/08 19:16:05  lavr
+ * -<connect/ncbi_service_misc.h>
+ *
  * Revision 6.12  2006/11/08 17:15:30  lavr
  * +LBSMD_FastHeapAccess()
  *
