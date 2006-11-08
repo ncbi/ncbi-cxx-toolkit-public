@@ -382,7 +382,8 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( CMsvcSite::IsLibOk(lib_info) ) {
+        if ( CMsvcSite::IsLibOk(lib_info) &&
+            GetApp().GetSite().IsLibEnabledInConfig(requires, cfg_info)) {
             if ( !lib_info.m_Libs.empty() ) {
                 copy(lib_info.m_Libs.begin(), lib_info.m_Libs.end(), 
                     back_inserter(additional_libs));
@@ -482,7 +483,8 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
         }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( CMsvcSite::IsLibOk(lib_info) ) {
+        if ( CMsvcSite::IsLibOk(lib_info) &&
+             GetApp().GetSite().IsLibEnabledInConfig(requires, cfg_info) ) {
             if ( !lib_info.m_LibPath.empty() ) {
                 dir_list.push_back(lib_info.m_LibPath);
             }
@@ -570,6 +572,18 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config,
         copy(components.begin(), 
              components.end(), back_inserter(libs_3party));
     }
+    list<string> libs_required;
+    ITERATE(list<string>, p, m_Requires) {
+        const string& lib = *p;
+        list<string> components;
+        GetApp().GetSite().GetComponents(lib, &components);
+        if (components.empty()) {
+            libs_required.push_back(lib);
+        } else {
+            copy(components.begin(), 
+                components.end(), back_inserter(libs_required));
+        }
+    }
 
     // Add requires to test : If there is such library and configuration for 
     // this library is disabled then we'll disable this config
@@ -608,7 +622,10 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config,
                 }
                 *unmet += requires;
             }
-            result = false;
+            if (find( libs_required.begin(), libs_required.end(), requires )
+                   != libs_required.end()) {
+                result = false;
+            }
             s_DisabledPackages[config.m_Name].insert(requires);
         } else {
             s_EnabledPackages[config.m_Name].insert(requires);
@@ -1084,6 +1101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/11/08 18:05:41  gouriano
+ * Enable config when a 3rd party lib is absent, but not required
+ *
  * Revision 1.61  2006/09/26 18:50:20  gouriano
  * Added CNcbiRegistry wrapper to speed up the execution
  *
