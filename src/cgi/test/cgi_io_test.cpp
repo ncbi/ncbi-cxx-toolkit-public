@@ -38,7 +38,9 @@
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgictx.hpp>
 
-#include <signal.h>
+#if defined(NCBI_OS_UNIX)
+#  include <signal.h>
+#endif
 
 
 using namespace ncbi;
@@ -59,6 +61,7 @@ private:
 };
 
 
+#if defined(NCBI_OS_UNIX)
 static unsigned int s_SIGPIPE_Count = 0;
 extern "C" {
     static void s_SIGPIPE_Handler(int)
@@ -66,6 +69,7 @@ extern "C" {
         s_SIGPIPE_Count++;
     }
 }
+#endif
 
 
 void CCgiIOTestApplication::Init()
@@ -76,11 +80,13 @@ void CCgiIOTestApplication::Init()
     // Describe possible cmd-line and HTTP entries
     x_SetupArgs();
 
+#if defined(NCBI_OS_UNIX)
     struct sigaction sa_old;
     struct sigaction sa_new;
     memset(&sa_new, 0, sizeof(sa_new));
     sa_new.sa_handler = s_SIGPIPE_Handler;
     _VERIFY(sigaction(SIGPIPE, &sa_new, &sa_old) == 0);
+#endif
 }
 
 
@@ -93,7 +99,7 @@ static void s_Sleep(const char* wait_time)
 {
     unsigned long t = (unsigned long)
         (s_Arg(wait_time).AsDouble() * 1000000.0);
-    _TRACE("CGI_SIG::  -- SleepMicroSec(" << t << ")");
+    _TRACE("SleepMicroSec(" << t << ")");
     if ( t ) {
         SleepMicroSec(t);
     }
@@ -102,15 +108,19 @@ static void s_Sleep(const char* wait_time)
 
 int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
 {
+#if defined(NCBI_OS_UNIX)
     unsigned int sig_count = s_SIGPIPE_Count;
-#define X_TRACE(expr) \
+#  define X_TRACE(expr) \
     do { \
         if (sig_count != s_SIGPIPE_Count) { \
             sig_count = s_SIGPIPE_Count; \
-            _TRACE("CGI_SIG::   SIGPIPE! = " << s_SIGPIPE_Count);  \
+            _TRACE("SIGPIPE! = " << s_SIGPIPE_Count);  \
         } \
         _TRACE(expr); \
 } while (0)
+#else
+#  define X_TRACE _TRACE
+#endif
 
 
     GetDiagContext().PrintExtra("The request ID: " + s_Arg("id").AsString());
@@ -119,12 +129,12 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
     static bool printed_args = false;
     if ( !printed_args ) {
         string args;
-        X_TRACE("CGI_SIG:: Args:: \n" << GetArgs().Print(args) << "\n\n");
+        X_TRACE("Args:: \n" << GetArgs().Print(args) << "\n\n");
         printed_args = true;
     }
 
 
-    X_TRACE("CGI_SIG::  Enter ProcessRequest()");
+    X_TRACE("Enter ProcessRequest()");
 
     CCgiResponse& response = ctx.GetResponse();
     response.SetContentType("text/plain");
@@ -137,31 +147,31 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
     }
 
     //
-    X_TRACE("CGI_SIG::  sleep(header_before)");
+    X_TRACE("sleep(header_before)");
     s_Sleep("header_before");
 
-    X_TRACE("CGI_SIG::  WriteHeader()");
+    X_TRACE("WriteHeader()");
     response.WriteHeader();
 
-    X_TRACE("CGI_SIG::  flush()");
+    X_TRACE("flush()");
     response.out().flush();
 
-    X_TRACE("CGI_SIG::  sleep(header_after)");
+    X_TRACE("sleep(header_after)");
     s_Sleep("header_after");
 
-    X_TRACE("CGI_SIG::  entering data write loop...");
+    X_TRACE("entering data write loop...");
 
     int data_chunks = s_Arg("data_chunks").AsInteger();
     for (int i = 0 ;  i < data_chunks;  i++) {
-        X_TRACE("CGI_SIG::  write(buf)");
+        X_TRACE("write(buf)");
         response.out().write(buf, buf_size);
-        X_TRACE("CGI_SIG::  flush()");
+        X_TRACE("flush()");
         response.out().flush();
-        X_TRACE("CGI_SIG::  sleep(chunk_wait)");
+        X_TRACE("sleep(chunk_wait)");
         s_Sleep("chunk_wait");
     }
 
-    X_TRACE("CGI_SIG::  Exit ProcessRequest()");
+    X_TRACE("Exit ProcessRequest()");
     return 0;
 }
 
@@ -251,6 +261,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/08 16:06:04  vakatov
+ * Conditionalize signal handling on NCBI_OS_UNIX
+ *
  * Revision 1.1  2006/11/07 20:45:45  vakatov
  * Initial revision
  *
