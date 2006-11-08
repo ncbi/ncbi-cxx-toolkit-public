@@ -64,14 +64,33 @@ public:
 
   // Methods
   void Init();
-  void ValidateLine(const SDataLine& line, int comp_end);
+  void ValidateLine(
+    const string& comp_id,
+    int line_num, int comp_end);
   void CheckTaxids();
   void PrintTotals();
 
-  void x_AddToTaxidMap(int taxid, const SDataLine& dl);
+  void x_AddToTaxidMap(int taxid, const string& comp_id, int line_num);
   int x_GetSpecies(int taxid);
   int x_GetTaxonSpecies(int taxid);
 
+  struct SLineData
+  {
+    string orig_line;
+    string comp_id;
+    int line_num;
+    int comp_end;
+  };
+
+  vector<SLineData> lineQueue;
+  void QueueLine(
+    const string& orig_line, const string& comp_id,
+    int line_num, int comp_end);
+  int QueueSize()
+  {
+    return lineQueue.size();
+  }
+  void ProcessQueue();
 };
 
 

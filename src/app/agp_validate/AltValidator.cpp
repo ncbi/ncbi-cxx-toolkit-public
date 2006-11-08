@@ -71,7 +71,7 @@ BEGIN_NCBI_SCOPE
 
 static CRef<CObjectManager> m_ObjectManager;
 static CRef<CScope> m_Scope;
-static int x_GetTaxid(CBioseq_Handle& bioseq_handle, const SDataLine& dl);
+static int x_GetTaxid(CBioseq_Handle& bioseq_handle, const string& comp_id);
 
 
 void CAltValidator::Init(void)
@@ -103,34 +103,35 @@ void CAltValidator::Init(void)
 }
 
 void CAltValidator::ValidateLine(
-  const SDataLine& dl, int comp_end)
+  const string& comp_id,
+  int line_num, int comp_end)
 {
   //// Check the accession
   CSeq_id seq_id;
   try {
-      seq_id.Set(dl.component_id);
+      seq_id.Set(comp_id);
   }
   //    catch (CSeqIdException::eFormat)
   catch (...) {
-    agpErr.Msg(CAgpErr::G_InvalidCompId, string(": ")+dl.component_id);
+    agpErr.Msg(CAgpErr::G_InvalidCompId, string(": ")+comp_id);
     return;
   }
 
   CBioseq_Handle bioseq_handle=m_Scope->GetBioseqHandle(seq_id);
   if( !bioseq_handle ) {
-    agpErr.Msg(CAgpErr::G_NotInGenbank, string(": ")+dl.component_id);
+    agpErr.Msg(CAgpErr::G_NotInGenbank, string(": ")+comp_id);
     return;
   }
 
   m_GenBankCompLineCount++; // component_id is a valid GenBank accession
 
   //// Warn if no version was supplied and GenBank version is > 1
-  SIZE_TYPE pos_ver = NStr::Find( dl.component_id, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
+  SIZE_TYPE pos_ver = NStr::Find( comp_id, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
   if(pos_ver==NPOS) {
     string acc_ver = sequence::GetAccessionForId(seq_id, *m_Scope);
     pos_ver = NStr::Find( acc_ver, "."); //, 0, NPOS, NStr::EOccurrence::eLast);
     if(pos_ver==NPOS) {
-      cerr << "FATAL: cannot get version for " << dl.component_id << "\n";
+      cerr << "FATAL: cannot get version for " << comp_id << "\n";
       exit(1);
     }
     int ver = NStr::StringToInt( acc_ver.substr(pos_ver+1) );
@@ -138,7 +139,7 @@ void CAltValidator::ValidateLine(
       agpErr.Msg(CAgpErr::G_NeedVersion,
         string(" (current version is ")+acc_ver+")",
         AT_ThisLine,
-        dl.component_id);
+        comp_id);
     }
   }
 
@@ -149,9 +150,9 @@ void CAltValidator::ValidateLine(
 
     if ( comp_end > (int) seq_len) {
       string details=": ";
-      details += dl.component_end;
+      details += NStr::IntToString(comp_end);
       details += " > ";
-      details += dl.component_id;
+      details += comp_id;
       details += " length = ";
       details += NStr::IntToString(seq_len);
       details += " bp";
@@ -161,12 +162,12 @@ void CAltValidator::ValidateLine(
   //}
 
   //if(m_ValidationType & VT_Taxid) {
-    int taxid = x_GetTaxid(bioseq_handle, dl);
+    int taxid = x_GetTaxid(bioseq_handle, comp_id);
     if(m_SpeciesLevelTaxonCheck) {
       taxid = x_GetSpecies(taxid);
     }
 
-    x_AddToTaxidMap(taxid, dl);
+    x_AddToTaxidMap(taxid, comp_id, line_num);
   //}
 }
 
@@ -193,7 +194,7 @@ void CAltValidator::PrintTotals()
 }
 
 int x_GetTaxid(
-  CBioseq_Handle& bioseq_handle, const SDataLine& dl)
+  CBioseq_Handle& bioseq_handle, const string& comp_id)
 {
   int taxid = 0;
   string docsum_taxid = "";
@@ -224,7 +225,7 @@ int x_GetTaxid(
     catch(...) {
       agpErr.Msg(CAgpErr::G_TaxError,
         string(" - cannot retrieve the taxonomic id for ") +
-        dl.component_id);
+        comp_id);
       return 0;
     }
   }
@@ -301,13 +302,13 @@ int CAltValidator::x_GetTaxonSpecies(int taxid)
 
 
 void CAltValidator::x_AddToTaxidMap(
-  int taxid, const SDataLine& dl)
+  int taxid, const string& comp_id, int line_num)
 {
     SAgpLineInfo line_info;
 
     line_info.file_num = agpErr.GetFileNum();
-    line_info.line_num = dl.line_num;
-    line_info.component_id = dl.component_id;
+    line_info.line_num = line_num;
+    line_info.component_id = comp_id;
 
     TAgpInfoList info_list;
     TTaxidMapRes res = m_TaxidMap.insert(
@@ -361,5 +362,31 @@ void CAltValidator::CheckTaxids()
     }
   }
 }
+
+//// Batch processing using queue
+void CAltValidator::QueueLine(
+  const string& orig_line, const string& comp_id,
+  int line_num, int comp_end)
+{
+  SLineData ld;
+  ld.orig_line = orig_line;
+  ld.comp_id = comp_id;
+  ld.line_num = line_num;
+  ld.comp_end = comp_end;
+  lineQueue.push_back(ld);
+}
+
+void CAltValidator::ProcessQueue()
+{
+  for(vector<SLineData>::iterator it = lineQueue.begin();  it != lineQueue.end(); ++it) {
+    // temporary code for testing the queue functions
+    // (with no performance improvement, absent the batch Entrez retrieval)
+    ValidateLine(it->comp_id, it->line_num, it->comp_end);
+    agpErr.LineDone(it->orig_line, it->line_num);
+  }
+  lineQueue.clear();
+}
+
+
 END_NCBI_SCOPE
 

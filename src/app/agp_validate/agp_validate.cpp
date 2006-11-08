@@ -340,7 +340,13 @@ void CAgpValidateApplication::x_ValidateFile(
 
     if(line == "") {
       agpErr.Msg(CAgpErr::E_EmptyLine);
-      valid=true; // avoid suppressing the errors related to the previous line
+
+      // avoid suppressing the errors related to the previous line
+      // valid=true;
+      // ^^ can't do it that easily -- this variable affects
+      //    2 other things as well: 1) skipped line count
+      //    2) correct order of -alt messages
+
       goto NextLine;
     }
 
@@ -417,7 +423,9 @@ void CAgpValidateApplication::x_ValidateFile(
         m_ContextValidator->ValidateLine(data_line, agp_line);
       }
       else if( !agp_line.is_gap ) {
-        m_AltValidator->ValidateLine(data_line, agp_line.compSpan.end);
+        //m_AltValidator->ValidateLine(
+        m_AltValidator->QueueLine(line_orig,
+          data_line.component_id, line_num, agp_line.compSpan.end);
       }
 
       if(istr.eof()) {
@@ -426,13 +434,27 @@ void CAgpValidateApplication::x_ValidateFile(
     }
 
   NextLine:
-    agpErr.LineDone(line_orig, line_num, !valid);
+    if( (m_ValidationType & VT_Acc) && (!valid || m_AltValidator->QueueSize() >= 50) ) {
+      // !valid: process the batch now so that error lines are printed in the correct order.
+      CNcbiOstrstream* tmp_messages = agpErr.m_messages;
+      agpErr.m_messages =  new CNcbiOstrstream();
+
+      // process a batch of preceding lines
+      m_AltValidator->ProcessQueue();
+
+      delete agpErr.m_messages;
+      agpErr.m_messages = tmp_messages;
+    }
+
+    agpErr.LineDone(line_orig, line_num, !valid );
     if(!valid && m_ValidationType == VT_Context) {
       // Adjust the context after an invalid line
       // (to suppress some spurious errors)
       m_ContextValidator->InvalidLine();
     }
   }
+
+  if( m_ValidationType & VT_Acc) m_AltValidator->ProcessQueue();
 }
 
 void CAgpValidateApplication::Exit(void)
