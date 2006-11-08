@@ -214,38 +214,39 @@ class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_IOStream
 {
 public:
     CConn_HttpStream
-    (const string&       host,
-     const string&       path,
-     const string&       args        = kEmptyStr,
-     const string&       user_header = kEmptyStr,
-     unsigned short      port        = 80,
-     THCC_Flags          flags       = fHCC_AutoReconnect,
-     const STimeout*     timeout     = kDefaultTimeout,
-     streamsize          buf_size    = kConn_DefaultBufSize
+    (const string&        host,
+     const string&        path,
+     const string&        args         = kEmptyStr,
+     const string&        user_header  = kEmptyStr,
+     unsigned short       port         = 80,
+     THCC_Flags           flags        = fHCC_AutoReconnect,
+     const STimeout*      timeout      = kDefaultTimeout,
+     streamsize           buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
-    (const string&   url,
-     THCC_Flags      flags           = fHCC_AutoReconnect,
-     const STimeout* timeout         = kDefaultTimeout,
-     streamsize      buf_size        = kConn_DefaultBufSize
+    (const string&        url,
+     THCC_Flags           flags        = fHCC_AutoReconnect,
+     const STimeout*      timeout      = kDefaultTimeout,
+     streamsize           buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
-    (const string&       url,
-     const SConnNetInfo* net_info,
-     const string&       user_header = kEmptyStr,
-     THCC_Flags          flags       = fHCC_AutoReconnect,
-     const STimeout*     timeout     = kDefaultTimeout,
-     streamsize          buf_size    = kConn_DefaultBufSize
+    (const string&        url,
+     const SConnNetInfo*  net_info,
+     const string&        user_header  = kEmptyStr,
+     THCC_Flags           flags        = fHCC_AutoReconnect,
+     const STimeout*      timeout      = kDefaultTimeout,
+     streamsize           buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
-    (const SConnNetInfo* net_info    = 0,
-     const string&       user_header = kEmptyStr,
-     THCC_Flags          flags       = fHCC_AutoReconnect,
-     const STimeout*     timeout     = kDefaultTimeout,
-     streamsize          buf_size    = kConn_DefaultBufSize
+    (const SConnNetInfo*  net_info     = 0,
+     const string&        user_header  = kEmptyStr,
+     FHttpParseHTTPHeader parse_header = 0,
+     THCC_Flags           flags        = fHCC_AutoReconnect,
+     const STimeout*      timeout      = kDefaultTimeout,
+     streamsize           buf_size     = kConn_DefaultBufSize
      );
 
 private:
@@ -430,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.47  2006/11/08 17:00:16  lavr
+ * CConn_HttpStream:  To use parse_header callback in generic ctor
+ *
  * Revision 6.46  2006/10/23 20:11:35  lavr
  * Formatting (indentation)
  *

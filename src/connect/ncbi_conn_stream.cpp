@@ -118,15 +118,16 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 }
 
 
-static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* a_net_info,
-                                        const char*         url,
-                                        const char*         host,
-                                        unsigned short      port,
-                                        const char*         path,
-                                        const char*         args,
-                                        const char*         user_hdr,
-                                        THCC_Flags          flags,
-                                        const STimeout*     timeout)
+static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
+                                        const char*          url,
+                                        const char*          host,
+                                        unsigned short       port,
+                                        const char*          path,
+                                        const char*          args,
+                                        const char*          user_header,
+                                        FHttpParseHTTPHeader parse_header,
+                                        THCC_Flags           flags,
+                                        const STimeout*      timeout)
 {
     SConnNetInfo* net_info = a_net_info ?
         ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(0);
@@ -142,12 +143,14 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* a_net_info,
         strncpy0(net_info->path, path, sizeof(net_info->path) - 1);
     if (args)
         strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
+    if (user_header)
+        ConnNetInfo_OverrideUserHeader(net_info, user_header);
     if (timeout  &&  timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
         net_info->timeout = 0;
-    CONNECTOR c = HTTP_CreateConnector(net_info, user_hdr, flags);
+    CONNECTOR c = HTTP_CreateConnectorEx(net_info, flags, parse_header, 0,0,0);
     ConnNetInfo_Destroy(net_info);
     return c;
 }
@@ -168,6 +171,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             path.c_str(),
                                             args.c_str(),
                                             user_header.c_str(),
+                                            0,
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -182,6 +186,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                    streamsize          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
                                             url.c_str(),
+                                            0,
                                             0,
                                             0,
                                             0,
@@ -208,6 +213,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                             0,
                                             0,
                                             user_header.c_str(),
+                                            0,
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -216,11 +222,12 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
 }
 
 
-CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
-                                   const string&       user_header,
-                                   THCC_Flags          flags,
-                                   const STimeout*     timeout,
-                                   streamsize          buf_size)
+CConn_HttpStream::CConn_HttpStream(const SConnNetInfo*  net_info,
+                                   const string&        user_header,
+                                   FHttpParseHTTPHeader parse_header,
+                                   THCC_Flags           flags,
+                                   const STimeout*      timeout,
+                                   streamsize           buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
                                             0,
                                             0,
@@ -228,6 +235,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                             0,
                                             0,
                                             user_header.c_str(),
+                                            parse_header,
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -450,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.61  2006/11/08 17:00:28  lavr
+ * CConn_HttpStream:  To use parse_header callback in generic ctor
+ *
  * Revision 6.60  2006/10/23 18:28:28  vakatov
  * Reinstate CConn_HttpStream(url, flags, ....)
  *
