@@ -104,11 +104,15 @@ public:
 
     /// Open an already existing database in read-only mode.
     /// Throw an exception on error (or, if the database does not exist).
+    /// 
+    /// @note Use Index() method to create or repair the database.
     CLDS_Database& GetDB();
 
     /// Open an already existing database in read-only mode.
     /// Throw an exception on error (or, if the database does not exist).
     /// Gives away the database object; caller will be responsible for destroying it.
+    /// 
+    /// @note Use Index() method to create or repair the database.
     CLDS_Database* ReleaseDB();
        
 private:
@@ -128,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/08 15:08:15  didenko
+ * Added comments
+ *
  * Revision 1.2  2006/10/02 15:31:28  didenko
  * added <memory> include
  *
