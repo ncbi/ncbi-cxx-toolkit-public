@@ -155,7 +155,7 @@ void CAgpContextValidator::x_OnGapLine(
 {
   int i = gap.type;
   if(gap.linkage==CGapVal::LINKAGE_yes) i+= CGapVal::GAP_count;
-  NCBI_ASSERT( i < sizeof(m_GapTypeCnt)/sizeof(m_GapTypeCnt[0]),
+  NCBI_ASSERT( i < (int)sizeof(m_GapTypeCnt)/sizeof(m_GapTypeCnt[0]),
     "m_GapTypeCnt[] index out of bounds" );
   m_GapTypeCnt[i]++;
   m_GapCount++;

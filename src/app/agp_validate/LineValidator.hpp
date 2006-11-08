@@ -68,11 +68,6 @@ struct SDataLine {
   string  linkage;
 };
 
-// proper values for the different fields in the AGP
-//typedef set<string> TValuesSet;
-
-// Compared to TValuesSet. provides code optimization by avoiding
-// repetetive string comparisons.
 typedef map<string, int> TValuesMap;
 
 // Values for Validatable component columns (7a-9a)

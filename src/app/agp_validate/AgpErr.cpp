@@ -309,7 +309,6 @@ void CAgpErr::LineDone(const string& s, int line_num, bool invalid_line)
     m_lines_skipped++;
   }
 
-
   m_two_lines_involved=false;
 }
 
