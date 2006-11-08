@@ -166,7 +166,7 @@ void BlastInitHitListReset(BlastInitHitList * init_hitlist)
 }
 
 
-/* empty an init hitlist but do not deallocate the base structure
+/** empty an init hitlist but do not deallocate the base structure
  * @param hi list of initial hits to clean [in][out]
  */
 static void s_BlastInitHitListClean(BlastInitHitList * hi)
