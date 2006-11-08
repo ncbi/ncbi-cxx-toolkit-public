@@ -6,8 +6,7 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = demo_html_template
-EXPENDABLE_APP_PROJ = demo_html
+APP_PROJ = demo_html demo_html_template
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
