@@ -52,7 +52,7 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
 /* Get configuration file name. Returned '\0'-terminated string
  * is to be free()'d by a caller when no longer needed.
  * Return NULL if no configuration file name is available.
- * LBSMD_KeepHeapAttached() was set to eOff and there is a cached copy
+ * LBSMD_FastHeapAccess() was set to "eOff" and there is a cached copy
  * of LBSM heap kept in-core, it will be released by this call.
  */
 extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
@@ -65,13 +65,14 @@ extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
  * LBSM shmem to be obsolete).
  * Returned heap (if non-NULL) has a serial number reflecting which
  * shmem segment has been used to get the snapshot.  The serial number
- * is negated for older heap structure, which has no dedicated version
- * entry format (SLBSM_OldEntry is used instead), and has TTLs for entries
- * instead of expiration times.  The returned copy must be passed to
- * (MT-locked by the caller) HEAP_Destroy() when no longer needed.
+ * is negated for newer heap structure, which has dedicated version
+ * entry format.  Older heap structure uses SLBSM_OldEntry instead,
+ * and has TTLs for entries instead of expiration times.  The returned
+ * copy must be passed to (MT-locked by the caller) HEAP_Destroy() when
+ * no longer needed.
  * The copy can be cached in-core, the only way to release it is to
- * call LBSMD_GetConfig() provided that LBSM_KeepHeapAttached() has
- * been set to eOff (which is the default setting).
+ * call LBSMD_GetConfig() provided that LBSM_FastHeapAccess() has
+ * been set to "eOff" (which is the default setting).
  */
 extern NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
 
@@ -99,6 +100,9 @@ int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2]);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2006/11/08 17:19:07  lavr
+ * Change sign of used serial nos for new vs. old heap formats
+ *
  * Revision 6.13  2006/03/06 20:40:14  lavr
  * Added NCBI_XCONNECT_EXPORT attribute to LBSMD_GetHeapCopy()
  *
