@@ -220,6 +220,24 @@ public:
         return m_Bitmap;
     }
 
+
+    /// Dump in human readable text format
+    template <class TOutStream>
+    void Dump(TOutStream& os) {
+        os << "QueryAnchoredTest:" 
+           << IsQueryAnchored() << endl;
+        os << "Number of alignments: " << GetAlnCount() << endl;
+        os << "Number of alignments containing nuc seqs:" << GetAlnWithNucCount() << endl;
+        os << "Number of alignments containing prot seqs:" << GetAlnWithProtCount() << endl;
+        os << "Number of alignments containing nuc seqs only:" << GetNucOnlyAlnCount() << endl;
+        os << "Number of alignments containing prot seqs only:" << GetProtOnlyAlnCount() << endl;
+        os << "Number of alignments containing both nuc and prot seqs:" << GetTranslatedAlnCount() << endl;
+        os << "Number of sequences:" << GetSeqCount() << endl;
+        os << "Number of self-aligned sequences:" << GetSelfAlignedSeqCount() << endl;
+        os << endl;
+    }
+    
+
 private:
 
     void x_InitNucProtBitmaps() const {
@@ -264,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/11/08 22:27:59  todorov
+* + template <class TOutStream> void Dump(TOutStream& os)
+*
 * Revision 1.5  2006/11/06 19:59:54  todorov
 * Minor changes.  Added GetAlnVector()
 *

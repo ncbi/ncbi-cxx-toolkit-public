@@ -59,6 +59,7 @@ public:
                  int base_width_1 = 1,
                  int base_width_2 = 1);
 
+
     /// Accessors:
     const CSeq_align& GetSeqAlign() const {
         return *m_SeqAlign;
@@ -68,6 +69,26 @@ public:
     }
     const TDim& GetRow2() const {
         return m_Row2;
+    }
+
+
+    /// Dump in human readable text format:
+    template <class TOutStream>
+    void Dump(TOutStream& os) {
+        char s[32];
+        sprintf(s, "%X", (unsigned int) GetFlags());
+        os << "CPairwiseAln  Flags = " << s << ", : ";
+
+        ITERATE (CPairwiseAln, it, (CPairwiseAln)*this) {
+            const CPairwiseAln::TAlnRng& r = *it;
+            os << "[" 
+               << r.GetFirstFrom() << ", " 
+               << r.GetSecondFrom() << ", "
+               << r.GetLength() << ", " 
+               << (r.IsDirect() ? "true" : "false") 
+               << "]";
+        }
+        os << endl;
     }
 
 private:
@@ -107,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/11/08 22:28:14  todorov
+* + template <class TOutStream> void Dump(TOutStream& os)
+*
 * Revision 1.4  2006/11/06 19:55:08  todorov
 * Added base widths.
 *

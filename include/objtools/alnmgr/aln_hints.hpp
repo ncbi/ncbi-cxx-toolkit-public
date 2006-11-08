@@ -127,6 +127,30 @@ public:
     }
 
 
+    /// Dump in human readable text format:
+    template <class TOutStream>
+    void Dump(TOutStream& os) {
+        os << "Number of alignments: " << GetAlnCount() << endl;
+        os << "QueryAnchoredTest:"     << IsAnchored() << endl;
+        for (size_t aln_idx = 0;  aln_idx < GetAlnCount();  ++aln_idx) {
+            TDim dim = GetDimForAln(aln_idx);
+            os << endl << "Alignment " << aln_idx << " has " 
+               << dim << " rows:" << endl;
+            for (TDim row = 0;  row < dim;  ++row) {
+                GetSeqIdsForAln(aln_idx)[row]->WriteAsFasta(os);
+                os << " [base width: " 
+                   << GetBaseWidthForAlnRow(aln_idx, row)
+                   << "]";
+                if (IsAnchored()  &&  
+                    row == GetAnchorRowForAln(aln_idx)) {
+                    os << " (anchor)";
+                }
+                os << endl;
+            }
+        }
+    }
+
+
 private:
     const TAlnVector& m_AlnVector;
     const TAlnSeqIdVector& m_AlnSeqIdVector;
@@ -142,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/11/08 22:27:17  todorov
+* + template <class TOutStream> void Dump(TOutStream& os)
+*
 * Revision 1.4  2006/11/08 17:42:54  todorov
 * Cleaned code.
 *
