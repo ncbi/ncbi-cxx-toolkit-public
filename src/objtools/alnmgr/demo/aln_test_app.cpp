@@ -50,11 +50,72 @@
 #include <objtools/alnmgr/aln_asn_reader.hpp>
 #include <objtools/alnmgr/aln_container.hpp>
 #include <objtools/alnmgr/aln_tests.hpp>
+#include <objtools/alnmgr/aln_hints.hpp>
 
 
 using namespace ncbi;
 using namespace objects;
 
+
+/// Types we use here:
+typedef CSeq_align::TDim TDim;
+typedef vector<const CSeq_align*> TAlnVector;
+typedef const CSeq_id* TSeqIdPtr;
+typedef vector<TSeqIdPtr> TSeqIdVector;
+typedef SCompareOrdered<TSeqIdPtr> TComp;
+typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
+typedef CSeqIdAlnBitmap<TAlnSeqIdVector> TSeqIdAlnBitmap;
+typedef CAlnHints<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnHints;
+typedef TAlnHints::TBaseWidths TBaseWidths;
+typedef TAlnHints::TAnchorRows TAnchorRows;
+
+
+ostream& operator<<(ostream& out, const TSeqIdAlnBitmap& id_aln_bitmap)
+{
+    out << "QueryAnchoredTest:" 
+        << id_aln_bitmap.IsQueryAnchored() << endl;
+
+    out << "Number of alignments: " << id_aln_bitmap.GetAlnCount() << endl;
+    out << "Number of alignments containing nuc seqs:" << id_aln_bitmap.GetAlnWithNucCount() << endl;
+    out << "Number of alignments containing prot seqs:" << id_aln_bitmap.GetAlnWithProtCount() << endl;
+    out << "Number of alignments containing nuc seqs only:" << id_aln_bitmap.GetNucOnlyAlnCount() << endl;
+    out << "Number of alignments containing prot seqs only:" << id_aln_bitmap.GetProtOnlyAlnCount() << endl;
+    out << "Number of alignments containing both nuc and prot seqs:" << id_aln_bitmap.GetTranslatedAlnCount() << endl;
+    out << "Number of sequences:" << id_aln_bitmap.GetSeqCount() << endl;
+    out << "Number of self-aligned sequences:" << id_aln_bitmap.GetSelfAlignedSeqCount() << endl;
+    return out;
+}
+
+
+ostream& operator<<(ostream& out, const TAlnHints& aln_hints)
+{
+    out << "Number of alignments: " << aln_hints.GetAlnCount() << endl;
+
+    out << "QueryAnchoredTest:"     << aln_hints.IsAnchored() << endl;
+
+    for (size_t aln_idx = 0;  aln_idx < aln_hints.GetAlnCount();  ++aln_idx) {
+        TDim dim = aln_hints.GetDimForAln(aln_idx);
+        out << endl << "Alignment " << aln_idx 
+            << " has " 
+            << dim << " rows:" << endl;
+        for (TDim row = 0;  row < dim;  ++row) {
+            aln_hints.GetSeqIdsForAln(aln_idx)[row]->WriteAsFasta(out);
+
+            out << " [base width: " 
+                << aln_hints.GetBaseWidthForAlnRow(aln_idx, row)
+                << "]";
+
+            if (aln_hints.IsAnchored()  &&  
+                row == aln_hints.GetAnchorRowForAln(aln_idx)) {
+                out << " (anchor)";
+            }
+
+            out << endl;
+        }
+    }
+    return out;
+}
+    
 
 class CAlnTestApp : public CNcbiApplication
 {
@@ -136,35 +197,80 @@ int CAlnTestApp::Run(void)
     CONNECT_Init(&GetConfig());
 
     LoadInputAlns();
-    typedef vector<const CSeq_align*> TAlnVector;
+
+
+    /// Create a vector of alignments
     TAlnVector aln_vector(m_AlnContainer.size());
     aln_vector.assign(m_AlnContainer.begin(), m_AlnContainer.end());
 
-    typedef SCompareOrdered<const CSeq_id*> TComp;
+
+    /// Create a comparison functor
     TComp comp;
 
-    typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
-    TAlnSeqIdVector aln_id_vector(aln_vector, comp);
 
-    CSeqIdAlnBitmap<TAlnSeqIdVector>
-        id_aln_bitmap(aln_id_vector, GetScope());
+    /// Create a vector of seq-ids per seq-align
+    TAlnSeqIdVector aln_seq_id_vector(aln_vector, comp);
 
-    cout << "QueryAnchoredTest:" 
-         << id_aln_bitmap.IsQueryAnchored() << endl;
 
-    if (id_aln_bitmap.IsQueryAnchored()) {
-        cout << "Query seq-id:" 
-             << id_aln_bitmap.GetAnchorHandle().GetSeqId()->AsFastaString() << endl;
+    /// Create an alignment bitmap to obtain statistics.
+    TSeqIdAlnBitmap id_aln_bitmap(aln_seq_id_vector, GetScope());
+
+    cout << id_aln_bitmap;
+    
+
+    /// Determine anchor row for each alignment
+    TBaseWidths base_widths;
+    bool translated = id_aln_bitmap.GetTranslatedAlnCount();
+    if (translated) {
+        base_widths.resize(id_aln_bitmap.GetAlnCount());
+        for (size_t aln_idx = 0;  aln_idx < aln_seq_id_vector.size();  ++aln_idx) {
+            const TSeqIdVector& ids = aln_seq_id_vector[aln_idx];
+            base_widths[aln_idx].resize(ids.size());
+            for (size_t row = 0; row < ids.size(); ++row)   {
+                CBioseq_Handle bioseq_handle = m_Scope->GetBioseqHandle(*ids[row]);
+                if (bioseq_handle.IsProtein()) {
+                    base_widths[aln_idx][row] = 3;
+                } else if (bioseq_handle.IsNucleotide()) {
+                    base_widths[aln_idx][row] = 1;
+                } else {
+                    string err_str =
+                        string("Cannot determine molecule type for seq-id: ")
+                        + ids[row]->AsFastaString();
+                    NCBI_THROW(CSeqalignException, eInvalidSeqId, err_str);
+                }
+            }
+        }
     }
 
-    cout << "Number of alignments: " << id_aln_bitmap.GetAlnCount() << endl;
-    cout << "Number of alignments containing nuc seqs:" << id_aln_bitmap.GetAlnWithNucCount() << endl;
-    cout << "Number of alignments containing prot seqs:" << id_aln_bitmap.GetAlnWithProtCount() << endl;
-    cout << "Number of alignments containing nuc seqs only:" << id_aln_bitmap.GetNucOnlyAlnCount() << endl;
-    cout << "Number of alignments containing prot seqs only:" << id_aln_bitmap.GetProtOnlyAlnCount() << endl;
-    cout << "Number of alignments containing both nuc and prot seqs:" << id_aln_bitmap.GetTranslatedAlnCount() << endl;
-    cout << "Number of sequences:" << id_aln_bitmap.GetSeqCount() << endl;
-    cout << "Number of self-aligned sequences:" << id_aln_bitmap.GetSelfAlignedSeqCount() << endl;
+
+    /// Determine anchor rows;
+    TAnchorRows anchor_rows;
+    bool anchored = id_aln_bitmap.IsQueryAnchored();
+    if (anchored) {
+        TSeqIdPtr anchor_id = id_aln_bitmap.GetAnchorHandle().GetSeqId();
+        anchor_rows.resize(id_aln_bitmap.GetAlnCount(), -1);
+        for (size_t aln_idx = 0;  aln_idx < anchor_rows.size();  ++aln_idx) {
+            const TSeqIdVector& ids = aln_seq_id_vector[aln_idx];
+            for (size_t row = 0; row < ids.size(); ++row)   {
+                if ( !(comp(ids[row], anchor_id) ||
+                       comp(anchor_id, ids[row])) ) {
+                    anchor_rows[aln_idx] = row;
+                    break;
+                }
+            }
+            _ASSERT(anchor_rows[aln_idx] >= 0);
+        }
+    }
+
+
+    /// Store all retrieved statistics in the aln hints
+    TAlnHints aln_hints(aln_vector,
+                        aln_seq_id_vector,
+                        anchored ? &anchor_rows : 0,
+                        translated ? &base_widths : 0);
+
+    cout << aln_hints;
+
 
     return 0;
 }
@@ -180,6 +286,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/11/08 17:48:20  todorov
+* Included all latest aln stats.
+*
 * Revision 1.3  2006/10/17 21:54:55  todorov
 * Printing the query seq-id.
 *
