@@ -193,16 +193,17 @@ public:
     /// If ranges are specified for a sequence, data areas in
     /// specified sequences will be accurate, but data outside the
     /// specified ranges should not be accessed, and no guarantees are
-    /// made about what data they will contain.  If the keep_current
+    /// made about what data they will contain.  If the append_ranges
     /// flag is true, the range will be added to existing ranges.  If
     /// false, existing ranges will be flushed and replaced by new
     /// ranges.  To remove ranges, call this method with an empty list
-    /// of ranges; future calls will return the complete sequence.
+    /// of ranges (and append_ranges == false); future calls will then
+    /// return the complete sequence.
     ///
-    /// If the cache_data flag is provided, data for this sequence
-    /// will be kept for the duration of SeqDB's lifetime.  To disable
-    /// caching (and flush cached data) for this sequence, call the
-    /// method again, but specify cache_data to be false.
+    /// If the cache_data flag is set, data for this sequence will be
+    /// kept for the duration of SeqDB's lifetime.  To disable caching
+    /// (and flush cached data) for this sequence, call the method
+    /// again, but specify cache_data to be false.
     ///
     /// @param oid           OID of the sequence.
     /// @param offset_ranges Ranges of sequence data to return.
