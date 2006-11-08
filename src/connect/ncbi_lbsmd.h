@@ -70,7 +70,7 @@ extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
  * and has TTLs for entries instead of expiration times.  The returned
  * copy must be passed to (MT-locked by the caller) HEAP_Destroy() when
  * no longer needed.
- * The copy can be cached in-core, the only way to release it is to
+ * The copy may be cached in-core, the only way to release it is to
  * call LBSMD_GetConfig() provided that LBSM_FastHeapAccess() has
  * been set to "eOff" (which is the default setting).
  */
@@ -100,6 +100,9 @@ int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2]);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2006/11/08 20:02:53  lavr
+ * Clarify comments about cached in-core heap copy
+ *
  * Revision 6.14  2006/11/08 17:19:07  lavr
  * Change sign of used serial nos for new vs. old heap formats
  *
