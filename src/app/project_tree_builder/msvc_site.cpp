@@ -218,6 +218,9 @@ bool CMsvcSite::IsLibEnabledInConfig(const string&      lib,
                                      const SConfigInfo& config) const
 {
     string enabled_configs_str = m_Registry.Get(lib, "CONFS");
+    if (enabled_configs_str.empty()) {
+        return true;
+    }
     list<string> enabled_configs;
     NStr::Split(enabled_configs_str, 
                 LIST_SEPARATOR, enabled_configs);
@@ -571,6 +574,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/11/08 18:04:07  gouriano
+ * If CONFS not specified, default to all configs
+ *
  * Revision 1.41  2006/08/29 16:07:05  ucko
  * Spell out bulk list -> set data transfers to workaround WorkShop's
  * limited STL implementation.
