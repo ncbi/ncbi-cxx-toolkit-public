@@ -34,6 +34,7 @@
 #include <objtools/readers/seqdb/seqdbexpert.hpp>
 #include <serial/serialbase.hpp>
 #include <objects/seq/seq__.hpp>
+#include <corelib/ncbifile.hpp>
 #include <math.h>
 
 #include <util/sequtil/sequtil_convert.hpp>
@@ -314,6 +315,23 @@ BOOST_AUTO_UNIT_TEST(ConstructLocal)
     
     CSeqDB local1("data/seqp", CSeqDB::eProtein);
     CSeqDB local2("data/seqp", CSeqDB::eProtein, 0, 0, false);
+    
+    Int4 num1(0), num2(0);
+    local1.GetTotals(CSeqDB::eFilteredAll, & num1, 0);
+    local2.GetTotals(CSeqDB::eFilteredAll, & num2, 0);
+    
+    CHECK(num1 >= 1);
+    CHECK_EQUAL(num1, num2);
+}
+
+BOOST_AUTO_UNIT_TEST(PathDelimiters)
+{
+    START;
+    
+    // Test both constructors; make sure sizes are equal and non-zero.
+    
+    CSeqDB local1("data\\seqp", CSeqDB::eProtein);
+    CSeqDB local2("data/seqp", CSeqDB::eProtein);
     
     Int4 num1(0), num2(0);
     local1.GetTotals(CSeqDB::eFilteredAll, & num1, 0);
@@ -1810,7 +1828,8 @@ BOOST_AUTO_UNIT_TEST(CSeqDBFileGiList_GetGis)
     sort(gis.begin(), gis.end());
     
     // Read text gi list manually
-    ifstream gifile(kFileName.c_str());
+    string fn = CDirEntry::ConvertToOSPath(kFileName);
+    ifstream gifile(fn.c_str());
     CHECK(gifile);
     
     vector<int> reference;
@@ -2305,6 +2324,9 @@ void s_ForceSymbolDefinitions(CObjectIStream& ois,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/11/08 18:06:27  bealer
+ * - SeqDB now converts paths to OS format.
+ *
  * Revision 1.4  2006/11/06 17:00:01  bealer
  * - Add test for resolve path.
  *

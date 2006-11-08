@@ -591,6 +591,12 @@ public:
         return m_Value == other.m_Value;
     }
     
+    /// Change any internal delimiters to the platform specific kind.
+    void FixDelimiters()
+    {
+        m_Value = CDirEntry::ConvertToOSPath(m_Value);
+    }
+    
 private:
     /// The base name.
     string m_Value;
@@ -631,6 +637,12 @@ public:
     void Assign(const CSeqDB_Substring & sub)
     {
         sub.GetStringQuick(m_Value);
+    }
+    
+    /// Change any internal delimiters to the platform specific kind.
+    void FixDelimiters()
+    {
+        m_Value = CDirEntry::ConvertToOSPath(m_Value);
     }
     
 private:
@@ -806,6 +818,12 @@ public:
     void Assign(const string & path)
     {
         s_SeqDB_QuickAssign(m_Value, path);
+    }
+    
+    /// Change any internal delimiters to the platform specific kind.
+    void FixDelimiters()
+    {
+        m_Value = CDirEntry::ConvertToOSPath(m_Value);
     }
     
 private:

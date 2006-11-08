@@ -420,7 +420,7 @@ public:
     virtual bool DoesFileExist(const string & fname)
     {
         // Use the same criteria as the Atlas code would.
-        CFile whole(fname);
+        CFile whole(CDirEntry::ConvertToOSPath(fname));
         return whole.GetLength() != (Int8) -1;
     }
 };
@@ -605,7 +605,7 @@ CSeqDBGiList::GetGiList(vector<int>& gis) const
 
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
 {
-    CMemoryFile mfile(fname);
+    CMemoryFile mfile(CDirEntry::ConvertToOSPath(fname));
     
     Int4 * beginp = (Int4*) mfile.GetPtr();
     Int4 * endp   = (Int4*) (((char*)mfile.GetPtr()) + mfile.GetSize());
@@ -780,7 +780,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
 
 void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, bool * in_order)
 {
-    CMemoryFile mfile(fname);
+    CMemoryFile mfile(CDirEntry::ConvertToOSPath(fname));
     
     Int8 file_size = mfile.GetSize();
     const char * fbeginp = (char*) mfile.GetPtr();

@@ -78,6 +78,7 @@ void CSeqDBAliasNode::x_Tokenize(const string & dbnames)
     
     for(size_t i = 0; i<dbs.size(); i++) {
         m_DBList[i].Assign(dbs[i]);
+        m_DBList[i].FixDelimiters();
     }
 }
 
@@ -1353,6 +1354,8 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
             
             if (oid_iter != m_Values.end()) {
                 CSeqDB_BaseName oidlist(oid_iter->second);
+                oidlist.FixDelimiters();
+                
                 x_SetOIDMask(volset, first_oid, last_oid, oidlist);
                 filtered = true;
             }
@@ -1369,6 +1372,7 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
                 }
                 
                 CSeqDB_FileName gilist(gilname);
+                gilist.FixDelimiters();
                 
                 x_SetGiListMask(volset, first_oid, last_oid, gilist);
                 filtered = true;
