@@ -73,68 +73,6 @@ typedef TAlnHints::TBaseWidths TBaseWidths;
 typedef TAlnHints::TAnchorRows TAnchorRows;
 
 
-ostream& operator<<(ostream& out, const CPairwiseAln& coll)
-{
-    char s[32];
-    sprintf(s, "%X", (unsigned int) coll.GetFlags());
-    out << "CPairwiseAln  Flags = " << s << ", : ";
-
-    ITERATE (CPairwiseAln, it, coll) {
-        const CPairwiseAln::TAlnRng& r = *it;
-        out << "[" << r.GetFirstFrom() << ", " << r.GetSecondFrom() << ", "
-            << r.GetLength() << ", " << (r.IsDirect() ? "true" : "false") << "]";
-    }
-    return out;
-}
-
-
-ostream& operator<<(ostream& out, const TSeqIdAlnBitmap& id_aln_bitmap)
-{
-    out << "QueryAnchoredTest:" 
-        << id_aln_bitmap.IsQueryAnchored() << endl;
-
-    out << "Number of alignments: " << id_aln_bitmap.GetAlnCount() << endl;
-    out << "Number of alignments containing nuc seqs:" << id_aln_bitmap.GetAlnWithNucCount() << endl;
-    out << "Number of alignments containing prot seqs:" << id_aln_bitmap.GetAlnWithProtCount() << endl;
-    out << "Number of alignments containing nuc seqs only:" << id_aln_bitmap.GetNucOnlyAlnCount() << endl;
-    out << "Number of alignments containing prot seqs only:" << id_aln_bitmap.GetProtOnlyAlnCount() << endl;
-    out << "Number of alignments containing both nuc and prot seqs:" << id_aln_bitmap.GetTranslatedAlnCount() << endl;
-    out << "Number of sequences:" << id_aln_bitmap.GetSeqCount() << endl;
-    out << "Number of self-aligned sequences:" << id_aln_bitmap.GetSelfAlignedSeqCount() << endl;
-    return out;
-}
-
-
-ostream& operator<<(ostream& out, const TAlnHints& aln_hints)
-{
-    out << "Number of alignments: " << aln_hints.GetAlnCount() << endl;
-
-    out << "QueryAnchoredTest:"     << aln_hints.IsAnchored() << endl;
-
-    for (size_t aln_idx = 0;  aln_idx < aln_hints.GetAlnCount();  ++aln_idx) {
-        TDim dim = aln_hints.GetDimForAln(aln_idx);
-        out << endl << "Alignment " << aln_idx 
-            << " has " 
-            << dim << " rows:" << endl;
-        for (TDim row = 0;  row < dim;  ++row) {
-            aln_hints.GetSeqIdsForAln(aln_idx)[row]->WriteAsFasta(out);
-
-            out << " [base width: " 
-                << aln_hints.GetBaseWidthForAlnRow(aln_idx, row)
-                << "]";
-
-            if (aln_hints.IsAnchored()  &&  
-                row == aln_hints.GetAnchorRowForAln(aln_idx)) {
-                out << " (anchor)";
-            }
-
-            out << endl;
-        }
-    }
-    return out;
-}
-    
-
 class CPairwiseAlnApp : public CNcbiApplication
 {
 public:
@@ -247,9 +185,7 @@ int CPairwiseAlnApp::Run(void)
 
     /// Create an alignment bitmap to obtain statistics.
     TSeqIdAlnBitmap id_aln_bitmap(aln_seq_id_vector, GetScope());
-
-    cout << id_aln_bitmap << endl;
-    
+    id_aln_bitmap.Dump(cout);
 
     /// Determine anchor row for each alignment
     TBaseWidths base_widths;
@@ -301,8 +237,7 @@ int CPairwiseAlnApp::Run(void)
                         aln_seq_id_vector,
                         anchored ? &anchor_rows : 0,
                         translated ? &base_widths : 0);
-
-    cout << aln_hints << endl;
+    aln_hints.Dump(cout);
 
 
     /// Construct pairwise alignmenst based on the aln hints
@@ -317,7 +252,7 @@ int CPairwiseAlnApp::Run(void)
                          aln_hints.GetBaseWidthForAlnRow(aln_idx, m_QueryRow),
                          aln_hints.GetBaseWidthForAlnRow(aln_idx, m_SubjectRow));
 
-        cout << pairwise_aln << endl;
+        pairwise_aln.Dump(cout);
     }
     cout << endl;
 
@@ -336,6 +271,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/11/08 22:26:29  todorov
+* Using Dump(os) methods.
+*
 * Revision 1.2  2006/11/08 18:13:50  todorov
 * Using aln_hints to determine base widths.
 *
