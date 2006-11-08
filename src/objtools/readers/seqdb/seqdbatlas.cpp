@@ -1162,7 +1162,7 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
     // Find file and get length
     
     CFile file(*m_Fname);
-    CNcbiIfstream istr(m_Fname->c_str());
+	CNcbiIfstream istr(m_Fname->c_str(), IOS_BASE::binary | IOS_BASE::in);
     
     if ((! file.Exists()) || istr.fail()) {
         return false;
