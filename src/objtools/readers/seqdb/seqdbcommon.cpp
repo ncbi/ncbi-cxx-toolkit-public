@@ -306,7 +306,9 @@ static string s_SeqDB_TryPaths(const string         & blast_paths,
     ITERATE(vector<string>, road, roads) {
         attempt.erase();
         
-        SeqDB_CombinePath(CSeqDB_Substring(*road),
+        string os_road = CDirEntry::ConvertToOSPath(*road);
+        
+        SeqDB_CombinePath(CSeqDB_Substring(os_road),
                           CSeqDB_Substring(dbname),
                           0,
                           attempt);
