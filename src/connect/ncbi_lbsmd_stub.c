@@ -50,11 +50,19 @@ extern const char* LBSMD_GetConfig(void)
 }
 
 
-/*ARGSUSED*/
+/*ARGSUSED*/ /*DEPRECATED*/
 extern ESwitch LBSMD_KeepHeapAttached(ESwitch sw/*ignored*/)
 {
-    /* ignore any new settings, always return Off */
+    /* ignore any new settings, always return "Off" here */
     return eOff;
+}
+
+
+/*ARGSUSED*/
+extern ESwitch LBSMD_FastHeapAccess(ESwitch sw/*ignored*/)
+{
+    /* ignore any new settings, always return "not implemented" */
+    return eDefault;
 }
 
 
@@ -96,6 +104,9 @@ int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2006/11/08 17:15:30  lavr
+ * +LBSMD_FastHeapAccess()
+ *
  * Revision 6.11  2006/10/23 21:17:34  lavr
  * -LBSM_KeepHeapAttached (has been deprecated a long ago)
  *
