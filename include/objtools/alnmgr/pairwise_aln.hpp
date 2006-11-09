@@ -74,18 +74,18 @@ public:
 
     /// Dump in human readable text format:
     template <class TOutStream>
-    void Dump(TOutStream& os) {
+    void Dump(TOutStream& os) const {
         char s[32];
         sprintf(s, "%X", (unsigned int) GetFlags());
         os << "CPairwiseAln  Flags = " << s << ", : ";
 
-        ITERATE (CPairwiseAln, it, (CPairwiseAln)*this) {
-            const CPairwiseAln::TAlnRng& r = *it;
+        ITERATE (CDiagRngColl, rng_it, *this) {
+            const TAlnRng& rng = *rng_it;
             os << "[" 
-               << r.GetFirstFrom() << ", " 
-               << r.GetSecondFrom() << ", "
-               << r.GetLength() << ", " 
-               << (r.IsDirect() ? "true" : "false") 
+               << rng.GetFirstFrom() << ", " 
+               << rng.GetSecondFrom() << ", "
+               << rng.GetLength() << ", " 
+               << (rng.IsDirect() ? "true" : "false") 
                << "]";
         }
         os << endl;
@@ -115,10 +115,54 @@ public:
     typedef vector<CConstRef<CSeq_id> > TSeqIds;
     TSeqIds m_SeqIds;
 
-    typedef vector<CConstRef<CPairwiseAln> > TPairwiseAlns;
-    TPairwiseAlns m_PairwiseAlns;
+    typedef vector<CConstRef<CPairwiseAln> > TPairwiseAlnVector;
+    TPairwiseAlnVector m_PairwiseAlnVector;
+
+
+    /// Dump in human readable text format:
+    template <class TOutStream>
+    void Dump(TOutStream& os) const {
+        os << "CAnchorAln contains " 
+           << m_PairwiseAlnVector.size() << " pair(s) of rows:" << endl;
+        ITERATE(TPairwiseAlnVector, pairwise_aln_i, m_PairwiseAlnVector) {
+            (*pairwise_aln_i)->Dump(os);
+        }
+        os << endl;
+    }
+
 };
 
+
+/// Creating an anchored alignment from Seq-align using hints
+template <class TAlnHints>
+CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnHints& aln_hints,
+                                            size_t aln_idx)
+{
+    typedef typename TAlnHints::TDim TDim;
+
+    _ASSERT(aln_hints.IsAnchored());
+
+    CRef<CAnchoredAln> anchored_aln(new CAnchoredAln);
+
+    for (TDim row = 0;
+         row < aln_hints.GetDimForAln(aln_idx);
+         ++row) {
+
+        TDim anchor_row = aln_hints.GetAnchorRowForAln(aln_idx);
+
+        if (row != anchor_row) {
+            CConstRef<CPairwiseAln> pairwise_aln
+                (new CPairwiseAln(*aln_hints.GetAlnVector()[aln_idx],
+                                  anchor_row,
+                                  row,
+                                  aln_hints.GetBaseWidthForAlnRow(aln_idx, anchor_row),
+                                  aln_hints.GetBaseWidthForAlnRow(aln_idx, row)));
+            anchored_aln->m_PairwiseAlnVector.push_back(pairwise_aln);
+        }
+
+    }
+    return anchored_aln;
+}
 
 
 END_NCBI_SCOPE
@@ -128,6 +172,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/11/09 00:17:27  todorov
+* Fixed Dump and added CreateAnchoredAlnFromAln.
+*
 * Revision 1.5  2006/11/08 22:28:14  todorov
 * + template <class TOutStream> void Dump(TOutStream& os)
 *
