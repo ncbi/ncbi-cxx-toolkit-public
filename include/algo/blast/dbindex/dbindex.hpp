@@ -172,6 +172,8 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
             unsigned long report_level;         /**< Verbose index creation. */
             unsigned long max_index_size;       /**< Maximum index size in megabytes. */
             unsigned long version;              /**< Index format version. */
+
+            std::string stat_file_name;         /**< File to write index statistics into. */
         };
 
         /** Type used to enumerate sequences in the index. */
@@ -195,9 +197,16 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                     @param size         [I]     number of logical subjects covered by
                                                 this result set
                 */
-                CSearchResults( TSeqNum start, TSeqNum size )
+                template< typename word_t >
+                CSearchResults( 
+                        TSeqNum start, TSeqNum size,
+                        const word_t * map, size_t map_size )
                     : start_( start ), results_( size, 0 )
-                {}
+                {
+                    for( size_t i = 0; i < map_size; ++i ) {
+                        map_.push_back( map[i] );
+                    }
+                }
 
                 /** Get the result set for a particular logical subject.
                     @param seq  [I]     logical subject number
@@ -209,6 +218,30 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                     else if( seq - start_ - 1 >= results_.size() ) return 0;
                     else return results_[seq - start_ - 1];
                 }
+
+            private:
+
+                /** Map a subject sequence and a chunk number to 
+                    internal logical id.
+                    @param subj  The subject id.
+                    @param chunk The chunk number.
+                    @return Internal logical id of the given sequence.
+                */
+                TSeqNum MapSubject( TSeqNum subj, TSeqNum chunk ) const
+                {
+                    if( subj >= map_.size() ) return 0;
+                    return map_[subj] + chunk;
+                }
+
+            public:
+
+                /** Get the result set for a particular subject and chunk.
+                    @param subj  The subject id.
+                    @param chunk The chunk number.
+                    @return pointer to a C structure describing the set of seeds
+                */
+                BlastInitHitList * GetResults( TSeqNum subj, TSeqNum chunk ) const
+                { return GetResults( MapSubject( subj, chunk ) ); }
 
                 /** Set the result set for a given logical subject.
                     @param seq  [I]     logical subject number
@@ -242,6 +275,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 
                 TSeqNum start_;                 /**< Starting logical subject number. */
                 TResults results_;              /**< The combined result set. */
+                vector< Uint8 > map_;           /**< (subject,chunk)->(logical id) map. */
         };
 
         /** Creates an SOptions instance initialized with default values.
@@ -498,6 +532,8 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         virtual bool DoCheckResults(
                 CConstRef< CSearchResults >, TSeqNum ) const
         { return false; }
+
+    protected:
 
         TSeqNum start_;         /**< OID of the first sequence in the index. */
         TSeqNum start_chunk_;   /**< Number of the first chunk of the first sequence. */
