@@ -223,7 +223,7 @@ public:
 
     /// Dump in human readable text format
     template <class TOutStream>
-    void Dump(TOutStream& os) {
+    void Dump(TOutStream& os) const {
         os << "QueryAnchoredTest:" 
            << IsQueryAnchored() << endl;
         os << "Number of alignments: " << GetAlnCount() << endl;
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/11/09 00:16:54  todorov
+* Fixed Dump.
+*
 * Revision 1.6  2006/11/08 22:27:59  todorov
 * + template <class TOutStream> void Dump(TOutStream& os)
 *
