@@ -92,6 +92,11 @@ void CMkIndexApplication::Init()
     arg_desc->AddOptionalKey(
             "iversion", "index_version", "index format version",
             CArgDescriptions::eInteger );
+    arg_desc->AddOptionalKey(
+            "stat", "statistics_file",
+            "write index statistics into file with that name "
+            "(for testing and debugging purposes only).",
+            CArgDescriptions::eString );
     arg_desc->SetConstraint( 
             "verbosity",
             &(*new CArgAllow_Strings, "quiet", "normal", "verbose") );
@@ -124,6 +129,10 @@ int CMkIndexApplication::Run()
         options.version = GetArgs()["iversion"].AsInteger();
     }
 
+    if( GetArgs()["stat"] ) {
+        options.stat_file_name = GetArgs()["stat"].AsString();
+    }
+
     options.whole_seq = WHOLE_SEQ;
     unsigned int vol_num = 0;
 
@@ -146,7 +155,8 @@ int CMkIndexApplication::Run()
         start = stop;
         stop = orig_stop;
         ostringstream os;
-        os << ofname_base << "_v" << vol_num++ << ".idx";
+        os << ofname_base << "." << setfill( '0' ) << setw( 2 ) 
+           << vol_num++ << ".idx";
         CDbIndex::MakeIndex( 
                 *seqstream,
                 os.str(), start, stop, options );
@@ -158,6 +168,9 @@ int CMkIndexApplication::Run()
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2006/11/09 15:44:12  morgulis
+ * Support for statistics generation during index creation.
+ *
  * Revision 1.2  2006/09/27 16:55:05  morgulis
  * Changes needed to make makeindex compile.
  *

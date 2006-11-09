@@ -980,15 +980,15 @@ class COffsetData
             @param report_level level of verbosity requested by the user
         */
         COffsetData( 
-                unsigned long hkey_width, 
                 TSubjectMap & subject_map, 
-                unsigned long report_level )
+                const CDbIndex::SOptions & options )
             : subject_map_( subject_map ),
-              hash_table_( 1<<(2*hkey_width) ),
-              report_level_( report_level ),
+              hash_table_( 1<<(2*options.hkey_width) ),
+              report_level_( options.report_level ),
               total_( 0 ),
-              hkey_width_( hkey_width ),
-              last_seq_( 0 )
+              hkey_width_( options.hkey_width ),
+              last_seq_( 0 ),
+              options_( options )
         {}
 
         /** Get the total memory usage by offset lists in bytes.
@@ -1064,6 +1064,8 @@ class COffsetData
         TWord total_;                   /**< Current size of the structure in bytes. */
         unsigned long hkey_width_;      /**< Nmer width in bases. */
         TSeqNum last_seq_;              /**< Logical oid of last processed sequence. */
+
+        const CDbIndex::SOptions & options_; /**< Index options. */
 };
 
 //-------------------------------------------------------------------------
@@ -1072,13 +1074,27 @@ template<
 void COffsetData< word_t, subject_map_t, COMPRESSION >::Save(
         CNcbiOstream & os, unsigned long version ) const
 {
+    bool stat = !options_.stat_file_name.empty();
+    std::auto_ptr< CNcbiOfstream > stats;
+
+    if( stat ) {
+        stats.reset( 
+                new CNcbiOfstream( options_.stat_file_name.c_str() ) );
+    }
+
     WriteWord( os, total() );
     TWord tot = 0;
+    unsigned long nmer = 0;
 
     for( typename THashTable::const_iterator cit = hash_table_.begin();
-            cit != hash_table_.end(); ++cit ) {
+            cit != hash_table_.end(); ++cit, ++nmer ) {
         WriteWord( os, tot );
         tot += cit->Size();
+
+        if( stat && cit->Size() > 0 ) {
+            *stats << hex << setw( 10 ) << nmer 
+                   << " " << dec << cit->Size() << endl;
+        }
     }
 
     if( version == 2 ) WriteWord( os, total() );
@@ -1390,8 +1406,7 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
 
     TSubjectMap subject_map( 
             options.chunk_size, options.chunk_overlap, options.report_level );
-    TOffsetData offset_data( 
-            options.hkey_width, subject_map, options.report_level );
+    TOffsetData offset_data( subject_map, options );
 
     input.rewind( start );
     TSeqNum i = start;
