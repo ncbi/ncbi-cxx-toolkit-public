@@ -131,6 +131,7 @@ corelib/ncbi_limits.hpp
 //corelib/ncbi_os_mswin.hpp
 corelib/ncbi_process.hpp
 corelib/ncbi_safe_static.hpp
+corelib/ncbi_stack.hpp
 corelib/ncbi_system.hpp
 corelib/ncbiapp.hpp
 corelib/ncbiargs.hpp
@@ -398,9 +399,17 @@ public:
 #endif
 
 
+// for corelib/ncbi_stack.hpp
+%template(list_CStackTrace_SStackFrameInfo)
+    std::list<ncbi::CStackTrace::SStackFrameInfo>;
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/11/09 21:04:35  jcherry
+ * Added corelib/ncbi_stack.hpp
+ *
  * Revision 1.22  2006/10/19 17:52:09  jcherry
  * Added connect/*.h
  *
