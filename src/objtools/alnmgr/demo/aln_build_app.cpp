@@ -51,6 +51,7 @@
 #include <objtools/alnmgr/aln_container.hpp>
 #include <objtools/alnmgr/aln_tests.hpp>
 #include <objtools/alnmgr/aln_hints.hpp>
+#include <objtools/alnmgr/pairwise_aln.hpp>
 
 
 using namespace ncbi;
@@ -70,53 +71,6 @@ typedef TAlnHints::TBaseWidths TBaseWidths;
 typedef TAlnHints::TAnchorRows TAnchorRows;
 
 
-ostream& operator<<(ostream& out, const TSeqIdAlnBitmap& id_aln_bitmap)
-{
-    out << "QueryAnchoredTest:" 
-        << id_aln_bitmap.IsQueryAnchored() << endl;
-
-    out << "Number of alignments: " << id_aln_bitmap.GetAlnCount() << endl;
-    out << "Number of alignments containing nuc seqs:" << id_aln_bitmap.GetAlnWithNucCount() << endl;
-    out << "Number of alignments containing prot seqs:" << id_aln_bitmap.GetAlnWithProtCount() << endl;
-    out << "Number of alignments containing nuc seqs only:" << id_aln_bitmap.GetNucOnlyAlnCount() << endl;
-    out << "Number of alignments containing prot seqs only:" << id_aln_bitmap.GetProtOnlyAlnCount() << endl;
-    out << "Number of alignments containing both nuc and prot seqs:" << id_aln_bitmap.GetTranslatedAlnCount() << endl;
-    out << "Number of sequences:" << id_aln_bitmap.GetSeqCount() << endl;
-    out << "Number of self-aligned sequences:" << id_aln_bitmap.GetSelfAlignedSeqCount() << endl;
-    return out;
-}
-
-
-ostream& operator<<(ostream& out, const TAlnHints& aln_hints)
-{
-    out << "Number of alignments: " << aln_hints.GetAlnCount() << endl;
-
-    out << "QueryAnchoredTest:"     << aln_hints.IsAnchored() << endl;
-
-    for (size_t aln_idx = 0;  aln_idx < aln_hints.GetAlnCount();  ++aln_idx) {
-        TDim dim = aln_hints.GetDimForAln(aln_idx);
-        out << endl << "Alignment " << aln_idx 
-            << " has " 
-            << dim << " rows:" << endl;
-        for (TDim row = 0;  row < dim;  ++row) {
-            aln_hints.GetSeqIdsForAln(aln_idx)[row]->WriteAsFasta(out);
-
-            out << " [base width: " 
-                << aln_hints.GetBaseWidthForAlnRow(aln_idx, row)
-                << "]";
-
-            if (aln_hints.IsAnchored()  &&  
-                row == aln_hints.GetAnchorRowForAln(aln_idx)) {
-                out << " (anchor)";
-            }
-
-            out << endl;
-        }
-    }
-    return out;
-}
-    
-
 class CAlnBuildApp : public CNcbiApplication
 {
 public:
@@ -126,6 +80,7 @@ public:
     void         LoadInputAlns(void);
     bool         InsertAln    (const CSeq_align* aln) {
         m_AlnContainer.insert(*aln);
+        aln->Validate(true);
         return true;
     }
 
@@ -214,8 +169,7 @@ int CAlnBuildApp::Run(void)
 
     /// Create an alignment bitmap to obtain statistics.
     TSeqIdAlnBitmap id_aln_bitmap(aln_seq_id_vector, GetScope());
-
-    cout << id_aln_bitmap;
+    id_aln_bitmap.Dump(cout);
     
 
     /// Determine anchor row for each alignment
@@ -268,8 +222,21 @@ int CAlnBuildApp::Run(void)
                         aln_seq_id_vector,
                         anchored ? &anchor_rows : 0,
                         translated ? &base_widths : 0);
+    aln_hints.Dump(cout);
 
-    cout << aln_hints;
+
+    /// Construct a vector of anchored alignments containing pairs of rows
+    typedef vector<CConstRef<CAnchoredAln> > TAnchoredAlnVector;
+    TAnchoredAlnVector anchored_aln_vector;
+    for (size_t aln_idx = 0;  
+         aln_idx < aln_hints.GetAlnCount();
+         ++aln_idx) {
+
+        CConstRef<CAnchoredAln> anchored_aln =
+            CreateAnchoredAlnFromAln(aln_hints, aln_idx);
+        anchored_aln->Dump(cout);
+        anchored_aln_vector.push_back(anchored_aln);
+    }
 
 
     return 0;
@@ -286,6 +253,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/11/09 00:14:27  todorov
+* Working version of building a vector of anchored alignments.
+*
 * Revision 1.3  2006/11/08 17:42:10  todorov
 * Working version extracting complete stats.
 *
