@@ -6,8 +6,8 @@ Seq-align-set ::= {
       dim 2 ,
       numseg 1 ,
       ids {
-	local str "seq0" ,
-	local str "seq1" } ,
+	gi 37221178,
+	gi 31324547 },
       starts {
 	0,
 	0 },
@@ -24,8 +24,8 @@ Seq-align-set ::= {
       dim 2 ,
       numseg 1 ,
       ids {
-	local str "seq0" ,
-	local str "seq1" } ,
+	gi 37221178,
+	gi 31324547 },
       starts {
 	8 ,
 	6 } ,
