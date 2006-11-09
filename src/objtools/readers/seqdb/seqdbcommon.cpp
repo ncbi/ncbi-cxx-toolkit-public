@@ -306,9 +306,7 @@ static string s_SeqDB_TryPaths(const string         & blast_paths,
     ITERATE(vector<string>, road, roads) {
         attempt.erase();
         
-        string os_road = CDirEntry::ConvertToOSPath(*road);
-        
-        SeqDB_CombinePath(CSeqDB_Substring(os_road),
+        SeqDB_CombinePath(CSeqDB_Substring(SeqDB_MakeOSPath(*road)),
                           CSeqDB_Substring(dbname),
                           0,
                           attempt);
@@ -422,7 +420,7 @@ public:
     virtual bool DoesFileExist(const string & fname)
     {
         // Use the same criteria as the Atlas code would.
-        CFile whole(CDirEntry::ConvertToOSPath(fname));
+        CFile whole(SeqDB_MakeOSPath(fname));
         return whole.GetLength() != (Int8) -1;
     }
 };
@@ -607,7 +605,7 @@ CSeqDBGiList::GetGiList(vector<int>& gis) const
 
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
 {
-    CMemoryFile mfile(CDirEntry::ConvertToOSPath(fname));
+    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
     
     Int4 * beginp = (Int4*) mfile.GetPtr();
     Int4 * endp   = (Int4*) (((char*)mfile.GetPtr()) + mfile.GetSize());
@@ -782,7 +780,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
 
 void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, bool * in_order)
 {
-    CMemoryFile mfile(CDirEntry::ConvertToOSPath(fname));
+    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
     
     Int8 file_size = mfile.GetSize();
     const char * fbeginp = (char*) mfile.GetPtr();

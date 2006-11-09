@@ -313,6 +313,26 @@ bool CSeqDBAtlas::GetFileSize(const string   & fname,
     return GetFileSizeL(fname, length);
 }
 
+void SeqDB_ConvertOSPath(string & dbs)
+{
+    // See also CDirEntry::ConvertToOSPath()
+    
+    char delim = CDirEntry::GetPathSeparator();
+    
+    for(size_t i = 0; i<dbs.size(); i++) {
+        if (dbs[i] == '/' || dbs[i] == '\\') {
+            dbs[i] = delim;
+        }
+    }
+}
+
+string SeqDB_MakeOSPath(const string & dbs)
+{
+    string cvt(dbs);
+    SeqDB_ConvertOSPath(cvt);
+    return cvt;
+}
+
 bool CSeqDBAtlas::GetFileSizeL(const string & fname,
                                TIndx        & length)
 {

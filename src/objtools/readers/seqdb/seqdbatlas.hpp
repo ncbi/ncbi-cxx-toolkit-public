@@ -136,6 +136,31 @@ void seqdb_log(int cl, const char * s1, int s2);
 class CSeqDBAtlas; // WorkShop needs this forward declaration.
 
 
+/// Change path delimiters to platform preferred kind in-place.
+///
+/// The path is modified in place.  The 'Convert' interface is more
+/// efficient for cases where the new path would be assigned to the
+/// same string object.  Delimiter conversion should be called by
+/// SeqDB at least once on any path received from the user, or via
+/// filesystem sources such as alias files.
+///
+/// @param dbs This string will be changed in-place.
+void SeqDB_ConvertOSPath(string & dbs);
+
+
+/// Return path with delimiters changed to platform preferred kind.
+///
+/// The path is modified and returned.  The 'Make' interface is more
+/// convenient for cases where the input path and output path are
+/// different objects.  Delimiter conversion should be called by SeqDB
+/// at least once on any path received from the user, or via
+/// filesystem sources such as alias files.
+///
+/// @param dbs This is the input path.
+/// @return The modified path is returned.
+string SeqDB_MakeOSPath(const string & dbs);
+
+
 /// CSeqDBFlushCB
 /// 
 /// This abstract class defines an interface which can be called to

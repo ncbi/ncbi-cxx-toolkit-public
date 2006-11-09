@@ -594,7 +594,7 @@ public:
     /// Change any internal delimiters to the platform specific kind.
     void FixDelimiters()
     {
-        m_Value = CDirEntry::ConvertToOSPath(m_Value);
+        SeqDB_ConvertOSPath(m_Value);
     }
     
 private:
@@ -642,7 +642,7 @@ public:
     /// Change any internal delimiters to the platform specific kind.
     void FixDelimiters()
     {
-        m_Value = CDirEntry::ConvertToOSPath(m_Value);
+        SeqDB_ConvertOSPath(m_Value);
     }
     
 private:
@@ -823,7 +823,7 @@ public:
     /// Change any internal delimiters to the platform specific kind.
     void FixDelimiters()
     {
-        m_Value = CDirEntry::ConvertToOSPath(m_Value);
+        SeqDB_ConvertOSPath(m_Value);
     }
     
 private:
