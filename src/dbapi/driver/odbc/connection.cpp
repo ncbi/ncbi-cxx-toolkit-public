@@ -1264,7 +1264,6 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     if(nof_bytes < 1) return 0;
 
     int rc;
-    int cur_num_of_bytes = nof_bytes;
 
     if (GetClientEncoding() == eEncoding_UTF8 &&
         m_DescrType == CDB_ITDescriptor::eText) {
@@ -1392,6 +1391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/11/09 17:02:00  ssikorsk
+ * Get rid of unused variables.
+ *
  * Revision 1.58  2006/10/30 15:57:04  ssikorsk
  * Improved reading of data from UTF8 streams and converting it to UCS2/OEM encodings.
  *
