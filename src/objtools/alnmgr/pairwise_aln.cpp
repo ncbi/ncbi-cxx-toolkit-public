@@ -115,8 +115,8 @@ CPairwiseAln::x_BuildFromDenseg()
     for (seg = 0, pos_1 = m_Row1, pos_2 = m_Row2;
          seg < numseg;
          ++seg, pos_1 += dim, pos_2 += dim) {
-        TSignedSeqPos from_1 = starts[pos_1] * m_BaseWidth1;
-        TSignedSeqPos from_2 = starts[pos_2] * m_BaseWidth2;
+        TSignedSeqPos from_1 = starts[pos_1];
+        TSignedSeqPos from_2 = starts[pos_2];
         TSeqPos len = lens[seg];
 
         /// if not a gap, insert it to the collection
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/11/09 00:18:49  todorov
+* Fixed dealing with base widths in x_BuildFromDenseg.
+*
 * Revision 1.3  2006/11/06 20:07:46  todorov
 * Fixed warnings.
 *
