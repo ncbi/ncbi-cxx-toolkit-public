@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
 
 #ifdef DO_INLINE
-#define INLINE inline
+#define INLINE NCBI_INLINE
 #else
 #define INLINE 
 #endif
@@ -607,6 +607,12 @@ class CSubjectMap_Base
                                         in the map
         */
         CSubjectMap_Base( TWord ** map, TSeqNum start, TSeqNum stop );
+
+        /** Provides a mapping from real subject ids and chunk numbers to
+            internal logical subject ids.
+            @return start of the (subject,chunk)->id mapping
+        */
+        const TWord * GetSubjectMap() const { return &subjects_[0]; }
 
         /** Return the start of the raw storage for compressed subject 
             sequence data.
@@ -1799,7 +1805,9 @@ CConstRef< CDbIndex::CSearchResults > CSearch< index_impl_t >::operator()()
 
     ComputeSeeds();
     CRef< CDbIndex::CSearchResults > result( 
-            new CDbIndex::CSearchResults( 0, index_impl_.NumSubjects() ) );
+            new CDbIndex::CSearchResults( 
+                0, index_impl_.NumSubjects(), index_impl_.GetSubjectMap(), 
+                index_impl_.StopSeq() - index_impl_.StartSeq() ) );
 
     for( TTrackedSeeds::iterator it = seeds_.begin(); 
             it != seeds_.end(); ++it ) {
@@ -1926,6 +1934,13 @@ class CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 > : public CDbIndex
         */
         TSeqNum NumSubjects() const { return subject_map_->NumSubjects(); }
 
+        /** Provides a mapping from real subject ids and chunk numbers to
+            internal logical subject ids.
+            @return start of the (subject,chunk)->id mapping
+        */
+        const TWord * GetSubjectMap() const 
+        { return subject_map_->GetSubjectMap(); }
+
         /** Get the start of compressed raw sequence data.
             @sa CSubjectMap::GetSeqStoreBase()
         */
@@ -1982,6 +1997,11 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::CDbIndex_Impl(
         CNcbiIstream & is, const SIndexHeader< 1 > & header )
     : mapfile_( 0 ), map_( 0 )
 {
+    start_ = header.start_;
+    stop_  = header.stop_;
+    start_chunk_ = header.start_chunk_;
+    stop_chunk_  = header.stop_chunk_;
+
     offset_data_ = new TOffsetData( is, header.hkey_width_ );
     subject_map_ = new TSubjectMap( is, header.start_, header.stop_ );
 }
@@ -1995,6 +2015,11 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::CDbIndex_Impl(
         CMemoryFile * map, const SIndexHeader< 1 > & header )
     : mapfile_( map )
 {
+    start_ = header.start_;
+    stop_  = header.stop_;
+    start_chunk_ = header.start_chunk_;
+    stop_chunk_  = header.stop_chunk_;
+
     if( mapfile_ != 0 ) {
         map_ = (TWord *)(((char *)(mapfile_->GetPtr())) + HEADER_SIZE);
         offset_data_ = new TOffsetData( &map_, header.hkey_width_ );
