@@ -70,6 +70,7 @@ public:
         eDbtagType_CK,
         eDbtagType_COG,
         eDbtagType_ENSEMBL,
+        eDbtagType_ERIC,
         eDbtagType_ESTLIB,
         eDbtagType_FANTOM_DB,
         eDbtagType_FLYBASE,
@@ -201,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/11/09 15:48:58  rsmith
+ * add ERIC (the Enteropathogen Resource Integration Center) to valid dbtags
+ *
  * Revision 1.18  2006/08/30 15:06:59  rsmith
  * += influenza sequence database (ISD) to the list of allowed db_xrefs
  *

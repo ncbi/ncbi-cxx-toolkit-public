@@ -65,6 +65,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("CK", CDbtag::eDbtagType_CK),
     TDbxrefPair("COG", CDbtag::eDbtagType_COG),
     TDbxrefPair("ENSEMBL", CDbtag::eDbtagType_ENSEMBL),
+    TDbxrefPair("ERIC", CDbtag::eDbtagType_ERIC),
     TDbxrefPair("ESTLIB", CDbtag::eDbtagType_ESTLIB),
     TDbxrefPair("FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB),
     TDbxrefPair("FLYBASE", CDbtag::eDbtagType_FLYBASE),
@@ -421,6 +422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.35  2006/11/09 15:48:40  rsmith
+ * add ERIC (the Enteropathogen Resource Integration Center) to valid dbtags
+ *
  * Revision 6.34  2006/10/25 15:41:16  ucko
  * Put kApprovedDbXrefs back in alphabetical order.
  *
