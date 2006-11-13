@@ -1073,7 +1073,7 @@ BOOST_AUTO_UNIT_TEST(StringIdentSearch)
     const char * s4[] =
         { "gi|443091",  "pdb|1LCT|",   "1LCT", 0 };
     const char * s5[] =
-        { "gi|28948348", "pdb|1GWB|A", "pdb|1GWB|", "1GWB", 0 };
+        { "gi|28948348", "gi|28948349", "pdb|1GWB|A", "pdb|1GWB|B", "1GWB", 0 };
     
     str_list[0] = s0;
     str_list[1] = s1;
@@ -1101,7 +1101,7 @@ BOOST_AUTO_UNIT_TEST(StringIdentSearch)
     Uint4 g4[] =
         { 443091, 0 };
     Uint4 g5[] =
-        { 28948348, 0 };
+        { 28948348, 28948349, 0 };
     
     gi_list[0] = g0;
     gi_list[1] = g1;
@@ -1117,7 +1117,7 @@ BOOST_AUTO_UNIT_TEST(StringIdentSearch)
     Uint4 l2[] = { 17, 90, 0 };
     Uint4 l3[] = { 17, 90, 0 };
     Uint4 l4[] = { 333, 0 };
-    Uint4 l5[] = { 121, 0 };
+    Uint4 l5[] = { 281, 0 };
     
     len_list[0] = l0;
     len_list[1] = l1;
@@ -1134,6 +1134,7 @@ BOOST_AUTO_UNIT_TEST(StringIdentSearch)
     
     CHECK_EQUAL(L_gi, L_str);
     CHECK_EQUAL(L_gi, L_len);
+    CHECK_EQUAL(L_gi, NUM_ITEMS);
     
     for(Uint4 i = 0; i<L_gi; i++) {
         set<int> str_oids;
@@ -2324,6 +2325,9 @@ void s_ForceSymbolDefinitions(CObjectIStream& ois,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/11/13 16:01:19  bealer
+ * - Fix values for re-enabled test.
+ *
  * Revision 1.6  2006/11/13 15:43:20  bealer
  * - Fix stack issue.
  *
