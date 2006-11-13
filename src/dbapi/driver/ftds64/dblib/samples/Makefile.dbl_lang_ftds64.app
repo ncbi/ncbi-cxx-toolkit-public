@@ -7,3 +7,5 @@ LIB  = ncbi_xdbapi_ftds64_dblib$(STATIC) sybdb_ftds64 tds_ftds64 dbapi_driver$(S
 LIBS = $(TLS_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
+
+CHECK_CMD = run_sybase_app.sh dbl_lang_ftds64
