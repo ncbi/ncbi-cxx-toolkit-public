@@ -892,21 +892,15 @@ bool CQueueDataBase::x_CheckStopPurge(void)
 
 void CQueueDataBase::RunPurgeThread(void)
 {
-# ifdef NCBI_THREADS
-       LOG_POST(Info << "Starting guard and cleaning thread.");
-       m_PurgeThread.Reset(
-           new CJobQueueCleanerThread(*this, 1));
-       m_PurgeThread->Run();
-# else
-        LOG_POST(Warning << 
-                 "Cannot run background thread in non-MT configuration.");
-# endif
+    LOG_POST(Info << "Starting guard and cleaning thread.");
+    m_PurgeThread.Reset(
+        new CJobQueueCleanerThread(*this, 1));
+    m_PurgeThread->Run();
 }
 
 
 void CQueueDataBase::StopPurgeThread(void)
 {
-# ifdef NCBI_THREADS
     if (!m_PurgeThread.Empty()) {
         LOG_POST(Info << "Stopping guard and cleaning thread...");
         StopPurge();
@@ -914,7 +908,6 @@ void CQueueDataBase::StopPurgeThread(void)
         m_PurgeThread->Join();
         LOG_POST(Info << "Stopped.");
     }
-# endif
 }
 
 void CQueueDataBase::RunNotifThread(void)
@@ -923,58 +916,73 @@ void CQueueDataBase::RunNotifThread(void)
         return;
     }
 
-# ifdef NCBI_THREADS
-       LOG_POST(Info << "Starting client notification thread.");
-       m_NotifThread.Reset(
-           new CJobNotificationThread(*this, 5));
-       m_NotifThread->Run();
-# else
-        LOG_POST(Warning << 
-                 "Cannot run background thread in non-MT configuration.");
-# endif
+    LOG_POST(Info << "Starting client notification thread.");
+    m_NotifThread.Reset(
+        new CJobNotificationThread(*this, 5));
+    m_NotifThread->Run();
 }
 
 void CQueueDataBase::StopNotifThread(void)
 {
-# ifdef NCBI_THREADS
     if (!m_NotifThread.Empty()) {
         LOG_POST(Info << "Stopping notification thread...");
         m_NotifThread->RequestStop();
         m_NotifThread->Join();
         LOG_POST(Info << "Stopped.");
     }
-# endif
 }
 
 void CQueueDataBase::RunExecutionWatcherThread(unsigned run_delay)
 {
-# ifdef NCBI_THREADS
-       LOG_POST(Info << "Starting execution watcher thread.");
-       m_ExeWatchThread.Reset(
-           new CJobQueueExecutionWatcherThread(*this, run_delay));
-       m_ExeWatchThread->Run();
-# else
-       LOG_POST(Warning << 
-                "Cannot run background thread in non-MT configuration.");
-# endif
-
+    LOG_POST(Info << "Starting execution watcher thread.");
+    m_ExeWatchThread.Reset(
+        new CJobQueueExecutionWatcherThread(*this, run_delay));
+    m_ExeWatchThread->Run();
 }
 
 void CQueueDataBase::StopExecutionWatcherThread(void)
 {
-# ifdef NCBI_THREADS
     if (!m_ExeWatchThread.Empty()) {
         LOG_POST(Info << "Stopping execution watch thread...");
         m_ExeWatchThread->RequestStop();
         m_ExeWatchThread->Join();
         LOG_POST(Info << "Stopped.");
     }
-# endif
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 // CQueue implementation
+
+#define DB_TRY(where) for (unsigned n_tries = 0; true; ) { try {
+#define DB_END \
+    } catch (CBDB_ErrnoException& ex) { \
+        if (ex.IsDeadLock()) { \
+            if (++n_tries < k_max_dead_locks) { \
+                if (m_LQueue.monitor.IsMonitorActive()) { \
+                    m_LQueue.monitor.SendString( \
+                        "DeadLock repeat in "##where); \
+                } \
+                SleepMilliSec(250); \
+                continue; \
+            } \
+        } else if (ex.IsNoMem()) { \
+            if (++n_tries < k_max_dead_locks) { \
+                if (m_LQueue.monitor.IsMonitorActive()) { \
+                    m_LQueue.monitor.SendString( \
+                        "No resource repeat in "##where); \
+                } \
+                SleepMilliSec(250); \
+                continue; \
+            } \
+        } \
+        ERR_POST("Too many transaction repeats in "##where); \
+        throw; \
+    } \
+    break; \
+}
+
+
 CQueueDataBase::CQueue::CQueue(CQueueDataBase& db, 
                                const string&   queue_name,
                                unsigned        client_host_addr)
@@ -1924,7 +1932,7 @@ repeat_transaction:
             if (++dead_locks < k_max_dead_locks) {
                 if (m_LQueue.monitor.IsMonitorActive()) {
                     m_LQueue.monitor.SendString(
-                        "No resource repeat in CQueue::PutResult");
+                        "No resource repeat in CQueue::JobExchange");
                 }
                 SleepMilliSec(250);
                 goto repeat_transaction;
@@ -3841,6 +3849,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2006/11/13 19:15:35  joukovv
+ * Protocol parser re-implemented. Remnants of ThreadData removed.
+ *
  * Revision 1.92  2006/10/31 19:35:26  joukovv
  * Queue creation and reading of its parameters decoupled. Code reorganized to
  * reduce coupling in general. Preparing for queue-on-demand.

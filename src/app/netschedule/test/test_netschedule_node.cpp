@@ -206,7 +206,7 @@ int CTestNetScheduleNode::Run(void)
             }
 
             // do no job here, just delay for a little while
-            SleepMilliSec(50);
+            // SleepMilliSec(50);
             string out = "DONE " + queue_name;
             cl.PutResult(job_key, 0, out);
 
@@ -250,6 +250,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/11/13 19:15:35  joukovv
+ * Protocol parser re-implemented. Remnants of ThreadData removed.
+ *
  * Revision 1.11  2006/05/08 11:25:30  kuznets
  * Test for file redirection
  *

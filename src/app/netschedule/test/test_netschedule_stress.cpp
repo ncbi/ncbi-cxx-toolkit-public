@@ -95,6 +95,11 @@ void CTestNetScheduleStress::Init(void)
                              "Number of jobs to submit",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddDefaultKey("batch", "batch",
+                            "Test batch submit",
+                            CArgDescriptions::eBoolean,
+                            "false",
+                            0);
 
     
     // Setup arg.descriptions for this application
@@ -226,15 +231,15 @@ void TestNetwork(const string host, unsigned port, const string& queue_name)
 
 }
 
-void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
+void TestBatchSubmit(const string host, unsigned port,
+                     const string& queue_name, unsigned jcount)
 {
     CNetScheduleClient cl(host, port, "stress_test", queue_name);
     cl.SetProgramVersion("test 1.0.0");
     
     CNetScheduleClient::SJobBatch jobs;
-    const int kJobCount = 400000;
 
-    for (int i = 0; i < kJobCount; ++i) {
+    for (unsigned i = 0; i < jcount; ++i) {
         jobs.job_list.push_back(CNetScheduleClient::SBatchSubm("HELLO BSUBMIT"));
     }
     
@@ -295,21 +300,25 @@ int CTestNetScheduleStress::Run(void)
     CArgs args = GetArgs();
     const string&  host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
-    const string&  queue_name = args["queue"].AsString();  
+    const string&  queue_name = args["queue"].AsString();
+    bool batch = args["batch"].AsBoolean();
     string output;
     int ret_code;
-
-//    TestRunTimeout(host, port, queue_name);
-//    TestNetscheduleLB(queue_name);
-
-//    TestNetwork(host, port, queue_name);
-//    TestBatchSubmit(host, port, queue_name);
-//return 0;
 
     unsigned jcount = 10000;
     if (args["jcount"]) {
         jcount = args["jcount"].AsInteger();
     }
+
+    //    TestRunTimeout(host, port, queue_name);
+//    TestNetscheduleLB(queue_name);
+
+//    TestNetwork(host, port, queue_name);
+    if (batch) {
+        TestBatchSubmit(host, port, queue_name, jcount);
+        return 0;
+    }
+
     CNetScheduleClient::EJobStatus status;
     CNetScheduleClient cl(host, port, "client_test", queue_name);
     cl.ActivateRequestRateControl(false);
@@ -336,7 +345,7 @@ int CTestNetScheduleStress::Run(void)
     string err_msg;
     status = cl.GetStatus(job_key, &ret_code, &output, &err_msg);
     if (status != CNetScheduleClient::eFailed) {
-        NcbiCerr << "Job " << job_key << " not failed!" << NcbiEndl;
+        NcbiCerr << "Job " << job_key << " succeeded!" << NcbiEndl;
     } else {
         NcbiCout << err_msg << NcbiEndl;
         if (err_msg != err) {
@@ -352,10 +361,6 @@ int CTestNetScheduleStress::Run(void)
     } else {
         NcbiCout << "Job " << job_key << " has been deleted." << NcbiEndl;
     }
-    
-
-
-
 
 
     vector<string> jobs;
@@ -382,10 +387,8 @@ int CTestNetScheduleStress::Run(void)
     NcbiCout << "Avg time: " << avg << " sec." << NcbiEndl;
     }}
 
-    
-    
-    
-    
+
+
     NcbiCout << NcbiEndl << "Waiting..." << NcbiEndl;
     SleepMilliSec(40 * 1000);
     NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
@@ -416,10 +419,8 @@ int CTestNetScheduleStress::Run(void)
     }
     }}
 
-    
-    
-    
-    
+
+
     NcbiCout << NcbiEndl << "Waiting..." << NcbiEndl;
     SleepMilliSec(40 * 1000);
     NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
@@ -536,6 +537,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/11/13 19:15:35  joukovv
+ * Protocol parser re-implemented. Remnants of ThreadData removed.
+ *
  * Revision 1.19  2006/01/09 12:52:55  kuznets
  * Reflected changes in CStopWatch
  *

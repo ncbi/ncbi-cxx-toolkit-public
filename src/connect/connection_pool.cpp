@@ -163,10 +163,12 @@ void CServer_ConnectionPool::Clean(void)
         }
         CServer_Connection* conn = dynamic_cast<CServer_Connection*>(it->first);
         if (!it->first->IsOpen() || info.expiration <= now) {
-            if (info.expiration <= now)
+            if (info.expiration <= now) {
                 it->first->OnTimeout();
-            else
+                // DEBUG printf("Closed on timeout\n");
+            } else {
                 conn->OnSocketEvent(eIO_Close);
+            }
             delete it->first;
             data.erase(it);
             ++n_cleaned;
@@ -229,6 +231,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.4  2006/11/13 19:15:35  joukovv
+* Protocol parser re-implemented. Remnants of ThreadData removed.
+*
 * Revision 6.3  2006/10/19 20:38:20  joukovv
 * Works in thread-per-request mode. Errors in BDB layer fixed.
 *
