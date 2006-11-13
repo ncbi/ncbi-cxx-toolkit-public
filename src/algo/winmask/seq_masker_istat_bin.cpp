@@ -110,8 +110,7 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
 
     in_stream.read( (char *)&data, sizeof( Uint4 ) );
 
-    if( get_min_count() == 0 )
-        set_min_count( data );
+    set_min_count( data );
 
     in_stream.read( (char *)&data, sizeof( Uint4 ) );
 
@@ -151,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2006/11/13 18:19:58  morgulis
+ * Check if the requested t_low is less than the computed one and issue a warning.
+ *
  * Revision 1.4  2005/05/02 17:58:01  morgulis
  * Fixed a few warnings for solaris.
  *

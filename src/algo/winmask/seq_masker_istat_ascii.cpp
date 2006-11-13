@@ -104,7 +104,7 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
                 set_textend(
                     NStr::StringToUInt(line.substr(val_start, NPOS), 0, 0));
 
-            if( name == "t_low" && get_min_count() == 0 )
+            if( name == "t_low" )
                 set_min_count(
                     NStr::StringToUInt(line.substr(val_start, NPOS), 0, 0));
 
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2006/11/13 18:19:58  morgulis
+ * Check if the requested t_low is less than the computed one and issue a warning.
+ *
  * Revision 1.3  2006/02/06 16:13:41  ivanov
  * Replace NStr::fStringToNumDefault to 0
  *

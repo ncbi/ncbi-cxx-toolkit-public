@@ -280,6 +280,7 @@ void CWinMaskApplication::Init(void)
 //-------------------------------------------------------------------------
 int CWinMaskApplication::Run (void)
 {
+    SetDiagPostLevel( eDiag_Warning );
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 
 #if 0
@@ -412,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.18  2006/11/13 18:19:58  morgulis
+ * Check if the requested t_low is less than the computed one and issue a warning.
+ *
  * Revision 1.17  2006/04/05 19:55:56  morgulis
  * Removed registration of id2reader.
  *

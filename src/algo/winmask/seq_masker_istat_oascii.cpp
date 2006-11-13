@@ -142,8 +142,7 @@ CSeqMaskerIstatOAscii::CSeqMaskerIstatOAscii( const string & name,
     if( linenum < HEADER_LINES )
         NCBI_THROW( Exception, eFormat, "file too short" );
 
-    if( get_min_count() == 0 )
-        set_min_count( t_low );
+    set_min_count( t_low );
 
     if( get_textend() == 0 )
         set_textend( t_extend );
@@ -210,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2006/11/13 18:19:58  morgulis
+ * Check if the requested t_low is less than the computed one and issue a warning.
+ *
  * Revision 1.1  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

@@ -220,7 +220,18 @@ protected:
         **\param arg_min_count new T_low value
         **/
     void set_min_count( Uint4 arg_min_count )
-    { min_count = arg_min_count; }
+    { 
+        if( min_count != 0 && min_count < arg_min_count ) {
+            ERR_POST( Warning << "Requested value of t_low (" 
+                              << min_count 
+                              << ") is less than the one stored with the "
+                              << "N-mer counts (" << arg_min_count << ")."
+                              << "The value " << arg_min_count 
+                              << " will be used." );
+        }
+
+        min_count = arg_min_count; 
+    }
 
 public:
     /**
@@ -293,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2006/11/13 18:19:58  morgulis
+ * Check if the requested t_low is less than the computed one and issue a warning.
+ *
  * Revision 1.3  2005/08/30 14:35:19  morgulis
  * NMer counts optimization using bit arrays. Performance is improved
  * by about 20%.
