@@ -814,11 +814,12 @@ void CDataMember::PrintSpecDump(CNcbiOstream& out, int indent, const char* tag) 
                 else if ( Optional() ) {
                     out << ",OPTIONAL";
                 }
+                type->Comments().PrintASN(out, indent,CComments::eNoEOL);
+                m_Comments.PrintASN(out, indent,CComments::eNoEOL);
             }
         }
         type->PrintSpecDump(out, indent);
     }
-    m_Comments.PrintASN(out, indent,CComments::eNoEOL);
 }
 
 void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent) const
@@ -874,6 +875,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.73  2006/11/13 15:56:54  gouriano
+* Corrected parsing and printing ASN spec comments
+*
 * Revision 1.72  2006/10/30 21:03:33  gouriano
 * Corrected data spec dump formatting
 *

@@ -116,7 +116,7 @@ public:
 
     bool InChoice(void) const;
 
-    void PrintASNTypeComments(CNcbiOstream& out, int indent) const;
+    void PrintASNTypeComments(CNcbiOstream& out, int indent, int flags=0) const;
     void PrintDTDTypeComments(CNcbiOstream& out, int indent) const;
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
     virtual void PrintSpecDump(CNcbiOstream& out, int indent) const;
@@ -186,6 +186,7 @@ public:
     bool IsInUniSeq(void) const;
     bool IsUniSeq(void) const;
     bool IsContainer(void) const;
+    bool IsEnumType(void) const;
 
 /*
     static string GetTemplateHeader(const string& tmpl);
@@ -331,6 +332,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/11/13 15:57:11  gouriano
+* Corrected parsing and printing ASN spec comments
+*
 * Revision 1.34  2006/10/30 18:15:14  gouriano
 * Added writing data specification in internal format
 *

@@ -92,6 +92,10 @@ public:
     virtual string GetXMLContents(void) const;
 
     TValue& AddValue(const string& name, TEnumValueType value);
+    const TValues& GetValues(void) const
+        {
+            return m_Values;
+        }
 
     void PrintASN(CNcbiOstream& out, int indent) const;
     virtual void PrintSpecDumpExtra(CNcbiOstream& out, int indent) const;
@@ -156,6 +160,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/11/13 15:57:11  gouriano
+* Corrected parsing and printing ASN spec comments
+*
 * Revision 1.18  2006/10/31 16:18:44  gouriano
 * Added source line info
 *

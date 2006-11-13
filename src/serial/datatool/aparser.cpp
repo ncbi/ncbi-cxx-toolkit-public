@@ -77,7 +77,6 @@ void AbstractParser::CopyLineComment(int line, CComments& comments,
         const AbstractLexer::CComment& c = Lexer().NextComment();
         if ( c.GetLine() > line ) {
             // next comment is below limit line
-            Lexer().FlushComments();
             return;
         }
 
@@ -95,6 +94,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/11/13 15:56:54  gouriano
+* Corrected parsing and printing ASN spec comments
+*
 * Revision 1.20  2006/10/18 13:07:39  gouriano
 * Moved Log to bottom
 *

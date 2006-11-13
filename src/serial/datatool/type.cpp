@@ -106,9 +106,10 @@ void CDataType::Warning(const string& mess) const
     CNcbiDiag() << LocationString() << ": " << mess;
 }
 
-void CDataType::PrintASNTypeComments(CNcbiOstream& out, int indent) const
+void CDataType::PrintASNTypeComments(CNcbiOstream& out,
+    int indent, int flags) const
 {
-    m_Comments.PrintASN(out, indent);
+    m_Comments.PrintASN(out, indent, flags);
 }
 
 void CDataType::PrintDTDTypeComments(CNcbiOstream& out, int /*indent*/) const
@@ -228,6 +229,11 @@ bool CDataType::IsUniSeq(void) const
 bool CDataType::IsContainer(void) const
 {
     return dynamic_cast<const CDataMemberContainerType*>(this) != 0;
+}
+
+bool CDataType::IsEnumType(void) const
+{
+    return dynamic_cast<const CEnumDataType*>(this) != 0;
 }
 
 void CDataType::SetParent(const CDataType* parent, const string& memberName,
@@ -808,6 +814,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.94  2006/11/13 15:56:54  gouriano
+* Corrected parsing and printing ASN spec comments
+*
 * Revision 1.93  2006/10/30 21:03:34  gouriano
 * Corrected data spec dump formatting
 *

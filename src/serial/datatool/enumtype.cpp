@@ -94,8 +94,10 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
         out << CDataTypeModule::ToAsnId(i->GetName()) << " (" << i->GetValue() << ")";
         if ( !last )
             out << ',';
-        if ( oneLineComment )
+        if ( oneLineComment ) {
+            out << ' ';
             i->GetComments().PrintASN(out, indent, CComments::eOneLine);
+        }
     }
     --indent;
     PrintASNNewLine(out, indent);
@@ -432,6 +434,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2006/11/13 15:56:54  gouriano
+* Corrected parsing and printing ASN spec comments
+*
 * Revision 1.41  2006/10/31 16:18:30  gouriano
 * Added source line info
 *

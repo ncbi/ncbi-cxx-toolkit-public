@@ -78,15 +78,13 @@ AutoPtr<CDataTypeModule> ASNParser::Module(void)
     string moduleName = ModuleReference();
     AutoPtr<CDataTypeModule> module(new CDataTypeModule(moduleName));
     module->SetSourceLine(Lexer().CurrentLine());
+    CopyComments(module->Comments());
 
     Consume(K_DEFINITIONS, "DEFINITIONS");
     Consume(T_DEFINE, "::=");
     Consume(K_BEGIN, "BEGIN");
 
     Next();
-
-    CopyComments(module->Comments());
-
     ModuleBody(*module);
     Consume(K_END, "END");
 
@@ -215,14 +213,24 @@ CDataType* ASNParser::x_Type(void)
         return new CNullDataType();
     case K_SEQUENCE:
         Consume();
-        if ( ConsumeIf(K_OF) )
-            return new CUniSequenceDataType(Type());
+        if ( ConsumeIf(K_OF) ) {
+            AutoPtr<CDataType> elem = Type();
+            CDataType* uni = new CUniSequenceDataType(elem);
+            uni->Comments() = elem->Comments();
+            elem->Comments() = CComments();
+            return uni;
+        }
         else
             return TypesBlock(new CDataSequenceType(), true);
     case K_SET:
         Consume();
-        if ( ConsumeIf(K_OF) )
-            return new CUniSetDataType(Type());
+        if ( ConsumeIf(K_OF) ) {
+            AutoPtr<CDataType> elem = Type();
+            CDataType* uni = new CUniSetDataType(elem);
+            uni->Comments() = elem->Comments();
+            elem->Comments() = CComments();
+            return uni;
+        }
         else
             return TypesBlock(new CDataSetType(), true);
     case K_CHOICE:
@@ -295,10 +303,30 @@ CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType,
         line = NextTokenLine();
         AutoPtr<CDataMember> member = NamedDataType(allowDefaults);
         more = HaveMoreElements();
-        if ( more )
+        line = Lexer().CurrentLine();
+        if ( more ) {
+            if (member->GetType()->IsContainer()) {
+                CDataMemberContainerType* cont = 
+                    dynamic_cast<CDataMemberContainerType*>(member->GetType());
+                if (!cont->GetMembers().empty()) {
+                    CDataMember* mem = cont->GetMembers().back().get();
+                    CopyLineComment(mem->GetType()->GetSourceLine(),
+                                    mem->Comments(), eCombineNext);
+                }
+            } else if (member->GetType()->IsEnumType()) {
+                CEnumDataType* cont = 
+                    dynamic_cast<CEnumDataType*>(member->GetType());
+                if (!cont->GetValues().empty()) {
+                    const CEnumDataTypeValue& val = cont->GetValues().back();
+                    CopyLineComment(val.GetSourceLine(),
+                        const_cast<CComments&>(val.GetComments()), eCombineNext);
+                }
+            }
             CopyLineComment(line, member->Comments(), eCombineNext);
-        else
-            CopyLineComment(line, member->Comments());
+        } else {
+            CopyComments(member->Comments());
+            CopyLineComment(member->GetType()->GetSourceLine(), member->Comments());
+        }
         container->AddMember(member);
     }
     return container.release();
@@ -485,6 +513,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2006/11/13 15:56:54  gouriano
+* Corrected parsing and printing ASN spec comments
+*
 * Revision 1.37  2006/10/31 16:18:30  gouriano
 * Added source line info
 *

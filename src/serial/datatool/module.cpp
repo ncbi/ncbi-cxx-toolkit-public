@@ -136,7 +136,7 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
     }
 
     ITERATE ( TDefinitions, i, m_Definitions ) {
-        i->second->PrintASNTypeComments(out, 0);
+        i->second->PrintASNTypeComments(out, 0, CComments::eDoNotWriteBlankLine);
         out << ToAsnName(i->first) << " ::= ";
         i->second->PrintASN(out, 0);
         out <<
@@ -544,6 +544,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2006/11/13 15:56:54  gouriano
+* Corrected parsing and printing ASN spec comments
+*
 * Revision 1.52  2006/10/31 16:18:30  gouriano
 * Added source line info
 *
