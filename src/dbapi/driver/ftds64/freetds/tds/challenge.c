@@ -33,8 +33,10 @@
 #endif /* HAVE_STRING_H */
 
 #include "tds.h"
+#include "tdsstring.h"
 #include "md4.h"
 #include "md5.h"
+#include "hmac_md5.h"
 #include "des.h"
 
 #ifdef DMALLOC
@@ -51,7 +53,7 @@ TDS_RCSID(var, "$Id$");
 
 /**
  * \addtogroup auth
- *  \@{ 
+ *  \@{
  */
 
 /*
@@ -61,6 +63,147 @@ TDS_RCSID(var, "$Id$");
 static void tds_encrypt_answer(const unsigned char *hash, const unsigned char *challenge, unsigned char *answer);
 static void tds_convert_key(const unsigned char *key_56, DES_KEY * ks);
 
+
+static void convert_to_upper(char* buf, int len)
+{
+    int i;
+
+    for (i = 0; i < len; i++) {
+        buf[i] = toupper(buf[i]);
+    }
+}
+
+
+static void convert_to_usc2le(const char* in_buf,
+                              unsigned char* out_buf,
+                              int len)
+{
+    int i;
+
+    /*
+     * TODO we should convert this to ucs2le instead of
+     * using it blindly as iso8859-1
+     */
+    for (i = 0; i < len; ++i) {
+        out_buf[2 * i] = (unsigned char)in_buf[i];
+        out_buf[2 * i + 1] = 0;
+    }
+}
+
+
+void generate_random_buffer(unsigned char *out, int len)
+{
+    int i;
+
+    /* TODO find a better random... */
+    for (i = 0; i < len; ++i) {
+        out[i] = rand() / (RAND_MAX/256);
+    }
+}
+
+
+static void make_ntlm_hash(const char* passwd, unsigned char ntlm_hash[16])
+{
+    MD4_CTX context;
+    int len;
+    unsigned char passwd_buf[256];
+
+    len = strlen(passwd);
+
+    if (len > 128)
+        len = 128;
+
+    convert_to_usc2le(passwd, passwd_buf, len);
+
+    /* compute NTLM hash */
+    MD4Init(&context);
+    MD4Update(&context, passwd_buf, len * 2);
+    MD4Final(&context, ntlm_hash);
+
+    /* with security is best be pedantic */
+    memset(passwd_buf, 0, sizeof(passwd_buf));
+    memset(&context, 0, sizeof(context));
+}
+
+
+static void make_ntlm_v2_hash(const char* target,
+                             const char* user,
+                             const char* passwd,
+                             unsigned char ntlm_v2_hash[16])
+{
+    unsigned char ntlm_hash[16];
+    char buf[256];
+    unsigned char usc2le_buf[512];
+    int len;
+    int user_len;
+    int target_len;
+
+    user_len = strlen(user);
+    if (user_len > 128)
+        user_len = 128;
+    memcpy(buf, user, user_len);
+
+    convert_to_upper(buf, user_len);
+
+    target_len = strlen(target);
+    if (target_len > 128)
+        target_len = 128;
+    memcpy(buf + user_len, target, target_len);
+    /* Target is supposed to be case-sensitive */
+
+    len = user_len + target_len;
+
+    convert_to_usc2le(buf, usc2le_buf, len);
+
+    make_ntlm_hash(passwd, ntlm_hash);
+    hmac_md5(ntlm_hash, usc2le_buf, len * 2, ntlm_v2_hash);
+
+    /* with security is best be pedantic */
+    memset(&ntlm_hash, 0, sizeof(ntlm_hash));
+    memset(buf, 0, sizeof(buf));
+    memset(usc2le_buf, 0, sizeof(usc2le_buf));
+}
+
+
+/*
+    hash - The NTLMv2 Hash.
+    client_data - The client data (blob or client nonce).
+    challenge - The server challenge from the Type 2 message.
+*/
+static unsigned char*
+make_lm_v2_response(const unsigned char ntlm_v2_hash[16],
+                    const unsigned char* client_data,
+                    TDS_INT client_data_len,
+                    const unsigned char challenge[8])
+{
+    int mac_len = 16 + client_data_len;
+    unsigned char* mac;
+    int data_len = 8 + client_data_len;
+    unsigned char* data;
+
+    data = malloc(data_len);
+    mac = malloc(mac_len);
+
+    memcpy(data, challenge, 8);
+    memcpy(data + 8, client_data, client_data_len);
+    hmac_md5(ntlm_v2_hash, data, data_len, mac);
+    free(data);
+    memcpy(mac + 16, client_data, client_data_len);
+
+    return mac;
+}
+
+
+static unsigned char*
+get_lm_v2_response(unsigned char hash[16], const unsigned char* challenge)
+{
+    unsigned char client_chalenge[8];
+
+    generate_random_buffer(client_chalenge, sizeof(client_chalenge));
+    make_lm_v2_response(hash, client_chalenge, sizeof(client_chalenge), challenge);
+}
+
+
 /**
  * Crypt a given password using schema required for NTLMv1 authentication
  * @param passwd clear text domain password
@@ -69,85 +212,122 @@ static void tds_convert_key(const unsigned char *key_56, DES_KEY * ks);
  * @param answer buffer where to store crypted password
  */
 void
-tds_answer_challenge(const char *passwd, const unsigned char *challenge, TDS_UINT *flags, TDSANSWER * answer)
+tds_answer_challenge(TDSCONNECTION* connection,
+                     const unsigned char* challenge,
+                     TDS_UINT* flags,
+                     const unsigned char* names_blob,
+                     TDS_INT names_blob_len,
+                     TDSANSWER* answer,
+                     unsigned char** ntlm_v2_response)
 {
 #define MAX_PW_SZ 14
-	int len;
-	int i;
-	static const des_cblock magic = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
-	DES_KEY ks;
-	unsigned char hash[24], ntlm2_challenge[16];
-	unsigned char passwd_buf[256];
-	MD4_CTX context;
+    const char* passwd;
+    const char* user_name;
+    const char *p;
+    int domain_len;
+    int user_name_len;
+    int ntlm_v;
+    unsigned char* lm_v2_response;
 
-	memset(answer, 0, sizeof(TDSANSWER));
+    int len;
+    int i;
+    static const des_cblock magic = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
+    DES_KEY ks;
+    unsigned char hash[24];
+    unsigned char ntlm2_challenge[16];
+    unsigned char passwd_buf[256];
+    char domain[128];
+    /* unsigned char client_chalenge[8]; */
 
-	if (!(*flags & 0x80000)) {
-		/* convert password to upper and pad to 14 chars */
-		memset(passwd_buf, 0, MAX_PW_SZ);
-		len = strlen(passwd);
-		if (len > MAX_PW_SZ)
-			len = MAX_PW_SZ;
-		for (i = 0; i < len; i++)
-			passwd_buf[i] = toupper((unsigned char) passwd[i]);
+    unsigned char ntlm_v2_hash[16];
+    const names_blob_prefix_t* names_blob_prefix;
 
-		/* hash the first 7 characters */
-		tds_convert_key(passwd_buf, &ks);
-		tds_des_ecb_encrypt(&magic, sizeof(magic), &ks, (hash + 0));
+    memset(answer, 0, sizeof(TDSANSWER));
 
-		/* hash the second 7 characters */
-		tds_convert_key(passwd_buf + 7, &ks);
-		tds_des_ecb_encrypt(&magic, sizeof(magic), &ks, (hash + 8));
+    passwd = tds_dstr_cstr(&connection->password);
+    user_name = tds_dstr_cstr(&connection->user_name);
+    user_name_len = user_name ? strlen(user_name) : 0;
 
-		memset(hash + 16, 0, 5);
+    /* parse domain\username */
+    p = strchr(user_name, '\\');
 
-		tds_encrypt_answer(hash, challenge, answer->lm_resp);
-	} else {
-		MD5_CTX md5_ctx;
+    domain_len = p - user_name;
+    memcpy(domain, user_name, domain_len);
+    domain[domain_len] = '\0';
 
-		/* NTLM2 */
-		/* TODO find a better random... */
-		for (i = 0; i < 8; ++i)
-			hash[i] = rand() / (RAND_MAX/256);
-		memset(hash + 8, 0, 16);
-		memcpy(answer->lm_resp, hash, 24);
+    user_name = p + 1;
+    user_name_len = strlen(user_name);
 
-		MD5Init(&md5_ctx);
-		MD5Update(&md5_ctx, challenge, 8);
-		MD5Update(&md5_ctx, hash, 8);
-		MD5Final(&md5_ctx, ntlm2_challenge);
-		challenge = ntlm2_challenge;
-		memset(&md5_ctx, 0, sizeof(md5_ctx));
-	}
-	*flags = 0x8201;
+    ntlm_v = 2;
 
-	/* NTLM/NTLM2 response */
-	len = strlen(passwd);
-	if (len > 128)
-		len = 128;
-	/*
-	 * TODO we should convert this to ucs2le instead of
-	 * using it blindly as iso8859-1
-	 */
-	for (i = 0; i < len; ++i) {
-		passwd_buf[2 * i] = passwd[i];
-		passwd_buf[2 * i + 1] = 0;
-	}
+    if (ntlm_v == 1) {
+        if (!(*flags & 0x80000)) {
+            /* convert password to upper and pad to 14 chars */
+            memset(passwd_buf, 0, MAX_PW_SZ);
+            len = strlen(passwd);
+            if (len > MAX_PW_SZ)
+                len = MAX_PW_SZ;
+            for (i = 0; i < len; i++)
+                passwd_buf[i] = toupper((unsigned char) passwd[i]);
 
-	/* compute NTLM hash */
-	MD4Init(&context);
-	MD4Update(&context, passwd_buf, len * 2);
-	MD4Final(&context, hash);
-	memset(hash + 16, 0, 5);
+            /* hash the first 7 characters */
+            tds_convert_key(passwd_buf, &ks);
+            tds_des_ecb_encrypt(&magic, sizeof(magic), &ks, (hash + 0));
 
-	tds_encrypt_answer(hash, challenge, answer->nt_resp);
+            /* hash the second 7 characters */
+            tds_convert_key(passwd_buf + 7, &ks);
+            tds_des_ecb_encrypt(&magic, sizeof(magic), &ks, (hash + 8));
 
-	/* with security is best be pedantic */
-	memset(&ks, 0, sizeof(ks));
-	memset(hash, 0, sizeof(hash));
-	memset(passwd_buf, 0, sizeof(passwd_buf));
-	memset(ntlm2_challenge, 0, sizeof(ntlm2_challenge));
-	memset(&context, 0, sizeof(context));
+            memset(hash + 16, 0, 5);
+
+            tds_encrypt_answer(hash, challenge, answer->lm_resp);
+
+            /* with security is best be pedantic */
+            memset(&ks, 0, sizeof(ks));
+        } else {
+            MD5_CTX md5_ctx;
+
+            /* NTLM2 */
+            generate_random_buffer(hash, 8);
+            memset(hash + 8, 0, 16);
+            memcpy(answer->lm_resp, hash, 24);
+
+            MD5Init(&md5_ctx);
+            MD5Update(&md5_ctx, challenge, 8);
+            MD5Update(&md5_ctx, hash, 8);
+            MD5Final(&md5_ctx, ntlm2_challenge);
+            challenge = ntlm2_challenge;
+            memset(&md5_ctx, 0, sizeof(md5_ctx));
+        }
+        *flags = 0x8201;
+
+        /* NTLM/NTLM2 response */
+        make_ntlm_hash(passwd, hash);
+        memset(hash + 16, 0, 5);
+
+        tds_encrypt_answer(hash, challenge, answer->nt_resp);
+        *ntlm_v2_response = NULL;
+
+        /* with security is best be pedantic */
+        memset(hash, 0, sizeof(hash));
+        memset(passwd_buf, 0, sizeof(passwd_buf));
+        memset(ntlm2_challenge, 0, sizeof(ntlm2_challenge));
+    } else {
+        /* NTLMv2 */
+
+        make_ntlm_v2_hash(domain, user_name, passwd, ntlm_v2_hash);
+
+        /* NTLMv2 response */
+        /* Size of lm_v2_response is 16 + names_blob_len */
+        *ntlm_v2_response = make_lm_v2_response(ntlm_v2_hash, names_blob, names_blob_len, challenge);
+
+        /* LMv2 response */
+        /* Take client's chalenge from names_blob */
+        names_blob_prefix = (const names_blob_prefix_t*)names_blob;
+        lm_v2_response = make_lm_v2_response(ntlm_v2_hash, names_blob_prefix->challenge, 8, challenge);
+        memcpy(answer->lm_resp, lm_v2_response, 24);
+        free(lm_v2_response);
+    }
 }
 
 
@@ -159,18 +339,18 @@ tds_answer_challenge(const char *passwd, const unsigned char *challenge, TDS_UIN
 static void
 tds_encrypt_answer(const unsigned char *hash, const unsigned char *challenge, unsigned char *answer)
 {
-	DES_KEY ks;
+    DES_KEY ks;
 
-	tds_convert_key(hash, &ks);
-	tds_des_ecb_encrypt(challenge, 8, &ks, answer);
+    tds_convert_key(hash, &ks);
+    tds_des_ecb_encrypt(challenge, 8, &ks, answer);
 
-	tds_convert_key(&hash[7], &ks);
-	tds_des_ecb_encrypt(challenge, 8, &ks, &answer[8]);
+    tds_convert_key(&hash[7], &ks);
+    tds_des_ecb_encrypt(challenge, 8, &ks, &answer[8]);
 
-	tds_convert_key(&hash[14], &ks);
-	tds_des_ecb_encrypt(challenge, 8, &ks, &answer[16]);
+    tds_convert_key(&hash[14], &ks);
+    tds_des_ecb_encrypt(challenge, 8, &ks, &answer[16]);
 
-	memset(&ks, 0, sizeof(ks));
+    memset(&ks, 0, sizeof(ks));
 }
 
 
@@ -181,21 +361,21 @@ tds_encrypt_answer(const unsigned char *hash, const unsigned char *challenge, un
 static void
 tds_convert_key(const unsigned char *key_56, DES_KEY * ks)
 {
-	des_cblock key;
+    des_cblock key;
 
-	key[0] = key_56[0];
-	key[1] = ((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1);
-	key[2] = ((key_56[1] << 6) & 0xFF) | (key_56[2] >> 2);
-	key[3] = ((key_56[2] << 5) & 0xFF) | (key_56[3] >> 3);
-	key[4] = ((key_56[3] << 4) & 0xFF) | (key_56[4] >> 4);
-	key[5] = ((key_56[4] << 3) & 0xFF) | (key_56[5] >> 5);
-	key[6] = ((key_56[5] << 2) & 0xFF) | (key_56[6] >> 6);
-	key[7] = (key_56[6] << 1) & 0xFF;
+    key[0] = key_56[0];
+    key[1] = ((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1);
+    key[2] = ((key_56[1] << 6) & 0xFF) | (key_56[2] >> 2);
+    key[3] = ((key_56[2] << 5) & 0xFF) | (key_56[3] >> 3);
+    key[4] = ((key_56[3] << 4) & 0xFF) | (key_56[4] >> 4);
+    key[5] = ((key_56[4] << 3) & 0xFF) | (key_56[5] >> 5);
+    key[6] = ((key_56[5] << 2) & 0xFF) | (key_56[6] >> 6);
+    key[7] = (key_56[6] << 1) & 0xFF;
 
-	tds_des_set_odd_parity(key);
-	tds_des_set_key(ks, key, sizeof(key));
+    tds_des_set_odd_parity(key);
+    tds_des_set_key(ks, key, sizeof(key));
 
-	memset(&key, 0, sizeof(key));
+    memset(&key, 0, sizeof(key));
 }
 
 
