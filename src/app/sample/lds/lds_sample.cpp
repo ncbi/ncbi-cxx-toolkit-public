@@ -55,7 +55,7 @@
 
 //#include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include <objtools/lds/lds_admin.hpp>
+#include <objtools/lds/lds_manager.hpp>
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_reader.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
@@ -201,13 +201,9 @@ void CSampleLdsApplication::x_InitLDS()
 
     bool recurse_sub_dir = reg.GetBool(lds_section_name, "SubDir", true);
 
-    if (lds_path.empty()) {
-    }
-
-
-    CLDS_Management::ERecurse recurse = 
-        (recurse_sub_dir) ? CLDS_Management::eRecurseSubDirs : 
-                            CLDS_Management::eDontRecurse;
+    CLDS_Manager::ERecurse recurse = 
+        (recurse_sub_dir) ? CLDS_Manager::eRecurseSubDirs : 
+                            CLDS_Manager::eDontRecurse;
 
         bool crc32 = 
             reg.GetBool(lds_section_name, "ControlSum", true);
@@ -218,32 +214,24 @@ void CSampleLdsApplication::x_InitLDS()
             crc32 = reg.GetBool(lds_section_name, "CRC32", true);
         }
 
-        CLDS_Management::EComputeControlSum control_sum =
-            (crc32) ? CLDS_Management::eComputeControlSum : 
-                      CLDS_Management::eNoControlSum;
+        CLDS_Manager::EComputeControlSum control_sum =
+            (crc32) ? CLDS_Manager::eComputeControlSum : 
+                      CLDS_Manager::eNoControlSum;
 
-        bool is_created;
-        CLDS_Database *ldb = 
-            CLDS_Management::OpenCreateDB(lds_path, "lds.db", 
-                                          &is_created, recurse, 
-                                          control_sum);
-        m_LDS_db.reset(ldb);
+        CLDS_Manager mgr(lds_path,lds_path, lds_alias);
 
-        if (!lds_alias.empty()) {
-            ldb->SetAlias(lds_alias);
+        try {
+            m_LDS_db.reset(mgr.ReleaseDB());
+        } catch (CBDB_ErrnoException& ) {
+            mgr.Index(recurse, control_sum);
+            m_LDS_db.reset(mgr.ReleaseDB());
         }
-
-        if (!is_created) {
-            CLDS_Management mgmt(*ldb);
-            mgmt.SyncWithDir(lds_path, recurse, control_sum);
-        }
-
 
         try {
             CRef<CLDS_DataLoader> loader
                 (CLDS_DataLoader::RegisterInObjectManager
                  (*CObjectManager::GetInstance(),
-                  *ldb,
+                  *m_LDS_db,
                   CObjectManager::eDefault,
                   80).GetLoader());
         }
@@ -272,6 +260,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/11/13 20:03:27  didenko
+ * Moved to the new LDS manager implementaion
+ *
  * Revision 1.4  2006/05/08 15:54:36  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and
