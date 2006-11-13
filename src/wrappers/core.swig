@@ -246,7 +246,6 @@ connect/ncbi_sendmail.h
 connect/ncbi_server_info.h
 connect/ncbi_service.h
 connect/ncbi_service_connector.h
-connect/ncbi_service_misc.h
 connect/ncbi_socket.h
 connect/ncbi_socket_connector.h
 connect/ncbi_socket_unix.h
@@ -407,6 +406,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/11/13 15:14:02  jcherry
+ * Removed deleted connect/ncbi_service_misc.h
+ *
  * Revision 1.23  2006/11/09 21:04:35  jcherry
  * Added corelib/ncbi_stack.hpp
  *
