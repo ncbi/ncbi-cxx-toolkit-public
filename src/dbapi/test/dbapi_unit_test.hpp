@@ -181,11 +181,12 @@ public:
     void Test_DateTime(void);
     void Test_Insert(void);
     void Test_HasMoreResults(void);
-    void Create_Destroy(void);
+    void Test_Create_Destroy(void);
     void Multiple_Close(void);
     void Test_Unicode(void);
     void Test_Iskhakov(void);
     void Test_NCBI_LS(void);
+    void Test_Authentication(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -243,6 +244,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2006/11/13 19:56:28  ssikorsk
+ * Added Test_Authentication.
+ *
  * Revision 1.46  2006/10/18 18:38:36  ssikorsk
  * + Test_NCBI_LS
  *
