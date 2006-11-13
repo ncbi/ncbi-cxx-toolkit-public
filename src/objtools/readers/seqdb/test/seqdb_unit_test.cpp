@@ -1043,7 +1043,7 @@ BOOST_AUTO_UNIT_TEST(StringIdentSearch)
     
     // Sets of equivalent strings
     
-    const Uint4 NUM_ITEMS = 5;
+    const Uint4 NUM_ITEMS = 6;
     
     const char ** str_list[NUM_ITEMS];
     
@@ -2324,6 +2324,9 @@ void s_ForceSymbolDefinitions(CObjectIStream& ois,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/11/13 15:43:20  bealer
+ * - Fix stack issue.
+ *
  * Revision 1.5  2006/11/08 18:06:27  bealer
  * - SeqDB now converts paths to OS format.
  *
