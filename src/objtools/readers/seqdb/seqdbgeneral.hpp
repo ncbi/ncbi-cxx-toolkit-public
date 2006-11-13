@@ -1208,6 +1208,12 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
 void SeqDB_SplitQuoted(const string             & dbname,
                        vector<CSeqDB_Substring> & dbs);
 
+/// Fence Sentry value, which is placed at either end of ranges of
+/// data that are included in partially fetched sequences; this only
+/// applies to CSeqDBExpert objects, where SetOffsetRanges() has been
+/// called.
+#define FENCE_SENTRY 201
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBGENERAL_HPP

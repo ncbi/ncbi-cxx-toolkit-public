@@ -453,11 +453,22 @@ unsigned SeqDB_ncbina8_to_blastna8[] = {
 ///    The array of nucleotides to convert
 /// @param length
 ///    The size of the buf array.
+/// @param preserve_fence
+///    If true, the fence character will be preserved.
 static void
-s_SeqDBMapNcbiNA8ToBlastNA8(char * buf, int length)
+s_SeqDBMapNcbiNA8ToBlastNA8(char * buf, int length, bool preserve_fence)
 {
-    for(int i = 0; i < length; i++) {
-        buf[i] = SeqDB_ncbina8_to_blastna8[ buf[i] & 0xF ];
+    if (preserve_fence) {
+        for(int i = 0; i < length; i++) {
+            unsigned char inp = buf[i];
+            char outp = SeqDB_ncbina8_to_blastna8[ inp & 0xF ];
+            
+            buf[i] = (inp == FENCE_SENTRY) ? FENCE_SENTRY : outp;
+        }
+    } else {
+        for(int i = 0; i < length; i++) {
+            buf[i] = SeqDB_ncbina8_to_blastna8[ buf[i] & 0xF ];
+        }
     }
 }
 
@@ -503,7 +514,32 @@ s_SeqDBMapNcbiNA8ToBlastNA8_Ranges(char               * buffer,
         char * area = buffer + begin;
         int area_size = end-begin;
         
-        s_SeqDBMapNcbiNA8ToBlastNA8(area, area_size);
+        s_SeqDBMapNcbiNA8ToBlastNA8(area, area_size, true);
+        
+        // Place 'fence' sentinel bytes around each subsequence.
+        
+        if (sentinel) {
+            area[0] = (char) FENCE_SENTRY;
+            area[area_size-1] = (char) FENCE_SENTRY;
+        } else {
+            if (begin != 0) {
+                area[-1] = (char) FENCE_SENTRY;
+            }
+            if (end != length) {
+                area[area_size] = (char) FENCE_SENTRY;
+            }
+        }
+    }
+    
+    // Place the 'external' sentinel bytes directly.  If the requested
+    // range touches the beginning or end of the sequence, it already
+    // has a 'fence' sentinel; however, walking off the subrange in
+    // that direction is not cause for refetching, because there is
+    // nothing in that direction for us to get.
+    
+    if (sentinel) {
+        buffer[0] = (char)0;
+        buffer[length-1] = (char)0;
     }
 }
 
@@ -1319,6 +1355,10 @@ char * CSeqDBVol::x_AllocType(size_t           length,
                               CSeqDBLockHold & locked) const
 {
     // Allocation using the atlas is not intended for the end user.
+    // 16 bytes are added as insurance against potential off-by-one or
+    // off-by-a-few errors.
+    
+    length += 16;
     
     char * retval = 0;
     
@@ -1333,7 +1373,7 @@ char * CSeqDBVol::x_AllocType(size_t           length,
         
     case eAtlas:
     default:
-        retval = m_Atlas.Alloc(length, locked, false);
+        retval = m_Atlas.Alloc(length + 16, locked, false);
     }
     
     return retval;
@@ -1384,38 +1424,44 @@ static void s_MapRangeData(const char         * seq_buffer,
     
     if (sentinel) {
         start8 = 1;
-        buffer_na8[0] = (char)0;
-        buffer_na8[buffer_na8_len-1] = (char)0;
     }
     
-    if (sentinel) {
-        // Place sentinel bytes around each range; this is done before
-        // any of the range data is mapped so that the range data is
-        // free to replace the sentinel bytes if needed; that would
-        // only happen if ranges are adjacent or overlapping.
+    // Place 'fence' sentinel bytes around each range; this is done
+    // before any of the range data is mapped so that the range data
+    // is free to replace the sentinel bytes if needed; that would
+    // only happen if ranges are adjacent or overlapping.
+    
+    ITERATE(TRangeVector, riter, ranges) {
+        int begin = riter->first;
+        int end = riter->second;
         
-        // I don't know if this is strictly necessary or useful, but
-        // it should make extensions more deterministic.
+        if (begin >= seq_length)
+            continue;
         
-        ITERATE(TRangeVector, riter, ranges) {
-            int begin = riter->first;
-            int end = riter->second;
-            
-            if (begin >= seq_length)
-                continue;
-            
-            if (end > seq_length)
-                end = seq_length;
-            
-            // Fetch a sub-range of the data into the sequence buffer.
-            
-            int dest_off = start8 + begin;
-            int dest_end = start8 + end;
-            char * datap = & buffer_na8[0];
-            
-            datap[dest_off - 1] = (char) 0;
-            datap[dest_end] = (char) 0;
+        if (end >= seq_length) {
+            end = seq_length;
         }
+        
+        // Fetch a sub-range of the data into the sequence buffer.
+        
+        int dest_off = start8 + begin;
+        int dest_end = start8 + end;
+        char * datap = & buffer_na8[0];
+        
+        if (dest_off || sentinel) {
+            datap[dest_off - 1] = (char) FENCE_SENTRY;
+        }
+        if (end != seq_length || sentinel) {
+            datap[dest_end] = (char) FENCE_SENTRY;
+        }
+    }
+    
+    // Overwrite any 'fence' sentinels at the buffer ends with normal
+    // sentinels.
+    
+    if (sentinel) {
+        buffer_na8[0] = (char)0;
+        buffer_na8[buffer_na8_len-1] = (char)0;
     }
     
     ITERATE(TRangeVector, riter, ranges) {
@@ -1589,7 +1635,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
                 
                 if (sentinel) {
                     // Translate bytewise, in place.
-                    s_SeqDBMapNcbiNA8ToBlastNA8(buffer_na8, buffer_na8_len);
+                    s_SeqDBMapNcbiNA8ToBlastNA8(buffer_na8, buffer_na8_len, false);
                 }
             }
         }
@@ -1752,7 +1798,7 @@ CSeqDBVol::x_GetFilteredHeader(int                  oid,
     
     CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
     
-    // 2. filter based on "rdfp->membership_bit" or similar.
+    // Filter based on "rdfp->membership_bit" or similar.
     
     if (x_HaveGiList() || (have_oidlist && (membership_bit != 0))) {
         // Create the memberships mask (should this be fixed to allow
