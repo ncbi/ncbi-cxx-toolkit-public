@@ -62,6 +62,8 @@
 #include <objmgr/data_loader_factory.hpp>
 #endif
 
+#include <test/test_assert.h> // Must be last include directive.
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
@@ -2325,6 +2327,9 @@ void s_ForceSymbolDefinitions(CObjectIStream& ois,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/11/13 16:35:44  bealer
+ * - Prevent dialog-on-error behavior on Windows systems.
+ *
  * Revision 1.7  2006/11/13 16:01:19  bealer
  * - Fix values for re-enabled test.
  *
