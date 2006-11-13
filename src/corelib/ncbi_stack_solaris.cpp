@@ -46,7 +46,7 @@ struct SFrame
 
 
 extern "C"
-static int s_StackWalker(uintptr_t int_ptr, int, void* data)
+int s_StackWalker(uintptr_t int_ptr, int, void* data)
 {
     CStackTrace::TStack* stack_trace = (CStackTrace::TStack*)data;
     CStackTrace::SStackFrameInfo sf_info;
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/13 19:14:02  grichenk
+ * Fixed compilation on solaris.
+ *
  * Revision 1.2  2006/11/06 23:00:58  grichenk
  * Fixed type casts on 64-bit solaris
  *
