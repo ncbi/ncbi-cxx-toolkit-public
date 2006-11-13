@@ -147,7 +147,8 @@ public:
     /// Offset row's coords
     void OffsetRow(TDim row, TSeqPos offset);
 
-    /// @deprecated
+    /// @deprecated (use sequence::RemapAlignToLoc())
+    /// @sa RemapAlignToLoc
     NCBI_DEPRECATED void RemapToLoc(TDim row,
                                     const CSeq_loc& dst_loc,
                                     bool ignore_strand = false);
@@ -187,6 +188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2006/11/13 16:54:15  grichenk
+* Fixed comments and default value.
+*
 * Revision 1.19  2006/07/24 13:11:05  dicuccio
 * Doxygenated.  Added support for creating named scores
 *

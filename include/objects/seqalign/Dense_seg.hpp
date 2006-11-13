@@ -112,7 +112,8 @@ public:
     /// Offset row's coords
     void OffsetRow(TDim row, TSeqPos offset);
 
-    /// @deprecated (use CSeq_loc_Mapper or CSeq_align_Mapper)
+    /// @deprecated (use sequence::RemapAlignToLoc())
+    /// @sa RemapAlignToLoc
     NCBI_DEPRECATED void RemapToLoc(TDim row, const CSeq_loc& loc,
                                     bool ignore_strand = false);
 
@@ -217,6 +218,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/11/13 16:54:15  grichenk
+* Fixed comments and default value.
+*
 * Revision 1.18  2006/10/26 19:11:02  todorov
 * Added comment for the deprecated RempaToLoc.
 *

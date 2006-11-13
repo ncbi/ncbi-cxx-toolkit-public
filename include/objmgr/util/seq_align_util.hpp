@@ -74,7 +74,7 @@ NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
                                  CSeq_align::TDim  row,
                                  const CSeq_loc&   loc,
-                                 CScope*           scope = 0);
+                                 CScope*           scope = NULL);
 
 
 /* @} */
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/11/13 16:54:15  grichenk
+* Fixed comments and default value.
+*
 * Revision 1.1  2006/11/06 17:45:22  grichenk
 * Initial revisioon
 *
