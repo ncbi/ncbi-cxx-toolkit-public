@@ -3704,6 +3704,10 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
     // Check file size
     Int8 file_size = GetFileSize();
     if ( file_size < 0 ) {
+        if ( m_Attrs ) {
+            delete m_Attrs;
+            m_Attrs = 0;
+        }
         NCBI_THROW(CFileException, eMemoryMap,
             "CMemoryFileMap: The mapped file \"" + m_FileName +
             "\" must exists");
@@ -4099,6 +4103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.149  2006/11/13 20:46:51  ivanov
+ * CMemoryFileMap(): fixed memory leak
+ *
  * Revision 1.148  2006/08/12 05:30:38  lavr
  * CDirEntry::{Get|Set}Time[T]: Swap last access time / creation-change time
  *
