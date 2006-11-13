@@ -179,7 +179,7 @@ int main(int argc, const char* argv[])
 #endif
 
     LOG_POST("Test 1 of 3: Big buffer bounce");
-    CConn_HttpStream ios(0, "User-Header: My header\r\n", 0,
+    CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHCC_UrlEncodeArgs | fHCC_AutoReconnect);
 
     char *buf1 = new char[kBufferSize + 1];
@@ -326,6 +326,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2006/11/13 18:24:37  lavr
+ * Adjust parameters for CConn_HttpStream's ctor
+ *
  * Revision 6.51  2006/11/08 17:17:23  lavr
  * Adjust parameters used in generic CConn_HttpStream's ctor
  *
