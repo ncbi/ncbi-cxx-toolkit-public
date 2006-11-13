@@ -613,7 +613,7 @@ void CDBAPIUnitTest::Test_Iskhakov(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-CDBAPIUnitTest::Create_Destroy(void)
+CDBAPIUnitTest::Test_Create_Destroy(void)
 {
     ///////////////////////
     // CreateStatement
@@ -4855,6 +4855,45 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 }
 
 
+void
+CDBAPIUnitTest::Test_Authentication(void)
+{
+    // MSSQL10 has SSL certificate.
+    {
+        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+
+        auto_conn->Connect(
+            "NCBI_NT\\anyone",
+            "Perm1tted",
+            "MSSQL10"
+            );
+
+        auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+
+        auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version" ) );
+        BOOST_CHECK( rs.get() != NULL );
+        BOOST_CHECK( rs->Next() );
+    }
+
+    // No SSL certificate.
+    {
+        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+
+        auto_conn->Connect(
+            "NCBI_NT\\anyone",
+            "Perm1tted",
+            "MSSQL7"
+            );
+
+        auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+
+        auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version" ) );
+        BOOST_CHECK( rs.get() != NULL );
+        BOOST_CHECK( rs->Next() );
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
@@ -4928,7 +4967,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception, DBAPIInstance));
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Create_Destroy, DBAPIInstance);
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 
@@ -5127,6 +5166,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if (args.GetServerType() == CTestArguments::eMsSql &&
+        (args.GetDriverName() == "ftds64_odbc"
+         || args.GetDriverName() == "ftds64_ctlib")
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
     // development ....
     if (false) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
@@ -5233,29 +5281,35 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
     SetDatabaseParameters();
 }
 
+
 CTestArguments::EServerType
 CTestArguments::GetServerType(void) const
 {
-    if ( GetServerName() == "STRAUSS" ||
-         GetServerName() == "MOZART" ||
-         GetServerName() == "OBERON" ||
-         GetServerName() == "SCHUMANN" ||
-         GetServerName().compare(0, 6, "BARTOK") == 0 ) {
+    if ( GetServerName().compare("STRAUSS") == 0
+         || GetServerName().compare("MOZART") == 0
+         || GetServerName().compare("OBERON") == 0
+         || GetServerName().compare("SCHUMANN") == 0
+         || GetServerName().compare("BARTOK") == 0
+         ) {
         return eSybase;
-    } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0 ||
-                GetServerName().compare(0, 5, "MSSQL") == 0 ||
-                GetServerName().compare(0, 7, "OAMSDEV") == 0) {
+    } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0
+                || GetServerName().compare(0, 5, "MSSQL") == 0
+                || GetServerName().compare(0, 7, "OAMSDEV") == 0
+                || GetServerName().compare(0, 6, "QMSSQL") == 0
+                ) {
         return eMsSql;
     }
 
     return eUnknown;
 }
 
+
 string
 CTestArguments::GetProgramBasename(void) const
 {
     return m_Arguments.GetProgramBasename();
 }
+
 
 void
 CTestArguments::SetDatabaseParameters(void)
@@ -5276,12 +5330,14 @@ CTestArguments::SetDatabaseParameters(void)
                     GetServerType() == eSybase ) {
             // ftds work with Sybase databases using protocol v42 only ...
             m_DatabaseParameters["version"] = "100";
-        } else if (GetDriverName() == "ftds64_odbc"  &&
-                   GetServerType() == eSybase) {
-            m_DatabaseParameters["version"] = "50";
+        } else if (GetDriverName() == "ftds64_odbc") {
+            if (GetServerType() == eSybase) {
+                m_DatabaseParameters["version"] = "50";
+            }
         } else if (GetDriverName() == "ftds64_ctlib"  &&
                    GetServerType() == eMsSql) {
             m_DatabaseParameters["version"] = "80";
+//             m_DatabaseParameters["version"] = "70";
         }
     } else {
         m_DatabaseParameters["version"] = m_TDSVersion;
@@ -5320,6 +5376,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.112  2006/11/13 19:57:38  ssikorsk
+ * Added and enabled Test_Authentication.
+ *
  * Revision 1.111  2006/11/02 15:37:16  ssikorsk
  * Disable Test_Procedure with the ftds driver. It is the only
  * driver, which has problems with Test_Procedure currently.
