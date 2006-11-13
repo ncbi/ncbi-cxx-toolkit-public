@@ -877,6 +877,7 @@ static void TestHeapStack(void)
       NcbiCerr << "Test CObjectInt on heap:" << NcbiEndl;
       CObjectInt* heapObj = new CObjectInt();
       assert(heapObj->CanBeDeleted());
+      delete heapObj; 
     }
     {
       NcbiCerr << "Test static CObjectInt:" << NcbiEndl;
@@ -897,6 +898,7 @@ static void TestHeapStack(void)
       NcbiCerr << "Test CObject on heap:" << NcbiEndl;
       CObject* heapObj = new CObject();
       assert(heapObj->CanBeDeleted());
+      delete heapObj; 
     }
     {
       NcbiCerr << "Test static CObject:" << NcbiEndl;
@@ -1055,6 +1057,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2006/11/13 21:29:11  ivanov
+ * TestHeapStack: removed memory leak
+ *
  * Revision 1.108  2006/04/05 18:57:32  lavr
  * Adjust for IgnoreDiagDieLevel() prototype
  *
@@ -1412,3 +1417,4 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
  *
  * ==========================================================================
  */
+
