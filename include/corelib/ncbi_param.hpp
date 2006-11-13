@@ -405,6 +405,9 @@ public:
     TValueType Get(void) const;
     /// Set new parameter value (this instance only).
     void Set(const TValueType& val);
+    /// Reset value as if it has not been initialized yet. Next call to
+    /// Get() will cache the thread default (or global default) value.
+    void Reset(void);
 
     /// Get global default value. If not yet set, attempts to load the value
     /// from application registry or environment.
@@ -412,16 +415,23 @@ public:
     /// Set new global default value. Does not affect values of existing
     /// CParam<> objects or thread-local default values.
     static void SetDefault(const TValueType& val);
+    /// Reload the global default value from the environment/registry
+    /// or reset it to the initial value specified in NCBI_PARAM_DEF.
+    static void ResetDefault(void);
 
     /// Get thread-local default value if set or global default value.
     static TValueType GetThreadDefault(void);
     /// Set new thread-local default value.
     static void SetThreadDefault(const TValueType& val);
+    /// Reset thread default value as if it has not been set. Unless
+    /// SetThreadDefault() is called, GetThreadDefault() will return
+    /// global default value.
+    static void ResetThreadDefault(void);
 
 private:
     typedef CTls<TValueType> TTls;
 
-    static TValueType&       sx_GetDefault (void);
+    static TValueType&       sx_GetDefault (bool force_reset = false);
     static CRef<TTls>&       sx_GetTls     (void);
 
     static bool sx_IsSetFlag(ENcbiParamFlags flag);
@@ -442,6 +452,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/11/13 16:57:27  grichenk
+ * Added methods to reset CParam.
+ *
  * Revision 1.10  2006/10/18 18:30:27  vakatov
  * + NCBI_PARAM_DEF_IN_SCOPE
  *

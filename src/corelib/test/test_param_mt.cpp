@@ -146,6 +146,14 @@ bool CTestParamApp::Thread_Run(int idx)
     // Parameters should keep the value set during initialization
     _ASSERT(str_param1.Get() == kStrParam_Default);
     _ASSERT(str_param2.Get() == kStrParam_Default + str_idx);
+    // Test local reset
+    str_param2.Reset();
+    _ASSERT(str_param2.Get() == TParam_StrParam::GetThreadDefault());
+    // Test thread reset
+    TParam_StrParam::ResetThreadDefault();
+    _ASSERT(TParam_StrParam::GetThreadDefault() == kStrParam_Default);
+    str_param2.Reset();
+    _ASSERT(str_param2.Get() == str_param1.Get());
     // Restore thread default to global default for testing in ST mode
     TParam_StrParam::SetThreadDefault(kStrParam_Default);
 
@@ -171,6 +179,14 @@ bool CTestParamApp::Thread_Run(int idx)
 
 bool CTestParamApp::TestApp_Init(void)
 {
+    HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
+                              "Test of CE2Blast interface");
+
+    SetupArgDescriptions(arg_desc.release());
+
     NcbiCout << NcbiEndl
              << "Testing parameters with "
              << NStr::IntToString(s_NumThreads)
@@ -182,6 +198,19 @@ bool CTestParamApp::TestApp_Init(void)
 
 bool CTestParamApp::TestApp_Exit(void)
 {
+    // Test resets in ST mode
+    TParam_StrParam::SetDefault(kStrParam_Default + "-test1");
+    TParam_StrParam::ResetThreadDefault();
+    _ASSERT(TParam_StrParam::GetThreadDefault() ==
+        TParam_StrParam::GetDefault());
+    TParam_StrParam::SetDefault(kStrParam_Default + "-test2");
+    // the global value must be used
+    _ASSERT(TParam_StrParam::GetThreadDefault() ==
+        TParam_StrParam::GetDefault());
+    // Global reset
+    TParam_StrParam::ResetDefault();
+    _ASSERT(TParam_StrParam::GetDefault() == kStrParam_Default);
+
     NcbiCout << "Test completed successfully!"
              << NcbiEndl << NcbiEndl;
     return true;
@@ -203,6 +232,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/11/13 16:57:27  grichenk
+ * Added methods to reset CParam.
+ *
  * Revision 1.5  2006/01/05 20:40:17  grichenk
  * Added explicit environment variable name for params.
  * Added default value caching flag to CParam constructor.

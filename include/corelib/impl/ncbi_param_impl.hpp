@@ -272,12 +272,18 @@ CParam<TDescription>::CParam(const string& section, const string& name)
 
 template<class TDescription>
 typename CParam<TDescription>::TValueType&
-CParam<TDescription>::sx_GetDefault(void)
+CParam<TDescription>::sx_GetDefault(bool force_reset)
 {
     static TValueType s_Default =
         TDescription::sm_ParamDescription.default_value;
 
     static bool initialized = false;
+
+    if ( force_reset ) {
+        s_Default = TDescription::sm_ParamDescription.default_value;
+        initialized = false;
+    }
+
     if ( !initialized ) {
         if ( !sx_IsSetFlag(eParam_NoLoad) ) {
             string config_value =
@@ -336,6 +342,15 @@ void CParam<TDescription>::SetDefault(const TValueType& val)
 
 template<class TDescription>
 inline
+void CParam<TDescription>::ResetDefault(void)
+{
+    CFastMutexGuard guard(s_GetLock());
+    sx_GetDefault(true);
+}
+
+
+template<class TDescription>
+inline
 typename CParam<TDescription>::TValueType
 CParam<TDescription>::GetThreadDefault(void)
 {
@@ -372,6 +387,21 @@ void CParam<TDescription>::SetThreadDefault(const TValueType& val)
 
 template<class TDescription>
 inline
+void CParam<TDescription>::ResetThreadDefault(void)
+{
+    if ( sx_IsSetFlag(eParam_NoThread) ) {
+        return; // already using global default value
+    }
+    CFastMutexGuard guard(s_GetLock());
+    CRef<TTls>& tls = sx_GetTls();
+    if ( tls ) {
+        tls->Reset();
+    }
+}
+
+
+template<class TDescription>
+inline
 bool CParam<TDescription>::sx_CanGetDefault(void)
 {
     return CNcbiApplication::Instance();
@@ -400,12 +430,23 @@ void CParam<TDescription>::Set(const TValueType& val)
 }
 
 
+template<class TDescription>
+inline
+void CParam<TDescription>::Reset(void)
+{
+    m_ValueSet = false;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/11/13 16:57:27  grichenk
+ * Added methods to reset CParam.
+ *
  * Revision 1.10  2006/11/06 17:25:23  grichenk
  * Fixed SParamEnumDescription - added env_var_name.
  *
