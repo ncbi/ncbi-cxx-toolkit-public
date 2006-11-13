@@ -30,7 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <algorithm>
 #include <typeinfo>
@@ -618,6 +618,12 @@ void CCodeGenerator::GenerateCvsignore(
                 CDirEntry entry(Path(m_FileNamePrefix,m_FileListFileName));
                 ignoreFile << entry.GetName() << endl;
             }
+
+// specification dump (somewhat hackishly)
+            if ( const CArgValue& f
+                 = CNcbiApplication::Instance()->GetArgs()["fd"] ) {
+                ignoreFile << f.AsString() << endl;
+            }
         }
     }
 }
@@ -1045,6 +1051,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2006/11/13 18:47:07  ucko
+* GenerateCvsignore: add the name of the specification dump (if any)
+* requested with -fd.
+*
 * Revision 1.67  2006/06/27 18:03:41  gouriano
 * Corrected generation of class registration code
 *
