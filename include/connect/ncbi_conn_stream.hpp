@@ -241,12 +241,15 @@ public:
      );
 
     CConn_HttpStream
-    (const SConnNetInfo*  net_info     = 0,
-     const string&        user_header  = kEmptyStr,
-     FHttpParseHTTPHeader parse_header = 0,
-     THCC_Flags           flags        = fHCC_AutoReconnect,
-     const STimeout*      timeout      = kDefaultTimeout,
-     streamsize           buf_size     = kConn_DefaultBufSize
+    (const SConnNetInfo*  net_info        = 0,
+     const string&        user_header     = kEmptyStr,
+     FHttpParseHTTPHeader parse_header    = 0,
+     FHttpAdjustNetInfo   adjust_net_info = 0,
+     void*                adjust_data     = 0,
+     FHttpAdjustCleanup   adjust_cleanup  = 0,
+     THCC_Flags           flags           = fHCC_AutoReconnect,
+     const STimeout*      timeout         = kDefaultTimeout,
+     streamsize           buf_size        = kConn_DefaultBufSize
      );
 
 private:
@@ -431,6 +434,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.48  2006/11/13 18:16:36  lavr
+ * Extend CConn_HttpStream's default ctor with two more parameters
+ *
  * Revision 6.47  2006/11/08 17:00:16  lavr
  * CConn_HttpStream:  To use parse_header callback in generic ctor
  *

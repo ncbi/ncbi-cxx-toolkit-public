@@ -126,6 +126,9 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
                                         const char*          args,
                                         const char*          user_header,
                                         FHttpParseHTTPHeader parse_header,
+                                        FHttpAdjustNetInfo   adjust_net_info,
+                                        void*                adjust_data,
+                                        FHttpAdjustCleanup   adjust_cleanup,
                                         THCC_Flags           flags,
                                         const STimeout*      timeout)
 {
@@ -150,7 +153,8 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo*  a_net_info,
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
         net_info->timeout = 0;
-    CONNECTOR c = HTTP_CreateConnectorEx(net_info, flags, parse_header, 0,0,0);
+    CONNECTOR c = HTTP_CreateConnectorEx(net_info, flags,
+        parse_header, adjust_net_info, adjust_data, adjust_cleanup);
     ConnNetInfo_Destroy(net_info);
     return c;
 }
@@ -172,6 +176,9 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             args.c_str(),
                                             user_header.c_str(),
                                             0,
+                                            0,
+                                            0,
+                                            0,
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -186,6 +193,9 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                    streamsize          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
                                             url.c_str(),
+                                            0,
+                                            0,
+                                            0,
                                             0,
                                             0,
                                             0,
@@ -214,6 +224,9 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                             0,
                                             user_header.c_str(),
                                             0,
+                                            0,
+                                            0,
+                                            0,
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -225,6 +238,9 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
 CConn_HttpStream::CConn_HttpStream(const SConnNetInfo*  net_info,
                                    const string&        user_header,
                                    FHttpParseHTTPHeader parse_header,
+                                   FHttpAdjustNetInfo   adjust_net_info,
+                                   void*                adjust_data,
+                                   FHttpAdjustCleanup   adjust_cleanup,
                                    THCC_Flags           flags,
                                    const STimeout*      timeout,
                                    streamsize           buf_size)
@@ -236,6 +252,9 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo*  net_info,
                                             0,
                                             user_header.c_str(),
                                             parse_header,
+                                            adjust_net_info,
+                                            adjust_data,
+                                            adjust_cleanup,
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -458,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.62  2006/11/13 18:16:57  lavr
+ * Extend CConn_HttpStream's default ctor with two more parameters
+ *
  * Revision 6.61  2006/11/08 17:00:28  lavr
  * CConn_HttpStream:  To use parse_header callback in generic ctor
  *
