@@ -715,7 +715,7 @@ void CQueueDataBase::Purge(void)
     // This is done to spread massive job deletion in time
     // and thus smooth out peak loads
     // TODO: determine batch size based on load
-    unsigned n_jobs_to_delete = 500; 
+    unsigned n_jobs_to_delete = 10000; 
     unsigned unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
     global_del_rec += unc_del_rec;
 
@@ -1755,6 +1755,7 @@ SQueueDB* CQueueDataBase::CQueue::x_GetLocalDb()
     if (pqdb == 0) {
         ++m_QueueDbAccessCounter;
         if (m_QueueDbAccessCounter > 2) {
+            printf("Opening private db\n"); // DEBUG
             const string& file_name = m_LQueue.db.FileName();
             CBDB_Env* env = m_LQueue.db.GetEnv();
             m_QueueDB.reset(pqdb = new SQueueDB());
@@ -3293,7 +3294,8 @@ CQueueDataBase::CQueue::DeleteBatch(bm::bvector<>& batch)
             unsigned job_id = *en;
             cur.SetCondition(CBDB_FileCursor::eEQ);
             cur.From << job_id;
-            if (cur.Delete(CBDB_File::eIgnoreError) == eBDB_Ok) {
+            if (cur.FetchFirst() == eBDB_Ok) {
+                cur.Delete(CBDB_File::eIgnoreError);
                 ++del_rec;
             }
         }
@@ -3849,6 +3851,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2006/11/13 22:49:15  joukovv
+ * Background job deletion code corrected.
+ *
  * Revision 1.93  2006/11/13 19:15:35  joukovv
  * Protocol parser re-implemented. Remnants of ThreadData removed.
  *

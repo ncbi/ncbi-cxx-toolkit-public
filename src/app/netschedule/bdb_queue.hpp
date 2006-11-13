@@ -537,6 +537,7 @@ public:
         CQueueDataBase& m_Db;      ///< Parent structure reference
         SLockedQueue&   m_LQueue;  
         unsigned        m_ClientHostAddr;
+        /// For private DB
         unsigned        m_QueueDbAccessCounter;
         /// Private database (for long running sessions)
         auto_ptr<SQueueDB>         m_QueueDB;
@@ -604,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/11/13 22:49:15  joukovv
+ * Background job deletion code corrected.
+ *
  * Revision 1.57  2006/10/31 19:35:26  joukovv
  * Queue creation and reading of its parameters decoupled. Code reorganized to
  * reduce coupling in general. Preparing for queue-on-demand.
