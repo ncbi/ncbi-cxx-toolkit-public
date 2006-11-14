@@ -65,6 +65,8 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
     ITERATE ( CID2S_Chunk_Info::TContent, it, info.GetContent() ) {
         const CID2S_Chunk_Content& content = **it;
         switch ( content.Which() ) {
+        case CID2S_Chunk_Content::e_not_set:
+            break;
         case CID2S_Chunk_Content::e_Seq_descr:
             x_Attach(*ret, content.GetSeq_descr());
             break;
@@ -86,9 +88,16 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
         case CID2S_Chunk_Content::e_Seq_assembly:
             x_Attach(*ret, content.GetSeq_assembly());
             break;
+#ifdef OBJECTS_SEQSPLIT_ID2S_SEQ_FEAT_IDS_INFO_HPP
+        case CID2S_Chunk_Content::e_Feat_ids:
+            ITERATE ( CID2S_Chunk_Content::TFeat_ids, it2,
+                      content.GetFeat_ids() ) {
+                x_Attach(*ret, **it2);
+            }
+            break;
+#endif
         default:
-            NCBI_THROW(CLoaderException, eOtherError,
-                       "Unexpected split data");
+            ERR_POST_ONCE("ID2 Split parser: Unexpected split data: "<<content.Which());
         }
     }
     return ret;
@@ -308,6 +317,43 @@ void CSplitParser::x_AddGiInterval(TLocationSet& vec, int gi,
 }
 
 
+void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
+                            const CID2S_Seq_feat_Ids_Info& ids)
+{
+#ifdef OBJECTS_SEQSPLIT_ID2S_SEQ_FEAT_IDS_INFO_HPP
+    chunk.x_AddFeat_ids();
+    ITERATE ( CID2S_Seq_feat_Ids_Info::TFeat_types, it, ids.GetFeat_types() ) {
+        const CID2S_Feat_type_Info& type = **it;
+        if ( type.IsSetSubtypes() ) {
+            ITERATE ( CID2S_Feat_type_Info::TSubtypes, sit,
+                      type.GetSubtypes() ) {
+                SAnnotTypeSelector sel(CSeqFeatData::ESubtype(+*sit));
+                chunk.x_AddFeat_ids(sel, ids.GetLocal_ids());
+            }
+        }
+        else {
+            SAnnotTypeSelector sel(CSeqFeatData::E_Choice(type.GetType()));
+            chunk.x_AddFeat_ids(sel, ids.GetLocal_ids());
+        }
+    }
+    ITERATE ( CID2S_Seq_feat_Ids_Info::TXref_types, it, ids.GetXref_types() ) {
+        const CID2S_Feat_type_Info& type = **it;
+        if ( type.IsSetSubtypes() ) {
+            ITERATE ( CID2S_Feat_type_Info::TSubtypes, sit,
+                      type.GetSubtypes() ) {
+                SAnnotTypeSelector sel(CSeqFeatData::ESubtype(+*sit));
+                chunk.x_AddXref_ids(sel, ids.GetLocal_ids());
+            }
+        }
+        else {
+            SAnnotTypeSelector sel(CSeqFeatData::E_Choice(type.GetType()));
+            chunk.x_AddXref_ids(sel, ids.GetLocal_ids());
+        }
+    }
+#endif
+}
+
+
 void CSplitParser::x_ParseLocation(TLocationSet& vec,
                                    const CID2S_Seq_loc& loc)
 {
@@ -452,6 +498,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.19  2006/11/14 19:23:30  vasilche
+ * Added parsing of feature ids information.
+ *
  * Revision 1.18  2005/08/31 14:47:14  didenko
  * Changed the object parameter type for LoadAnnot and LoadBioseq methods
  *

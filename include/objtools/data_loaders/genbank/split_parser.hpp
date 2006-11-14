@@ -48,6 +48,7 @@ class CID2S_Bioseq_place_Info;
 class CID2S_Seq_data_Info;
 class CID2S_Seq_loc;
 class CID2S_Seq_assembly_Info;
+class CID2S_Seq_feat_Ids_Info;
 
 class CTSE_Info;
 class CTSE_Chunk_Info;
@@ -74,6 +75,8 @@ public:
                          const CID2S_Seq_assembly_Info& data);
     static void x_Attach(CTSE_Chunk_Info& chunk,
                          const CID2S_Bioseq_place_Info& data);
+    static void x_Attach(CTSE_Chunk_Info& chunk,
+                         const CID2S_Seq_feat_Ids_Info& ids);
 
     typedef CSeq_id_Handle TLocationId;
     typedef CRange<TSeqPos> TLocationRange;
@@ -97,6 +100,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.9  2006/11/14 19:23:30  vasilche
+* Added parsing of feature ids information.
+*
 * Revision 1.8  2005/06/09 15:17:29  grichenk
 * Added support for split history assembly.
 *
