@@ -98,6 +98,13 @@ install_mssql:
 	$(TEST_NOT_STAMP)\mssql$(STAMP_SUFFIX).installed      if exist "$(MSSQL_SRC)\*.pdb" (copy /Y "$(MSSQL_SRC)\*.pdb" "$(INSTALL_BINPATH)" > NUL)
 	$(TEST_NOT_STAMP)\mssql$(STAMP_SUFFIX).installed      if exist "$(MSSQL_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\mssql$(STAMP_SUFFIX).installed")
 
+OPENSSL_SRC      = $(OPENSSL_BINPATH)\$(INTDIR)
+install_openssl:
+	$(TEST_NOT_STAMP)\openssl$(STAMP_SUFFIX).installed      echo Copying OpenSSL DLLs...
+	$(TEST_IF__STAMP)\openssl$(STAMP_SUFFIX).installed      echo OpenSSL DLLs are already installed
+	$(TEST_NOT_STAMP)\openssl$(STAMP_SUFFIX).installed      if exist "$(OPENSSL_SRC)\*.dll" (copy /Y "$(OPENSSL_SRC)\*.dll" "$(INSTALL_BINPATH)" > NUL) else (echo WARNING: OpenSSL DLLs not found.)
+	$(TEST_NOT_STAMP)\openssl$(STAMP_SUFFIX).installed      if exist "$(OPENSSL_SRC)\*.dll" (echo "" > "$(THIRDPARTY_CFG_PATH)\openssl$(STAMP_SUFFIX).installed")
+
 #
 # MSVC7.10 run-time DLLs'
 #

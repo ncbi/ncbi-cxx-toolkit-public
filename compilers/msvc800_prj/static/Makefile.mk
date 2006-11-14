@@ -93,6 +93,13 @@ install_mssql:
 	$(TEST_NOT_STAMP)\mssql.installed      if exist "$(MSSQL_SRC)\*.pdb" copy /Y $(MSSQL_SRC)\*.pdb $(INSTALL_BINPATH)
 	$(TEST_NOT_STAMP)\mssql.installed      echo "" > $(THIRDPARTY_CFG_PATH)\mssql.installed
 
+OPENSSL_SRC      = $(OPENSSL_BINPATH)\$(INTDIR)
+install_openssl:
+	$(TEST_NOT_STAMP)\openssl.installed      echo Coping OpenSSL DLLs
+	$(TEST_IF__STAMP)\openssl.installed      echo OpenSSL DLLs are already installed
+	$(TEST_NOT_STAMP)\openssl.installed      if exist "$(OPENSSL_SRC)\libeay32.dll" copy /Y $(OPENSSL_SRC)\libeay32.dll $(INSTALL_BINPATH)
+	$(TEST_NOT_STAMP)\openssl.installed      echo "" > $(THIRDPARTY_CFG_PATH)\openssl.installed
+
 #
 # MSVC7.10 run-time DLLs'
 #
