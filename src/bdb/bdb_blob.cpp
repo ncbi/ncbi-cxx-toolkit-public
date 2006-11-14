@@ -448,9 +448,9 @@ size_t CBDB_LobFile::LobSize() const
 
 void CBDB_LobFile::SetCmp(DB*)
 {
-    BDB_CompareFunction func = BDB_UintCompare;
+    BDB_CompareFunction func = BDB_Uint4Compare;
     if (IsByteSwapped()) {
-        func = BDB_ByteSwap_UintCompare;
+        func = BDB_ByteSwap_Uint4Compare;
     }
 
     _ASSERT(func);
@@ -464,6 +464,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/11/14 13:27:38  dicuccio
+ * Use field widths in comparators
+ *
  * Revision 1.25  2006/03/28 16:37:28  kuznets
  * +ReadRealloc()
  *

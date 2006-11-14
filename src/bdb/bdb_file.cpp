@@ -1389,9 +1389,9 @@ CBDB_IdFile::CBDB_IdFile()
 
 void CBDB_IdFile::SetCmp(DB* /* db */)
 {
-    BDB_CompareFunction func = BDB_IntCompare;
+    BDB_CompareFunction func = BDB_Int4Compare;
     if (IsByteSwapped()) {
-        func = BDB_ByteSwap_IntCompare;
+        func = BDB_ByteSwap_Int4Compare;
     }
 
     _ASSERT(func);
@@ -1406,6 +1406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/11/14 13:27:37  dicuccio
+ * Use field widths in comparators
+ *
  * Revision 1.66  2006/09/14 15:48:30  dicuccio
  * Fix buffer management
  *
