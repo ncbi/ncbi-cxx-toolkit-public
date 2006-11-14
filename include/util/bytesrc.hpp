@@ -310,6 +310,10 @@ private:
     char*              m_Data;
     size_t             m_DataSize;
     CRef<CMemoryChunk> m_NextChunk;
+
+private:
+    CMemoryChunk(const CMemoryChunk&);
+    void operator=(const CMemoryChunk&);
 };
 
 
@@ -478,6 +482,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2006/11/14 19:27:15  vasilche
+ * Made forbidden copy constructor private.
+ *
  * Revision 1.29  2006/02/15 17:40:25  lavr
  * IReader/IWriter API moved (along with RWStream[buf]) to corelib
  *
