@@ -52,22 +52,25 @@ public:
 
     /// Calculate a difference
     void Diff(const TAlnRngColl& substrahend,
-              TAlnRngColl& difference);
+              TAlnRngColl& difference) const;
 
     /// Trimming methods
-    void TrimFirstFrom (TAlnRng& rng, int trim);
-    void TrimFirstTo   (TAlnRng& rng, int trim);
-    void TrimSecondFrom(TAlnRng& rng, int trim);
-    void TrimSecondTo  (TAlnRng& rng, int trim);
+    static void TrimFirstFrom (TAlnRng& rng, int trim);
+    static void TrimFirstTo   (TAlnRng& rng, int trim);
+    static void TrimSecondFrom(TAlnRng& rng, int trim);
+    static void TrimSecondTo  (TAlnRng& rng, int trim);
+
+
+
 
 private:
     void x_Diff(const TAlnRng& rng,
                 TAlnRngColl&   result,
-                TAlnRngColl::const_iterator& r_it);
+                TAlnRngColl::const_iterator& r_it) const;
 
     void x_DiffSecond(const TAlnRng& rng,
                       TAlnRngColl&   result,
-                      TAlnRngCollExt::const_iterator& r_it);
+                      TAlnRngCollExt::const_iterator& r_it) const;
 
     struct PItLess
     {
@@ -92,7 +95,7 @@ private:
         }    
     };
 
-    TAlnRngCollExt m_Extender;
+    mutable TAlnRngCollExt m_Extender;
 };
 
 
@@ -142,6 +145,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/11/14 20:35:35  todorov
+* Trim methods are static; m_Extender is mutable.
+*
 * Revision 1.5  2006/11/06 19:56:51  todorov
 * Eliminated basewidths.  Positions are stored in pseudo coords.
 *
