@@ -142,15 +142,9 @@ CPsiBlastIterationState::GetSeqIds(CConstRef<objects::CSeq_align_set> seqalign,
                                    TSeqIds& retval)
 {
     retval.clear();
-
     CPsiBlastAlignmentProcessor proc;
     CPsiBlastAlignmentProcessor::THitIdentifiers hit_ids;
-    proc(*seqalign, opts->GetInclusionThreshold(), hit_ids);
-
-    retval.reserve(hit_ids.size());
-    ITERATE(CPsiBlastAlignmentProcessor::THitIdentifiers, itr, hit_ids) {
-        retval.push_back(itr->second);
-    }
+    proc(*seqalign, opts->GetInclusionThreshold(), retval);
 }
 
 END_SCOPE(blast)

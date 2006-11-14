@@ -386,7 +386,6 @@ CPsiBlastAlignmentProcessor::operator()
      THitIdentifiers& output)
 {
     output.clear();
-    unsigned int seq_index = 0;
 
     // For each discontinuous Seq-align corresponding to each query-subj pair
     // (i.e.: for each hit)
@@ -401,14 +400,13 @@ CPsiBlastAlignmentProcessor::operator()
             double e = GetLowestEvalue((*hsp)->GetScore());
             if (e < evalue_inclusion_threshold) {
                 CRef<CSeq_id> id(const_cast<CSeq_id*>(&(*hsp)->GetSeq_id(1)));
-                output.push_back(make_pair(seq_index, id));
-                break;
+                if (output.empty() || !id->Match(*output.back()) ) {
+                    output.push_back(id);
+                }
+                break;  // assumes lower valued scores are listed first
             }
         }
-        seq_index++;
     }
-
-    _ASSERT(seq_index == alignments.Get().size());
 }
 
 void 

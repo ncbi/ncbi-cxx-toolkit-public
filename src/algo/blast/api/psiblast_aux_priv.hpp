@@ -96,12 +96,9 @@ double GetLowestEvalue(const objects::CDense_seg::TScores& scores);
  */
 class CPsiBlastAlignmentProcessor {
 public:
-    /// Typedef to identify an interesting hit in an alignment by its index in
-    /// the CSeq_align_set::Tdata and its actual Seq-id
-    typedef pair<unsigned int, CRef<objects::CSeq_id> > THitId;
-
-    /// Container of THitId
-    typedef vector<THitId> THitIdentifiers;
+    /// Container of Seq-ids for the subject sequences (hits) aligned with the
+    /// query
+    typedef vector< CRef<objects::CSeq_id> > THitIdentifiers;
 
     /// Extract all the THitId which have evalues below the inclusion threshold
     /// @param alignments 
