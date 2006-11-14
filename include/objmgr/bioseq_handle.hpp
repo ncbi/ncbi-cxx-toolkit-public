@@ -304,7 +304,7 @@ public:
     ///  segments.
     ///
     /// @param limit_flag
-    ///  Allow/prohibit resolving far references. By defautl all segments are
+    ///  Allow/prohibit resolving far references. By default all segments are
     ///  resolved. If the flag is set to eFindSegment_LimitTSE, only near
     ///  references are checked.
     bool ContainsSegment(const CSeq_id& id,
@@ -829,6 +829,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2006/11/14 19:22:26  vasilche
+* Fixed typo in comment.
+*
 * Revision 1.87  2006/08/07 15:24:59  vasilche
 * CBioseq_EditHandle(CBioseq_Handle) made public and explicit.
 *
