@@ -119,6 +119,15 @@ int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2)
                      : ((v2 < v1) ? 1 : 0);
 }
 
+int BDB_Uint8Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Uint8 v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(Uint8));
+    ::memcpy(&v2, val2->data, sizeof(Uint8));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
 int BDB_IntCompare(DB* db, const DBT* val1, const DBT* val2)
 {
     return BDB_Int4Compare(db, val1, val2);
@@ -1101,6 +1110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/11/14 16:33:30  ucko
+ * Add forgotten BDB_Uint8Compare implementation.
+ *
  * Revision 1.37  2006/11/14 13:27:13  dicuccio
  * Added additional field types for Uint8, Int1, Uint2.  Clarified nomenclature
  * for BDB comparators - include field width for integral types always.
