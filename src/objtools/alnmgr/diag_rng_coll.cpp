@@ -48,12 +48,12 @@ CDiagRngColl::CDiagRngColl() :
 };
 
 
-void CDiagRngColl::Diff(const TAlnRngColl& substrahend,
-                        TAlnRngColl& difference)
+void CDiagRngColl::Diff(const TAlnRngColl& subtrahend,
+                        TAlnRngColl& difference) const
 {
     if (empty()) {
-        ITERATE (TAlnRngColl, substrahend_it, substrahend) {
-            difference.insert(*substrahend_it);
+        ITERATE (TAlnRngColl, subtrahend_it, subtrahend) {
+            difference.insert(*subtrahend_it);
         }
         return;
     }
@@ -61,8 +61,8 @@ void CDiagRngColl::Diff(const TAlnRngColl& substrahend,
     TAlnRngColl difference_on_first;
     {
         TAlnRngColl::const_iterator minuend_it = begin();
-        ITERATE (TAlnRngColl, substrahend_it, substrahend) {
-            x_Diff(*substrahend_it,
+        ITERATE (TAlnRngColl, subtrahend_it, subtrahend) {
+            x_Diff(*subtrahend_it,
                    difference_on_first,
                    minuend_it);
         }
@@ -75,9 +75,9 @@ void CDiagRngColl::Diff(const TAlnRngColl& substrahend,
         TAlnRngCollExt diff_on_first_ext(difference_on_first);
         diff_on_first_ext.UpdateIndex();
         ITERATE (TAlnRngCollExt,
-                 substrahend_it,
+                 subtrahend_it,
                  diff_on_first_ext) {
-            x_DiffSecond(*(substrahend_it->second),
+            x_DiffSecond(*(subtrahend_it->second),
                          difference,
                          minuend_it);
         }
@@ -87,7 +87,7 @@ void CDiagRngColl::Diff(const TAlnRngColl& substrahend,
 
 void CDiagRngColl::x_Diff(const TAlnRng& rng,
                           TAlnRngColl&   result,
-                          TAlnRngColl::const_iterator& r_it)
+                          TAlnRngColl::const_iterator& r_it) const
 {
     TAlnRngColl::PRangeLess<TAlnRng> p;
 
@@ -143,7 +143,7 @@ void CDiagRngColl::x_Diff(const TAlnRng& rng,
 
 void CDiagRngColl::x_DiffSecond(const TAlnRng& rng,
                                 TAlnRngColl&   result,
-                                TAlnRngCollExt::const_iterator& r_it)
+                                TAlnRngCollExt::const_iterator& r_it) const
 {
     PItLess p;
 
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/11/14 20:36:34  todorov
+* Diff is const.
+*
 * Revision 1.3  2006/11/06 19:56:35  todorov
 * Eliminated basewidths.  Positions are stored in pseudo coords.
 *
