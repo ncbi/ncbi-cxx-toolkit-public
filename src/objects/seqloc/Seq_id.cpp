@@ -660,6 +660,7 @@ static CSeq_id::EAccessionInfo s_IdentifyCxxAcc(const string& acc)
 typedef pair<const char*, CSeq_id::EAccessionInfo> TRefSeqType;
 // used for binary searching; must be in order.
 static const TRefSeqType sc_RefSeqArray[] = {
+    TRefSeqType("AC_", CSeq_id::eAcc_refseq_chromosome),
     TRefSeqType("AP_", CSeq_id::eAcc_refseq_prot),
     TRefSeqType("NC_", CSeq_id::eAcc_refseq_chromosome),
     TRefSeqType("NG_", CSeq_id::eAcc_refseq_genomic),
@@ -1729,6 +1730,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.138  2006/11/14 21:45:37  ucko
+ * Properly recognize RefSeq AC_ (alternate chromosome-class) records.
+ *
  * Revision 6.137  2006/11/14 19:30:50  ucko
  * s_IdentifyCxxAcc: correct the known EMBL protein ID cutoff (slightly) upwards.
  *
