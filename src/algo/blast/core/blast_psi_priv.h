@@ -134,11 +134,57 @@ _PSICopyMatrix_double(double** dest, double** src,
 /****************************************************************************/
 /* Structure declarations */
 
+/** Compact version of the PSIMsaCell structure */
+typedef struct _PSIPackedMsaCell {
+    unsigned char letter:7;     /**< Preferred letter at this position, in
+                                  ncbistdaa encoding */
+    unsigned char is_aligned:1; /**< Is this letter part of the alignment? */
+} _PSIPackedMsaCell;
+
+/** Compact version of PSIMsa structure */
+typedef struct _PSIPackedMsa {
+    PSIMsaDimensions*   dimensions; /**< dimensions of the msa */
+    _PSIPackedMsaCell** data;       /**< actual data, dimensions are 
+                                     (dimensions->num_seqs+1) by
+                                     (dimensions->query_length) */
+    Boolean*            use_sequence;       /**< used to indicate whether a
+                                              sequence should be used for
+                                              further processing by the engine
+                                              (length: num_seqs + 1) */
+}_PSIPackedMsa;
+
+/** Allocates and initializes the compact version of the PSIMsa structure
+ * (makes a deep copy) for internal use by the PSSM engine.
+ * @param msa multiple sequence alignment data structure provided by the user
+ * [in]
+ * @param alphabet_size number of elements in the alphabet that makes up the
+ * aligned characters in the multiple sequence alignment [in]
+ * @return newly allocated structure or NULL in case of memory allocation
+ * failure
+ */
+_PSIPackedMsa*
+_PSIPackedMsaNew(const PSIMsa* msa);
+
+/** Deallocates the _PSIMsa data structure.
+ * @param msa multiple sequence alignment data structure to deallocate [in] 
+ * @return NULL
+ */
+_PSIPackedMsa*
+_PSIPackedMsaFree(_PSIPackedMsa* msa);
+
+/** Retrieve the number of aligned sequences in the compact multiple sequence
+ * alignment
+ * @param msa multiple sequence alignment data structure to deallocate [in] 
+ */
+unsigned int
+_PSIPackedMsaGetNumberOfAlignedSeqs(const _PSIPackedMsa* msa);
+
+
 /** Internal data structure to represent a position in the multiple sequence
  * alignment data structure @sa _PSIMsa */
 typedef struct _PSIMsaCell {
-    Uint1       letter;           /**< Preferred letter at this position */
-    Boolean     is_aligned;       /**< Is this letter part of the alignment? */
+    Uint1       letter:7;         /**< Preferred letter at this position */
+    Boolean     is_aligned:1;     /**< Is this letter part of the alignment? */
     SSeqRange   extents;          /**< Extents of this aligned position */
 } _PSIMsaCell;
 
@@ -148,10 +194,6 @@ typedef struct _PSIMsa {
     _PSIMsaCell**       cell;               /**< multiple sequence alignment
                                               matrix (dimensions: query_length 
                                               x num_seqs + 1) */
-    Boolean*            use_sequence;       /**< used to indicate whether a
-                                              sequence should be used for
-                                              further processing by the engine
-                                              (length: num_seqs + 1) */
     Uint1*              query;              /**< query sequence (length:
                                               query_length) */
     Uint4**             residue_counts;     /**< matrix to keep track of the
@@ -169,15 +211,14 @@ typedef struct _PSIMsa {
 
 /** Allocates and initializes the internal version of the PSIMsa structure
  * (makes a deep copy) for internal use by the PSSM engine.
- * @param msa multiple sequence alignment data structure provided by the user
- * [in]
+ * @param packed_msa compact multiple sequence alignment data structure [in]
  * @param alphabet_size number of elements in the alphabet that makes up the
  * aligned characters in the multiple sequence alignment [in]
  * @return newly allocated structure or NULL in case of memory allocation
  * failure
  */
 _PSIMsa*
-_PSIMsaNew(const PSIMsa* msa, Uint4 alphabet_size);
+_PSIMsaNew(const _PSIPackedMsa* packed_msa, Uint4 alphabet_size);
 
 /** Deallocates the _PSIMsa data structure.
  * @param msa multiple sequence alignment data structure to deallocate [in] 
@@ -318,7 +359,7 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
  * @return PSIERR_BADPARAM if alignment is NULL; PSI_SUCCESS otherwise
  */
 int 
-_PSIPurgeBiasedSegments(_PSIMsa* msa);
+_PSIPurgeBiasedSegments(_PSIPackedMsa* msa);
 
 /** Main validation function for multiple sequence alignment structure. Should
  * be called after _PSIPurgeBiasedSegments.
@@ -461,7 +502,7 @@ _IMPALAScaleMatrix(const Uint1* query, const double* std_probs,
  *          are invalid, PSI_SUCCESS otherwise
  */
 int
-_PSIPurgeAlignedRegion(_PSIMsa* msa,
+_PSIPurgeAlignedRegion(_PSIPackedMsa* msa,
                        unsigned int seq_index,
                        unsigned int start,
                        unsigned int stop);
@@ -475,14 +516,6 @@ _PSIPurgeAlignedRegion(_PSIMsa* msa,
  */
 void
 _PSIUpdatePositionCounts(_PSIMsa* msa);
-
-/** Checks for any positions in sequence seq_index still considered for PSSM 
- * construction. If none is found, the entire sequence is marked as unused.
- * @param msa multiple sequence alignment data  [in|out]
- * @param seq_index index of the sequence of interest [in]
- */
-void
-_PSIDiscardIfUnused(_PSIMsa* msa, unsigned int seq_index);
 
 /** Calculates the length of the sequence without including any 'X' residues.
  * used in kappa.c
@@ -567,8 +600,8 @@ _PSICalculateInformationContentFromFreqRatios(
     Uint4 alphabet_sz);
 
 #ifdef _DEBUG
-void
-__printMsa(const char* filename, const _PSIMsa* msa);
+void PrintMsa(const char* filename, const PSIMsa* msa);
+void __printMsa(const char* filename, const _PSIPackedMsa* msa);
 #endif /* _DEBUG */
 
 /** Enable NCBI structure group customization to discard the query sequence,
@@ -597,6 +630,9 @@ _PSIValidateMSA_StructureGroup(const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2006/11/14 15:37:19  camacho
+ * PSSM engine performance optimizations
+ *
  * Revision 1.30  2006/04/19 19:16:49  camacho
  * Refactoring of structure group customization and addition of validation
  *

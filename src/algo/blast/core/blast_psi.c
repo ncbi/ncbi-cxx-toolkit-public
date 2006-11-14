@@ -47,6 +47,7 @@ static char const rcsid[] =
 /** Convenience function to deallocate data structures allocated in
  * PSICreatePssmWithDiagnostics.
  * @param pssm PSSM and statistical information [in|out]
+ * @param packed_msa compact multiple sequence alignment structure[in]
  * @param msa multiple sequence alignment structure[in]
  * @param aligned_block aligned blocks data structure [in] 
  * @param seq_weights sequence weights data structure [in]
@@ -54,6 +55,7 @@ static char const rcsid[] =
  */
 static void
 s_PSICreatePssmCleanUp(PSIMatrix** pssm,
+                       _PSIPackedMsa* packed_msa,
                        _PSIMsa* msa,
                        _PSIAlignedBlock* aligned_block,
                        _PSISequenceWeights* seq_weights,
@@ -116,14 +118,26 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     _PSIAlignedBlock* aligned_block = NULL;
     _PSISequenceWeights* seq_weights = NULL; 
     _PSIInternalPssmData* internal_pssm = NULL;
+    _PSIPackedMsa* packed_msa = NULL;
     int status = 0;
 
     if ( !msap || !options || !sbp || !pssm ) {
         return PSIERR_BADPARAM;
     }
 
+    packed_msa = _PSIPackedMsaNew(msap);
+
+    /*** Run the engine's stages ***/
+
+    status = _PSIPurgeBiasedSegments(packed_msa);
+    if (status != PSI_SUCCESS) {
+        s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                               seq_weights, internal_pssm);
+        return status;
+    }
+
     /*** Allocate data structures ***/
-    msa = _PSIMsaNew(msap, (Uint4) sbp->alphabet_size);
+    msa = _PSIMsaNew(packed_msa, (Uint4) sbp->alphabet_size);
     aligned_block = _PSIAlignedBlockNew(msa->dimensions->query_length);
     seq_weights = _PSISequenceWeightsNew(msa->dimensions, sbp);
     internal_pssm = _PSIInternalPssmDataNew(msa->dimensions->query_length,
@@ -131,18 +145,11 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     *pssm = PSIMatrixNew(msa->dimensions->query_length, 
                          (Uint4) sbp->alphabet_size);
     if ( !msa || ! aligned_block || !seq_weights || !internal_pssm || !*pssm ) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights,
-                              internal_pssm);
+        s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                               seq_weights, internal_pssm);
         return PSIERR_OUTOFMEM;
     }
-
-    /*** Run the engine's stages ***/
-    status = _PSIPurgeBiasedSegments(msa);
-    if (status != PSI_SUCCESS) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
-                              internal_pssm);
-        return status;
-    }
+    packed_msa = _PSIPackedMsaFree(packed_msa);
 
     /*** Enable structure group customization if needed and validate the
      * multiple sequence alignment data ***/
@@ -153,15 +160,15 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         status = _PSIValidateMSA(msa);
     }
     if (status != PSI_SUCCESS) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights,
-                              internal_pssm);
+        s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                               seq_weights, internal_pssm);
         return status;
     }
 
     status = _PSIComputeAlignmentBlocks(msa, aligned_block);
     if (status != PSI_SUCCESS) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
-                              internal_pssm);
+        s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                               seq_weights, internal_pssm);
         return status;
     }
 
@@ -169,16 +176,16 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
                                         options->nsg_compatibility_mode,
                                         seq_weights);
     if (status != PSI_SUCCESS) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
-                              internal_pssm);
+        s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                               seq_weights, internal_pssm);
         return status;
     }
 
     status = _PSIComputeFreqRatios(msa, seq_weights, sbp, aligned_block, 
                                    options->pseudo_count, internal_pssm);
     if (status != PSI_SUCCESS) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
-                              internal_pssm);
+        s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                               seq_weights, internal_pssm);
         return status;
     }
 
@@ -186,8 +193,8 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         (internal_pssm, msa->query, msa->dimensions->query_length, 
          seq_weights->std_prob, sbp, options->impala_scaling_factor);
     if (status != PSI_SUCCESS) {
-        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
-                              internal_pssm);
+        s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                               seq_weights, internal_pssm);
         return status;
     }
     /*** Save the pssm outgoing parameter ***/
@@ -202,20 +209,20 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         if ( !*diagnostics ) {
             /* FIXME: This could be changed to return a warning and not
              * deallocate PSSM data */
-            s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
-                                  internal_pssm);
+            s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                                   seq_weights, internal_pssm);
             return PSIERR_OUTOFMEM;
         }
         status = _PSISaveDiagnostics(msa, aligned_block, seq_weights, 
                                      internal_pssm, *diagnostics);
         if (status != PSI_SUCCESS) {
             *diagnostics = PSIDiagnosticsResponseFree(*diagnostics);
-            s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights,
-                                  internal_pssm);
+            s_PSICreatePssmCleanUp(pssm, packed_msa, msa, aligned_block, 
+                                   seq_weights, internal_pssm);
             return status;
         }
     }
-    s_PSICreatePssmCleanUp(NULL, msa, aligned_block, seq_weights, 
+    s_PSICreatePssmCleanUp(NULL, packed_msa, msa, aligned_block, seq_weights, 
                            internal_pssm);
 
     return PSI_SUCCESS;
@@ -320,14 +327,16 @@ _PSICreateAndScalePssmFromFrequencyRatios(_PSIInternalPssmData* internal_pssm,
 
 static void
 s_PSICreatePssmCleanUp(PSIMatrix** pssm,
-                      _PSIMsa* msa,
-                      _PSIAlignedBlock* aligned_block,
-                      _PSISequenceWeights* seq_weights,
-                      _PSIInternalPssmData* internal_pssm)
+                       _PSIPackedMsa* packed_msa,
+                       _PSIMsa* msa,
+                       _PSIAlignedBlock* aligned_block,
+                       _PSISequenceWeights* seq_weights,
+                       _PSIInternalPssmData* internal_pssm)
 {
     if (pssm) {
         *pssm = PSIMatrixFree(*pssm);
     }
+    _PSIPackedMsaFree(packed_msa);
     _PSIMsaFree(msa);
     _PSIAlignedBlockFree(aligned_block);
     _PSISequenceWeightsFree(seq_weights);
@@ -387,8 +396,7 @@ PSIMsaNew(const PSIMsaDimensions* dimensions)
 
         for (s = 0; s < dimensions->num_seqs + 1; s++) {
             for (p = 0; p < dimensions->query_length; p++) {
-                /* FIXME: change to 0 when old code is dropped */
-                retval->data[s][p].letter = (Uint1) -1;
+                retval->data[s][p].letter = 0;
                 retval->data[s][p].is_aligned = FALSE;
             }
         }
