@@ -256,6 +256,9 @@ void CDemoApp::Init(void)
                             "Subtype of features to select",
                             CArgDescriptions::eInteger,
                             NStr::IntToString(CSeqFeatData::eSubtype_any));
+    arg_desc->AddOptionalKey("feat_id", "FeatId",
+                             "Feat-id of features to search",
+                             CArgDescriptions::eInteger);
     arg_desc->AddFlag("used_memory_check", "exit(0) after loading sequence");
     arg_desc->AddFlag("reset_scope", "reset scope before exiting");
     arg_desc->AddFlag("modify", "try to modify Bioseq object");
@@ -829,6 +832,44 @@ int CDemoApp::Run(void)
                                                      CSeq_loc_Mapper::eSeqMap_Up));
                 }
             }
+            if ( args["feat_id"] ) {
+                int feat_id = args["feat_id"].AsInteger();
+                vector<CSeq_feat_Handle> feats;
+                CTSE_Handle tse = handle.GetTSE_Handle();
+                for ( int t = 0; t < 4; ++t ) {
+                    switch ( t ) {
+                    case 0:
+                        NcbiCout << "Features with id "
+                                 << feat_id << " +type:";
+                        feats = tse.GetFeaturesWithId(feat_type, feat_id);
+                        break;
+                    case 1:
+                        NcbiCout << "Features with id "
+                                 << feat_id << " +subtype:";
+                        feats = tse.GetFeaturesWithId(feat_subtype, feat_id);
+                        break;
+                    case 2:
+                        NcbiCout << "Features with xref "
+                                 << feat_id << " +type:";
+                        feats = tse.GetFeaturesWithXref(feat_type, feat_id);
+                        break;
+                    case 3:
+                        NcbiCout << "Features with xref "
+                                 << feat_id << " +subtype:";
+                        feats = tse.GetFeaturesWithXref(feat_subtype, feat_id);
+                        break;
+                    }
+                    if ( print_features ) {
+                        NcbiCout << "\n";
+                        ITERATE ( vector<CSeq_feat_Handle>, it, feats ) {
+                            NcbiCout << MSerial_AsnText << *it->GetSeq_feat();
+                        }
+                    }
+                    else {
+                        NcbiCout << " " << feats.size() << NcbiEndl;
+                    }
+                }
+            }
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 if ( count_types ) {
                     ++types_counts[it->GetFeatType()];
@@ -876,6 +917,64 @@ int CDemoApp::Run(void)
                             MSerial_AsnText << it->GetLocation();
                     }
                 }
+
+                if ( it->GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA &&
+                     it->IsSetProduct() ) {
+                    using namespace sequence;
+                    handle.GetEditHandle();
+                    CSeq_id_Handle prod_idh =
+                        GetIdHandle(it->GetProduct(), NULL);
+                    NcbiCout << "mRNA product: " << prod_idh.AsString()
+                             << NcbiEndl;
+                    CBioseq_Handle bsh =
+                        scope.GetBioseqHandleFromTSE(prod_idh, handle);
+                    if ( bsh ) {
+                        NcbiCout << "GetBestXxxForMrna: "
+                                 << MSerial_AsnText
+                                 << it->GetOriginalFeature()
+                                 << NcbiEndl;
+                        
+                        CConstRef<CSeq_feat> gene =
+                            GetBestGeneForMrna(it->GetOriginalFeature(),
+                                               scope);
+                        NcbiCout << "GetBestGeneForMrna: ";
+                        if ( gene ) {
+                            NcbiCout << MSerial_AsnText << *gene;
+                        }
+                        else {
+                            NcbiCout << "null";
+                        }
+                        NcbiCout << NcbiEndl;
+                        CConstRef<CSeq_feat> cds =
+                            GetBestCdsForMrna(it->GetOriginalFeature(),
+                                              scope);
+                        NcbiCout << "GetBestCdsForMrna: ";
+                        if ( cds ) {
+                            NcbiCout << MSerial_AsnText << *cds;
+                        }
+                        else {
+                            NcbiCout << "null";
+                        }
+                        NcbiCout << NcbiEndl;
+                    }
+                }
+                if ( 0 && it->IsSetXref() ) {
+                    ITERATE ( CSeq_feat::TXref, xit, it->GetXref() ) {
+                        const CSeqFeatXref& xref = **xit;
+                        if ( !xref.IsSetId() )
+                            continue;
+                        int id = xref.GetId().GetLocal().GetId();
+                        NcbiCout << " xref: " << id << NcbiEndl;
+                        CTSE_Handle tse = it->GetAnnot().GetTSE_Handle();
+                        vector<CSeq_feat_Handle> ff =
+                            tse.GetFeaturesWithId(CSeqFeatData::e_not_set, id);
+                        ITERATE ( vector<CSeq_feat_Handle>, it, ff ) {
+                            NcbiCout << MSerial_AsnText
+                                     << *it->GetSeq_feat() << NcbiEndl;
+                        }
+                    }
+                }
+
                 CSeq_annot_Handle annot = it.GetAnnot();
                 /*
                   const CSeq_id* mapped_id = 0;
@@ -1191,6 +1290,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.115  2006/11/14 19:26:00  vasilche
+* Added option for feature retrieval by Feat-id.
+*
 * Revision 1.114  2006/10/24 18:28:05  didenko
 * Moved to the new LDS manager interface
 *
