@@ -526,6 +526,137 @@ static CSeq_id::EAccessionInfo s_IdentifyNAcc(const string& acc)
 }
 
 
+// CXXnnnnn accessions are theoretically all for EMBL's own protein
+// records, but third-party annotations are interspersed (albeit often
+// several in a row). :-/
+
+typedef pair<const char*, const char*> TTpeRange;
+#define SingleTPE(x) TTpeRange(x, x)
+static const TTpeRange sc_TpeRanges[] = {
+    // Listed as (last, first) because lower_bound() rounds up(!) on misses.
+    TTpeRange("CAD29879", "CAD29848"), // subsuming quite a few unassigned IDs
+    SingleTPE("CAD43606"),
+    SingleTPE("CAD44269"),
+    SingleTPE("CAD55807"),
+    SingleTPE("CAD56854"),
+    SingleTPE("CAD59554"),
+    TTpeRange("CAD59975", "CAD59973"),
+    SingleTPE("CAD62250"),
+    TTpeRange("CAD62385", "CAD62384"),
+    TTpeRange("CAD65875", "CAD65874"),
+    TTpeRange("CAD66057", "CAD66056"),
+    SingleTPE("CAD66176"),
+    TTpeRange("CAD66453", "CAD66451"),
+    SingleTPE("CAD66657"),
+    TTpeRange("CAD67553", "CAD67552"),
+    TTpeRange("CAD67579", "CAD67575"),
+    SingleTPE("CAD67582"),
+    TTpeRange("CAD67593", "CAD67592"),
+    SingleTPE("CAD67595"),
+    TTpeRange("CAD67964", "CAD67963"),
+    SingleTPE("CAD67985"),
+    TTpeRange("CAD68171", "CAD68170"),
+    SingleTPE("CAD71139"),
+    TTpeRange("CAD80157", "CAD80155"),
+    TTpeRange("CAD80169", "CAD80167"), // '68 unassigned
+    SingleTPE("CAD80243"),
+    TTpeRange("CAD88273", "CAD88272"),
+    TTpeRange("CAD89268", "CAD89265"),
+    SingleTPE("CAD89361"),
+    SingleTPE("CAD89763"),
+    TTpeRange("CAD89875", "CAD89874"),
+    SingleTPE("CAD91637"),
+    TTpeRange("CAD91911", "CAD91909"),
+    SingleTPE("CAD92036"),
+    SingleTPE("CAD98145"),
+    TTpeRange("CAE00414", "CAE00378"),
+    SingleTPE("CAE00502"),
+    TTpeRange("CAE12276", "CAE12270"),
+    SingleTPE("CAE18110"),
+    SingleTPE("CAE30337"),
+    SingleTPE("CAE30362"),
+    TTpeRange("CAE30476", "CAE30475"),
+    TTpeRange("CAE30502", "CAE30490"),
+    SingleTPE("CAE45343"),
+    SingleTPE("CAE47417"),
+    TTpeRange("CAE48363", "CAE48362"),
+    TTpeRange("CAE48393", "CAE48373"),
+    TTpeRange("CAE48396", "CAE48395"),
+    TTpeRange("CAE51417", "CAE51393"),
+    SingleTPE("CAE51851"),
+    TTpeRange("CAE51856", "CAE51855"),
+    TTpeRange("CAE51916", "CAE51895"),
+    TTpeRange("CAE52320", "CAE52317"),
+    TTpeRange("CAE54352", "CAE54311"),
+    SingleTPE("CAE54495"),
+    TTpeRange("CAE75631", "CAE75602"),
+    SingleTPE("CAE75743"),
+    TTpeRange("CAE82299", "CAE82298"),
+    TTpeRange("CAF06530", "CAF06526"),
+    SingleTPE("CAF18402"),
+    TTpeRange("CAF21739", "CAF21736"),
+    SingleTPE("CAF32458"),
+    SingleTPE("CAG23871"),
+    TTpeRange("CAG26664", "CAG26661"),
+    SingleTPE("CAG26750"),
+    TTpeRange("CAG29030", "CAG29023"),
+    SingleTPE("CAG29113"),
+    SingleTPE("CAG30664"),
+    SingleTPE("CAG33760"),
+    TTpeRange("CAG34296", "CAG34288"),
+    TTpeRange("CAH03727", "CAH03726"),
+    TTpeRange("CAH17841", "CAH17840"),
+    TTpeRange("CAH18926", "CAH18925"),
+    SingleTPE("CAH56764"),
+    TTpeRange("CAH59194", "CAH59193"),
+    TTpeRange("CAH69380", "CAH69244"),
+    SingleTPE("CAH74220"),
+    SingleTPE("CAH74225"),
+    TTpeRange("CAH89263", "CAH89261"),
+    TTpeRange("CAI56335", "CAI56319"),
+    TTpeRange("CAI61347", "CAI61342"),
+    TTpeRange("CAI77245", "CAI77244"),
+    SingleTPE("CAI77247"),
+    TTpeRange("CAI85013", "CAI84981"),
+    TTpeRange("CAI99163", "CAI99158"),
+    SingleTPE("CAI99872"),
+    TTpeRange("CAJ00252", "CAJ00225"),
+    TTpeRange("CAJ13825", "CAJ13823"),
+    TTpeRange("CAJ29302", "CAJ29301"),
+    SingleTPE("CAJ30479"),
+    TTpeRange("CAJ30484", "CAJ30481"),
+    SingleTPE("CAJ31324"),
+    SingleTPE("CAJ33891"),
+    SingleTPE("CAJ55345"),
+    TTpeRange("CAJ55733", "CAJ55730"),
+    TTpeRange("CAJ55747", "CAJ55745"),
+    TTpeRange("CAJ55784", "CAJ55783"),
+    TTpeRange("CAJ55825", "CAJ55824"),
+    TTpeRange("CAJ57446", "CAJ57445"),
+    TTpeRange("CAJ70649", "CAJ70647"),
+    TTpeRange("CAJ77886", "CAJ77880"),
+    SingleTPE("CAK26553"),
+    SingleTPE("CAK32514")
+};
+typedef CStaticArrayMap<const char*, const char*, PNocase_CStr> TTpeRangeMap;
+static const TTpeRangeMap sc_TpeRangeMap(sc_TpeRanges, sizeof(sc_TpeRanges));
+
+static CSeq_id::EAccessionInfo s_IdentifyCxxAcc(const string& acc)
+{
+    if (acc > "CAL69140") { // make no assumptions about as yet unassigned IDs
+        return CSeq_id::eAcc_unreserved_prot;
+    } else {
+        TTpeRangeMap::const_iterator it
+            = sc_TpeRangeMap.lower_bound(acc.c_str());
+        if (it != sc_TpeRangeMap.end()  &&  it->second <= acc) {
+            return CSeq_id::eAcc_embl_tpa_prot;
+        } else {
+            return CSeq_id::eAcc_embl_prot;
+        }
+    }
+}
+
+
 typedef pair<const char*, CSeq_id::EAccessionInfo> TRefSeqType;
 // used for binary searching; must be in order.
 static const TRefSeqType sc_RefSeqArray[] = {
@@ -734,7 +865,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'A': return (pfx == "AAE") ? eAcc_gb_patent_prot
                           : eAcc_gb_prot;
             case 'B': return eAcc_ddbj_prot;
-            case 'C': return eAcc_embl_prot;
+                // not necessarily "true" EMBL (may be TPE) :-/
+            case 'C': return s_IdentifyCxxAcc(acc.substr(0, main_size));
             case 'D': return eAcc_gb_tpa_prot;
             case 'E': return eAcc_gb_wgs_prot;
             case 'F': return eAcc_ddbj_tpa_prot;
@@ -1597,6 +1729,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.136  2006/11/14 19:13:38  ucko
+ * Cope (somewhat painfully) with EMBL's policy of mixing some TPA
+ * proteins into their namespace.
+ *
  * Revision 6.135  2006/11/03 19:14:40  ucko
  * IdentifyAccession: EH -> eAcc_gb_est.
  *
