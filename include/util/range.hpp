@@ -346,6 +346,12 @@ typedef CRange<TSignedSeqPos> TSignedSeqRange;
 
 /* @} */
 
+template<class Position>
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const COpenRange<Position>& range)
+{
+    return out << range.GetFrom() << ".." << range.GetTo();
+}
 
 //#include <util/range.inl>
 
@@ -354,6 +360,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/11/14 19:12:37  vasilche
+* Added iostream printing function.
+*
 * Revision 1.17  2004/04/20 19:13:33  jcherry
 * Made TParent typedef public
 *
