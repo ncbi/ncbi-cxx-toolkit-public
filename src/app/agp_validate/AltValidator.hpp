@@ -41,6 +41,12 @@ BEGIN_NCBI_SCOPE
 class CAltValidator
 {
 public:
+  bool m_check_len_taxid;
+  CAltValidator(bool check_len_taxid)
+  {
+    m_check_len_taxid=check_len_taxid;
+  }
+
   bool m_SpeciesLevelTaxonCheck;
 
   // The next few structures are used to keep track
@@ -70,7 +76,12 @@ public:
   void CheckTaxids();
   void PrintTotals();
 
+  static int ValidateAccession( const string& acc );
+  static void ValidateLength(const string& comp_id, int comp_end, int comp_len);
+
   void x_AddToTaxidMap(int taxid, const string& comp_id, int line_num);
+
+  // searches m_TaxidSpeciesMap first, calls x_GetTaxonSpecies() if necessary
   int x_GetSpecies(int taxid);
   int x_GetTaxonSpecies(int taxid);
 
@@ -80,9 +91,20 @@ public:
     string comp_id;
     int line_num;
     int comp_end;
+
+    CNcbiOstrstream* messages;
+    int gi;
+
+    SLineData()
+    {
+      messages=NULL;
+      gi=0;
+    }
   };
 
-  vector<SLineData> lineQueue;
+  typedef vector<SLineData> TLineQueue;
+  TLineQueue lineQueue;
+
   void QueueLine(
     const string& orig_line, const string& comp_id,
     int line_num, int comp_end);

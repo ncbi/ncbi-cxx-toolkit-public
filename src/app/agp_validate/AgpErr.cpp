@@ -101,7 +101,9 @@ const CAgpErr::TStr CAgpErr::msg[]= {
   "component_id not in GenBank",
   "component_id X is ambiguous without an explicit version",
   "component_end greater than sequence length",
-  "taxonomic data is invalid or unavailable",
+  "sequence data is invalid or unavailable",
+
+  "taxonomic data is not available",
 
   kEmptyCStr  // G_Last
 

@@ -27,8 +27,8 @@
  *      Lou Friedman, Victor Sapojnikov
  *
  * File Description:
- *      Validate AGP data. A command line option to chose either syntactic
- *      or GenBank validation. Syntactic validation uses only the information
+ *      Validate AGP data. A command line option to chose either context
+ *      or GenBank validation. Context validation uses only the information
  *      in the AGP file. GenBank validation queries sequence length and taxid
  *      via ObjectManager or CEntrez2Client.
  *
@@ -99,8 +99,8 @@ public:
     "OPTIONS:\n"
     "  -alt      Check component Accessions, Lengths and Taxids using GenBank data.\n"
     "            This can be very time-consuming, and is done separately from most other checks.\n"
-    /*
     "  -a        Check component Accessions (but not lengths or taxids); faster than \"-alt\".\n"
+    /*
     "  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
     */
     "  -species  Allow components from different subspecies during Taxid checks.\n"
@@ -135,8 +135,8 @@ void CAgpValidateApplication::Init(void)
 
   // component_id  checks that involve GenBank: Accession Length Taxid
   arg_desc->AddFlag("alt", "");
-  arg_desc->AddFlag("al" , "");
-  arg_desc->AddFlag("at" , "");
+  //arg_desc->AddFlag("al" , "");
+  //arg_desc->AddFlag("at" , "");
   arg_desc->AddFlag("a" , "");
 
   arg_desc->AddFlag("species", "allow components from different subspecies");
@@ -185,8 +185,8 @@ int CAgpValidateApplication::Run(void)
   /*
   else if( args["al" ].HasValue() ) m_ValidationType = VT_AccLen;
   else if( args["at" ].HasValue() ) m_ValidationType = VT_AccTaxid;
-  else if( args["a"  ].HasValue() ) m_ValidationType = VT_Acc;
   */
+  else if( args["a"  ].HasValue() ) m_ValidationType = VT_Acc;
   else {
     m_ValidationType = VT_Context;
     m_ContextValidator = new CAgpContextValidator();
@@ -195,7 +195,7 @@ int CAgpValidateApplication::Run(void)
     //// Setup registry, error log, MT-lock for CONNECT library
     CONNECT_Init(&GetConfig());
 
-    m_AltValidator= new CAltValidator();
+    m_AltValidator= new CAltValidator(m_ValidationType==VT_AccLenTaxid);
     m_AltValidator->Init();
     if( args["species"].HasValue() )
     {
@@ -434,7 +434,7 @@ void CAgpValidateApplication::x_ValidateFile(
     }
 
   NextLine:
-    if( (m_ValidationType & VT_Acc) && (!valid || m_AltValidator->QueueSize() >= 50) ) {
+    if( (m_ValidationType & VT_Acc) && (!valid || m_AltValidator->QueueSize() >= 150) ) {
       // !valid: process the batch now so that error lines are printed in the correct order.
       CNcbiOstrstream* tmp_messages = agpErr.m_messages;
       agpErr.m_messages =  new CNcbiOstrstream();

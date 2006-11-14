@@ -131,6 +131,8 @@ public:
     G_NotInGenbank,
     G_NeedVersion,
     G_CompEndGtLength,
+    G_DataError,
+
     G_TaxError,
 
     G_Last,
