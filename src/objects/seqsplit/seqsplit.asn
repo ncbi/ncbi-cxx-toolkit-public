@@ -1,4 +1,4 @@
---$Revision: 1.8 $
+--$Revision: 1.9 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -79,7 +79,10 @@ ID2S-Chunk-Content ::= CHOICE {
         seq-annot-place ID2S-Seq-annot-place-Info,
 
         -- place of Bioseqs
-        bioseq-place    SET OF ID2S-Bioseq-place-Info
+        bioseq-place    SET OF ID2S-Bioseq-place-Info,
+
+        -- ids of features
+        feat-ids        SET OF ID2S-Seq-feat-Ids-Info
 }
 
 
@@ -97,9 +100,7 @@ ID2S-Seq-annot-Info ::= SEQUENCE {
         align           NULL OPTIONAL,
         graph           NULL OPTIONAL,
         feat            SET OF ID2S-Feat-type-Info OPTIONAL,
-        seq-loc         ID2S-Seq-loc OPTIONAL,
-        feat-ids        SET OF INTEGER OPTIONAL,
-        xref-feat-ids   SET OF INTEGER OPTIONAL
+        seq-loc         ID2S-Seq-loc OPTIONAL
 }
 
 
@@ -107,6 +108,13 @@ ID2S-Seq-annot-place-Info ::= SEQUENCE {
         name            VisibleString OPTIONAL,
         bioseqs         ID2S-Bioseq-Ids OPTIONAL,
         bioseq-sets     ID2S-Bioseq-set-Ids OPTIONAL
+}
+
+
+ID2S-Seq-feat-Ids-Info ::= SEQUENCE {
+        feat-types      SET OF ID2S-Feat-type-Info OPTIONAL,
+        xref-types      SET OF ID2S-Feat-type-Info OPTIONAL,
+        local-ids       SET OF INTEGER OPTIONAL
 }
 
 

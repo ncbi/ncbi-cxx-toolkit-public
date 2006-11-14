@@ -17,3 +17,6 @@ length._type = TSeqPos
 [ID2S-Interval]
 start._type = TSeqPos
 length._type = TSeqPos
+
+[ID2S-Seq-feat-Ids-Info]
+local-ids._type = vector
