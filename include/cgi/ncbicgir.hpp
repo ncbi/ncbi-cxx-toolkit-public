@@ -176,12 +176,15 @@ protected:
     CCgiCookies    m_Cookies;       // Cookies
     CNcbiOstream*  m_Output;        // Default output stream
     int            m_OutputFD;      // Output file descriptor, if available.
+    CNcbiOstream::iostate m_OutputExpt; // Original output exceptions
 
     // Prohibit copy constructor and assignment operator
     CCgiResponse(const CCgiResponse&);
     CCgiResponse& operator= (const CCgiResponse&);
 
 private:
+    void x_RestoreOutputExceptions(void);
+
     const CCgiSession*   m_Session;
     auto_ptr<CCgiCookie> m_TrackingCookie;
 
@@ -294,6 +297,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2006/11/14 15:31:03  grichenk
+ * Restore output stream exceptions (fix for MIPS bug).
+ *
  * Revision 1.23  2006/10/18 18:33:01  vakatov
  * Allow to throw an exception in case the output becomes bad or closed
  * ([CGI.ThrowOnBadOutput] parameter)

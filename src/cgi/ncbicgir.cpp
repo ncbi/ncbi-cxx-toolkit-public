@@ -90,7 +90,7 @@ CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
 
 CCgiResponse::~CCgiResponse(void)
 {
-    return;
+    x_RestoreOutputExceptions();
 }
 
 
@@ -170,13 +170,24 @@ void CCgiResponse::SetStatus(unsigned int code, const string& reason)
 }
 
 
+void CCgiResponse::x_RestoreOutputExceptions(void)
+{
+    if (m_Output  &&  m_ThrowOnBadOutput.Get()) {
+        m_Output->exceptions(m_OutputExpt);
+    }
+}
+
+
 void CCgiResponse::SetOutput(CNcbiOstream* out, int fd)
 {
+    x_RestoreOutputExceptions();
+
     m_Output   = out;
     m_OutputFD = fd;
 
     // Make the output stream to throw on write if it's in a bad state
     if (m_Output  &&  m_ThrowOnBadOutput.Get()) {
+        m_OutputExpt = m_Output->exceptions();
         m_Output->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     }
 }
@@ -356,6 +367,7 @@ void CCgiResponse::SetThrowOnBadOutput(bool throw_on_bad_output)
 {
     m_ThrowOnBadOutput.Set(throw_on_bad_output);
     if (m_Output  &&  throw_on_bad_output) {
+        m_OutputExpt = m_Output->exceptions();
         m_Output->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     }
 }
@@ -367,6 +379,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.30  2006/11/14 15:31:03  grichenk
+* Restore output stream exceptions (fix for MIPS bug).
+*
 * Revision 1.29  2006/11/07 19:19:56  vakatov
 * By default, throw an exception if the output CGI stream goes bad
 *
