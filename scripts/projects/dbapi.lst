@@ -8,3 +8,4 @@ util/unicode_plans$
 connect$
 connect/ext$
 dbapi
+misc
