@@ -173,9 +173,6 @@ private:
     PSIDiagnosticsRequest*          m_DiagnosticsRequest;
     /// Underlying matrix to use
     string                          m_MatrixName;
-    /// Helps to keep track of the hits to process because they meet the
-    /// inclusion e-value threshold criteria
-    std::vector<Uint1>              m_ProcessHit;
 
     /////////////////////////// Auxiliary functions ///////////////////////////
 
@@ -234,6 +231,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/11/14 15:19:43  camacho
+ * m_ProcessHit no longer needed
+ *
  * Revision 1.14  2006/03/28 19:57:31  camacho
  * Doxygen fixes
  *
