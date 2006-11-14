@@ -1513,6 +1513,8 @@ void CProcessor_ID2::x_ReadData(const CID2_Reply_Data& data,
                    "CId2Reader::x_ReadData(): unknown data type");
     }
     SetSeqEntryReadHooks(*in);
+    in->SetSkipUnknownMembers(eSerialSkipUnknown_Yes);
+    in->SetSkipUnknownVariants(eSerialSkipUnknown_Yes);
     in->Read(object);
     data_size += in->GetStreamPos();
 }
