@@ -96,11 +96,16 @@ extern "C"
 //  BDB comparison functions
 //
 
-int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2)
+int BDB_UintCompare(DB* db, const DBT* val1, const DBT* val2)
 {
-    unsigned int v1, v2;
-    ::memcpy(&v1, val1->data, sizeof(unsigned));
-    ::memcpy(&v2, val2->data, sizeof(unsigned));
+    return BDB_Uint4Compare(db, val1, val2);
+}
+
+int BDB_Uint4Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Uint4 v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(Uint4));
+    ::memcpy(&v2, val2->data, sizeof(Uint4));
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -114,11 +119,16 @@ int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2)
                      : ((v2 < v1) ? 1 : 0);
 }
 
-int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2)
+int BDB_IntCompare(DB* db, const DBT* val1, const DBT* val2)
 {
-    int v1, v2;
-    ::memcpy(&v1, val1->data, sizeof(int));
-    ::memcpy(&v2, val2->data, sizeof(int));
+    return BDB_Int4Compare(db, val1, val2);
+}
+
+int BDB_Int4Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Int4 v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(Int4));
+    ::memcpy(&v2, val2->data, sizeof(Int4));
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -128,6 +138,24 @@ int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2)
     Int2 v1, v2;
     ::memcpy(&v1, val1->data, sizeof(Int2));
     ::memcpy(&v2, val2->data, sizeof(Int2));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_Uint2Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Uint2 v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(Uint2));
+    ::memcpy(&v2, val2->data, sizeof(Uint2));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_CharCompare(DB*, const DBT* val1, const DBT* val2)
+{
+    const char& v1=*static_cast<char*>(val1->data);
+    const char& v2=*static_cast<char*>(val2->data);
+
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -230,7 +258,12 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
 
 
 
-int BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2)
+int BDB_ByteSwap_UintCompare(DB* db, const DBT* val1, const DBT* val2)
+{
+    return BDB_ByteSwap_Uint4Compare(db, val1, val2);
+}
+
+int BDB_ByteSwap_Uint4Compare(DB*, const DBT* val1, const DBT* val2)
 {
     unsigned int v1, v2;
     v1 = (unsigned int) CByteSwap::GetInt4((unsigned char*)val1->data);
@@ -248,7 +281,21 @@ int BDB_ByteSwap_Int8Compare(DB*, const DBT* val1, const DBT* val2)
                      : ((v2 < v1) ? 1 : 0);
 }
 
-int BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2)
+int BDB_ByteSwap_Uint8Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Uint8 v1, v2;
+    v1 = CByteSwap::GetInt8((unsigned char*)val1->data);
+    v2 = CByteSwap::GetInt8((unsigned char*)val2->data);
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_ByteSwap_IntCompare(DB* db, const DBT* val1, const DBT* val2)
+{
+    return BDB_ByteSwap_Int4Compare(db, val1, val2);
+}
+
+int BDB_ByteSwap_Int4Compare(DB*, const DBT* val1, const DBT* val2)
 {
     int v1, v2;
     v1 = CByteSwap::GetInt4((unsigned char*)val1->data);
@@ -260,6 +307,15 @@ int BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2)
 int BDB_ByteSwap_Int2Compare(DB*, const DBT* val1, const DBT* val2)
 {
     Int2 v1, v2;
+    v1 = CByteSwap::GetInt2((unsigned char*)val1->data);
+    v2 = CByteSwap::GetInt2((unsigned char*)val2->data);
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_ByteSwap_Uint2Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Uint2 v1, v2;
     v1 = CByteSwap::GetInt2((unsigned char*)val1->data);
     v2 = CByteSwap::GetInt2((unsigned char*)val2->data);
     return (v1 < v2) ? -1
@@ -1045,6 +1101,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/11/14 13:27:13  dicuccio
+ * Added additional field types for Uint8, Int1, Uint2.  Clarified nomenclature
+ * for BDB comparators - include field width for integral types always.
+ *
  * Revision 1.36  2006/10/19 19:15:11  dicuccio
  * FIx _ASSERT() in CopyPackedFrom(): comparison should be <=, not <
  *

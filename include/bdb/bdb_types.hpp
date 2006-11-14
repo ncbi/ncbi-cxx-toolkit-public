@@ -69,20 +69,35 @@ extern "C" {
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "unsigned int" keys
+NCBI_DEPRECATED
 NCBI_BDB_EXPORT int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_Uint4Compare(DB*, const DBT* val1, const DBT* val2);
 
+/// Simple and fast comparison function for tables with 
+/// non-segmented "int" keys
+NCBI_DEPRECATED
+NCBI_BDB_EXPORT int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int BDB_Int4Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "Int8" keys
 NCBI_BDB_EXPORT int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
-/// non-segmented "int" keys
-NCBI_BDB_EXPORT int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
+/// non-segmented "Uint8" keys
+NCBI_BDB_EXPORT int BDB_Uint8Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "short int" keys
 NCBI_BDB_EXPORT int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2);
+
+/// Simple and fast comparison function for tables with 
+/// non-segmented "unsigned short int" keys
+NCBI_BDB_EXPORT int BDB_Uint2Compare(DB*, const DBT* val1, const DBT* val2);
+
+/// Simple and fast comparison function for tables with 
+/// non-segmented "char" keys
+NCBI_BDB_EXPORT int BDB_CharCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "unsigned char" keys
@@ -117,9 +132,11 @@ int NCBI_BDB_EXPORT BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
 /// Simple and fast comparison function for tables with 
 /// non-segmented "unsigned int" keys.
 /// Used when the data file is in a different byte order architecture.
+NCBI_DEPRECATED
 NCBI_BDB_EXPORT int
 BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2);
-
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_Uint4Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "Int8" keys
@@ -128,16 +145,31 @@ NCBI_BDB_EXPORT int
 BDB_ByteSwap_Int8Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
-/// non-segmented "int" keys
+/// non-segmented "Uint8" keys
 /// Used when the data file is in a different byte order architecture.
 NCBI_BDB_EXPORT int
+BDB_ByteSwap_Uint8Compare(DB*, const DBT* val1, const DBT* val2);
+
+/// Simple and fast comparison function for tables with 
+/// non-segmented "int" keys
+/// Used when the data file is in a different byte order architecture.
+NCBI_DEPRECATED
+NCBI_BDB_EXPORT int
 BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2);
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_Int4Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "short int" keys
 /// Used when the data file is in a different byte order architecture.
 NCBI_BDB_EXPORT int
 BDB_ByteSwap_Int2Compare(DB*, const DBT* val1, const DBT* val2);
+
+/// Simple and fast comparison function for tables with 
+/// non-segmented "unsigned short int" keys
+/// Used when the data file is in a different byte order architecture.
+NCBI_BDB_EXPORT int
+BDB_ByteSwap_Uint2Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "float" keys
@@ -619,6 +651,85 @@ public:
 };
 
 
+///  Uint8 field type
+///
+
+class NCBI_BDB_EXPORT CBDB_FieldUint8 : public CBDB_FieldSimpleInt<Uint8>
+{
+public:
+    const CBDB_FieldUint8& operator= (Uint8 val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    const CBDB_FieldUint8& operator= (const CBDB_FieldUint8& val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    virtual CBDB_Field* Construct(size_t /*buf_size*/) const
+    {
+        return new CBDB_FieldUint8();
+    }
+
+    Uint8 Get() const
+    {
+        Uint8  v;
+
+		_ASSERT(!IsNull());
+		
+        if (IsByteSwapped()) {
+            v = CByteSwap::GetInt8((unsigned char*)GetBuffer());
+        } else {
+            ::memcpy(&v, GetBuffer(), sizeof(Uint8));
+        }
+        return v;
+    }
+
+    virtual string GetString() const
+    {
+        Uint8  v = Get();
+        return NStr::UInt8ToString(v);
+    }
+
+    virtual void ToString(string& str) const
+    {
+        Uint8 v = Get();
+        NStr::UInt8ToString(str, v);
+    }
+
+    operator Uint8() const 
+    { 
+        return Get(); 
+    }
+
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
+    {
+        if (byte_swapped)
+            return BDB_ByteSwap_Uint8Compare;
+        return BDB_Uint8Compare;
+    } 
+
+    virtual int Compare(const void* p1, 
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimpleInt<Uint8>::Compare(p1, p2, byte_swapped);
+
+        Uint8 v1, v2;
+        v1 = CByteSwap::GetInt8((unsigned char*)p1);
+        v2 = CByteSwap::GetInt8((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
+
+};
+
+
 ///  Int4 field type
 ///
 
@@ -676,8 +787,8 @@ public:
     virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
     {
         if (byte_swapped)
-            return BDB_ByteSwap_IntCompare;
-        return BDB_IntCompare;
+            return BDB_ByteSwap_Int4Compare;
+        return BDB_Int4Compare;
     } 
 
     virtual int Compare(const void* p1, 
@@ -776,10 +887,89 @@ public:
 
 };
 
+
+/// Uint2 field type
+///
+
+class NCBI_BDB_EXPORT CBDB_FieldUint2 : public CBDB_FieldSimpleInt<Uint2>
+{
+public:
+    const CBDB_FieldUint2& operator= (Uint2 val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    const CBDB_FieldUint2& operator= (const CBDB_FieldUint2& val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    virtual CBDB_Field* Construct(size_t /*buf_size*/) const
+    {
+        return new CBDB_FieldUint2();
+    }
+
+    Uint2 Get() const
+    {
+        Uint2  v;
+
+		_ASSERT(!IsNull());
+		
+        if (IsByteSwapped()) {
+            v = CByteSwap::GetInt2((unsigned char*)GetBuffer());
+        } else {
+            ::memcpy(&v, GetBuffer(), sizeof(Uint2));
+        }
+        return v;
+    }
+
+    virtual string GetString() const
+    {
+        Int4  v = Get();
+        return NStr::IntToString(v);
+    }
+
+    virtual void ToString(string& str) const
+    {
+        Int4 v = Get();
+        NStr::IntToString(str, v);
+    }
+
+    operator Uint2() const 
+    { 
+        return Get(); 
+    }
+
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
+    {
+        if (byte_swapped)
+            return BDB_ByteSwap_Uint2Compare;
+        return BDB_Uint2Compare;
+    } 
+
+    virtual int Compare(const void* p1, 
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimpleInt<Uint2>::Compare(p1, p2, byte_swapped);
+
+        Uint2 v1, v2;
+        v1 = CByteSwap::GetInt2((unsigned char*)p1);
+        v2 = CByteSwap::GetInt2((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
+
+};
+
 /// Char field type
 ///
 
-class CBDB_FieldUChar:public CBDB_FieldSimpleInt<unsigned char>
+class CBDB_FieldUChar : public CBDB_FieldSimpleInt<unsigned char>
 {
 public:
     const CBDB_FieldUChar& operator = (unsigned char val) 
@@ -836,6 +1026,99 @@ public:
         return (c1 < c2) ? -1 : (c1 > c2) ? 1 : 0;
     }
 };
+
+class CBDB_FieldChar : public CBDB_FieldSimpleInt<char>
+{
+public:
+    const CBDB_FieldChar& operator = (char val) 
+    { 
+        Set(val); 
+        return *this; 
+    }
+
+    const CBDB_FieldChar& operator = (const CBDB_FieldChar& val) 
+    { 
+        Set(val); 
+        return *this; 
+    }
+
+    virtual CBDB_Field * Construct(size_t) const
+    { 
+        return new CBDB_FieldChar(); 
+    }
+    
+    char Get() const  
+    {
+		_ASSERT(!IsNull());
+	 
+        return *(const char*)GetBuffer(); 
+    }
+
+    operator char () const  
+    { 
+        return Get(); 
+    }
+
+    virtual string GetString() const  
+    { 
+        return string(1, Get()); 
+    }
+
+    virtual void ToString(string& s) const 
+    { 
+        s.assign(1, Get()); 
+    }
+
+    virtual BDB_CompareFunction GetCompareFunction(bool) const 
+    { 
+        return BDB_CharCompare; 
+    }
+    
+    virtual int Compare(const void * p1, 
+                        const void * p2, 
+                        bool) const 
+    { 
+        const char& c1 = *(const char *)p1;
+        const char& c2 = *(const char *)p2;
+        
+        return (c1 < c2) ? -1 : (c1 > c2) ? 1 : 0;
+    }
+};
+
+/// Int1 field type
+///
+
+class CBDB_FieldInt1 : public CBDB_FieldChar
+{
+public:
+    const CBDB_FieldChar& operator=(Int1 val) 
+    { 
+        Set(val); 
+        return *this; 
+    }
+
+    const CBDB_FieldChar& operator=(const CBDB_FieldChar& val) 
+    { 
+        Set(val); 
+        return *this; 
+    }
+
+    virtual CBDB_Field * Construct(size_t) const
+    { 
+        return new CBDB_FieldInt1(); 
+    }
+    
+    virtual string GetString() const  
+    { 
+        return NStr::UIntToString(Get()); 
+    }
+
+    virtual void ToString(string& s) const 
+    { 
+		s = GetString();
+    }
+};
+
 
 /// Uint1 field type
 ///
@@ -929,8 +1212,8 @@ public:
     virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
     {
         if (byte_swapped)
-            return BDB_ByteSwap_UintCompare;
-        return BDB_UintCompare;
+            return BDB_ByteSwap_Uint4Compare;
+        return BDB_Uint4Compare;
     } 
 
     virtual int Compare(const void* p1, 
@@ -2065,6 +2348,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/11/14 13:27:13  dicuccio
+ * Added additional field types for Uint8, Int1, Uint2.  Clarified nomenclature
+ * for BDB comparators - include field width for integral types always.
+ *
  * Revision 1.52  2006/09/12 16:55:28  kuznets
  * Implemented multi-row fetch
  *
