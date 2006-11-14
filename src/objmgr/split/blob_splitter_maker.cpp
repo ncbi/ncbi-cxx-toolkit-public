@@ -50,7 +50,7 @@
 #include <objects/seq/seq__.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
 #include <objects/seqsplit/seqsplit__.hpp>
@@ -63,6 +63,10 @@
 #include <objmgr/split/place_id.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/annot_type_selector.hpp>
+
+#ifdef OBJECTS_SEQSPLIT_ID2S_SEQ_FEAT_IDS_INFO_HPP
+//#define HAVE_FEAT_IDS
+#endif
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -148,6 +152,80 @@ namespace {
     };
 
 
+    struct SAllAnnotTypes
+    {
+        typedef vector<SAnnotTypeSelector> TTypeSet;
+        typedef CSeqFeatData::ESubtype TSubtype;
+        typedef CSeqFeatData::E_Choice TFeatType;
+        typedef set<TSubtype> TSubtypes;
+        typedef map<TFeatType, TSubtypes> TFeatTypes;
+
+        SAllAnnotTypes(void)
+            : m_Align(false), m_Graph(false)
+            {
+            }
+
+        void Add(const SAnnotTypeSelector& t)
+            {
+                switch ( t.GetAnnotType() ) {
+                case CSeq_annot::C_Data::e_Align:
+                    m_Align = true;
+                    break;
+                case CSeq_annot::C_Data::e_Graph:
+                    m_Graph = true;
+                    break;
+                case CSeq_annot::C_Data::e_Ftable:
+                    m_FeatTypes[t.GetFeatType()].insert(t.GetFeatSubtype());
+                    break;
+                default:
+                    _ASSERT("bad annot type" && 0);
+                }
+            }
+        void Add(const TTypeSet& types)
+            {
+                ITERATE ( TTypeSet, it, types ) {
+                    Add(*it);
+                }
+            }
+        
+        void SetFeatTypes(list<CRef<CID2S_Feat_type_Info> >& dst)
+            {
+                ITERATE ( TFeatTypes, tit, m_FeatTypes ) {
+                    TFeatType t = tit->first;
+                    const TSubtypes& subtypes = tit->second;
+                    bool all_subtypes =
+                        subtypes.find(CSeqFeatData::eSubtype_any) !=
+                        subtypes.end();
+                    if ( !all_subtypes ) {
+                        all_subtypes = true;
+                        for ( TSubtype st = CSeqFeatData::eSubtype_bad;
+                              st <= CSeqFeatData::eSubtype_max;
+                              st = TSubtype(st+1) ) {
+                            if ( CSeqFeatData::GetTypeFromSubtype(st) == t &&
+                                 subtypes.find(st) == subtypes.end() ) {
+                                all_subtypes = false;
+                                break;
+                            }
+                        }
+                    }
+                    CRef<CID2S_Feat_type_Info> type_info
+                        (new CID2S_Feat_type_Info);
+                    type_info->SetType(t);
+                    if ( !all_subtypes ) {
+                        ITERATE ( TSubtypes, stit, subtypes ) {
+                            type_info->SetSubtypes().push_back(*stit);
+                        }
+                    }
+                    dst.push_back(type_info);
+                }
+            }
+
+        bool m_Align;
+        bool m_Graph;
+        TFeatTypes m_FeatTypes;
+    };
+
+
     struct SAllAnnots
     {
         typedef map<CSeq_id_Handle, SOneSeqAnnots> TAllAnnots;
@@ -193,9 +271,10 @@ namespace {
         void Add(const CSeq_annot::C_Data::TFtable& objs)
             {
                 ITERATE ( CSeq_annot::C_Data::TFtable, it, objs ) {
-                    SAnnotTypeSelector type((*it)->GetData().GetSubtype());
+                    const CSeq_feat& feat = **it;
+                    SAnnotTypeSelector type(feat.GetData().GetSubtype());
                     CSeqsRange loc;
-                    loc.Add(**it);
+                    loc.Add(feat);
                     Add(type, loc);
                 }
             }
@@ -224,6 +303,76 @@ namespace {
         TSplitAnnots m_SplitAnnots;
     };
 
+
+#ifdef HAVE_FEAT_IDS
+    struct SFeatIds
+    {
+        typedef int TFeatId;
+        enum EIdType {
+            eFeatId,
+            eXrefId
+        };
+        typedef vector<SAnnotTypeSelector> TTypeSet;
+        typedef pair<TTypeSet, TTypeSet> TTypeSets;
+        typedef map<TFeatId, TTypeSets> TAllIds;
+        typedef vector<TFeatId> TFeatIds;
+        typedef map<TTypeSets, TFeatIds> TSplitIds;
+
+        void Add(const SAnnotTypeSelector& feat_type,
+                 const CFeat_id& feat_id,
+                 EIdType id_type)
+            {
+                if ( feat_id.IsLocal() && feat_id.GetLocal().IsId() ) {
+                    TTypeSets& types = m_AllIds[feat_id.GetLocal().GetId()];
+                    (id_type == eFeatId? types.first: types.second)
+                        .push_back(feat_type);
+                }
+            }
+
+        void Add(const CSeq_annot::C_Data::TFtable& objs)
+            {
+                ITERATE ( CSeq_annot::C_Data::TFtable, it, objs ) {
+                    const CSeq_feat& feat = **it;
+                    SAnnotTypeSelector type(feat.GetData().GetSubtype());
+                    if ( feat.IsSetId() ) {
+                        Add(type, feat.GetId(), eFeatId);
+                    }
+                    if ( feat.IsSetIds() ) {
+                        ITERATE ( CSeq_feat::TIds, id_it, feat.GetIds() ) {
+                            Add(type, **id_it, eFeatId);
+                        }
+                    }
+                    if ( feat.IsSetXref() ) {
+                        ITERATE ( CSeq_feat::TXref, xref_it, feat.GetXref() ) {
+                            if ( (*xref_it)->IsSetId() )
+                                Add(type, (*xref_it)->GetId(), eXrefId);
+                        }
+                    }
+                }
+            }
+
+        static void clean(TTypeSet& types)
+            {
+                sort(types.begin(), types.end());
+                types.erase(unique(types.begin(), types.end()), types.end());
+            }
+
+        void SplitInfo(void)
+            {
+                NON_CONST_ITERATE ( TAllIds, it, m_AllIds ) {
+                    clean(it->second.first);
+                    clean(it->second.second);
+                    m_SplitIds[it->second].push_back(it->first);
+                }
+                NON_CONST_ITERATE ( TSplitIds, it, m_SplitIds ) {
+                    sort(it->second.begin(), it->second.end());
+                }
+            }
+
+        TAllIds m_AllIds;
+        TSplitIds m_SplitIds;
+    };
+#endif
 
     typedef set<int> TGiSet;
     typedef set<CSeq_id_Handle> TIdSet;
@@ -654,6 +803,9 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
     TPlaces all_annot_places;
     typedef map<CAnnotName, SAllAnnots> TAllAnnots;
     TAllAnnots all_annots;
+#ifdef HAVE_FEAT_IDS
+    SFeatIds feat_ids;
+#endif
     CHandleRangeMap all_data;
     typedef set<CSeq_id_Handle> TBioseqIds;
     typedef map<CPlaceId, TBioseqIds> TBioseqPlaces;
@@ -687,6 +839,11 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
             // collect locations
             CAnnotName name = CSeq_annot_SplitInfo::GetName(*ait->first);
             all_annots[name].Add(*annot);
+#ifdef HAVE_FEAT_IDS
+            if ( annot->GetData().IsFtable() ) {
+                feat_ids.Add(annot->GetData().GetFtable());
+            }
+#endif
         }
     }
 
@@ -759,65 +916,52 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
         nit->second.SplitInfo();
         const CAnnotName& annot_name = nit->first;
         ITERATE ( SAllAnnots::TSplitAnnots, it, nit->second.m_SplitAnnots ) {
-            const SAllAnnots::TTypeSet& type_set = it->first;
-            const CSeqsRange& location = it->second;
             CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
             CID2S_Seq_annot_Info& annot_info = content->SetSeq_annot();
             if ( annot_name.IsNamed() ) {
                 annot_info.SetName(annot_name.GetName());
             }
-            typedef CSeqFeatData::ESubtype TSubtype;
-            typedef CSeqFeatData::E_Choice TFeatType;
-            typedef set<TSubtype> TSubtypes;
-            typedef map<TFeatType, TSubtypes> TFeatTypes;
-            TFeatTypes feat_types;
-            ITERATE ( SAllAnnots::TTypeSet, tit, type_set ) {
-                const SAnnotTypeSelector& t = *tit;
-                switch ( t.GetAnnotType() ) {
-                case CSeq_annot::C_Data::e_Align:
-                    annot_info.SetAlign();
-                    break;
-                case CSeq_annot::C_Data::e_Graph:
-                    annot_info.SetGraph();
-                    break;
-                case CSeq_annot::C_Data::e_Ftable:
-                    feat_types[t.GetFeatType()].insert(t.GetFeatSubtype());
-                    break;
-                default:
-                    _ASSERT("bad annot type" && 0);
-                }
+            SAllAnnotTypes types;
+            types.Add(it->first);
+            if ( types.m_Align ) {
+                annot_info.SetAlign();
             }
-            ITERATE ( TFeatTypes, tit, feat_types ) {
-                TFeatType t = tit->first;
-                const TSubtypes& subtypes = tit->second;
-                bool all_subtypes =
-                    subtypes.find(CSeqFeatData::eSubtype_any) !=
-                    subtypes.end();
-                if ( !all_subtypes ) {
-                    all_subtypes = true;
-                    for ( TSubtype st = CSeqFeatData::eSubtype_bad;
-                          st <= CSeqFeatData::eSubtype_max;
-                          st = TSubtype(st+1) ) {
-                        if ( CSeqFeatData::GetTypeFromSubtype(st) == t &&
-                             subtypes.find(st) == subtypes.end() ) {
-                            all_subtypes = false;
-                            break;
-                        }
-                    }
-                }
-                CRef<CID2S_Feat_type_Info> type_info(new CID2S_Feat_type_Info);
-                type_info->SetType(t);
-                if ( !all_subtypes ) {
-                    ITERATE ( TSubtypes, stit, subtypes ) {
-                        type_info->SetSubtypes().push_back(*stit);
-                    }
-                }
-                annot_info.SetFeat().push_back(type_info);
+            if ( types.m_Graph ) {
+                annot_info.SetGraph();
             }
-            annot_info.SetSeq_loc(*MakeLoc(location));
+            if ( !types.m_FeatTypes.empty() ) {
+                types.SetFeatTypes(annot_info.SetFeat());
+            }
+            annot_info.SetSeq_loc(*MakeLoc(it->second));
             chunk_content.push_back(content);
         }
     }
+
+#ifdef HAVE_FEAT_IDS
+    {
+        feat_ids.SplitInfo();
+        CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
+        CID2S_Chunk_Content::TFeat_ids& store = content->SetFeat_ids();
+        ITERATE ( SFeatIds::TSplitIds, it, feat_ids.m_SplitIds ) {
+            CRef<CID2S_Seq_feat_Ids_Info> info(new CID2S_Seq_feat_Ids_Info);
+            if ( !it->first.first.empty() ) {
+                SAllAnnotTypes types;
+                types.Add(it->first.first);
+                types.SetFeatTypes(info->SetFeat_types());
+            }
+            if ( !it->first.second.empty() ) {
+                SAllAnnotTypes types;
+                types.Add(it->first.second);
+                types.SetFeatTypes(info->SetXref_types());
+            }
+            ITERATE ( SFeatIds::TFeatIds, fit, it->second ) {
+                info->SetLocal_ids().push_back(*fit);
+            }
+            store.push_back(info);
+        }
+        chunk_content.push_back(content);
+    }
+#endif
 
     if ( !all_descrs.empty() ) {
         ITERATE ( TDescPlaces, tmit, all_descrs ) {
@@ -1056,6 +1200,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/11/14 19:22:00  vasilche
+* Added generation of feature ids information.
+*
 * Revision 1.20  2005/06/13 15:44:53  grichenk
 * Implemented splitting of assembly. Added splitting of seqdesc objects
 * into multiple chunks.
