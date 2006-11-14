@@ -158,7 +158,7 @@ _PSIPackedMsaNew(const PSIMsa* msa)
     /* Copy the multiple sequence alignment data */
     for (s = 0; s < msa->dimensions->num_seqs + 1; s++) {
         for (p = 0; p < msa->dimensions->query_length; p++) {
-            ASSERT(msa->data[s][p].letter >= 0 && 
+            ASSERT(((int)msa->data[s][p].letter) >= 0 && 
                    msa->data[s][p].letter <= BLASTAA_SIZE);
             retval->data[s][p].letter = msa->data[s][p].letter;
             retval->data[s][p].is_aligned = msa->data[s][p].is_aligned;
@@ -2576,6 +2576,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/11/14 17:24:12  camacho
+ * eliminate compiler warning
+ *
  * Revision 1.62  2006/11/14 15:37:19  camacho
  * PSSM engine performance optimizations
  *
