@@ -42,6 +42,24 @@
 
 BEGIN_NCBI_SCOPE
 
+
+///
+/// Template structure SStaticPair is simlified replacement of STL pair<>
+/// Main reason of introducing this structure is o allow static initialization
+/// by { xxx } construct.
+/// It's main use is for static const structures which do not need constructors
+///
+template<class FirstType, class SecondType>
+struct SStaticPair
+{
+    typedef FirstType first_type;
+    typedef SecondType second_type;
+
+    first_type first;
+    second_type second;
+};
+
+
 ///
 /// class CStaticArrayMap<> is an array adaptor that provides an STLish
 /// interface to statically-defined arrays, while making efficient use
@@ -90,6 +108,41 @@ BEGIN_NCBI_SCOPE
 
 
 ///
+/// class CStaticPairArrayMap<> provides access to a static array of pairs
+/// in much the same way as CStaticArraySet<>, except that it provides
+/// binding of a value type to each sorted key, much like an STL map<> would.
+/// Its first template parameter must satisfy STL pair<> requirements:
+/// 1. it must define first_type and second_type typedefs,
+/// 2. it must have two data members: first and second.
+///
+
+template <class PairType,
+          class KeyCompare = less<typename PairType::first_type> >
+class CStaticPairArrayMap
+    : public CStaticArraySearchBase<PKeyValuePair<PairType>, KeyCompare>
+{
+    typedef CStaticArraySearchBase<PKeyValuePair<PairType>, KeyCompare> TBase;
+public:
+    /// default constructor.  This will build a map around a given array; the
+    /// storage of the end pointer is based on the supplied array size.  In
+    /// debug mode, this will verify that the array is sorted.
+    CStaticPairArrayMap(typename TBase::const_iterator obj,
+                        typename TBase::size_type array_size)
+        : TBase(obj, array_size)
+    {
+    }
+
+    /// Constructor to initialize comparator object.
+    CStaticPairArrayMap(typename TBase::const_iterator obj,
+                        typename TBase::size_type array_size,
+                        const typename TBase::key_compare& comp)
+        : TBase(obj, array_size, comp)
+    {
+    }
+};
+
+
+///
 /// class CStaticArrayMap<> provides access to a static array in much the
 /// same way as CStaticArraySet<>, except that it provides arbitrary
 /// binding of a value type to each sorted key, much like an STL map<> would.
@@ -122,13 +175,15 @@ public:
 };
 
 
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/11/14 19:28:41  vasilche
+ * Added SStaticPair and corresponding map for static initialization.
+ *
  * Revision 1.9  2005/10/27 13:29:17  vasilche
  * Avoid virtual methods by key/value getter.
  * Moved x_Validate() back to base search class.
