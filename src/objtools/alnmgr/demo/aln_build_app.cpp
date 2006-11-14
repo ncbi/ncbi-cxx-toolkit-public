@@ -52,6 +52,7 @@
 #include <objtools/alnmgr/aln_tests.hpp>
 #include <objtools/alnmgr/aln_hints.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
+#include <objtools/alnmgr/aln_converters.hpp>
 
 
 using namespace ncbi;
@@ -239,6 +240,57 @@ int CAlnBuildApp::Run(void)
     }
 
 
+    /// Build a single anchored_aln
+    CAnchoredAln built_anchored_aln;
+    for (size_t aln_idx = 0; 
+         aln_idx < aln_hints.GetAlnCount();
+         ++aln_idx) {
+
+        const CAnchoredAln& anchored_aln = *anchored_aln_vector[aln_idx];
+
+        TDim dim = anchored_aln.GetDim();
+        for (TDim row = 0; row < dim; ++row) {
+
+            if (row < built_anchored_aln.GetDim()) {
+
+//                 const CPairwiseAln& minuend = *built_anchored_aln.m_PairwiseAlns[row];
+//                 const CPairwiseAln& subtrahend = *anchored_aln.m_PairwiseAlns[row];
+//                 CDiagRngColl diff;
+
+//                 cout << "Minuend:" << endl;
+//                 minuend.Dump(cout);
+//                 cout << "Subtrahend:" << endl;
+//                 subtrahend.Dump(cout);
+//                 minuend.Diff(subtrahend, diff);
+//                 cout << "Diff:" << endl;
+//                 diff.Dump(cout);
+                
+//                 CPairwiseAln& built_pairwise_aln = *built_anchored_aln.m_PairwiseAlns[row];
+//                 ITERATE(CDiagRngColl, rng_it, diff) {
+//                     built_pairwise_aln.insert(*rng_it);
+//                 }
+//                 cout << "Result:" << endl;
+//                 built_pairwise_aln.Dump(cout);
+
+                CPairwiseAln& built_pairwise_aln = *built_anchored_aln.SetPairwiseAlns()[row];
+                ITERATE(CPairwiseAln, rng_it, *anchored_aln.GetPairwiseAlns()[row]) {
+                    built_pairwise_aln.insert(*rng_it);
+                }
+
+            } else {
+                _ASSERT(row == built_anchored_aln.GetDim());
+
+                CRef<CPairwiseAln> pairwise_aln
+                    (new CPairwiseAln(*anchored_aln.GetPairwiseAlns()[row]));
+                built_anchored_aln.SetPairwiseAlns().push_back(pairwise_aln);
+                built_anchored_aln.SetSeqIds().push_back(anchored_aln.GetSeqIds()[row]);
+            }
+        }
+        cout << "Added alignment " << aln_idx << ":" << endl;
+        built_anchored_aln.Dump(cout);
+    }
+    built_anchored_aln.Dump(cout);
+
     return 0;
 }
 
@@ -253,6 +305,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/11/14 20:42:33  todorov
+* build without using CDiagRngColl.
+*
 * Revision 1.4  2006/11/09 00:14:27  todorov
 * Working version of building a vector of anchored alignments.
 *
