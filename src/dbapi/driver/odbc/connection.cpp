@@ -284,7 +284,9 @@ string CODBC_Connection::x_MakeFreeTDSVersion(int version)
         str_version += "8.0";
         break;
     default:
-        DATABASE_DRIVER_ERROR( "Invalid TDS version with the FreeTDS driver.", 100000 );
+        // DATABASE_DRIVER_ERROR( "Invalid TDS version with the FreeTDS driver.", 100000 );
+        str_version += "8.0";
+        break;
     }
 
     return str_version;
@@ -1391,6 +1393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/11/14 16:34:48  ssikorsk
+ * In x_MakeFreeTDSVersion set default TDS version to 8.0.
+ *
  * Revision 1.59  2006/11/09 17:02:00  ssikorsk
  * Get rid of unused variables.
  *
