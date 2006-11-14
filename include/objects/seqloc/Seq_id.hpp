@@ -264,7 +264,7 @@ public:
         eAcc_gb_tpa_prot = e_Tpg | eAcc_other | fAcc_prot,   // DAA
 
         eAcc_embl_tpa_nuc  = e_Tpe | eAcc_other | fAcc_nuc,  // BN
-        eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot, // unused
+        eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot, // CAD29848
 
         eAcc_ddbj_tpa_nuc  = e_Tpd | eAcc_other | fAcc_nuc,  // BR
         eAcc_ddbj_tpa_prot = e_Tpd | eAcc_other | fAcc_prot  // FAA
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.55  2006/11/14 19:14:23  ucko
+ * Note that TPA embl proteins do exist, albeit mixed in with non-TPA ones.
+ *
  * Revision 1.54  2006/02/15 17:17:27  ucko
  * Expose ranking methods used for FASTA deflines per Tom Madden's request.
  * Don't return kMax_Int from Base*Score, whose result is subject to scaling.
