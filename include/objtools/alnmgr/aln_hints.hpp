@@ -43,17 +43,19 @@
 BEGIN_NCBI_SCOPE
 
 
-template <class TAlnVector,
-          class TSeqIdVector,
-          class TAlnSeqIdVector>
+template <class _TAlnVector,
+          class _TSeqIdVector,
+          class _TAlnSeqIdVector>
 class CAlnHints : public CObject
 {
 public:
     /// Typedefs
+    typedef _TAlnVector TAlnVector;
+    typedef _TSeqIdVector TSeqIdVector;
+    typedef _TAlnSeqIdVector TAlnSeqIdVector;
     typedef objects::CSeq_align::TDim TDim;
     typedef vector< vector<int> > TBaseWidths;
     typedef vector<TDim> TAnchorRows;
-
 
     /// Constructor
     CAlnHints(const TAlnVector& aln_vector,
@@ -168,6 +170,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/11/14 20:34:36  todorov
+* Added typedefs.
+*
 * Revision 1.6  2006/11/09 00:16:38  todorov
 * Fixed Dump.
 *
