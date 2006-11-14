@@ -128,7 +128,7 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
         query_masks.Reset(mapper->Map(*query_masks));
 
         const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All;
-        if (query->mask.NotEmpty()) {
+        if (query->mask.NotEmpty() && !(*query->mask).IsNull()) {
             CRef<CSeq_loc> tmp(const_cast<CSeq_loc*>(&*query->mask));
             tmp->Add(*query_masks, kTopFlags, 0);
             tmp->Merge(kTopFlags, 0);
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.10  2006/11/14 18:44:37  madden
+ *  Add check to Blast_FindDustFilterLoc for NULL CSeq_loc
+ *
  *  Revision 1.9  2006/09/01 16:45:53  camacho
  *  Use size_type whenever possible
  *
