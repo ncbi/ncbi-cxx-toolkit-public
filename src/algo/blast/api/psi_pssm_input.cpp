@@ -118,16 +118,11 @@ CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
     // Default value provided by base class
     m_MatrixName = string(matrix_name ? matrix_name : "");
     m_DiagnosticsRequest = const_cast<PSIDiagnosticsRequest*>(diags);
-
-    const size_t kNumHits = m_SeqAlignSet->Get().size();
-    m_ProcessHit.reserve(kNumHits);
-    m_ProcessHit.assign(kNumHits, Uint1(0));
 }
 
 CPsiBlastInputData::~CPsiBlastInputData()
 {
     delete [] m_Query;
-    m_ProcessHit.clear();
     PSIMsaFree(m_Msa);
 }
 
@@ -157,11 +152,6 @@ CPsiBlastInputData::x_CountAndSelectQualifyingAlignments()
     CPsiBlastAlignmentProcessor proc;
     CPsiBlastAlignmentProcessor::THitIdentifiers hit_ids;
     proc(*m_SeqAlignSet, m_Opts.inclusion_ethresh, hit_ids);
-
-    ITERATE(CPsiBlastAlignmentProcessor::THitIdentifiers, itr, hit_ids) {
-        _ASSERT(itr->first < m_ProcessHit.size());
-        m_ProcessHit[itr->first] = 1U;
-    }
     return hit_ids.size();
 }
 
@@ -275,18 +265,14 @@ CPsiBlastInputData::x_CopyQueryToMsa()
 void
 CPsiBlastInputData::x_ExtractAlignmentData()
 {
-    // Index into m_ProcessHit vector
-    unsigned int seq_index = 0;
     // Index into multiple sequence alignment structure, query sequence 
     // already processed
     unsigned int msa_index = kQueryIndex + 1;  
-
+    
     // For each hit...
     ITERATE(CSeq_align_set::Tdata, itr, m_SeqAlignSet->Get()) {
-
-        if ( !m_ProcessHit[seq_index++] ) {
-            continue;
-        }
+        _ASSERT((*itr)->GetSegs().IsDisc());
+        bool qualifying_seqid = false;
 
         // for each HSP...
         ITERATE(CSeq_align::C_Segs::TDisc::Tdata, hsp_itr,
@@ -305,12 +291,13 @@ CPsiBlastInputData::x_ExtractAlignmentData()
             if (evalue < m_Opts.inclusion_ethresh) {
                 _ASSERT(msa_index < GetNumAlignedSequences() + 1);
                 x_ProcessDenseg((*hsp_itr)->GetSegs().GetDenseg(), msa_index);
+                qualifying_seqid = true;
             }
         }
-        msa_index++;
+        if (qualifying_seqid) {
+            msa_index++;
+        }
     }
-
-    _ASSERT(seq_index == m_ProcessHit.size());
 }
 
 void
@@ -322,6 +309,8 @@ CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg,
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
     const vector<TSignedSeqPos>& starts = denseg.GetStarts();
     const vector<TSeqPos>& lengths = denseg.GetLens();
+    const int kNumSegments = denseg.GetNumseg();
+    const TSeqPos kDimensions = denseg.GetDim();
     TSeqPos query_index = 0;        // index into starts vector
     TSeqPos subj_index = 1;         // index into starts vector
     TSeqPos subj_seq_idx = 0;       // index into subject sequence buffer
@@ -342,14 +331,14 @@ CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg,
     }
 
     // Iterate over all segments
-    for (int segmt_idx = 0; segmt_idx < denseg.GetNumseg(); segmt_idx++) {
+    for (int segmt_idx = 0; segmt_idx < kNumSegments; segmt_idx++) {
 
         TSeqPos query_offset = starts[query_index];
         TSeqPos subject_offset = starts[subj_index];
 
         // advance the query and subject indices for next iteration
-        query_index += denseg.GetDim();
-        subj_index += denseg.GetDim();
+        query_index += kDimensions;
+        subj_index += kDimensions;
 
         if (query_offset == GAP_IN_ALIGNMENT) {
 
@@ -393,12 +382,14 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
     TSeqPos subjlen = 0;                    // length of the return value
     TSeqPos subj_start = kInvalidSeqPos;    // start of subject alignment
     bool subj_start_found = false;
+    const int kNumSegments = ds.GetNumseg();
+    const TSeqPos kDimensions = ds.GetDim();
     TSeqPos subj_index = 1;                 // index into starts vector
 
     const vector<TSignedSeqPos>& starts = ds.GetStarts();
     const vector<TSeqPos>& lengths = ds.GetLens();
 
-    for (int i = 0; i < ds.GetNumseg(); i++) {
+    for (int i = 0; i < kNumSegments; i++) {
 
         if (starts[subj_index] != (TSignedSeqPos)GAP_IN_ALIGNMENT) {
             if ( !subj_start_found ) {
@@ -408,20 +399,15 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
             subjlen += lengths[i];
         }
 
-        subj_index += ds.GetDim();
+        subj_index += kDimensions;
     }
     _ASSERT(subj_start_found);
 
-    CSeq_loc seqloc;
-    seqloc.SetInt().SetFrom(subj_start);
-    seqloc.SetInt().SetTo(subj_start+subjlen-1);
-    seqloc.SetInt().SetStrand(eNa_strand_unknown);
-    seqloc.SetInt().SetId(const_cast<CSeq_id&>(*ds.GetIds().back()));
+    CSeq_loc seqloc(const_cast<CSeq_id&>(*ds.GetIds().back()), subj_start, 
+                    subj_start+subjlen-1);
 
-    CBioseq_Handle bh;
     Uint1* retval = NULL;
     try {
-        bh = scope.GetBioseqHandle(seqloc);
         CSeqVector sv(seqloc, scope);
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         retval = s_ExtractSequenceFromSeqVector(sv);
@@ -466,6 +452,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/11/14 15:20:22  camacho
+ * m_ProcessHit no longer needed, some optimizations
+ *
  * Revision 1.15  2006/06/14 15:58:54  camacho
  * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
  *
