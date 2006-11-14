@@ -39,47 +39,70 @@
 
 #include <objects/seqalign/Seq_align.hpp>
 
-#include <objtools/alnmgr/diag_rng_coll.hpp>
+#include <util/align_range.hpp>
+#include <util/align_range_coll.hpp>
 
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-/// A pairwise aln is a collection of diag ranges for a pair of rows
-class CPairwiseAln : public CObject, public CDiagRngColl
+/// A pairwise aln is a collection of ranges for a pair of rows
+class CPairwiseAln : 
+    public CObject,
+    public CAlignRangeCollection<CAlignRange<TSeqPos> >
 {
 public:
-    typedef CSeq_align::TDim TDim;
-    
-    /// Constructors:
-    CPairwiseAln(const CSeq_align& seq_align,
-                 TDim row_1,
-                 TDim row_2,
+    /// Types
+    typedef CAlignRange<TSeqPos>                 TAlnRng;
+    typedef CAlignRangeCollection<TAlnRng>       TAlnRngColl;
+
+
+    /// Constructor
+    CPairwiseAln(int flags = fDefaultPoicy,
                  int base_width_1 = 1,
-                 int base_width_2 = 1);
+                 int base_width_2 = 1)
+        : TAlnRngColl(flags),
+          m_BaseWidth1(base_width_1),
+          m_BaseWidth2(base_width_2) {}
 
 
     /// Accessors:
-    const CSeq_align& GetSeqAlign() const {
-        return *m_SeqAlign;
-    }
-    const TDim& GetRow1() const {
-        return m_Row1;
-    }
-    const TDim& GetRow2() const {
-        return m_Row2;
+    int GetBaseWidth1() const {
+        return m_BaseWidth1;
     }
 
+    int GetBaseWidth2() const {
+        return m_BaseWidth2;
+    }
 
     /// Dump in human readable text format:
     template <class TOutStream>
     void Dump(TOutStream& os) const {
         char s[32];
         sprintf(s, "%X", (unsigned int) GetFlags());
-        os << "CPairwiseAln  Flags = " << s << ", : ";
+        os << "CPairwiseAln";
 
-        ITERATE (CDiagRngColl, rng_it, *this) {
+        os << " BaseWidths: " 
+           << m_BaseWidth1 << ", "
+           << m_BaseWidth2 << " ";
+
+        os << " Flags = " << s << ":" << endl;
+
+        if (m_Flags & fKeepNormalized) os << "fKeepNormalized" << endl;
+        if (m_Flags & fAllowMixedDir) os << "fAllowMixedDir" << endl;
+        if (m_Flags & fAllowOverlap) os << "fAllowOverlap" << endl;
+        if (m_Flags & fAllowAbutting) os << "fAllowAbutting" << endl;
+        if (m_Flags & fNotValidated) os << "fNotValidated" << endl;
+        if (m_Flags & fInvalid) os << "fInvalid" << endl;
+        if (m_Flags & fUnsorted) os << "fUnsorted" << endl;
+        if (m_Flags & fDirect) os << "fDirect" << endl;
+        if (m_Flags & fReversed) os << "fReversed" << endl;
+        if ((m_Flags & fMixedDir) == fMixedDir) os << "fMixedDir" << endl;
+        if (m_Flags & fOverlap) os << "fOverlap" << endl;
+        if (m_Flags & fAbutting) os << "fAbutting" << endl;
+        
+        ITERATE (TAlnRngColl, rng_it, *this) {
             const TAlnRng& rng = *rng_it;
             os << "[" 
                << rng.GetFirstFrom() << ", " 
@@ -92,17 +115,8 @@ public:
     }
 
 private:
-    CConstRef<CSeq_align> m_SeqAlign;
-    TDim m_Row1;
-    TDim m_Row2;
     int m_BaseWidth1;
     int m_BaseWidth2;
-
-    void x_BuildFromDenseg();
-    void x_BuildFromStdseg();
-
-    typedef CRange<TSeqPos> TRng;
-    TRng m_Rng;
 };
 
 
@@ -110,59 +124,52 @@ private:
 class CAnchoredAln : public CObject
 {
 public:
-    CConstRef<CSeq_align> m_SeqAlign;
-    
+    /// Types:
+    typedef CSeq_align::TDim TDim;
     typedef vector<CConstRef<CSeq_id> > TSeqIds;
-    TSeqIds m_SeqIds;
+    typedef vector<CRef<CPairwiseAln> > TPairwiseAlnVector;
 
-    typedef vector<CConstRef<CPairwiseAln> > TPairwiseAlnVector;
-    TPairwiseAlnVector m_PairwiseAlnVector;
+
+    /// Accessors:
+    TDim GetDim() const {
+        _ASSERT(m_SeqIds.size() == m_PairwiseAlns.size());
+        return (TDim) m_SeqIds.size();
+    }
+
+    const TSeqIds& GetSeqIds() const {
+        return m_SeqIds;
+    }
+
+    const TPairwiseAlnVector& GetPairwiseAlns() const {
+        return m_PairwiseAlns;
+    }
+
+    /// Modifiers:
+    TSeqIds& SetSeqIds() {
+        return m_SeqIds;
+    }
+
+    TPairwiseAlnVector& SetPairwiseAlns() {
+        return m_PairwiseAlns;
+    }
 
 
     /// Dump in human readable text format:
     template <class TOutStream>
     void Dump(TOutStream& os) const {
         os << "CAnchorAln contains " 
-           << m_PairwiseAlnVector.size() << " pair(s) of rows:" << endl;
-        ITERATE(TPairwiseAlnVector, pairwise_aln_i, m_PairwiseAlnVector) {
+           << m_PairwiseAlns.size() << " pair(s) of rows:" << endl;
+        ITERATE(TPairwiseAlnVector, pairwise_aln_i, m_PairwiseAlns) {
             (*pairwise_aln_i)->Dump(os);
         }
         os << endl;
     }
 
+
+private:
+    TSeqIds            m_SeqIds;
+    TPairwiseAlnVector m_PairwiseAlns;
 };
-
-
-/// Creating an anchored alignment from Seq-align using hints
-template <class TAlnHints>
-CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnHints& aln_hints,
-                                            size_t aln_idx)
-{
-    typedef typename TAlnHints::TDim TDim;
-
-    _ASSERT(aln_hints.IsAnchored());
-
-    CRef<CAnchoredAln> anchored_aln(new CAnchoredAln);
-
-    for (TDim row = 0;
-         row < aln_hints.GetDimForAln(aln_idx);
-         ++row) {
-
-        TDim anchor_row = aln_hints.GetAnchorRowForAln(aln_idx);
-
-        if (row != anchor_row) {
-            CConstRef<CPairwiseAln> pairwise_aln
-                (new CPairwiseAln(*aln_hints.GetAlnVector()[aln_idx],
-                                  anchor_row,
-                                  row,
-                                  aln_hints.GetBaseWidthForAlnRow(aln_idx, anchor_row),
-                                  aln_hints.GetBaseWidthForAlnRow(aln_idx, row)));
-            anchored_aln->m_PairwiseAlnVector.push_back(pairwise_aln);
-        }
-
-    }
-    return anchored_aln;
-}
 
 
 END_NCBI_SCOPE
@@ -172,6 +179,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/11/14 20:38:38  todorov
+* CPairwiseAln derives directly from CAlignRangeCollection and it's
+* construction from CSeq-align is moved to aln_converters.hpp
+*
 * Revision 1.6  2006/11/09 00:17:27  todorov
 * Fixed Dump and added CreateAnchoredAlnFromAln.
 *
