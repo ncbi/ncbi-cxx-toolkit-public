@@ -38,6 +38,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
+#include <algorithm>
 #include <memory>
 #include <map>
 
@@ -273,6 +274,47 @@ FindBestChoice(const C& container, F score_func)
 
 END_NCBI_SCOPE
 
+#if !defined(HAVE_IS_SORTED)
+
+///
+/// is_sorted is provided by some implementations of the STL and may
+/// be included in future releases of all standard-conforming implementations
+/// This is provided here for future compatibility
+///
+
+BEGIN_STD_SCOPE
+
+template <class Iterator>
+bool is_sorted(Iterator iter1, Iterator iter2)
+{
+    Iterator prev = iter1;
+    for (++iter1;  iter1 != iter2;  ++iter1, ++prev) {
+        if (*iter1 < *prev) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+template <class Iterator, class Predicate>
+bool is_sorted(Iterator iter1, Iterator iter2, Predicate pred)
+{
+    Iterator prev = iter1;
+    for (++iter1;  iter1 != iter2;  ++iter1, ++prev) {
+        if (pred(*iter1, *prev)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+END_STD_SCOPE
+
+#endif // !defined(HAVE_IS_SORTED)
+
+
 
 /* @} */
 
@@ -280,6 +322,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/11/14 13:25:24  dicuccio
+ * Added is_sorted() for (forward) compatibility with STL implementations
+ *
  * Revision 1.35  2004/01/29 12:59:57  siyan
  * Fixed error in doc on SetMapString().
  *
