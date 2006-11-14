@@ -48,6 +48,8 @@
 #include <objects/seq/Annot_id.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/general/Object_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -621,6 +623,7 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
             ++index.m_AnnotLocationIndex;
         }
         x_UpdateObjectKeys(info, keys_begin);
+        x_MapFeatIds(info);
     }
 }
 
@@ -779,6 +782,76 @@ void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
 }
 
 
+void CSeq_annot_Info::x_MapFeatById(const CFeat_id& id,
+                                    CAnnotObject_Info& info,
+                                    bool xref)
+{
+    if ( id.IsLocal() ) {
+        const CObject_id& obj_id = id.GetLocal();
+        if ( obj_id.IsId() ) {
+            GetTSE_Info().x_MapFeatById(obj_id.GetId(), info, xref);
+        }
+    }
+}
+
+
+void CSeq_annot_Info::x_UnmapFeatById(const CFeat_id& id,
+                                      CAnnotObject_Info& info,
+                                      bool xref)
+{
+    if ( id.IsLocal() ) {
+        const CObject_id& obj_id = id.GetLocal();
+        if ( obj_id.IsId() ) {
+            GetTSE_Info().x_UnmapFeatById(obj_id.GetId(), info, xref);
+        }
+    }
+}
+
+
+void CSeq_annot_Info::x_MapFeatIds(CAnnotObject_Info& info)
+{
+    const CSeq_feat& feat = *info.GetFeatFast();
+    if ( feat.IsSetId() ) {
+        x_MapFeatById(feat.GetId(), info, true);
+    }
+    if ( feat.IsSetIds() ) {
+        ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
+            x_MapFeatById(**it, info, true);
+        }
+    }
+    if ( feat.IsSetXref() ) {
+        ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {
+            const CSeqFeatXref& xref = **it;
+            if ( xref.IsSetId() ) {
+                x_MapFeatById(xref.GetId(), info, false);
+            }
+        }
+    }
+}
+
+
+void CSeq_annot_Info::x_UnmapFeatIds(CAnnotObject_Info& info)
+{
+    const CSeq_feat& feat = *info.GetFeatFast();
+    if ( feat.IsSetId() ) {
+        x_UnmapFeatById(feat.GetId(), info, true);
+    }
+    if ( feat.IsSetIds() ) {
+        ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
+            x_UnmapFeatById(**it, info, true);
+        }
+    }
+    if ( feat.IsSetXref() ) {
+        ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {
+            const CSeqFeatXref& xref = **it;
+            if ( xref.IsSetId() ) {
+                x_UnmapFeatById(xref.GetId(), info, false);
+            }
+        }
+    }
+}
+
+
 void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
 {
     if ( x_DirtyAnnotIndex() ) {
@@ -842,6 +915,9 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
         ++index.m_AnnotLocationIndex;
     }
     x_UpdateObjectKeys(info, keys_begin);
+    if ( info.IsFeat() ) {
+        x_MapFeatIds(info);
+    }
 }
 
 
@@ -974,6 +1050,9 @@ void CSeq_annot_Info::x_UnmapAnnotObject(CAnnotObject_Info& info)
         }
     }
     info.ResetKey();
+    if ( info.IsFeat() ) {
+        x_UnmapFeatIds(info);
+    }
 }
 
 
@@ -1262,6 +1341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/11/14 19:21:58  vasilche
+ * Added feature ids index and retrieval.
+ *
  * Revision 1.44  2006/09/19 19:19:48  vasilche
  * struct STSEAnnotObjectMapper -> class CTSEAnnotObjectMapper.
  *

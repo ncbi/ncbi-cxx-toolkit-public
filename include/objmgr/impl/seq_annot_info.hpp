@@ -57,6 +57,7 @@ class CAnnotObject_Info;
 struct SAnnotObject_Key;
 class CTSEAnnotObjectMapper;
 class CSeq_annot_SNP_Info;
+class CFeat_id;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
 {
@@ -167,6 +168,11 @@ protected:
     void x_MapAnnotObject(CAnnotObject_Info& info);
     void x_RemapAnnotObject(CAnnotObject_Info& info);
 
+    void x_MapFeatIds(CAnnotObject_Info& info);
+    void x_UnmapFeatIds(CAnnotObject_Info& info);
+    void x_MapFeatById(const CFeat_id& id, CAnnotObject_Info& info, bool xref);
+    void x_UnmapFeatById(const CFeat_id& id, CAnnotObject_Info& info, bool xref);
+
     void x_Map(const CTSEAnnotObjectMapper& mapper,
                const SAnnotObject_Key& key,
                const SAnnotObject_Index& index);
@@ -246,6 +252,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/11/14 19:21:58  vasilche
+* Added feature ids index and retrieval.
+*
 * Revision 1.30  2006/09/19 19:19:48  vasilche
 * struct STSEAnnotObjectMapper -> class CTSEAnnotObjectMapper.
 *

@@ -70,9 +70,12 @@ void CAnnotType_Index::x_InitIndexTables(void)
     _ASSERT(!sm_TablesInitialized);
     sm_AnnotTypeIndexRange.resize(kAnnotTypeMax + 1);
     sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].first = 0;
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align] = TIndexRange(0,1);
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph] = TIndexRange(1,2);
-    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first = 2;
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align] =
+        TIndexRange(eAlignIndex, eAlignIndex+1);
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph] =
+        TIndexRange(eGraphIndex, eGraphIndex+1);
+    sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first =
+        eFtableIndex;
 
     vector< vector<size_t> > type_subtypes(kFeatTypeMax+1);
     for ( size_t subtype = 0; subtype <= kFeatSubtypeMax; ++subtype ) {
@@ -87,8 +90,7 @@ void CAnnotType_Index::x_InitIndexTables(void)
     sm_FeatTypeIndexRange.resize(kFeatTypeMax + 1);
     sm_FeatSubtypeIndex.resize(kFeatSubtypeMax + 1);
 
-    size_t cur_idx =
-        sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first;
+    size_t cur_idx = eFtableIndex;
     for ( size_t type = 0; type <= kFeatTypeMax; ++type ) {
         sm_FeatTypeIndexRange[type].first = cur_idx;
         if ( type != CSeqFeatData::e_not_set ) {
@@ -166,8 +168,7 @@ SAnnotTypeSelector CAnnotType_Index::GetTypeSelector(size_t index)
         sel.SetAnnotType(CSeq_annot::C_Data::e_Graph);
         break;
     default:
-        sel.SetFeatSubtype(SAnnotTypeSelector::TFeatSubtype(index -
-            sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first));
+        sel.SetFeatSubtype(CSeqFeatData::ESubtype(index - eFtableIndex));
         break;
     }
     return sel;
@@ -180,6 +181,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/11/14 19:21:58  vasilche
+* Added feature ids index and retrieval.
+*
 * Revision 1.8  2006/09/18 14:29:29  vasilche
 * Store annots indexing information to allow reindexing after modification.
 *

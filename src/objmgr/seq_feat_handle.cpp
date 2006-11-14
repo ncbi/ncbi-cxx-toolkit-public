@@ -74,6 +74,14 @@ CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
 }
 
 
+CSeq_feat_Handle::CSeq_feat_Handle(CScope& scope,
+                                   CAnnotObject_Info* info)
+    : m_Annot(scope.GetSeq_annotHandle(*info->GetSeq_annot_Info().GetSeq_annotSkeleton())),
+      m_AnnotIndex(info->GetAnnotIndex())
+{
+}
+
+
 void CSeq_feat_Handle::Reset(void)
 {
     m_CreatedFeat.Reset();
@@ -502,6 +510,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/11/14 19:21:58  vasilche
+ * Added feature ids index and retrieval.
+ *
  * Revision 1.17  2006/09/20 14:00:21  vasilche
  * Implemented user API to Update() annotation index.
  *

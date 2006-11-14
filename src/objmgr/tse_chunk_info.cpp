@@ -56,7 +56,8 @@ BEGIN_SCOPE(objects)
 CTSE_Chunk_Info::CTSE_Chunk_Info(TChunkId id)
     : m_SplitInfo(0),
       m_ChunkId(id),
-      m_AnnotIndexEnabled(false)
+      m_AnnotIndexEnabled(false),
+      m_ExplicitFeatIds(false)
 {
 }
 
@@ -382,6 +383,30 @@ void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
 }
 
 
+void CTSE_Chunk_Info::x_AddFeat_ids(void)
+{
+    m_ExplicitFeatIds = true;
+}
+
+
+void CTSE_Chunk_Info::x_AddFeat_ids(const SAnnotTypeSelector& type,
+                                    const TFeatIds& ids)
+{
+    m_ExplicitFeatIds = true;
+    TFeatIds& dst = m_FeatIds[type];
+    dst.insert(dst.end(), ids.begin(), ids.end());
+}
+
+
+void CTSE_Chunk_Info::x_AddXref_ids(const SAnnotTypeSelector& type,
+                                    const TFeatIds& ids)
+{
+    m_ExplicitFeatIds = true;
+    TFeatIds& dst = m_XrefIds[type];
+    dst.insert(dst.end(), ids.begin(), ids.end());
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // annot index maintainance
 void CTSE_Chunk_Info::x_EnableAnnotIndex(void)
@@ -473,6 +498,26 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
             }
         }
     }
+
+    if ( m_ExplicitFeatIds ) {
+        ITERATE ( TFeatIdsMap, it, m_FeatIds ) {
+            ITERATE ( TFeatIds, it2, it->second ) {
+                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), false);
+            }
+        }
+        ITERATE ( TFeatIdsMap, it, m_XrefIds ) {
+            ITERATE ( TFeatIds, it2, it->second ) {
+                tse.x_MapChunkByFeatId(*it2, it->first, GetChunkId(), true);
+            }
+        }
+    }
+    else {
+        ITERATE ( TAnnotContents, it, m_AnnotContents ) {
+            ITERATE ( TAnnotTypes, it2, it->second ) {
+                tse.x_MapChunkByFeatType(it2->first, GetChunkId());
+            }
+        }
+    }
 }
 
 
@@ -538,6 +583,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/11/14 19:21:58  vasilche
+* Added feature ids index and retrieval.
+*
 * Revision 1.33  2006/09/19 19:19:48  vasilche
 * struct STSEAnnotObjectMapper -> class CTSEAnnotObjectMapper.
 *

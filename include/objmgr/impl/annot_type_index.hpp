@@ -73,6 +73,7 @@ public:
                                      const SIdAnnotObjs& objs);
     static TIndexRange GetTypeIndex(const CAnnotObject_Info& info);
 
+    static CSeqFeatData::ESubtype GetSubtypeForIndex(size_t index);
     static SAnnotTypeSelector GetTypeSelector(size_t index);
 
 private:
@@ -80,6 +81,13 @@ private:
     typedef vector<size_t>      TIndexTable;
 
     static void x_InitIndexTables(void);
+
+    enum EAnnotTypeIndex
+    {
+        eAlignIndex = 0,
+        eGraphIndex = 1,
+        eFtableIndex = 2
+    };
 
     // Initialization flag
     static bool sm_TablesInitialized;
@@ -143,12 +151,22 @@ size_t CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::ESubtype subtype)
 }
 
 
+inline
+CSeqFeatData::ESubtype CAnnotType_Index::GetSubtypeForIndex(size_t index)
+{
+    return CSeqFeatData::ESubtype(index - eFtableIndex);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/11/14 19:21:58  vasilche
+* Added feature ids index and retrieval.
+*
 * Revision 1.4  2006/09/18 14:29:29  vasilche
 * Store annots indexing information to allow reindexing after modification.
 *

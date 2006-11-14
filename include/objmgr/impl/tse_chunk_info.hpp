@@ -157,6 +157,16 @@ public:
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
                         const TLocationSet& location);
+
+    // The chunk contains features with ids
+    void x_AddFeat_ids(void);
+    typedef int TFeatId;
+    typedef vector<TFeatId> TFeatIds;
+    typedef map<SAnnotTypeSelector, TFeatIds> TFeatIdsMap;
+
+    void x_AddFeat_ids(const SAnnotTypeSelector& type, const TFeatIds& ids);
+    void x_AddXref_ids(const SAnnotTypeSelector& type, const TFeatIds& ids);
+
     // The chunk contains seq-data. The corresponding bioseq's
     // data should be not set or set to delta with empty literal(s)
     void x_AddSeq_data(const TLocationSet& location);
@@ -260,6 +270,7 @@ private:
     TChunkId         m_ChunkId;
 
     bool             m_AnnotIndexEnabled;
+    bool             m_ExplicitFeatIds;
 
     TDescInfos       m_DescInfos;
     TPlaces          m_AnnotPlaces;
@@ -268,6 +279,9 @@ private:
     TAnnotContents   m_AnnotContents;
     TLocationSet     m_Seq_data;
     TAssemblyInfos   m_AssemblyInfos;
+
+    TFeatIdsMap      m_FeatIds;
+    TFeatIdsMap      m_XrefIds;
 
     CInitMutex<CObject> m_LoadLock;
     TObjectIndexList m_ObjectIndexList;
@@ -309,6 +323,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/11/14 19:21:58  vasilche
+* Added feature ids index and retrieval.
+*
 * Revision 1.27  2006/05/02 16:48:17  vasilche
 * Fixed path to moved header.
 *

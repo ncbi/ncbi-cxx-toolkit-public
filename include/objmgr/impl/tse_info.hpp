@@ -272,6 +272,36 @@ public:
     };
     typedef map<CSeq_id_Handle, SIdAnnotInfo>                TIdAnnotInfoMap;
 
+    struct SFeatIdInfo
+    {
+        SFeatIdInfo(bool xref, CAnnotObject_Info* info)
+            : m_Xref(xref), m_IsChunk(false)
+            {
+                m_Info = info;
+            }
+        SFeatIdInfo(bool xref, TChunkId chunk_id)
+            : m_Xref(xref), m_IsChunk(true)
+            {
+                m_ChunkId = chunk_id;
+            }
+
+        bool               m_Xref;
+        bool               m_IsChunk;
+        union {
+            CAnnotObject_Info* m_Info;
+            TChunkId           m_ChunkId;
+        };
+    };
+    typedef int TFeatId;
+    struct SFeatIdIndex
+    {
+        typedef multimap<TFeatId, SFeatIdInfo> TIndex;
+
+        TChunkIds m_Chunks;
+        TIndex    m_Index;
+    };
+    typedef map<CSeqFeatData::ESubtype, SFeatIdIndex>        TFeatIdIndex;
+
     typedef vector<CSeq_id_Handle>                           TBioseqsIds;
 
     // find bioseq with exactly the same id
@@ -322,6 +352,21 @@ public:
     CBioseq_Info& x_GetBioseq(const CSeq_id_Handle& id);
 
     CTSE_Info_Object* x_FindBioObject(const CBioObjectId& uniq_id) const;
+
+    typedef vector<CAnnotObject_Info*> TAnnotObjects;
+    void x_AddFeaturesById(TAnnotObjects& objects,
+                           CSeqFeatData::ESubtype subtype,
+                           TFeatId id,
+                           bool xref) const;
+    void x_AddAllFeaturesById(TAnnotObjects& objects,
+                              TFeatId id,
+                              bool xref) const;
+    TAnnotObjects x_GetFeaturesById(CSeqFeatData::E_Choice type,
+                                    TFeatId id,
+                                    bool xref) const;
+    TAnnotObjects x_GetFeaturesById(CSeqFeatData::ESubtype subtype,
+                                    TFeatId id,
+                                    bool xref) const;
 
 private:
     friend class CTSE_Guard;
@@ -412,6 +457,29 @@ private:
                             const SAnnotObject_Key& key);
     void x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos);
 
+    void x_MapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref);
+    void x_UnmapFeatById(TFeatId id, CAnnotObject_Info& info, bool xref);
+
+    void x_MapChunkByFeatType(CSeqFeatData::ESubtype subtype,
+                              TChunkId chunk_id);
+    void x_MapChunkByFeatType(CSeqFeatData::E_Choice type,
+                              TChunkId chunk_id);
+    void x_MapChunkByFeatType(const SAnnotTypeSelector& type,
+                              TChunkId chunk_id);
+
+    void x_MapChunkByFeatId(TFeatId feat_id,
+                            CSeqFeatData::ESubtype subtype,
+                            TChunkId chunk_id,
+                            bool xref);
+    void x_MapChunkByFeatId(TFeatId feat_id,
+                            CSeqFeatData::E_Choice type,
+                            TChunkId chunk_id,
+                            bool xref);
+    void x_MapChunkByFeatId(TFeatId feat_id,
+                            const SAnnotTypeSelector& type,
+                            TChunkId chunk_id,
+                            bool xref);
+
     friend class CTSEAnnotObjectMapper;
 
     void x_IndexSeqTSE(const CSeq_id_Handle& id);
@@ -493,6 +561,7 @@ private:
     // Annot objects maps: ID to annot-selector-map
     TNamedAnnotObjs        m_NamedAnnotObjs;
     TIdAnnotInfoMap        m_IdAnnotInfoMap;
+    TFeatIdIndex           m_FeatIdIndex;
 
     mutable TAnnotLock     m_AnnotLock;
     mutable CSeq_id_Handle m_RequestedId;

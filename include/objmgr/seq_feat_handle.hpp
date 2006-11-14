@@ -171,6 +171,7 @@ protected:
     friend class CSeq_annot_Handle;
     friend class CSeq_annot_ftable_CI;
     friend class CSeq_annot_ftable_I;
+    friend class CTSE_Handle;
     typedef Int4 TIndex;
 
     TIndex x_GetAnnotIndex() const;
@@ -200,6 +201,7 @@ protected:
     CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                      const SSNP_Info& snp_info,
                      CCreatedFeat_Ref& created_ref);
+    CSeq_feat_Handle(CScope& scope, CAnnotObject_Info* info);
 
 private:
     CSeq_annot_Handle              m_Annot;
@@ -776,6 +778,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/11/14 19:21:59  vasilche
+* Added feature ids index and retrieval.
+*
 * Revision 1.21  2006/09/20 14:00:19  vasilche
 * Implemented user API to Update() annotation index.
 *

@@ -38,6 +38,7 @@
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/tse_scope_lock.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -54,6 +55,8 @@ class CSeq_entry_Handle;
 class CSeq_id;
 class CSeq_id_Handle;
 class CBlobIdKey;
+class CSeq_feat_Handle;
+class CAnnotObject_Info;
 
 class CScopeInfo_Base;
 class CScopeInfoLocker;
@@ -129,6 +132,24 @@ public:
     /// Return true if this TSE handle is local to scope and can be edited.
     bool CanBeEdited(void) const;
 
+    
+    typedef vector<CSeq_feat_Handle> TSeq_feat_Handles;
+    typedef int TFeatureId;
+
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                                        TFeatureId id) const;
+    TSeq_feat_Handles GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                                        TFeatureId id) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                          TFeatureId id) const;
+    TSeq_feat_Handles GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                          TFeatureId id) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                      TFeatureId id) const;
+    CSeq_feat_Handle GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                      TFeatureId id) const;
+
+
 protected:
     friend class CScope_Impl;
     friend class CTSE_ScopeInfo;
@@ -136,6 +157,11 @@ protected:
     typedef CTSE_ScopeInfo TScopeInfo;
 
     CTSE_Handle(TScopeInfo& object);
+
+    typedef vector<CAnnotObject_Info*> TAnnotObjectList;
+    CSeq_feat_Handle x_MakeHandle(CAnnotObject_Info* info) const;
+    CSeq_feat_Handle x_MakeHandle(const TAnnotObjectList& info) const;
+    TSeq_feat_Handles x_MakeHandles(const TAnnotObjectList& infos) const;
 
 private:
 

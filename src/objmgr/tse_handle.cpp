@@ -36,6 +36,8 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/seq_feat_handle.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -504,6 +506,78 @@ void CScopeInfo_Base::x_ForgetTSE(CTSE_ScopeInfo* tse)
     m_TSE_Handle.Reset();
     m_TSE_ScopeInfo = 0;
     _ASSERT(x_Check(fForceZero|fForbidInfo));
+}
+
+
+CSeq_feat_Handle
+CTSE_Handle::x_MakeHandle(CAnnotObject_Info* info) const
+{
+    return CSeq_feat_Handle(GetScope(), info);
+}
+
+
+CSeq_feat_Handle
+CTSE_Handle::x_MakeHandle(const TAnnotObjectList& infos) const
+{
+    return infos.empty()? CSeq_feat_Handle(): x_MakeHandle(*infos.begin());
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::x_MakeHandles(const TAnnotObjectList& infos) const
+{
+    TSeq_feat_Handles handles;
+    handles.reserve(infos.size());
+    ITERATE ( TAnnotObjectList, it, infos ) {
+        handles.push_back(x_MakeHandle(*it));
+    }
+    return handles;
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithId(CSeqFeatData::E_Choice type,
+                               TFeatureId id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithId(CSeqFeatData::ESubtype subtype,
+                               TFeatureId id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::E_Choice type,
+                                 TFeatureId id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(type, id, false));
+}
+
+
+CTSE_Handle::TSeq_feat_Handles
+CTSE_Handle::GetFeaturesWithXref(CSeqFeatData::ESubtype subtype,
+                                 TFeatureId id) const
+{
+    return x_MakeHandles(x_GetTSE_Info().x_GetFeaturesById(subtype, id, false));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::E_Choice type,
+                                               TFeatureId id) const
+{
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(type, id, true));
+}
+
+
+CSeq_feat_Handle CTSE_Handle::GetFeatureWithId(CSeqFeatData::ESubtype subtype,
+                                               TFeatureId id) const
+{
+    return x_MakeHandle(x_GetTSE_Info().x_GetFeaturesById(subtype, id, true));
 }
 
 
