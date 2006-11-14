@@ -233,6 +233,7 @@ private:
     void ProcessMsgBatchItem(BUF buffer);
     void ProcessMsgBatchEnd(BUF buffer);
 
+public:
     // Protocol processing methods
     enum ENSTokenType {
         eNST_Error = -2,    // Error in the middle of the token, e.g. string
@@ -266,6 +267,7 @@ private:
         FProcessor  processor;
         SArgument   args[kMaxArgs+1]; // + eor (end of record)
     };
+private:
     static SArgument sm_End;
     static SCommandMap sm_CommandMap[];
 
@@ -2324,6 +2326,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2006/11/14 01:57:56  ucko
+ * Make CNetScheduleHandler's internal types public to fix WorkShop compilation.
+ *
  * Revision 1.104  2006/11/13 19:15:35  joukovv
  * Protocol parser re-implemented. Remnants of ThreadData removed.
  *
