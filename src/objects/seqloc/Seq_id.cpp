@@ -643,7 +643,7 @@ static const TTpeRangeMap sc_TpeRangeMap(sc_TpeRanges, sizeof(sc_TpeRanges));
 
 static CSeq_id::EAccessionInfo s_IdentifyCxxAcc(const string& acc)
 {
-    if (acc > "CAL69140") { // make no assumptions about as yet unassigned IDs
+    if (acc > "CAL69448") { // make no assumptions about as yet unassigned IDs
         return CSeq_id::eAcc_unreserved_prot;
     } else {
         TTpeRangeMap::const_iterator it
@@ -1729,6 +1729,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.137  2006/11/14 19:30:50  ucko
+ * s_IdentifyCxxAcc: correct the known EMBL protein ID cutoff (slightly) upwards.
+ *
  * Revision 6.136  2006/11/14 19:13:38  ucko
  * Cope (somewhat painfully) with EMBL's policy of mixing some TPA
  * proteins into their namespace.
