@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_stack.hpp>
+#include <corelib/ncbistd.hpp>
 
 #ifdef NCBI_OS_SOLARIS
 #  include <sys/ucontext.h> // for additional test below
@@ -82,6 +83,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/11/15 15:50:05  ucko
+ * Directly #include <corelib/ncbistd.hpp> to fix compilation errors when
+ * using ncbi_stack_default.cpp.
+ *
  * Revision 1.4  2006/11/15 15:38:54  grichenk
  * Added methods to fromat and output stack trace.
  *
