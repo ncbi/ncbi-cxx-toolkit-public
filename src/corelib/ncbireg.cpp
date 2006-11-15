@@ -1333,7 +1333,7 @@ bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
 }
 
 
-CNcbiRegistry::TPriority CNcbiRegistry::GetCoreCutoff(void)
+CNcbiRegistry::TPriority CNcbiRegistry::GetCoreCutoff(void) const
 {
     return m_AllRegistries->GetCoreCutoff();
 }
@@ -1417,7 +1417,7 @@ const string& CNcbiRegistry::x_Get(const string& section, const string& name,
         = m_ClearedEntries.find(s_FlatKey(section, name));
     if (it != m_ClearedEntries.end()) {
         flags &= ~it->second;
-        if ( !flags ) {
+        if ( !(flags & ~fJustCore) ) {
             return kEmptyStr;
         }
     }
@@ -1432,7 +1432,7 @@ bool CNcbiRegistry::x_HasEntry(const string& section, const string& name,
         = m_ClearedEntries.find(s_FlatKey(section, name));
     if (it != m_ClearedEntries.end()) {
         flags &= ~it->second;
-        if ( !flags ) {
+        if ( !(flags & ~fJustCore) ) {
             return false;
         }
     }
@@ -1451,8 +1451,27 @@ const string& CNcbiRegistry::x_GetComment(const string& section,
 void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
                                 TFlags flags) const
 {
-    // XXX - may reveal "ghosts"
-    m_AllRegistries->EnumerateEntries(section, &entries, flags);
+    set<string> accum;
+    REVERSE_ITERATE (CCompoundRegistry::TPriorityMap, it,
+                     m_AllRegistries->m_PriorityMap) {
+        if ((flags & fJustCore)  &&  (it->first < GetCoreCutoff())) {
+            break;
+        }
+        list<string> tmp;
+        it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
+        ITERATE (list<string>, it2, tmp) {
+            // avoid reporting cleared entries
+            TClearedEntries::const_iterator ceci
+                = m_ClearedEntries.find(s_FlatKey(section, *it2));
+            if (ceci == m_ClearedEntries.end()
+                ||  (flags & ~fJustCore & ~ceci->second)) {
+                accum.insert(*it2);
+            }
+        }
+    }
+    ITERATE (set<string>, it, accum) {
+        entries.push_back(*it);
+    }
 }
 
 
@@ -1524,6 +1543,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/11/15 16:39:11  ucko
+ * Make CNcbiRegistry::GetCoreCutoff() const.
+ * Fix CNcbiRegistry's handling of cleared entries, particularly when
+ * fJustCore is in play.
+ *
  * Revision 1.61  2006/08/30 18:02:31  ucko
  * CNcbiRegistry: optionally load a global registry (.ncbirc or ncbi.ini)
  * if explicitly requested (and not explicitly disabled).
