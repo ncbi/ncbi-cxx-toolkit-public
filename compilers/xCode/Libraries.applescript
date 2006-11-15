@@ -38,7 +38,7 @@ global AllApplications -- All GUI applications to build
 
 (* Libraries for linking (note the extra space before the lib name! )*)
 property Z_LIBS : "z"
-property IMG_LIBS : " png tiff gif z jpeg"
+property IMG_LIBS : " png tiff gif z"
 property FLTK_LIBS : " fltk_images fltk_gl fltk"
 property BDB_LIBS : " db"
 property SQLITE_LIBS : " sqlite"
@@ -62,7 +62,7 @@ req: true  if required for a default build
 
 (* Libraries definitions *)
 -- Core
-property xncbi : {name:"xncbi", path:"corelib", exc:{"test_mt.cpp", "ncbi_os_mac.cpp", "ncbi_os_mswin.cpp", "ncbicfg.c.in"}}
+property xncbi : {name:"xncbi", path:"corelib", exc:{"test_mt.cpp", "ncbi_os_mac.cpp", "ncbi_os_mswin.cpp", "ncbicfg.c.in", "ncbi_stack_default.cpp", "ncbi_stack_linux.cpp", "ncbi_stack_solaris.cpp", "ncbi_stack_win32.cpp"}}
 property xcgi : {name:"xcgi", path:"cgi", exc:{"fcgi_run.cpp", "fcgibuf.cpp"}}
 property dbapi : {name:"dbapi", path:"dbapi"}
 property dbapi_cache : {name:"dbapi_cache", path:"dbapi:cache"}
@@ -310,7 +310,7 @@ property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_open
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", fworks:"OpenGL", req:true}
 property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_data, w_html, w_serial_browse, w_object_list}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
-property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
+property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_pub ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project, data_handle, gbench_svc, gbench_svc_cli}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table, w_seq_text}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
@@ -442,6 +442,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.114  2006/11/15 19:46:41  lebedev
+ * gui_dialogs += ncbi_pub
+ *
  * Revision 1.113  2006/11/15 13:49:14  rsmith
  * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
  *
