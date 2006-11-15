@@ -52,6 +52,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+/// Forward definition for PIMPL idiom.
+class CWriteDB_Impl;
+
+
 /// CWriteDB
 ///
 /// User interface class for blast databases.
@@ -311,7 +315,7 @@ public:
     
 protected:
     /// Implementation object.
-    struct CWriteDB_Impl * m_Impl;
+    CWriteDB_Impl * m_Impl;
 };
 
 
