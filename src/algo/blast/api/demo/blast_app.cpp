@@ -240,7 +240,11 @@ void CBlastApplication::Init(void)
                             CArgDescriptions::eInteger, "1");
 
     arg_desc->AddDefaultKey( "index", "database_index",
-                             "database index file",
+                             "\'prefix,threads,start,stop\', where\n\t"
+                             " \'prefix\' \tis the index file prefix, \n\t"
+                             " \'threads\' \tis the number of threads to use when searhing for exact seeds,\n\t"
+                             " \'start\' \tis the first index volume to search, and\n\t"
+                             " \'stop\' \tis the last index volume to search",
                              CArgDescriptions::eString, "" );
 
     SetupArgDescriptions(arg_desc.release());
