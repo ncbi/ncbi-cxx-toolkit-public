@@ -3,6 +3,13 @@
 
 /* $Id$ */
 
+/* Redefine function's names in order to avoid conflicts with libmd5.so on Solaris. */
+#define MD5Init      FTDS64_MD5Init
+#define MD5Update    FTDS64_MD5Update
+#define MD5Transform FTDS64_MD5Transform
+#define MD5Final     FTDS64_MD5Final
+
+
 struct MD5Context {
 	TDS_UINT buf[4];
 	TDS_UINT bits[2];
