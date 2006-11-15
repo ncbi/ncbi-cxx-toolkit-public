@@ -410,7 +410,18 @@ int CNcbiApplication::AppMain
             AppStart();
 
             // Do init
+#if (defined(NCBI_COMPILER_ICC) && NCBI_COMPILER_VERSION < 900)
+            // ICC 8.0 have an optimization bug in exceptions handling,
+            // so workaround it here
+            try {            
+                Init();
+            }
+            catch (CArgHelpException& ) {
+                throw;
+            }            
+#else
             Init();
+#endif
 
             // If the app still has no arg description - provide default one
             if (!m_DisableArgDesc  &&  !m_ArgDesc.get()) {
@@ -998,6 +1009,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.136  2006/11/15 19:20:42  ivanov
+ * Added workaround for ICC 8.0 optimization bug in exceptions handling
+ *
  * Revision 1.135  2006/10/31 18:41:17  grichenk
  * Redesigned diagnostics setup.
  * Moved the setup function to ncbidiag.cpp.
