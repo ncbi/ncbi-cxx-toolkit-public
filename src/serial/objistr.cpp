@@ -310,9 +310,11 @@ void CObjectIStream::SetSkipUnknownVariantsThread(ESerialSkipUnknown skip)
     ESerialSkipUnknown now = ms_SkipUnknownVariantsDefault.GetThreadDefault();
     if (now != eSerialSkipUnknown_Never &&
         now != eSerialSkipUnknown_Always) {
-        ms_SkipUnknownVariantsDefault.SetThreadDefault(
-            (skip == eSerialSkipUnknown_Default) ?
-                ms_SkipUnknownVariantsDefault.GetDefault() : skip );
+        if (skip == eSerialSkipUnknown_Default) {
+            ms_SkipUnknownVariantsDefault.ResetThreadDefault();
+        } else {
+            ms_SkipUnknownVariantsDefault.SetThreadDefault(skip);
+        }
     }
 }
 
@@ -324,7 +326,11 @@ void CObjectIStream::SetSkipUnknownVariantsGlobal(ESerialSkipUnknown skip)
     ESerialSkipUnknown now = ms_SkipUnknownVariantsDefault.GetDefault();
     if (now != eSerialSkipUnknown_Never &&
         now != eSerialSkipUnknown_Always) {
-        ms_SkipUnknownVariantsDefault.SetDefault(skip);
+        if (skip == eSerialSkipUnknown_Default) {
+            ms_SkipUnknownVariantsDefault.ResetDefault();
+        } else {
+            ms_SkipUnknownVariantsDefault.SetDefault(skip);
+        }
     }
 }
 
@@ -1637,6 +1643,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.147  2006/11/15 15:46:19  gouriano
+* Corrected setting of SkipUnknownVariants
+*
 * Revision 1.146  2006/11/07 19:00:46  gouriano
 * Added option to skip unknown variants
 *
