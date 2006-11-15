@@ -389,7 +389,7 @@ private:
         
         for(int i = 0; i < 4; i++) {
             // skip 0 bits in input.
-            if (value & (1 << i) == 0)
+            if ((value & (1 << i)) == 0)
                 continue;
             
             // If the bitcount is zero, this is the bit we want.
