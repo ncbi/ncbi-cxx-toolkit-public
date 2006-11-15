@@ -4,6 +4,7 @@
 #################################
 
 MSVC_PROJ = third_party_static_install
+REQUIRES = -DLL
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
