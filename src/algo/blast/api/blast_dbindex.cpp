@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -31,23 +31,40 @@
 /// Functionality for indexed databases
 
 #include <ncbi_pch.hpp>
+#include <sstream>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbithr.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_gapalign.h>
-#include <algo/blast/core/mb_indexed_lookup.h>
+
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
+
 #include <algo/blast/api/blast_dbindex.hpp>
 #include <algo/blast/dbindex/dbindex.hpp>
+
+#include "algo/blast/core/mb_indexed_lookup.h"
 
 /** @addtogroup AlgoBlast
  *
  * @{
  */
 
-
 extern "C" {
 
+/** Construct a new instance of index based subject sequence source.
+
+    @param retval Preallocated instance of BlastSeqSrc structure.
+    @return \e retval with filled in fields.
+*/
 static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args );
 
+/** Get the seed search results for a give subject id and chunk number.
+
+    @param idb          [I]   Database and index data.
+    @param oid          [I]   Subject id.
+    @param chunk        [I]   Chunk number.
+    @param init_hitlist [I/O] Results are returned here.
+*/
 static void s_MB_IdbGetResults(
         void * idb_v,
         Int4 oid_i, Int4 chunk_i,
@@ -60,54 +77,142 @@ BEGIN_SCOPE( blast )
 USING_SCOPE( ncbi::objects );
 USING_SCOPE( ncbi::blastdbindex );
 
+/** No-op presearch function. Used when index search is not enables.
+    @sa DbIndexPreSearchFnType()
+*/
 static void NullPreSearch( 
         BlastSeqSrc *, LookupTableWrap *, 
         BLAST_SequenceBlk *, BlastSeqLoc *,
         LookupTableOptions *, BlastInitialWordOptions * ) {}
 
+/** Global pointer to the appropriate pre-search function, based
+    on whether or not index search is enabled.
+*/
 static DbIndexPreSearchFnType PreSearchFn = &NullPreSearch;
     
 //------------------------------------------------------------------------------
+/** This structure is used to transfer arguments to s_IDbSrcNew(). */
 struct SIndexedDbNewArgs
 {
-    string indexname;
-    BlastSeqSrc * db;
+    string indexname;   /**< Name of the index data file. */
+    BlastSeqSrc * db;   /**< BLAST database sequence source instance. */
 };
 
 //------------------------------------------------------------------------------
+/** This class is responsible for loading indices and doing the actual
+    seed search.
+
+    It acts as a middle man between the blast engine and dbindex library.
+*/
 class CIndexedDb : public CObject
 {
     private:
 
+        /** Type used to represent collections of search result sets. */
+        typedef vector< CConstRef< CDbIndex::CSearchResults > > TResultSet;
+
+        /** Type used to map loaded indices to subject ids. */
+        typedef vector< CDbIndex::TSeqNum > TSeqMap;
+
+        /** Data local to a running thread.
+        */
         struct SThreadLocal 
         {
-            CRef< CIndexedDb > idb_;
+            CRef< CIndexedDb > idb_; /**< Pointer to the shared index data. */
         };
 
-        BlastSeqSrc * db_;
-        CRef< CDbIndex > index_;
-        CConstRef< CDbIndex::CSearchResults > results_;
+        /** Find an index corresponding to the given subject id.
+
+            @param oid The subject sequence id.
+            @return Index of the corresponding index data in 
+                    \e this->indices_.
+        */
+        TSeqMap::size_type LocateIndex( CDbIndex::TSeqNum oid ) const
+        {
+            for( TSeqMap::size_type i = 0; i < seqmap_.size(); ++i ) {
+                if( seqmap_[i] > oid ) return i;
+            }
+
+            assert( 0 );
+        }
+
+        BlastSeqSrc * db_;      /**< Points to the real BLAST database instance. */
+        TResultSet results_;    /**< Set of result sets, one per loaded index. */
+        TSeqMap seqmap_;        /**< For each element of \e indices_ with index i
+                                     seqmap_[i] contains one plus the last oid of
+                                     that database index. */
+
+        unsigned long threads_;         /**< Number of threads to use for seed search. */
+        vector< string > index_names_;  /**< List of index volume names. */
 
     public:
 
-        typedef SThreadLocal TThreadLocal;
+        typedef SThreadLocal TThreadLocal; /**< Type for thread local data. */
 
+        /** Object constructor.
+            
+            @param indexname A string that is a comma separated list of index
+                             file prefix, number of threads, first and
+                             last chunks of the index.
+            @param db        Points to the open BLAST database object.
+        */
         explicit CIndexedDb( const string & indexname, BlastSeqSrc * db );
+
+        /** Object destructor. */
         ~CIndexedDb();
 
+        /** Access a wrapped BLAST database object.
+
+            @return The BLAST database object.
+        */
         BlastSeqSrc * GetDb() const { return db_; }
 
+        /** Get the data portion of the BLAST database object.
+
+            \e this->db_ encapsulates an actual structure representing 
+            a particular implementation of an open BLAST database. This
+            function returns a typeless pointer to this data.
+
+            @return Pointer to the data encapsulated by /e this=>db_.
+        */
         void * GetSeqDb() const 
         { return _BlastSeqSrcImpl_GetDataStructure( db_ ); }
 
+        /** Check whether any results were reported for a given subject sequence.
+
+            @param oid The subject sequence id.
+            @return True if the were seeds found for that subject;
+                    false otherwise.
+        */
         bool CheckOid( Int4 oid ) const
-        { return index_->CheckResults( results_, (CDbIndex::TSeqNum)oid ); }
+        {
+            TSeqMap::size_type i = LocateIndex( oid );
+            const CConstRef< CDbIndex::CSearchResults > & results = results_[i];
+            if( i > 0 ) oid -= seqmap_[i-1];
+            return results->GetResults( oid, 0 ) != 0;
+        }
 
+        /** Invoke the seed search procedure on each of the loaded indices.
+
+            Each search is run in a separate thread. The function waits until
+            all threads are complete before it returns.
+
+            @param queries      Queries descriptor.
+            @param locs         Unmasked intervals of queries.
+            @param lut_options  Lookup table parameters, like target word size.
+            @param word_options Contains window size of two-hits based search.
+        */
         void PreSearch( 
-                BLAST_SequenceBlk *, BlastSeqLoc *,
-                LookupTableOptions *,
-                BlastInitialWordOptions * );
+                BLAST_SequenceBlk * queries, BlastSeqLoc * locs,
+                LookupTableOptions * lut_options,
+                BlastInitialWordOptions *  word_options );
 
+        /** Return results corresponding to a given subject sequence and chunk.
+
+            @param oid          [I]   The subject sequence id.
+            @param chunk        [I]   The chunk number.
+            @param init_hitlist [I/O] The results are returned here.
+        */
         void GetResults( 
                 CDbIndex::TSeqNum oid,
                 CDbIndex::TSeqNum chunk,
@@ -115,6 +220,9 @@ class CIndexedDb : public CObject
 };
 
 //------------------------------------------------------------------------------
+/** Callback that is called for index based seed search.
+    @sa For the meaning of parameters see DbIndexPreSearchFnType.
+*/
 static void IndexedDbPreSearch( 
         BlastSeqSrc * seq_src, 
         LookupTableWrap * lt_wrap,
@@ -134,11 +242,76 @@ static void IndexedDbPreSearch(
 
 //------------------------------------------------------------------------------
 CIndexedDb::CIndexedDb( const string & indexname, BlastSeqSrc * db )
-    : db_( db ), index_( CDbIndex::Load( indexname ) ), results_( null )
+    : db_( db ), threads_( 1 )
 {
-    if( index_ == 0 ) {
+    // Parse the indexname as a comma separated list
+    string::size_type start = 0, end = 0;
+
+    if( !indexname.empty() ) {
+        unsigned long start_vol = 0, stop_vol = 99;
+        end = indexname.find_first_of( ",", start );
+        string index_base = indexname.substr( start, end );
+        start = end + 1;
+
+        if( start < indexname.length() && end != string::npos ) {
+            end = indexname.find_first_of( ",", start );
+            string threads_str = indexname.substr( start, end );
+            
+            if( !threads_str.empty() ) {
+                threads_ = atoi( threads_str.c_str() );
+            }
+
+            start = end + 1;
+
+            if( start < indexname.length() && end != string::npos ) {
+                end = indexname.find_first_of( ",", start );
+                string start_vol_str = indexname.substr( start, end );
+
+                if( !start_vol_str.empty() ) {
+                    start_vol = atoi( start_vol_str.c_str() );
+                }
+
+                start = end + 1;
+
+                if( start < indexname.length() && end != string::npos ) {
+                    end = indexname.find_first_of( ",", start );
+                    string stop_vol_str = indexname.substr( start, end );
+
+                    if( !stop_vol_str.empty() ) {
+                        stop_vol = atoi( stop_vol_str.c_str() );
+                    }
+                }
+            }
+        }
+
+        if( threads_ > 0 && start_vol <= stop_vol ) {
+            long last_i = -1;
+
+            for( long i = start_vol; (unsigned long)i <= stop_vol; ++i ) {
+                ostringstream os;
+                os << index_base << "." << setw( 2 ) << setfill( '0' )
+                   << i << ".idx";
+                string name = SeqDB_ResolveDbPath( os.str() );
+
+                if( !name.empty() ){
+                    if( i - last_i > 1 ) {
+                        for( long j = last_i + 1; j < i; ++j ) {
+                            ERR_POST( Error << "Index volume " 
+                                            << j << " not resolved." );
+                        }
+                    }
+
+                    index_names_.push_back( name );
+                    last_i = i;
+                }
+            }
+        }
+        else if( threads_ == 0 ) threads_ = 1;
+    }
+
+    if( index_names_.empty() ) {
         throw std::runtime_error(
-                "CIndexedDb: could not load index" );
+                "CIndexedDb: no index file specified" );
     }
 
     PreSearchFn = &IndexedDbPreSearch;
@@ -151,6 +324,41 @@ CIndexedDb::~CIndexedDb()
     BlastSeqSrcFree( db_ );
 }
 
+//------------------------------------------------------------------------------
+class CPreSearchThread : public CThread
+{
+    public:
+
+        CPreSearchThread(
+                BLAST_SequenceBlk * queries,
+                BlastSeqLoc * locs,
+                const CDbIndex::SSearchOptions & sopt,
+                CRef< CDbIndex > & index,
+                CConstRef< CDbIndex::CSearchResults > & results )
+            : queries_( queries ), locs_( locs ), sopt_( sopt ),
+              index_( index ), results_( results )
+        {}
+
+        virtual void * Main( void );
+        virtual void OnExit( void ) {}
+
+    private:
+
+        BLAST_SequenceBlk * queries_;
+        BlastSeqLoc * locs_;
+        const CDbIndex::SSearchOptions & sopt_;
+        CRef< CDbIndex > & index_;
+        CConstRef< CDbIndex::CSearchResults > & results_;
+};
+
+//------------------------------------------------------------------------------
+void * CPreSearchThread::Main( void )
+{
+    results_ = index_->Search( queries_, locs_, sopt_ );
+    return 0;
+}
+
+//------------------------------------------------------------------------------
 void CIndexedDb::PreSearch( 
         BLAST_SequenceBlk * queries, BlastSeqLoc * locs,
         LookupTableOptions * lut_options , 
@@ -160,7 +368,51 @@ void CIndexedDb::PreSearch(
     sopt.word_size = lut_options->word_size;
     sopt.template_type = lut_options->mb_template_type;
     sopt.two_hits = (word_options->window_size > 0);
-    results_ = index_->Search( queries, locs, sopt );
+
+    for( vector< string >::size_type v = 0; 
+            v < index_names_.size(); v += threads_ ) {
+        typedef vector< CRef< CDbIndex > > TIndexSet;
+        TIndexSet indices;
+
+        for( vector< string >::size_type ind = 0; 
+                ind < threads_ && v + ind < index_names_.size(); ++ind ) {
+            CRef< CDbIndex > index = CDbIndex::Load( index_names_[v+ind] );
+
+            if( index == 0 ) {
+                throw std::runtime_error(
+                        (string( "CIndexedDb: could not load index" ) 
+                        + index_names_[v+ind]).c_str() );
+            }
+
+            indices.push_back( index );
+            results_.push_back( CConstRef< CDbIndex::CSearchResults >( null ) );
+            CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();
+            seqmap_.push_back( s + (index->StopSeq() - index->StartSeq()) );
+        }
+
+        if( indices.size() > 1 ) {
+            vector< CPreSearchThread * > threads( indices.size(), 0 );
+
+            for( vector< CPreSearchThread * >::size_type i = 0;
+                    i < threads.size(); ++i ) {
+                threads[i] = new CPreSearchThread(
+                        queries, locs, sopt, indices[i], results_[v+i] );
+                threads[i]->Run();
+            }
+
+            for( vector< CPreSearchThread * >::iterator i = threads.begin();
+                    i != threads.end(); ++i ) {
+                void * result;
+                (*i)->Join( &result );
+                *i = 0;
+            }
+        }
+        else {
+            CRef< CDbIndex > & index = indices[0];
+            CConstRef< CDbIndex::CSearchResults > & results = results_[v];
+            results = index->Search( queries, locs, sopt );
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -169,8 +421,11 @@ void CIndexedDb::GetResults(
         BlastInitHitList * init_hitlist ) const
 {
     BlastInitHitList * res = 0;
+    TSeqMap::size_type i = LocateIndex( oid );
+    const CConstRef< CDbIndex::CSearchResults > & results = results_[i];
+    if( i > 0 ) oid -= seqmap_[i-1];
 
-    if( (res = index_->ExtractResults( results_, oid, chunk )) != 0 ) {
+    if( (res = results->GetResults( oid, chunk )) != 0 ) {
         BlastInitHitListMove( init_hitlist, res );
     }else {
         BlastInitHitListReset( init_hitlist );
@@ -199,6 +454,7 @@ USING_SCOPE( ncbi::blast );
 extern "C" {
 
 //------------------------------------------------------------------------------
+/** C language wrapper around CIndexedDb::GetDb(). */
 static BlastSeqSrc * s_GetForwardSeqSrc( void * handle )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
@@ -206,6 +462,7 @@ static BlastSeqSrc * s_GetForwardSeqSrc( void * handle )
 }
 
 //------------------------------------------------------------------------------
+/** C language wrapper around CIndexedDb::GetSeqDb(). */
 void * s_GetForwardSeqDb( void * handle )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
@@ -213,6 +470,7 @@ void * s_GetForwardSeqDb( void * handle )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Int4 s_IDbGetNumSeqs( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -221,6 +479,7 @@ static Int4 s_IDbGetNumSeqs( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Int4 s_IDbGetMaxLength( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -229,6 +488,7 @@ static Int4 s_IDbGetMaxLength( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Int4 s_IDbGetAvgLength( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -237,6 +497,7 @@ static Int4 s_IDbGetAvgLength( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Int8 s_IDbGetTotLen( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -245,6 +506,7 @@ static Int8 s_IDbGetTotLen( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static const char * s_IDbGetName( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -253,6 +515,7 @@ static const char * s_IDbGetName( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Boolean s_IDbGetIsProt( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -261,6 +524,7 @@ static Boolean s_IDbGetIsProt( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Int2 s_IDbGetSequence( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -269,6 +533,7 @@ static Int2 s_IDbGetSequence( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static Int4 s_IDbGetSeqLen( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -277,6 +542,9 @@ static Int4 s_IDbGetSeqLen( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_ but skip over the ones for
+    which no results were poduces by pre-search. 
+*/
 static Int4 s_IDbIteratorNext( void * handle, BlastSeqSrcIterator * itr )
 {
     CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
@@ -293,6 +561,7 @@ static Int4 s_IDbIteratorNext( void * handle, BlastSeqSrcIterator * itr )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
 static void s_IDbReleaseSequence( void * handle, void * x )
 {
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
@@ -301,6 +570,13 @@ static void s_IDbReleaseSequence( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Destroy the sequence source.
+
+    Destroys and frees CIndexedDb instance and the wrapped BLAST database.
+
+    @param seq_src BlastSeqSrc wrapper around CIndexedDb object.
+    @return NULL.
+*/
 static BlastSeqSrc * s_IDbSrcFree( BlastSeqSrc * seq_src )
 {
     if( seq_src ) {
@@ -315,6 +591,11 @@ static BlastSeqSrc * s_IDbSrcFree( BlastSeqSrc * seq_src )
 }
 
 //------------------------------------------------------------------------------
+/** Fill the BlastSeqSrc data with a copy of its own contents.
+
+    @param seq_src A BlastSeqSrc instance to fill.
+    @return seq_src if copy was successfull, NULL otherwise.
+*/
 static BlastSeqSrc * s_IDbSrcCopy( BlastSeqSrc * seq_src )
 {
     if( !seq_src ) {
@@ -335,6 +616,7 @@ static BlastSeqSrc * s_IDbSrcCopy( BlastSeqSrc * seq_src )
 }
 
 //------------------------------------------------------------------------------
+/** Initialize the BlastSeqSrc data structure with the appropriate callbacks. */
 static void s_IDbSrcInit( BlastSeqSrc * retval, CIndexedDb::TThreadLocal * idb )
 {
     ASSERT( retval );
@@ -389,6 +671,11 @@ static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args )
     return retval;
 }
 
+//------------------------------------------------------------------------------
+/** Get the seeds corresponding to the given subject sequence and chunk.
+
+    The function is a C language wrapper around CIndexedDb::GetResults().
+*/
 static void s_MB_IdbGetResults(
         void * idb_v,
         Int4 oid_i, Int4 chunk_i,
@@ -413,6 +700,12 @@ static void s_MB_IdbGetResults(
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/15 23:24:10  papadopo
+ * From Alex Morgulis:
+ * 1. Allow individual volumes of an indexed database to be searched
+ * 2. Add utility routines
+ * 3. Add doxygen
+ *
  * Revision 1.2  2006/10/05 15:59:21  papadopo
  * GetResults is static now
  *
