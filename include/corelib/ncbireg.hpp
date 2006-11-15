@@ -500,7 +500,7 @@ public:
     /// Subregistries whose priority is less than the core cutoff
     /// (ePriority_Default by default) will be ignored for fJustCore
     /// operations, such as Write by default.
-    TPriority GetCoreCutoff(void)           { return m_CoreCutoff; }
+    TPriority GetCoreCutoff(void) const     { return m_CoreCutoff; }
     void      SetCoreCutoff(TPriority prio) { m_CoreCutoff = prio; }
 
     /// Return a pointer to the sub-registry with the given name, or
@@ -671,7 +671,7 @@ public:
     /// Subregistries whose priority is less than the core cutoff
     /// (ePriority_Reserved by default) will be ignored for fJustCore
     /// operations, such as Write by default.
-    TPriority GetCoreCutoff(void);
+    TPriority GetCoreCutoff(void) const;
     void      SetCoreCutoff(TPriority prio);
 
     /// Non-empty names must be unique within each compound registry,
@@ -813,6 +813,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/11/15 16:38:17  ucko
+ * Make C{Compound,Ncbi}Registry::GetCoreCutoff() const.
+ *
  * Revision 1.41  2006/08/30 18:02:24  ucko
  * CNcbiRegistry: optionally load a global registry (.ncbirc or ncbi.ini)
  * if explicitly requested (and not explicitly disabled).
