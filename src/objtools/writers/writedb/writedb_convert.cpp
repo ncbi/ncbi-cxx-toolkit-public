@@ -370,20 +370,26 @@ private:
     /// @return A non-ambiguous letter.
     int x_Random(int value)
     {
+        // 0xF is the most common case of ambiguity so it's worth to
+        // process it in fastest way, especially because it's very easy.
+        
+        if (value == 0xF) {
+            return rand() & 0x3;
+        }
+        
+        if (value == 0) {
+            cerr << "Error: '0' ambiguity code found, changing to 15." << endl;
+            return rand() & 0x3;
+        }
+        
         int bitcount = ((value & 1) +
                         ((value >> 1) & 1) +
                         ((value >> 2) & 1) +
                         ((value >> 3) & 1));
         
-        if (bitcount == 0) {
-            cerr << "Error: ambiguity with '0' code found, changing to 15." << endl;
-            value = 0xF;
-            bitcount = 4;
-        } else {
-            // 1-bit ambiguities here, indicate an error in this class.
-            _ASSERT(bitcount >= 2);
-        }
-        _ASSERT(bitcount <= 4);
+        // 1-bit ambiguities here, indicate an error in this class.
+        _ASSERT(bitcount >= 2);
+        _ASSERT(bitcount <= 3);
         
         int pick = rand() % bitcount;
         
