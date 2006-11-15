@@ -55,6 +55,9 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
         ITERATE (list<string>, it, provided) {
             m_ProvidedThing.insert(*it);
         }
+        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+            m_ProvidedThing.insert("DLL");
+        }
 
         GetStandardFeatures(provided);
         ITERATE (list<string>, it, provided) {
@@ -574,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/11/15 15:33:17  gouriano
+ * Added handling DLL requirement
+ *
  * Revision 1.42  2006/11/08 18:04:07  gouriano
  * If CONFS not specified, default to all configs
  *
