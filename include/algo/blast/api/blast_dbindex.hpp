@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -40,16 +40,40 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+/** Wrap a BlastSeqSrc object db by another object that provides index based
+    seed searching.
+
+    @param indexname Name of the file containing index data.
+    @param db        Blast database object.
+    @return New BlastSeqSrc object the is a wrapper around the original one.
+*/
 NCBI_XBLAST_EXPORT
 BlastSeqSrc * DbIndexSeqSrcInit( const string & indexname, BlastSeqSrc * db );
 
-typedef void (*DbIndexPreSearchFnType)( 
-        BlastSeqSrc *, LookupTableWrap *, BLAST_SequenceBlk *, BlastSeqLoc *,
-        LookupTableOptions *, BlastInitialWordOptions * );
+/** Type of a callback that is called to invoke index based search.
 
+    @param seq_src      Indexed database source object.
+    @param lt_wrap      Wrapper for CIndexedDb.
+    @param queries      Queries descriptor.
+    @param locs         Unmasked intervals of queries.
+    @param lut_options  Lookup table parameters, like target word size.
+    @param word_options Contains window size of two-hits based search.
+*/
+typedef void (*DbIndexPreSearchFnType)( 
+        BlastSeqSrc * seq_src, LookupTableWrap * lt_wrap, 
+        BLAST_SequenceBlk * queries, BlastSeqLoc * locs,
+        LookupTableOptions * lut_options, 
+        BlastInitialWordOptions * word_options );
+
+/** Return the appropriate pre-search callback. 
+
+    @return No-op function if indexing is not being used;
+            otherwise - the appropriate callback.
+*/
 extern DbIndexPreSearchFnType GetDbIndexPreSearchFn();
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
 #endif /* ALGO_BLAST_API___BLAST_DBINDEX__HPP */
+
