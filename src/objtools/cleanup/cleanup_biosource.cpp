@@ -263,7 +263,7 @@ void CCleanup_imp::x_SubtypeCleanup(CBioSource& bs)
             CSubSource& ss = **it;
             if ( ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_seq  || 
                  ss.GetSubtype() == CSubSource::eSubtype_rev_primer_seq ) {
-                NStr::ToUpper(ss.SetName());
+                NStr::ToLower(ss.SetName());
                 ss.SetName(NStr::Replace(ss.GetName(), " ", kEmptyStr));
                 if (ss.GetSubtype() == CSubSource::eSubtype_fwd_primer_seq) {
                     if (fwd_primer_seq == subtypes.end() ) {
@@ -1490,6 +1490,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2006/11/15 13:49:15  rsmith
+ * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
+ *
  * Revision 1.16  2006/10/24 12:15:22  bollin
  * Added more steps to LoopToAsn3, including steps for creating and combining
  * MolInfo descriptors and BioSource descriptors.

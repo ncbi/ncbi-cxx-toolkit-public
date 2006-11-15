@@ -66,7 +66,7 @@ for lib in $LIBS; do
 		echo "Applying patch: level 5"
 		patch -p1 <$NCBICPP/src/gui/patches/fltk/fltk-1.1.6-ncbi5.patch
 		
-		conf="--prefix="$DEST" --enable-shared --enable-threads --disable-localpng --disable-localjpeg --disable-localzlib"
+		conf="--prefix="$DEST" --enable-debug --enable-shared --enable-threads --disable-localpng --disable-localjpeg --disable-localzlib"
 		CPPFLAGS="-I$DEST/include"
 		LDFLAGS="-L$DEST/lib -lstdc++"
 		CFLAGS=$CPPFLAGS

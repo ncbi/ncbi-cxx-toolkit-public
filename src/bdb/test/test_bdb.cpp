@@ -43,7 +43,7 @@
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_blob.hpp>
-#include <bdb/bdb_map.hpp>
+//#include <bdb/bdb_map.hpp>
 #include <bdb/bdb_blobcache.hpp>
 #include <bdb/bdb_filedump.hpp>
 #include <bdb/bdb_trans.hpp>
@@ -1839,7 +1839,7 @@ bool CheckMapDataValid_i2s(int first, const string& second)
     sprintf(szBuf, "Data%i", first);
     return second == string(szBuf);
 }
-
+/*
 static void s_TEST_db_map(void)
 {
     cout << "======== db_map test." << endl;
@@ -1941,7 +1941,7 @@ static void s_TEST_db_multimap(void)
     cout << "======== db_multimap test ok." << endl;
 
 }
-
+*/
 static void s_TEST_BDB_Queue()
 {
     cout << "======== Queue test." << endl;
@@ -2156,11 +2156,11 @@ int CBDB_Test::Run(void)
         s_TEST_BDB_Duplicates();
 
         s_TEST_BDB_Transaction();
-
+/*
         s_TEST_db_map();
 
         s_TEST_db_multimap();
-
+*/
         s_TEST_ICache();
 
         s_TEST_BDB_Query();
@@ -2200,6 +2200,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/11/15 13:49:14  rsmith
+ * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
+ *
  * Revision 1.64  2006/01/13 14:42:44  vasilche
  * Fixed comparison in assert() call.
  *

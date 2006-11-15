@@ -38,7 +38,7 @@ global AllApplications -- All GUI applications to build
 
 (* Libraries for linking (note the extra space before the lib name! )*)
 property Z_LIBS : "z"
-property IMG_LIBS : " png tiff gif z" -- jpeg
+property IMG_LIBS : " png tiff gif z jpeg"
 property FLTK_LIBS : " fltk_images fltk_gl fltk"
 property BDB_LIBS : " db"
 property SQLITE_LIBS : " sqlite"
@@ -360,8 +360,8 @@ property coretest : {name:"coretest", path:"corelib:test", inc:{"coretest.cpp"},
 -- object manager
 property test_objmgr : {name:"test_objmgr", path:"objmgr:test", inc:{"test_objmgr.cpp", "test_helper.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property test_objmgr_basic : {name:"test_objmgr_basic", path:"objmgr:test", inc:{"test_objmgr_basic.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
-property test_validator : {name:"test_validator", path:"objtools:validator:test", inc:{"test_validator.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb ncbi_validator", req:false}
-property test_basic_cleanup : {name:"test_basic_cleanup", path:"objtools:cleanup:test", inc:{"test_basic_cleanup.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
+property test_validator : {name:"test_validator", path:"objtools:validator:test", inc:{"test_validator.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb ncbi_validator", req:true}
+property test_basic_cleanup : {name:"test_basic_cleanup", path:"objtools:cleanup:test", inc:{"test_basic_cleanup.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 -- App
 --property asn2flat : {name:"asn2flat", path:"app:asn2flat", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property asn2asn : {name:"asn2asn", path:"app:asn2asn", inc:{"asn2asn.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
@@ -372,7 +372,7 @@ property id1_fetch : {name:"id1_fetch", path:"app:id1_fetch", inc:{"id1_fetch.cp
 property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:{"id1_fetch_simple.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext", req:false}
 property objmgr_demo : {name:"objmgr_demo", path:"app:objmgr:demo", dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb", req:false}
 property blast_client : {name:"blast_client", path:"app:blast_client", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_algo ncbi_lds ncbi_xloader_genbank", req:false}
-property convert_seq : {name:"convert_seq", path:"app:convert_seq", dep:"ncbi_core ncbi_general ncbi_seq ncbi_misc ncbi_seqext ncbi_xloader_genbank", req:false}
+property convert_seq : {name:"convert_seq", path:"app:convert_seq", dep:"ncbi_core ncbi_general ncbi_seq ncbi_misc ncbi_seqext ncbi_xloader_genbank", req:true}
 
 property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core", req:true}
 
@@ -442,6 +442,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.113  2006/11/15 13:49:14  rsmith
+ * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
+ *
  * Revision 1.112  2006/11/06 14:47:36  lebedev
  * Libraries updated
  *

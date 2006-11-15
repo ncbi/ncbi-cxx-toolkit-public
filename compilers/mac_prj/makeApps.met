@@ -2,13 +2,13 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "users:rsmith:fltk-1.1.6-ncbi3" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
-property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
+property pImageLibsFolder : "users:rsmith:sw:" -- root folder for the image libraries and headers.
 
 -- do test/demo applications
-property pBuildDemos : false
+property pBuildDemos : true
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -289,9 +289,11 @@ on SetProjectData()
 	AddProject(datatoolData)
 	
 	---------- GENOME WORK BENCH ----------
-	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"w_workspace"}, {"gui_core"})
-	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
-		{}, {"gui_core"})
+	AddAppProjectExcept("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"gbench_feedback_agent.cpp", "gbench_monitor.cpp"}, {"w_workspace", "gui_services"}, {"gui_core"})
+	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", {}, {"gui_core"})
+	AddAppProjectList("gbench_monitor", {"cmdline", "plainname"}, "gui:gbench", {"gbench_monitor"}, {"xncbi", "xutil"}, {})
+	AddAppProjectList("gbench_feedback_agent", {"fltk", "plainname"}, "gui:gbench", {"gbench_feedback_agent.cpp", "feedback_wizard.cpp", "gbench_version.cpp"}, {}, {"gui_core"})
+	
 	
 	---------- OBJECTS ----------	
 	AddProject(DataPlusLibs(SimpleProjectData("ini2reg", "gui:objutils:test", {"cmdline", "C++"}), objMgrLibs & {"gui_objutils", "gui_utils", "xalnmgr", "tables"}, {}))
@@ -301,7 +303,7 @@ on SetProjectData()
 	AddProject(DataPlusLibs(SimpleProjectData("asn2flat", "app:asn2flat", {"C++", "cmdline"}), objMgrLibs & {"xalnmgr", "entrez2", "entrez2cli"}, {}))
 	
 	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objtools:validator:test", {"C++", "sockets", "libdl", "cmdline"}, {"test_validator"}), Â
-		objMgrLibs & {"xvalidate", "xobjutil", "submit"}, {}))
+		objMgrLibs & {"xvalidate", "xobjutil", "submit", "valerr"}, {}))
 	AddProject(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), Â
 		commonObjLibs & {"id1", "xconnect"}, {}))
 	

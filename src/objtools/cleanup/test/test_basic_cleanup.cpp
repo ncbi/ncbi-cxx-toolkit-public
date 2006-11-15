@@ -192,7 +192,7 @@ int CTest_cleanupApplication::Run(void)
         }
     }
 
-    if ( changes->ChangeCount() > 0 ) {
+    if ( changes && changes->ChangeCount() > 0 ) {
         PrintChanges(changes, args);
     }
 
@@ -340,6 +340,7 @@ CObjectIStream* CTest_cleanupApplication::OpenIFile
 {
     // file name
     string fname = args["i"].AsString();
+    CNcbiIstream& in = args["i"].AsInputFile();
 
     // file format 
     ESerialDataFormat format = eSerial_AsnText;
@@ -347,7 +348,7 @@ CObjectIStream* CTest_cleanupApplication::OpenIFile
         format = eSerial_AsnBinary;
     }
 
-    return CObjectIStream::Open(fname, format);
+    return CObjectIStream::Open(format, in );
 }
 
 
@@ -355,12 +356,12 @@ CObjectOStream* CTest_cleanupApplication::OpenOFile
 (const CArgs& args)
 {
     // file name
-    string fname = args["o"].AsString();
+    CNcbiOstream& out = args["o"].AsOutputFile();
     
     // file format 
     ESerialDataFormat format = eSerial_AsnText;
     
-    return CObjectOStream::Open(fname, format);
+    return CObjectOStream::Open(format, out );
 }
 
 
@@ -368,19 +369,24 @@ SIZE_TYPE CTest_cleanupApplication::PrintChanges
 (CConstRef<CCleanupChange> changes, 
  const CArgs& args)
 {
-    CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
+    if (args["x"]) {
+        string errOutName = args["x"].AsString();
 
-    if ( changes->ChangeCount() == 0 ) {
-        return 0;
+        CNcbiOstream* os = &NcbiCerr;
+        if (errOutName == "-")
+            os = &(args["x"].AsOutputFile());
+
+        if ( changes->ChangeCount() == 0 ) {
+            return 0;
+        }
+
+        vector<string> changes_str = changes->GetAllDescriptions();
+        ITERATE(vector<string>, vit, changes_str) {
+            *os << *vit << endl;
+        }
+
+        *os << "Number of changes: " << changes->ChangeCount() << endl;
     }
-
-    vector<string> changes_str = changes->GetAllDescriptions();
-    ITERATE(vector<string>, vit, changes_str) {
-        *os << *vit << endl;
-    }
-
-    *os << "Number of changes: " << changes->ChangeCount() << endl;
-
     return changes->ChangeCount();
 }
 
@@ -404,6 +410,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/11/15 13:49:15  rsmith
+ * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
+ *
  * Revision 1.4  2006/09/12 19:43:58  rsmith
  * fix reporting for changes.
  *

@@ -44,6 +44,8 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -333,20 +335,24 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
 void CCleanup_imp::BasicCleanup(CGB_block& gbb)   
 {
     CLEAN_STRING_LIST(gbb, Extra_accessions);
-    CGB_block::TExtra_accessions& x_accs = gbb.SetExtra_accessions();
-    if ( ! objects::is_sorted(x_accs.begin(), x_accs.end())) {
-        x_accs.sort();
-        ChangeMade(CCleanupChange::eCleanQualifiers);
-    }
-    size_t xaccs_len = x_accs.size();
-    x_accs.unique();
-    if (xaccs_len != x_accs.size()) {
-        ChangeMade(CCleanupChange::eCleanQualifiers);
+    if (gbb.IsSetExtra_accessions()) {
+        CGB_block::TExtra_accessions& x_accs = gbb.SetExtra_accessions();
+        if ( ! objects::is_sorted(x_accs.begin(), x_accs.end())) {
+            x_accs.sort();
+            ChangeMade(CCleanupChange::eCleanQualifiers);
+        }
+        size_t xaccs_len = x_accs.size();
+        x_accs.unique();
+        if (xaccs_len != x_accs.size()) {
+            ChangeMade(CCleanupChange::eCleanQualifiers);
+        }
     }
     
     CLEAN_STRING_LIST(gbb, Keywords);
-    if (RemoveDupsNoSort(gbb.SetKeywords(), m_Mode != eCleanup_EMBL)) { // case insensitive
-        ChangeMade(CCleanupChange::eCleanKeywords);
+    if (gbb.IsSetKeywords()) {
+        if (RemoveDupsNoSort(gbb.SetKeywords(), m_Mode != eCleanup_EMBL)) { // case insensitive
+            ChangeMade(CCleanupChange::eCleanKeywords);
+        }        
     }
     
     // don't sort keywords, but get rid of dups.
@@ -477,8 +483,61 @@ void CCleanup_imp::BasicCleanup(CSeq_annot_Handle& sah)
 }
 
 
+static
+bool x_IsOneMinusStrand(const CSeq_loc& sl)
+{
+    bool isReverse = true;
+    switch ( sl.Which() ) {
+        case CSeq_loc::e_not_set:
+        case CSeq_loc::e_Null:
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Whole:
+            return false; 
+        case CSeq_loc::e_Int:
+        case CSeq_loc::e_Pnt:
+            return sl.IsReverseStrand();
+
+        case CSeq_loc::e_Packed_int:
+            ITERATE(CSeq_loc::TPacked_int::Tdata, i, sl.GetPacked_int().Get()) {
+                if (IsReverse((*i)->GetStrand())) {
+                    return true;
+                }
+            }
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            return IsReverse(sl.GetPacked_pnt().GetStrand());
+        case CSeq_loc::e_Mix:
+            ITERATE(CSeq_loc::TMix::Tdata, i, sl.GetMix().Get()) {
+                if (x_IsOneMinusStrand(**i)) {
+                    return true;
+                }
+            }
+            break;
+        case CSeq_loc::e_Equiv:
+            ITERATE(CSeq_loc::TEquiv::Tdata, i, sl.GetEquiv().Get()) {
+                if (x_IsOneMinusStrand(**i)) {
+                    return true;
+                }
+            }
+            break;
+        case CSeq_loc::e_Bond:
+            if (IsReverse(sl.GetBond().GetA().GetStrand())) {
+                return true;
+            }
+            if (sl.GetBond().IsSetB()) {
+                if (IsReverse(sl.GetBond().GetB().GetStrand())) {
+                    return true;
+                }
+            }
+            break;
+    }
+    return false;
+}
+
+
 void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
 {
+    
     if (sl.IsWhole()  &&  m_Scope) {
         // change the Seq-loc/whole to a Seq-loc/interval which covers the whole sequence.
         CSeq_id& id = sl.SetWhole();
@@ -495,6 +554,7 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
         }
     }
     
+        
     switch (sl.Which()) {
     case CSeq_loc::e_Int :
         BasicCleanup(sl.SetInt());
@@ -565,6 +625,19 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
         }
         break;
     }
+
+    /* don't allow negative strand on protein sequences */
+    {
+        CBioseq_Handle bsh;
+        try {
+            bsh = m_Scope->GetBioseqHandle(sl);
+        } catch (...) { }
+        if (bsh  &&  bsh.IsProtein()  && x_IsOneMinusStrand(sl) ) {
+            sl.SetStrand(eNa_strand_unknown);
+            ChangeMade(CCleanupChange::eChangeSeqloc);
+        }
+    }
+    
 }
 
 
@@ -1443,6 +1516,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.52  2006/11/15 13:49:15  rsmith
+ * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
+ *
  * Revision 1.51  2006/10/12 17:29:39  bollin
  * Corrected bugs that were falsely reporting changes made by ExtendedCleanup.
  *

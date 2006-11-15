@@ -2,23 +2,24 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "" -- full path of the patched FLTK directory. Optional.
+property pFLTKRootFolder : "users:rsmith:fltk-1.1.6-ncbi3:" -- full path of the patched FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Optional
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
-property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
+property pImageLibsFolder : "users:rsmith:sw:" -- root folder for the image libraries and headers.
 
 -- Whether to create projects in the specified category.
-property pCreateCoreLibs : true
-property pCreateSocketLibs : true (* whether to create/compile socket libs *)
-property pCreateObjectLibs : true (* whether to create/compile object libraries *)
-property pCreateObjToolsLibs : true
-property pCreateGuiLibs : true
+property pCreateCoreLibs : false
+property pCreateSocketLibs : false (* whether to create/compile socket libs *)
+property pCreateObjectLibs : false (* whether to create/compile object libraries *)
+property pCreateObjToolsLibs : false
+property pCreateGuiLibs : false
+property pCreateDLLPackages : true
 property pCreatePluginLibs : true
 
 -- true if we want to save compilation errors in a file and continue.
 -- false if we want to stop on an error.
-property pSaveContinueOnErrors : false
+property pSaveContinueOnErrors : true
 
 -- Whether to recreate existing project files.
 property pAlwaysCreateProjects : false
@@ -207,6 +208,12 @@ on AddGuiProject(projName, features, section)
 	AddProject(GuiProjectData(projName, features, section))
 end AddGuiProject
 
+on AddDLL(projName, features, staticLibs, dynLibs)
+	if features does not contain "DLL" then set features to features & {"DLL"}
+	set projData to ProjectData(projName, features, {mkFileDataListFiles("", {})})
+	AddProject(DataPlusLibs(projData, staticLibs, dynLibs))
+end AddDLL
+
 on AddPlugin(projName, features, section, staticLibs)
 	if features does not contain "plugin" then set features to features & {"plugin"}
 	set projData to GuiProjectData(projName, features, section)
@@ -269,6 +276,7 @@ on SetProjectData()
 		AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
 		AddSimpleProject("dbapi", {}, "dbapi")
 		AddSimpleProject("dbapi_driver", {}, "dbapi:driver")
+		AddSimpleProject("dbapi_cache", {}, "dbapi:cache")
 		AddSimpleProjectExceptFiles("xhtml", {}, "html", {"nodemap.cpp"})
 		AddSimpleProjectListFiles("xcser", {}, "serial", {"asntypes.cpp", "serialasn.cpp"})
 		AddSimpleProjectExceptFiles("xser", {}, "serial", Â
@@ -287,7 +295,8 @@ on SetProjectData()
 		AddSimpleProject("creaders", {}, "util:creaders")
 		
 		AddSimpleProject("xsqlite", {"sqlite"}, "sqlite")
-		AddSimpleProjectExceptFiles("bdb", {"bdb"}, "bdb", {"bdb_query_bison.tab.c", "bdb_query_lexer.cpp"})
+		AddSimpleProjectExceptFiles("bdb", {"bdb"}, "bdb", {"bdb_query_bison.tab.c", "bdb_query_lexer.cpp", "bdb_blobcache.cpp"})
+		AddSimpleProjectListFiles("xcache_bdb", {"bdb"}, "bdb", {"bdb_blobcache.cpp"})
 		
 		set libdbFiles to {Â
 			mkFileData(gBdbRootFolder & "btree"), Â
@@ -382,6 +391,7 @@ on SetProjectData()
 		AddObject("submit")
 		AddProject(ObjectData("taxon1", {"cache", "ctreecont", "taxon1", "utils"}))
 		AddObject("tinyseq")
+		AddObject("valerr")
 		
 	end if
 	
@@ -401,18 +411,18 @@ on SetProjectData()
 		AddSimpleProject("xobjmanip", {}, "objtools:manip")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
 		AddSimpleProject("seqdb", {}, "objtools:readers:seqdb")
-		AddSimpleProject("ncbi_xloader_patcher", {}, "objtools:data_loaders:patcher")
+		AddSimpleProject("xloader_patcher", {}, "objtools:data_loaders:patcher")
 		AddSimpleProject("xformat", {}, "objtools:format")
 		AddSimpleProject("xcleanup", {}, "objtools:cleanup")
 		
-		AddSimpleProject("ncbi_xloader_lds", {}, "objtools:data_loaders:lds")
-		AddSimpleProject("ncbi_xloader_table", {}, "objtools:data_loaders:table")
-		AddSimpleProject("ncbi_xloader_trace", {}, "objtools:data_loaders:trace")
-		AddSimpleProject("ncbi_xloader_genbank", {}, "objtools:data_loaders:genbank")
-		AddSimpleProject("ncbi_xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1")
-		AddSimpleProject("ncbi_xreader_id2", {}, "objtools:data_loaders:genbank:readers:id2")
-		AddSimpleProject("ncbi_xreader_cache", {}, "objtools:data_loaders:genbank:readers:cache")
-		AddSimpleProject("ncbi_xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
+		AddSimpleProject("xloader_lds", {}, "objtools:data_loaders:lds")
+		AddSimpleProject("xloader_table", {}, "objtools:data_loaders:table")
+		AddSimpleProject("xloader_trace", {}, "objtools:data_loaders:trace")
+		AddSimpleProject("xloader_genbank", {}, "objtools:data_loaders:genbank")
+		AddSimpleProject("xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1")
+		AddSimpleProject("xreader_id2", {}, "objtools:data_loaders:genbank:readers:id2")
+		AddSimpleProject("xreader_cache", {}, "objtools:data_loaders:genbank:readers:cache")
+		AddSimpleProject("xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
 		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
 		
 		AddSimpleProject("xalgoalignutil", {}, "algo:align:util")
@@ -445,6 +455,7 @@ on SetProjectData()
 	if pCreateGuiLibs then
 		-- GuiProject's automatically have 'fltk' feature.
 		
+		AddGuiProject("gui_services", {}, "services")
 		AddGuiProject("w_phylo_tree", {}, "widgets:phylo_tree")
 		AddGuiProject("gui_utils", {}, "utils")
 		AddGuiProject("gui_objutils", {}, "objutils")
@@ -509,6 +520,43 @@ on SetProjectData()
 		AddSimpleProjectListFiles("gbench_svc", {}, "gui:core", {"gbench_svc__.cpp", "gbench_svc___.cpp"})
 		AddSimpleProjectListFiles("gbench_svc_cli", {}, "gui:core", {"gbench_svc_cli.cpp", "gbench_svc_cli_.cpp"})
 		
+		AddSimpleProjectListFiles("gui__core", {"fltk"}, "gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link", "view_composite", "dh_manager"})
+		
+	end if
+	
+	if pCreateDLLPackages then
+		-- create DLL packages of the previous libs.
+		AddDLL("ncbi_core", {"libdl"}, {"xncbi", "xcompress", "xbz2", "tables", "sequtil", "creaders", "regexp", "xutil", "xconnect", "xser", "z", "bz2"}, {})
+		AddDLL("ncbi_web", {}, {"xhtml", "xcgi"}, {"ncbi_core"})
+		AddDLL("ncbi_bdb", {}, {"bdb", "libdb"}, {"ncbi_core"})
+		AddDLL("ncbi_xcache_bdb", {}, {"xcache_bdb"}, {"ncbi_core", "ncbi_bdb"})
+		AddDLL("ncbi_sqlite", {"sqlitelib"}, {"xsqlite"}, {"ncbi_core"})
+		AddDLL("ncbi_image", {"image"}, {"ximage"}, {"ncbi_core"})
+		AddDLL("ncbi_dbapi_driver", {}, {"dbapi_driver"}, {"ncbi_core"})
+		AddDLL("ncbi_dbapi", {}, {"dbapi", "dbapi_cache"}, {"ncbi_core", "ncbi_dbapi_driver"})
+		AddDLL("ncbi_general", {}, {"general"}, {"ncbi_core"})
+		AddDLL("ncbi_pub", {}, {"biblio", "medline", "medlars", "mla", "mlacli", "pub", "pubmed"}, {"ncbi_core", "ncbi_general"})
+		AddDLL("ncbi_seq", {}, {"seq", "seqset", "seqcode", "submit", "scoremat", "xnetblast", "xnetblastcli", "blastdb", "blastxml", "taxon1", "seqtest", "seqedit", "seqres", "seqloc", "seqfeat", "seqblock", "seqalign"}, {"ncbi_core", "ncbi_general", "ncbi_pub"})
+		AddDLL("ncbi_misc", {}, {"access", "biotree", "docsum", "entrez2", "entrez2cli", "insdseq", "entrezgene", "featdef", "gbseq", "mim", "objprt", "tinyseq", "proj", "omssa", "pcassay", "pcsubstance"}, {"ncbi_core", "ncbi_general", "ncbi_pub", "ncbi_seq"})
+		AddDLL("ncbi_mmdb", {}, {"cdd", "cn3d", "ncbimime", "mmdb1", "mmdb2", "mmdb3"}, {"ncbi_core", "ncbi_general", "ncbi_pub", "ncbi_seq"})
+		AddDLL("ncbi_seqext", {}, {"xalnmgr", "xobjmgr", "xobjread", "xobjwrite", "xobjutil", "xobjmanip", "xformat", "seqdb", "id1", "id1cli", "id2", "id2cli", "id2_split", "seqsplit", "xobjedit", "xobjcleanup"}, {"ncbi_core", "ncbi_general", "ncbi_pub", "ncbi_misc", "ncbi_seq", "ncbi_dbapi_driver", "ncbi_dbapi", "ncbi_web"})
+		AddDLL("ncbi_validator", {}, {"xvalidate", "valerr"}, {"ncbi_core", "ncbi_general", "ncbi_pub", "ncbi_seq", "ncbi_seqext"})
+		AddDLL("ncbi_lds", {}, {"lds"}, {"ncbi_core", "ncbi_xcache_bdb", "ncbi_bdb", "ncbi_general", "ncbi_seq", "ncbi_seqext"})
+		
+		AddDLL("ncbi_xreader", {}, {"xreader"}, {"ncbi_core", "ncbi_general", "ncbi_pub", "ncbi_seq", "ncbi_seqext"})
+		AddDLL("ncbi_xreader_id1", {}, {"xreader_id1"}, {"ncbi_core", "ncbi_general", "ncbi_pub", "ncbi_seq", "ncbi_seqext", "ncbi_xreader"})
+		AddDLL("ncbi_xreader_id2", {}, {"xreader_id2"}, {"ncbi_core", "ncbi_general", "ncbi_pub", "ncbi_seq", "ncbi_seqext", "ncbi_xreader"})
+		AddDLL("ncbi_xreader_cache", {}, {"xreader_cache"}, {"ncbi_core", "ncbi_pub", "ncbi_seq", "ncbi_seqext", "ncbi_xreader"})
+		AddDLL("ncbi_xreader_pubseqos", {}, {"xreader_pubseqos"}, {"ncbi_core", "ncbi_dbapi", "ncbi_dbapi_driver", "ncbi_pub", "ncbi_seq", "ncbi_seqext", "ncbi_xreader"})
+		
+		AddDLL("ncbi_xloader_cdd", {}, {"xloader_cdd"}, {"ncbi_core", "ncbi_pub", "ncbi_seq", "ncbi_seqext", "ncbi_xreader", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_pubseqos", "ncbi_xreader_cache", "ncbi_general"})
+		AddDLL("ncbi_xloader_genbank", {}, {"xloader_genbank"}, {"ncbi_core", "ncbi_pub", "ncbi_seq", "ncbi_seqext", "ncbi_xreader", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_pubseqos", "ncbi_xreader_cache"})
+		AddDLL("ncbi_xloader_blastdb", {}, {"xloader_blastdb"}, {"ncbi_core", "ncbi_pub", "ncbi_seq", "ncbi_seqext"})
+		AddDLL("ncbi_xloader_lds", {}, {"xloader_lds"}, {"ncbi_core", "ncbi_general", "ncbi_pub", "ncbi_seq", "ncbi_seqext", "ncbi_bdb", "ncbi_xcache_bdb", "ncbi_lds", "ncbi_xcache_bdb"})
+		AddDLL("ncbi_xloader_table", {}, {"xloader_table"}, {"ncbi_core", "ncbi_general", "ncbi_seq", "ncbi_seqext", "ncbi_sqlite"})
+		AddDLL("ncbi_xloader_trace", {}, {"xloader_trace"}, {"ncbi_core", "ncbi_general", "ncbi_seq", "ncbi_seqext"})
+		AddDLL("ncbi_xobjsimple", {}, {"xobjsimple"}, {"ncbi_core", "ncbi_general", "ncbi_seq", "ncbi_seqext", "ncbi_xloader_genbank"})
+		AddDLL("ncbi_algo", {}, {"xalgoalign", "xalgosplign", "xalgocontig_assembly", "xalgoalignnw", "xalgoaligutil", "xalgoseq", "xalgoseqqa", "blast", "blast_composition", "xblast", "xalgognomon", "xalgowinmask", "xalgodustmask", "xalgophytree", "fastme"}, {"ncbi_core", "ncbi_seq", "ncbi_misc", "ncbi_general", "ncbi_seqext", "ncbi_xobjsimple"})
 	end if
 	
 	if pCreatePluginLibs then
@@ -519,7 +567,7 @@ on SetProjectData()
 		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil", "seqsplit", "seqedit"}
 		set SomeObjects to {"biblio", "general", "medline", "pub", "pubmed", "gbseq", "entrez2", "entrez2cli", "entrezgene", "entrezgene"}
 		set MostObjects to SeqObjects & SomeObjects & Â
-			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"}
+			{"dbapi_driver", "id1", "id2", "xobjmgr", "xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"}
 		set ObjTools to {"xncbi", "xconnect", "xthrserv", "xconnserv", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables", "xformat"}
 		set LdsLibs to {"bdb", "lds", "libdb"}
 		
@@ -527,24 +575,21 @@ on SetProjectData()
 		set UsualStatics to MostObjects & ObjTools
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
-		set gui_core_files to {Â
-			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "selection_service", "task_manager", "task_queue", "view_link", "view_composite", "dh_manager"})}
-		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images", "sqlitelib"}, gui_core_files)
-		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gbench_svc", "gbench_svc_cli", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_object_list", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask", "data_handle"}, {}))
+		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images", "sqlitelib"}, {})
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui__core", "gui_project", "gbench_svc", "gbench_svc_cli", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "gui_graph", "gui_math", "xalgophytree", "fastme", "xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_object_list", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask", "data_handle"}, {}))
 		
 		-- PLUGINS --
 		
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
 			{"entrezgene", "xobjwrite"})
-		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit"}) -- "ncbi_xreader_id1c",
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit"}) -- "ncbi_xreader_id1c",
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xloader_cdd", "cdd", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "xalgoalignnw", "xalgoalignutil", "xalgocontig_assembly", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb", "xobjsimple", "composition_adjustment"})
-		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
+		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate", "valerr"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
 			{"plugin", "fltk", "libdl"}, Â
 			{mkFileData(gSourceDir & "gui:plugins:algo:external"), Â
@@ -559,7 +604,7 @@ on SetProjectData()
 		-- Document plugins
 		--  
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", Â
-			{"xsqlite", "ncbi_xloader_table", "xobjmanip"})
+			{"xsqlite", "xloader_table", "xobjmanip"})
 		
 		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", {"w_aln_crossaln", "w_hit_matrix"})
@@ -571,7 +616,7 @@ on SetProjectData()
 		AddPluginExcept("gui_view_text", {}, "plugins:view:text", Â
 			{"taxon1", "w_taxtree", "w_seq", "w_seq_text"}, Â
 			{"genbank_ff_formatter.cpp", "header_editor.cpp", "object_editor.cpp", "paragraph.cpp", "reference_editor.cpp", "view_genbank.cpp", "auth_form.cpp"})
-		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate"})
+		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate", "valerr"})
 		
 		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree"})
 		
@@ -1026,36 +1071,38 @@ on SetupTarget(proj, targetIndex)
 	-- Add source files
 	repeat with group in projFileData
 		set projPath to projPath of group -- projPath is absolute,  not relative.
-		my AppendAccessPath(projPath, true, true) -- add this folder to the access paths, as a recursive user path.
-		if (projName is "xconnserv") then
-			-- append parent directory in this one case.
-			my AppendAccessPath(POSIX file (POSIX path of projPath & "/..") as string, false, true)
-		end if
-		set fileList to group's fileList
-		
-		set filesToAdd to {}
-		repeat with i in fileList
-			if i does not contain "." then set i to i & fileExtension
-			try -- ignore it if the file doesn't exist.
-				
-				-- NOTE: if the following line is within a tell "Codewarrior" block then
-				--  the following Add Files command will fail.
-				copy alias (projPath & i) to end of filesToAdd
-				-- Set the file's type so CW will have less problems with it.
-				tell application "Finder"
-					set file type of file (projPath & i) to "TEXT"
-					set creator type of file (projPath & i) to "CWIE"
-				end tell
-			end try
-		end repeat
-		
-		tell application "CodeWarrior IDE"
-			Add Files filesToAdd
+		if projPath is not ":" then -- any files to add?
+			my AppendAccessPath(projPath, true, true) -- add this folder to the access paths, as a recursive user path.
+			if (projName is "xconnserv") then
+				-- append parent directory in this one case.
+				my AppendAccessPath(POSIX file (POSIX path of projPath & "/..") as string, false, true)
+			end if
+			set fileList to group's fileList
 			
-			-- Take out source files that do not belong.
-			set fileNotList to group's fileNotList
-			Remove Files fileNotList
-		end tell
+			set filesToAdd to {}
+			repeat with i in fileList
+				if i does not contain "." then set i to i & fileExtension
+				try -- ignore it if the file doesn't exist.
+					
+					-- NOTE: if the following line is within a tell "Codewarrior" block then
+					--  the following Add Files command will fail.
+					copy alias (projPath & i) to end of filesToAdd
+					-- Set the file's type so CW will have less problems with it.
+					tell application "Finder"
+						set file type of file (projPath & i) to "TEXT"
+						set creator type of file (projPath & i) to "CWIE"
+					end tell
+				end try
+			end repeat
+			
+			tell application "CodeWarrior IDE"
+				Add Files filesToAdd
+				
+				-- Take out source files that do not belong.
+				set fileNotList to group's fileNotList
+				Remove Files fileNotList
+			end tell
+		end if
 	end repeat
 	
 	if projFeatures does not contain "fltklib" then
@@ -1237,37 +1284,39 @@ on UpdateTarget(proj, targetIndex)
 	set targetFileList to my GetTargetFiles(targetIndex)
 	repeat with group in projFileData
 		set projPath to projPath of group -- projPath is absolute,  not relative.
-		
-		set fileList to group's fileList
-		
-		set filesToAdd to {}
-		
-		repeat with i in fileList
-			if i does not contain "." then set i to i & fileExtension
-			set fileFullPath to projPath & i
-			set found to targetFileList contains fileFullPath
-			if (not found) then
-				--try -- ignore it if the file doesn't exist.
-				
-				-- NOTE: if the following line is within a tell "Codewarrior" block then
-				--  the following Add Files command will fail.
-				
-				copy alias fileFullPath to end of filesToAdd
-				--end try
-			end if
-		end repeat
-		
-		tell application "CodeWarrior IDE"
-			if ((count of filesToAdd) is not 0) then
-				--display dialog filesToAdd
-				Add Files filesToAdd
-				set targetFileList to my GetTargetFiles(targetIndex)
-			end if
+		if projPath is not ":" then -- any files to add?
 			
-			-- Take out source files that do not belong.
-			set fileNotList to group's fileNotList
-			Remove Files fileNotList
-		end tell
+			set fileList to group's fileList
+			
+			set filesToAdd to {}
+			
+			repeat with i in fileList
+				if i does not contain "." then set i to i & fileExtension
+				set fileFullPath to projPath & i
+				set found to targetFileList contains fileFullPath
+				if (not found) then
+					--try -- ignore it if the file doesn't exist.
+					
+					-- NOTE: if the following line is within a tell "Codewarrior" block then
+					--  the following Add Files command will fail.
+					
+					copy alias fileFullPath to end of filesToAdd
+					--end try
+				end if
+			end repeat
+			
+			tell application "CodeWarrior IDE"
+				if ((count of filesToAdd) is not 0) then
+					--display dialog filesToAdd
+					Add Files filesToAdd
+					set targetFileList to my GetTargetFiles(targetIndex)
+				end if
+				
+				-- Take out source files that do not belong.
+				set fileNotList to group's fileNotList
+				Remove Files fileNotList
+			end tell
+		end if
 	end repeat
 	
 	-- Update libraries
@@ -1388,7 +1437,7 @@ on CreateAndBuildAllProjects()
 	CleanupFiles(gProjectsDir)
 	set targetSpecs to GetTargetSpecs()
 	
-	my BuildSqlite()
+	-- my BuildSqlite()
 	
 	tell application "CodeWarrior IDE" to activate
 	
