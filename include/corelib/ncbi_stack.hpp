@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbistre.hpp>
 #include <string>
 #include <list>
 
@@ -42,6 +43,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XNCBI_EXPORT CStackTrace
 {
 public:
+    /// Structure for holding stack trace data
     struct SStackFrameInfo
     {
         string func;
@@ -55,8 +57,38 @@ public:
     };
     typedef list<SStackFrameInfo> TStack;
 
+    /// Get and store current stack trace. When printing the stack trace
+    /// to a stream, each line is prepended with "prefix".
+    CStackTrace(const string& prefix = "");
+
+    /// Check if stack trace information is available
+    bool Empty(void) const { return m_Stack.empty(); }
+
+    /// Get the stack trace data
+    const TStack& GetStack(void) const { return m_Stack; }
+
+    /// Get current prefix
+    const string& GetPrefix(void) const { return m_Prefix; }
+    /// Set new prefix
+    void SetPrefix(const string& prefix) const { m_Prefix = prefix; }
+    /// Write stack trace to the stream, prepend each line with the prefix.
+    void Write(CNcbiOstream& os) const;
+
     static void GetStackTrace(TStack& stack_trace);
+
+private:
+    TStack         m_Stack;
+    mutable string m_Prefix;
 };
+
+
+/// Output stack trace
+inline
+CNcbiOstream& operator<<(CNcbiOstream& os, const CStackTrace& stack_trace)
+{
+    stack_trace.Write(os);
+    return os;
+}
 
 
 END_NCBI_SCOPE
@@ -65,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/15 15:38:53  grichenk
+ * Added methods to fromat and output stack trace.
+ *
  * Revision 1.1  2006/11/06 17:35:19  grichenk
  * Initial revision
  *

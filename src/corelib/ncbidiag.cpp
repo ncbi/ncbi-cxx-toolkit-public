@@ -2876,6 +2876,29 @@ bool CNcbiDiag::CheckFilters(void) const
 }
 
 
+// Formatted output of stack trace
+void s_FormatStackTrace(CNcbiOstream& os, const CStackTrace& trace)
+{
+    string old_prefix = trace.GetPrefix();
+    trace.SetPrefix("      ");
+    os << "\n     Stack trace:\n" << trace;
+    trace.SetPrefix(old_prefix);
+}
+
+
+const CNcbiDiag& CNcbiDiag::Put(const CStackTrace*,
+                                const CStackTrace& stacktrace) const
+{
+    if ( !stacktrace.Empty() ) {
+        stacktrace.SetPrefix("      ");
+        ostrstream os;
+        s_FormatStackTrace(os, stacktrace);
+        *this << (string) CNcbiOstrstreamToString(os);
+    }
+    return *this;
+}
+
+
 const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
 {
     if ( !s_CheckDiagFilter(ex, GetSeverity(), GetFile()) ) {
@@ -2905,12 +2928,11 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
                 text += ')';
             }
         }
-        {
+        const CStackTrace* stacktrace = pex->GetStackTrace();
+        if ( stacktrace ) {
             ostrstream os;
-            pex->ReportStackTrace(os, "\n     Stack trace:", "\n      ");
-            if (os.pcount() != 0) {
-                text += (string) CNcbiOstrstreamToString(os);
-            }
+            s_FormatStackTrace(os, *stacktrace);
+            text += (string) CNcbiOstrstreamToString(os);
         }
         string err_type(pex->GetType());
         err_type += "::";
@@ -3489,6 +3511,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.136  2006/11/15 15:38:54  grichenk
+ * Added methods to fromat and output stack trace.
+ *
  * Revision 1.135  2006/11/06 17:43:29  grichenk
  * Report stack trace for exceptions.
  * Log file warning changed to info.

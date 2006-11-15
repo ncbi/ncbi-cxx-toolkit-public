@@ -47,9 +47,44 @@
 #endif
 
 
+BEGIN_NCBI_SCOPE
+
+
+CStackTrace::CStackTrace(const string& prefix)
+    : m_Prefix(prefix)
+{
+    GetStackTrace(m_Stack);
+}
+
+
+void CStackTrace::Write(CNcbiOstream& os) const
+{
+    if ( Empty() ) {
+        os << m_Prefix << "NOT AVAILABLE" << endl;
+        return;
+    }
+
+    ITERATE(TStack, it, m_Stack) {
+        os << m_Prefix
+           << it->module << " "
+           << it->file << ":"
+           << it->line << " "
+           << it->func << " offset=0x"
+           << NStr::UInt8ToString(it->offs, 0, 16)
+           << endl;
+    }
+}
+
+
+END_NCBI_SCOPE
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/15 15:38:54  grichenk
+ * Added methods to fromat and output stack trace.
+ *
  * Revision 1.3  2006/11/13 17:43:41  grichenk
  * Disable stack trace on 64-bit MSWIN.
  *

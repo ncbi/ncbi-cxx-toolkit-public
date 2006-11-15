@@ -415,6 +415,7 @@ private:
 
 //
 class CException;
+class CStackTrace;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -489,6 +490,15 @@ public:
     const CNcbiDiag& Put(const CException* e, const X& x) const {
         return x_Put(x);
     }
+
+    /// Helper method to post stack trace to diagnostic stream using
+    /// standard stack trace formatting.
+    ///
+    /// Example:
+    ///   CNcbiDiag() << "My message" << CStackTrace();
+    NCBI_XNCBI_EXPORT
+        const CNcbiDiag& Put(const CStackTrace*,
+                             const CStackTrace& stacktrace) const;
 
     /// Helper method to handle various diagnostic stream manipulators.
     ///
@@ -1708,6 +1718,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.120  2006/11/15 15:38:53  grichenk
+ * Added methods to fromat and output stack trace.
+ *
  * Revision 1.119  2006/10/31 21:15:04  ucko
  * #include <memory> for auto_ptr<>, as required by GCC 2.95.
  *

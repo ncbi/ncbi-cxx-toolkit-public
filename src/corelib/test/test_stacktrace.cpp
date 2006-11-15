@@ -57,17 +57,17 @@ public:
 
 void CTestStackTrace::Func1()
 {
-    Func2(10);
+    Func2(9);
 }
 
 void CTestStackTrace::Func2(int i)
 {
-    Func3(i/2);
+    Func3(i/2.0);
 }
 
 void CTestStackTrace::Func3(double d)
 {
-    Func4(string("float to string: ") + NStr::DoubleToString(d));
+    Func4(NStr::DoubleToString(d));
 }
 
 void CTestStackTrace::Func4(const string& str)
@@ -77,17 +77,13 @@ void CTestStackTrace::Func4(const string& str)
 
 void CTestStackTrace::Func5(const char* char_ptr)
 {
-    CStackTrace::TStack trace;
-    CStackTrace::GetStackTrace(trace);
+    CStackTrace trace("\t");
 
-    cout << "Func5(" << char_ptr << ") stacktrace:" << endl;
-    ITERATE (CStackTrace::TStack, iter, trace) {
-        cout << iter->func << " + 0x" << hex << iter->offs << dec;
-        if ( !iter->file.empty() ) {
-            cout << " (" << iter->file << ":" << iter->line << ")";
-        }
-        cout << endl;
-    }
+    cout << "Func5(" << char_ptr << ") stacktrace:" << endl << trace;
+
+    ERR_POST(Warning
+        << "Func5(" << char_ptr << ") stacktrace:\n"
+        << trace);
 }
 
 void CTestStackTrace::Init(void)
@@ -116,6 +112,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/15 15:38:54  grichenk
+ * Added methods to fromat and output stack trace.
+ *
  * Revision 1.1  2006/11/06 17:41:26  grichenk
  * Initial revision
  *

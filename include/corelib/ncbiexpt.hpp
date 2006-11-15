@@ -562,17 +562,8 @@ public:
     /// "out" stream.
     virtual void ReportExtra(ostream& out) const;
 
-    /// Report stack trace if available.
-    ///
-    /// @param out
-    ///   Output stream.
-    /// @param header
-    ///   Header string to be printed before the stack trace.
-    /// @param separator
-    ///   String to be printed before each element of the stack trace.
-    void ReportStackTrace(ostream&      out,
-                          const string& header,
-                          const string& separator) const;
+    /// Get the saved stack trace if available or NULL.
+    const CStackTrace* GetStackTrace(void) const;
 
     /// Enable background reporting.
     ///
@@ -687,8 +678,7 @@ private:
     mutable bool m_InReporter;       ///< Reporter flag
     static  bool sm_BkgrEnabled;     ///< Background reporting enabled flag
 
-    typedef CStackTrace::TStack TStackTrace;
-    auto_ptr<TStackTrace> m_StackTrace; ///< Saved stack trace
+    auto_ptr<CStackTrace> m_StackTrace; ///< Saved stack trace
 
     /// Private assignment operator to prohibit assignment.
     CException& operator= (const CException&);
@@ -1184,6 +1174,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/11/15 15:38:53  grichenk
+ * Added methods to fromat and output stack trace.
+ *
  * Revision 1.72  2006/11/06 17:25:03  grichenk
  * Fixed SParamEnumDescription - added env_var_name.
  *

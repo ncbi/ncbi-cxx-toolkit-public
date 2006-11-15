@@ -284,25 +284,14 @@ void CException::ReportExtra(ostream& /*out*/) const
 }
 
 
-void CException::ReportStackTrace(ostream&      out,
-                                  const string& header,
-                                  const string& separator) const
+const CStackTrace* CException::GetStackTrace(void) const
 {
     EDiagSev level = GetStackTraceLevel();
-    if ( !m_StackTrace.get()  ||
+    if ( !m_StackTrace.get()  ||  m_StackTrace->Empty()  ||
         (m_Severity < level  &&  level != eDiag_Trace)) {
-        return;
+        return NULL;
     }
-
-    out << header;
-    ITERATE(TStackTrace, it, *m_StackTrace) {
-        out << separator
-            << it->module << " "
-            << it->file << ":"
-            << it->line << " "
-            << it->func << " offset=0x"
-            << NStr::UInt8ToString(it->offs, 0, 16);
-    }
+    return m_StackTrace.get();
 }
 
 
@@ -385,7 +374,7 @@ void CException::x_Assign(const CException& src)
         m_Predecessor = src.m_Predecessor->x_Clone();
     }
     if ( src.m_StackTrace.get() ) {
-        m_StackTrace.reset(new TStackTrace(*src.m_StackTrace));
+        m_StackTrace.reset(new CStackTrace(*src.m_StackTrace));
     }
 }
 
@@ -416,8 +405,7 @@ void CException::x_GetStackTrace(void)
         (m_Severity < level  ||  m_Severity == eDiag_Trace) ) {
         return;
     }
-    m_StackTrace.reset(new TStackTrace);
-    CStackTrace::GetStackTrace(*m_StackTrace);
+    m_StackTrace.reset(new CStackTrace);
 }
 
 
@@ -585,6 +573,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/11/15 15:38:54  grichenk
+ * Added methods to fromat and output stack trace.
+ *
  * Revision 1.49  2006/11/06 17:43:29  grichenk
  * Report stack trace for exceptions.
  * Log file warning changed to info.
