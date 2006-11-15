@@ -10,5 +10,5 @@ CPPFLAGS = -DFTDS_IN_USE $(FTDS64_INCLUDE) $(ODBC_INCLUDE) $(ORIG_CPPFLAGS)
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = odbc_$(ftds64) $(FTDS64_LIB) dbapi_driver
-LIBS = $(FTDS64_LIBS) $(TLS_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+DLL_LIB = odbc_$(ftds64)$(STATIC) tds_$(ftds64)$(STATIC) dbapi_driver
+LIBS = $(TLS_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
