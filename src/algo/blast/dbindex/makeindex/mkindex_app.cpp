@@ -168,8 +168,12 @@ int CMkIndexApplication::Run()
 /*
  * ========================================================================
  * $Log$
- * Revision 1.3  2006/11/09 15:44:12  morgulis
- * Support for statistics generation during index creation.
+ * Revision 1.4  2006/11/16 20:40:11  morgulis
+ * Optimization changes:
+ * 	0-terminated offset lists;
+ * 	list-based tracked seed containers;
+ * 	reordered offset lists;
+ * 	limits on max number of roots to avoid memory allocation problems.
  *
  * Revision 1.2  2006/09/27 16:55:05  morgulis
  * Changes needed to make makeindex compile.

@@ -50,7 +50,7 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamFasta : public CSequenceIStream
 
         bool stream_allocated_;         /**< Whether to deallocate the stream at destruction. */
         CNcbiIstream * istream_;        /**< Standard IO stream for reading FASTA data. */
-        size_t curr_seq_;          /**< Current sequence number. */
+        size_t curr_seq_;               /**< Current sequence number. */
 
         /** Starting positions of sequences withing the FASTA stream. */
         std::vector< pos_type > seq_positions_; 

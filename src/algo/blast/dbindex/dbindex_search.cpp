@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <list>
 #include <algorithm>
 
 #include <corelib/ncbifile.hpp>
@@ -78,6 +79,18 @@ struct SIndexHeader< 1 >
 /** Header structure of index format version 2. */
 template<>
 struct SIndexHeader< 2 > : public SIndexHeader< 1 >
+{
+};
+
+/** Header structure of index format version 3. */
+template<>
+struct SIndexHeader< 3 > : public SIndexHeader< 1 >
+{
+};
+
+/** Header structure of index format version 4. */
+template<>
+struct SIndexHeader< 4 > : public SIndexHeader< 1 >
 {
 };
 
@@ -179,17 +192,17 @@ const SIndexHeader< 1 > ReadIndexHeader< 1 >( CNcbiIstream & is )
 template< unsigned long VER >
 const SIndexHeader< VER > ReadIndexHeader( void * map );
 
-/** Read index header information from memory aread for 
-    index format version 2.
+/** Read index header information from memory area for 
+    index format version 2 or higher.
     @param WIDTH index bit width
     @param map  [I]     memory area containing index data
     @return appropriate index header structure
 */
 template< unsigned long WIDTH >
-const SIndexHeader< 2 > ReadIndexHeader_2( void * map )
+const SIndexHeader< 1 > ReadIndexHeader_2( void * map )
 {
     typedef typename SWord< WIDTH >::type TWord;
-    SIndexHeader< 2 > result;
+    SIndexHeader< 1 > result;
     result.width_ = WIDTH;
     TWord * ptr = (TWord *)((Uint8 *)map + 2);
     result.hkey_width_  = (unsigned long)(*ptr++);
@@ -203,40 +216,30 @@ const SIndexHeader< 2 > ReadIndexHeader_2( void * map )
 }
 
 /** Read index header information from the memory area.
-    @param VER          index format version
     @param WIDTH        index bit width
     @param map  [I]     memory area containing index data
     @return appropriate index header structure
 */
-template< unsigned long VER, unsigned long WIDTH >
-const SIndexHeader< VER > ReadIndexHeaderAux( void * map )
-{
-    switch( VER ) {
-        case 2:  return ReadIndexHeader_2< WIDTH >( map );
-        default: return ReadIndexHeader< VER >( map );
-    }
-}
+template< unsigned long WIDTH >
+const SIndexHeader< 1 > ReadIndexHeaderAux( void * map )
+{ return ReadIndexHeader_2< WIDTH >( map ); }
 
 /** Read index header information from the memory area.
-    Only index format versions supporting this operation are
-    specialized.
-    @param VER          index format version
     @param map  [I]     memory area containing index data
     @return appropriate index header structure
 */
-template< unsigned long VER >
-const SIndexHeader< VER > ReadIndexHeader( void * map ) 
+const SIndexHeader< 1 > ReadIndexHeader( void * map ) 
 {
     Uint8 width = *(((Uint8 *)map) + 1);
 
     if( width == WIDTH_32 ) {
-        return ReadIndexHeaderAux< VER, WIDTH_32 >( map );
+        return ReadIndexHeaderAux< WIDTH_32 >( map );
     }
     else if( width == WIDTH_64 ) {
-        return ReadIndexHeaderAux< VER, WIDTH_64 >( map );
+        return ReadIndexHeaderAux< WIDTH_64 >( map );
     }
 
-    return SIndexHeader< VER >();
+    return SIndexHeader< 1 >();
 }
 
 //-------------------------------------------------------------------------
@@ -428,7 +431,7 @@ COffsetData_Base< word_t, COMPRESSION >::COffsetData_Base(
 
 //-------------------------------------------------------------------------
 /** COMPRESSION specific functinality of offset list manager class. */
-template< typename word_t, unsigned long COMPRESSION >
+template< typename word_t, typename iterator_t, unsigned long COMPRESSION >
 class COffsetData;
 
 /** Interface for iterating over the offset lists.
@@ -447,7 +450,8 @@ class COffsetIterator< word_t, UNCOMPRESSED >
 {
     /**@name Some convenient type declarations. */
     /**@{*/
-    typedef COffsetData< word_t, UNCOMPRESSED > TOffsetData;
+    typedef COffsetData< 
+        word_t, COffsetIterator, UNCOMPRESSED > TOffsetData;
     typedef word_t TWord;
     /**@}*/
 
@@ -457,13 +461,21 @@ class COffsetIterator< word_t, UNCOMPRESSED >
             @param offset_data  [I]     Combined offset data for all keys
             @param key          [I]     Hash key defining the offset list
         */
-        COffsetIterator( const TOffsetData & offset_data, TWord key );
+        COffsetIterator( 
+                const TOffsetData & offset_data, 
+                TWord key, 
+                unsigned long mod );
 
         /** Advance the iterator.
             @return false if the end of the offset list has been reached;
                     true otherwise
         */
         bool Next();
+
+        /** Check if more data is available in the iterator.
+            @return true if more data is available; false otherwise
+        */
+        bool More();
 
         /** Get the offset value corresponding to the current position of
             the iterator.
@@ -476,6 +488,118 @@ class COffsetIterator< word_t, UNCOMPRESSED >
         const TWord * start_;   /**< Current position in the offset list. */
         TWord len_;             /**< Number of offsets left in the list. */
         TWord offset_;          /**< Current offset value. */
+        bool more_;             /**< Flag indicating that more data is available. */
+        unsigned long mod_;     /**< Determines which offsets to skip. */
+        bool boundary_;         /**< Flag indicating the current offset is actually
+                                     a extra information for boundary cases. */
+};
+
+/** Iterate over zero terminated offset lists. 
+    @param word_t       type of the index word
+    @param COMPRESSION  type of compression
+*/
+template< typename word_t, unsigned long COMPRESSION >
+class CZeroEndOffsetIterator;
+
+/** Specialization for uncompressed offset lists. */
+template< typename word_t >
+class CZeroEndOffsetIterator< word_t, UNCOMPRESSED >
+{
+    /** Type of offset data class supported by this iterator. */
+    typedef COffsetData< 
+        word_t, CZeroEndOffsetIterator, UNCOMPRESSED > TOffsetData;
+
+    /** Index word type. */
+    typedef word_t TWord;
+
+    public:
+
+        /** Object constructor.
+            @param offset_data  [I] offset data connected to the this object
+            @param key          [I] nmer value identifying the offset list
+        */
+        CZeroEndOffsetIterator( 
+                const TOffsetData & offset_data, 
+                TWord key, 
+                unsigned long mod );
+
+        /** Advance the iterator.
+            @return false if the end of the list is reached; true otherwise
+        */
+        bool Next();
+
+        /** Check if more data is available in the iterator.
+            @return true if more data is available; false otherwise
+        */
+        bool More();
+
+        /** Iterator dereference.
+            @return the value pointed to by the interator
+        */
+        TWord Offset() const { return offset_; }
+
+    private:
+
+        const TWord * curr_;    /**< Points to the current position in the offset list. */
+        TWord offset_;          /**< Current offset value. */
+        bool more_;             /**< Flag indicating the more data is available. */
+        unsigned long mod_;     /**< Determines which offsets to skip. */
+        bool boundary_;         /**< Flag indicating the current offset is actually
+                                     a extra information for boundary cases. */
+};
+
+/** Iterate over zero terminated reordered offset lists. 
+    @param word_t       type of the index word
+    @param COMPRESSION  type of compression
+*/
+template< typename word_t, unsigned long COMPRESSION >
+class CPreOrderedOffsetIterator;
+
+/** Specialization for uncompressed offset lists. */
+template< typename word_t >
+class CPreOrderedOffsetIterator< word_t, UNCOMPRESSED >
+{
+    /** Type of offset data class supported by this iterator. */
+    typedef COffsetData< 
+        word_t, CPreOrderedOffsetIterator, UNCOMPRESSED > TOffsetData;
+
+    /** Index word type. */
+    typedef word_t TWord;
+
+    public:
+
+        /** Object constructor.
+            @param offset_data  [I] offset data connected to the this object
+            @param key          [I] nmer value identifying the offset list
+            @param mod          [I] only boundary offsets and offsets that are
+                                    0 modulo mod will be reported
+        */
+        CPreOrderedOffsetIterator( 
+                const TOffsetData & offset_data, TWord key, unsigned long mod );
+
+        /** Advance the iterator.
+            @return false if the end of the list is reached; true otherwise
+        */
+        bool Next();
+
+        /** Check if more data is available in the iterator.
+            @return true if more data is available; false otherwise
+        */
+        bool More();
+
+        /** Iterator dereference.
+            @return the value pointed to by the interator
+        */
+        TWord Offset() const { return offset_; }
+
+    private:
+
+        const TWord * curr_;    /**< Current position in the offset list. */
+        TWord offset_;          /**< Current cached offset value. */
+        unsigned long more_;    /**< Flag indicating that more values are available. */
+        unsigned long mod_;     /**< Determines which offsets to skip. */
+        bool boundary_;         /**< Flag indicating the current offset is actually
+                                     a extra information for boundary cases. */
 };
 
 //-------------------------------------------------------------------------
@@ -483,11 +607,10 @@ class COffsetIterator< word_t, UNCOMPRESSED >
     the corresponding hash table.
     @param word_t word size used for uncompressed offsets
 */
-template< typename word_t >
-class COffsetData< word_t, UNCOMPRESSED >
+template< typename word_t, typename iterator_t >
+class COffsetData< word_t, iterator_t, UNCOMPRESSED >
     : public COffsetData_Base< word_t, UNCOMPRESSED >
 {
-    // friend class COffsetIterator< word_t, UNCOMPRESSED >;
 
     typedef COffsetData_Base< word_t, UNCOMPRESSED > TBase;     /**< Base class alias. */
     typedef typename TBase::TWord TWord;                        /**< Forward from TBase for convenience. */
@@ -497,7 +620,7 @@ class COffsetData< word_t, UNCOMPRESSED >
     public:
 
         /** Type used to iterate over an offset list. */
-        typedef COffsetIterator< word_t, UNCOMPRESSED > TIterator;
+        typedef iterator_t TIterator;
 
         /** Construct the object from the data in the given input stream.
             @param is           [I/O]   the input stream containing the object
@@ -515,13 +638,15 @@ class COffsetData< word_t, UNCOMPRESSED >
     // private:
 
         TOffsets offsets_;      /**< Concatenated offset list data. */
+        TWord * data_start_;    /**< Start of the offset data. */
 };
 
 //-------------------------------------------------------------------------
 template< typename word_t > 
 INLINE
 COffsetIterator< word_t, UNCOMPRESSED >::COffsetIterator(
-        const TOffsetData & offset_data, TWord key )
+        const TOffsetData & offset_data, TWord key, unsigned long mod )
+    : more_( true ), mod_( mod ), boundary_( false )
 {
     start_ = &offset_data.offsets_[0] + 
         offset_data.hash_table_[
@@ -539,31 +664,167 @@ INLINE
 bool COffsetIterator< word_t, UNCOMPRESSED >::Next()
 {
     if( len_ == 0 ) return false;
-    offset_ = *start_++;
-    --len_;
-    return true;
+
+    if( boundary_ ) {
+        offset_ = *start_++;
+        --len_;
+        boundary_ = false;
+        return true;
+    }
+
+    do {
+        offset_ = *start_++;
+        --len_;
+
+        if( offset_ < CDbIndex::MIN_OFFSET ) {
+            boundary_ = true;
+            return true;
+        }
+    }while( offset_%mod_ != 0 && len_ > 0 );
+
+    return offset_%mod_ == 0;
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t > 
+INLINE
+bool COffsetIterator< word_t, UNCOMPRESSED >::More()
+{
+    if( more_ ) {
+        more_ = false;
+        return true;
+    }else {
+        return false;
+    }
 }
 
 //-------------------------------------------------------------------------
 template< typename word_t >
-COffsetData< word_t, UNCOMPRESSED >::COffsetData( 
+INLINE
+CZeroEndOffsetIterator< word_t, UNCOMPRESSED >::CZeroEndOffsetIterator(
+        const TOffsetData & offset_data, TWord key, unsigned long mod )
+    : more_( true ), mod_( mod ), boundary_( false )
+{ 
+    TWord tmp = offset_data.hash_table_[key];
+
+    if( tmp != 0 ) curr_ = offset_data.data_start_ + tmp - 1; 
+    else curr_ = 0;
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+INLINE
+bool CZeroEndOffsetIterator< word_t, UNCOMPRESSED >::Next()
+{ 
+    if( curr_ == 0 ) return false;
+
+    if( boundary_ ) {
+        offset_ = *++curr_;
+        boundary_ = false;
+        return offset_ != 0;
+    }
+
+    while( (offset_ = *++curr_) != 0 ) {
+        if( offset_ < CDbIndex::MIN_OFFSET ) {
+            boundary_ = true;
+            return true;
+        }
+
+        if( offset_%mod_ == 0 ) return true;
+    }
+
+    return false;
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t > 
+INLINE
+bool CZeroEndOffsetIterator< word_t, UNCOMPRESSED >::More()
+{
+    if( more_ ) {
+        more_ = false;
+        return true;
+    }else {
+        return false;
+    }
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+INLINE
+CPreOrderedOffsetIterator< 
+    word_t, UNCOMPRESSED 
+>::CPreOrderedOffsetIterator( const TOffsetData & offset_data, TWord key, unsigned long mod )
+    : more_( 3 ), mod_( mod ), boundary_( false )
+{
+    TWord tmp = offset_data.hash_table_[key];
+
+    if( tmp != 0 ) curr_ = offset_data.data_start_ + tmp - 1; 
+    else{ 
+        curr_ = 0; 
+        more_ = 0; 
+    }
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+INLINE
+bool CPreOrderedOffsetIterator< word_t, UNCOMPRESSED >::Next()
+{
+    if( curr_ == 0 ) return false;
+    
+    if( (offset_ = *++curr_) == 0 ) {
+        more_ = 0;
+        return false;
+    }
+    else {
+        if( offset_ < CDbIndex::MIN_OFFSET ) {
+            boundary_ = true;
+            return true;
+        }
+        else if( boundary_ ) {
+            boundary_ = false;
+            return true;
+        }
+        else if( offset_%more_ == 0 ) {
+            return true;
+        }
+        else {
+            more_ = (more_ <= mod_) ? 0 : more_ - 1;
+            --curr_;
+            return false;
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+INLINE
+bool CPreOrderedOffsetIterator< word_t, UNCOMPRESSED >::More()
+{ return more_ != 0; }
+
+//-------------------------------------------------------------------------
+template< typename word_t, typename iterator_t >
+COffsetData< word_t, iterator_t, UNCOMPRESSED >::COffsetData( 
         CNcbiIstream & is, unsigned long hkey_width )
     : TBase( is, hkey_width ), offsets_( this->total_, 0 )
 {
     is.read( 
             (char *)(&offsets_[0]), 
             sizeof( TWord )*(std::streamsize)(this->total_) );
+    data_start_ = &offsets_[0];
 }
 
 //-------------------------------------------------------------------------
-template< typename word_t >
-COffsetData< word_t, UNCOMPRESSED >::COffsetData( 
+template< typename word_t, typename iterator_t >
+COffsetData< word_t, iterator_t, UNCOMPRESSED >::COffsetData( 
         TWord ** map, unsigned long hkey_width )
     : TBase( map, hkey_width )
 {
     if( *map ) {
         offsets_.SetPtr( 
                 *map, (typename TOffsets::size_type)(this->total_) );
+        data_start_ = *map;
         *map += this->total_;
     }
 }
@@ -1063,12 +1324,23 @@ class CSeedRoots
         const SSeedRoot * GetSubjRoots( TSeqNum subject ) const
         { return roots_ + (subject<<subj_roots_len_bits_); }
 
+        /** Check if the max number of elements is reached.
+            @return true if LIM_ROOTS is exceeded, false otherwise
+        */
+        bool Overflow() const { return total_ > LIMIT_ROOTS; }
+
+        /** Reinitialize the structure. */
+        void Reset();
+
     private:
 
         /** Assumption on the amound of cache in the system.
             (overly optimistic)
         */
         static const unsigned long TOTAL_CACHE = 4*1024*1024; 
+
+        /** Max number of roots before triggering overflow. */
+        static const unsigned long LIMIT_ROOTS = 16*1024*1024;
 
         /** Clean up all the dynamically allocated memory. */
         void CleanUp()
@@ -1081,29 +1353,25 @@ class CSeedRoots
             delete[] roots_;
         }
 
+        /** Reallocate all the storage. Used by constructor and
+            Reset().
+        */
+        void Allocate();
+
         TSeqNum num_subjects_;                  /**< Number of subjects in the index. */
         unsigned long subj_roots_len_bits_;     /**< Log_2 of n_subj_roots_. */
         unsigned long n_subj_roots_;            /**< Space is preallocated for this number of roots per subject. */
         SSeedRoot * roots_;                     /**< Roots array preallocated for all subjects. */
         SSubjRootsInfo * rinfo_;                /**< Array of root information structures for each subject.
                                                      Dynamically allocated. */
+        unsigned long total_;                   /**< Currenr total number of elements. */
+        unsigned long total_roots_;             /**< Max number of roots in preallocated storage. */
 };
 
-CSeedRoots::CSeedRoots( TSeqNum num_subjects )
-    : num_subjects_( num_subjects ), subj_roots_len_bits_( 7 ), 
-      roots_( 0 ), rinfo_( 0 )
+void CSeedRoots::Allocate()
 {
-    unsigned long total_roots = (num_subjects_<<subj_roots_len_bits_);
-
-    while( total_roots*sizeof( SSeedRoot ) < TOTAL_CACHE ) {
-        ++subj_roots_len_bits_;
-        total_roots <<= 1;
-    }
-
-    n_subj_roots_ = (1<<subj_roots_len_bits_);
-
     try {
-        roots_ = new SSeedRoot[total_roots];
+        roots_ = new SSeedRoot[total_roots_];
         rinfo_ = new SSubjRootsInfo[num_subjects_];
 
         for( TSeqNum i = 0; i < num_subjects_; ++i ) {
@@ -1114,6 +1382,28 @@ CSeedRoots::CSeedRoots( TSeqNum num_subjects )
         CleanUp(); 
         throw;
     }
+}
+
+void CSeedRoots::Reset()
+{
+    CleanUp();
+    roots_ = 0; rinfo_ = 0; total_ = 0;
+    Allocate();
+}
+
+CSeedRoots::CSeedRoots( TSeqNum num_subjects )
+    : num_subjects_( num_subjects ), subj_roots_len_bits_( 7 ), 
+      roots_( 0 ), rinfo_( 0 ), total_( 0 )
+{
+    total_roots_ = (num_subjects_<<subj_roots_len_bits_);
+
+    while( total_roots_*sizeof( SSeedRoot ) < TOTAL_CACHE ) {
+        ++subj_roots_len_bits_;
+        total_roots_ <<= 1;
+    }
+
+    n_subj_roots_ = (1<<subj_roots_len_bits_);
+    Allocate();
 }
 
 INLINE
@@ -1132,6 +1422,8 @@ void CSeedRoots::Add( const SSeedRoot & root, TSeqNum subject )
 
         rinfo.extra_roots_->push_back( root );
     }
+
+    ++total_;
 }
 
 INLINE
@@ -1156,6 +1448,8 @@ void CSeedRoots::Add2(
         rinfo.extra_roots_->push_back( root1 );
         rinfo.extra_roots_->push_back( root2 );
     }
+
+    total_ += 2;
 }
 
 //-------------------------------------------------------------------------
@@ -1176,8 +1470,8 @@ class CTrackedSeeds
 {
     /**@name Some convenience type declaration. */
     /**@{*/
-    typedef std::vector< STrackedSeed > TSeeds;
-    typedef TSeeds::const_iterator TIter;
+    typedef std::list< STrackedSeed > TSeeds;
+    typedef TSeeds::iterator TIter;
     /**@}*/
 
     public:
@@ -1185,29 +1479,15 @@ class CTrackedSeeds
         /** Object constructor. */
         CTrackedSeeds() 
             : hitlist_( 0 )
-        {
-            seeds_ = &seeds_1_;
-            new_seeds_ = &seeds_2_;
-            it_ = seeds_->begin();
-        }
+        { it_ = seeds_.begin(); }
 
         /** Object copy constructor.
             @param rhs  [I]     source object to copy
         */
         CTrackedSeeds( const CTrackedSeeds & rhs )
             : hitlist_( rhs.hitlist_ ), 
-              seeds_1_( rhs.seeds_1_ ), seeds_2_( rhs.seeds_2_ )
-        {
-            if( rhs.seeds_ == &rhs.seeds_1_ ) {
-                seeds_     = &seeds_1_;
-                new_seeds_ = &seeds_2_;
-            }else {
-                seeds_     = &seeds_2_;
-                new_seeds_ = &seeds_1_;
-            }
-
-            it_ = seeds_->begin();
-        }
+              seeds_( rhs.seeds_ )
+        { it_ = seeds_.begin(); }
 
         /** Prepare for processing of the next query position. */
         void Reset();
@@ -1251,10 +1531,7 @@ class CTrackedSeeds
     private:
 
         BlastInitHitList * hitlist_;    /**< The result set. */
-        TSeeds seeds_1_;                /**< Storage for tracked seeds. */
-        TSeeds seeds_2_;                /**< Storage for tracked seeds. */
-        TSeeds * seeds_;                /**< Seeds currently being tracked. */
-        TSeeds * new_seeds_;            /**< Seeds to keep for the next iteration. */
+        TSeeds seeds_;                  /**< List of seed candidates. */
         TIter it_;                      /**< Iterator pointing to the tracked seed that
                                              is about to be inspected. */
 };
@@ -1262,15 +1539,45 @@ class CTrackedSeeds
 //-------------------------------------------------------------------------
 INLINE
 void CTrackedSeeds::Reset()
-        {
-            for( ; it_ != seeds_->end(); ++it_ ) {
-                new_seeds_->push_back( *it_ );
-            }
+{ it_ = seeds_.begin(); }
 
-            std::swap( seeds_, new_seeds_ );
-            new_seeds_->clear();
-            it_ = seeds_->begin();
+/* This code is for testing purposes only.
+{
+    unsigned long soff = 0, qoff = 0;
+    bool good = true;
+
+    for( TSeeds::iterator i = seeds_.begin(); i != seeds_.end(); ++i ) {
+        if( i != seeds_.begin() ) {
+            unsigned long s;
+
+            if( i->qoff_ > qoff ) {
+                unsigned long step = i->qoff_ - qoff;
+                s = soff + step;
+                if( s > i->soff_ ) { good = false; break; }
+            }else {
+                unsigned long step = qoff - i->qoff_;
+                s = i->soff_ + step;
+                if( s < soff ) { good = false; break; }
+            }
         }
+
+        soff = i->soff_;
+        qoff = i->qoff_;
+    }
+
+    if( !good ) {
+        cerr << "Bad List at " << qoff << " " << soff << endl;
+
+        for( TSeeds::iterator i = seeds_.begin(); i != seeds_.end(); ++i ) {
+            cerr << i->qoff_ << " " << i->soff_ << " "
+                 << i->qright_ << " " << i->len_ << endl;
+        }
+    }
+
+    it_ = seeds_.begin();
+}
+*/
+
 //-------------------------------------------------------------------------
 INLINE
 void CTrackedSeeds::SaveSeed( const STrackedSeed & seed )
@@ -1295,8 +1602,8 @@ void CTrackedSeeds::SaveSeed( const STrackedSeed & seed )
 INLINE
 void CTrackedSeeds::Finalize()
 {
-    for( TSeeds::const_iterator cit = seeds_->begin(); 
-            cit != seeds_->end(); ++cit ) {
+    for( TSeeds::const_iterator cit = seeds_.begin(); 
+            cit != seeds_.end(); ++cit ) {
         SaveSeed( *cit );
     }
 }
@@ -1304,33 +1611,33 @@ void CTrackedSeeds::Finalize()
 //-------------------------------------------------------------------------
 INLINE
 void CTrackedSeeds::AppendSimple( const STrackedSeed & seed )
-{ new_seeds_->push_back( seed ); }
+{ seeds_.insert( it_, seed ); }
 
 //-------------------------------------------------------------------------
 INLINE
 void CTrackedSeeds::Append( 
         const STrackedSeed & seed, unsigned long word_size )
 {
-    if( !new_seeds_->empty() ) {
-        STrackedSeed & bs = new_seeds_->back();
-        TSeqPos step = seed.qoff_ - bs.qoff_;
-        TSeqPos bs_soff_corr = bs.soff_ + step;
+    if( it_ != seeds_.begin() ) {
+        TIter tmp_it = it_; tmp_it--;
+        TSeqPos step = seed.qoff_ - tmp_it->qoff_;
+        TSeqPos bs_soff_corr = tmp_it->soff_ + step;
 
         if( bs_soff_corr == seed.soff_ ) {
-            if( seed.qright_ < bs.qright_ ) {
-                bs.len_ -= (bs.qright_ - seed.qright_);
+            if( seed.qright_ < tmp_it->qright_ ) {
+                tmp_it->len_ -= (tmp_it->qright_ - seed.qright_ );
 
-                if( bs.len_ < word_size ) {
-                    new_seeds_->pop_back();
+                if( tmp_it->len_ < word_size ) {
+                    seeds_.erase( tmp_it );
                 }else {
-                    bs.qright_ = seed.qright_;
+                    tmp_it->qright_ = seed.qright_;
                 }
             }
         }else if( seed.len_ >= word_size ) {
-            new_seeds_->push_back( seed );
+            seeds_.insert( it_, seed );
         }
     }else if( seed.len_ >= word_size ) {
-        new_seeds_->push_back( seed );
+        seeds_.insert( it_, seed );
     }
 }
 
@@ -1338,18 +1645,24 @@ void CTrackedSeeds::Append(
 INLINE
 bool CTrackedSeeds::EvalAndUpdate( const STrackedSeed & seed )
 {
-    while( it_ != seeds_->end() ) {
+    while( it_ != seeds_.end() ) {
         TSeqPos step = seed.qoff_ - it_->qoff_;
         TSeqPos it_soff_corr = it_->soff_ + step;
-        if( it_soff_corr > seed.soff_ ) return true;
+
+        if( it_soff_corr > seed.soff_ ) {
+            return true;
+        }
 
         if( it_->qright_ < seed.qoff_ ) {
             SaveSeed( *it_ );
+            it_ = seeds_.erase( it_ );
+        }
+        else {
             ++it_;
-        }else {
-            new_seeds_->push_back( *it_ );
-            ++it_;
-            if( it_soff_corr == seed.soff_ ) return false;
+            
+            if( it_soff_corr == seed.soff_ ) {
+                return false;
+            }
         }
     }
 
@@ -1421,13 +1734,6 @@ class CSearch
         */
         void ProcessOffset( TWord offset );
 
-        /** Check if the offset value in the offset list needs 
-            processing.
-            @param offset       [I]     uncompressed offset value
-            @return true if the offset can be skipped, false otherwise
-        */
-        bool Skip( TWord offset ) const { return offset%off_mod_ != 0; }
-
         /** Find the subject sequence containing the given offset value.
             @param offset       [I]     uncompressed offset value
         */
@@ -1477,6 +1783,7 @@ class CSearch
         TWord subj_start_;      /**< Start position of subject_. */
         TWord subj_end_;        /**< One past the end position of subject_. */
         TSeqPos qoff_;          /**< Current query offset. */
+        TSeqPos soff_;          /**< Current subject offset. */
         TSeqPos qstart_;        /**< Start of the current query segment. */
         TSeqPos qstop_;         /**< One past the end of the current query segment. */
         CSeedRoots roots_;      /**< Collection of initial soff/qoff pairs. */
@@ -1681,7 +1988,8 @@ void CSearch< index_impl_t >::ProcessOffset( TWord offset )
     if( subj_seeds.EvalAndUpdate( seed ) ) {
         ExtendLeft( seed );
         ExtendRight( seed );
-        subj_seeds.Append( seed, options_.word_size );
+        if( seed.len_ >= options_.word_size )
+            subj_seeds.AppendSimple( seed );
     }
 }
 
@@ -1694,6 +2002,9 @@ unsigned long CSearch< index_impl_t >::ProcessRoot(
     if( qoff_ != root->qoff_ ) {
         seeds.Reset();
         qoff_ = root->qoff_;
+    }else if( root->soff_ >= CDbIndex::MIN_OFFSET && 
+                root->soff_ < soff_ ) {
+        seeds.Reset();
     }
 
     qstart_ = root->qstart_;
@@ -1703,9 +2014,11 @@ unsigned long CSearch< index_impl_t >::ProcessRoot(
         TSeqPos boundary = (root++)->soff_;
         ProcessBoundaryOffset( 
                 root->soff_ - CDbIndex::MIN_OFFSET, boundary );
+        soff_ = root->soff_;
         return 2;
     }else {
         ProcessOffset( root->soff_ - CDbIndex::MIN_OFFSET );
+        soff_ = root->soff_;
         return 1;
     }
 }
@@ -1757,31 +2070,39 @@ void CSearch< index_impl_t >::SearchInt()
 
     while( nmer_it.Next() ) {
         typename TIndex_Impl::TOffsetIterator off_it( 
-                index_impl_.OffsetIterator( nmer_it.Nmer() ) );
+                index_impl_.OffsetIterator( nmer_it.Nmer(), off_mod_ ) );
         qoff_ = nmer_it.Pos();
-        subject_ = 0;
-        subj_end_off_ = 0;
 
-        while( off_it.Next() ) {
-            TWord offset = off_it.Offset();
+        while( off_it.More() ) {
+            subject_ = 0;
+            subj_end_off_ = 0;
 
-            if( offset < CDbIndex::MIN_OFFSET ) {
-                off_it.Next();
-                TWord real_offset = off_it.Offset();
-                UpdateSubject( real_offset );
-                TSeqPos soff = CDbIndex::MIN_OFFSET + 
-                    (TSeqPos)(real_offset - 
-                              subj_start_off_)*CDbIndex::STRIDE;
-                SSeedRoot r1 = { qoff_, (TSeqPos)offset, qstart_, qstop_ };
-                SSeedRoot r2 = { qoff_, soff, qstart_, qstop_ };
-                roots_.Add2( r1, r2, subject_ );
-            }else if( !Skip( offset ) ) {
-                UpdateSubject( offset );
-                TSeqPos soff = CDbIndex::MIN_OFFSET + 
-                    (TSeqPos)(offset - subj_start_off_)*CDbIndex::STRIDE;
-                SSeedRoot r = { qoff_, soff, qstart_, qstop_ };
-                roots_.Add( r, subject_ );
+            while( off_it.Next() ) {
+                TWord offset = off_it.Offset();
+
+                if( offset < CDbIndex::MIN_OFFSET ) {
+                    off_it.Next();
+                    TWord real_offset = off_it.Offset();
+                    UpdateSubject( real_offset );
+                    TSeqPos soff = CDbIndex::MIN_OFFSET + 
+                        (TSeqPos)(real_offset - 
+                                subj_start_off_)*CDbIndex::STRIDE;
+                    SSeedRoot r1 = { qoff_, (TSeqPos)offset, qstart_, qstop_ };
+                    SSeedRoot r2 = { qoff_, soff, qstart_, qstop_ };
+                    roots_.Add2( r1, r2, subject_ );
+                }else {
+                    UpdateSubject( offset );
+                    TSeqPos soff = CDbIndex::MIN_OFFSET + 
+                        (TSeqPos)(offset - subj_start_off_)*CDbIndex::STRIDE;
+                    SSeedRoot r = { qoff_, soff, qstart_, qstop_ };
+                    roots_.Add( r, subject_ );
+                }
             }
+        }
+
+        if( roots_.Overflow() ) {
+            ComputeSeeds();
+            roots_.Reset();
         }
     }
 }
@@ -1821,6 +2142,61 @@ CConstRef< CDbIndex::CSearchResults > CSearch< index_impl_t >::operator()()
 }
 
 //-------------------------------------------------------------------------
+/** This class computes the values of subject map and offset data types
+    from index header values.
+    @param word_t       index word type
+    @param OFF_TYPE     offset encoding type
+    @param COMPRESSION  offset list compression type
+    @param VER          index format version
+*/
+template<
+    typename word_t,
+    unsigned long OFF_TYPE,
+    unsigned long COMPRESSION,
+    unsigned long VER >
+struct CDbIndex_Traits
+{
+    /** Computed offset data type. */
+    typedef COffsetData< 
+        word_t, COffsetIterator< word_t, UNCOMPRESSED >, COMPRESSION 
+    > TOffsetData;
+
+    /** Computed subject map type. */
+    typedef CSubjectMap< word_t, OFF_TYPE > TSubjectMap;
+};
+
+/** Specialization for index format version 3. */
+template< 
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION 
+>
+struct CDbIndex_Traits< word_t, OFF_TYPE, COMPRESSION, 3 >
+{
+    typedef COffsetData< 
+        word_t, 
+        CZeroEndOffsetIterator< word_t, UNCOMPRESSED >, 
+        COMPRESSION 
+    > TOffsetData;
+    typedef CSubjectMap< word_t, OFF_TYPE > TSubjectMap;
+};
+
+/** Specialization for index format version 4. */
+template< 
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION 
+>
+struct CDbIndex_Traits< word_t, OFF_TYPE, COMPRESSION, 4 >
+{
+    typedef COffsetData< 
+        word_t, 
+        CPreOrderedOffsetIterator< word_t, UNCOMPRESSED >, 
+        COMPRESSION 
+    > TOffsetData;
+    typedef CSubjectMap< word_t, OFF_TYPE > TSubjectMap;
+};
+
 /** Implementation of the BLAST database index
     @param word_t       bit width of the index
     @param OFF_TYPE     offset encoding type
@@ -1832,32 +2208,22 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER >
-class CDbIndex_Impl {};
-
-//-------------------------------------------------------------------------
-/** Implementation of the BLAST database index specialized for
-    given index parameters (index format version 1).
-    @param word_t       bit width of the index
-    @param OFF_TYPE     offset encoding type
-    @param COMPRESSION  offset list compression type
-*/
-template< 
-    typename word_t, 
-    unsigned long OFF_TYPE, 
-    unsigned long COMPRESSION >
-class CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 > : public CDbIndex
+class CDbIndex_Impl : public CDbIndex
 {
+    /** Offset data and subject map types computer. */
+    typedef CDbIndex_Traits< word_t, OFF_TYPE, COMPRESSION, VER > TTraits;
+
     public:
 
         /**@name Some convenience alias declarations. */
         /**@{*/
         typedef word_t TWord;
-        typedef COffsetData< TWord, COMPRESSION > TOffsetData;
-        typedef CSubjectMap< TWord, OFF_TYPE > TSubjectMap;
+        typedef typename TTraits::TOffsetData TOffsetData;
+        typedef typename TTraits::TSubjectMap TSubjectMap;
         typedef typename TOffsetData::TIterator TOffsetIterator;
         /**@}*/
 
-        /** Size of the index file header for index format version 2. */
+        /** Size of the index file header for index format version >= 2. */
         static const unsigned long HEADER_SIZE = 16 + 7*sizeof( TWord );
 
         /** Load an index data from the given input stream.
@@ -1891,8 +2257,8 @@ class CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 > : public CDbIndex
             @param nmer [I]     the Nmer value
             @return the iterator over the offset list corresponding to nmer
         */
-        const TOffsetIterator OffsetIterator( TWord nmer ) const
-        { return TOffsetIterator( *offset_data_, nmer ); }
+        const TOffsetIterator OffsetIterator( TWord nmer, unsigned long mod ) const
+        { return TOffsetIterator( *offset_data_, nmer, mod ); }
 
         /** Advance the current sequence id according to the given offset
             value.
@@ -1992,8 +2358,9 @@ class CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 > : public CDbIndex
 template< 
     typename word_t, 
     unsigned long OFF_TYPE, 
-    unsigned long COMPRESSION >
-CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::CDbIndex_Impl(
+    unsigned long COMPRESSION,
+    unsigned long VER >
+CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::CDbIndex_Impl(
         CNcbiIstream & is, const SIndexHeader< 1 > & header )
     : mapfile_( 0 ), map_( 0 )
 {
@@ -2010,8 +2377,9 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::CDbIndex_Impl(
 template< 
     typename word_t, 
     unsigned long OFF_TYPE, 
-    unsigned long COMPRESSION >
-CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::CDbIndex_Impl(
+    unsigned long COMPRESSION,
+    unsigned long VER >
+CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::CDbIndex_Impl(
         CMemoryFile * map, const SIndexHeader< 1 > & header )
     : mapfile_( map )
 {
@@ -2031,10 +2399,11 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::CDbIndex_Impl(
 template< 
     typename word_t, 
     unsigned long OFF_TYPE, 
-    unsigned long COMPRESSION >
+    unsigned long COMPRESSION,
+    unsigned long VER >
 INLINE
 BlastInitHitList * 
-CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::DoExtractResults(
+CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::DoExtractResults(
         CConstRef< CSearchResults > all_results,
         TSeqNum subject, TSeqNum chunk ) const
 {
@@ -2046,9 +2415,10 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::DoExtractResults(
 template< 
     typename word_t, 
     unsigned long OFF_TYPE, 
-    unsigned long COMPRESSION >
+    unsigned long COMPRESSION,
+    unsigned long VER >
 INLINE bool 
-CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::DoCheckResults( 
+CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::DoCheckResults( 
         CConstRef< CSearchResults > all_results, TSeqNum oid ) const
 {
     TSeqNum local_subj = subject_map_->MapSubject( oid, 0 );
@@ -2067,9 +2437,10 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::DoCheckResults(
 template< 
     typename word_t, 
     unsigned long OFF_TYPE, 
-    unsigned long COMPRESSION >
+    unsigned long COMPRESSION,
+    unsigned long VER >
 CConstRef< CDbIndex::CSearchResults > 
-CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::DoSearch( 
+CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::DoSearch( 
         const BLAST_SequenceBlk * query, 
         const BlastSeqLoc * locs,
         const SSearchOptions & search_options )
@@ -2080,29 +2451,11 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >::DoSearch(
 }
 
 //-------------------------------------------------------------------------
-template< 
-    typename word_t, 
-    unsigned long OFF_TYPE, 
-    unsigned long COMPRESSION >
-class CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 2 > 
-    : public CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 >
-{
-    typedef CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, 1 > TBase;
-
-    public:
-
-        CDbIndex_Impl( 
-                CMemoryFile * map, const SIndexHeader< 2 > & header )
-            : TBase( map, header )
-        {}
-};
-
-//-------------------------------------------------------------------------
 template< unsigned long VER >
 CRef< CDbIndex > CDbIndex::LoadIndex( CNcbiIstream & is )
 {
     CRef< CDbIndex > result( null );
-    SIndexHeader< VER > header = ReadIndexHeader< VER >( is );
+    SIndexHeader< 1 > header = ReadIndexHeader< 1 >( is );
 
     // Make a choice of CDbIndex_Impl specialization
     if( header.width_ == WIDTH_32 ) {
@@ -2141,7 +2494,7 @@ template< unsigned long VER >
 CRef< CDbIndex > CDbIndex::LoadIndex( const std::string & fname )
 {
     CMemoryFile * map = MapFile( fname );
-    SIndexHeader< VER > header = ReadIndexHeader< VER >( map->GetPtr() );
+    SIndexHeader< 1 > header = ReadIndexHeader( map->GetPtr() );
     CRef< CDbIndex > result( null );
     if( map ==0 ) return result;
 
@@ -2201,13 +2554,18 @@ CRef< CDbIndex > CDbIndex::Load( const std::string & fname )
     }
 
     unsigned long version = GetIndexVersion( index_stream );
-    //return LoadByVersion( index_stream, version );
 
     switch( version ) {
         case 1: return LoadIndex< 1 >( index_stream );
         case 2:
                 index_stream.close();
                 return LoadIndex< 2 >( fname );
+        case 3:
+                index_stream.close();
+                return LoadIndex< 3 >( fname );
+        case 4:
+                index_stream.close();
+                return LoadIndex< 4 >( fname );
         default: 
             
             NCBI_THROW( 

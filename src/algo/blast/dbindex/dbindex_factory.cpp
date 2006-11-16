@@ -674,7 +674,7 @@ void CSubjectMap< word_t, OFFSET_RAW >::Save(
     for( TSubjects::const_iterator cit = subjects_.begin();
             cit != subjects_.end(); ++cit ) {
         if( version == 1 ) WriteWord( os, *cit );
-        else if( version == 2 ) WriteWord( os, (TWord)(*cit) );
+        else if( version >= 2 ) WriteWord( os, (TWord)(*cit) );
     }
 
     for( typename TChunks::const_iterator cit = chunks_.begin();
@@ -682,10 +682,10 @@ void CSubjectMap< word_t, OFFSET_RAW >::Save(
         WriteWord( os, cit->seq_start_ );
     }
 
-    if( version == 2 ) WriteWord( os, (TWord)(seq_store_.size()) );
+    if( version >= 2 ) WriteWord( os, (TWord)(seq_store_.size()) );
 
     if( version == 1 ) WriteWord( os, seq_store_.size() );
-    else if( version == 2 ) WriteWord( os, (TWord)(seq_store_.size()) );
+    else if( version >= 2 ) WriteWord( os, (TWord)(seq_store_.size()) );
 
     os.write( (char *)(&seq_store_[0]), seq_store_.size() );
     os << std::flush;
@@ -908,11 +908,49 @@ class COffsetList< word_t, UNCOMPRESSED >
 //-------------------------------------------------------------------------
 template< typename word_t >
 inline void COffsetList< word_t, UNCOMPRESSED >::Save( 
-        CNcbiOstream & os, unsigned long ) const
+        CNcbiOstream & os, unsigned long version ) const
 {
-    for( typename TData::const_iterator cit = data_.begin(); 
-            cit != data_.end(); ++cit ) {
-        WriteWord( os, *cit );
+    if( version <= 3 ) {
+        for( typename TData::const_iterator cit = data_.begin(); 
+                cit != data_.end(); ++cit ) {
+            WriteWord( os, *cit );
+        }
+    }
+    else if( version == 4 ) {
+        for( typename TData::const_iterator cit = data_.begin(); 
+                cit != data_.end(); ++cit ) {
+            if( *cit < MIN_OFFSET ) {
+                WriteWord( os, *cit );
+                WriteWord( os, *(++cit) );
+            }
+            else if( (*cit)%3 == 0 ) {
+                WriteWord( os, *cit );
+            }
+        }
+
+        for( typename TData::const_iterator cit = data_.begin(); 
+                cit != data_.end(); ++cit ) {
+            if( (*cit) < MIN_OFFSET ) {
+                ++cit;
+            }
+            else if( (*cit)%3 != 0 && (*cit)%2 == 0 ) {
+                WriteWord( os, *cit );
+            }
+        }
+
+        for( typename TData::const_iterator cit = data_.begin(); 
+                cit != data_.end(); ++cit ) {
+            if( (*cit) < MIN_OFFSET ) {
+                ++cit;
+            }
+            else if( (*cit)%3 != 0 && (*cit)%2 != 0 ) {
+                WriteWord( os, *cit );
+            }
+        }
+    }
+
+    if( version >= 3 && !data_.empty() ) {
+        WriteWord( os, (word_t)0 );
     }
 }
 
@@ -1005,7 +1043,7 @@ class COffsetData
             @param os output stream; must be open in binary mode
             @param version index format version
         */
-        void Save( CNcbiOstream & os, unsigned long version ) const;
+        void Save( CNcbiOstream & os, unsigned long version );
 
     private:
 
@@ -1072,8 +1110,17 @@ class COffsetData
 template< 
     typename word_t, typename subject_map_t, unsigned long COMPRESSION >
 void COffsetData< word_t, subject_map_t, COMPRESSION >::Save(
-        CNcbiOstream & os, unsigned long version ) const
+        CNcbiOstream & os, unsigned long version ) 
 {
+    if( version >= 3 ) { // Adjust total_ to include end zeroes.
+        ++this->total_;
+
+        for( typename THashTable::const_iterator cit = hash_table_.begin();
+                cit != hash_table_.end(); ++cit ) {
+            if( cit->Size() > 0 ) ++this->total_;
+        }
+    }
+
     bool stat = !options_.stat_file_name.empty();
     std::auto_ptr< CNcbiOfstream > stats;
 
@@ -1088,7 +1135,14 @@ void COffsetData< word_t, subject_map_t, COMPRESSION >::Save(
 
     for( typename THashTable::const_iterator cit = hash_table_.begin();
             cit != hash_table_.end(); ++cit, ++nmer ) {
-        WriteWord( os, tot );
+        if( version >= 3 && cit->Size() != 0 ) {
+            ++tot;
+        }
+
+        if( version < 3 || (version >= 3 && cit->Size() != 0) ) 
+            WriteWord( os, tot );
+        else WriteWord( os, (word_t)0 );
+
         tot += cit->Size();
 
         if( stat && cit->Size() > 0 ) {
@@ -1097,7 +1151,9 @@ void COffsetData< word_t, subject_map_t, COMPRESSION >::Save(
         }
     }
 
-    if( version == 2 ) WriteWord( os, total() );
+    if( version >= 2 ) WriteWord( os, total() );
+    if( version >= 3 ) WriteWord( os, (word_t)0 ); // offset list data starts
+                                                   //     zero entry
 
     for( typename THashTable::const_iterator cit = hash_table_.begin();
             cit != hash_table_.end(); ++cit ) {
@@ -1314,7 +1370,7 @@ void CDbIndex_Factory< WIDTH >::SaveHeader(
                 TSeqNum stop,
                 TSeqNum stop_chunk )
 {
-    ASSERT( version == 1 || version == 2 );
+    ASSERT( version == 1 || version == 2 || version == 3 || version == 4 );
 
     switch( version ) {
         case 1:
@@ -1331,7 +1387,7 @@ void CDbIndex_Factory< WIDTH >::SaveHeader(
         os << std::flush;
         break;
 
-        case 2:
+        case 2: case 3: case 4:
 
         {
             WriteWord( os, (unsigned char)version );
@@ -1382,7 +1438,7 @@ void CDbIndex_Factory< WIDTH >::do_create(
         TSeqNum & stop, TSeqNum & stop_chunk, const SOptions & options )
 {
     switch( options.version ) {
-        case 1: case 2:
+        case 1: case 2: case 3: case 4:
 
             do_create_1_2< OFF_TYPE, COMPRESSION >(
                 input, oname, start, start_chunk, 

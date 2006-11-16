@@ -135,7 +135,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         static const unsigned long CODE_BITS = 3;       
 
         /** Index version that this library handles. */
-        static const unsigned char VERSION = (unsigned char)1;
+        static const unsigned char VERSION = (unsigned char)4;
 
         /** Simple record type used to specify index creation parameters.
 
