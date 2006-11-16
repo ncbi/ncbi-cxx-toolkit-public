@@ -67,7 +67,8 @@
 #include <algo/structure/cd_utils/cuCD.hpp>
 #include <algo/structure/cd_utils/cuBlockIntersector.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeFactory.hpp>
-#include <algo/structure/cd_utils/cuSeqTreeRootedLayout.hpp>
+#include <algo/structure/cd_utils/cuPssmScorer.hpp>
+#include <algo/structure/cd_utils/cuPssmMaker.hpp>
 #include <math.h>
 
 BEGIN_NCBI_SCOPE
@@ -877,27 +878,35 @@ int IntersectByMaster(CCdCore* ccd) {
     return result;
 }
 
-/*
-string layoutSeqTree(vector<CCdCore*>& cds, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
+int findHighestScoringRowByPssm(CCdCore* ccd)
 {
-	vector<CDFamily> families;
-	CDFamily::createFamilies(cds, families);
-	if(families.size() != 1 )
-		return string();
-	MultipleAlignment ma(families[0]);
-	TreeOptions treeOptions;
-	SeqTree* seqTree = TreeFactory::makeTree(&ma, treeOptions);
-	seqTree->fixRowName(ma, SeqTree::eGI);
-	SeqTreeRootedLayout treeLayout(yInt);
-	treeLayout.calculateNodePositions(*seqTree, maxX, maxY);
-	treeLayout.getAllEdges(*seqTree, edges);
-	string param = GetTreeAlgorithmName(treeOptions.clusteringMethod);
-	param.append(" / " + DistanceMatrix::GetDistMethodName(treeOptions.distMethod));
-	if (DistanceMatrix::DistMethodUsesScoringMatrix(treeOptions.distMethod) ) {
-		param.append(" / " + GetScoringMatrixName(treeOptions.matrix));
+	cd_utils::PssmMaker pm(ccd,true,true);   // 2rd param is useConsensus.  generally "true".
+	cd_utils::PssmMakerOptions config;
+	config.requestFrequencyRatios = false;
+	pm.setOptions(config);
+	CRef<CPssmWithParameters> pssm = pm.make();
+	const BlockModelPair& guide = pm.getGuideAlignment();
+	int max = 0;
+	int maxRow = 0;
+	PssmScorer ps(pssm);
+	CRef<CBioseq> bioseq;
+	for (int i = 0; i < ccd->GetNumRows(); i++)
+	{
+		ccd->GetBioseqForRow(i, bioseq);
+		BlockModelPair bmp(ccd->GetSeqAlign(i));
+		if (i==0) //score the master
+			bmp.getSlave() = bmp.getMaster();
+		bmp.remaster(guide);
+		int score = ps.score(bmp,bioseq);
+		if (score > max)
+		{
+			max = score;
+			maxRow = i;
+		}
 	}
-	return param;
-}*/
+	return maxRow;
+}
+
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
@@ -906,6 +915,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2006/11/16 20:19:46  cliu
+ * remove comment and add a function to find highest scoring row by PSSM
+ *
  * Revision 1.19  2006/07/05 15:50:43  cliu
  * Bug fix with consensus replacement and default PSSM
  *

@@ -161,6 +161,9 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = tru
 NCBI_CDUTILS_EXPORT 
 int IntersectByMaster(CCdCore* ccd);
 
+NCBI_CDUTILS_EXPORT 
+int findHighestScoringRowByPssm(CCdCore* ccd);
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -171,6 +174,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/11/16 20:20:30  cliu
+ * remove comment and add a function to find highest scoring row by PSSM
+ *
  * Revision 1.9  2006/08/09 18:41:23  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
