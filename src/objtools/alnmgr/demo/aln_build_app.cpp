@@ -53,6 +53,7 @@
 #include <objtools/alnmgr/aln_hints.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
+#include <objtools/alnmgr/sparse_aln.hpp> //< Temp, just to test it
 
 
 using namespace ncbi;
@@ -291,6 +292,17 @@ int CAlnBuildApp::Run(void)
     }
     built_anchored_aln.Dump(cout);
 
+    /// Get sequence:
+    CSparseAln sparse_aln(built_anchored_aln, GetScope());
+    for (TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
+        string sequence;
+        sparse_aln.GetAlnSeqString
+            (row, 
+             sequence, 
+             sparse_aln.GetSeqAlnRange(row));
+        cout << sequence;
+    }
+
     return 0;
 }
 
@@ -305,6 +317,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/11/16 13:51:10  todorov
+* Using some CSparseAln.
+*
 * Revision 1.5  2006/11/14 20:42:33  todorov
 * build without using CDiagRngColl.
 *
