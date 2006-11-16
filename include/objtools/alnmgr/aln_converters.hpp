@@ -88,8 +88,8 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  //< output
             }
 
             /// base-width adjustments
-            const int& base_width_1 = pairwise_aln.GetBaseWidth1();
-            const int& base_width_2 = pairwise_aln.GetBaseWidth2();
+            const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
+            const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
             if (base_width_1 > 1  ||  base_width_2 > 1) {
                 if (base_width_1 > 1) {
                     from_1 *= base_width_1;
@@ -134,8 +134,8 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         //< output
             bool direct = 
                 loc[row_1]->IsReverseStrand() == loc[row_2]->IsReverseStrand();
 
-            const int& base_width_1 = pairwise_aln.GetBaseWidth1();
-            const int& base_width_2 = pairwise_aln.GetBaseWidth2();
+            const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
+            const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
             _ASSERT(len_1 * base_width_1 == len_2 * base_width_2);
 
             pairwise_aln.insert
@@ -257,6 +257,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/11/16 13:40:29  todorov
+* Minor refactoring.
+*
 * Revision 1.4  2006/11/14 20:39:26  todorov
 * Initial revision.
 *
