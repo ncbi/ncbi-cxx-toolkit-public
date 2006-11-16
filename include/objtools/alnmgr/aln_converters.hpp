@@ -53,9 +53,9 @@ USING_SCOPE(objects);
 
 
 void
-ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  //< output
-                           const CDense_seg& ds,        //< input Dense-seg
-                           CDense_seg::TDim row_1,      //< which pair of rows
+ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
+                           const CDense_seg& ds,        ///< input Dense-seg
+                           CDense_seg::TDim row_1,      ///< which pair of rows
                            CDense_seg::TDim row_2)
 {
     _ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
@@ -110,9 +110,9 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  //< output
 
 
 void
-ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         //< output
-                           const CSeq_align::TSegs::TStd& std, //< input Std
-                           CSeq_align::TDim row_1,             //< which pair of rows 
+ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
+                           const CSeq_align::TSegs::TStd& std, ///< input Std
+                           CSeq_align::TDim row_1,             ///< which pair of rows 
                            CSeq_align::TDim row_2)
 {
     ITERATE (CSeq_align::TSegs::TStd, 
@@ -149,9 +149,9 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         //< output
 
 
 void
-ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  //< output
-                             const CSeq_align& sa,        //< input Seq-align
-                             CSeq_align::TDim row_1,      //< which pair of rows
+ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
+                             const CSeq_align& sa,        ///< input Seq-align
+                             CSeq_align::TDim row_1,      ///< which pair of rows
                              CSeq_align::TDim row_2)
 {
     _ASSERT(sa.GetDim() > max(row_1, row_2));
@@ -200,6 +200,7 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnHints& aln_hints,
     TDim dim = aln_hints.GetDimForAln(aln_idx);
     TDim anchor_row = aln_hints.GetAnchorRowForAln(aln_idx);
     TDim target_row;
+    TDim target_anchor_row = dim - 1; ///< anchor row goes at the last row (TODO: maybe a candidate for a user option?)
 
     CRef<CAnchoredAln> anchored_aln(new CAnchoredAln);
 
@@ -220,14 +221,14 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnHints& aln_hints,
         CPairwiseAln::fAllowAbutting;
 
     for (TDim row = 0;  row < dim;  ++row) {
-        /// Determine the where the row goes to (in the target
-        /// anchored alignment)
+        /// Determine where the row goes to (in the target anchored
+        /// alignment)
         if (row < anchor_row) {
-            target_row = row + 1;
-        } else if (row == anchor_row) {
-            target_row = 0;
-        } else {
-            target_row = row;
+            target_row = row < target_anchor_row ? row : row + 1;
+        } else if (row > anchor_row) {
+            target_row = row > target_anchor_row ? row : row - 1;
+        } else { // row == anchor_row
+            target_row = target_anchor_row; 
         }
 
         /// Create a pairwise
@@ -246,6 +247,7 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnHints& aln_hints,
         CConstRef<CSeq_id> id(ids[row]);
         anchored_aln->SetSeqIds()[target_row].Reset(id);
     }
+    anchored_aln->SetAnchorRow(target_anchor_row);
     return anchored_aln;
 }
 
@@ -257,6 +259,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/11/16 18:07:24  todorov
+* Anchor row is set to dim - 1.  This would allow to use CAnchoredAln
+* for non-query-anchored alignments (via a fake anchor).
+*
 * Revision 1.5  2006/11/16 13:40:29  todorov
 * Minor refactoring.
 *
