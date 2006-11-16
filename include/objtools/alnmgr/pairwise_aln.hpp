@@ -147,6 +147,10 @@ public:
         return m_PairwiseAlns;
     }
 
+    TDim GetAnchorRow() const {
+        return m_AnchorRow;
+    }
+
 
     /// Modifiers:
     void SetDim(TDim dim) {
@@ -162,6 +166,10 @@ public:
 
     TPairwiseAlnVector& SetPairwiseAlns() {
         return m_PairwiseAlns;
+    }
+
+    void SetAnchorRow(TDim anchor_row) {
+        m_AnchorRow = anchor_row;
     }
 
 
@@ -180,6 +188,7 @@ public:
 private:
     TSeqIdVector       m_SeqIds;
     TPairwiseAlnVector m_PairwiseAlns;
+    TDim               m_AnchorRow;
 };
 
 
@@ -190,6 +199,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/11/16 18:05:32  todorov
+* + {G,S}etAnchorRow
+*
 * Revision 1.8  2006/11/16 13:42:33  todorov
 * Changed the position type from TSeqPos to TSignedSeqPos.
 *
