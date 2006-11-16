@@ -131,13 +131,13 @@ public:
     /// Runs the search but does not produce seqalign output
     /// (useful if the raw search results are needed, rather
     /// than a set of complete Seq-aligns)
-    /// Please DO NOT use this method, use Run() or RunEx() instead.
+    /// @deprecated Please DO NOT use this method, use Run() or RunEx() instead.
     NCBI_DEPRECATED virtual void RunWithoutSeqalignGeneration();
 
     /// Retrieves the list of HSP results from the engine
     /// (to be used after RunWithoutSeqalignGeneration() method)
-    /// Please DO NOT use this method, use Run() or RunEx() instead, as this is
-    /// an internal data structure and it might change over time
+    /// @deprecated Please DO NOT use this method, use Run() or RunEx() 
+    /// instead, as this is an internal data structure of the BLAST engine
     NCBI_DEPRECATED BlastHSPResults* GetResults() const;
 
     /// Retrieves regions filtered on the query/queries
@@ -319,6 +319,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2006/11/16 16:17:50  camacho
+* Doxygenize deprecation comments
+*
 * Revision 1.53  2006/11/16 16:16:42  camacho
 * Added comment to deprecated methods
 *
