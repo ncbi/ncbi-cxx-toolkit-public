@@ -53,6 +53,7 @@
 #include <objtools/alnmgr/aln_hints.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
+#include <objtools/alnmgr/aln_rng_coll_oper.hpp> //< Temp, just to test it
 #include <objtools/alnmgr/sparse_aln.hpp> //< Temp, just to test it
 
 
@@ -227,18 +228,33 @@ int CAlnBuildApp::Run(void)
     aln_hints.Dump(cout);
 
 
-    /// Construct a vector of anchored alignments containing pairs of rows
-    typedef vector<CConstRef<CAnchoredAln> > TAnchoredAlnVector;
+    /// Construct a vector of anchored alignments
+    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVector;
     TAnchoredAlnVector anchored_aln_vector;
     for (size_t aln_idx = 0;  
          aln_idx < aln_hints.GetAlnCount();
          ++aln_idx) {
 
-        CConstRef<CAnchoredAln> anchored_aln =
+        CRef<CAnchoredAln> anchored_aln =
             CreateAnchoredAlnFromAln(aln_hints, aln_idx);
+
+        /// Calc scores
+        for (TDim row = 0; row < anchored_aln->GetDim(); ++row) {
+            ITERATE(CPairwiseAln, rng_it, *anchored_aln->GetPairwiseAlns()[row]) {
+                anchored_aln->SetScore() += rng_it->GetLength();
+            }
+        }
+        anchored_aln->SetScore() /= anchored_aln->GetDim();
+        
         anchored_aln->Dump(cout);
         anchored_aln_vector.push_back(anchored_aln);
     }
+
+
+    /// Sort the anchored alns by score (best to worst)
+    sort(anchored_aln_vector.begin(),
+         anchored_aln_vector.end(), 
+         PScoreGreater<CAnchoredAln>());
 
 
     /// Build a single anchored_aln
@@ -274,7 +290,12 @@ int CAlnBuildApp::Run(void)
 //                 built_pairwise_aln.Dump(cout);
 
                 CPairwiseAln& built_pairwise_aln = *built_anchored_aln.SetPairwiseAlns()[row];
-                ITERATE(CPairwiseAln, rng_it, *anchored_aln.GetPairwiseAlns()[row]) {
+
+                CRef<CPairwiseAln> diff(new CPairwiseAln);
+                SubtractAlnRngCollections(*anchored_aln.GetPairwiseAlns()[row],
+                                          built_pairwise_aln,
+                                          *diff);
+                ITERATE(CPairwiseAln, rng_it, *diff) {
                     built_pairwise_aln.insert(*rng_it);
                 }
 
@@ -292,6 +313,7 @@ int CAlnBuildApp::Run(void)
     }
     built_anchored_aln.Dump(cout);
 
+
     /// Get sequence:
     CSparseAln sparse_aln(built_anchored_aln, GetScope());
     for (TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
@@ -300,8 +322,10 @@ int CAlnBuildApp::Run(void)
             (row, 
              sequence, 
              sparse_aln.GetSeqAlnRange(row));
-        cout << sequence;
+        cout << sparse_aln.GetSeqId(row).AsFastaString() << "\t"
+             << sequence << endl;
     }
+
 
     return 0;
 }
@@ -317,6 +341,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/11/16 22:41:37  todorov
+* Truncating chunks by substracting aligment collections.
+*
 * Revision 1.6  2006/11/16 13:51:10  todorov
 * Using some CSparseAln.
 *
