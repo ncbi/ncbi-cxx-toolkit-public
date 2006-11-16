@@ -3177,25 +3177,28 @@ PHIBlast_HSPResultsSplit(const BlastHSPResults* results,
                          const SPHIQueryInfo* pattern_info)
 {
     BlastHSPResults* *phi_results = NULL;
-    int pattern_index, hit_index, hsp_index;
+    int pattern_index, hit_index;
     int num_patterns;
     BlastHitList* hit_list = NULL;
-    int hitlist_size;
     BlastHSPList** hsplist_array; /* Temporary per-pattern HSP lists. */  
 
-    if (!results || !results->hitlist_array[0] || !pattern_info)
+    if (!pattern_info || pattern_info->num_patterns == 0)
         return NULL;
 
     num_patterns = pattern_info->num_patterns;
-    hit_list = results->hitlist_array[0];
-    hitlist_size = hit_list->hsplist_max;
     
     phi_results = 
         (BlastHSPResults**) calloc(num_patterns, sizeof(BlastHSPResults*));
+
+    if (!results || !results->hitlist_array[0])
+        return phi_results;   /* An empty results set is expected if no hits. */
+
     hsplist_array = (BlastHSPList**) calloc(num_patterns, sizeof(BlastHSPList*));
+    hit_list = results->hitlist_array[0];
 
     for (hit_index = 0; hit_index < hit_list->hsplist_count; ++hit_index) {
         BlastHSPList* hsp_list = hit_list->hsplist_array[hit_index];
+        int hsp_index;
         /* Copy HSPs corresponding to different pattern occurrences into
            separate HSP lists. */
         for (hsp_index = 0; hsp_index < hsp_list->hspcnt; ++hsp_index) {
@@ -3216,7 +3219,7 @@ PHIBlast_HSPResultsSplit(const BlastHSPResults* results,
                     phi_results[pattern_index] = Blast_HSPResultsNew(1);
                 Blast_HSPResultsInsertHSPList(phi_results[pattern_index],
                                               hsplist_array[pattern_index],
-                                              hitlist_size);
+                                              hit_list->hsplist_max);
                 hsplist_array[pattern_index] = NULL;
             }
         }
