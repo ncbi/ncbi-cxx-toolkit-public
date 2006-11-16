@@ -68,9 +68,9 @@ public:
     }
 
     template <class TCallback>
-    void Read(CObjectIStream * obj_in_stream, //< The object stream to read from
-              TCallback callback,             //< Callback for each const CSeq_align*
-              const string& top_level_asn_object = kEmptyStr) //< In case of binary ASN.1 or need to force the type
+    void Read(CObjectIStream * obj_in_stream, ///< The object stream to read from
+              TCallback callback,             ///< Callback for each const CSeq_align*
+              const string& top_level_asn_object = kEmptyStr) ///< In case of binary ASN.1 or need to force the type
     {
         while ( !obj_in_stream->EndOfData() ) {
 
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/11/16 18:08:49  todorov
+* Doxygenized comments.
+*
 * Revision 1.2  2006/10/19 17:08:33  todorov
 * + #include <objmgr/scope.hpp>
 *
