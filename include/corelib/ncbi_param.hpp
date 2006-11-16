@@ -401,6 +401,18 @@ public:
 
     ~CParam(void) {}
 
+    /// Current param state flag - allows to check if the global default
+    /// value has been loaded from the environment/INI file or set by user.
+    enum EParamState {
+        eState_NotSet = 0, ///< The param's value has not been set yet
+        eState_EnvVar = 1, ///< Value has been read from the environment
+        eState_Config = 2, ///< Value has been loaded from app. config
+        eState_User   = 3  ///< Value has been set by user
+    };
+
+    /// Get current state of the param.
+    static EParamState GetState(void);
+
     /// Get current parameter value.
     TValueType Get(void) const;
     /// Set new parameter value (this instance only).
@@ -431,8 +443,9 @@ public:
 private:
     typedef CTls<TValueType> TTls;
 
-    static TValueType&       sx_GetDefault (bool force_reset = false);
-    static CRef<TTls>&       sx_GetTls     (void);
+    static TValueType& sx_GetDefault(bool force_reset = false);
+    static CRef<TTls>& sx_GetTls    (void);
+    static EParamState& sx_GetState(void);
 
     static bool sx_IsSetFlag(ENcbiParamFlags flag);
     static bool sx_CanGetDefault(void);
@@ -452,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/11/16 20:12:10  grichenk
+ * Added CParam state (stage of initialization).
+ *
  * Revision 1.11  2006/11/13 16:57:27  grichenk
  * Added methods to reset CParam.
  *

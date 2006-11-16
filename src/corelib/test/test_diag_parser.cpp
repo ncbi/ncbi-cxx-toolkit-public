@@ -277,9 +277,6 @@ void CDiagParserApp::x_CheckMessage(void)
         ERR_POST_EX(123, 45, "Test error post message");
 
         result = string(str.str(), str.pcount());
-        size_t cr = result.find('\n');
-        _ASSERT(cr != NPOS  &&  cr < result.length() - 1);
-        result = result.substr(cr + 1, result.length());
         msg.reset(new SDiagMessage(result));
     }
     catch (...) {
@@ -335,6 +332,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/11/16 20:12:10  grichenk
+ * Added CParam state (stage of initialization).
+ *
  * Revision 1.4  2006/10/31 18:41:17  grichenk
  * Redesigned diagnostics setup.
  * Moved the setup function to ncbidiag.cpp.

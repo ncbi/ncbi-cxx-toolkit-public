@@ -277,27 +277,25 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
     static TValueType s_Default =
         TDescription::sm_ParamDescription.default_value;
 
-    static bool initialized = false;
-
     if ( force_reset ) {
         s_Default = TDescription::sm_ParamDescription.default_value;
-        initialized = false;
+        sx_GetState() = eState_NotSet;
     }
 
-    if ( !initialized ) {
-        if ( !sx_IsSetFlag(eParam_NoLoad) ) {
-            string config_value =
-                g_GetConfigString(TDescription::sm_ParamDescription.section,
-                                  TDescription::sm_ParamDescription.name,
-                                  TDescription::sm_ParamDescription.env_var_name,
-                                  "");
-            if ( !config_value.empty() ) {
-                s_Default =
-                    TParamParser::StringToValue(config_value,
-                    TDescription::sm_ParamDescription);
-            }
+    if ( sx_GetState() < eState_Config  &&  !sx_IsSetFlag(eParam_NoLoad) ) {
+        string config_value =
+            g_GetConfigString(TDescription::sm_ParamDescription.section,
+                                TDescription::sm_ParamDescription.name,
+                                TDescription::sm_ParamDescription.env_var_name,
+                                "");
+        if ( !config_value.empty() ) {
+            s_Default =
+                TParamParser::StringToValue(config_value,
+                TDescription::sm_ParamDescription);
         }
-        initialized = true;
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        sx_GetState() = app  &&  app->HasLoadedConfig()
+            ? eState_Config : eState_EnvVar;
     }
 
     return s_Default;
@@ -314,10 +312,28 @@ CParam<TDescription>::sx_GetTls(void)
 
 
 template<class TDescription>
+typename CParam<TDescription>::EParamState&
+CParam<TDescription>::sx_GetState(void)
+{
+    static EParamState s_State = eState_NotSet;
+    return s_State;
+}
+
+
+template<class TDescription>
 inline
 bool CParam<TDescription>::sx_IsSetFlag(ENcbiParamFlags flag)
 {
     return (TDescription::sm_ParamDescription.flags & flag) != 0;
+}
+
+
+template<class TDescription>
+inline
+typename CParam<TDescription>::EParamState
+CParam<TDescription>::GetState(void)
+{
+    return sx_GetState();
 }
 
 
@@ -444,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/11/16 20:12:10  grichenk
+ * Added CParam state (stage of initialization).
+ *
  * Revision 1.11  2006/11/13 16:57:27  grichenk
  * Added methods to reset CParam.
  *
