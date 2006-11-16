@@ -728,20 +728,38 @@ string GetDefaultLogLocation(CNcbiApplication& app)
 }
 
 
+NCBI_PARAM_DECL(bool, Log, Truncate);
+NCBI_PARAM_DEF_EX(bool, Log, Truncate, false, eParam_NoThread, LOG_TRUNCATE);
+typedef NCBI_PARAM_TYPE(Log, Truncate) TLogTruncateParam;
+
+
+bool CDiagContext::GetLogTruncate(void)
+{
+    return TLogTruncateParam::GetDefault();
+}
+
+
+ios::openmode s_GetLogOpenMode(void)
+{
+    return ios::out |
+        (CDiagContext::GetLogTruncate() ? ios::trunc : ios::app);
+}
+
+
+NCBI_PARAM_DECL(bool, Log, NoCreate);
+NCBI_PARAM_DEF_EX(bool, Log, NoCreate, false, eParam_NoThread, LOG_NOCREATE);
+typedef NCBI_PARAM_TYPE(Log, NoCreate) TLogNoCreate;
+
 bool OpenLogFileFromConfig(CNcbiRegistry& config)
 {
     string logname = config.GetString("LOG", "File", kEmptyStr);
     // In eDS_User mode do not use config unless IgnoreEnvArg
     // is set to true.
     if ( !logname.empty() ) {
-        bool truncate_log = config.GetBool("LOG", "Truncate", false);
-        bool nocreate_log = config.GetBool("LOG", "NoCreate", false);
-        CFile logfile(logname);
-        ios::openmode mode = ios::out |
-            (truncate_log ? ios::trunc : ios::app);
-        if (!nocreate_log || logfile.Exists()) {
-            return SetLogFile(logname, eDiagFile_All, true, mode);
+        if ( TLogNoCreate::GetDefault()  &&  !CDirEntry(logname).Exists() ) {
+            return false;
         }
+        return SetLogFile(logname, eDiagFile_All, true);
     }
     return false;
 }
@@ -2216,37 +2234,29 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 }
 
 
-void ReportDiagHandlerSwitch(const string& msg)
-{
-    CDiagContext& ctx = GetDiagContext();
-    if ( ctx.IsSetOldPostFormat() ) {
-        return;
-    }
-    ctx.PrintExtra(msg);
-}
-
-
 extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
 {
     CMutexGuard LOCK(s_DiagMutex);
+    CDiagContext& ctx = GetDiagContext();
+    bool report_switch = ctx.IsSetOldPostFormat()  &&
+        CDiagBuffer::GetProcessPostNumber(false) > 0;
     string old_name, new_name;
+
     if ( CDiagBuffer::sm_Handler ) {
         old_name = CDiagBuffer::sm_Handler->GetLogName();
     }
     if ( handler ) {
         new_name = handler->GetLogName();
-        if (new_name != old_name) {
-            ReportDiagHandlerSwitch(
-                "Switching diagnostics to " + new_name);
+        if (report_switch  &&  new_name != old_name) {
+            ctx.PrintExtra("Switching diagnostics to " + new_name);
         }
     }
     if ( CDiagBuffer::sm_CanDeleteHandler )
         delete CDiagBuffer::sm_Handler;
     CDiagBuffer::sm_Handler          = handler;
     CDiagBuffer::sm_CanDeleteHandler = can_delete;
-    if (!old_name.empty()  && new_name != old_name) {
-        ReportDiagHandlerSwitch(
-            "Switched diagnostics from " + old_name);
+    if (report_switch  &&  !old_name.empty()  &&  new_name != old_name) {
+        ctx.PrintExtra("Switched diagnostics from " + old_name);
     }
 }
 
@@ -2403,7 +2413,7 @@ CFileDiagHandler::CFileDiagHandler(void)
       m_Trace("-"),
       m_LastReopen(new CTime)
 {
-    SetLogFile("-", eDiagFile_All, true, ios::app);
+    SetLogFile("-", eDiagFile_All, true);
 }
 
 
@@ -2430,8 +2440,7 @@ bool s_CanOpenLogFile(const string& file_name)
 
 bool CFileDiagHandler::SetLogFile(const string& file_name,
                                   EDiagFileType file_type,
-                                  bool          quick_flush,
-                                  ios::openmode mode)
+                                  bool          quick_flush)
 {
     bool special = s_IsSpecialLogName(file_name);
     switch ( file_type ) {
@@ -2458,13 +2467,13 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             }
 
             m_Err.m_FileName = err_name;
-            m_Err.m_Mode = mode;
+            m_Err.m_Mode = s_GetLogOpenMode();
             m_Err.m_QuickFlush = quick_flush;
             m_Log.m_FileName = log_name;
-            m_Log.m_Mode = mode;
+            m_Log.m_Mode = s_GetLogOpenMode();
             m_Log.m_QuickFlush = quick_flush;
             m_Trace.m_FileName = trace_name;
-            m_Trace.m_Mode = mode;
+            m_Trace.m_Mode = s_GetLogOpenMode();
             m_Trace.m_QuickFlush = quick_flush;
             break;
         }
@@ -2473,7 +2482,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             return false;
         }
         m_Err.m_FileName = file_name;
-        m_Err.m_Mode = mode;
+        m_Err.m_Mode = s_GetLogOpenMode();
         m_Err.m_QuickFlush = quick_flush;
         break;
     case eDiagFile_Log:
@@ -2481,7 +2490,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             return false;
         }
         m_Log.m_FileName = file_name;
-        m_Log.m_Mode = mode;
+        m_Log.m_Mode = s_GetLogOpenMode();
         m_Log.m_QuickFlush = quick_flush;
         break;
     case eDiagFile_Trace:
@@ -2489,7 +2498,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             return false;
         }
         m_Trace.m_FileName = file_name;
-        m_Trace.m_Mode = mode;
+        m_Trace.m_Mode = s_GetLogOpenMode();
         m_Trace.m_QuickFlush = quick_flush;
         break;
     }
@@ -2619,8 +2628,7 @@ public:
                        void*         cleanup_data);
     bool SetLogFile(const string& file_name,
                     EDiagFileType file_type,
-                    bool          quick_flush,
-                    ios::openmode mode);
+                    bool          quick_flush);
     string GetLogFile(EDiagFileType file_type) const;
     bool IsDiagStream(const CNcbiOstream* os) const;
     CNcbiOstream* GetDiagStream(void) const;
@@ -2633,8 +2641,7 @@ private:
 
 extern bool SetLogFile(const string& file_name,
                        EDiagFileType file_type,
-                       bool quick_flush,
-                       ios::openmode mode)
+                       bool quick_flush)
 {
     // Check if a non-existing dir is specified
     if ( !s_IsSpecialLogName(file_name) ) {
@@ -2648,7 +2655,7 @@ extern bool SetLogFile(const string& file_name,
         dynamic_cast<CDoubleDiagHandler*>(GetDiagHandler());
     if ( double_handler ) {
         return double_handler->SetLogFile(
-            file_name, file_type, quick_flush, mode);
+            file_name, file_type, quick_flush);
     }
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
@@ -2659,7 +2666,7 @@ extern bool SetLogFile(const string& file_name,
             return false;
         }
         // Check special filenames
-        if ( file_name.empty() ) {
+        if ( file_name.empty()  ||  file_name == "/dev/null" ) {
             // no output
             SetDiagStream(0, quick_flush, 0, 0, kLogName_None);
         }
@@ -2668,9 +2675,12 @@ extern bool SetLogFile(const string& file_name,
             SetDiagStream(&NcbiCerr, quick_flush, 0, 0, kLogName_Stderr);
         }
         else {
+            if ( !s_CanOpenLogFile(file_name) ) {
+                return false;
+            }
             // output to file
             CNcbiOfstream* str = new CNcbiOfstream(file_name.c_str(),
-                mode);
+                s_GetLogOpenMode());
             if ( !str->is_open() ) {
                 SetLogFile("-", eDiagFile_All, quick_flush);
                 ERR_POST(Info << "Failed to initialize log: "
@@ -2689,10 +2699,16 @@ extern bool SetLogFile(const string& file_name,
         if ( !handler ) {
             // Install new handler
             handler = new CFileDiagHandler();
-            SetDiagHandler(handler);
+            if ( handler->SetLogFile(file_name, file_type, quick_flush) ) {
+                SetDiagHandler(handler);
+                return true;
+            }
+            else {
+                return false;
+            }
         }
         // Update the existing handler
-        return handler->SetLogFile(file_name, file_type, quick_flush, mode);
+        return handler->SetLogFile(file_name, file_type, quick_flush);
     }
     return true;
 }
@@ -3221,8 +3237,7 @@ CNcbiOstream* CDoubleDiagHandler::GetDiagStream(void) const
 
 bool CDoubleDiagHandler::SetLogFile(const string& file_name,
                                     EDiagFileType file_type,
-                                    bool          quick_flush,
-                                    ios::openmode mode)
+                                    bool          quick_flush)
 {
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
@@ -3246,7 +3261,7 @@ bool CDoubleDiagHandler::SetLogFile(const string& file_name,
         else {
             // output to file
             CNcbiOfstream* str = new CNcbiOfstream(file_name.c_str(),
-                mode);
+                s_GetLogOpenMode());
             if ( !str->is_open() ) {
                 m_FileHandler.reset(
                     new CStreamDiagHandler(&NcbiCerr, quick_flush));
@@ -3268,7 +3283,7 @@ bool CDoubleDiagHandler::SetLogFile(const string& file_name,
             m_FileHandler.reset(handler);
         }
         // Update the existing handler
-        return handler->SetLogFile(file_name, file_type, quick_flush, mode);
+        return handler->SetLogFile(file_name, file_type, quick_flush);
     }
     return true;
 }
@@ -3511,6 +3526,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.137  2006/11/16 20:16:55  grichenk
+ * Log open mode controlled by CParam.
+ * Report switching handlers only if messages have been printed.
+ * Disable diagnostics if log file is /dev/null.
+ *
  * Revision 1.136  2006/11/15 15:38:54  grichenk
  * Added methods to fromat and output stack trace.
  *

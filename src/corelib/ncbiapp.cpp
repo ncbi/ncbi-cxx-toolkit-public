@@ -308,7 +308,7 @@ int CNcbiApplication::AppMain
                 if ( !argv[i++] ) {
                     continue;
                 }
-                if (SetLogFile(argv[i], eDiagFile_All, true, ios::app)) {
+                if (SetLogFile(argv[i], eDiagFile_All, true)) {
                     diag = eDS_User;
                     is_diag_setup = true;
                 }
@@ -1009,6 +1009,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.137  2006/11/16 20:16:55  grichenk
+ * Log open mode controlled by CParam.
+ * Report switching handlers only if messages have been printed.
+ * Disable diagnostics if log file is /dev/null.
+ *
  * Revision 1.136  2006/11/15 19:20:42  ivanov
  * Added workaround for ICC 8.0 optimization bug in exceptions handling
  *

@@ -1177,6 +1177,9 @@ public:
     /// Discard the collected messages without printing them.
     void DiscardMessages(void);
 
+    /// Get log file truncation flag
+    static bool GetLogTruncate(void);
+
     /// Application-wide diagnostics setup. Attempts to create log files
     /// or diag streams according to the 'ds' flag. If 'config' is set,
     /// gets name of the log file from the registry.
@@ -1395,8 +1398,7 @@ public:
     ///   Do stream flush after every message.
     bool SetLogFile(const string& file_name,
                     EDiagFileType file_type,
-                    bool          quick_flush,
-                    ios::openmode mode);
+                    bool          quick_flush);
 
     /// Get current log file name. If file_type is eDiagFile_All, always
     /// returns empty string.
@@ -1497,8 +1499,7 @@ NCBI_XNCBI_EXPORT extern bool GetSplitLogFile(void);
 NCBI_XNCBI_EXPORT
 extern bool SetLogFile(const string& file_name,
                        EDiagFileType file_type = eDiagFile_All,
-                       bool          quick_flush = true,
-                       ios::openmode mode = ios::app);
+                       bool          quick_flush = true);
 
 /// Get log file name for the given log type. Return empty string for
 /// eDiagFile_All or if the log file handler is not installed.
@@ -1718,6 +1719,11 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.121  2006/11/16 20:16:55  grichenk
+ * Log open mode controlled by CParam.
+ * Report switching handlers only if messages have been printed.
+ * Disable diagnostics if log file is /dev/null.
+ *
  * Revision 1.120  2006/11/15 15:38:53  grichenk
  * Added methods to fromat and output stack trace.
  *
