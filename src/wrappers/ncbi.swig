@@ -67,12 +67,27 @@
 
 namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
 
+%immutable st;
+%inline %{
+    string st;  // stack trace from CException
+%}
+
 %include exception.i
 %{
 // helper function for exception catching
+#include <iostream>
+#include <sstream>
 void HandleException(void) {
     try {
         throw;
+    } catch(ncbi::CException& e) {
+#ifdef SWIGPYTHON
+        ostringstream ostr;
+        e.ReportStackTrace(ostr, "", "\n");
+        st = ostr.str();
+#endif
+        // const_cast for Perl
+        SWIG_exception(SWIG_RuntimeError, const_cast<char *>(e.what()));
     } catch(std::exception& e) {
         // const_cast for Perl
         SWIG_exception(SWIG_RuntimeError, const_cast<char *>(e.what()));
@@ -323,6 +338,9 @@ end\n\
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/11/16 23:29:46  jcherry
+ * Experimental exception stack trace capture for Python
+ *
  * Revision 1.9  2006/11/02 22:15:07  jcherry
  * Exception handling: catch only (...) and handle in a function (reduces
  * library size by 3-4 Mb).  Deal with fact that NStr methods now take
