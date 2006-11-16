@@ -40,6 +40,9 @@ Contents: Find local alignments between sequences
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/cobalt/cobalt.hpp>
@@ -171,41 +174,61 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
     blastp_opts.SetEvalueThreshold(max(m_BlastpEvalue, 10.0));
     blastp_opts.SetSegFiltering(false);
     CBl2Seq blaster(filler_locs, m_tQueries, blastp_opts);
-    blaster.RunWithoutSeqalignGeneration();
-
-    BlastHSPResults *tmp_results = blaster.GetResults();
-    _ASSERT(tmp_results);
+    TSeqAlignVector v = blaster.Run();
 
     // Convert each resulting HSP into a CHit object
 
-    for (int i = 0; i < tmp_results->num_queries; i++) {
+    // iterate over query sequence fragments
 
-        BlastHitList *hitlist = tmp_results->hitlist_array[i];
-        if (hitlist == NULL)
-            continue;
+    for (int i = 0; i < (int)filler_locs.size(); i++) {
 
-        for (int j = 0; j < hitlist->hsplist_count; j++) {
-            BlastHSPList *hsplist = hitlist->hsplist_array[j];
+        int list1_oid = filler_segs[i].seq_index;
+        int list2_oid = 0;
 
-            SSegmentLoc& loc1 = filler_segs[hsplist->query_index];
+        // iterate over hitlists
 
-            if (loc1.seq_index == hsplist->oid)
+        ITERATE(CSeq_align_set::Tdata, itr, v[i]->Get()) {
+
+            const CSeq_align& hitlist_sa = **itr;
+
+            // skip hits that map to the same query sequence
+
+            if (list1_oid == list2_oid) {
+                list2_oid++;
                 continue;
-
-            // for each HSP found, remap back to the original
-            // query sequences and then update the input list of
-            // results
-
-            for (int k = 0; k < hsplist->hspcnt; k++) {
-                BlastHSP *hsp = hsplist->hsp_array[k];
-
-                if (hsp->evalue <= m_BlastpEvalue) {
-                    hsp->query.offset += loc1.GetFrom();
-                    hsp->query.end += loc1.GetFrom();
-                    m_LocalHits.AddToHitList(new CHit(loc1.seq_index, 
-                                             hsplist->oid, hsp));
-                }
             }
+
+            // iterate over hits
+
+            ITERATE(CSeq_align_set::Tdata, sitr, 
+                                 hitlist_sa.GetSegs().GetDisc().Get()) {
+
+                const CSeq_align& s = **sitr;
+                const CDense_seg& denseg = s.GetSegs().GetDenseg();
+                int align_score = 0;
+                double evalue = 0;
+
+                // compute the score of the hit
+
+                ITERATE(CSeq_align::TScore, score_itr, s.GetScore()) {
+                    const CScore& curr_score = **score_itr;
+                    if (curr_score.GetId().GetStr() == "score")
+                        align_score = curr_score.GetValue().GetInt();
+                    else if (curr_score.GetId().GetStr() == "e_value")
+                        evalue = curr_score.GetValue().GetReal();
+                }
+
+                // check if the hit is worth saving
+                if (evalue > m_BlastpEvalue)
+                    continue;
+
+                // save the hit
+
+                m_LocalHits.AddToHitList(new CHit(list1_oid, list2_oid,
+                                                    align_score, denseg));
+            }
+
+            list2_oid++;
         }
     }
 }
@@ -262,6 +285,9 @@ END_NCBI_SCOPE
 
 /* ====================================================================
  * $Log$
+ * Revision 1.13  2006/11/16 17:46:33  papadopo
+ * remove deprecated function, replace with code that iterates through seqaligns
+ *
  * Revision 1.12  2006/06/15 17:43:03  papadopo
  * PartialRun -> RunWithoutSeqalignGeneration
  *
