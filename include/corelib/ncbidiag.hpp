@@ -1179,6 +1179,8 @@ public:
 
     /// Get log file truncation flag
     static bool GetLogTruncate(void);
+    /// Set log file truncation flag
+    static void SetLogTruncate(bool value);
 
     /// Application-wide diagnostics setup. Attempts to create log files
     /// or diag streams according to the 'ds' flag. If 'config' is set,
@@ -1719,10 +1721,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
- * Revision 1.121  2006/11/16 20:16:55  grichenk
- * Log open mode controlled by CParam.
- * Report switching handlers only if messages have been printed.
- * Disable diagnostics if log file is /dev/null.
+ * Revision 1.122  2006/11/16 21:41:48  grichenk
+ * Added SetLogTruncate().
+ * Fixed empty path bug in s_CanOpenLogFile().
  *
  * Revision 1.120  2006/11/15 15:38:53  grichenk
  * Added methods to fromat and output stack trace.
