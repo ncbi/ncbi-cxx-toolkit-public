@@ -35,7 +35,6 @@
 #ifndef CU_CDCORE_HPP
 #define CU_CDCORE_HPP
 
-#pragma warning (disable: 4786)
 #include <algo/structure/cd_utils/cuCppNCBI.hpp>
 #include <algo/structure/cd_utils/cuGlobalDefs.hpp>
 #include <algo/structure/cd_utils/cuMatrix.hpp>
@@ -243,6 +242,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/11/16 20:23:04  cliu
+ * remove a pragma
+ *
  * Revision 1.4  2006/08/09 18:41:23  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
