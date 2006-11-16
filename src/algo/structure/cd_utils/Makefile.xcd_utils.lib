@@ -58,7 +58,8 @@ SRC = \
 	cuBlast2Seq \
 	cuHitsDistributor \
 	cuSeqSwapper \
-	cuFlexiDm
+	cuFlexiDm \
+	cuPssmScorer
 
 DLL_LIB = xobjread
 
