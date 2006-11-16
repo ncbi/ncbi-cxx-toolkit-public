@@ -60,10 +60,10 @@ class CSparseAln : public CObject
 {
 public:
     /// Types
-    typedef CPairwiseAln::TRng TRng; //< Synonym of TRange
-    typedef CPairwiseAln::TAlnRng TAlnRng; //< Synonym of TAlignRange
-    typedef CPairwiseAln::TAlnRngColl TAlnRngColl; //< Synonym of TAlignColl
-    typedef CAnchoredAln::TDim TDim; //< Synonym of TNumrow
+    typedef CPairwiseAln::TRng TRng; ///< Synonym of TRange
+    typedef CPairwiseAln::TAlnRng TAlnRng; ///< Synonym of TAlignRange
+    typedef CPairwiseAln::TAlnRngColl TAlnRngColl; ///< Synonym of TAlignColl
+    typedef CAnchoredAln::TDim TDim; ///< Synonym of TNumrow
     
     typedef SAlignTools::TAlignRange   TAlignRange;
     typedef SAlignTools::TAlignColl    TAlignColl;
@@ -116,7 +116,7 @@ public:
         return true; /// Always true for sparce alignments
     }
     TNumrow GetAnchor() const {
-        return 0; /// Always the 0-th row.
+        return m_AnchoredAln.GetAnchorRow();
     }
 
     /// Sequence range in alignment coords (strand ignored)
@@ -165,7 +165,7 @@ protected:
     const TPairwiseAlnVector& m_PairwiseAlns;
     const TSeqIdVector& m_SeqIds;
     mutable CRef<objects::CScope> m_Scope;
-    TRng m_FirstRange; //< the extent of all segments in aln coords
+    TRng m_FirstRange; ///< the extent of all segments in aln coords
     vector<TRng> m_SecondRanges;
     TResidue m_GapChar;
     mutable vector<objects::CBioseq_Handle> m_BioseqHandles;
@@ -182,6 +182,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/16 18:09:40  todorov
+ * Anchor row is obtained from the underlying anchored aln.
+ * Doxygenized comments.
+ *
  * Revision 1.1  2006/11/16 13:45:08  todorov
  * Moved over from gui/widgets/aln_data and refactored to adapt to the
  * new aln framework.
