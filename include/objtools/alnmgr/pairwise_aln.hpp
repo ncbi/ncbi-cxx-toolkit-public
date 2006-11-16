@@ -50,31 +50,34 @@ USING_SCOPE(objects);
 /// A pairwise aln is a collection of ranges for a pair of rows
 class CPairwiseAln : 
     public CObject,
-    public CAlignRangeCollection<CAlignRange<TSeqPos> >
+    public CAlignRangeCollection<CAlignRange<TSignedSeqPos> >
 {
 public:
     /// Types
-    typedef CAlignRange<TSeqPos>                 TAlnRng;
-    typedef CAlignRangeCollection<TAlnRng>       TAlnRngColl;
+    typedef TSignedSeqPos                  TPos;
+    typedef CRange<TPos>                   TRng; 
+    typedef CAlignRange<TPos>              TAlnRng;
+    typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
 
 
     /// Constructor
     CPairwiseAln(int flags = fDefaultPoicy,
-                 int base_width_1 = 1,
-                 int base_width_2 = 1)
+                 int first_base_width = 1,
+                 int second_base_width = 1)
         : TAlnRngColl(flags),
-          m_BaseWidth1(base_width_1),
-          m_BaseWidth2(base_width_2) {}
+          m_FirstBaseWidth(first_base_width),
+          m_SecondBaseWidth(second_base_width) {}
 
 
     /// Accessors:
-    int GetBaseWidth1() const {
-        return m_BaseWidth1;
+    int GetFirstBaseWidth() const {
+        return m_FirstBaseWidth;
     }
 
-    int GetBaseWidth2() const {
-        return m_BaseWidth2;
+    int GetSecondBaseWidth() const {
+        return m_SecondBaseWidth;
     }
+
 
     /// Dump in human readable text format:
     template <class TOutStream>
@@ -84,8 +87,8 @@ public:
         os << "CPairwiseAln";
 
         os << " BaseWidths: " 
-           << m_BaseWidth1 << ", "
-           << m_BaseWidth2 << " ";
+           << m_FirstBaseWidth << ", "
+           << m_SecondBaseWidth << " ";
 
         os << " Flags = " << s << ":" << endl;
 
@@ -115,8 +118,8 @@ public:
     }
 
 private:
-    int m_BaseWidth1;
-    int m_BaseWidth2;
+    int m_FirstBaseWidth;
+    int m_SecondBaseWidth;
 };
 
 
@@ -126,7 +129,7 @@ class CAnchoredAln : public CObject
 public:
     /// Types:
     typedef CSeq_align::TDim TDim;
-    typedef vector<CConstRef<CSeq_id> > TSeqIds;
+    typedef vector<CConstRef<CSeq_id> > TSeqIdVector;
     typedef vector<CRef<CPairwiseAln> > TPairwiseAlnVector;
 
 
@@ -136,7 +139,7 @@ public:
         return (TDim) m_SeqIds.size();
     }
 
-    const TSeqIds& GetSeqIds() const {
+    const TSeqIdVector& GetSeqIds() const { 
         return m_SeqIds;
     }
 
@@ -144,8 +147,16 @@ public:
         return m_PairwiseAlns;
     }
 
+
     /// Modifiers:
-    TSeqIds& SetSeqIds() {
+    void SetDim(TDim dim) {
+        if (dim > GetDim()) {
+            m_SeqIds.resize(dim);
+            m_PairwiseAlns.resize(dim);
+        }
+    }
+
+    TSeqIdVector& SetSeqIds() {
         return m_SeqIds;
     }
 
@@ -167,7 +178,7 @@ public:
 
 
 private:
-    TSeqIds            m_SeqIds;
+    TSeqIdVector       m_SeqIds;
     TPairwiseAlnVector m_PairwiseAlns;
 };
 
@@ -179,6 +190,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/11/16 13:42:33  todorov
+* Changed the position type from TSeqPos to TSignedSeqPos.
+*
 * Revision 1.7  2006/11/14 20:38:38  todorov
 * CPairwiseAln derives directly from CAlignRangeCollection and it's
 * construction from CSeq-align is moved to aln_converters.hpp
