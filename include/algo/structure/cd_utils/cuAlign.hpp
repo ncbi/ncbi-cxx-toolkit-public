@@ -45,6 +45,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils) 
 
+typedef CSeq_align::C_Segs::TDendiag TDendiag;
+typedef TDendiag::iterator TDendiag_it;
+typedef TDendiag::const_iterator TDendiag_cit;
+
 enum {
 	DD_NOFLAG=0,
 	DD_FOLLOWGUIDE=0x01,// use block structure of guide for remapping
@@ -251,6 +255,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/11/16 20:23:29  cliu
+ * move some typedef here
+ *
  * Revision 1.3  2006/11/01 17:45:24  lanczyck
  * add method:  ChangeSeqIdInSeqAlign
  *
