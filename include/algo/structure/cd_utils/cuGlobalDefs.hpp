@@ -44,10 +44,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils) 
 
-typedef CSeq_align::C_Segs::TDendiag TDendiag;
-typedef TDendiag::iterator TDendiag_it;
-typedef TDendiag::const_iterator TDendiag_cit;
-
 enum CoordMapDir {
     CHILD_TO_MASTER = 0,
     MASTER_TO_CHILD
@@ -74,6 +70,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/11/16 20:21:16  cliu
+ * remove some problematic tyepdef
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
