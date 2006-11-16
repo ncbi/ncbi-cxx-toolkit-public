@@ -131,17 +131,20 @@ public:
     /// Runs the search but does not produce seqalign output
     /// (useful if the raw search results are needed, rather
     /// than a set of complete Seq-aligns)
+    /// Please DO NOT use this method, use Run() or RunEx() instead.
     NCBI_DEPRECATED virtual void RunWithoutSeqalignGeneration();
+
+    /// Retrieves the list of HSP results from the engine
+    /// (to be used after RunWithoutSeqalignGeneration() method)
+    /// Please DO NOT use this method, use Run() or RunEx() instead, as this is
+    /// an internal data structure and it might change over time
+    NCBI_DEPRECATED BlastHSPResults* GetResults() const;
 
     /// Retrieves regions filtered on the query/queries
     TSeqLocInfoVector GetFilteredQueryRegions() const;
 
     /// Retrieves the diagnostics information returned from the engine
     BlastDiagnostics* GetDiagnostics() const;
-
-    /// Retrieves the list of HSP results from the engine
-    /// (to be used after PartialRun() method)
-    BlastHSPResults* GetResults() const;
 
     /// Returns error messages/warnings.
     void GetMessages(TSearchMessages& messages) const;
@@ -316,6 +319,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2006/11/16 16:16:42  camacho
+* Added comment to deprecated methods
+*
 * Revision 1.52  2006/11/07 22:08:16  camacho
 * Refactor construction of CSearchResultSet so that it can be used in CBl2Seq
 *
