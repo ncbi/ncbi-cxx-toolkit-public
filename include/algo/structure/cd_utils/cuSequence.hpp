@@ -90,6 +90,8 @@ NCBI_CDUTILS_EXPORT
 void   NcbistdaaToNcbieaaString(const vector< char >& vec, string* str);  //  StringFromStdaa(...)
 NCBI_CDUTILS_EXPORT 
 bool   GetNcbieaaString(const CBioseq& bioseq, string& str);
+NCBI_CDUTILS_EXPORT
+bool GetNcbistdSeq(const CBioseq& bioseq, vector<char>& seqData);
 NCBI_CDUTILS_EXPORT 
 bool   GetNcbieaaString(const CRef< CSeq_entry >& seqEntry, string& str);  //  from cdt_manipcd
 NCBI_CDUTILS_EXPORT 
@@ -118,6 +120,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2006/11/16 20:21:41  cliu
+ * get ncbistd from bioseq
+ *
  * Revision 1.7  2006/08/29 18:43:41  cliu
  * no message
  *

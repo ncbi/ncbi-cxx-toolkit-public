@@ -294,6 +294,38 @@ bool GetNcbieaaString(const CBioseq& bioseq, string & Str)
     return false;
 }
 
+bool GetNcbistdSeq(const CBioseq& bioseq, vector<char>& seqData) 
+{
+    if (bioseq.GetInst().IsSetSeq_data()) 
+	{
+        const CSeq_data & pDat= bioseq.GetInst().GetSeq_data();
+		if (pDat.IsNcbieaa())
+		{
+			string Str = pDat.GetNcbieaa().Get();
+			try {
+				CSeqConvert::Convert(Str, CSeqUtil::e_Ncbieaa, 0, Str.size(), seqData, CSeqUtil::e_Ncbistdaa);
+			} catch (...) {
+				return false;
+			}
+		}
+		else if (pDat.IsIupacaa()) 
+		{
+			string Str = pDat.GetIupacaa().Get();
+			try {
+				CSeqConvert::Convert(Str, CSeqUtil::e_Iupacaa, 0, Str.size(), seqData, CSeqUtil::e_Ncbistdaa);
+			} catch (...) {
+				return false;
+			}
+		}
+        else if (pDat.IsNcbistdaa()) {
+                const std::vector < char >& vec = pDat.GetNcbistdaa().Get();
+				seqData.assign(vec.begin(), vec.end());
+        }
+        return true;
+    }
+    return false;
+}
+
 
 //  Return as a raw string whatever found in the bioseq.  Ignore types ncbi8aa
 //  and ncbipaa, and all nucleic acid encodings.
@@ -392,6 +424,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/11/16 20:18:48  cliu
+ * get ncbistd from bioseq
+ *
  * Revision 1.6  2006/08/02 14:04:28  cliu
  * add function GetAccAndVersion
  *
