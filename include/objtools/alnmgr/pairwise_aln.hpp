@@ -151,6 +151,10 @@ public:
         return m_AnchorRow;
     }
 
+    int GetScore() const {
+        return m_Score;
+    }
+
 
     /// Modifiers:
     void SetDim(TDim dim) {
@@ -172,11 +176,19 @@ public:
         m_AnchorRow = anchor_row;
     }
 
+    void SetScore(int score) {
+        m_Score = score;
+    }
+
+    int& SetScore() {
+        return m_Score;
+    }
+
 
     /// Dump in human readable text format:
     template <class TOutStream>
     void Dump(TOutStream& os) const {
-        os << "CAnchorAln contains " 
+        os << "CAnchorAln has score of " << m_Score << " and contains " 
            << m_PairwiseAlns.size() << " pair(s) of rows:" << endl;
         ITERATE(TPairwiseAlnVector, pairwise_aln_i, m_PairwiseAlns) {
             (*pairwise_aln_i)->Dump(os);
@@ -189,6 +201,17 @@ private:
     TSeqIdVector       m_SeqIds;
     TPairwiseAlnVector m_PairwiseAlns;
     TDim               m_AnchorRow;
+    int                m_Score;
+};
+
+
+template<class C>
+struct PScoreGreater
+{
+    bool operator()(const C* const c_1, const C* const c_2)
+    {
+        return c_1->GetScore() > c_2->GetScore();
+    }
 };
 
 
@@ -199,6 +222,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/11/16 22:36:37  todorov
+* + score
+*
 * Revision 1.9  2006/11/16 18:05:32  todorov
 * + {G,S}etAnchorRow
 *
