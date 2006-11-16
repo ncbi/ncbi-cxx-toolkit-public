@@ -1,25 +1,25 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbiapp.hpp>
+#include "../../dbapi_driver_sample_base.hpp"
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
@@ -41,25 +41,39 @@
 USING_NCBI_SCOPE;
 
 
-class CDemoeApp : public CNcbiApplication
+class CDemoApp : public CDbapiDriverSampleApp
 {
 public:
-    virtual ~CDemoeApp(void) {}
+    CDemoApp(const string& server_name,
+             int tds_version = GetCtlibTdsVersion());
+    virtual ~CDemoApp(void);
 
-    virtual int Run(void);
+    virtual int RunSample(void);
 };
 
+CDemoApp::CDemoApp(const string& server_name, int tds_version) :
+    CDbapiDriverSampleApp(server_name, tds_version)
+{
+}
+
+
+CDemoApp::~CDemoApp(void)
+{
+    return;
+}
+
+
 int
-CDemoeApp::Run(void)
+CDemoApp::RunSample(void)
 {
     try {
         DBLB_INSTALL_DEFAULT();
-                
-        CTLibContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("SCHUMANN", 
-                                                        "anyone", 
-                                                        "allowed", 
+        CTLibContext my_context(true, GetTDSVersion());
+
+        auto_ptr<CDB_Connection> con(my_context.Connect(GetServerName(),
+                                                        GetUserName(),
+                                                        GetPassword(),
                                                         0));
 
         auto_ptr<CDB_RPCCmd> rcmd(con->RPC("sp_who", 0));
@@ -69,7 +83,7 @@ CDemoeApp::Run(void)
             auto_ptr<CDB_Result> r(rcmd->Result());
             if (!r.get())
                 continue;
-            
+
             if (r->ResultType() == eDB_RowResult) {
                 while (r->Fetch()) {
                     for (unsigned int j = 0;  j < r->NofItems(); j++) {
@@ -78,14 +92,14 @@ CDemoeApp::Run(void)
                             CDB_VarChar r_vc;
                             r->GetItem(&r_vc);
                             cout << r->ItemName(j) << ": "
-                                 << (r_vc.IsNULL()? "" : r_vc.Value()) 
+                                 << (r_vc.IsNULL()? "" : r_vc.Value())
                                  << " \t";
                         } else if (rt == eDB_Int ||
                                    rt == eDB_SmallInt ||
                                    rt == eDB_TinyInt) {
                             CDB_Int r_in;
                             r->GetItem(&r_in);
-                            cout << r->ItemName(j) << ": " << r_in.Value() 
+                            cout << r->ItemName(j) << ": " << r_in.Value()
                                  << ' ';
                         } else
                             r->SkipItem();
@@ -96,7 +110,7 @@ CDemoeApp::Run(void)
         }
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
-        
+
         myExHandler.HandleIt(&e);
         return 1;
     } catch (const CException&) {
@@ -108,13 +122,16 @@ CDemoeApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CDemoeApp().AppMain(argc, argv);
+    return CDemoApp("SCHUMANN").AppMain(argc, argv);
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/11/16 22:31:40  ssikorsk
+ * Revamp code to use CDbapiDriverSampleApp.
+ *
  * Revision 1.13  2006/08/31 18:46:11  ssikorsk
  * Get rid of unused variables.
  *
