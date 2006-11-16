@@ -228,6 +228,9 @@ public:
     /// Set a specified environment variable by name
     void SetEnvironment(const string& name, const string& value);
 
+    /// Check if the config file has been loaded
+    bool HasLoadedConfig(void) const;
+
     /// Get the application's cached configuration parameters.
     const CNcbiRegistry& GetConfig(void) const;
     CNcbiRegistry& GetConfig(void);
@@ -544,6 +547,11 @@ inline const string& CNcbiApplication::GetConfigPath(void) const
     return m_ConfigPath;
 }
 
+inline bool CNcbiApplication::HasLoadedConfig(void) const
+{
+    return !m_ConfigPath.empty();
+}
+
 inline bool CNcbiApplication::ReloadConfig(CMetaRegistry::TFlags flags,
                                            IRegistry::TFlags reg_flags)
 {
@@ -582,6 +590,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/11/16 20:13:14  grichenk
+ * Added HasLoadedConfig()
+ *
  * Revision 1.67  2006/10/31 18:41:16  grichenk
  * Redesigned diagnostics setup.
  * Moved the setup function to ncbidiag.cpp.
