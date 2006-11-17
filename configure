@@ -19375,10 +19375,10 @@ if test "$with_openssl" != "no"; then
        elif test -d "$OPENSSL_PATH/lib"; then
           OPENSSL_LIBPATH="-L$OPENSSL_PATH/lib ${CONF_f_runpath}$OPENSSL_PATH/lib"
        fi
-       OPENSSL_LIBS="$OPENSSL_LIBPATH -lssl -lcrypt"
+       OPENSSL_LIBS="$OPENSSL_LIBPATH -lssl -lcrypto"
     else
        OPENSSL_INCLUDE=""
-       OPENSSL_LIBS="-lssl -lcrypt"
+       OPENSSL_LIBS="-lssl -lcrypto"
        in_path=
     fi
     echo "$as_me:$LINENO: checking for libssl$in_path" >&5

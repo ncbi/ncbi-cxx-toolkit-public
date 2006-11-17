@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.444 2006/11/15 20:59:54 ucko Exp $
+#  $Id: configure.ac,v 1.445 2006/11/17 19:06:31 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2898,7 +2898,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
 NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
  [[AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
    [[SSL_library_init();]])]],
- -lcrypt)
+ -lcrypto)
 
 if test -n "$GNUTLS_LIBS"; then
    TLS_INCLUDE=$GNUTLS_INCLUDE
