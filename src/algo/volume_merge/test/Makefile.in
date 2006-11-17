@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile 
+#################################
+
+APP_PROJ = test_vmerge
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,10 @@
+# $Id$
+
+
+LIB = xalgovmerge xutil xncbi
+
+SRC = volume_merge
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
