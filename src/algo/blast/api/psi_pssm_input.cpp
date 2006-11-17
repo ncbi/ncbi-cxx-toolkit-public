@@ -403,7 +403,7 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         sv.GetSeqData(0, kInvalidSeqPos, sequence_data);
     } catch (const CException&) {
-        sequence_data.clear();
+        sequence_data.erase();
         ERR_POST(Warning << "Failed to retrieve sequence " <<
                  seqloc.GetInt().GetId().AsFastaString());
     }
@@ -418,6 +418,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2006/11/17 20:26:54  ucko
+ * CPsiBlastInputData::x_GetSubjectSequence(): use string::erase() rather
+ * than string::clear() for compatibility with GCC 2.95.
+ *
  * Revision 1.17  2006/11/17 17:22:02  camacho
  * Return sequence data in a std::string
  *
