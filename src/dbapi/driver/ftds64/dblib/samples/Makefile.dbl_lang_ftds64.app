@@ -8,4 +8,4 @@ LIBS = $(TLS_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
 
-CHECK_CMD = run_sybase_app.sh dbl_lang_ftds64
+# CHECK_CMD = run_sybase_app.sh dbl_lang_ftds64
