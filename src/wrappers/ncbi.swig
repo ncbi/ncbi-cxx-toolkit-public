@@ -77,14 +77,20 @@ namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
 // helper function for exception catching
 #include <iostream>
 #include <sstream>
+#include <corelib/ncbi_stack.hpp>
 void HandleException(void) {
     try {
         throw;
     } catch(ncbi::CException& e) {
 #ifdef SWIGPYTHON
-        ostringstream ostr;
-        e.ReportStackTrace(ostr, "", "\n");
-        st = ostr.str();
+        const ncbi::CStackTrace* cst = e.GetStackTrace();
+        if (cst) {
+            ostringstream ostr;
+            cst->Write(ostr);
+            st = ostr.str();
+        } else {
+            st.erase();
+        }
 #endif
         // const_cast for Perl
         SWIG_exception(SWIG_RuntimeError, const_cast<char *>(e.what()));
@@ -338,6 +344,9 @@ end\n\
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/11/17 19:37:52  jcherry
+ * Adjust for changed exception/stack trace API
+ *
  * Revision 1.10  2006/11/16 23:29:46  jcherry
  * Experimental exception stack trace capture for Python
  *
