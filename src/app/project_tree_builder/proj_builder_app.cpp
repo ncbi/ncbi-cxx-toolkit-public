@@ -1165,6 +1165,7 @@ USING_NCBI_SCOPE;
 int main(int argc, const char* argv[])
 {
     // Execute main application function
+    CDiagContext::SetLogTruncate(true);
     return GetApp().AppMain(argc, argv, 0, eDS_Default);
 }
 
@@ -1172,6 +1173,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2006/11/17 15:49:45  gouriano
+ * Request truncation of log
+ *
  * Revision 1.87  2006/11/02 15:34:22  gouriano
  * Corrected Lst file filter
  *
