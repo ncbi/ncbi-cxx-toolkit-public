@@ -29,6 +29,9 @@
  *
  */
 
+%ignore *::CTSE_Info_SFeatIdIndex::m_Chunks;
+%ignore *::CTSE_Info_SFeatIdInfo::CTSE_Info_SFeatIdInfo;
+
 %ignore *::CVecscreen_AlnInfo::type;
 
 %ignore *::CReaderCacheManager_SReaderCacheInfo;
@@ -138,6 +141,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/11/17 18:18:44  jcherry
+ * Deal with CTSE_Info substructures
+ *
  * Revision 1.16  2006/10/10 18:33:31  jcherry
  * %ignore CVecscreen::AlnInfo::type
  *
