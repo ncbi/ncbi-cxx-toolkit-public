@@ -50,13 +50,13 @@
 #include <objtools/alnmgr/aln_asn_reader.hpp>
 #include <objtools/alnmgr/aln_container.hpp>
 #include <objtools/alnmgr/aln_tests.hpp>
-#include <objtools/alnmgr/aln_hints.hpp>
+#include <objtools/alnmgr/aln_stats.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
 #include <objtools/alnmgr/aln_rng_coll_oper.hpp> //< Temp, just to test it
 #include <objtools/alnmgr/sparse_aln.hpp> //< Temp, just to test it
-
-
+#include <objtools/alnmgr/aln_builders.hpp>
+#include <objtools/alnmgr/aln_user_options.hpp>
 using namespace ncbi;
 using namespace objects;
 
@@ -69,9 +69,9 @@ typedef vector<TSeqIdPtr> TSeqIdVector;
 typedef SCompareOrdered<TSeqIdPtr> TComp;
 typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
 typedef CSeqIdAlnBitmap<TAlnSeqIdVector> TSeqIdAlnBitmap;
-typedef CAlnHints<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnHints;
-typedef TAlnHints::TBaseWidths TBaseWidths;
-typedef TAlnHints::TAnchorRows TAnchorRows;
+typedef CAlnStats<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnStats;
+typedef TAlnStats::TBaseWidths TBaseWidths;
+typedef TAlnStats::TAnchorRows TAnchorRows;
 
 
 class CAlnBuildApp : public CNcbiApplication
@@ -221,22 +221,22 @@ int CAlnBuildApp::Run(void)
 
 
     /// Store all retrieved statistics in the aln hints
-    TAlnHints aln_hints(aln_vector,
+    TAlnStats aln_stats(aln_vector,
                         aln_seq_id_vector,
                         anchored ? &anchor_rows : 0,
                         translated ? &base_widths : 0);
-    aln_hints.Dump(cout);
+    aln_stats.Dump(cout);
 
 
     /// Construct a vector of anchored alignments
     typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVector;
     TAnchoredAlnVector anchored_aln_vector;
     for (size_t aln_idx = 0;  
-         aln_idx < aln_hints.GetAlnCount();
+         aln_idx < aln_stats.GetAlnCount();
          ++aln_idx) {
 
         CRef<CAnchoredAln> anchored_aln =
-            CreateAnchoredAlnFromAln(aln_hints, aln_idx);
+            CreateAnchoredAlnFromAln(aln_stats, aln_idx);
 
         /// Calc scores
         for (TDim row = 0; row < anchored_aln->GetDim(); ++row) {
@@ -251,66 +251,12 @@ int CAlnBuildApp::Run(void)
     }
 
 
-    /// Sort the anchored alns by score (best to worst)
-    sort(anchored_aln_vector.begin(),
-         anchored_aln_vector.end(), 
-         PScoreGreater<CAnchoredAln>());
-
-
-    /// Build a single anchored_aln
+    /// Build a single anchored aln
+    CAlnUserOptions aln_user_options;
     CAnchoredAln built_anchored_aln;
-    for (size_t aln_idx = 0; 
-         aln_idx < aln_hints.GetAlnCount();
-         ++aln_idx) {
-
-        const CAnchoredAln& anchored_aln = *anchored_aln_vector[aln_idx];
-
-        TDim dim = anchored_aln.GetDim();
-        for (TDim row = 0; row < dim; ++row) {
-
-            if (row < built_anchored_aln.GetDim()) {
-
-//                 const CPairwiseAln& minuend = *built_anchored_aln.m_PairwiseAlns[row];
-//                 const CPairwiseAln& subtrahend = *anchored_aln.m_PairwiseAlns[row];
-//                 CDiagRngColl diff;
-
-//                 cout << "Minuend:" << endl;
-//                 minuend.Dump(cout);
-//                 cout << "Subtrahend:" << endl;
-//                 subtrahend.Dump(cout);
-//                 minuend.Diff(subtrahend, diff);
-//                 cout << "Diff:" << endl;
-//                 diff.Dump(cout);
-                
-//                 CPairwiseAln& built_pairwise_aln = *built_anchored_aln.m_PairwiseAlns[row];
-//                 ITERATE(CDiagRngColl, rng_it, diff) {
-//                     built_pairwise_aln.insert(*rng_it);
-//                 }
-//                 cout << "Result:" << endl;
-//                 built_pairwise_aln.Dump(cout);
-
-                CPairwiseAln& built_pairwise_aln = *built_anchored_aln.SetPairwiseAlns()[row];
-
-                CRef<CPairwiseAln> diff(new CPairwiseAln);
-                SubtractAlnRngCollections(*anchored_aln.GetPairwiseAlns()[row],
-                                          built_pairwise_aln,
-                                          *diff);
-                ITERATE(CPairwiseAln, rng_it, *diff) {
-                    built_pairwise_aln.insert(*rng_it);
-                }
-
-            } else {
-                _ASSERT(row == built_anchored_aln.GetDim());
-
-                CRef<CPairwiseAln> pairwise_aln
-                    (new CPairwiseAln(*anchored_aln.GetPairwiseAlns()[row]));
-                built_anchored_aln.SetPairwiseAlns().push_back(pairwise_aln);
-                built_anchored_aln.SetSeqIds().push_back(anchored_aln.GetSeqIds()[row]);
-            }
-        }
-        cout << "Added alignment " << aln_idx << ":" << endl;
-        built_anchored_aln.Dump(cout);
-    }
+    BuildAln(anchored_aln_vector,
+             built_anchored_aln,
+             aln_user_options);
     built_anchored_aln.Dump(cout);
 
 
@@ -341,6 +287,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/11/17 05:32:31  todorov
+* Using a separate builder.
+*
 * Revision 1.7  2006/11/16 22:41:37  todorov
 * Truncating chunks by substracting aligment collections.
 *
