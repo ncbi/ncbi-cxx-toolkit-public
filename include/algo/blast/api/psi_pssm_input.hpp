@@ -176,16 +176,16 @@ private:
 
     /////////////////////////// Auxiliary functions ///////////////////////////
 
-    /// Typedef for sequence data and its length
-    typedef pair<TAutoUint1ArrayPtr, TSeqPos> TSeqPair;
-
     /// Tries to fetch the sequence data for the subject for the segments 
     /// specified in the Dense-seg. If the sequence cannot be retrieved from the
-    /// scope, a warning is printed and the pair (NULL, 0) is returned.
+    /// scope, a warning is printed and an empty string is returned in
+    /// sequence_data
     /// @param ds dense seg for which the sequence data is needed [in]
     /// @param scope scope from which to obtain the sequence data [in]
-    static TSeqPair 
-    x_GetSubjectSequence(const objects::CDense_seg& ds, objects::CScope& scope);
+    /// @param sequence_data string which will contain the sequence data.
+    static void
+    x_GetSubjectSequence(const objects::CDense_seg& ds, objects::CScope& scope,
+                         string& sequence_data);
 
     /// Examines the sequence alignment and keeps track of those hits which
     /// have an HSP with an e-value below the inclusion threshold specified in
@@ -231,6 +231,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/11/17 17:21:53  camacho
+ * Return sequence data in a std::string
+ *
  * Revision 1.15  2006/11/14 15:19:43  camacho
  * m_ProcessHit no longer needed
  *

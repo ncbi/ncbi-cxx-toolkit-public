@@ -74,18 +74,6 @@ BEGIN_SCOPE(blast)
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
-// Static function prototypes
-
-/// Retrieves sequence data from sv. Caller is responsible for deallocating
-/// return value with delete[]
-/// @param sv CSeqVector containing sequence data [in]
-/// @return sequence data contained in sv
-/// @throws CBlastException if memory allocation fails
-static Uint1* 
-s_ExtractSequenceFromSeqVector(const CSeqVector& sv);
-
-// End static function prototypes
-//////////////////////////////////////////////////////////////////////////////
 
 CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
                                        unsigned int query_length,
@@ -282,8 +270,10 @@ CPsiBlastInputData::x_ExtractAlignmentData()
             // Dense-seg, but this will need conversion from Dense-diag to 
             // Dense-seg too
             if ( !(*hsp_itr)->GetSegs().IsDenseg() ) {
-                NCBI_THROW(CBlastException, eNotSupported, 
-                           "Segment type not supported");
+                string msg("Segment type ");
+                msg += NStr::IntToString((*hsp_itr)->GetSegs().Which());
+                msg += string(" not supported");
+                NCBI_THROW(CBlastException, eNotSupported, msg);
             }
 
             double evalue = GetLowestEvalue((*hsp_itr)->GetScore());
@@ -314,15 +304,16 @@ CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg,
     TSeqPos query_index = 0;        // index into starts vector
     TSeqPos subj_index = 1;         // index into starts vector
     TSeqPos subj_seq_idx = 0;       // index into subject sequence buffer
+    string seq;                     // the sequence data
 
     // Get the portion of the subject sequence corresponding to this Dense-seg
-    TSeqPair seq = x_GetSubjectSequence(denseg, *m_Scope);
+    x_GetSubjectSequence(denseg, *m_Scope, seq);
 
     // if this isn't available, set its corresponding row in the multiple
     // sequence alignment to the query sequence so that it can be purged in
     // PSIPurgeMatrix -> This is a hack, it should withdraw the sequence from
     // the multiple sequence alignment structure!
-    if (seq.first.get() == NULL) {
+    if (seq.size() == 0) {
         for (unsigned int i = 0; i < GetQueryLength(); i++) {
             m_Msa->data[msa_index][i].letter = m_Query[i];
             m_Msa->data[msa_index][i].is_aligned = true;
@@ -364,7 +355,7 @@ CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg,
                 PSIMsaCell& msa_cell =
                     m_Msa->data[msa_index][query_offset++];
                 if ( !msa_cell.is_aligned ) {
-                    msa_cell.letter = seq.first.get()[subj_seq_idx];
+                    msa_cell.letter = static_cast<Uint1>(seq[subj_seq_idx]);
                     msa_cell.is_aligned = true;
                 }
             }
@@ -374,9 +365,10 @@ CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg,
 
 }
 
-CPsiBlastInputData::TSeqPair 
+void
 CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds, 
-                                         objects::CScope& scope) 
+                                         objects::CScope& scope,
+                                         string& sequence_data) 
 {
     _ASSERT(ds.GetDim() == 2);
     TSeqPos subjlen = 0;                    // length of the return value
@@ -406,41 +398,15 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
     CSeq_loc seqloc(const_cast<CSeq_id&>(*ds.GetIds().back()), subj_start, 
                     subj_start+subjlen-1);
 
-    Uint1* retval = NULL;
     try {
         CSeqVector sv(seqloc, scope);
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
-        retval = s_ExtractSequenceFromSeqVector(sv);
+        sv.GetSeqData(0, kInvalidSeqPos, sequence_data);
     } catch (const CException&) {
-        subjlen = 0;
-        retval = NULL;
+        sequence_data.clear();
         ERR_POST(Warning << "Failed to retrieve sequence " <<
                  seqloc.GetInt().GetId().AsFastaString());
     }
-
-    return make_pair(TAutoUint1ArrayPtr(retval), subjlen);
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// Static function definitions
-
-static Uint1* 
-s_ExtractSequenceFromSeqVector(const CSeqVector& sv) 
-{
-    Uint1* retval = NULL;
-
-    try {
-        retval = new Uint1[sv.size()];
-    } catch (const std::bad_alloc&) {
-        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
-                   "Could not allocate " + NStr::IntToString(sv.size()) +
-                   "bytes");
-    }
-    for (TSeqPos i = 0; i < sv.size(); i++) {
-        retval[i] = sv[i];
-    }
-
-    return retval;
 }
 
 END_SCOPE(blast)
@@ -452,6 +418,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2006/11/17 17:22:02  camacho
+ * Return sequence data in a std::string
+ *
  * Revision 1.16  2006/11/14 15:20:22  camacho
  * m_ProcessHit no longer needed, some optimizations
  *
