@@ -741,7 +741,7 @@ bool CDiagContext::GetLogTruncate(void)
 
 void CDiagContext::SetLogTruncate(bool value)
 {
-    return TLogTruncateParam::SetDefault(value);
+    TLogTruncateParam::SetDefault(value);
 }
 
 
@@ -3533,6 +3533,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.139  2006/11/17 00:17:47  ucko
+ * CDiagContext::SetLogTruncate: don't return an expression, even of type void.
+ * (Fixes compilation with MIPSpro.)
+ *
  * Revision 1.138  2006/11/16 21:41:48  grichenk
  * Added SetLogTruncate().
  * Fixed empty path bug in s_CanOpenLogFile().
