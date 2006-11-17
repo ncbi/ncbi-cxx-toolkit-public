@@ -100,6 +100,8 @@ CMemoryLineReader& CMemoryLineReader::operator++(void)
         m_Pos = p + 2;
     } else if (p < m_End) {
         m_Pos = p + 1;
+    } else { // no final line break
+        m_Pos = p;
     }
     return *this;
 }
@@ -121,6 +123,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/11/17 19:16:29  ucko
+* CMemoryLineReader::operator++: make sure to advance m_Pos (to m_End)
+* in the absence of a final delimiter.
+*
 * Revision 1.1  2006/04/13 14:42:47  ucko
 * Add a lightweight interface for getting lines of data with minimal
 * memory copying, along with two implementations -- one for input
