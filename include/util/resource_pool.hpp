@@ -172,7 +172,16 @@ public:
 
     ~CResourcePoolGuard()
     {
-        m_Pool.Return(m_Value);
+        if (m_Value) {
+            m_Pool.Return(m_Value);
+        }
+    }
+
+    typename Pool::TValue* Release()
+    {
+        typename Pool::TValue* ret = m_Value;
+        m_Value = 0;
+        return ret;
     }
 
 private:
@@ -189,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/11/17 07:36:32  kuznets
+ * added guard Release() method
+ *
  * Revision 1.6  2006/01/10 14:58:26  kuznets
  * +GetIfAvailable()
  *
