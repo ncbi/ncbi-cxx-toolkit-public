@@ -496,6 +496,34 @@ static string s_DescribeClones(const string& clone)
 }
 
 
+static bool s_EndsWithStrain(const string& name, const string& strain)
+{
+    // return NStr::EndsWith(name, strain, NStr::eNocase);
+    if (strain.size() >= name.size()) {
+        return false;
+    }
+    SIZE_TYPE pos = name.find(' ');
+    if (pos == NPOS) {
+        return false;
+    }
+    pos = name.find(' ', pos + 1);
+    if (pos == NPOS) {
+        return false;
+    }
+    // XXX - the C Toolkit looks for the first occurrence, which could
+    // (at least in theory) lead to false negatives.
+    pos = NStr::FindNoCase(name, strain, pos + 1, NPOS, NStr::eLast);
+    if (pos == name.size() - strain.size()) {
+        return true;
+    } else if (pos == name.size() - strain.size() - 1
+               &&  name[pos - 1] == '\''  &&  name[name.size() - 1] == '\'') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 static string s_TitleFromBioSource(const CBioSource& source,
                                    const string&     suffix)
 {
@@ -525,8 +553,7 @@ static string s_TitleFromBioSource(const CBioSource& source,
     if (org.IsSetOrgname()  &&  org.GetOrgname().IsSetMod()) {
         ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
             if ((*it)->GetSubtype() == COrgMod::eSubtype_strain
-                &&  !NStr::EndsWith(name, 
-                (*it)->GetSubname(), NStr::eNocase)) {
+                &&  !s_EndsWithStrain(name, (*it)->GetSubname())) {
                 strain = " strain " + (*it)->GetSubname();
             }
         }
@@ -917,6 +944,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.57  2006/11/17 15:57:11  ucko
+* Split s_EndsWithStrain from s_TitleFromBioSource, and bring it in line with
+* the C Toolkit's (new) logic; in particular, check for single-quoted strains.
+*
 * Revision 1.56  2006/03/10 17:59:46  ucko
 * Correct previous commit to avoid potential false positives.
 *
