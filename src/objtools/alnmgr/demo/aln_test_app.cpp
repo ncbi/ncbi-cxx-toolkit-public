@@ -50,7 +50,7 @@
 #include <objtools/alnmgr/aln_asn_reader.hpp>
 #include <objtools/alnmgr/aln_container.hpp>
 #include <objtools/alnmgr/aln_tests.hpp>
-#include <objtools/alnmgr/aln_hints.hpp>
+#include <objtools/alnmgr/aln_stats.hpp>
 
 
 using namespace ncbi;
@@ -65,9 +65,9 @@ typedef vector<TSeqIdPtr> TSeqIdVector;
 typedef SCompareOrdered<TSeqIdPtr> TComp;
 typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
 typedef CSeqIdAlnBitmap<TAlnSeqIdVector> TSeqIdAlnBitmap;
-typedef CAlnHints<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnHints;
-typedef TAlnHints::TBaseWidths TBaseWidths;
-typedef TAlnHints::TAnchorRows TAnchorRows;
+typedef CAlnStats<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnStats;
+typedef TAlnStats::TBaseWidths TBaseWidths;
+typedef TAlnStats::TAnchorRows TAnchorRows;
 
 
 class CAlnTestApp : public CNcbiApplication
@@ -217,11 +217,11 @@ int CAlnTestApp::Run(void)
 
 
     /// Store all retrieved statistics in the aln hints
-    TAlnHints aln_hints(aln_vector,
+    TAlnStats aln_stats(aln_vector,
                         aln_seq_id_vector,
                         anchored ? &anchor_rows : 0,
                         translated ? &base_widths : 0);
-    aln_hints.Dump(cout);
+    aln_stats.Dump(cout);
 
 
     return 0;
@@ -238,6 +238,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/11/17 05:36:51  todorov
+* hints -> stats
+*
 * Revision 1.5  2006/11/08 22:30:18  todorov
 * Using Dump() methods.
 *

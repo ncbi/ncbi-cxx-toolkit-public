@@ -190,22 +190,22 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
 
 
 /// Create an anchored alignment from Seq-align using hints
-template <class TAlnHints>
-CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnHints& aln_hints,
+template <class TAlnStats>
+CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
                                             size_t aln_idx)
 {
-    _ASSERT(aln_hints.IsAnchored());
+    _ASSERT(aln_stats.IsAnchored());
 
-    typedef typename TAlnHints::TDim TDim;
-    TDim dim = aln_hints.GetDimForAln(aln_idx);
-    TDim anchor_row = aln_hints.GetAnchorRowForAln(aln_idx);
+    typedef typename TAlnStats::TDim TDim;
+    TDim dim = aln_stats.GetDimForAln(aln_idx);
+    TDim anchor_row = aln_stats.GetAnchorRowForAln(aln_idx);
     TDim target_row;
     TDim target_anchor_row = dim - 1; ///< anchor row goes at the last row (TODO: maybe a candidate for a user option?)
 
     CRef<CAnchoredAln> anchored_aln(new CAnchoredAln);
 
-    typedef typename TAlnHints::TSeqIdVector TSeqIdVector;
-    TSeqIdVector ids = aln_hints.GetSeqIdsForAln(aln_idx);
+    typedef typename TAlnStats::TSeqIdVector TSeqIdVector;
+    TSeqIdVector ids = aln_stats.GetSeqIdsForAln(aln_idx);
 
     anchored_aln->SetSeqIds().resize(dim);
     anchored_aln->SetPairwiseAlns().resize(dim);
@@ -234,11 +234,11 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnHints& aln_hints,
         /// Create a pairwise
         CRef<CPairwiseAln> pairwise_aln
             (new CPairwiseAln(row == anchor_row ? anchor_flags : flags,
-                              aln_hints.GetBaseWidthForAlnRow(aln_idx, anchor_row),
-                              aln_hints.GetBaseWidthForAlnRow(aln_idx, row)));
+                              aln_stats.GetBaseWidthForAlnRow(aln_idx, anchor_row),
+                              aln_stats.GetBaseWidthForAlnRow(aln_idx, row)));
         ConvertSeqAlignToPairwiseAln
             (*pairwise_aln,
-             *aln_hints.GetAlnVector()[aln_idx],
+             *aln_stats.GetAlnVector()[aln_idx],
              anchor_row,
              row);
         anchored_aln->SetPairwiseAlns()[target_row].Reset(pairwise_aln);
@@ -259,6 +259,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/11/17 05:36:13  todorov
+* hints -> stats
+*
 * Revision 1.6  2006/11/16 18:07:24  todorov
 * Anchor row is set to dim - 1.  This would allow to use CAnchoredAln
 * for non-query-anchored alignments (via a fake anchor).

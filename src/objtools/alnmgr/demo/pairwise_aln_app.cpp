@@ -53,7 +53,7 @@
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_container.hpp>
 #include <objtools/alnmgr/aln_tests.hpp>
-#include <objtools/alnmgr/aln_hints.hpp>
+#include <objtools/alnmgr/aln_stats.hpp>
 
 
 using namespace ncbi;
@@ -68,9 +68,9 @@ typedef vector<TSeqIdPtr> TSeqIdVector;
 typedef SCompareOrdered<TSeqIdPtr> TComp;
 typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
 typedef CSeqIdAlnBitmap<TAlnSeqIdVector> TSeqIdAlnBitmap;
-typedef CAlnHints<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnHints;
-typedef TAlnHints::TBaseWidths TBaseWidths;
-typedef TAlnHints::TAnchorRows TAnchorRows;
+typedef CAlnStats<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnStats;
+typedef TAlnStats::TBaseWidths TBaseWidths;
+typedef TAlnStats::TAnchorRows TAnchorRows;
 
 
 class CPairwiseAlnApp : public CNcbiApplication
@@ -233,24 +233,24 @@ int CPairwiseAlnApp::Run(void)
 
 
     /// Store all retrieved statistics in the aln hints
-    TAlnHints aln_hints(aln_vector,
+    TAlnStats aln_stats(aln_vector,
                         aln_seq_id_vector,
                         anchored ? &anchor_rows : 0,
                         translated ? &base_widths : 0);
-    aln_hints.Dump(cout);
+    aln_stats.Dump(cout);
 
 
     /// Construct pairwise alignmenst based on the aln hints
     for (size_t aln_idx = 0;  
-         aln_idx < aln_hints.GetAlnCount();
+         aln_idx < aln_stats.GetAlnCount();
          ++aln_idx) {
 
         CPairwiseAln 
-            pairwise_aln(*aln_hints.GetAlnVector()[aln_idx],
+            pairwise_aln(*aln_stats.GetAlnVector()[aln_idx],
                          m_QueryRow,
                          m_SubjectRow,
-                         aln_hints.GetBaseWidthForAlnRow(aln_idx, m_QueryRow),
-                         aln_hints.GetBaseWidthForAlnRow(aln_idx, m_SubjectRow));
+                         aln_stats.GetBaseWidthForAlnRow(aln_idx, m_QueryRow),
+                         aln_stats.GetBaseWidthForAlnRow(aln_idx, m_SubjectRow));
 
         pairwise_aln.Dump(cout);
     }
@@ -271,6 +271,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/11/17 05:37:08  todorov
+* hints -> stats
+*
 * Revision 1.3  2006/11/08 22:26:29  todorov
 * Using Dump(os) methods.
 *
