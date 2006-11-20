@@ -127,6 +127,20 @@ public:
     /// the table
     virtual bool EndBCP(void);
 
+    const string& GetQuery(void) const
+    {
+        return m_Query;
+    }
+
+    const CDB_Params& GetParams(void) const
+    {
+        return m_Params;
+    }
+    CDB_Params& GetParams(void)
+    {
+        return m_Params;
+    }
+
 protected:
     void DetachInterface(void);
 
@@ -137,10 +151,6 @@ protected:
         return m_Recompile;
     }
 
-protected:
-    string      m_Query;
-    CDB_Params  m_Params;
-
 private:
     void AttachTo(CDB_LangCmd* interface);
     void AttachTo(CDB_RPCCmd* interface);
@@ -149,6 +159,9 @@ private:
     CInterfaceHook<CDB_LangCmd>  m_InterfaceLang;
     CInterfaceHook<CDB_RPCCmd>   m_InterfaceRPC;
     CInterfaceHook<CDB_BCPInCmd> m_InterfaceBCPIn;
+
+    string                       m_Query;
+    CDB_Params                   m_Params;
     bool                         m_Recompile; // Temporary. Should be deleted.
 };
 
@@ -208,6 +221,15 @@ protected:
 
     void DetachInterface(void);
 
+    const string& GetQuery(void) const
+    {
+        return m_Query;
+    }
+    string& GetQuery(void)
+    {
+        return m_Query;
+    }
+
     const CDB_Params& GetParams(void) const
     {
         return m_Params;
@@ -264,6 +286,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/11/20 17:37:12  ssikorsk
+ * Added GetQuery() and GetParams() to CBaseCmd;
+ * Added GetQuery() to CCursorCmd;
+ *
  * Revision 1.6  2006/07/19 14:09:55  ssikorsk
  * Refactoring of CursorCmd.
  *
