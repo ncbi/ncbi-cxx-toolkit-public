@@ -78,10 +78,10 @@ void CSplignApp::Init()
 {
     HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-    SetVersion(CVersionInfo(1, 20, 0, "Splign"));  
+    SetVersion(CVersionInfo(1, 21, 0, "Splign"));  
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-    string program_name ("Splign v.1.20");
+    string program_name ("Splign v.1.21");
 
 #ifdef GENOME_PIPELINE
     program_name += 'p';
@@ -217,10 +217,6 @@ void CSplignApp::Init()
          CArgDescriptions::eDouble,
          NStr::DoubleToString(CSplign::s_GetDefaultMinExonIdty()));
     
-#ifdef GENOME_PIPELINE
-    
-    argdescr->AddFlag ("mt","Use multiple threads (up to the number of CPUs)", true);
-#endif
 
     argdescr->AddDefaultKey
         ("quality", "quality", "Genomic sequence quality.",
@@ -863,6 +859,11 @@ int CSplignApp::Run()
         static_cast<CSplicedAligner*> (new CSplicedAligner16):
         static_cast<CSplicedAligner*> (new CSplicedAligner32)  );
 
+    aligner->SetWi(0, args["Wi0"].AsInteger());
+    aligner->SetWi(1, args["Wi1"].AsInteger());
+    aligner->SetWi(2, args["Wi2"].AsInteger());
+    aligner->SetWi(3, args["Wi3"].AsInteger());
+
 #if GENOME_PIPELINE
     aligner->SetWm(args["Wm"].AsInteger());
     aligner->SetWms(args["Wms"].AsInteger());
@@ -876,7 +877,6 @@ int CSplignApp::Run()
         aligner->SetWi(i, args[arg_name.c_str()].AsInteger());
     }
     
-    aligner->EnableMultipleThreads(args["mt"]);
 #endif
     
     // splign and formatter setup    
@@ -1194,6 +1194,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/11/20 14:55:14  kapustin
+ * Actually pass user-specified splice scores to the aligner
+ *
  * Revision 1.72  2006/08/29 20:23:03  kapustin
  * Use CLocalBlast instead of discontinued CDbBlast
  *
