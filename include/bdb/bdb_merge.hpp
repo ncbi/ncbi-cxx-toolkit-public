@@ -72,7 +72,7 @@ public:
         if (buf_size) {
             *buf_size = m_DataLen;
         }
-        return m_Data;
+        return (unsigned char*)m_Data;
     }
     virtual void Close() { m_Cursor.reset(0); }
     virtual void SetRecordMoved() {}
@@ -85,7 +85,7 @@ protected:
     bool                        m_Eof;
     const void*                 m_Data;
     size_t                      m_DataLen;
-    UInt4                       m_Key;
+    Uint4                       m_Key;
     const unsigned char*        m_KeyPtr;
 };
 
@@ -143,7 +143,7 @@ void CBDB_MergeBlobWalker<BF>::FetchFirst()
 {
     m_Cursor.reset(new CBDB_FileCursor(*m_BlobFile));
     m_Cursor->SetCondition(CBDB_FileCursor::eGE);
-    if (fetch_buffer_size) {
+    if (m_FetchBufferSize) {
         m_Cursor->InitMultiFetch(m_FetchBufferSize);
     }
     this->Fetch();
@@ -156,10 +156,10 @@ void CBDB_MergeBlobWalker<BF>::Fetch()
     switch (err) 
     {
     case eBDB_Ok:
-        m_Data     = cursor->GetLastMultiFetchData();
-        m_DataLen = cursor->GetLastMultiFetchDataLen();
+        m_Data     = m_Cursor->GetLastMultiFetchData();
+        m_DataLen  = m_Cursor->GetLastMultiFetchDataLen();
         {
-        const CBDB_BufferManager* key_bm = m_BlobFile.GetKeyBuffer();
+        const CBDB_BufferManager* key_bm = m_BlobFile->GetKeyBuffer();
         const CBDB_Field& fld = key_bm->GetField(0);
         const void* ptr = fld.GetBuffer();
         m_KeyPtr =(const unsigned char*) ptr;
@@ -179,7 +179,7 @@ void CBDB_MergeBlobWalker<BF>::Fetch()
 /////////////////////////////////////////////////////////////////////////////
 
 template<class BStore>
-CBDB_MergeStore::CBDB_MergeStore(TBlobStore*  blob_store, 
+CBDB_MergeStore<BStore>::CBDB_MergeStore(TBlobStore*  blob_store, 
                                  EOwnership   own)
   : m_BlobStore(blob_store),
     m_OwnBlobStore(own)
@@ -187,7 +187,7 @@ CBDB_MergeStore::CBDB_MergeStore(TBlobStore*  blob_store,
 }
 
 template<class BStore>
-CBDB_MergeStore::~CBDB_MergeStore()
+CBDB_MergeStore<BStore>::~CBDB_MergeStore()
 {
     if (m_OwnBlobStore == eTakeOwnership) {
         delete m_BlobStore;
@@ -198,7 +198,7 @@ template<class BStore>
 void CBDB_MergeStore<BStore>::Store(Uint4                      blob_id, 
                                     CMergeVolumes::TRawBuffer* buffer)
 {
-    TBufPoolGuard guard(*(this->m_BufResourcePool), buffer);
+    CMergeVolumes::TBufPoolGuard guard(*(this->m_BufResourcePool), buffer);
     EBDB_ErrCode err = m_BlobStore->Insert(
                                      blob_id, 
                                      &((*buffer)[0]), buffer->size());
@@ -209,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/20 16:24:34  kuznets
+ * compilation fixes
+ *
  * Revision 1.1  2006/11/20 08:24:03  kuznets
  * initial revision
  *
