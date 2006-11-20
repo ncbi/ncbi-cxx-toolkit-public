@@ -164,6 +164,7 @@ void CMergePrintStore::Store(Uint4                      blob_id,
 {
     bm::bvector<> bv;
     bm::deserialize(bv, &((*buffer)[0]));
+    m_BufResourcePool->Put(buffer);
     NcbiCout << blob_id << ": ";
     bm::bvector<>::enumerator en(bv.first());
     for (;en.valid(); ++en) {
@@ -312,6 +313,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/20 16:31:48  kuznets
+ * Fixed buffer leak in the demo code
+ *
  * Revision 1.1  2006/11/17 07:30:47  kuznets
  * initial revision
  *
