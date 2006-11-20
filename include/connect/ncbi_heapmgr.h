@@ -127,12 +127,19 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Free
 
 
 /* Deallocate a block pointed to by "ptr" and having "prev" as its predecessor
- * (NULL if "ptr" is the first on the heap).
+ * (NULL if "ptr" is the first on the heap) -- faster variant of HEAP_Free()
+ * NOTE:  Since "ptr" gets invalidated by this call, it cannot be used in
+ * successive calls to HEAP_FreeFast() as a "previous" block pointer (keep
+ * using older "ptr"'s previous pointer if needed;  however, "ptr" still can
+ * be used for advancing in HEAP_Walk().
+ * NOTE:  This call may invalidate "prev" pointer if the "prev" block was
+ * already free.  So, it is recommended that HEAP_FreeFast() is to be used
+ * only once per a heap walk, to lessen the code complication.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_FreeFast
 (HEAP               heap,  /* heap handle         */
  SHEAP_Block*       ptr,   /* block to deallocate */
- const SHEAP_Block* prev
+ const SHEAP_Block* prev   /* block's predecessor */
  );
 
 
@@ -237,6 +244,9 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Options(ESwitch fast, ESwitch newalk);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2006/11/20 17:26:20  lavr
+ * HEAP_FreeFast() better documented (with all side effects)
+ *
  * Revision 6.23  2006/11/20 17:01:52  lavr
  * Added missing declaration of newly added HEAP_FreeFast()
  *
