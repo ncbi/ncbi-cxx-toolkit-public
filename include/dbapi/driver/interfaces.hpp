@@ -222,6 +222,9 @@ protected:
     /// Set the "recompile before execute" flag for the stored proc
     /// Implementation-specific.
     virtual void SetRecompile(bool recompile = true) = 0;
+
+    /// Get a name of the procedure.
+    virtual const string& GetProcName(void) const = 0;
 };
 
 
@@ -657,6 +660,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/11/20 17:33:42  ssikorsk
+ * Added I_RPCCmd::GetProcName().
+ *
  * Revision 1.55  2006/09/18 14:53:00  ssikorsk
  * Made GetLoginTimeout/GetTimeout virtual.
  *
