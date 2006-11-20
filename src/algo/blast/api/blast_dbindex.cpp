@@ -134,6 +134,7 @@ class CIndexedDb : public CObject
             }
 
             assert( 0 );
+            return 0;
         }
 
         BlastSeqSrc * db_;      /**< Points to the real BLAST database instance. */
@@ -700,6 +701,9 @@ static void s_MB_IdbGetResults(
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/20 20:20:02  papadopo
+ * from Alex Morgulis: remove compiler warning
+ *
  * Revision 1.3  2006/11/15 23:24:10  papadopo
  * From Alex Morgulis:
  * 1. Allow individual volumes of an indexed database to be searched
