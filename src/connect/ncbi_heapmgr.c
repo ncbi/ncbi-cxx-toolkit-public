@@ -310,19 +310,49 @@ static SHEAP_HeapBlock* s_HEAP_Collect(HEAP heap, TNCBI_Size* prev)
  * for use of by at most 'size' bytes (aligned, and block header included).
  * Return the block to use.
  */
-static SHEAP_Block* s_HEAP_Take(HEAP heap, SHEAP_HeapBlock* b, TNCBI_Size size)
+static SHEAP_Block* s_HEAP_Take(HEAP heap, SHEAP_HeapBlock* b,
+                                TNCBI_Size size, int/*bool*/ fast)
 {
     unsigned int last = b->head.flag & HEAP_LAST;
 
     assert(HEAP_ALIGN(size) == size);
     assert(HEAP_ISFREE(b)  &&  b->head.size >= size);
     if (b->head.size >= size + _HEAP_ALIGNMENT) {
-        b->head.flag &= ~HEAP_LAST;
-        b->head.size -= size;
-        b = HEAP_NEXT(b);
-        b->head.size = size;
-        if (last)
-            heap->last = HEAP_INDEX(b, heap->base);
+        if (fast) {
+            b->head.flag &= ~HEAP_LAST;
+            b->head.size -= size;
+            b = HEAP_NEXT(b);
+            b->head.size  = size;
+            if (last)
+                heap->last = HEAP_INDEX(b, heap->base);
+        } else {
+            SHEAP_HeapBlock* f = (SHEAP_HeapBlock*)((char*) b + size);
+            f->head.flag  = b->head.flag;
+            f->head.size  = b->head.size - size;
+            b->head.flag &= ~HEAP_LAST;
+            b->head.size  = size;
+            size = HEAP_INDEX(f, heap->base);
+            if (last) {
+                heap->last = size;
+                last = 0;
+            }
+            if (heap->base + b->prevfree == b) {
+                assert(b->prevfree == b->nextfree);
+                assert(b->prevfree == heap->free);
+                f->prevfree = size;
+                f->nextfree = size;
+                heap->free = size;
+            } else {
+                f->prevfree = b->prevfree;
+                f->nextfree = b->nextfree;
+                assert(HEAP_ISFREE(heap->base + f->prevfree));
+                assert(HEAP_ISFREE(heap->base + f->nextfree));
+                heap->base[f->nextfree].prevfree = size;
+                heap->base[f->prevfree].nextfree = size;
+                if (heap->base + heap->free == b)
+                    heap->free = size;
+            }
+        }
     } else {
         size = HEAP_INDEX(b, heap->base);
         if (b->prevfree != size) {
@@ -361,7 +391,7 @@ static const char* s_HEAP_Id(char* buf, HEAP h)
 }
 
 
-SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
+static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
 {
     SHEAP_HeapBlock* f, *b;
     TNCBI_Size free;
@@ -397,7 +427,7 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
                 return 0;
             }
             if (b->head.size >= size)
-                return s_HEAP_Take(heap, b, size);
+                return s_HEAP_Take(heap, b, size, fast);
             free += b->head.size;
             b = heap->base + b->nextfree;
         } while (b != f);
@@ -459,7 +489,19 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
         heap->size = hsize >> _HEAP_ALIGNSHIFT;
     }
     assert(b  &&  HEAP_ISFREE(b));
-    return s_HEAP_Take(heap, b, size);
+    return s_HEAP_Take(heap, b, size, fast);
+}
+
+
+SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
+{
+    return s_HEAP_Alloc(heap, size, 0);
+}
+
+
+SHEAP_Block* HEAP_AllocFast(HEAP heap, TNCBI_Size size)
+{
+    return s_HEAP_Alloc(heap, size, 1);
 }
 
 
@@ -905,6 +947,9 @@ void HEAP_Options(ESwitch fast, ESwitch newalk)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2006/11/20 20:19:31  lavr
+ * +HEAP_AllocFast()
+ *
  * Revision 6.33  2006/11/20 17:02:47  lavr
  * Fixing HEAP_FreeFast()'s signature ("prev" should be const)
  *
