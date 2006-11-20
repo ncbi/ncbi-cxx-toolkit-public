@@ -102,8 +102,8 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Attach
  int         serial        /* serial number to assign       */
  );
 
-/* faster HEAP_Attach() that does not calculate heap size on its own */
-extern NCBI_XCONNECT_EXPORT HEAP HEAP_AttachEx
+/* Expedited HEAP_Attach() that does not calculate heap size on its own */
+extern NCBI_XCONNECT_EXPORT HEAP HEAP_AttachFast
 (const void* base,         /* base of the heap to attach to                  */
  TNCBI_Size  size,         /* heap extent -- must be non-0 for non-NULL base */
  int         serial        /* serial number to assign                        */
@@ -149,7 +149,7 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Trim(HEAP heap);
 
 
 /* Make a snapshot of a given heap.  Return a read-only heap
- * (like the one after HEAP_Attach[Ex]), which must be freed by a call
+ * (like the one after HEAP_Attach[Fast]), which must be freed by a call
  * to either HEAP_Detach() or HEAP_Destroy() when no longer needed.
  * A copy is created reference-counted (with the initial ref.count set to 1).
  */
@@ -161,14 +161,14 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Copy
 
 
 /* Add reference counter to the given copy heap (no effect on
- * a heap, which have been HEAP_Create()'d or HEAP_Attach[Ex]()'d).
+ * a heap, which have been HEAP_Create()'d or HEAP_Attach[Fast]()'d).
  * The heap handle then will be destroyed only when the internal
  * reference counter reaches 0.  No internal locking is provided.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_AddRef(HEAP heap);
 
 
-/* Detach heap (previously attached by HEAP_Attach[Ex]).
+/* Detach heap (previously attached by HEAP_Attach[Fast]).
  * For copy heap, it decrements an internal ref. counter by one, and
  * destroys the heap handle if and only if the counter has reached 0.
  * No internal locking of the reference counter is provided.
@@ -203,6 +203,19 @@ extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Size(const HEAP heap);
 extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 
 
+/* Set heap access speed and check level while walking:
+ * fast == eOn  turns on fast heap operations (default);
+ * fast == eOff turns off fast heap operations (more checks, slower);
+ * fast == eDefault does not change current setting;
+ * newalk == eOn turns on new heap integrity checks while walking;
+ * newalk == eOff turns off new heap integrity checks (default);
+ * newalk == eDefault keeps current setting.
+ * This call is intended for internal uses; and default settings (fast ops
+ * w/o new structure integrity checks) should suffice for most users.
+ */
+extern NCBI_XCONNECT_EXPORT void HEAP_Options(ESwitch fast, ESwitch newalk);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -214,6 +227,11 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2006/11/20 16:38:15  lavr
+ * Faster heap with free blocks linked into a list.
+ * HEAP_AttachEx() -> HEAP_AttachFast()
+ * +HEAP_FreeFast(), +HEAP_Options()
+ *
  * Revision 6.21  2006/03/05 17:32:35  lavr
  * Revised API to allow to create ref-counted heap copies
  *
