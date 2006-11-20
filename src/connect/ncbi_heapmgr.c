@@ -578,7 +578,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 }
 
 
-void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, SHEAP_Block* prev)
+void HEAP_FreeFast(HEAP heap, SHEAP_Block* ptr, const SHEAP_Block* prev)
 {
     SHEAP_HeapBlock* b, *p;
     char _id[32];
@@ -905,6 +905,9 @@ void HEAP_Options(ESwitch fast, ESwitch newalk)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2006/11/20 17:02:47  lavr
+ * Fixing HEAP_FreeFast()'s signature ("prev" should be const)
+ *
  * Revision 6.32  2006/11/20 16:39:40  lavr
  * Faster heap with free blocks linked into a list (read backward compatible)
  * HEAP_AttachEx() -> HEAP_AttachFast()
