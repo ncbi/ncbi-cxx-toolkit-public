@@ -207,8 +207,22 @@ public:
                             string* disk = 0, string* dir = 0,
                             string* base = 0, string* ext = 0);
 
+    /// What GetDir() should return if the dir entry does not contains path.
+    /// @sa GetDir
+    enum EIfEmptyPath {
+        eIfEmptyPath_Empty,    ///< Return empty string
+        eIfEmptyPath_Current   ///< Return current dir like "./"
+    };
+
     /// Get the directory component for this directory entry.
-    string GetDir (void) const;
+    //
+    /// @param path
+    ///   Flag to control returning value for paths that don't have
+    ///   directory name. 
+    /// @return
+    ///   The directory component for this directory entry, or empty string.
+    /// @sa EGetDirMode, SplitPath
+    string GetDir(EIfEmptyPath mode = eIfEmptyPath_Current) const;
 
     /// Get the base entry name with extension (if any).
     string GetName(void) const;
@@ -2154,14 +2168,6 @@ const string& CDirEntry::GetPath(void) const
 }
 
 inline
-string CDirEntry::GetDir(void) const
-{
-    string dir;
-    SplitPath(GetPath(), &dir);
-    return dir;
-}
-
-inline
 string CDirEntry::GetName(void) const
 {
     string title, ext;
@@ -2866,6 +2872,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2006/11/20 12:45:54  ivanov
+ * CDirEntry::GetDir() -- added parameter to control returned value for
+ * dir entries with missed directory name in the path, like "file.ext".
+ *
  * Revision 1.82  2006/08/12 05:30:15  lavr
  * CDirEntry::{Get|Set}Time[T]: Swap last access time / creation-change time
  *

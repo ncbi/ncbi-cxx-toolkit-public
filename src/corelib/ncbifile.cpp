@@ -409,6 +409,17 @@ string CDirEntry::DeleteTrailingPathSeparator(const string& path)
 }
 
 
+string CDirEntry::GetDir(EIfEmptyPath mode) const
+{
+    string dir;
+    SplitPath(GetPath(), &dir);
+    if ( dir.empty() &&  mode == eIfEmptyPath_Current  &&
+         !GetPath().empty() ) {
+        return string(DIR_CURRENT) + DIR_SEPARATOR;
+    }
+    return dir;
+}
+
 bool CDirEntry::IsAbsolutePath(const string& path)
 {
     if ( path.empty() )
@@ -4103,6 +4114,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.150  2006/11/20 12:46:04  ivanov
+ * CDirEntry::GetDir() -- added parameter to control returned value for
+ * dir entries with missed directory name in the path, like "file.ext".
+ *
  * Revision 1.149  2006/11/13 20:46:51  ivanov
  * CMemoryFileMap(): fixed memory leak
  *
