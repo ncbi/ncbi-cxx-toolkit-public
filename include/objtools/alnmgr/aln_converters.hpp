@@ -252,6 +252,33 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
 }
 
 
+template <class TAlnStats>
+void 
+CreateAnchoredAlnVector(TAlnStats& aln_stats, ///< Input
+                        vector<CRef<CAnchoredAln> >& out_vec) ///< Output
+{
+    _ASSERT(out_vec.empty());
+    out_vec.resize(aln_stats.GetAlnCount());
+    for (size_t aln_idx = 0;  
+         aln_idx < aln_stats.GetAlnCount();
+         ++aln_idx) {
+
+        out_vec[aln_idx] = 
+            CreateAnchoredAlnFromAln(aln_stats, aln_idx);
+
+        CAnchoredAln& anchored_aln = *out_vec[aln_idx];
+
+        /// Calc scores
+        for (typename TAlnStats::TDim row = 0; row < anchored_aln.GetDim(); ++row) {
+            ITERATE(CPairwiseAln, rng_it, *anchored_aln.GetPairwiseAlns()[row]) {
+                anchored_aln.SetScore() += rng_it->GetLength();
+            }
+        }
+        anchored_aln.SetScore() /= anchored_aln.GetDim();
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -259,6 +286,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/11/20 18:39:48  todorov
+* + CreateAnchoredAlnVector
+*
 * Revision 1.7  2006/11/17 05:36:13  todorov
 * hints -> stats
 *
