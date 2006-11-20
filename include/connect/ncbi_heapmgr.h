@@ -118,6 +118,15 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Alloc
  );
 
 
+/* Allocate a new block of memory in the heap
+ * (faster than HEAP_Alloc() but inverses the insertion order).
+ */
+extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_AllocFast
+(HEAP       heap,          /* heap handle                          */
+ TNCBI_Size size           /* data size of the block to accomodate */
+ );
+
+
 /* Deallocate a block pointed to by "ptr".
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Free
@@ -127,14 +136,11 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Free
 
 
 /* Deallocate a block pointed to by "ptr" and having "prev" as its predecessor
- * (NULL if "ptr" is the first on the heap) -- faster variant of HEAP_Free()
- * NOTE:  Since "ptr" gets invalidated by this call, it cannot be used in
- * successive calls to HEAP_FreeFast() as a "previous" block pointer (keep
- * using older "ptr"'s previous pointer if needed;  however, "ptr" still can
- * be used for advancing in HEAP_Walk().
- * NOTE:  This call may invalidate "prev" pointer if the "prev" block was
- * already free.  So, it is recommended that HEAP_FreeFast() is to be used
- * only once per a heap walk, to lessen the code complication.
+ * (NULL if "ptr" is the first on the heap) -- faster variant of HEAP_Free().
+ * NOTE:  Since the block pointed to by "ptr" may cause free blocks to
+ * coalesce, to use this call again while walking the following rule must
+ * be utilized:  If "prev" was free, "prev" must not get advanced;
+ * otherwise, "prev" must be updated with "ptr"'s value.
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_FreeFast
 (HEAP               heap,  /* heap handle         */
@@ -244,6 +250,9 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Options(ESwitch fast, ESwitch newalk);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2006/11/20 20:18:56  lavr
+ * +HEAP_AllocFast() [and better documentation on HEAP_FreeFast()]
+ *
  * Revision 6.24  2006/11/20 17:26:20  lavr
  * HEAP_FreeFast() better documented (with all side effects)
  *
