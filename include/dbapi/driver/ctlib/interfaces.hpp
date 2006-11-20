@@ -288,6 +288,11 @@ protected:
                         );
     void GetRowCount(int* cnt);
 
+    bool IsMultibyteClientEncoding(void) const
+    {
+        return GetConnection().IsMultibyteClientEncoding();
+    }
+
 protected:
     // Result-related ...
     inline bool HaveResult(void) const;
@@ -792,6 +797,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/11/20 17:38:44  ssikorsk
+ * Added IsMultibyteClientEncoding() to CTL_Cmd.
+ *
  * Revision 1.50  2006/10/05 19:50:33  ssikorsk
  * Moved connection logic from CTLibContext to CTL_Connection.
  *
