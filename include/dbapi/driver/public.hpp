@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 9, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 10, 0, 0);
 
 
 BEGIN_SCOPE(impl)
@@ -367,6 +367,9 @@ public:
     /// Implementation-specific.
     NCBI_DEPRECATED virtual void SetRecompile(bool recompile = true);
 
+    /// Get a name of the procedure.
+    virtual const string& GetProcName(void) const;
+
     // Destructor
     virtual ~CDB_RPCCmd();
 
@@ -606,6 +609,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/11/20 17:34:51  ssikorsk
+ * Added CDB_RPCCmd::GetProcName();
+ * Updated interface version to 10;
+ *
  * Revision 1.30  2006/09/13 19:26:22  ssikorsk
  * Set interface version to 9.0.0
  *
