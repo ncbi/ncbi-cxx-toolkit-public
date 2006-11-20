@@ -47,6 +47,11 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
                                  const CSeq_loc&   loc,
                                  CScope*           scope)
 {
+    if ( loc.IsWhole() ) {
+        CRef<CSeq_align> copy(new CSeq_align);
+        copy->Assign(align);
+        return copy;
+    }
     const CSeq_id* orig_id = loc.GetId();
     if ( !orig_id ) {
         NCBI_THROW(CLocMapperException, eBadLocation,
@@ -58,7 +63,7 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
 
     // Create source seq-loc
     CSeq_loc src_loc(*id, 0, GetLength(loc, scope) - 1);
-    CSeq_loc_Mapper mapper(src_loc, loc);
+    CSeq_loc_Mapper mapper(src_loc, loc, scope);
     return mapper.Map(align);
 }
 
@@ -70,6 +75,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/11/20 17:49:49  grichenk
+* Fixed problems with scope.
+*
 * Revision 1.1  2006/11/06 17:45:23  grichenk
 * Initial revisioon
 *
