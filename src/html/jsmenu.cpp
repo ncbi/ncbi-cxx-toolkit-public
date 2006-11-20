@@ -66,12 +66,19 @@ const string kJSMenuDefaultURL_KurdinSideCSS
 // Store menu global attributes in TLS (eKurdinConf menu type only)
 static CSafeStaticRef< CTls<CHTMLPopupMenu::TAttributes> > s_TlsGlobalAttrs;
 
+static void s_TlsGlobalAttrsCleanup(CHTMLPopupMenu::TAttributes* attrs,
+                                    void* /* data */)
+{
+    delete attrs;
+}
+
+
 CHTMLPopupMenu::TAttributes* CHTMLPopupMenu::GetGlobalAttributesPtr(void)
 {
     CHTMLPopupMenu::TAttributes* attrs = s_TlsGlobalAttrs->GetValue();
     if ( !attrs ) {
         attrs = new CHTMLPopupMenu::TAttributes; 
-        s_TlsGlobalAttrs->SetValue(attrs);
+        s_TlsGlobalAttrs->SetValue(attrs, s_TlsGlobalAttrsCleanup);
     }
     return attrs;
 }
@@ -630,6 +637,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/11/20 17:45:00  ivanov
+ * Fixed memory leak in storing global attributes in TLS
+ *
  * Revision 1.37  2006/08/21 16:05:41  ivanov
  * Added XHTML support.
  *
