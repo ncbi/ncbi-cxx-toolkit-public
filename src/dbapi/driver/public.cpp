@@ -495,6 +495,12 @@ void CDB_RPCCmd::SetRecompile(bool recompile)
     m_CmdImpl->SetRecompile(recompile);
 }
 
+const string& CDB_RPCCmd::GetProcName(void) const
+{
+    CHECK_COMMAND( m_CmdImpl );
+    return m_CmdImpl->GetQuery();
+}
+
 
 CDB_RPCCmd::~CDB_RPCCmd()
 {
@@ -764,6 +770,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/11/20 18:14:15  ssikorsk
+ * Implemented CDB_RPCCmd::GetProcName.
+ *
  * Revision 1.29  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *
