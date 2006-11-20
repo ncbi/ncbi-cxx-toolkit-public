@@ -230,7 +230,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                 TSeqNum MapSubject( TSeqNum subj, TSeqNum chunk ) const
                 {
                     if( subj >= map_.size() ) return 0;
-                    return map_[subj] + chunk;
+                    return (TSeqNum)(map_[subj]) + chunk;
                 }
 
             public:
