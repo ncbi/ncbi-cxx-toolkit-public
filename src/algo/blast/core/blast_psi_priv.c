@@ -37,6 +37,7 @@ static char const rcsid[] =
 
 #include "blast_psi_priv.h"
 #include "blast_posit.h"
+#include "blast_dynarray.h"
 #include <algo/blast/core/blast_util.h>
 
 /****************************************************************************/
@@ -1350,131 +1351,6 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
 
 /****************************************************************************/
 
-/** Data structure to maintain a dynamically allocated array of Uint4 */
-typedef struct SDynamicUint4Array {
-    Uint4 num_used;         /**< number of elements used in this array */
-    Uint4 num_allocated;    /**< size of the array below */
-    Uint4* data;            /**< array of Uint4 */
-} SDynamicUint4Array;
-
-/** Initial number of queries allocated per chunk */
-#define INIT_NUM_ELEMENTS 8
-
-SDynamicUint4Array* DynamicUint4ArrayFree(SDynamicUint4Array* arr)
-{
-    if ( !arr ) {
-        return NULL;
-    }
-    if (arr->data) {
-        sfree(arr->data);
-    }
-    sfree(arr);
-    return NULL;
-}
-
-SDynamicUint4Array* DynamicUint4ArrayNewEx(Uint4 init_num_elements)
-{
-    SDynamicUint4Array* retval = 
-        (SDynamicUint4Array*) calloc(1, sizeof(SDynamicUint4Array));
-    if ( !retval ) {
-        return NULL;
-    }
-    retval->data = (Uint4*) calloc(init_num_elements, sizeof(Uint4));
-    if ( !retval->data ) {
-        return DynamicUint4ArrayFree(retval);
-    }
-    retval->num_allocated = init_num_elements;
-
-    return retval;
-}
-
-Int2
-DynamicUint4Array_ReallocIfNecessary(SDynamicUint4Array* arr)
-{
-    ASSERT(arr);
-
-    if (arr->num_used+1 > arr->num_allocated) {
-        /* we need more room for elements */
-        arr->num_allocated *= 2;
-        arr->data = (Uint4*) realloc(arr->data, 
-                                     arr->num_allocated * sizeof(Uint4));
-        if ( !arr->data ) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
-Int2
-DynamicUint4Array_Append(SDynamicUint4Array* arr, Uint4 element)
-{
-    Int2 retval = 0;
-    ASSERT(arr);
-
-    if ( (retval = DynamicUint4Array_ReallocIfNecessary(arr)) != 0) {
-        return retval;
-    }
-    arr->data[arr->num_used++] = element;
-    return retval;
-}
-
-SDynamicUint4Array*
-DynamicUint4Array_Dup(const SDynamicUint4Array* src)
-{
-    SDynamicUint4Array* retval = NULL;
-
-    if ( !src ) {
-        return retval;
-    }
-
-    retval = DynamicUint4ArrayNewEx(src->num_allocated);
-    memcpy((void*) retval->data, (void*) src->data, 
-           sizeof(*src->data) * src->num_used);
-    return retval;
-}
-
-Int4
-DynamicUint4Array_Copy(SDynamicUint4Array* dest,
-                       const SDynamicUint4Array* src)
-{
-    Uint4 i = 0;        /* index into arrays */
-
-    if (dest->num_allocated < src->num_allocated) {
-        dest->num_allocated = src->num_allocated;
-        dest->data = (Uint4*) realloc(dest->data, 
-                                      dest->num_allocated * sizeof(Uint4));
-        if ( !dest->data ) {
-            return -1;
-        }
-    }
-
-    for (i = 0; i < src->num_used; i++) {
-        dest->data[i] = src->data[i];
-    }
-    dest->num_used = src->num_used;
-    return 0;
-}
-
-Boolean
-DynamicUint4Array_AreEqual(const SDynamicUint4Array* a,
-                           const SDynamicUint4Array* b)
-{
-    Uint4 i = 0;        /* index into arrays */
-
-    if (a->num_used != b->num_used) {
-        return FALSE;
-    }
-
-    for (i = 0; i < a->num_used; i++) {
-        if (a->data[i] != b->data[i]) {
-            return FALSE;
-        }
-    }
-
-    return TRUE;
-}
-
-
 /** Populates the array aligned_sequences with the indices of the sequences
  * which are part of the multiple sequence alignment at the request position
  * @param msa multiple sequence alignment data structure [in]
@@ -2575,6 +2451,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/11/20 15:48:00  camacho
+ * Relocation of dynamic array functions/definitions
+ *
  * Revision 1.64  2006/11/15 16:19:53  camacho
  * Pacify compiler
  *
