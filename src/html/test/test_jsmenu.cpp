@@ -82,7 +82,8 @@ static CHTMLPopupMenu* CreatePopupMenu(EMenuType type)
         menu = new CHTMLPopupMenu(string("MenuSmithHtml_") + index);
         menu->AddItem("<b>Bold item</b>");
         menu->AddItem("<img src='http://www.ncbi.nlm.nih.gov/corehtml/help.gif'> Image item");
-        CHTML_a* anchor = new CHTML_a("some link...", "Link item");
+        CNodeRef anchor;
+	anchor = new CHTML_a("some link...", "Link item");
         menu->AddItem(*anchor);
         }
         break;
@@ -145,24 +146,25 @@ static void Test_Html(void)
     LOG_POST("HTML test\n");
 
     // Create HTML page skeleton with HEAD and BODY
-    CHTML_html* html = new CHTML_html;
-    CHTML_head* head = new CHTML_head;
-    CHTML_body* body = new CHTML_body;
-
+    
+    CNodeRef html(new CHTML_html);
+    CNodeRef head (new CHTML_head);
+    CRef<CHTML_body> body(new CHTML_body);
+    
     html->AppendChild(head); 
     html->AppendChild(body); 
 
     // Create menues
 
-    CHTMLPopupMenu* menuSM = CreatePopupMenu(eSmithPlain);
-    CHTMLPopupMenu* menuSH = CreatePopupMenu(eSmithHtml);
-    CHTMLPopupMenu* menuKP = CreatePopupMenu(eKurdin);
-    CHTMLPopupMenu* menuKC = CreatePopupMenu(eKurdinConf);
-    CHTMLPopupMenu* menuKS = CreatePopupMenu(eKurdinSide);
+    CRef<CHTMLPopupMenu> menuSP(CreatePopupMenu(eSmithPlain));
+    CRef<CHTMLPopupMenu> menuSH(CreatePopupMenu(eSmithHtml));
+    CRef<CHTMLPopupMenu> menuKP(CreatePopupMenu(eKurdin));
+    CRef<CHTMLPopupMenu> menuKC(CreatePopupMenu(eKurdinConf));
+    CRef<CHTMLPopupMenu> menuKS(CreatePopupMenu(eKurdinSide));
 
     // Add menues to the page
     // !!! We can add Smith's and Kurdin's menu to the BODY only!
-    body->AppendChild(menuSM);
+    body->AppendChild(menuSP);
     body->AppendChild(menuSH);
     body->AppendChild(menuKP);
     body->AppendChild(menuKC);
@@ -170,21 +172,21 @@ static void Test_Html(void)
     head->AppendChild(menuKS);
 
     // Add menu calls
-    CHTML_a* anchorSM  = new CHTML_a("#","Smith's menu (click me)");
-    anchorSM->AttachPopupMenu(menuSM, eHTML_EH_Click);
-    CHTML_a* anchorSH  = new CHTML_a("#","Smith's menu with HTML (move mouse over me)");
+    CRef<CHTML_a> anchorSP(new CHTML_a("#","Smith's menu (click me)"));
+    anchorSP->AttachPopupMenu(menuSP, eHTML_EH_Click);
+    CRef<CHTML_a> anchorSH(new CHTML_a("#","Smith's menu with HTML (move mouse over me)"));
     anchorSH->AttachPopupMenu(menuSH, eHTML_EH_MouseOver);
-    CHTML_a* anchorKP  = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
+    CRef<CHTML_a> anchorKP(new CHTML_a("#","Kurdin's popup menu (move mouse over me)"));
     anchorKP->AttachPopupMenu(menuKP);
-    CHTML_a* anchorKPc = new CHTML_a("#","Kurdin's popup menu (click me)");
+    CRef<CHTML_a> anchorKPc(new CHTML_a("#","Kurdin's popup menu (click me)"));
     anchorKPc->AttachPopupMenu(menuKP, eHTML_EH_Click);
-    CHTML_a* anchorKC  = new CHTML_a("#","Kurdin's popup menu with configurations (move mouse over me)");
+    CRef<CHTML_a> anchorKC(new CHTML_a("#","Kurdin's popup menu with configurations (move mouse over me)"));
     anchorKC->AttachPopupMenu(menuKC);
-    CHTML_a* anchorKCc = new CHTML_a("#","Kurdin's popup menu with configurations (click me)");
+    CRef<CHTML_a> anchorKCc(new CHTML_a("#","Kurdin's popup menu with configurations (click me)"));
     anchorKCc->AttachPopupMenu(menuKC, eHTML_EH_Click);
 
     CRef<CHTML_blockquote> bc(new CHTML_blockquote);
-    bc->AppendChild(anchorSM);
+    bc->AppendChild(anchorSP);
     bc->AppendChild(new CHTML_br(2));
     bc->AppendChild(anchorSH);
     bc->AppendChild(new CHTML_br(2));
@@ -221,14 +223,14 @@ static void Test_Template(void)
     LOG_POST("\nTemplate test\n");
 
     CHTMLPage page("JSMenu test page","template_jsmenu.html"); 
-    CNCBINode* view_menues   = new CNCBINode();
-    CNCBINode* view_sidemenu = new CNCBINode();
+    CNodeRef view_menues   (new CNCBINode());
+    CNodeRef view_sidemenu (new CNCBINode());
 
     // Create menues
-    CHTMLPopupMenu* menuSP = CreatePopupMenu(eSmithPlain);
-    CHTMLPopupMenu* menuSH = CreatePopupMenu(eSmithHtml);
-    CHTMLPopupMenu* menuKP = CreatePopupMenu(eKurdin);
-    CHTMLPopupMenu* menuKS = CreatePopupMenu(eKurdinSide);
+    CRef<CHTMLPopupMenu> menuSP(CreatePopupMenu(eSmithPlain));
+    CRef<CHTMLPopupMenu> menuSH(CreatePopupMenu(eSmithHtml));
+    CRef<CHTMLPopupMenu> menuKP(CreatePopupMenu(eKurdin));
+    CRef<CHTMLPopupMenu> menuKS(CreatePopupMenu(eKurdinSide));
 
     // Add menues to the page
     // !!! We can add Smith's and Kurdin's menu to the BODY only!
@@ -239,13 +241,13 @@ static void Test_Template(void)
     view_sidemenu->AppendChild(menuKS);
 
     // Add menu calls
-    CHTML_a* anchorSP  = new CHTML_a("#","Smith's menu (click me)");
+    CRef<CHTML_a> anchorSP(new CHTML_a("#","Smith's menu (click me)"));
     anchorSP->AttachPopupMenu(menuSP, eHTML_EH_Click);
-    CHTML_a* anchorSH  = new CHTML_a("#","Smith's menu with HTML (move mouse over me)");
+    CRef<CHTML_a> anchorSH(new CHTML_a("#","Smith's menu with HTML (move mouse over me)"));
     anchorSH->AttachPopupMenu(menuSH, eHTML_EH_MouseOver);
-    CHTML_a* anchorKP  = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
+    CRef<CHTML_a> anchorKP(new CHTML_a("#","Kurdin's popup menu (move mouse over me)"));
     anchorKP->AttachPopupMenu(menuKP);
-    CHTML_a* anchorKPC = new CHTML_a("#","Kurdin's popup menu (click me)");
+    CRef<CHTML_a> anchorKPC(new CHTML_a("#","Kurdin's popup menu (click me)"));
     anchorKPC->AttachPopupMenu(menuKP, eHTML_EH_Click);
 
     view_menues->AppendChild(anchorSP);
@@ -347,6 +349,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/11/20 17:26:56  ivanov
+ * Replaced pointers to CRef's to avoid memory leaks
+ *
  * Revision 1.11  2005/09/07 16:44:18  ivanov
  * Cosmetic changes
  *
