@@ -60,8 +60,8 @@ public:
     /// Constructor
     CAlnStats(const TAlnVector& aln_vector,
               const TAlnSeqIdVector& aln_seq_id_vector,
-              const TAnchorRows* const anchor_rows = 0,
-              const TBaseWidths* const base_widths = 0) :
+              const TAnchorRows& anchor_rows,
+              const TBaseWidths& base_widths) :
         m_AlnVector(aln_vector),
         m_AlnSeqIdVector(aln_seq_id_vector),
         m_AnchorRows(anchor_rows),
@@ -69,13 +69,13 @@ public:
     {
         _ASSERT(m_AlnVector.size() == GetAlnCount());
         _ASSERT(m_AlnSeqIdVector.size() == GetAlnCount());
-        _ASSERT( !m_AnchorRows  ||  m_AnchorRows->size() == GetAlnCount());
-        _ASSERT( !m_BaseWidths  ||  m_BaseWidths->size() == GetAlnCount());
+        _ASSERT(m_AnchorRows.empty()  ||  m_AnchorRows.size() == GetAlnCount());
+        _ASSERT(m_BaseWidths.empty()  ||  m_BaseWidths.size() == GetAlnCount());
     }
-
 
     /// How many alignments do we have?
     size_t GetAlnCount() const {
+        _ASSERT(m_AlnVector.size() ==  m_AlnSeqIdVector.size());
         return m_AlnVector.size();
     }
 
@@ -100,16 +100,18 @@ public:
 
     /// Do the alignments share a common sequence (anchor)?
     bool IsAnchored() const {
-        return m_AnchorRows;
+        _ASSERT(m_AnchorRows.empty()  ||  m_AnchorRows.size() == GetAlnCount());
+        return !m_AnchorRows.empty();
     }
 
     /// Get the anchor row within an alignment
     TDim GetAnchorRowForAln(size_t aln_idx) const {
         if (IsAnchored()) {
-            _ASSERT(IsAnchored());
-            _ASSERT(aln_idx < GetAlnCount());
-            _ASSERT((*m_AnchorRows)[aln_idx] >= 0);
-            return (*m_AnchorRows)[aln_idx];
+            _ASSERT(m_AnchorRows.size() == GetAlnCount());
+            _ASSERT(aln_idx < m_AnchorRows.size());
+            _ASSERT(m_AnchorRows[aln_idx] >= 0);
+            _ASSERT(m_AnchorRows[aln_idx] < GetDimForAln(aln_idx));
+            return m_AnchorRows[aln_idx];
         } else {
             return -1;
         }
@@ -118,11 +120,12 @@ public:
 
     /// What are the base widths?
     const int GetBaseWidthForAlnRow(size_t aln_idx, TDim row) const {
-        if (m_BaseWidths) {
-            _ASSERT(aln_idx < m_BaseWidths->size());
-            _ASSERT((TDim)(*m_BaseWidths)[aln_idx].size() == GetDimForAln(aln_idx));
-            _ASSERT(row < (TDim)(*m_BaseWidths)[aln_idx].size());
-            return (*m_BaseWidths)[aln_idx][row];
+        if ( !m_BaseWidths.empty() ) {
+            _ASSERT(m_BaseWidths.size() == GetAlnCount());
+            _ASSERT(aln_idx < m_BaseWidths.size());
+            _ASSERT((TDim)m_BaseWidths[aln_idx].size() == GetDimForAln(aln_idx));
+            _ASSERT(row < (TDim)m_BaseWidths[aln_idx].size());
+            return m_BaseWidths[aln_idx][row];
         } else {
             return 1;
         }
@@ -158,8 +161,8 @@ public:
 private:
     const TAlnVector& m_AlnVector;
     const TAlnSeqIdVector& m_AlnSeqIdVector;
-    const TAnchorRows* const m_AnchorRows;
-    const TBaseWidths* const m_BaseWidths;
+    const TAnchorRows& m_AnchorRows;
+    const TBaseWidths& m_BaseWidths;
 };
 
 
@@ -170,6 +173,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/11/20 18:43:23  todorov
+* anchor rows and base widtsh are now const refs.
+*
 * Revision 1.1  2006/11/17 05:33:35  todorov
 * Initial revision.
 *
