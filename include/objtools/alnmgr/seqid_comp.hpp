@@ -54,7 +54,7 @@ class SCompareOrdered :
 {
 public:
     bool operator()(TSeqIdPtr left_seq_id,
-                    TSeqIdPtr right_seq_id)
+                    TSeqIdPtr right_seq_id) const
     {
         return left_seq_id->CompareOrdered(*right_seq_id);
     }
@@ -69,7 +69,7 @@ public:
     CSeqIdBioseqHandleComp(CScope& scope) : m_Scope(scope) {}
 
     bool operator()(TSeqIdPtr left_seq_id,
-                    TSeqIdPtr right_seq_id)
+                    TSeqIdPtr right_seq_id) const
     {
         CBioseq_Handle l_bioseq_handle = m_Scope.GetBioseqHandle(*left_seq_id);
         CBioseq_Handle r_bioseq_handle = m_Scope.GetBioseqHandle(*right_seq_id);
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/11/20 18:48:02  todorov
+* + const
+*
 * Revision 1.2  2006/10/17 21:25:32  todorov
 * + #include <objmgr/scope.hpp>
 *
