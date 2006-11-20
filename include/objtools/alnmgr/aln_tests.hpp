@@ -50,12 +50,24 @@ USING_SCOPE(objects);
 
 
 /// Vector of Seq-ids per Seq-align
-template <class TAlnVector,
-          class TSeqIdPtrComp,
-          class TSeqIdPtr = const CSeq_id*>
-class CAlnSeqIdVector
+template <class _TAlnVector,
+          class _TSeqIdPtrComp,
+          class _TSeqIdPtr = const CSeq_id*>
+class CAlnSeqIdVector : public CObject
 {
 public:
+    /// Types:
+    typedef _TAlnVector TAlnVector;
+    typedef _TSeqIdPtrComp TSeqIdPtrComp;
+    typedef _TSeqIdPtr TSeqIdPtr;
+    typedef vector<TSeqIdPtr> TSeqIdVector;
+private:
+    typedef vector<TSeqIdVector> TAlnSeqIdVector;
+public:
+    typedef typename TAlnSeqIdVector::value_type value_type;
+    typedef size_t size_type;
+
+
     /// Construction
     CAlnSeqIdVector(const TAlnVector& aln_vector,
                     TSeqIdPtrComp& seq_id_ptr_comp) :
@@ -67,7 +79,6 @@ public:
     {
     }
 
-    typedef vector<TSeqIdPtr> TSeqIdVector;
 
     /// Accessing the seq-ids of a particular seq-align
     const TSeqIdVector& operator[](size_t aln_idx) const
@@ -81,18 +92,14 @@ public:
         return m_AlnSeqIdVector[aln_idx];
     }
 
+
     /// Accessing the underlying TAlnVector
     const TAlnVector& GetAlnVector() const {
         return m_AlnVector;
     }
 
-private:
-    typedef vector<TSeqIdVector> TAlnSeqIdVector;
 
-public:
-    typedef typename TAlnSeqIdVector::value_type value_type;
-
-    typedef size_t size_type;
+    /// Size
     size_type size() const {
         return m_Size;
     }
@@ -108,14 +115,24 @@ private:
 
 /// Seq-id to Seq-align map
 template<class TAlnSeqIdVector>
-class CSeqIdAlnBitmap
+class CSeqIdAlnBitmap : public CObject
 {
 public:
+    /// Typedefs
+    typedef CSeq_align::TDim TDim;
+    typedef vector< vector<int> > TBaseWidthVector;
+    typedef vector<TDim> TAnchorRowVector;
+    typedef typename TAlnSeqIdVector::TSeqIdVector TSeqIdVector;
+    typedef typename TAlnSeqIdVector::TSeqIdPtr TSeqIdPtr;
+    typedef typename TAlnSeqIdVector::TSeqIdPtrComp TSeqIdPtrComp;
+
     /// Constructor
     CSeqIdAlnBitmap(const TAlnSeqIdVector& aln_id_vec,
                     CScope& scope) :
+        m_AlnIdVec(aln_id_vec),
+        m_AlnCount(m_AlnIdVec.size()),
         m_Scope(scope),
-        m_AlnCount(aln_id_vec.size()),
+        m_Comp(),
         m_IsQueryAnchoredTestDone(false),
         m_NucProtBitmapsInitialized(false)
     {
@@ -123,9 +140,9 @@ public:
         TSeqIdPtr seq_id;
 
         for (size_t aln_i = 0; aln_i < m_AlnCount; ++aln_i) {
-            for (size_t seq_i = 0;  seq_i < aln_id_vec[aln_i].size();  ++seq_i) {
+            for (size_t seq_i = 0;  seq_i < m_AlnIdVec[aln_i].size();  ++seq_i) {
 
-                seq_id = aln_id_vec[aln_i][seq_i];
+                seq_id = m_AlnIdVec[aln_i][seq_i];
 
                 CBioseq_Handle bioseq_handle = m_Scope.GetBioseqHandle(*seq_id);
                 
@@ -221,6 +238,53 @@ public:
     }
 
 
+    /// If translated, what are the base widths?  (Empty vector otherwise)
+    const TBaseWidthVector& GetBaseWidths() const {
+        if (m_BaseWidths.empty() &&  GetTranslatedAlnCount()) {
+            m_BaseWidths.resize(GetAlnCount());
+            for (size_t aln_idx = 0;  aln_idx < m_AlnIdVec.size();  ++aln_idx) {
+                const TSeqIdVector& ids = m_AlnIdVec[aln_idx];
+                m_BaseWidths[aln_idx].resize(ids.size());
+                for (size_t row = 0; row < ids.size(); ++row)   {
+                    CBioseq_Handle bioseq_handle = m_Scope.GetBioseqHandle(*ids[row]);
+                    if (bioseq_handle.IsProtein()) {
+                        m_BaseWidths[aln_idx][row] = 3;
+                    } else if (bioseq_handle.IsNucleotide()) {
+                        m_BaseWidths[aln_idx][row] = 1;
+                    } else {
+                        string err_str =
+                            string("Cannot determine molecule type for seq-id: ")
+                            + ids[row]->AsFastaString();
+                        NCBI_THROW(CSeqalignException, eInvalidSeqId, err_str);
+                    }
+                }
+            }
+        }
+        return m_BaseWidths;
+    }
+
+
+    /// If query-anchored, what are the anchor rows?  (Empty vector otherwise)
+    const TAnchorRowVector& GetAnchorRows() const {
+        if (m_AnchorRows.empty()  &&  IsQueryAnchored()) {
+            TSeqIdPtr anchor_id = GetAnchorHandle().GetSeqId();
+            m_AnchorRows.resize(GetAlnCount(), -1);
+            for (size_t aln_idx = 0;  aln_idx < m_AnchorRows.size();  ++aln_idx) {
+                const TSeqIdVector& ids = m_AlnIdVec[aln_idx];
+                for (size_t row = 0; row < ids.size(); ++row) {
+                    if ( !(m_Comp(ids[row], anchor_id) ||
+                           m_Comp(anchor_id, ids[row])) ) {
+                        m_AnchorRows[aln_idx] = row;
+                        break;
+                    }
+                }
+                _ASSERT(m_AnchorRows[aln_idx] >= 0);
+            }
+        }
+        return m_AnchorRows;
+    }
+
+
     /// Dump in human readable text format
     template <class TOutStream>
     void Dump(TOutStream& os) const {
@@ -260,9 +324,11 @@ private:
         }
     }
 
-    TSeqIdAlnMap m_Bitmap;
-    CScope& m_Scope;
+    TAlnSeqIdVector m_AlnIdVec;
     size_t m_AlnCount;
+    CScope& m_Scope;
+    TSeqIdAlnMap m_Bitmap;
+    TSeqIdPtrComp m_Comp;
 
     mutable bool m_IsQueryAnchoredTestDone;
     mutable CBioseq_Handle m_AnchorHandle;
@@ -272,8 +338,10 @@ private:
     mutable TBitVector m_NucleotideBitmap;
 
     TSeqIdAlnMap m_SelfAlignedBitmap;
-};
 
+    mutable TBaseWidthVector m_BaseWidths;
+    mutable TAnchorRowVector m_AnchorRows;
+};
 
 
 END_NCBI_SCOPE
@@ -282,6 +350,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2006/11/20 18:47:16  todorov
+* + CSeqIdAlnBitmap::GetBaseWidths()
+* + CSeqIdAlnBitmap::GetAnchorRows()
+*
 * Revision 1.7  2006/11/09 00:16:54  todorov
 * Fixed Dump.
 *
