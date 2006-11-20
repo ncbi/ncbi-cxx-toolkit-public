@@ -58,7 +58,7 @@ CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
 
 bool CTL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
 {
-    return m_Params.BindParam(column_num, kEmptyStr, pVal);
+    return GetParams().BindParam(column_num, kEmptyStr, pVal);
 }
 
 
@@ -111,12 +111,12 @@ bool CTL_BCPInCmd::x_AssignParams()
     param_fmt.format = CS_FMT_UNUSED;
     param_fmt.count  = 1;
 
-    for (unsigned int i = 0;  i < m_Params.NofParams();  i++) {
+    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
 
-        if (m_Params.GetParamStatus(i) == 0)
+        if (GetParams().GetParamStatus(i) == 0)
             continue;
 
-        CDB_Object& param = *m_Params.GetParam(i);
+        CDB_Object& param = *GetParams().GetParam(i);
         m_Bind[i].indicator = param.IsNULL() ? -1 : 0;
         m_Bind[i].datalen   = (m_Bind[i].indicator == 0) ? CS_UNUSED : 0;
 
@@ -340,15 +340,15 @@ bool CTL_BCPInCmd::Send(void)
 
     if ( !m_WasSent ) {
         // we need to init the bcp
-        CheckSFB(blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) m_Query.c_str(), CS_NULLTERM),
+        CheckSFB(blk_init(x_GetSybaseCmd(), CS_BLK_IN, (CS_CHAR*) GetQuery().c_str(), CS_NULLTERM),
                  "blk_init failed", 123001);
 
         m_WasSent = true;
 
         // check what needs to be default
         CS_DATAFMT fmt;
-        for (i = 0;  i < m_Params.NofParams();  i++) {
-            if (m_Params.GetParamStatus(i) != 0) {
+        for (i = 0;  i < GetParams().NofParams();  i++) {
+            if (GetParams().GetParamStatus(i) != 0) {
                 continue;
             }
 
@@ -364,7 +364,7 @@ bool CTL_BCPInCmd::Send(void)
             m_HasFailed = (Check(blk_bind(x_GetSybaseCmd(),
                                           i + 1,
                                           &fmt,
-                                          (void*) &m_Params,
+                                          (void*) &GetParams(),
                                           &datalen,
                                           &indicator)) != CS_SUCCEED);
             CHECK_DRIVER_ERROR(
@@ -380,11 +380,11 @@ bool CTL_BCPInCmd::Send(void)
 
     switch ( Check(blk_rowxfer(x_GetSybaseCmd())) ) {
     case CS_BLK_HAS_TEXT:
-        for (i = 0;  i < m_Params.NofParams();  i++) {
-            if (m_Params.GetParamStatus(i) == 0)
+        for (i = 0;  i < GetParams().NofParams();  i++) {
+            if (GetParams().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *m_Params.GetParam(i);
+            CDB_Object& param = *GetParams().GetParam(i);
 
             if (param.GetType() == eDB_Text) {
                 size_t valid_len = 0;
@@ -576,6 +576,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.28  2006/10/06 22:29:48  ssikorsk
  * Explicitly convert text strings into UCS-2LE encoding for blk_textxfer in case of big endian.
  *

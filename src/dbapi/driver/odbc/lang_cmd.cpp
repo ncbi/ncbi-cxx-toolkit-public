@@ -73,9 +73,9 @@ bool CODBC_LangCmd::Send(void)
     CMemPot bindGuard;
     string q_str;
 
-    if(m_Params.NofParams() > 0) {
+    if(GetParams().NofParams() > 0) {
         SQLLEN* indicator = (SQLLEN*)
-                bindGuard.Alloc(m_Params.NofParams() * sizeof(SQLLEN));
+                bindGuard.Alloc(GetParams().NofParams() * sizeof(SQLLEN));
 
         if (!x_AssignParams(q_str, bindGuard, indicator)) {
             ResetParams();
@@ -86,13 +86,13 @@ bool CODBC_LangCmd::Send(void)
         }
     }
 
-    string* real_query;
+    const string* real_query;
     if(!q_str.empty()) {
-        q_str.append(m_Query);
+        q_str.append(GetQuery());
         real_query = &q_str;
     }
     else {
-        real_query = &m_Query;
+        real_query = &GetQuery();
     }
 
     switch(SQLExecDirect(GetHandle(), CODBCString(*real_query, GetClientEncoding()), SQL_NTS)) {
@@ -172,7 +172,7 @@ bool CODBC_LangCmd::Cancel()
         }
 
         ResetParams();
-        // m_Query.erase();
+        // GetQuery().erase();
     }
 
     return true;
@@ -280,10 +280,10 @@ CODBC_LangCmd::~CODBC_LangCmd()
 
 bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLLEN* indicator)
 {
-    for (unsigned int n = 0; n < m_Params.NofParams(); ++n) {
-        if(m_Params.GetParamStatus(n) == 0) continue;
-        const string& name  =  m_Params.GetParamName(n);
-        const CDB_Object& param = *m_Params.GetParam(n);
+    for (unsigned int n = 0; n < GetParams().NofParams(); ++n) {
+        if(GetParams().GetParamStatus(n) == 0) continue;
+        const string& name  =  GetParams().GetParamName(n);
+        const CDB_Object& param = *GetParams().GetParam(n);
 
         const string type = Type2String(param);
         if (!x_BindParam_ODBC(param, bind_guard, indicator, n)) {
@@ -361,6 +361,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/11/20 18:15:59  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.35  2006/10/26 15:07:57  ssikorsk
  * Use a charset provided by a client instead of a default one.
  *

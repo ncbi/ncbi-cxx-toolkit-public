@@ -63,7 +63,7 @@ CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* conn,
 bool CTDS_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 {
     m_WasBound = false;
-    return m_Params.BindParam(column_num,  kEmptyStr, param_ptr);
+    return GetParams().BindParam(column_num,  kEmptyStr, param_ptr);
 }
 
 
@@ -72,11 +72,11 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
     RETCODE r;
 
     if (!m_WasBound) {
-        for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
-            if (m_Params.GetParamStatus(i) == 0)
+        for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
+            if (GetParams().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *m_Params.GetParam(i);
+            CDB_Object& param = *GetParams().GetParam(i);
 
             switch ( param.GetType() ) {
             case eDB_Int: {
@@ -205,11 +205,11 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
         }
         m_WasBound = true;
     } else {
-        for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
-            if (m_Params.GetParamStatus(i) == 0)
+        for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
+            if (GetParams().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *m_Params.GetParam(i);
+            CDB_Object& param = *GetParams().GetParam(i);
 
             switch ( param.GetType() ) {
             case eDB_Int: {
@@ -377,11 +377,11 @@ bool CTDS_BCPInCmd::Send(void)
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size
 
-        for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
-            if (m_Params.GetParamStatus(i) == 0)
+        for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
+            if (GetParams().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *m_Params.GetParam(i);
+            CDB_Object& param = *GetParams().GetParam(i);
 
             if (param.GetType() != eDB_Text &&
                 param.GetType() != eDB_Image)
@@ -503,6 +503,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.20  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

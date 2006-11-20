@@ -57,7 +57,7 @@ bool CTL_RPCCmd::Send()
     m_HasFailed = false;
 
     CheckSFB(ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
-                        const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
+                        const_cast<char*> (GetQuery().c_str()), CS_NULLTERM,
                               NeedToRecompile() ? CS_RECOMPILE : CS_UNUSED),
              "ct_command failed", 121001);
 
@@ -189,15 +189,15 @@ bool CTL_RPCCmd::x_AssignParams()
     memset(&param_fmt, 0, sizeof(param_fmt));
     param_fmt.namelen = CS_NULLTERM;
 
-    for (unsigned int i = 0;  i < m_Params.NofParams();  i++) {
+    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
 
-        if(m_Params.GetParamStatus(i) == 0) continue;
-        CDB_Object&   param      = *m_Params.GetParam(i);
-        const string& param_name = m_Params.GetParamName(i);
+        if(GetParams().GetParamStatus(i) == 0) continue;
+        CDB_Object&   param      = *GetParams().GetParam(i);
+        const string& param_name = GetParams().GetParamName(i);
         CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
 
         param_fmt.status =
-            ((m_Params.GetParamStatus(i) & CDB_Params::fOutput) == 0)
+            ((GetParams().GetParamStatus(i) & CDB_Params::fOutput) == 0)
             ? CS_INPUTVALUE : CS_RETURN;
 
         if ( !AssignCmdParam(param,
@@ -220,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.23  2006/08/02 15:15:58  ssikorsk
  * Revamp code to use CheckSFB and CheckSFBCP;
  * Revamp code to compile with FreeTDS ctlib implementation;

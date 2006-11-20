@@ -50,7 +50,7 @@ CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection* conn,
 bool CMySQL_LangCmd::Send()
 {
     if (mysql_real_query
-        (&m_Connect->m_MySQL, m_Query.c_str(), m_Query.length()) != 0) {
+        (&m_Connect->m_MySQL, GetQuery().c_str(), GetQuery().length()) != 0) {
         DATABASE_DRIVER_WARNING( "Failed: mysql_real_query", 800003 );
     }
 
@@ -152,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.18  2006/07/18 15:47:58  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

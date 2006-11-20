@@ -66,7 +66,7 @@ bool CDBL_LangCmd::Send()
         DATABASE_DRIVER_ERROR( "cannot assign params", 220003 );
     }
 
-    if (Check(dbcmd(GetCmd(), (char*)(m_Query.c_str()))) != SUCCEED) {
+    if (Check(dbcmd(GetCmd(), (char*)(GetQuery().c_str()))) != SUCCEED) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
         m_HasFailed = true;
@@ -109,7 +109,7 @@ bool CDBL_LangCmd::Cancel()
 
         dbfreebuf(GetCmd());
         CheckFunctCall();
-        m_Query.erase();
+        // m_Query.erase();
 
         return (Check(dbcancel(GetCmd())) == SUCCEED);
     }
@@ -304,10 +304,10 @@ bool CDBL_LangCmd::x_AssignParams()
 {
     static const char s_hexnum[] = "0123456789ABCDEF";
 
-    for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
-        if(m_Params.GetParamStatus(n) == 0) continue;
-        const string& name  =  m_Params.GetParamName(n);
-        CDB_Object&   param = *m_Params.GetParam(n);
+    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
+        if(GetParams().GetParamStatus(n) == 0) continue;
+        const string& name  =  GetParams().GetParamName(n);
+        CDB_Object&   param = *GetParams().GetParam(n);
         char          val_buffer[16*1024];
         const char*   type;
         string        cmd;
@@ -522,6 +522,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.32  2006/09/21 16:20:48  ssikorsk
  * CDBL_Connection::Check --> CheckDead.
  *

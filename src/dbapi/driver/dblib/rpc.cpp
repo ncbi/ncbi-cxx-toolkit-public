@@ -70,7 +70,7 @@ bool CDBL_RPCCmd::Send()
 
     m_HasFailed = false;
 
-    if (Check(dbrpcinit(GetCmd(), (char*) m_Query.c_str(),
+    if (Check(dbrpcinit(GetCmd(), (char*) GetQuery().c_str(),
                   NeedToRecompile() ? DBRPCRECOMPILE : 0)) != SUCCEED) {
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "dbrpcinit failed", 221001 );
@@ -266,39 +266,39 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
 {
     RETCODE r;
 
-    for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
-        if(m_Params.GetParamStatus(i) == 0) continue;
-        CDB_Object& param = *m_Params.GetParam(i);
+    for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
+        if(GetParams().GetParamStatus(i) == 0) continue;
+        CDB_Object& param = *GetParams().GetParam(i);
         BYTE status =
-            (m_Params.GetParamStatus(i) & CDB_Params::fOutput)
+            (GetParams().GetParamStatus(i) & CDB_Params::fOutput)
             ? DBRPCRETURN : 0;
         bool is_null = param.IsNULL();
 
         switch (param.GetType()) {
         case eDB_Int: {
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBINT4, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_SmallInt: {
             CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBINT2, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_TinyInt: {
             CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBINT1, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_Bit: {
             CDB_Bit& val = dynamic_cast<CDB_Bit&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBBIT, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
@@ -309,7 +309,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             Int8 v8 = val.Value();
             if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                 return false;
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBNUMERIC, -1,
                            is_null ? 0 : -1, (BYTE*) v));
             param_buff = (char*) (v + 1);
@@ -317,7 +317,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_Char: {
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -325,7 +325,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_LongChar: {
             CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -333,7 +333,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_VarChar: {
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBCHAR, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -341,7 +341,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         break;
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBBINARY, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -349,7 +349,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_VarBinary: {
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBBINARY, -1,
                            is_null ? 0 : (DBINT) val.Size(),
                            (BYTE*) val.Value()));
@@ -357,14 +357,14 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         break;
         case eDB_Float: {
             CDB_Float& val = dynamic_cast<CDB_Float&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBREAL, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
         }
         case eDB_Double: {
             CDB_Double& val = dynamic_cast<CDB_Double&> (param);
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBFLT8, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal()));
             break;
@@ -374,7 +374,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             DBDATETIME4* dt        = (DBDATETIME4*) param_buff;
             DBDATETIME4_days(dt)   = val.GetDays();
             DBDATETIME4_mins(dt)   = val.GetMinutes();
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBDATETIME4, -1,
                            is_null ? 0 : -1, (BYTE*) dt));
             param_buff = (char*) (dt + 1);
@@ -385,7 +385,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             DBDATETIME* dt = (DBDATETIME*) param_buff;
             dt->dtdays     = val.GetDays();
             dt->dttime     = val.Get300Secs();
-            r = Check(dbrpcparam(GetCmd(), (char*) m_Params.GetParamName(i).c_str(),
+            r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBDATETIME, -1,
                            is_null ? 0 : -1, (BYTE*) dt));
             param_buff = (char*) (dt + 1);
@@ -426,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.31  2006/09/21 16:23:02  ssikorsk
  * CDBL_Connection::Check --> CheckDead.
  *

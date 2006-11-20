@@ -312,7 +312,15 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }
     case eDB_VarChar: {
         CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
+
+// #if defined(CS_NCHAR_TYPE)
+//         param_fmt.datatype = IsMultibyteClientEncoding() ? CS_NCHAR_TYPE : CS_CHAR_TYPE;
+// #else
+//         param_fmt.datatype = CS_CHAR_TYPE;
+// #endif
+
         param_fmt.datatype = CS_CHAR_TYPE;
+
         if ( declare_only ) {
             break;
         }
@@ -527,7 +535,7 @@ bool CTL_LangCmd::Send()
     m_HasFailed = false;
 
     CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
-                        const_cast<char*> (m_Query.c_str()), CS_NULLTERM,
+                        const_cast<char*> (GetQuery().c_str()), CS_NULLTERM,
                         CS_END),
              "ct_command failed", 120001);
 
@@ -659,11 +667,11 @@ bool CTL_LangCmd::x_AssignParams()
     param_fmt.namelen = CS_NULLTERM;
     param_fmt.status  = CS_INPUTVALUE;
 
-    for (unsigned int i = 0;  i < m_Params.NofParams();  i++) {
-        if(m_Params.GetParamStatus(i) == 0) continue;
+    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
+        if(GetParams().GetParamStatus(i) == 0) continue;
 
-        CDB_Object&   param      = *m_Params.GetParam(i);
-        const string& param_name = m_Params.GetParamName(i);
+        CDB_Object&   param      = *GetParams().GetParam(i);
+        const string& param_name = GetParams().GetParamName(i);
         CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
 
         if ( !AssignCmdParam(param,
@@ -686,6 +694,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.24  2006/08/10 15:19:27  ssikorsk
  * Revamp code to use new CheckXXX methods.
  *

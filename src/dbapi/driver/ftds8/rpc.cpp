@@ -66,7 +66,7 @@ bool CTDS_RPCCmd::Send()
         DATABASE_DRIVER_ERROR( "cannot assign the output params", 221001 );
     }
 
-    string cmd= "execute " + m_Query;
+    string cmd= "execute " + GetQuery();
     if (Check(dbcmd(GetCmd(), (char*)(cmd.c_str()))) != SUCCEED) {
         dbfreebuf(GetCmd());
         CheckFunctCall();
@@ -108,7 +108,7 @@ bool CTDS_RPCCmd::Cancel()
         m_WasSent = false;
         return Check(dbcancel(GetCmd())) == SUCCEED;
     }
-    // m_Query.erase();
+    // GetQuery().erase();
     return true;
 }
 
@@ -402,12 +402,12 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
 bool CTDS_RPCCmd::x_AssignOutputParams()
 {
     char buffer[64];
-    for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
-        if ((m_Params.GetParamStatus(n) & CDB_Params::fOutput) == 0)
+    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
+        if ((GetParams().GetParamStatus(n) & CDB_Params::fOutput) == 0)
             continue;
 
-        const string& name  =  m_Params.GetParamName(n);
-        CDB_Object&   param = *m_Params.GetParam(n);
+        const string& name  =  GetParams().GetParamName(n);
+        CDB_Object&   param = *GetParams().GetParam(n);
         const char*   type;
         string        cmd;
 
@@ -478,12 +478,12 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
 
 bool CTDS_RPCCmd::x_AssignParams()
 {
-    for (unsigned int i = 0;  i < m_Params.NofParams();  i++) {
-      if(!m_Params.GetParamStatus(i)) continue;
-        CDB_Object& param = *m_Params.GetParam(i);
+    for (unsigned int i = 0;  i < GetParams().NofParams();  i++) {
+      if(!GetParams().GetParamStatus(i)) continue;
+        CDB_Object& param = *GetParams().GetParam(i);
         bool is_output =
-            (m_Params.GetParamStatus(i) & CDB_Params::fOutput) != 0;
-        const string& name  = m_Params.GetParamName(i);
+            (GetParams().GetParamStatus(i) & CDB_Params::fOutput) != 0;
+        const string& name  = GetParams().GetParamName(i);
         string cmd= i? ", " : " ";
 
         if(!name.empty()) {
@@ -512,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.25  2006/09/21 16:23:18  ssikorsk
  * CDBL_Connection::Check --> CheckDead.
  *

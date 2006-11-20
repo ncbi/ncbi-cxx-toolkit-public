@@ -65,8 +65,8 @@ bool CSL3_LangCmd::Send()
     // m_HasFailed = false;
 
     int rc = Check(sqlite3_prepare(GetConnection().GetSQLite3(),
-                                   m_Query.c_str(),
-                                   m_Query.size(),
+                                   GetQuery().c_str(),
+                                   GetQuery().size(),
                                    &m_SQLite3stmt,
                                    &sql_tail
                                    ));
@@ -194,10 +194,10 @@ int CSL3_LangCmd::RowCount() const
 
 bool CSL3_LangCmd::x_AssignParams(void)
 {
-    for (unsigned int i = 0;  i < m_Params.NofParams();  ++i) {
-        if(m_Params.GetParamStatus(i) == 0) continue;
+    for (unsigned int i = 0;  i < GetParams().NofParams();  ++i) {
+        if(GetParams().GetParamStatus(i) == 0) continue;
 
-        CDB_Object& param = *m_Params.GetParam(i);
+        CDB_Object& param = *GetParams().GetParam(i);
         if ( !AssignCmdParam(param, i + 1) ) {
             return false;
         }
@@ -372,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/20 18:15:59  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.3  2006/07/18 15:47:59  ssikorsk
  * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
  *

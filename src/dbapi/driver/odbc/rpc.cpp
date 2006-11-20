@@ -68,15 +68,15 @@ bool CODBC_RPCCmd::Send()
 
     // make a language command
     string main_exec_query("declare @STpROCrETURNsTATUS int;\nexec @STpROCrETURNsTATUS=");
-    main_exec_query += m_Query;
+    main_exec_query += GetQuery();
     string param_result_query;
 
     CMemPot bindGuard;
     string q_str;
 
-    if(m_Params.NofParams() > 0) {
+    if(GetParams().NofParams() > 0) {
         SQLLEN* indicator = (SQLLEN*)
-                bindGuard.Alloc(m_Params.NofParams() * sizeof(SQLLEN));
+                bindGuard.Alloc(GetParams().NofParams() * sizeof(SQLLEN));
 
         if (!x_AssignParams(q_str, main_exec_query, param_result_query,
                           bindGuard, indicator)) {
@@ -174,7 +174,7 @@ bool CODBC_RPCCmd::Cancel()
         }
 
         ResetParams();
-        m_Query.erase();
+        // GetQuery().erase();
     }
 
     return true;
@@ -311,12 +311,12 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
 {
     char p_nm[16];
     // check if we do have a named parameters (first named - all named)
-    bool param_named = !m_Params.GetParamName(0).empty();
+    bool param_named = !GetParams().GetParamName(0).empty();
 
-    for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
-        if(m_Params.GetParamStatus(n) == 0) continue;
-        const string& name  =  m_Params.GetParamName(n);
-        CDB_Object&   param = *m_Params.GetParam(n);
+    for (unsigned int n = 0; n < GetParams().NofParams(); n++) {
+        if(GetParams().GetParamStatus(n) == 0) continue;
+        const string& name  =  GetParams().GetParamName(n);
+        CDB_Object&   param = *GetParams().GetParam(n);
 
         if (!x_BindParam_ODBC(param, bind_guard, indicator, n)) {
             return false;
@@ -345,7 +345,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             indicator[n] = SQL_NULL_DATA;
         }
 
-        if ((m_Params.GetParamStatus(n) & CDB_Params::fOutput) != 0) {
+        if ((GetParams().GetParamStatus(n) & CDB_Params::fOutput) != 0) {
             q_exec += " output";
             const char* p_name = param_named? name.c_str() : p_nm;
             if(!q_select.empty()) q_select += ',';
@@ -390,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/11/20 18:15:59  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.34  2006/10/26 15:06:41  ssikorsk
  * Use a charset provided by a client instead of a default one.
  *

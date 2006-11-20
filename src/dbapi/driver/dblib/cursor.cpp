@@ -91,17 +91,17 @@ CDB_Result* CDBL_CursorCmd::Open()
     if ( connected_to_MSSQLServer ) {
         string cur_feat;
 
-        if(for_update_of(m_Query)) {
+        if(for_update_of(GetQuery())) {
             cur_feat = " cursor FORWARD_ONLY SCROLL_LOCKS for ";
         } else {
             cur_feat = " cursor FORWARD_ONLY for ";
         }
 
-        buff = "declare " + m_Name + cur_feat + m_Query;
+        buff = "declare " + m_Name + cur_feat + GetQuery();
     } else {
         // Sybase ...
 
-        buff = "declare " + m_Name + " cursor for " + m_Query;
+        buff = "declare " + m_Name + " cursor for " + GetQuery();
     }
 
     try {
@@ -511,7 +511,7 @@ bool CDBL_CursorCmd::x_AssignParams()
             strcpy(val_buffer, "NULL");
 
         // substitute the param
-        g_SubstituteParam(m_Query, name, val_buffer);
+        g_SubstituteParam(GetQuery(), name, val_buffer);
     }
 
     return true;
@@ -525,6 +525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.31  2006/07/19 14:11:02  ssikorsk
  * Refactoring of CursorCmd.
  *

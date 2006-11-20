@@ -80,7 +80,7 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
 
 bool CODBC_BCPInCmd::Bind(unsigned int column_num, CDB_Object* param_ptr)
 {
-    return m_Params.BindParam(column_num,  kEmptyStr, param_ptr);
+    return GetParams().BindParam(column_num,  kEmptyStr, param_ptr);
 }
 
 
@@ -198,13 +198,13 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
     RETCODE r;
 
     if (!m_WasBound) {
-        for (unsigned int i = 0; i < m_Params.NofParams(); ++i) {
-            if (m_Params.GetParamStatus(i) == 0) {
+        for (unsigned int i = 0; i < GetParams().NofParams(); ++i) {
+            if (GetParams().GetParamStatus(i) == 0) {
                 bcp_bind(GetHandle(), (BYTE*) pb, 0, SQL_NULL_DATA, 0, 0, 0, i + 1);
                 continue;
             }
 
-            CDB_Object& param = *m_Params.GetParam(i);
+            CDB_Object& param = *GetParams().GetParam(i);
 
             EDB_Type data_type = param.GetType();
             r = bcp_bind(GetHandle(),
@@ -225,11 +225,11 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
         }
         m_WasBound = true;
     }
-    for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
-        if (m_Params.GetParamStatus(i) == 0)
+    for (unsigned int i = 0; i < GetParams().NofParams(); i++) {
+        if (GetParams().GetParamStatus(i) == 0)
             continue;
 
-        CDB_Object& param = *m_Params.GetParam(i);
+        CDB_Object& param = *GetParams().GetParam(i);
 
         switch ( param.GetType() ) {
         case eDB_Int: {
@@ -460,11 +460,11 @@ bool CODBC_BCPInCmd::Send(void)
     if (m_HasTextImage) { // send text/image data
         char buff[1800]; // text/image page size
 
-        for (unsigned int i = 0; i < m_Params.NofParams(); ++i) {
-            if (m_Params.GetParamStatus(i) == 0)
+        for (unsigned int i = 0; i < GetParams().NofParams(); ++i) {
+            if (GetParams().GetParamStatus(i) == 0)
                 continue;
 
-            CDB_Object& param = *m_Params.GetParam(i);
+            CDB_Object& param = *GetParams().GetParam(i);
 
             if (param.GetType() != eDB_Text &&
                 param.GetType() != eDB_Image)
@@ -608,6 +608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/11/20 18:15:58  ssikorsk
+ * Revamp code to use GetQuery() and GetParams() methods.
+ *
  * Revision 1.26  2006/10/26 15:08:39  ssikorsk
  * Use a charset provided by a client instead of a default one.
  *
