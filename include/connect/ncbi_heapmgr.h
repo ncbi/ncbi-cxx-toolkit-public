@@ -118,11 +118,21 @@ extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Alloc
  );
 
 
-/* Deallocate a block pointed to by "block_ptr".
+/* Deallocate a block pointed to by "ptr".
  */
 extern NCBI_XCONNECT_EXPORT void HEAP_Free
 (HEAP         heap,        /* heap handle         */
- SHEAP_Block* block_ptr    /* block to deallocate */
+ SHEAP_Block* ptr          /* block to deallocate */
+ );
+
+
+/* Deallocate a block pointed to by "ptr" and having "prev" as its predecessor
+ * (NULL if "ptr" is the first on the heap).
+ */
+extern NCBI_XCONNECT_EXPORT void HEAP_FreeFast
+(HEAP               heap,  /* heap handle         */
+ SHEAP_Block*       ptr,   /* block to deallocate */
+ const SHEAP_Block* prev
  );
 
 
@@ -227,6 +237,9 @@ extern NCBI_XCONNECT_EXPORT void HEAP_Options(ESwitch fast, ESwitch newalk);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2006/11/20 17:01:52  lavr
+ * Added missing declaration of newly added HEAP_FreeFast()
+ *
  * Revision 6.22  2006/11/20 16:38:15  lavr
  * Faster heap with free blocks linked into a list.
  * HEAP_AttachEx() -> HEAP_AttachFast()
