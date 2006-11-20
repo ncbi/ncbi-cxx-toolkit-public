@@ -79,11 +79,21 @@ static void s_TEST_SplitPath(void)
     path = CFile::MakePath("c:", "win", "ini");
     assert( path == "c:win.ini" );
 
-    CFile f("c:\\dir\\subdir\\file.ext");
-    assert( f.GetDir()  == "c:\\dir\\subdir\\" );
-    assert( f.GetName() == "file.ext" );
-    assert( f.GetBase() == "file" );
-    assert( f.GetExt()  == ".ext" );
+    {{
+        CFile f("c:\\dir\\subdir\\file.ext");
+        assert( f.GetDir()  == "c:\\dir\\subdir\\" );
+        assert( f.GetName() == "file.ext" );
+        assert( f.GetBase() == "file" );
+        assert( f.GetExt()  == ".ext" );
+    }}
+    {{
+        CFile f("file");
+        assert( f.GetDir()  == ".\\" );
+        assert( f.GetDir(CDirEntry::eIfEmptyPath_Current)  == ".\\" );
+        assert( f.GetDir(CDirEntry::eIfEmptyPath_Empty)    == "" );
+        assert( f.GetName() == "file" );
+        assert( f.GetBase() == "file" );
+    }}
 
     assert( CFile::AddTrailingPathSeparator("dir")   == "dir\\");
     assert( CFile::AddTrailingPathSeparator("dir\\") == "dir\\");
@@ -99,11 +109,21 @@ static void s_TEST_SplitPath(void)
     path = CFile::MakePath("/dir/subdir", "file", "ext");
     assert( path == "/dir/subdir/file.ext" );
 
-    CFile f("/usr/lib/any.other.lib");
-    assert( f.GetDir()  == "/usr/lib/" );
-    assert( f.GetName() == "any.other.lib" );
-    assert( f.GetBase() == "any.other" );
-    assert( f.GetExt()  == ".lib" );
+    {{
+        CFile f("/usr/lib/any.other.lib");
+        assert( f.GetDir()  == "/usr/lib/" );
+        assert( f.GetName() == "any.other.lib" );
+        assert( f.GetBase() == "any.other" );
+        assert( f.GetExt()  == ".lib" );
+    }}
+    {{
+        CFile f("file");
+        assert( f.GetDir()  == "./" );
+        assert( f.GetDir(CDirEntry::eIfEmptyPath_Current)  == "./" );
+        assert( f.GetDir(CDirEntry::eIfEmptyPath_Empty)    == "" );
+        assert( f.GetName() == "file" );
+        assert( f.GetBase() == "file" );
+    }}
 
     assert( CFile::AddTrailingPathSeparator("dir")  == "dir/");
     assert( CFile::AddTrailingPathSeparator("dir/") == "dir/");
@@ -1095,6 +1115,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/11/20 12:49:16  ivanov
+ * Added more tests for CDirEntry::GetDir()
+ *
  * Revision 1.62  2006/10/30 14:19:20  ivanov
  * Fixed bug in previous revision.
  * s_TEST_File() -- one more fix for file modification time change tests,
