@@ -61,19 +61,6 @@ using namespace ncbi;
 using namespace objects;
 
 
-/// Types we use here:
-typedef CSeq_align::TDim TDim;
-typedef vector<const CSeq_align*> TAlnVector;
-typedef const CSeq_id* TSeqIdPtr;
-typedef vector<TSeqIdPtr> TSeqIdVector;
-typedef SCompareOrdered<TSeqIdPtr> TComp;
-typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
-typedef CSeqIdAlnBitmap<TAlnSeqIdVector> TSeqIdAlnBitmap;
-typedef CAlnStats<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnStats;
-typedef TAlnStats::TBaseWidths TBaseWidths;
-typedef TAlnStats::TAnchorRows TAnchorRows;
-
-
 class CAlnBuildApp : public CNcbiApplication
 {
 public:
@@ -157,7 +144,18 @@ int CAlnBuildApp::Run(void)
     LoadInputAlns();
 
 
-    /// Create a vector of alignments
+    /// Types we use here:
+    typedef CSeq_align::TDim TDim;
+    typedef vector<const CSeq_align*> TAlnVector;
+    typedef const CSeq_id* TSeqIdPtr;
+    typedef vector<TSeqIdPtr> TSeqIdVector;
+    typedef SCompareOrdered<TSeqIdPtr> TComp;
+    typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
+    typedef CSeqIdAlnBitmap<TAlnSeqIdVector> TSeqIdAlnBitmap;
+    typedef CAlnStats<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnStats;
+
+
+    /// Create a vector of alignments based on m_AlnContainer
     TAlnVector aln_vector(m_AlnContainer.size());
     aln_vector.assign(m_AlnContainer.begin(), m_AlnContainer.end());
 
@@ -172,83 +170,20 @@ int CAlnBuildApp::Run(void)
 
     /// Create an alignment bitmap to obtain statistics.
     TSeqIdAlnBitmap id_aln_bitmap(aln_seq_id_vector, GetScope());
-    id_aln_bitmap.Dump(cout);
-    
-
-    /// Determine anchor row for each alignment
-    TBaseWidths base_widths;
-    bool translated = id_aln_bitmap.GetTranslatedAlnCount();
-    if (translated) {
-        base_widths.resize(id_aln_bitmap.GetAlnCount());
-        for (size_t aln_idx = 0;  aln_idx < aln_seq_id_vector.size();  ++aln_idx) {
-            const TSeqIdVector& ids = aln_seq_id_vector[aln_idx];
-            base_widths[aln_idx].resize(ids.size());
-            for (size_t row = 0; row < ids.size(); ++row)   {
-                CBioseq_Handle bioseq_handle = m_Scope->GetBioseqHandle(*ids[row]);
-                if (bioseq_handle.IsProtein()) {
-                    base_widths[aln_idx][row] = 3;
-                } else if (bioseq_handle.IsNucleotide()) {
-                    base_widths[aln_idx][row] = 1;
-                } else {
-                    string err_str =
-                        string("Cannot determine molecule type for seq-id: ")
-                        + ids[row]->AsFastaString();
-                    NCBI_THROW(CSeqalignException, eInvalidSeqId, err_str);
-                }
-            }
-        }
-    }
 
 
-    /// Determine anchor rows;
-    TAnchorRows anchor_rows;
-    bool anchored = id_aln_bitmap.IsQueryAnchored();
-    if (anchored) {
-        TSeqIdPtr anchor_id = id_aln_bitmap.GetAnchorHandle().GetSeqId();
-        anchor_rows.resize(id_aln_bitmap.GetAlnCount(), -1);
-        for (size_t aln_idx = 0;  aln_idx < anchor_rows.size();  ++aln_idx) {
-            const TSeqIdVector& ids = aln_seq_id_vector[aln_idx];
-            for (size_t row = 0; row < ids.size(); ++row)   {
-                if ( !(comp(ids[row], anchor_id) ||
-                       comp(anchor_id, ids[row])) ) {
-                    anchor_rows[aln_idx] = row;
-                    break;
-                }
-            }
-            _ASSERT(anchor_rows[aln_idx] >= 0);
-        }
-    }
-
-
-    /// Store all retrieved statistics in the aln hints
+    /// Crete align statistics object
     TAlnStats aln_stats(aln_vector,
                         aln_seq_id_vector,
-                        anchored ? &anchor_rows : 0,
-                        translated ? &base_widths : 0);
+                        id_aln_bitmap.GetAnchorRows(),
+                        id_aln_bitmap.GetBaseWidths());
     aln_stats.Dump(cout);
 
 
     /// Construct a vector of anchored alignments
     typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVector;
     TAnchoredAlnVector anchored_aln_vector;
-    for (size_t aln_idx = 0;  
-         aln_idx < aln_stats.GetAlnCount();
-         ++aln_idx) {
-
-        CRef<CAnchoredAln> anchored_aln =
-            CreateAnchoredAlnFromAln(aln_stats, aln_idx);
-
-        /// Calc scores
-        for (TDim row = 0; row < anchored_aln->GetDim(); ++row) {
-            ITERATE(CPairwiseAln, rng_it, *anchored_aln->GetPairwiseAlns()[row]) {
-                anchored_aln->SetScore() += rng_it->GetLength();
-            }
-        }
-        anchored_aln->SetScore() /= anchored_aln->GetDim();
-        
-        anchored_aln->Dump(cout);
-        anchored_aln_vector.push_back(anchored_aln);
-    }
+    CreateAnchoredAlnVector(aln_stats, anchored_aln_vector);
 
 
     /// Build a single anchored aln
@@ -287,6 +222,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/11/20 18:54:10  todorov
+* Simplified code (using supplied methods).
+*
 * Revision 1.8  2006/11/17 05:32:31  todorov
 * Using a separate builder.
 *
