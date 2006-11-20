@@ -112,6 +112,7 @@ int main(int argc, const char* argv[])
     else
         g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     CORE_LOGF(eLOG_Note, ("Using seed %d", g_NCBI_ConnectRandomSeed));
+    HEAP_Options(eOff/*slow*/, eOn/*newalk*/);
     srand(g_NCBI_ConnectRandomSeed);
     for (j = 1;  j <= 3;  j++) {
         CORE_LOGF(eLOG_Note, ("Creating heap %d", j));
@@ -154,33 +155,51 @@ int main(int argc, const char* argv[])
                     s_Walk(heap, 0);
                 }
             } else if (r == 5) {
+                const SHEAP_Block* prev = 0;
                 unsigned ok = 0;
                 blk = 0;
                 for (;;) {
-                    if (!(blk = HEAP_Walk(heap, blk)))
+                    if (!(blk = HEAP_Walk(heap, prev)))
                         break;
                     if ((short) blk->flag  &&  (rand() & 7)) {
                         unsigned size = blk->size;
+                        int/*bool*/ fast = rand() & 1;
                         unsigned data_size = size - sizeof(*blk);
                         CORE_LOGF(eLOG_Note,
-                                  ("Freeing block @%u while walking, size %u,"
-                                   " data size %u", HEAP_ADDR(blk, heap),
+                                  ("Freeing block%s%s @%u while walking, size"
+                                   " %u, data size %u", fast ? " fast" : "",
+                                   ok ? " again" : "", HEAP_ADDR(blk, heap),
                                    size, data_size));
                         assert(data_size);
-                        HEAP_Free(heap, blk);
+                        if (fast)
+                            HEAP_FreeFast(heap, blk, prev);
+                        else
+                            HEAP_Free(heap, blk);
                         CORE_LOG(eLOG_Note, "Done");
                         s_Walk(heap, 0);
                         ok = 1;
-                    }
+                        if (fast  &&  prev  &&  !((short) prev->flag))
+                            break;
+                    } else
+                        prev = blk;
                 }
                 if (!ok)
                     s_Walk(heap, "the");
+                else
+                    CORE_LOG(eLOG_Note, "Done with freeing while walking");
             } else if (r == 6  ||  r == 7) {
                 HEAP newheap;
 
                 if (r == 6) {
-                    CORE_LOG(eLOG_Note, "Attaching heap");
-                    newheap = HEAP_Attach(HEAP_Base(heap), 0);
+                    int/*bool*/ fast = rand() & 1;
+                    if (fast) {
+                        CORE_LOG(eLOG_Note, "Attaching heap fast");
+                        newheap = HEAP_AttachFast(HEAP_Base(heap), 0,
+                                                  HEAP_Size(heap));
+                    } else {
+                        CORE_LOG(eLOG_Note, "Attaching heap");
+                        newheap = HEAP_Attach(HEAP_Base(heap), 0);
+                    }
                 } else {
                     CORE_LOG(eLOG_Note, "Copying heap");
                     newheap = HEAP_Copy(heap, 0, 0);
@@ -219,6 +238,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2006/11/20 17:25:00  lavr
+ * Test extended to use HEAP_FreeFast() and HEAP_AttachFast()
+ *
  * Revision 6.16  2006/11/20 16:42:31  lavr
  * Test extended to be more thorough
  *
