@@ -234,7 +234,11 @@ public:
 
     virtual void SetInt(int)
         { BDB_THROW(eType, "Bad conversion"); }
-    virtual void SetUint(unsigned)  // ???
+    virtual void SetUint(unsigned)
+        { BDB_THROW(eType, "Bad conversion"); }
+    virtual int GetInt() const
+        { BDB_THROW(eType, "Bad conversion"); }
+    virtual unsigned GetUint() const
         { BDB_THROW(eType, "Bad conversion"); }
     virtual void SetString(const char*)
         { BDB_THROW(eType, "Bad conversion"); }
@@ -481,6 +485,21 @@ public:
         long v = ::atol(val);
         Set((T) v);
     }
+
+    virtual int GetInt() const 
+    {
+        int value;
+        ::memcpy(&value, this->GetBuffer(), sizeof(T));
+        return value;
+    }
+
+    virtual unsigned GetUint() const 
+    {
+        unsigned value;
+        ::memcpy(&value, this->GetBuffer(), sizeof(T));
+        return value;
+    }
+
     virtual void SetStdString(const string& str) 
     {
         SetString(str.c_str());
@@ -2348,6 +2367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/11/20 08:23:18  kuznets
+ * +GetInt() to CBDB_Field interface
+ *
  * Revision 1.53  2006/11/14 13:27:13  dicuccio
  * Added additional field types for Uint8, Int1, Uint2.  Clarified nomenclature
  * for BDB comparators - include field width for integral types always.
