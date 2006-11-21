@@ -32,10 +32,13 @@
  * functions, combine with blast_dust.h?
  */
 
-#ifndef __BLAST_FILTER__
-#define __BLAST_FILTER__
+#ifndef ALGO_BLAST_CORE__BLAST_FILTER__H
+#define ALGO_BLAST_CORE__BLAST_FILTER__H
 
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_program.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/blast_options.h>
 
@@ -296,7 +299,19 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number,
                                 SBlastFilterOptions* *filtering_options, 
                                 Blast_Message* *blast_message);
 
+/** Determines whether this is a nucleotide query and whether this a minus strand or not
+ *
+ * @param is_na the query is nucleotide
+ * @param context offset in the QueryInfo array
+ * @return TRUE if this is minus strand
+ */
+static NCBI_INLINE Boolean BlastIsReverseStrand(Boolean is_na, Int4 context)
+{
+     return (is_na && ((context & 1) != 0));
+
+}
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_FILTER__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_FILTER__H */
