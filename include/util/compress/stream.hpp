@@ -233,6 +233,10 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eRead);
     };
+    /// Indicates if the stream is still good.
+    operator void *() const {
+        return (fail() ? 0 : (void *)this);
+    }
 };
 
 
@@ -255,6 +259,10 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eWrite);
     };
+    /// Indicates if the stream is still good.
+    operator void *() const {
+        return (fail() ? 0 : (void *)this);
+    }
 };
 
 
@@ -278,6 +286,10 @@ public:
     unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetOutputSize(dir);
     };
+    /// Indicates if the stream is still good.
+    operator void *() const {
+        return (fail() ? 0 : (void *)this);
+    }
 };
 
 
@@ -290,6 +302,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/11/21 15:13:53  ivanov
+ * Added operator void* to all CCompression[IO]Stream
+ *
  * Revision 1.12  2006/10/26 15:34:16  ivanov
  * Added automatic finalization for input streams, if no more data
  * in the underlying stream
