@@ -31,6 +31,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -47,14 +48,19 @@ BEGIN_NCBI_SCOPE
 /// Pool frees all vacant objects only upon pools destruction.
 /// Subsequent Get/Put calls does not result in objects reallocations and
 /// reinitializations. (So the prime target is performance optimization).
-/// Class is intentinally light weight and unsophisticated.
-template<class Value>
+/// 
+/// Class can be used syncronized across threads 
+/// (use CFastMutex as Lock parameter)
+///
+template<class Value, class Lock=CNoLock>
 class CResourcePool
 {
 public: 
-    typedef Value                       TValue;
-    typedef Value*                      TValuePtr;
-    typedef vector<Value*>              TPoolList;
+    typedef Value                          TValue;
+    typedef Lock                           TLock;
+    typedef typename Lock::TWriteLockGuard TWriteLockGuard;
+    typedef Value*                         TValuePtr;
+    typedef vector<Value*>                 TPoolList;
 
 public:
     CResourcePool()
@@ -62,6 +68,8 @@ public:
 
     ~CResourcePool()
     {
+        TWriteLockGuard guard(m_Lock);
+
         ITERATE(typename TPoolList, it, m_FreeObjects) {
             Value* v = *it;
             delete v;
@@ -76,6 +84,8 @@ public:
     /// Caller is responsible for deletion or returning object back to the pool.
     Value* Get()
     {
+        TWriteLockGuard guard(m_Lock);
+
         Value* v;
         if (m_FreeObjects.empty()) {
             v = new Value;
@@ -91,6 +101,8 @@ public:
     /// otherwise returns NULL
     Value* GetIfAvailable()
     {
+        TWriteLockGuard guard(m_Lock);
+
         if (m_FreeObjects.empty()) {
             return 0;
         }
@@ -109,11 +121,18 @@ public:
     /// Method does NOT immidiately destroy the object v. 
     void Put(Value* v)
     {
+        TWriteLockGuard guard(m_Lock);
+
         _ASSERT(v);
         m_FreeObjects.push_back(v);
     }
 
-    void Return(Value* v) { Put(v); }
+    void Return(Value* v) 
+    { 
+        TWriteLockGuard guard(m_Lock);
+
+        Put(v); 
+    }
 
     /// Makes the pool to forget the object.
     ///
@@ -125,6 +144,8 @@ public:
     ///    object's pointer otherwise.
     Value* Forget(Value* v)
     {
+        TWriteLockGuard guard(m_Lock);
+
         NON_CONST_ITERATE(typename TPoolList, it, m_FreeObjects) {
             Value* vp = *it;
             if (v == vp) {
@@ -141,14 +162,26 @@ public:
     /// deallocate the objects.
     void ForgetAll()
     {
+        TWriteLockGuard guard(m_Lock);
+
         m_FreeObjects.clear();
     }
 
     /// Get internal list of free objects
-    TPoolList& GetFreeList() { return m_FreeObjects; }
+    ///
+    /// Be very careful with this function! It does not provide MT sync.
+    TPoolList& GetFreeList() 
+    { 
+        return m_FreeObjects; 
+    }
 
     /// Get internal list of free objects
-    const TPoolList& GetFreeList() const { return m_FreeObjects; }
+    ///
+    /// No MT sync here !
+    const TPoolList& GetFreeList() const 
+    { 
+        return m_FreeObjects; 
+    }
 
 protected:
     CResourcePool(const CResourcePool&);
@@ -156,6 +189,7 @@ protected:
 
 protected:
     TPoolList   m_FreeObjects;
+    TLock       m_Lock;
 };
 
 
@@ -177,6 +211,7 @@ public:
         }
     }
 
+    /// Return the pointer to the caller, not to the pool
     typename Pool::TValue* Release()
     {
         typename Pool::TValue* ret = m_Value;
@@ -198,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/11/21 06:50:01  kuznets
+ * Added Pool locking parameter (mutex)
+ *
  * Revision 1.7  2006/11/17 07:36:32  kuznets
  * added guard Release() method
  *
