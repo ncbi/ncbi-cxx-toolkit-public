@@ -30,8 +30,8 @@
  * Various diagnostics (hit counts, etc.) returned from the BLAST engine
  */
 
-#ifndef __BLAST_DIAGNOSTICS__
-#define __BLAST_DIAGNOSTICS__
+#ifndef ALGO_BLAST_CORE__BLAST_DIAGNOSTICS__H
+#define ALGO_BLAST_CORE__BLAST_DIAGNOSTICS__H
 
 #include <algo/blast/core/ncbi_std.h>
 #include <connect/ncbi_core.h>
@@ -115,4 +115,4 @@ Blast_DiagnosticsUpdate(BlastDiagnostics* diag_global,
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_DIAGNOSTICS__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_DIAGNOSTICS__H */
