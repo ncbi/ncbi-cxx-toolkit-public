@@ -300,7 +300,8 @@ static void s_SkipSkip(SERV_ITER iter)
     size_t n;
     if (!iter->n_skip)
         return;
-
+    if (iter->time  &&  (iter->ismask  ||  (iter->type & fSERV_Promiscuous)))
+        return;
     n = 0;
     while (n < iter->n_skip) {
         SSERV_Info* temp = iter->skip[n];
@@ -700,6 +701,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.86  2006/11/21 14:46:23  lavr
+ * s_SkipSkip() not to expire servers in promiscuous and wildcard searches
+ *
  * Revision 6.85  2006/10/18 17:23:38  lavr
  * Elaborated comments
  *
