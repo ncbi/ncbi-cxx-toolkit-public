@@ -31,10 +31,10 @@
  * Structures for BLAST messages
  */
 
-#ifndef __BLASTMESSAGES__
-#define __BLASTMESSAGES__
+#ifndef ALGO_BLAST_CORE__BLAST_MESSAGE__H
+#define ALGO_BLAST_CORE__BLAST_MESSAGE__H
 
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/ncbi_std.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,5 +151,5 @@ void Blast_PerrorEx(Blast_Message* *msg,
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLASTMESSAGES__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_MESSAGE__H */
 
