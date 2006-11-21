@@ -37,6 +37,7 @@
 
 #include <util/regexp.hpp>
 #include <util/arg_regexp.hpp>
+#include <util/mask_regexp.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -87,7 +88,7 @@ int CRegexApplication::Run(void)
     
     // String to find matching pattern in
     const string text
-       ("The quick brown fox jumped over the lazy dogs.\n"             \
+    ("The quick brown fox jumped over the lazy dogs.\n"             \
         "Now is the time for all good men to come to the aid of "      \
         "their country.\nTwas the night before Christmas and all "     \
         "through the house, not a\n creature was stirring, not "       \
@@ -133,45 +134,70 @@ int CRegexApplication::Run(void)
     LOG_POST(string(33, '-'));
 
     // Match() test
-
-    pattern.Set("d?g");
-    assert(!pattern.IsMatch(""));
-    assert( pattern.NumFound() <= 0);
-    assert( pattern.IsMatch("dog"));
-    assert( pattern.NumFound() == 1);
-    assert(!pattern.IsMatch("DOG"));
-    assert( pattern.IsMatch("dog dog"));
-    assert( pattern.NumFound() == 1);
-    assert(!pattern.IsMatch("doc"));
-    assert( pattern.NumFound() <= 0);
-
+    {{
+        pattern.Set("d?g");
+        assert(!pattern.IsMatch(""));
+        assert( pattern.NumFound() <= 0);
+        assert( pattern.IsMatch("dog"));
+        assert( pattern.NumFound() == 1);
+        assert(!pattern.IsMatch("DOG"));
+        assert( pattern.IsMatch("dog dog"));
+        assert( pattern.NumFound() == 1);
+        assert(!pattern.IsMatch("doc"));
+        assert( pattern.NumFound() <= 0);
+    }}
 
     // Escape special metacharacters test
+    {{
+        assert(CRegexp::Escape("a+b") == "a\\+b");
+        assert(CRegexp::Escape("^.*[0-9]\\{3\\}") ==
+                            "\\^\\.\\*\\[0\\-9\\]\\\\\\{3\\\\\\}");
+        assert(CRegexp::Escape("a_b") == "a_b");
+        assert(CRegexp::Escape("") == "");
 
-    assert(CRegexp::Escape("a+b") == "a\\+b");
-    assert(CRegexp::Escape("^.*[0-9]\\{3\\}") ==
-                           "\\^\\.\\*\\[0\\-9\\]\\\\\\{3\\\\\\}");
-    assert(CRegexp::Escape("a_b") == "a_b");
-    assert(CRegexp::Escape("") == "");
+        pattern.Set("d.*g");
+        assert( pattern.IsMatch("dog"));
+        pattern.Set(CRegexp::Escape("d.*g"));
+        assert(!pattern.IsMatch("dog"));
+        assert( pattern.IsMatch("d.*g"));
 
-    pattern.Set("d.*g");
-    assert( pattern.IsMatch("dog"));
-    pattern.Set(CRegexp::Escape("d.*g"));
-    assert(!pattern.IsMatch("dog"));
-    assert( pattern.IsMatch("d.*g"));
+        pattern.Set(CRegexp::Escape("[0-9]{3}"));
+        assert(!pattern.IsMatch("123"));
+        assert( pattern.IsMatch("[0-9]{3}"));
 
-    pattern.Set(CRegexp::Escape("[0-9]{3}"));
-    assert(!pattern.IsMatch("123"));
-    assert( pattern.IsMatch("[0-9]{3}"));
+        pattern.Set(CRegexp::Escape(".?*+$^[](){}/\\|-"));
+        assert(pattern.IsMatch(".?*+$^[](){}/\\|-"));
 
-    pattern.Set(CRegexp::Escape(".?*+$^[](){}/\\|-"));
-    assert(pattern.IsMatch(".?*+$^[](){}/\\|-"));
+        pattern.Set(CRegexp::WildcardToRegexp("c*t c?t"));
+        assert(pattern.IsMatch("...ct cat..."));
+        assert(pattern.IsMatch("...cat city..."));
+        assert(pattern.IsMatch("...colt c.t..."));
+        assert(!pattern.IsMatch("...cat ct..."));
+    }}
 
-    pattern.Set(CRegexp::WildcardToRegexp("c*t c?t"));
-    assert(pattern.IsMatch("...ct cat..."));
-    assert(pattern.IsMatch("...cat city..."));
-    assert(pattern.IsMatch("...colt c.t..."));
-    assert(!pattern.IsMatch("...cat ct..."));
+    // CMaskRegexp
+    {{
+        CMaskRegexp mask;
+        assert( mask.Match(""));
+        assert( mask.Match("text"));
+
+        mask.Add("D..");
+        mask.Add("....");
+        mask.Add("[0-9][0-9]*");
+        mask.AddExclusion("d.*m");
+
+        assert( mask.Match("DOG"));
+        assert(!mask.Match("dog"));
+        assert( mask.Match("dog", NStr::eNocase));
+        assert( mask.Match("Dam"));
+        assert(!mask.Match("dam"));
+        assert( mask.Match("abcd"));
+        assert(!mask.Match("abc"));
+        assert( mask.Match("123"));
+
+        mask.Remove("[0-9][0-9]*");
+        assert(!mask.Match("123"));
+    }}
 
     return 0;
 }
@@ -192,6 +218,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/11/21 21:00:25  ivanov
+ * Added test for CMaskRegexp
+ *
  * Revision 1.10  2006/05/15 16:03:31  ivanov
  * Added tests for CRegexp::WildcardToRegexp()
  *
