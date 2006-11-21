@@ -917,21 +917,27 @@ EDiagSev       CDiagBuffer::sm_PostSeverity       = eDiag_Warning;
 EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
                                                   // to be set on first request
 
+static const TDiagPostFlags s_OldDefaultPostFlags =
+    eDPF_Prefix | eDPF_Severity | eDPF_ErrorID | 
+    eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation |
+    eDPF_ErrCodeUseSeverity | eDPF_AtomicWrite;
+static const TDiagPostFlags s_NewDefaultPostFlags =
+    s_OldDefaultPostFlags |
+#if defined(NCBI_THREADS)
+    eDPF_TID | eDPF_SerialNo_Thread |
+#endif
+    eDPF_PID | eDPF_SerialNo | eDPF_AtomicWrite;
+static TDiagPostFlags s_PostFlags = 0;
+static bool s_DiagPostFlagsInitialized = false;
+
 inline
 TDiagPostFlags& CDiagBuffer::sx_GetPostFlags(void)
 {
-    static const TDiagPostFlags s_OldDefaultPostFlags =
-        eDPF_Prefix | eDPF_Severity | eDPF_ErrorID | 
-        eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation |
-        eDPF_ErrCodeUseSeverity | eDPF_AtomicWrite;
-    static const TDiagPostFlags s_NewDefaultPostFlags =
-        s_OldDefaultPostFlags |
-#if defined(NCBI_THREADS)
-        eDPF_TID | eDPF_SerialNo_Thread |
-#endif
-        eDPF_PID | eDPF_SerialNo | eDPF_AtomicWrite;
-    static TDiagPostFlags s_PostFlags = TOldPostFormatParam::GetDefault() ?
-        s_OldDefaultPostFlags : s_NewDefaultPostFlags;
+    if (!s_DiagPostFlagsInitialized) {
+        s_PostFlags = TOldPostFormatParam::GetDefault() ?
+            s_OldDefaultPostFlags : s_NewDefaultPostFlags;
+        s_DiagPostFlagsInitialized = true;
+    }
     return s_PostFlags;
 }
 
@@ -3533,6 +3539,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.140  2006/11/21 15:26:54  grichenk
+ * Fixed initialization of s_PostFlags.
+ *
  * Revision 1.139  2006/11/17 00:17:47  ucko
  * CDiagContext::SetLogTruncate: don't return an expression, even of type void.
  * (Fixes compilation with MIPSpro.)
