@@ -167,7 +167,7 @@ struct IAsyncInterface
 
     /// Wait until interface is ready (or operation fails)
     /// (On failure volume is free to throw an exception)
-    virtual EStatus WaitReady() = 0;
+    virtual EStatus WaitReady() const = 0;
 };
 
 
@@ -315,6 +315,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/21 14:38:58  kuznets
+ * WaitReady() declared const
+ *
  * Revision 1.2  2006/11/21 06:52:05  kuznets
  * Use CFastMutex as pool locking parameter
  *
