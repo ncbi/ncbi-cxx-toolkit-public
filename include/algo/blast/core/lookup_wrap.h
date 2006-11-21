@@ -31,9 +31,10 @@
  * Wrapper for all lookup tables used in BLAST
  */
 
-#ifndef __LOOKUP_WRAP__
-#define __LOOKUP_WRAP__
+#ifndef ALGO_BLAST_CORE__LOOKUP_WRAP__H
+#define ALGO_BLAST_CORE__LOOKUP_WRAP__H
 
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_rps.h>
@@ -45,7 +46,7 @@ extern "C" {
 
 /** Wrapper structure for different types of BLAST lookup tables */
 typedef struct LookupTableWrap {
-   Uint1 lut_type; /**< What kind of a lookup table it is? */
+   ELookupTableType lut_type; /**< What kind of a lookup table it is? */
    void* lut; /**< Pointer to the actual lookup table structure */
    void* read_indexed_db; /**< function used to retrieve hits
                               from an indexed database */
@@ -78,25 +79,7 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup);
  */
 Int4 GetOffsetArraySize(LookupTableWrap* lookup);
 
-/** Structure holding a pair of offsets. Used for storing offsets for the
- * initial sseds. In most programs the offsets are query offset and subject 
- * offset of an initial word match. For PHI BLAST, the offsets are start and 
- * end of the pattern occurrence in subject, with no query information, 
- * because all pattern occurrences in subjects are aligned to all pattern 
- * occurrences in query.
- */
-typedef union BlastOffsetPair {
-    struct {
-        Uint4 q_off;  /**< Query offset */
-        Uint4 s_off;  /**< Subject offset */
-    } qs_offsets;     /**< Query/subject offset pair */
-    struct {
-        Uint4 s_start;/**< Start offset of pattern in subject */
-        Uint4 s_end;  /**< End offset of pattern in subject */
-    } phi_offsets;    /**< Pattern offsets in subject (PHI BLAST only) */
-} BlastOffsetPair;
-
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__LOOKUP_WRAP__ */
+#endif /* !ALGO_BLAST_CORE__LOOKUP_WRAP__H */
