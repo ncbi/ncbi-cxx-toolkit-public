@@ -33,6 +33,7 @@
 #include "../ncbi_priv.h"
 #include <connect/ncbi_heapmgr.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #if 0
 #  define eLOG_Warning eLOG_Fatal
@@ -121,10 +122,13 @@ int main(int argc, const char* argv[])
         for (n = 0; n < 1000 && (rand() & 0xFFFF) != 0x1234; n++) {
             r = rand() & 7;
             if (r == 1  ||  r == 3) {
+                int/*bool*/ fast = rand() & 1;
                 i = rand() & 0xFF;
                 if (i) {
-                    CORE_LOGF(eLOG_Note, ("Allocating %d data size", i));
-                    blk = HEAP_Alloc(heap, i);
+                    CORE_LOGF(eLOG_Note,
+                              ("Allocating%s data size %d",
+                               fast ? " fast" : "", i));
+                    blk = fast ? HEAP_AllocFast(heap, i) : HEAP_Alloc(heap, i);
                     if (blk) {
                         CORE_LOGF(eLOG_Note,
                                   ("Done @%u, size %u",
@@ -135,8 +139,11 @@ int main(int argc, const char* argv[])
                     while (i--)
                         *c++ = rand();
                     s_Walk(heap, 0);
-                } else
-                    assert(!HEAP_Alloc(heap, i));
+                } else {
+                    assert(!(fast
+                             ? HEAP_AllocFast(heap, i)
+                             : HEAP_Alloc(heap, i)));
+                }
             } else if (r == 2  ||  r == 4) {
                 blk = 0;
                 do {
@@ -147,7 +154,7 @@ int main(int argc, const char* argv[])
                     unsigned size = blk->size;
                     unsigned data_size = size - sizeof(*blk);
                     CORE_LOGF(eLOG_Note,
-                              ("Freeing block @%u, size %u, data size %u",
+                              ("Freeing @%u, size %u, data size %u",
                                HEAP_ADDR(blk, heap), size, data_size));
                     assert(data_size);
                     HEAP_Free(heap, blk);
@@ -159,17 +166,22 @@ int main(int argc, const char* argv[])
                 unsigned ok = 0;
                 blk = 0;
                 for (;;) {
-                    if (!(blk = HEAP_Walk(heap, prev)))
+                    if (!(blk = HEAP_Walk(heap, blk)))
                         break;
                     if ((short) blk->flag  &&  (rand() & 7)) {
+                        char buf[32];
                         unsigned size = blk->size;
                         int/*bool*/ fast = rand() & 1;
                         unsigned data_size = size - sizeof(*blk);
+                        if (!fast  ||  !prev)
+                            *buf = '\0';
+                        else
+                            sprintf(buf, ", prev @%u", HEAP_ADDR(prev, heap));
                         CORE_LOGF(eLOG_Note,
-                                  ("Freeing block%s%s @%u while walking, size"
-                                   " %u, data size %u", fast ? " fast" : "",
-                                   ok ? " again" : "", HEAP_ADDR(blk, heap),
-                                   size, data_size));
+                                  ("Freeing%s%s @%u%s in walk,"
+                                   " size %u, data size %u",
+                                   fast ? " fast" : "", ok ? " more" : "",
+                                   HEAP_ADDR(blk,heap), buf, size, data_size));
                         assert(data_size);
                         if (fast)
                             HEAP_FreeFast(heap, blk, prev);
@@ -178,10 +190,10 @@ int main(int argc, const char* argv[])
                         CORE_LOG(eLOG_Note, "Done");
                         s_Walk(heap, 0);
                         ok = 1;
-                        if (fast  &&  prev  &&  !((short) prev->flag))
-                            break;
-                    } else
-                        prev = blk;
+                        if (prev  &&  !((short) prev->flag))
+                            continue;
+                    }
+                    prev = blk;
                 }
                 if (!ok)
                     s_Walk(heap, "the");
@@ -194,8 +206,8 @@ int main(int argc, const char* argv[])
                     int/*bool*/ fast = rand() & 1;
                     if (fast) {
                         CORE_LOG(eLOG_Note, "Attaching heap fast");
-                        newheap = HEAP_AttachFast(HEAP_Base(heap), 0,
-                                                  HEAP_Size(heap));
+                        newheap = HEAP_AttachFast(HEAP_Base(heap),
+                                                  HEAP_Size(heap), 0);
                     } else {
                         CORE_LOG(eLOG_Note, "Attaching heap");
                         newheap = HEAP_Attach(HEAP_Base(heap), 0);
@@ -238,6 +250,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2006/11/21 14:47:58  lavr
+ * Implement correct fast freeing and fast allocation checks
+ *
  * Revision 6.17  2006/11/20 17:25:00  lavr
  * Test extended to use HEAP_FreeFast() and HEAP_AttachFast()
  *
