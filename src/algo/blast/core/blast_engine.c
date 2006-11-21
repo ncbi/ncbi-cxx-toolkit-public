@@ -59,20 +59,22 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_engine.h>
-#include <algo/blast/core/lookup_wrap.h>
-#include <algo/blast/core/aa_ungapped.h>
 #include <algo/blast/core/blast_util.h>
-#include <algo/blast/core/blast_setup.h>
-#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_aalookup.h>
+#include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/core/blast_sw.h>
-#include <algo/blast/core/blast_traceback.h>
+#include <algo/blast/core/aa_ungapped.h>
+#include <algo/blast/core/na_ungapped.h>
+#include <algo/blast/core/phi_lookup.h>
+#include <algo/blast/core/phi_gapalign.h>
 #include <algo/blast/core/phi_extend.h>
 #include <algo/blast/core/link_hsps.h>
-#include "blast_gapalign_priv.h"
-#include <algo/blast/core/phi_gapalign.h>
-#include <algo/blast/core/phi_lookup.h>
-
+#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_parameters.h>
+#include <algo/blast/core/blast_setup.h>
+#include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/mb_indexed_lookup.h>
+#include "blast_gapalign_priv.h"
 
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
 NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 2;
@@ -642,26 +644,23 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
 {
    Int2 status = 0;
    BlastCoreAuxStruct* aux_struct;
-   Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE ||
-                     lookup_wrap->lut_type == RPS_LOOKUP_TABLE);
-   Boolean mb_lookup = (lookup_wrap->lut_type == MB_LOOKUP_TABLE);
-   Boolean indexed_mb_lookup = (lookup_wrap->lut_type == INDEXED_MB_LOOKUP_TABLE);
-   Boolean phi_lookup = (lookup_wrap->lut_type == PHI_AA_LOOKUP ||
-                         lookup_wrap->lut_type == PHI_NA_LOOKUP);
+   Boolean blastp = (lookup_wrap->lut_type == eAaLookupTable ||
+                     lookup_wrap->lut_type == eRPSLookupTable);
+   Boolean mb_lookup = (lookup_wrap->lut_type == eMBLookupTable);
+   Boolean indexed_mb_lookup = (lookup_wrap->lut_type == eIndexedMBLookupTable);
+   Boolean phi_lookup = (lookup_wrap->lut_type == ePhiLookupTable ||
+                         lookup_wrap->lut_type == ePhiNaLookupTable);
    Boolean smith_waterman = 
                  (ext_options->ePrelimGapExt == eSmithWatermanScoreOnly);
    Int4 offset_array_size = GetOffsetArraySize(lookup_wrap);
-   Uint4 avg_subj_length;
 
    ASSERT(seq_src);
 
    *aux_struct_ptr = aux_struct = (BlastCoreAuxStruct*)
       calloc(1, sizeof(BlastCoreAuxStruct));
 
-   avg_subj_length = BlastSeqSrcGetAvgSeqLen(seq_src);
-     
-   if ((status = BlastExtendWordNew(lookup_wrap, query->length, word_params, 
-                                    avg_subj_length, &aux_struct->ewp)) != 0)
+   if ((status = BlastExtendWordNew(query->length, word_params, 
+                                    &aux_struct->ewp)) != 0)
       return status;
 
    if (smith_waterman) {
@@ -773,10 +772,8 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
    /* Change the table of diagonals that will be used for the
       search; we need a diag table that can fit the entire
       concatenated DB */
-   avg_subj_length = (Uint4) (dbsize / num_db_seqs);
    BlastExtendWordFree(aux_struct->ewp);
-   BlastExtendWordNew(lookup_wrap, concat_db.length, word_params, 
-                      avg_subj_length, &aux_struct->ewp);
+   BlastExtendWordNew(concat_db.length, word_params, &aux_struct->ewp);
 
    /* Run the search; the input query is what gets scanned
       and the concatenated DB is the sequence associated with
