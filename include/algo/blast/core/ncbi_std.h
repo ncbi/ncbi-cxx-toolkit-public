@@ -246,12 +246,4 @@ ListNode* ListNodeCopyStr (ListNode** head, Uint1 choice, const char* str);
 }
 #endif
 
-/** The following header file needs some of the definitions from this header, 
- * so it #include's ncbi_std.h. The circular inclusion is avoided because of
- * the header-specific macros that are #define'd only once. On the other hand
- * it is convenient to include ncbi_math.h automatically whenever ncbi_std.h
- * is included in any other file.
- */
-#include <algo/blast/core/ncbi_math.h>
-
 #endif /* !ALGO_BLAST_CORE__NCBI_STD */
