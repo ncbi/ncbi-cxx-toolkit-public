@@ -233,10 +233,8 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eRead);
     };
-    /// Indicates if the stream is still good.
-    operator void *() const {
-        return (fail() ? 0 : (void *)this);
-    }
+    /// Test if no stream operation has failed
+    DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
 
 
@@ -259,10 +257,8 @@ public:
     unsigned long GetOutputSize(void) {
         return CCompressionStream::x_GetOutputSize(eWrite);
     };
-    /// Indicates if the stream is still good.
-    operator void *() const {
-        return (fail() ? 0 : (void *)this);
-    }
+    /// Test if no stream operation has failed
+    DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
 
 
@@ -286,10 +282,8 @@ public:
     unsigned long GetOutputSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetOutputSize(dir);
     };
-    /// Indicates if the stream is still good.
-    operator void *() const {
-        return (fail() ? 0 : (void *)this);
-    }
+    /// Test if no stream operation has failed
+    DECLARE_OPERATOR_BOOL((void *)this != 0);
 };
 
 
@@ -302,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/11/21 15:55:19  ivanov
+ * In last revision replace operators void* to DECLARE_OPERATOR_BOOL
+ *
  * Revision 1.13  2006/11/21 15:13:53  ivanov
  * Added operator void* to all CCompression[IO]Stream
  *
