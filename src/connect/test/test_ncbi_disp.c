@@ -69,7 +69,7 @@ int main(int argc, const char* argv[])
                               SERV_MapperName(iter)));
         while ((info = SERV_GetNextInfoEx(iter, &hinfo)) != 0) {
             char* info_str = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Note, ("Service `%s' = %s",
+            CORE_LOGF(eLOG_Note, ("Server #%d `%s' = %s", ++n_found,
                                   SERV_CurrentName(iter), info_str));
             if (hinfo) {
                 double array[2];
@@ -98,7 +98,6 @@ int main(int argc, const char* argv[])
                 free(hinfo);
             }
             free(info_str);
-            n_found++;
         }
         CORE_LOG(eLOG_Trace, "Resetting service mapper");
         SERV_Reset(iter);
@@ -141,6 +140,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2006/11/21 14:47:16  lavr
+ * Enumerate printed servers
+ *
  * Revision 6.24  2006/11/08 20:04:12  lavr
  * Include (commented out) call to LBSMD_FastHeapAccess()
  *
