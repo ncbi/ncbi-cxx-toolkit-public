@@ -28,9 +28,11 @@
  *  Utility functions for lookup table generation.
  */
 
+#ifndef ALGO_BLAST_CORE__LOOKUP_UTIL__H
+#define ALGO_BLAST_CORE__LOOKUP_UTIL__H
+
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_def.h>
-#ifndef UTIL__H
-#define UTIL__H
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,14 +57,6 @@ Int4 iexp(Int4 x, Int4 n);
 
 Int4 ilog2(Int4 x);
 
-/** Make a bit mask with the low-order x bits set
- *
- * @param x x
- * @return the mask
- */
-
-Int4 makemask(Int4 x);
-
 /**
  * generates a de Bruijn sequence containing all substrings
  * of length n over an alphabet of size k.
@@ -84,7 +78,7 @@ void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet);
  * currently intended for nucleotide locations, and ignores ambiguities
  * and the actual width of a lookup table word
  * @param location A linked list of locations to index [in]
- * @return The apprixomate number of lookup table entries
+ * @return The approximate number of lookup table entries
  */
 Int4 EstimateNumTableEntries(BlastSeqLoc* location);
 
@@ -92,4 +86,4 @@ Int4 EstimateNumTableEntries(BlastSeqLoc* location);
 }
 #endif
 
-#endif /* UTIL__H */
+#endif /* !ALGO_BLAST_CORE__LOOKUP_UTIL__H */
