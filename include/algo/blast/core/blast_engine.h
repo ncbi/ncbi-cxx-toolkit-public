@@ -31,13 +31,18 @@
 * Function calls to actually perform a BLAST search (high level).
  */
 
-#ifndef __BLAST_ENGINE__
-#define __BLAST_ENGINE__
+#ifndef ALGO_BLAST_CORE__BLAST_ENGINE__H
+#define ALGO_BLAST_CORE__BLAST_ENGINE__H
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_program.h>
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_parameters.h>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_diagnostics.h>   
 #include <algo/blast/core/blast_hspstream.h>
@@ -201,4 +206,4 @@ typedef Int2 (*BlastWordFinderType)
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_ENGINE__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_ENGINE__H */

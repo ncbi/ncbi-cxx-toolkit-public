@@ -32,10 +32,10 @@
  * details of the implementation of the BlastSeqSrc framework
  */
 
-#ifndef BLAST_SEQSRC_IMPL_H
-#define BLAST_SEQSRC_IMPL_H
+#ifndef ALGO_BLAST_CORE__BLAST_SEQSRC_IMPL__H
+#define ALGO_BLAST_CORE__BLAST_SEQSRC_IMPL__H
 
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_message.h>
 
 #ifdef __cplusplus
@@ -332,4 +332,4 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr);
 }
 #endif
 
-#endif /* BLAST_SEQSRC_H */
+#endif /* !ALGO_BLAST_CORE__BLAST_SEQSRC__H */

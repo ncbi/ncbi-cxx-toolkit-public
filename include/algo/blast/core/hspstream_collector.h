@@ -32,9 +32,11 @@
  * a BLAST search, and subsequently return them in sorted order.
  */
 
-#ifndef HSPSTREAM_COLLECTOR_H
-#define HSPSTREAM_COLLECTOR_H
+#ifndef ALGO_BLAST_CORE__HSPSTREAM_COLLECTOR__H
+#define ALGO_BLAST_CORE__HSPSTREAM_COLLECTOR__H
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_program.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_hspstream.h>
@@ -91,4 +93,4 @@ Blast_HSPListCollectorInit(EBlastProgramType program,
 }
 #endif
 
-#endif /* HSPSTREAM_COLLECTOR_H */
+#endif /* !ALGO_BLAST_CORE__HSPSTREAM_COLLECTOR__H */

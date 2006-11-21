@@ -31,10 +31,16 @@
  * Structures and API used for saving BLAST hits
  */
 
-#ifndef __BLAST_HITS__
-#define __BLAST_HITS__
+#ifndef ALGO_BLAST_CORE__BLAST_HITS__H
+#define ALGO_BLAST_CORE__BLAST_HITS__H
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
+#include <algo/blast/core/blast_program.h>
+#include <algo/blast/core/blast_query_info.h>
+#include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_parameters.h>
+#include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/pattern.h>
@@ -805,4 +811,4 @@ PhiBlastGetEffectiveNumberOfPatterns(const BlastQueryInfo *query_info);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_HITS__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_HITS__H */

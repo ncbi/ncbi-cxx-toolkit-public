@@ -41,10 +41,12 @@
  *   BLAST)
  */
 
-#ifndef BLAST_SEQSRC_H
-#define BLAST_SEQSRC_H
+#ifndef ALGO_BLAST_CORE__BLAST_SEQSRC__H
+#define ALGO_BLAST_CORE__BLAST_SEQSRC__H
 
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/blast_encoding.h>
 
@@ -320,4 +322,4 @@ Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src,
 }
 #endif
 
-#endif /* BLAST_SEQSRC_H */
+#endif /* !ALGO_BLAST_CORE__BLAST_SEQSRC__H */

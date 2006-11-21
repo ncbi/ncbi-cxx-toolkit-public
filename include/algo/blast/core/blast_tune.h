@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE___BLAST_TUNE__H
-#define ALGO_BLAST_CORE___BLAST_TUNE__H
-
 /*  $Id$
  * ===========================================================================
  *
@@ -36,7 +33,11 @@
  * percent identity.
  */
 
+#ifndef ALGO_BLAST_CORE___BLAST_TUNE__H
+#define ALGO_BLAST_CORE___BLAST_TUNE__H
+
 #include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 
 /** @addtogroup AlgoBlast
  *

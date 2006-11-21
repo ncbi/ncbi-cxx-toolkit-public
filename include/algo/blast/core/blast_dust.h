@@ -32,9 +32,11 @@
  * @todo FIXME: include reference?
  */
 
-#ifndef __BLAST_DUST__
-#define __BLAST_DUST__
+#ifndef ALGO_BLAST_CORE__BLAST_DUST__H
+#define ALGO_BLAST_CORE__BLAST_DUST__H
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_def.h>
 
 #ifdef __cplusplus
@@ -58,4 +60,4 @@ Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_FILTER__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_DUST__H */

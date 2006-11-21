@@ -30,9 +30,12 @@
  * Various auxiliary BLAST utility functions
  */
 
-#ifndef __BLAST_UTIL__
-#define __BLAST_UTIL__
+#ifndef ALGO_BLAST_CORE__BLAST_UTIL__H
+#define ALGO_BLAST_CORE__BLAST_UTIL__H
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
+#include <algo/blast/core/blast_program.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_encoding.h>
@@ -349,4 +352,4 @@ unsigned int BLAST_GetNumberOfContexts(EBlastProgramType program);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_UTIL__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_UTIL__H */

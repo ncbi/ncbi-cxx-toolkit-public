@@ -30,9 +30,18 @@
  * Functions to do gapped alignment with traceback
  */
 
-#ifndef __BLAST_TRACEBACK__
-#define __BLAST_TRACEBACK__
+#ifndef ALGO_BLAST_CORE__BLAST_TRACEBACK__H
+#define ALGO_BLAST_CORE__BLAST_TRACEBACK__H
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
+#include <algo/blast/core/blast_program.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_parameters.h>
+#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_encoding.h>
+#include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hspstream.h>
@@ -166,4 +175,4 @@ Blast_RunTracebackSearch(EBlastProgramType program,
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_TRACEBACK__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_TRACEBACK__H */

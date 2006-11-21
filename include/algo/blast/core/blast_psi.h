@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE___BLAST_PSI__H
-#define ALGO_BLAST_CORE___BLAST_PSI__H
-
 /* $Id$
  * ===========================================================================
  *
@@ -34,8 +31,13 @@
  * High level definitions and declarations for the PSSM engine of PSI-BLAST.
  */
 
+#ifndef ALGO_BLAST_CORE___BLAST_PSI__H
+#define ALGO_BLAST_CORE___BLAST_PSI__H
+
 #include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_stat.h>
 
 #ifdef __cplusplus
 extern "C" {

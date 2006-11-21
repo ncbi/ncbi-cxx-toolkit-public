@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE__BLAST_HSPSTREAM_H
-#define ALGO_BLAST_CORE__BLAST_HSPSTREAM_H
-
 /*  $Id$
  * ===========================================================================
  *
@@ -34,6 +31,10 @@
  * Declaration of ADT to save and retrieve lists of HSPs in the BLAST engine.
  */
 
+#ifndef ALGO_BLAST_CORE__BLAST_HSPSTREAM_H
+#define ALGO_BLAST_CORE__BLAST_HSPSTREAM_H
+
+#include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_hits.h>
 
 #ifdef __cplusplus

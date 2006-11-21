@@ -32,13 +32,14 @@
  * PHI-BLAST
  */
 
-#include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/pattern.h>
-#include <algo/blast/core/lookup_wrap.h>
-
 #ifndef ALGO_BLAST_CORE__PHI_LOOKUP_H
 #define ALGO_BLAST_CORE__PHI_LOOKUP_H
+
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_stat.h>
+#include <algo/blast/core/pattern.h>
+#include <algo/blast/core/lookup_wrap.h>
 
 #ifdef __cplusplus
 extern "C" {

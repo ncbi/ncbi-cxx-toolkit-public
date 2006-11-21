@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE___BLAST_SW__H
-#define ALGO_BLAST_CORE___BLAST_SW__H
-
 /*  $Id$
  * ===========================================================================
  *
@@ -34,9 +31,17 @@
  *  Smith-Waterman alignment for use within the infrastructure of BLAST
  */
 
-#include <algo/blast/core/blast_util.h>
+#ifndef ALGO_BLAST_CORE___BLAST_SW__H
+#define ALGO_BLAST_CORE___BLAST_SW__H
+
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_program.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_parameters.h>
 #include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_diagnostics.h>
 
 /** @addtogroup AlgoBlast
  *

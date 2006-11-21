@@ -32,10 +32,12 @@
  * statistics. @todo FIXME: needs doxygen comments
  */
 
-#ifndef __BLAST_STAT__
-#define __BLAST_STAT__
+#ifndef ALGO_BLAST_CORE__BLAST_STAT__H
+#define ALGO_BLAST_CORE__BLAST_STAT__H
 
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
+#include <algo/blast/core/blast_program.h>
 #include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_message.h>
 #include <util/tables/raw_scoremat.h>
@@ -728,4 +730,4 @@ SNCBIPackedScoreMatrix* BlastScoreBlkGetCompiledInMatrix(const char* name);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_STAT__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_STAT__H */

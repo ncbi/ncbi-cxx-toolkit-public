@@ -45,9 +45,13 @@
  * </pre>
  */
 
-#ifndef __BLASTPARAMETERS__
-#define __BLASTPARAMETERS__
+#ifndef ALGO_BLAST_CORE__BLASTPARAMETERS__H
+#define ALGO_BLAST_CORE__BLASTPARAMETERS__H
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
+#include <algo/blast/core/blast_program.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/blast_stat.h>
@@ -430,5 +434,5 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLASTPARAMETERS__ */
+#endif /* !ALGO_BLAST_CORE__BLASTPARAMETERS__H */
 

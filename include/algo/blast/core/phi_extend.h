@@ -31,11 +31,16 @@
  * Word finder for PHI-BLAST
  */
 
-#include <algo/blast/core/blast_extend.h>
-#include <algo/blast/core/blast_util.h>
-
 #ifndef ALGO_BLAST_CORE__PHI_EXTEND_H
 #define ALGO_BLAST_CORE__PHI_EXTEND_H
+
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_query_info.h>
+#include <algo/blast/core/lookup_wrap.h>
+#include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/blast_diagnostics.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -34,10 +34,14 @@
 #ifndef __BLAST_SETUP__
 #define __BLAST_SETUP__
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_query_info.h>
+#include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_parameters.h>
+#include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/blast_stat.h>
-#include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/pattern.h>
 
@@ -247,6 +251,9 @@ BLAST_GetSubjectTotals(const BlastSeqSrc* seqsrc,
 /*
  *
 * $Log$
+* Revision 1.63  2006/11/21 16:46:03  papadopo
+* rearrange headers
+*
 * Revision 1.62  2006/07/19 13:19:04  madden
 * Blast_SetPHIPatternInfo takes a new Blast_Message parameter
 *

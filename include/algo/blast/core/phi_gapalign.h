@@ -35,9 +35,10 @@
 #ifndef ALGO_BLAST_CORE__PHI_GAPALIGN_H
 #define ALGO_BLAST_CORE__PHI_GAPALIGN_H
 
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_parameters.h>
-#include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_gapalign.h>

@@ -31,10 +31,10 @@
  * RPS BLAST structure definitions.
  */
 
-#ifndef BLAST_RPS__H
-#define BLAST_RPS__H
+#ifndef ALGO_BLAST_CORE__BLAST_RPS__H
+#define ALGO_BLAST_CORE__BLAST_RPS__H
 
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/ncbi_std.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,4 +109,4 @@ typedef struct BlastRPSInfo {
 #ifdef __cplusplus
 }
 #endif
-#endif /* !BLAST_RPS__H */
+#endif /* !ALGO_BLAST_CORE__BLAST_RPS__H */

@@ -29,12 +29,15 @@
 
 /** @file blast_kappa.h
  * Header file for composition-based statistics
- * @todo FIXME needs doxygen comments
  */
 
-#ifndef __BLAST_KAPPA__
-#define __BLAST_KAPPA__
+#ifndef ALGO_BLAST_CORE__BLAST_KAPPA__H
+#define ALGO_BLAST_CORE__BLAST_KAPPA__H
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_program.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_hspstream.h>
@@ -90,6 +93,9 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/11/21 16:41:16  papadopo
+ * rearrange headers
+ *
  * Revision 1.12  2005/12/13 17:57:21  gertz
  * Revert accidental checkin of the previous revision (cvs commit was run in
  * the wrong directory.)
@@ -130,5 +136,5 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
  * ===========================================================================
  */
 
-#endif /* __BLAST_KAPPA__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_KAPPA__H */
 

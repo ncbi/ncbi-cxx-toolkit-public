@@ -31,10 +31,10 @@
  * Prototypes and structures for greedy gapped alignment
  */
 
-#ifndef _GREEDY_H_
-#define _GREEDY_H_
+#ifndef ALGO_BLAST_CORE__GREEDY_ALIGN__H
+#define ALGO_BLAST_CORE__GREEDY_ALIGN__H
 
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/gapinfo.h>
 
 #ifdef __cplusplus
@@ -155,4 +155,4 @@ BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
 #ifdef __cplusplus
 }
 #endif
-#endif /* _GREEDY_H_ */
+#endif /* !ALGO_BLAST_CORE__GREEDY_ALIGN__H */
