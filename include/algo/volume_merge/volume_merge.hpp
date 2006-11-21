@@ -63,7 +63,7 @@ public:
 
     /// Memory manager for raw buffers to avoid unnecessary reallocations
     /// and memory fragmentation
-    typedef CResourcePool<TRawBuffer> TBufResourcePool;
+    typedef CResourcePool<TRawBuffer, CFastMutex> TBufResourcePool;
 
     /// Buffer pool guard 
     typedef CResourcePoolGuard<TBufResourcePool>   TBufPoolGuard;
@@ -315,6 +315,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/21 06:52:05  kuznets
+ * Use CFastMutex as pool locking parameter
+ *
  * Revision 1.1  2006/11/17 07:29:32  kuznets
  * initial revision
  *
