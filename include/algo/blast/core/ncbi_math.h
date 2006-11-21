@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE__NCBIMATH
-#define ALGO_BLAST_CORE__NCBIMATH
-
 /* $Id$
  * ===========================================================================
  *
@@ -36,6 +33,9 @@
 /** @file ncbi_math.h
  * Prototypes for portable math library (ported from C Toolkit)
  */
+
+#ifndef ALGO_BLAST_CORE__NCBIMATH
+#define ALGO_BLAST_CORE__NCBIMATH
 
 #include <algo/blast/core/ncbi_std.h> 
 #include <algo/blast/core/blast_export.h>
@@ -160,6 +160,9 @@ double BLAST_Powi (double x, Int4 n);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2006/11/21 16:50:15  papadopo
+ * minor
+ *
  * Revision 1.11  2005/03/10 16:12:59  papadopo
  * doxygen fixes
  *
