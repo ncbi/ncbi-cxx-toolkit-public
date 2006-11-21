@@ -34,6 +34,8 @@
 #include <algo/seqqa/single_aln_tests.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/IUPACna.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -45,6 +47,7 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/annot_selector.hpp>
@@ -195,6 +198,12 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     TSeqPos worst_exon_length;
     int indel_count = 0;
     int cds_indel_count = 0;
+
+    // These will be used for counting genomic ambiguities
+    CSeq_data genomic_seq_data;
+    string& genomic_seq = genomic_seq_data.SetIupacna().Set();
+    CSeq_data genomic_cds_seq_data;
+    string& genomic_cds_seq = genomic_cds_seq_data.SetIupacna().Set();
 
     int lag;  // cumulative gaps in xcript minus genomic in cds
     int frame;
@@ -371,6 +380,9 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             if (gap_in_genomic && in_cds) {
                 --lag;
             }
+            if (!gap_in_genomic && in_cds) {
+                genomic_cds_seq.push_back(avec.GetResidue(1, i));
+            }
         }
         match_count += exon_match_count;
         possible_match_count += exon_possible_match_count;
@@ -412,6 +424,11 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
                     < static_cast<TSignedSeqPos>(cds_to);
             }
         }
+
+        string exon_genomic_seq;
+        avec.GetSeqString(exon_genomic_seq, 1,
+                          avec.GetSeqStart(1), avec.GetSeqStop(1));
+        genomic_seq += exon_genomic_seq;
 
         ++exon_index;
     }
@@ -488,6 +505,17 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         .AddField("indel_count", indel_count);
     result->SetOutput_data()
         .AddField("cds_indel_count", cds_indel_count);
+
+    CSeq_data out_seq;
+    vector<TSeqPos> out_indices;
+    TSeqPos gac =
+        CSeqportUtil::GetAmbigs(genomic_seq_data, &out_seq, &out_indices);
+    result->SetOutput_data()
+        .AddField("genomic_ambiguity_count", int(gac));
+    TSeqPos gcac =
+        CSeqportUtil::GetAmbigs(genomic_cds_seq_data, &out_seq, &out_indices);
+    result->SetOutput_data()
+        .AddField("genomic_cds_ambiguity_count", int(gcac));
 
 
     // Some tests involving the genomic sequence
@@ -626,6 +654,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/11/21 18:51:44  jcherry
+ * Added genomic_ambiguity_count and genomic_cds_ambiguity_count
+ *
  * Revision 1.22  2006/10/18 15:51:18  jcherry
  * Moved consensus splice determination into external function
  *
