@@ -34,10 +34,8 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_parameters.h>
-#include <algo/blast/core/blast_lookup.h>
-#include <algo/blast/core/mb_lookup.h>
-#include <algo/blast/core/phi_lookup.h>
-#include <algo/blast/core/blast_rps.h>
+#include <algo/blast/core/ncbi_math.h>
+#include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/core/blast_hits.h>
 
 /** Returns true if the Karlin-Altschul block doesn't have its lambda, K, and H
@@ -137,25 +135,25 @@ s_GetBestExtensionMethod(const LookupTableWrap* lookup_wrap)
    ASSERT(lookup_wrap);
 
    switch (lookup_wrap->lut_type) {
-     case AA_LOOKUP_TABLE:
-     case PHI_AA_LOOKUP:  
-     case PHI_NA_LOOKUP:
-     case RPS_LOOKUP_TABLE:
+     case eAaLookupTable:
+     case ePhiLookupTable:  
+     case ePhiNaLookupTable:
+     case eRPSLookupTable:
          retval = eRight;
          break;
-     case NA_LOOKUP_TABLE:
-         if (((BlastLookupTable*)lookup_wrap->lut)->ag_scanning_mode == TRUE)
+     case eNaLookupTable:
+         if (((BlastNaLookupTable*)lookup_wrap->lut)->ag_scanning_mode == TRUE)
                retval = eRightAndLeft;
          else
                retval = eRight;
          break;
-     case MB_LOOKUP_TABLE:
+     case eMBLookupTable:
          if (((BlastMBLookupTable*)lookup_wrap->lut)->template_length > 0)
                retval = eUpdateDiag;   /* Used for discontiguous megablast. */
          else
                retval = eRightAndLeft;
          break;
-     case INDEXED_MB_LOOKUP_TABLE:
+     case eIndexedMBLookupTable:
          retval = eRightAndLeft;
          break;
    }
@@ -987,6 +985,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2006/11/21 17:06:23  papadopo
+ * rearrange headers, use enum for lookup table types
+ *
  * Revision 1.29  2006/10/05 20:18:49  papadopo
  * set the alignment cutoff scores to infinity for invalid contexts (resolves RT#15205407)
  *

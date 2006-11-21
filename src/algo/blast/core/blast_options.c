@@ -39,6 +39,7 @@ static char const rcsid[] =
 
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h>
+#include <algo/blast/core/blast_stat.h>
 
 const int kUngappedHSPNumMax = 400;  /**< Suggested max. number of HSPs for an ungapped search. */
 
@@ -790,14 +791,14 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
    case eBlastTypeBlastn:
        /* Blastn default is megablast. */
        (*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
-       (*options)->lut_type = MB_LOOKUP_TABLE;
+       (*options)->lut_type = eMBLookupTable;
        (*options)->max_positions = INT4_MAX;
        /* Discontig mb scanning default is one base at a time. */
        (*options)->full_byte_scan = FALSE; 
        break;
    case eBlastTypeRpsBlast: case eBlastTypeRpsTblastn:
        (*options)->word_size = BLAST_WORDSIZE_PROT;
-       (*options)->lut_type = RPS_LOOKUP_TABLE;
+       (*options)->lut_type = eRPSLookupTable;
        
        if (program_number == eBlastTypeRpsBlast)
            (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
@@ -805,14 +806,14 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
            (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
        break;
    case eBlastTypePhiBlastn:
-       (*options)->lut_type = PHI_NA_LOOKUP;
+       (*options)->lut_type = ePhiNaLookupTable;
        break;
    case eBlastTypePhiBlastp:
-       (*options)->lut_type = PHI_AA_LOOKUP;
+       (*options)->lut_type = ePhiLookupTable;
        break;
    default:
        (*options)->word_size = BLAST_WORDSIZE_PROT;
-       (*options)->lut_type = AA_LOOKUP_TABLE;
+       (*options)->lut_type = eAaLookupTable;
        
        if (program_number == eBlastTypeBlastp)
            (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
@@ -840,15 +841,15 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
 
    if (program_number == eBlastTypeBlastn) {
       if (is_megablast)	{
+         options->lut_type = eMBLookupTable;
          options->word_size = BLAST_WORDSIZE_MEGABLAST;
-         options->lut_type = MB_LOOKUP_TABLE;
          options->max_positions = INT4_MAX;
       }	else {
-         options->lut_type = NA_LOOKUP_TABLE;
+         options->lut_type = eNaLookupTable;
          options->word_size = BLAST_WORDSIZE_NUCL;
       }
    } else {
-      options->lut_type = AA_LOOKUP_TABLE;
+      options->lut_type = eAaLookupTable;
    }
 
    /* if the supplied threshold is -1, disable neighboring words */
@@ -860,7 +861,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       options->threshold = threshold;
 
    if (Blast_ProgramIsRpsBlast(program_number))
-      options->lut_type = RPS_LOOKUP_TABLE;
+      options->lut_type = eRPSLookupTable;
    if (word_size)
       options->word_size = word_size;
    return 0;
@@ -1002,7 +1003,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 	}
 
 	if (program_number != eBlastTypeBlastn && 
-       options->lut_type == MB_LOOKUP_TABLE)
+       options->lut_type == eMBLookupTable)
 	{
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                          "Megablast lookup table only supported with blastn");
@@ -1015,7 +1016,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
          Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                             "Invalid discontiguous template parameters");
          return (Int2) 2;
-      } else if (options->lut_type != MB_LOOKUP_TABLE) {
+      } else if (options->lut_type != eMBLookupTable) {
          Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
             "Invalid lookup table type for discontiguous Mega BLAST");
          return (Int2) 2;
@@ -1327,6 +1328,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.189  2006/11/21 17:06:04  papadopo
+ * rearrange headers, use enum for lookup table types
+ *
  * Revision 1.188  2006/10/13 15:47:49  camacho
  * Set the default full_byte_scan to false for disco megablast
  *
