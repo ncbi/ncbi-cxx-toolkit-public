@@ -204,12 +204,12 @@ int CBDB_MergeTest::Run(void)
     typedef CBDB_BlobSplitStore<bm::bvector<> > TBlobSplit;
     TBlobSplit split_db(new CBDB_BlobDeMux());
     split_db.Open("vol_store", CBDB_RawFile::eCreate);
-    CBDB_MergeStore<TBlobSplit> mstore(&split_db, eNoOwnership); 
+    CBDB_MergeStoreAsync<TBlobSplit> mstore(&split_db, eNoOwnership); 
 
     vector<IMergeVolumeWalker*> vol_vector;
-    vol_vector.push_back(new CBDB_MergeBlobWalker<TBvStore>(&vol1, eNoOwnership));
-    vol_vector.push_back(new CBDB_MergeBlobWalker<TBvStore>(&vol2, eNoOwnership));
-    vol_vector.push_back(new CBDB_MergeBlobWalker<TBvStore>(&vol3, eNoOwnership));
+    vol_vector.push_back(new CBDB_MergeBlobWalkerAsync<TBvStore>(&vol1, eNoOwnership));
+    vol_vector.push_back(new CBDB_MergeBlobWalkerAsync<TBvStore>(&vol2, eNoOwnership));
+    vol_vector.push_back(new CBDB_MergeBlobWalkerAsync<TBvStore>(&vol3, eNoOwnership));
 
     merger.SetMergeAccumulator(new CMergeBitsetBlob<bm::bvector<> >());
     merger.SetMergeStore(&mstore, eNoOwnership);
@@ -236,6 +236,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/21 14:42:43  kuznets
+ * use async. interfaces for testing
+ *
  * Revision 1.1  2006/11/20 16:26:17  kuznets
  * Initial revision
  *
