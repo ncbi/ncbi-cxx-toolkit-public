@@ -32,9 +32,12 @@
  *
  */
 
+#include <corelib/ncbimtx.hpp>
 #include <algo/volume_merge/volume_merge.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_cursor.hpp>
+#include <util/thread_nonstop.hpp>
+
 
 
 BEGIN_NCBI_SCOPE
@@ -44,10 +47,10 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-/**
-    Generic iterator to traverse any CBDB_BLobFile for volume merge
-    BF - any CBDB_BLobFile derived class
-*/
+
+/// Generic iterator to traverse any CBDB_BLobFile for volume merge
+/// BF - any CBDB_BLobFile derived class
+///
 template<class BF>
 class CBDB_MergeBlobWalker : public IMergeVolumeWalker
 {
@@ -90,9 +93,104 @@ protected:
 };
 
 
-/**
-    Merge store saves result to BLOB store
-*/
+/// Generic iterator to traverse any CBDB_BLobFile for volume merge
+/// BF - any CBDB_BLobFile derived class
+/// This implementation supports asyncronous processing.
+template<class BF>
+class CBDB_MergeBlobWalkerAsync : public IMergeVolumeWalker
+{
+public:
+    typedef  BF  TBlobFile;
+    
+public:
+    CBDB_MergeBlobWalkerAsync(
+                    TBlobFile*   blob_file,
+                    EOwnership   own=eTakeOwnership,
+                    size_t       fetch_buffer_size = 10 * 1024 * 1024);
+    virtual ~CBDB_MergeBlobWalkerAsync();
+
+    virtual IAsyncInterface* QueryIAsync()  { return &m_AsyncImpl; }
+    virtual bool IsEof() const;
+    virtual bool IsGood() const;
+    virtual void FetchFirst();
+    virtual void Fetch();
+    virtual const unsigned char* GetKeyPtr() const;
+    virtual Uint4 GetUint4Key() const;
+    virtual const unsigned char* GetBufferPtr(size_t* buf_size) const;
+    virtual void Close();
+    virtual void SetRecordMoved() {}
+
+protected:
+    typedef CBDB_MergeBlobWalkerAsync<BF> TMainClass;
+
+    /// IAsync implementation
+    /// @internal
+    class CAsync : public IAsyncInterface
+    {
+    public:
+        CAsync(TMainClass& impl) : m_Impl (impl) {}
+        virtual EStatus GetStatus() const
+        {
+            CFastMutex::TReadLockGuard guard(m_Impl.m_Lock);
+            if (!m_Impl.m_Good)
+                return eFailed;
+            if (m_Impl.m_Data)
+                return eReady;
+            return eNotReady;
+        }
+        virtual EStatus WaitReady() const
+        {
+            while (1) {
+                EStatus st = GetStatus();
+                switch (st)
+                {
+                case eReady:    return st;
+                case eNotReady: break;
+                default: return st;
+                }
+            }
+        }
+    private:
+        TMainClass& m_Impl;
+    };
+    /// Background thread class (executes async requests)
+    /// @internal
+    class CJobThread : public CThreadNonStop
+    {
+    public:
+        CJobThread(TMainClass& impl) 
+            : CThreadNonStop(1000), m_Impl(impl) 
+        {}
+    protected:
+        /// Do job delegated processing to the main class
+        virtual void DoJob(void) { m_Impl.DoFetch(); }
+    protected:
+        TMainClass&  m_Impl; 
+    };
+    friend class TMainClass::CAsync;
+    friend class TMainClass::CJobThread;
+protected:
+    void DoFetch();
+protected:
+    mutable CFastMutex          m_Lock;
+    TBlobFile*                  m_BlobFile;
+    EOwnership                  m_OwnBlobFile;
+    size_t                      m_FetchBufferSize;
+    auto_ptr<CBDB_FileCursor>   m_Cursor;
+    bool                        m_Eof;
+    bool                        m_Good;
+    const void*                 m_Data;
+    size_t                      m_DataLen;
+    Uint4                       m_Key;
+    const unsigned char*        m_KeyPtr;
+    CRef<CJobThread>            m_JobThread;
+    CAsync                      m_AsyncImpl;
+};
+
+
+
+///    Merge store saves result to BLOB store
+///
 template<class BStore>
 class CBDB_MergeStore : public IMergeStore
 {
@@ -111,6 +209,89 @@ private:
     TBlobStore*  m_BlobStore;
     EOwnership   m_OwnBlobStore;
 };
+
+
+
+///  Merge store saves result to BLOB store.
+///  This is asyncronous implementation, it starts a background thread
+///  to process requests.
+///
+template<class BStore>
+class CBDB_MergeStoreAsync : public IMergeStore
+{
+public:
+    typedef BStore  TBlobStore;
+public:
+    CBDB_MergeStoreAsync(TBlobStore*   blob_store, 
+                         EOwnership    own=eTakeOwnership);
+    virtual ~CBDB_MergeStoreAsync();
+
+    virtual IAsyncInterface* QueryIAsync() { return &m_AsyncImpl; }
+    virtual bool IsGood() const;
+    virtual void Store(Uint4 blob_id, CMergeVolumes::TRawBuffer* buffer);
+    virtual void Close();
+protected:
+    void DoStore();
+protected:
+    typedef CBDB_MergeStoreAsync<BStore> TMainClass;
+
+    /// IAsync implementation
+    /// @internal
+    class CAsync : public IAsyncInterface
+    {
+    public:
+        CAsync(TMainClass& impl) : m_Impl (impl) {}
+        virtual EStatus GetStatus() const
+        {
+            CFastMutex::TReadLockGuard guard(m_Impl.m_Lock);
+            if (!m_Impl.m_Good)
+                return eFailed;
+            if (m_Impl.m_Request_Buffer == 0)
+                return eReady;
+            return eNotReady;
+        }
+        virtual EStatus WaitReady() const
+        {
+            while (1) {
+                EStatus st = GetStatus();
+                switch (st)
+                {
+                case eReady:    return st;
+                case eNotReady: break;
+                default: return st;
+                }
+            }
+        }
+    private:
+        TMainClass& m_Impl;
+    };
+    /// Background thread class (executes async requests)
+    /// @internal
+    class CJobThread : public CThreadNonStop
+    {
+    public:
+        CJobThread(TMainClass& impl) 
+            : CThreadNonStop(1000), m_Impl(impl) 
+        {}
+    protected:
+        /// Do job delegated processing to the main class
+        virtual void DoJob(void) { m_Impl.DoStore(); }
+    protected:
+        TMainClass&  m_Impl; 
+    };
+    friend class TMainClass::CAsync;
+    friend class TMainClass::CJobThread;
+protected:
+    mutable CFastMutex         m_Lock;
+    bool                       m_Good;
+    TBlobStore*                m_BlobStore;
+    EOwnership                 m_OwnBlobStore;
+    CRef<CJobThread>           m_JobThread;
+    Uint4                      m_Request_BlobId;
+    CMergeVolumes::TRawBuffer* m_Request_Buffer;
+    CAsync                     m_AsyncImpl;
+};
+
 
 
  /* @} */
@@ -204,11 +385,244 @@ void CBDB_MergeStore<BStore>::Store(Uint4                      blob_id,
                                      &((*buffer)[0]), buffer->size());
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+
+template<class BStore>
+CBDB_MergeStoreAsync<BStore>::CBDB_MergeStoreAsync(TBlobStore*  blob_store, 
+                                                   EOwnership   own)
+  : m_Good(true),
+    m_BlobStore(blob_store),
+    m_OwnBlobStore(own),
+    m_Request_BlobId(0),
+    m_Request_Buffer(0),
+    m_AsyncImpl(*this)
+{
+    m_JobThread.Reset(new CJobThread(*this));
+    m_JobThread->Run();
+}
+
+template<class BStore>
+CBDB_MergeStoreAsync<BStore>::~CBDB_MergeStoreAsync()
+{
+    if (m_OwnBlobStore == eTakeOwnership) {
+        delete m_BlobStore;
+    }
+}
+
+template<class BStore>
+void CBDB_MergeStoreAsync<BStore>::Close()
+{
+    while (1) {
+        {{
+            CFastMutex::TWriteLockGuard guard(m_Lock);
+            if (m_Request_Buffer == 0) { // make sure the last request is done
+                m_JobThread->RequestStop();
+                m_JobThread->Join();
+                break;
+            }
+        }}
+    }
+}
+
+template<class BStore>
+bool CBDB_MergeStoreAsync<BStore>::IsGood() const
+{
+    CFastMutex::TReadLockGuard guard(m_Lock);
+    return m_Good;
+}
+
+template<class BStore>
+void CBDB_MergeStoreAsync<BStore>::Store(Uint4                      blob_id, 
+                                         CMergeVolumes::TRawBuffer* buffer)
+{
+    CFastMutex::TWriteLockGuard guard(m_Lock);
+    if (m_Request_Buffer) {
+        NCBI_THROW(CMerge_Exception, eOperationNotReady, "Store not ready.");
+    }
+    m_Request_BlobId = blob_id;
+    m_Request_Buffer = buffer;
+    m_JobThread->RequestDoJob();
+}
+
+template<class BStore>
+void CBDB_MergeStoreAsync<BStore>::DoStore()
+{
+    CMergeVolumes::TBufPoolGuard 
+        guard(*(this->m_BufResourcePool), m_Request_Buffer);
+
+    CFastMutex::TWriteLockGuard lock(m_Lock);
+    if (!m_Request_Buffer) {
+        return;
+    }
+    try {
+        EBDB_ErrCode err = m_BlobStore->Insert(
+                                            m_Request_BlobId, 
+                                            &((*m_Request_Buffer)[0]), 
+                                            m_Request_Buffer->size());
+        if (err != eBDB_Ok) {
+            m_Good = false;
+        }
+        m_Request_Buffer = 0;
+    } catch (...) {
+        m_Good = false;
+        throw;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+template<class BF>
+CBDB_MergeBlobWalkerAsync<BF>::CBDB_MergeBlobWalkerAsync(
+                                               TBlobFile*   blob_file,
+                                               EOwnership   own,
+                                               size_t       fetch_buffer_size)
+ : m_BlobFile(blob_file),
+   m_OwnBlobFile(own),
+   m_FetchBufferSize(fetch_buffer_size),
+   m_Eof(false),
+   m_Good(true),
+   m_AsyncImpl(*this)
+{
+    m_JobThread.Reset(new CJobThread(*this));
+    m_JobThread->Run();
+}
+
+template<class BF>
+CBDB_MergeBlobWalkerAsync<BF>::~CBDB_MergeBlobWalkerAsync()
+{
+    if (m_OwnBlobFile == eTakeOwnership) {
+        delete m_BlobFile;
+    }
+}
+
+template<class BF>
+bool CBDB_MergeBlobWalkerAsync<BF>::IsEof() const
+{
+    CFastMutex::TReadLockGuard lock(m_Lock);
+    return m_Eof;
+}
+
+template<class BF>
+bool CBDB_MergeBlobWalkerAsync<BF>::IsGood() const
+{
+    CFastMutex::TReadLockGuard lock(m_Lock);
+    return m_Good;
+}
+
+template<class BF>
+void CBDB_MergeBlobWalkerAsync<BF>::FetchFirst()
+{
+    CFastMutex::TWriteLockGuard lock(m_Lock);
+
+    m_Cursor.reset(new CBDB_FileCursor(*m_BlobFile));
+    m_Cursor->SetCondition(CBDB_FileCursor::eGE);
+    if (m_FetchBufferSize) {
+        m_Cursor->InitMultiFetch(m_FetchBufferSize);
+    }
+    m_Key = 0;
+    m_KeyPtr = 0;
+    m_DataLen = 0;
+    m_Data = 0;
+
+    m_JobThread->RequestDoJob();
+}
+
+template<class BF>
+void CBDB_MergeBlobWalkerAsync<BF>::Fetch()
+{
+    CFastMutex::TWriteLockGuard lock(m_Lock);
+
+    m_Key = 0;
+    m_KeyPtr = 0;
+    m_DataLen = 0;
+    m_Data = 0;
+
+    m_JobThread->RequestDoJob();
+}
+
+template<class BF>
+void CBDB_MergeBlobWalkerAsync<BF>::DoFetch()
+{
+    CFastMutex::TWriteLockGuard lock(m_Lock);
+    if (m_Data) { // fetch was not requested...
+        return;
+    }
+    try {
+        EBDB_ErrCode err = m_Cursor->Fetch();
+        switch (err) 
+        {
+        case eBDB_Ok:
+            m_Data     = m_Cursor->GetLastMultiFetchData();
+            m_DataLen  = m_Cursor->GetLastMultiFetchDataLen();
+            {
+            const CBDB_BufferManager* key_bm = m_BlobFile->GetKeyBuffer();
+            const CBDB_Field& fld = key_bm->GetField(0);
+            const void* ptr = fld.GetBuffer();
+            m_KeyPtr =(const unsigned char*) ptr;
+            m_Key = fld.GetUint();
+            }
+            break;
+        case eBDB_NotFound:
+            m_Data = 0;
+            m_DataLen = 0;
+            m_Eof = true;
+            break;
+        default:
+            _ASSERT(0);
+        };
+        
+    } catch (...) {
+        m_Good = false;
+        throw;
+    }
+}
+
+
+template<class BF>
+const unsigned char* CBDB_MergeBlobWalkerAsync<BF>::GetKeyPtr() const
+{
+    CFastMutex::TReadLockGuard lock(m_Lock);
+    return m_KeyPtr;
+}
+
+template<class BF>
+Uint4 CBDB_MergeBlobWalkerAsync<BF>::GetUint4Key() const
+{
+    CFastMutex::TReadLockGuard lock(m_Lock);
+    return m_Key;
+}
+
+template<class BF>
+const unsigned char* 
+CBDB_MergeBlobWalkerAsync<BF>::GetBufferPtr(size_t* buf_size) const
+{
+    CFastMutex::TReadLockGuard lock(m_Lock);
+    if (buf_size) {
+        *buf_size = m_DataLen;
+    }
+    return (unsigned char*)m_Data;
+}
+
+template<class BF>
+void CBDB_MergeBlobWalkerAsync<BF>::Close()
+{
+    m_JobThread->RequestStop();
+    m_JobThread->Join();
+    {{
+    CFastMutex::TWriteLockGuard lock(m_Lock);
+    m_Cursor.reset(0);
+    }}
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/21 14:41:21  kuznets
+ * added async. implementations
+ *
  * Revision 1.2  2006/11/20 16:24:34  kuznets
  * compilation fixes
  *
