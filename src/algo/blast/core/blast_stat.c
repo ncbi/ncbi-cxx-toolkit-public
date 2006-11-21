@@ -54,8 +54,7 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_stat.h>
-#include <algo/blast/core/blast_util.h>
-#include <algo/blast/core/blast_encoding.h>
+#include <algo/blast/core/ncbi_math.h>
 #include "blast_psi_priv.h"
 
 #define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN) /**< maximum allowed range of BLAST scores. */
@@ -4412,6 +4411,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.152  2006/11/21 17:08:28  papadopo
+ * rearrange headers
+ *
  * Revision 1.151  2006/10/02 12:33:59  madden
  * Add ifdef for BLOSUM62_20
  *

@@ -38,6 +38,7 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include "blast_dynarray.h"
+#include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_message.h>  /* for error codes */
 
 SDynamicUint4Array* DynamicUint4ArrayFree(SDynamicUint4Array* arr)

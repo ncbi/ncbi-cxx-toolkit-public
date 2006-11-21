@@ -40,8 +40,6 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_filter.h>
-#include <algo/blast/core/blast_encoding.h>
-#include <algo/blast/core/phi_lookup.h>
 
 /* See description in blast_setup.h */
 Int2

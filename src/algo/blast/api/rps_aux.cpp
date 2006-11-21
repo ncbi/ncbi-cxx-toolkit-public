@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_exception.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <algo/blast/api/rps_aux.hpp>
+#include <algo/blast/core/blast_def.h>
 #include <memory>
 
 /** @addtogroup AlgoBlast

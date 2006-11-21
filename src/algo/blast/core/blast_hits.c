@@ -35,8 +35,7 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
-#include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_hspstream.h>
@@ -3368,4 +3367,3 @@ Blast_HSPResultsFromHSPStreamWithLimit(BlastHSPStream* hsp_stream,
     }
     return retval;
 }
-

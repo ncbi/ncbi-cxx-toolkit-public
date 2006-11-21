@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE___BLAST_GAPALIGN_PRI__H
-#define ALGO_BLAST_CORE___BLAST_GAPALIGN_PRI__H
-
 /*  $Id$
  * ===========================================================================
  *
@@ -34,6 +31,14 @@
  *  Private interface for blast_gapalign.c
  */
 
+#ifndef ALGO_BLAST_CORE___BLAST_GAPALIGN_PRIV__H
+#define ALGO_BLAST_CORE___BLAST_GAPALIGN_PRIV__H
+
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/gapinfo.h>
+#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_stat.h>
+#include <algo/blast/core/blast_parameters.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,6 +158,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2006/11/21 17:02:11  papadopo
+ * rearrange headers
+ *
  * Revision 1.17  2006/08/22 19:26:20  papadopo
  * change order of macro parameters
  *
@@ -209,4 +217,4 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  */
 
-#endif /* !ALGO_BLAST_CORE__BLAST_GAPALIGN_PRI__H */
+#endif /* !ALGO_BLAST_CORE__BLAST_GAPALIGN_PRIV__H */

@@ -286,14 +286,14 @@ CBlastApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle,
     // automatically. Value 1 corresponds to megablast lookup table;
     switch (args["lookup"].AsInteger()) {
     case 1:
-        opt.SetLookupTableType(MB_LOOKUP_TABLE);
+        opt.SetLookupTableType(eMBLookupTable);
         break;
     default:
         break;
     }
 
     if( args["index"].AsString().size() > 0 ) {
-        opt.SetLookupTableType(INDEXED_MB_LOOKUP_TABLE);
+        opt.SetLookupTableType(eIndexedMBLookupTable);
     }
 
     if (args["matrix"]) {

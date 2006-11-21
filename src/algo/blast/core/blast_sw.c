@@ -37,8 +37,8 @@ static char const rcsid[] =
    "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
-#include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_sw.h>
+#include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE */
 
 /** swap (pointers to) a pair of sequences */
 #define SWAP_SEQS(A, B) {Uint1 *tmp = (A); (A) = (B); (B) = tmp; }

@@ -37,8 +37,8 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
-#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/core/pattern.h>
 
 Int4 

@@ -37,7 +37,6 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_hspstream.h>
-#include <algo/blast/core/blast_def.h>      /* needed for sfree */
 
 /** Complete type definition of Blast Hsp Stream ADT */
 struct BlastHSPStream {

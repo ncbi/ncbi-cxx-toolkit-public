@@ -35,6 +35,7 @@ static char const rcsid[] =
  *  PSI-BLAST
  */
     
+#include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_util.h>
 #include "blast_posit.h"
 #include "blast_psi_priv.h"
@@ -419,6 +420,9 @@ Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/11/21 17:06:43  papadopo
+ * rearrange headers
+ *
  * Revision 1.6  2005/02/23 17:24:41  camacho
  * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
  * 2. Removed unneeded fields from Kappa_compactSearchItems

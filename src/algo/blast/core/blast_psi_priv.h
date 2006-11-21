@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE___BLAST_PSI_PRIV__H
-#define ALGO_BLAST_CORE___BLAST_PSI_PRIV__H
-
 /*  $Id$
  * ===========================================================================
  *
@@ -51,6 +48,11 @@
  * </pre>
  */
 
+#ifndef ALGO_BLAST_CORE___BLAST_PSI_PRIV__H
+#define ALGO_BLAST_CORE___BLAST_PSI_PRIV__H
+
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_psi.h>
 #include "matrix_freq_ratios.h"
 
@@ -630,6 +632,9 @@ _PSIValidateMSA_StructureGroup(const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2006/11/21 17:07:38  papadopo
+ * rearrange headers
+ *
  * Revision 1.31  2006/11/14 15:37:19  camacho
  * PSSM engine performance optimizations
  *

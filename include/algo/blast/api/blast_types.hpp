@@ -38,6 +38,7 @@
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <algo/blast/core/blast_export.h>
 #include <algo/blast/core/blast_message.h>
 
 BEGIN_NCBI_SCOPE
@@ -207,6 +208,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/11/21 17:19:27  papadopo
+* rearrange headers
+*
 * Revision 1.27  2006/06/21 21:04:00  vakatov
 * Moved DOXYGEN MainPage content to "doc/tools/doxygen/metamodules_doxygen.h"
 *

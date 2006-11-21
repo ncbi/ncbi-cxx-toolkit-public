@@ -38,7 +38,6 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 
-#include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/hspstream_collector.h>
 
 /** Default hit saving stream methods */

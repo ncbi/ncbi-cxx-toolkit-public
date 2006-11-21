@@ -37,6 +37,7 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
+#include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/gapinfo.h>
 
 GapStateArrayStruct* 

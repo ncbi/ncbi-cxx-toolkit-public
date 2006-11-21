@@ -34,7 +34,6 @@ static char const rcsid[] =
  *  Definitions for various scoring matrices' frequency ratios.
  */
     
-#include <algo/blast/core/blast_def.h>
 #include "matrix_freq_ratios.h"
 #include "blast_psi_priv.h"
 
@@ -1761,6 +1760,9 @@ _PSIMatrixFrequencyRatiosFree(SFreqRatios* freq_ratios)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/11/21 17:13:10  papadopo
+ * rearrange headers
+ *
  * Revision 1.8  2006/09/28 12:44:26  madden
  * Use more accurrate, symmetric, frequency data for the PAM matrices. [from Mike Gertz]
  *

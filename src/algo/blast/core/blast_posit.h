@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE___BLAST_POSIT__H
-#define ALGO_BLAST_CORE___BLAST_POSIT__H
-
 /*  $Id$
  * ===========================================================================
  *
@@ -35,6 +32,10 @@
  * based statistics for PSI-BLAST.
  */
 
+#ifndef ALGO_BLAST_CORE___BLAST_POSIT__H
+#define ALGO_BLAST_CORE___BLAST_POSIT__H
+
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/core/blast_stat.h>
 #include "matrix_freq_ratios.h"
 
@@ -155,6 +156,9 @@ int Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/11/21 17:06:51  papadopo
+ * rearrange headers
+ *
  * Revision 1.5  2005/02/25 19:47:45  camacho
  * Added documentation
  *

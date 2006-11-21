@@ -32,11 +32,11 @@
  * are used in multiple source files.
  */
 
-#include <algo/blast/core/ncbi_std.h>
-#include <algo/blast/core/pattern.h>
-
 #ifndef ALGO_BLAST_CORE__PATTERN_PRIV_H
 #define ALGO_BLAST_CORE__PATTERN_PRIV_H
+
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/pattern.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -106,4 +106,4 @@ _PHIGetRightOneBits(Int4 s, Int4 mask, Int4* rightOne, Int4* rightMaskOnly);
 }
 #endif
 
-#endif /* ALGO_BLAST_CORE__PATTERN_PRIV_H */
+#endif /* !ALGO_BLAST_CORE__PATTERN_PRIV_H */

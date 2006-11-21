@@ -34,7 +34,6 @@ static char const rcsid[] =
  * Implementation of the high level functions of PSI-BLAST's PSSM engine.
  */
     
-#include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_encoding.h>
 #include "blast_psi_priv.h"
 

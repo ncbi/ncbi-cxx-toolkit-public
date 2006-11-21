@@ -37,6 +37,8 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include "blast_itree.h"
+#include "blast_gapalign_priv.h"
+#include "blast_hits_priv.h"
 
 /** When allocating a node for an interval tree, this
     specifies which half of the parent node will be described

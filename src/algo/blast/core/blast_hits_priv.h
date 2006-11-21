@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE___BLAST_HITS_PRIV__H
-#define ALGO_BLAST_CORE___BLAST_HITS_PRIV__H
-
 /*  $Id$
  * ===========================================================================
  *
@@ -33,6 +30,12 @@
 /** @file blast_hits_priv.h
  *  Utilities for dealing with BLAST HSPs in the core of BLAST.
  */
+
+#ifndef ALGO_BLAST_CORE___BLAST_HITS_PRIV__H
+#define ALGO_BLAST_CORE___BLAST_HITS_PRIV__H
+
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_hits.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,6 +87,9 @@ BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/11/21 17:02:37  papadopo
+ * rearrange headers
+ *
  * Revision 1.2  2006/02/07 14:24:47  madden
  * Add prototype for BlastMergeTwoHSPs
  *

@@ -38,19 +38,17 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <float.h>
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_hits.h>
-#include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_kappa.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_gapalign.h>
-#include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/link_hsps.h>
 #include "blast_psi_priv.h"
 #include "blast_gapalign_priv.h"
-#include "blast_posit.h"
 #include "blast_hits_priv.h"
+#include "blast_posit.h"
 
 #include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
 #include <algo/blast/composition_adjustment/compo_heap.h>

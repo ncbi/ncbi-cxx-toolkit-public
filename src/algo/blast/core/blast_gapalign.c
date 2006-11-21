@@ -35,11 +35,9 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
-#include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
-#include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/greedy_align.h>
 #include "blast_gapalign_priv.h"
 #include "blast_hits_priv.h"

@@ -40,6 +40,7 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_seg.h>
+#include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_filter.h>
 
 

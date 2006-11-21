@@ -37,8 +37,9 @@ static char const rcsid[] =
 
 #include "blast_psi_priv.h"
 #include "blast_posit.h"
-#include "blast_dynarray.h"
+#include <algo/blast/core/ncbi_math.h>
 #include <algo/blast/core/blast_util.h>
+#include "blast_dynarray.h"
 
 /****************************************************************************/
 /* Use the following #define's to enable/disable functionality */
@@ -2451,6 +2452,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/11/21 17:07:31  papadopo
+ * rearrange headers
+ *
  * Revision 1.65  2006/11/20 15:48:00  camacho
  * Relocation of dynamic array functions/definitions
  *

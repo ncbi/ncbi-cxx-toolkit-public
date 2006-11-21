@@ -31,10 +31,11 @@
  * Declarations for various dynamic array types
  */
 
-#ifndef __BLAST_DYNARRAY__
-#define __BLAST_DYNARRAY__
+#ifndef ALGO_BLAST_CORE__BLAST_DYNARRAY__H
+#define ALGO_BLAST_CORE__BLAST_DYNARRAY__H
 
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,4 +141,4 @@ DynamicInt4Array_Append(SDynamicInt4Array* arr, Int4 element);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLAST_DYNARRAY__ */
+#endif /* !ALGO_BLAST_CORE__BLAST_DYNARRAY__H */
