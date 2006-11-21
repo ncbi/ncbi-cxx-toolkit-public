@@ -233,8 +233,13 @@ HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
                   ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
     }
     heap->base   = (SHEAP_HeapBlock*) base;
-    heap->size   = size >> _HEAP_ALIGNSHIFT;
+    heap->size   = HEAP_ALIGN(size) >> _HEAP_ALIGNSHIFT;
     heap->serial = serial;
+    if (size != heap->size << _HEAP_ALIGNSHIFT) {
+        CORE_LOGF(eLOG_Warning,
+                  ("Heap Attach: Heap size alignment (%u->%u) can result in"
+                   " data garbage", size, heap->size << _HEAP_ALIGNSHIFT));
+    }
     return heap;
 }
 
@@ -947,6 +952,9 @@ void HEAP_Options(ESwitch fast, ESwitch newalk)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2006/11/21 14:45:32  lavr
+ * HEAP_AttachFast() to warn against possibly adverse size alignment
+ *
  * Revision 6.34  2006/11/20 20:19:31  lavr
  * +HEAP_AllocFast()
  *
