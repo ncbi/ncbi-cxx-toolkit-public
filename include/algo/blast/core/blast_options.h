@@ -37,9 +37,11 @@
 #ifndef __BLASTOPTIONS__
 #define __BLASTOPTIONS__
 
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/core/blast_export.h>
+#include <algo/blast/core/blast_program.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_message.h>
-#include <algo/blast/core/blast_stat.h>
 
 
 #ifdef __cplusplus
@@ -143,16 +145,6 @@ extern "C" {
                                      value exceeds this number are discarded */
 #define BLAST_HITLIST_SIZE 500 /**< Number of database sequences to save hits 
                                   for */
-/** Types of the lookup table */
-#define MB_LOOKUP_TABLE 1  /**< megablast lookup table (includes both
-                                contiguous and discontiguous megablast) */
-#define NA_LOOKUP_TABLE 2  /**< blastn lookup table */
-#define AA_LOOKUP_TABLE 3  /**< standard protein (blastp) lookup table */
-#define PHI_AA_LOOKUP 4  /**< protein lookup table specialized for phi-blast */
-#define PHI_NA_LOOKUP 5  /**< nucleotide lookup table for phi-blast */
-#define RPS_LOOKUP_TABLE 6 /**< RPS lookup table (rpsblast and rpstblastn) */
-#define INDEXED_MB_LOOKUP_TABLE 7 /**< use database index as a lookup structure */
-
 /** Defaults for PSI-BLAST options */
 #define PSI_INCLUSION_ETHRESH 0.002 /**< Inclusion threshold for PSI BLAST */
 #define PSI_PSEUDO_COUNT_CONST 9 /**< Pseudo-count constant for PSI-BLAST */
@@ -166,13 +158,24 @@ extern "C" {
  * when scaling a PSSM */
 extern const double kPSSM_NoImpalaScaling;
 
+/** Types of the lookup table */
+typedef enum {
+    eMBLookupTable = 1,  /**< megablast lookup table (includes both
+                                contiguous and discontiguous megablast) */
+    eNaLookupTable = 2,  /**< blastn lookup table */
+    eAaLookupTable = 3,  /**< standard protein (blastp) lookup table */
+    ePhiLookupTable = 4,  /**< protein lookup table specialized for phi-blast */
+    ePhiNaLookupTable = 5,  /**< nucleotide lookup table for phi-blast */
+    eRPSLookupTable = 6, /**< RPS lookup table (rpsblast and rpstblastn) */
+    eIndexedMBLookupTable = 7 /**< use database index as a lookup structure */
+} ELookupTableType;
+
 /** Options needed to construct a lookup table 
  * Also needed: query sequence and query length.
  */
 typedef struct LookupTableOptions {
    Int4 threshold; /**< Score threshold for putting words in a lookup table */
-   Int4 lut_type; /**< What kind of lookup table to construct? E.g. blastn 
-                     allows for traditional and megablast style lookup table */
+   ELookupTableType lut_type; /**< What kind of lookup table to construct? */
    Int4 word_size; /**< Determines the size of the lookup table */
    Uint1 mb_template_length; /**< Length of the discontiguous words */
    Uint1 mb_template_type; /**< Type of a discontiguous word template */
