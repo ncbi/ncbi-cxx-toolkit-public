@@ -38,9 +38,16 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_util.h>
-#include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/blast_filter.h>
 #include <algo/blast/core/blast_stat.h>
+
+void
+__sfree(void **x)
+{
+    free(*x);
+    *x = NULL;
+    return;
+}
 
 Int2
 BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length,
