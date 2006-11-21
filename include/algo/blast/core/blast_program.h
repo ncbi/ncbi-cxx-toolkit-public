@@ -1,6 +1,3 @@
-#ifndef ALGO_BLAST_CORE___BLAST_PROGRAM__H
-#define ALGO_BLAST_CORE___BLAST_PROGRAM__H
-
 /* $Id$
  * ===========================================================================
  *
@@ -33,6 +30,9 @@
 /** @file blast_program.h
  * Definitions for various programs supported by core BLAST
  */
+
+#ifndef ALGO_BLAST_CORE___BLAST_PROGRAM__H
+#define ALGO_BLAST_CORE___BLAST_PROGRAM__H
 
 #include <algo/blast/core/ncbi_std.h>
 
