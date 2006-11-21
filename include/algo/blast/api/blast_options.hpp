@@ -130,8 +130,8 @@ public:
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
-    int GetLookupTableType() const;
-    void SetLookupTableType(int type);
+    ELookupTableType GetLookupTableType() const;
+    void SetLookupTableType(ELookupTableType type);
 
     int GetWordSize() const;
     void SetWordSize(int ws);
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.123  2006/11/21 17:19:05  papadopo
+* use enum for lookup table types
+*
 * Revision 1.122  2006/08/23 19:11:36  camacho
 * Remove CDbBlast from doxygen documentation
 *

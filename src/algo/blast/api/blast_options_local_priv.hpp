@@ -72,8 +72,8 @@ public:
     int GetWordThreshold() const;
     void SetWordThreshold(int w);
 
-    int GetLookupTableType() const;
-    void SetLookupTableType(int type);
+    ELookupTableType GetLookupTableType() const;
+    void SetLookupTableType(ELookupTableType type);
 
     int GetWordSize() const;
     void SetWordSize(int ws);
@@ -405,17 +405,17 @@ CBlastOptionsLocal::SetWordThreshold(int w)
     m_LutOpts->threshold = w;
 }
 
-inline int
+inline ELookupTableType
 CBlastOptionsLocal::GetLookupTableType() const
 {
     return m_LutOpts->lut_type;
 }
 
 inline void
-CBlastOptionsLocal::SetLookupTableType(int type)
+CBlastOptionsLocal::SetLookupTableType(ELookupTableType type)
 {
     m_LutOpts->lut_type = type;
-    if (type == MB_LOOKUP_TABLE) {
+    if (type == eMBLookupTable) {
        m_LutOpts->max_positions = INT4_MAX;
        m_LutOpts->word_size = BLAST_WORDSIZE_MEGABLAST;
     } 
@@ -1213,9 +1213,9 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
         return;
 
     if (is_dna)
-       m_LutOpts->lut_type = PHI_NA_LOOKUP;
+       m_LutOpts->lut_type = ePhiNaLookupTable;
     else
-       m_LutOpts->lut_type = PHI_AA_LOOKUP;
+       m_LutOpts->lut_type = ePhiLookupTable;
 
     m_LutOpts->phi_pattern = strdup(pattern);
 }

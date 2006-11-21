@@ -69,10 +69,10 @@ public:
 
     /******************* Lookup table options ***********************/
     /// Returns LookupTableType
-    int GetLookupTableType() const { return m_Opts->GetLookupTableType(); }
+    ELookupTableType GetLookupTableType() const { return m_Opts->GetLookupTableType(); }
     /// Sets LookupTableType
     /// @param type LookupTableType [in]
-    void SetLookupTableType(int type) 
+    void SetLookupTableType(ELookupTableType type) 
     { 
         m_Opts->SetLookupTableType(type); 
     }
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/11/21 17:18:51  papadopo
+ * use enum for lookup table types
+ *
  * Revision 1.30  2006/06/12 17:16:44  madden
  * Remove [GS]etMatrixPath
  *

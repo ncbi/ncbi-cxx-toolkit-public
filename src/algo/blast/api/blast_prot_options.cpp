@@ -56,7 +56,7 @@ CBlastProteinOptionsHandle::CBlastProteinOptionsHandle(EAPILocality locality)
 void 
 CBlastProteinOptionsHandle::SetLookupTableDefaults()
 {
-    m_Opts->SetLookupTableType(AA_LOOKUP_TABLE);
+    m_Opts->SetLookupTableType(eAaLookupTable);
     SetWordSize(BLAST_WORDSIZE_PROT);
     SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP);
 }
@@ -140,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/11/21 17:16:47  papadopo
+ * use enum for lookup table types
+ *
  * Revision 1.24  2006/06/05 13:31:30  madden
  * Remove call to FindMatrixOrPath
  *

@@ -55,7 +55,7 @@ CBlastRPSOptionsHandle::CBlastRPSOptionsHandle(EAPILocality locality)
 void 
 CBlastRPSOptionsHandle::SetLookupTableDefaults()
 {
-    m_Opts->SetLookupTableType(RPS_LOOKUP_TABLE);
+    m_Opts->SetLookupTableType(eRPSLookupTable);
 }
 
 void
@@ -133,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/11/21 17:17:03  papadopo
+ * use enum for lookup table types
+ *
  * Revision 1.16  2006/01/23 16:37:11  papadopo
  * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
  *

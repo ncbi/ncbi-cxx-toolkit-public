@@ -728,7 +728,7 @@ CBlastOptions::SetWordThreshold(int w)
     }
 }
 
-int 
+ELookupTableType
 CBlastOptions::GetLookupTableType() const
 {
     if (! m_Local) {
@@ -737,7 +737,7 @@ CBlastOptions::GetLookupTableType() const
     return m_Local->GetLookupTableType();
 }
 void 
-CBlastOptions::SetLookupTableType(int type)
+CBlastOptions::SetLookupTableType(ELookupTableType type)
 {
     if (m_Local) {
         m_Local->SetLookupTableType(type);
@@ -1950,6 +1950,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.86  2006/11/21 17:16:10  papadopo
+* use enum for lookup table types
+*
 * Revision 1.85  2006/11/02 18:49:49  bealer
 * - Allow X-dropoff in eBoth version of BlastOptions.
 * - Check and handle Cutoff type for EvalueThreshold field.

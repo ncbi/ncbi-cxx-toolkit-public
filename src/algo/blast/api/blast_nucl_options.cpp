@@ -109,7 +109,7 @@ CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
 void 
 CBlastNucleotideOptionsHandle::SetLookupTableDefaults()
 {
-    SetLookupTableType(NA_LOOKUP_TABLE);
+    SetLookupTableType(eNaLookupTable);
     SetWordSize(BLAST_WORDSIZE_NUCL);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTN);
 }
@@ -117,7 +117,7 @@ CBlastNucleotideOptionsHandle::SetLookupTableDefaults()
 void 
 CBlastNucleotideOptionsHandle::SetMBLookupTableDefaults()
 {
-    SetLookupTableType(MB_LOOKUP_TABLE);
+    SetLookupTableType(eMBLookupTable);
     SetWordSize(BLAST_WORDSIZE_MEGABLAST);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_MEGABLAST);
     m_Opts->SetMBMaxPositions(INT4_MAX);
@@ -249,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/11/21 17:15:53  papadopo
+ * use enum for lookup table types
+ *
  * Revision 1.29  2006/06/12 17:17:16  madden
  * Remove [GS]etMatrixPath
  *
