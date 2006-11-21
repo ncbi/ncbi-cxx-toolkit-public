@@ -34,67 +34,57 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/lookup_util.h>
-#include <algo/blast/core/blast_options.h>
 
-void __sfree(void **x)
+static void fkm_output(Int4 * a,
+                       Int4 n,
+                       Int4 p,
+                       Uint1 * output,
+                       Int4 * cursor,
+                       Uint1 * alphabet);
+static void fkm(Int4 * a,
+                Int4 n,
+                Int4 k,
+                Uint1 * output,
+                Int4 * cursor,
+                Uint1 * alphabet);
+
+Int4
+iexp(Int4 x,
+     Int4 n)
 {
-  free(*x);
-  *x=NULL;
-  return;
+    Int4 r, y;
+
+    r = 1;
+    y = x;
+
+    if (n == 0)
+        return 1;
+    if (x == 0)
+        return 0;
+
+    while (n > 1) {
+        if ((n % 2) == 1)
+            r *= y;
+        n = n >> 1;
+        y = y * y;
+    }
+    r = r * y;
+    return r;
 }
 
-static void fkm_output(Int4* a, Int4 n, Int4 p, Uint1* output, Int4* cursor, Uint1* alphabet);
-static void fkm(Int4* a, Int4 n, Int4 k, Uint1* output, Int4* cursor, Uint1* alphabet);
-
-Int4 iexp(Int4 x, Int4 n)
+Int4
+ilog2(Int4 x)
 {
-Int4 r,y;
+    Int4 lg = 0;
 
-r=1;
-y=x;
+    if (x == 0)
+        return 0;
 
- if(n==0) return 1;
- if(x==0) return 0;
-  
-while (n > 1)
-  { 
-    if ( (n%2)==1) r *= y;
-    n = n >> 1;
-    y = y*y;
-  }
- r = r*y;
- return r;
+    while ((x = x >> 1))
+        lg++;
+
+    return lg;
 }
-
-Int4 ilog2(Int4 x)
-{
-  Int4 lg=0;
-
-  if (x==0) return 0;
-
-  while ( ( x = x >> 1) )
-    lg++;
-
-  return lg;
-}
-
-Int4 makemask(Int4 x)
-{
-Int4 mask=1;
-
-if (x==0) return 0;
-
-mask = mask << (x-1);
-
-mask |= (mask >> 1);
-mask |= (mask >> 2);
-mask |= (mask >> 4);
-mask |= (mask >> 8);
-mask |= (mask >> 16);
-
-return mask;
-}
-
 
 /** Output a Lyndon word as part of a de Bruijn sequence.
  *
@@ -107,19 +97,24 @@ return mask;
  * @param alphabet optional translation alphabet
  */
 
-static void fkm_output(Int4* a, Int4 n, Int4 p, Uint1* output, Int4* cursor, Uint1* alphabet)
+static void
+fkm_output(Int4 * a,
+           Int4 n,
+           Int4 p,
+           Uint1 * output,
+           Int4 * cursor,
+           Uint1 * alphabet)
 {
-  Int4 i;
+    Int4 i;
 
-  if (n % p == 0)
-    for(i=1;i<=p;i++)
-      {
-	if (alphabet != NULL)
-	  output[*cursor] = alphabet[ a[i] ];
-	else
-	  output[*cursor] = a[i];
-	*cursor = *cursor + 1;
-      }
+    if (n % p == 0)
+        for (i = 1; i <= p; i++) {
+            if (alphabet != NULL)
+                output[*cursor] = alphabet[a[i]];
+            else
+                output[*cursor] = a[i];
+            *cursor = *cursor + 1;
+        }
 }
 
 /**
@@ -146,56 +141,66 @@ static void fkm_output(Int4* a, Int4 n, Int4 p, Uint1* output, Int4* cursor, Uin
  * @param alphabet optional translation alphabet
  */
 
-static void fkm(Int4* a, Int4 n, Int4 k, Uint1* output, Int4* cursor, Uint1* alphabet)
+static void
+fkm(Int4 * a,
+    Int4 n,
+    Int4 k,
+    Uint1 * output,
+    Int4 * cursor,
+    Uint1 * alphabet)
 {
-  Int4 i,j;
+    Int4 i, j;
 
-  fkm_output(a,n,1,output,cursor,alphabet);
+    fkm_output(a, n, 1, output, cursor, alphabet);
 
-  i=n;
+    i = n;
 
-do
-  {
-    a[i] = a[i] + 1;
+    do {
+        a[i] = a[i] + 1;
 
-    for(j=1;j<=n-i;j++)
-      a[j+i] = a[j];
+        for (j = 1; j <= n - i; j++)
+            a[j + i] = a[j];
 
-    fkm_output(a,n,i,output,cursor,alphabet);
+        fkm_output(a, n, i, output, cursor, alphabet);
 
-    i=n;
+        i = n;
 
-    while (a[i] == k-1)
-      i--;
-  }
- while (i>0);
+        while (a[i] == k - 1)
+            i--;
+    }
+    while (i > 0);
 }
 
-void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet)
+void
+debruijn(Int4 n,
+         Int4 k,
+         Uint1 * output,
+         Uint1 * alphabet)
 {
-  Int4* a;
-  Int4 cursor=0;
+    Int4 *a;
+    Int4 cursor = 0;
 
-  /* n+1 because the array is indexed from one, not zero */
-  a = (Int4*) calloc( (n+1), sizeof(Int4));
+    /* n+1 because the array is indexed from one, not zero */
+    a = (Int4 *) calloc((n + 1), sizeof(Int4));
 
-  /* compute the (n,k) de Bruijn sequence and store it in output */
- 
-  fkm(a,n,k,output,&cursor,alphabet);
-  
-  sfree(a);
-  return;
+    /* compute the (n,k) de Bruijn sequence and store it in output */
+
+    fkm(a, n, k, output, &cursor, alphabet);
+
+    sfree(a);
+    return;
 }
 
-Int4 EstimateNumTableEntries(BlastSeqLoc* location)
+Int4
+EstimateNumTableEntries(BlastSeqLoc * location)
 {
-   Int4 num_entries = 0;
-   BlastSeqLoc *loc = location;
+    Int4 num_entries = 0;
+    BlastSeqLoc *loc = location;
 
-   while (loc) {
-       num_entries += loc->ssr->right - loc->ssr->left;
-       loc = loc->next;
-   }
+    while (loc) {
+        num_entries += loc->ssr->right - loc->ssr->left;
+        loc = loc->next;
+    }
 
-   return num_entries;
+    return num_entries;
 }
