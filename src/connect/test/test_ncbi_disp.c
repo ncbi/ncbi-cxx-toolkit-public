@@ -32,10 +32,13 @@
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_servicep.h"
+#include <connect/ncbi_heapmgr.h>
 #include <stdlib.h>
 #include <string.h>
 /* This header must go last */
 #include "test_assert.h"
+
+extern ESwitch LBSMD_FastHeapAccess(ESwitch);
 
 
 /* One can define env.var. 'service'_CONN_HOST to reroute dispatching
@@ -52,6 +55,20 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
+    if (argc > 2) {
+        if (strcasecmp(argv[2],"heap") == 0 || strcasecmp(argv[2],"all") == 0){
+            CORE_LOG(eLOG_Note, "Using slow heap access (w/checks)");
+            HEAP_Options(eOff, eDefault);
+        }
+        if (strcasecmp(argv[2],"lbsm") == 0 || strcasecmp(argv[2],"all") == 0){
+            CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
+            LBSMD_FastHeapAccess(eOn);
+        }
+        if (strcasecmp(argv[2],"lbsm") != 0  &&
+            strcasecmp(argv[2],"heap") != 0  &&
+            strcasecmp(argv[2],"all")  != 0)
+            CORE_LOGF(eLOG_Warning, ("Unknown option `%s'", argv[2]));
+    }
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -140,6 +157,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2006/11/21 17:33:58  lavr
+ * Implement command line option to control heap access settings
+ *
  * Revision 6.25  2006/11/21 14:47:16  lavr
  * Enumerate printed servers
  *
