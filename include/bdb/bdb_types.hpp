@@ -1830,6 +1830,125 @@ public:
 	CBDB_Field* Create(const string& type) const;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Type trait classes for finding the correct BDB field type automagically
+///
+
+///
+/// SBDB_TypeTraits defines via template parameters a policy for mapping a
+/// built-in type to a BDB field type.
+///
+template <class Type>
+struct SBDB_TypeTraits
+{
+    typedef Type TType;
+    typedef void* TFieldType;
+};
+
+
+///
+/// 8-bit signed and unsigned integral types
+///
+template<>
+struct SBDB_TypeTraits<Int1>
+{
+    typedef Int4 TType;
+    typedef CBDB_FieldInt1 TFieldType;
+};
+
+template<>
+struct SBDB_TypeTraits<Uint1>
+{
+    typedef Uint4 TType;
+    typedef CBDB_FieldUint1 TFieldType;
+};
+
+
+///
+/// 16-bit signed and unsigned integral types
+///
+template<>
+struct SBDB_TypeTraits<Int2>
+{
+    typedef Int4 TType;
+    typedef CBDB_FieldInt2 TFieldType;
+};
+
+template<>
+struct SBDB_TypeTraits<Uint2>
+{
+    typedef Uint4 TType;
+    typedef CBDB_FieldUint2 TFieldType;
+};
+
+
+///
+/// 32-bit signed and unsigned integral types
+///
+template<>
+struct SBDB_TypeTraits<Int4>
+{
+    typedef Int4 TType;
+    typedef CBDB_FieldInt4 TFieldType;
+};
+
+template<>
+struct SBDB_TypeTraits<Uint4>
+{
+    typedef Uint4 TType;
+    typedef CBDB_FieldUint4 TFieldType;
+};
+
+
+///
+/// 64-bit signed and unsigned integral types
+///
+template<>
+struct SBDB_TypeTraits<Int8>
+{
+    typedef Int8 TType;
+    typedef CBDB_FieldInt8 TFieldType;
+};
+
+template<>
+struct SBDB_TypeTraits<Uint8>
+{
+    typedef Uint8 TType;
+    typedef CBDB_FieldUint8 TFieldType;
+};
+
+
+///
+/// string types
+///
+template<>
+struct SBDB_TypeTraits<string>
+{
+    typedef string TType;
+    typedef CBDB_FieldString TFieldType;
+};
+
+
+///
+/// 32- and 64- bit floating point types
+///
+template<>
+struct SBDB_TypeTraits<float>
+{
+    typedef float TType;
+    typedef CBDB_FieldFloat TFieldType;
+};
+
+template<>
+struct SBDB_TypeTraits<double>
+{
+    typedef double TType;
+    typedef CBDB_FieldDouble TFieldType;
+};
+
+
 /* @} */
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2367,6 +2486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/11/21 13:24:33  dicuccio
+ * Added type traits class for disambiguating BDB field type given a concrete type
+ *
  * Revision 1.54  2006/11/20 08:23:18  kuznets
  * +GetInt() to CBDB_Field interface
  *
