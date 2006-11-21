@@ -242,7 +242,7 @@ CBlast2seqApplication::ProcessCommandLineArgs()
     // FIXME: Handle lcase masking
 
     if (args["lookup"].AsInteger()) {
-        opt.SetLookupTableType(args["lookup"].AsInteger());
+        opt.SetLookupTableType((ELookupTableType)(args["lookup"].AsInteger()));
     }
     if (args["matrix"]) {
         opt.SetMatrixName(args["matrix"].AsString().c_str());
