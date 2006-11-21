@@ -735,7 +735,6 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
    Int2 status = 0;
    Int8 dbsize;
    Int4 num_db_seqs;
-   Uint4 avg_subj_length = 0;
    BlastRPSLookupTable *lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
    BLAST_SequenceBlk concat_db;
    BlastQueryInfo* one_query_info = NULL;

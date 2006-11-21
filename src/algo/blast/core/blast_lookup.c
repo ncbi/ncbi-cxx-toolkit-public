@@ -39,7 +39,6 @@ void BlastLookupAddWordHit(Int4 **backbone, Int4 wordsize,
                            Int4 charsize, Uint1* seq,
                            Int4 query_offset)
 {
-    Int4 i;
     Int4 index;
     Int4 *chain = NULL;
     Int4 chain_size = 0;        /* total number of elements in the chain */
