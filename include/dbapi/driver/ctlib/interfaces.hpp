@@ -68,6 +68,32 @@ CS_INT NCBI_DBAPIDRIVER_CTLIB_EXPORT GetCtlibTdsVersion(int version = 0);
 
 
 /////////////////////////////////////////////////////////////////////////////
+BEGIN_SCOPE(ctlib)
+
+class Connection
+{
+public:
+    Connection(CTLibContext& context, CTL_Connection* ctl_conn);
+    ~Connection(void) throw();
+
+public:
+    CS_CONNECTION* GetNativeHandle(void) const
+    {
+        return m_Handle;
+    }
+
+protected:
+    const CTL_Connection& GetCTLConn(void) const;
+    CTL_Connection& GetCTLConn(void);
+
+private:
+    CTL_Connection* m_CTL_Conn;
+    CS_CONNECTION*  m_Handle;
+};
+
+END_SCOPE(ctlib)
+
+/////////////////////////////////////////////////////////////////////////////
 //
 //  CTLibContext::
 //
@@ -190,7 +216,13 @@ protected:
 public:
     CS_RETCODE Check(CS_RETCODE rc);
     CS_INT GetBLKVersion(void) const;
+
     const CTLibContext& GetCTLibContext(void) const
+    {
+        _ASSERT(m_Cntx);
+        return *m_Cntx;
+    }
+    CTLibContext& GetCTLibContext(void)
     {
         _ASSERT(m_Cntx);
         return *m_Cntx;
@@ -239,11 +271,11 @@ protected:
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
-    CS_CONNECTION* x_GetSybaseConn(void) const { return m_Link; }
+    CS_CONNECTION* x_GetSybaseConn(void) const { return m_Handle.GetNativeHandle(); }
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
 
     CTLibContext*   m_Cntx;
-    CS_CONNECTION*  m_Link;
+    ctlib::Connection   m_Handle;
 };
 
 
@@ -797,6 +829,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/11/22 20:50:23  ssikorsk
+ * Added class ctlib::Connection.
+ *
  * Revision 1.51  2006/11/20 17:38:44  ssikorsk
  * Added IsMultibyteClientEncoding() to CTL_Cmd.
  *
