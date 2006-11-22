@@ -67,7 +67,7 @@ int main(int argc, const char* argv[])
         if (strcasecmp(argv[2],"lbsm") != 0  &&
             strcasecmp(argv[2],"heap") != 0  &&
             strcasecmp(argv[2],"all")  != 0)
-            CORE_LOGF(eLOG_Warning, ("Unknown option `%s'", argv[2]));
+            CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[2]));
     }
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
@@ -157,6 +157,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2006/11/22 03:27:55  lavr
+ * Make unknown option fatal
+ *
  * Revision 6.26  2006/11/21 17:33:58  lavr
  * Implement command line option to control heap access settings
  *
