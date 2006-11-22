@@ -45,9 +45,18 @@ class CAlnUserOptions : public CObject
 {
 public:
 
+    enum EMergeOptions {
+        eMergeAllSeqs      = 0, ///< Merge all sequences
+        eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, 
+        ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence)
+        eDefault           = eMergeAllSeqs
+    };
+    typedef int TMergeOption;
+    TMergeOption m_MergeOption;
+
     enum EMergeFlags {
-        fQuerySeqMergeOnly, ///< Only put the query seq on same row, 
-        fAllowMixedStrand   ///< Allow mixed strand on the same row
+        fTruncateOverlaps = 0x0001, ///< Otherwise put on separate rows
+        fAllowMixedStrand = 0x0002, ///< Allow mixed strand on the same row
     };
     typedef int TMergeFlags;
     TMergeFlags m_MergeFlags;
@@ -91,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/11/22 00:46:16  todorov
+* Fixed the flags and options.
+*
 * Revision 1.1  2006/11/17 05:34:35  todorov
 * Initial revision.
 *
