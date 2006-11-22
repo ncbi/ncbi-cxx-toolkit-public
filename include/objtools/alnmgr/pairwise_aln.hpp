@@ -53,7 +53,7 @@ class CPairwiseAln :
     public CAlignRangeCollection<CAlignRange<TSignedSeqPos> >
 {
 public:
-    /// Types
+    // Types
     typedef TSignedSeqPos                  TPos;
     typedef CRange<TPos>                   TRng; 
     typedef CAlignRange<TPos>              TAlnRng;
@@ -69,17 +69,18 @@ public:
           m_SecondBaseWidth(second_base_width) {}
 
 
-    /// Accessors:
+    /// Base width of the first row
     int GetFirstBaseWidth() const {
         return m_FirstBaseWidth;
     }
 
+    /// Base width of the second row
     int GetSecondBaseWidth() const {
         return m_SecondBaseWidth;
     }
 
 
-    /// Dump in human readable text format:
+    /// Dump in human readable text format
     template <class TOutStream>
     void Dump(TOutStream& os) const {
         char s[32];
@@ -127,59 +128,119 @@ private:
 class CAnchoredAln : public CObject
 {
 public:
-    /// Types:
+    // Types
     typedef CSeq_align::TDim TDim;
-    typedef vector<CConstRef<CSeq_id> > TSeqIdVector;
+    typedef CConstRef<CSeq_id> TSeqIdPtr;
+    typedef vector<TSeqIdPtr> TSeqIdVector;
     typedef vector<CRef<CPairwiseAln> > TPairwiseAlnVector;
 
 
-    /// Accessors:
+    /// Default constructor
+    CAnchoredAln()
+        : m_AnchorRow(kInvalidAnchorRow),
+          m_Score(0)
+    {
+    }
+
+    /// NB: Copy constructor is deep on pairwise_alns so that
+    /// pairwise_alns can be modified
+    CAnchoredAln(const CAnchoredAln& c)
+        : m_AnchorRow(c.m_AnchorRow),
+          m_SeqIds(c.m_SeqIds),
+          m_Score(c.m_Score)
+    {
+        m_PairwiseAlns.resize(c.GetDim());
+        for (TDim row = 0;  row < c.GetDim();  ++row) {
+            CRef<CPairwiseAln> pairwise_aln
+                (new CPairwiseAln(*c.m_PairwiseAlns[row]));
+            m_PairwiseAlns[row].Reset(pairwise_aln);
+        }
+    }
+        
+
+    /// NB: Assignment operator is deep on pairwise_alns so that
+    /// pairwise_alns can be modified
+    CAnchoredAln& operator=(const CAnchoredAln& c)
+    {
+        m_AnchorRow = c.m_AnchorRow;
+        m_SeqIds = c.m_SeqIds;
+        m_Score = c.m_Score;
+        m_PairwiseAlns.resize(c.GetDim());
+        for (TDim row = 0;  row < c.GetDim();  ++row) {
+            CRef<CPairwiseAln> pairwise_aln
+                (new CPairwiseAln(*c.m_PairwiseAlns[row]));
+            m_PairwiseAlns[row].Reset(pairwise_aln);
+        }
+        return *this;
+    }
+        
+
+    /// How many rows
     TDim GetDim() const {
         _ASSERT(m_SeqIds.size() == m_PairwiseAlns.size());
+        _ASSERT(m_AnchorRow == (TDim) m_SeqIds.size() - 1);
         return (TDim) m_SeqIds.size();
     }
 
+    /// Seq ids of the rows
     const TSeqIdVector& GetSeqIds() const { 
         return m_SeqIds;
     }
 
+    /// The vector of pairwise alns
     const TPairwiseAlnVector& GetPairwiseAlns() const {
         return m_PairwiseAlns;
     }
 
+    /// Which is the anchor row?
     TDim GetAnchorRow() const {
+        _ASSERT(m_AnchorRow != kInvalidAnchorRow);
+        _ASSERT(m_AnchorRow < GetDim());
         return m_AnchorRow;
     }
 
+    /// What is the seq id of the anchor?
+    const TSeqIdPtr& GetAnchorId() const {
+        return m_SeqIds[m_AnchorRow];
+    }
+
+    /// What is the total score?
     int GetScore() const {
         return m_Score;
     }
 
 
-    /// Modifiers:
+    /// Modify the number of rows.  NB: This resizes the vectors and
+    /// potentially invalidates the anchor row.  Never do this unless
+    /// you know what you're doing)
     void SetDim(TDim dim) {
-        if (dim > GetDim()) {
-            m_SeqIds.resize(dim);
-            m_PairwiseAlns.resize(dim);
-        }
+        _ASSERT(m_AnchorRow == kInvalidAnchorRow); // make sure anchor is not set yet
+        m_SeqIds.resize(dim);
+        m_PairwiseAlns.resize(dim);
     }
 
+    /// Modify seq-ids
     TSeqIdVector& SetSeqIds() {
         return m_SeqIds;
     }
 
+    /// Modify pairwise alns
     TPairwiseAlnVector& SetPairwiseAlns() {
         return m_PairwiseAlns;
     }
 
+    /// Modify anchor row (never do this unless you are creating a new
+    /// alignment and know what you're doing)
     void SetAnchorRow(TDim anchor_row) {
         m_AnchorRow = anchor_row;
     }
 
+    /// Set the total score
     void SetScore(int score) {
         m_Score = score;
     }
 
+    /// Non-const access to the total score
     int& SetScore() {
         return m_Score;
     }
@@ -198,9 +259,10 @@ public:
 
 
 private:
+    static const TDim  kInvalidAnchorRow = -1;
+    TDim               m_AnchorRow;
     TSeqIdVector       m_SeqIds;
     TPairwiseAlnVector m_PairwiseAlns;
-    TDim               m_AnchorRow;
     int                m_Score;
 };
 
@@ -222,6 +284,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/11/22 00:46:46  todorov
+* Various fixes.
+*
 * Revision 1.10  2006/11/16 22:36:37  todorov
 * + score
 *
