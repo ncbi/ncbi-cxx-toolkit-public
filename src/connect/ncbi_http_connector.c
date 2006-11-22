@@ -38,6 +38,7 @@
 #include "ncbi_priv.h"
 #include <connect/ncbi_http_connector.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 
 
@@ -93,6 +94,9 @@ typedef struct {
     BUF                  r_buf;        /* storage to accumulate input data   */
     BUF                  w_buf;        /* storage to accumulate output data  */
     size_t               w_len;        /* pending message body size          */
+
+    size_t               expected;     /* expected to receive until EOF      */
+    size_t               received;     /* actually received so far           */
 } SHttpConnector;
 
 
@@ -249,6 +253,8 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
             assert(uuu->sock);
             uuu->read_header = 1/*true*/;
             uuu->shut_down = 0/*false*/;
+            uuu->expected = 0;
+            uuu->received = 0;
         } else
             status = eIO_Success;
 
@@ -278,7 +284,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
                 /* 10/28/03: CISCO's beta patch for their LB shows that the
                  * problem has been fixed; no more 2'30" drops in connections
                  * that shut down for write.  We still leave this commented
-                 * out to allow unpatched clients work seamlessly... */ 
+                 * out to allow unpatched clients to work seamlessly... */ 
                 /*SOCK_Shutdown(uuu->sock, eIO_Write);*/
                 uuu->shut_down = 1;
             }
@@ -388,37 +394,34 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 
     {{
         /* parsing "NCBI-Message" tag */
-        const char k_NcbiMessageTag[] = "\n" HTTP_NCBI_MESSAGE " ";
-        char*      message            = strstr(header, k_NcbiMessageTag);
-
-        if (message) {
-            char* s;
-            char  c;
-
-            message += sizeof(k_NcbiMessageTag) - 1;
-            while (*message && isspace((unsigned char)(*message)))
-                message++;
-            if (!(s = strchr(message, '\r')))
-                s = strchr(message, '\n');
-            assert(s);
-            do {
-                if (!isspace((unsigned char) s[-1]))
-                    break;
-            } while (--s > message);
-            c  = *s;
-            *s = '\0';
-            if (*message) {
-                if (s_MessageHook) {
-                    if (s_MessageIssued <= 0) {
-                        s_MessageIssued = 1;
-                        s_MessageHook(message);
+        static const char kNcbiMessageTag[] = "\n" HTTP_NCBI_MESSAGE " ";
+        const char* s;
+        for (s = strchr(header, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
+            if (strncasecmp(s, kNcbiMessageTag, sizeof(kNcbiMessageTag)-1)==0){
+                const char* message = s + sizeof(kNcbiMessageTag) - 1;
+                while (*message  &&  isspace((unsigned char)(*message)))
+                    message++;
+                if (!(s = strchr(message, '\r')))
+                    s = strchr(message, '\n');
+                assert(s);
+                do {
+                    if (!isspace((unsigned char) s[-1]))
+                        break;
+                } while (--s > message);
+                if (message != s) {
+                    if (s_MessageHook) {
+                        if (s_MessageIssued <= 0) {
+                            s_MessageIssued = 1;
+                            s_MessageHook(message);
+                        }
+                    } else {
+                        s_MessageIssued = -1;
+                        CORE_LOGF(eLOG_Warning, ("[NCBI-MESSAGE]  %.*s",
+                                                 (int)(s - message), message));
                     }
-                } else {
-                    s_MessageIssued = -1;
-                    CORE_LOGF(eLOG_Warning, ("[NCBI-MESSAGE]  %s", message));
                 }
+                break;
             }
-            *s = c;
         }
     }}
 
@@ -438,27 +441,51 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 
     if (moved) {
         /* parsing "Location" pointer */
-        const char k_LocationTag[] = "\nLocation: ";
-        char*      location        = strstr(header, k_LocationTag);
-
-        if (location) {
-            char* s;
-
-            location += sizeof(k_LocationTag) - 1;
-            if (!(s = strchr(location, '\r')))
-                *strchr(location, '\n') = 0;
-            else
-                *s = 0;
-            while (*location && isspace((unsigned char)(*location)))
-                location++;
-            for (s = location; *s; s++) {
-                if (isspace((unsigned char)(*s)))
-                    break;
+        static const char kLocationTag[] = "\nLocation: ";
+        char* s;
+        for (s = strchr(header, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
+            if (strncasecmp(s, kLocationTag, sizeof(kLocationTag) - 1) == 0) {
+                char* location = s + sizeof(kLocationTag) - 1;
+                while (*location  &&  isspace((unsigned char)(*location)))
+                    location++;
+                if (!(s = strchr(location, '\r')))
+                    s = strchr(location, '\n');
+                assert(s);
+                do {
+                    if (!isspace((unsigned char) s[-1]))
+                        break;
+                } while (--s > location);
+                if (s != location) {
+                    size_t len = (size_t)(s - location);
+                    memmove(header, location, len);
+                    header[len] = '\0';
+                    *redirect = header;
+                }
+                break;
             }
-            *s = 0;
-            if ((size = strlen(location)) != 0) {
-                memmove(header, location, size + 1);
-                *redirect = header;
+        }
+    } else if (!server_error) {
+        static const char kContentLengthTag[] = "\nContent-Length: ";
+        const char* s;
+        for (s = strchr(header, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
+            if (!strncasecmp(s,kContentLengthTag,sizeof(kContentLengthTag)-1)){
+                const char* expected = s + sizeof(kContentLengthTag) - 1;
+                while (*expected  &&  isspace((unsigned char)(*expected)))
+                    expected++;
+                if (!(s = strchr(expected, '\r')))
+                    s = strchr(expected, '\n');
+                assert(s);
+                do {
+                    if (!isspace((unsigned char) s[-1]))
+                        break;
+                } while (--s > expected);
+                if (s != expected) {
+                    char* e;
+                    errno = 0;
+                    uuu->expected = (size_t) strtol(expected, &e, 10);
+                    if (errno  ||  e != s)
+                        uuu->expected = 0;
+                }
             }
         }
     }
@@ -561,14 +588,21 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
 static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
                          size_t size, size_t* n_read)
 {
+    EIO_Status status;
+
     assert(uuu->sock);
     /* just read, with no URL-decoding */
-    if (!(uuu->flags & fHCC_UrlDecodeInput))
-        return SOCK_Read(uuu->sock, buf, size, n_read, eIO_ReadPlain);
+    if (!(uuu->flags & fHCC_UrlDecodeInput)) {
+        status = SOCK_Read(uuu->sock, buf, size, n_read, eIO_ReadPlain);
+        uuu->received += *n_read;
+        return (status != eIO_Closed
+                ||  !uuu->expected  ||  uuu->expected == uuu->received
+                ? status
+                : eIO_Unknown);
+    }
 
     /* read and URL-decode */
     {{
-        EIO_Status status;
         size_t     n_peeked, n_decoded;
         size_t     peek_size = 3 * size;
         void*      peek_buf  = malloc(peek_size);
@@ -576,9 +610,13 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         /* peek the data */
         status= SOCK_Read(uuu->sock,peek_buf,peek_size,&n_peeked,eIO_ReadPeek);
         if (status != eIO_Success) {
+            assert(!n_peeked);
             *n_read = 0;
             free(peek_buf);
-            return status;
+            return (status != eIO_Closed
+                    ||  !uuu->expected  ||  uuu->expected == uuu->received
+                    ? status
+                    : eIO_Unknown);
         }
 
         /* decode, then discard the successfully decoded data from the input */
@@ -586,6 +624,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             if (n_decoded) {
                 SOCK_Read(uuu->sock, 0, n_decoded, &n_peeked, eIO_ReadPersist);
                 assert(n_peeked == n_decoded);
+                uuu->received += n_decoded;
                 status = eIO_Success;
             } else if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed) {
                 /* we are at EOF, and the remaining data cannot be decoded */
@@ -1069,6 +1108,9 @@ extern void HTTP_SetNcbiMessageHook(FHTTP_NcbiMessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.75  2006/11/22 17:23:16  lavr
+ * Process Content-Length and fail on short contents received
+ *
  * Revision 6.74  2006/11/03 22:21:50  lavr
  * Make path and arguments non-inheritable in redirects
  *
