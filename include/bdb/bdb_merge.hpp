@@ -580,7 +580,7 @@ template<class BF>
 void CBDB_MergeBlobWalkerAsync<BF>::DoFetch()
 {
     CFastMutex::TWriteLockGuard lock(m_Lock);
-    if (m_Data) { // fetch was not requested...
+    if (m_Data || !m_Cursor.get()) { // fetch was not requested...
         return;
     }
     try {
@@ -663,6 +663,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/11/22 10:28:56  kuznets
+ * Fixed race condition
+ *
  * Revision 1.4  2006/11/22 06:21:33  kuznets
  * Implemented multirow fetch mode when Fetch signals back about buffer ends
  *
