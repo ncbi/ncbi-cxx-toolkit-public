@@ -49,14 +49,6 @@ extern const char* LBSMD_GetConfig(void)
 }
 
 
-/*ARGSUSED*/ /*DEPRECATED*/
-extern ESwitch LBSMD_KeepHeapAttached(ESwitch sw/*ignored*/)
-{
-    /* ignore any new settings, always return "Off" here */
-    return eOff;
-}
-
-
 /*ARGSUSED*/
 extern ESwitch LBSMD_FastHeapAccess(ESwitch sw/*ignored*/)
 {
@@ -103,6 +95,9 @@ int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2006/11/22 18:05:00  lavr
+ * -LBSMD_KeepHeapAttached()
+ *
  * Revision 6.13  2006/11/08 19:16:05  lavr
  * -<connect/ncbi_service_misc.h>
  *
