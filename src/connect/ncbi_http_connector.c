@@ -488,6 +488,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
                     else if (!uuu->expected)
                         uuu->expected = (size_t)(-1L);
                 }
+                break;
             }
         }
     }
@@ -632,10 +633,11 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     if (uuu->expected) {
         if (uuu->received > uuu->expected)
             return eIO_Unknown/*received too much*/;
-        if (uuu->received  &&  uuu->expected == (size_t)(-1L))
+        if (uuu->expected != (size_t)(-1L)) {
+            if (status == eIO_Closed  &&  uuu->expected > uuu->received)
+                return eIO_Unknown/*received too little*/;
+        } else if (uuu->received)
             return eIO_Unknown/*received too much*/;
-        if (status == eIO_Closed  &&  uuu->expected > uuu->received)
-            return eIO_Unknown/*received too little*/;
     }
     return status;
 }
@@ -1107,6 +1109,9 @@ extern void HTTP_SetNcbiMessageHook(FHTTP_NcbiMessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.77  2006/11/22 19:41:31  lavr
+ * Fix content length handling in case of 0
+ *
  * Revision 6.76  2006/11/22 18:07:51  lavr
  * Check not only against short reads but also against exceedingly long ones
  *
