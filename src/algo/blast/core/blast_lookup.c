@@ -124,6 +124,15 @@ void BlastLookupIndexQueryExactMatches(Int4 **backbone,
             if (*seq & invalid_mask)
                 word_target = seq + lut_word_length + 1;
         }
+
+        /* handle the last word, without loading *seq */
+        if (seq >= word_target) {
+            BlastLookupAddWordHit(backbone, 
+                                  lut_word_length, charsize,
+                                  seq - lut_word_length, 
+                                  offset - lut_word_length);
+        }
+
     }
 }
 
