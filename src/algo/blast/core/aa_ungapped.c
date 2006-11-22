@@ -778,8 +778,7 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
  * @param query query sequence [in]
  * @param s_off subject offset [in]
  * @param q_off query offset [in]
- * @param dropoff the X dropoff parameter [in]
- * @param displacement the length of the extension [out]
+ * @param length the length of the computed extension [out]
  * @param maxscore the score derived from a previous left extension [in]
  * @param s_last_off the rightmost subject offset examined [out]
  * @return The score of the extension
@@ -833,8 +832,10 @@ static Int4 s_BlastAaExtendRight(Int4 ** matrix,
  * @param s_off subject offset [in]
  * @param q_off query offset [in]
  * @param dropoff the X dropoff parameter [in]
- * @param displacement the length of the extension [out]
- * @param score the score so far (probably from initial word hit) [in]
+ * @param length the length of the computed extension [out]
+ * @param maxscore the best running score from a previous extension;
+ *                 the running score of the current extension must exceed 
+ *                 this value if the extension is to be of nonzero size [in]
  * @return The score of the extension
  */
 static Int4 s_BlastAaExtendLeft(Int4 ** matrix,
@@ -884,7 +885,7 @@ static Int4 s_BlastAaExtendLeft(Int4 ** matrix,
  * @param s_off subject offset [in]
  * @param q_off query offset [in]
  * @param dropoff the X dropoff parameter [in]
- * @param displacement the length of the extension [out]
+ * @param length the length of the extension [out]
  * @param maxscore the score derived from a previous left extension [in]
  * @param s_last_off the rightmost subject offset examined [out]
  * @return The score of the extension
@@ -933,8 +934,8 @@ static Int4 s_BlastPSSMExtendRight(Int4 ** matrix,
  * @param s_off subject offset [in]
  * @param q_off query offset [in]
  * @param dropoff the X dropoff parameter [in]
- * @param displacement the length of the extension [out]
- * @param score the score so far (probably from initial word hit) [in]
+ * @param length the length of the extension [out]
+ * @param maxscore the score so far (probably from initial word hit) [in]
  * @return The score of the extension
  */
 static Int4 s_BlastPSSMExtendLeft(Int4 ** matrix,

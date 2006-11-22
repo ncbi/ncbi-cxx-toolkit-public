@@ -159,8 +159,6 @@ typedef struct _PSIPackedMsa {
  * (makes a deep copy) for internal use by the PSSM engine.
  * @param msa multiple sequence alignment data structure provided by the user
  * [in]
- * @param alphabet_size number of elements in the alphabet that makes up the
- * aligned characters in the multiple sequence alignment [in]
  * @return newly allocated structure or NULL in case of memory allocation
  * failure
  */
@@ -632,6 +630,9 @@ _PSIValidateMSA_StructureGroup(const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2006/11/22 15:35:17  papadopo
+ * doxygen fixes
+ *
  * Revision 1.32  2006/11/21 17:07:38  papadopo
  * rearrange headers
  *

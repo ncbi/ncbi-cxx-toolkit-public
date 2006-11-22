@@ -63,8 +63,8 @@ typedef struct NeighborInfo {
  * @param query_bias number added to each offset put into lookup table
  *                      (ordinarily 0; a nonzero value allows a succession of
  *                      query sequences to update the same lookup table)
- * @param locations the list of ranges of query offsets to examine 
- *                  for indexing [in]
+ * @param location the list of ranges of query offsets to examine 
+ *                 for indexing [in]
  */
 static void s_AddNeighboringWords(BlastAaLookupTable * lookup, Int4 ** matrix,
                                   BLAST_SequenceBlk * query, Int4 query_bias,
@@ -80,7 +80,7 @@ static void s_AddNeighboringWords(BlastAaLookupTable * lookup, Int4 ** matrix,
  * @param query_bias number added to each offset put into lookup table
  *                      (ordinarily 0; a nonzero value allows a succession of
  *                      query sequences to update the same lookup table)
- * @param locations the list of ranges of query offsets to examine for indexing
+ * @param location the list of ranges of query offsets to examine for indexing
  */
 static void s_AddPSSMNeighboringWords(BlastAaLookupTable * lookup, 
                                       Int4 ** matrix, Int4 query_bias, 

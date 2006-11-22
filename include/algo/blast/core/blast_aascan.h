@@ -24,7 +24,7 @@
  * ===========================================================================
  */
 
-/** @file blast_aalookup.h
+/** @file blast_aascan.h
  *  Routines for creating protein BLAST lookup tables.
  *  Contains definitions and prototypes for the lookup 
  *  table scanning phase of blastp and RPS blast.

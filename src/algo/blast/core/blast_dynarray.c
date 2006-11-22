@@ -27,7 +27,7 @@
  *
  */
 
-/** @file blast_util.c
+/** @file blast_dynarray.c
  * Definitions for various dynamic array types
  */
 

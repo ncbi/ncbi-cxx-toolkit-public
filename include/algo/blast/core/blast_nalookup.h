@@ -116,7 +116,7 @@ typedef struct BlastNaLookupTable {
  * @param locations The locations to be included in the lookup table,
  *        e.g. [0,length-1] for full sequence. NULL means no sequence. [in]
  * @param lut Pointer to the lookup table to be created [out]
- * @param lookup_options Options for lookup table creation [in]
+ * @param opt Options for lookup table creation [in]
  * @param lut_width The number of nucleotides in one lookup table word [in]
  * @return 0 if successful, nonzero on failure
  */
