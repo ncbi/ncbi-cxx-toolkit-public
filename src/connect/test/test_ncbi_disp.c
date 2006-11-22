@@ -30,11 +30,11 @@
  *
  */
 
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_servicep.h"
 #include <connect/ncbi_heapmgr.h>
 #include <stdlib.h>
-#include <string.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -157,6 +157,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2006/11/22 04:07:27  lavr
+ * Include "../ncbi_ansi_ext.h" for private implementation of strcasecmp()
+ *
  * Revision 6.27  2006/11/22 03:27:55  lavr
  * Make unknown option fatal
  *
