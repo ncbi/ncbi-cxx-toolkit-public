@@ -46,54 +46,154 @@
 BEGIN_NCBI_SCOPE
 
 
-void 
-BuildAln(vector<CRef<CAnchoredAln> >& in_anchored_alns, ///< Input Alignments
-         CAnchoredAln& out_anchored_aln,                ///< Output
-         CAlnUserOptions& aln_user_options)             ///< Input Options
+void MergeAlnRngColl(CPairwiseAln& existing,
+                     const CPairwiseAln& addition,
+                     const CAlnUserOptions::TMergeFlags& flags)
 {
-    /// Types
-    typedef CAnchoredAln::TDim TDim;
-    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVector;
+    CPairwiseAln difference;
+    SubtractAlnRngCollections(addition,
+                              existing,
+                              difference);
+#define _TRACE_MergeAlnRngColl
+#ifdef _TRACE_MergeAlnRngColl
+    cerr << endl << "existing:" << endl;
+    existing.Dump(cerr);
+    cerr << endl<< "addition:" << endl;
+    addition.Dump(cerr);
+    cerr << endl << "difference = addition - existing:" << endl;
+    difference.Dump(cerr);
+#endif
+    ITERATE(CPairwiseAln, rng_it, difference) {
+        existing.insert(*rng_it);
+    }
+#ifdef _TRACE_MergeAlnRngColl
+    cerr << endl << "result = existing + difference:" << endl;
+    existing.Dump(cerr);
+    cerr << endl;
+#endif
+}
 
-    /// Sort the anchored alns by score (best to worst)
-    sort(in_anchored_alns.begin(),
-         in_anchored_alns.end(), 
+
+template <class TAnchoredAlns,
+          class TSeqIdPtrComp>
+void 
+BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
+         CAnchoredAln& out_aln,          ///< Output
+         const CAlnUserOptions& options, ///< Input Options
+         const TSeqIdPtrComp& comp)      ///< TSeqIdPtr comparison functor
+{
+    // Types
+    typedef CAnchoredAln::TDim TDim;
+    typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
+    typedef CAnchoredAln::TSeqIdPtr TSeqIdPtr;
+
+    /// 1. Sort the anchored alns by score (best to worst)
+    sort(in_alns.begin(),
+         in_alns.end(), 
          PScoreGreater<CAnchoredAln>());
     
-    /// Build a single anchored_aln
-    for (size_t aln_idx = 0; 
-         aln_idx < in_anchored_alns.size();
-         ++aln_idx) {
-        
-        const CAnchoredAln& anchored_aln = *in_anchored_alns[aln_idx];
-        
-        TDim dim = anchored_aln.GetDim();
-        for (TDim row = 0; row < dim; ++row) {
-            
-            if (row < out_anchored_aln.GetDim()) {
-                
-                CPairwiseAln& out_pairwise_aln = *out_anchored_aln.SetPairwiseAlns()[row];
-                
-                CRef<CPairwiseAln> diff(new CPairwiseAln);
-                SubtractAlnRngCollections(*anchored_aln.GetPairwiseAlns()[row],
-                                          out_pairwise_aln,
-                                          *diff);
-                ITERATE(CPairwiseAln, rng_it, *diff) {
-                    out_pairwise_aln.insert(*rng_it);
+
+    /// 2. Build a single anchored_aln
+    _ASSERT(out_aln.GetDim() == 0);
+    switch (options.m_MergeOption) {
+    case CAlnUserOptions::eQuerySeqMergeOnly:
+        ITERATE(typename TAnchoredAlns, aln_it, in_alns) {
+            const CAnchoredAln& aln = **aln_it;
+            if (aln_it == in_alns.begin()) {
+                out_aln = aln;
+                continue;
+            }
+            // assumption is that anchor row is the last
+            _ASSERT(aln.GetAnchorRow() == aln.GetDim()-1);
+            for (TDim row = 0; row < aln.GetDim(); ++row) {
+                if (row == aln.GetAnchorRow()) {
+                    MergeAlnRngColl(*out_aln.SetPairwiseAlns().back(),
+                                    *aln.GetPairwiseAlns()[row],
+                                    CAlnUserOptions::fTruncateOverlaps);
+                } else {
+                    // swap the anchor row with the new one
+                    CRef<CPairwiseAln> anchor_pairwise(out_aln.GetPairwiseAlns().back());
+                    out_aln.SetPairwiseAlns().back().Reset
+                        (new CPairwiseAln(*aln.GetPairwiseAlns()[row]));
+                    out_aln.SetPairwiseAlns().push_back(anchor_pairwise);
+                    TSeqIdPtr anchor_id(out_aln.GetSeqIds().back());
+                    out_aln.SetSeqIds().back().Reset(aln.GetSeqIds()[row]);
+                    out_aln.SetSeqIds().push_back(anchor_id);
                 }
-                
-            } else {
-                _ASSERT(row == out_anchored_aln.GetDim());
-                
-                CRef<CPairwiseAln> pairwise_aln
-                    (new CPairwiseAln(*anchored_aln.GetPairwiseAlns()[row]));
-                out_anchored_aln.SetPairwiseAlns().push_back(pairwise_aln);
-                out_anchored_aln.SetSeqIds().push_back(anchored_aln.GetSeqIds()[row]);
             }
         }
-        cout << "Added alignment " << aln_idx << ":" << endl;
-        out_anchored_aln.Dump(cout);
+        break;
+    case CAlnUserOptions::ePreserveRows:
+        ITERATE(typename TAnchoredAlns, aln_it, in_alns) {
+            CAnchoredAln aln = **aln_it;
+            if (aln_it == in_alns.begin()) {
+                out_aln = aln;
+                continue;
+            }
+            _ASSERT(aln.GetDim() == out_aln.GetDim());
+            _ASSERT(aln.GetAnchorRow() == out_aln.GetAnchorRow());
+            for (TDim row = 0; row < aln.GetDim(); ++row) {
+                MergeAlnRngColl(*out_aln.SetPairwiseAlns()[row],
+                                *aln.GetPairwiseAlns()[row],
+                                row == aln.GetAnchorRow() ?
+                                CAlnUserOptions::fTruncateOverlaps :
+                                options.m_MergeFlags);
+            }
+        }
+        break;
+    case CAlnUserOptions::eMergeAllSeqs:
+    default: 
+        {
+            typedef map<TSeqIdPtr, CRef<CPairwiseAln>, TSeqIdPtrComp> TIdAlnMap;
+            TIdAlnMap id_aln_map;
+            TSeqIdPtr anchor_id;
+            CRef<CPairwiseAln> anchor_pairwise;
+            ITERATE(typename TAnchoredAlns, aln_it, in_alns) {
+                const CAnchoredAln& aln = **aln_it;
+                for (TDim row = 0; row < aln.GetDim(); ++row) {
+                    if (row == aln.GetAnchorRow()) {
+                        if (aln_it == in_alns.begin()) {
+                            anchor_id = aln.GetSeqIds()[row];
+                        }
+                        _ASSERT( !(comp(anchor_id, aln.GetSeqIds()[row])  ||
+                                   comp(aln.GetSeqIds()[row], anchor_id)) );
+                    }
+                    CRef<CPairwiseAln>& pairwise = id_aln_map[aln.GetSeqIds()[row]];
+                    if (pairwise.Empty()) {
+                        pairwise.Reset
+                            (new CPairwiseAln(*aln.GetPairwiseAlns()[row]));
+                    } else {
+                        MergeAlnRngColl(*pairwise,
+                                        *aln.GetPairwiseAlns()[row],
+                                        row == aln.GetAnchorRow() ?
+                                        CAlnUserOptions::fTruncateOverlaps :
+                                        options.m_MergeFlags);
+                    }
+                }
+            }
+            _ASSERT(out_aln.GetPairwiseAlns().empty());
+            TDim dim = id_aln_map.size();
+            TDim target_anchor_row = dim - 1;
+            TDim target_row = 0;
+            out_aln.SetPairwiseAlns().resize(dim);
+            out_aln.SetSeqIds().resize(dim);
+            NON_CONST_ITERATE (typename TIdAlnMap, map_it, id_aln_map) {
+                if (comp(map_it->first, anchor_id) ||  comp(anchor_id, map_it->first)) {
+                    // not the anchor
+                    out_aln.SetSeqIds()[target_row].Reset(map_it->first);
+                    out_aln.SetPairwiseAlns()[target_row].Reset(map_it->second);
+                    ++target_row;
+                } else {
+                    // anchor case
+                    out_aln.SetSeqIds()[target_anchor_row].Reset(map_it->first);
+                    out_aln.SetPairwiseAlns()[target_anchor_row].Reset(map_it->second);
+                }
+            }
+        }
+        break;
     }
+    out_aln.SetAnchorRow(out_aln.GetSeqIds().size() - 1);
+    /// 3. Sort the ids and alns according to score, how to collect score?
 }
 
 
@@ -104,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/11/22 00:45:10  todorov
+* Added support for three merging modes.
+*
 * Revision 1.1  2006/11/17 05:35:11  todorov
 * Initial revision.
 *
