@@ -56,7 +56,7 @@ public:
     bool operator()(TSeqIdPtr left_seq_id,
                     TSeqIdPtr right_seq_id) const
     {
-        return left_seq_id->CompareOrdered(*right_seq_id);
+        return left_seq_id->CompareOrdered(*right_seq_id) < 0;
     }
 };
 
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/11/22 00:47:17  todorov
+* Fixed the usage of CompareOrdered
+*
 * Revision 1.3  2006/11/20 18:48:02  todorov
 * + const
 *
