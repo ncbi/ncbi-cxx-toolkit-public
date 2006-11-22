@@ -173,6 +173,58 @@ CTLibContextRegistry::StaticClearAll(void)
     CTLibContextRegistry::Instance().ClearAll();
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+BEGIN_SCOPE(ctlib)
+
+Connection::Connection(CTLibContext& context,
+                       CTL_Connection* ctl_conn) :
+    m_CTL_Conn(ctl_conn),
+    m_Handle(NULL)
+{
+    if (context.Check(ct_con_alloc(context.CTLIB_GetContext(),
+                                   &m_Handle)) != CS_SUCCEED) {
+        DATABASE_DRIVER_ERROR( "Cannot allocate a connection handle.", 100011 );
+    }
+}
+
+
+Connection::~Connection(void) throw()
+{
+    try {
+        GetCTLConn().Check(ct_con_drop(m_Handle));
+    }
+    catch (...)
+    {
+        _ASSERT(false);
+    }
+}
+
+
+const CTL_Connection&
+Connection::GetCTLConn(void) const
+{
+    if (!m_CTL_Conn) {
+        DATABASE_DRIVER_ERROR( "CTL_Connection wasn't assigned.", 100011 );
+    }
+
+    return *m_CTL_Conn;
+}
+
+
+CTL_Connection&
+Connection::GetCTLConn(void)
+{
+    if (!m_CTL_Conn) {
+        DATABASE_DRIVER_ERROR( "CTL_Connection wasn't assigned.", 100011 );
+    }
+
+    return *m_CTL_Conn;
+}
+
+END_SCOPE(ctlib)
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTLibContext::
@@ -1156,6 +1208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2006/11/22 20:50:58  ssikorsk
+ * Implemented class ctlib::Connection.
+ *
  * Revision 1.98  2006/10/05 19:51:50  ssikorsk
  * Moved connection logic from CTLibContext to CTL_Connection.
  *
