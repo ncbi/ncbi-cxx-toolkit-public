@@ -38,8 +38,6 @@
 /* This header must go last */
 #include "test_assert.h"
 
-extern ESwitch LBSMD_FastHeapAccess(ESwitch);
-
 
 /* One can define env.var. 'service'_CONN_HOST to reroute dispatching
  * information to particular dispatching host (instead of default).
@@ -57,12 +55,15 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFILE(stderr, 0/*false*/);
     if (argc > 2) {
         if (strcasecmp(argv[2],"heap") == 0 || strcasecmp(argv[2],"all") == 0){
-            CORE_LOG(eLOG_Note, "Using slow heap access (w/checks)");
             HEAP_Options(eOff, eDefault);
+            CORE_LOG(eLOG_Note, "Using slow heap access (w/checks)");
         }
         if (strcasecmp(argv[2],"lbsm") == 0 || strcasecmp(argv[2],"all") == 0){
-            CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
+#ifndef NCBI_OS_MSWIN
+            extern ESwitch LBSMD_FastHeapAccess(ESwitch);
             LBSMD_FastHeapAccess(eOn);
+#endif /*NCBI_OS_MSWIN*/
+            CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
         }
         if (strcasecmp(argv[2],"lbsm") != 0  &&
             strcasecmp(argv[2],"heap") != 0  &&
@@ -157,6 +158,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2006/11/22 18:08:23  lavr
+ * Do not use LBSMD_FastHeapAccess() on Windows (DLL mode requires a modifier)
+ *
  * Revision 6.28  2006/11/22 04:07:27  lavr
  * Include "../ncbi_ansi_ext.h" for private implementation of strcasecmp()
  *
