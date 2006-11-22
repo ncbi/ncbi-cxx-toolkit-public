@@ -211,9 +211,7 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
     anchored_aln->SetPairwiseAlns().resize(dim);
 
     int anchor_flags =
-        CPairwiseAln::fKeepNormalized |
-        CPairwiseAln::fAllowOverlap |
-        CPairwiseAln::fAllowAbutting;
+        CPairwiseAln::fKeepNormalized;
 
     int flags = 
         CPairwiseAln::fAllowMixedDir |
@@ -286,6 +284,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/11/22 00:45:48  todorov
+* Fixed the anchor collection flags.
+*
 * Revision 1.8  2006/11/20 18:39:48  todorov
 * + CreateAnchoredAlnVector
 *
