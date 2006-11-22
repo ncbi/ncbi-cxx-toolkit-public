@@ -39,7 +39,7 @@
 #include <util/regexp.hpp>
 
 
-/** @addtogroup Utility
+/** @addtogroup Utility Regexp
  *
  * @{
  */
@@ -56,7 +56,7 @@ BEGIN_NCBI_SCOPE
 /// The empty mask object always correspond to "all is included" case.
 /// Throw exceptions on error.
 ///
-class CMaskRegexp : public CMask
+class NCBI_XREGEXP_EXPORT CMaskRegexp : public CMask
 {
 public:
     /// Match string
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/22 13:00:26  ivanov
+ * Added export specifier
+ *
  * Revision 1.1  2006/11/21 20:58:39  ivanov
  * Initial revision
  *
