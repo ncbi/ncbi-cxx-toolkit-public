@@ -86,7 +86,7 @@ void CAlnBuildApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey
-        ("in", "InputFileName",
+        ("in", "input_file_name",
          "Name of file to read from (standard input by default)",
          CArgDescriptions::eInputFile, "-");
 
@@ -95,6 +95,15 @@ void CAlnBuildApp::Init(void)
          "This forces the input file to be read in binary ASN.1 mode\n"
          "and specifies the type of the top-level ASN.1 object.\n",
          CArgDescriptions::eString, "");
+
+    // Merge option
+    arg_desc->AddDefaultKey
+        ("m", "merge_option",
+         "eMergeAllSeqs      = 0, ///< Merge all sequences\n"
+         "eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, \n"
+         "ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence)\n"
+         "eDefault           = eMergeAllSeqs",
+         CArgDescriptions::eInteger, "0");
 
     // Program description
     string prog_description = "Alignment build application.\n";
@@ -186,12 +195,17 @@ int CAlnBuildApp::Run(void)
     CreateAnchoredAlnVector(aln_stats, anchored_aln_vector);
 
 
-    /// Build a single anchored aln
+    /// Choose user options
     CAlnUserOptions aln_user_options;
+    aln_user_options.m_MergeOption = GetArgs()["m"].AsInteger();
+
+
+    /// Build a single anchored aln
     CAnchoredAln built_anchored_aln;
     BuildAln(anchored_aln_vector,
              built_anchored_aln,
-             aln_user_options);
+             aln_user_options,
+             comp);
     built_anchored_aln.Dump(cout);
 
 
@@ -222,6 +236,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/11/22 00:48:43  todorov
+* 1) + merge options
+* 2) + sequence comparison functor (when building)
+*
 * Revision 1.9  2006/11/20 18:54:10  todorov
 * Simplified code (using supplied methods).
 *
