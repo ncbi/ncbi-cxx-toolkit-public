@@ -129,8 +129,6 @@ public:
 
     void Return(Value* v) 
     { 
-        TWriteLockGuard guard(m_Lock);
-
         Put(v); 
     }
 
@@ -233,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/11/22 09:17:39  kuznets
+ * Fixed recoursive mutex bug
+ *
  * Revision 1.8  2006/11/21 06:50:01  kuznets
  * Added Pool locking parameter (mutex)
  *
