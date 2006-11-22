@@ -368,7 +368,8 @@ CConstRef<CValidError> CTest_validatorApplication::ProcessSeqSubmit(void)
 
     // Validae Seq-submit
     CValidator validator(*m_ObjMgr);
-    return validator.Validate(*ss, 0, m_Options);
+    CScope scope(*m_ObjMgr);
+    return validator.Validate(*ss, &scope, m_Options);
 }
 
 
@@ -531,6 +532,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2006/11/22 15:20:01  rsmith
+ * Validate Seq-submit needs a scope too now.
+ *
  * Revision 1.32  2006/01/25 19:16:06  rsmith
  * Validate(Seq-entry-handle)
  *
