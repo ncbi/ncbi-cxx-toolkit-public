@@ -57,85 +57,85 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                const I_DriverContext::SConnAttr& conn_attr) :
     impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name),
     m_Cntx(&cntx),
-    m_Link(NULL)
+    m_Handle(cntx, this)
 {
-    // Call Check() from CTLibContext in order to preserve previous behaviour.
-
-    if (cntx.Check(ct_con_alloc(cntx.CTLIB_GetContext(), &m_Link)) != CS_SUCCEED) {
-        DATABASE_DRIVER_ERROR( "Cannot allocate a connection handle.", 100011 );
-    }
-
-    cntx.Check(ct_callback(NULL,
+    GetCTLibContext().Check(ct_callback(NULL,
                            x_GetSybaseConn(),
                            CS_SET,
                            CS_CLIENTMSG_CB,
                            (CS_VOID*) CTLibContext::CTLIB_cterr_handler));
 
-    cntx.Check(ct_callback(NULL,
+    GetCTLibContext().Check(ct_callback(NULL,
                            x_GetSybaseConn(),
                            CS_SET,
                            CS_SERVERMSG_CB,
                            (CS_VOID*) CTLibContext::CTLIB_srverr_handler));
 
     char hostname[256];
+
     if(gethostname(hostname, 256)) {
       strcpy(hostname, "UNKNOWN");
+    } else {
+        hostname[255] = '\0';
     }
-    else hostname[255]= '\0';
 
 
-    if (cntx.Check(ct_con_props(x_GetSybaseConn(),
+    if (GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_USERNAME,
                                 (void*) conn_attr.user_name.c_str(),
                                 CS_NULLTERM,
                                 NULL)) != CS_SUCCEED
-        || cntx.Check(ct_con_props(x_GetSybaseConn(),
+        || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_PASSWORD,
                                    (void*) conn_attr.passwd.c_str(),
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
-        || cntx.Check(ct_con_props(x_GetSybaseConn(),
+        || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_APPNAME,
                                    (void*) GetCDriverContext().GetApplicationName().c_str(),
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
-        || cntx.Check(ct_con_props(x_GetSybaseConn(),
-                                   CS_SET,
-                                   CS_LOC_PROP,
-                                   (void*) cntx.GetLocale(),
-                                   CS_UNUSED,
-                                   NULL)) != CS_SUCCEED
-        || cntx.Check(ct_con_props(x_GetSybaseConn(),
+        || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_HOSTNAME,
                                    (void*) hostname,
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
         // Future development ...
-//         || cntx.Check(ct_con_props(x_GetSybaseConn(), CS_SET, CS_TDS_VERSION, &m_TDSVersion,
+//         || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(), CS_SET, CS_TDS_VERSION, &m_TDSVersion,
 //                      CS_UNUSED, NULL)) != CS_SUCCEED
         )
     {
-        cntx.Check(ct_con_drop(x_GetSybaseConn()));
         DATABASE_DRIVER_ERROR( "Cannot connection's properties.", 100011 );
     }
 
-    if ( !GetCDriverContext().GetHostName().empty() ) {
-        cntx.Check(ct_con_props(x_GetSybaseConn(),
-                                CS_SET,
-                                CS_HOSTNAME,
-                                (void*) GetCDriverContext().GetHostName().c_str(),
-                                CS_NULLTERM,
-                                NULL));
+    if (cntx.GetLocale()) {
+        if (Check(ct_con_props(x_GetSybaseConn(),
+                               CS_SET,
+                               CS_LOC_PROP,
+                               (void*) cntx.GetLocale(),
+                               CS_UNUSED,
+                               NULL)) != CS_SUCCEED
+            ) {
+            DATABASE_DRIVER_ERROR( "Cannot set a connection locale.", 100011 );
+        }
     }
+//     if ( !GetCDriverContext().GetHostName().empty() ) {
+//         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+//                                 CS_SET,
+//                                 CS_HOSTNAME,
+//                                 (void*) GetCDriverContext().GetHostName().c_str(),
+//                                 CS_NULLTERM,
+//                                 NULL));
+//     }
 
     if (cntx.GetPacketSize() > 0) {
         CS_INT packet_size = cntx.GetPacketSize();
 
-        cntx.Check(ct_con_props(x_GetSybaseConn(),
+        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_PACKETSIZE,
                                 (void*) &packet_size,
@@ -147,7 +147,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     if (cntx.GetLoginRetryCount() > 0) {
         CS_INT login_retry_count = cntx.GetLoginRetryCount();
 
-        cntx.Check(ct_con_props(x_GetSybaseConn(),
+        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_RETRY_COUNT,
                                 (void*) &login_retry_count,
@@ -160,7 +160,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     if (cntx.GetLoginLoopDelay() > 0) {
         CS_INT login_loop_delay = cntx.GetLoginLoopDelay();
 
-        cntx.Check(ct_con_props(x_GetSybaseConn(),
+        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_LOOP_DELAY,
                                 (void*) &login_loop_delay,
@@ -171,7 +171,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 
     CS_BOOL flag = CS_TRUE;
     if ((conn_attr.mode & I_DriverContext::fBcpIn) != 0) {
-        cntx.Check(ct_con_props(x_GetSybaseConn(),
+        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_BULK_LOGIN,
                                 &flag,
@@ -181,7 +181,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     }
 
     if ((conn_attr.mode & I_DriverContext::fPasswordEncrypted) != 0) {
-        cntx.Check(ct_con_props(x_GetSybaseConn(),
+        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_SEC_ENCRYPTION,
                                 &flag,
@@ -190,12 +190,12 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         SetSecureLogin(true);
     }
 
-    if (cntx.Check(ct_connect(x_GetSybaseConn(),
-                              const_cast<char*> (conn_attr.srv_name.c_str()),
-                              CS_NULLTERM))
-        != CS_SUCCEED) {
-        cntx.Check(ct_con_drop(x_GetSybaseConn()));
+    CS_RETCODE rc;
+    rc = GetCTLibContext().Check(ct_connect(x_GetSybaseConn(),
+                               const_cast<char*> (conn_attr.srv_name.c_str()),
+                               CS_NULLTERM));
 
+    if (rc != CS_SUCCEED) {
         string err;
 
         err += "Cannot connect to the server '" + conn_attr.srv_name;
@@ -203,9 +203,8 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
-
     CTL_Connection* link = this;
-    cntx.Check(ct_con_props(x_GetSybaseConn(),
+    GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
                             CS_SET,
                             CS_USERDATA,
                             &link,
@@ -271,7 +270,7 @@ CTL_Connection::GetBLKVersion(void) const
 void
 CTL_Connection::x_CmdAlloc(CS_COMMAND** cmd)
 {
-    CheckSFB(ct_cmd_alloc(m_Link, cmd),
+    CheckSFB(ct_cmd_alloc(x_GetSybaseConn(), cmd),
              "ct_cmd_alloc failed", 110001);
 }
 
@@ -639,10 +638,6 @@ bool CTL_Connection::Close(void)
             Check(ct_close(x_GetSybaseConn(), CS_FORCE_CLOSE));
         }
 
-        Check(ct_con_drop(x_GetSybaseConn()));
-
-        m_Link = NULL;
-
         return true;
     }
 
@@ -825,6 +820,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/11/22 20:52:27  ssikorsk
+ * Revamp code to use class ctlib::Connection;
+ * Revamp code to use method GetCTLibContext();
+ *
  * Revision 1.46  2006/10/05 20:40:21  ssikorsk
  * + #include <winsock2.h> on Windows.
  *
