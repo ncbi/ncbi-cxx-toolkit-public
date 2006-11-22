@@ -1,7 +1,7 @@
 # $Id$
 
 
-LIB = xalgovmerge xutil xncbi
+LIB = xalgovmerge
 
 SRC = volume_merge
 
