@@ -485,6 +485,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
                     uuu->expected = (size_t) strtol(expected, &e, 10);
                     if (errno  ||  e != s)
                         uuu->expected = 0;
+                    else if (!uuu->expected)
+                        uuu->expected = (size_t)(-1L);
                 }
             }
         }
@@ -591,18 +593,8 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     EIO_Status status;
 
     assert(uuu->sock);
-    /* just read, with no URL-decoding */
-    if (!(uuu->flags & fHCC_UrlDecodeInput)) {
-        status = SOCK_Read(uuu->sock, buf, size, n_read, eIO_ReadPlain);
-        uuu->received += *n_read;
-        return (status != eIO_Closed
-                ||  !uuu->expected  ||  uuu->expected == uuu->received
-                ? status
-                : eIO_Unknown);
-    }
-
-    /* read and URL-decode */
-    {{
+    if (uuu->flags & fHCC_UrlDecodeInput) {
+        /* read and URL-decode */
         size_t     n_peeked, n_decoded;
         size_t     peek_size = 3 * size;
         void*      peek_buf  = malloc(peek_size);
@@ -612,33 +604,40 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         if (status != eIO_Success) {
             assert(!n_peeked);
             *n_read = 0;
-            free(peek_buf);
-            return (status != eIO_Closed
-                    ||  !uuu->expected  ||  uuu->expected == uuu->received
-                    ? status
-                    : eIO_Unknown);
-        }
-
-        /* decode, then discard the successfully decoded data from the input */
-        if (URL_Decode(peek_buf, n_peeked, &n_decoded, buf, size, n_read)) {
-            if (n_decoded) {
-                SOCK_Read(uuu->sock, 0, n_decoded, &n_peeked, eIO_ReadPersist);
-                assert(n_peeked == n_decoded);
-                uuu->received += n_decoded;
-                status = eIO_Success;
-            } else if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed) {
-                /* we are at EOF, and the remaining data cannot be decoded */
+        } else {
+            if (URL_Decode(peek_buf,n_peeked,&n_decoded,buf,size,n_read)) {
+                /* decode, then discard successfully decoded data from input */
+                if (n_decoded) {
+                    SOCK_Read(uuu->sock,0,n_decoded,&n_peeked,eIO_ReadPersist);
+                    assert(n_peeked == n_decoded);
+                    uuu->received += n_decoded;
+                    status = eIO_Success;
+                } else if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed) {
+                    /* we are at EOF, and remaining data cannot be decoded */
+                    status = eIO_Unknown;
+                }
+            } else
                 status = eIO_Unknown;
-            }
-        } else
-            status = eIO_Unknown;
 
-        if (status != eIO_Success)
-            CORE_LOG(eLOG_Error, "[HTTP]  Cannot URL-decode data");
-
+            if (status != eIO_Success)
+                CORE_LOG(eLOG_Error, "[HTTP]  Cannot URL-decode data");
+        }
         free(peek_buf);
-        return status;
-    }}
+    } else {
+        /* just read, with no URL-decoding */
+        status = SOCK_Read(uuu->sock, buf, size, n_read, eIO_ReadPlain);
+        uuu->received += *n_read;
+    }
+
+    if (uuu->expected) {
+        if (uuu->received > uuu->expected)
+            return eIO_Unknown/*received too much*/;
+        if (uuu->received  &&  uuu->expected == (size_t)(-1L))
+            return eIO_Unknown/*received too much*/;
+        if (status == eIO_Closed  &&  uuu->expected > uuu->received)
+            return eIO_Unknown/*received too little*/;
+    }
+    return status;
 }
 
 
@@ -1108,6 +1107,9 @@ extern void HTTP_SetNcbiMessageHook(FHTTP_NcbiMessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.76  2006/11/22 18:07:51  lavr
+ * Check not only against short reads but also against exceedingly long ones
+ *
  * Revision 6.75  2006/11/22 17:23:16  lavr
  * Process Content-Length and fail on short contents received
  *
