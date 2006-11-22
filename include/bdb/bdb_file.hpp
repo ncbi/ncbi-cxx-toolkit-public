@@ -56,7 +56,8 @@ enum EBDB_ErrCode {
     eBDB_Ok,
     eBDB_NotFound,
     eBDB_KeyDup,
-    eBDB_KeyEmpty
+    eBDB_KeyEmpty,
+    eBDB_MultiRowEnd
 };
 
 
@@ -472,9 +473,14 @@ protected:
 
     /// Multiple-row read into a buffer
     /// Buffer is to be traversed using DB_MULTIPLE_KEY_NEXT (BerkeleyDB)
-    EBDB_ErrCode ReadCursor(DBC*         dbc, 
-                            unsigned int bdb_flag,
-                            CBDB_MultiRowBuffer*  multirow_buf);
+    ///
+    /// @param multirow_only
+    ///     Fetch only in multirow buffer, method returns eBDB_MultiRowEnd
+    ///     when the buffer is over
+    EBDB_ErrCode ReadCursor(DBC*                  dbc, 
+                            unsigned int          bdb_flag,
+                            CBDB_MultiRowBuffer*  multirow_buf,
+                            bool                  multirow_only);
 
 
     /// Write DB cursor
@@ -666,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/11/22 06:21:33  kuznets
+ * Implemented multirow fetch mode when Fetch signals back about buffer ends
+ *
  * Revision 1.47  2006/09/12 16:55:28  kuznets
  * Implemented multi-row fetch
  *

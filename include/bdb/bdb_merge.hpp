@@ -518,7 +518,8 @@ void CBDB_MergeBlobWalkerAsync<BF>::FetchFirst()
     m_Cursor.reset(new CBDB_FileCursor(*m_BlobFile));
     m_Cursor->SetCondition(CBDB_FileCursor::eGE);
     if (m_FetchBufferSize) {
-        m_Cursor->InitMultiFetch(m_FetchBufferSize);
+        m_Cursor->InitMultiFetch(m_FetchBufferSize, 
+                                 CBDB_FileCursor::eFetchGetBufferEnds);
     }
     m_Key = 0;
     m_KeyPtr = 0;
@@ -533,12 +534,46 @@ void CBDB_MergeBlobWalkerAsync<BF>::Fetch()
 {
     CFastMutex::TWriteLockGuard lock(m_Lock);
 
-    m_Key = 0;
-    m_KeyPtr = 0;
-    m_DataLen = 0;
-    m_Data = 0;
+    // here we try to move to the next multifetch buffer record
+    // without delegating to background thread
+    // if Fetch returns error code, indicating we are at the end of
+    // the multifetch buffer we delegate next fetch call to the 
+    // background reader (next call will be slow read from the disk)
+    //
+    // so here we have hybrid mode, when fast fetch is done in the same call
+    // and potentially slow one is in the background
+    //
+    EBDB_ErrCode err = m_Cursor->Fetch();
+    switch (err) 
+    {
+    case eBDB_Ok:
+        m_Data     = m_Cursor->GetLastMultiFetchData();
+        m_DataLen  = m_Cursor->GetLastMultiFetchDataLen();
+        {
+        const CBDB_BufferManager* key_bm = m_BlobFile->GetKeyBuffer();
+        const CBDB_Field& fld = key_bm->GetField(0);
+        const void* ptr = fld.GetBuffer();
+        m_KeyPtr =(const unsigned char*) ptr;
+        m_Key = fld.GetUint();
+        }
+        break;
+    case eBDB_NotFound:
+        m_Data = 0;
+        m_DataLen = 0;
+        m_Eof = true;
+        break;
+    case eBDB_MultiRowEnd:
+        m_Key = 0;
+        m_KeyPtr = 0;
+        m_DataLen = 0;
+        m_Data = 0;
 
-    m_JobThread->RequestDoJob();
+        m_JobThread->RequestDoJob();        
+        break;
+    default:
+        _ASSERT(0);
+    };
+
 }
 
 template<class BF>
@@ -549,28 +584,36 @@ void CBDB_MergeBlobWalkerAsync<BF>::DoFetch()
         return;
     }
     try {
-        EBDB_ErrCode err = m_Cursor->Fetch();
-        switch (err) 
-        {
-        case eBDB_Ok:
-            m_Data     = m_Cursor->GetLastMultiFetchData();
-            m_DataLen  = m_Cursor->GetLastMultiFetchDataLen();
+        bool re_try;
+        do {
+            re_try = false;
+        
+            EBDB_ErrCode err = m_Cursor->Fetch();
+            switch (err) 
             {
-            const CBDB_BufferManager* key_bm = m_BlobFile->GetKeyBuffer();
-            const CBDB_Field& fld = key_bm->GetField(0);
-            const void* ptr = fld.GetBuffer();
-            m_KeyPtr =(const unsigned char*) ptr;
-            m_Key = fld.GetUint();
-            }
-            break;
-        case eBDB_NotFound:
-            m_Data = 0;
-            m_DataLen = 0;
-            m_Eof = true;
-            break;
-        default:
-            _ASSERT(0);
-        };
+            case eBDB_Ok:
+                m_Data     = m_Cursor->GetLastMultiFetchData();
+                m_DataLen  = m_Cursor->GetLastMultiFetchDataLen();
+                {
+                const CBDB_BufferManager* key_bm = m_BlobFile->GetKeyBuffer();
+                const CBDB_Field& fld = key_bm->GetField(0);
+                const void* ptr = fld.GetBuffer();
+                m_KeyPtr =(const unsigned char*) ptr;
+                m_Key = fld.GetUint();
+                }
+                break;
+            case eBDB_NotFound:
+                m_Data = 0;
+                m_DataLen = 0;
+                m_Eof = true;
+                break;
+            case eBDB_MultiRowEnd:
+                re_try = true;
+                break;
+            default:
+                _ASSERT(0);
+            };
+        } while (re_try);
         
     } catch (...) {
         m_Good = false;
@@ -620,6 +663,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/22 06:21:33  kuznets
+ * Implemented multirow fetch mode when Fetch signals back about buffer ends
+ *
  * Revision 1.3  2006/11/21 14:41:21  kuznets
  * added async. implementations
  *

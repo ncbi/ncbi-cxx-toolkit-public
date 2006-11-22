@@ -206,7 +206,8 @@ CBDB_FileCursor::~CBDB_FileCursor()
     delete m_MutiRowBuf;
 }
 
-void CBDB_FileCursor::InitMultiFetch(size_t buffer_size)
+void CBDB_FileCursor::InitMultiFetch(size_t          buffer_size,
+                                     EMultiFetchMode mfm)
 {
     if (m_FetchFlags & DB_RMW) {
         // it is incorrect to set multi-fetch for update cursor
@@ -220,6 +221,8 @@ void CBDB_FileCursor::InitMultiFetch(size_t buffer_size)
     if (buffer_size) {
         m_MutiRowBuf = new CBDB_MultiRowBuffer(buffer_size);
     }
+    m_MultiFetchMode = mfm;
+    m_LastMultiFetchSuccess = true;
 }
 
 
@@ -419,8 +422,24 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     // set the correct flag
     x_FetchFirst_Prolog(flag);
 
+    bool multirow_only;
+    switch (m_MultiFetchMode) 
+    {
+    case eFetchAll:
+        multirow_only = false;
+        break;
+    case eFetchGetBufferEnds:
+        multirow_only = m_LastMultiFetchSuccess;
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
+    
     EBDB_ErrCode ret; 
-    ret = m_Dbf.ReadCursor(m_DBC, flag | m_FetchFlags, m_MutiRowBuf);
+    ret = m_Dbf.ReadCursor(m_DBC, 
+                           flag | m_FetchFlags, m_MutiRowBuf,
+                           multirow_only);
+    m_LastMultiFetchSuccess = (ret != eBDB_MultiRowEnd);
     if (ret != eBDB_Ok)
         return ret;
 
@@ -428,7 +447,10 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     // up or down to reach the interval criteria.
     if (m_CondFrom == eGT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT | m_FetchFlags, m_MutiRowBuf);
+            ret = m_Dbf.ReadCursor(m_DBC, 
+                                   DB_NEXT | m_FetchFlags, m_MutiRowBuf,
+                                   false /*no multirow*/);
+            m_LastMultiFetchSuccess = true;
             if (ret != eBDB_Ok)
                 return ret;
         }
@@ -436,7 +458,10 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     else
     if (m_CondFrom == eLT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags, m_MutiRowBuf);
+            ret = m_Dbf.ReadCursor(m_DBC, 
+                                   DB_PREV | m_FetchFlags, m_MutiRowBuf,
+                                   false);
+            m_LastMultiFetchSuccess = true;
             if (ret != eBDB_Ok)
                 return ret;
         }
@@ -531,12 +556,30 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
     default:
         _ASSERT(0);
     }
-    EBDB_ErrCode ret;
 
+    bool multirow_only;
+    switch (m_MultiFetchMode) 
+    {
+    case eFetchAll:
+        multirow_only = false;
+        break;
+    case eFetchGetBufferEnds:
+        multirow_only = m_LastMultiFetchSuccess;
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
+
+
+    EBDB_ErrCode ret;
     while (1) {
-        ret = m_Dbf.ReadCursor(m_DBC, flag | m_FetchFlags, m_MutiRowBuf);
+        ret = m_Dbf.ReadCursor(m_DBC, 
+                               flag | m_FetchFlags, m_MutiRowBuf,
+                               multirow_only);
+        m_LastMultiFetchSuccess = (ret != eBDB_MultiRowEnd);
         if (ret != eBDB_Ok) {
-            ret = eBDB_NotFound;
+            if (ret != eBDB_MultiRowEnd)
+                ret = eBDB_NotFound;
             break;
         }
 
@@ -721,6 +764,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/11/22 06:22:20  kuznets
+ * Implemented multirow fetch mode when Fetch signals back about buffer ends
+ *
  * Revision 1.24  2006/09/14 15:27:07  dicuccio
  * Fixed bugs in multi-key access
  *

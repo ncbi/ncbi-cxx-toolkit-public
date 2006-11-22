@@ -129,13 +129,24 @@ public:
 
     ~CBDB_FileCursor();
 
+    /// Fetch mode regulates multi-row fetches
+    /// eFetchAll (default mode) when buffer ends, cursor automatically
+    /// reads the next buffer
+    /// eFetchGetBufferEnds - returns eBDB_MultiRowEnd every time 
+    /// cursor needs to read from disk
+    enum EMultiFetchMode
+    {
+        eFetchAll,
+        eFetchGetBufferEnds
+    };
+
     /// Init multi-row fetch
     ///
     /// @buffer_size 
     ///    Size of fetch buffer 
     ///    (at least one page size, multiple of 1024 bytes in size)
     ///
-    void InitMultiFetch(size_t buffer_size);
+    void InitMultiFetch(size_t buffer_size, EMultiFetchMode mfm = eFetchAll);
 
     /// Set search condition(type of interval)
     ///
@@ -256,6 +267,10 @@ private:
     unsigned int           m_FetchFlags;
     /// Buffer class for multiple fetch
     CBDB_MultiRowBuffer*   m_MutiRowBuf;
+    /// Multifetch control mode
+    EMultiFetchMode        m_MultiFetchMode;
+    /// when true, last multifetch was successfull
+    bool                   m_LastMultiFetchSuccess;
 
     friend class CBDB_FC_Condition;
 };
@@ -329,6 +344,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/11/22 06:21:33  kuznets
+ * Implemented multirow fetch mode when Fetch signals back about buffer ends
+ *
  * Revision 1.19  2006/09/12 16:55:28  kuznets
  * Implemented multi-row fetch
  *

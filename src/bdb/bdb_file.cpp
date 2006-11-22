@@ -1180,7 +1180,8 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
 
 EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc, 
                                    unsigned int bdb_flag,
-                                   CBDB_MultiRowBuffer*  multirow_buf)
+                                   CBDB_MultiRowBuffer*  multirow_buf,
+                                   bool                  multirow_only)
 {
 	int ret;
     if (multirow_buf == 0) {
@@ -1198,6 +1199,13 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
 
         if (multirow_buf->m_BufPtr != 0) {
             goto read_epilog;
+        }
+        if (multirow_only) {
+            return eBDB_MultiRowEnd;
+        }
+    } else {
+        if (multirow_only) {
+            return eBDB_MultiRowEnd;
         }
     }
 
@@ -1406,6 +1414,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/11/22 06:22:20  kuznets
+ * Implemented multirow fetch mode when Fetch signals back about buffer ends
+ *
  * Revision 1.67  2006/11/14 13:27:37  dicuccio
  * Use field widths in comparators
  *
