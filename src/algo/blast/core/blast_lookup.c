@@ -96,12 +96,12 @@ void BlastLookupIndexQueryExactMatches(Int4 **backbone,
 
     for (loc = locations; loc; loc = loc->next) {
         Int4 from = loc->ssr->left;
-        Int4 to = loc->ssr->right + 1;
+        Int4 to = loc->ssr->right;
 
         /* if this location is too small to fit a complete word, skip the
            location */
 
-        if (word_length > to - from)
+        if (word_length > to - from + 1)
             continue;
 
         /* Indexing proceeds from the start point to the last offset
