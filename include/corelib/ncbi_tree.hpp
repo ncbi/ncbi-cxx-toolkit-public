@@ -565,7 +565,7 @@ template<class TValue, class TKeyGetter>
 CTreeNode<TValue, TKeyGetter>::~CTreeNode(void)
 {
     _ASSERT(m_Parent == 0);
-    ITERATE(typename TNodeList, it, m_Nodes) {
+    NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNode* node = *it;
         node->m_Parent = 0;
         delete node;
@@ -586,6 +586,7 @@ CTreeNode<TValue, TKeyGetter>::operator=(const TTreeType& tree)
 {
     NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNode* node = *it;
+        node->m_Parent = 0;
         delete node;
     }
     m_Nodes.clear();
@@ -696,6 +697,7 @@ void CTreeNode<TValue, TKeyGetter>::RemoveAllSubNodes(EDeletePolicy del)
     if (del == eDelete) {
         NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
             CTreeNode* node = *it;
+            node->m_Parent = 0;
             delete node;
         }
     }
@@ -866,6 +868,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/11/22 14:45:12  didenko
+ * a node's parent should be cleared before the node is deleted
+ *
  * Revision 1.45  2006/10/24 19:11:55  ivanov
  * Cosmetics: replaced tabulation with spaces
  *
