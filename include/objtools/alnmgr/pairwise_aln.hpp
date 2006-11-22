@@ -162,6 +162,9 @@ public:
     /// pairwise_alns can be modified
     CAnchoredAln& operator=(const CAnchoredAln& c)
     {
+        if (this == &c) {
+            return *this; // prevent self-assignment
+        }
         m_AnchorRow = c.m_AnchorRow;
         m_SeqIds = c.m_SeqIds;
         m_Score = c.m_Score;
@@ -284,6 +287,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/11/22 00:54:13  todorov
+* Prevent self-assignment in the assignment operator.
+*
 * Revision 1.11  2006/11/22 00:46:46  todorov
 * Various fixes.
 *
