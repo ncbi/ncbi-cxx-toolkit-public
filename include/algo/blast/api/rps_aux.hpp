@@ -34,6 +34,7 @@
 #define ALGO_BLAST_API__RPS_AUX___HPP
 
 #include <algo/blast/core/blast_export.h>
+#include <algo/blast/core/blast_aalookup.h> // for BlastRPSLookupTable
 #include <algo/blast/core/blast_rps.h>
 
 /** @addtogroup AlgoBlast
