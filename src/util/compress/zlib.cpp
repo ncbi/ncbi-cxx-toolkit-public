@@ -1077,12 +1077,8 @@ CCompressionProcessor::EStatus CZipDecompressor::Flush(
                       size_t  out_size,
                       size_t* out_avail)
 {
-    // Process cached data
-    if (F_ISSET(fCheckFileHeader)  &&  m_Cache.size()) {
-        size_t in_avail;
-        return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
-    }
-    return eStatus_Success;
+    size_t in_avail;
+    return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
 }
 
 
@@ -1091,12 +1087,8 @@ CCompressionProcessor::EStatus CZipDecompressor::Finish(
                       size_t  out_size,
                       size_t* out_avail)
 {
-    // Process cached data
-    if (F_ISSET(fCheckFileHeader)  &&  m_Cache.size()) {
-        size_t in_avail;
-        return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
-    }
-    return eStatus_Success;
+    size_t in_avail;
+    return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
 }
 
 
@@ -1118,6 +1110,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/11/22 16:01:16  ivanov
+ * CZipDecompressor::Flush()/Finish() -- call Process() method always.
+ * This fixed a bug which result in infinite loops on broken archives.
+ *
  * Revision 1.29  2006/10/18 14:21:04  ivanov
  * Comments changes
  *
