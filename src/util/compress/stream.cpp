@@ -141,7 +141,7 @@ void CCompressionStream::Finalize(CCompressionStream::EDirection dir)
 
 
 CCompressionProcessor::EStatus 
-CCompressionStream::GetStatus(CCompressionStream::EDirection dir)
+CCompressionStream::x_GetStatus(CCompressionStream::EDirection dir)
 {
     CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader : m_Writer;
     if ( !sp ) {
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/11/23 04:16:12  ivanov
+ * Fixed warning about hidden GetStatus function on Workshop compiler
+ *
  * Revision 1.11  2006/11/23 03:45:06  ivanov
  * + CCompressionStream::GetStatus()
  *

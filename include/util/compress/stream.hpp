@@ -139,11 +139,10 @@ public:
     virtual void Finalize(CCompressionStream::EDirection dir =
                           CCompressionStream::eReadWrite);
 
+protected:
     /// Get status of last compression/decompression stream operation.
     CCompressionProcessor::EStatus 
-        GetStatus(CCompressionStream::EDirection dir);
-
-protected:
+        x_GetStatus(CCompressionStream::EDirection dir);
     // Return number of processed/output bytes.
     unsigned long x_GetProcessedSize(CCompressionStream::EDirection dir);
     unsigned long x_GetOutputSize(CCompressionStream::EDirection dir);
@@ -231,7 +230,7 @@ public:
     
     /// Get status of last compression/decompression stream operation.
     CCompressionProcessor::EStatus GetStatus(void) {
-        return CCompressionStream::GetStatus(eRead);
+        return CCompressionStream::x_GetStatus(eRead);
     }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(void) {
@@ -259,7 +258,7 @@ public:
 
     /// Get status of last compression/decompression stream operation.
     CCompressionProcessor::EStatus GetStatus(void) {
-        return CCompressionStream::GetStatus(eWrite);
+        return CCompressionStream::x_GetStatus(eWrite);
     }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(void) {
@@ -286,6 +285,11 @@ public:
           CCompressionStream(stream, read_sp, write_sp, ownership)
     { }
 
+    /// Get status of last compression/decompression stream operation.
+    CCompressionProcessor::EStatus
+    GetStatus(CCompressionStream::EDirection dir) {
+        return CCompressionStream::x_GetStatus(eRead);
+    }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(CCompressionStream::EDirection dir) {
         return CCompressionStream::x_GetProcessedSize(dir);
@@ -308,6 +312,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/11/23 04:15:56  ivanov
+ * Fixed warning about hidden GetStatus function on Workshop compiler
+ *
  * Revision 1.15  2006/11/23 03:44:32  ivanov
  * + CCompressionStream::GetStatus()
  *
