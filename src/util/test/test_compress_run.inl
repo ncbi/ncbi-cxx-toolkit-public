@@ -59,7 +59,7 @@
     {{
         LOG_POST("File compress/decompress test...");
 
-        size_t n;
+        long n;
 
         // First test
 
@@ -99,11 +99,11 @@
             {{
                 // Read data from compressed file
                 TCompressionFile zf(kFileName, TCompressionFile::eMode_Read);
-                size_t nread = 0;
+                long nread = 0;
                 do {
                     n = zf.Read(cmp_buf + nread, 100);
                     nread += n;
-                } while ( n != 0 );
+                } while ( n > 0 );
                 assert(nread == (int)kDataLen);
             }}
 
