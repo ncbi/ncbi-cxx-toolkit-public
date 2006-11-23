@@ -683,6 +683,11 @@ long CZipCompressionFile::Read(void* buf, size_t len)
             "[CZipCompressionFile::Read]  File must be opened for reading");
     }
     m_Zip->read((char*)buf, len);
+    // Check decompression processor status
+    if ( m_Zip->GetStatus(CCompressionStream::eRead) 
+         == CCompressionProcessor::eStatus_Error ) {
+        return -1;
+    }
     streamsize nread = m_Zip->gcount();
     if ( nread ) {
         return nread;
@@ -1110,6 +1115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/11/23 03:46:52  ivanov
+ * CZipCompressionFile::Read - added check for decompression processor status
+ *
  * Revision 1.30  2006/11/22 16:01:16  ivanov
  * CZipDecompressor::Flush()/Finish() -- call Process() method always.
  * This fixed a bug which result in infinite loops on broken archives.
