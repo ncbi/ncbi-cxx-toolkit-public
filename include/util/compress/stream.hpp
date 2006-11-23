@@ -288,7 +288,7 @@ public:
     /// Get status of last compression/decompression stream operation.
     CCompressionProcessor::EStatus
     GetStatus(CCompressionStream::EDirection dir) {
-        return CCompressionStream::x_GetStatus(eRead);
+        return CCompressionStream::x_GetStatus(dir);
     }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(CCompressionStream::EDirection dir) {
@@ -312,6 +312,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/11/23 04:18:46  ivanov
+ * Fixed cut & paste error
+ *
  * Revision 1.16  2006/11/23 04:15:56  ivanov
  * Fixed warning about hidden GetStatus function on Workshop compiler
  *
