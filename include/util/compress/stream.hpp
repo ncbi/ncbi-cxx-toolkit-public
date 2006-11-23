@@ -134,10 +134,14 @@ public:
     /// Destructor
     virtual ~CCompressionStream(void);
 
-    // Finalize stream's compression/decompression process for read/write.
-    // This function just calls a streambuf Finalize().
+    /// Finalize stream's compression/decompression process for read/write.
+    /// This function just calls a streambuf Finalize().
     virtual void Finalize(CCompressionStream::EDirection dir =
                           CCompressionStream::eReadWrite);
+
+    /// Get status of last compression/decompression stream operation.
+    CCompressionProcessor::EStatus 
+        GetStatus(CCompressionStream::EDirection dir);
 
 protected:
     // Return number of processed/output bytes.
@@ -225,6 +229,10 @@ public:
           CCompressionStream(stream, stream_processor, 0, ownership)
     {}
     
+    /// Get status of last compression/decompression stream operation.
+    CCompressionProcessor::EStatus GetStatus(void) {
+        return CCompressionStream::GetStatus(eRead);
+    }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eRead);
@@ -249,6 +257,10 @@ public:
           CCompressionStream(stream, 0, stream_processor, ownership)
     {}
 
+    /// Get status of last compression/decompression stream operation.
+    CCompressionProcessor::EStatus GetStatus(void) {
+        return CCompressionStream::GetStatus(eWrite);
+    }
     /// Return number of processed bytes.
     unsigned long GetProcessedSize(void) {
         return CCompressionStream::x_GetProcessedSize(eWrite);
@@ -296,6 +308,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/11/23 03:44:32  ivanov
+ * + CCompressionStream::GetStatus()
+ *
  * Revision 1.14  2006/11/21 15:55:19  ivanov
  * In last revision replace operators void* to DECLARE_OPERATOR_BOOL
  *

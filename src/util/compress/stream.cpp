@@ -140,6 +140,17 @@ void CCompressionStream::Finalize(CCompressionStream::EDirection dir)
 }
 
 
+CCompressionProcessor::EStatus 
+CCompressionStream::GetStatus(CCompressionStream::EDirection dir)
+{
+    CCompressionStreamProcessor* sp = (dir == eRead) ? m_Reader : m_Writer;
+    if ( !sp ) {
+        return CCompressionProcessor::eStatus_Unknown;
+    }
+    return sp->m_LastStatus;
+}
+
+
 unsigned long CCompressionStream::x_GetProcessedSize(
                                   CCompressionStream::EDirection dir)
 {
@@ -168,6 +179,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/11/23 03:45:06  ivanov
+ * + CCompressionStream::GetStatus()
+ *
  * Revision 1.10  2006/10/26 15:34:04  ivanov
  * Added automatic finalization for input streams, if no more data
  * in the underlying stream
