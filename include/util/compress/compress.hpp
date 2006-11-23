@@ -244,7 +244,9 @@ public:
         eStatus_Error,
         // Output buffer overflow - not enough output space.
         // Buffer must be emptied and the last action repeated.
-        eStatus_Overflow
+        eStatus_Overflow,
+        // Special value, status is undefined
+        eStatus_Unknown
     };
 
     // 'ctors
@@ -453,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/11/23 03:52:37  ivanov
+ * CCompressionProcessor::EStatus += eStatus_Unknown
+ *
  * Revision 1.13  2006/10/26 15:34:16  ivanov
  * Added automatic finalization for input streams, if no more data
  * in the underlying stream
