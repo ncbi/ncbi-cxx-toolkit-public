@@ -1,0 +1,9 @@
+NCBI-Sample-ASN-Type ::= {
+  date std {
+    year  2000,
+    month    7,
+    day     15
+  },
+  id str "My ID",
+  name "My Name"
+}
