@@ -179,25 +179,40 @@ BEGIN_SCOPE(ctlib)
 
 Connection::Connection(CTLibContext& context,
                        CTL_Connection* ctl_conn) :
+    m_CTL_Context(&context),
     m_CTL_Conn(ctl_conn),
-    m_Handle(NULL)
+    m_Handle(NULL),
+    m_IsAllocated(false),
+    m_IsOpen(false)
 {
-    if (context.Check(ct_con_alloc(context.CTLIB_GetContext(),
+    if (GetCTLContext().Check(ct_con_alloc(GetCTLContext().CTLIB_GetContext(),
                                    &m_Handle)) != CS_SUCCEED) {
         DATABASE_DRIVER_ERROR( "Cannot allocate a connection handle.", 100011 );
     }
+    m_IsAllocated = true;
 }
 
 
 Connection::~Connection(void) throw()
 {
     try {
-        GetCTLConn().Check(ct_con_drop(m_Handle));
+        Drop();
     }
     catch (...)
     {
         _ASSERT(false);
     }
+}
+
+
+bool Connection::Drop(void)
+{
+    if (m_IsAllocated) {
+        GetCTLConn().Check(ct_con_drop(m_Handle));
+        m_IsAllocated = false;
+    }
+
+    return !m_IsAllocated;
 }
 
 
@@ -221,6 +236,38 @@ Connection::GetCTLConn(void)
 
     return *m_CTL_Conn;
 }
+
+
+bool Connection::Open(const string& srv_name)
+{
+    if (!IsOpen() || Close()) {
+        CS_RETCODE rc;
+
+        rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+                                const_cast<char*> (srv_name.c_str()),
+                                CS_NULLTERM));
+
+        if (rc == CS_SUCCEED) {
+            m_IsOpen = true;
+        }
+    }
+
+    return IsOpen();
+}
+
+
+bool Connection::Close(void)
+{
+    if (IsOpen()) {
+        if (GetCTLConn().Check(ct_close(GetNativeHandle(), CS_UNUSED)) == CS_SUCCEED ||
+            GetCTLConn().Check(ct_close(GetNativeHandle(), CS_FORCE_CLOSE)) == CS_SUCCEED) {
+            m_IsOpen = false;
+        }
+    }
+
+    return !IsOpen();
+}
+
 
 END_SCOPE(ctlib)
 
@@ -1208,6 +1255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2006/11/24 20:18:38  ssikorsk
+ * Implemented methods Drop, IsOpen, Open, Close of the ctlib::GetCTLContext.
+ *
  * Revision 1.99  2006/11/22 20:50:58  ssikorsk
  * Implemented class ctlib::Connection.
  *
