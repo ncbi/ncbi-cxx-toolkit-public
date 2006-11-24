@@ -75,6 +75,8 @@ class Connection
 public:
     Connection(CTLibContext& context, CTL_Connection* ctl_conn);
     ~Connection(void) throw();
+    /// Drop allocated connection.
+    bool Drop(void);
 
 public:
     CS_CONNECTION* GetNativeHandle(void) const
@@ -82,13 +84,34 @@ public:
         return m_Handle;
     }
 
+    bool IsOpen(void) const
+    {
+        return m_IsOpen;
+    }
+    bool Open(const string& srv_name);
+    bool Close(void);
+
 protected:
     const CTL_Connection& GetCTLConn(void) const;
     CTL_Connection& GetCTLConn(void);
 
+    const CTLibContext& GetCTLContext(void) const
+    {
+        _ASSERT(m_CTL_Context);
+        return *m_CTL_Context;
+    }
+    CTLibContext& GetCTLContext(void)
+    {
+        _ASSERT(m_CTL_Context);
+        return *m_CTL_Context;
+    }
+
 private:
+    CTLibContext*   m_CTL_Context;
     CTL_Connection* m_CTL_Conn;
     CS_CONNECTION*  m_Handle;
+    bool            m_IsAllocated;
+    bool            m_IsOpen;
 };
 
 END_SCOPE(ctlib)
@@ -829,6 +852,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/11/24 20:13:58  ssikorsk
+ * Added methods Drop, IsOpen, Open, Close to the ctlib::GetCTLContext;
+ *
  * Revision 1.52  2006/11/22 20:50:23  ssikorsk
  * Added class ctlib::Connection.
  *
