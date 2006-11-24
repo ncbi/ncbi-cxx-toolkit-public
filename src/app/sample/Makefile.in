@@ -3,8 +3,10 @@
 # Meta-makefile
 #################################
 
-SUB_PROJ = basic cgi dbapi objects objmgr alnmgr soap lds netschedule netcache \
-           blast
+SUB_PROJ = \
+   basic cgi dbapi objects objmgr alnmgr soap lds netschedule netcache blast
+
+EXPENDABLE_SUB_PROJ = asn
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
