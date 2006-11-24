@@ -190,12 +190,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         SetSecureLogin(true);
     }
 
-    CS_RETCODE rc;
-    rc = GetCTLibContext().Check(ct_connect(x_GetSybaseConn(),
-                               const_cast<char*> (conn_attr.srv_name.c_str()),
-                               CS_NULLTERM));
-
-    if (rc != CS_SUCCEED) {
+    if (!m_Handle.Open(conn_attr.srv_name)) {
         string err;
 
         err += "Cannot connect to the server '" + conn_attr.srv_name;
@@ -633,12 +628,8 @@ bool CTL_Connection::Abort()
 
 bool CTL_Connection::Close(void)
 {
-    if (x_GetSybaseConn()) {
-        if (!Refresh()  ||  Check(ct_close(x_GetSybaseConn(), CS_UNUSED)) != CS_SUCCEED) {
-            Check(ct_close(x_GetSybaseConn(), CS_FORCE_CLOSE));
-        }
-
-        return true;
+    if (m_Handle.IsOpen()) {
+        return (!Refresh() || (m_Handle.Close() && m_Handle.Drop()));
     }
 
     return false;
@@ -820,6 +811,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/11/24 20:17:06  ssikorsk
+ * Improved algorithm of opening and closing of a connection.
+ *
  * Revision 1.47  2006/11/22 20:52:27  ssikorsk
  * Revamp code to use class ctlib::Connection;
  * Revamp code to use method GetCTLibContext();
