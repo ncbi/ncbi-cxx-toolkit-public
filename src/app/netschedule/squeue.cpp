@@ -145,40 +145,46 @@ SLockedQueue::~SLockedQueue()
     delete lb_coordinator;
 }
 
-enum {
-    MEASURE_INTERVAL = 1,
-    DECAY_INTERVAL = 10, // for informational purposes only, see EXP below
-    FSHIFT = 7,
-    FIXED_1 = 1 << FSHIFT,
-    EXP = 116 // 2 ^ FSHIFT / 2 ^ ( MEASURE_INTERVAL * log2(e) / DECAY_INTERVAL)
-};
+
+const unsigned kMeasureInterval = 1;
+ /* for informational purposes only, see kDecayExp below */
+const unsigned kDecayInterval = 10;
+const unsigned kFixedShift = 7;
+const unsigned kFixed_1 = 1 << kFixedShift;
+// kDecayExp = 2 ^ kFixedShift / 2 ^ ( kMeasureInterval * log2(e) / kDecayInterval)
+const unsigned kDecayExp = 116;
 
 SLockedQueue::CStatisticsThread::CStatisticsThread(TContainer& container)
-    : CThreadNonStop(MEASURE_INTERVAL),
+    : CThreadNonStop(kMeasureInterval),
         m_Container(container)
 {
 }
+
 
 void SLockedQueue::CStatisticsThread::DoJob(void) {
     unsigned counter;
     counter = m_Container.m_GetCounter.Get();
     m_Container.m_GetCounter.Add(-counter);
-    m_Container.m_GetAverage = (EXP * m_Container.m_GetAverage +
-                                (FIXED_1-EXP) * (counter << FSHIFT)) >> FSHIFT;
+    m_Container.m_GetAverage = (kDecayExp * m_Container.m_GetAverage +
+                                (kFixed_1-kDecayExp) * (counter << kFixedShift)
+                                ) >> kFixedShift;
     counter = m_Container.m_PutCounter.Get();
     m_Container.m_PutCounter.Add(-counter);
-    m_Container.m_PutAverage = (EXP * m_Container.m_PutAverage +
-                                (FIXED_1-EXP) * (counter << FSHIFT)) >> FSHIFT;
+    m_Container.m_PutAverage = (kDecayExp * m_Container.m_PutAverage +
+                                (kFixed_1-kDecayExp) * (counter << kFixedShift)
+                                ) >> kFixedShift;
 }
+
 
 double SLockedQueue::GetGetAverage(void)
 {
-    return m_GetAverage / double(FIXED_1 * MEASURE_INTERVAL);
+    return m_GetAverage / double(kFixed_1 * kMeasureInterval);
 }
+
 
 double SLockedQueue::GetPutAverage(void)
 {
-    return m_PutAverage / double(FIXED_1 * MEASURE_INTERVAL);
+    return m_PutAverage / double(kFixed_1 * kMeasureInterval);
 }
 
 
@@ -187,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/27 23:50:47  joukovv
+ * Name clash on Windows fixed.
+ *
  * Revision 1.2  2006/11/27 16:46:21  joukovv
  * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
  * un-nested CQueue from CQueueDataBase; instrumented code to count job
