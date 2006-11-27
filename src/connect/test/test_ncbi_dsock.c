@@ -48,8 +48,8 @@
    /* This has been found experimentally on IRIX64 6.5 04101931 IP25 */
 #  define MAX_DGRAM_SIZE (60*1024)
 #elif defined(NCBI_OS_LINUX)
-/* Larger sizes do not seem to work everywhere */
-#  define MAX_DGRAM_SIZE 65000
+   /* Larger sizes do not seem to work everywhere */
+#  define MAX_DGRAM_SIZE 59550
 #else
    /* This is the maximal datagram size defined by the UDP standard */
 #  define MAX_DGRAM_SIZE 65535
@@ -137,7 +137,7 @@ static int s_Server(int x_port)
                               "%lu bytes",
                               addr, peerport, (unsigned long) msglen));
 
-        if (!(buf = (char*) malloc(msglen ? msglen : 1))) {
+        if (!(buf = (char*) malloc(msglen < 10 ? 10 : msglen))) {
             CORE_LOG_ERRNO(eLOG_Error, errno,"[Server]  Cannot alloc msg buf");
             break;
         }
@@ -157,6 +157,7 @@ static int s_Server(int x_port)
             len += n;
         }
         assert(SOCK_Read(server, 0, 1, &n, eIO_ReadPlain) == eIO_Closed);
+        assert(memcmp(buf + msglen - 10, "\0\0\0\0\0\0\0\0\0", 10) == 0);
 
         CORE_LOG(eLOG_Note, "[Server]  Bouncing the message to sender");
 
@@ -169,6 +170,7 @@ static int s_Server(int x_port)
             break;
         }
 
+        msglen -= 10;
         for (len = 0; len < msglen; len += n) {
             n = (size_t)(((double)rand()/(double)RAND_MAX)*(msglen-len) + 0.5);
             if ((status = SOCK_Write(server, buf + len, n, &n, eIO_WritePlain))
@@ -182,7 +184,7 @@ static int s_Server(int x_port)
 
         free(buf);
 
-        if ((status = DSOCK_SendMsg(server, addr, peerport, "--Reply--", 9))
+        if ((status = DSOCK_SendMsg(server, addr, peerport, "--Reply--", 10))
             != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Server]  Error sending to DSOCK: %s",
                                    IO_StatusStr(status)));
@@ -224,21 +226,21 @@ static int s_Client(int x_port, unsigned int max_try)
         return 1;
     }
 
-    msglen = (size_t)(((double)rand()/(double)RAND_MAX)*(s_MTU - 10));
-    if (msglen < sizeof(time_t))
-        msglen = sizeof(time_t);
+    msglen = (size_t)(((double)rand()/(double)RAND_MAX) * s_MTU);
+    if (msglen < sizeof(time_t) + 10)
+        msglen = sizeof(time_t) + 10;
 
     CORE_LOGF(eLOG_Note, ("[Client]  Generating a message %lu bytes long",
                           (unsigned long) msglen));
 
-    if (!(buf = (char*) malloc(2*msglen + 9))) {
+    if (!(buf = (char*) malloc(2 * msglen))) {
         CORE_LOG_ERRNO(eLOG_Error, errno, "[Client]  Cannot alloc msg buf");
         return 1;
     }
 
-
-    for (n = sizeof(unsigned long); n < msglen; n++)
+    for (n = sizeof(unsigned long); n < msglen - 10; n++)
         buf[n] = rand() % 0xFF;
+    memcpy(buf + msglen - 10, "\0\0\0\0\0\0\0\0\0", 10);
 
     id = (unsigned long) time(0);
 
@@ -268,20 +270,20 @@ static int s_Client(int x_port, unsigned int max_try)
         }
 
     again:
-        if ((status = DSOCK_RecvMsg(client, &buf[msglen], msglen+9,0, &n, 0,0))
+        if ((status = DSOCK_RecvMsg(client, buf + msglen, msglen, 0, &n, 0, 0))
             != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Client]  Error reading from DSOCK: %s",
                                    IO_StatusStr(status)));
             continue;
         }
 
-        if (n != msglen + 9) {
+        if (n != msglen) {
             CORE_LOGF(eLOG_Error, ("[Client]  Received message of wrong size: "
                                    "%lu", (unsigned long) n));
             return 1;
         }
 
-        memcpy(&tmp, &buf[msglen], sizeof(tmp));
+        memcpy(&tmp, buf + msglen, sizeof(tmp));
         if (SOCK_NetToHostLong(tmp) != id) {
             m++;
             CORE_LOGF(m < max_try ? eLOG_Warning : eLOG_Error,
@@ -300,20 +302,20 @@ static int s_Client(int x_port, unsigned int max_try)
     if (m > max_try)
         return 1;
 
-    for (n = sizeof(unsigned long); n < msglen; n++) {
+    for (n = sizeof(unsigned long); n < msglen - 10; n++) {
         if (buf[n] != buf[msglen + n])
             break;
     }
 
-    if (n < msglen) {
+    if (n < msglen - 10) {
         CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupted, off=%lu",
                                (unsigned long) n));
         return 1;
     }
 
-    if (strncmp(&buf[msglen*2], "--Reply--", 9) != 0) {
+    if (strcmp(buf + msglen*2 - 10, "--Reply--") != 0) {
         CORE_LOGF(eLOG_Error, ("[Client]  No signature in the message: %.9s",
-                               &buf[msglen*2]));
+                               buf + msglen*2 - 10));
         return 1;
     }
 
@@ -381,6 +383,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2006/11/27 21:33:44  lavr
+ * Lower MAX_DGRAM_SIZE for Linux (i686 seems to fail on former default 65000)
+ *
  * Revision 6.18  2006/01/27 17:12:10  lavr
  * Replace obsolete call names with current ones
  *
