@@ -260,6 +260,7 @@ CRef< CTls<SNC_ThreadData> > s_tls(new CTls<SNC_ThreadData>);
 
 
 CNetCacheServer::CNetCacheServer(unsigned int     port,
+                                 bool             use_hostname,
                                  ICache*          cache,
                                  unsigned         max_threads,
                                  unsigned         init_threads,
@@ -275,10 +276,19 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
     m_TLS_Size(64 * 1024),
     m_Reg(reg)
 {
-    char hostname[256];
-    int status = SOCK_gethostname(hostname, sizeof(hostname));
-    if (status == 0) {
-        m_Host = hostname;
+    if (use_hostname) {
+        char hostname[256];
+        if (SOCK_gethostname(hostname, sizeof(hostname)) == 0) {
+            m_Host = hostname;
+        }
+    } else {
+        unsigned int hostaddr = SOCK_HostToNetLong(SOCK_gethostbyname(0));
+        char ipaddr[32];
+        sprintf(ipaddr, "%u.%u.%u.%u", (hostaddr >> 24) & 0xff,
+                                       (hostaddr >> 16) & 0xff,
+                                       (hostaddr >> 8)  & 0xff,
+                                        hostaddr        & 0xff);
+        m_Host = ipaddr;
     }
 
     m_MaxThreads = max_threads ? max_threads : 25;
@@ -1984,7 +1994,6 @@ int CNetCacheDApp::Run(void)
 
         int port = 
             reg.GetInt("server", "port", 9000, 0, CNcbiRegistry::eReturn);
-
         unsigned max_threads =
             reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
         unsigned init_threads =
@@ -1998,16 +2007,18 @@ int CNetCacheDApp::Run(void)
         } else {
             LOG_POST("Network IO timeout " << network_timeout);
         }
-
+        bool use_hostname =
+            reg.GetBool("server", "use_hostname", false, 0, CNcbiRegistry::eReturn);
         bool is_log =
             reg.GetBool("server", "log", false, 0, CNcbiRegistry::eReturn);
         unsigned tls_size =
             reg.GetInt("server", "tls_size", 64 * 1024, 0, CNcbiRegistry::eReturn);
 
         auto_ptr<CNetCacheServer> thr_srv(
-            new CNetCacheServer(port, 
-                                cache.get(), 
-                                max_threads, 
+            new CNetCacheServer(port,
+                                use_hostname,
+                                cache.get(),
+                                max_threads,
                                 init_threads,
                                 network_timeout,
                                 is_log,
@@ -2061,6 +2072,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2006/11/27 16:24:16  joukovv
+ * New option, use_hostname introduced and default for NC key changed - with
+ * new option on, it inserts server name into the key, by default it uses IP
+ * address.
+ *
  * Revision 1.88  2006/08/17 20:47:44  kuznets
  * Added support of in-memory logs
  *

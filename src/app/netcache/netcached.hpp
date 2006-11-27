@@ -232,6 +232,7 @@ public:
 
 public:
     CNetCacheServer(unsigned int     port,
+                    bool             use_hostname,
                     ICache*          cache,
                     unsigned         max_threads,
                     unsigned         init_threads,
@@ -542,6 +543,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/11/27 16:24:16  joukovv
+ * New option, use_hostname introduced and default for NC key changed - with
+ * new option on, it inserts server name into the key, by default it uses IP
+ * address.
+ *
  * Revision 1.9  2006/05/18 13:27:51  kuznets
  * Implemented cache cleaning function
  *
