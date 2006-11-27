@@ -829,14 +829,14 @@ protected:
                         he_ii.m_X = (*jj)->GetStart(where2) + 1;
                     }
 
-                    typedef typename THitEnds::iterator THitEndsIter;
+                    typedef typename THitEnds::const_iterator THitEndsIter;
                     const THitEndsIter ii0 = hit_ends.lower_bound(he_ii);
                     const THitEndsIter ii1 = hit_ends.upper_bound(he_jj);
 
                     const size_t max_len = 
                         size_t(maxlenfr * min((*ii)->GetLength(),(*jj)->GetLength()));
 
-                    for(typename THitEnds::iterator ii = ii0; ii != ii1; ++ii) {
+                    for(THitEndsIter ii = ii0; ii != ii1; ++ii) {
 
                         const THitRef& h = *(ii->m_Ptr);
 
@@ -908,6 +908,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/11/27 18:31:33  kapustin
+ * s_MergeAbutting(): Use THitEnds::const_iterator to satisfy MSVC
+ *
  * Revision 1.13  2006/11/27 14:48:31  kapustin
  * +CHitFilter::s_MergeAbutting()
  *
