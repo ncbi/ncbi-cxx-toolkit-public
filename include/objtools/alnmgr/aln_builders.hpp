@@ -41,6 +41,7 @@
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_stats.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
+#include <objtools/alnmgr/aln_rng_coll_oper.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -145,7 +146,7 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
     default: 
         {
             typedef map<TSeqIdPtr, CRef<CPairwiseAln>, TSeqIdPtrComp> TIdAlnMap;
-            TIdAlnMap id_aln_map;
+            TIdAlnMap id_aln_map(comp);
             TSeqIdPtr anchor_id;
             CRef<CPairwiseAln> anchor_pairwise;
             ITERATE(typename TAnchoredAlns, aln_it, in_alns) {
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/11/27 19:37:57  todorov
+* using comp.
+*
 * Revision 1.2  2006/11/22 00:45:10  todorov
 * Added support for three merging modes.
 *
