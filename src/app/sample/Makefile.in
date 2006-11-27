@@ -4,9 +4,8 @@
 #################################
 
 SUB_PROJ = \
-   basic cgi dbapi objects objmgr alnmgr soap lds netschedule netcache blast
-
-EXPENDABLE_SUB_PROJ = asn
+   basic cgi dbapi objects objmgr alnmgr soap lds netschedule netcache blast \
+   asn
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
