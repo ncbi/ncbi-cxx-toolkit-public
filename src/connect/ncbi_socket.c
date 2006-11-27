@@ -118,7 +118,15 @@
 #elif defined(NCBI_OS_MAC)
 #  include <unistd.h>
 #  include <sock_ext.h>
+#ifdef __MWERKS__
+# if TARGET_API_MAC_CARBON
+#  include <carbon_netdb.h>
+#else
 #  include <netdb.h>
+#endif
+#else
+#  include <netdb.h>
+#endif
 #  include <s_types.h>
 #  include <s_socket.h>
 #  include <neti_in.h>
@@ -4595,6 +4603,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.194  2006/11/27 15:09:08  kans
+ * for C toolkit CodeWarrior Mac OS9 only, include carbon_netdb.h from within local mitsock folder, avoids unwanted collision with real netdb.h
+ *
  * Revision 6.193  2006/10/23 21:16:40  lavr
  * Fix SOCK_isip() [strtol() has got arguments in order]
  *
