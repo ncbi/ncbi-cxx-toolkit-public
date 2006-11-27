@@ -49,11 +49,14 @@ public:
     enum ESortCriterion {
         eQueryMin,
         eSubjMin,
+        eQueryMinScore,
+        eSubjMinScore,
         eSubjMaxQueryMax,
         eQueryId,
         eSubjId,
         eSubjIdQueryId,
-        eSubjStrand
+        eSubjStrand,
+        eQueryIdSubjIdSubjStrand
     };
 
     CHitComparator(ESortCriterion sort_type): m_SortType (sort_type) {}
@@ -87,49 +90,98 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
 
         rv = lhs->GetSubjMin() <= rhs->GetSubjMin();
         break;
+        
+    case eQueryMinScore:
+        {
+            const typename THit::TCoord qmin_lhs = lhs->GetQueryMin();
+            const typename THit::TCoord qmin_rhs = rhs->GetQueryMin();
+            if(qmin_lhs == qmin_rhs) {
+                return lhs->GetScore() > rhs->GetScore();
+            }
+            else {
+                return qmin_lhs < qmin_rhs;
+            }
+        }
+        break;
+        
+    case eSubjMinScore:
+        {
+            const typename THit::TCoord smin_lhs = lhs->GetSubjMin();
+            const typename THit::TCoord smin_rhs = rhs->GetSubjMin();
+            if(smin_lhs == smin_rhs) {
+                return lhs->GetScore() > rhs->GetScore();
+            }
+            else {
+                return smin_lhs < smin_rhs;
+            }
+        }
+        break;
+
 
     case eSubjMaxQueryMax: 
         {
-        typename THit::TCoord lhs_subj_max = lhs->GetSubjMax();
-        typename THit::TCoord rhs_subj_max = rhs->GetSubjMax();
-
-        if(lhs_subj_max < rhs_subj_max) {
-            rv = true;
-        }
-        else if(lhs_subj_max > rhs_subj_max) {
-            rv = false;
-        }
-        else {
-            rv = lhs->GetQueryMax() < rhs->GetQueryMax();
-        }
+            const typename THit::TCoord lhs_subj_max = lhs->GetSubjMax();
+            const typename THit::TCoord rhs_subj_max = rhs->GetSubjMax();
+            
+            if(lhs_subj_max < rhs_subj_max) {
+                rv = true;
+            }
+            else if(lhs_subj_max > rhs_subj_max) {
+                rv = false;
+            }
+            else {
+                rv = lhs->GetQueryMax() < rhs->GetQueryMax();
+            }
         }
         break;
         
     case eQueryId:
-
+        
         rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
         break;
 
     case eSubjId:
-
+        
         rv = *(lhs->GetSubjId()) < *(rhs->GetSubjId());
         break;
-
+        
     case eSubjIdQueryId: 
         {
-        const int co = lhs->GetSubjId()->CompareOrdered( *(rhs->GetSubjId()) );
-        if(co == 0) {
-            rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
-        }
-        else {
-            rv = co < 0;
-        }
+            const int co = lhs->GetSubjId()->CompareOrdered( *(rhs->GetSubjId()) );
+            if(co == 0) {
+                rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
+            }
+            else {
+                rv = co < 0;
+            }
         }
         break;
-
+        
     case eSubjStrand:
-
+        
         rv = lhs->GetSubjStrand() < rhs->GetSubjStrand();
+        break;
+        
+        
+    case eQueryIdSubjIdSubjStrand:
+        {
+            const int qid = lhs->GetQueryId()->CompareOrdered(*(rhs->GetQueryId()));
+            const int sid = lhs->GetSubjId()->CompareOrdered(*(rhs->GetSubjId()));
+
+            if(qid == 0) {
+                if(sid == 0) {
+                    const bool subj_strand_lhs  = lhs->GetSubjStrand();
+                    const bool subj_strand_rhs = rhs->GetSubjStrand();
+                    return subj_strand_lhs > subj_strand_rhs;
+                }
+                else {
+                    rv = sid < 0;
+                }
+            }
+            else {
+                rv = qid < 0;
+            }
+        }
         break;
 
     default:
@@ -148,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/11/27 14:46:53  kapustin
+ * +eQueryIdSubjIdSubjStrand
+ *
  * Revision 1.6  2005/10/24 17:31:59  kapustin
  * Add eSubjIdQueryId sort criterion
  *
