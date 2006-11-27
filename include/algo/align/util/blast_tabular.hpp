@@ -52,7 +52,7 @@ public:
     CBlastTabular(const objects::CSeq_align& seq_align, bool save_xcript = false);
 
     CBlastTabular(const TId& idquery, TCoord qstart, bool qstrand,
-                  const TId& idsubj,  TCoord qsubj,  bool qsubj,
+                  const TId& idsubj, TCoord sstart, bool sstrand,
                   const string& xcript);
 
     CBlastTabular(const char* m8, bool force_local_ids = false);
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/11/27 17:40:05  kapustin
+ * Fix a typo in a parameter's name
+ *
  * Revision 1.8  2006/11/27 14:47:55  kapustin
  * Support a raw transcript construction
  *
