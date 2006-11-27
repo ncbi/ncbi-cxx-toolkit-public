@@ -316,6 +316,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/27 14:25:21  dicuccio
+ * Stripped trailing line feeds
+ *
  * Revision 1.1  2006/11/17 07:30:47  kuznets
  * initial revision
  *
