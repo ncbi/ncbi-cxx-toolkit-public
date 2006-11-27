@@ -37,6 +37,7 @@
 *
 */
 
+
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -58,10 +59,42 @@ class NCBI_XALGOALIGN_EXPORT CAlignShadow: public CObject
 public:
 
     typedef CConstRef<objects::CSeq_id> TId;
+    typedef TSeqPos TCoord;
 
     // c'tors
     CAlignShadow(void);
+
+    /// Create the object from a seq-align structure
+    ///
+    /// @param seq_align
+    ///    Input seq-align structure to create from
+    /// @param save_xcript
+    ///    If true, the alignment transcript string will be run-length encoded
+    ///    and saved in m_Transcript. All diagonals are recorded
+    ///    as matches.
     CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcript = false);
+
+    /// Create the object from a transcript
+    ///
+    /// @param idquery
+    ///    Query sequence ID
+    /// @param qstart
+    ///    Starting coordinate on the query
+    /// @param qstrand
+    ///    Query strand (direction)
+    /// @param idsubj
+    ///    Subject sequence ID
+    /// @param sstart
+    ///    Starting coordinate on the subject
+    /// @param sstrand
+    ///    Subject strand (direction)
+    /// @param xcript
+    ///    Plain alignment (edit) transcript.
+    ///    Allowed characters are 'M', 'R', 'I', 'D'.
+    ///
+    CAlignShadow(const TId& idquery, TCoord qstart, bool qstrand,
+                 const TId& idsubj,  TCoord qsubj,  bool qsubj,
+                 const string& xcript);
 
     virtual ~CAlignShadow() {}
 
@@ -84,8 +117,6 @@ public:
     void  FlipStrands(void);
 
     void  SwapQS(void);
-
-    typedef TSeqPos TCoord;
     
     const TCoord* GetBox(void) const;
     void  SetBox(const TCoord box [4]);
@@ -131,6 +162,7 @@ public:
     // optional alignment transcript
     typedef string TTranscript;
     const TTranscript& GetTranscript(void) const;
+
     static string s_RunLengthEncode(const string& in);
     static string s_RunLengthDecode(const string& in);
 
@@ -161,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/11/27 14:47:55  kapustin
+ * Support a raw transcript construction
+ *
  * Revision 1.16  2006/03/21 16:16:44  kapustin
  * Support edit transcript string
  *

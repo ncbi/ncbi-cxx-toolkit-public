@@ -48,7 +48,13 @@ public:
 
     // c'tors
     CBlastTabular(void) {};
+
     CBlastTabular(const objects::CSeq_align& seq_align, bool save_xcript = false);
+
+    CBlastTabular(const TId& idquery, TCoord qstart, bool qstrand,
+                  const TId& idsubj,  TCoord qsubj,  bool qsubj,
+                  const string& xcript);
+
     CBlastTabular(const char* m8, bool force_local_ids = false);
 
     // getters / setters
@@ -96,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/11/27 14:47:55  kapustin
+ * Support a raw transcript construction
+ *
  * Revision 1.7  2006/09/13 16:29:06  kapustin
  * Add local id option when creating from a blast string
  *

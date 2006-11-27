@@ -144,6 +144,54 @@ CAlignShadow::CAlignShadow(void)
 }
 
 
+CAlignShadow::CAlignShadow(const TId& idquery, TCoord qstart, bool qstrand,
+                           const TId& idsubj, TCoord sstart, bool sstrand,
+                           const string& xcript)
+{
+    m_Id.first  = idquery;
+    m_Id.second = idsubj;
+
+    m_Box[0] = qstart;
+    m_Box[2] = sstart;
+
+    TCoord q = qstart, q0 = q, s = sstart, s0 = s;
+    const int qinc (qstrand? 1: -1), sinc (sstrand? 1: -1);
+
+    ITERATE(string, ii, xcript) {
+
+        switch(*ii) {
+
+        case 'M': case 'R':
+            q0 = q;
+            q += qinc; 
+            s0 = s;
+            s += sinc; 
+            break;
+
+        case 'I':
+            s0 = s;
+            s += sinc;
+            break;
+
+        case 'D':
+            q0 = q;
+            q += qinc;
+            break;
+
+        default:
+            NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                       "CAlignShadow()::CAlignShadow(): "
+                       "Unexpected transcript symbol found");
+        }
+    }
+
+    m_Box[1] = q0;
+    m_Box[3] = s0;
+
+    m_Transcript = s_RunLengthEncode(xcript);
+}
+
+
 CNcbiOstream& operator << (CNcbiOstream& os, const CAlignShadow& align_shadow)
 {
     USING_SCOPE(objects);
@@ -879,6 +927,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.21  2006/11/27 14:49:06  kapustin
+ * Support a raw transcript construction
+ *
  * Revision 1.20  2006/05/01 15:23:23  kapustin
  * Fix one-off problem when splitting at query deletion
  *

@@ -84,6 +84,30 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
 }
 
 
+CBlastTabular::CBlastTabular(const TId& idquery, TCoord qstart, bool qstrand,
+                             const TId& idsubj, TCoord sstart, bool sstrand,
+                             const string& xcript):
+    TParent(idquery, qstart, qstrand, idsubj, sstart, sstrand, xcript)
+{
+    m_Length = xcript.size();    
+    m_Mismatches = m_Gaps = 0;
+    bool diag (true);
+    size_t matches (0);
+    for(size_t i = 0; i < m_Length; ++i) {
+        switch(xcript[i]) {
+        case 'R': ++m_Mismatches; diag = true; break;
+        case 'M': ++matches; diag = true; break;
+        case 'I': case 'D': if(diag) {diag = false; ++m_Gaps; } break;
+        }
+    }
+
+    SetIdentity(double(matches) / m_Length);
+
+    m_EValue = 0;
+    m_Score = 2 * matches;
+}
+
+
 CRef<CSeq_id> ExtractSeqId(const string& strid, bool use_local)
 {
     CRef<CSeq_id> seqid;
