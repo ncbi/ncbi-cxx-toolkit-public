@@ -60,7 +60,7 @@ void CAppHitFilter::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "HitFilter v.2.0.0");
+                              "HitFilter v.2.0.1");
 
     argdescr->AddDefaultKey("min_idty", "min_idty", 
                             "Minimal input hit identity",
@@ -80,6 +80,13 @@ void CAppHitFilter::Init()
     argdescr->AddOptionalKey("file_in", "file_in", "Input file (stdin otherwise)",
                              CArgDescriptions::eInputFile,
                              CArgDescriptions::fBinary);
+    
+    argdescr->AddDefaultKey("merge", "merge",
+                            "Merge abutting alignments unless the merged "
+                            "alignment overlap length ratio is greater "
+                            "than this parameter. Any negative value will "
+                            "turn merging off.",
+                            CArgDescriptions::eDouble, "-1.0");
 
     argdescr->AddOptionalKey("constraints", "constraints",
                              "Binary ASN file with constraining alignments",
@@ -90,7 +97,8 @@ void CAppHitFilter::Init()
                              CArgDescriptions::eOutputFile,
                              CArgDescriptions::fBinary);    
     
-    argdescr->AddOptionalKey("m", "m","Text description/comment to add to the output",
+    argdescr->AddOptionalKey("m", "m",
+                             "Text description/comment to add to the output",
                              CArgDescriptions::eString);
     
     argdescr->AddDefaultKey("fmt_out", "fmt_out", "Output format",
@@ -121,6 +129,10 @@ void CAppHitFilter::Init()
     
     CArgAllow* constrain_minidty = new CArgAllow_Doubles(0.0, 1.0);
     argdescr->SetConstraint("min_idty", constrain_minidty);
+
+    
+    CArgAllow* constrain_merge = new CArgAllow_Doubles(-1.0, 1.0);
+    argdescr->SetConstraint("merge", constrain_merge);
 
     SetupArgDescriptions(argdescr.release());
 }
@@ -168,10 +180,13 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
     CNcbiIstream& istr = args["file_in"]? args["file_in"].AsInputFile(): cin;
 
     if(fmt_in == g_m8) {
+
         while(istr) {
+
             char line [1024];
             istr.getline(line, sizeof line, '\n');
             string s (NStr::TruncateSpaces(line));
+
             if(s.size()) {
 
                 THitRef hit (new THit(s.c_str()));
@@ -310,6 +325,7 @@ bool s_PHitRefScore(const CAppHitFilter::THitRef& lhs,
     return lhs->GetScore() > rhs->GetScore();
 }
 
+
 int CAppHitFilter::Run()
 {    
     const CArgs& args = GetArgs();
@@ -340,6 +356,8 @@ int CAppHitFilter::Run()
 
     THitRefs all;
     x_ReadInputHits(&all);
+
+    const double maxlenfr (args["merge"].AsDouble());
 
     copy(restraint.begin(), restraint.end(), back_inserter(all));
     sort(all.begin(), all.end(), s_PHitRefScore);
@@ -380,7 +398,14 @@ int CAppHitFilter::Run()
         }
     }
     all.erase(ii_hi, ii_end);
-    
+
+    if(maxlenfr >= 0) {
+
+        THitRefs merged;
+        CHitFilter<THit>::s_MergeAbutting(all.begin(), all.end(), maxlenfr, &merged);
+        all = merged;
+    }
+
     x_DumpOutput(all);
 
     return 0;
@@ -477,6 +502,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/11/27 14:50:35  kapustin
+ * Support merging of abutting hits at the output
+ *
  * Revision 1.14  2006/10/16 16:15:20  kapustin
  * ASN element output type changed from disc to partial
  *
