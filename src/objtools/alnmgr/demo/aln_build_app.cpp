@@ -53,7 +53,6 @@
 #include <objtools/alnmgr/aln_stats.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
-#include <objtools/alnmgr/aln_rng_coll_oper.hpp> //< Temp, just to test it
 #include <objtools/alnmgr/sparse_aln.hpp> //< Temp, just to test it
 #include <objtools/alnmgr/aln_builders.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
@@ -158,7 +157,8 @@ int CAlnBuildApp::Run(void)
     typedef vector<const CSeq_align*> TAlnVector;
     typedef const CSeq_id* TSeqIdPtr;
     typedef vector<TSeqIdPtr> TSeqIdVector;
-    typedef SCompareOrdered<TSeqIdPtr> TComp;
+    typedef CSeqIdBioseqHandleComp<TSeqIdPtr> TComp;
+    //typedef SCompareOrdered<TSeqIdPtr> TComp;
     typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
     typedef CSeqIdAlnBitmap<TAlnSeqIdVector> TSeqIdAlnBitmap;
     typedef CAlnStats<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnStats;
@@ -170,7 +170,7 @@ int CAlnBuildApp::Run(void)
 
 
     /// Create a comparison functor
-    TComp comp;
+    TComp comp(GetScope());
 
 
     /// Create a vector of seq-ids per seq-align
@@ -178,7 +178,7 @@ int CAlnBuildApp::Run(void)
 
 
     /// Create an alignment bitmap to obtain statistics.
-    TSeqIdAlnBitmap id_aln_bitmap(aln_seq_id_vector, GetScope());
+    TSeqIdAlnBitmap id_aln_bitmap(aln_seq_id_vector, GetScope(), comp);
 
 
     /// Crete align statistics object
@@ -236,6 +236,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/11/27 19:38:32  todorov
+* Using CSeqIdBioseqHandleComp<TSeqIdPtr>
+*
 * Revision 1.10  2006/11/22 00:48:43  todorov
 * 1) + merge options
 * 2) + sequence comparison functor (when building)
