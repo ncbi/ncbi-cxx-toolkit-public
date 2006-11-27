@@ -34,6 +34,7 @@ ARGUMENTS:
      app/gui         to build an FLTK application
      app/lds         to build an application using a local data store
      app/objects     to build an application using ASN.1 objects
+     app/asn         to build a library from ASN.1 spec, and sample application
      app/objmgr      to build an application using the object manager
      app/soap/client to build a SOAP client
      app/soap/server to build a SOAP server
