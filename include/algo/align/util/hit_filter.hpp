@@ -166,7 +166,7 @@ public:
         return n > 0? n: 0;
     }
     
-    // Multiple greedy reconciliation algorithm
+    // The Multiple Greedy Reconciliation algorithm
 
     static void s_RunGreedy(typename THitRefs::iterator hri_beg, 
                             typename THitRefs::iterator hri_end,
@@ -306,8 +306,7 @@ public:
                         he[point].m_X = hc->GetBox()[point];
                     }
                     else {
-                        const typename THit::TCoord a = 0, 
-                            b = numeric_limits<typename THit::TCoord>::max() / 2;
+                        const TCoord a = 0, b = numeric_limits<TCoord>::max() / 2;
                         const bool is_start = point % 2 == 0;
                         const bool is_plus  = hc->GetStrand(point / 2);
                         he[point].m_X =  (is_start ^ is_plus)? b: a;
@@ -459,6 +458,99 @@ public:
         }
     }
 
+
+    // merge hits abutting on query(subject) but separated on subject(query).
+    // maxlenfr is the maximum allowed length of an alignment within a gap
+    // as a fraction of the minimum length of two merging hits
+    static void s_MergeAbutting(typename THitRefs::iterator hri_beg,
+                                typename THitRefs::iterator hri_end,
+                                const double& maxlenfr,
+                                THitRefs* pout)
+    {
+        if(hri_beg > hri_end) {
+            NCBI_THROW(CAlgoAlignUtilException, eInternal, 
+                       "Invalid input iterator order");
+        }
+
+        // copy input hits and make all queries in plus strand
+        const size_t dim0 = hri_end - hri_beg;
+        THitRefs all;
+        all.reserve(dim0);
+        for(typename THitRefs::iterator hri = hri_beg; hri != hri_end; ++hri) {
+            if((*hri)->GetQueryStrand() == false) {
+                (*hri)->FlipStrands();
+            }
+            all.push_back(*hri);
+        }
+
+        // compile ordered set of hit ends;
+        // go from the ends for better balancing
+        typename THitRefs::iterator ii1 = all.begin();
+        typename THitRefs::iterator ii2 = all.end(); --ii2;
+        THitEnds hit_ends;
+        while(ii1 != ii2) {
+            
+            THitRef& h1 = *ii1;
+            THitRef& h2 = *ii2;
+            for(Uint1 point = 0; point < 4; ++point) {
+
+                THitEnd he1;
+                he1.m_Point = point;
+                he1.m_Ptr = &h1;
+                he1.m_X = h1->GetBox()[point];
+                hit_ends.insert(he1);
+
+                THitEnd he2;
+                he2.m_Point = point;
+                he2.m_Ptr = &h2;
+                he2.m_X = h2->GetBox()[point];
+                hit_ends.insert(he2);
+            }
+
+            if(++ii1 == ii2) {
+                --ii2;
+                break;
+            }
+            --ii2;
+        }
+
+        if(ii1 == ii2) {
+            THitRef& h = *ii2;
+            for(Uint1 point = 0; point < 4; ++point) {
+                THitEnd he;
+                he.m_Point = point;
+                he.m_Ptr = &h;
+                he.m_X = h->GetBox()[point];
+                hit_ends.insert(he);
+            }
+        }
+
+        // collate by id pairs and strands
+        typedef CHitComparator<THit> THitComparator;
+        typename THitComparator::ESortCriterion sort_type
+            (THitComparator::eQueryIdSubjIdSubjStrand);
+        THitComparator sorter (sort_type);
+        stable_sort(all.begin(), all.end(), sorter);
+        
+        // go chunk-by-chunk and merge whatever is suitable
+        pout->clear();
+        
+        THitRef h0 (all.front());
+        typename THitRefs::iterator ib = all.begin();
+        NON_CONST_ITERATE(typename THitRefs, ii, all) {
+
+            if ( ! (*ii)->GetQueryId()->Match(*(h0->GetQueryId())) ||
+                 ! (*ii)->GetSubjId()->Match(*(h0->GetSubjId())) ||
+                 (*ii)->GetSubjStrand() != h0->GetSubjStrand() )
+            {
+                h0 = *ii;
+                sx_TestAndMerge(ib, ii, hit_ends, maxlenfr, pout);
+                ib = ii;
+            }
+        }
+        sx_TestAndMerge(ib, all.end(), hit_ends, maxlenfr, pout);
+    }
+
     // helper predicate
     static bool s_PNullRef(const THitRef& hr) {
         return hr.IsNull();
@@ -568,6 +660,244 @@ protected:
         }
         return rv;
     }
+
+    
+    static THitRef sx_Merge(const THitRef& lhs, const THitRef& rhs, Uint1 where)
+    {
+        THitRef rv (0);
+
+        const bool sstrand (lhs->GetSubjStrand());
+        if(sstrand != rhs->GetSubjStrand()) {
+
+            NCBI_THROW(CAlgoAlignUtilException, eInternal, 
+                       "Cannot merge hits: different strands");
+        }
+
+        const int qgap ((!sstrand && where == 1)? 
+                        (int(lhs->GetQueryMin()) - int(rhs->GetQueryMax())):
+                        (int(rhs->GetQueryMin()) - int(lhs->GetQueryMax())));
+
+        const int sgap ((!sstrand && where == 0)?
+                        (int(lhs->GetSubjMin()) - int(rhs->GetSubjMax())):
+                        (int(rhs->GetSubjMin()) - int(lhs->GetSubjMax())));
+
+        const bool bv1 (abs(qgap) == 1 && abs(sgap) > 0);
+        const bool bv2 (abs(sgap) == 1 && abs(qgap) > 0);
+
+        if(!bv1 && !bv2){
+            return rv;
+        }
+
+        typename THit::TTranscript x_lhs = 
+            THit::s_RunLengthDecode(lhs->GetTranscript());
+        typename THit::TTranscript x_rhs = 
+            THit::s_RunLengthDecode(rhs->GetTranscript());
+
+        if(x_lhs.size() && x_rhs.size()) {
+
+            string x_gap;
+            if(where == 0) {
+                x_gap.assign(abs(sgap) - 1, 'I');
+            }
+            else {
+                x_gap.assign(abs(qgap) - 1, 'D');
+            }
+
+            string xcript;
+            THitRef h;
+            if(where == 0 || sstrand) {
+                xcript = x_lhs + x_gap + x_rhs;
+                h = lhs;
+            }
+            else {
+                xcript = x_rhs + x_gap + x_lhs;
+                h = rhs;
+            }
+
+            rv.Reset (new THit(h->GetId(0), h->GetStart(0), h->GetStrand(0), 
+                               h->GetId(1), h->GetStart(1), h->GetStrand(1), 
+                               xcript));
+        }
+        else {
+            rv.Reset(new THit());
+            rv->SetId(0, lhs->GetId(0));
+            rv->SetId(1, lhs->GetId(1));
+            TCoord box [4] = {
+                lhs->GetQueryStart(), rhs->GetQueryStop(),
+                lhs->GetSubjStart(), rhs->GetSubjStop()
+            };
+            rv->SetBox(box);
+        }
+
+        return rv;
+    }
+
+    
+    static bool s_TrackHit(const THit& h)
+    {
+        const string xcript (THit::s_RunLengthDecode(h.GetTranscript()));
+        if(xcript.size()) {
+
+            TCoord q = h.GetQueryStart(), q0 = q, s = h.GetSubjStart(), s0 = s;
+
+            const int qinc = h.GetQueryStrand()? 1 : -1;
+            const int sinc = h.GetSubjStrand()? 1 : -1;
+
+            ITERATE(string, ii, xcript) {
+                switch(*ii) {
+                case 'M' : case 'R' : q0 = q; q += qinc; s0 = s; s += sinc; break;
+                case 'I' : s0 = s; s += sinc; break;
+                case 'D' : q0 = q; q += qinc; break;
+                default:
+                    NCBI_THROW(CAlgoAlignUtilException, eInternal, 
+                               "Invalid transcript symbol");
+                }
+            }
+            
+            const bool rv = (q0 == h.GetQueryStop() && s0 == h.GetSubjStop());
+            return rv;
+        }
+        else {
+            return true;
+        }
+    }
+
+
+    static void sx_TM(Uint1 where,
+                      typename THitRefs::iterator ii_beg,
+                      typename THitRefs::iterator ii_end,
+                      const THitEnds& hit_ends,
+                      const double& maxlenfr,
+                      map<typename THitRefs::iterator, THitRef>& m)
+    {
+        typedef CHitComparator<THit> THitComparator;
+        typename THitComparator::ESortCriterion sort_type (
+                 where == 0? 
+                 THitComparator::eQueryMinScore:
+                 THitComparator::eSubjMinScore);
+        THitComparator sorter (sort_type);
+        stable_sort(ii_beg, ii_end, sorter);
+
+        typedef typename THitRefs::iterator TIter;
+        typedef map<typename THitRefs::iterator, THitRef> TIterMap;
+        for(TIter ii = ii_beg; ii != ii_end; ++ii)  {
+
+            TIter jj = ii;
+            const TCoord cmax = (*ii)->GetMax(where);
+            TCoord cmin = 0;
+            for(++jj; jj != ii_end && cmax >= cmin; ++jj) {
+                cmin = (*jj)->GetMin(where);
+            }
+            
+            if(cmax + 1 == cmin) {
+
+                --jj;
+                bool can_merge = true;
+                const Uint1 where2 ((where + 1) % 2);
+                const bool subj_strand ((*ii)->GetSubjStrand());
+                if(subj_strand) {
+                    can_merge = (*ii)->GetMax(where2) < (*jj)->GetMin(where2);
+                }
+                else {
+                    can_merge = (*jj)->GetMax(where2) < (*ii)->GetMin(where2);
+                }
+                
+                if(can_merge) {
+
+                    // also test the maxlenfr condition using hit_ends
+                    
+                    THitEnd he_ii, he_jj;
+
+                    if(subj_strand) {
+
+                        he_ii.m_Point = 2*where2 + 1;
+                        he_ii.m_Ptr = &(*ii);
+                        he_ii.m_X = (*ii)->GetStop(where2) + 1;
+
+                        he_jj.m_Point = 2*where2;
+                        he_jj.m_Ptr = &(*jj);
+                        he_jj.m_X = (*jj)->GetStart(where2) - 1;
+                    }
+                    else {
+
+                        he_jj.m_Point = 2*where2 + 1;
+                        he_jj.m_Ptr = &(*ii);
+                        he_jj.m_X = (*ii)->GetStop(where2) - 1;
+
+                        he_ii.m_Point = 2*where2;
+                        he_ii.m_Ptr = &(*jj);
+                        he_ii.m_X = (*jj)->GetStart(where2) + 1;
+                    }
+
+                    typedef typename THitEnds::iterator THitEndsIter;
+                    const THitEndsIter ii0 = hit_ends.lower_bound(he_ii);
+                    const THitEndsIter ii1 = hit_ends.upper_bound(he_jj);
+
+                    const size_t max_len = 
+                        size_t(maxlenfr * min((*ii)->GetLength(),(*jj)->GetLength()));
+
+                    for(typename THitEnds::iterator ii = ii0; ii != ii1; ++ii) {
+
+                        const THitRef& h = *(ii->m_Ptr);
+
+                        TCoord cmin (h->GetMin(where2));
+                        if(cmin < he_ii.m_X) cmin = he_ii.m_X;
+
+                        TCoord cmax (h->GetMax(where2));
+                        if(cmax < he_jj.m_X) cmax = he_jj.m_X;
+                        
+                        if(cmax - cmin + 1 > max_len) {
+                            can_merge = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(can_merge) {
+                
+                    // if (*ii) already merged, merge with the result;
+                    // if (*jj) already merged, do not merge.
+                    typename TIterMap::iterator imi = m.find(ii);
+                    THitRef lhs (imi == m.end()? *ii: imi->second);
+                    if (m.find(jj) == m.end() && lhs.NotEmpty()) {
+
+                        THitRef rv (sx_Merge(lhs, *jj, where));
+                        if(rv.NotNull()) {
+                            m[ii] = THitRef(0);
+                            m[jj] = rv;
+                        }
+                    }                    
+                }
+            }
+        }
+    }
+
+
+    // merging of abutting hits sharing same ids and subject strand
+    // (plus query strand assumed)
+    void static sx_TestAndMerge(typename THitRefs::iterator ii_beg,
+                                typename THitRefs::iterator ii_end,
+                                const THitEnds& hit_ends,
+                                const double& maxlenfr,
+                                THitRefs* pout)
+    {
+        typedef typename THitRefs::iterator TIter;
+        typedef map<TIter, THitRef> TIterMap;
+        TIterMap m;
+
+        sx_TM(0, ii_beg, ii_end, hit_ends, maxlenfr, m);
+        sx_TM(1, ii_beg, ii_end, hit_ends, maxlenfr, m);
+
+        // copy final merge targets and unmerged hits
+        for(TIter ii = ii_beg; ii != ii_end; ++ii) {
+            typename TIterMap::iterator imi = m.find(ii);
+            THitRef hr (imi == m.end()? *ii: imi->second);
+            if(hr.NotEmpty()) {
+                pout->push_back(hr);
+            }
+        }
+    }
+
 };
 
 
@@ -578,6 +908,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/11/27 14:48:31  kapustin
+ * +CHitFilter::s_MergeAbutting()
+ *
  * Revision 1.12  2006/06/27 14:25:00  kapustin
  * Introduce retain_overlap (min overlap to retain) parameter
  *
