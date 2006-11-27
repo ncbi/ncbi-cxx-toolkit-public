@@ -131,6 +131,8 @@ SLockedQueue::SLockedQueue(const string& queue_name)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
+    m_StatThread.Reset(new CStatisticsThread(*this));
+    m_StatThread->Run();
 }
 
 SLockedQueue::~SLockedQueue()
@@ -143,11 +145,53 @@ SLockedQueue::~SLockedQueue()
     delete lb_coordinator;
 }
 
+enum {
+    MEASURE_INTERVAL = 1,
+    DECAY_INTERVAL = 10, // for informational purposes only, see EXP below
+    FSHIFT = 7,
+    FIXED_1 = 1 << FSHIFT,
+    EXP = 116 // 2 ^ FSHIFT / 2 ^ ( MEASURE_INTERVAL * log2(e) / DECAY_INTERVAL)
+};
+
+SLockedQueue::CStatisticsThread::CStatisticsThread(TContainer& container)
+    : CThreadNonStop(MEASURE_INTERVAL),
+        m_Container(container)
+{
+}
+
+void SLockedQueue::CStatisticsThread::DoJob(void) {
+    unsigned counter;
+    counter = m_Container.m_GetCounter.Get();
+    m_Container.m_GetCounter.Add(-counter);
+    m_Container.m_GetAverage = (EXP * m_Container.m_GetAverage +
+                                (FIXED_1-EXP) * (counter << FSHIFT)) >> FSHIFT;
+    counter = m_Container.m_PutCounter.Get();
+    m_Container.m_PutCounter.Add(-counter);
+    m_Container.m_PutAverage = (EXP * m_Container.m_PutAverage +
+                                (FIXED_1-EXP) * (counter << FSHIFT)) >> FSHIFT;
+}
+
+double SLockedQueue::GetGetAverage(void)
+{
+    return m_GetAverage / double(FIXED_1 * MEASURE_INTERVAL);
+}
+
+double SLockedQueue::GetPutAverage(void)
+{
+    return m_PutAverage / double(FIXED_1 * MEASURE_INTERVAL);
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/27 16:46:21  joukovv
+ * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
+ * un-nested CQueue from CQueueDataBase; instrumented code to count job
+ * throughput average.
+ *
  * Revision 1.1  2006/10/31 19:35:26  joukovv
  * Queue creation and reading of its parameters decoupled. Code reorganized to
  * reduce coupling in general. Preparing for queue-on-demand.

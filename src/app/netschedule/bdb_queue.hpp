@@ -54,37 +54,20 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Queue database manager
-///
-/// @internal
-///
-class CQueueCollection
+
+class CParameterSet
 {
-public:
     typedef map<string, SLockedQueue*> TQueueMap;
-
 public:
-    CQueueCollection();
-    ~CQueueCollection();
-
-    void Close();
-
-    SLockedQueue& GetLockedQueue(const string& qname);
-    bool QueueExists(const string& qname) const;
-
-    /// Collection takes ownership of queue
-    void AddQueue(const string& name, SLockedQueue* queue);
-
-    const TQueueMap& GetMap() const { return m_QMap; }
-
+    void Read(const IRegistry& reg, const string& sname)
+    {
+        m_Params.Read(reg, sname);
+        m_ParamsLB.Read(reg, sname);
+    }
 private:
-    CQueueCollection(const CQueueCollection&);
-    CQueueCollection& operator=(const CQueueCollection&);
-private:
-    TQueueMap              m_QMap;
-    mutable CRWLock        m_Lock;
+    SQueueParameters   m_Params;
+    SQueueLBParameters m_ParamsLB;
 };
-
 
 /// Batch submit record
 ///
@@ -102,6 +85,476 @@ struct SNS_BatchSubmitRec
         input[0] = affinity_token[0] = 0;
         affinity_id = job_id = 0;
     }
+};
+
+class CQueueDataBase;
+
+/// Main queue entry point
+///
+/// @internal
+///
+class CQueue
+{
+public:
+    /// @param client_host_addr - 0 means internal use
+    CQueue(CQueueDataBase& db,
+           const string&   queue_name,
+           unsigned        client_host_addr);
+
+    unsigned int Submit(const char*   input,
+                        unsigned      host_addr = 0,
+                        unsigned      port = 0,
+                        unsigned      wait_timeout = 0,
+                        const char*   progress_msg = 0,
+                        const char*   affinity_token = 0,
+                        const char*   jout = 0,
+                        const char*   jerr = 0,
+                        unsigned      mask = 0);
+
+    /// Submit job batch
+    /// @return 
+    ///    ID of the first job, second is first_id+1
+    unsigned int SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
+                             unsigned      host_addr = 0,
+                             unsigned      port = 0,
+                             unsigned      wait_timeout = 0,
+                             const char*   progress_msg = 0);
+
+    void Cancel(unsigned int job_id);
+
+    /// Move job to pending ignoring its current status
+    void ForceReschedule(unsigned int job_id);
+
+    void PutResult(unsigned int  job_id,
+                   int           ret_code,
+                   const char*   output,
+                   bool          remove_from_tl);
+
+    void PutResultGetJob(unsigned int   done_job_id,
+                         int            ret_code,
+                         const char*    output,
+                         bool           update_tl,
+                         unsigned int   worker_node,
+                         unsigned int*  job_id, 
+                         char*          input,
+                         char*          jout,
+                         char*          jerr,
+                         const string&  client_name,
+                         unsigned*      job_mask);
+
+
+    void PutProgressMessage(unsigned int  job_id,
+                            const char*   msg);
+    
+    void JobFailed(unsigned int  job_id,
+                   const string& err_msg,
+                   const string& output,
+                   int           ret_code,
+                   unsigned int  worker_node,
+                   const string& client_name);
+
+    void GetJobKey(char* key_buf, unsigned job_id,
+                   const string& host, unsigned port);
+
+
+    /// Get job with load balancing
+    void GetJobLB(unsigned int   worker_node,
+                  unsigned int*  job_id, 
+                  char*          input,
+                  char*          jout,
+                  char*          jerr,
+                  unsigned*      job_mask);
+
+    void GetJob(unsigned int   worker_node,
+                unsigned int*  job_id, 
+                char*          input,
+                char*          jout,
+                char*          jerr,
+                const string&  client_name,
+                unsigned*      job_mask);
+
+    void ReturnJob(unsigned int job_id);
+
+    /// @param expected_status
+    ///    If current status is different from expected try to
+    ///    double read the database (to avoid races between nodes
+    ///    and submitters)
+    bool GetJobDescr(unsigned int job_id,
+                     int*         ret_code,
+                     char*        input,
+                     char*        output,
+                     char*        err_msg,
+                     char*        progress_msg,
+                     char*        jout,
+                     char*        jerr,
+                     CNetScheduleClient::EJobStatus expected_status 
+                                        = CNetScheduleClient::eJobNotFound);
+
+    CNetScheduleClient::EJobStatus 
+    GetStatus(unsigned int job_id) const;
+
+    /// count status snapshot for affinity token
+    /// returns false if affinity token not found
+    bool CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
+                     const char*                           affinity_token);
+
+
+    /// Set job run-expiration timeout
+    /// @param tm
+    ///    Time worker node needs to execute the job (in seconds)
+    void SetJobRunTimeout(unsigned job_id, unsigned tm);
+
+    /// Prolong job expiration timeout
+    /// @param tm
+    ///    Time worker node needs to execute the job (in seconds)
+    void JobDelayExpiration(unsigned job_id, unsigned tm);
+
+    /// Delete if job is done and timeout expired
+    ///
+    /// @return TRUE if job has been deleted
+    ///
+    bool CheckDelete(unsigned int job_id);
+
+    /// Delete batch_size jobs
+    /// @return
+    ///    Number of deleted jobs
+    unsigned CheckDeleteBatch(unsigned batch_size,
+                              CNetScheduleClient::EJobStatus status,
+                              unsigned &last_deleted);
+    /// Delete batch jobs
+    /// @return
+    ///    Number of deleted jobs
+    unsigned DeleteBatch(bm::bvector<>& batch);
+
+    /// Delete all job ids already deleted (phisically) from the queue
+    void ClearAffinityIdx(void);
+
+    /// Remove all jobs
+    void Truncate(void);
+
+    /// Remove job from the queue
+    void DropJob(unsigned job_id);
+
+    /// Free unsued memory (status storage)
+    void FreeUnusedMem(void)
+        { m_LQueue->status_tracker.FreeUnusedMem(); }
+
+    /// All returned jobs come back to pending status
+    void Returned2Pending(void)
+        { m_LQueue->status_tracker.Returned2Pending(); }
+
+    /// @param host_addr
+    ///    host address in network BO
+    ///
+    void RegisterNotificationListener(unsigned int   host_addr, 
+                                      unsigned short udp_port,
+                                      int            timeout,
+                                      const string&  auth);
+    void UnRegisterNotificationListener(unsigned int   host_addr, 
+                                        unsigned short udp_port);
+
+    /// Remove affinity association for a specified host
+    ///
+    /// @note Affinity is based on network host name and 
+    /// program name (not UDP port). Presumed that we have one
+    /// worker node instance per host.
+    void ClearAffinity(unsigned int  host_addr,
+                        const string& auth);
+
+    void SetMonitorSocket(SOCK sock);
+
+    /// Return monitor (no ownership transfer)
+    CNetScheduleMonitor* GetMonitor(void) { return &m_LQueue->monitor; }
+
+    /// UDP notification to all listeners
+    void NotifyListeners(void);
+
+    /// Check execution timeout.
+    /// All jobs failed to execute, go back to pending
+    void CheckExecutionTimeout(void);
+
+    /// Check job expiration
+    /// Returns new time if job not yet expired (or ended)
+    /// 0 means job ended in any way.
+    time_t CheckExecutionTimeout(unsigned job_id, time_t curr_time);
+
+    unsigned CountStatus(CNetScheduleClient::EJobStatus) const;
+
+    void StatusStatistics(CNetScheduleClient::EJobStatus status,
+                          CJobStatusTracker::TBVector::statistics* st) const;
+
+    /// Count database records
+    unsigned CountRecs(void);
+
+    void PrintStat(CNcbiOstream & out);
+    void PrintNodeStat(CNcbiOstream & out) const;
+    void PrintSubmHosts(CNcbiOstream & out) const;
+    void PrintWNodeHosts(CNcbiOstream & out) const;
+    void PrintQueue(CNcbiOstream& out, 
+                    CNetScheduleClient::EJobStatus job_status,
+                    const string& host,
+                    unsigned      port);
+
+    /// Queue dump
+    void PrintJobDbStat(unsigned job_id, 
+                        CNcbiOstream & out,
+                        CNetScheduleClient::EJobStatus status 
+                                    = CNetScheduleClient::eJobNotFound);
+    /// Dump all job records
+    void PrintAllJobDbStat(CNcbiOstream & out);
+
+    void PrintJobStatusMatrix(CNcbiOstream & out);
+
+    bool IsVersionControl() const
+    {
+        return m_LQueue->program_version_list.IsConfigured();
+    }
+
+    bool IsMatchingClient(const CQueueClientInfo& cinfo) const
+    {
+        return m_LQueue->program_version_list.IsMatchingClient(cinfo);
+    }
+
+    /// Check if client is a configured submitter
+    bool IsSubmitAllowed() const
+    {
+        return (m_ClientHostAddr == 0) || 
+                m_LQueue->subm_hosts.IsAllowed(m_ClientHostAddr);
+    }
+
+    /// Check if client is a configured worker node
+    bool IsWorkerAllowed() const
+    {
+        return (m_ClientHostAddr == 0) || 
+                m_LQueue->wnode_hosts.IsAllowed(m_ClientHostAddr);
+    }
+
+    void RemoveFromTimeLine(unsigned job_id);
+    void TimeLineExchange(unsigned remove_job_id, 
+                          unsigned add_job_id,
+                          time_t   curr);
+
+    double GetGetAverage(void) { return m_LQueue->GetGetAverage(); }
+    double GetPutAverage(void) { return m_LQueue->GetPutAverage(); }
+
+private:
+    // Transitional - for support of CQueue iterators
+    // Can not be declared private because of circular
+    // dependency
+    friend class CQueueIterator;
+    CQueue(const CQueueDataBase& db) :
+        m_Db(const_cast<CQueueDataBase&>(db)), // HACK! - legitimate here,
+                                               // because iterator access is
+                                               // const, and this constructor
+                                               // is for CQueueIterator only
+        m_LQueue(0),
+        m_ClientHostAddr(0),
+        m_QueueDbAccessCounter(0) {}
+    void x_Assume(SLockedQueue* slq) { m_LQueue = slq; }
+
+    /// Find the listener if it is registered
+    /// @return NULL if not found
+    ///
+    SLockedQueue::TListenerList::iterator 
+    x_FindListener(unsigned int host_addr, unsigned short udp_port);
+
+    void x_DropJob(unsigned job_id);
+
+    /// Find the pending job.
+    /// This method takes into account jobs available
+    /// in the job status matrix and current 
+    /// worker node affinity association
+    ///
+    /// Sync.Locks: affinity map lock, main queue lock, status matrix
+    ///
+    /// @return job_id
+    unsigned 
+    FindPendingJob(const string&  client_name,
+                   unsigned       client_addr);
+
+    CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
+
+
+    time_t x_ComputeExpirationTime(unsigned time_run, 
+                                   unsigned run_timeout) const; 
+
+
+    /// db should be already positioned
+    void x_PrintJobDbStat(SQueueDB&     db, 
+                          CNcbiOstream& out,
+                          const char*   fld_separator = "\n",
+                          bool          print_fname = true);
+
+    void x_PrintShortJobDbStat(SQueueDB&     db, 
+                               const string& host,
+                               unsigned port,
+                               CNcbiOstream& out,
+                               const char*   fld_separator = "\t");
+
+    /// Delete record using positioned cursor, dumps content
+    /// to text file if necessary
+    void x_DeleteDBRec(SQueueDB& db, 
+                       CBDB_FileCursor& cur);
+
+    void x_AssignSubmitRec(unsigned      job_id,
+                           const char*   input,
+                           unsigned      host_addr,
+                           unsigned      port,
+                           unsigned      wait_timeout,
+                           const char*   progress_msg,
+                           unsigned      aff_id,
+                           const char*   jout,
+                           const char*   jerr,
+                           unsigned      mask);
+
+    /// Info on how to notify job submitter
+    struct SSubmitNotifInfo
+    {
+        unsigned subm_addr;
+        unsigned subm_port;
+        unsigned subm_timeout;
+        unsigned time_submit;
+        unsigned time_run;
+    };
+
+    /// @return TRUE if job record has been found and updated
+    bool x_UpdateDB_PutResultNoLock(SQueueDB&            db,
+                                    time_t               curr,
+                                    CBDB_FileCursor&     cur,
+                                    unsigned             job_id,
+                                    int                  ret_code,
+                                    const char*          output,
+                                    SSubmitNotifInfo*    subm_info);
+
+
+    enum EGetJobUpdateStatus
+    {
+        eGetJobUpdate_Ok,
+        eGetJobUpdate_NotFound,
+        eGetJobUpdate_JobStopped,  
+        eGetJobUpdate_JobFailed  
+    };
+    EGetJobUpdateStatus x_UpdateDB_GetJobNoLock(
+                                SQueueDB&            db,
+                                time_t               curr,
+                                CBDB_FileCursor&     cur,
+                                CBDB_Transaction&    trans,
+                                unsigned int         worker_node,
+                                unsigned             job_id,
+                                char*                input,
+                                char*                jout,
+                                char*                jerr,
+                                unsigned*            aff_id,
+                                unsigned*            job_mask);
+
+    SQueueDB*        x_GetLocalDb();
+    CBDB_FileCursor* x_GetLocalCursor(CBDB_Transaction& trans);
+
+    /// Update the affinity index (no locking)
+    void x_AddToAffIdx_NoLock(unsigned aff_id, 
+                              unsigned job_id_from,
+                              unsigned job_id_to = 0);
+
+    void x_AddToAffIdx_NoLock(const vector<SNS_BatchSubmitRec>& batch);
+
+    /// Read queue affinity index, retrieve all jobs, with
+    /// given set of affinity ids
+    ///
+    /// @param aff_id_set
+    ///     set of affinity ids to read
+    /// @param job_candidates
+    ///     OUT set of jobs associated with specified affinities
+    ///
+    void x_ReadAffIdx_NoLock(const bm::bvector<>& aff_id_set,
+                             bm::bvector<>*       job_candidates);
+
+    void x_ReadAffIdx_NoLock(unsigned             aff_id,
+                             bm::bvector<>*       job_candidates);
+
+    void x_CountGet(void) { m_LQueue->m_GetCounter.Add(1); }
+    void x_CountPut(void) { m_LQueue->m_PutCounter.Add(1); }
+
+private:
+    CQueue(const CQueue&);
+    CQueue& operator=(const CQueue&);
+
+private:
+    // Per queue data
+    CQueueDataBase& m_Db;      ///< Parent structure reference
+    SLockedQueue*   m_LQueue;  
+    unsigned        m_ClientHostAddr;
+
+    // Per client data
+    /// For private DB
+    unsigned        m_QueueDbAccessCounter;
+    /// Private database (for long running sessions)
+    auto_ptr<SQueueDB>         m_QueueDB;
+    /// Private cursor
+    auto_ptr<CBDB_FileCursor>  m_QueueDB_Cursor;
+
+}; // CQueue
+
+
+
+/// Queue database manager
+///
+/// @internal
+///
+class CQueueIterator;
+class CQueueCollection
+{
+public:
+    typedef map<string, SLockedQueue*> TQueueMap;
+    typedef CQueueIterator iterator;
+    typedef CQueueIterator const_iterator; // HACK
+
+public:
+    CQueueCollection(const CQueueDataBase& db);
+    ~CQueueCollection();
+
+    void Close();
+
+    SLockedQueue& GetLockedQueue(const string& qname);
+    bool QueueExists(const string& qname) const;
+
+    /// Collection takes ownership of queue
+    void AddQueue(const string& name, SLockedQueue* queue);
+
+    CQueueIterator begin() const;
+    CQueueIterator end() const;
+
+    size_t GetSize() const { return m_QMap.size(); }
+
+private:
+    CQueueCollection(const CQueueCollection&);
+    CQueueCollection& operator=(const CQueueCollection&);
+private:
+    friend class CQueueIterator;
+    const CQueueDataBase&  m_QueueDataBase;
+    TQueueMap              m_QMap;
+    mutable CRWLock        m_Lock;
+};
+
+
+
+class CQueueIterator
+{
+public:
+    CQueueIterator(const CQueueDataBase& db,
+        CQueueCollection::TQueueMap::const_iterator iter);
+    CQueue& operator*();
+    const string GetName();
+    void operator++();
+    bool operator==(const CQueueIterator& rhs) {
+        return m_Iter == rhs.m_Iter;
+    }
+    bool operator!=(const CQueueIterator& rhs) {
+        return m_Iter != rhs.m_Iter;
+    }
+private:
+    const CQueueDataBase&                 m_QueueDataBase;
+    CQueueCollection::TQueueMap::const_iterator m_Iter;
+    CQueue m_Queue;
 };
 
 
@@ -138,8 +591,10 @@ public:
     void ReadConfig(const IRegistry& reg, unsigned* min_run_timeout);
 
     void MountQueue(const string& qname, const SQueueParameters& params);
-    void UpdateQueue(const string& qname, const SQueueParameters& params);
-    void UpdateQueueLB(const string& qname, const SQueueLBParameters& params);
+    void UpdateQueueParameters(const string& qname,
+                               const SQueueParameters& params);
+    void UpdateQueueLBParameters(const string& qname,
+                                 const SQueueLBParameters& params);
     void Close(void);
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
@@ -162,388 +617,6 @@ public:
 
     void SetUdpPort(unsigned short port) { m_UdpPort = port; }
     unsigned short GetUdpPort(void) const { return m_UdpPort; }
-
-    /// Main queue entry point
-    ///
-    /// @internal
-    ///
-    class CQueue
-    {
-    public:
-        /// @param client_host_addr - 0 means internal use
-        CQueue(CQueueDataBase& db, 
-               const string&   queue_name,
-               unsigned        client_host_addr);
-
-        unsigned int Submit(const char*   input,
-                            unsigned      host_addr = 0,
-                            unsigned      port = 0,
-                            unsigned      wait_timeout = 0,
-                            const char*   progress_msg = 0,
-                            const char*   affinity_token = 0,
-                            const char*   jout = 0,
-                            const char*   jerr = 0,
-                            unsigned      mask = 0);
-
-        /// Submit job batch
-        /// @return 
-        ///    ID of the first job, second is first_id+1
-        unsigned int SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
-                                 unsigned      host_addr = 0,
-                                 unsigned      port = 0,
-                                 unsigned      wait_timeout = 0,
-                                 const char*   progress_msg = 0);
-
-        void Cancel(unsigned int job_id);
-
-        /// Move job to pending ignoring its current status
-        void ForceReschedule(unsigned int job_id);
-
-        void PutResult(unsigned int  job_id,
-                       int           ret_code,
-                       const char*   output,
-                       bool          remove_from_tl);
-
-        void PutResultGetJob(unsigned int   done_job_id,
-                             int            ret_code,
-                             const char*    output,
-                             bool           update_tl,
-                             unsigned int   worker_node,
-                             unsigned int*  job_id, 
-                             char*          input,
-                             char*          jout,
-                             char*          jerr,
-                             const string&  client_name,
-                             unsigned*      job_mask);
-
-
-        void PutProgressMessage(unsigned int  job_id,
-                                const char*   msg);
-        
-        void JobFailed(unsigned int  job_id,
-                       const string& err_msg,
-                       const string& output,
-                       int           ret_code,
-                       unsigned int  worker_node,
-                       const string& client_name);
-
-        void GetJobKey(char* key_buf, unsigned job_id,
-                       const string& host, unsigned port);
-
-
-        /// Get job with load balancing
-        void GetJobLB(unsigned int   worker_node,
-                      unsigned int*  job_id, 
-                      char*          input,
-                      char*          jout,
-                      char*          jerr,
-                      unsigned*      job_mask);
-
-        void GetJob(unsigned int   worker_node,
-                    unsigned int*  job_id, 
-                    char*          input,
-                    char*          jout,
-                    char*          jerr,
-                    const string&  client_name,
-                    unsigned*      job_mask);
-
-        void ReturnJob(unsigned int job_id);
-
-        /// @param expected_status
-        ///    If current status is different from expected try to
-        ///    double read the database (to avoid races between nodes
-        ///    and submitters)
-        bool GetJobDescr(unsigned int job_id,
-                         int*         ret_code,
-                         char*        input,
-                         char*        output,
-                         char*        err_msg,
-                         char*        progress_msg,
-                         char*        jout,
-                         char*        jerr,
-                         CNetScheduleClient::EJobStatus expected_status 
-                                         = CNetScheduleClient::eJobNotFound);
-
-        CNetScheduleClient::EJobStatus 
-        GetStatus(unsigned int job_id) const;
-
-        /// count status snapshot for affinity token
-        /// returns false if affinity token not found
-        bool CountStatus(
-            CNetScheduler_JobStatusTracker::TStatusSummaryMap*   status_map, 
-            const char*          affinity_token);
-
-
-        /// Set job run-expiration timeout
-        /// @param tm
-        ///    Time worker node needs to execute the job (in seconds)
-        void SetJobRunTimeout(unsigned job_id, unsigned tm);
-
-        /// Prolong job expiration timeout
-        /// @param tm
-        ///    Time worker node needs to execute the job (in seconds)
-        void JobDelayExpiration(unsigned job_id, unsigned tm);
-
-        /// Delete if job is done and timeout expired
-        ///
-        /// @return TRUE if job has been deleted
-        ///
-        bool CheckDelete(unsigned int job_id);
-
-        /// Delete batch_size jobs
-        /// @return
-        ///    Number of deleted jobs
-        unsigned CheckDeleteBatch(unsigned batch_size,
-                                  CNetScheduleClient::EJobStatus status,
-                                  unsigned &last_deleted);
-        /// Delete batch jobs
-        /// @return
-        ///    Number of deleted jobs
-        unsigned DeleteBatch(bm::bvector<>& batch);
-
-        /// Delete all job ids already deleted (phisically) from the queue
-        void ClearAffinityIdx(void);
-
-        /// Remove all jobs
-        void Truncate(void);
-
-        /// Remove job from the queue
-        void DropJob(unsigned job_id);
-
-        /// Free unsued memory (status storage)
-        void FreeUnusedMem(void) { m_LQueue.status_tracker.FreeUnusedMem(); }
-
-        /// All returned jobs come back to pending status
-        void Returned2Pending(void)
-            { m_LQueue.status_tracker.Returned2Pending(); }
-
-        /// @param host_addr
-        ///    host address in network BO
-        ///
-        void RegisterNotificationListener(unsigned int    host_addr, 
-                                          unsigned short  udp_port,
-                                          int             timeout,
-                                          const string&   auth);
-        void UnRegisterNotificationListener(unsigned int    host_addr, 
-                                            unsigned short  udp_port);
-
-        /// Remove affinity association for a specified host
-        ///
-        /// @note Affinity is based on network host name and 
-        /// program name (not UDP port). Presumed that we have one
-        /// worker node instance per host.
-        void ClearAffinity(unsigned int  host_addr,
-                           const string& auth);
-
-        void SetMonitorSocket(SOCK sock);
-
-        /// Return monitor (no ownership transfer)
-        CNetScheduleMonitor* GetMonitor(void) { return &m_LQueue.monitor; }
-
-        /// UDP notification to all listeners
-        void NotifyListeners(void);
-
-        /// Check execution timeout.
-        /// All jobs failed to execute, go back to pending
-        void CheckExecutionTimeout(void);
-
-        /// Check job expiration
-        /// Returns new time if job not yet expired (or ended)
-        /// 0 means job ended in any way.
-        time_t CheckExecutionTimeout(unsigned job_id, time_t curr_time);
-
-        unsigned CountStatus(CNetScheduleClient::EJobStatus) const;
-
-        void StatusStatistics(CNetScheduleClient::EJobStatus status,
-            CNetScheduler_JobStatusTracker::TBVector::statistics* st) const;
-
-        /// Count database records
-        unsigned CountRecs(void);
-
-        void PrintStat(CNcbiOstream & out);
-        void PrintNodeStat(CNcbiOstream & out) const;
-        void PrintSubmHosts(CNcbiOstream & out) const;
-        void PrintWNodeHosts(CNcbiOstream & out) const;
-        void PrintQueue(CNcbiOstream & out, 
-                        CNetScheduleClient::EJobStatus job_status,
-                        const string& host,
-                        unsigned      port);
-
-        /// Queue dump
-        void PrintJobDbStat(unsigned job_id, 
-                            CNcbiOstream & out,
-                            CNetScheduleClient::EJobStatus status 
-                                        = CNetScheduleClient::eJobNotFound);
-        /// Dump all job records
-        void PrintAllJobDbStat(CNcbiOstream & out);
-
-        void PrintJobStatusMatrix(CNcbiOstream & out);
-
-        bool IsVersionControl() const
-        {
-            return m_LQueue.program_version_list.IsConfigured();
-        }
-
-        bool IsMatchingClient(const CQueueClientInfo& cinfo) const
-        {
-            return m_LQueue.program_version_list.IsMatchingClient(cinfo);
-        }
-
-        /// Check if client is a configured submitter
-        bool IsSubmitAllowed() const
-        {
-            return (m_ClientHostAddr == 0) || 
-                   m_LQueue.subm_hosts.IsAllowed(m_ClientHostAddr);
-        }
-
-        /// Check if client is a configured worker node
-        bool IsWorkerAllowed() const
-        {
-            return (m_ClientHostAddr == 0) || 
-                   m_LQueue.wnode_hosts.IsAllowed(m_ClientHostAddr);
-        }
-
-        void RemoveFromTimeLine(unsigned job_id);
-        void TimeLineExchange(unsigned remove_job_id, 
-                              unsigned add_job_id,
-                              time_t   curr);
-    private:
-
-        /// Find the listener if it is registered
-        /// @return NULL if not found
-        ///
-        SLockedQueue::TListenerList::iterator 
-                        x_FindListener(unsigned int    host_addr, 
-                                     unsigned short  udp_port);
-
-        void x_DropJob(unsigned job_id);
-
-        /// Find the pending job.
-        /// This method takes into account jobs available
-        /// in the job status matrix and current 
-        /// worker node affinity association
-        ///
-        /// Sync.Locks: affinity map lock, main queue lock, status matrix
-        ///
-        /// @return job_id
-        unsigned 
-        FindPendingJob(const string&  client_name,
-                               unsigned       client_addr);
-
-        CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
-
-
-        time_t x_ComputeExpirationTime(unsigned time_run, 
-                                       unsigned run_timeout) const; 
-
-
-        /// db should be already positioned
-        void x_PrintJobDbStat(SQueueDB&     db, 
-                              CNcbiOstream& out,
-                              const char*   fld_separator = "\n",
-                              bool          print_fname = true);
-
-        void x_PrintShortJobDbStat(SQueueDB&     db, 
-                                   const string& host,
-                                   unsigned port,
-                                   CNcbiOstream& out,
-                                   const char*   fld_separator = "\t");
-
-        /// Delete record using positioned cursor, dumps content
-        /// to text file if necessary
-        void x_DeleteDBRec(SQueueDB& db, 
-                           CBDB_FileCursor& cur);
-
-        void x_AssignSubmitRec(unsigned      job_id,
-                               const char*   input,
-                               unsigned      host_addr,
-                               unsigned      port,
-                               unsigned      wait_timeout,
-                               const char*   progress_msg,
-                               unsigned      aff_id,
-                               const char*   jout,
-                               const char*   jerr,
-                               unsigned      mask);
-
-        /// Info on how to notify job submitter
-        struct SSubmitNotifInfo
-        {
-            unsigned subm_addr;
-            unsigned subm_port;
-            unsigned subm_timeout;
-            unsigned time_submit;
-            unsigned time_run;
-        };
-
-        /// @return TRUE if job record has been found and updated
-        bool x_UpdateDB_PutResultNoLock(SQueueDB&            db,
-                                        time_t               curr,
-                                        CBDB_FileCursor&     cur,
-                                        unsigned             job_id,
-                                        int                  ret_code,
-                                        const char*          output,
-                                        SSubmitNotifInfo*    subm_info);
-
-
-        enum EGetJobUpdateStatus
-        {
-            eGetJobUpdate_Ok,
-            eGetJobUpdate_NotFound,
-            eGetJobUpdate_JobStopped,  
-            eGetJobUpdate_JobFailed  
-        };
-        EGetJobUpdateStatus x_UpdateDB_GetJobNoLock(
-                                    SQueueDB&            db,
-                                    time_t               curr,
-                                    CBDB_FileCursor&     cur,
-                                    CBDB_Transaction&    trans,
-                                    unsigned int         worker_node,
-                                    unsigned             job_id,
-                                    char*                input,
-                                    char*                jout,
-                                    char*                jerr,
-                                    unsigned*            aff_id,
-                                    unsigned*            job_mask);
-
-        SQueueDB*        x_GetLocalDb();
-        CBDB_FileCursor* x_GetLocalCursor(CBDB_Transaction& trans);
-
-        /// Update the affinity index (no locking)
-        void x_AddToAffIdx_NoLock(unsigned aff_id, 
-                                  unsigned job_id_from,
-                                  unsigned job_id_to = 0);
-
-        void x_AddToAffIdx_NoLock(const vector<SNS_BatchSubmitRec>& batch);
-
-        /// Read queue affinity index, retrieve all jobs, with
-        /// given set of affinity ids
-        ///
-        /// @param aff_id_set
-        ///     set of affinity ids to read
-        /// @param job_candidates
-        ///     OUT set of jobs associated with specified affinities
-        ///
-        void x_ReadAffIdx_NoLock(const bm::bvector<>& aff_id_set,
-                                 bm::bvector<>*       job_candidates);
-
-        void x_ReadAffIdx_NoLock(unsigned             aff_id,
-                                 bm::bvector<>*       job_candidates);
-
-    private:
-        CQueue(const CQueue&);
-        CQueue& operator=(const CQueue&);
-
-    private:
-        CQueueDataBase& m_Db;      ///< Parent structure reference
-        SLockedQueue&   m_LQueue;  
-        unsigned        m_ClientHostAddr;
-        /// For private DB
-        unsigned        m_QueueDbAccessCounter;
-        /// Private database (for long running sessions)
-        auto_ptr<SQueueDB>         m_QueueDB;
-        /// Private cursor
-        auto_ptr<CBDB_FileCursor>  m_QueueDB_Cursor;
-    }; // CQueue
 
     const CQueueCollection& GetQueueCollection() const 
     { 
@@ -599,12 +672,16 @@ private:
 }; // CQueueDataBase
 
 
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/11/27 16:46:21  joukovv
+ * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
+ * un-nested CQueue from CQueueDataBase; instrumented code to count job
+ * throughput average.
+ *
  * Revision 1.58  2006/11/13 22:49:15  joukovv
  * Background job deletion code corrected.
  *

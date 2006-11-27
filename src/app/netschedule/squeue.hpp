@@ -38,6 +38,8 @@
 
 #include <util/logrotate.hpp>
 
+#include <util/thread_nonstop.hpp>
+
 #include "ns_db.hpp"
 #include "job_status.hpp"
 #include "queue_vc.hpp"
@@ -166,6 +168,20 @@ struct SQueueListener
     {}
 };
 
+class CQueueComparator
+{
+public:
+    CQueueComparator(unsigned host, unsigned port) :
+      m_Host(host), m_Port(port)
+    {}
+    bool operator()(SQueueListener *l) {
+        return l->host == m_Host && l->udp_port == m_Port;
+    }
+private:
+    unsigned m_Host;
+    unsigned m_Port;
+};
+
 /// Runtime queue statistics
 ///
 /// @internal
@@ -193,24 +209,24 @@ class CNSLB_Coordinator;
 ///
 struct SLockedQueue
 {
-    SQueueDB                        db;               ///< Main queue database
-    SQueueAffinityIdx               aff_idx;          ///< Q affinity index
-    auto_ptr<CBDB_FileCursor>       cur;              ///< DB cursor
-    CFastMutex                      lock;             ///< db, cursor lock
-    CNetScheduler_JobStatusTracker  status_tracker;   ///< status FSA
+    SQueueDB                     db;               ///< Main queue database
+    SQueueAffinityIdx            aff_idx;          ///< Q affinity index
+    auto_ptr<CBDB_FileCursor>    cur;              ///< DB cursor
+    CFastMutex                   lock;             ///< db, cursor lock
+    CJobStatusTracker            status_tracker;   ///< status FSA
 
     // affinity dictionary does not need a mutex, because 
     // CAffinityDict is a syncronized class itself (mutex included)
-    CAffinityDict                   affinity_dict;    ///< Affinity tokens
-    CWorkerNodeAffinity             worker_aff_map;   ///< Affinity map
-    CFastMutex                      aff_map_lock;     ///< worker_aff_map lck
+    CAffinityDict                affinity_dict;    ///< Affinity tokens
+    CWorkerNodeAffinity          worker_aff_map;   ///< Affinity map
+    CFastMutex                   aff_map_lock;     ///< worker_aff_map lck
 
     // queue parameters
-    int                             timeout;        ///< Result exp. timeout
-    int                             notif_timeout;  ///< Notification interval
-    bool                            delete_done;    ///< Delete done jobs
+    int                          timeout;        ///< Result exp. timeout
+    int                          notif_timeout;  ///< Notification interval
+    bool                         delete_done;    ///< Delete done jobs
     /// How many attemts to make on different nodes before failure
-    unsigned                        failed_retries;
+    unsigned                     failed_retries;
 
     // List of active worker node listeners waiting for pending jobs
 
@@ -262,6 +278,26 @@ struct SLockedQueue
 
     SLockedQueue(const string& queue_name);
     ~SLockedQueue();
+
+    // Statistics gathering objects
+    friend class CStatisticsThread;
+    class CStatisticsThread : public CThreadNonStop
+    {
+        typedef SLockedQueue TContainer;
+    public:
+        CStatisticsThread(TContainer& container);
+        void DoJob(void);
+    private:
+        TContainer& m_Container;
+    };
+    CRef<CStatisticsThread> m_StatThread;
+    CAtomicCounter m_GetCounter;
+    CAtomicCounter m_PutCounter;
+    unsigned m_GetAverage;
+    unsigned m_PutAverage;
+//public:
+    double GetGetAverage(void);
+    double GetPutAverage(void);
 };
 
 
@@ -270,6 +306,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/27 16:46:21  joukovv
+ * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
+ * un-nested CQueue from CQueueDataBase; instrumented code to count job
+ * throughput average.
+ *
  * Revision 1.1  2006/10/31 19:35:26  joukovv
  * Queue creation and reading of its parameters decoupled. Code reorganized to
  * reduce coupling in general. Preparing for queue-on-demand.

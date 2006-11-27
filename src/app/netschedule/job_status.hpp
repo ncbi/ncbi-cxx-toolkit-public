@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 /// Syncronized thread safe class
 ///
 /// @internal
-class CNetScheduler_JobStatusTracker
+class CJobStatusTracker
 {
 public:
     typedef bm::bvector<>     TBVector;
@@ -62,8 +62,8 @@ public:
     typedef map<CNetScheduleClient::EJobStatus, unsigned> TStatusSummaryMap;
 
 public:
-    CNetScheduler_JobStatusTracker();
-    ~CNetScheduler_JobStatusTracker();
+    CJobStatusTracker();
+    ~CJobStatusTracker();
 
     CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
@@ -231,9 +231,8 @@ protected:
     void IncDoneJobs();
 
 private:
-    CNetScheduler_JobStatusTracker(const CNetScheduler_JobStatusTracker&);
-    CNetScheduler_JobStatusTracker& 
-        operator=(const CNetScheduler_JobStatusTracker&);
+    CJobStatusTracker(const CJobStatusTracker&);
+    CJobStatusTracker& operator=(const CJobStatusTracker&);
 private:
 
     TStatusStorage          m_StatusStor;
@@ -251,9 +250,8 @@ private:
 class CNetSchedule_JS_BorrowGuard
 {
 public:
-    CNetSchedule_JS_BorrowGuard(
-        CNetScheduler_JobStatusTracker& strack,
-        unsigned int                    job_id,
+    CNetSchedule_JS_BorrowGuard(CJobStatusTracker& strack,
+                                unsigned int       job_id,
         CNetScheduleClient::EJobStatus  old_status = CNetScheduleClient::ePending)
     : m_Tracker(strack),
       m_OldStatus(old_status),
@@ -281,9 +279,9 @@ private:
     CNetSchedule_JS_BorrowGuard(const CNetSchedule_JS_BorrowGuard&);
     CNetSchedule_JS_BorrowGuard& operator=(const CNetSchedule_JS_BorrowGuard&);
 private:
-    CNetScheduler_JobStatusTracker&  m_Tracker;
-    CNetScheduleClient::EJobStatus   m_OldStatus;
-    unsigned int                     m_JobId;
+    CJobStatusTracker&              m_Tracker;
+    CNetScheduleClient::EJobStatus  m_OldStatus;
+    unsigned int                    m_JobId;
 };
 
 /// @internal
@@ -291,10 +289,10 @@ class CNetSchedule_JS_Guard
 {
 public:
     CNetSchedule_JS_Guard(
-        CNetScheduler_JobStatusTracker& strack,
-        unsigned int                    job_id,
-        CNetScheduleClient::EJobStatus  status,
-        bool*                           updated = 0)
+        CJobStatusTracker&             strack,
+        unsigned int                   job_id,
+        CNetScheduleClient::EJobStatus status,
+        bool*                          updated = 0)
      : m_Tracker(strack),
        m_OldStatus(strack.ChangeStatus(job_id, status, updated)),
        m_JobId(job_id)
@@ -323,9 +321,9 @@ private:
     CNetSchedule_JS_Guard(const CNetSchedule_JS_Guard&);
     CNetSchedule_JS_Guard& operator=(CNetSchedule_JS_Guard&);
 private:
-    CNetScheduler_JobStatusTracker&  m_Tracker;
-    int                              m_OldStatus;
-    unsigned int                     m_JobId;
+    CJobStatusTracker& m_Tracker;
+    int                m_OldStatus;
+    unsigned int       m_JobId;
 };
 
 
@@ -334,6 +332,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/11/27 16:46:21  joukovv
+ * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
+ * un-nested CQueue from CQueueDataBase; instrumented code to count job
+ * throughput average.
+ *
  * Revision 1.21  2006/10/31 19:35:26  joukovv
  * Queue creation and reading of its parameters decoupled. Code reorganized to
  * reduce coupling in general. Preparing for queue-on-demand.

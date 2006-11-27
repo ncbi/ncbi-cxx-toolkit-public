@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.1.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.2.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -334,22 +334,22 @@ private:
     string m_Answer;
     char   m_MsgBuffer[kMaxMessageSize];
 
-    unsigned                         m_PeerAddr;
-    string                           m_AuthString;
-    CNetScheduleServer*              m_Server;
-    string                           m_QueueName;
-    auto_ptr<CQueueDataBase::CQueue> m_Queue;
-    CNetScheduleMonitor*             m_Monitor;
-    SJS_Request                      m_JobReq;
-    bool                             m_VersionControl;
-    bool                             m_AdminAccess;
+    unsigned                    m_PeerAddr;
+    string                      m_AuthString;
+    CNetScheduleServer*         m_Server;
+    string                      m_QueueName;
+    auto_ptr<CQueue>            m_Queue;
+    CNetScheduleMonitor*        m_Monitor;
+    SJS_Request                 m_JobReq;
+    bool                        m_VersionControl;
+    bool                        m_AdminAccess;
     void (CNetScheduleHandler::*m_ProcessMessage)(BUF buffer);
 
     // Batch submit data
-    unsigned                         m_BatchSize;
-    unsigned                         m_BatchPos;
-    CStopWatch                       m_BatchStopWatch;
-    vector<SNS_BatchSubmitRec>       m_BatchSubmitVector;
+    unsigned                    m_BatchSize;
+    unsigned                    m_BatchPos;
+    CStopWatch                  m_BatchStopWatch;
+    vector<SNS_BatchSubmitRec>  m_BatchSubmitVector;
 
     /// Quick local timer
     CFastLocalTime              m_LocalTimer;
@@ -630,9 +630,8 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
     s_ReadBufToString(buffer, m_QueueName);
 
     if (!m_AdminAccess || m_QueueName != "noname") {
-        m_Queue.reset(new CQueueDataBase::CQueue(*(m_Server->GetQueueDB()),
-                                                m_QueueName,
-                                                m_PeerAddr));
+        m_Queue.reset(new CQueue(*(m_Server->GetQueueDB()),
+                                 m_QueueName, m_PeerAddr));
         m_Monitor = m_Queue->GetMonitor();
 
         if (!m_Queue->IsVersionControl()) {
@@ -961,14 +960,14 @@ void CNetScheduleHandler::ProcessJobDelayExpiration()
 void CNetScheduleHandler::ProcessStatusSnapshot()
 {
     const char* aff_token = m_JobReq.affinity_token;
-    CNetScheduler_JobStatusTracker::TStatusSummaryMap st_map;
+    CJobStatusTracker::TStatusSummaryMap st_map;
 
     bool aff_exists = m_Queue->CountStatus(&st_map, aff_token);
     if (!aff_exists) {
         WriteMsg("ERR:", "Unknown affinity token.");
         return;
     }
-    ITERATE(CNetScheduler_JobStatusTracker::TStatusSummaryMap,
+    ITERATE(CJobStatusTracker::TStatusSummaryMap,
             it,
             st_map) {
         string st_str = CNetScheduleClient::StatusToString(it->first);
@@ -1182,6 +1181,7 @@ CNetScheduleHandler::ProcessJobExchange()
         CSocket& socket = GetSocket();
         string msg = "::ProcessJobExchange ";
         msg += m_LocalTimer.GetLocalTime().AsString();
+        msg += " ";
         msg += m_Answer;
         msg += " ==> ";
         msg += socket.GetPeerAddress();
@@ -1246,9 +1246,9 @@ void CNetScheduleHandler::ProcessUnRegisterClient()
 void CNetScheduleHandler::ProcessQList()
 {
     string qnames;
-    ITERATE(CQueueCollection::TQueueMap, it, 
-            m_Server->GetQueueDB()->GetQueueCollection().GetMap()) {
-        qnames += it->first; qnames += ";";
+    ITERATE(CQueueCollection, it, 
+            m_Server->GetQueueDB()->GetQueueCollection()) {
+        qnames += it.GetName(); qnames += ";";
     }
     WriteMsg("OK:", qnames.c_str());
 }
@@ -1426,6 +1426,13 @@ void CNetScheduleHandler::ProcessStatistics()
     string started = "Started: " + m_Server->GetStartTime().AsString();
     WriteMsg("OK:", started.c_str());
 
+    string load_str = "Load: jobs dispatched: ";
+    load_str.append(NStr::DoubleToString(m_Queue->GetGetAverage()));
+    load_str += "/sec, jobs complete: ";
+    load_str.append(NStr::DoubleToString(m_Queue->GetPutAverage()));
+    load_str += "/sec";
+    WriteMsg("OK:", load_str.c_str());
+
     for (int i = CNetScheduleClient::ePending; 
          i < CNetScheduleClient::eLastStatus; ++i) {
         CNetScheduleClient::EJobStatus st = 
@@ -1439,8 +1446,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
         WriteMsg("OK:", st_str.c_str(), true, false);
 
-        CNetScheduler_JobStatusTracker::TBVector::statistics 
-            bv_stat;
+        CJobStatusTracker::TBVector::statistics bv_stat;
         m_Queue->StatusStatistics(st, &bv_stat);
         st_str = "   bit_blk="; 
         st_str.append(NStr::UIntToString(bv_stat.bit_blocks));
@@ -2326,6 +2332,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2006/11/27 16:46:21  joukovv
+ * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
+ * un-nested CQueue from CQueueDataBase; instrumented code to count job
+ * throughput average.
+ *
  * Revision 1.105  2006/11/14 01:57:56  ucko
  * Make CNetScheduleHandler's internal types public to fix WorkShop compilation.
  *
