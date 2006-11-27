@@ -1,5 +1,5 @@
-corelib$
-corelib/impl$
+corelib
 connect$
 connect/ext
 connect/test
+util$
