@@ -266,7 +266,7 @@ private:
     /// Type of locking (conventional or RMW)
     unsigned int           m_FetchFlags;
     /// Buffer class for multiple fetch
-    CBDB_MultiRowBuffer*   m_MutiRowBuf;
+    CBDB_MultiRowBuffer*   m_MultiRowBuf;
     /// Multifetch control mode
     EMultiFetchMode        m_MultiFetchMode;
     /// when true, last multifetch was successfull
@@ -344,6 +344,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/11/27 23:46:07  joukovv
+ * Uninitialized 'default' data in constructor fixed.
+ *
  * Revision 1.20  2006/11/22 06:21:33  kuznets
  * Implemented multirow fetch mode when Fetch signals back about buffer ends
  *

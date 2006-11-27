@@ -168,7 +168,8 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, ECursorUpdateType utype)
   m_FetchDirection(eForward),
   m_FirstFetched(false),
   m_FetchFlags(0),
-  m_MutiRowBuf(0)
+  m_MultiRowBuf(0),
+  m_MultiFetchMode(eFetchAll)
 {
     CBDB_Env* env = m_Dbf.GetEnv();
     CBDB_Transaction* trans = dbf.GetTransaction();
@@ -190,7 +191,8 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File&         dbf,
   m_FetchDirection(eForward),
   m_FirstFetched(false),
   m_FetchFlags(0),
-  m_MutiRowBuf(0)
+  m_MultiRowBuf(0),
+  m_MultiFetchMode(eFetchAll)
 {
     CBDB_Env* env = m_Dbf.GetEnv();
     if (env && env->IsTransactional() && utype == eReadModifyUpdate) {
@@ -203,7 +205,7 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File&         dbf,
 CBDB_FileCursor::~CBDB_FileCursor()
 {
     Close();
-    delete m_MutiRowBuf;
+    delete m_MultiRowBuf;
 }
 
 void CBDB_FileCursor::InitMultiFetch(size_t          buffer_size,
@@ -214,12 +216,12 @@ void CBDB_FileCursor::InitMultiFetch(size_t          buffer_size,
         _ASSERT(false);
         return;
     }
-    if (m_MutiRowBuf) {
-        delete m_MutiRowBuf;
-        m_MutiRowBuf = NULL;
+    if (m_MultiRowBuf) {
+        delete m_MultiRowBuf;
+        m_MultiRowBuf = NULL;
     }
     if (buffer_size) {
-        m_MutiRowBuf = new CBDB_MultiRowBuffer(buffer_size);
+        m_MultiRowBuf = new CBDB_MultiRowBuffer(buffer_size);
     }
     m_MultiFetchMode = mfm;
     m_LastMultiFetchSuccess = true;
@@ -300,18 +302,18 @@ void CBDB_FileCursor::SetCondition(ECondition cond_from, ECondition cond_to)
 
 const void* CBDB_FileCursor::GetLastMultiFetchData() const
 {
-    _ASSERT(m_MutiRowBuf != 0);
+    _ASSERT(m_MultiRowBuf != 0);
 
-    if (m_MutiRowBuf == 0) return 0;
-    return m_MutiRowBuf->GetLastDataPtr();
+    if (m_MultiRowBuf == 0) return 0;
+    return m_MultiRowBuf->GetLastDataPtr();
 }
 
 size_t CBDB_FileCursor::GetLastMultiFetchDataLen() const
 {
-    _ASSERT(m_MutiRowBuf != 0);
+    _ASSERT(m_MultiRowBuf != 0);
 
-    if (m_MutiRowBuf == 0) return 0;
-    return m_MutiRowBuf->GetLastDataLen();
+    if (m_MultiRowBuf == 0) return 0;
+    return m_MultiRowBuf->GetLastDataLen();
 }
 
 
@@ -320,7 +322,7 @@ EBDB_ErrCode CBDB_FileCursor::Update(CBDB_File::EAfterWrite write_flag)
     if (m_DBC == 0) {
         BDB_THROW(eInvalidValue, "Attempt to use invalid cursor");
     }
-    if (m_MutiRowBuf) {
+    if (m_MultiRowBuf) {
         BDB_THROW(eInvalidOperation, "Cannot update multi-fetch cursor");
     }
     
@@ -334,7 +336,7 @@ EBDB_ErrCode CBDB_FileCursor::UpdateBlob(const void* data,
     if (m_DBC == 0) {
         BDB_THROW(eInvalidValue, "Attempt to use invalid cursor");
     }
-    if (m_MutiRowBuf) {
+    if (m_MultiRowBuf) {
         BDB_THROW(eInvalidOperation, "Cannot update multi-fetch cursor");
     }
 
@@ -344,7 +346,7 @@ EBDB_ErrCode CBDB_FileCursor::UpdateBlob(const void* data,
 
 EBDB_ErrCode CBDB_FileCursor::Delete(CBDB_File::EIgnoreError on_error)
 {
-    if (m_MutiRowBuf) {
+    if (m_MultiRowBuf) {
         BDB_THROW(eInvalidOperation, "Cannot update multi-fetch cursor");
     }
 
@@ -437,7 +439,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     
     EBDB_ErrCode ret; 
     ret = m_Dbf.ReadCursor(m_DBC, 
-                           flag | m_FetchFlags, m_MutiRowBuf,
+                           flag | m_FetchFlags, m_MultiRowBuf,
                            multirow_only);
     m_LastMultiFetchSuccess = (ret != eBDB_MultiRowEnd);
     if (ret != eBDB_Ok)
@@ -448,7 +450,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     if (m_CondFrom == eGT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
             ret = m_Dbf.ReadCursor(m_DBC, 
-                                   DB_NEXT | m_FetchFlags, m_MutiRowBuf,
+                                   DB_NEXT | m_FetchFlags, m_MultiRowBuf,
                                    false /*no multirow*/);
             m_LastMultiFetchSuccess = true;
             if (ret != eBDB_Ok)
@@ -459,7 +461,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     if (m_CondFrom == eLT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
             ret = m_Dbf.ReadCursor(m_DBC, 
-                                   DB_PREV | m_FetchFlags, m_MutiRowBuf,
+                                   DB_PREV | m_FetchFlags, m_MultiRowBuf,
                                    false);
             m_LastMultiFetchSuccess = true;
             if (ret != eBDB_Ok)
@@ -488,7 +490,7 @@ CBDB_FileCursor::FetchFirst(void**       buf,
                             size_t       buf_size, 
                             CBDB_RawFile::EReallocMode allow_realloc)
 {
-    _ASSERT(m_MutiRowBuf == 0);
+    _ASSERT(m_MultiRowBuf == 0);
 
     unsigned int flag;
     x_FetchFirst_Prolog(flag);
@@ -574,7 +576,7 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
     EBDB_ErrCode ret;
     while (1) {
         ret = m_Dbf.ReadCursor(m_DBC, 
-                               flag | m_FetchFlags, m_MutiRowBuf,
+                               flag | m_FetchFlags, m_MultiRowBuf,
                                multirow_only);
         m_LastMultiFetchSuccess = (ret != eBDB_MultiRowEnd);
         if (ret != eBDB_Ok) {
@@ -616,7 +618,7 @@ CBDB_FileCursor::Fetch(EFetchDirection fdir,
                        size_t       buf_size, 
                        CBDB_RawFile::EReallocMode allow_realloc)
 {
-    _ASSERT(m_MutiRowBuf == 0);
+    _ASSERT(m_MultiRowBuf == 0);
 
     if ( !m_FirstFetched )
         return FetchFirst(buf, buf_size, allow_realloc);
@@ -764,6 +766,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/11/27 23:46:07  joukovv
+ * Uninitialized 'default' data in constructor fixed.
+ *
  * Revision 1.25  2006/11/22 06:22:20  kuznets
  * Implemented multirow fetch mode when Fetch signals back about buffer ends
  *
