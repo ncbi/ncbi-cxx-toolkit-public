@@ -6,4 +6,5 @@
 
 
 [-]
-_export = NCBI_GENERAL_EXPORT
+; Only if it's going into a DLL on MS-Windows
+;_export = NCBI_SAMPLE_ASN_EXPORT
