@@ -128,11 +128,12 @@ public:
 
     /// Constructor
     CSeqIdAlnBitmap(const TAlnSeqIdVector& aln_id_vec,
-                    CScope& scope) :
+                    CScope& scope,
+                    const TSeqIdPtrComp& comp) :
         m_AlnIdVec(aln_id_vec),
         m_AlnCount(m_AlnIdVec.size()),
         m_Scope(scope),
-        m_Comp(),
+        m_Comp(comp),
         m_IsQueryAnchoredTestDone(false),
         m_NucProtBitmapsInitialized(false)
     {
@@ -328,7 +329,7 @@ private:
     size_t m_AlnCount;
     CScope& m_Scope;
     TSeqIdAlnMap m_Bitmap;
-    TSeqIdPtrComp m_Comp;
+    const TSeqIdPtrComp& m_Comp;
 
     mutable bool m_IsQueryAnchoredTestDone;
     mutable CBioseq_Handle m_AnchorHandle;
@@ -350,6 +351,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2006/11/27 19:39:19  todorov
+* Require comp in CSeqIdAlnBitmap
+*
 * Revision 1.8  2006/11/20 18:47:16  todorov
 * + CSeqIdAlnBitmap::GetBaseWidths()
 * + CSeqIdAlnBitmap::GetAnchorRows()
