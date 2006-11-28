@@ -301,7 +301,13 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }
     case eDB_LongChar: {
         CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
+#ifndef FTDS_IN_USE
         param_fmt.datatype = CS_LONGCHAR_TYPE;
+#else
+        // CS_LONGCHAR_TYPE is not supported with the FreeTDS ctlib library ...
+        // param_fmt.datatype = CS_UNICHAR_TYPE; - Unicode datatype ...
+        param_fmt.datatype = CS_CHAR_TYPE;
+#endif
         if ( declare_only ) {
             break;
         }
@@ -642,7 +648,7 @@ CTL_LangCmd::~CTL_LangCmd()
 
         Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -694,6 +700,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/11/28 20:09:05  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION);
+ *
  * Revision 1.25  2006/11/20 18:15:58  ssikorsk
  * Revamp code to use GetQuery() and GetParams() methods.
  *
