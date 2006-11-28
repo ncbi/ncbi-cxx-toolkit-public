@@ -193,7 +193,7 @@ CDBL_Connection::~CDBL_Connection()
         // because it is defined in this class.
         Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -604,7 +604,7 @@ CDBL_SendDataCmd::~CDBL_SendDataCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -615,6 +615,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/11/28 20:08:09  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.40  2006/09/21 16:19:09  ssikorsk
  * CDBL_Connection::Check --> CheckDead.
  *

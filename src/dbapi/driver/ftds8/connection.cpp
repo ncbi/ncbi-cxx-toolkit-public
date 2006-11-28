@@ -189,7 +189,7 @@ CTDS_Connection::~CTDS_Connection()
     try {
         Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -521,7 +521,7 @@ CTDS_SendDataCmd::~CTDS_SendDataCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -532,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/11/28 20:08:07  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.33  2006/09/21 16:19:34  ssikorsk
  * CDBL_Connection::Check --> CheckDead.
  *

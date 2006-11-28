@@ -523,7 +523,7 @@ CTDS_RowResult::~CTDS_RowResult()
         if (!m_EOR)
             Check(dbcanquery(GetCmd()));
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -759,7 +759,7 @@ CTDS_BlobResult::~CTDS_BlobResult()
             Check(dbcanquery(GetCmd()));
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -869,7 +869,7 @@ CTDS_ParamResult::~CTDS_ParamResult()
             m_ColFmt = 0;
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1221,7 +1221,7 @@ CTDS_CursorResult::~CTDS_CursorResult()
     try {
         delete m_Res;
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1505,6 +1505,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/11/28 20:08:07  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.31  2006/09/21 16:22:40  ssikorsk
  * CDBL_Connection::Check --> CheckDead.
  *

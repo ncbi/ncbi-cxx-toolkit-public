@@ -66,7 +66,7 @@ CMySQL_Connection::~CMySQL_Connection()
         // because it is defined in this class.
         Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -172,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/11/28 20:08:07  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.14  2006/07/12 16:29:31  ssikorsk
  * Separated interface and implementation of CDB classes.
  *

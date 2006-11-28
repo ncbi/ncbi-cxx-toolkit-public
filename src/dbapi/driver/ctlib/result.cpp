@@ -972,7 +972,7 @@ CTL_RowResult::~CTL_RowResult()
     try {
         Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1064,7 +1064,7 @@ CTL_CursorResult::~CTL_CursorResult()
         }
         else m_EOR= true; // to prevent ct_cancel call (close cursor will do a job)
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1098,6 +1098,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/11/28 20:08:09  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.32  2006/10/17 21:31:38  ssikorsk
  * Improved handling of "indicator" and "copied" flags in my_ct_get_data.
  *

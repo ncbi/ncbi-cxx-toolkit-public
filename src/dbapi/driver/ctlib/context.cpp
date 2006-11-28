@@ -113,7 +113,7 @@ CTLibContextRegistry::~CTLibContextRegistry(void) throw()
     try {
         ClearAll();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 CTLibContextRegistry&
@@ -198,10 +198,7 @@ Connection::~Connection(void) throw()
     try {
         Drop();
     }
-    catch (...)
-    {
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -393,7 +390,7 @@ CTLibContext::~CTLibContext()
             m_Locale = NULL;
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1255,6 +1252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.101  2006/11/28 20:08:09  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.100  2006/11/24 20:18:38  ssikorsk
  * Implemented methods Drop, IsOpen, Open, Close of the ctlib::GetCTLContext.
  *

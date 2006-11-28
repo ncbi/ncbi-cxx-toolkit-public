@@ -520,7 +520,7 @@ CDBL_RowResult::~CDBL_RowResult()
         if (!m_EOR)
             Check(dbcanquery(GetCmd()));
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -752,7 +752,7 @@ CDBL_BlobResult::~CDBL_BlobResult()
         if (!m_EOR)
             Check(dbcanquery(GetCmd()));
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -864,7 +864,7 @@ CDBL_ParamResult::~CDBL_ParamResult()
             m_ColFmt = 0;
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1004,7 +1004,7 @@ CDBL_ComputeResult::~CDBL_ComputeResult()
             Fetch();
         }
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1282,7 +1282,7 @@ CDBL_CursorResult::~CDBL_CursorResult()
     try {
         ClearResultSet();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -1649,6 +1649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/11/28 20:08:08  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.39  2006/09/21 16:21:57  ssikorsk
  * CDBL_Connection::Check --> CheckDead.
  *

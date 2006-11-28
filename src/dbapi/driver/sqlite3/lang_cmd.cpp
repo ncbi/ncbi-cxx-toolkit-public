@@ -179,7 +179,7 @@ CSL3_LangCmd::~CSL3_LangCmd()
 
         Cancel();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 long long int CSL3_LangCmd::LastInsertId() const
@@ -372,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/11/28 20:08:07  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.4  2006/11/20 18:15:59  ssikorsk
  * Revamp code to use GetQuery() and GetParams() methods.
  *

@@ -358,7 +358,7 @@ CDBL_CursorCmd::~CDBL_CursorCmd()
 
         Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
@@ -525,6 +525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/11/28 20:08:09  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.32  2006/11/20 18:15:58  ssikorsk
  * Revamp code to use GetQuery() and GetParams() methods.
  *

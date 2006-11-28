@@ -95,7 +95,7 @@ CDblibContextRegistry::~CDblibContextRegistry(void) throw()
     try {
         ClearAll();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 CDblibContextRegistry&
@@ -348,7 +348,7 @@ CTDSContext::~CTDSContext()
     try {
         x_Close();
     }
-    NCBI_CATCH_ALL( kEmptyStr )
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -371,7 +371,7 @@ CTDSContext::x_Close(bool delete_conn)
                         CloseAllConn();
                     }
                 }
-                NCBI_CATCH_ALL( kEmptyStr );
+                NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 
                 // Finalize client library even if we cannot close connections.
                 dbloginfree(m_Login);
@@ -883,6 +883,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2006/11/28 20:08:07  ssikorsk
+ * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+ *
  * Revision 1.83  2006/09/13 22:49:42  ssikorsk
  * CDriverContext --> impl::CDriverContext
  *
