@@ -66,6 +66,7 @@ CBlastOptionsLocal::CBlastOptionsLocal()
     m_EffLenOpts.Reset(eff_len_opts);
     m_DbOpts.Reset((BlastDatabaseOptions*)calloc(1, sizeof(BlastDatabaseOptions)));
     m_PSIBlastOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
+    m_Program = eBlastNotSet;
 }
 
 CBlastOptionsLocal::~CBlastOptionsLocal()
