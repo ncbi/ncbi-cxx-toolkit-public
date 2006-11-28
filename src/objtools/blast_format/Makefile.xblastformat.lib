@@ -5,4 +5,4 @@ ASN_DEP = seq blastdb blastxml
 LIB = xblastformat
 SRC = blastfmtutil showdefline showalign tabular vectorscreen blastxml_format seqalignfilter
 
-DLL_LIB = blastxml xhtml
+DLL_LIB = blastxml xhtml xcgi
