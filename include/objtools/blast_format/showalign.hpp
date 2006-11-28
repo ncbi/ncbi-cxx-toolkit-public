@@ -41,7 +41,7 @@
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objtools/readers/getfeature.hpp>
-
+#include <cgi/cgictx.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -134,10 +134,11 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
         eHyperLinkSlaveSeqid = (1 << 19),    //Hyperlink slave seqids 
         eHyperLinkMasterSeqid = (1 << 20),    //Hyperlink master seqids 
         eDisplayTreeView = (1 << 21),         // Display tree feature
-        eShowInfoOnMouseOverSeqid = (1 << 22)  //show defline when mouse
+        eShowInfoOnMouseOverSeqid = (1 << 22), //show defline when mouse
                                                //seqid. Note you need 
                                                //seperate style sheet functions
                                                //for this to work
+        eShowSortControls = (1 << 23)
     };
     
     ///Middle line style option
@@ -306,6 +307,10 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
         m_BlastType = type;
     }
     
+    void SetCgiContext (CCgiContext& ctx) {
+        m_Ctx = &ctx;
+    }
+
     /// static functions
     ///Need to call this if the seqalign is stdseg or dendiag for ungapped
     ///blast alignment display as each stdseg ro dendiag is a distinct
@@ -381,11 +386,14 @@ private:
     CNcbiRegistry *m_Reg;
     CGetFeature* m_DynamicFeature;
     map < string, string > m_Segs;
+    map < string, int > m_HspNumber;
+       
     CRef < CObjectManager > m_FeatObj;  // used for fetching feature
     CRef < CScope > m_featScope;        // used for fetching feature
     MiddleLineStyle m_MidLineStyle;
     int m_MasterGeneticCode;
     int m_SlaveGeneticCode;
+    CCgiContext* m_Ctx;
 
     ///Display the current alnvec
     ///@param out: stream for display
@@ -398,7 +406,7 @@ private:
     ///@param out: output stream
     ///
     void x_PrintDefLine(const CBioseq_Handle& bsp_handle, 
-                              list<int>& use_this_gi,
+                        list<int>& use_this_gi, string& id_label,
                               CNcbiOstream& out) const;
 
     /// display sequence for one row
@@ -439,7 +447,7 @@ private:
     ///@param taxid: taxid
     ///
     string x_GetUrl(const list < CRef < CSeq_id > >&ids, int gi,
-                    int row, int taxid) const;
+                    int row, int taxid, int linkout) const;
 
     ///get dumpgnl url to sequence record
     ///@param ids: id list
@@ -605,6 +613,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.52  2006/11/28 15:40:37  jianye
+*adding sorting seqalign functions
+*
 *Revision 1.51  2006/04/13 17:07:19  jianye
 *x_DisplayAlnvecList to x_DisplayAlnvecList
 *

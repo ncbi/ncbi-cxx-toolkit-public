@@ -192,6 +192,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_DynamicFeature = NULL;    
     m_MasterGeneticCode = 1;
     m_SlaveGeneticCode = 1;
+    m_Ctx = NULL;
 
     SNCBIFullScoreMatrix blosumMatrix;
     NCBISM_Unpack(&NCBISM_Blosum62, &blosumMatrix);
@@ -1005,28 +1006,34 @@ void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
 
 
 string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi, 
-                                  int row, int taxid) const
+                                  int row, int taxid, int linkout) const
 {
     string urlLink = NcbiEmptyString;
-    
     char dopt[32], db[32];
+    //   bool hit_not_in_mapviewer = !(linkout & eHitInMapviewer);
+    
     gi = (gi == 0) ? s_GetGiForSeqIdList(ids):gi;
-    string toolUrl= m_Reg->Get(m_BlastType, "TOOL_URL");
-    if(toolUrl == NcbiEmptyString || (gi > 0 && toolUrl.find("dumpgnl.cgi") 
-                                      != string::npos)){ 
-        //use entrez or dbtag specified
-        if(m_IsDbNa) {
-            strcpy(dopt, "GenBank");
-            strcpy(db, "Nucleotide");
-        } else {
-            strcpy(dopt, "GenPept");
-            strcpy(db, "Protein");
-        }    
+    string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
+
+    if (user_url != NcbiEmptyString && 
+        !((user_url.find("dumpgnl.cgi") != string::npos && gi > 0))) { 
+        //need to use url in configuration file
+        string altUrl = NcbiEmptyString;
+        urlLink = x_GetDumpgnlLink(ids, row, altUrl, taxid);
+    } else {
         
         char urlBuf[2048];
         string temp_class_info = kClassInfo + " ";
         if (gi > 0) {
-           
+            //use entrez or dbtag specified
+            if(m_IsDbNa) {
+                strcpy(dopt, "GenBank");
+                strcpy(db, "Nucleotide");
+            } else {
+                strcpy(dopt, "GenPept");
+                strcpy(db, "Protein");
+            }    
+            
             sprintf(urlBuf, kEntrezUrl.c_str(), 
                     (m_AlignOption & eShowInfoOnMouseOverSeqid) ? 
                     temp_class_info.c_str() : "", db, gi, dopt, 
@@ -1049,9 +1056,6 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
                 }
             }
         }
-    } else { //need to use url in configuration file
-        string altUrl = NcbiEmptyString;
-        urlLink = x_GetDumpgnlLink(ids, row, altUrl, taxid);
     }
     return urlLink;
 }
@@ -1305,7 +1309,10 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
                         urlLink = x_GetUrl(m_AV->GetBioseqHandle(row).
                                            GetBioseqCore()->GetId(), gi, 
-                                           row, taxid[row]);     
+                                           row, taxid[row], 
+                                           CBlastFormatUtil::
+                                           GetLinkout(m_AV->GetBioseqHandle(row),
+                                                      m_AV->GetSeqId(row)));     
                         out << urlLink;            
                     }        
                 }
@@ -1555,10 +1562,11 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
           because we will need seg information form all hsp's with the same id
           for genome url link.  As a result we show hsp's with the same id 
           as a group*/
-
-        //get segs first
+     
+        //get segs first and get hsp number
         if (toolUrl.find("dumpgnl.cgi") != string::npos 
-            || (m_AlignOption & eLinkout)) {
+            || (m_AlignOption & eLinkout)
+            || (m_AlignOption & eHtml && m_AlignOption & eShowBlastInfo)) {
             /*need to construct segs for dumpgnl and
               get sub-sequence for long sequences*/
             for (CSeq_align_set::Tdata::const_iterator 
@@ -1568,26 +1576,36 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                 //make alnvector
                 CRef<CAlnVec> avRef = x_GetAlnVecForSeqalign(**iter);
                 string idString = avRef->GetSeqId(1).GetSeqIdString();
-                if(m_Segs.count(idString) > 0){ 
-                    //already has seg, concatenate
-                    /*Note that currently it's not necessary to 
-                      use map to store this information.  
-                      But I already implemented this way for 
-                      previous version.  Will keep this way as
-                      it's more flexible if we change something*/
-                    
-                    m_Segs[idString] += "," 
-                        + NStr::IntToString(avRef->GetSeqStart(1))
-                        + "-" + 
-                        NStr::IntToString(avRef->GetSeqStop(1));
-                } else {//new segs
-                    m_Segs.
-                        insert(map<string, string>::
-                               value_type(idString, 
-                                          NStr::
-                                          IntToString(avRef->GetSeqStart(1))
-                                          + "-" + 
-                                          NStr::IntToString(avRef->GetSeqStop(1))));
+                if (toolUrl.find("dumpgnl.cgi") != string::npos 
+                    || (m_AlignOption & eLinkout)) {
+                    if(m_Segs.count(idString) > 0){ 
+                        //already has seg, concatenate
+                        /*Note that currently it's not necessary to 
+                          use map to store this information.  
+                          But I already implemented this way for 
+                          previous version.  Will keep this way as
+                          it's more flexible if we change something*/
+                        
+                        m_Segs[idString] += "," 
+                            + NStr::IntToString(avRef->GetSeqStart(1))
+                            + "-" + 
+                            NStr::IntToString(avRef->GetSeqStop(1));
+                    } else {//new segs
+                        m_Segs.
+                            insert(map<string, string>::
+                                   value_type(idString, 
+                                              NStr::
+                                              IntToString(avRef->GetSeqStart(1))
+                                              + "-" + 
+                                              NStr::IntToString(avRef->GetSeqStop(1))));
+                    }
+                } 
+                if (m_AlignOption & eHtml && m_AlignOption & eShowBlastInfo) {
+                    if(m_HspNumber.count(idString) > 0){
+                        m_HspNumber[idString] ++;
+                    } else {//new subject
+                        m_HspNumber.insert(map<string, int>::value_type(idString, 1));
+                    }
                 }
             }	    
             
@@ -1815,7 +1833,7 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
 
 void 
 CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
-                                 list<int>& use_this_gi, 
+                                 list<int>& use_this_gi, string& id_label,
                                  CNcbiOstream& out) const
 {
     if(bsp_handle){
@@ -1842,6 +1860,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                 string urlLink;
                 int gi =  s_GetGiForSeqIdList((*iter)->GetSeqid());
                 int gi_in_use_this_gi = 0;
+                int taxid = 0;
                 ITERATE(list<int>, iter_gi, use_this_gi){
                     if(gi == *iter_gi){
                         gi_in_use_this_gi = *iter_gi;
@@ -1873,7 +1892,6 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                     }
                 
                     if(m_AlignOption&eHtml){
-                        int taxid = 0;
                         string type_temp = m_BlastType;
                         type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
                         if((type_temp == "mapview" || 
@@ -1884,7 +1902,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                             taxid = (*iter)->GetTaxid();
                         }
                         urlLink = x_GetUrl((*iter)->GetSeqid(), 
-                                           gi_in_use_this_gi, 1, taxid);    
+                                           gi_in_use_this_gi, 1, 
+                                           taxid, CBlastFormatUtil::GetLinkout(**iter));    
                         out<<urlLink;
                     }
                 
@@ -1901,13 +1920,30 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                         }
                         if(gi != 0){
                             out<<"<a name="<<gi<<"></a>";
+                            id_label = NStr::IntToString(gi);
                         } else {
                             out<<"<a name="<<wid2->GetSeqIdString()<<"></a>";
+                            id_label = wid2->GetSeqIdString();
                         }
                         if(m_AlignOption&eLinkout){
+                            
+                            int linkout = CBlastFormatUtil::
+                                GetLinkout((**iter));
+                            string user_url = m_Reg->Get(m_BlastType, 
+                                                         "TOOL_URL");
+                            list<string> linkout_url =  CBlastFormatUtil::
+                                GetLinkoutUrl(linkout, (*iter)->GetSeqid(),
+                                              m_Rid, m_DbName, m_QueryNumber,
+                                              taxid, m_CddRid, m_EntrezTerm,
+                                              bsp_handle.
+                                              GetBioseqCore()->IsNa(), 
+                                              user_url, m_IsDbNa, firstGi,
+                                              false);
                             out <<" ";
-                            x_AddLinkout(*(bsp_handle.GetBioseqCore()), (**iter),
-                                         firstGi, gi, out);
+                            ITERATE(list<string>, iter_linkout, linkout_url){
+                                out << *iter_linkout;
+                            }
+                           
                             if((int)bsp_handle.GetBioseqLength() 
                                > k_GetSubseqThreshhold){
                                 string dumpGnlUrl
@@ -1917,7 +1953,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                                    <<"<img border=0 height=16 width=16\
  src=\"/blast/images/D.gif\" alt=\"Download subject sequence spanning the \
 HSP\"></a>";
-                            }
+}
                         }
                     }
                 
@@ -2577,7 +2613,8 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     if(alternative_url != NcbiEmptyString){ 
         toolUrl = alternative_url;
     }
-    url_with_parameters = CBlastFormatUtil::BuildUserUrl(ids, taxid, toolUrl, m_DbName,
+    url_with_parameters = CBlastFormatUtil::BuildUserUrl(ids, taxid, toolUrl,
+                                                         m_DbName,
                                                          m_IsDbNa, m_Rid, m_QueryNumber);
     if (url_with_parameters != NcbiEmptyString) {
         
@@ -2677,10 +2714,99 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
     m_AV = aln_vec_info->alnvec;
     const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
     if(show_defline && (m_AlignOption&eShowBlastInfo)) {
+        string id_label;
         if(!(m_AlignOption & eShowNoDeflineInfo)){
-            x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, out);
+            x_PrintDefLine(bsp_handle, aln_vec_info->use_this_gi, id_label, out);
             out<<"Length="<<bsp_handle.GetBioseqLength()<<endl;
         }
+        
+        if(m_AlignOption&eHtml && m_AlignOption & eShowBlastInfo &&
+           m_HspNumber[m_AV->GetSeqId(1).GetSeqIdString()] > 1 &&
+           m_AlignOption & eShowSortControls){
+            string query_buf; 
+            map< string, string> parameters_to_change;
+            parameters_to_change.insert(map<string, string>::
+                                        value_type("HSP_SORT", ""));
+            CBlastFormatUtil::BuildFormatQueryString(*m_Ctx, 
+                                                     parameters_to_change,
+                                                     query_buf);
+            out << endl;
+            CBlastFormatUtil::AddSpace(out, 57); 
+            out << "Sort alignments for this subject sequence by:\n";
+            CBlastFormatUtil::AddSpace(out, 59); 
+            
+            string hsp_sort_value = m_Ctx->GetRequestValue("HSP_SORT").GetValue();
+            int hsp_sort = hsp_sort_value == NcbiEmptyString ? 
+                0 : NStr::StringToInt(hsp_sort_value);
+           
+            if (hsp_sort != CBlastFormatUtil::eEvalue) {
+                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+                    << "&HSP_SORT="
+                    << CBlastFormatUtil::eEvalue
+                    << "#" << id_label << "\">";
+            }
+            
+            out << "E value";
+            if (hsp_sort != CBlastFormatUtil::eEvalue) {
+                out << "</a>"; 
+            }
+            
+            CBlastFormatUtil::AddSpace(out, 2);
+
+            if (hsp_sort != CBlastFormatUtil::eScore) {
+                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+                    << "&HSP_SORT="
+                    << CBlastFormatUtil::eScore
+                    << "#" << id_label << "\">";
+            }
+            
+            out << "Score";
+            if (hsp_sort != CBlastFormatUtil::eScore) {
+                out << "</a>"; 
+            }
+            
+            CBlastFormatUtil::AddSpace(out, 2);
+
+          
+
+            if (hsp_sort != CBlastFormatUtil::eHspPercentIdentity) {
+                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+                    << "&HSP_SORT="
+                    << CBlastFormatUtil::eHspPercentIdentity
+                    << "#" << id_label << "\">";
+            }
+            out  << "Percent identity"; 
+            if (hsp_sort != CBlastFormatUtil::eHspPercentIdentity) {
+                out << "</a>"; 
+            }
+            out << endl;
+            CBlastFormatUtil::AddSpace(out, 59); 
+            if (hsp_sort != CBlastFormatUtil::eQueryStart) {
+                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+                    << "&HSP_SORT="
+                    << CBlastFormatUtil::eQueryStart
+                    << "#" << id_label << "\">";
+            } 
+            out << "Query start position";
+            if (hsp_sort != CBlastFormatUtil::eQueryStart) {
+                out << "</a>"; 
+            }
+            CBlastFormatUtil::AddSpace(out, 2);
+           
+            if (hsp_sort != CBlastFormatUtil::eSubjectStart) {
+                out << "<a href=\"Blast.cgi?CMD=Get&" << query_buf 
+                    << "&HSP_SORT="
+                    << CBlastFormatUtil::eSubjectStart
+                    << "#" << id_label << "\">";
+            } 
+            out << "Subject start position";
+            if (hsp_sort != CBlastFormatUtil::eSubjectStart) {
+                out << "</a>"; 
+            }
+            
+            out << endl;
+        }
+        
         if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
            && (m_AlignOption&eShowBl2seqLink)) {
             const CBioseq_Handle& query_handle=m_AV->GetBioseqHandle(0);
@@ -3004,6 +3130,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.126  2006/11/28 15:41:12  jianye
+*adding sorting seqalign functions
+*
 *Revision 1.125  2006/10/05 17:30:31  ucko
 *Drop obsolete CAlnMix::fGen2EST flag.
 *

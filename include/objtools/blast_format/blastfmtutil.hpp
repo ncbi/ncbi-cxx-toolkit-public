@@ -33,6 +33,7 @@
  * BLAST formatter utilities.
  */
 
+#include <cgi/cgictx.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbireg.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -96,6 +97,12 @@ const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
 query.fcgi?db=gene&cmd=search&term=%d[%s]\"><img border=0 height=16 width=16 \
 src=\"/blast/images/G.gif\" alt=\"Gene info\"></a>";
 
+///mapviewer linkout
+/*const string kMapviwerUrl = "<a href=\"%s\"><img border=0 height=16 width=16 \
+  src=\"/blast/images/M.gif\" alt=\"Genome view with mapviewer\"></a>";*/
+const string kMapviwerUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=%d\"><img border=0 height=16 width=16 \
+src=\"/blast/images/M.gif\" alt=\"Genome view with mapviewer\"></a>";
+
 ///Sub-sequence
 const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.\
 gov/entrez/viewer.fcgi?val=%d&db=%s&from=%d&to=%d&view=gbwithparts\">";
@@ -129,6 +136,28 @@ public:
         int    number_seqs;
         bool   subset;	
     };
+
+    enum DbSortOrder {
+        eNonGenomicFirst = 1,
+        eGenomicFirst
+    };
+
+    enum HitOrder {
+        eEvalue = 0,
+        eHighestScore,
+        eTotalScore,
+        ePercentIdentity,
+        eQueryCoverage
+    };
+
+    enum HspOrder {
+        eHspEvalue = 0,
+        eScore,
+        eQueryStart,
+        eHspPercentIdentity,
+        eSubjectStart
+    };
+
     ///Output blast errors
     ///@param error_return: list of errors to report
     ///@param error_post: post to stderr or not
@@ -218,12 +247,19 @@ public:
     static CRef<CBlast_def_line_set> 
     GetBlastDefline (const CBioseq_Handle& handle);
 
-	///Get linkout membership
-	///@param bdl: blast defline to get linkout membership from
-	///@return the value representing the membership bits set
-	///
-	static int GetLinkout(const CBlast_def_line& bdl);
-	
+    ///Get linkout membership
+    ///@param bdl: blast defline to get linkout membership from
+    ///@return the value representing the membership bits set
+    ///
+    static int GetLinkout(const CBlast_def_line& bdl);
+    
+    ///Get linkout membership for this bioseq, this id only
+    ///@param handle: bioseq handle
+    ///@param id: the id to be matched
+    ///@return the value representing the membership bits set
+    ///
+    static int GetLinkout(const CBioseq_Handle& handle, const CSeq_id& id);	
+    
     ///Extract score info from blast alingment
     ///@param aln: alignment to extract score info from
     ///@param score: place to extract the raw score to
@@ -338,6 +374,11 @@ public:
     static bool SortHitByTotalScoreDescending(CRef<CSeq_align_set> const& info1,
                                     CRef<CSeq_align_set> const& info2);
 
+    static bool 
+    SortHitByMasterCoverageDescending(CRef<CSeq_align_set> const& info1,
+                                     CRef<CSeq_align_set> const& info2);
+    
+
     ///group hsp's with the same id togeter
     ///@param target: the result list
     ///@param source: the source list
@@ -410,9 +451,9 @@ public:
     ///@param info2: the second element
     ///@return: info1 >= info2?
     ///
-    static bool SortHspByPercentIdentityDescending
-        (const CRef<CSeq_align>& info1,
-         const CRef<CSeq_align>& info2);
+    static bool SortHspByPercentIdentityDescending 
+    (const CRef<CSeq_align>& info1,
+     const CRef<CSeq_align>& info2);
     
     ///sorting function for sorting a list of seqalign by ascending mater 
     ///start position
@@ -420,8 +461,19 @@ public:
     ///@param info2: the second element
     ///@return: info1 >= info2?
     ///
-    static bool SortHspByMasterStartAscending(CRef<CSeq_align> const& info1,
-                                              CRef<CSeq_align> const& info2);
+    static bool SortHspByMasterStartAscending(const CRef<CSeq_align>& info1,
+                                              const CRef<CSeq_align>& info2);
+
+    static bool SortHspBySubjectStartAscending(const CRef<CSeq_align>& info1,
+                                               const CRef<CSeq_align>& info2);
+
+    static bool SortHitByScoreDescending
+    (const CRef<CSeq_align_set>& info1,
+     const CRef<CSeq_align_set>& info2);
+    
+
+    static bool SortHspByScoreDescending(const CRef<CSeq_align>& info1,
+                                         const CRef<CSeq_align>& info2);
 
     ///sorting function for sorting a list of seqalign set by ascending mater 
     ///start position
@@ -432,6 +484,59 @@ public:
     static bool SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1,
                                               CRef<CSeq_align_set>& info2);
 
+    ///sort a list of seqalign set by molecular type
+    ///@param seqalign_hit_list: list to be sorted.
+    ///@param scope: scope to fetch sequence
+    ///
+    static void 
+    SortHitByMolecularType(list< CRef<CSeq_align_set> >& seqalign_hit_list,
+                           CScope& scope);
+    
+    ///actual sorting function for SortHitByMolecularType
+    ///@param info1: the first element 
+    ///@param info2: the second element
+    ///@return: info1 >= info2?
+    ///
+    static bool SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& info1,
+                                          const CRef<CSeq_align_set>& info2);
+
+    static void 
+    SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
+            bool do_translation, CScope& scope, int sort_method);
+    
+    static void SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >& 
+                                             target,
+                                             int sort_method,
+                                             const CSeq_align_set& source,
+                                             CScope& scope);
+    static CRef<CSeq_align_set> 
+    SortSeqalignForSortableFormat(CCgiContext& ctx,
+                               CScope& scope,
+                               CSeq_align_set& aln_set,
+                               bool nuc_to_nuc_translation,
+                               int db_order,
+                               int hit_order,
+                               int hsp_order);
+    
+    static void BuildFormatQueryString (CCgiContext& ctx, 
+                                       string& cgi_query);
+
+    static void BuildFormatQueryString (CCgiContext& ctx, 
+                                        map< string, string>& parameters_to_change,
+                                        string& cgi_query);
+
+    static bool IsMixedDatabase(const CSeq_align_set& alnset, 
+                                CScope& scope); 
+
+    static list<string> GetLinkoutUrl(int linkout, const CBioseq::TId& ids, 
+                                      const string& rid, const string& db_name, 
+                                      const int query_number, const int taxid,
+                                      const string& cdd_rid, const string& entrez_term,
+                                      bool is_na, string& user_url,
+                                      const bool db_is_na, int first_gi,
+                                      bool structure_linkout_as_group);
+
+    static int GetMasterCoverage(const CSeq_align_set& alnset);
 };
 
 /// 256x256 matrix used for calculating positives etc. during formatting.
@@ -453,6 +558,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.26  2006/11/28 15:40:37  jianye
+adding sorting seqalign functions
+
 Revision 1.25  2006/07/26 22:05:48  ucko
 SortHitByPercentIdentityDescendingEx, SortHspByPercentIdentityDescending:
 take references to const CRefs to fix compilation under WorkShop.

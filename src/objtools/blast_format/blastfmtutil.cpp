@@ -36,7 +36,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
-
+#include <html/htmlhelper.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
@@ -449,18 +449,7 @@ int CBlastFormatUtil::GetLinkout(const CBlast_def_line& bdl)
     if (bdl.IsSetLinks()){
         for (list< int >::const_iterator iter = bdl.GetLinks().begin();
              iter != bdl.GetLinks().end(); iter ++){
-            if ((*iter) & eUnigene) {
-                linkout += eUnigene;
-            }
-            if ((*iter) & eStructure){
-                linkout += eStructure;
-            } 
-            if ((*iter) & eGeo){
-                linkout += eGeo;
-            } 
-            if ((*iter) & eGene){
-                linkout += eGene;
-            }
+            linkout += *iter;
         }
     }
     return linkout;
@@ -818,15 +807,64 @@ SortHspByPercentIdentityDescending(const CRef<CSeq_align>& info1,
     if(length1 > 0 && length2 > 0 && num_ident1 > 0 &&num_ident2 > 0 ) {
         if (((double)num_ident1)/length1 == ((double)num_ident2)/length2) {
        
-            retval = bits1 > bits2;
+            retval = evalue1 < evalue2;
         
         } else {
             retval = ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
             
         }
     } else {
-        retval = bits2 >= bits2;
+        retval = evalue1 < evalue2;
     }
+    return retval;
+}
+
+bool CBlastFormatUtil::
+SortHitByScoreDescending(const CRef<CSeq_align_set>& info1,
+                         const CRef<CSeq_align_set>& info2) 
+{
+    CRef<CSeq_align_set> i1(info1), i2(info2);
+    
+    i1->Set().sort(SortHspByScoreDescending);
+    i2->Set().sort(SortHspByScoreDescending);
+     
+     
+    int score1, sum_n1, num_ident1;
+    double bits1, evalue1;
+    list<int> use_this_gi1;
+    
+    int score2, sum_n2, num_ident2;
+    double bits2, evalue2;
+    list<int> use_this_gi2;
+    
+    GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
+    GetAlnScores(*(info2->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
+    return bits1 > bits2;
+}
+
+bool CBlastFormatUtil::
+SortHitByMasterCoverageDescending(CRef<CSeq_align_set> const& info1,
+                                  CRef<CSeq_align_set> const& info2) 
+{
+    int cov1 = GetMasterCoverage(*info1);
+    int cov2 = GetMasterCoverage(*info2);
+    bool retval = false;
+
+    if (cov1 > cov2) {
+        retval = cov1 > cov2;
+    } else if (cov1 == cov2) {
+        int score1, sum_n1, num_ident1;
+        double bits1, evalue1;
+        list<int> use_this_gi1;
+    
+        int score2, sum_n2, num_ident2;
+        double bits2, evalue2;
+        list<int> use_this_gi2;
+        GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
+        GetAlnScores(*(info2->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
+        retval = evalue1 < evalue2;
+    }
+
     return retval;
 }
 
@@ -858,16 +896,37 @@ bool CBlastFormatUtil::SortHitByMasterStartAscending(CRef<CSeq_align_set>& info1
         
         GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
         GetAlnScores(*(info1->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
-        return bits1 > bits2;
+        return evalue1 < evalue2;
         
     } else {
-        return start1 <= start2;   
+        return start1 < start2;   
     }
 
 }
 
-bool CBlastFormatUtil::SortHspByMasterStartAscending(CRef<CSeq_align> const& info1,
-                                                     CRef<CSeq_align> const& info2) 
+bool CBlastFormatUtil::
+SortHspByScoreDescending(const CRef<CSeq_align>& info1,
+                         const CRef<CSeq_align>& info2)
+{
+ 
+    int score1, sum_n1, num_ident1;
+    double bits1, evalue1;
+    list<int> use_this_gi1;
+    
+    int score2, sum_n2, num_ident2;
+    double bits2, evalue2;
+    list<int> use_this_gi2;
+    
+    
+    GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
+    GetAlnScores(*info2, score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
+    return bits1 > bits2;
+        
+} 
+
+bool CBlastFormatUtil::
+SortHspByMasterStartAscending(const CRef<CSeq_align>& info1,
+                              const CRef<CSeq_align>& info2) 
 {
     int start1 = 0, start2 = 0;
    
@@ -887,7 +946,7 @@ bool CBlastFormatUtil::SortHspByMasterStartAscending(CRef<CSeq_align> const& inf
         
         GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
         GetAlnScores(*info2, score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
-        return bits1 > bits2;
+        return evalue1 < evalue2;
         
     } else {
         
@@ -895,6 +954,35 @@ bool CBlastFormatUtil::SortHspByMasterStartAscending(CRef<CSeq_align> const& inf
     } 
 }
 
+bool CBlastFormatUtil::
+SortHspBySubjectStartAscending(const CRef<CSeq_align>& info1,
+                               const CRef<CSeq_align>& info2) 
+{
+    int start1 = 0, start2 = 0;
+   
+    start1 = min(info1->GetSeqStart(1), info1->GetSeqStop(1));
+    start2 = min(info2->GetSeqStart(1), info2->GetSeqStop(1)) ;
+   
+    if (start1 == start2) {
+        //same start then arrange by bits score
+        int score1, sum_n1, num_ident1;
+        double bits1, evalue1;
+        list<int> use_this_gi1;
+        
+        int score2, sum_n2, num_ident2;
+        double bits2, evalue2;
+        list<int> use_this_gi2;
+        
+        
+        GetAlnScores(*info1, score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
+        GetAlnScores(*info2, score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
+        return evalue1 < evalue2;
+        
+    } else {
+        
+        return start1 < start2;  
+    } 
+}
 
 int CBlastFormatUtil::GetAlignmentLength(const CSeq_align& aln, bool do_translation)
 {
@@ -979,12 +1067,12 @@ bool CBlastFormatUtil::
 SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
                                      const CRef<CSeq_align_set>& info2)
 {
+  
     CRef<CSeq_align_set> i1(info1), i2(info2);
-
+    
     i1->Set().sort(SortHspByPercentIdentityDescending);
     i2->Set().sort(SortHspByPercentIdentityDescending);
 
-  
     int score1, sum_n1, num_ident1;
     double bits1, evalue1;
     list<int> use_this_gi1;
@@ -1004,14 +1092,14 @@ SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
     if(length1 > 0 && length2 > 0 && num_ident1 > 0 &&num_ident2 > 0) {
         if (((double)num_ident1)/length1 == ((double)num_ident2)/length2) {
        
-            retval = bits1 > bits2;
+            retval = evalue1 < evalue2;
         
         } else {
             retval = ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
           
         }
     } else {
-        retval = bits1 >= bits2;
+        retval = evalue1 < evalue2;
     }
     return retval;
 }
@@ -1041,6 +1129,94 @@ bool CBlastFormatUtil::SortHitByTotalScoreDescending(CRef<CSeq_align_set> const&
         
 }
 
+void CBlastFormatUtil::
+SortHitByMolecularType(list< CRef<CSeq_align_set> >& seqalign_hit_list,
+                       CScope& scope)
+{
+
+    kScope = &scope;
+    seqalign_hit_list.sort(SortHitByMolecularTypeEx);
+}
+
+void CBlastFormatUtil::SortHit(list< CRef<CSeq_align_set> >& seqalign_hit_list,
+                               bool do_translation, CScope& scope, int sort_method) 
+{
+    kScope = &scope; 
+    kTranslation = do_translation;
+    
+    if (sort_method == 1) {
+        seqalign_hit_list.sort(SortHitByMolecularTypeEx);
+    } else if (sort_method == 2) {
+        seqalign_hit_list.sort(SortHitByTotalScoreDescending);
+    } else if (sort_method == 3) {
+        seqalign_hit_list.sort(SortHitByPercentIdentityDescendingEx);
+    } 
+}
+
+bool CBlastFormatUtil::SortHitByMolecularTypeEx (const CRef<CSeq_align_set>& info1,
+                                                 const CRef<CSeq_align_set>& info2) 
+{
+    CConstRef<CSeq_id> id1, id2;
+    id1 = &(info1->Get().front()->GetSeq_id(1));
+    id2 = &(info2->Get().front()->GetSeq_id(1));
+
+    const CBioseq_Handle& handle1 = kScope->GetBioseqHandle(*id1);
+    const CBioseq_Handle& handle2 = kScope->GetBioseqHandle(*id2);
+
+    const CRef<CBlast_def_line_set> bdl_ref1 = 
+        CBlastFormatUtil::GetBlastDefline(handle1);
+    const CRef<CBlast_def_line_set> bdl_ref2 = 
+        CBlastFormatUtil::GetBlastDefline(handle2);
+
+    int linkout1 = GetLinkout(*(bdl_ref1->Get().front()));
+    int linkout2 = GetLinkout(*(bdl_ref2->Get().front()));
+
+    return (linkout1 & eGenomicSeq) <= (linkout2 & eGenomicSeq);
+}
+
+void CBlastFormatUtil::
+SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >& 
+                             target,
+                             int sort_method,
+                             const CSeq_align_set& source,
+                             CScope& scope)
+{
+    
+    ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
+        
+        const CSeq_id& id = (*iter)->GetSeq_id(1);
+        try {
+            const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
+            if (handle) {
+                int linkout = GetLinkout(handle, id);
+                        
+                if (linkout & eGenomicSeq) {
+                    if (sort_method == 1) {
+                        target[1]->Set().push_back(*iter);
+                    } else if (sort_method == 2){
+                        target[0]->Set().push_back(*iter);
+                    } else {
+                        target[1]->Set().push_back(*iter);
+                    }
+                } else {
+                    if (sort_method == 1) {
+                        target[0]->Set().push_back(*iter);
+                    } else if (sort_method == 2) {
+                        target[1]->Set().push_back(*iter);
+                    }  else {
+                        target[0]->Set().push_back(*iter);
+                    }
+                }
+            } else {
+                target[0]->Set().push_back(*iter);
+            }
+            
+        } catch (const CException& e){
+            target[0]->Set().push_back(*iter); //no bioseq found, leave untouched
+        }
+        
+    }
+}
 
 void CBlastFormatUtil::HspListToHitList(list< CRef<CSeq_align_set> >& target,
                                         const CSeq_align_set& source) 
@@ -1244,5 +1420,341 @@ string CBlastFormatUtil::BuildUserUrl(const CBioseq::TId& ids, int taxid,
     delete [] dbname;
     return link;
 }
+void CBlastFormatUtil::
+BuildFormatQueryString (CCgiContext& ctx, 
+                        map< string, string>& parameters_to_change,
+                        string& cgi_query) 
+{
+   
+    //add parameters to exclude
+    parameters_to_change.insert(map<string, string>::
+                                value_type("service", ""));
+    parameters_to_change.insert(map<string, string>::
+                                value_type("address", ""));
+    parameters_to_change.insert(map<string, string>::
+                                value_type("platform", ""));
+    parameters_to_change.insert(map<string, string>::
+                                    value_type("_pgr", ""));
+    parameters_to_change.insert(map<string, string>::
+                                value_type("client", ""));
+    parameters_to_change.insert(map<string, string>::
+                                value_type("composition_based_statistics", ""));
+    
+    parameters_to_change.insert(map<string, string>::
+                                value_type("auto_format", ""));
+    cgi_query = NcbiEmptyString;
+    TCgiEntries& cgi_entry = ctx.GetRequest().GetEntries();
+    bool is_first = true;
 
+    for(TCgiEntriesI it=cgi_entry.begin(); it!=cgi_entry.end(); ++it) {
+        string parameter = it->first;
+        if (parameter != NcbiEmptyString) {        
+            if (parameters_to_change.count(NStr::ToLower(parameter)) > 0 ||
+                parameters_to_change.count(NStr::ToUpper(parameter)) > 0) {
+                if(parameters_to_change[NStr::ToLower(parameter)] !=
+                   NcbiEmptyString && 
+                   parameters_to_change[NStr::ToUpper(parameter)] !=
+                   NcbiEmptyString) {
+                    if (!is_first) {
+                        cgi_query += "&";
+                    }
+                    cgi_query += 
+                        it->first + "=" + parameters_to_change[it->first];
+                    is_first = false;
+                }
+            } else {
+                if (!is_first) {
+                    cgi_query += "&";
+                }
+                cgi_query += it->first + "=" + it->second;
+                is_first = false;
+            }
+            
+        }   
+    }
+}
+
+void CBlastFormatUtil::BuildFormatQueryString(CCgiContext& ctx, string& cgi_query) {
+ 
+    string format_type = ctx.GetRequestValue("FORMAT_TYPE").GetValue();
+    string ridstr = ctx.GetRequestValue("RID").GetValue(); 
+    string align_view = ctx.GetRequestValue("ALIGNMENT_VIEW").GetValue();  
+  
+    cgi_query += "RID=" + ridstr;
+    cgi_query += "&FORMAT_TYPE=" + format_type;
+    cgi_query += "&ALIGNMENT_VIEW=" + align_view;
+
+    cgi_query += "&QUERY_NUMBER=" + ctx.GetRequestValue("QUERY_NUMBER").GetValue();
+    cgi_query += "&FORMAT_OBJECT=" + ctx.GetRequestValue("FORMAT_OBJECT").GetValue();
+    cgi_query += "&RUN_PSIBLAST=" + ctx.GetRequestValue("RUN_PSIBLAST").GetValue();
+    cgi_query += "&I_THRESH=" + ctx.GetRequestValue("I_THRESH").GetValue();
+  
+    cgi_query += "&DESCRIPTIONS=" + ctx.GetRequestValue("DESCRIPTIONS").GetValue();
+       
+    cgi_query += "&ALIGNMENTS=" + ctx.GetRequestValue("ALIGNMENTS").GetValue();
+      
+    cgi_query += "&NUM_OVERVIEW=" + ctx.GetRequestValue("NUM_OVERVIEW").GetValue();
+   
+    cgi_query += "&NCBI_GI=" + ctx.GetRequestValue("NCBI_GI").GetValue();
+    
+    cgi_query += "&SHOW_OVERVIEW=" + ctx.GetRequestValue("SHOW_OVERVIEW").GetValue();
+   
+    cgi_query += "&SHOW_LINKOUT=" + ctx.GetRequestValue("SHOW_LINKOUT").GetValue();
+ 
+    cgi_query += "&GET_SEQUENCE=" + ctx.GetRequestValue("GET_SEQUENCE").GetValue();
+   
+    cgi_query += "&MASK_CHAR=" + ctx.GetRequestValue("MASK_CHAR").GetValue();
+    cgi_query += "&MASK_COLOR=" + ctx.GetRequestValue("MASK_COLOR").GetValue();
+    
+    cgi_query += "&SHOW_CDS_FEATURE=" + ctx.GetRequestValue("SHOW_CDS_FEATURE").GetValue();
+
+    if (ctx.GetRequestValue("FORMAT_EQ_TEXT").GetValue() != NcbiEmptyString) {
+        cgi_query += "&FORMAT_EQ_TEXT=" +
+            URL_EncodeString(NStr::TruncateSpaces(ctx.
+                                                  GetRequestValue("FORMAT_EQ_TEXT").
+                                                  GetValue())); 
+    }
+
+    if (ctx.GetRequestValue("FORMAT_EQ_OP").GetValue() != NcbiEmptyString) {
+        cgi_query += "&FORMAT_EQ_OP=" +
+            URL_EncodeString(NStr::TruncateSpaces(ctx.
+                                                  GetRequestValue("FORMAT_EQ_OP").
+                                                  GetValue())); 
+    }
+
+    if (ctx.GetRequestValue("FORMAT_EQ_MENU").GetValue() != NcbiEmptyString) {
+        cgi_query += "&FORMAT_EQ_MENU=" +
+            URL_EncodeString(NStr::TruncateSpaces(ctx.
+                                                  GetRequestValue("FORMAT_EQ_MENU").
+                                                  GetValue())); 
+    }
+
+    cgi_query += "&EXPECT_LOW=" + ctx.GetRequestValue("EXPECT_LOW").GetValue();
+    cgi_query += "&EXPECT_HIGH=" + ctx.GetRequestValue("EXPECT_HIGH").GetValue();
+
+    cgi_query += "&BL2SEQ_LINK=" + ctx.GetRequestValue("BL2SEQ_LINK").GetValue();
+   
+}
+
+
+int CBlastFormatUtil::GetLinkout(const CBioseq_Handle& handle, const CSeq_id& id)
+{
+    int linkout = 0;
+    
+    const CRef<CBlast_def_line_set> bdl_ref = CBlastFormatUtil::GetBlastDefline(handle);
+    
+    if (!bdl_ref.Empty()) {
+        const list< CRef< CBlast_def_line > >& bdl = bdl_ref->Get();
+              
+        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
+            iter != bdl.end(); iter++){
+            const CBioseq::TId& cur_id = (*iter)->GetSeqid();
+            ITERATE(CBioseq::TId, iter_id, cur_id) {
+                if ((*iter_id)->Match(id)) {
+                    linkout = CBlastFormatUtil::GetLinkout((**iter));
+                    break;
+                }
+            }
+        }
+    }
+    return linkout;
+}
+
+bool CBlastFormatUtil::IsMixedDatabase(const CSeq_align_set& alnset, 
+                                       CScope& scope) 
+{
+    bool is_mixed = false;
+    bool is_first = true;
+    int prev_database = 0;
+
+    ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()) { 
+       
+        const CSeq_id& id = (*iter)->GetSeq_id(1);
+        const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
+        int linkout = GetLinkout(handle, id);
+        int cur_database = (linkout & eGenomicSeq);
+        if (!is_first && cur_database != prev_database) {
+            is_mixed = true;
+            break;
+        }
+        prev_database = cur_database;
+        is_first = false;
+    }
+    
+    return is_mixed;
+
+}
+
+///Get the url for linkout
+///@param linkout: the membership value
+///@param gi: the actual gi or 0
+///@param rid: RID
+///@param cdd_rid: CDD RID
+///@param entrez_term: entrez query term
+///@param is_na: is this sequence nucleotide or not
+///
+list<string> CBlastFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& ids, 
+                                             const string& rid, const string& db_name, 
+                                             const int query_number, const int taxid,
+                                             const string& cdd_rid, 
+                                             const string& entrez_term,
+                                             bool is_na, string& user_url,
+                                             const bool db_is_na, int first_gi,
+                                             bool structure_linkout_as_group)
+{
+    list<string> linkout_list;
+    int gi = FindGi(ids);
+    char molType[8]={""};
+    if(!is_na){
+        sprintf(molType, "[pgi]");
+    }
+    else {
+        sprintf(molType, "[ngi]");
+    }
+    
+    char buf[1024];
+    
+    if (linkout & eUnigene) {
+        sprintf(buf, kUnigeneUrl.c_str(), is_na ? "nucleotide" : "protein", 
+                is_na ? "nucleotide" : "protein", gi);
+        linkout_list.push_back(buf);
+    }
+    if (linkout & eStructure){
+        sprintf(buf, kStructureUrl.c_str(), rid.c_str(), first_gi == 0 ? gi : first_gi,
+                gi, cdd_rid.c_str(), structure_linkout_as_group ? "onegroup" : "onepair",
+                
+                (entrez_term == NcbiEmptyString) ? 
+                "none":((char*) entrez_term.c_str()));
+        linkout_list.push_back(buf);
+    }
+    if (linkout & eGeo){
+        sprintf(buf, kGeoUrl.c_str(), gi);
+        linkout_list.push_back(buf);
+    }
+    if(linkout & eGene){
+        sprintf(buf, kGeneUrl.c_str(), gi, !is_na ? "PUID" : "NUID");
+        linkout_list.push_back(buf);
+    }
+
+    if((linkout & eAnnotatedInMapviewer) && !(linkout & eGenomicSeq)){
+        /*  string url_with_parameters = 
+            CBlastFormatUtil::BuildUserUrl(ids, taxid, user_url,
+                                           db_name,
+                                           db_is_na, rid,
+                                           query_number);
+                                           if (url_with_parameters != NcbiEmptyString) { */
+        sprintf(buf, kMapviwerUrl.c_str(), gi);
+        linkout_list.push_back(buf);
+        // }
+    }
+    
+    return linkout_list;
+}
+
+static bool FromRangeAscendingSort(CRange<TSeqPos> const& info1,
+                                   CRange<TSeqPos> const& info2)
+{
+    return info1.GetFrom() < info2.GetFrom();
+}
+
+int CBlastFormatUtil::GetMasterCoverage(const CSeq_align_set& alnset) 
+{
+
+    list<CRange<TSeqPos> > merge_list; 
+  
+    list<CRange<TSeqPos> > temp;
+    ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()) {
+        CRange<TSeqPos> seq_range = (*iter)->GetSeqRange(0);
+        //for minus strand
+        if(seq_range.GetFrom() > seq_range.GetTo()){
+            seq_range.Set(seq_range.GetTo(), seq_range.GetFrom());
+        }
+        temp.push_back(seq_range);
+    }
+    
+    temp.sort(FromRangeAscendingSort);
+
+    bool is_first = true;
+    CRange<TSeqPos> prev_range (0, 0);
+    ITERATE(list<CRange<TSeqPos> >, iter, temp) {
+       
+        if (is_first) {
+            merge_list.push_back(*iter);
+            is_first= false;
+            prev_range = *iter;
+        } else {
+            if (prev_range.IntersectingWith(*iter)) {
+                merge_list.pop_back();
+                CRange<TSeqPos> temp_range = prev_range.CombinationWith(*iter);
+                merge_list.push_back(temp_range);
+                prev_range = temp_range;
+            } else {
+                merge_list.push_back(*iter);
+                prev_range = *iter;
+            }
+        }
+       
+    }
+    int master_covered_lenghth = 0;
+    ITERATE(list<CRange<TSeqPos> >, iter, merge_list) {
+        master_covered_lenghth += iter->GetLength();
+    }
+    return master_covered_lenghth;
+}
+
+CRef<CSeq_align_set>
+CBlastFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
+                                             CScope& scope,
+                                             CSeq_align_set& aln_set,
+                                             bool nuc_to_nuc_translation,
+                                             int db_sort,
+                                             int hit_sort,
+                                             int hsp_sort) {
+    
+   
+    list< CRef<CSeq_align_set> > seqalign_hit_total_list;
+    vector< CRef<CSeq_align_set> > seqalign_vec(2);
+    seqalign_vec[0] = new CSeq_align_set;
+    seqalign_vec[1] = new CSeq_align_set;
+   
+    SplitSeqalignByMolecularType(seqalign_vec, db_sort, aln_set, scope);
+
+    ITERATE(vector< CRef<CSeq_align_set> >, iter, seqalign_vec){
+        list< CRef<CSeq_align_set> > seqalign_hit_list;
+        HspListToHitList(seqalign_hit_list, **iter);
+            
+        if (hit_sort == eTotalScore) {
+            seqalign_hit_list.sort(SortHitByTotalScoreDescending);
+        } else if (hit_sort == eHighestScore) {
+                seqalign_hit_list.sort(CBlastFormatUtil::SortHitByScoreDescending);
+        } else if (hit_sort == ePercentIdentity) {
+            
+            SortHitByPercentIdentityDescending(seqalign_hit_list, 
+                                               nuc_to_nuc_translation);
+        } else if (hit_sort == eQueryCoverage) {
+            seqalign_hit_list.sort(SortHitByMasterCoverageDescending);
+        }
+
+        ITERATE(list< CRef<CSeq_align_set> >, iter2, seqalign_hit_list) { 
+            CRef<CSeq_align_set> temp(*iter2);
+            if (hsp_sort == eQueryStart) {
+                temp->Set().sort(SortHspByMasterStartAscending);
+            } else if (hsp_sort == eHspPercentIdentity) {
+                temp->Set().sort(SortHspByPercentIdentityDescending);
+                
+            } else if (hsp_sort == eScore) {
+                temp->Set().sort(SortHspByScoreDescending);
+                
+            } else if (hsp_sort == eSubjectStart) {
+                temp->Set().sort(SortHspBySubjectStartAscending);
+                
+            } 
+            
+            seqalign_hit_total_list.push_back(temp);
+        }
+    }
+       
+    return HitListToHspList(seqalign_hit_total_list);
+}
+ 
 END_NCBI_SCOPE

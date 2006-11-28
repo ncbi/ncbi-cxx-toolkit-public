@@ -37,6 +37,7 @@
 #include <corelib/ncbireg.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
+#include <cgi/cgictx.hpp>
 
 //forward declarations
 class CShowBlastDeflineTest;  //For internal test only
@@ -86,7 +87,8 @@ public:
     CShowBlastDefline(const CSeq_align_set& seqalign,                       
                       CScope& scope,
                       size_t line_length = 65,
-                      size_t num_defline_to_show = 100);
+                      size_t num_defline_to_show = 100,
+                      bool translated_nuc_alignment = false);
     
     ~CShowBlastDefline();
     
@@ -100,7 +102,8 @@ public:
         eCheckboxChecked = (1 << 5),    //pre-check the checkbox
         eNoShowHeader = (1 << 6),       //defline annotation at the top
         eNewTargetWindow = (1 << 7),    //open url link in a new window
-        eShowNewSeqGif = (1 << 8)       //show new sequence gif image
+        eShowNewSeqGif = (1 << 8),      //show new sequence gif image
+        eShowPercentIdent = (1 << 9)    //show percent identity column
     };
 
     ///options per DisplayOption
@@ -176,6 +179,10 @@ public:
         m_BlastType = type;
     }
 
+    void SetCgiContext (CCgiContext& ctx) {
+        m_Ctx = &ctx;
+    }
+
     /// Creates a '|' delimited string, corresponding to a list of Seq-ids
     /// @param id List of Seq-ids [in]
     /// @param show_gi Should gi ids be shown or skipped?
@@ -210,7 +217,9 @@ public:
     ///@param out: stream to output
     ///
     void DisplayBlastDefline(CNcbiOstream & out);
+    void DisplayBlastDeflineTable(CNcbiOstream & out);
  
+
 private:
   
     ///Internal data Representing each defline
@@ -219,6 +228,9 @@ private:
         int gi;                        //gi 
         string defline;                //defline
         string bit_string;             //bit score
+        string total_bit_string;       //total bit score for this hit
+        int match;                     //number of matches for the top hsp with the hit
+        int align_length;              //lenght of alignment
         string evalue_string;          //e value
         int sum_n;                     //sum_n in score block
         list<string> linkout_list;     //linkout urls
@@ -227,6 +239,7 @@ private:
         string score_url;              //score url (quick jump to alignment)
         bool is_new;                   //is this sequence new (for psiblast)?
         bool was_checked;              //was this sequence checked before?
+        int master_covered_lenghth;    //total length covered by alignment
     };
 
     ///Seqalign 
@@ -278,10 +291,20 @@ private:
     ///hash table to track psiblast status for each sequence
     map<string, int>* m_SeqStatus;
 
+    ///used to calculate the alignment length
+    bool m_TranslatedNucAlignment;
+    
+    CCgiContext* m_Ctx;
+
     ///Internal function to return defline info
     ///@param aln: seqalign we are working on
     ///@return defline info
     SDeflineInfo* x_GetDeflineInfo(const CSeq_align& aln);
+
+    ///Internal function to return defline info
+    ///@param aln: seqalign we are working on
+    ///@return defline info
+    SDeflineInfo* x_GetHitDeflineInfo(const CSeq_align_set& aln);
 
     ///Internal function to fill defline info
     ///@param handle: sequence handle for current seqalign
@@ -292,7 +315,16 @@ private:
                             const CSeq_id& aln_id,
                             list<int>& use_this_gi,
                             SDeflineInfo* sdl);
-
+    
+    ///Internal function to fill defline info
+    ///@param handle: sequence handle for current seqalign
+    ///@param aln_id: seqid from current seqalign
+    ///@param use_this_gi: gi from use_this_gi in seqalign
+    ///@param sdl: this is where is info is filled to
+    void x_FillDeflineAndIdNew(const CBioseq_Handle& handle,
+                            const CSeq_id& aln_id,
+                            list<int>& use_this_gi,
+                            SDeflineInfo* sdl);
     //For internal test 
     friend class ::CShowBlastDeflineTest;
 };
@@ -303,6 +335,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.8  2006/11/28 15:40:37  jianye
+adding sorting seqalign functions
+
 Revision 1.7  2005/12/21 15:18:13  jcherry
 Added export specifiers
 
