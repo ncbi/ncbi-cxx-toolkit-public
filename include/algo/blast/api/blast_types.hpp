@@ -54,7 +54,8 @@ BEGIN_SCOPE(blast)
 /// (blast_setup_cxx.cpp) and BlastNumber2Program and BlastProgram2Number
 /// (blast_util.c)
 enum EProgram {
-    eBlastn = 0,        ///< Nucl-Nucl (traditional blastn)
+    eBlastNotSet = 0,   ///< Not yet set.
+    eBlastn,            ///< Nucl-Nucl (traditional blastn)
     eBlastp,            ///< Protein-Protein
     eBlastx,            ///< Translated nucl-Protein
     eTblastn,           ///< Protein-Translated nucl
@@ -208,6 +209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/11/28 13:27:10  madden
+* Add eBlastNotSet to EProgram enum
+*
 * Revision 1.28  2006/11/21 17:19:27  papadopo
 * rearrange headers
 *
