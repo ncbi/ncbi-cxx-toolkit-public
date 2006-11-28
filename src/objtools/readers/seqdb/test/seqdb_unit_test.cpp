@@ -257,8 +257,9 @@ s_ApproxEqual(NUM a, NUM b, DIF epsilon, int lineno)
     }
 }
 
-static Uint4 s_BufHash(const char * buf, size_t length, Uint4 start = 1)
+static Uint4 s_BufHash(const char * buf_in, Uint4 length, Uint4 start = 1)
 {
+    const signed char * buf = (const signed char *) buf_in;
     Uint4 hash = start;
     Uint4 i    = 0;
     
@@ -2327,6 +2328,9 @@ void s_ForceSymbolDefinitions(CObjectIStream& ois,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/11/28 20:49:01  bealer
+ * - Fix signedness issue for Irix.
+ *
  * Revision 1.8  2006/11/13 16:35:44  bealer
  * - Prevent dialog-on-error behavior on Windows systems.
  *
