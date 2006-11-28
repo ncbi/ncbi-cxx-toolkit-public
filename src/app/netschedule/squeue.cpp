@@ -147,7 +147,7 @@ SLockedQueue::~SLockedQueue()
 
 
 const unsigned kMeasureInterval = 1;
- /* for informational purposes only, see kDecayExp below */
+// for informational purposes only, see kDecayExp below
 const unsigned kDecayInterval = 10;
 const unsigned kFixedShift = 7;
 const unsigned kFixed_1 = 1 << kFixedShift;
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/28 18:03:49  joukovv
+ * MSVC8 build fix, grid_worker_sample idle task commented out.
+ *
  * Revision 1.3  2006/11/27 23:50:47  joukovv
  * Name clash on Windows fixed.
  *

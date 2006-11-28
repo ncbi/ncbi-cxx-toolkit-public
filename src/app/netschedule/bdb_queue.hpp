@@ -542,6 +542,10 @@ class CQueueIterator
 public:
     CQueueIterator(const CQueueDataBase& db,
         CQueueCollection::TQueueMap::const_iterator iter);
+    // MSVC8 (Studio 2005) can not (or does not want to) perform
+    // copy constructor optimization on return etc. thus it needs
+    // explicit copy constructor because CQueue does not have it.
+    CQueueIterator(const CQueueIterator& rhs);
     CQueue& operator*();
     const string GetName();
     void operator++();
@@ -552,9 +556,9 @@ public:
         return m_Iter != rhs.m_Iter;
     }
 private:
-    const CQueueDataBase&                 m_QueueDataBase;
+    const CQueueDataBase&                       m_QueueDataBase;
     CQueueCollection::TQueueMap::const_iterator m_Iter;
-    CQueue m_Queue;
+    CQueue                                      m_Queue;
 };
 
 
@@ -677,6 +681,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/11/28 18:03:49  joukovv
+ * MSVC8 build fix, grid_worker_sample idle task commented out.
+ *
  * Revision 1.59  2006/11/27 16:46:21  joukovv
  * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
  * un-nested CQueue from CQueueDataBase; instrumented code to count job

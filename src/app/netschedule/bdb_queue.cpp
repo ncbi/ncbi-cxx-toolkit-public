@@ -180,6 +180,13 @@ CQueueIterator::CQueueIterator(const CQueueDataBase& db,
     m_QueueDataBase(db), m_Iter(iter), m_Queue(db)
 {}
 
+CQueueIterator::CQueueIterator(const CQueueIterator& rhs) :
+    m_QueueDataBase(rhs.m_QueueDataBase),
+    m_Iter(rhs.m_Iter),
+    m_Queue(rhs.m_QueueDataBase)
+{
+}
+
 CQueue& CQueueIterator::operator*()
 {
     m_Queue.x_Assume(m_Iter->second);
@@ -3837,6 +3844,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.96  2006/11/28 18:03:49  joukovv
+ * MSVC8 build fix, grid_worker_sample idle task commented out.
+ *
  * Revision 1.95  2006/11/27 16:46:21  joukovv
  * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
  * un-nested CQueue from CQueueDataBase; instrumented code to count job

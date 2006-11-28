@@ -190,16 +190,19 @@ private:
 
 // Use this marcos to implement the main function for the CSampleJob version 1.0.1
 // with idle task CSampleIdleTask
-NCBI_WORKERNODE_MAIN_EX(CSampleJob, CSampleIdleTask, 1.0.1);
+//NCBI_WORKERNODE_MAIN_EX(CSampleJob, CSampleIdleTask, 1.0.1);
 
 // if you don't need an Idle task just use this marcos.
-//NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1);
+NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1);
 
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/11/28 18:03:49  joukovv
+ * MSVC8 build fix, grid_worker_sample idle task commented out.
+ *
  * Revision 1.17  2006/02/01 16:39:01  didenko
  * Added Idle Task facility to the Grid Worker Node Framework
  *
