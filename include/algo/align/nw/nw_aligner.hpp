@@ -53,6 +53,11 @@
 
 BEGIN_NCBI_SCOPE
 
+BEGIN_SCOPE(objects)
+    class CDense_seg;
+    class CSeq_id;
+    enum ENa_strand;
+END_SCOPE(objects)
 
 // Needleman Wunsch algorithm encapsulation
 //
@@ -193,6 +198,22 @@ public:
     size_t MakePattern(const size_t hit_size = 100, 
                        const size_t core_size = 28);
 
+    // Create a Dense-seg representing the alignment, without ids set
+    CRef<objects::CDense_seg> GetDense_seg(TSeqPos query_start,
+                                           objects::ENa_strand query_strand,
+                                           TSeqPos subj_start,
+                                           objects::ENa_strand subj_strand)
+                                           const;
+
+    // Create a Dense-seg representing the alignment, with provided ids set
+    CRef<objects::CDense_seg> GetDense_seg(TSeqPos query_start,
+                                           objects::ENa_strand query_strand,
+                                           const objects::CSeq_id& query_id,
+                                           TSeqPos subj_start,
+                                           objects::ENa_strand subj_strand,
+                                           const objects::CSeq_id& subj_id)
+                                           const;
+
 protected:
 
     // Bonuses and penalties
@@ -317,6 +338,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/11/28 21:17:21  jcherry
+ * Added CNWAligner::GetDense_seg
+ *
  * Revision 1.46  2006/03/21 16:17:09  kapustin
  * Move RLE code to xalgoalignutil
  *

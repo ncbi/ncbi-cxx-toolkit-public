@@ -39,10 +39,13 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <algo/align/nw/align_exception.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 // IUPACna alphabet (default)
 const char g_nwaligner_nucleotides [] = "AGTCBDHKMNRSVWY";
@@ -1435,12 +1438,45 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
 }
 
 
+CRef<CDense_seg> CNWAligner::GetDense_seg(TSeqPos query_start,
+                                          ENa_strand query_strand,
+                                          TSeqPos subj_start,
+                                          ENa_strand subj_strand) const
+{
+    CRef<CDense_seg> ds(new CDense_seg);
+    ds->FromTranscript(query_start, query_strand, subj_start, subj_strand,
+                       GetTranscriptString());
+    return ds;
+}
+
+
+CRef<CDense_seg> CNWAligner::GetDense_seg(TSeqPos query_start,
+                                          ENa_strand query_strand,
+                                          const CSeq_id& query_id,
+                                          TSeqPos subj_start,
+                                          ENa_strand subj_strand,
+                                          const CSeq_id& subj_id) const
+{
+    CRef<CDense_seg> ds = GetDense_seg(query_start, query_strand,
+                                       subj_start, subj_strand);
+    CRef<CSeq_id> id0(new CSeq_id);
+    CRef<CSeq_id> id1(new CSeq_id);
+    id0->Assign(query_id);
+    id1->Assign(subj_id);
+    ds->SetIds().push_back(id0);
+    ds->SetIds().push_back(id1);
+    return ds;
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/11/28 21:17:21  jcherry
+ * Added CNWAligner::GetDense_seg
+ *
  * Revision 1.71  2006/08/24 13:43:06  kapustin
  * Set initial value for CNWAligner::m_terminate
  *
