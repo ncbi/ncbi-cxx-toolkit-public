@@ -74,8 +74,12 @@ SDynamicUint4Array* DynamicUint4ArrayNewEx(Uint4 init_num_elements)
     return retval;
 }
 
-Int2
-DynamicUint4Array_ReallocIfNecessary(SDynamicUint4Array* arr)
+/** Grow a dynamic array of Uint4 elements
+ * @param arr Structure of array data [in][out]
+ * @return zero on success
+ */
+static Int2
+s_DynamicUint4Array_ReallocIfNecessary(SDynamicUint4Array* arr)
 {
     ASSERT(arr);
 
@@ -97,7 +101,7 @@ DynamicUint4Array_Append(SDynamicUint4Array* arr, Uint4 element)
     Int2 retval = 0;
     ASSERT(arr);
 
-    if ( (retval = DynamicUint4Array_ReallocIfNecessary(arr)) != 0) {
+    if ( (retval = s_DynamicUint4Array_ReallocIfNecessary(arr)) != 0) {
         return retval;
     }
     arr->data[arr->num_used++] = element;
@@ -188,8 +192,12 @@ SDynamicInt4Array* DynamicInt4ArrayNew()
     return retval;
 }
 
-Int2
-DynamicInt4Array_ReallocIfNecessary(SDynamicInt4Array* arr)
+/** Grow a dynamic array of Int4 elements
+ * @param arr Structure of array data [in][out]
+ * @return zero on success
+ */
+static Int2
+s_DynamicInt4Array_ReallocIfNecessary(SDynamicInt4Array* arr)
 {
     ASSERT(arr);
 
@@ -211,7 +219,7 @@ DynamicInt4Array_Append(SDynamicInt4Array* arr, Int4 element)
     Int2 retval = 0;
     ASSERT(arr);
 
-    if ( (retval = DynamicInt4Array_ReallocIfNecessary(arr)) != 0) {
+    if ( (retval = s_DynamicInt4Array_ReallocIfNecessary(arr)) != 0) {
         return retval;
     }
     arr->data[arr->num_used++] = element;

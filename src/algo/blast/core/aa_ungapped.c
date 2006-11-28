@@ -778,6 +778,7 @@ s_BlastAaWordFinder_OneHit(const BLAST_SequenceBlk * subject,
  * @param query query sequence [in]
  * @param s_off subject offset [in]
  * @param q_off query offset [in]
+ * @param dropoff the X dropoff parameter [in]
  * @param length the length of the computed extension [out]
  * @param maxscore the score derived from a previous left extension [in]
  * @param s_last_off the rightmost subject offset examined [out]
