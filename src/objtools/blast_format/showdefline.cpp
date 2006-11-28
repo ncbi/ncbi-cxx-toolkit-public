@@ -1234,11 +1234,10 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
                 }
             }
             if(m_Option & eHtml){
-                
-                out << "<div id=\"desctbl\">"<< endl << "<table id=\"descs\">" << endl << "<thead>" << endl;
+                out << "<div id=\"desctbl\">" << "<table id=\"descs\">" << endl << "<thead>" << endl;
                 out << "<tr class=\"first\">" << endl << "<th>Accession</th>" << endl << "<th>Description</th>" << endl;			
             }
-            //??
+            /*
             if(m_Option & eHtml){
                 if((m_Option & eShowNewSeqGif)){
                     out << kPsiblastNewSeqBackgroundGif;
@@ -1250,7 +1249,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
                 }
             }
 			
-			/*
+			
             CBlastFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
             CBlastFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
 			*/
@@ -1327,10 +1326,10 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
         string line_component;
         cur_database_type = ((*iter)->linkout & eGenomicSeq);
         if (is_mixed_database) {
-			if (m_Option & eHtml) {
-				out << "<tr>" << endl << "<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
-			}
-            if (is_first) {
+			if (is_first) {
+                if (m_Option & eHtml) {
+				    out << "<tr>" << endl << "<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
+			    }
                 if (cur_database_type) {
                     out << "Genomic sequences";                    
                 } else {
@@ -1339,12 +1338,18 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 				if (!(m_Option & eHtml)) {					
 					out << ":" << endl;
 				}
+                if (m_Option & eHtml) {
+				    out << "</th></tr>" << endl;
+			    }
             } else if (prev_database_type != cur_database_type) {				
+                if (m_Option & eHtml) {
+				    out << "<tr>" << endl << "<th colspan=\"" << tableColNumber<< "\" class=\"l sp\">";
+			    }
 				if (cur_database_type) {
                     out << "Genomic sequences";					
 				} else {
                     out << "Transcripts";
-				}
+				}                
 				if (m_Option & eHtml) {
 					out << "<span class=\"slink\">"
 						<< " [<a href=\"Blast.cgi?CMD=Get&"
@@ -1360,10 +1365,10 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 				else {
 					out << ":" << endl;
 				}				
-            }
-			if (m_Option & eHtml) {
-				out << "</th></tr>" << endl;
-			}
+                if (m_Option & eHtml) {
+				    out << "</th></tr>" << endl;
+			    }
+            }			
         }
         prev_database_type = cur_database_type;
         is_first = false;
@@ -1429,6 +1434,8 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 		}
         line_component = "  " + (*iter)->defline; 
         string actual_line_component;
+        actual_line_component = line_component;
+        /*
         if(line_component.size() > m_LineLen){
             actual_line_component = line_component.substr(0, m_LineLen - 
                                                           line_length - 3);
@@ -1437,20 +1444,21 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
             actual_line_component = line_component.substr(0, m_LineLen - 
                                                           line_length);
         }
+        */
         if (m_Option & eHtml) {
             out << CHTMLHelper::HTMLEncode(actual_line_component);
 			out << "</div></td><td>";
         } else {
             out << actual_line_component; 
         }
-		
+		/*
         line_length += actual_line_component.size();
         //pad the short lines
 		if (!(m_Option & eHtml)) {
 			CBlastFormatUtil::AddSpace(out, m_LineLen - line_length);
 			out << kTwoSpaceMargin;
 		}
-		
+		*/
         if((m_Option & eHtml) && ((*iter)->score_url != NcbiEmptyString)) {
             out << (*iter)->score_url;
         }
@@ -1719,6 +1727,9 @@ CShowBlastDefline::x_GetHitDeflineInfo(const CSeq_align_set& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.34  2006/11/28 20:28:10  zaretska
+*Removed limitting defilne length for table output. Fixed bugs
+*
 *Revision 1.33  2006/11/28 15:41:12  jianye
 *adding sorting seqalign functions
 *
