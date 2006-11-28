@@ -149,6 +149,11 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality)
         retval = new CPHIBlastNuclOptionsHandle(locality);
         break;
 
+    case eBlastNotSet:
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   "eBlastNotSet may not be used as argument");
+        break;
+
     default:
         abort();    // should never happen
     }
@@ -166,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/11/28 13:28:31  madden
+ * Throw exception in Create if eBlastNotSet passed in
+ *
  * Revision 1.17  2006/11/02 18:14:47  madden
  * For eBlastp create CBlastAdvancedProteinOptionsHandle
  *
