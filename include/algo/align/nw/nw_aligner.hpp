@@ -40,6 +40,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <util/tables/raw_scoremat.h>
+#include <objects/seqloc/Na_strand.hpp>
 
 #include <vector>
 #include <string>
@@ -56,7 +57,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CDense_seg;
     class CSeq_id;
-    enum ENa_strand;
 END_SCOPE(objects)
 
 // Needleman Wunsch algorithm encapsulation
@@ -338,6 +338,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/11/28 21:41:28  jcherry
+ * Compilation fix for linux
+ *
  * Revision 1.47  2006/11/28 21:17:21  jcherry
  * Added CNWAligner::GetDense_seg
  *
