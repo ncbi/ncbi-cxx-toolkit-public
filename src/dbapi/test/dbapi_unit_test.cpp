@@ -4761,59 +4761,323 @@ CDBAPIUnitTest::Test_Variant(void)
 void
 CDBAPIUnitTest::Test_NCBI_LS(void)
 {
+    if (true) {
+        static C_DriverMgr s_dbdrivers;
+        static time_t s_tTimeOut = 30; // in seconds
+        CDB_Connection* pDbLink = NULL;
+
+        string sDbDriver(m_args.GetDriverName());
+//         string sDbServer("MSSQL57");
+        string sDbServer("mssql57.nac.ncbi.nlm.nih.gov");
+        string sDbName("NCBI_LS");
+        string sDbUser("anyone");
+        string sDbPasswd("allowed");
+        string sErr;
+
+        try {
+            I_DriverContext* drv_context = m_DS->GetDriverContext();
+
+        	if( drv_context == NULL ) {
+                BOOST_FAIL("FATAL: Unable to load context for dbdriver " + sDbDriver);
+        	}
+        	drv_context->SetMaxTextImageSize( 0x7fffffff );
+        	drv_context->SetLoginTimeout( s_tTimeOut );
+        	drv_context->SetTimeout( s_tTimeOut );
+
+        	pDbLink = drv_context->Connect( sDbServer, sDbUser, sDbPasswd,
+        				    0, true, "Service" );
+
+        	string sUseDb = "use "+sDbName;
+        	auto_ptr<CDB_LangCmd> pUseCmd( pDbLink->LangCmd( sUseDb.c_str() ) );
+        	if( pUseCmd->Send() ) {
+        	    pUseCmd->DumpResults();
+        	} else {
+                BOOST_FAIL("Unable to send sql command "+ sUseDb);
+        	}
+        } catch( CDB_Exception& dbe ) {
+        	sErr = "CDB Exception from "+dbe.OriginatedFrom()+":"+
+        	    dbe.SeverityString(dbe.Severity())+": "+
+        	    dbe.Message();
+
+            BOOST_FAIL(sErr);
+        }
+
+
+        CDB_Connection* m_Connect = pDbLink;
+
+        // id(7777777) is going to expire soon ...
+//         int uid = 0;
+//         bool need_userInfo = true;
+//
+//         try {
+//             CDB_RPCCmd* r_cmd= m_Connect->RPC("getAcc4Sid", 2);
+//             CDB_Int id(7777777);
+//             CDB_TinyInt info(need_userInfo? 1 : 0);
+//
+//             r_cmd->SetParam("@sid", &id);
+//             r_cmd->SetParam("@need_info", &info);
+//
+//             r_cmd->Send();
+//
+//             CDB_Result* r;
+//             const char* res_name;
+//             while(r_cmd->HasMoreResults()) {
+//                 r= r_cmd->Result();
+//                 if(r == 0) continue;
+//                 if(r->ResultType() == eDB_RowResult) {
+//                     res_name= r->ItemName(0);
+//                     if(strstr(res_name, "uId") == res_name) {
+//                         while(r->Fetch()) {
+//                             r->GetItem(&id);
+//                         }
+//                         uid = id.Value();
+//                     }
+//                     else if((strstr(res_name, "login_name") == res_name)) {
+//                         CDB_LongChar name;
+//                         while(r->Fetch()) {
+//                             r->GetItem(&name); // login name
+//                             r->GetItem(&name); // user name
+//                             r->GetItem(&name); // first name
+//                             r->GetItem(&name); // last name
+//                             r->GetItem(&name); // affiliation
+//                             r->GetItem(&name); // question
+//                             r->GetItem(&info); // status
+//                             r->GetItem(&info); // role
+//                         }
+//                     }
+//                     else if((strstr(res_name, "gID") == res_name)) {
+//                         // int gID;
+//                         // int bID= 0;
+//                         CDB_VarChar label;
+//                         CDB_LongChar val;
+//
+//                         while(r->Fetch()) {
+//                             r->GetItem(&id); // gID
+//                             r->GetItem(&id); // bID
+//
+//                             r->GetItem(&info); // flag
+//                             r->GetItem(&label);
+//                             r->GetItem(&val);
+//
+//                         }
+//                     }
+//                     else if((strstr(res_name, "addr") == res_name)) {
+//                         CDB_LongChar addr;
+//                         CDB_LongChar comment(2048);
+//                         while(r->Fetch()) {
+//                             r->GetItem(&addr);
+//                             r->GetItem(&info);
+//                             r->GetItem(&comment);
+//                         }
+//                     }
+//                     else if((strstr(res_name, "num") == res_name)) {
+//                         CDB_LongChar num;
+//                         CDB_LongChar comment(2048);
+//                         while(r->Fetch()) {
+//                             r->GetItem(&num);
+//                             r->GetItem(&info);
+//                             r->GetItem(&comment);
+//                         }
+//                     }
+//                 }
+//                 delete r;
+//             }
+//             delete r_cmd;
+//         }
+//         catch (CDB_Exception& e) {
+//             CDB_UserHandler::GetDefault().HandleIt(&e);
+//         }
+
+        // Find accounts
+
+            CDB_Int       status;
+        // Request
+        CDB_VarChar   db_login( NULL, 64 );
+        CDB_VarChar   db_title( NULL, 64 );
+        CDB_VarChar   db_first( NULL, 127 );
+        CDB_VarChar   db_last( NULL, 127 );
+        CDB_VarChar   db_affil( NULL, 127 );
+        // grp ids
+        CDB_Int       db_gid1;
+        CDB_LongChar  db_val1;
+        CDB_VarChar   db_label1( NULL, 32 );
+        CDB_Int       db_gid2;
+        CDB_LongChar  db_val2;
+        CDB_VarChar   db_label2( NULL, 32 );
+        CDB_Int       db_gid3;
+        CDB_LongChar  db_val3;
+        CDB_VarChar   db_label3( NULL, 32 );
+        // emails
+        CDB_VarChar   db_email1( NULL, 255 );
+        CDB_VarChar   db_email2( NULL, 255 );
+        CDB_VarChar   db_email3( NULL, 255 );
+        // phones
+        CDB_VarChar   db_phone1( NULL, 20 );
+        CDB_VarChar   db_phone2( NULL, 20 );
+        CDB_VarChar   db_phone3( NULL, 20 );
+        // Reply
+        CDB_Int       db_uid;
+        CDB_Int       db_score;
+
+        auto_ptr<CDB_RPCCmd> pRpc( NULL );
+
+        pRpc.reset( m_Connect->RPC("FindAccount",20) );
+
+        db_last.SetValue( "%" );
+//         db_last.SetValue( "a" );
+
+        pRpc->SetParam( "@login",  &db_login );
+        pRpc->SetParam( "@title",   &db_title );
+        pRpc->SetParam( "@first", &db_first );
+        pRpc->SetParam( "@last", &db_last );
+        pRpc->SetParam( "@affil", &db_affil );
+        pRpc->SetParam( "@gid1", &db_gid1 );
+        pRpc->SetParam( "@val1", &db_val1 );
+        pRpc->SetParam( "@label1", &db_label1 );
+        pRpc->SetParam( "@gid2", &db_gid2 );
+        pRpc->SetParam( "@val2", &db_val2 );
+        pRpc->SetParam( "@label2", &db_label2 );
+        pRpc->SetParam( "@gid3",  &db_gid3 );
+        pRpc->SetParam( "@val3", &db_val3 );
+        pRpc->SetParam( "@label3", &db_label3 );
+        pRpc->SetParam( "@email1", &db_email1 );
+        pRpc->SetParam( "@email2", &db_email2 );
+        pRpc->SetParam( "@email3", &db_email3 );
+        pRpc->SetParam( "@phone1", &db_phone1 );
+        pRpc->SetParam( "@phone2", &db_phone2 );
+        pRpc->SetParam( "@phone3", &db_phone3 );
+        bool bFetchErr = false;
+        string sError;
+
+        try {
+        	if( pRpc->Send() ) {
+        	    // Save results
+        	    while ( !bFetchErr && pRpc->HasMoreResults() ) {
+        		auto_ptr<CDB_Result> pRes( pRpc->Result() );
+        		if( !pRes.get() ) {
+        		    continue;
+        		}
+        		if( pRes->ResultType() == eDB_RowResult ) {
+        		    while( pRes->Fetch() ) {
+        			pRes->GetItem( &db_uid );
+                                // cout << "uid=" << db_uid.Value();
+        			pRes->GetItem( &db_score );
+                                // cout << " score=" << db_score.Value() << endl;
+        		    }
+        		} else if( pRes->ResultType() == eDB_StatusResult ) {
+        		    while( pRes->Fetch() ) {
+        			pRes->GetItem( &status );
+        			if( status.Value() < 0 ) {
+        			    sError = "Bad status value " + NStr::IntToString(status.Value())
+        				+ " from RPC 'FindAccount'";
+        			    bFetchErr = true;
+        			    break;
+        			}
+        		    }
+        		}
+        	    }
+        	} else { // Error sending rpc
+        	    sError = "Error sending rpc 'FindAccount' to db server";
+        	    bFetchErr = true;
+        	}
+        }  catch( CDB_Exception& dbe ) {
+        	sError = "CDB Exception from "+dbe.OriginatedFrom()+":"+
+        	    dbe.SeverityString(dbe.Severity())+": "+
+        	    dbe.Message();
+        	bFetchErr = true;
+        }
+
+        BOOST_CHECK( bFetchErr == false );
+    }
+
     auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
     BOOST_CHECK( auto_conn.get() != NULL );
 
     auto_conn->Connect(
         "anyone",
         "allowed",
-        "MSSQL57",
+//         "MSSQL57",
+        "mssql57.nac.ncbi.nlm.nih.gov",
         "NCBI_LS"
         );
 
+    // Does not work with ftds64_odbc ...
+//     {
+//         int sid = 0;
+//
+//         {
+//             auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+//
+//             auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "SELECT sID FROM Session" ) );
+//             BOOST_CHECK( rs.get() != NULL );
+//             BOOST_CHECK( rs->Next() );
+//             sid = rs->GetVariant(1).GetInt4();
+//             BOOST_CHECK( sid > 0 );
+//         }
+//
+//         {
+//             int num = 0;
+//             auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("getAcc4Sid", 2) );
+//
+//             auto_stmt->SetParam( CVariant(Int4(sid)), "@sid" );
+//             auto_stmt->SetParam( CVariant(Int2(1)), "@need_info" );
+//
+//             auto_stmt->Execute();
+//
+//             BOOST_CHECK(auto_stmt->HasMoreResults());
+//             BOOST_CHECK(auto_stmt->HasMoreResults());
+//             BOOST_CHECK(auto_stmt->HasMoreResults());
+//             BOOST_CHECK(auto_stmt->HasRows());
+//             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+//             BOOST_CHECK(rs.get() != NULL);
+//
+//             while (rs->Next()) {
+//                 BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
+//                 BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
+//                 BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), false);
+//                 BOOST_CHECK(rs->GetVariant(4).GetString().size() > 0);
+//                 // BOOST_CHECK(rs->GetVariant(5).GetString().size() > 0); // Stoped to work for some reason ...
+//                 ++num;
+//             }
+//
+//             BOOST_CHECK(num > 0);
+//
+// //             DumpResults(auto_stmt.get());
+//         }
+//     }
+
     //
     {
-        int sid = 0;
+        auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("FindAccount", 20) );
 
-        {
-            auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@first" );
+        auto_stmt->SetParam( CVariant("a%"), "@last" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
+        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
+        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
+        auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
+        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@email3" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone1" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone2" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@phone3" );
 
-            auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "SELECT sID FROM Session" ) );
-            BOOST_CHECK( rs.get() != NULL );
-            BOOST_CHECK( rs->Next() );
-            sid = rs->GetVariant(1).GetInt4();
-            BOOST_CHECK( sid > 0 );
-        }
+        auto_stmt->Execute();
 
-        {
-            int num = 0;
-            auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("getAcc4Sid", 2) );
+        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
 
-            auto_stmt->SetParam( CVariant(Int4(sid)), "@sid" );
-            auto_stmt->SetParam( CVariant(Int2(1)), "@need_info" );
+        auto_stmt->Execute();
 
-            auto_stmt->Execute();
-
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasMoreResults());
-            BOOST_CHECK(auto_stmt->HasRows());
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-            BOOST_CHECK(rs.get() != NULL);
-
-            while (rs->Next()) {
-                BOOST_CHECK(rs->GetVariant(1).GetInt4() > 0);
-                BOOST_CHECK(rs->GetVariant(2).GetInt4() > 0);
-                BOOST_CHECK_EQUAL(rs->GetVariant(3).IsNull(), false);
-                BOOST_CHECK(rs->GetVariant(4).GetString().size() > 0);
-                BOOST_CHECK(rs->GetVariant(5).GetString().size() > 0);
-                ++num;
-            }
-
-            BOOST_CHECK(num > 0);
-
-//             DumpResults(auto_stmt.get());
-        }
+        BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
     }
 
     //
@@ -5156,23 +5420,22 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    // Disabled. Stoped to work for unknown reason.
-//     if (args.GetServerType() == CTestArguments::eMsSql
-//         && args.GetDriverName() != "odbc" // Doesn't work ...
-//         && args.GetDriverName() != "odbcw" // Doesn't work ...
-//         && args.GetDriverName() != "ftds64_odbc"
-//         && args.GetDriverName() != "msdblib"
-//         ) {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NCBI_LS, DBAPIInstance);
-//         add(tc);
-//     }
-
     if (args.GetServerType() == CTestArguments::eMsSql &&
         (args.GetDriverName() == "ftds64_odbc"
          || args.GetDriverName() == "ftds64_ctlib")
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication, DBAPIInstance);
         tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    if (args.GetServerType() == CTestArguments::eMsSql
+        && args.GetDriverName() != "odbc" // Doesn't work ...
+        && args.GetDriverName() != "odbcw" // Doesn't work ...
+        // && args.GetDriverName() != "ftds64_odbc"
+        && args.GetDriverName() != "msdblib"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NCBI_LS, DBAPIInstance);
         add(tc);
     }
 
@@ -5377,6 +5640,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.114  2006/11/28 20:21:00  ssikorsk
+ * Improved and enabled Test_NCBI_LS.
+ *
  * Revision 1.113  2006/11/15 15:47:22  ssikorsk
  * Disabled Test_NCBI_LS. It stoped to work for unknown reason.
  *
