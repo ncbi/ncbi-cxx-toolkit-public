@@ -12,8 +12,6 @@ import_root = ../../../..
 project_path = objtools/writers/writedb/unit_test
 user_makefile = Makefile.seqdb_unit_test_app
 include $(import_root)/Makefile.mk
-CC_WRAPPER=ccache
-CXX_WRAPPER=ccache
 
 ###  IMPORT THE ORIGINAL PROJECT SETTINGS -- DON'T TOUCH THESE TWO LINES !!!
 TMPL = seqdb_unit_test
