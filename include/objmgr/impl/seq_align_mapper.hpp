@@ -160,6 +160,9 @@ private:
                                     CSeq_loc_Mapper& mapper,
                                     size_t row);
 
+    typedef vector<ENa_strand> TStrands;
+    void x_FillKnownStrands(TStrands& strands) const;
+
     void x_GetDstDendiag(CRef<CSeq_align>& dst) const;
     void x_GetDstDenseg(CRef<CSeq_align>& dst) const;
     void x_GetDstStd(CRef<CSeq_align>& dst) const;
@@ -242,6 +245,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/11/29 20:44:04  grichenk
+* Set correct strand for gaps.
+*
 * Revision 1.15  2006/09/27 21:27:58  vasilche
 * Added accessors.
 *

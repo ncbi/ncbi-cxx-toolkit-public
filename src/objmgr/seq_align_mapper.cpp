@@ -1029,23 +1029,49 @@ CSeq_align_Mapper::x_ConvertSegment(TSegments::iterator& seg_it,
 
 // Get mapped alignment
 
+void CSeq_align_Mapper::x_FillKnownStrands(TStrands& strands) const
+{
+    // Remember first known strand for each row, use it in gaps
+    strands.clear();
+    strands.reserve(m_Segs.front().m_Rows.size());
+    for (size_t r_idx = 0; r_idx < m_Segs.front().m_Rows.size(); r_idx++) {
+        ENa_strand strand = eNa_strand_unknown;
+        // Skip gaps, try find a row with mapped strand
+        ITERATE(TSegments, seg_it, m_Segs) {
+            if (seg_it->m_Rows[r_idx].GetSegStart() != kInvalidSeqPos) {
+                strand = seg_it->m_Rows[r_idx].m_Strand;
+                break;
+            }
+        }
+        strands.push_back(strand);
+    }
+}
+
+
 void CSeq_align_Mapper::x_GetDstDendiag(CRef<CSeq_align>& dst) const
 {
     TDendiag& diags = dst->SetSegs().SetDendiag();
+    TStrands strands;
+    x_FillKnownStrands(strands);
     ITERATE(TSegments, seg_it, m_Segs) {
         const SAlignment_Segment& seg = *seg_it;
         CRef<CDense_diag> diag(new CDense_diag);
         diag->SetDim(seg.m_Rows.size());
         bool have_prots = false;
+        size_t str_idx = 0;
         ITERATE(SAlignment_Segment::TRows, row, seg.m_Rows) {
             CRef<CSeq_id> id(new CSeq_id);
             id.Reset(&const_cast<CSeq_id&>(*row->m_Id.GetSeqId()));
             diag->SetIds().push_back(id);
             diag->SetStarts().push_back(row->GetSegStart());
             if (seg.m_HaveStrands) { // per-segment strands
-                diag->SetStrands().push_back(row->m_Strand);
+                // For gaps use the strand of the first mapped row
+                diag->SetStrands().push_back(
+                    row->GetSegStart() != kInvalidSeqPos ?
+                    row->m_Strand : strands[str_idx]);
             }
             have_prots |= row->m_Width == 3;
+            str_idx++;
         }
         int new_len = seg_it->m_Len;
         if ( m_MapWidths ) {
@@ -1083,6 +1109,8 @@ void CSeq_align_Mapper::x_GetDstDenseg(CRef<CSeq_align>& dst) const
         }
         have_prots |= row->m_Width == 3;
     }
+    TStrands strands;
+    x_FillKnownStrands(strands);
     ITERATE(TSegments, seg_it, m_Segs) {
         int new_len = seg_it->m_Len;
         if ( m_MapWidths ) {
@@ -1094,11 +1122,16 @@ void CSeq_align_Mapper::x_GetDstDenseg(CRef<CSeq_align>& dst) const
             }
         }
         dseg.SetLens().push_back(new_len);
+        size_t str_idx = 0;
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             dseg.SetStarts().push_back(row->GetSegStart());
             if (m_HaveStrands) { // per-alignment strands
-                dseg.SetStrands().push_back(row->m_Strand);
+                // For gaps use the strand of the first mapped row
+                dseg.SetStrands().push_back(
+                    row->GetSegStart() != kInvalidSeqPos ?
+                    row->m_Strand : strands[str_idx]);
             }
+            str_idx++;
         }
     }
 }
@@ -1151,6 +1184,8 @@ void CSeq_align_Mapper::x_GetDstPacked(CRef<CSeq_align>& dst) const
     if ( m_Segs.front().m_Scores.size() ) {
         pseg.SetScores() = m_Segs.front().m_Scores;
     }
+    TStrands strands;
+    x_FillKnownStrands(strands);
     ITERATE(SAlignment_Segment::TRows, row, m_Segs.front().m_Rows) {
         CRef<CSeq_id> id(new CSeq_id);
         id.Reset(&const_cast<CSeq_id&>(*row->m_Id.GetSeqId()));
@@ -1158,13 +1193,17 @@ void CSeq_align_Mapper::x_GetDstPacked(CRef<CSeq_align>& dst) const
     }
     ITERATE(TSegments, seg_it, m_Segs) {
         bool have_prots = false;
+        size_t str_idx = 0;
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             pseg.SetStarts().push_back(row->GetSegStart());
             pseg.SetPresent().push_back(row->m_Start != kInvalidSeqPos);
             if (m_HaveStrands) {
-                pseg.SetStrands().push_back(row->m_Strand);
+                pseg.SetStrands().push_back(
+                    row->GetSegStart() != kInvalidSeqPos ?
+                    row->m_Strand : strands[str_idx]);
             }
             have_prots |= row->m_Width == 3;
+            str_idx++;
         }
         int new_len = seg_it->m_Len;
         if ( m_MapWidths ) {
@@ -1296,6 +1335,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/11/29 20:44:04  grichenk
+* Set correct strand for gaps.
+*
 * Revision 1.21  2006/09/27 21:27:59  vasilche
 * Added accessors.
 *
