@@ -537,7 +537,7 @@ CBDB_FileCursor::FetchFirst(void**       buf,
 EBDB_ErrCode 
 CBDB_FileCursor::FetchFirst(vector<unsigned char>*  buf)
 {
-    _ASSERT(m_MutiRowBuf == 0);
+    _ASSERT(m_MultiRowBuf == 0);
     _ASSERT(buf);
 
     unsigned int flag;
@@ -723,7 +723,7 @@ EBDB_ErrCode
 CBDB_FileCursor::Fetch(vector<unsigned char>*  buf,
                        EFetchDirection         fdir)
 {
-    _ASSERT(m_MutiRowBuf == 0);
+    _ASSERT(m_MultiRowBuf == 0);
 
     if ( !m_FirstFetched )
         return FetchFirst(buf);
@@ -856,6 +856,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/11/29 11:52:45  kuznets
+ * Minor compilation fixes
+ *
  * Revision 1.27  2006/11/29 11:41:37  kuznets
  * Added BLOB fetch into resizable STL vector
  *
