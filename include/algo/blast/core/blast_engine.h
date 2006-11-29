@@ -174,7 +174,6 @@ Blast_RunPreliminarySearch(EBlastProgramType program,
    const PSIBlastOptions* psi_options, const BlastDatabaseOptions* db_options, 
    BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics);
 
-
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
      (EBlastProgramType, /**< @todo comment function pointer types */
@@ -187,8 +186,9 @@ typedef Int2 (*BlastGetGappedScoreType)
       const BlastHitSavingParameters*,
       BlastInitHitList*, 
       BlastHSPList**, 
-      BlastGappedStats*);
-     
+      BlastGappedStats*,
+      Boolean * fence_hit);
+
 /** Word finder function pointer type */
 typedef Int2 (*BlastWordFinderType) 
      (BLAST_SequenceBlk*, /**< @todo comment function pointer types */

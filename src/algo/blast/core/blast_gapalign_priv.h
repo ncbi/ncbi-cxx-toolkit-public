@@ -66,7 +66,8 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         Int4* b_offset, GapPrelimEditBlock *edit_block, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* scoringParams, Int4 query_offset,
-        Boolean reversed, Boolean reverse_sequence);
+        Boolean reversed, Boolean reverse_sequence,
+        Boolean * hit_fence);
 
 /** Low level function to perform gapped extension in one direction with 
  * or without traceback.
@@ -91,7 +92,8 @@ Blast_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                   Int4* a_offset, Int4* b_offset, Boolean score_only, 
                   GapPrelimEditBlock *edit_block, BlastGapAlignStruct* gap_align, 
                   const BlastScoringParameters* score_params, 
-                  Int4 query_offset, Boolean reversed, Boolean reverse_sequence);
+                  Int4 query_offset, Boolean reversed, Boolean reverse_sequence,
+                  Boolean * fence_hit);
 
 /** Convert the initial list of traceback actions from a non-OOF
  *  gapped alignment into a blast edit script. Note that this routine
@@ -158,6 +160,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2006/11/29 17:25:50  bealer
+ * - HSP range support.
+ *
  * Revision 1.18  2006/11/21 17:02:11  papadopo
  * rearrange headers
  *

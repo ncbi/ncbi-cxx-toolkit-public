@@ -297,7 +297,8 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                        Int4 match_cost, Int4 mismatch_cost,
                        Int4* seq1_align_len, Int4* seq2_align_len, 
                        SGreedyAlignMem* aux_data, 
-                       GapPrelimEditBlock *edit_block, Uint1 rem)
+                       GapPrelimEditBlock *edit_block, Uint1 rem,
+                       Boolean * fence_hit)
 {
     Int4 seq1_index;
     Int4 seq2_index;
@@ -367,12 +368,24 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     
     /* find the offset of the first mismatch between seq1 and seq2 */
 
+    /* Sentry detection here should be relatively inexpensive: The
+     * sentry value cannot appear in the query, so detection only
+     * needs to be done at exit from the subject-query matching loop.
+     */
+    
     index = 0;
     if (reverse) {
         if (rem == 4) {
             while (index < len1 && index < len2) {
-                if (seq1[len1-1 - index] != seq2[len2-1 - index])
+                if (seq1[len1-1 - index] != seq2[len2-1 - index]) {
+                    if (seq2[len2-1-index] == FENCE_SENTRY) {
+                        ASSERT(fence_hit);
+                        *fence_hit = TRUE;
+                    }
+                    
                     break;
+                }
+                
                 index++;
             }
         } 
@@ -389,8 +402,14 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     else {
         if (rem == 4) {
             while (index < len1 && index < len2) {
-                if (seq1[index] != seq2[index])
-                    break; 
+                if (seq1[index] != seq2[index]) {
+                    if (seq2[index] == FENCE_SENTRY) {
+                        ASSERT(fence_hit);
+                        *fence_hit = TRUE;
+                    }
+                    break;
+                }
+                
                 index++;
             }
         } 
@@ -537,8 +556,15 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                             ++seq1_index;
                             ++seq2_index;
                         }
-                    } 
-                    else {
+                        
+                        if (seq2_index < len2 &&
+                            seq2[len2-1-seq2_index] == FENCE_SENTRY) {
+                            
+                            ASSERT(fence_hit);
+                            *fence_hit = TRUE;
+                            break;
+                        }
+                    } else {
                         while (seq1_index < len1 && seq2_index < len2 && 
                             seq1[len1-1 - seq1_index] == 
                             NCBI2NA_UNPACK_BASE(seq2[(len2-1-seq2_index) / 4],
@@ -554,6 +580,14 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                                seq1[seq1_index] == seq2[seq2_index]) {
                             ++seq1_index;
                             ++seq2_index;
+                        }
+                        
+                        if (seq2_index < len2 &&
+                            seq2[seq2_index] == FENCE_SENTRY) {
+                            
+                            ASSERT(fence_hit);
+                            *fence_hit = TRUE;
+                            break;
                         }
                     } 
                     else {
@@ -672,7 +706,10 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     seq2_index = *seq2_align_len; 
 
     /* for all positive distances */
-
+    
+    if (fence_hit && *fence_hit)
+        goto done;
+    
     while (d > 0) {
         Int4 new_diag;
         Int4 new_seq2_index;
@@ -718,7 +755,8 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
         best_diag = new_diag; 
         seq2_index = new_seq2_index; 
     }
-
+    
+ done:
     /* handle the final group of substitutions back to distance zero,
        i.e. back to offset zero of seq1 and seq2 */
 
@@ -736,7 +774,8 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                               Int4 in_gap_open, Int4 in_gap_extend,
                               Int4* seq1_align_len, Int4* seq2_align_len, 
                               SGreedyAlignMem* aux_data, 
-                              GapPrelimEditBlock *edit_block, Uint1 rem)
+                              GapPrelimEditBlock *edit_block, Uint1 rem,
+                              Boolean * fence_hit)
 {
     Int4 seq1_index;
     Int4 seq2_index;
@@ -786,7 +825,8 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                                 xdrop_threshold, match_score, 
                                 mismatch_score, seq1_align_len, 
                                 seq2_align_len, aux_data, edit_block, 
-                                rem);
+                                rem,
+                                fence_hit);
     }
     
     /* ordinary dynamic programming alignment, for each offset
@@ -853,12 +893,18 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     if (reverse) {
         if (rem == 4) {
             while (index < len1 && index < len2) {
-                if (seq1[len1-1 - index] != seq2[len2-1 - index])
+                if (seq1[len1 - 1 - index] != seq2[len2 - 1 - index]) {
+                    if (seq2[len2 - 1 - index] == FENCE_SENTRY) {
+                        ASSERT(fence_hit);
+                        *fence_hit = TRUE;
+                    }
+                    
                     break;
+                }
+                
                 index++;
             }
-        } 
-        else {
+        } else {
             while (index < len1 && index < len2) {
                 if (seq1[len1-1 - index] != 
                           NCBI2NA_UNPACK_BASE(seq2[(len2-1 - index) / 4], 
@@ -871,8 +917,13 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     else {
         if (rem == 4) {
             while (index < len1 && index < len2) {
-                if (seq1[index] != seq2[index])
-                    break; 
+                if (seq1[index] != seq2[index]) {
+                    if (seq2[index] == FENCE_SENTRY) {
+                        ASSERT(fence_hit);
+                        *fence_hit = TRUE;
+                    }
+                    break;
+                }
                 index++;
             }
         } 
@@ -1093,6 +1144,12 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                             ++seq1_index;
                             ++seq2_index;
                         }
+                        if (seq2_index < len2 &&
+                            seq2[len2-1-seq2_index] == FENCE_SENTRY) {
+                            
+                            ASSERT(fence_hit);
+                            *fence_hit = TRUE;
+                        }
                     } 
                     else {
                         while (seq1_index < len1 && seq2_index < len2 && 
@@ -1110,6 +1167,12 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                                seq1[seq1_index] == seq2[seq2_index]) {
                             ++seq1_index;
                             ++seq2_index;
+                        }
+                        if (seq2_index < len2 &&
+                            seq2[seq2_index] == FENCE_SENTRY) {
+                            
+                            ASSERT(fence_hit);
+                            *fence_hit = TRUE;
                         }
                     } 
                     else {
@@ -1291,3 +1354,4 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
 
     return max_score[best_dist];
 }
+

@@ -752,7 +752,8 @@ s_SWFindFinalEndsUsingXdrop(BlastCompo_SequenceData * query,
                      queryEnd - queryStart + 1, matchEnd - matchStart + 1,
                      queryAlignmentExtent,
                      matchAlignmentExtent, gap_align->fwd_prelim_tback,
-                     gap_align, scoringParams, queryStart - 1, FALSE, FALSE);
+                     gap_align, scoringParams, queryStart - 1, FALSE, FALSE,
+                     NULL);
 
         gap_align->gap_x_dropoff *= 2;
         doublingCount++;
@@ -1311,7 +1312,8 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
                                            context->scoringParams,
                                            q_start, s_start,
                                            query_data->length,
-                                           subject_data->length);
+                                           subject_data->length,
+                                           NULL);
     if (status == 0) {
         return s_NewAlignmentFromGapAlign(gapAlign, &gapAlign->edit_script,
                                           query_range, subject_range,

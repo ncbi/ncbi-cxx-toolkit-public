@@ -35,7 +35,7 @@
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_seqsrc_impl.h>
-#include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/readers/seqdb/seqdbexpert.hpp>
 #include "blast_setup.hpp"
 
 USING_NCBI_SCOPE;
@@ -137,7 +137,7 @@ s_SeqDbGetIsProt(void* seqdb_handle, void*)
 static Int2 
 s_SeqDbGetSequence(void* seqdb_handle, void* args)
 {
-    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    CRef<CSeqDBExpert>* seqdb = (CRef<CSeqDBExpert>*) seqdb_handle;
     BlastSeqSrcGetSeqArg* seqdb_args = (BlastSeqSrcGetSeqArg*) args;
     Int4 oid = -1, len = 0;
     Boolean has_sentinel_byte;
@@ -156,7 +156,18 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
     /* free buffers if necessary */
     if (seqdb_args->seq)
         BlastSequenceBlkClean(seqdb_args->seq);
-
+    
+    /* If nucleotide and ranges are disabled, remove any range list
+       stored in the SeqDB object.  Protein databases ignore ranges in
+       any case. */
+    
+    if (! seqdb_args->enable_ranges) {
+        if ((*seqdb)->GetSequenceType() == CSeqDB::eNucleotide) {
+            CSeqDBExpert::TRangeList none;
+            (*seqdb)->SetOffsetRanges(oid, none, false, false);
+        }
+    }
+    
     const char *buf;
     if (!buffer_allocated) {
         len = (*seqdb)->GetSequence(oid, &buf);
@@ -515,6 +526,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2006/11/29 17:25:50  bealer
+ * - HSP range support.
+ *
  * Revision 1.40  2006/06/14 15:58:54  camacho
  * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
  *

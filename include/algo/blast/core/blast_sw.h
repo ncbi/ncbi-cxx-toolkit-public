@@ -103,6 +103,7 @@ void SmithWatermanScoreWithTraceback(EBlastProgramType program_number,
  *               contains a gapped alignment that exceeds a cutoff
  *               score. [out]
  * @param gapped_stats Return statistics (not filled if NULL) [out]
+ * @param fence_hit Partial range support (not used for S/W). [in]
  */
 Int2 BLAST_SmithWatermanGetGappedScore (EBlastProgramType program_number, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -112,7 +113,8 @@ Int2 BLAST_SmithWatermanGetGappedScore (EBlastProgramType program_number,
         const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
         BlastInitHitList* init_hitlist,
-        BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
+        BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats,
+        Boolean * fence_hit);
 
 #ifdef __cplusplus
 }

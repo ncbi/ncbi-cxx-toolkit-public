@@ -335,7 +335,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp, 
    const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,
-   const BlastHitSavingParameters* hit_params, const Uint1* gen_code_string)
+   const BlastHitSavingParameters* hit_params, const Uint1* gen_code_string,
+   Boolean * fence_hit)
 {
    Int4 index;
    BlastHSP* hsp;
@@ -361,13 +362,19 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    Int4 offsets[2];
    Int4 num_initial_hsps = hsp_list->hspcnt;
    BlastIntervalTree* tree = NULL;
+   BlastHSPList * orig_hsplist = NULL;
+   Boolean fence_error = FALSE;
    
    if (num_initial_hsps == 0) {
       return 0;
    }
-
+   
+   if (fence_hit) {
+       orig_hsplist = BlastHSPListDup(hsp_list);
+   }
+   
    hsp_array = hsp_list->hsp_array;
-
+   
    /* for Smith-Waterman, the results do not overwrite 
       the input list of HSPs one by one; instead, hsp_list
       is rebuilt from scratch */
@@ -378,9 +385,13 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    }
 
    if (kTranslateSubject) {
-      if (!gen_code_string && program_number != eBlastTypeRpsTblastn)
-         return -1;
-
+      if (! gen_code_string && program_number != eBlastTypeRpsTblastn) {
+          if (orig_hsplist) {
+              Blast_HSPListFree(orig_hsplist);
+          }
+          return -1;
+      }
+      
       if (kIsOutOfFrame) {
          Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
                                        NULL, NULL, &partial_translation);
@@ -426,7 +437,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    tree = Blast_IntervalTreeInit(0, query_blk->length + 1,
                                  0, (subject_length > 0 ? subject_length :
                                  subject_blk->length / CODON_LENGTH) + 1);
-
+   
    for (index=0; index < num_initial_hsps; index++) {
       hsp = hsp_array[index];
       if (program_number == eBlastTypeBlastx && kIsOutOfFrame) {
@@ -552,13 +563,21 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          } else if (kGreedyTraceback) {
              BLAST_GreedyGappedAlignment(query, adjusted_subject, 
                  query_length, adjusted_s_length, gap_align, 
-                 score_params, q_start, s_start, FALSE, TRUE);
+                 score_params, q_start, s_start, FALSE, TRUE,
+                 fence_hit);
          } else {
              BLAST_GappedAlignmentWithTraceback(program_number, query, 
                  adjusted_subject, gap_align, score_params, q_start, s_start, 
-                 query_length, adjusted_s_length);
+                 query_length, adjusted_s_length,
+                 fence_hit);
          }
-
+         
+         fence_error = (fence_hit && *fence_hit);
+         
+         if (fence_error) {
+             break;
+         }
+         
          if (gap_align->score >= cutoff) {
             Boolean delete_hsp = FALSE;
             Blast_HSPUpdateWithTraceback(gap_align, hsp);
@@ -612,40 +631,58 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
        sfree(frame_offsets_a);
    }
    
-   /* Remove any HSPs that share a starting or ending diagonal
-      with a higher-scoring HSP. */
-   Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);
+   if (! fence_error) {
+       /* Remove any HSPs that share a starting or ending diagonal
+          with a higher-scoring HSP. */
+       Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);
 
-   /* Sort HSPs by score again, as the scores might have changed. */
-   Blast_HSPListSortByScore(hsp_list);
+       /* Sort HSPs by score again, as the scores might have changed. */
+       Blast_HSPListSortByScore(hsp_list);
 
-   /* Remove any HSPs that are contained within other HSPs.
-      Since the list is sorted by score already, any HSP
-      contained by a previous HSP is guaranteed to have a
-      lower score, and may be purged. */
-   Blast_IntervalTreeReset(tree);
-   for (index = 0; index < hsp_list->hspcnt; index++) {
-       hsp = hsp_array[index];
+       /* Remove any HSPs that are contained within other HSPs.
+          Since the list is sorted by score already, any HSP
+          contained by a previous HSP is guaranteed to have a
+          lower score, and may be purged. */
+       Blast_IntervalTreeReset(tree);
+       for (index = 0; index < hsp_list->hspcnt; index++) {
+           hsp = hsp_array[index];
        
-       if (BlastIntervalTreeContainsHSP(tree, hsp, query_info, 0)) {
-           hsp_array[index] = Blast_HSPFree(hsp);
-       }
-       else {
-           BlastIntervalTreeAddHSP(hsp, tree, query_info, 
-                                   eQueryAndSubject);
+           if (BlastIntervalTreeContainsHSP(tree, hsp, query_info, 0)) {
+               hsp_array[index] = Blast_HSPFree(hsp);
+           }
+           else {
+               BlastIntervalTreeAddHSP(hsp, tree, query_info, 
+                                       eQueryAndSubject);
+           }
        }
    }
+   
    tree = Blast_IntervalTreeFree(tree);
-
-   Blast_HSPListPurgeNullHSPs(hsp_list);
-
+   
    /* Free the local query_info structure, if necessary (RPS tblastn only) */
    if (query_info != query_info_in)
       sfree(query_info);
    
-   s_HSPListPostTracebackUpdate(program_number, hsp_list, query_info_in, 
-                                score_params, hit_params, sbp, 
-                                subject_blk->length);
+   if (fence_error) {
+       /* Roll back this function by restoring the input HSP list. */
+       
+       Blast_HSPListSwap(hsp_list, orig_hsplist);
+       Blast_HSPListFree(orig_hsplist);
+       
+       if (gap_align->edit_script) {
+           gap_align->edit_script =
+               GapEditScriptDelete(gap_align->edit_script);
+       }
+   } else {
+       Blast_HSPListPurgeNullHSPs(hsp_list);
+       
+       if (orig_hsplist) {
+           Blast_HSPListFree(orig_hsplist);
+       }
+       s_HSPListPostTracebackUpdate(program_number, hsp_list, query_info_in, 
+                                    score_params, hit_params, sbp, 
+                                    subject_blk->length);
+   }
    
    return 0;
 }
@@ -1026,7 +1063,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
       
       Blast_TracebackFromHSPList(program_number, hsp_list, seq_arg.seq, 
          one_query, one_query_info, gap_align, sbp, score_params, 
-         ext_params->options, hit_params, NULL);
+         ext_params->options, hit_params, NULL, NULL);
 
       BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
 
@@ -1179,11 +1216,43 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                           score_params, hit_params, 
                                           query_info, pattern_blk);
             } else {
-                Blast_TracebackFromHSPList(program_number, hsp_list, query, 
+                Boolean fence_hit = FALSE;
+                Boolean * fence_hit_ptr = NULL;
+                
+                if (! (hit_params->restricted_align ||
+                       score_params->options->is_ooframe ||
+                       ext_params->options->eTbackExt == eSmithWatermanTbck)) {
+                    
+                    seq_arg.enable_ranges = TRUE;
+                    fence_hit_ptr = & fence_hit;
+                }
+                
+                Blast_TracebackFromHSPList(program_number, hsp_list, query,
                                            seq_arg.seq, query_info, gap_align,
-                                           sbp, score_params, 
+                                           sbp, score_params,
                                            ext_params->options, hit_params, 
-                                           gen_code_string);
+                                           gen_code_string,
+                                           fence_hit_ptr);
+                
+                if (fence_hit) {
+                    /* Disable range support. */
+                    
+                    seq_arg.enable_ranges = FALSE;
+                    
+                    /* Refetch the (whole) sequence. */
+                    
+                    BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);
+                    BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
+                    
+                    /* Retry the alignment */
+                    
+                    Blast_TracebackFromHSPList(program_number, hsp_list, query, 
+                                               seq_arg.seq, query_info, gap_align,
+                                               sbp, score_params, 
+                                               ext_params->options, hit_params, 
+                                               gen_code_string,
+                                               NULL);
+                }
             }
             
             BlastSeqSrcReleaseSequence(seq_src, (void*)&seq_arg);

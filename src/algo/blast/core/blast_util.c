@@ -264,7 +264,21 @@ s_CodonToAA (Uint1* codon, const Uint1* codes)
                                2,     /* C */
                                1,     /* A */
                                4 };   /* G */
-
+   
+   // Arithmetic should be faster than conditionals (i.e. with &&s.)
+   // The OR cannot result in anything larger than 15 unless it is a
+   // FENCE_SENTRY byte or an error, but I poll the individual bytes
+   // just in case.
+   
+   if ((codon[0] | codon[1] | codon[2]) > 15) {
+       if ((codon[0] == FENCE_SENTRY) ||
+           (codon[1] == FENCE_SENTRY) ||
+           (codon[2] == FENCE_SENTRY)) {
+           
+           return FENCE_SENTRY;
+       }
+   }
+   
    for (i = 0; i < 4; i++) {
       if (codon[0] & mapping[i]) {
          index0 = i * 16;
@@ -318,7 +332,7 @@ BLAST_GetTranslation(const Uint1* query_seq, const Uint1* query_seq_rev,
 		codon[1] = nucl_seq[index+1];
 		codon[2] = nucl_seq[index+2];
 		residue = s_CodonToAA(codon, genetic_code);
-		if (IS_residue(residue))
+		if (IS_residue(residue) || residue == FENCE_SENTRY)
 		{
 			prot_seq[index_prot] = residue;
 			index_prot++;

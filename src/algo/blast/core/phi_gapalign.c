@@ -704,8 +704,8 @@ s_PHIGappedAlignment(BLAST_SequenceBlk* query_blk,
       score_left = 
          Blast_SemiGappedAlign(query, subject, q_length, s_length,
             &private_q_start, &private_s_start, TRUE, NULL, gap_align, 
-            score_params, query_offset, FALSE, TRUE);
-        
+            score_params, query_offset, FALSE, TRUE, NULL);
+      
       gap_align->query_start = q_length - private_q_start + 1;
       gap_align->subject_start = s_length - private_s_start + 1;
       
@@ -722,7 +722,7 @@ s_PHIGappedAlignment(BLAST_SequenceBlk* query_blk,
          subject+s_length, query_blk->length-q_length-1, 
          subject_blk->length-s_length-1, &(gap_align->query_stop), 
          &(gap_align->subject_stop), TRUE, NULL, gap_align, 
-         score_params, q_length, FALSE, FALSE);
+         score_params, q_length, FALSE, FALSE, NULL);
       gap_align->query_stop += q_length;
       gap_align->subject_stop += s_length;
    }
@@ -750,7 +750,8 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
         const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
         BlastInitHitList* init_hitlist,
-        BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats)
+        BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats,
+        Boolean * fence_hit)
 
 {
    BlastHSPList* hsp_list;
@@ -761,7 +762,10 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
    Int4 pattern_index;
    Int4 num_patterns;
    Int4 HspNumMax=0;
-
+   
+   /* PHI does not support partial fetching at the moment. */
+   ASSERT(! fence_hit);
+   
    if (!query || !subject || !gap_align || !score_params ||
        !hit_params || !init_hitlist || !hsp_list_ptr)
       return -1;
@@ -863,7 +867,7 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
     score_left = 
        Blast_SemiGappedAlign(query, subject, q_start, s_start, 
            &private_q_length, &private_s_length, FALSE, rev_prelim_tback,
-          gap_align, score_params, q_start, FALSE, TRUE);
+          gap_align, score_params, q_start, FALSE, TRUE, NULL);
     gap_align->query_start = q_start - private_q_length;
     gap_align->subject_start = s_start - private_s_length;
 
@@ -888,7 +892,7 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
           Blast_SemiGappedAlign(query+q_start, subject+s_start, 
              query_length-q_start-1, subject_length-s_start-1, 
              &private_q_length, &private_s_length, FALSE, fwd_prelim_tback,
-             gap_align, score_params, q_start, FALSE, FALSE);
+             gap_align, score_params, q_start, FALSE, FALSE, NULL);
 
        gap_align->query_stop = q_start + private_q_length + 1;
        gap_align->subject_stop = s_start + private_s_length + 1; 

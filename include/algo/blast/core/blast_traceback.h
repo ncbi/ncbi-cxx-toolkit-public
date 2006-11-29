@@ -68,6 +68,7 @@ extern "C" {
  * @param ext_options Gapped extension options [in]
  * @param hit_params Hit saving parameters [in]
  * @param gen_code_string specifies genetic code [in]
+ * @param fence_hit True is returned here if overrun is detected. [in]
  */
 NCBI_XBLAST_EXPORT
 Int2
@@ -78,7 +79,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingParameters* hit_params,
-   const Uint1* gen_code_string);
+   const Uint1* gen_code_string,
+   Boolean * fence_hit);
 
 /** Get the subject sequence encoding type for the traceback,
  * given a program number.

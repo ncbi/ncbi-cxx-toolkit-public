@@ -121,6 +121,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
  *        information from the ungapped alignment performed earlier) [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
  * @param gapped_stats Return statistics (not filled if NULL) [out]
+ * @param fence_hit True is returned here if overrun is detected. [in]
  */
 Int2 BLAST_GetGappedScore (EBlastProgramType program_number, 
             BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -130,7 +131,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
               const BlastExtensionParameters* ext_params,
               const BlastHitSavingParameters* hit_params,
               BlastInitHitList* init_hitlist,
-              BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
+              BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats,
+              Boolean * fence_hit);
 
 /** Perform a gapped alignment with traceback
  * @param program Type of BLAST program [in]
@@ -142,12 +144,14 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
  * @param s_start Offset in subject where to start alignment [in]
  * @param query_length Maximal allowed extension in query [in]
  * @param subject_length Maximal allowed extension in subject [in]
+ * @param fence_hit True is returned here if overrun is detected. [in]
  */
 Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, 
         Uint1* query, Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params,
-        Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
+        Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length,
+        Boolean * fence_hit);
 
 /** Greedy gapped alignment, with or without traceback.
  * Given two sequences, relevant options and an offset pair, fills the
@@ -164,12 +168,14 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
  * @param s_off Starting offset in subject [in]
  * @param compressed_subject Is subject sequence compressed? [in]
  * @param do_traceback Should traceback be saved? [in]
+ * @param fence_hit True is returned here if overrun is detected. [in]
  */
 Int2 
 BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject, 
    Int4 query_length, Int4 subject_length, BlastGapAlignStruct* gap_align,
    const BlastScoringParameters* score_params, 
-   Int4 q_off, Int4 s_off, Boolean compressed_subject, Boolean do_traceback);
+   Int4 q_off, Int4 s_off, Boolean compressed_subject, Boolean do_traceback,
+   Boolean * fence_hit);
 
 /** Convert initial HSP list to an HSP list: to be used in ungapped search.
  * Ungapped data must be available in the initial HSP list for this function 

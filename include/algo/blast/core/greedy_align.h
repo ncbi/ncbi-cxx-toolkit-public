@@ -110,6 +110,7 @@ typedef struct SGreedyAlignMem {
  *          Traceback is not saved if NULL is passed. [in] [out]
  * @param rem Offset within a byte of the compressed second sequence. 
  *          Set to 4 if sequence is uncompressed. [in]
+ * @param fence_hit True is returned here if overrun is detected. [in]
  * @return The minimum distance between the two sequences, i.e.
  *          the number of mismatches plus gaps in the resulting alignment
  */
@@ -120,7 +121,8 @@ BLAST_GreedyAlign (const Uint1* seq1, Int4 len1,
                    Int4 match_cost, Int4 mismatch_cost,
                    Int4* seq1_align_len, Int4* seq2_align_len, 
                    SGreedyAlignMem* aux_data, 
-                   GapPrelimEditBlock *edit_block, Uint1 rem);
+                   GapPrelimEditBlock *edit_block, Uint1 rem,
+                   Boolean * fence_hit);
 
 /** Perform the greedy extension algorithm with affine gap penalties.
  * @param seq1 First sequence (always uncompressed) [in]
@@ -140,6 +142,7 @@ BLAST_GreedyAlign (const Uint1* seq1, Int4 len1,
  *          Traceback is not saved if NULL is passed. [in] [out]
  * @param rem Offset within a byte of the compressed second sequence.
  *          Set to 4 if sequence is uncompressed. [in]
+ * @param fence_hit True is returned here if overrun is detected. [in]
  * @return The score of the alignment
  */
 Int4 
@@ -150,7 +153,8 @@ BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                          Int4 in_gap_open, Int4 in_gap_extend,
                          Int4* seq1_align_len, Int4* seq2_align_len, 
                          SGreedyAlignMem* aux_data, 
-                         GapPrelimEditBlock *edit_block, Uint1 rem);
+                         GapPrelimEditBlock *edit_block, Uint1 rem,
+                         Boolean * fence_hit);
 
 #ifdef __cplusplus
 }

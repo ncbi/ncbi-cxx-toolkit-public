@@ -319,9 +319,10 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
              * frames). Contexts should also be filled in HSPs when they 
              * are saved.
             */
+            /* fence_hit is null, since this is only for prelim stage. */
             aux_struct->GetGappedScore(program_number, query, query_info, 
                subject, gap_align, score_params, ext_params, hit_params, 
-               init_hitlist, &hsp_list, gapped_stats);
+               init_hitlist, &hsp_list, gapped_stats, NULL);
 
             /* Removes redundant HSPs. */
              Blast_HSPListPurgeHSPsWithCommonEndpoints(program_number, hsp_list);
