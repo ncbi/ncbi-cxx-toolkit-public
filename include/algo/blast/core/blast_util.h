@@ -322,6 +322,14 @@ BLAST_StrToUpper(const char* string);
  */
 #define MAX_FULL_TRANSLATION 2100
 
+/** This sentry value is used as a 'fence' around the valid portions
+ * of partially decoded sequences.  If an alignment finds this value
+ * in a subject sequence, the fence_hit flag should be used to request
+ * a refetch of the whole sequence, and the alignment restarted.
+ */
+#define FENCE_SENTRY 201
+
+
 /** Translate the subject sequence into 6 frames, and create a mixed-frame 
  * sequence, if out-of-frame gapping will be used.
  * @param subject_blk Subject sequence structure [in]

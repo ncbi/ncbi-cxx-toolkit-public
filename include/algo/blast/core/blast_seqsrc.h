@@ -176,9 +176,15 @@ BlastSeqSrcGetIsProt(const BlastSeqSrc* seq_src);
 typedef struct BlastSeqSrcGetSeqArg {
     /** Oid in BLAST database, index in an array of sequences, etc [in] */
     Int4 oid;
+
     /** Encoding of sequence, i.e.: eBlastEncodingProtein,
      * eBlastEncodingNucleotide, etc [in] */
     EBlastEncoding encoding;
+
+    /** Specify true here to disable this OID's ranges before fetching.
+     * TRUE to disable ranges, FALSE to use them if they exist [in] */
+    Boolean enable_ranges;
+
     /** Sequence to return, if NULL, it should allocated by GetSeqBlkFnPtr, else
      * its contents are freed and the structure is reused [out]*/
     BLAST_SequenceBlk* seq;

@@ -398,6 +398,12 @@ NCBI_XBLAST_EXPORT
 Boolean
 Blast_HSPList_IsEmpty(const BlastHSPList* hsp_list);
 
+/** Returns a duplicate (deep copy) of the given hsp list. */
+BlastHSPList* BlastHSPListDup(const BlastHSPList* hsp_list);
+
+/** Swaps the two HSP lists via structure assignment */
+void Blast_HSPListSwap(BlastHSPList* list1, BlastHSPList* list2);
+
 /** Saves HSP information into a BlastHSPList structure
  * @param hsp_list Structure holding all HSPs with full gapped alignment 
  *        information [in] [out]

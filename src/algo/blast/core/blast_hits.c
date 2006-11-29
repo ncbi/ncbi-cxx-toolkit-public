@@ -1404,6 +1404,46 @@ Blast_HSPList_IsEmpty(const BlastHSPList* hsp_list)
     return (hsp_list && hsp_list->hspcnt == 0) ? TRUE : FALSE;
 }
 
+BlastHSPList* BlastHSPListDup(const BlastHSPList* hsp_list) 
+{
+    BlastHSPList * rv = 0;
+    
+    if (hsp_list) {
+        int index = 0;
+        int num = hsp_list->hspcnt;
+        
+        rv = malloc(sizeof(BlastHSPList));
+        *rv = *hsp_list;
+        
+        if (num) {
+            rv->hsp_array = malloc(sizeof(BlastHSP*) * num);
+            
+            for(index = 0; index < hsp_list->hspcnt; ++index) {
+                BlastHSP * h = hsp_list->hsp_array[index];
+                BlastHSP ** h2 = & rv->hsp_array[index];
+                
+                if (h) {
+                    *h2 = malloc(sizeof(BlastHSP));
+                    **h2 = *h;
+                } else {
+                    *h2 = 0;
+                }
+            }
+        }
+    }
+    
+    return rv;
+}
+
+void Blast_HSPListSwap(BlastHSPList* list1, BlastHSPList* list2)
+{
+    BlastHSPList tmp;
+    
+    tmp = *list1;
+    *list1 = *list2;
+    *list2 = tmp;
+}
+
 /** This is a copy of a static function from ncbimisc.c.
  * Turns array into a heap with respect to a given comparison function.
  */
