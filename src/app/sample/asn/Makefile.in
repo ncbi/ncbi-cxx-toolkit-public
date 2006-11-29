@@ -7,5 +7,7 @@
 ASN_PROJ = sample_asn
 APP_PROJ = asn_sample
 
+REQUIRES = objects
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
