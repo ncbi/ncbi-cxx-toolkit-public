@@ -542,11 +542,12 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         last_b_index = first_b_index;
 
         for (b_index = first_b_index; b_index < b_size; b_index++) {
+            int matrix_index = 0;
 
             b_ptr += b_increment;
             score_gap_col = score_array[b_index].best_gap;
             
-            int matrix_index = *b_ptr;
+            matrix_index = *b_ptr;
             
             if (matrix_index == FENCE_SENTRY) {
                 ASSERT(fence_hit);
