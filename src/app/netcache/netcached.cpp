@@ -54,7 +54,7 @@
 #include "netcached.hpp"
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=2.1.0  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.2.0  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -2072,6 +2072,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2006/11/29 17:25:16  joukovv
+ * New option and behavior use_hostname introduced, version bumped.
+ *
  * Revision 1.89  2006/11/27 16:24:16  joukovv
  * New option, use_hostname introduced and default for NC key changed - with
  * new option on, it inserts server name into the key, by default it uses IP

@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.2.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.3.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -381,6 +381,7 @@ class CNetScheduleServer : public CServer
 {
 public:
     CNetScheduleServer(unsigned        port,
+                       bool            use_hostname,
                        CQueueDataBase* qdb,
                        unsigned        network_timeout,
                        bool            is_log); 
@@ -2030,6 +2031,7 @@ void CNetScheduleHandler::x_MakeGetAnswer(const char*   key_buf,
 //////////////////////////////////////////////////////////////////////////
 // CNetScheduleServer implementation
 CNetScheduleServer::CNetScheduleServer(unsigned int    port,
+                                       bool            use_hostname,
                                        CQueueDataBase* qdb,
                                        unsigned        network_timeout,
                                        bool            is_log)
@@ -2041,8 +2043,19 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
     m_AccessLog("ns_access.log", 100 * 1024 * 1024)
 {
     m_QueueDB = qdb;
-    m_Host = CSocketAPI::gethostname();
+
     m_HostNetAddr = CSocketAPI::gethostbyname(kEmptyStr);
+    if (use_hostname) {
+        m_Host = CSocketAPI::gethostname();
+    } else {
+        unsigned int hostaddr = SOCK_HostToNetLong(m_HostNetAddr);
+        char ipaddr[32];
+        sprintf(ipaddr, "%u.%u.%u.%u", (hostaddr >> 24) & 0xff,
+                                       (hostaddr >> 16) & 0xff,
+                                       (hostaddr >> 8)  & 0xff,
+                                        hostaddr        & 0xff);
+        m_Host = ipaddr;
+    }
 
     s_netschedule_server = this;
 
@@ -2268,6 +2281,9 @@ int CNetScheduleDApp::Run(void)
         bool is_log =
             reg.GetBool("server", "log", false, 0, CNcbiRegistry::eReturn);
 
+        bool use_hostname =
+            reg.GetBool("server", "use_hostname", false, 0, CNcbiRegistry::eReturn);
+
         params.max_threads     = max_threads;
         params.max_connections = max_connections;
         params.queue_size      = max_connections;
@@ -2276,7 +2292,8 @@ int CNetScheduleDApp::Run(void)
         params.accept_timeout  = &m_ServerAcceptTimeout;
 
         auto_ptr<CNetScheduleServer> server(
-            new CNetScheduleServer(port, 
+            new CNetScheduleServer(port,
+                                   use_hostname,
                                    qdb.release(),
                                    network_timeout,
                                    is_log));
@@ -2332,6 +2349,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2006/11/29 17:25:16  joukovv
+ * New option and behavior use_hostname introduced, version bumped.
+ *
  * Revision 1.106  2006/11/27 16:46:21  joukovv
  * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
  * un-nested CQueue from CQueueDataBase; instrumented code to count job
