@@ -594,7 +594,11 @@ void CObject::ThrowNullPointerException(void)
     if ( sx_abort_on_null.Get() ) {
         Abort();
     }
-    NCBI_THROW(CCoreException, eNullPtr, "Attempt to access NULL pointer.");
+    NCBI_EXCEPTION_VAR(ex,
+        CCoreException, eNullPtr, "Attempt to access NULL pointer.");
+    ex.SetSeverity(eDiag_Critical);
+    NCBI_EXCEPTION_THROW(ex);
+    // NCBI_THROW(CCoreException, eNullPtr, "Attempt to access NULL pointer.");
 }
 
 
@@ -918,6 +922,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/11/29 15:19:07  grichenk
+ * Throw null pointer exception with critical severity.
+ *
  * Revision 1.57  2006/11/29 13:56:29  gouriano
  * Moved GetErrorCodeString method into cpp
  *
