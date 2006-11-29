@@ -159,7 +159,7 @@ public:
         }
 
         /// Get current result set position
-        const TResultStore::TResultSetPosition& GetPosition() const
+        const typename TResultStore::TResultSetPosition& GetPosition() const
         {
             return m_RS_Pos;
         }
@@ -240,7 +240,7 @@ public:
         }
 
         /// Set new enumerator position 
-        void SetPosition(const TResultStore::TResultSetPosition& pos)
+        void SetPosition(const typename TResultStore::TResultSetPosition& pos)
         {
             m_RS_Pos = pos;
             CreateCursor();
@@ -317,13 +317,13 @@ public:
 
     friend class TResultStore;
     private:
-        TResultStore&                     m_ResultStore;
-        TResultStore::TResultSetPosition  m_RS_Pos;
-        CBDB_FileCursor*                  m_Cursor;
-        bool                              m_SubsetChanged;
-        EBDB_ErrCode                      m_LastFetchRes;
-        TResultStore::TSubset             m_CurrentSubset;
-        unsigned                          m_CurrentId;
+        TResultStore&                              m_ResultStore;
+        typename TResultStore::TResultSetPosition  m_RS_Pos;
+        CBDB_FileCursor*                           m_Cursor;
+        bool                                       m_SubsetChanged;
+        EBDB_ErrCode                               m_LastFetchRes;
+        typename TResultStore::TSubset             m_CurrentSubset;
+        unsigned                                   m_CurrentId;
     };
 
 private:
@@ -400,6 +400,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/29 12:41:39  kuznets
+ * Compilation fixes (MSVC)
+ *
  * Revision 1.1  2006/11/29 11:42:32  kuznets
  * initial revision
  *

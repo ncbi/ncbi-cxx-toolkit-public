@@ -42,16 +42,14 @@ CBDB_ResultStoreBase::CBDB_ResultStoreBase()
     BindKey("format",    &format);
 }
 
-void CBDB_ResultStoreBase::ProcessNewFetch(TResultSetPosition* pos)
-{
-
-}
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/29 12:41:09  kuznets
+ * Compilation fixes (MSVC)
+ *
  * Revision 1.1  2006/11/29 11:42:08  kuznets
  * initial revision
  *
