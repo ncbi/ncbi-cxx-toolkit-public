@@ -7,5 +7,4 @@
 SRC = sample_asn__ sample_asn___
 LIB = sample_asn
 
-REQUIRES = objects
-ASN_DEP  = general
+ASN_DEP = general
