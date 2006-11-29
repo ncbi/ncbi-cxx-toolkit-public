@@ -59,11 +59,16 @@ int main(int argc, const char* argv[])
             CORE_LOG(eLOG_Note, "Using slow heap access (w/checks)");
         }
         if (strcasecmp(argv[2],"lbsm") == 0 || strcasecmp(argv[2],"all") == 0){
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_MSWIN
+            if (strcasecmp(argv[2],"lbsm") == 0) {
+                CORE_LOG(eLOG_Warning,
+                         "Option \"lbsm\" has no useful effect on MS-Windows");
+            }
+#else
             extern ESwitch LBSMD_FastHeapAccess(ESwitch);
             LBSMD_FastHeapAccess(eOn);
-#endif /*NCBI_OS_MSWIN*/
             CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
+#endif /*NCBI_OS_MSWIN*/
         }
         if (strcasecmp(argv[2],"lbsm") != 0  &&
             strcasecmp(argv[2],"heap") != 0  &&
@@ -158,6 +163,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2006/11/29 17:06:37  lavr
+ * MS-Win's version of test to warn about using non-effective "lbsm" option
+ *
  * Revision 6.29  2006/11/22 18:08:23  lavr
  * Do not use LBSMD_FastHeapAccess() on Windows (DLL mode requires a modifier)
  *
