@@ -167,14 +167,19 @@ public:
 
     int CompareNocase(const CTempXStr<_TChar>& pattern) const
     {
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
+#  define CT_TOLOWER(x) tolower((unsigned)(x))
+#else
         const ctype<_TChar>& ct =
 
 #if defined(NCBI_COMPILER_WORKSHOP)
 //#if !defined(_RWSTD_NOTEMPLATE_ON_RETURN_TYPE)
-// Old style; on newer compilers is now deprecated
+// Old style; on newer compilers this is deprecated
             use_facet( locale(), (ctype<_TChar>*)0);
 #else
             use_facet< ctype<_TChar> >(locale());
+#endif
+#  define CT_TOLOWER(x) ct.tolower(x)
 #endif
 
         size_t n = length();
@@ -184,14 +189,15 @@ public:
         const _TChar *s = data();
         const _TChar *p = pattern.data();
         size_t c = 0;
-        for ( ; n-- && (ct.tolower( *s ) == ct.tolower( *p )); ++s,++p,++c )
+        for ( ; n-- && (CT_TOLOWER( *s ) == CT_TOLOWER( *p )); ++s,++p,++c )
             ;
-        _TChar se = ct.tolower( operator[](c) );
-        _TChar pe = ct.tolower( pattern[c] );
+        _TChar se = CT_TOLOWER( operator[](c) );
+        _TChar pe = CT_TOLOWER( pattern[c] );
         if ( se == pe) {
             return 0;
         }
         return se < pe ? -1 : 1;
+#undef CT_TOLOWER
     }
 
 private:
@@ -201,7 +207,11 @@ private:
     }
     size_t x_length(void) const
     {
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
+        return (m_Length = string_char_traits<_TChar>::length(m_Data));
+#else
         return (m_Length = char_traits<_TChar>::length(m_Data));
+#endif
     }
     const _TChar* m_Data;
     mutable size_t  m_Length;
@@ -227,26 +237,42 @@ public:
     static
     int CompareCase(const basic_string<_TChar>& str, SIZE_TYPE pos, SIZE_TYPE n, const _TChar* pattern)
     {
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
+        return CTempXStr<_TChar>(str,pos,n).CompareCase(CTempXStr<_TChar>(pattern));
+#else
         return str.compare(pos,n,pattern);
+#endif
     }
     template< typename _TChar >
     static
     int CompareCase(const _TChar* str, SIZE_TYPE pos, SIZE_TYPE n, const _TChar* pattern)
     {
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
+        return CTempXStr<_TChar>(str,pos,n).CompareCase(CTempXStr<_TChar>(pattern));
+#else
         return basic_string<_TChar>(str).compare(pos,n,pattern);
+#endif
     }
 
     template< typename _TChar >
     static
     int CompareCase(const basic_string<_TChar>& str, SIZE_TYPE pos, SIZE_TYPE n, const basic_string<_TChar>& pattern)
     {
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
+        return CTempXStr<_TChar>(str,pos,n).CompareCase(CTempXStr<_TChar>(pattern));
+#else
         return str.compare(pos,n,pattern);
+#endif
     }
     template< typename _TChar >
     static
     int CompareCase(const _TChar* str, SIZE_TYPE pos, SIZE_TYPE n, const basic_string<_TChar>& pattern)
     {
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION <= 295)
+        return CTempXStr<_TChar>(str,pos,n).CompareCase(CTempXStr<_TChar>(pattern));
+#else
         return basic_string<_TChar>(str).compare(pos,n,pattern);
+#endif
     }
 // --------------------------------------------------------------------------
 // CompareNocase
@@ -397,6 +423,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/11/29 20:10:51  gouriano
+ * Corrected for GCC 2.95
+ *
  * Revision 1.1  2006/11/29 13:58:37  gouriano
  * Initial revision
  *
