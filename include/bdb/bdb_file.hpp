@@ -469,6 +469,9 @@ protected:
                             void**       buf, 
                             size_t       buf_size, 
                             EReallocMode allow_realloc);
+    /// Read DB cursor (BLOB)
+    EBDB_ErrCode ReadCursor(DBC* dbc, unsigned int bdb_flag,
+                            vector<unsigned char>* buf);
 
 
     /// Multiple-row read into a buffer
@@ -672,6 +675,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/11/29 11:42:56  kuznets
+ * Added BLOB fetch into resizable STL vector
+ *
  * Revision 1.48  2006/11/22 06:21:33  kuznets
  * Implemented multirow fetch mode when Fetch signals back about buffer ends
  *

@@ -168,6 +168,9 @@ public:
                             size_t       buf_size, 
                             CBDB_RawFile::EReallocMode allow_realloc);
 
+    /// Fetch BLOB
+    EBDB_ErrCode FetchFirst(vector<unsigned char>*  buf);
+
 
     /// Fetch record
     ///
@@ -185,6 +188,9 @@ public:
                        void**       buf, 
                        size_t       buf_size, 
                        CBDB_RawFile::EReallocMode allow_realloc);
+    /// Fetch BLOB
+    EBDB_ErrCode Fetch(vector<unsigned char>*  buf,
+                       EFetchDirection fdir = eDefault);
 
     EBDB_ErrCode Update(CBDB_File::EAfterWrite write_flag 
                                     = CBDB_File::eDiscardData);
@@ -344,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/11/29 11:42:56  kuznets
+ * Added BLOB fetch into resizable STL vector
+ *
  * Revision 1.21  2006/11/27 23:46:07  joukovv
  * Uninitialized 'default' data in constructor fixed.
  *

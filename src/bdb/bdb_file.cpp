@@ -1136,6 +1136,49 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
     return eBDB_Ok;
 }
 
+EBDB_ErrCode CBDB_File::ReadCursor(DBC*                   dbc, 
+                                   unsigned int           bdb_flag,
+                                   vector<unsigned char>*  buf)
+{
+    _ASSERT(buf);
+    
+    if (buf->size() == 0) {
+        buf->resize(1024);
+    } 
+    if (buf->size() < buf->capacity()) {
+        buf->resize(buf->capacity());
+    }
+
+    x_StartRead();
+    m_DBT_Data->data = &((*buf)[0]);
+    m_DBT_Data->ulen = buf->size();
+    m_DBT_Data->size = 0;
+    m_DBT_Data->flags = DB_DBT_USERMEM;
+
+    int ret = dbc->c_get(dbc,
+                         m_DBT_Key,
+                         m_DBT_Data,
+                         bdb_flag);
+
+    switch (ret) {
+    case DB_NOTFOUND:
+        return eBDB_NotFound;
+    case DB_KEYEMPTY:
+        // record has been deleted
+        return eBDB_KeyEmpty;
+    case DB_BUFFER_SMALL:
+        buf->resize(m_DBT_Data->size);
+        return this->ReadCursor(dbc, DB_CURRENT, buf);
+        break;       
+    } // switch
+
+    BDB_CHECK(ret, FileName().c_str());
+    buf->resize(m_DBT_Data->size);
+    x_EndRead();
+
+    return eBDB_Ok;
+}
+
 EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc, 
                                    unsigned int bdb_flag,
                                    void**       buf, 
@@ -1414,6 +1457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/11/29 11:41:37  kuznets
+ * Added BLOB fetch into resizable STL vector
+ *
  * Revision 1.68  2006/11/22 06:22:20  kuznets
  * Implemented multirow fetch mode when Fetch signals back about buffer ends
  *

@@ -534,6 +534,73 @@ CBDB_FileCursor::FetchFirst(void**       buf,
     return ret;
 }
 
+EBDB_ErrCode 
+CBDB_FileCursor::FetchFirst(vector<unsigned char>*  buf)
+{
+    _ASSERT(m_MutiRowBuf == 0);
+    _ASSERT(buf);
+
+    unsigned int flag;
+    x_FetchFirst_Prolog(flag);
+
+    EBDB_ErrCode ret = m_Dbf.ReadCursor(m_DBC, flag | m_FetchFlags,
+                                        buf);
+    if (ret != eBDB_Ok)
+        return ret;
+
+    // Berkeley DB does not support "<" ">" conditions, so we need to scroll
+    // up or down to reach the interval criteria.
+    if (m_CondFrom == eGT) {
+        while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
+            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT | m_FetchFlags);
+            if (ret != eBDB_Ok)
+                return ret;
+        }
+    }
+    else
+    if (m_CondFrom == eLT) {
+        while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
+            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags);
+            if (ret != eBDB_Ok)
+                return ret;
+        }
+    }
+    else
+    if (m_CondFrom == eEQ && !From.m_Condition.IsComplete()) {
+        int cmp =
+            m_Dbf.m_KeyBuf->Compare(From.m_Condition.GetBuffer(),
+                                    From.m_Condition.GetFieldsAssigned());
+        if (cmp != 0) {
+            return eBDB_NotFound;
+        }
+    }
+
+    if ( !TestTo() ) {
+        ret = eBDB_NotFound;
+    }
+
+    return ret;
+}
+
+static 
+unsigned int s_FDir2DBFlag(CBDB_FileCursor::EFetchDirection  fdir)
+{
+    unsigned int flag = 0;
+    switch (fdir) {
+    case CBDB_FileCursor::eForward:
+        flag = DB_NEXT;
+        break;
+    case CBDB_FileCursor::eBackward:
+        flag = DB_PREV;
+        break;
+    case CBDB_FileCursor::eCurrent:
+        flag = DB_CURRENT;
+        break;
+    default:
+        _ASSERT(0);
+    }
+    return flag;
+}
 
 
 EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
@@ -544,21 +611,7 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
     if (fdir == eDefault)
         fdir = m_FetchDirection;
 
-    unsigned int flag = 0;
-    switch (fdir) {
-    case eForward:
-        flag = DB_NEXT;
-        break;
-    case eBackward:
-        flag = DB_PREV;
-        break;
-    case eCurrent:
-        flag = DB_CURRENT;
-        break;
-    default:
-        _ASSERT(0);
-    }
-
+    unsigned int flag = s_FDir2DBFlag(fdir);
     bool multirow_only;
     switch (m_MultiFetchMode) 
     {
@@ -612,6 +665,7 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
     return ret;
 }
 
+
 EBDB_ErrCode 
 CBDB_FileCursor::Fetch(EFetchDirection fdir,
                        void**       buf, 
@@ -626,20 +680,7 @@ CBDB_FileCursor::Fetch(EFetchDirection fdir,
     if (fdir == eDefault)
         fdir = m_FetchDirection;
 
-    unsigned int flag = 0;
-    switch (fdir) {
-    case eForward:
-        flag = DB_NEXT;
-        break;
-    case eBackward:
-        flag = DB_PREV;
-        break;
-    case eCurrent:
-        flag = DB_CURRENT;
-        break;
-    default:
-        _ASSERT(0);
-    }
+    unsigned int flag = s_FDir2DBFlag(fdir);
     EBDB_ErrCode ret;
 
     while (1) {
@@ -674,6 +715,55 @@ CBDB_FileCursor::Fetch(EFetchDirection fdir,
         To.m_Condition.ResetUnassigned();
     }
 
+    return ret;
+}
+
+
+EBDB_ErrCode 
+CBDB_FileCursor::Fetch(vector<unsigned char>*  buf,
+                       EFetchDirection         fdir)
+{
+    _ASSERT(m_MutiRowBuf == 0);
+
+    if ( !m_FirstFetched )
+        return FetchFirst(buf);
+
+    if (fdir == eDefault)
+        fdir = m_FetchDirection;
+
+    unsigned int flag = s_FDir2DBFlag(fdir);
+    EBDB_ErrCode ret;
+
+    while (1) {
+        ret = m_Dbf.ReadCursor(m_DBC, flag, buf);
+        if (ret != eBDB_Ok) {
+            ret = eBDB_NotFound;
+            break;
+        }
+
+        if ( !TestTo() ) {
+            ret = eBDB_NotFound;
+            break;
+        }
+
+        // Check if we have fallen out of the FROM range
+        if (m_CondFrom == eEQ) {
+            int cmp =
+                m_Dbf.m_KeyBuf->Compare(From.m_Condition.GetBuffer(),
+                                        From.m_Condition.GetFieldsAssigned());
+            if (cmp != 0) {
+                ret = eBDB_NotFound;
+            }
+        }
+        break;
+
+    } // while
+
+    if (ret != eBDB_Ok)
+    {
+        From.m_Condition.ResetUnassigned();
+        To.m_Condition.ResetUnassigned();
+    }
     return ret;
 }
 
@@ -766,6 +856,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/11/29 11:41:37  kuznets
+ * Added BLOB fetch into resizable STL vector
+ *
  * Revision 1.26  2006/11/27 23:46:07  joukovv
  * Uninitialized 'default' data in constructor fixed.
  *
