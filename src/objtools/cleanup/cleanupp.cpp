@@ -540,17 +540,18 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
     
     if (sl.IsWhole()  &&  m_Scope) {
         // change the Seq-loc/whole to a Seq-loc/interval which covers the whole sequence.
-        CSeq_id& id = sl.SetWhole();
+        CRef<CSeq_id> id(&sl.SetWhole());
         CBioseq_Handle bsh;
         try {
-            bsh = m_Scope->GetBioseqHandle(id);
+            bsh = m_Scope->GetBioseqHandle(*id);
         } catch (...) { }
         if (bsh) {
             TSeqPos bs_len = bsh.GetBioseqLength();
             
-            sl.SetInt().SetId(id);
+            sl.SetInt().SetId(*id);
             sl.SetInt().SetFrom(0);
             sl.SetInt().SetTo(bs_len - 1);
+            ChangeMade(CCleanupChange::eChangeSeqloc);
         }
     }
     
@@ -644,7 +645,7 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
 void CCleanup_imp::BasicCleanup(CSeq_interval& si)
 {
     // Fix backwards intervals
-    if (si.GetFrom() > si.GetTo()) {
+    if ( si.CanGetFrom()  &&  si.CanGetTo()  &&  si.GetFrom() > si.GetTo()) {
         swap(si.SetFrom(), si.SetTo());
         ChangeMade(CCleanupChange::eChangeSeqloc);
     }
@@ -1516,6 +1517,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.53  2006/11/29 13:47:55  rsmith
+ * fix Seq-loc whole cleanup.
+ *
  * Revision 1.52  2006/11/15 13:49:15  rsmith
  * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
  *
