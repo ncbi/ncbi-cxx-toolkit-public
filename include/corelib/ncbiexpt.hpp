@@ -685,14 +685,6 @@ private:
 };
 
 
-inline
-void CException::SetSeverity(EDiagSev severity)
-{
-    m_Severity = severity;
-    x_GetStackTrace(); // May need stack trace with the new severity
-}
-
-
 /// Return valid pointer to uppermost derived class only if "from" is _really_
 /// the object of the desired type.
 ///
@@ -1174,6 +1166,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/11/29 15:04:05  grichenk
+ * Get stack trace from x_Init.
+ * Added Abort_If_Critical flag.
+ *
  * Revision 1.73  2006/11/15 15:38:53  grichenk
  * Added methods to fromat and output stack trace.
  *

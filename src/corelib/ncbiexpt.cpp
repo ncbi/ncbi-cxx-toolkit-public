@@ -132,6 +132,18 @@ EDiagSev CException::GetStackTraceLevel(void)
 }
 
 
+NCBI_PARAM_DECL(bool, EXCEPTION, Abort_If_Critical);
+NCBI_PARAM_DEF_EX(bool,
+                  EXCEPTION,
+                  Abort_If_Critical,
+                  false,
+                  eParam_NoThread,
+                  EXCEPTION_ABORT_IF_CRITICAL);
+typedef NCBI_PARAM_TYPE(EXCEPTION, Abort_If_Critical) TAbortIfCritical;
+
+static TAbortIfCritical s_AbortIfCritical;
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CException implementation
 
@@ -148,8 +160,10 @@ CException::CException(const CDiagCompileInfo& info,
   m_Predecessor(0),
   m_InReporter(false)
 {
+    if (severity == eDiag_Critical &&  s_AbortIfCritical.Get()) {
+        abort();
+    }
     x_Init(info, message, prev_exception, severity);
-    x_GetStackTrace();
 }
 
 
@@ -195,6 +209,16 @@ void CException::AddBacklog(const CDiagCompileInfo& info,
         delete prev;
     }
     x_Init(info, message, 0, severity);
+}
+
+
+void CException::SetSeverity(EDiagSev severity)
+{
+    if (severity == eDiag_Critical &&  s_AbortIfCritical.Get()) {
+        abort();
+    }
+    m_Severity = severity;
+    x_GetStackTrace(); // May need stack trace with the new severity
 }
 
 
@@ -356,6 +380,7 @@ void CException::x_Init(const CDiagCompileInfo& info,const string& message,
     if (!m_Predecessor && prev_exception) {
         m_Predecessor = prev_exception->x_Clone();
     }
+    x_GetStackTrace();
 }
 
 
@@ -372,9 +397,6 @@ void CException::x_Assign(const CException& src)
     m_Function = src.m_Function;
     if (!m_Predecessor && src.m_Predecessor) {
         m_Predecessor = src.m_Predecessor->x_Clone();
-    }
-    if ( src.m_StackTrace.get() ) {
-        m_StackTrace.reset(new CStackTrace(*src.m_StackTrace));
     }
 }
 
@@ -397,10 +419,10 @@ void CException::x_InitErrCode(EErrCode err_code)
 
 void CException::x_GetStackTrace(void)
 {
-    EDiagSev level = GetStackTraceLevel();
     if ( m_StackTrace.get() ) {
         return;
     }
+    EDiagSev level = GetStackTraceLevel();
     if ( level != eDiag_Trace  &&
         (m_Severity < level  ||  m_Severity == eDiag_Trace) ) {
         return;
@@ -573,6 +595,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/11/29 15:04:05  grichenk
+ * Get stack trace from x_Init.
+ * Added Abort_If_Critical flag.
+ *
  * Revision 1.50  2006/11/15 15:38:54  grichenk
  * Added methods to fromat and output stack trace.
  *
