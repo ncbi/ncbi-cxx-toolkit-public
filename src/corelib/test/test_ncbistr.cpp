@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/version.hpp>
+#include <corelib/ncbi_xstr.hpp>
 #include <algorithm>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -894,6 +895,42 @@ static void s_Compare()
     OK;
 }
 
+static void s_XCompare()
+{
+    NcbiCout << NcbiEndl << "XStr::Compare() tests...";
+
+    const SStrCompare* rec;
+    const size_t count = sizeof(s_StrCompare) / sizeof(s_StrCompare[0]);
+
+    for (size_t i = 0;  i < count;  i++) {
+        rec = &s_StrCompare[i];
+
+        string s1 = rec->s1;
+        s_CompareStr(XStr::Compare(s1, rec->s2, XStr::eCase),   rec->case_res);
+        s_CompareStr(XStr::Compare(s1, rec->s2, XStr::eNocase),
+                     rec->nocase_res);
+        s_CompareStr(XStr::Compare(s1, 0, rec->n, rec->s2, XStr::eCase),
+                     rec->n_case_res);
+        s_CompareStr(XStr::Compare(s1, 0, rec->n, rec->s2, XStr::eNocase),
+                     rec->n_nocase_res);
+
+        string s2 = rec->s2;
+        s_CompareStr(XStr::Compare(s1, s2, XStr::eCase), rec->case_res);
+        s_CompareStr(XStr::Compare(s1, s2, XStr::eNocase), rec->nocase_res);
+        s_CompareStr(XStr::Compare(s1, 0, rec->n, s2, XStr::eCase),
+                     rec->n_case_res);
+        s_CompareStr(XStr::Compare(s1, 0, rec->n, s2, XStr::eNocase),
+                     rec->n_nocase_res);
+    }
+
+    assert(XStr::Compare("0123", 0, 2, "12") <  0);
+    assert(XStr::Compare("0123", 1, 2, "12") == 0);
+    assert(XStr::Compare("0123", 2, 2, "12") >  0);
+    assert(XStr::Compare("0123", 3, 2,  "3") == 0);
+
+    OK;
+}
+
 
 //----------------------------------------------------------------------------
 // NStr::Split()
@@ -1457,6 +1494,7 @@ int CTestApplication::Run(void)
     CExceptionReporter::EnableDefault(false);
 
     s_Compare();
+    s_XCompare();
     s_Case();
     s_strcasecmp();
     s_Equal();
@@ -1496,6 +1534,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.60  2006/11/29 14:06:26  gouriano
+ * Added XStr test
+ *
  * Revision 6.59  2006/11/02 14:01:54  ivanov
  * Don't use deprecated SetupDiag()
  *
