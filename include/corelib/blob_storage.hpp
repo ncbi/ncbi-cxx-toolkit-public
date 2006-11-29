@@ -186,7 +186,7 @@ private:
 ///
 /// Blob Storage Exception
 ///
-class CBlobStorageException : public CException
+class NCBI_XNCBI_EXPORT CBlobStorageException : public CException
 {
 public:
     enum EErrCode {
@@ -198,19 +198,7 @@ public:
         eNotImplemented ///< An operation is not implemented
     };
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eReader:         return "eReaderError";
-        case eWriter:         return "eWriterError";
-        case eBlocked:        return "eBlocked";
-        case eBlobNotFound:   return "eBlobNotFound";
-        case eBusy:           return "eBusy";
-        case eNotImplemented: return "eNotImplemented";
-        default:              return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     NCBI_EXCEPTION_DEFAULT(CBlobStorageException, CException);
 };
@@ -275,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.7  2006/07/17 17:56:26  didenko
  * + DeleteStorage method
  *

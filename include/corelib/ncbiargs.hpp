@@ -113,7 +113,7 @@ class CArgAllow;
 /// CArgException inherits its basic functionality from CCoreException
 /// and defines additional error codes for malformed arguments.
 
-class CArgException : public CCoreException
+class NCBI_XNCBI_EXPORT CArgException : public CCoreException
 {
 public:
     /// Error types for improperly formatted arguments.
@@ -133,21 +133,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eInvalidArg: return "eInvalidArg";
-        case eNoValue:    return "eNoValue";
-        case eWrongCast:  return "eWrongCast";
-        case eConvert:    return "eConvert";
-        case eNoFile:     return "eNoFile";
-        case eConstraint: return "eConstraint";
-        case eArgType:    return "eArgType";
-        case eNoArg:      return "eNoArg";
-        case eSynopsis:   return "eSynopsis";
-        default:    return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception bolier plate code.
     NCBI_EXCEPTION_DEFAULT(CArgException, CCoreException);
@@ -164,7 +150,7 @@ public:
 /// CArgException inherits its basic functionality from CArgException
 /// and defines an additional error code for help.
 
-class CArgHelpException : public CArgException
+class NCBI_XNCBI_EXPORT CArgHelpException : public CArgException
 {
 public:
     /// Error type for help exception.
@@ -174,14 +160,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eHelp:     return "eHelp";
-        case eHelpFull: return "eHelpFull";
-        default:    return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception bolier plate code.
     NCBI_EXCEPTION_DEFAULT(CArgHelpException, CArgException);
@@ -1345,6 +1324,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.56  2006/07/20 16:01:19  grichenk
  * Fixed comments
  *

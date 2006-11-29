@@ -137,7 +137,6 @@ private:
 };
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// NStr --
@@ -2476,7 +2475,7 @@ private:
 /// CParseTemplException<CCoreException> and defines additional error codes
 /// for string parsing.
 
-class CStringException : public CParseTemplException<CCoreException>
+class NCBI_XNCBI_EXPORT CStringException : public CParseTemplException<CCoreException>
 {
 public:
     /// Error types that string classes can generate.
@@ -2487,15 +2486,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eConvert:  return "eConvert";
-        case eBadArgs:  return "eBadArgs";
-        case eFormat:   return "eFormat";
-        default:    return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT2(CStringException,
@@ -3234,6 +3225,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.112  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.111  2006/10/17 14:02:32  ucko
  * Drop extraneous NStr:: qualifier from HexChar's declaration to fix
  * compilation under GCC 4.1.x.

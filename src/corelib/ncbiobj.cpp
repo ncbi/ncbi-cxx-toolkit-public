@@ -609,6 +609,18 @@ void CObjectCounterLocker::ReportIncompatibleType(const type_info& type)
 #endif
 }
 
+const char* CObjectException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eRefDelete:    return "eRefDelete";
+    case eDeleted:      return "eDeleted";
+    case eCorrupted:    return "eCorrupted";
+    case eRefOverflow:  return "eRefOverflow";
+    case eNoRef:        return "eNoRef";
+    case eRefUnref:     return "eRefUnref";
+    default:    return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -906,6 +918,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.56  2006/07/17 14:17:27  ucko
  * RemoveLastReference, DoDeleteThisObject: Ensure that both sides of ==
  * have the same signedness to ensure correct behavior under VisualAge.

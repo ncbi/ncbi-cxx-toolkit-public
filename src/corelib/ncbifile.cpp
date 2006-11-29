@@ -4107,6 +4107,23 @@ void CMemoryFile::x_Verify(void) const
     NCBI_THROW(CFileException, eMemoryMap,"CMemoryFile: File is not mapped");
 }
 
+const char* CFileException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eMemoryMap:    return "eMemoryMap";
+    case eRelativePath: return "eRelativePath";
+    case eNotExists:    return "eNotExists";
+    default:            return CException::GetErrCodeString();
+    }
+}
+
+const char* CFileErrnoException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eFileSystemInfo:  return "eFileSystemInfo";
+    default:               return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -4114,6 +4131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.151  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.150  2006/11/20 12:46:04  ivanov
  * CDirEntry::GetDir() -- added parameter to control returned value for
  * dir entries with missed directory name in the path, like "file.ext".

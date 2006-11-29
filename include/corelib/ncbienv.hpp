@@ -72,7 +72,7 @@ BEGIN_NCBI_SCOPE
 /// CArgumentsException inherits its basic functionality from CCoreException
 /// and defines additional error codes for applications.
 
-class CArgumentsException : public CCoreException
+class NCBI_XNCBI_EXPORT CArgumentsException : public CCoreException
 {
 public:
     /// Error types that arguments processing can generate.
@@ -82,14 +82,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eNegativeArgc:  return "eNegativeArgc";
-        case eNoArgs:        return "eNoArgs";
-        default:    return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CArgumentsException, CCoreException);
@@ -235,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.18  2005/04/12 19:06:39  ucko
  * Move EFollowLinks to ncbimisc.hpp.
  *

@@ -1369,14 +1369,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eInvalid:   return "eInvalid";
-        case eFormat:    return "eFormat";
-        default:         return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CTimeException, CCoreException);
@@ -2060,6 +2053,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.64  2006/11/01 20:10:47  ivanov
  * Cosmetics
  *

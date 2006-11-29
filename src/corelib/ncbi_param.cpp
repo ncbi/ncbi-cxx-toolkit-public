@@ -331,12 +331,25 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
     return value;
 }
 
+const char* CParamException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eParserError:   return "eParserError";
+    case eBadValue:      return "eBadValue";
+    case eNoThreadValue: return "eNoThreadValue";
+    default:            return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.4  2006/09/11 18:01:04  grichenk
  * Check for null pointer in GetEnvVarName().
  *

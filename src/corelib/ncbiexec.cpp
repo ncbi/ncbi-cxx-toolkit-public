@@ -598,6 +598,15 @@ string CExec::QuoteArg(const string& arg)
     return arg;
 }
 
+const char* CExecException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eSystem: return "eSystem";
+    case eSpawn:  return "eSpawn";
+    case eResult: return "eResult";
+    default:      return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -605,6 +614,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.41  2006/10/24 18:56:17  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

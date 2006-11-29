@@ -329,6 +329,14 @@ CDllResolver* CPluginManager_DllResolver::GetCreateDllResolver()
     return m_DllResolver;
 }
 
+const char* CPluginManagerException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eResolveFailure:   return "eResolveFailure";
+    case eParameterMissing: return "eParameterMissing";
+    default:    return CException::GetErrCodeString();
+    }
+}
 
 
 END_NCBI_SCOPE
@@ -336,6 +344,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/11/29 13:56:30  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.22  2006/10/24 18:56:17  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

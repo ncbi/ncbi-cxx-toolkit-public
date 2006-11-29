@@ -287,6 +287,15 @@ void CNcbiArguments::Add(const string& arg)
     m_Args.push_back(arg);
 }
 
+const char* CArgumentsException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eNegativeArgc:  return "eNegativeArgc";
+    case eNoArgs:        return "eNoArgs";
+    default:    return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -294,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.16  2005/03/15 15:14:45  ucko
  * Per Vlad Lebedev's advice, use a more appropriate interface to get at
  * environ on Darwin.

@@ -77,15 +77,7 @@ public:
     };
 
     /// Translate from an error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eMemoryMap:    return "eMemoryMap";
-        case eRelativePath: return "eRelativePath";
-        case eNotExists:    return "eNotExists";
-        default:            return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CFileException, CCoreException);
@@ -110,13 +102,7 @@ public:
         eFileSystemInfo
     };
     /// Translate from an error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eFileSystemInfo:  return "eFileSystemInfo";
-        default:               return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CFileErrnoException, CFileErrnoException_Base);
 };
@@ -2872,6 +2858,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.83  2006/11/20 12:45:54  ivanov
  * CDirEntry::GetDir() -- added parameter to control returned value for
  * dir entries with missed directory name in the path, like "file.ext".

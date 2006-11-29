@@ -107,6 +107,19 @@ IBlobStorage* CBlobStorageFactory::CreateInstance()
 }
 
 
+const char* CBlobStorageException::GetErrCodeString(void) const
+{
+    switch (GetErrCode())
+    {
+    case eReader:         return "eReaderError";
+    case eWriter:         return "eWriterError";
+    case eBlocked:        return "eBlocked";
+    case eBlobNotFound:   return "eBlobNotFound";
+    case eBusy:           return "eBusy";
+    case eNotImplemented: return "eNotImplemented";
+    default:              return CException::GetErrCodeString();
+    }
+}
 
 
 END_NCBI_SCOPE
@@ -115,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.3  2006/07/17 17:56:26  didenko
  * + DeleteStorage method
  *

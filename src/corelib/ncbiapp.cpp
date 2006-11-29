@@ -1002,6 +1002,17 @@ void CNcbiApplication::SetExitCode(int exit_code, EExitMode when)
     m_ExitCodeCond = when;
 }
 
+const char* CAppException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eUnsetArgs:  return "eUnsetArgs";
+    case eSetupDiag:  return "eSetupDiag";
+    case eLoadConfig: return "eLoadConfig";
+    case eSecond:     return "eSecond";
+    case eNoRegistry: return "eNoRegistry";
+    default:    return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -1009,6 +1020,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.138  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.137  2006/11/16 20:16:55  grichenk
  * Log open mode controlled by CParam.
  * Report switching handlers only if messages have been printed.

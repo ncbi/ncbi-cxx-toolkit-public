@@ -193,7 +193,7 @@ private:
 /// CPIDGuardException --
 ///
 
-class CPIDGuardException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XNCBI_EXPORT CPIDGuardException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -201,14 +201,7 @@ public:
         eWrite         ///< Unable to write into the PID file.
     };
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eStillRunning: return "eStillRunning";
-        case eWrite:        return "eWrite";
-        default:            return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     /// Constructor.
     CPIDGuardException(const CDiagCompileInfo& info,
@@ -297,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.21  2006/10/24 19:11:55  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

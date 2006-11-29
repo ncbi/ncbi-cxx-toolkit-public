@@ -1536,6 +1536,17 @@ void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     }
 }
 
+const char* CRegistryException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eSection: return "eSection";
+    case eEntry:   return "eEntry";
+    case eValue:   return "eValue";
+    case eErr:     return "eErr";
+    default:       return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -1543,6 +1554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.62  2006/11/15 16:39:11  ucko
  * Make CNcbiRegistry::GetCoreCutoff() const.
  * Fix CNcbiRegistry's handling of cleared entries, particularly when

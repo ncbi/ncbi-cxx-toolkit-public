@@ -2541,6 +2541,16 @@ TUnicodeSymbol CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
     return 0;
 }
 
+const char* CStringException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eConvert:  return "eConvert";
+    case eBadArgs:  return "eBadArgs";
+    case eFormat:   return "eFormat";
+    default:    return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -2548,6 +2558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.186  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.185  2006/10/24 18:44:20  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

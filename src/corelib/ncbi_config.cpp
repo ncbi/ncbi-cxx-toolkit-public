@@ -543,6 +543,14 @@ bool CConfig::GetBool(const string&  driver_name,
     return default_value;
 }
 
+const char* CConfigException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eParameterMissing: return "eParameterMissing";
+    default:                return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -550,6 +558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.17  2006/05/08 15:54:36  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and

@@ -2696,6 +2696,31 @@ string CArgAllow_Doubles::GetUsage(void) const
     return NStr::DoubleToString(m_Min) + ".." + NStr::DoubleToString(m_Max);
 }
 
+const char* CArgException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eInvalidArg: return "eInvalidArg";
+    case eNoValue:    return "eNoValue";
+    case eWrongCast:  return "eWrongCast";
+    case eConvert:    return "eConvert";
+    case eNoFile:     return "eNoFile";
+    case eConstraint: return "eConstraint";
+    case eArgType:    return "eArgType";
+    case eNoArg:      return "eNoArg";
+    case eSynopsis:   return "eSynopsis";
+    default:    return CException::GetErrCodeString();
+    }
+}
+
+const char* CArgHelpException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eHelp:     return "eHelp";
+    case eHelpFull: return "eHelpFull";
+    default:    return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -2703,6 +2728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.71  2006/10/24 18:56:17  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

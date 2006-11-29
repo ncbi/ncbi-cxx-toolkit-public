@@ -2165,6 +2165,14 @@ void TuneupFastLocalTime(void)
     s_FastLocalTime.Tuneup();
 }
 
+const char* CTimeException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eInvalid:   return "eInvalid";
+    case eFormat:    return "eFormat";
+    default:         return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -2172,6 +2180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2006/11/29 13:56:30  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.78  2006/11/01 20:11:08  ivanov
  * Cosmetics
  *

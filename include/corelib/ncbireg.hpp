@@ -755,7 +755,7 @@ private:
 /// CCParseTemplException<CCoreException> and defines additional error codes
 /// for the Registry.
 
-class CRegistryException : public CParseTemplException<CCoreException>
+class NCBI_XNCBI_EXPORT CRegistryException : public CParseTemplException<CCoreException>
 {
 public:
     /// Error types that the Registry can generate.
@@ -767,16 +767,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eSection: return "eSection";
-        case eEntry:   return "eEntry";
-        case eValue:   return "eValue";
-        case eErr:     return "eErr";
-        default:       return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception boilerplate code
     NCBI_EXCEPTION_DEFAULT2(CRegistryException,
@@ -813,6 +804,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.42  2006/11/15 16:38:17  ucko
  * Make C{Compound,Ncbi}Registry::GetCoreCutoff() const.
  *

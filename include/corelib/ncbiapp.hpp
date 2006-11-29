@@ -75,7 +75,7 @@ BEGIN_NCBI_SCOPE
 /// CAppException inherits its basic functionality from CCoreException
 /// and defines additional error codes for applications.
 
-class CAppException : public CCoreException
+class NCBI_XNCBI_EXPORT CAppException : public CCoreException
 {
 public:
     /// Error types that an application can generate.
@@ -90,17 +90,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eUnsetArgs:  return "eUnsetArgs";
-        case eSetupDiag:  return "eSetupDiag";
-        case eLoadConfig: return "eLoadConfig";
-        case eSecond:     return "eSecond";
-        case eNoRegistry: return "eNoRegistry";
-        default:    return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CAppException, CCoreException);
@@ -590,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.68  2006/11/16 20:13:14  grichenk
  * Added HasLoadedConfig()
  *

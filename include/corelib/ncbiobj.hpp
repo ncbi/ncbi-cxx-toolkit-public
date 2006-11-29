@@ -90,18 +90,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eRefDelete:    return "eRefDelete";
-        case eDeleted:      return "eDeleted";
-        case eCorrupted:    return "eCorrupted";
-        case eRefOverflow:  return "eRefOverflow";
-        case eNoRef:        return "eNoRef";
-        case eRefUnref:     return "eRefUnref";
-        default:    return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CObjectException, CCoreException);
@@ -1952,6 +1941,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/11/29 13:55:39  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.70  2006/07/17 14:15:54  ucko
  * ObjectStateUnreferenced, ObjectStateReferencedOnlyOnce: Ensure that
  * both sides of == have the same signedness to avoid false negatives

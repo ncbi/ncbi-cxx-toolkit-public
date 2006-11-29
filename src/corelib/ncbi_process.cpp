@@ -559,6 +559,15 @@ void CPIDGuard::UpdatePID(TPid pid)
     m_NewPID = pid;
 }
 
+const char* CPIDGuardException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eStillRunning: return "eStillRunning";
+    case eWrite:        return "eWrite";
+    default:            return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -566,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/11/29 13:56:29  gouriano
+ * Moved GetErrorCodeString method into cpp
+ *
  * Revision 1.27  2006/06/13 13:23:36  ivanov
  * MSWin: Wait() -- fixed bug with incorrect return code for zero timeouts.
  * Use kInfiniteTimeoutMs instead of kMax_ULong.
