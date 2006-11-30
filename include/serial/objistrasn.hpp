@@ -55,6 +55,8 @@ public:
     CObjectIStreamAsn(CNcbiIstream& in,
                       bool deleteIn,
                       EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsn(const char* buffer, size_t size,
+                      EFixNonPrint how = eFNP_Default);
 
     // check if there is still some meaningful data that can be read;
     // this function will skip white spaces and comments
@@ -226,6 +228,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2006/11/30 20:15:39  vasilche
+* Allow direct reading from memory.
+*
 * Revision 1.68  2006/10/12 15:08:26  gouriano
 * Some header files moved into impl
 *

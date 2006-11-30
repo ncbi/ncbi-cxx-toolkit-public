@@ -107,14 +107,17 @@ public:
                                   CByteSource& source);
     static CObjectIStream* Create(ESerialDataFormat format,
                                   CByteSourceReader& reader);
+    static CObjectIStream* CreateFromBuffer(ESerialDataFormat format,
+                                            const char* buffer, size_t size);
     // Get data format
     ESerialDataFormat GetDataFormat(void) const;
 
 //---------------------------------------------------------------------------
 // Open methods
-    virtual void Open(CByteSourceReader& reader);
+    void Open(CByteSourceReader& reader);
     void Open(CByteSource& source);
     void Open(CNcbiIstream& inStream, bool deleteInStream = false);
+    void OpenFromBuffer(const char* buffer, size_t size);
     void Close(void);
 
 //---------------------------------------------------------------------------
@@ -767,6 +770,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.122  2006/11/30 20:15:39  vasilche
+* Allow direct reading from memory.
+*
 * Revision 1.121  2006/11/07 19:00:06  gouriano
 * Added option to skip unknown variants
 *

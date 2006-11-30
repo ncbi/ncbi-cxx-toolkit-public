@@ -151,6 +151,15 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format,
     return stream.release();
 }
 
+CObjectIStream* CObjectIStream::CreateFromBuffer(ESerialDataFormat format,
+                                                 const char* buffer,
+                                                 size_t size)
+{
+    AutoPtr<CObjectIStream> stream(Create(format));
+    stream->OpenFromBuffer(buffer, size);
+    return stream.release();
+}
+
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      CNcbiIstream& inStream,
                                      bool deleteInStream)
@@ -368,6 +377,14 @@ void CObjectIStream::Open(CByteSourceReader& reader)
     Close();
     _ASSERT(m_Fail == fNotOpen);
     m_Input.Open(reader);
+    m_Fail = 0;
+}
+
+void CObjectIStream::OpenFromBuffer(const char* buffer, size_t size)
+{
+    Close();
+    _ASSERT(m_Fail == fNotOpen);
+    m_Input.Open(buffer, size);
     m_Fail = 0;
 }
 
@@ -1643,6 +1660,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.148  2006/11/30 20:15:39  vasilche
+* Allow direct reading from memory.
+*
 * Revision 1.147  2006/11/15 15:46:19  gouriano
 * Corrected setting of SkipUnknownVariants
 *

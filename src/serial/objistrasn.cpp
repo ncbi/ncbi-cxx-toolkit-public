@@ -73,6 +73,14 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
     Open(in, deleteIn);
 }
 
+CObjectIStreamAsn::CObjectIStreamAsn(const char* buffer,
+                                     size_t size,
+                                     EFixNonPrint how)
+    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
+{
+    OpenFromBuffer(buffer, size);
+}
+
 bool CObjectIStreamAsn::EndOfData(void)
 {
     if (CObjectIStream::EndOfData()) {
@@ -1556,6 +1564,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2006/11/30 20:15:40  vasilche
+* Allow direct reading from memory.
+*
 * Revision 1.110  2006/11/07 19:00:46  gouriano
 * Added option to skip unknown variants
 *

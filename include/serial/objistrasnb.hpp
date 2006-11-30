@@ -61,6 +61,9 @@ public:
                             EFixNonPrint how = eFNP_Default);
     CObjectIStreamAsnBinary(CByteSourceReader& reader,
                             EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsnBinary(const char* buffer,
+                            size_t size,
+                            EFixNonPrint how = eFNP_Default);
 
 
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
@@ -260,6 +263,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2006/11/30 20:15:39  vasilche
+* Allow direct reading from memory.
+*
 * Revision 1.57  2006/11/07 19:00:06  gouriano
 * Added option to skip unknown variants
 *

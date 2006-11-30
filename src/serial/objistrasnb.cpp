@@ -110,6 +110,21 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
     Open(reader);
 }
 
+CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(const char* buffer,
+                                                 size_t size,
+                                                 EFixNonPrint how)
+    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
+{
+#if CHECK_INSTREAM_STATE
+    m_CurrentTagState = eTagStart;
+#endif
+#if CHECK_INSTREAM_LIMITS
+    m_CurrentTagLimit = 0;
+#endif
+    m_CurrentTagLength = 0;
+    OpenFromBuffer(buffer, size);
+}
+
 CObjectIStreamAsnBinary::TLongTag
 CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte)
 {
@@ -1330,6 +1345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2006/11/30 20:15:40  vasilche
+* Allow direct reading from memory.
+*
 * Revision 1.92  2006/11/07 19:00:46  gouriano
 * Added option to skip unknown variants
 *
