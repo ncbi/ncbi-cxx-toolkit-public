@@ -1010,13 +1010,15 @@ string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi,
 {
     string urlLink = NcbiEmptyString;
     char dopt[32], db[32];
-    //   bool hit_not_in_mapviewer = !(linkout & eHitInMapviewer);
+    bool hit_not_in_mapviewer = !(linkout & eHitInMapviewer);
     
     gi = (gi == 0) ? s_GetGiForSeqIdList(ids):gi;
     string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
 
     if (user_url != NcbiEmptyString && 
-        !((user_url.find("dumpgnl.cgi") != string::npos && gi > 0))) { 
+        !((user_url.find("dumpgnl.cgi") != string::npos && gi > 0) || 
+          (user_url.find("maps.cgi") != string::npos && hit_not_in_mapviewer &&
+          m_AlignOption & eShowSortControls))) { 
         //need to use url in configuration file
         string altUrl = NcbiEmptyString;
         urlLink = x_GetDumpgnlLink(ids, row, altUrl, taxid);
@@ -1888,7 +1890,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,
                         sprintf(buf, k_Checkbox.c_str(), gi > 0 ?
                                 NStr::IntToString(gi).c_str() : wid2->GetSeqIdString().c_str(),
                                 m_QueryNumber);
-                        out << buf;
+                                out << buf;
                     }
                 
                     if(m_AlignOption&eHtml){
@@ -3130,6 +3132,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.127  2006/11/30 22:33:37  jianye
+*adjust user defined url for eHitInMapviewer bit
+*
 *Revision 1.126  2006/11/28 15:41:12  jianye
 *adding sorting seqalign functions
 *
