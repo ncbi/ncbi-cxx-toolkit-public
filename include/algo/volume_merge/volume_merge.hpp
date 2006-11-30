@@ -257,7 +257,7 @@ public:
     }
 
     /// Merge request
-    /// Implementation MUST buffer to the buffer pool (may be delayed)
+    /// Implementation MUST return the buffer to the pool
     virtual void Merge(CMergeVolumes::TRawBuffer* buffer) = 0;
 
     /// Returns destination (merged) buffer
@@ -298,9 +298,17 @@ struct IMergeStore
     /// This request can be asyncronous 
     ///   caller needs to check status using IAsyncInterface 
     ///   to make sure Fetch finished
-    /// Methos MUST return storage buffer to the resource pool
+    /// Method implementation MUST return storage buffer to the resource pool
     virtual void Store(Uint4 blob_id, CMergeVolumes::TRawBuffer* buffer) = 0;
     
+    /// Read buffer with the specified blob_id
+    /// This method is for store update, when we are merging into an
+    /// existing store. If method returns a non NULL value, the existing
+    /// buffer is merged with the coming buffer
+    /// Method implementation MUST return storage buffer to the resource pool
+    ///
+    virtual CMergeVolumes::TRawBuffer* ReadBlob(Uint4 blob_id) = 0;
+
     /// Close storage (when it ends)
     /// Method is responsible for finalization of store procedure, 
     /// stopping background threads, closing server connections
@@ -315,6 +323,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/30 10:59:42  kuznets
+ * added BLOB read from the merge store (merge-update)
+ *
  * Revision 1.3  2006/11/21 14:38:58  kuznets
  * WaitReady() declared const
  *
