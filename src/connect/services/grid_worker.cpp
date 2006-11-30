@@ -445,14 +445,16 @@ void CGridWorkerNode::Start()
 const string& CGridWorkerNode::GetQueueName() const 
 { 
     if (!m_NSReadClient.get())
-        const_cast<CGridWorkerNode*>(this)->x_CreateNSReadClient();
+        if ( !const_cast<CGridWorkerNode*>(this)->x_CreateNSReadClient() )
+            return kEmptyStr;
     return m_NSReadClient->GetQueueName(); 
 }
 
 const string& CGridWorkerNode::GetClientName() const 
 { 
     if (!m_NSReadClient.get())
-        const_cast<CGridWorkerNode*>(this)->x_CreateNSReadClient();
+        if ( !const_cast<CGridWorkerNode*>(this)->x_CreateNSReadClient() )
+            return kEmptyStr;
     return m_NSReadClient->GetClientName(); 
 }
 
@@ -738,6 +740,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/11/30 20:44:57  didenko
+ * Got rid of SEGV
+ *
  * Revision 1.59  2006/11/30 15:33:33  didenko
  * Moved to a new log system
  *
