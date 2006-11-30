@@ -464,13 +464,15 @@ void CNetBVSServer::ProcessGet(CSocket&               sock,
 {
     _ASSERT(bvs);
 
-    size_t buf_size;
-    EBDB_ErrCode err = bvs->ReadRealloc(req.id, tdata.buf, &buf_size);
+    // clear the buffer to get correct size
+    tdata.buf.clear();
+    EBDB_ErrCode err = bvs->ReadRealloc(req.id, tdata.buf);
     if (err != eBDB_Ok) {
         string msg = "BLOB not found. ";
         WriteMsg(sock, "ERR:", msg);
         return;
     }
+    size_t buf_size = tdata.buf.size();
 
     string msg("BLOB found. SIZE=");
     string sz;
@@ -740,6 +742,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/11/30 16:52:50  vasilche
+ * Fixed for new API.
+ *
  * Revision 1.4  2006/11/30 14:23:50  dicuccio
  * Update to use buffer typedefs from CBDB_RawFile
  *
