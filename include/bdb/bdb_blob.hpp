@@ -112,7 +112,7 @@ public:
     /// Read BLOB into vector. 
     /// If BLOB does not fit, method resizes the vector to accomodate.
     /// 
-    EBDB_ErrCode ReadRealloc(TBuffer& buffer, size_t* buf_size);
+    EBDB_ErrCode ReadRealloc(TBuffer& buffer);
 
     /// Copy LOB data into the 'buf'.
     /// Throw an exception if buffer size 'size' is less than LOB size.
@@ -268,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/11/30 14:16:40  kuznets
+ * Removed buf_size parameter (ReadRealloc()) size passed as vector property
+ *
  * Revision 1.20  2006/11/30 12:42:08  dicuccio
  * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
  * vector<unsigned char>

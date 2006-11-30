@@ -391,14 +391,10 @@ CMergeVolumes::TRawBuffer* CBDB_MergeStore<BStore>::ReadBlob(Uint4 blob_id)
 {
     CMergeVolumes::TRawBuffer* buf = m_BufResourcePool->Get();
     CMergeVolumes::TBufPoolGuard buf_guard(*m_BufResourcePool, buf);
-    // TODO: make vector<char> (buffer) compatible across the code
-    /*
-    size_t buf_size;
-    EBDB_ErrCode ret = m_BlobStore->ReadRealloc(blob_id, buf, &buf_size);
+    EBDB_ErrCode ret = m_BlobStore->ReadRealloc(blob_id, buf);
     if (ret == eBDB_Ok) {
         return buf_guard.Release();
     }
-    */
     return 0;
 }
 
@@ -495,14 +491,10 @@ CMergeVolumes::TRawBuffer* CBDB_MergeStoreAsync<BStore>::ReadBlob(Uint4 blob_id)
     CMergeVolumes::TBufPoolGuard buf_guard(*m_BufResourcePool, buf);
     {{
     CFastMutex::TWriteLockGuard guard(m_Lock);
-    // TODO: make vector<char> (buffer) compatible across the code
-    /*
-    size_t buf_size;
-    EBDB_ErrCode ret = m_BlobStore->ReadRealloc(blob_id, buf, &buf_size);
+    EBDB_ErrCode ret = m_BlobStore->ReadRealloc(blob_id, *buf);
     if (ret == eBDB_Ok) {
         return buf_guard.Release();
     }
-    */
     }}
     return 0;
 }
@@ -700,6 +692,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/11/30 14:19:43  kuznets
+ * Removed buf_size parameter (ReadRealloc()) size passed as vector property
+ *
  * Revision 1.7  2006/11/30 11:34:48  kuznets
  * half implemented ReadBlob
  *

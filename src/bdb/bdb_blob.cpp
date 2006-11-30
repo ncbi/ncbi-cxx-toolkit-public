@@ -88,30 +88,24 @@ EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf,
 
  
 EBDB_ErrCode 
-CBDB_BLobFile::ReadRealloc(TBuffer& buffer, size_t* buf_size)
+CBDB_BLobFile::ReadRealloc(TBuffer& buffer)
 {
     EBDB_ErrCode ret;
-    if (buffer.size() == 0) {
-        buffer.resize(10);
-    }
     // use the maximum capacity
     size_t capacity = buffer.capacity();
     if (capacity > buffer.size()) {
         buffer.resize(capacity);
+    }
+    if (buffer.size() == 0) {
+        buffer.resize(10);
     }
     while(1) {
         try {
             void* p = &buffer[0];
             ret = Fetch(&p, buffer.size(), eReallocForbidden);
             if (ret != eBDB_Ok) {
-                if (buf_size) {
-                    *buf_size = 0;
-                }
                 buffer.resize(0);
                 return ret;
-            }
-            if (buf_size) {
-                *buf_size = LobSize();
             }
             buffer.resize(LobSize());
         }
@@ -119,8 +113,7 @@ CBDB_BLobFile::ReadRealloc(TBuffer& buffer, size_t* buf_size)
             // check if we have insufficient buffer
             if (ex.IsBufferSmall() || ex.IsNoMem()) {
                 // increase the buffer and re-read
-                unsigned buf_size = LobSize();
-                buffer.resize(buf_size);
+                buffer.resize(LobSize());
             } else {
                 throw;
             }
@@ -471,6 +464,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/11/30 14:16:11  kuznets
+ * Removed buf_size parameter (ReadRealloc()) size passed as vector property
+ *
  * Revision 1.28  2006/11/30 12:42:08  dicuccio
  * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
  * vector<unsigned char>
