@@ -3467,6 +3467,11 @@ void CSourceFeatureItem::x_GatherInfo(CBioseqContext& ctx)
         m_IsSynthetic = bsrc.GetOrg().GetOrgname().IsSetDiv()  &&
             NStr::EqualNocase(bsrc.GetOrg().GetOrgname().GetDiv(), "SYN");
     }
+    if (!m_IsSynthetic  &&  bsrc.CanGetOrg() && bsrc.GetOrg().CanGetTaxname()) {
+        if (NStr::EqualNocase(bsrc.GetOrg().GetTaxname(), "synthetic construct")) {
+            m_IsSynthetic = true;
+        }
+    }
     x_AddQuals(ctx);
 }
 
@@ -4008,6 +4013,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.86  2006/11/30 20:02:45  ludwigf
+* CHANGED: Besides BioSource.origin==ORG_SYNTHETIC and BioSource.org.division
+*   =="SYN", BioSource.org.taxname=="synthetic construct" will now also
+*   suppress source location subtraction.
+*
 * Revision 1.85  2006/09/19 12:59:42  ludwigf
 * FIXED: Some tildes in the /note qualifier would not get expanded in the
 *  final output.
