@@ -148,10 +148,10 @@ int CBDB_SplitTest::Run(void)
         res = strcmp(buf_read, "test large 2");
         assert(res == 0);
 
-        size_t buf_size;
         CBDB_RawFile::TBuffer chbuf(10);
-        err = split_store.ReadRealloc(4, chbuf, &buf_size);
+        err = split_store.ReadRealloc(4, chbuf);
         assert(err == eBDB_Ok);
+        assert(chbuf.size() > 12);
         res = strcmp((const char*)&chbuf[0], "test large 2");
         assert(res == 0);
 
@@ -190,6 +190,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/11/30 16:22:13  vasilche
+ * Fixed for new API.
+ *
  * Revision 1.4  2006/11/30 12:42:09  dicuccio
  * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
  * vector<unsigned char>
