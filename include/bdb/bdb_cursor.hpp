@@ -169,7 +169,7 @@ public:
                             CBDB_RawFile::EReallocMode allow_realloc);
 
     /// Fetch BLOB
-    EBDB_ErrCode FetchFirst(vector<unsigned char>*  buf);
+    EBDB_ErrCode FetchFirst(CBDB_RawFile::TBuffer*  buf);
 
 
     /// Fetch record
@@ -189,7 +189,7 @@ public:
                        size_t       buf_size, 
                        CBDB_RawFile::EReallocMode allow_realloc);
     /// Fetch BLOB
-    EBDB_ErrCode Fetch(vector<unsigned char>*  buf,
+    EBDB_ErrCode Fetch(CBDB_RawFile::TBuffer*  buf,
                        EFetchDirection fdir = eDefault);
 
     EBDB_ErrCode Update(CBDB_File::EAfterWrite write_flag 
@@ -350,6 +350,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/11/30 12:42:08  dicuccio
+ * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
+ * vector<unsigned char>
+ *
  * Revision 1.22  2006/11/29 11:42:56  kuznets
  * Added BLOB fetch into resizable STL vector
  *

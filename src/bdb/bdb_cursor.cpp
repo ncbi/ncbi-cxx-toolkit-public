@@ -535,7 +535,7 @@ CBDB_FileCursor::FetchFirst(void**       buf,
 }
 
 EBDB_ErrCode 
-CBDB_FileCursor::FetchFirst(vector<unsigned char>*  buf)
+CBDB_FileCursor::FetchFirst(CBDB_RawFile::TBuffer*  buf)
 {
     _ASSERT(m_MultiRowBuf == 0);
     _ASSERT(buf);
@@ -720,7 +720,7 @@ CBDB_FileCursor::Fetch(EFetchDirection fdir,
 
 
 EBDB_ErrCode 
-CBDB_FileCursor::Fetch(vector<unsigned char>*  buf,
+CBDB_FileCursor::Fetch(CBDB_RawFile::TBuffer*  buf,
                        EFetchDirection         fdir)
 {
     _ASSERT(m_MultiRowBuf == 0);
@@ -856,6 +856,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/11/30 12:42:09  dicuccio
+ * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
+ * vector<unsigned char>
+ *
  * Revision 1.28  2006/11/29 11:52:45  kuznets
  * Minor compilation fixes
  *

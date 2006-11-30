@@ -1136,9 +1136,9 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
     return eBDB_Ok;
 }
 
-EBDB_ErrCode CBDB_File::ReadCursor(DBC*                   dbc, 
-                                   unsigned int           bdb_flag,
-                                   vector<unsigned char>*  buf)
+EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc, 
+                                   unsigned int bdb_flag,
+                                   TBuffer*     buf)
 {
     _ASSERT(buf);
     
@@ -1457,6 +1457,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/11/30 12:42:09  dicuccio
+ * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
+ * vector<unsigned char>
+ *
  * Revision 1.69  2006/11/29 11:41:37  kuznets
  * Added BLOB fetch into resizable STL vector
  *

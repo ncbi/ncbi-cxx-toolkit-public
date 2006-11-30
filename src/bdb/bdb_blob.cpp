@@ -88,7 +88,7 @@ EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf,
 
  
 EBDB_ErrCode 
-CBDB_BLobFile::ReadRealloc(vector<char>& buffer, size_t* buf_size)
+CBDB_BLobFile::ReadRealloc(TBuffer& buffer, size_t* buf_size)
 {
     EBDB_ErrCode ret;
     if (buffer.size() == 0) {
@@ -471,6 +471,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/11/30 12:42:08  dicuccio
+ * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
+ * vector<unsigned char>
+ *
  * Revision 1.27  2006/11/30 11:09:21  kuznets
  * Tweaked buffer read to resize vector to full capacity
  *

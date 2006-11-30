@@ -58,7 +58,6 @@ class CBDB_BvStore : public CBDB_BLobFile
 {
 public:
     typedef TBV                   TBitVector; ///< Serializable bitvector
-    typedef vector<unsigned char> TBuffer;
     typedef TBuffer::value_type   TBufferValue;
 public:
 
@@ -1316,6 +1315,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/11/30 12:42:08  dicuccio
+ * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
+ * vector<unsigned char>
+ *
  * Revision 1.12  2006/03/29 15:24:08  ucko
  * Tweak WriteVector for compatibility with GCC 2.95.
  *

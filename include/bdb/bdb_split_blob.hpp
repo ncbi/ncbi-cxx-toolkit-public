@@ -334,7 +334,7 @@ public:
     /// If BLOB does not fit, method resizes the vector to accomodate.
     /// 
     EBDB_ErrCode ReadRealloc(unsigned id, 
-	                         vector<char>& buffer, size_t* buf_size);
+	                         CBDB_RawFile::TBuffer& buffer, size_t* buf_size);
 
 
     /// Fetch LOB record directly into the provided '*buf'.
@@ -546,7 +546,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Fetch(unsigned     id,
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(unsigned      id,
-                                                    vector<char>& buffer, 
+                                                    CBDB_RawFile::TBuffer& buffer, 
                                                     size_t*       buf_size)
 {
     unsigned coord[2];
@@ -781,6 +781,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/11/30 12:42:08  dicuccio
+ * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
+ * vector<unsigned char>
+ *
  * Revision 1.13  2006/10/04 12:26:30  dicuccio
  * Drop noisy LOG_POST()s.  Added dtor.
  *
