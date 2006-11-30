@@ -205,11 +205,11 @@ public:
     virtual bool IsGood() const { return true; }
     virtual void Store(Uint4 blob_id, CMergeVolumes::TRawBuffer* buffer);
     virtual void Close() {}
+    virtual CMergeVolumes::TRawBuffer* ReadBlob(Uint4 blob_id);
 private:
     TBlobStore*  m_BlobStore;
     EOwnership   m_OwnBlobStore;
 };
-
 
 
 ///  Merge store saves result to BLOB store.
@@ -230,6 +230,7 @@ public:
     virtual bool IsGood() const;
     virtual void Store(Uint4 blob_id, CMergeVolumes::TRawBuffer* buffer);
     virtual void Close();
+    virtual CMergeVolumes::TRawBuffer* ReadBlob(Uint4 blob_id);
 protected:
     void DoStore();
 protected:
@@ -385,6 +386,13 @@ void CBDB_MergeStore<BStore>::Store(Uint4                      blob_id,
                                      &((*buffer)[0]), buffer->size());
 }
 
+template<class BStore>
+CMergeVolumes::TRawBuffer* CBDB_MergeStore<BStore>::ReadBlob(Uint4 blob_id)
+{
+    // TODO: add read implementation here
+    return 0;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -468,6 +476,14 @@ void CBDB_MergeStoreAsync<BStore>::DoStore()
         m_Good = false;
         throw;
     }
+}
+
+
+template<class BStore>
+CMergeVolumes::TRawBuffer* CBDB_MergeStoreAsync<BStore>::ReadBlob(Uint4 blob_id)
+{
+    // TODO: add read implementation here
+    return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -663,6 +679,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/11/30 11:08:18  kuznets
+ * added BLOB read from the merge store (merge-update)
+ *
  * Revision 1.5  2006/11/22 10:28:56  kuznets
  * Fixed race condition
  *

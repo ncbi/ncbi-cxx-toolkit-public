@@ -177,6 +177,66 @@ void CMergeVolumes::Run()
                     break;
                 case IAsyncInterface::eFailed:
                     NCBI_THROW(CMerge_Exception, eInputVolumeFailure,
+                       "Input volume failed. Volume merge cannot recover.");
+                    //++processed_volumes;
+                    //vol_exclude[i] = 1;
+                    break;
+                case IAsyncInterface::eNoMoreData:
+                    ++processed_volumes;
+                    vol_exclude[i] = vol_eof[i] = 1;
+                    continue;
+                case IAsyncInterface::eNotReady:
+                    complete_scan = false; // something is pending
+                    break;
+                default:
+                    _ASSERT(0);
+                } // switch
+            } // for each volume
+        } while (!complete_scan);
+
+        if (!merger_empty) {
+            // since we are out of the volume scan it means the merger
+            // has accumulated all current min keys and no more is coming
+            // we can store the BLOB now
+            x_StoreMerger();
+            merger_empty = true;
+        }
+
+        // merge next min key value BLOBs
+        if (!m_MinKeyCandidates.empty()) {
+            x_MergeCandidates();
+            m_MinKeyCandidates.resize(0);
+            merger_empty = false;
+        }
+
+    } // while pending volumes
+
+    if (!merger_empty) {
+        x_StoreMerger();
+    }
+
+    // closing input-output interfaces
+    m_Store->Close();
+    for (size_t i = 0; i < m_VolumeVect.size(); ++i) {
+        m_VolumeVect[i]->Close();
+    }
+}
+/*
+void CMergeVolumes::x_StoreMerger()
+{
+    // wait for the store.
+    //
+    IAsyncInterface* iasync = m_Store->QueryIAsync();
+    while (iasync) {
+        IAsyncInterface::EStatus astatus = iasync->WaitReady();
+        switch (astatus) 
+        {
+        case IAsyncInterface::eReady:
+            iasync = 0;
+            break;
+        case IAsyncInterface::eFailed:
+        case IAsyncInterface::eNoMoreData:
+=======
                        "Input volume failed. Volume merge cannot recover.");                                        
                     //++processed_volumes;
                     //vol_exclude[i] = 1;
@@ -221,12 +281,9 @@ void CMergeVolumes::Run()
         m_VolumeVect[i]->Close();
     }
 }
-
+*/
 void CMergeVolumes::x_StoreMerger()
 {
-    TRawBuffer* blob_buffer = m_Merger->GetMergeBuffer();
-    TBufPoolGuard guard(m_BufResourcePool, blob_buffer);
-
     IAsyncInterface* iasync = m_Store->QueryIAsync();
     while (iasync) {
         IAsyncInterface::EStatus astatus = iasync->WaitReady();
@@ -238,7 +295,7 @@ void CMergeVolumes::x_StoreMerger()
         case IAsyncInterface::eFailed:
         case IAsyncInterface::eNoMoreData:
             NCBI_THROW(CMerge_Exception, eStoreFailure,
-                "Store device failed. Volume merge cannot recover.");                                        
+                "Store device failed. Volume merge cannot recover.");
             break;
         case IAsyncInterface::eNotReady:
             break;
@@ -247,6 +304,19 @@ void CMergeVolumes::x_StoreMerger()
         } // switch
     } // while 
 
+
+    // check if store already has the same BLOB (if yes add to the merger)
+    //
+    TRawBuffer* store_blob_buffer = m_Store->ReadBlob(m_MergeKey);
+    if (store_blob_buffer) {
+        m_Merger->Merge(store_blob_buffer);
+    }
+
+    // merge
+    //
+    TRawBuffer* blob_buffer = m_Merger->GetMergeBuffer();
+    TBufPoolGuard guard(m_BufResourcePool, blob_buffer);
+
     m_Merger->Reset();
 
     if (m_Store->IsGood()) {
@@ -254,7 +324,7 @@ void CMergeVolumes::x_StoreMerger()
         m_Store->Store(m_MergeKey, guard.Release());
     } else {
         NCBI_THROW(CMerge_Exception, eStoreFailure,
-            "Store device failed. Volume merge cannot recover.");                                        
+            "Store device failed. Volume merge cannot recover.");
     }
     m_MergeKey = 0;
 }
@@ -316,6 +386,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/30 11:07:04  kuznets
+ * added BLOB read from the merge store (merge-update)
+ *
  * Revision 1.2  2006/11/27 14:25:21  dicuccio
  * Stripped trailing line feeds
  *

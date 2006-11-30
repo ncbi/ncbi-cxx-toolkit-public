@@ -157,6 +157,10 @@ public:
     virtual bool IsGood() const { return true; }
     virtual void Store(Uint4 blob_id, CMergeVolumes::TRawBuffer* buffer);
     virtual void Close() {}
+    virtual CMergeVolumes::TRawBuffer* ReadBlob(Uint4 blob_id) 
+    { 
+        return 0; // write-only store 
+    }
 };
 
 void CMergePrintStore::Store(Uint4                      blob_id, 
@@ -313,6 +317,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/30 11:07:17  kuznets
+ * added BLOB read from the merge store (merge-update)
+ *
  * Revision 1.2  2006/11/20 16:31:48  kuznets
  * Fixed buffer leak in the demo code
  *
