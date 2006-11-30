@@ -102,7 +102,7 @@ TDS_RCSID(var, "$Id$");
 
 /**
  * \addtogroup network
- * \@{ 
+ * \@{
  */
 
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
@@ -455,8 +455,8 @@ tds_read_packet(TDSSOCKET * tds)
 		if (header[0] != 0x04 && header[0] != 0x0f) {
 			tdsdump_log(TDS_DBG_ERROR, "Invalid packet header %d\n", header[0]);
 			/*
-			 * Not sure if this is the best way to do the error 
-			 * handling here but this is the way it is currently 
+			 * Not sure if this is the best way to do the error
+			 * handling here but this is the way it is currently
 			 * being done.
 			 */
 			tds->in_len = 0;
@@ -606,8 +606,8 @@ tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char la
 		 * writability
 		 * moved socket writability check to own function -- bsb
 		 */
-		/* 
-		 * TODO we can avoid calling select for every send using 
+		/*
+		 * TODO we can avoid calling select for every send using
 		 * no-blocking socket... This will reduce syscalls
 		 */
 		tds_check_socket_write(tds);
@@ -621,12 +621,15 @@ tds_goodwrite(TDSSOCKET * tds, const unsigned char *p, int len, unsigned char la
 #endif
 
 		if (retval <= 0) {
-			tdsdump_log(TDS_DBG_NETWORK, "TDS: Write failed in tds_write_packet\nError: %d (%s)\n", sock_errno, strerror(sock_errno));
-			tds_client_msg(tds->tds_ctx, tds, 20006, 9, 0, 0, "Write to SQL Server failed.");
-			tds->in_pos = 0;
-			tds->in_len = 0;
-			tds_close_socket(tds);
-			return -1;
+            if (!retval || (errno != EINTR  &&  errno != EAGAIN)) {
+                tdsdump_log(TDS_DBG_NETWORK, "TDS: Write failed in tds_write_packet\nError: %d (%s)\n", sock_errno, strerror(sock_errno));
+                tds_client_msg(tds->tds_ctx, tds, 20006, 9, 0, 0, "Write to SQL Server failed.");
+                tds->in_pos = 0;
+                tds->in_len = 0;
+                tds_close_socket(tds);
+                return -1;
+            }
+            retval = 0;
 		}
 		left -= retval;
 		p += retval;
@@ -826,7 +829,7 @@ tds7_get_instance_port(const char *ip_addr, const char *instance)
 #if defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 
 #ifdef HAVE_GNUTLS
-static ssize_t 
+static ssize_t
 tds_pull_func(gnutls_transport_ptr ptr, void* data, size_t len)
 {
 	TDSSOCKET *tds = (TDSSOCKET *) ptr;
@@ -870,7 +873,7 @@ tds_ssl_read(BIO *b, char* data, int len)
 }
 
 #ifdef HAVE_GNUTLS
-static ssize_t 
+static ssize_t
 tds_push_func(gnutls_transport_ptr ptr, const void* data, size_t len)
 {
 	TDSSOCKET *tds = (TDSSOCKET *) ptr;
@@ -916,8 +919,8 @@ tds_ssl_init(TDSSOCKET *tds)
 	gnutls_certificate_credentials xcred;
 
 	static const int kx_priority[] = {
-		GNUTLS_KX_RSA_EXPORT, 
-		GNUTLS_KX_RSA, GNUTLS_KX_DHE_DSS, GNUTLS_KX_DHE_RSA, 
+		GNUTLS_KX_RSA_EXPORT,
+		GNUTLS_KX_RSA, GNUTLS_KX_DHE_DSS, GNUTLS_KX_DHE_RSA,
 		0
 	};
 	static const int cipher_priority[] = {
