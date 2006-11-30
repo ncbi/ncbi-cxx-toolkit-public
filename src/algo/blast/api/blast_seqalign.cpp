@@ -42,6 +42,7 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/general/Object_id.hpp>
 #include <serial/iterator.hpp>
+#include <objmgr/util/seq_align_util.hpp>
 
 #include <algorithm>
 
@@ -1261,43 +1262,8 @@ s_RemapToSubjectLoc(CRef<CSeq_align> subj_aligns, const CSeq_loc& subj_loc)
     /// Iterate over this subject's HSPs...
     NON_CONST_ITERATE(CSeq_align_set::Tdata, hsp, 
                       subj_aligns->SetSegs().SetDisc().Set()) {
-        // If subject is on a minus strand, we'll need to flip subject 
-        // strands and remap subject coordinates on all segments.
-        // Otherwise we only need to shift subject coordinates, 
-        // if the respective location starts not from 0.
-        bool reverse = (subj_loc.GetStrand() == eNa_strand_minus);
-        
-        TSeqPos s_shift = subj_loc.GetStart(eExtreme_Positional);
-        
-        // Nothing needs to be done if subject location is on forward strand 
-        // and starts from the beginning of sequence.
-        if (!reverse && s_shift == 0) {
-            continue;
-        }
-
-        for (CTypeIterator<CDense_seg> seg_itr(Begin(**hsp)); seg_itr; 
-             ++seg_itr) {
-
-            const vector<ENa_strand> strands = seg_itr->GetStrands();
-            // Create temporary CSeq_loc with strand matching the segment 
-            // strand if subject location is on forward strand,
-            // or opposite if subject is on reverse strand, to force 
-            // RemapToLoc to behave correctly.
-            CSeq_loc s_seqloc;
-            ENa_strand s_strand;
-            if (reverse) {
-                s_strand = ((strands[1] == eNa_strand_plus) ?
-                            eNa_strand_minus : eNa_strand_plus);
-            } else {
-                s_strand = strands[1];
-            }
-            s_seqloc.SetInt().SetFrom(s_shift);
-            s_seqloc.SetInt().SetTo(subj_loc.GetStop(eExtreme_Positional));
-            s_seqloc.SetInt().SetStrand(s_strand);
-            s_seqloc.SetId(*subj_loc.GetId());
-            seg_itr->RemapToLoc(kSubjDimension, s_seqloc, !reverse);
-        } // Loop on Dense-segs
-    } // One-iteration loop over subjects
+        hsp->Reset(sequence::RemapAlignToLoc(**hsp, kSubjDimension, subj_loc));
+    }
 }
 
 CSeq_align_set*
@@ -1515,7 +1481,9 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             }
             _ASSERT(hit_align->GetSegs().IsDisc());
             RemapToQueryLoc(hit_align, *seqloc);
-            s_RemapToSubjectLoc(hit_align, *seqinfo_src.GetSeqLoc(subj_index));
+            if ( !is_ooframe )
+                s_RemapToSubjectLoc(hit_align, 
+                                    *seqinfo_src.GetSeqLoc(subj_index));
             seq_aligns.Reset(new CSeq_align_set());
             seq_aligns->Set().push_back(hit_align);
         } else {
@@ -1656,6 +1624,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2006/11/30 21:34:45  camacho
+* Replace use of deprecated CDense_seg::RemapToLoc in favor of sequence::RemapAlignToLoc
+*
 * Revision 1.79  2006/09/27 20:39:54  avagyanv
 * removed definitions of GetFilteredRedundantGis and GetSequenceLengthAndId
 *
