@@ -243,6 +243,8 @@ void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 TSeqPos CHandleRange::GetLeft(void) const
 {
     if ( !m_IsCircular ) {
+        // Since empty ranges have extremely large 'from' coordinate it's
+        // ok to simply return min of 'from' coordinates.
         return min(m_TotalRanges_plus.GetFrom(), m_TotalRanges_minus.GetFrom());
     }
     return IsReverse(m_Ranges.front().second) ?
@@ -253,7 +255,16 @@ TSeqPos CHandleRange::GetLeft(void) const
 TSeqPos CHandleRange::GetRight(void) const
 {
     if ( !m_IsCircular ) {
-        return max(m_TotalRanges_plus.GetTo(), m_TotalRanges_minus.GetTo());
+        // A bit more logic is required to check empty ranges.
+        if ( m_TotalRanges_minus.Empty() ) {
+            return m_TotalRanges_plus.GetTo();
+        }
+        else if ( m_TotalRanges_plus.Empty() ) {
+            return m_TotalRanges_minus.GetTo();
+        }
+        else {
+            return max(m_TotalRanges_plus.GetTo(), m_TotalRanges_minus.GetTo());
+        }
     }
     return IsReverse(m_Ranges.front().second) ?
         m_TotalRanges_plus.GetTo() : m_TotalRanges_minus.GetTo();
@@ -386,6 +397,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2006/11/30 18:13:46  vasilche
+* Fixed GetRight() for single-strand CHandleRange.
+*
 * Revision 1.28  2006/01/17 17:21:14  vasilche
 * Commented out asserion check incompatible with alignments.
 *
