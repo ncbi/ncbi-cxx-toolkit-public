@@ -389,7 +389,16 @@ void CBDB_MergeStore<BStore>::Store(Uint4                      blob_id,
 template<class BStore>
 CMergeVolumes::TRawBuffer* CBDB_MergeStore<BStore>::ReadBlob(Uint4 blob_id)
 {
-    // TODO: add read implementation here
+    CMergeVolumes::TRawBuffer* buf = m_BufResourcePool->Get();
+    CMergeVolumes::TBufPoolGuard buf_guard(*m_BufResourcePool, buf);
+    // TODO: make vector<char> (buffer) compatible across the code
+    /*
+    size_t buf_size;
+    EBDB_ErrCode ret = m_BlobStore->ReadRealloc(blob_id, buf, &buf_size);
+    if (ret == eBDB_Ok) {
+        return buf_guard.Release();
+    }
+    */
     return 0;
 }
 
@@ -482,7 +491,19 @@ void CBDB_MergeStoreAsync<BStore>::DoStore()
 template<class BStore>
 CMergeVolumes::TRawBuffer* CBDB_MergeStoreAsync<BStore>::ReadBlob(Uint4 blob_id)
 {
-    // TODO: add read implementation here
+    CMergeVolumes::TRawBuffer* buf = m_BufResourcePool->Get();
+    CMergeVolumes::TBufPoolGuard buf_guard(*m_BufResourcePool, buf);
+    {{
+    CFastMutex::TWriteLockGuard guard(m_Lock);
+    // TODO: make vector<char> (buffer) compatible across the code
+    /*
+    size_t buf_size;
+    EBDB_ErrCode ret = m_BlobStore->ReadRealloc(blob_id, buf, &buf_size);
+    if (ret == eBDB_Ok) {
+        return buf_guard.Release();
+    }
+    */
+    }}
     return 0;
 }
 
@@ -679,6 +700,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/11/30 11:34:48  kuznets
+ * half implemented ReadBlob
+ *
  * Revision 1.6  2006/11/30 11:08:18  kuznets
  * added BLOB read from the merge store (merge-update)
  *
