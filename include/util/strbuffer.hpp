@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2006/11/30 20:15:15  vasilche
+* Allow direct reading from memory in CIStreamBuffer.
+*
 * Revision 1.39  2005/11/22 16:43:11  vakatov
 * CIStreamBuffer::Get/SetStreamOffset() -- doxinen'ize the deprecation of.
 *
@@ -204,8 +207,8 @@ class CSubSourceCollector;
 class NCBI_XUTIL_EXPORT CIStreamBuffer
 {
 public:
-    CIStreamBuffer(void)
-        THROWS1((bad_alloc));
+    CIStreamBuffer(void);
+    CIStreamBuffer(const char* buffer, size_t size);
     ~CIStreamBuffer(void);
     
     bool fail(void) const;
@@ -213,6 +216,7 @@ public:
     const char* GetError(void) const;
 
     void Open(CByteSourceReader& reader);
+    void Open(const char* buffer, size_t size);
     void Close(void);
 
     char PeekChar(size_t offset = 0)
@@ -306,9 +310,9 @@ public:
 protected:
     // action: fill buffer so *pos char is valid
     // return: new value of pos pointer if buffer content was shifted
-    char* FillBuffer(char* pos, bool noEOF = false)
+    const char* FillBuffer(const char* pos, bool noEOF = false)
         THROWS1((CIOException, bad_alloc));
-    char FillBufferNoEOF(char* pos);
+    char FillBufferNoEOF(const char* pos);
     bool TryToFillBuffer(void);
 
     void BadNumber(void);
@@ -319,13 +323,13 @@ private:
     const char* m_Error;
 
     Int8 m_BufferPos; // offset of current buffer in source stream
-    size_t m_BufferSize;      // buffer size
+    size_t m_BufferSize;      // buffer size, 0 if the buffer is external
     char* m_Buffer;           // buffer pointer
-    char* m_CurrentPos;       // current char position in buffer
-    char* m_DataEndPos;       // end of valid content in buffer
+    const char* m_CurrentPos; // current char position in buffer
+    const char* m_DataEndPos; // end of valid content in buffer
     size_t m_Line;            // current line counter
 
-    char* m_CollectPos;
+    const char* m_CollectPos;
     CRef<CSubSourceCollector> m_Collector;
 };
 

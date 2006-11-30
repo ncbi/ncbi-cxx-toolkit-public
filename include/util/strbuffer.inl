@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/11/30 20:15:15  vasilche
+* Allow direct reading from memory in CIStreamBuffer.
+*
 * Revision 1.10  2005/11/07 18:39:33  gouriano
 * Use Int8 in stream position calculations
 *
@@ -89,7 +92,7 @@ inline
 char CIStreamBuffer::PeekChar(size_t offset)
     THROWS1((CIOException, bad_alloc))
 {
-    char* pos = m_CurrentPos + offset;
+    const char* pos = m_CurrentPos + offset;
     if ( pos >= m_DataEndPos )
         pos = FillBuffer(pos);
     return *pos;
@@ -98,7 +101,7 @@ char CIStreamBuffer::PeekChar(size_t offset)
 inline
 char CIStreamBuffer::PeekCharNoEOF(size_t offset)
 {
-    char* pos = m_CurrentPos + offset;
+    const char* pos = m_CurrentPos + offset;
     if ( pos >= m_DataEndPos )
         return FillBufferNoEOF(pos);
     return *pos;
@@ -107,7 +110,7 @@ char CIStreamBuffer::PeekCharNoEOF(size_t offset)
 inline
 bool CIStreamBuffer::SkipExpectedChar(char c, size_t offset)
 {
-    char* pos = m_CurrentPos+offset;
+    const char* pos = m_CurrentPos+offset;
     if ( pos >= m_DataEndPos )
         pos = FillBuffer(pos);
     if ( *pos != c )
@@ -119,7 +122,7 @@ bool CIStreamBuffer::SkipExpectedChar(char c, size_t offset)
 inline
 bool CIStreamBuffer::SkipExpectedChars(char c1, char c2, size_t offset)
 {
-    char* pos = m_CurrentPos+offset+1;
+    const char* pos = m_CurrentPos+offset+1;
     if ( pos >= m_DataEndPos )
         pos = FillBuffer(pos);
     if ( pos[-1] != c1 || pos[0] != c2 )
@@ -138,7 +141,7 @@ inline
 char CIStreamBuffer::GetChar(void)
     THROWS1((CIOException, bad_alloc))
 {
-    char* pos = m_CurrentPos;
+    const char* pos = m_CurrentPos;
     if ( pos >= m_DataEndPos )
         pos = FillBuffer(pos);
     m_CurrentPos = pos + 1;
@@ -148,7 +151,7 @@ char CIStreamBuffer::GetChar(void)
 inline
 void CIStreamBuffer::UngetChar(char _DEBUG_ARG(c))
 {
-    char* pos = m_CurrentPos;
+    const char* pos = m_CurrentPos;
     _ASSERT(pos > m_Buffer);
     _ASSERT(pos[-1] == c);
     m_CurrentPos = pos - 1;

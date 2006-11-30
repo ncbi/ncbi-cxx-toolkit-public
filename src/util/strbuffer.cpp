@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2006/11/30 20:15:15  vasilche
+* Allow direct reading from memory in CIStreamBuffer.
+*
 * Revision 1.51  2006/03/16 16:51:19  vasilche
 * Fixed premature deletion of CSubSourceCollector.
 * Move position to the beginning of buffer if no data is left.
@@ -240,8 +243,17 @@ size_t BiggerBufferSize(size_t size) THROWS1_NONE
 CIStreamBuffer::CIStreamBuffer(void)
     THROWS1((bad_alloc))
     : m_Error(0), m_BufferPos(0),
-      m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
-      m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
+      m_BufferSize(0), m_Buffer(0),
+      m_CurrentPos(0), m_DataEndPos(0),
+      m_Line(1),
+      m_CollectPos(0)
+{
+}
+
+CIStreamBuffer::CIStreamBuffer(const char* buffer, size_t size)
+    : m_Error(0), m_BufferPos(0),
+      m_BufferSize(0), m_Buffer(const_cast<char*>(buffer)),
+      m_CurrentPos(buffer), m_DataEndPos(buffer+size),
       m_Line(1),
       m_CollectPos(0)
 {
@@ -256,14 +268,32 @@ CIStreamBuffer::~CIStreamBuffer(void)
         ERR_POST(Warning <<
                  "~CIStreamBuffer: exception while closing: " << exc.what());
     }
-    delete[] m_Buffer;
-    
+    if ( m_BufferSize ) {
+        delete[] m_Buffer;
+    }
 }
 
 void CIStreamBuffer::Open(CByteSourceReader& reader)
 {
     Close();
+    if ( !m_BufferSize ) {
+        m_BufferSize = KInitialBufferSize;
+        m_CurrentPos = m_DataEndPos = m_Buffer = new char[m_BufferSize];
+    }
     m_Input = &reader;
+    m_Error = 0;
+}
+
+void CIStreamBuffer::Open(const char* buffer, size_t size)
+{
+    Close();
+    if ( m_BufferSize ) {
+        delete[] m_Buffer;
+    }
+    m_BufferSize = 0;
+    m_Buffer = const_cast<char*>(buffer);
+    m_CurrentPos = buffer;
+    m_DataEndPos = buffer + size;
     m_Error = 0;
 }
 
@@ -326,8 +356,8 @@ char CIStreamBuffer::SkipSpaces(void)
     THROWS1((CIOException))
 {
     // cache pointers
-    char* pos = m_CurrentPos;
-    char* end = m_DataEndPos;
+    const char* pos = m_CurrentPos;
+    const char* end = m_DataEndPos;
     // make sure thire is at least one char in buffer
     if ( pos == end ) {
         // fill buffer
@@ -369,8 +399,8 @@ void CIStreamBuffer::FindChar(char c)
     THROWS1((CIOException))
 {
     // cache pointers
-    char* pos = m_CurrentPos;
-    char* end = m_DataEndPos;
+    const char* pos = m_CurrentPos;
+    const char* end = m_DataEndPos;
     // make sure thire is at least one char in buffer
     if ( pos == end ) {
         // fill buffer
@@ -384,7 +414,8 @@ void CIStreamBuffer::FindChar(char c)
     //     end == m_DataEndPos
     //     pos < end
     for (;;) {
-        char* found = static_cast<char*>(memchr(pos, c, end - pos));
+        const char* found =
+            static_cast<const char*>(memchr(pos, c, end - pos));
         if ( found ) {
             m_CurrentPos = found;
             return;
@@ -405,30 +436,40 @@ size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
     _ASSERT(limit > 0);
     PeekCharNoEOF(limit - 1);
     // cache pointers
-    char* pos = m_CurrentPos;
+    const char* pos = m_CurrentPos;
     size_t bufferSize = m_DataEndPos - pos;
     if ( bufferSize != 0 ) {
-        char* found =
-            static_cast<char*>(memchr(pos, c, min(limit, bufferSize)));
+        const char* found =
+            static_cast<const char*>(memchr(pos, c, min(limit, bufferSize)));
         if ( found )
             return found - pos;
     }
     return limit;
 }
 
-char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
+const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
     THROWS1((CIOException, bad_alloc))
 {
     _ASSERT(pos >= m_DataEndPos);
     // remove unused portion of buffer at the beginning
     _ASSERT(m_CurrentPos >= m_Buffer);
+    if ( m_BufferSize == 0 ) {
+        // buffer is external -> no more data
+        if ( noEOF ) {
+            return pos;
+        }
+        else {
+            m_Error = "end of file";
+            NCBI_THROW(CEofException,eEof,m_Error);
+        }
+    }
     size_t newPosOffset = pos - m_Buffer;
     if ( newPosOffset >= m_BufferSize || m_DataEndPos == m_CurrentPos ) {
         // if new position is out of buffer, or if there is no data left
         // move pointers to the beginning
         size_t erase = m_CurrentPos - m_Buffer;
         if ( erase > 0 ) {
-            char* newPos = m_CurrentPos - erase;
+            const char* newPos = m_CurrentPos - erase;
             if ( m_Collector ) {
                 _ASSERT(m_CollectPos);
                 size_t count = m_CurrentPos - m_CollectPos;
@@ -438,7 +479,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
             }
             size_t copy_count = m_DataEndPos - m_CurrentPos;
             if ( copy_count )
-                memmove(newPos, m_CurrentPos, copy_count);
+                memmove(const_cast<char*>(newPos), m_CurrentPos, copy_count);
             m_CurrentPos = newPos;
             m_DataEndPos -= erase;
             m_BufferPos += CT_OFF_TYPE(erase);
@@ -466,7 +507,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
     }
     size_t load = m_BufferSize - dataSize;
     while ( load > 0  &&  pos >= m_DataEndPos ) {
-        size_t count = m_Input->Read(m_DataEndPos, load);
+        size_t count = m_Input->Read(const_cast<char*>(m_DataEndPos), load);
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
                 return pos;
@@ -503,7 +544,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
     return pos;
 }
 
-char CIStreamBuffer::FillBufferNoEOF(char* pos)
+char CIStreamBuffer::FillBufferNoEOF(const char* pos)
 {
     pos = FillBuffer(pos, true);
     if ( pos >= m_DataEndPos )
@@ -521,7 +562,7 @@ void CIStreamBuffer::GetChars(char* buffer, size_t count)
     THROWS1((CIOException))
 {
     // cache pos
-    char* pos = m_CurrentPos;
+    const char* pos = m_CurrentPos;
     for ( ;; ) {
         size_t c = m_DataEndPos - pos;
         if ( c >= count ) {
@@ -544,7 +585,7 @@ void CIStreamBuffer::GetChars(string& str, size_t count)
     THROWS1((CIOException))
 {
     // cache pos
-    char* pos = m_CurrentPos;
+    const char* pos = m_CurrentPos;
     size_t in_buffer = m_DataEndPos - pos;
     if ( in_buffer >= count ) {
         // simplest case - plain copy
@@ -573,7 +614,7 @@ void CIStreamBuffer::GetChars(size_t count)
     THROWS1((CIOException))
 {
     // cache pos
-    char* pos = m_CurrentPos;
+    const char* pos = m_CurrentPos;
     for ( ;; ) {
         size_t c = m_DataEndPos - pos;
         if ( c >= count ) {
