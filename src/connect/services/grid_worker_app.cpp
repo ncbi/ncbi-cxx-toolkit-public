@@ -100,6 +100,11 @@ void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
                              "A TCP port number",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("logfile", 
+                             "file_name",
+                             "File to which the program log should be redirected",
+                             CArgDescriptions::eOutputFile);
+
     CNcbiApplication::SetupArgDescriptions(arg_desc);
 }
 
@@ -128,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/11/30 15:33:33  didenko
+ * Moved to a new log system
+ *
  * Revision 1.30  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

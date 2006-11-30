@@ -445,21 +445,21 @@ void CGridWorkerNode::Start()
 const string& CGridWorkerNode::GetQueueName() const 
 { 
     if (!m_NSReadClient.get())
-        return kEmptyStr;
+        const_cast<CGridWorkerNode*>(this)->x_CreateNSReadClient();
     return m_NSReadClient->GetQueueName(); 
 }
 
 const string& CGridWorkerNode::GetClientName() const 
 { 
     if (!m_NSReadClient.get())
-        return kEmptyStr;
+        const_cast<CGridWorkerNode*>(this)->x_CreateNSReadClient();
     return m_NSReadClient->GetClientName(); 
 }
 
 string CGridWorkerNode::GetConnectionInfo() const
 {
     if (!m_NSReadClient.get())
-        return kEmptyStr;
+        const_cast<CGridWorkerNode*>(this)->x_CreateNSReadClient();
     return m_NSReadClient->GetConnectionInfo();    
 }
 
@@ -738,6 +738,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/11/30 15:33:33  didenko
+ * Moved to a new log system
+ *
  * Revision 1.58  2006/08/03 19:33:10  didenko
  * Added auto_shutdown_if_idle config file paramter
  * Added current date to messages in the log file.

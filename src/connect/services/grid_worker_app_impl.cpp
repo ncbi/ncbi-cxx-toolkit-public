@@ -170,38 +170,6 @@ private:
     CWorkerNodeControlThread& m_Control;
 };
 
-class CSelfRotatingLogStream : public CRotatingLogStream
-{
-public:
-    typedef CRotatingLogStream TParent;
-    CSelfRotatingLogStream(const string&    filename, 
-                           CNcbiStreamoff   limit)
-     : TParent(filename, limit)  {}
- protected:
-    virtual string x_BackupName(string& name)
-    {
-        return kEmptyStr;
-    }
-};
- 
-/*
-/////////////////////////////////////////////////////////////////////////////
-//
-//     CShutdownIdleTask      -- 
-class CShutdownIdleTask : public IWorkerNodeIdleTask
-{
-public:
-    CShutdownIdleTask() {}
-    virtual ~CShutdownIdleTask() {}
-    virtual void Run(CWorkerNodeIdleTaskContext& ctx)
-    {
-        LOG_POST(CTime(CTime::eCurrent).AsString() 
-                 << " There are no more jobs to be done. Exiting.");
-        ctx.RequestShutdown();
-    }
-};
-*/
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //     CWorkerNodeIdleThread      -- 
@@ -405,11 +373,6 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-enum ELoggingType {
-    eRotatingLog = 0x0,
-    eSelfRotatingLog,
-    eNonRotatingLog
-};
 
 CGridWorkerApp_Impl::CGridWorkerApp_Impl(
                                CNcbiApplication&          app,
@@ -417,7 +380,7 @@ CGridWorkerApp_Impl::CGridWorkerApp_Impl(
                                IBlobStorageFactory*       storage_factory,
                                INetScheduleClientFactory* client_factory)
 : m_JobFactory(job_factory), m_StorageFactory(storage_factory),
-  m_ClientFactory(client_factory), m_JobWatchers(new CWorkerNodeJobWatchers),
+  m_ClientFactory(client_factory),
   m_App(app), m_SingleThreadForced(false)
 {
     if (!m_JobFactory.get())
@@ -428,15 +391,12 @@ CGridWorkerApp_Impl::CGridWorkerApp_Impl(
 
 CGridWorkerApp_Impl::~CGridWorkerApp_Impl()
 {
-    try {
-        SetDiagStream(&NcbiCerr);
-    } NCBI_CATCH_ALL("CGridWorkerApp_Impl::~CGridWorkerApp_Impl()");
 }
 
 void CGridWorkerApp_Impl::Init()
 {
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagPostFlag(eDPF_DateTime);
+    //    SetDiagPostLevel(eDiag_Info);
+    //    SetDiagPostFlag(eDPF_DateTime);
   
     IRWRegistry& reg = m_App.GetConfig();
     reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
@@ -481,13 +441,6 @@ int CGridWorkerApp_Impl::Run()
 
     bool server_log = 
         reg.GetBool(kServerSec,"log",false,0,IRegistry::eReturn);
-    string s_log_type =
-        reg.GetString(kServerSec,"log_type","self_rotating");
-    ELoggingType log_type = eSelfRotatingLog;
-    if (NStr::CompareNocase(s_log_type, "rotating")==0) 
-        log_type = eRotatingLog;
-    if (NStr::CompareNocase(s_log_type, "non_rotating")==0) 
-        log_type = eNonRotatingLog;
 
     unsigned int idle_run_delay = 
         reg.GetInt(kServerSec,"idle_run_delay",30,0,IRegistry::eReturn);
@@ -512,10 +465,6 @@ int CGridWorkerApp_Impl::Run()
     bool reuse_job_object =
         reg.GetBool(kServerSec, "reuse_job_object", false, 0, 
                     CNcbiRegistry::eReturn);
-
-    unsigned int log_size = 
-        reg.GetInt(kServerSec,"log_file_size",1024*1024,0,IRegistry::eReturn);
-    string log_file_name = GetLogName();
 
     unsigned int max_total_jobs = 
         reg.GetInt(kServerSec,"max_total_jobs",0,0,IRegistry::eReturn);
@@ -566,8 +515,6 @@ int CGridWorkerApp_Impl::Run()
             max_total_jobs = 0;
             debug_context.SetExecuteList(files);
         }
-        log_file_name = debug_context.GetLogFileName();
-        log_type = eNonRotatingLog;
         is_daemon = false;
     }
 
@@ -582,19 +529,7 @@ int CGridWorkerApp_Impl::Run()
     }
 #endif
 
-    if (log_type == eRotatingLog)
-        m_ErrLog.reset(new CRotatingLogStream(log_file_name, log_size));
-    else if(log_type == eNonRotatingLog)
-        m_ErrLog.reset(new CSelfRotatingLogStream(log_file_name, kMax_Int));
-    else
-        m_ErrLog.reset(new CSelfRotatingLogStream(log_file_name, log_size));
-
-    // All errors redirected to rotated log
-    // from this moment on the server is silent...
-    SetDiagStream(m_ErrLog.get());
-    AttachJobWatcher(*(new CLogWatcher(m_ErrLog.get())), eTakeOwnership);
-
-
+    AttachJobWatcher(CGridGlobals::GetInstance().GetJobsWatcher());
     m_WorkerNode.reset(new CGridWorkerNode(GetJobFactory(), 
                                            GetStorageFactory(), 
                                            GetClientFactory(),
@@ -618,10 +553,11 @@ int CGridWorkerApp_Impl::Run()
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxJobsAllowed(max_total_jobs);
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxFailuresAllowed(max_failed_jobs);
     CGridGlobals::GetInstance().GetJobsWatcher().SetInfinitLoopTime(infinit_loop_time);
-    AttachJobWatcher(CGridGlobals::GetInstance().GetJobsWatcher());
     CGridGlobals::GetInstance().SetWorker(*m_WorkerNode);
 
-    IWorkerNodeIdleTask* task = GetJobFactory().GetIdleTask();
+    IWorkerNodeIdleTask* task = NULL;
+    if (idle_run_delay > 0)
+        task = GetJobFactory().GetIdleTask();
     if (task || auto_shutdown > 0 ) {
         m_IdleThread.Reset(new CWorkerNodeIdleThread(task, *m_WorkerNode, 
                                                      task ? idle_run_delay : auto_shutdown,
@@ -649,9 +585,8 @@ int CGridWorkerApp_Impl::Run()
                  << " ===================\n"
                  << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
                  << "Waiting for control commands on TCP port " << control_port << "\n"
-                 << "Queue name: " << m_WorkerNode->GetQueueName() );
-        if (max_threads > 1)
-            LOG_POST( "Maximum job threads: " << max_threads);
+                 << "Queue name: " << m_WorkerNode->GetQueueName()
+                 << "Maximum job threads: " << max_threads);
 
 
         try {
@@ -685,15 +620,11 @@ void CGridWorkerApp_Impl::RequestShutdown()
 }
 
 
-string CGridWorkerApp_Impl::GetLogName(void) const
-{
-    return m_App.GetProgramDisplayName() + ".log";
-}
-
-
 void CGridWorkerApp_Impl::AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher, 
                                            EOwnership owner)
 {
+    if (!m_JobWatchers.get())
+        m_JobWatchers.reset(new CWorkerNodeJobWatchers);
     m_JobWatchers->AttachJobWatcher(job_watcher, owner);
 };
 
@@ -702,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.29  2006/11/30 15:33:33  didenko
+ * Moved to a new log system
+ *
  * Revision 6.28  2006/10/31 18:41:17  grichenk
  * Redesigned diagnostics setup.
  * Moved the setup function to ncbidiag.cpp.

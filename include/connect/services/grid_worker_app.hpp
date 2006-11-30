@@ -129,18 +129,20 @@ private:
 NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version); \
 int main(int argc, const char* argv[])                    \
 {                                                         \
+    GetDiagContext().SetOldPostFormat(false);             \
     BlobStorage_RegisterDriver_NetCache();                \
     CGridWorkerApp app(new TWorkerNodeJob##Factory);      \
-    return app.AppMain(argc, argv);                       \
+    return app.AppMain(argc, argv, NULL, eDS_ToStdlog);  \
 }
 
 #define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version)     \
 NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version); \
 int main(int argc, const char* argv[])                                            \
 {                                                                                 \
+    GetDiagContext().SetOldPostFormat(false);                                     \
     BlobStorage_RegisterDriver_NetCache();                                        \
     CGridWorkerApp app(new TWorkerNodeJob##FactoryEx);                            \
-    return app.AppMain(argc, argv);                                               \
+    return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                          \
 }
 
 /* @} */
@@ -151,6 +153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/11/30 15:33:33  didenko
+ * Moved to a new log system
+ *
  * Revision 1.14  2006/04/04 20:14:04  didenko
  * Disabled copy constractors and assignment operators
  *

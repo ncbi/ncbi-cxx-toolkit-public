@@ -899,7 +899,7 @@ bool CNetScheduleClient::GetJob(string*        job_key,
     }
 
     _ASSERT(!job_key->empty());
-    _ASSERT(!input->empty());
+    //    _ASSERT(!input->empty());
 
     return true;
 }
@@ -955,7 +955,7 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
         }
 
         _ASSERT(!job_key->empty());
-        _ASSERT(!input->empty());
+        //_ASSERT(!input->empty());
 
         return true;
     }
@@ -1920,6 +1920,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/11/30 15:33:33  didenko
+ * Moved to a new log system
+ *
  * Revision 1.64  2006/10/19 20:38:20  joukovv
  * Works in thread-per-request mode. Errors in BDB layer fixed.
  *

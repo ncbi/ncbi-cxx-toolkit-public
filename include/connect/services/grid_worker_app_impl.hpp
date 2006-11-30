@@ -43,7 +43,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/grid_worker.hpp>
-#include <util/logrotate.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -98,7 +97,6 @@ private:
 
     CRef<CWorkerNodeIdleThread>  m_IdleThread;
 
-    auto_ptr<CRotatingLogStream> m_ErrLog;
     CNcbiApplication& m_App;
     bool m_SingleThreadForced;
 
@@ -137,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/11/30 15:33:33  didenko
+ * Moved to a new log system
+ *
  * Revision 1.8  2006/05/12 15:13:37  didenko
  * Added infinit loop detection mechanism in job executions
  *
