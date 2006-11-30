@@ -291,6 +291,44 @@ void GetCdssForGene(const CSeq_feat& gene_feat,
                     list< CConstRef<CSeq_feat> >& cds_feats,
                     TBestFeatOpts opts = fBestFeat_Defaults);
 
+/////////////////////////////////////////////////////////////////////////////
+// Versions of functions with lookup by feature id
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat>
+GetBestGeneForMrna(const CSeq_feat& mrna_feat,
+                   const CTSE_Handle& tse,
+                   TBestFeatOpts opts = fBestFeat_Defaults);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat>
+GetBestGeneForCds(const CSeq_feat& cds_feat,
+                  const CTSE_Handle& tse,
+                  TBestFeatOpts opts = fBestFeat_Defaults);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat>
+GetBestMrnaForCds(const CSeq_feat& cds_feat,
+                  const CTSE_Handle& tse,
+                  TBestFeatOpts opts = fBestFeat_Defaults);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat>
+GetBestCdsForMrna(const CSeq_feat& mrna_feat,
+                  const CTSE_Handle& tse,
+                  TBestFeatOpts opts = fBestFeat_Defaults);
+
+NCBI_XOBJUTIL_EXPORT
+void GetMrnasForGene(const CSeq_feat& gene_feat,
+                     const CTSE_Handle& tse,
+                     list< CConstRef<CSeq_feat> >& mrna_feats,
+                     TBestFeatOpts opts = fBestFeat_Defaults);
+
+NCBI_XOBJUTIL_EXPORT
+void GetCdssForGene(const CSeq_feat& gene_feat,
+                    const CTSE_Handle& tse,
+                    list< CConstRef<CSeq_feat> >& cds_feats,
+                    TBestFeatOpts opts = fBestFeat_Defaults);
+
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat>
 GetBestOverlappingFeat(const CSeq_feat& feat,
@@ -771,6 +809,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.68  2006/11/30 14:22:47  vasilche
+* Use feature lookup by feat-id in GetBestXxxForXxx().
+*
 * Revision 1.67  2006/08/14 17:32:26  jcherry
 * Added GetAccessionForId and GetGiForId
 *

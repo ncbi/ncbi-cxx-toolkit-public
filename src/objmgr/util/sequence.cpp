@@ -71,13 +71,7 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqfeat/Genetic_code.hpp>
-#include <objects/seqfeat/Genetic_code_table.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/seq_entry_ci.hpp>
@@ -1417,6 +1411,172 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
     return feat_ref;
 }
 
+
+namespace {
+
+void x_GetFeatsById(CSeqFeatData::ESubtype subtype,
+                    const CSeq_feat& feat,
+                    const CTSE_Handle& tse,
+                    list< CConstRef<CSeq_feat> >& result)
+{
+    vector<CSeq_feat_Handle> handles;
+    if ( feat.IsSetXref() ) {
+        ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {
+            const CSeqFeatXref& xref = **it;
+            if ( xref.IsSetId() ) {
+                const CFeat_id& id = xref.GetId();
+                if ( id.IsLocal() ) {
+                    const CObject_id& obj_id = id.GetLocal();
+                    if ( obj_id.IsId() ) {
+                        int local_id = obj_id.GetId();
+                        handles = tse.GetFeaturesWithId(subtype, local_id);
+                        ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
+                            result.push_back(feat_it->GetSeq_feat());
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void x_GetFeatsByXref(CSeqFeatData::ESubtype subtype,
+                      const CFeat_id& id,
+                      const CTSE_Handle& tse,
+                      list< CConstRef<CSeq_feat> >& result)
+{
+    if ( id.IsLocal() ) {
+        const CObject_id& obj_id = id.GetLocal();
+        if ( obj_id.IsId() ) {
+            int local_id = obj_id.GetId();
+            vector<CSeq_feat_Handle> handles =
+                tse.GetFeaturesWithId(subtype, local_id);
+            ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
+                result.push_back(feat_it->GetSeq_feat());
+            }
+        }
+    }
+}
+
+void x_GetFeatsByXref(CSeqFeatData::ESubtype subtype,
+                      const CSeq_feat& feat,
+                      const CTSE_Handle& tse,
+                      list< CConstRef<CSeq_feat> >& result)
+{
+    if ( feat.IsSetId() ) {
+        x_GetFeatsByXref(subtype, feat.GetId(), tse, result);
+    }
+    if ( feat.IsSetIds() ) {
+        ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
+            x_GetFeatsByXref(subtype, **it, tse, result);
+        }
+    }
+}
+
+
+CConstRef<CSeq_feat> x_GetFeatById(CSeqFeatData::ESubtype subtype,
+                                   const CSeq_feat& feat,
+                                   const CTSE_Handle& tse)
+{
+    if ( feat.IsSetXref() ) {
+        ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {
+            const CSeqFeatXref& xref = **it;
+            if ( xref.IsSetId() ) {
+                const CFeat_id& id = xref.GetId();
+                if ( id.IsLocal() ) {
+                    const CObject_id& obj_id = id.GetLocal();
+                    if ( obj_id.IsId() ) {
+                        int local_id = obj_id.GetId();
+                        CSeq_feat_Handle feat_handle =
+                            tse.GetFeatureWithId(subtype, local_id);
+                        if ( feat_handle ) {
+                            return feat_handle.GetSeq_feat();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return null;
+}
+
+}
+
+
+CConstRef<CSeq_feat>
+GetBestGeneForMrna(const CSeq_feat& mrna_feat,
+                   const CTSE_Handle& tse,
+                   TBestFeatOpts opts)
+{
+    _ASSERT(mrna_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA);
+    CConstRef<CSeq_feat> ret =
+        x_GetFeatById(CSeqFeatData::eSubtype_gene, mrna_feat, tse);
+    if ( !ret ) {
+        ret = GetBestGeneForMrna(mrna_feat, tse.GetScope(), opts);
+    }
+    return ret;
+}
+
+CConstRef<CSeq_feat>
+GetBestGeneForCds(const CSeq_feat& cds_feat,
+                  const CTSE_Handle& tse,
+                  TBestFeatOpts opts)
+{
+    _ASSERT(cds_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion);
+    CConstRef<CSeq_feat> ret =
+        x_GetFeatById(CSeqFeatData::eSubtype_gene, cds_feat, tse);
+    if ( !ret ) {
+        ret = GetBestGeneForCds(cds_feat, tse.GetScope(), opts);
+    }
+    return ret;
+}
+
+CConstRef<CSeq_feat>
+GetBestMrnaForCds(const CSeq_feat& cds_feat,
+                  const CTSE_Handle& tse,
+                  TBestFeatOpts opts)
+{
+    _ASSERT(cds_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion);
+    CConstRef<CSeq_feat> ret =
+        x_GetFeatById(CSeqFeatData::eSubtype_mRNA, cds_feat, tse);
+    if ( !ret ) {
+        ret = GetBestMrnaForCds(cds_feat, tse.GetScope(), opts);
+    }
+    return ret;
+}
+
+CConstRef<CSeq_feat>
+GetBestCdsForMrna(const CSeq_feat& mrna_feat,
+                  const CTSE_Handle& tse,
+                  TBestFeatOpts opts)
+{
+    _ASSERT(mrna_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA);
+    CConstRef<CSeq_feat> ret =
+        x_GetFeatById(CSeqFeatData::eSubtype_cdregion, mrna_feat, tse);
+    if ( !ret ) {
+        ret = GetBestCdsForMrna(mrna_feat, tse.GetScope(), opts);
+    }
+    return ret;
+}
+
+void GetMrnasForGene(const CSeq_feat& gene_feat,
+                     const CTSE_Handle& tse,
+                     list< CConstRef<CSeq_feat> >& mrna_feats,
+                     TBestFeatOpts opts)
+{
+    _ASSERT(gene_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene);
+    GetMrnasForGene(gene_feat, tse.GetScope(), mrna_feats, opts);
+}
+
+void GetCdssForGene(const CSeq_feat& gene_feat,
+                    const CTSE_Handle& tse,
+                    list< CConstRef<CSeq_feat> >& cds_feats,
+                    TBestFeatOpts opts)
+{
+    _ASSERT(gene_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene);
+    GetCdssForGene(gene_feat, tse.GetScope(), cds_feats, opts);
+}
 
 // Get the encoding CDS feature of a given protein sequence.
 const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope)
@@ -2846,6 +3006,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.147  2006/11/30 14:22:47  vasilche
+* Use feature lookup by feat-id in GetBestXxxForXxx().
+*
 * Revision 1.146  2006/08/14 17:32:26  jcherry
 * Added GetAccessionForId and GetGiForId
 *
