@@ -364,9 +364,8 @@ CBDB_ResultStore<TBV>::Insert(unsigned          subset,
     if (st1.max_serialize_mem > m_Buffer.size()) {
         m_Buffer.resize(st1.max_serialize_mem);
     }
-    size_t size = bm::serialize(*bv_to_store, &m_Buffer[0], 
-                                m_STmpBlock, bm::BM_NO_BYTE_ORDER);
-    return this->Insert(&m_Buffer[0], size);
+    size_t size = bm::serialize(bv, &m_Buffer[0], m_STmpBlock);
+    return CBDB_BLobFile::Insert(&m_Buffer[0], size);
 }
 
 template<class TBV>
@@ -377,7 +376,7 @@ EBDB_ErrCode CBDB_ResultStore<TBV>::Insert(unsigned      subset,
     this->subset_id = subset;
     this->volume_id = volume;
     this->format = (unsigned) eIdVector;
-    return this->Insert(&id_vect[0], sizeof(id_vect[0]) * id_vect.size());
+    return CBDB_BLobFile::Insert(&id_vect[0], sizeof(id_vect[0]) * id_vect.size());
 }
 
 
@@ -389,7 +388,7 @@ EBDB_ErrCode CBDB_ResultStore<TBV>::Insert(unsigned      subset,
     this->subset_id = subset;
     this->volume_id = volume;
     this->format = (unsigned) eSingleId;
-    return this->Insert(&id_vect[0], sizeof(id_vect[0]) * id_vect.size());
+    return CBDB_BLobFile::Insert((const void*)&id, sizeof(id));
 }
 
 
@@ -400,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/11/30 14:23:09  kuznets
+ * Compilation fixes
+ *
  * Revision 1.2  2006/11/29 12:41:39  kuznets
  * Compilation fixes (MSVC)
  *
