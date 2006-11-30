@@ -318,8 +318,8 @@ void CNetBVSServer::ProcessVersion(CSocket& sock, const SBVS_Request& req)
 
 
 void CNetBVSServer::x_WriteBuf(CSocket& sock,
-                                 char*    buf,
-                                 size_t   bytes)
+                               const CBDB_RawFile::TBuffer::value_type* buf,
+                               size_t                                   bytes)
 {
     do {
         size_t n_written;
@@ -740,6 +740,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/11/30 14:23:50  dicuccio
+ * Update to use buffer typedefs from CBDB_RawFile
+ *
  * Revision 1.3  2006/06/07 15:48:09  kuznets
  * commented out socket send delay
  *

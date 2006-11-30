@@ -89,7 +89,7 @@ struct SBVS_ThreadData
     char          request[2048];                  ///< request string
     string        auth;                           ///< Authentication string
     SBVS_Request  req;                            ///< parsed NC request
-    vector<char>  buf;                            ///< BLOB buffer
+    CBDB_RawFile::TBuffer  buf;                            ///< BLOB buffer
     string        tmp;
 
     SBVS_ThreadData(size_t size)
@@ -194,8 +194,8 @@ private:
 private:
 
     void x_WriteBuf(CSocket& sock,
-                    char*    buf,
-                    size_t   bytes);
+                    const CBDB_RawFile::TBuffer::value_type* buf,
+                    size_t                                   bytes);
 
     /// Check if we have active thread data for this thread.
     /// Setup thread data if we don't.
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/11/30 14:23:50  dicuccio
+ * Update to use buffer typedefs from CBDB_RawFile
+ *
  * Revision 1.1  2006/06/02 12:44:55  kuznets
  * Initial revision
  *
