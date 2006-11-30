@@ -1509,7 +1509,7 @@ GetBestGeneForMrna(const CSeq_feat& mrna_feat,
                    const CTSE_Handle& tse,
                    TBestFeatOpts opts)
 {
-    _ASSERT(mrna_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA);
+    _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> ret =
         x_GetFeatById(CSeqFeatData::eSubtype_gene, mrna_feat, tse);
     if ( !ret ) {
@@ -1523,7 +1523,7 @@ GetBestGeneForCds(const CSeq_feat& cds_feat,
                   const CTSE_Handle& tse,
                   TBestFeatOpts opts)
 {
-    _ASSERT(cds_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion);
+    _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
     CConstRef<CSeq_feat> ret =
         x_GetFeatById(CSeqFeatData::eSubtype_gene, cds_feat, tse);
     if ( !ret ) {
@@ -1537,7 +1537,7 @@ GetBestMrnaForCds(const CSeq_feat& cds_feat,
                   const CTSE_Handle& tse,
                   TBestFeatOpts opts)
 {
-    _ASSERT(cds_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion);
+    _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
     CConstRef<CSeq_feat> ret =
         x_GetFeatById(CSeqFeatData::eSubtype_mRNA, cds_feat, tse);
     if ( !ret ) {
@@ -1551,7 +1551,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                   const CTSE_Handle& tse,
                   TBestFeatOpts opts)
 {
-    _ASSERT(mrna_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA);
+    _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> ret =
         x_GetFeatById(CSeqFeatData::eSubtype_cdregion, mrna_feat, tse);
     if ( !ret ) {
@@ -1565,7 +1565,7 @@ void GetMrnasForGene(const CSeq_feat& gene_feat,
                      list< CConstRef<CSeq_feat> >& mrna_feats,
                      TBestFeatOpts opts)
 {
-    _ASSERT(gene_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene);
+    _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     GetMrnasForGene(gene_feat, tse.GetScope(), mrna_feats, opts);
 }
 
@@ -1574,7 +1574,7 @@ void GetCdssForGene(const CSeq_feat& gene_feat,
                     list< CConstRef<CSeq_feat> >& cds_feats,
                     TBestFeatOpts opts)
 {
-    _ASSERT(gene_feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gene);
+    _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     GetCdssForGene(gene_feat, tse.GetScope(), cds_feats, opts);
 }
 
@@ -3006,6 +3006,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.148  2006/11/30 16:06:07  vasilche
+* Fixed wrong call in _ASSERT().
+*
 * Revision 1.147  2006/11/30 14:22:47  vasilche
 * Use feature lookup by feat-id in GetBestXxxForXxx().
 *
