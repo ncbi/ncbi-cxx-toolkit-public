@@ -94,6 +94,11 @@ CBDB_BLobFile::ReadRealloc(vector<char>& buffer, size_t* buf_size)
     if (buffer.size() == 0) {
         buffer.resize(10);
     }
+    // use the maximum capacity
+    size_t capacity = buffer.capacity();
+    if (capacity > buffer.size()) {
+        buffer.resize(capacity);
+    }
     while(1) {
         try {
             void* p = &buffer[0];
@@ -102,11 +107,13 @@ CBDB_BLobFile::ReadRealloc(vector<char>& buffer, size_t* buf_size)
                 if (buf_size) {
                     *buf_size = 0;
                 }
+                buffer.resize(0);
                 return ret;
             }
             if (buf_size) {
                 *buf_size = LobSize();
             }
+            buffer.resize(LobSize());
         }
         catch (CBDB_ErrnoException& ex) {
             // check if we have insufficient buffer
@@ -464,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/11/30 11:09:21  kuznets
+ * Tweaked buffer read to resize vector to full capacity
+ *
  * Revision 1.26  2006/11/14 13:27:38  dicuccio
  * Use field widths in comparators
  *
