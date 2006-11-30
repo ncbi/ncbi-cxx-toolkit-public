@@ -308,6 +308,8 @@ int CNcbiApplication::AppMain
                 if ( !argv[i++] ) {
                     continue;
                 }
+                v[real_arg_index++] = argv[i - 1];
+                v[real_arg_index++] = argv[i];
                 if (SetLogFile(argv[i], eDiagFile_All, true)) {
                     diag = eDS_User;
                     is_diag_setup = true;
@@ -317,6 +319,8 @@ int CNcbiApplication::AppMain
                 if ( !argv[i++] ) {
                     continue;
                 }
+                v[real_arg_index++] = argv[i - 1];
+                v[real_arg_index++] = argv[i];
                 conf = argv[i];
 
                 // Version
@@ -582,6 +586,21 @@ void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
     m_ArgDesc.reset(arg_desc);
 
     if ( arg_desc ) {
+        if ( !m_DisableArgDesc ) {
+            // Add logfile and conffile arguments
+            if ( !m_ArgDesc->Exist(s_ArgLogFile + 1) ) {
+                m_ArgDesc->AddOptionalKey
+                    (s_ArgLogFile+1, "File_Name",
+                        "File to which the program log should be redirected",
+                        CArgDescriptions::eOutputFile);
+            }
+            if ( !m_ArgDesc->Exist(s_ArgCfgFile + 1) ) {
+                m_ArgDesc->AddOptionalKey
+                    (s_ArgCfgFile + 1, "File_Name",
+                        "Program's configuration (registry) data file",
+                        CArgDescriptions::eInputFile);
+            }
+        }
         m_Args.reset(arg_desc->CreateArgs(GetArguments()));
     } else {
         m_Args.reset();
@@ -1020,6 +1039,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.139  2006/11/30 21:32:17  grichenk
+ * Automatically add logfile and conffile arguments if they do not exist.
+ *
  * Revision 1.138  2006/11/29 13:56:29  gouriano
  * Moved GetErrorCodeString method into cpp
  *
