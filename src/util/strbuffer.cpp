@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2006/12/01 14:28:38  vasilche
+* Fixed cast on several platforms.
+*
 * Revision 1.52  2006/11/30 20:15:15  vasilche
 * Allow direct reading from memory in CIStreamBuffer.
 *
@@ -414,10 +417,9 @@ void CIStreamBuffer::FindChar(char c)
     //     end == m_DataEndPos
     //     pos < end
     for (;;) {
-        const char* found =
-            static_cast<const char*>(memchr(pos, c, end - pos));
+        const void* found = memchr(pos, c, end - pos);
         if ( found ) {
-            m_CurrentPos = found;
+            m_CurrentPos = static_cast<const char*>(found);
             return;
         }
         // point m_CurrentPos to end of buffer
@@ -439,10 +441,9 @@ size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
     const char* pos = m_CurrentPos;
     size_t bufferSize = m_DataEndPos - pos;
     if ( bufferSize != 0 ) {
-        const char* found =
-            static_cast<const char*>(memchr(pos, c, min(limit, bufferSize)));
+        const void* found = memchr(pos, c, min(limit, bufferSize));
         if ( found )
-            return found - pos;
+            return static_cast<const char*>(found) - pos;
     }
     return limit;
 }
