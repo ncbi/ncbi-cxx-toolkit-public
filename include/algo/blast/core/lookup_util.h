@@ -78,9 +78,11 @@ void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet);
  * currently intended for nucleotide locations, and ignores ambiguities
  * and the actual width of a lookup table word
  * @param location A linked list of locations to index [in]
+ * @param max_off upper bound on the largest query offset
+ *               to be indexed [out]
  * @return The approximate number of lookup table entries
  */
-Int4 EstimateNumTableEntries(BlastSeqLoc* location);
+Int4 EstimateNumTableEntries(BlastSeqLoc* location, Int4 *max_off);
 
 #ifdef __cplusplus
 }
