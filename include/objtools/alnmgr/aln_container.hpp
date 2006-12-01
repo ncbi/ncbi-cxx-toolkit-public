@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class NCBI_XALNMGR_EXPORT CAlnContainer
+class CAlnContainer
 {
 public:
     CAlnContainer() {};
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/12/01 21:21:35  todorov
+* - NCBI_XALNMGR_EXPORT
+*
 * Revision 1.2  2006/12/01 17:53:11  todorov
 * + NCBI_XALNMGR_EXPORT
 *

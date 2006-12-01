@@ -47,7 +47,6 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_XALNMGR_EXPORT 
 void 
 MergeAlnRngColl(CPairwiseAln& existing,
                 const CPairwiseAln& addition,
@@ -207,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/12/01 21:21:02  todorov
+* - NCBI_XALNMGR_EXPORT
+*
 * Revision 1.4  2006/12/01 17:53:00  todorov
 * + NCBI_XALNMGR_EXPORT
 *

@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XALNMGR_EXPORT CAlnUserOptions : public CObject
+class CAlnUserOptions : public CObject
 {
 public:
 
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/12/01 21:23:25  todorov
+* - NCBI_XALNMGR_EXPORT
+*
 * Revision 1.3  2006/12/01 17:53:32  todorov
 * + NCBI_XALNMGR_EXPORT
 *

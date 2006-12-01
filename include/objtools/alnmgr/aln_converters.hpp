@@ -52,7 +52,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-NCBI_XALNMGR_EXPORT
 void
 ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                            const CDense_seg& ds,        ///< input Dense-seg
@@ -110,7 +109,6 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
 }
 
 
-NCBI_XALNMGR_EXPORT
 void
 ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
                            const CSeq_align::TSegs::TStd& std, ///< input Std
@@ -150,7 +148,6 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
 }
 
 
-NCBI_XALNMGR_EXPORT
 void
 ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                              const CSeq_align& sa,        ///< input Seq-align
@@ -288,6 +285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/12/01 21:22:34  todorov
+* - NCBI_XALNMGR_EXPORT
+*
 * Revision 1.10  2006/12/01 17:53:22  todorov
 * + NCBI_XALNMGR_EXPORT
 *
