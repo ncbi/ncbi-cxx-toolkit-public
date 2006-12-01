@@ -268,6 +268,238 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap * lookup_wrap,
     return total_hits;
 }
 
+Int4 BlastSmallNaScanSubject_AG(const LookupTableWrap * lookup_wrap,
+                                const BLAST_SequenceBlk * subject,
+                                Int4 start_offset,
+                                BlastOffsetPair * NCBI_RESTRICT offset_pairs,
+                                Int4 max_hits, Int4 * end_offset)
+{
+    BlastSmallNaLookupTable *lookup;
+    Uint1 *s;
+    Uint1 *abs_start;
+    Int4 s_off;
+    Int4 num_hits;
+    Int4 index;
+    Int4 total_hits = 0;
+    Int4 scan_step;
+    Int4 mask;
+    Int4 lut_word_length;
+    Int4 last_offset;
+    Int2 *backbone;
+    Int2 *overflow;
+
+    ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
+    lookup = (BlastSmallNaLookupTable *) lookup_wrap->lut;
+
+    abs_start = subject->sequence;
+    mask = lookup->mask;
+    scan_step = lookup->scan_step;
+    lut_word_length = lookup->lut_word_length;
+    last_offset = subject->length - lut_word_length;
+
+    backbone = lookup->final_backbone;
+    overflow = lookup->overflow;
+    max_hits -= lookup->longest_chain;
+
+    ASSERT(lookup->scan_step > 0);
+
+    if (lut_word_length > 5) {
+
+        /* perform scanning for lookup tables of width 6, 7, and 8. These
+           widths require two bytes of the compressed subject sequence, and
+           possibly a third if the word is not aligned on a 4-base boundary */
+
+        if (scan_step % COMPRESSION_RATIO == 0) {
+
+            /* for strides that are a multiple of 4, words are always aligned 
+               and two bytes of the subject sequence will always hold a
+               complete word (plus possible extra bases that must be shifted
+               away). s_end below always points to the second-to-last byte of
+               subject, so we will never fetch the byte beyond the end of
+               subject */
+
+            Uint1 *s_end = abs_start + last_offset / COMPRESSION_RATIO;
+            Int4 shift = 2 * (FULL_BYTE_SHIFT - lut_word_length);
+            s = abs_start + start_offset / COMPRESSION_RATIO;
+            scan_step = scan_step / COMPRESSION_RATIO;
+
+            for (; s <= s_end; s += scan_step) {
+                index = s[0] << 8 | s[1];
+                index = backbone[index >> shift];
+                if (index == -1)
+                    continue;
+                if (total_hits > max_hits)
+                    break;
+        
+                s_off = (s - abs_start) * COMPRESSION_RATIO;
+        
+                if (index >= 0) {
+                    offset_pairs[total_hits].qs_offsets.q_off = index;
+                    offset_pairs[total_hits].qs_offsets.s_off = s_off;
+                    num_hits = 1;
+                }
+                else {
+                    Int4 src_off = -(index + 2);
+                    index = overflow[src_off++];
+                    num_hits = 0;
+                    do {
+                        offset_pairs[total_hits+num_hits].qs_offsets.q_off = index;
+                        offset_pairs[total_hits+num_hits].qs_offsets.s_off = s_off;
+                        num_hits++;
+                        index = overflow[src_off++];
+                    } while (index >= 0);
+                }
+                total_hits += num_hits;
+            }
+            *end_offset = (s - abs_start) * COMPRESSION_RATIO;
+        } else {
+            /* when the stride is not a multiple of 4, extra bases may occur
+               both before and after every word read from the subject
+               sequence. The portion of each 12-base region that contains the 
+               actual word depends on the offset of the word and the lookup
+               table width, and must be recalculated for each 12-base region
+
+               Unlike the aligned stride case, the scanning can walk off the
+               subject array for lut_word_length = 6 or 7 (length 8 may also
+               do this, but only if the subject is a multiple of 4 bases in
+               size, and in that case there is a sentinel byte). We avoid
+               this by first handling all the cases where 12-base regions
+               fit, then handling the last few offsets separately */
+
+            Int4 last_offset3 = last_offset;
+            switch (subject->length % COMPRESSION_RATIO) {
+            case 2:
+                if (lut_word_length == 6)
+                    last_offset3--;
+                break;
+            case 3:
+                if (lut_word_length == 6)
+                    last_offset3 -= 2;
+                else if (lut_word_length == 7)
+                    last_offset3--;
+                break;
+            }
+
+            for (s_off = start_offset; s_off <= last_offset3;
+                 s_off += scan_step) {
+
+                Int4 shift =
+                    2 * (12 - (s_off % COMPRESSION_RATIO + lut_word_length));
+                s = abs_start + (s_off / COMPRESSION_RATIO);
+
+                index = s[0] << 16 | s[1] << 8 | s[2];
+                index = backbone[(index >> shift) & mask];
+
+                if (index == -1)
+                    continue;
+                if (total_hits > max_hits)
+                    break;
+        
+                if (index >= 0) {
+                    offset_pairs[total_hits].qs_offsets.q_off = index;
+                    offset_pairs[total_hits].qs_offsets.s_off = s_off;
+                    num_hits = 1;
+                }
+                else {
+                    Int4 src_off = -(index + 2);
+                    index = overflow[src_off++];
+                    num_hits = 0;
+                    do {
+                        offset_pairs[total_hits+num_hits].qs_offsets.q_off = index;
+                        offset_pairs[total_hits+num_hits].qs_offsets.s_off = s_off;
+                        num_hits++;
+                        index = overflow[src_off++];
+                    } while (index >= 0);
+                }
+                total_hits += num_hits;
+            }
+
+            /* repeat the loop but only read two bytes at a time. For
+               lut_word_length = 6 the loop runs at most twice, and for
+               lut_word_length = 7 it runs at most once */
+
+            for (; s_off > last_offset3 && s_off <= last_offset;
+                 s_off += scan_step) {
+
+                Int4 shift =
+                    2 * (8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+                s = abs_start + (s_off / COMPRESSION_RATIO);
+
+                index = s[0] << 8 | s[1];
+                index = backbone[(index >> shift) & mask];
+
+                if (index == -1)
+                    continue;
+                if (total_hits > max_hits)
+                    break;
+        
+                if (index >= 0) {
+                    offset_pairs[total_hits].qs_offsets.q_off = index;
+                    offset_pairs[total_hits].qs_offsets.s_off = s_off;
+                    num_hits = 1;
+                }
+                else {
+                    Int4 src_off = -(index + 2);
+                    index = overflow[src_off++];
+                    num_hits = 0;
+                    do {
+                        offset_pairs[total_hits+num_hits].qs_offsets.q_off = index;
+                        offset_pairs[total_hits+num_hits].qs_offsets.s_off = s_off;
+                        num_hits++;
+                        index = overflow[src_off++];
+                    } while (index >= 0);
+                }
+                total_hits += num_hits;
+            }
+            *end_offset = s_off;
+        }
+    } else {
+        /* perform scanning for lookup tables of width 4 and 5. Here the
+           stride will never be a multiple of 4 (these tables are only used
+           for very small word sizes). The last word is always two bytes from 
+           the end of the sequence, unless the table width is 4 and subect is 
+           a multiple of 4 bases; in that case there is a sentinel byte, so
+           the following does not need to be corrected when scanning near the 
+           end of the subject sequence */
+
+        for (s_off = start_offset; s_off <= last_offset; s_off += scan_step) {
+
+            Int4 shift =
+                2 * (8 - (s_off % COMPRESSION_RATIO + lut_word_length));
+            s = abs_start + (s_off / COMPRESSION_RATIO);
+
+            index = s[0] << 8 | s[1];
+            index = backbone[(index >> shift) & mask];
+
+            if (index == -1)
+                continue;
+            if (total_hits > max_hits)
+                break;
+    
+            if (index >= 0) {
+                offset_pairs[total_hits].qs_offsets.q_off = index;
+                offset_pairs[total_hits].qs_offsets.s_off = s_off;
+                num_hits = 1;
+            }
+            else {
+                Int4 src_off = -(index + 2);
+                index = overflow[src_off++];
+                num_hits = 0;
+                do {
+                    offset_pairs[total_hits+num_hits].qs_offsets.q_off = index;
+                    offset_pairs[total_hits+num_hits].qs_offsets.s_off = s_off;
+                    num_hits++;
+                    index = overflow[src_off++];
+                } while (index >= 0);
+            }
+            total_hits += num_hits;
+        }
+        *end_offset = s_off;
+    }
+
+    return total_hits;
+}
+
 Int4 BlastNaScanSubject(const LookupTableWrap * lookup_wrap,
                         const BLAST_SequenceBlk * subject,
                         Int4 start_offset,
@@ -306,6 +538,73 @@ Int4 BlastNaScanSubject(const LookupTableWrap * lookup_wrap,
                               index,
                               offset_pairs + total_hits,
                               (s - abs_start) * COMPRESSION_RATIO);
+        total_hits += num_hits;
+    }
+    *end_offset = (s - abs_start) * COMPRESSION_RATIO;
+
+    return total_hits;
+}
+
+Int4 BlastSmallNaScanSubject(const LookupTableWrap * lookup_wrap,
+                             const BLAST_SequenceBlk * subject,
+                             Int4 start_offset,
+                             BlastOffsetPair * NCBI_RESTRICT offset_pairs,
+                             Int4 max_hits, Int4 * end_offset)
+{
+    Uint1 *s;
+    Uint1 *abs_start, *s_end;
+    BlastSmallNaLookupTable *lookup;
+    Int4 total_hits = 0;
+    Int4 lut_word_length;
+    Int2 *backbone;
+    Int2 *overflow;
+
+    ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
+    lookup = (BlastSmallNaLookupTable *) lookup_wrap->lut;
+
+    lut_word_length = lookup->lut_word_length;
+    ASSERT(lut_word_length == 8);
+
+    abs_start = subject->sequence;
+    s = abs_start + start_offset / COMPRESSION_RATIO;
+    s_end = abs_start + (subject->length - lut_word_length) /
+        COMPRESSION_RATIO;
+
+    backbone = lookup->final_backbone;
+    overflow = lookup->overflow;
+    max_hits -= lookup->longest_chain;
+
+    for (; s <= s_end; s++) {
+
+        Int4 index = s[0] << 8 | s[1];
+        Int4 num_hits, s_off;
+
+        index = backbone[index];
+        if (index == -1)
+            continue;
+
+        if (total_hits > max_hits)
+            break;
+
+        s_off = (s - abs_start) * COMPRESSION_RATIO;
+
+        if (index >= 0) {
+            offset_pairs[total_hits].qs_offsets.q_off = index;
+            offset_pairs[total_hits].qs_offsets.s_off = s_off;
+            num_hits = 1;
+        }
+        else {
+            Int4 src_off = -(index + 2);
+            index = overflow[src_off++];
+            num_hits = 0;
+            do {
+                offset_pairs[total_hits+num_hits].qs_offsets.q_off = index;
+                offset_pairs[total_hits+num_hits].qs_offsets.s_off = s_off;
+                num_hits++;
+                index = overflow[src_off++];
+            } while (index >= 0);
+        }
+            
         total_hits += num_hits;
     }
     *end_offset = (s - abs_start) * COMPRESSION_RATIO;
