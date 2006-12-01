@@ -141,6 +141,13 @@ s_GetBestExtensionMethod(const LookupTableWrap* lookup_wrap)
      case eRPSLookupTable:
          retval = eRight;
          break;
+     case eSmallNaLookupTable:
+         if (((BlastSmallNaLookupTable*)
+              lookup_wrap->lut)->ag_scanning_mode == TRUE)
+               retval = eRightAndLeft;
+         else
+               retval = eRight;
+         break;
      case eNaLookupTable:
          if (((BlastNaLookupTable*)lookup_wrap->lut)->ag_scanning_mode == TRUE)
                retval = eRightAndLeft;
@@ -985,6 +992,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2006/12/01 16:52:25  papadopo
+ * choose mini-extension type for improved blastn lookup tables
+ *
  * Revision 1.30  2006/11/21 17:06:23  papadopo
  * rearrange headers, use enum for lookup table types
  *
