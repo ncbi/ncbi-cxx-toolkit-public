@@ -46,12 +46,58 @@ extern "C" {
  * @param approx_table_entries An upper bound on the number of words
  *        that must be added to the lookup table [in]
  * @param lut_width The number of nucleotides in one lookup table word [out]
+ @param query_length Number of letters in the query [in]
  * @return the lookup table type chosen
  */
 ELookupTableType
 BlastChooseNaLookupTable(const LookupTableOptions* lookup_options,	
-                         Int4 approx_table_entries,
+                         Int4 approx_table_entries, Int4 query_length,
                          Int4 *lut_width);
+
+/*------------------------- Small lookup table --------------------------*/
+
+/** Lookup table structure for blastn searches with small queries */
+typedef struct BlastSmallNaLookupTable {
+    Int4 mask;             /**< part of index to mask off, that is, top 
+                                (wordsize*charsize) bits should be discarded. */
+    Int4 word_length;      /**< Length in bases of the full word match 
+                                required to trigger extension */
+    Int4 lut_word_length;  /**< Length in bases of a word indexed by the
+                                lookup table */
+    Int4 scan_step;        /**< number of bases between successive words */
+    Int4 backbone_size;    /**< number of cells in the backbone */
+    Int4 longest_chain;    /**< length of the longest chain on the backbone */
+    Int2 * final_backbone; /**< backbone structure used when scanning for 
+                                 hits */
+    Int2 * overflow;       /**< the overflow array for the compacted 
+                                lookup table */
+    Int4  overflow_size;   /**< Number of elements in the overflow array */
+    Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if 
+                                 TRUE, so that not every base is checked.  */
+} BlastSmallNaLookupTable;
+
+/** Create a new small nucleotide lookup table.
+ * @param query The query sequence block (if concatenated sequence, the 
+ *        individual strands/sequences must be separated by a 0x0f byte)[in]
+ * @param locations The locations to be included in the lookup table,
+ *        e.g. [0,length-1] for full sequence. NULL means no sequence. [in]
+ * @param lut Pointer to the lookup table to be created [out]
+ * @param lookup_options Options for lookup table creation [in]
+ * @param lut_width The number of nucleotides in one lookup table word [in]
+ * @return 0 if successful, nonzero on failure
+ */
+Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query,
+                                BlastSeqLoc* locations,
+                                BlastSmallNaLookupTable * *lut,
+                                const LookupTableOptions * opt,
+                                Int4 lut_width);
+
+/** Free a small nucleotide lookup table.
+ *  @param lookup The lookup table structure to be freed
+ *  @return NULL
+ */
+BlastSmallNaLookupTable* BlastSmallNaLookupTableDestruct(
+                                        BlastSmallNaLookupTable* lookup);
 
 /*----------------------- Standard lookup table -------------------------*/
 
@@ -87,9 +133,6 @@ typedef struct BlastNaLookupTable {
     Int4 scan_step;        /**< number of bases between successive words */
     Int4 backbone_size;    /**< number of cells in the backbone */
     Int4 longest_chain;    /**< length of the longest chain on the backbone */
-    Int4 ** thin_backbone; /**< the "thin" backbone. for each index cell, 
-                                maintain a pointer to a dynamically-allocated 
-                                chain of hits. */
     NaLookupBackboneCell * thick_backbone; /**< the "thick" backbone. after 
                                               queries are indexed, compact the 
                                               backbone to put at most 
@@ -104,10 +147,6 @@ typedef struct BlastNaLookupTable {
                                 backbone cell contains hits */
     Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if 
                                  TRUE, so that not every base is checked.  */
-
-    Int4 exact_matches;    /**< the number of exact matches found while 
-                                indexing the queries, used for informational/
-                                debugging purposes */
 } BlastNaLookupTable;
   
 /** Create a new nucleotide lookup table.
