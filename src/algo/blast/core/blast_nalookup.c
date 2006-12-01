@@ -42,15 +42,16 @@ static char const rcsid[] =
  */
 #define BLAST2NA_MASK 0xfc
 
-/** number of bits in a compressed nuclleotide letter */
+/** number of bits in a compressed nucleotide letter */
 #define BITS_PER_NUC 2
-
 
 ELookupTableType
 BlastChooseNaLookupTable(const LookupTableOptions* lookup_options,	
-                         Int4 approx_table_entries,
+                         Int4 approx_table_entries, Int4 max_q_off,
                          Int4 *lut_width)
 {
+   ELookupTableType lut_type;
+
    /* Choose the width of the lookup table. The width may be any number
       <= the word size, but the most efficient width is a compromise
       between small values (which have better cache performance and
@@ -72,103 +73,302 @@ BlastChooseNaLookupTable(const LookupTableOptions* lookup_options,
    case 4:
    case 5:
    case 6:
+      lut_type = eSmallNaLookupTable;
       *lut_width = lookup_options->word_size;
-      return eNaLookupTable;
+      break;
 
    case 7:
+      lut_type = eSmallNaLookupTable;
       if (approx_table_entries < 625)
          *lut_width = 6;
       else
          *lut_width = 7;
-      return eNaLookupTable;
+      break;
       
    case 8:
+      lut_type = eSmallNaLookupTable;
       if (approx_table_entries < 8500)
          *lut_width = 7;
       else
          *lut_width = 8;
-      return eNaLookupTable;
+      break;
 
    case 9:
+      lut_type = eSmallNaLookupTable;
       if (approx_table_entries < 1250)
          *lut_width = 7;
       else
          *lut_width = 8;
-      return eNaLookupTable;
+      break;
 
    case 10:
       if (approx_table_entries < 1250) {
          *lut_width = 7;
-         return eNaLookupTable;
+         lut_type = eSmallNaLookupTable;
       } else if (approx_table_entries < 8500) {
          *lut_width = 8;
-         return eNaLookupTable;
+         lut_type = eSmallNaLookupTable;
       } else if (approx_table_entries < 18000) {
          *lut_width = 9;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       } else {
          *lut_width = 10;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       }
+      break;
       
    case 11:
       /* For word size 11 the standard lookup table is 
          especially efficient, so the cutoff before switching
          over to the megablast lookup table is larger */
-      if (approx_table_entries < 17000) {
+      if (approx_table_entries < 20000) {
          *lut_width = 8;
-         return eNaLookupTable;
-      } else if (approx_table_entries < 18000) {
-         *lut_width = 9;
-         return eMBLookupTable;
+         lut_type = eSmallNaLookupTable;
       } else if (approx_table_entries < 180000) {
          *lut_width = 10;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       } else {
          *lut_width = 11;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       }
+      break;
 
    case 12:
       if (approx_table_entries < 8500) {
          *lut_width = 8;
-         return eNaLookupTable;
+         lut_type = eSmallNaLookupTable;
       } else if (approx_table_entries < 18000) {
          *lut_width = 9;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       } else if (approx_table_entries < 60000) {
          *lut_width = 10;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       } else if (approx_table_entries < 900000) {
          *lut_width = 11;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       } else {
          *lut_width = 12;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       }
+      break;
 
    default:
       if (approx_table_entries < 8500) {
          *lut_width = 8;
-         return eNaLookupTable;
+         lut_type = eSmallNaLookupTable;
       } else if (approx_table_entries < 300000) {
          *lut_width = 11;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       } else {
          *lut_width = 12;
-         return eMBLookupTable;
+         lut_type = eMBLookupTable;
       }
+      break;
    }
+
+   /* we only use the ordinary blastn table for cases where
+      the number of words to index, or the maximum query offset,
+      exceeds the range of the 15-bit values used in the 
+      small blastn lookup table */
+
+   if (lut_type == eSmallNaLookupTable && 
+       (approx_table_entries >= 32767 || max_q_off >= 32768)) {
+      lut_type = eNaLookupTable;
+   }
+   return lut_type;
 }
+
+/*--------------------- Small nucleotide table  ----------------------*/
+
+/** Pack the data structures comprising a small nucleotide lookup table
+ * into their final form
+ * @param thin_backbone structure containing indexed query offsets [in][out]
+ * @param lookup the lookup table [in]
+ * @return zero if packing process succeeded
+ */
+static Int4 s_BlastSmallNaLookupFinalize(Int4 **thin_backbone,
+                                         BlastSmallNaLookupTable * lookup)
+{
+    Int4 i;
+    Int4 overflow_cells_needed = 0;
+    Int4 overflow_cursor = 0;
+    Int4 longest_chain = 0;
+#ifdef LOOKUP_VERBOSE
+    Int4 backbone_occupancy = 0;
+    Int4 thick_backbone_occupancy = 0;
+    Int4 num_overflows = 0;
+#endif
+
+    /* find out how many cells need the overflow array. The
+       backbone holds at most one hit per cell, so any cells 
+       that need more than that must go into the overflow array 
+       (along with a trailing null). */
+       
+    for (i = 0; i < lookup->backbone_size; i++) {
+        if (thin_backbone[i] != NULL) {
+            Int4 num_hits = thin_backbone[i][1];
+            if (num_hits > 1)
+                overflow_cells_needed += num_hits + 1;
+            longest_chain = MAX(longest_chain, num_hits);
+        }
+    }
+
+    /* there is a hard limit to the number of query offsets
+       allowed in the overflow array. Although unlikely, it
+       is technically possible to index a query sequence that
+       has so many trailing nulls in the overflow array that
+       the limit gets exceeded */
+
+    if (overflow_cells_needed >= 32768) {
+       for (i = 0; i < lookup->backbone_size; i++)
+          sfree(thin_backbone[i]);
+       return -1;
+    }
+
+    /* allocate the new lookup table */
+    lookup->final_backbone = (Int2 *)malloc(
+                               lookup->backbone_size * sizeof(Int2));
+    ASSERT(lookup->final_backbone != NULL);
+
+    lookup->longest_chain = longest_chain;
+
+    /* allocate the overflow array */
+    if (overflow_cells_needed > 0) {
+        lookup->overflow = (Int2 *) malloc(overflow_cells_needed * 
+                                           sizeof(Int2));
+        ASSERT(lookup->overflow != NULL);
+    }
+
+    /* for each position in the lookup table backbone, */
+    for (i = 0; i < lookup->backbone_size; i++) {
+
+        Int4 j, num_hits;
+
+        /* skip if there are no hits in cell i */
+        if (thin_backbone[i] == NULL) {
+            lookup->final_backbone[i] = -1;
+            continue;
+        }
+
+#ifdef LOOKUP_VERBOSE
+        backbone_occupancy++;
+#endif
+        num_hits = thin_backbone[i][1];
+
+        if (num_hits == 1) {
+
+           /* if there is only one hit, it goes into the backbone */
+
+#ifdef LOOKUP_VERBOSE
+            thick_backbone_occupancy++;
+#endif
+            lookup->final_backbone[i] = thin_backbone[i][2];
+        } 
+        else {
+#ifdef LOOKUP_VERBOSE
+            num_overflows++;
+#endif
+            /* for more than one hit, the backbone stores
+               -(overflow offset where hits occur). Since a
+               cell value of -1 is reserved to mean 'empty cell',
+               the value stored begins at -2 */
+            lookup->final_backbone[i] = -(overflow_cursor + 2);
+            for (j = 0; j < num_hits; j++) {
+                lookup->overflow[overflow_cursor++] =
+                    thin_backbone[i][j + 2];
+            }
+
+            /* we don't have the room to store the number of hits,
+               so append a null to the end of the list to signal
+               that the current chain is finished */
+            lookup->overflow[overflow_cursor++] = -1;
+        }
+
+        /* done with this chain */
+        sfree(thin_backbone[i]);
+    }
+
+    lookup->overflow_size = overflow_cursor;
+
+#ifdef LOOKUP_VERBOSE
+    printf("SmallNa\n");
+    printf("backbone size: %d\n", lookup->backbone_size);
+    printf("backbone occupancy: %d (%f%%)\n", backbone_occupancy,
+           100.0 * backbone_occupancy / lookup->backbone_size);
+    printf("thick_backbone occupancy: %d (%f%%)\n",
+           thick_backbone_occupancy,
+           100.0 * thick_backbone_occupancy / lookup->backbone_size);
+    printf("num_overflows: %d\n", num_overflows);
+    printf("overflow size: %d\n", overflow_cells_needed);
+    printf("longest chain: %d\n", longest_chain);
+#endif
+
+    return 0;
+}
+
+Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query, 
+                           BlastSeqLoc* locations,
+                           BlastSmallNaLookupTable * *lut,
+                           const LookupTableOptions * opt, 
+                           Int4 lut_width)
+{
+    Int4 status = 0;
+    Int4 **thin_backbone;
+    BlastSmallNaLookupTable *lookup = 
+        (BlastSmallNaLookupTable *) calloc(1, sizeof(BlastSmallNaLookupTable));
+
+    ASSERT(lookup != NULL);
+
+    lookup->word_length = opt->word_size;
+    lookup->lut_word_length = lut_width;
+    lookup->backbone_size = 1 << (BITS_PER_NUC * lookup->lut_word_length);
+    lookup->mask = lookup->backbone_size - 1;
+    lookup->overflow = NULL;
+
+    thin_backbone = (Int4 **) calloc(lookup->backbone_size, sizeof(Int4 *));
+    ASSERT(thin_backbone != NULL);
+
+    /* the standard word size and lookup width will not use
+       AG striding, but all other combinations do */
+    if (lookup->lut_word_length != 8 || lookup->word_length != 11) {
+        lookup->ag_scanning_mode = TRUE;
+        lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
+    }
+
+    BlastLookupIndexQueryExactMatches(thin_backbone,
+                                      lookup->word_length,
+                                      BITS_PER_NUC,
+                                      lookup->lut_word_length,
+                                      query, locations);
+    status = s_BlastSmallNaLookupFinalize(thin_backbone, lookup);
+    if (status != 0) {
+        lookup = BlastSmallNaLookupTableDestruct(lookup);
+    }
+
+    sfree(thin_backbone);
+    *lut = lookup;
+    return status;
+}
+
+BlastSmallNaLookupTable *BlastSmallNaLookupTableDestruct(
+                                    BlastSmallNaLookupTable * lookup)
+{
+    sfree(lookup->final_backbone);
+    sfree(lookup->overflow);
+    sfree(lookup);
+    return NULL;
+}
+
 
 /*--------------------- Standard nucleotide table  ----------------------*/
 
 /** Pack the data structures comprising a nucleotide lookup table
  * into their final form
- *
+ * @param thin_backbone structure containing indexed query offsets [in][out]
  * @param lookup the lookup table [in]
  */
-static void s_BlastNaLookupFinalize(BlastNaLookupTable * lookup)
+static void s_BlastNaLookupFinalize(Int4 **thin_backbone,
+                                    BlastNaLookupTable * lookup)
 {
     Int4 i;
     Int4 overflow_cells_needed = 0;
@@ -182,96 +382,83 @@ static void s_BlastNaLookupFinalize(BlastNaLookupTable * lookup)
 #endif
 
     /* allocate the new lookup table */
-    lookup->thick_backbone = (NaLookupBackboneCell *)
-        calloc(lookup->backbone_size, sizeof(NaLookupBackboneCell));
+    lookup->thick_backbone = (NaLookupBackboneCell *)calloc(
+                                           lookup->backbone_size, 
+                                           sizeof(NaLookupBackboneCell));
     ASSERT(lookup->thick_backbone != NULL);
 
     /* allocate the pv_array */
-    pv = lookup->pv = (PV_ARRAY_TYPE *) calloc(
+    pv = lookup->pv = (PV_ARRAY_TYPE *)calloc(
                               (lookup->backbone_size >> PV_ARRAY_BTS) + 1,
                               sizeof(PV_ARRAY_TYPE));
     ASSERT(pv != NULL);
 
     /* find out how many cells need the overflow array */
-    for (i = 0; i < lookup->backbone_size; i++)
-        if (lookup->thin_backbone[i] != NULL) {
-            if (lookup->thin_backbone[i][1] > NA_HITS_PER_CELL)
-                overflow_cells_needed += lookup->thin_backbone[i][1];
-
-            if (lookup->thin_backbone[i][1] > longest_chain)
-                longest_chain = lookup->thin_backbone[i][1];
+    for (i = 0; i < lookup->backbone_size; i++) {
+        if (thin_backbone[i] != NULL) {
+            Int4 num_hits = thin_backbone[i][1];
+            if (num_hits > NA_HITS_PER_CELL)
+                overflow_cells_needed += num_hits;
+            longest_chain = MAX(longest_chain, num_hits);
         }
+    }
 
     lookup->longest_chain = longest_chain;
 
     /* allocate the overflow array */
     if (overflow_cells_needed > 0) {
-        lookup->overflow =
-            (Int4 *) calloc(overflow_cells_needed, sizeof(Int4));
+        lookup->overflow = (Int4 *) calloc(overflow_cells_needed, sizeof(Int4));
         ASSERT(lookup->overflow != NULL);
     }
 
-/* for each position in the lookup table backbone, */
+    /* for each position in the lookup table backbone, */
     for (i = 0; i < lookup->backbone_size; i++) {
-        /* if there are hits there, */
-        if (lookup->thin_backbone[i] != NULL) {
-            /* set the corresponding bit in the pv_array */
-            PV_SET(pv, i, PV_ARRAY_BTS);
-#ifdef LOOKUP_VERBOSE
-            backbone_occupancy++;
-#endif
 
-            /* if there are three or fewer hits, */
-            if ((lookup->thin_backbone[i])[1] <= NA_HITS_PER_CELL)
-                /* copy them into the thick_backbone cell */
-            {
-                Int4 j;
-#ifdef LOOKUP_VERBOSE
-                thick_backbone_occupancy++;
-#endif
+        Int4 j, num_hits;
 
-                lookup->thick_backbone[i].num_used =
-                    lookup->thin_backbone[i][1];
-
-                for (j = 0; j < lookup->thin_backbone[i][1]; j++)
-                    lookup->thick_backbone[i].payload.entries[j] =
-                        lookup->thin_backbone[i][j + 2];
-            } else
-                /* more than three hits; copy to overflow array */
-            {
-                Int4 j;
+        /* skip if there are no hits in cell i */
+        if (thin_backbone[i] == NULL)
+            continue;
 
 #ifdef LOOKUP_VERBOSE
-                num_overflows++;
+        backbone_occupancy++;
 #endif
+        num_hits = thin_backbone[i][1];
+        lookup->thick_backbone[i].num_used = num_hits;
 
-                lookup->thick_backbone[i].num_used =
-                    lookup->thin_backbone[i][1];
-                lookup->thick_backbone[i].payload.overflow_cursor =
-                    overflow_cursor;
-                for (j = 0; j < lookup->thin_backbone[i][1]; j++) {
-                    lookup->overflow[overflow_cursor] =
-                        lookup->thin_backbone[i][j + 2];
-                    overflow_cursor++;
-                }
+        PV_SET(pv, i, PV_ARRAY_BTS);
+
+        /* if there are few enough hits, copy them into 
+           the thick_backbone cell; otherwise copy all 
+           hits to the overflow array */
+
+        if (num_hits <= NA_HITS_PER_CELL) {
+#ifdef LOOKUP_VERBOSE
+            thick_backbone_occupancy++;
+#endif
+            for (j = 0; j < num_hits; j++) {
+                lookup->thick_backbone[i].payload.entries[j] =
+                                     thin_backbone[i][j + 2];
             }
-
-            /* done with this chain- free it */
-            sfree(lookup->thin_backbone[i]);
-            lookup->thin_backbone[i] = NULL;
+        } 
+        else {
+#ifdef LOOKUP_VERBOSE
+            num_overflows++;
+#endif
+            lookup->thick_backbone[i].payload.overflow_cursor =
+                                         overflow_cursor;
+            for (j = 0; j < num_hits; j++) {
+                lookup->overflow[overflow_cursor] =
+                    thin_backbone[i][j + 2];
+                overflow_cursor++;
+            }
         }
 
-        else
-            /* no hits here */
-        {
-            lookup->thick_backbone[i].num_used = 0;
-        }
-    }                           /* end for */
+        /* done with this chain */
+        sfree(thin_backbone[i]);
+    }
 
     lookup->overflow_size = overflow_cursor;
-
-/* done copying hit info- free the backbone */
-    sfree(lookup->thin_backbone);
 
 #ifdef LOOKUP_VERBOSE
     printf("backbone size: %d\n", lookup->backbone_size);
@@ -283,7 +470,6 @@ static void s_BlastNaLookupFinalize(BlastNaLookupTable * lookup)
     printf("num_overflows: %d\n", num_overflows);
     printf("overflow size: %d\n", overflow_cells_needed);
     printf("longest chain: %d\n", longest_chain);
-    printf("exact matches: %d\n", lookup->exact_matches);
 #endif
 }
 
@@ -293,6 +479,7 @@ Int4 BlastNaLookupTableNew(BLAST_SequenceBlk* query,
                            const LookupTableOptions * opt, 
                            Int4 lut_width)
 {
+    Int4 **thin_backbone;
     BlastNaLookupTable *lookup = *lut =
         (BlastNaLookupTable *) calloc(1, sizeof(BlastNaLookupTable));
 
@@ -303,9 +490,9 @@ Int4 BlastNaLookupTableNew(BLAST_SequenceBlk* query,
     lookup->backbone_size = 1 << (BITS_PER_NUC * lookup->lut_word_length);
     lookup->mask = lookup->backbone_size - 1;
     lookup->overflow = NULL;
-    lookup->thin_backbone = (Int4 **) calloc(lookup->backbone_size, 
-                                             sizeof(Int4 *));
-    ASSERT(lookup->thin_backbone != NULL);
+
+    thin_backbone = (Int4 **) calloc(lookup->backbone_size, sizeof(Int4 *));
+    ASSERT(thin_backbone != NULL);
 
     /* the standard word size and lookup width will not use
        AG striding, but all other combinations do */
@@ -314,12 +501,13 @@ Int4 BlastNaLookupTableNew(BLAST_SequenceBlk* query,
         lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
     }
 
-    BlastLookupIndexQueryExactMatches(lookup->thin_backbone,
+    BlastLookupIndexQueryExactMatches(thin_backbone,
                                       lookup->word_length,
                                       BITS_PER_NUC,
                                       lookup->lut_word_length,
                                       query, locations);
-    s_BlastNaLookupFinalize(lookup);
+    s_BlastNaLookupFinalize(thin_backbone, lookup);
+    sfree(thin_backbone);
     return 0;
 }
 
@@ -340,7 +528,7 @@ BlastNaLookupTable *BlastNaLookupTableDestruct(BlastNaLookupTable * lookup)
 */
 static EDiscTemplateType 
 s_GetDiscTemplateType(Int4 weight, Uint1 length, 
-                                     EDiscWordType type)
+                      EDiscWordType type)
 {
    if (weight == 11) {
       if (length == 16) {
