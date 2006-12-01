@@ -63,7 +63,7 @@ void SubtractAlnRngCollections(const CAlignRangeCollection<TAlnRng>& minuend,
 
     /// Second row
     typedef CAlignRangeCollExtender<TAlnRngColl> TAlnRngCollExt;
-    TAlnRngCollExt subtrahend_ext(subtrahend_ext);
+    TAlnRngCollExt subtrahend_ext(subtrahend);
     subtrahend_ext.Init(subtrahend); ///< HACK?
     subtrahend_ext.UpdateIndex();
 
@@ -307,6 +307,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/12/01 22:07:19  todorov
+* Bug fix: subtrahend_ext should be constructed from subtrahend.
+*
 * Revision 1.2  2006/12/01 20:00:38  todorov
 * + includes
 *
