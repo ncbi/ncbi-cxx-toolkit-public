@@ -786,12 +786,20 @@ BlastNaExtendRight(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     Int4 hits_extended = 0;
     Uint1 template_length = 0;
     Boolean hit_ready;
-    BlastNaLookupTable *lut;
 
     ASSERT(lookup_wrap->lut_type != eMBLookupTable);
-    lut = (BlastNaLookupTable *) lookup_wrap->lut;
-    word_length = lut->word_length;
-    lut_word_length = lut->lut_word_length;
+    if (lookup_wrap->lut_type == eSmallNaLookupTable) {
+        BlastSmallNaLookupTable *lut = 
+                             (BlastSmallNaLookupTable *) lookup_wrap->lut;
+        word_length = lut->word_length;
+        lut_word_length = lut->lut_word_length;
+    }
+    else {
+        BlastNaLookupTable *lut = 
+                             (BlastNaLookupTable *) lookup_wrap->lut;
+        word_length = lut->word_length;
+        lut_word_length = lut->lut_word_length;
+    }
     extra_bases = word_length - lut_word_length;
 
     for (index = 0; index < num_hits; ++index) {
@@ -904,19 +912,37 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
                        BlastInitHitList * init_hitlist,
                        BlastUngappedStats * ungapped_stats)
 {
-    BlastNaLookupTable *lookup = (BlastNaLookupTable *) lookup_wrap->lut;
+    ELookupTableType lut_type = lookup_wrap->lut_type;
     Int4 hitsfound, total_hits = 0;
     Int4 hits_extended = 0;
-    Int4 start_offset, last_start, next_start;
+    Int4 start_offset = 0;
+    Int4 last_start;
 
-    last_start = subject->length - lookup->lut_word_length;
+    if (lut_type == eSmallNaLookupTable) {
+        BlastSmallNaLookupTable *lookup = 
+                                (BlastSmallNaLookupTable *) lookup_wrap->lut;
+        last_start = subject->length - lookup->lut_word_length;
+    }
+    else {
+        BlastNaLookupTable *lookup = 
+                                (BlastNaLookupTable *) lookup_wrap->lut;
+        last_start = subject->length - lookup->lut_word_length;
+    }
     start_offset = 0;
 
     while (start_offset <= last_start) {
         /* Pass the last word ending offset */
-        next_start = last_start;
-        hitsfound = BlastNaScanSubject(lookup_wrap, subject, start_offset,
-                                       offset_pairs, max_hits, &next_start);
+        Int4 next_start = last_start;
+
+        if (lut_type == eSmallNaLookupTable) {
+            hitsfound = BlastSmallNaScanSubject(lookup_wrap, subject, 
+                                                start_offset, offset_pairs, 
+                                                max_hits, &next_start);
+        }
+        else {
+            hitsfound = BlastNaScanSubject(lookup_wrap, subject, start_offset,
+                                           offset_pairs, max_hits, &next_start);
+        }
 
         total_hits += hitsfound;
 
@@ -1209,18 +1235,34 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk * subject,
 {
     Int4 hitsfound, total_hits = 0;
     Int4 start_offset, end_offset, next_start;
-    BlastNaLookupTable *lookup = (BlastNaLookupTable *) lookup_wrap->lut;
     Int4 hits_extended = 0;
+    ELookupTableType lut_type = lookup_wrap->lut_type;
 
+    if (lut_type == eSmallNaLookupTable) {
+        BlastSmallNaLookupTable *lookup = 
+                                (BlastSmallNaLookupTable *)lookup_wrap->lut;
+        end_offset = subject->length - lookup->lut_word_length;
+    }
+    else {
+        BlastNaLookupTable *lookup = 
+                                (BlastNaLookupTable *)lookup_wrap->lut;
+        end_offset = subject->length - lookup->lut_word_length;
+    }
     start_offset = 0;
-    end_offset = subject->length - lookup->lut_word_length;
 
     /* start_offset points to the beginning of the word; end_offset is the
        beginning of the last word */
     while (start_offset <= end_offset) {
-        hitsfound = BlastNaScanSubject_AG(lookup_wrap, subject, start_offset,
-                                          offset_pairs, max_hits,
-                                          &next_start);
+        if (lut_type == eSmallNaLookupTable) {
+            hitsfound = BlastSmallNaScanSubject_AG(lookup_wrap, subject, 
+                                                   start_offset, offset_pairs, 
+                                                   max_hits, &next_start);
+        }
+        else {
+            hitsfound = BlastNaScanSubject_AG(lookup_wrap, subject, 
+                                              start_offset, offset_pairs, 
+                                              max_hits, &next_start);
+        }
 
         total_hits += hitsfound;
 
