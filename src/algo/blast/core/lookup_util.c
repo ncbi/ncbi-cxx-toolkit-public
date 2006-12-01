@@ -192,15 +192,18 @@ debruijn(Int4 n,
 }
 
 Int4
-EstimateNumTableEntries(BlastSeqLoc * location)
+EstimateNumTableEntries(BlastSeqLoc * location, Int4 *max_off)
 {
     Int4 num_entries = 0;
+    Int4 curr_max = 0;
     BlastSeqLoc *loc = location;
 
     while (loc) {
         num_entries += loc->ssr->right - loc->ssr->left;
+        curr_max = MAX(curr_max, loc->ssr->right);
         loc = loc->next;
     }
 
+    *max_off = curr_max;
     return num_entries;
 }
