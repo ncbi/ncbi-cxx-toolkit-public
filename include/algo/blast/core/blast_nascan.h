@@ -78,6 +78,43 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                         Int4 max_hits, 
                         Int4* end_offset);
 
+/** Similar to BlastNaScanSubject, except that a lookup table is
+ * used that is more efficient for small queries
+ * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param start_offset The offset into the sequence in actual coordinates [in]
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                found [out]
+ * @param max_hits The allocated size of the above array - how many offsets 
+ *        can be returned [in]
+ * @param end_offset Where the scanning should stop [in], has stopped [out]
+*/
+Int4 BlastSmallNaScanSubject(const LookupTableWrap* lookup_wrap,
+                             const BLAST_SequenceBlk* subject,
+                             Int4 start_offset,
+                             BlastOffsetPair* NCBI_RESTRICT offset_pairs,
+                             Int4 max_hits, 
+                             Int4* end_offset);
+
+/** Similar to BlastNaScanSubject_AG, except that a lookup table is
+ * used that is more efficient for small queries
+ * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param start_offset The offset into the sequence in actual coordinates [in]
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                     found [out]
+ * @param max_hits The allocated size of the above array - how many offsets 
+ *        can be returned [in]
+ * @param end_offset Where the scanning should stop [in], has stopped [out]
+ * @return The number of hits found from the lookup table
+*/
+Int4 BlastSmallNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
+                                const BLAST_SequenceBlk* subject,
+                                Int4 start_offset,
+                                BlastOffsetPair* NCBI_RESTRICT offset_pairs,
+                                Int4 max_hits, 
+                                Int4* end_offset);
+
 /** Scan the compressed subject sequence, returning all word hits, looking up 
  * discontiguous words. Lookup table is presumed to have a traditional 
  * MegaBLAST structure containing discontiguous word positions.
