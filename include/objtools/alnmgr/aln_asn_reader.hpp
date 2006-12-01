@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class CAlnAsnReader
+class NCBI_XALNMGR_EXPORT CAlnAsnReader
 {
 public:
     CAlnAsnReader(CScope* scope = NULL) :
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/12/01 17:52:43  todorov
+* + NCBI_XALNMGR_EXPORT
+*
 * Revision 1.3  2006/11/16 18:08:49  todorov
 * Doxygenized comments.
 *

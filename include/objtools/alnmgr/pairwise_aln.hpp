@@ -48,7 +48,7 @@ USING_SCOPE(objects);
 
 
 /// A pairwise aln is a collection of ranges for a pair of rows
-class CPairwiseAln : 
+class NCBI_XALNMGR_EXPORT CPairwiseAln : 
     public CObject,
     public CAlignRangeCollection<CAlignRange<TSignedSeqPos> >
 {
@@ -125,7 +125,7 @@ private:
 
 
 /// Query-anchored alignment can be 2 or multi-dimentional
-class CAnchoredAln : public CObject
+class NCBI_XALNMGR_EXPORT CAnchoredAln : public CObject
 {
 public:
     // Types
@@ -287,6 +287,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/12/01 17:53:44  todorov
+* + NCBI_XALNMGR_EXPORT
+*
 * Revision 1.12  2006/11/22 00:54:13  todorov
 * Prevent self-assignment in the assignment operator.
 *

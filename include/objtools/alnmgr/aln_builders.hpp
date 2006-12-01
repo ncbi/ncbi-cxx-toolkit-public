@@ -47,9 +47,11 @@
 BEGIN_NCBI_SCOPE
 
 
-void MergeAlnRngColl(CPairwiseAln& existing,
-                     const CPairwiseAln& addition,
-                     const CAlnUserOptions::TMergeFlags& flags)
+NCBI_XALNMGR_EXPORT 
+void 
+MergeAlnRngColl(CPairwiseAln& existing,
+                const CPairwiseAln& addition,
+                const CAlnUserOptions::TMergeFlags& flags)
 {
     CPairwiseAln difference;
     SubtractAlnRngCollections(addition,
@@ -205,6 +207,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/12/01 17:53:00  todorov
+* + NCBI_XALNMGR_EXPORT
+*
 * Revision 1.3  2006/11/27 19:37:57  todorov
 * using comp.
 *

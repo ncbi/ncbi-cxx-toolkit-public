@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 ////////////////////////////////////////////////////////////////////////////////
 /// CSparseSegment - IAlnSegment implementation for CAlnMap::CAlnChunk
 
-class CSparseSegment : public  IAlnSegment
+class NCBI_XALNMGR_EXPORT CSparseSegment : public  IAlnSegment
 {
     friend class CSparseIterator;
 public:
@@ -70,7 +70,7 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 /// CSparseIterator - IAlnSegmentIterator implementation for CAlnMap::CAlnChunkVec
 
-class CSparse_CI : public IAlnSegmentIterator
+class NCBI_XALNMGR_EXPORT CSparse_CI : public IAlnSegmentIterator
 {
 public:
     typedef CSparseAln::TAlignRange   TAlignRange;
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/01 17:54:05  todorov
+ * + NCBI_XALNMGR_EXPORT
+ *
  * Revision 1.1  2006/11/16 13:48:12  todorov
  * Moved over from gui/widgets/aln_data and refactored to adapt to the
  * new aln framework.

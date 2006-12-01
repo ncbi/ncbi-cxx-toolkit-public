@@ -56,7 +56,7 @@ BEGIN_NCBI_SCOPE
 ///     master is always specified in CSparse-seg and has a Seq-id
 ///     we display it always anchored
 ///     chaning anchor is not supported
-class CSparseAln : public CObject
+class NCBI_XALNMGR_EXPORT CSparseAln : public CObject
 {
 public:
     /// Types
@@ -182,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/01 17:53:54  todorov
+ * + NCBI_XALNMGR_EXPORT
+ *
  * Revision 1.2  2006/11/16 18:09:40  todorov
  * Anchor row is obtained from the underlying anchored aln.
  * Doxygenized comments.
