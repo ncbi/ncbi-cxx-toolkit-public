@@ -33,6 +33,11 @@
 */
 
 
+#include <corelib/ncbistd.hpp>
+
+#include <util/align_range_coll.hpp>
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -302,6 +307,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/12/01 20:00:38  todorov
+* + includes
+*
 * Revision 1.1  2006/11/16 22:40:51  todorov
 * Initial revision.
 *
