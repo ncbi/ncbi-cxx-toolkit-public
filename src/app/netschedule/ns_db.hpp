@@ -55,7 +55,7 @@
 
 BEGIN_NCBI_SCOPE
 
-/// BDB table to store queue information
+/// BDB table to store queue
 ///
 /// @internal
 ///
@@ -156,7 +156,7 @@ struct SQueueAffinityIdx : public CBDB_BvStore< bm::bvector<> >
     }
 };
 
-/// BDB table to store queue information
+/// BDB table to store affinity
 ///
 /// @internal
 ///
@@ -190,12 +190,30 @@ struct SAffinityDictTokenIdx : public CBDB_File
     }
 };
 
+/// BDB table for storing queue descriptions
+///
+/// @internal
+///
+struct SQueueDescriptionDB : public CBDB_File
+{
+    CBDB_FieldString queue_name;
+    CBDB_FieldString qclass_name;
+    SQueueDescriptionDB()
+    {
+        DisableNull();
+        BindKey("queue", &queue_name, kNetScheduleMaxDBDataSize);
+        BindData("qclass", &qclass_name, kNetScheduleMaxDBDataSize);
+    }
+};
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/12/01 00:10:58  joukovv
+ * Dynamic queue creation implemented.
+ *
  * Revision 1.6  2006/10/31 19:35:26  joukovv
  * Queue creation and reading of its parameters decoupled. Code reorganized to
  * reduce coupling in general. Preparing for queue-on-demand.

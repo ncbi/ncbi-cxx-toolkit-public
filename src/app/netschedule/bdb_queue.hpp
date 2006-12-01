@@ -62,11 +62,9 @@ public:
     void Read(const IRegistry& reg, const string& sname)
     {
         m_Params.Read(reg, sname);
-        m_ParamsLB.Read(reg, sname);
     }
 private:
     SQueueParameters   m_Params;
-    SQueueLBParameters m_ParamsLB;
 };
 
 /// Batch submit record
@@ -592,13 +590,19 @@ public:
               unsigned      log_mem_size,
               unsigned      max_trans);
 
-    void ReadConfig(const IRegistry& reg, unsigned* min_run_timeout);
+    void Configure(const IRegistry& reg, unsigned* min_run_timeout);
 
-    void MountQueue(const string& qname, const SQueueParameters& params);
+    void MountQueue(const string& qname,
+                    const string& qclass,
+                    const SQueueParameters& params);
+
+    bool CreateQueue(const string& qname, const string& qclass);
+    bool DeleteQueue(const string& qname);
+
     void UpdateQueueParameters(const string& qname,
                                const SQueueParameters& params);
     void UpdateQueueLBParameters(const string& qname,
-                                 const SQueueLBParameters& params);
+                                 const SQueueParameters& params);
     void Close(void);
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
@@ -644,11 +648,16 @@ private:
     void x_OptimizeStatusMatrix(void);
     void x_OptimizeAffinity(void);
     bool x_CheckStopPurge(void);
+    void x_CleanParamMap(void);
 
     CBDB_Env*                       m_Env;
     string                          m_Path;
     string                          m_Name;
 
+    CFastMutex                      m_ConfigureLock;
+    typedef map<string, SQueueParameters*> TQueueParamMap;
+    TQueueParamMap                  m_QueueParamMap;
+    SQueueDescriptionDB             m_QueueDescriptionDB;
     CQueueCollection                m_QueueCollection;
 
     CAtomicCounter                  m_IdCounter;
@@ -681,6 +690,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/12/01 00:10:58  joukovv
+ * Dynamic queue creation implemented.
+ *
  * Revision 1.60  2006/11/28 18:03:49  joukovv
  * MSVC8 build fix, grid_worker_sample idle task commented out.
  *

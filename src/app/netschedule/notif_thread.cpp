@@ -25,7 +25,7 @@
  *
  * Authors:  Anatoliy Kuznetsov
  *
- * File Description: Queue cleaning thread.
+ * File Description: Notification thread.
  *                   
  *
  */
@@ -63,6 +63,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/01 00:10:58  joukovv
+ * Dynamic queue creation implemented.
+ *
  * Revision 1.3  2005/04/11 13:52:21  kuznets
  * Removed confusing log message
  *

@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.3.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.4.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -94,7 +94,9 @@ enum ENSRequestField {
     eNSRF_Port,
     eNSRF_Timeout,
     eNSRF_JobMask,
-    eNSRF_ErrMsg
+    eNSRF_ErrMsg,
+    eNSRF_QueueName,
+    eNSRF_QueueClass
 };
 struct SJS_Request
 {
@@ -109,14 +111,16 @@ struct SJS_Request
     unsigned int       port;
     unsigned int       timeout;
     unsigned int       job_mask;
-
     string             err_msg;
+    string             param1;
+    string             param2;
 
     void Init()
     {
         input[0] = output[0] = progress_msg[0] = affinity_token[0] 
                                                = cout[0] = cerr[0] = 0;
         job_key.erase(); err_msg.erase();
+        param1.erase(); param2.erase();
         job_return_code = port = timeout = job_mask = 0;
     }
     void SetField(ENSRequestField fld,
@@ -172,6 +176,14 @@ struct SJS_Request
         case eNSRF_ErrMsg:
             err_msg.erase();
             err_msg.append(val, eff_size);
+            break;
+        case eNSRF_QueueName:
+            param1.erase();
+            param1.append(val, eff_size);
+            break;
+        case eNSRF_QueueClass:
+            param2.erase();
+            param2.append(val, eff_size);
             break;
         default:
             break;
@@ -305,6 +317,8 @@ private:
     void ProcessError();
     void ProcessLog();
     void ProcessQuitSession();
+    void ProcessCreateQueue();
+    void ProcessDeleteQueue();
 
 private:
     static
@@ -1412,7 +1426,7 @@ void CNetScheduleHandler::ProcessReloadConfig()
     bool reloaded = app->ReloadConfig(CMetaRegistry::fReloadIfChanged);
     if (reloaded) {
         unsigned tmp;
-        m_Server->GetQueueDB()->ReadConfig(app->GetConfig(), &tmp);
+        m_Server->GetQueueDB()->Configure(app->GetConfig(), &tmp);
     }
     WriteMsg("OK:", "");
 }
@@ -1579,14 +1593,38 @@ void CNetScheduleHandler::ProcessShutdown()
 }
 
 
-void CNetScheduleHandler::ProcessVersion() {
+void CNetScheduleHandler::ProcessVersion()
+{
     WriteMsg("OK:", NETSCHEDULED_VERSION);
+}
+
+void CNetScheduleHandler::ProcessCreateQueue()
+{
+    const string& qname  = m_JobReq.param1;
+    const string& qclass = m_JobReq.param2;
+    if (m_Server->GetQueueDB()->CreateQueue(qname, qclass)) {
+        WriteMsg("OK:", "");
+    } else {
+        WriteMsg("ERR:", "Can not create.");
+        LOG_POST(Warning << "Can not create queue: " << qname <<
+                 " of class " << qclass);
+    }
+}
+
+void CNetScheduleHandler::ProcessDeleteQueue()
+{
+    const string& qname = m_JobReq.param1;
+    if (m_Server->GetQueueDB()->DeleteQueue(qname)) {
+        WriteMsg("OK:", "");
+    } else {
+        WriteMsg("ERR:", "Can not delete.");
+        LOG_POST(Warning << "Can not delete queue: " << qname);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 /// NetSchedule command parser
-/// Here I use 4 byte strings packed into integer for int comparison (faster)
 ///
 /// @internal
 ///
@@ -1691,6 +1729,13 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // STSN [ affinity_token : keystr(aff) ]
     { "STSN",     &CNetScheduleHandler::ProcessStatusSnapshot,
         { { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" }, sm_End} },
+    // QCRE qname : id  qclass : id
+    { "QCRE",     &CNetScheduleHandler::ProcessCreateQueue,
+        { { eNSA_Required, eNST_Id, eNSRF_QueueName },
+          { eNSA_Required, eNST_Id, eNSRF_QueueClass }, sm_End} },
+    // QDEL qname : id
+    { "QDEL",     &CNetScheduleHandler::ProcessDeleteQueue,
+        { { eNSA_Required, eNST_Id, eNSRF_QueueName }, sm_End } },
     { 0,          &CNetScheduleHandler::ProcessError },
 };
 
@@ -2248,7 +2293,7 @@ int CNetScheduleDApp::Run(void)
         // Scan and mount queues
         unsigned min_run_timeout = 3600;
 
-        qdb->ReadConfig(reg, &min_run_timeout);
+        qdb->Configure(reg, &min_run_timeout);
 
         LOG_POST(Info << "Running execution control every " 
                       << min_run_timeout << " seconds. ");
@@ -2349,6 +2394,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2006/12/01 00:10:58  joukovv
+ * Dynamic queue creation implemented.
+ *
  * Revision 1.107  2006/11/29 17:25:16  joukovv
  * New option and behavior use_hostname introduced, version bumped.
  *

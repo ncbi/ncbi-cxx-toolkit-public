@@ -226,7 +226,6 @@ CQueueDataBase::~CQueueDataBase()
 {
     try {
         Close();
-        delete m_Env; // paranoiya check
     } catch (exception& )
     {}
 }
@@ -349,12 +348,15 @@ void CQueueDataBase::Open(const string& path,
         m_Env->SetTransactionTimeout(10 * 1000000); // 10 sec
         m_Env->TransactionCheckpoint();
     }
+
+    m_QueueDescriptionDB.SetEnv(*m_Env);
+    m_QueueDescriptionDB.Open("sys_qdescr.db", CBDB_RawFile::eReadWriteCreate);
 }
 
 
 static
-CNSLB_ThreasholdCurve* s_ConfigureCurve(const SQueueLBParameters& params,
-                                        unsigned                  exec_delay)
+CNSLB_ThreasholdCurve* s_ConfigureCurve(const SQueueParameters& params,
+                                        unsigned                exec_delay)
 {
     auto_ptr<CNSLB_ThreasholdCurve> curve;
     do {
@@ -405,27 +407,81 @@ CNSLB_DecisionModule* s_ConfigureDecision(const IRegistry& reg,
 }
 */
 
-void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
+void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
 {
-    string qname;
+    bool no_default_queues = 
+        reg.GetBool("server", "no_default_queues", false, 0, IRegistry::eReturn);
+
+    x_CleanParamMap();
+
+    CFastMutexGuard guard(m_ConfigureLock);
+
+    CBDB_Transaction trans(*m_Env, 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+    m_QueueDescriptionDB.SetTransaction(&trans);
+
+    string qclass;
+    string tmp;
     list<string> sections;
     reg.EnumerateSections(&sections);
 
-
-    string tmp;
     ITERATE(list<string>, it, sections) {
         const string& sname = *it;
-        NStr::SplitInTwo(sname, "_", tmp, qname);
-        if (NStr::CompareNocase(tmp, "queue") != 0) {
+        NStr::SplitInTwo(sname, "_", tmp, qclass);
+        if (NStr::CompareNocase(tmp, "queue") != 0 &&
+            NStr::CompareNocase(tmp, "qclass") != 0) {
+            continue;
+        }
+        if (m_QueueParamMap.find(qclass) != m_QueueParamMap.end()) {
+            LOG_POST(Warning << tmp << " section " << sname
+                             << " conflicts with previous " << 
+                             (NStr::CompareNocase(tmp, "queue") == 0 ?
+                                 "qclass" : "queue") <<
+                             " section with same queue/qclass name");
             continue;
         }
 
-        bool qexists = m_QueueCollection.QueueExists(qname);
-
-        SQueueParameters params;
-        params.Read(reg, sname);
+        SQueueParameters* params = new SQueueParameters;
+        params->Read(reg, sname);
+        m_QueueParamMap[qclass] = params;
         *min_run_timeout = 
-            std::min(*min_run_timeout, (unsigned)params.run_timeout_precision);
+            std::min(*min_run_timeout, (unsigned)params->run_timeout_precision);
+        if (!no_default_queues && NStr::CompareNocase(tmp, "queue") == 0) {
+            m_QueueDescriptionDB.queue_name = qclass;
+            m_QueueDescriptionDB.qclass_name = qclass;
+            m_QueueDescriptionDB.UpdateInsert();
+        }
+    }
+
+    list<string> queues;
+    reg.EnumerateEntries("queues", &queues);
+    ITERATE(list<string>, it, queues) {
+        const string& qname = *it;
+        string qclass = reg.GetString("queues", qname, "");
+        if (!qclass.empty()) {
+            m_QueueDescriptionDB.queue_name = qname;
+            m_QueueDescriptionDB.qclass_name = qclass;
+            m_QueueDescriptionDB.UpdateInsert();
+        }
+    }
+    trans.Commit();
+    m_QueueDescriptionDB.Sync();
+
+    CBDB_FileCursor cur(m_QueueDescriptionDB);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+
+    string qname;
+    while (cur.Fetch() == eBDB_Ok) {
+        qname = m_QueueDescriptionDB.queue_name;
+        qclass = m_QueueDescriptionDB.qclass_name;
+        TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
+        if (it == m_QueueParamMap.end()) {
+            LOG_POST(Error << "Can not find class " << qclass << " for queue " << qname);
+            continue;
+        }
+        const SQueueParameters& params = *(it->second);
+        bool qexists = m_QueueCollection.QueueExists(qname);
         if (!qexists) {
             LOG_POST(Info 
                 << "Mounting queue:           " << qname                        << "\n"
@@ -436,25 +492,25 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
                 << "   Programs:              " << params.program_name          << "\n"
                 << "   Delete when done:      " << params.delete_when_done      << "\n"
             );
-            MountQueue(qname, params);
-        } else { // update non-critical queue parameters
+            MountQueue(qname, qclass, params);
+        } else {
+            // update non-critical queue parameters
             UpdateQueueParameters(qname, params);
         }
 
         // re-load load balancing settings
-        SQueueLBParameters lb_params;
-        lb_params.Read(reg, sname);
-        UpdateQueueLBParameters(qname, lb_params);
-    } // ITERATE
+        UpdateQueueLBParameters(qname, params);
+    }
 }
 
 
-void CQueueDataBase::MountQueue(const string& qname, 
+void CQueueDataBase::MountQueue(const string& qname,
+                                const string& qclass,
                                 const SQueueParameters& params)
 {
     _ASSERT(m_Env);
 
-    auto_ptr<SLockedQueue> q(new SLockedQueue(qname));
+    auto_ptr<SLockedQueue> q(new SLockedQueue(qname, qclass));
     string fname = string("jsq_") + qname + string(".db");
     q->db.SetEnv(*m_Env);
 
@@ -531,6 +587,40 @@ void CQueueDataBase::MountQueue(const string& qname,
     LOG_POST(Info << "Queue records = " << recs);
 }
 
+bool CQueueDataBase::CreateQueue(const string& qname, const string& qclass)
+{
+    CFastMutexGuard guard(m_ConfigureLock);
+    if (m_QueueCollection.QueueExists(qname)) {
+        LOG_POST(Error << "Queue " << qname << " already exists");
+        return false;
+    }
+    TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
+    if (it == m_QueueParamMap.end()) {
+        LOG_POST(Error << "Can not find class " << qclass <<
+                          " for queue " << qname);
+        return false;
+    }
+    CBDB_Transaction trans(*m_Env, 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+    m_QueueDescriptionDB.SetTransaction(&trans);
+    m_QueueDescriptionDB.queue_name = qname;
+    m_QueueDescriptionDB.qclass_name = qclass;
+    m_QueueDescriptionDB.UpdateInsert();
+    trans.Commit();
+    m_QueueDescriptionDB.Sync();
+    const SQueueParameters& params = *(it->second);
+    MountQueue(qname, qclass, params);
+    UpdateQueueLBParameters(qname, params);
+    return true;
+}
+
+bool CQueueDataBase::DeleteQueue(const string& qname)
+{
+    return false;
+}
+
+
 void CQueueDataBase::UpdateQueueParameters(const string& qname,
                                            const SQueueParameters& params)
 {
@@ -550,7 +640,7 @@ void CQueueDataBase::UpdateQueueParameters(const string& qname,
 }
 
 void CQueueDataBase::UpdateQueueLBParameters(const string& qname,
-                                             const SQueueLBParameters& params)
+                                             const SQueueParameters& params)
 {
     SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
 
@@ -653,7 +743,10 @@ void CQueueDataBase::Close()
         m_Env->TransactionCheckpoint();
     }
 
+    x_CleanParamMap();
+
     m_QueueCollection.Close();
+    m_QueueDescriptionDB.Close();
     try {
         if (m_Env) {
             if (m_Env->CheckRemove()) {
@@ -884,6 +977,15 @@ void CQueueDataBase::x_OptimizeStatusMatrix(void)
 }
 
 
+void CQueueDataBase::x_CleanParamMap(void)
+{
+    NON_CONST_ITERATE(TQueueParamMap, it, m_QueueParamMap) {
+        SQueueParameters* params = it->second;
+        delete params;
+    }
+}
+
+
 void CQueueDataBase::StopPurge(void)
 {
     CFastMutexGuard guard(m_PurgeLock);
@@ -902,10 +1004,11 @@ bool CQueueDataBase::x_CheckStopPurge(void)
 
 void CQueueDataBase::RunPurgeThread(void)
 {
-    LOG_POST(Info << "Starting guard and cleaning thread.");
+    LOG_POST(Info << "Starting guard and cleaning thread...");
     m_PurgeThread.Reset(
         new CJobQueueCleanerThread(*this, 1));
     m_PurgeThread->Run();
+    LOG_POST(Info << "Started.");
 }
 
 
@@ -926,10 +1029,11 @@ void CQueueDataBase::RunNotifThread(void)
         return;
     }
 
-    LOG_POST(Info << "Starting client notification thread.");
+    LOG_POST(Info << "Starting client notification thread...");
     m_NotifThread.Reset(
         new CJobNotificationThread(*this, 5));
     m_NotifThread->Run();
+    LOG_POST(Info << "Started.");
 }
 
 void CQueueDataBase::StopNotifThread(void)
@@ -944,10 +1048,11 @@ void CQueueDataBase::StopNotifThread(void)
 
 void CQueueDataBase::RunExecutionWatcherThread(unsigned run_delay)
 {
-    LOG_POST(Info << "Starting execution watcher thread.");
+    LOG_POST(Info << "Starting execution watcher thread...");
     m_ExeWatchThread.Reset(
         new CJobQueueExecutionWatcherThread(*this, run_delay));
     m_ExeWatchThread->Run();
+    LOG_POST(Info << "Started.");
 }
 
 void CQueueDataBase::StopExecutionWatcherThread(void)
@@ -1764,7 +1869,7 @@ SQueueDB* CQueue::x_GetLocalDb()
     return 0;
     SQueueDB* pqdb = m_QueueDB.get();
     if (pqdb == 0  &&  ++m_QueueDbAccessCounter > 1) {
-        // DEBUG printf("Opening private db\n");
+        printf("Opening private db\n"); // DEBUG
         const string& file_name = m_LQueue->db.FileName();
         CBDB_Env* env = m_LQueue->db.GetEnv();
         m_QueueDB.reset(pqdb = new SQueueDB());
@@ -3844,6 +3949,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2006/12/01 00:10:58  joukovv
+ * Dynamic queue creation implemented.
+ *
  * Revision 1.96  2006/11/28 18:03:49  joukovv
  * MSVC8 build fix, grid_worker_sample idle task commented out.
  *

@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 
 void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 {
+    // Read general parameters
     timeout = reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
     notif_timeout =
         reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
@@ -60,11 +61,8 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
     dump_db = reg.GetBool(sname, "dump_db", false, 0, IRegistry::eReturn);
-}
 
-
-void SQueueLBParameters::Read(const IRegistry& reg, const string& sname)
-{
+    // Read load balancing parameters
     lb_flag = reg.GetBool(sname, "lb", false, 0, IRegistry::eReturn);
     lb_service = reg.GetString(sname, "lb_service", kEmptyStr);
     lb_collect_time =
@@ -112,22 +110,24 @@ void SQueueLBParameters::Read(const IRegistry& reg, const string& sname)
 }
 
 
-SLockedQueue::SLockedQueue(const string& queue_name) 
-    : timeout(3600), 
-        notif_timeout(7), 
-        delete_done(false),
-        failed_retries(0),
-        last_notif(0), 
-        q_notif("NCBI_JSQ_"),
-        run_time_line(0),
+SLockedQueue::SLockedQueue(const string& queue_name, const string& qclass_name)
+  :
+    qclass(qclass_name),
+    timeout(3600), 
+    notif_timeout(7), 
+    delete_done(false),
+    failed_retries(0),
+    last_notif(0), 
+    q_notif("NCBI_JSQ_"),
+    run_time_line(0),
 
-        rec_dump("jsqd_"+queue_name+".dump", 10 * (1024 * 1024)),
-        rec_dump_flag(false),
-        lb_flag(false),
-        lb_coordinator(0),
-        lb_stall_delay_type(eNSLB_Constant),
-        lb_stall_time(6),
-        lb_stall_time_mult(1.0)
+    rec_dump("jsqd_"+queue_name+".dump", 10 * (1024 * 1024)),
+    rec_dump_flag(false),
+    lb_flag(false),
+    lb_coordinator(0),
+    lb_stall_delay_type(eNSLB_Constant),
+    lb_stall_time(6),
+    lb_stall_time_mult(1.0)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/01 00:10:58  joukovv
+ * Dynamic queue creation implemented.
+ *
  * Revision 1.4  2006/11/28 18:03:49  joukovv
  * MSVC8 build fix, grid_worker_sample idle task commented out.
  *

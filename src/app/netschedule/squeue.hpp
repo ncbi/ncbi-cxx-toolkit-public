@@ -50,9 +50,14 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Main parameters
+/// Queue parameters
+enum ELBCurveType {
+    eLBLinear = 0,
+    eLBRegression = 1
+};
 struct SQueueParameters
 {
+    /// General parameters
     int timeout;
     int notif_timeout;
     int run_timeout;
@@ -64,6 +69,18 @@ struct SQueueParameters
     string wnode_hosts;
     bool dump_db;
 
+    /// Parameters for Load Balancing
+    bool   lb_flag;
+    string lb_service;
+    int    lb_collect_time;
+    string lb_unknown_host;
+    string lb_exec_delay_str;
+    double lb_stall_time_mult;
+    ELBCurveType lb_curve;
+    double lb_curve_high;
+    double lb_curve_linear_low;
+    double lb_curve_regression_a;
+
     SQueueParameters() :
         timeout(3600),
         notif_timeout(7),
@@ -74,33 +91,7 @@ struct SQueueParameters
         failed_retries(0),
         subm_hosts(""),
         wnode_hosts(""),
-        dump_db(false)
-    { }
-    ///
-    void Read(const IRegistry& reg, const string& sname);
-};
-
-
-enum ELBCurveType {
-    eLBLinear = 0,
-    eLBRegression = 1
-};
-/// Parameters for Load Balancing
-struct SQueueLBParameters
-{
-    bool   lb_flag;
-    string lb_service;
-    int    lb_collect_time;
-    string lb_unknown_host;
-    string lb_exec_delay_str;
-    double lb_stall_time_mult;
-
-    ELBCurveType lb_curve;
-    double lb_curve_high;
-    double lb_curve_linear_low;
-    double lb_curve_regression_a;
-
-    SQueueLBParameters() :
+        dump_db(false),
         lb_flag(false),
         lb_service(""),
         lb_collect_time(5),
@@ -209,6 +200,7 @@ class CNSLB_Coordinator;
 ///
 struct SLockedQueue
 {
+    string                       qclass;
     SQueueDB                     db;               ///< Main queue database
     SQueueAffinityIdx            aff_idx;          ///< Q affinity index
     auto_ptr<CBDB_FileCursor>    cur;              ///< DB cursor
@@ -276,7 +268,7 @@ struct SLockedQueue
     SQueueStatictics             qstat;
     CFastMutex                   qstat_lock;
 
-    SLockedQueue(const string& queue_name);
+    SLockedQueue(const string& queue_name, const string& qclass_name);
     ~SLockedQueue();
 
     // Statistics gathering objects
@@ -306,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/01 00:10:58  joukovv
+ * Dynamic queue creation implemented.
+ *
  * Revision 1.2  2006/11/27 16:46:21  joukovv
  * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
  * un-nested CQueue from CQueueDataBase; instrumented code to count job
