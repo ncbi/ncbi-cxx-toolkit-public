@@ -92,20 +92,36 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       lookup_wrap->lut = NULL;
       break;
 
+   case eSmallNaLookupTable:
    case eNaLookupTable:
    case eMBLookupTable:
       {
           Int4 lut_width;
-          Int4 num_table_entries = EstimateNumTableEntries(lookup_segments);
-    
+          Int4 max_q_off;
+          Int4 num_table_entries;
+              
+          num_table_entries = EstimateNumTableEntries(lookup_segments,
+                                                      &max_q_off);
           lookup_wrap->lut_type = BlastChooseNaLookupTable(
                                      lookup_options, num_table_entries,
-                                     &lut_width);
+                                     max_q_off, &lut_width);
     
           if (lookup_wrap->lut_type == eMBLookupTable) {
              BlastMBLookupTableNew(query, lookup_segments, 
                                (BlastMBLookupTable* *) &(lookup_wrap->lut), 
                                lookup_options, num_table_entries, lut_width);
+          }
+          else if (lookup_wrap->lut_type == eSmallNaLookupTable) {
+             status = BlastSmallNaLookupTableNew(query, lookup_segments,
+                            (BlastSmallNaLookupTable* *) &(lookup_wrap->lut), 
+                             lookup_options, lut_width);
+             if (status != 0) {
+                 printf("failed\n");
+                lookup_wrap->lut_type = eNaLookupTable;
+                status = BlastNaLookupTableNew(query, lookup_segments,
+                            (BlastNaLookupTable* *) &(lookup_wrap->lut), 
+                             lookup_options, lut_width);
+             }
           }
           else {
              BlastNaLookupTableNew(query, lookup_segments,
@@ -150,25 +166,43 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup)
    if (!lookup)
        return NULL;
 
-   if (lookup->lut_type == eMBLookupTable) {
+   switch(lookup->lut_type) {
+   case eMBLookupTable:
       lookup->lut = (void*) 
          BlastMBLookupTableDestruct((BlastMBLookupTable*)lookup->lut);
-   } else if( lookup->lut_type == eIndexedMBLookupTable ) {
-       lookup->lut = NULL;
-   } else if (lookup->lut_type == ePhiLookupTable || 
-              lookup->lut_type == ePhiNaLookupTable) {
-       lookup->lut = (void*)
+      break;
+
+   case eIndexedMBLookupTable:
+      lookup->lut = NULL;
+      break;
+
+   case ePhiLookupTable:
+   case ePhiNaLookupTable:
+      lookup->lut = (void*)
            SPHIPatternSearchBlkFree((SPHIPatternSearchBlk*)lookup->lut);
-   } else if (lookup->lut_type == eRPSLookupTable) {
+      break;
+
+   case eRPSLookupTable:
       lookup->lut = (void*) 
          RPSLookupTableDestruct((BlastRPSLookupTable*)lookup->lut);
-   } else if (lookup->lut_type == eNaLookupTable) {
+      break;
+
+   case eSmallNaLookupTable:
+      lookup->lut = (void*) 
+         BlastSmallNaLookupTableDestruct((BlastSmallNaLookupTable*)lookup->lut);
+      break;
+
+   case eNaLookupTable:
       lookup->lut = (void*) 
          BlastNaLookupTableDestruct((BlastNaLookupTable*)lookup->lut);
-   } else {
+      break;
+
+   case eAaLookupTable:
       lookup->lut = (void*) 
          BlastAaLookupTableDestruct((BlastAaLookupTable*)lookup->lut);
+      break;
    }
+
    sfree(lookup);
    return NULL;
 }
@@ -185,6 +219,10 @@ Int4 GetOffsetArraySize(LookupTableWrap* lookup)
    case eAaLookupTable: 
       offset_array_size = OFFSET_ARRAY_SIZE + 
          ((BlastAaLookupTable*)lookup->lut)->longest_chain;
+      break;
+   case eSmallNaLookupTable:
+      offset_array_size = OFFSET_ARRAY_SIZE + 
+         ((BlastSmallNaLookupTable*)lookup->lut)->longest_chain;
       break;
    case eNaLookupTable:
       offset_array_size = OFFSET_ARRAY_SIZE + 
