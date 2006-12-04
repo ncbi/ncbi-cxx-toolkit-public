@@ -200,7 +200,7 @@ class CNSLB_Coordinator;
 ///
 struct SLockedQueue
 {
-    string                       qclass;
+    string                       qclass;           ///< Parameter class
     SQueueDB                     db;               ///< Main queue database
     SQueueAffinityIdx            aff_idx;          ///< Q affinity index
     auto_ptr<CBDB_FileCursor>    cur;              ///< DB cursor
@@ -298,6 +298,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/04 21:58:32  joukovv
+ * netschedule_control commands for dynamic queue creation, access control
+ * centralized
+ *
  * Revision 1.3  2006/12/01 00:10:58  joukovv
  * Dynamic queue creation implemented.
  *

@@ -568,10 +568,24 @@ public:
     virtual
     void UnRegisterClient(unsigned short udp_port);
 
-
     /// Return version string
     virtual
     string ServerVersion();
+
+    /// Create queue of given queue class
+    /// @param qname
+    ///    Name of the queue to create
+    /// @param qclass
+    ///    Parameter set described in config file in qclass_* section
+    virtual
+    void CreateQueue(const string& qname, const string& qclass);
+
+    /// Delete queue
+    /// Applicable only to queues, created through CreateQueue method
+    /// @param qname
+    ///    Name of the queue to delete.
+    virtual
+    void DeleteQueue(const string& qname);
 
     /// Printable status type 
     static
@@ -1006,6 +1020,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/12/04 21:58:31  joukovv
+ * netschedule_control commands for dynamic queue creation, access control
+ * centralized
+ *
  * Revision 1.61  2006/07/19 15:54:39  kuznets
  * Added database size constants
  *

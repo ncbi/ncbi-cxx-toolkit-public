@@ -97,6 +97,21 @@ void CNetScheduleControl::Init(void)
                              "Drop ALL jobs in the queue (no questions asked!)",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("qcreate",
+                             "queue_create",
+                             "Create queue (qclass should be present)",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("qclass",
+                             "queue_class",
+                             "Class for queue creation",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("qdelete",
+                             "queue_delete",
+                             "Delete queue",
+                             CArgDescriptions::eString);
+
     arg_desc->AddOptionalKey("stat",
                              "stat_queue",
                              "Print queue statistics",
@@ -169,22 +184,37 @@ int CNetScheduleControl::Run(void)
         NcbiCout << "Logging turned " 
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
     }
-    if (args["drop"]) {  
-        string queue = args["drop"].AsString(); 
+    if (args["drop"]) {
+        string queue = args["drop"].AsString();
         CNetScheduleClient_Control drop_client(host, port, queue);
         drop_client.DropQueue();
         NcbiCout << "Queue droppped: " << queue << NcbiEndl;
     }
 
-    if (args["stat"]) {  
-        string queue = args["stat"].AsString(); 
+    if (args["qcreate"]) {
+        string queue = args["qcreate"].AsString();
+        string qclass = args["qclass"].AsString();
+        CNetScheduleClient_Control qcreate_client(host, port);
+        qcreate_client.CreateQueue(queue, qclass);
+        NcbiCout << "Queue created: " << queue << NcbiEndl;
+    }
+
+    if (args["qdelete"]) {
+        string queue = args["qdelete"].AsString();
+        CNetScheduleClient_Control qdelete_client(host, port);
+        qdelete_client.DeleteQueue(queue);
+        NcbiCout << "Queue deleted: " << queue << NcbiEndl;
+    }
+
+    if (args["stat"]) {
+        string queue = args["stat"].AsString();
         CNetScheduleClient_Control cl(host, port, queue);
         cl.PrintStatistics(NcbiCout);
         NcbiCout << NcbiEndl;
     }
 
-    if (args["affstat"]) {  
-        string queue_aff = args["affstat"].AsString(); 
+    if (args["affstat"]) {
+        string queue_aff = args["affstat"].AsString();
         string queue, aff;
         NStr::SplitInTwo(queue_aff, ":", queue, aff);
         if (queue.empty()) {
@@ -198,13 +228,13 @@ int CNetScheduleControl::Run(void)
             NcbiCout << CNetScheduleClient::StatusToString(it->first) << ": "
                      << it->second
                      << NcbiEndl;
-        }        
+        }
     }
 
-    if (args["dump"]) {  
-        string param = args["dump"].AsString(); 
+    if (args["dump"]) {
+        string param = args["dump"].AsString();
         string queue, job_key;
-        
+
         NStr::SplitInTwo(param, ":", queue, job_key);
 
         CNetScheduleClient_Control cl(host, port, queue);
@@ -213,9 +243,9 @@ int CNetScheduleControl::Run(void)
     }
 
     if (args["qprint"]) {
-        string param = args["qprint"].AsString(); 
+        string param = args["qprint"].AsString();
         string queue, status_str;
-        
+
         NStr::SplitInTwo(param, ":", queue, status_str);
 
         CNetScheduleClient::EJobStatus status =
@@ -243,12 +273,12 @@ int CNetScheduleControl::Run(void)
 
 
     if (args["monitor"]) {
-        string queue = args["monitor"].AsString(); 
+        string queue = args["monitor"].AsString();
         CNetScheduleClient_Control cl(host, port, queue);
         cl.Monitor(NcbiCout);
     }
 
-    if (args["s"]) {  // shutdown        
+    if (args["s"]) {  // shutdown
         if( !CheckPermission() ) {
             NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
             return 1;
@@ -257,7 +287,7 @@ int CNetScheduleControl::Run(void)
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
         return 0;
     }
-    if (args["die"]) {  // shutdown        
+    if (args["die"]) {  // shutdown
         if( !CheckPermission() ) {
             NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
             return 1;
@@ -314,6 +344,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/12/04 21:58:32  joukovv
+ * netschedule_control commands for dynamic queue creation, access control
+ * centralized
+ *
  * Revision 1.21  2006/06/08 19:20:17  kuznets
  * Minor formatting fix
  *

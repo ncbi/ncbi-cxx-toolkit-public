@@ -95,6 +95,8 @@ enum ENSRequestField {
     eNSRF_Timeout,
     eNSRF_JobMask,
     eNSRF_ErrMsg,
+    eNSRF_Option,
+    eNSRF_Status,
     eNSRF_QueueName,
     eNSRF_QueueClass
 };
@@ -177,6 +179,8 @@ struct SJS_Request
             err_msg.erase();
             err_msg.append(val, eff_size);
             break;
+        case eNSRF_Option:
+        case eNSRF_Status:
         case eNSRF_QueueName:
             param1.erase();
             param1.append(val, eff_size);
@@ -265,6 +269,20 @@ public:
         eNSA_Optchain       // if the argument is absent, whole
                             // chain is ignored
     };
+    enum ENSAccess {
+        eNSAC_Queue     = 1,
+        eNSAC_Worker    = 2,
+        eNSAC_Submitter = 4,
+        eNSAC_Admin     = 8
+    };
+    enum ENSClientRole {
+        eNSCR_Any        = 0,
+        eNSCR_Queue      = eNSAC_Queue,
+        eNSCR_Worker     = eNSAC_Worker + eNSAC_Queue,
+        eNSCR_Submitter  = eNSAC_Submitter + eNSAC_Queue,
+        eNSCR_Admin      = eNSAC_Admin,
+        eNSCR_QueueAdmin = eNSAC_Admin + eNSAC_Queue 
+    };
     typedef void (CNetScheduleHandler::*FProcessor)(void);
     struct SArgument {
         ENSArgType      atype;
@@ -277,6 +295,7 @@ public:
     struct SCommandMap {
         const char* cmd;
         FProcessor  processor;
+        ENSClientRole role;
         SArgument   args[kMaxArgs+1]; // + eor (end of record)
     };
 private:
@@ -285,7 +304,7 @@ private:
 
     FProcessor ParseRequest(const char* reqstr, SJS_Request* req);
 
-    // Moved from CNetScheduleServer
+    // Command processors
     void ProcessSubmit();
     void ProcessSubmitBatch();
     void ProcessCancel();
@@ -331,8 +350,8 @@ private:
                     const char* token, int tsize,
                     const char*&val, int& vsize);
 
-    bool x_ParsePutParameters(const char* s, SJS_Request* req);
     bool x_CheckVersion(void);
+    void x_CheckAccess(ENSClientRole role);
     string x_FormatErrorMessage(string header, string what);
     void x_WriteErrorToMonitor(string msg);
     // Moved from CNetScheduleServer
@@ -541,11 +560,17 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     }
     catch (CNetScheduleException &ex)
     {
-        if (ex.GetErrCode() == CNetScheduleException::eUnknownQueue) {
+        switch(ex.GetErrCode()) {
+        case CNetScheduleException::eUnknownQueue:
             WriteMsg("ERR:", "QUEUE_NOT_FOUND");
-        } else {
+            break;
+        case CNetScheduleException::eOperationAccessDenied:
+            WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
+            break;
+        default:
             string err = NStr::PrintableString(ex.what());
             WriteMsg("ERR:", err.c_str());
+            break;
         }
         string msg = x_FormatErrorMessage("Server error", ex.what());
         ERR_POST(msg);
@@ -732,6 +757,17 @@ bool CNetScheduleHandler::x_CheckVersion()
         return false;
     }
     return true;
+}
+
+void CNetScheduleHandler::x_CheckAccess(ENSClientRole role)
+{
+    if (((role & eNSAC_Queue) && m_Queue.get() == 0) ||
+        ((role & eNSAC_Worker) && !m_Queue->IsWorkerAllowed()) ||
+        ((role & eNSAC_Submitter) && !m_Queue->IsSubmitAllowed()) ||
+        ((role & eNSAC_Admin) && !m_AdminAccess))
+    {
+        NCBI_THROW(CNetScheduleException, eOperationAccessDenied, "");
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1151,7 +1187,7 @@ void CNetScheduleHandler::ProcessGet()
     if (m_JobReq.port) {  // unregister notification
         m_Queue->RegisterNotificationListener(
             m_PeerAddr, m_JobReq.port, 0, m_AuthString);
-   }
+    }
 }
 
 
@@ -1341,10 +1377,10 @@ void CNetScheduleHandler::ProcessPrintQueue()
     // TODO this method can not support session, because socket is closed at
     // the end.
     CNetScheduleClient::EJobStatus 
-        job_status = CNetScheduleClient::StringToStatus(m_JobReq.job_key);
+        job_status = CNetScheduleClient::StringToStatus(m_JobReq.param1);
 
     if (job_status == CNetScheduleClient::eJobNotFound) {
-        string err_msg = "Status unknown: " + m_JobReq.job_key;
+        string err_msg = "Status unknown: " + m_JobReq.param1;
         WriteMsg("ERR:", err_msg.c_str());
         return;
     }
@@ -1472,7 +1508,7 @@ void CNetScheduleHandler::ProcessStatistics()
         WriteMsg("OK:", st_str.c_str());
     } // for
 
-    if (m_JobReq.job_key == "ALL") {
+    if (m_JobReq.param1 == "ALL") {
 
         unsigned db_recs = m_Queue->CountRecs();
         string recs = "Records:";
@@ -1554,7 +1590,7 @@ void CNetScheduleHandler::ProcessStatistics()
 
 void CNetScheduleHandler::ProcessLog()
 {
-    const char* str = m_JobReq.job_key.c_str();
+    const char* str = m_JobReq.param1.c_str();
     if (NStr::strcasecmp(str, "ON") == 0) {
         m_Server->SetLogging(true);
         LOG_POST("Logging turned ON");
@@ -1635,7 +1671,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // SUBMIT input : str [ progress_msg : str ] [ port : uint [ timeout : uint ]]
     //        [ affinity_token : keystr(aff) ] [ cout : keystr(out) ] 
     //        [ cerr : keystr(err) ] [ job_mask : keyint(msk) ]
-    { "SUBMIT",   &CNetScheduleHandler::ProcessSubmit,
+    { "SUBMIT",   &CNetScheduleHandler::ProcessSubmit, eNSCR_Submitter,
         { { eNSA_Required, eNST_Str,     eNSRF_Input },
           { eNSA_Optional, eNST_Str,     eNSRF_ProgressMsg },
           { eNSA_Optional, eNST_Int,     eNSRF_Port },
@@ -1645,96 +1681,98 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { eNSA_Optional, eNST_KeyStr,  eNSRF_CErr, "", "err" },
           { eNSA_Optional, eNST_KeyInt,  eNSRF_JobMask, "0", "msk" }, sm_End } },
     // CANCEL job_key : id
-    { "CANCEL",   &CNetScheduleHandler::ProcessCancel,
+    { "CANCEL",   &CNetScheduleHandler::ProcessCancel, eNSCR_Submitter, 
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
     // STATUS job_key : id
-    { "STATUS",   &CNetScheduleHandler::ProcessStatus,
+    { "STATUS",   &CNetScheduleHandler::ProcessStatus, eNSCR_Queue,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
     // GET [ port : int ]
-    { "GET",      &CNetScheduleHandler::ProcessGet,
+    { "GET",      &CNetScheduleHandler::ProcessGet, eNSCR_Worker,
         { { eNSA_Optional, eNST_Int, eNSRF_Port }, sm_End } },
     // PUT job_key : id  job_return_code : int  output : str
-    { "PUT",      &CNetScheduleHandler::ProcessPut,
+    { "PUT",      &CNetScheduleHandler::ProcessPut, eNSCR_Worker,
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
           { eNSA_Required, eNST_Int, eNSRF_JobReturnCode },
           { eNSA_Required, eNST_Str, eNSRF_Output }, sm_End } },
     // RETURN job_key : id
-    { "RETURN",   &CNetScheduleHandler::ProcessReturn,
+    { "RETURN",   &CNetScheduleHandler::ProcessReturn, eNSCR_Worker,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
-    { "SHUTDOWN", &CNetScheduleHandler::ProcessShutdown, NO_ARGS },
-    { "VERSION",  &CNetScheduleHandler::ProcessVersion, NO_ARGS },
-    // TODO: Don't abuse job_key_str, move this away into own param
-    // LOG job_key_str : id -- "ON" or "OFF"
-    { "LOG",      &CNetScheduleHandler::ProcessLog,
-        { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
-    // TODO: Don't abuse job_key_str, move this away into own param
-    // STAT [ job_key_str : id ] -- "ALL"
-    { "STAT",     &CNetScheduleHandler::ProcessStatistics,
-        { { eNSA_Optional, eNST_Id, eNSRF_JobKey }, sm_End } },
-    { "QUIT",     &CNetScheduleHandler::ProcessQuitSession, NO_ARGS },
-    { "DROPQ",    &CNetScheduleHandler::ProcessDropQueue, NO_ARGS },
+    { "SHUTDOWN", &CNetScheduleHandler::ProcessShutdown, eNSCR_Admin,
+        NO_ARGS },
+    { "VERSION",  &CNetScheduleHandler::ProcessVersion, eNSCR_Any, NO_ARGS },
+    // LOG option : id -- "ON" or "OFF"
+    { "LOG",      &CNetScheduleHandler::ProcessLog, eNSCR_Any, // ?? Admin
+        { { eNSA_Required, eNST_Id, eNSRF_Option }, sm_End } },
+    // STAT [ option : id ] -- "ALL"
+    { "STAT",     &CNetScheduleHandler::ProcessStatistics, eNSCR_Queue,
+        { { eNSA_Optional, eNST_Id, eNSRF_Option }, sm_End } },
+    { "QUIT",     &CNetScheduleHandler::ProcessQuitSession, eNSCR_Any,
+        NO_ARGS },
+    { "DROPQ",    &CNetScheduleHandler::ProcessDropQueue, eNSCR_QueueAdmin,
+        NO_ARGS },
     // WGET port : uint  timeout : uint
-    { "WGET",     &CNetScheduleHandler::ProcessWaitGet,
+    { "WGET",     &CNetScheduleHandler::ProcessWaitGet, eNSCR_Worker,
         { { eNSA_Required, eNST_Int, eNSRF_Port },
           { eNSA_Required, eNST_Int, eNSRF_Timeout }, sm_End} },
     // JRTO job_key : id  timeout : uint
-    { "JRTO",     &CNetScheduleHandler::ProcessJobRunTimeout,
+    { "JRTO",     &CNetScheduleHandler::ProcessJobRunTimeout, eNSCR_Queue, // ?? Worker/Submitter
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
           { eNSA_Required, eNST_Int, eNSRF_Timeout }, sm_End} },
     // DROJ job_key : id
-    { "DROJ",     &CNetScheduleHandler::ProcessDropJob,
+    { "DROJ",     &CNetScheduleHandler::ProcessDropJob, eNSCR_Submitter,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
     // FPUT job_key : id  err_msg : str  output : str  job_return_code : int
-    { "FPUT",     &CNetScheduleHandler::ProcessPutFailure,
+    { "FPUT",     &CNetScheduleHandler::ProcessPutFailure, eNSCR_Worker,
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
           { eNSA_Required, eNST_Str, eNSRF_ErrMsg },
           { eNSA_Required, eNST_Str, eNSRF_Output }, 
           { eNSA_Required, eNST_Int, eNSRF_JobReturnCode }, sm_End} },
     // MPUT job_key : id  progress_msg : str
-    { "MPUT",     &CNetScheduleHandler::ProcessPutMessage,
+    { "MPUT",     &CNetScheduleHandler::ProcessPutMessage, eNSCR_Queue,
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
           { eNSA_Required, eNST_Str, eNSRF_ProgressMsg }, sm_End} },
     // MGET job_key : id
-    { "MGET",     &CNetScheduleHandler::ProcessGetMessage,
+    { "MGET",     &CNetScheduleHandler::ProcessGetMessage, eNSCR_Queue,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
-    { "MONI",     &CNetScheduleHandler::ProcessMonitor, NO_ARGS },
+    { "MONI",     &CNetScheduleHandler::ProcessMonitor, eNSCR_Queue, NO_ARGS },
     // DUMP [ job_key : id ]
-    { "DUMP",     &CNetScheduleHandler::ProcessDump,
+    { "DUMP",     &CNetScheduleHandler::ProcessDump, eNSCR_Queue,
         { { eNSA_Optional, eNST_Id, eNSRF_JobKey }, sm_End } },
-    { "RECO",     &CNetScheduleHandler::ProcessReloadConfig, NO_ARGS },
-    { "QLST",     &CNetScheduleHandler::ProcessQList, NO_ARGS },
-    { "BSUB",     &CNetScheduleHandler::ProcessSubmitBatch, NO_ARGS },
+    { "RECO",     &CNetScheduleHandler::ProcessReloadConfig, eNSCR_Any, // ?? Admin
+        NO_ARGS },
+    { "QLST",     &CNetScheduleHandler::ProcessQList, eNSCR_Any, NO_ARGS },
+    { "BSUB",     &CNetScheduleHandler::ProcessSubmitBatch, eNSCR_Submitter,
+        NO_ARGS },
     // JXCG [ job_key : id job_return_code : int output : str ]
-    { "JXCG",     &CNetScheduleHandler::ProcessJobExchange,
+    { "JXCG",     &CNetScheduleHandler::ProcessJobExchange, eNSCR_Worker,
         { { eNSA_Optchain, eNST_Id,  eNSRF_JobKey },
           { eNSA_Optchain, eNST_Int, eNSRF_JobReturnCode },
           { eNSA_Optchain, eNST_Str, eNSRF_Output }, sm_End } },
     // REGC port : uint
-    { "REGC",     &CNetScheduleHandler::ProcessRegisterClient,
+    { "REGC",     &CNetScheduleHandler::ProcessRegisterClient, eNSCR_Worker,
         { { eNSA_Required, eNST_Int, eNSRF_Port }, sm_End} },
     // URGC port : uint
-    { "URGC",     &CNetScheduleHandler::ProcessUnRegisterClient,
+    { "URGC",     &CNetScheduleHandler::ProcessUnRegisterClient, eNSCR_Worker,
         { { eNSA_Required, eNST_Int, eNSRF_Port }, sm_End} },
-    // TODO: Don't abuse job_key_str, move this away into own param
-    // QPRT job_key_str : id -- status
-    { "QPRT",     &CNetScheduleHandler::ProcessPrintQueue,
-        { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
+    // QPRT status : id
+    { "QPRT",     &CNetScheduleHandler::ProcessPrintQueue, eNSCR_Queue,
+        { { eNSA_Required, eNST_Id, eNSRF_Status }, sm_End } },
     // FRES job_key : id
-    { "FRES",     &CNetScheduleHandler::ProcessForceReschedule,
+    { "FRES",     &CNetScheduleHandler::ProcessForceReschedule, eNSCR_QueueAdmin,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
     // JDEX job_key : id timeout : uint
-    { "JDEX",     &CNetScheduleHandler::ProcessJobDelayExpiration,
+    { "JDEX",     &CNetScheduleHandler::ProcessJobDelayExpiration, eNSCR_Worker,
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
           { eNSA_Required, eNST_Int, eNSRF_Timeout }, sm_End} },
     // STSN [ affinity_token : keystr(aff) ]
-    { "STSN",     &CNetScheduleHandler::ProcessStatusSnapshot,
+    { "STSN",     &CNetScheduleHandler::ProcessStatusSnapshot, eNSCR_Queue,
         { { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" }, sm_End} },
     // QCRE qname : id  qclass : id
-    { "QCRE",     &CNetScheduleHandler::ProcessCreateQueue,
+    { "QCRE",     &CNetScheduleHandler::ProcessCreateQueue, eNSCR_Admin,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName },
           { eNSA_Required, eNST_Id, eNSRF_QueueClass }, sm_End} },
     // QDEL qname : id
-    { "QDEL",     &CNetScheduleHandler::ProcessDeleteQueue,
+    { "QDEL",     &CNetScheduleHandler::ProcessDeleteQueue, eNSCR_Admin,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName }, sm_End } },
     { 0,          &CNetScheduleHandler::ProcessError },
 };
@@ -1899,6 +1937,7 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
         req->err_msg = "Unknown request";
         return &CNetScheduleHandler::ProcessError;
     }
+    x_CheckAccess(sm_CommandMap[n_cmd].role);
     // Parse arguments
     while (argsDescr->atype != eNSA_None && // extra arguments are just ignored
            (ttype = x_GetToken(s, token, tsize)) >= 0) // end or error
@@ -1937,42 +1976,6 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
     }
 
     return processor;
-}
-
-#define NS_SKIPSPACE(x)  \
-    while (*x && (*x == ' ' || *x == '\t')) { ++x; }
-#define NS_GETSTRING(x, str) \
-    for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
-
-bool CNetScheduleHandler::x_ParsePutParameters(const char* s, SJS_Request* req)
-{
-    NS_GETSTRING(s, req->job_key)
-    NS_SKIPSPACE(s)
-
-    // return code
-    if (*s == 0) return false;
-    req->job_return_code = atoi(s);
-    // skip digits
-    for (; isdigit((unsigned char)(*s)); ++s) {}
-    if (!isspace((unsigned char)(*s))) {
-        return false;
-    }
-
-    // output information
-    NS_SKIPSPACE(s)           
-    if (*s !='"') return false;
-    char *ptr = req->output;
-    for (++s; true; ++s) {
-        if (*s == '"' && *(s-1) != '\\') break;
-        if (!*s) return false;
-        if (unsigned(ptr-req->output) >= kNetScheduleMaxDBDataSize) {
-            req->err_msg = "Message too long";
-            return false;
-        }
-        *ptr++ = *s;            
-    }
-    *ptr = 0;
-    return true;
 }
 
 
@@ -2394,6 +2397,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2006/12/04 21:58:32  joukovv
+ * netschedule_control commands for dynamic queue creation, access control
+ * centralized
+ *
  * Revision 1.108  2006/12/01 00:10:58  joukovv
  * Dynamic queue creation implemented.
  *

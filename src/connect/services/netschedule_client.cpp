@@ -617,7 +617,6 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
             }
         } 
     } // for
-
 }
 
 
@@ -1071,7 +1070,6 @@ CNetScheduleClient::WaitNotification(const string&  queue_name,
     return false;
 
 }
-
 
 
 void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
@@ -1572,6 +1570,36 @@ string CNetScheduleClient::ServerVersion()
 }
 
 
+void CNetScheduleClient::CreateQueue(const string& qname, const string& qclass)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    bool connected = CheckConnect(kEmptyStr);
+    CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+
+    CommandInitiate("QCRE ", qname + " " + qclass, &m_Tmp, connected);
+
+    CheckOK(&m_Tmp);
+}
+
+
+void CNetScheduleClient::DeleteQueue(const string& qname)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    bool connected = CheckConnect(kEmptyStr);
+    CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+
+    CommandInitiate("QDEL ", qname, &m_Tmp, connected);
+
+    CheckOK(&m_Tmp);
+}
+
+
 void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
                                    const string& job_key)
 {
@@ -1672,15 +1700,7 @@ string CNetScheduleClient::GetQueueList()
     bool connected = CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "QLST ", connected);
-    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
-
-    WaitForServer();
-
-    if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
-                   "Communication error");
-    }
+    CommandInitiate("QLST ", "", &m_Tmp, connected);
     TrimPrefix(&m_Tmp);
 
     return m_Tmp;
@@ -1692,16 +1712,8 @@ void CNetScheduleClient::DropQueue()
     bool connected = CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "DROPQ ", connected);
-    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
-
-    WaitForServer();
-
-    if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
-                   "Communication error");
-    }
-    TrimPrefix(&m_Tmp);
+    CommandInitiate("DROPQ ", "", &m_Tmp, connected);
+    CheckOK(&m_Tmp);
 }
 
 
@@ -1920,6 +1932,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/12/04 21:58:32  joukovv
+ * netschedule_control commands for dynamic queue creation, access control
+ * centralized
+ *
  * Revision 1.65  2006/11/30 15:33:33  didenko
  * Moved to a new log system
  *
