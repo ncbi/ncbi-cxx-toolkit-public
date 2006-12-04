@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.4.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.5.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -293,10 +293,10 @@ public:
     };
     enum { kMaxArgs = 8 };
     struct SCommandMap {
-        const char* cmd;
-        FProcessor  processor;
+        const char*   cmd;
+        FProcessor    processor;
         ENSClientRole role;
-        SArgument   args[kMaxArgs+1]; // + eor (end of record)
+        SArgument     args[kMaxArgs+1]; // + end of record
     };
 private:
     static SArgument sm_End;
@@ -775,10 +775,6 @@ void CNetScheduleHandler::x_CheckAccess(ENSClientRole role)
 
 void CNetScheduleHandler::ProcessSubmit()
 {
-    if (!m_Queue->IsSubmitAllowed()) {
-        WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-        return;
-    }
     unsigned job_id =
         m_Queue->Submit(m_JobReq.input, 
                         m_PeerAddr, 
@@ -813,13 +809,7 @@ void CNetScheduleHandler::ProcessSubmit()
 
 void CNetScheduleHandler::ProcessSubmitBatch()
 {
-    if (!m_Queue->IsSubmitAllowed()) {
-        WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-        return;
-    }
-
     WriteMsg("OK:", "Batch submit ready");
-
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgBatchHeader;
 }
 
@@ -955,11 +945,6 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
 
 void CNetScheduleHandler::ProcessCancel()
 {
-    if (!m_Queue->IsSubmitAllowed()) {
-        WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-        return;
-    }
-
     unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
     m_Queue->Cancel(job_id);
     WriteMsg("OK:", "");
@@ -968,11 +953,6 @@ void CNetScheduleHandler::ProcessCancel()
 
 void CNetScheduleHandler::ProcessForceReschedule()
 {
-    if (!m_Queue->IsSubmitAllowed()) {
-        WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-        return;
-    }
-
     unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
     m_Queue->ForceReschedule(job_id);
     WriteMsg("OK:", "");
@@ -981,11 +961,6 @@ void CNetScheduleHandler::ProcessForceReschedule()
 
 void CNetScheduleHandler::ProcessDropJob()
 {
-    if (!m_Queue->IsSubmitAllowed()) {
-        WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-        return;
-    }
-
     unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
     m_Queue->DropJob(job_id);
     WriteMsg("OK:", "");
@@ -1149,10 +1124,6 @@ void CNetScheduleHandler::ProcessPutMessage()
 
 void CNetScheduleHandler::ProcessGet()
 {
-    if (!m_Queue->IsWorkerAllowed()) {
-        WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-        return;
-    }
     unsigned job_id;
     char key_buf[1024];
     m_Queue->GetJob(m_PeerAddr, &job_id,
@@ -1194,10 +1165,6 @@ void CNetScheduleHandler::ProcessGet()
 void 
 CNetScheduleHandler::ProcessJobExchange()
 {
-    if (!m_Queue->IsWorkerAllowed()) {
-        WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-        return;
-    }
     unsigned job_id;
     char key_buf[1024];
 
@@ -1246,10 +1213,6 @@ CNetScheduleHandler::ProcessJobExchange()
 
 void CNetScheduleHandler::ProcessWaitGet()
 {
-    if (!m_Queue->IsWorkerAllowed()) {
-        WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-        return;
-    }
     unsigned job_id;
     m_Queue->GetJob(m_PeerAddr, &job_id, 
                     m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
@@ -1758,7 +1721,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "QPRT",     &CNetScheduleHandler::ProcessPrintQueue, eNSCR_Queue,
         { { eNSA_Required, eNST_Id, eNSRF_Status }, sm_End } },
     // FRES job_key : id
-    { "FRES",     &CNetScheduleHandler::ProcessForceReschedule, eNSCR_QueueAdmin,
+    { "FRES",     &CNetScheduleHandler::ProcessForceReschedule, eNSCR_Submitter,
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
     // JDEX job_key : id timeout : uint
     { "JDEX",     &CNetScheduleHandler::ProcessJobDelayExpiration, eNSCR_Worker,
@@ -2397,6 +2360,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.110  2006/12/04 22:07:39  joukovv
+ * Access checks corrected, version bumped
+ *
  * Revision 1.109  2006/12/04 21:58:32  joukovv
  * netschedule_control commands for dynamic queue creation, access control
  * centralized
