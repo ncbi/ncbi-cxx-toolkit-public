@@ -116,13 +116,13 @@ void CAlnBuildApp::Init(void)
 void CAlnBuildApp::LoadInputAlns(void)
 {
     const CArgs& args = GetArgs();
-    string sname = args["in"].AsString();
     
     /// get the asn type of the top-level object
     string asn_type = args["b"].AsString();
     bool binary = !asn_type.empty();
     auto_ptr<CObjectIStream> in
-        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
+        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText,
+                              args["in"].AsInputFile()));
     
     CAlnAsnReader reader(&GetScope());
     reader.Read(in.get(),
@@ -175,6 +175,25 @@ int CAlnBuildApp::Run(void)
 
     /// Create a vector of seq-ids per seq-align
     TAlnSeqIdVector aln_seq_id_vector(aln_vector, comp);
+
+    /// TEMP
+//     typedef set<CSeq_id_Handle> TIdSet;
+//     TIdSet id_set;
+//     TSeqIdPtr seq_id;
+//     for (size_t aln_i = 0; aln_i < aln_vector.size(); ++aln_i) {
+//         for (size_t seq_i = 0;  seq_i < aln_seq_id_vector[aln_i].size();  ++seq_i) {
+//             seq_id = aln_seq_id_vector[aln_i][seq_i];
+//             CSeq_id_Handle handle = CSeq_id_Handle::GetHandle(*seq_id);
+//             id_set.insert(handle);
+//             cerr << handle.GetHash() << endl;
+//         }
+//     }
+//     cerr << endl;
+//     ITERATE(TIdSet, id_i, id_set) {
+//         cerr << id_i->GetHash() << endl;
+//     }
+//     return 0;
+        
 
 
     /// Create an alignment bitmap to obtain statistics.
@@ -236,6 +255,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/12/04 19:56:16  todorov
+* Allow reading from stdin.
+*
 * Revision 1.11  2006/11/27 19:38:32  todorov
 * Using CSeqIdBioseqHandleComp<TSeqIdPtr>
 *
