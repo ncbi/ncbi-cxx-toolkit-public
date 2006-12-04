@@ -366,8 +366,12 @@ CAlnMixSeq::CAlnMixSeq(void)
       m_RowIdx(-1),
       m_Starts(new CAlnMixStarts())
 {
-};
+}
 
+
+CAlnMixSeq::~CAlnMixSeq()
+{
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
@@ -376,6 +380,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/12/04 13:46:59  dicuccio
+* Added dtor
+*
 * Revision 1.5  2006/02/21 15:58:59  todorov
 * CAlnMixSeq::TStarts -> CAlnMixStarts.
 * + CAlnMixSeq::m_ChildIdx
