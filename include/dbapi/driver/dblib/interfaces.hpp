@@ -65,7 +65,6 @@
 #endif // MS_DBLIB_IN_USE
 
 #ifdef FTDS_IN_USE
-#    include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
 #    include <cspublic.h>
 
 #    define CDBLibContext           CTDSContext
@@ -1065,6 +1064,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/12/04 15:35:05  ssikorsk
+ * - #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+ *
  * Revision 1.51  2006/09/21 16:18:05  ssikorsk
  * CDBL_Connection::Check --> CheckDead.
  *
