@@ -35,8 +35,6 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
-#include <sstream>
-#include <connect/ncbi_conn_stream.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -80,56 +78,6 @@ static void TestIostream(void)
 
     str = "0 1 2 3 4 5\n6 7 8 9";
     NcbiCout << "String output: "  << str << NcbiEndl;
-
-#if 0
-    const int CNT2 = 1000000, CNT1 = 1000000/CNT2;
-    if ( 0 ) {
-        CStopWatch sw(CStopWatch::eStart);
-        vector<string> ss;
-        for ( int i = 0; i < CNT1; ++i ) {
-            ostringstream out;
-            for ( int j = 0; j < CNT2; ++j ) 
-            out << "Line  is a bit longer: a;ospdofgiaw;oivnzs;cnv";
-            ss.push_back(out.str());
-        }
-        NcbiCout << "Stringstream time: " << sw.Elapsed() << NcbiEndl;
-    }
-    {
-        CStopWatch sw(CStopWatch::eStart);
-        vector<string> ss;
-        for ( int i = 0; i < CNT1; ++i ) {
-            CNcbiOstrstream out;
-            for ( int j = 0; j < CNT2; ++j ) 
-            out << "Line  is a bit longer: a;ospdofgiaw;oivnzs;cnv";
-            ss.push_back(CNcbiOstrstreamToString(out));
-        }
-        NcbiCout << "CNcbiOstrstreamToString time: " << sw.Elapsed() << NcbiEndl;
-    }
-    {
-        CStopWatch sw(CStopWatch::eStart);
-        vector<string> ss;
-        for ( int i = 0; i < CNT1; ++i ) {
-            CConn_MemoryStream out;
-            for ( int j = 0; j < CNT2; ++j ) 
-            out << "Line  is a bit longer: a;ospdofgiaw;oivnzs;cnv";
-            string s;
-            out.ToString(&s);
-            ss.push_back(s);
-        }
-        NcbiCout << "CConn_MemoryStream str time: " << sw.Elapsed() << NcbiEndl;
-    }
-    {
-        CStopWatch sw(CStopWatch::eStart);
-        vector<string> ss;
-        for ( int i = 0; i < CNT1; ++i ) {
-            CConn_MemoryStream out;
-            for ( int j = 0; j < CNT2; ++j ) 
-            out << "Line  is a bit longer: a;ospdofgiaw;oivnzs;cnv";
-            ss.push_back(out.ToCStr());
-        }
-        NcbiCout << "CConn_MemoryStream cstr time: " << sw.Elapsed() << NcbiEndl;
-    }
-#endif
 }
 
 
@@ -1057,6 +1005,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.110  2006/12/04 19:02:18  vasilche
+ * Removed accidentally added code.
+ *
  * Revision 1.109  2006/11/13 21:29:11  ivanov
  * TestHeapStack: removed memory leak
  *
