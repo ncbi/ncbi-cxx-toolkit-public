@@ -87,12 +87,9 @@ int CImageTestApp::Run(void)
     size_t depth  = 0;
     CImageIO::EType type = CImageIO::eUnknown;
 
-    CStopWatch sw;
-    sw.Start();
     if ( !CImageIO::ReadImageInfo(istr, &width, &height, &depth, &type) ) {
         NCBI_THROW(CException, eUnknown, "failed to read image info");
     }
-    double read_time = sw.Elapsed();
 
     CNcbiOstrstream ostr;
     switch (type) {
@@ -147,6 +144,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/04 13:54:46  dicuccio
+ * Remove unneeded code
+ *
  * Revision 1.1  2006/07/24 13:35:19  dicuccio
  * Added image_info app
  *
