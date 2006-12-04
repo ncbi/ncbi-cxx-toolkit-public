@@ -51,7 +51,6 @@ BEGIN_NCBI_SCOPE
 /// Include definitions from the objects namespace.
 USING_SCOPE(objects);
 
-
 /// Forward definition for PIMPL idiom.
 class CWriteDB_Impl;
 
@@ -320,6 +319,15 @@ protected:
 
 
 END_NCBI_SCOPE
+
+/*
+ * ==========================================================================
+ * $Log$
+ * Revision 1.8  2006/12/04 13:47:37  dicuccio
+ * Added cvs log
+ *
+ * ==========================================================================
+ */
 
 #endif // OBJTOOLS_WRITERS_WRITEDB__WRITEDB_HPP
 
