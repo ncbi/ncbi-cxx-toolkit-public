@@ -22,6 +22,12 @@
 
 #include <cstypes.h>
 
+#ifndef NCBI_DBAPI_RENAME_CTLIB
+#  define NCBI_DBAPI_RENAME_CTLIB
+#endif
+#include <dbapi/driver/ctlib/ncbi_dbapi_rename_ctlib.h>
+
+
 #undef TDS_STATIC_CAST
 #ifdef __cplusplus
 #define TDS_STATIC_CAST(type, a) static_cast<type>(a)
@@ -52,7 +58,7 @@ static const void *const no_unused_cspublic_h_warn[] = { rcsid_cspublic_h, no_un
 #define CS_TIMED_OUT 	-208
 #define CS_PENDING 	-2
 #define CS_INTERRUPT 	-5
-#define CS_BLK_HAS_TEXT -6 
+#define CS_BLK_HAS_TEXT -6
 #define CS_QUIET 	-3
 
 #define CS_SIZEOF(x) sizeof(x)
@@ -300,7 +306,7 @@ enum
 
 /*
  * Code added for CURSOR support
- * types accepted by ct_cursor 
+ * types accepted by ct_cursor
  */
 #define CS_CURSOR_DECLARE  700
 #define CS_CURSOR_OPEN     701
