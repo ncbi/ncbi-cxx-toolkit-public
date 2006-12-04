@@ -1,0 +1,2 @@
+MODULE_PATH   = objects/genome_collection
+MODULE_IMPORT = objects/general/general objects/seqloc/seqloc objects/seqfeat/seqfeat objects/seq/seq

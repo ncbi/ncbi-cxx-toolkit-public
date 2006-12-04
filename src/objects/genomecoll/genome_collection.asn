@@ -1,0 +1,154 @@
+-- $Id: genome_collection.asn,v 1.1 2006/12/04 13:37:27 dicuccio Exp $
+-- **********************************************************************
+--
+--  NCBI Genome Collections
+--  by Mike DiCuccio, Avi Kimchi, Karl Sirotkin, Josh Cherry
+--
+-- **********************************************************************
+
+
+
+
+NCBI-GenomeCollection DEFINITIONS ::=
+BEGIN
+
+IMPORTS Dbtag FROM NCBI-General
+        MolInfo, Seqdesc, Delta-ext FROM NCBI-Sequence
+        Seq-id FROM NCBI-Seqloc
+        BioSource FROM NCBI-BioSource;
+
+Genome ::= SEQUENCE
+{
+    -- The identifier for this genome
+    id SET OF Dbtag,
+
+    -- biosrc provides taxonomic information for this genome
+    biosrc BioSource,
+
+    -- project ID for this genome
+    -- this is a *master* ID for the genome
+    project-id INTEGER,
+
+    -- descriptors
+    desc Seqdesc OPTIONAL,
+
+    -- official list of chromosome names
+    -- this should be the complete expected set of chromosomes
+    -- regardless of whether they are represented in *any*
+    -- genomic part
+    chrom-names SET OF VisibleString OPTIONAL,
+
+    -- the bits that make up this genome
+    -- this preserves the expected display order
+    parts SET OF GenomicPart
+}
+
+GenomicPart ::= CHOICE {
+    assembly Assembly,
+    mol Molecule,
+    seqs SequenceBag
+}
+
+ChromosomeName ::= SEQUENCE
+{
+    -- the name used in a particular genomic part
+    name           VisibleString,
+
+    -- refers to a name from the official set of chromosome names
+    -- given in the Genome
+    canonical-name VisibleString OPTIONAL,
+
+    -- other names for this object
+    aliases SET OF VisibleString OPTIONAL
+}
+
+
+Assembly ::= SEQUENCE
+{
+    -- The identifier of this assembly
+    id SET OF Dbtag,
+
+    -- project ID for this genome
+    -- this is the ID for this asssembly and may reflect the submitter/source
+    project-id INTEGER,
+
+    -- biosrc provides taxonomic information for this assembly
+    biosrc BioSource OPTIONAL,
+
+    -- descriptors
+    desc Seqdesc OPTIONAL,
+
+    -- flag: is this assembly partial?
+    partial BOOLEAN OPTIONAL,
+
+    -- level of coverage for this assembly
+    coverage INTEGER OPTIONAL,
+
+    -- collections of molecules for this assembly
+    mols SET OF Molecule,
+
+    -- unplaced bits for this asssembly
+    unplaced SET OF SequenceBag OPTIONAL
+}
+
+
+Molecule ::= SEQUENCE
+{
+    -- id for this molecule
+    id SET OF Dbtag,
+
+    -- name for this molecule
+    name ChromosomeName,
+
+    -- biosrc provides taxonomic information for this molecule
+    biosrc BioSource OPTIONAL,
+
+    -- descriptors
+    desc Seqdesc OPTIONAL,
+
+    -- type of molecule
+    type MolInfo OPTIONAL,
+
+    -- the sequence(s) representing this molecule
+    -- in the case of 
+    sequence CHOICE {
+        single Seq-id,
+        set SET OF Seq-id,
+        ordered-set Delta-ext
+    },
+    
+    -- components used to produce this molecule
+    components SequenceBag OPTIONAL,
+
+    -- unlinked components in this molecule
+    unlinked SET OF SequenceBag OPTIONAL
+}
+
+
+SequenceBag ::= SEQUENCE
+{
+    -- name for this bag
+    name ChromosomeName OPTIONAL,
+
+    -- biosrc provides taxonomic information for this bag
+    biosrc BioSource OPTIONAL,
+
+    -- descriptors
+    desc Seqdesc OPTIONAL,
+
+    -- flag: is this set ordered?
+    ordered BOOLEAN OPTIONAL,
+
+    -- sequences represented in this collection
+    sequences SET OF Seq-id
+}
+
+END
+
+-- --------------------------------------------------------------------------
+-- $Log: genome_collection.asn,v $
+-- Revision 1.1  2006/12/04 13:37:27  dicuccio
+-- Initial revision
+--
+-- --------------------------------------------------------------------------
+
