@@ -25,11 +25,7 @@
 
 /*****************************************************************************
 
-File name: blast_format.cpp
-
 Author: Jason Papadopoulos
-
-Contents: Produce formatted blast output
 
 ******************************************************************************/
 

@@ -29,12 +29,7 @@ static char const rcsid[] = "$Id$";
 
 /*****************************************************************************
 
-File name: blastall.cpp
-
 Author: Jason Papadopoulos
-
-Contents: Search one or more query sequences against a database
-          using the C++ BLAST engine
 
 ******************************************************************************/
 
