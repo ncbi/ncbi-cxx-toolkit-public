@@ -20,6 +20,11 @@
 #ifndef _sybdb_h_
 #define _sybdb_h_
 
+#ifndef NCBI_FTDS_RENAME_SYBDB
+#  define NCBI_FTDS_RENAME_SYBDB
+#endif
+#include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+
 #include "tds_sysdep_public.h"
 
 #ifdef __cplusplus
@@ -75,7 +80,7 @@ static const void *const no_unused_sybdb_h_warn[] = { rcsid_sybdb_h, no_unused_s
 
 /**
  * DBTDS_xxx are returned by DBTDS()
- * The integer values of the constants are poorly chosen.  
+ * The integer values of the constants are poorly chosen.
  */
 #define DBTDS_UNKNOWN           0
 #define DBTDS_2_0               1	/* pre 4.0 SQL Server */
@@ -119,7 +124,7 @@ typedef int (*DB_DBCHKINTR_FUNC) (void *dbproc);
 typedef int (*DB_DBHNDLINTR_FUNC) (void *dbproc);
 
 #ifndef __INCvxWorksh
-/* VxWorks already defines STATUS and BOOL. Compiler gets mad if you 
+/* VxWorks already defines STATUS and BOOL. Compiler gets mad if you
 ** redefine them. */
 /* __INCvxWorksh will get #defined by std. include files included from tds.h
 */
@@ -218,12 +223,12 @@ typedef tds_sysdep_real32_type DBREAL;
 typedef tds_sysdep_real64_type DBFLT8;
 typedef unsigned tds_sysdep_int16_type DBUSMALLINT;
 
-typedef struct 
+typedef struct
 {
 	DBINT len;
     char  str[256];
 } DBVARYCHAR;
-   
+
 typedef struct
 {
 	unsigned char precision;
@@ -283,24 +288,24 @@ enum
 { MAXCOLNAMELEN = 512 }; /* duplicates TDS_SYSNAME_SIZE */
 typedef enum { CI_REGULAR=1, CI_ALTERNATE=2, CI_CURSOR=3 } CI_TYPE;
 
-typedef struct 
-{ 
-    DBINT SizeOfStruct; 
-    DBCHAR  Name[MAXCOLNAMELEN+2]; 
-    DBCHAR  ActualName[MAXCOLNAMELEN+2]; 
-    DBCHAR  TableName[MAXCOLNAMELEN+2]; 
-    SHORT Type; 
-    DBINT UserType; 
-    DBINT MaxLength; 
-    BYTE  Precision; 
-    BYTE  Scale; 
-    BOOL  VarLength; 
-    BYTE  Null; 
-    BYTE  CaseSensitive; 
-    BYTE  Updatable; 
-    BOOL  Identity; 
+typedef struct
+{
+    DBINT SizeOfStruct;
+    DBCHAR  Name[MAXCOLNAMELEN+2];
+    DBCHAR  ActualName[MAXCOLNAMELEN+2];
+    DBCHAR  TableName[MAXCOLNAMELEN+2];
+    SHORT Type;
+    DBINT UserType;
+    DBINT MaxLength;
+    BYTE  Precision;
+    BYTE  Scale;
+    BOOL  VarLength;
+    BYTE  Null;
+    BYTE  CaseSensitive;
+    BYTE  Updatable;
+    BOOL  Identity;
 
-} DBCOL; 
+} DBCOL;
 /* end dbcolinfo stuff */
 
 

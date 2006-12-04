@@ -20,6 +20,11 @@
 #ifndef _sybdb_h_
 #define _sybdb_h_
 
+#ifndef NCBI_FTDS_RENAME_SYBDB
+#  define NCBI_FTDS_RENAME_SYBDB
+#endif
+#include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+
 #include "tds.h"
 
 #ifdef __cplusplus
@@ -103,7 +108,7 @@ typedef unsigned short	USHORT;
 typedef int	(*INTFUNCPTR)();
 
 #ifndef __INCvxWorksh
-/* VxWorks already defines STATUS and BOOL. Compiler gets mad if you 
+/* VxWorks already defines STATUS and BOOL. Compiler gets mad if you
 ** redefine them. */
 /* __INCvxWorksh will get #defined by std. include files included from tds.h
 */
@@ -195,7 +200,7 @@ typedef struct {
 	TDS_TINYINT  db_prec;
 	TDS_TINYINT  db_scale;
     TDS_SMALLINT db_flags;
-	TDS_INT		 db_size; 
+	TDS_INT		 db_size;
 	TDS_TINYINT  db_unicodedata;
     char         db_collate[5];
 	long	data_size;
@@ -205,16 +210,16 @@ typedef struct {
 
 typedef struct {
    TDSSOCKET	  *tds_socket ;
-   
+
    DBPROC_ROWBUF   row_buf;
-   
+
    int             noautofree;
    int             more_results; /* boolean.  Are we expecting results? */
    BYTE           *user_data;   /* see dbsetuserdata() and dbgetuserdata() */
    unsigned char  *dbbuf; /* is dynamic!                   */
    int             dbbufsz;
    int             empty_res_hack;
-   TDS_INT         text_size;   
+   TDS_INT         text_size;
    TDS_INT         text_sent;
    TDS_CHAR        *bcp_hostfile;
    TDS_CHAR        *bcp_errorfile;
@@ -573,8 +578,8 @@ char *dbtabname(DBPROCESS *dbprocess, int tabnum);
 char *dbtabsoruce(DBPROCESS *dbprocess, int colnum, int *tabnum);
 
 #define SYBEMEM         20010   /* Unable to allocate sufficient memory. */
-#define SYBESMSG        20018   
-#define SYBERPND        20019  
+#define SYBESMSG        20018
+#define SYBERPND        20019
 #define SYBETIME        20003   /* SQL Server connection timed out. */
 #define SYBEABNC        20032   /* Attempt to bind to a non-existent column. */
 #define SYBENSIP        20045   /* Negative starting index passed to dbstrcpy().
@@ -601,20 +606,20 @@ or in source field. */
 #define SYBEVDPT         20079
 #define SYBEUNOP         20115  /* Unknown option passed to dbsetopt(). */
 #define SYBESPID         20154  /* Called dbspid() with a NULL dbproc. */
-#define SYBEBNUM         20214  /* Bad numbytes parameter passed to dbstrcpy(). 
+#define SYBEBNUM         20214  /* Bad numbytes parameter passed to dbstrcpy().
 */
 #define SYBEBCPCTYP      20233
 #define SYBEBCHLEN       20235
 #define SYBEBCPREF       20237
 #define SYBEBCVLEN       20234
 #define SYBEBCUO         20084
-#define SYBEBUOE         20097  /* FIXME: I made up this number (not the name). 
+#define SYBEBUOE         20097  /* FIXME: I made up this number (not the name).
 jkl */
 #define SYBEBUOF         20098
 #define SYBEBUDF         20102
 #define SYBEBIHC         20103
 #define SYBEBCUC         20085
-#define SYBEBUCE         20096  /* FIXME: I made up this number (not the name). 
+#define SYBEBUCE         20096  /* FIXME: I made up this number (not the name).
 jkl */
 #define SYBEBUCF         20099
 #define SYBEIFNB         20065
@@ -699,19 +704,19 @@ RETCODE dbsetllong(LOGINREC* login, long value, int which);
 #define DBSETLLABELED(x,y)	dbsetlbool((x), (y), DBSETLABELED)
 #define BCP_SETLABELED(x,y)	dbsetlbool((x), (y), DBSETLABELED)
 
-extern	RETCODE    bcp_init(DBPROCESS *dbproc, char *tblname, char *hfile, 
+extern	RETCODE    bcp_init(DBPROCESS *dbproc, char *tblname, char *hfile,
                             char *errfile, int direction);
-extern	RETCODE    bcp_collen(DBPROCESS *dbproc, DBINT varlen, 
+extern	RETCODE    bcp_collen(DBPROCESS *dbproc, DBINT varlen,
                               int table_column);
 extern	RETCODE    bcp_columns(DBPROCESS *dbproc, int host_colcount);
-extern	RETCODE    bcp_colfmt(DBPROCESS *dbproc, int host_colnum, 
-                              int host_type, int host_prefixlen, 
+extern	RETCODE    bcp_colfmt(DBPROCESS *dbproc, int host_colnum,
+                              int host_type, int host_prefixlen,
                               DBINT host_collen, BYTE *host_term,
                               int host_termlen, int table_colnum);
-extern	RETCODE    bcp_colfmt_ps(DBPROCESS *dbproc, int host_colnum, 
-                                 int host_type, int host_prefixlen, 
+extern	RETCODE    bcp_colfmt_ps(DBPROCESS *dbproc, int host_colnum,
+                                 int host_type, int host_prefixlen,
                                  DBINT host_collen, BYTE *host_term,
-                                 int host_termlen, int table_colnum, 
+                                 int host_termlen, int table_colnum,
                                  DBTYPEINFO *typeinfo);
 extern	RETCODE    bcp_control(DBPROCESS *dbproc, int field, DBINT value);
 extern	RETCODE    bcp_colptr(DBPROCESS *dbproc, BYTE *colptr,
@@ -724,12 +729,12 @@ extern	RETCODE    bcp_sendrow(DBPROCESS *dbproc);
 extern	RETCODE    bcp_moretext(DBPROCESS *dbproc, DBINT size, BYTE *text);
 extern	int    bcp_batch(DBPROCESS *dbproc);
 extern	int    bcp_done(DBPROCESS *dbproc);
-extern	RETCODE    bcp_bind(DBPROCESS *dbproc, BYTE *varaddr, int prefixlen, 
-                            DBINT varlen, BYTE *terminator, int termlen, 
+extern	RETCODE    bcp_bind(DBPROCESS *dbproc, BYTE *varaddr, int prefixlen,
+                            DBINT varlen, BYTE *terminator, int termlen,
                             int type, int table_column);
-extern	RETCODE    dbmnyadd(DBPROCESS *dbproc, DBMONEY *m1, DBMONEY *m2, 
+extern	RETCODE    dbmnyadd(DBPROCESS *dbproc, DBMONEY *m1, DBMONEY *m2,
                             DBMONEY *sum);
-extern	RETCODE    dbmnysub(DBPROCESS *dbproc, DBMONEY *m1, DBMONEY *m2, 
+extern	RETCODE    dbmnysub(DBPROCESS *dbproc, DBMONEY *m1, DBMONEY *m2,
                             DBMONEY *diff);
 extern	RETCODE    dbmnymul(DBPROCESS *dbproc, DBMONEY *m1, DBMONEY *m2,
                             DBMONEY *prod);
@@ -743,22 +748,22 @@ extern	RETCODE    dbmnymaxpos(DBPROCESS *dbproc, DBMONEY *dest);
 extern	RETCODE    dbmnymaxneg(DBPROCESS *dbproc, DBMONEY *dest);
 extern	RETCODE    dbmnyndigit(DBPROCESS *dbproc, DBMONEY *mnyptr,
                                DBCHAR *value, DBBOOL *zero);
-extern	RETCODE    dbmnyinit(DBPROCESS *dbproc,DBMONEY *mnyptr, int trim, 
+extern	RETCODE    dbmnyinit(DBPROCESS *dbproc,DBMONEY *mnyptr, int trim,
                              DBBOOL *negative);
-extern	RETCODE    dbmnydown(DBPROCESS *dbproc,DBMONEY *mnyptr, int divisor, 
+extern	RETCODE    dbmnydown(DBPROCESS *dbproc,DBMONEY *mnyptr, int divisor,
                              int *remainder);
 extern	RETCODE    dbmnyinc(DBPROCESS *dbproc,DBMONEY *mnyptr);
 extern	RETCODE    dbmnydec(DBPROCESS *dbproc,DBMONEY *mnyptr);
 extern	RETCODE    dbmnyminus(DBPROCESS *dbproc,DBMONEY *src, DBMONEY *dest);
 extern	RETCODE    dbmny4cmp(DBPROCESS *dbproc, DBMONEY4 *m1, DBMONEY4 *m2);
-extern	RETCODE    dbmny4minus(DBPROCESS *dbproc, DBMONEY4 *src, 
+extern	RETCODE    dbmny4minus(DBPROCESS *dbproc, DBMONEY4 *src,
                                DBMONEY4 *dest);
 extern	RETCODE    dbmny4zero(DBPROCESS *dbproc, DBMONEY4 *dest);
-extern	RETCODE    dbmny4add(DBPROCESS *dbproc, DBMONEY4 *m1, DBMONEY4 *m2, 
+extern	RETCODE    dbmny4add(DBPROCESS *dbproc, DBMONEY4 *m1, DBMONEY4 *m2,
                              DBMONEY4 *sum);
 extern	RETCODE    dbmny4sub(DBPROCESS *dbproc, DBMONEY4 *m1, DBMONEY4 *m2,
                              DBMONEY4 *diff);
-extern	RETCODE    dbmny4mul(DBPROCESS *dbproc, DBMONEY4 *m1, DBMONEY4 *m2, 
+extern	RETCODE    dbmny4mul(DBPROCESS *dbproc, DBMONEY4 *m1, DBMONEY4 *m2,
                              DBMONEY4 *prod);
 extern	RETCODE    dbmny4divide(DBPROCESS *dbproc, DBMONEY4 *m1, DBMONEY4 *m2,
                                 DBMONEY4 *quotient);
@@ -768,7 +773,7 @@ extern	RETCODE    dbdatecmp(DBPROCESS *dbproc, DBDATETIME *d1,
 extern	RETCODE    dbdatecrack(DBPROCESS *dbproc, DBDATEREC *dateinfo,
                                DBDATETIME *datetime);
 extern	void       dbrpwclr(LOGINREC *login);
-extern	RETCODE    dbrpwset(LOGINREC *login, char *srvname, char *password, 
+extern	RETCODE    dbrpwset(LOGINREC *login, char *srvname, char *password,
                             int pwlen);
 extern	void       build_xact_string(char *xact_name, char *service_name,
                                      DBINT commid, char *result);
@@ -789,9 +794,9 @@ extern  BYTE      *dbdata(DBPROCESS *dbproc,int column);
 extern  char      *dbcolname(DBPROCESS *dbproc,int column);
 extern  DBBINARY  *dbtxptr(DBPROCESS *dbproc,int column);
 extern  DBBINARY  *dbtxtimestamp(DBPROCESS *dbproc, int column);
-extern  RETCODE    dbwritetext(DBPROCESS *dbproc,char *objname, 
-				DBBINARY *textptr, DBTINYINT textptrlen, 
-				DBBINARY *timestamp, DBBOOL log, 
+extern  RETCODE    dbwritetext(DBPROCESS *dbproc,char *objname,
+				DBBINARY *textptr, DBTINYINT textptrlen,
+				DBBINARY *timestamp, DBBOOL log,
                                         DBINT size, BYTE *text);
 extern  void       dbfreebuf(DBPROCESS *dbproc);
 extern  RETCODE	   dbcmd(DBPROCESS *dbproc, char *cmdstring);
@@ -799,7 +804,7 @@ extern  RETCODE    dbsqlexec(DBPROCESS *dbproc);
 extern  int        dbnumcols(DBPROCESS *dbproc);
 extern  DBINT      dbcollen(DBPROCESS *dbproc, int column);
 extern  char      *dbprtype(int token);
-extern  RETCODE    dbbind(DBPROCESS *dbproc, int column, int vartype, 
+extern  RETCODE    dbbind(DBPROCESS *dbproc, int column, int vartype,
                           DBINT varlen, BYTE *varaddr);
 extern  RETCODE	   dbnullbind(DBPROCESS *dbproc, int column, DBINT *indicator);
 extern  RETCODE    dbsqlsend(DBPROCESS *dbproc);
@@ -810,7 +815,7 @@ extern  RETCODE    dbpoll(DBPROCESS *dbproc, long milliseconds,
 
 extern  DBINT dbspr1rowlen(DBPROCESS *dbproc);
 extern  RETCODE dbspr1row(DBPROCESS *dbproc, char *buffer, DBINT buf_len);
-extern  RETCODE dbsprline(DBPROCESS *dbproc,char *buffer, DBINT buf_len, 
+extern  RETCODE dbsprline(DBPROCESS *dbproc,char *buffer, DBINT buf_len,
 			DBCHAR line_char);
 extern  RETCODE dbsprhead(DBPROCESS *dbproc,char *buffer, DBINT buf_len);
 extern  char *dbversion();
