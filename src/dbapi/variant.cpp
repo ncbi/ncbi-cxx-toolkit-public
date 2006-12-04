@@ -41,21 +41,21 @@
 
 BEGIN_NCBI_SCOPE
 
-//CVariantException::CVariantException(const string& msg)
-//    : m_msg(msg)
-//{
-//
-//}
-//
-//CVariantException::~CVariantException() throw()
-//{
-//
-//}
-//
-//const char* CVariantException::what() const throw()
-//{
-//    return m_msg.c_str();
-//}
+//==================================================================
+CVariantException::CVariantException(const string& message)
+    : CException(DIAG_COMPILE_INFO, 0, (CException::EErrCode)eVariant,  message)
+{
+}
+
+
+const char* CVariantException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eVariant:    return "eVariant";
+    default:       return CException::GetErrCodeString();
+    }
+}
+
 
 //==================================================================
 CVariant CVariant::BigInt(Int8 *p)
@@ -854,6 +854,9 @@ bool operator==(const CVariant& v1, const CVariant& v2)
 }
 /*
 * $Log$
+* Revision 1.43  2006/12/04 15:38:39  ssikorsk
+* Added implementation of CVariantException.
+*
 * Revision 1.42  2006/09/13 19:17:48  ssikorsk
 * Post a warning if a string was truncated.
 *
