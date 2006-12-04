@@ -33,6 +33,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbitime.hpp>
 #include <objtools/format/gff3_formatter.hpp>
 #include <objtools/format/items/alignment_item.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -350,6 +351,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/12/04 15:26:54  vasilche
+* Include ncbitime.hpp
+*
 * Revision 1.7  2006/04/05 14:01:35  dicuccio
 * Cosmetic changes
 *
