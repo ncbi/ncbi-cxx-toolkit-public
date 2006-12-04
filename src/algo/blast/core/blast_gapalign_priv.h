@@ -59,6 +59,9 @@ extern "C" {
  * @param query_offset The starting offset in query [in]
  * @param reversed Has the sequence been reversed? Used for psi-blast [in]
  * @param reverse_sequence Do reverse the sequence [in]
+ * @param hit_fence If NULL, set to TRUE if the extension encountered
+ *                  sequence letters that indicate finding a region
+ *                  of B that is uninitialized [out]
  * @return The best alignment score found.
 */
 Int4
@@ -85,6 +88,9 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
  * @param query_offset The starting offset in query [in]
  * @param reversed Has the sequence been reversed? Used for psi-blast [in]
  * @param reverse_sequence Do reverse the sequence [in]
+ * @param fence_hit If NULL, set to TRUE if the extension encountered
+ *                  sequence letters that indicate finding a region
+ *                  of B that is uninitialized [out]
  * @return The best alignment score found.
  */
 Int4 
@@ -160,6 +166,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2006/12/04 21:17:24  papadopo
+ * doxygen fixes
+ *
  * Revision 1.19  2006/11/29 17:25:50  bealer
  * - HSP range support.
  *
