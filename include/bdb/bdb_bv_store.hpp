@@ -120,6 +120,9 @@ protected:
     /// Read bvector, reallocate the internal buffer if necessary
     EBDB_ErrCode ReadRealloc(TBitVector* bv, bool clear_target_vec);
 
+    /// Read buffer, reallocate if necessary
+    EBDB_ErrCode ReadRealloc(TBuffer& buffer);
+
 protected:
     /// temporary serialization buffer
     TBuffer                   m_Buffer;
@@ -559,6 +562,12 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadRealloc(TBitVector* bv,
         }
     }
     return err;
+}
+
+template<class TBV>
+EBDB_ErrCode CBDB_BvStore<TBV>::ReadRealloc(TBuffer& buffer)
+{
+    return CBDB_BLobFile::ReadRealloc(buffer);
 }
 
 
@@ -1315,6 +1324,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/12/04 12:49:49  dicuccio
+ * Added low-level ReadRealloc()
+ *
  * Revision 1.13  2006/11/30 12:42:08  dicuccio
  * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
  * vector<unsigned char>
