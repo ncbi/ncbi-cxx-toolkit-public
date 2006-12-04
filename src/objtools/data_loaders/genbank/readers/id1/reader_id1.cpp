@@ -81,9 +81,9 @@ namespace {
     public:
         CDebugPrinter(CId1Reader::TConn conn)
             {
-                *this << "CId1Reader(" << conn << "): ";
+                flush() << "CId1Reader(" << conn << "): ";
 #ifdef NCBI_THREADS
-                *this << "T" << CThread::GetSelf() << ' ';
+                flush() << "T" << CThread::GetSelf() << ' ';
 #endif
             }
         ~CDebugPrinter()
