@@ -174,7 +174,8 @@ bool CRegexp::IsMatch(const string& str, TMatch flags)
 {
     int x_flags = s_GetRealMatchFlags(flags);
     m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.c_str(),
-                           (int)str.length(),  0, x_flags, m_Results, 3);
+                           (int)str.length(),  0, x_flags, m_Results,
+                           (int)(kRegexpMaxSubPatterns +1) * 3);
     return m_NumFound > 0;
 }
 
@@ -478,6 +479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/12/04 16:45:00  ivanov
+ * CRegexp::IsMatch() fixed a bug with matching to regexp with subpatterns
+ *
  * Revision 1.18  2006/12/04 16:12:20  gouriano
  * Moved CRegexpException::GetErrCodeString
  *
