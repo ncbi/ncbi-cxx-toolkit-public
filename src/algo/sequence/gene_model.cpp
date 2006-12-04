@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/sequence/gene_model.hpp>
+#include <corelib/ncbitime.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
@@ -384,6 +385,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/12/04 15:46:27  vasilche
+ * Include ncbitime.hpp.
+ *
  * Revision 1.10  2006/10/05 16:29:22  todorov
  * Removed the deprecated CAlnMix::fTryOtherMethodOnFail.
  *
