@@ -424,7 +424,7 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
     // set the correct flag
     x_FetchFirst_Prolog(flag);
 
-    bool multirow_only;
+    bool multirow_only = false;
     switch (m_MultiFetchMode) 
     {
     case eFetchAll:
@@ -612,7 +612,7 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
         fdir = m_FetchDirection;
 
     unsigned int flag = s_FDir2DBFlag(fdir);
-    bool multirow_only;
+    bool multirow_only = false;
     switch (m_MultiFetchMode) 
     {
     case eFetchAll:
@@ -856,6 +856,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/12/04 12:50:05  dicuccio
+ * Fix compiler warnings
+ *
  * Revision 1.29  2006/11/30 12:42:09  dicuccio
  * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
  * vector<unsigned char>
