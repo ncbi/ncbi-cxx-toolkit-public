@@ -98,17 +98,18 @@ public:
     
 
     enum EMergeFlags {
-        fTruncateOverlaps     = 0x0001, // otherwise put on separate rows
+        fTruncateOverlaps     = 0x0001, //< otherwise put on separate rows
         fNegativeStrand       = 0x0002,
-        fGapJoin              = 0x0004, // join equal len segs gapped on refseq
-        fMinGap               = 0x0008, // minimize segs gapped on refseq
-        fRemoveLeadTrailGaps  = 0x0010, // Remove all leading or trailing gaps
-        fSortSeqsByScore      = 0x0020, // Better scoring seqs go towards the top
-        fSortInputByScore     = 0x0040, // Process better scoring input alignments first
-        fQuerySeqMergeOnly    = 0x0080, // Only put the query seq on same row, 
-                                        // other seqs from diff densegs go to diff rows
+        fGapJoin              = 0x0004, //< join equal len segs gapped on refseq
+        fMinGap               = 0x0008, //< minimize segs gapped on refseq
+        fRemoveLeadTrailGaps  = 0x0010, //< Remove all leading or trailing gaps
+        fSortSeqsByScore      = 0x0020, //< Better scoring seqs go towards the top
+        fSortInputByScore     = 0x0040, //< Process better scoring input alignments first
+        fQuerySeqMergeOnly    = 0x0080, //< Only put the query seq on same row, 
+                                        //< other seqs from diff densegs go to
+                                        //< diff rows
         fFillUnalignedRegions = 0x0100,
-        fAllowTranslocation   = 0x0200  // allow translocations when truncating overlaps
+        fAllowTranslocation   = 0x0200  //< allow translocations when truncating overlaps
     };
     typedef int TMergeFlags;
 
@@ -196,6 +197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2006/12/04 13:46:27  dicuccio
+* Doxygenate comments
+*
 * Revision 1.55  2006/10/05 16:38:20  todorov
 * Removed the deprecated CAlnMix::fGen2EST and CAlnMix::fTryOtherMethodOnFail.
 *
