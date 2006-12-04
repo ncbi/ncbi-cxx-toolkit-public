@@ -487,7 +487,7 @@ private:
     /// Quick local timer
     CFastLocalTime              m_LocalTimer;
 
-    /// List of admin stations allowed to enter
+    /// List of admin stations
     CNetSchedule_AccessList    m_AdminHosts;
 };
 
@@ -657,8 +657,11 @@ void CNetScheduleHandler::ProcessMsgAuth(BUF buffer)
 {
     s_ReadBufToString(buffer, m_AuthString);
 
-    if (m_AuthString == "netschedule_control" ||
-        m_AuthString == "netschedule_admin") {
+    if ((!m_Server->GetAccessList().IsRestrictionSet() || // no host control
+         m_Server->GetAccessList().IsAllowed(m_PeerAddr)) &&
+        (m_AuthString == "netschedule_control" ||
+         m_AuthString == "netschedule_admin"))
+    {
         m_AdminAccess = true;
     }
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgQueue;
@@ -669,7 +672,7 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
 {
     s_ReadBufToString(buffer, m_QueueName);
 
-    if (!m_AdminAccess || m_QueueName != "noname") {
+    if (m_QueueName != "noname" && !m_QueueName.empty()) {
         m_Queue.reset(new CQueue(*(m_Server->GetQueueDB()),
                                  m_QueueName, m_PeerAddr));
         m_Monitor = m_Queue->GetMonitor();
@@ -710,7 +713,7 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
     }
 
     // program version control
-    if (!m_VersionControl &&
+    if (m_VersionControl &&
         // we want status request to be fast, skip version control 
         (requestProcessor != &CNetScheduleHandler::ProcessStatus) &&
         // bypass for admin tools
@@ -908,8 +911,8 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
     CStopWatch sw(CStopWatch::eStart);
     unsigned job_id =
         m_Queue->SubmitBatch(m_BatchSubmitVector, 
-                                m_PeerAddr,
-                                0, 0, 0);
+                             m_PeerAddr,
+                             0, 0, 0);
     double db_elapsed = sw.Elapsed();
 
     if (m_Monitor && m_Monitor->IsMonitorActive()) {
@@ -1018,11 +1021,11 @@ void CNetScheduleHandler::ProcessStatus()
     case CNetScheduleClient::eDone:
         {
             if (m_Queue->GetJobDescr(job_id, &ret_code, 
-                                    m_JobReq.input,
-                                    m_JobReq.output,
-                                    0, 0,
-                                    0, 0, 
-                                    status)) {
+                                     m_JobReq.input,
+                                     m_JobReq.output,
+                                     0, 0,
+                                     0, 0, 
+                                     status)) {
                 sprintf(szBuf, 
                         "%i %i \"%s\" \"\" \"%s\"", 
                         st, ret_code, 
@@ -1041,11 +1044,11 @@ void CNetScheduleHandler::ProcessStatus()
     case CNetScheduleClient::ePending:
         {
             bool b = m_Queue->GetJobDescr(job_id, 0, 
-                                        m_JobReq.input,
-                                        0,
-                                        0, 0,
-                                        0, 0, 
-                                        status);
+                                          m_JobReq.input,
+                                          0,
+                                          0, 0,
+                                          0, 0, 
+                                          status);
 
             if (b) {
                 m_JobReq.output[0] = 0;
@@ -1066,12 +1069,12 @@ void CNetScheduleHandler::ProcessStatus()
         {
             char err[kNetScheduleMaxDBErrSize];
             bool b = m_Queue->GetJobDescr(job_id, &ret_code, 
-                                        m_JobReq.input,
-                                        m_JobReq.output,
-                                        err,
-                                        0,
-                                        0, 0, 
-                                        status);
+                                          m_JobReq.input,
+                                          m_JobReq.output,
+                                          err,
+                                          0,
+                                          0, 0, 
+                                          status);
 
             if (b) {
                 sprintf(szBuf, 
@@ -1571,24 +1574,13 @@ void CNetScheduleHandler::ProcessShutdown()
 {
     CSocket& socket = GetSocket();
     string admin_host = socket.GetPeerAddress();
-    size_t pos = admin_host.find_first_of(':');
-    if (pos != string::npos) {
-        admin_host = admin_host.substr(0, pos);
-    }
-    unsigned ha = CSocketAPI::gethostbyname(admin_host);
-    if (!m_Server->GetAccessList().IsRestrictionSet() || // no control
-        m_Server->GetAccessList().IsAllowed(ha)) {
-        string msg = "Shutdown request... ";
-        msg += admin_host;
-        msg += " ";
-        msg += CTime(CTime::eCurrent).AsString();
-        LOG_POST(Info << msg);
-        m_Server->SetShutdownFlag();
-        WriteMsg("OK:", "");
-    } else {
-        WriteMsg("ERR:", "Shutdown access denied.");
-        LOG_POST(Warning << "Shutdown request denied: " << admin_host);
-    }
+    string msg = "Shutdown request... ";
+    msg += admin_host;
+    msg += " ";
+    msg += CTime(CTime::eCurrent).AsString();
+    LOG_POST(Info << msg);
+    m_Server->SetShutdownFlag();
+    WriteMsg("OK:", "");
 }
 
 
@@ -2360,6 +2352,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.111  2006/12/04 23:31:30  joukovv
+ * Access control/version control checks corrected.
+ *
  * Revision 1.110  2006/12/04 22:07:39  joukovv
  * Access checks corrected, version bumped
  *

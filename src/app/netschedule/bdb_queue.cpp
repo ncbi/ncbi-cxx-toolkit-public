@@ -412,9 +412,9 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
     bool no_default_queues = 
         reg.GetBool("server", "no_default_queues", false, 0, IRegistry::eReturn);
 
-    x_CleanParamMap();
-
     CFastMutexGuard guard(m_ConfigureLock);
+
+    x_CleanParamMap();
 
     CBDB_Transaction trans(*m_Env, 
                            CBDB_Transaction::eTransASync,
@@ -3949,6 +3949,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2006/12/04 23:31:30  joukovv
+ * Access control/version control checks corrected.
+ *
  * Revision 1.97  2006/12/01 00:10:58  joukovv
  * Dynamic queue creation implemented.
  *
