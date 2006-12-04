@@ -126,11 +126,11 @@ CBlastallArgs::SetCommandLine()
                  CArgDescriptions::fOptionalSeparator);
     arg_desc->AddAlias("-gapped", ARG_GAPPED);
 
-    // GI list
+    // GI list; no OptionalSeparator in order to 
+    // fix conflict with '-logfile' default
     arg_desc->AddOptionalKey(ARG_GILIST, "gilist", 
                             "Restrict search of database to list of GI's",
-                            CArgDescriptions::eString,
-                            CArgDescriptions::fOptionalSeparator);
+                            CArgDescriptions::eString);
     arg_desc->AddAlias("-gilist", ARG_GILIST);
 
     // largest intron length
@@ -870,6 +870,9 @@ END_NCBI_SCOPE
 
 /*---------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/12/04 20:50:31  papadopo
+ * work around runtime error with '-l'
+ *
  * Revision 1.3  2006/09/26 21:44:12  papadopo
  * add to blast scope; add CVS log
  *
