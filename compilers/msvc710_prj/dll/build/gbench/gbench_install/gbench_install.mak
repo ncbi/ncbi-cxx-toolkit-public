@@ -203,6 +203,29 @@ RESOURCES = \
         share\gbench\insp_table_mode.png    \
         share\gbench\insp_brief_text_mode.png           \
         share\gbench\insp_text_mode.png     \
+        share\gbench\folder_open.png     \
+        share\gbench\folder_closed.png     \
+        share\gbench\sequence_symbol.png     \
+        share\gbench\sequence_dna_symbol.png     \
+        share\gbench\sequence_protein_symbol.png     \
+        share\gbench\sequence_id_symbol.png     \
+        share\gbench\sequence_id_dna_symbol.png     \
+        share\gbench\sequence_id_protein_symbol.png     \
+        share\gbench\sequence_set_symbol.png     \
+        share\gbench\annot_aligns_symbol.png     \
+        share\gbench\annot_feats_symbol.png     \
+        share\gbench\annot_graphs_symbol.png     \
+        share\gbench\annot_ids_symbol.png     \
+        share\gbench\annot_locs_symbol.png     \
+        share\gbench\feature_symbol.png     \
+        share\gbench\alignment_symbol.png     \
+        share\gbench\text_view.png     \
+        share\gbench\multi_align_view.png     \
+        share\gbench\dot_matrix_view.png     \
+        share\gbench\cross_align_view.png     \
+        share\gbench\feature_table_view.png     \
+        share\gbench\graphical_view.png     \
+        share\gbench\phylo_tree_view.png     \
         \
         etc\algo_urls                       \
         etc\gbench.asn                      \
@@ -349,6 +372,9 @@ $(GBENCH)/plugins/plugin-cache : $(PLUGINS) $(GBENCH)\bin\gbench_plugin_scan.exe
 
 ###############################################################
 # $Log$
+# Revision 1.5  2006/12/04 22:33:30  yazhuk
+# MAGIC Added new gbench icons
+#
 # Revision 1.4  2006/10/13 15:54:33  katargir
 # MAGIC Add feat_edit_res
 #
