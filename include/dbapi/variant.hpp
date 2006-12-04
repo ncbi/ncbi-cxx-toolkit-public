@@ -4,30 +4,30 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
  * Author:  Michael Kholodov
- *   
+ *
  * File Description:  CVariant class implementation
  *
  */
@@ -51,10 +51,10 @@ BEGIN_NCBI_SCOPE
 //
 //  CVariantException::
 //
-//  
+//
 
-//class NCBI_DBAPI_EXPORT CVariantException : public std::exception 
-class NCBI_DBAPI_EXPORT CVariantException : EXCEPTION_VIRTUAL_BASE public CException 
+//class NCBI_DBAPI_EXPORT CVariantException : public std::exception
+class NCBI_DBAPI_EXPORT CVariantException : EXCEPTION_VIRTUAL_BASE public CException
 {
 
 public:
@@ -62,18 +62,10 @@ public:
          eVariant
     };
 
-    CVariantException(const string& message) 
-        : CException(DIAG_COMPILE_INFO, 0, (CException::EErrCode)eVariant,  message)
-    {
-    }
+    CVariantException(const string& message);
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eVariant:    return "eVariant";
-        default:       return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
+
     NCBI_EXCEPTION_DEFAULT(CVariantException, CException);
 };
 
@@ -85,9 +77,9 @@ public:
 //  DateTime format
 //
 
-enum EDateTimeFormat { 
-    eShort, 
-    eLong 
+enum EDateTimeFormat {
+    eShort,
+    eLong
 };
 
 
@@ -151,7 +143,7 @@ public:
     // Get methods
     EDB_Type GetType() const;
 
-    Int8          GetInt8(void) const; 
+    Int8          GetInt8(void) const;
     string        GetString(void) const;
     Int4          GetInt4(void) const;
     Int2          GetInt2(void) const;
@@ -183,7 +175,7 @@ public:
     CVariant& operator=(const char* v);
     CVariant& operator=(const bool& v);
     CVariant& operator=(const CTime& v);
-    
+
 
 
     // Get pointer to the data buffer
@@ -198,7 +190,7 @@ public:
     size_t GetBlobSize() const;
     size_t Read(void* buf, size_t len) const;
     size_t Append(const void* buf, size_t len);
-    // Truncates from buffer end to buffer start. 
+    // Truncates from buffer end to buffer start.
     // Truncates everything if no argument
     void Truncate(size_t len = kMax_UInt);
     // Moves the internal position pointer
@@ -225,8 +217,8 @@ bool NCBI_DBAPI_EXPORT operator<(const CVariant& v1, const CVariant& v2);
 
 //================================================================
 inline
-CDB_Object* CVariant::GetData() const { 
-    return m_data; 
+CDB_Object* CVariant::GetData() const {
+    return m_data;
 }
 
 inline
@@ -242,7 +234,7 @@ EDB_Type CVariant::GetType() const
 //    if( !e ) {
 //#ifdef _DEBUG
 //        _TRACE("CVariant::VerifyType(): Invalid type");
-//        _ASSERT(0); 
+//        _ASSERT(0);
 //#else
 //        NCBI_THROW(CVariantException, eVariant, "Invalid type");
 //#endif
@@ -251,45 +243,45 @@ EDB_Type CVariant::GetType() const
 
 
 inline
-void CVariant::x_Verify_AssignType(EDB_Type db_type, const char* cxx_type) const 
+void CVariant::x_Verify_AssignType(EDB_Type db_type, const char* cxx_type) const
 {
     if( db_type != GetType() )
     {
-        NCBI_THROW(CVariantException, eVariant, 
-             "Cannot assign type '" + string(cxx_type) + "' to type '" 
+        NCBI_THROW(CVariantException, eVariant,
+             "Cannot assign type '" + string(cxx_type) + "' to type '"
              + string(CDB_Object::GetTypeName(GetType())) + "'");
     }
 }
 
 inline
-void CVariant::x_Inapplicable_Method(const char* method) const 
+void CVariant::x_Inapplicable_Method(const char* method) const
 {
-    NCBI_THROW(CVariantException, eVariant, 
-        "CVariant::" + string(method) + " is not applicable to type '" 
+    NCBI_THROW(CVariantException, eVariant,
+        "CVariant::" + string(method) + " is not applicable to type '"
         + string(CDB_Object::GetTypeName(GetType())) + "'");
 }
 
 
 inline
-bool operator!=(const CVariant& v1, const CVariant& v2) 
+bool operator!=(const CVariant& v1, const CVariant& v2)
 {
     return !(v1 == v2);
 }
 
 inline
-bool operator>(const CVariant& v1, const CVariant& v2) 
+bool operator>(const CVariant& v1, const CVariant& v2)
 {
     return v2 < v1;
 }
 
 inline
-bool operator<=(const CVariant& v1, const CVariant& v2) 
+bool operator<=(const CVariant& v1, const CVariant& v2)
 {
     return v1 < v2 || v1 == v2;
 }
 
 inline
-bool operator>=(const CVariant& v1, const CVariant& v2) 
+bool operator>=(const CVariant& v1, const CVariant& v2)
 {
     return v2 < v1 || v1 == v2;
 }
@@ -301,6 +293,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/12/04 15:31:39  ssikorsk
+ * CVariantException: moved all inline virtual functions into cpp.
+ *
  * Revision 1.26  2005/06/01 16:29:00  kholodov
  * Added: more detailed diagnostics
  *
