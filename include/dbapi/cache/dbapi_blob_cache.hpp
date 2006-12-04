@@ -51,7 +51,7 @@ void DBAPI_Register_Cache(void);
 
 /// DBAPI ICache exception
 
-class CDBAPI_ICacheException : public CException
+class NCBI_DBAPI_CACHE_EXPORT CDBAPI_ICacheException : public CException
 {
 public:
     enum EErrCode {
@@ -64,20 +64,7 @@ public:
         eTempFileIOError
     };
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eCannotInitCache:   return "eCannotInitCache";
-        case eConnectionError:   return "eConnectionError";
-        case eInvalidDirectory:  return "eInvalidDirectory";
-        case eStreamClosed:      return "eStreamClosed";
-        case eCannotCreateBLOB:  return "eCannotCreateBLOB";
-        case eCannotReadBLOB:    return "eCannotReadBLOB";
-        case eTempFileIOError:   return "eTempFileIOError";
-        default:                 return  CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     NCBI_EXCEPTION_DEFAULT(CDBAPI_ICacheException, CException);
 };
@@ -303,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/12/04 15:34:01  ssikorsk
+ * CDBAPI_ICacheException::GetErrCodeString moved into cpp.
+ *
  * Revision 1.19  2006/01/11 15:28:03  kuznets
  * dbapi_blob_cache.hpp
  *
