@@ -89,18 +89,19 @@
 /* Definitions for NCBI_SEQ.DLL
  */
 #ifdef NCBI_SEQ_EXPORTS
-#  define NCBI_BLAST_EXPORTS
 #  define NCBI_BLASTDB_EXPORTS
 #  define NCBI_BLASTXML_EXPORTS
+#  define NCBI_BLAST_EXPORTS
+#  define NCBI_GENOME_COLLECTION_EXPORTS
 #  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQBLOCK_EXPORTS
 #  define NCBI_SEQCODE_EXPORTS
+#  define NCBI_SEQEDIT_EXPORTS
 #  define NCBI_SEQFEAT_EXPORTS
 #  define NCBI_SEQLOC_EXPORTS
 #  define NCBI_SEQRES_EXPORTS
 #  define NCBI_SEQSET_EXPORTS
-#  define NCBI_SEQEDIT_EXPORTS
 #  define NCBI_SEQTEST_EXPORTS
 #  define NCBI_SUBMIT_EXPORTS
 #  define NCBI_TAXON1_EXPORTS
@@ -478,6 +479,14 @@
 #  define NCBI_GENERAL_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_GENERAL_EXPORT __declspec(dllimport)
+#endif
+
+/* Export specifier for library sgenome_collection
+ */
+#ifdef NCBI_GENOME_COLLECTION_EXPORTS
+#  define NCBI_GENOME_COLLECTION_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_GENOME_COLLECTION_EXPORT __declspec(dllimport)
 #endif
 
 /* Export specifier for library id1
@@ -1293,6 +1302,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.118  2006/12/04 13:37:00  dicuccio
+ * Added export specifier for genome collections ASN library
+ *
  * Revision 1.117  2006/08/09 18:32:27  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
