@@ -611,7 +611,8 @@ void CStackTrace::GetStackTrace(TStack& stack_trace)
                                     s.AddrPC.Offset,
                                     &offs,
                                     pSym) ) {
-                ERR_POST(Error << "failed to get symbol");
+                ERR_POST(Error << "failed to get symbol for address: "
+                    << s.AddrPC.Offset);
             } else {
 
                 // retrieve function names, if we can
@@ -682,6 +683,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/04 13:48:24  dicuccio
+ * LOg address of offending failed symbol
+ *
  * Revision 1.1  2006/11/06 17:37:39  grichenk
  * Initial revision
  *
