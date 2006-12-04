@@ -730,17 +730,8 @@ void CRWLock::Unlock(void)
         }
 #if defined(_DEBUG)
         // Check if the unlocking thread is in the owners list
-#if defined(NCBI_COMPILER_ICC) && NCBI_COMPILER_VERSION == 900
-	vector<CThreadSystemID>::iterator found = m_Readers.begin();
-	for ( ; found != m_Readers.end(); ++found) {
-	    if (*found == self_id) {
-	        break;
-	    }
-	}
-#else
         vector<CThreadSystemID>::iterator found =
             find(m_Readers.begin(), m_Readers.end(), self_id);
-#endif
         _ASSERT(found != m_Readers.end());
         m_Readers.erase(found);
         if ( m_Count == 0 ) {
@@ -1038,6 +1029,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/12/04 16:26:09  gouriano
+ * Removed workaround for ICC900
+ *
  * Revision 1.22  2006/11/20 17:39:18  gouriano
  * Workaround for ICC900
  *
