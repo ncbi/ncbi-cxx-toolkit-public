@@ -77,7 +77,10 @@ public:
                 if ( !pm_base ) {
                     pm_base = new TPluginManager;
                     CPluginManagerGetterImpl::PutBase(key, pm_base);
+                    LOG_POST(Info << "CPluginManagerGetter<>::Get(): "
+                             "created new instance: "<< key);
                 }
+                _ASSERT(pm_base);
             }}
             TPluginManager* pm = dynamic_cast<TPluginManager*>(pm_base);
             if ( !pm ) {
@@ -150,6 +153,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2006/12/04 13:57:49  dicuccio
+ * Added logging, asserts
+ *
  * Revision 1.8  2005/06/09 15:06:11  ucko
  * Guard against multiple inclusion.
  *
