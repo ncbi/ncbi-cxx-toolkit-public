@@ -85,21 +85,15 @@ const char* CNcbiTable_Exception::GetErrCodeString(void) const
     }
 }
 
-const char* CRegexpException::GetErrCodeString(void) const
-{
-    switch ( GetErrCode() ) {
-    case eCompile:    return "eCompile";
-    case eBadFlags:   return "eBadFlags";
-    default:          return CException::GetErrCodeString();
-    }
-}
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/04 16:12:20  gouriano
+ * Moved CRegexpException::GetErrCodeString
+ *
  * Revision 1.1  2006/12/04 14:51:28  gouriano
  * Moved GetErrCodeString method into src
  *

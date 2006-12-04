@@ -462,6 +462,15 @@ void CRegexpUtil::x_Join(void)
     }
 }
 
+const char* CRegexpException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eCompile:    return "eCompile";
+    case eBadFlags:   return "eBadFlags";
+    default:          return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -469,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/12/04 16:12:20  gouriano
+ * Moved CRegexpException::GetErrCodeString
+ *
  * Revision 1.17  2006/05/15 16:03:00  ivanov
  * + CRegexp::WildcardToRegexp()
  *
