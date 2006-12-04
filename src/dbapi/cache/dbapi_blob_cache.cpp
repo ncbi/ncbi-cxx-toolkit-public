@@ -546,8 +546,23 @@ private:
 
 
 
+///////////////////////////////////////////////////////////////////////////////
+const char* CDBAPI_ICacheException::GetErrCodeString(void) const
+{
+    switch (GetErrCode())
+    {
+    case eCannotInitCache:   return "eCannotInitCache";
+    case eConnectionError:   return "eConnectionError";
+    case eInvalidDirectory:  return "eInvalidDirectory";
+    case eStreamClosed:      return "eStreamClosed";
+    case eCannotCreateBLOB:  return "eCannotCreateBLOB";
+    case eCannotReadBLOB:    return "eCannotReadBLOB";
+    case eTempFileIOError:   return "eTempFileIOError";
+    default:                 return  CException::GetErrCodeString();
+    }
+}
 
-
+///////////////////////////////////////////////////////////////////////////////
 CDBAPI_Cache::CDBAPI_Cache()
 : m_Conn(0),
   m_OwnConnection(false),
@@ -1256,6 +1271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/12/04 15:40:10  ssikorsk
+ * Added implementation of CDBAPI_ICacheException::GetErrCodeString.
+ *
  * Revision 1.21  2006/01/11 15:27:34  kuznets
  * Reflecting changes in ICache
  *
