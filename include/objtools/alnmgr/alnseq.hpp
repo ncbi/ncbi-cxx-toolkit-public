@@ -140,6 +140,7 @@ class NCBI_XALNMGR_EXPORT CAlnMixSeq : public CObject
 {
 public:
     CAlnMixSeq(void);
+    ~CAlnMixSeq();
 
     typedef list<CAlnMixMatch *>          TMatchList;
 
@@ -213,6 +214,10 @@ private:
     CRef<CSeqVector> m_PlusStrandSeqVector;
     CRef<CSeqVector> m_MinusStrandSeqVector;
     auto_ptr<CAlnMixStarts> m_Starts;
+
+    /// forbidden
+    CAlnMixSeq(const CAlnMixSeq&);
+    CAlnMixSeq& operator=(const CAlnMixSeq&);
 };
 
 
@@ -226,6 +231,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/12/04 13:46:45  dicuccio
+* Added dtor, private copy ctor/assignment operator
+*
 * Revision 1.6  2006/02/21 15:59:20  todorov
 * CAlnMixSeq::TStarts -> CAlnMixStarts.
 * + CAlnMixSeq::m_ChildIdx
