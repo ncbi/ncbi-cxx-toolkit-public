@@ -57,14 +57,7 @@ public:
         eBadParameters, ///< Out-of-range parameters given
         eCouldntListen  ///< Unable to bind listening port
     };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eBadParameters: return "eBadParameters";
-        case eCouldntListen: return "eCouldntListen";
-        default:             return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CThreadedServerException, CConnException);
 };
 
@@ -142,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2006/12/04 14:53:43  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 6.16  2006/04/24 15:20:13  ucko
  * Give CThreadedServer a virtual destructor as a matter of principal.
  *

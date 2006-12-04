@@ -37,7 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNcbiTable_Exception : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XUTIL_EXPORT CNcbiTable_Exception : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     /// Exception types
@@ -48,14 +48,7 @@ public:
         eColumnAlreadyExists   ///< Column id has been assigned before
     };
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch ( GetErrCode() ) {
-        case eRowNotFound:        return "eRowNotFound";
-        case eColumnNotFound:     return "eColumnNotFound";
-        default:            return  CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     NCBI_EXCEPTION_DEFAULT(CNcbiTable_Exception, CException);
 };
@@ -463,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/04 14:50:57  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 1.5  2004/12/27 20:58:34  vakatov
  * Remove an extraneous comma in enum to get rid of a warning
  *

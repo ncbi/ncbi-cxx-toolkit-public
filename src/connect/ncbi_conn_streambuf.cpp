@@ -403,6 +403,13 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
 }
 
+const char* CConnException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eConn:    return "eConn";
+    default:       return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -410,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.69  2006/12/04 14:53:54  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 6.68  2006/08/24 19:01:02  lavr
  * showmanyc() not to loop with zero timeouts
  *

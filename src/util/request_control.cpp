@@ -207,6 +207,15 @@ void CRequestRateControl::x_CleanTimeLine(CTime& now)
     m_TimeLine.erase(m_TimeLine.begin(), current);
 }
 
+const char* CRequestRateControlException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eNumRequestsMax:         return "eNumRequestsMax";
+    case eNumRequestsPerPeriod:   return "eNumRequestsPerPeriod";
+    case eMinTimeBetweenRequests: return "eMinTimeBetweenRequests";
+    default:                      return CException::GetErrCodeString();
+    }
+}
 
 /* @} */
 
@@ -216,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/04 14:51:28  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 1.4  2005/06/24 12:07:40  ivanov
  * Heed Workshop compiler warnings in Approve()
  *

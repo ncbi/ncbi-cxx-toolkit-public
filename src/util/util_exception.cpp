@@ -1,5 +1,3 @@
-#ifndef UTIL_EXCEPTION__HPP
-#define UTIL_EXCEPTION__HPP
 
 /* $Id$
 * ===========================================================================
@@ -33,90 +31,79 @@
 *
 */
 
-#include <corelib/ncbiexpt.hpp>
-
-
-/** @addtogroup UtilExcep
- *
- * @{
- */
-
+#include <ncbi_pch.hpp>
+#include <util/util_exception.hpp>
+#include <util/ncbi_table.hpp>
+#include <util/regexp.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XUTIL_EXPORT CUtilException : public CException
+const char* CUtilException::GetErrCodeString(void) const
 {
-public:
-    enum EErrCode {
-        eNoInput,
-        eWrongCommand,
-        eWrongData
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CUtilException,CException);
-};
+    switch ( GetErrCode() ) {
+    case eNoInput:      return "eNoInput";
+    case eWrongCommand: return "eWrongCommand";
+    case eWrongData:    return "eWrongData";
+    default:     return CException::GetErrCodeString();
+    }
+}
 
-
-// this exception is thrown when IO error occurred in serialization
-class NCBI_XUTIL_EXPORT CIOException : public CUtilException
+const char* CIOException::GetErrCodeString(void) const
 {
-public:
-    enum EErrCode {
-        eRead,
-        eWrite,
-        eFlush
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CIOException, CUtilException);
-};
+    switch ( GetErrCode() ) {
+    case eRead:  return "eRead";
+    case eWrite: return "eWrite";
+    case eFlush: return "eFlush";
+    default:     return CException::GetErrCodeString();
+    }
+}
 
-class NCBI_XUTIL_EXPORT CEofException : public CIOException
+const char* CEofException::GetErrCodeString(void) const
 {
-public:
-    enum EErrCode {
-        eEof
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CEofException, CIOException);
-};
+    switch ( GetErrCode() ) {
+    case eEof:  return "eEof";
+    default:    return CException::GetErrCodeString();
+    }
+}
 
-
-class NCBI_XUTIL_EXPORT CBlockingQueueException : public CUtilException
+const char* CBlockingQueueException::GetErrCodeString(void) const
 {
-public:
-    enum EErrCode {
-        eFull,    // attempt to insert into a full queue
-        eTimedOut // Put or WaitForRoom timed out
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CBlockingQueueException,CUtilException);
-};
+    switch (GetErrCode()) {
+    case eFull:     return "eFull";
+    case eTimedOut: return "eTimedOut";
+    default:        return CException::GetErrCodeString();
+    }
+}
 
+const char* CNcbiTable_Exception::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eRowNotFound:        return "eRowNotFound";
+    case eColumnNotFound:     return "eColumnNotFound";
+    default:            return  CException::GetErrCodeString();
+    }
+}
+
+const char* CRegexpException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eCompile:    return "eCompile";
+    case eBadFlags:   return "eBadFlags";
+    default:          return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
-
-
-/* @} */
 
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.4  2006/12/04 14:50:57  gouriano
+ * Revision 1.1  2006/12/04 14:51:28  gouriano
  * Moved GetErrCodeString method into src
  *
- * Revision 1.3  2004/08/19 13:10:35  dicuccio
- * Dropped export specifier on inlined exceptions
- *
- * Revision 1.2  2003/04/17 17:50:40  siyan
- * Added doxygen support
- *
- * Revision 1.1  2003/02/26 21:34:05  gouriano
- * modify C++ exceptions thrown by this library
  *
  *
  * ===========================================================================
  */
-
-#endif  /* UTIL_EXCEPTION__HPP */

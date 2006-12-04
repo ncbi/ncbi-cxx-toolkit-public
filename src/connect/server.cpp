@@ -393,6 +393,15 @@ SServer_Parameters::SServer_Parameters() :
 {
 }
 
+const char* CServerException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eBadParameters: return "eBadParameters";
+    case eCouldntListen: return "eCouldntListen";
+    default:             return CException::GetErrCodeString();
+    }
+}
+
 END_NCBI_SCOPE
 
 
@@ -400,6 +409,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.5  2006/12/04 14:53:54  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 6.4  2006/10/19 23:34:02  ucko
  * Replace debugging printf() (potentially undeclared) with _TRACE().
  *

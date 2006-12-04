@@ -142,11 +142,52 @@ const CException* CInvalidChoiceSelection::x_Clone(void) const
     return new CInvalidChoiceSelection(*this);
 }
 
+const char* CSerialException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eNotImplemented: return "eNotImplemented";
+    case eEOF:            return "eEOF";
+    case eIoError:        return "eIoError";
+    case eFormatError:    return "eFormatError";
+    case eOverflow:       return "eOverflow";
+    case eInvalidData:    return "eInvalidData";
+    case eIllegalCall:    return "eIllegalCall";
+    case eFail:           return "eFail";
+    case eNotOpen:        return "eNotOpen";
+    case eMissingValue:   return "eMissingValue";
+    default:              return CException::GetErrCodeString();
+    }
+}
+
+const char* CUnassignedMember::GetErrCodeString(void) const
+{
+#if 0
+    switch ( GetErrCode() ) {
+        case eGet:            return "eGet";
+        case eWrite:          return "eWrite";
+        case eUnknownMember:  return "eUnknownMember";
+        default:              return CException::GetErrCodeString();
+        }
+#else
+        // At least with ICC 9.0 on 64-bit Linux in Debug and MT mode
+    // there is an apparent bug that causes the above "switch" based
+    // variant of this function to misbehave and crash with SEGV...
+    TErrCode e = GetErrCode();
+    if (e == eGet)           {return "eGet";}
+    if (e == eWrite)         {return "eWrite";}
+    if (e == eUnknownMember) {return "eUnknownMember";}
+    return CException::GetErrCodeString();
+#endif
+}
+
 
 END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/12/04 14:53:29  gouriano
+* Moved GetErrCodeString method into src
+*
 * Revision 1.17  2006/01/18 19:45:23  ssikorsk
 * Added an extra argument to CException::x_Init
 *

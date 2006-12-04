@@ -422,15 +422,7 @@ public:
     };
 
     /// Translate from an error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eInit:   return "eInit";
-        case eOpen:   return "eOpen";
-        case eSetBuf: return "eSetBuf";
-        default:      return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
     // Standard exception boiler plate code.
     NCBI_EXCEPTION_DEFAULT(CPipeException,CCoreException);
 };
@@ -445,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/12/04 14:53:43  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 1.33  2006/09/06 16:55:52  didenko
  * Renamed CPipe::ICallBack to CPipe::IProcessWatcher
  *

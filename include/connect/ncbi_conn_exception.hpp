@@ -53,13 +53,7 @@ public:
     enum EErrCode {
         eConn
     };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eConn:    return "eConn";
-        default:       return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CConnException, CException);
 };
 
@@ -81,19 +75,7 @@ public:
         eUnknown      = eIO_Unknown
     };
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eTimeout:      return "eIO_Timeout";
-        case eClosed:       return "eIO_Closed";
-        case eInterrupt:    return "eIO_Interrupt";
-        case eInvalidArg:   return "eIO_InvalidArg";
-        case eNotSupported: return "eIO_NotSupported";
-        case eUnknown:      return "eIO_Unknown";
-        default:            return  CException::GetErrCodeString();
-        }
-    }
-
+    virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CIO_Exception, CException);
 };
 
@@ -130,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2006/12/04 14:53:43  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 6.12  2006/01/27 16:55:52  lavr
  * Headers rearranged to pickup corelib stuff first
  *

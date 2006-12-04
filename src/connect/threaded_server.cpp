@@ -125,6 +125,14 @@ void CThreadedServer::Run(void)
     pool.KillAllThreads(true);
 }
 
+const char* CThreadedServerException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eBadParameters: return "eBadParameters";
+    case eCouldntListen: return "eCouldntListen";
+    default:             return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -133,6 +141,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.19  2006/12/04 14:53:54  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 6.18  2006/08/28 19:40:50  didenko
  * Start a pool of threads only it a listening socket is created successfully
  *

@@ -65,15 +65,8 @@ public:
                                  ///< is too short;
     };
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eNumRequestsMax:         return "eNumRequestsMax";
-        case eNumRequestsPerPeriod:   return "eNumRequestsPerPeriod";
-        case eMinTimeBetweenRequests: return "eMinTimeBetweenRequests";
-        default:                      return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
+
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CRequestRateControlException, CCoreException);
 };
@@ -179,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/04 14:50:57  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 1.4  2005/03/02 18:56:38  ivanov
  * Renaming:
  *    file request_throttler.hpp -> request_control.hpp

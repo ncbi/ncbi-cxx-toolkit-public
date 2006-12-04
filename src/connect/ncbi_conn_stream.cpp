@@ -470,6 +470,19 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
     }
 }
 
+const char* CIO_Exception::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eTimeout:      return "eIO_Timeout";
+    case eClosed:       return "eIO_Closed";
+    case eInterrupt:    return "eIO_Interrupt";
+    case eInvalidArg:   return "eIO_InvalidArg";
+    case eNotSupported: return "eIO_NotSupported";
+    case eUnknown:      return "eIO_Unknown";
+    default:            return  CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -477,6 +490,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.63  2006/12/04 14:53:54  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 6.62  2006/11/13 18:16:57  lavr
  * Extend CConn_HttpStream's default ctor with two more parameters
  *

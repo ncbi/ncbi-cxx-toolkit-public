@@ -1828,6 +1828,15 @@ CPipe::EFinish CPipe::ExecWait(const string&         cmd,
     return finish;
 }
 
+const char* CPipeException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eInit:   return "eInit";
+    case eOpen:   return "eOpen";
+    case eSetBuf: return "eSetBuf";
+    default:      return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
@@ -1835,6 +1844,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2006/12/04 14:53:54  gouriano
+ * Moved GetErrCodeString method into src
+ *
  * Revision 1.65  2006/09/06 16:55:52  didenko
  * Renamed CPipe::ICallBack to CPipe::IProcessWatcher
  *
