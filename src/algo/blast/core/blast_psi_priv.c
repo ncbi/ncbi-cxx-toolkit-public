@@ -744,6 +744,7 @@ _PSIStructureGroupCustomization(_PSIMsa* msa)
         msa->cell[kQueryIndex][i].letter = 0;
         msa->cell[kQueryIndex][i].is_aligned = FALSE;
     }
+    _PSIUpdatePositionCounts(msa);
 }
 
 int
@@ -2452,6 +2453,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/12/05 22:03:00  camacho
+ * Minor fix for structure group customization
+ *
  * Revision 1.66  2006/11/21 17:07:31  papadopo
  * rearrange headers
  *
