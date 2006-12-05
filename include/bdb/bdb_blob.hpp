@@ -231,6 +231,8 @@ public:
     /// Throw an exception if buffer size 'size' is less than LOB size. 
     EBDB_ErrCode GetData(void* buf, size_t size);
 
+    unsigned int GetKey() const { return m_LobKey; }
+
     /// Comparison function for unsigned int key
     virtual void SetCmp(DB*);
 
@@ -268,6 +270,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/12/05 13:04:26  dicuccio
+ * Added accessor for key
+ *
  * Revision 1.21  2006/11/30 14:16:40  kuznets
  * Removed buf_size parameter (ReadRealloc()) size passed as vector property
  *
