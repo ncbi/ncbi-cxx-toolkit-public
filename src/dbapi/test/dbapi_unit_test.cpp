@@ -4889,8 +4889,8 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 //         }
 
         // Find accounts
-
-            CDB_Int       status;
+        int acc_num   = 0;
+        CDB_Int       status;
         // Request
         CDB_VarChar   db_login( NULL, 64 );
         CDB_VarChar   db_title( NULL, 64 );
@@ -4921,10 +4921,11 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 
         auto_ptr<CDB_RPCCmd> pRpc( NULL );
 
-        pRpc.reset( m_Connect->RPC("FindAccount",20) );
+//         pRpc.reset( m_Connect->RPC("FindAccount",20) );
+        pRpc.reset( m_Connect->RPC("FindAccountMatchAll",20) );
 
-        db_last.SetValue( "%" );
-//         db_last.SetValue( "a" );
+        db_login.SetValue( "lsroot" );
+        // db_last.SetValue( "%" );
 
         pRpc->SetParam( "@login",  &db_login );
         pRpc->SetParam( "@title",   &db_title );
@@ -4953,28 +4954,29 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
         	if( pRpc->Send() ) {
         	    // Save results
         	    while ( !bFetchErr && pRpc->HasMoreResults() ) {
-        		auto_ptr<CDB_Result> pRes( pRpc->Result() );
-        		if( !pRes.get() ) {
-        		    continue;
-        		}
-        		if( pRes->ResultType() == eDB_RowResult ) {
-        		    while( pRes->Fetch() ) {
-        			pRes->GetItem( &db_uid );
-                                // cout << "uid=" << db_uid.Value();
-        			pRes->GetItem( &db_score );
-                                // cout << " score=" << db_score.Value() << endl;
-        		    }
-        		} else if( pRes->ResultType() == eDB_StatusResult ) {
-        		    while( pRes->Fetch() ) {
-        			pRes->GetItem( &status );
-        			if( status.Value() < 0 ) {
-        			    sError = "Bad status value " + NStr::IntToString(status.Value())
-        				+ " from RPC 'FindAccount'";
-        			    bFetchErr = true;
-        			    break;
-        			}
-        		    }
-        		}
+            		auto_ptr<CDB_Result> pRes( pRpc->Result() );
+            		if( !pRes.get() ) {
+            		    continue;
+            		}
+            		if( pRes->ResultType() == eDB_RowResult ) {
+            		    while( pRes->Fetch() ) {
+                            ++acc_num;
+                			pRes->GetItem( &db_uid );
+                                    // cout << "uid=" << db_uid.Value();
+                			pRes->GetItem( &db_score );
+                                    // cout << " score=" << db_score.Value() << endl;
+            		    }
+            		} else if( pRes->ResultType() == eDB_StatusResult ) {
+            		    while( pRes->Fetch() ) {
+                			pRes->GetItem( &status );
+                			if( status.Value() < 0 ) {
+                			    sError = "Bad status value " + NStr::IntToString(status.Value())
+                				+ " from RPC 'FindAccount'";
+                			    bFetchErr = true;
+                			    break;
+                			}
+            		    }
+            		}
         	    }
         	} else { // Error sending rpc
         	    sError = "Error sending rpc 'FindAccount' to db server";
@@ -4987,7 +4989,8 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
         	bFetchErr = true;
         }
 
-        BOOST_CHECK( bFetchErr == false );
+        BOOST_CHECK( acc_num > 0 );
+        BOOST_CHECK_EQUAL( bFetchErr, false );
     }
 
     auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
@@ -5090,16 +5093,13 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
         auto_stmt->SetParam( CVariant("a%"), "@last" );
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@affil" );
         auto_stmt->SetParam( CVariant(eDB_Int), "@gid1" );
-//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val1" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val1" );
+        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val1" );
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@label1" );
         auto_stmt->SetParam( CVariant(eDB_Int), "@gid2" );
-//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val2" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val2" );
+        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val2" );
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@label2" );
         auto_stmt->SetParam( CVariant(eDB_Int), "@gid3" );
-//         auto_stmt->SetParam( CVariant(eDB_LongChar), "@val3" );
-        auto_stmt->SetParam( CVariant(eDB_VarChar), "@val3" );
+        auto_stmt->SetParam( CVariant(eDB_LongChar, 3600), "@val3" );
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@label3" );
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@email1" );
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@email2" );
@@ -5115,6 +5115,14 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
         auto_stmt->Execute();
 
         BOOST_CHECK( GetNumOfRecords(auto_stmt) > 1 );
+
+        // Another set of values ....
+        auto_stmt->SetParam( CVariant("lsroot"), "@login" );
+        auto_stmt->SetParam( CVariant(eDB_VarChar), "@last" );
+
+        auto_stmt->Execute();
+
+        BOOST_CHECK_EQUAL( GetNumOfRecords(auto_stmt), 1 );
     }
 }
 
@@ -5144,9 +5152,9 @@ CDBAPIUnitTest::Test_Authentication(void)
         auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
 
         auto_conn->Connect(
-            "NCBI_NT\\anyone",
-            "Perm1tted",
-            "MSSQL7"
+            "NAC\\anyone",
+            "permitted",
+            "MS_DEV2"
             );
 
         auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
@@ -5640,6 +5648,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.115  2006/12/05 17:20:07  ssikorsk
+ * Replaced server name for Test_Authentication with a new one.
+ *
  * Revision 1.114  2006/11/28 20:21:00  ssikorsk
  * Improved and enabled Test_NCBI_LS.
  *
