@@ -57,7 +57,7 @@ CDemoeApp::Run(void)
 
         CODBCContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("mssql51.nac.ncbi.nlm.nih.gov", // "MS_DEV1",
+        auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV1",
                                                         "anyone",
                                                         "allowed",
                                                         0));
@@ -114,6 +114,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/12/05 20:25:19  ssikorsk
+ * Roll back previous change.
+ *
  * Revision 1.10  2006/12/05 19:39:46  ssikorsk
  * Replaced MS_DEV1 with mssql51.nac.ncbi.nlm.nih.gov because of FreeBDS 4.10.
  *
