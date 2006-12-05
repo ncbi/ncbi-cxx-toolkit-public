@@ -57,19 +57,19 @@ CDemoeApp::Run(void)
 
         CODBCContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV1", 
-                                                        "anyone", 
-                                                        "allowed", 
+        auto_ptr<CDB_Connection> con(my_context.Connect("mssql51.nac.ncbi.nlm.nih.gov", // "MS_DEV1",
+                                                        "anyone",
+                                                        "allowed",
                                                         0));
 
         auto_ptr<CDB_RPCCmd> rcmd(con->RPC("sp_who", 0));
         rcmd->Send();
-        
+
         while (rcmd->HasMoreResults()) {
             auto_ptr<CDB_Result> r(rcmd->Result());
             if (!r.get())
                 continue;
-            
+
             if (r->ResultType() == eDB_RowResult) {
                 while (r->Fetch()) {
                     for (unsigned int j = 0;  j < r->NofItems(); j++) {
@@ -78,7 +78,7 @@ CDemoeApp::Run(void)
                             CDB_VarChar r_vc;
                             r->GetItem(&r_vc);
                             cout << r->ItemName(j) << ": "
-                                 << (r_vc.IsNULL()? "" : r_vc.Value()) 
+                                 << (r_vc.IsNULL()? "" : r_vc.Value())
                                  << " \t";
                         } else if (rt == eDB_Int ||
                                    rt == eDB_SmallInt ||
@@ -95,7 +95,7 @@ CDemoeApp::Run(void)
         }
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
-        
+
         myExHandler.HandleIt(&e);
         return 1;
     } catch (const CException&) {
@@ -114,6 +114,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/12/05 19:39:46  ssikorsk
+ * Replaced MS_DEV1 with mssql51.nac.ncbi.nlm.nih.gov because of FreeBDS 4.10.
+ *
  * Revision 1.9  2006/08/31 18:46:11  ssikorsk
  * Get rid of unused variables.
  *
