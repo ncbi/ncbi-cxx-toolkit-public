@@ -39,12 +39,14 @@
 
 
 // generated includes
-#include <corelib/ncbitime.hpp>
 #include <objects/seq/Seq_annot_.hpp>
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
+
+class CTime;
+
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
@@ -114,8 +116,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.6  2006/12/04 15:50:20  dicuccio
-* Back out changes from revision 1.5
+* Revision 1.7  2006/12/05 13:05:08  dicuccio
+* Reinstate removal of ncbitime.hpp
+*
+* Revision 1.5  2006/12/04 13:46:01  dicuccio
+* Predeclare CTime instead of including ncbitime.hpp
 *
 * Revision 1.4  2006/03/14 20:21:51  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
