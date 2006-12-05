@@ -8,4 +8,5 @@ LIBS = $(TLS_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(FTDS64_INCLUDE) $(ODBC_INCLUDE) $(ORIG_CPPFLAGS)
 
-CHECK_CMD = run_sybase_app.sh odbc_sp_who_ftds64
+CHECK_COPY = run_sample_odbc.sh
+CHECK_CMD = run_sample_odbc.sh odbc_sp_who_ftds64
