@@ -41,7 +41,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
-#include <dbapi/dbapi.hpp>
+#include <dbapi/driver/interfaces.hpp>
 
 #include "dbapi_bcp.hpp"
 #include "../dbapi_sample_base.hpp"
@@ -166,6 +166,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/12/05 01:27:22  ucko
+ * Include <dbapi/driver/interfaces.hpp> rather than <dbapi/dbapi.hpp>, which
+ * is overkill and can introduce spurious references to CVariantException.
+ *
  * Revision 1.9  2006/02/24 19:36:13  ssikorsk
  * Added #include <test/test_assert.h> for test-suite sake
  *
