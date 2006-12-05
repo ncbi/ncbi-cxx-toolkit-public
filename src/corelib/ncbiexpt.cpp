@@ -144,6 +144,13 @@ typedef NCBI_PARAM_TYPE(EXCEPTION, Abort_If_Critical) TAbortIfCritical;
 static TAbortIfCritical s_AbortIfCritical;
 
 
+inline bool SeverityEqualOrAbove(EDiagSev level, EDiagSev reference)
+{
+    return reference == eDiag_Trace  ||
+        (level != eDiag_Trace  &&  level >= reference);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CException implementation
 
@@ -160,7 +167,8 @@ CException::CException(const CDiagCompileInfo& info,
   m_Predecessor(0),
   m_InReporter(false)
 {
-    if (severity == eDiag_Critical &&  s_AbortIfCritical.Get()) {
+    if (SeverityEqualOrAbove(severity, eDiag_Critical)  &&
+        s_AbortIfCritical.Get()) {
         abort();
     }
     x_Init(info, message, prev_exception, severity);
@@ -214,7 +222,8 @@ void CException::AddBacklog(const CDiagCompileInfo& info,
 
 void CException::SetSeverity(EDiagSev severity)
 {
-    if (severity == eDiag_Critical &&  s_AbortIfCritical.Get()) {
+    if (SeverityEqualOrAbove(severity, eDiag_Critical)  &&
+        s_AbortIfCritical.Get()) {
         abort();
     }
     m_Severity = severity;
@@ -310,9 +319,8 @@ void CException::ReportExtra(ostream& /*out*/) const
 
 const CStackTrace* CException::GetStackTrace(void) const
 {
-    EDiagSev level = GetStackTraceLevel();
-    if ( !m_StackTrace.get()  ||  m_StackTrace->Empty()  ||
-        (m_Severity < level  &&  level != eDiag_Trace)) {
+    if (!m_StackTrace.get()  ||  m_StackTrace->Empty()  ||
+        !SeverityEqualOrAbove(m_Severity, GetStackTraceLevel())) {
         return NULL;
     }
     return m_StackTrace.get();
@@ -422,9 +430,7 @@ void CException::x_GetStackTrace(void)
     if ( m_StackTrace.get() ) {
         return;
     }
-    EDiagSev level = GetStackTraceLevel();
-    if ( level != eDiag_Trace  &&
-        (m_Severity < level  ||  m_Severity == eDiag_Trace) ) {
+    if (!SeverityEqualOrAbove(m_Severity, GetStackTraceLevel())) {
         return;
     }
     m_StackTrace.reset(new CStackTrace);
@@ -595,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/12/05 15:21:29  grichenk
+ * Fixed severity level checks.
+ *
  * Revision 1.51  2006/11/29 15:04:05  grichenk
  * Get stack trace from x_Init.
  * Added Abort_If_Critical flag.
