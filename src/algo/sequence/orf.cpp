@@ -284,6 +284,7 @@ CRef<CSeq_annot>
 COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CSeq_id* id)
 {
     CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable();  // in case there are zero orfs
 
     ITERATE (TLocVec, orf, orfs) {
         // create feature
@@ -316,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/12/05 17:18:20  jcherry
+ * Better handling of case of no ORFs found
+ *
  * Revision 1.7  2005/02/10 19:43:01  jcherry
  * Added ability to require ORFs to start with particular codons
  * (e.g., ATG).  Tweaked naming of file-local functions.
