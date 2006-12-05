@@ -226,6 +226,7 @@ RESOURCES = \
         share\gbench\feature_table_view.png     \
         share\gbench\graphical_view.png     \
         share\gbench\phylo_tree_view.png     \
+        share\gbench\sequence_text_view.png     \
         \
         etc\algo_urls                       \
         etc\gbench.asn                      \
@@ -372,6 +373,9 @@ $(GBENCH)/plugins/plugin-cache : $(PLUGINS) $(GBENCH)\bin\gbench_plugin_scan.exe
 
 ###############################################################
 # $Log$
+# Revision 1.6  2006/12/05 15:51:40  yazhuk
+# MAGIC Added sequence_text_view.png
+#
 # Revision 1.5  2006/12/04 22:33:30  yazhuk
 # MAGIC Added new gbench icons
 #
