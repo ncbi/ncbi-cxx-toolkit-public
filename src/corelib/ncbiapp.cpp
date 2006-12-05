@@ -330,6 +330,7 @@ int CNcbiApplication::AppMain
                 }
                 // Print USAGE
                 LOG_POST(appname + ": " + GetVersion().Print());
+                GetDiagContext().DiscardMessages();
                 return 0;
 
                 // Dry run
@@ -588,13 +589,15 @@ void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
     if ( arg_desc ) {
         if ( !m_DisableArgDesc ) {
             // Add logfile and conffile arguments
-            if ( !m_ArgDesc->Exist(s_ArgLogFile + 1) ) {
+            if ((m_HideArgs & fHideLogfile) == 0  &&
+                !m_ArgDesc->Exist(s_ArgLogFile + 1) ) {
                 m_ArgDesc->AddOptionalKey
                     (s_ArgLogFile+1, "File_Name",
                         "File to which the program log should be redirected",
                         CArgDescriptions::eOutputFile);
             }
-            if ( !m_ArgDesc->Exist(s_ArgCfgFile + 1) ) {
+            if ((m_HideArgs & fHideConffile) == 0  &&
+                !m_ArgDesc->Exist(s_ArgCfgFile + 1) ) {
                 m_ArgDesc->AddOptionalKey
                     (s_ArgCfgFile + 1, "File_Name",
                         "Program's configuration (registry) data file",
@@ -1039,6 +1042,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.140  2006/12/05 15:23:41  grichenk
+ * Check fHideLogfile when adding logfile and conffile args.
+ * Discard log messages after printing version.
+ *
  * Revision 1.139  2006/11/30 21:32:17  grichenk
  * Automatically add logfile and conffile arguments if they do not exist.
  *
