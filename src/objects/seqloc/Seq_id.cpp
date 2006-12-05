@@ -839,7 +839,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'A':                               return eAcc_gb_patent;
             case 'B': case 'C': case 'E': case 'G':
             case 'H':                               return eAcc_gb_est;
-            case 'D':                               return eAcc_gb_gss;
+            case 'D': case 'I':                     return eAcc_gb_gss;
             case 'F':                               return eAcc_gb_dirsub;
             default:                                return eAcc_unreserved_nuc;
             }
@@ -1730,6 +1730,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.139  2006/12/05 15:31:32  ucko
+ * IdentifyAccession: EI -> eAcc_gb_gss
+ *
  * Revision 6.138  2006/11/14 21:45:37  ucko
  * Properly recognize RefSeq AC_ (alternate chromosome-class) records.
  *
