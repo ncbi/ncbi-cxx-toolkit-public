@@ -540,14 +540,18 @@ int CNcbiApplication::AppMain
         got_exception = true;
         exit_code = 1;
     }
+#if defined(NCBI_COMPILER_MSVC)  &&  !defined(_DEBUG)
+    // Microsoft promotes many common application errors to exceptions.
+    // This includes occurrences such as dereference of a NULL pointer and
+    // walking off of a dangling pointer.  The catch-all is lifted only in
+    // debug mode to permit easy inspection of such error conditions, while
+    // maintaining safety of production, release-mode applications.
     catch (...) {
-        // MSVC++ 6.0 in Debug mode does not call destructors when
-        // unwinding the stack unless the exception is caught at least
-        // somewhere.
         ERR_POST(Warning <<
                  "Application has thrown an exception of unknown type");
         throw;
     }
+#endif
 
     if (m_ExitCodeCond == eAllExits
         ||  (got_exception  &&  m_ExitCodeCond == eExceptionalExits)) {
@@ -1042,6 +1046,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.141  2006/12/06 15:56:09  dicuccio
+ * Added conditional compilation to remove catch-all from debug builds under MSVC,
+ * as MSVC will promote a variety of application errors to exceptions and unwind
+ * the stack (preventing inspection of dereference of a NULL or dangling pointer,
+ * for example).
+ *
  * Revision 1.140  2006/12/05 15:23:41  grichenk
  * Check fHideLogfile when adding logfile and conffile args.
  * Discard log messages after printing version.

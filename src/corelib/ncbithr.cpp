@@ -419,13 +419,31 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     catch (CExitThreadException& e) {
         e.EnterWrapper();
     }
+#if defined(NCBI_COMPILER_MSVC)  &&  !defined(_DEBUG)
+    // Microsoft promotes many common application errors to exceptions.
+    // This includes occurrences such as dereference of a NULL pointer and
+    // walking off of a dangling pointer.  The catch-all is lifted only in
+    // debug mode to permit easy inspection of such error conditions, while
+    // maintaining safety of production, release-mode applications.
+    NCBI_CATCH("CThread::Wrapper: CThread::Main() failed");
+#else
     NCBI_CATCH_ALL("CThread::Wrapper: CThread::Main() failed");
+#endif
 
     // Call user-provided OnExit()
     try {
         thread_obj->OnExit();
     }
+#if defined(NCBI_COMPILER_MSVC)  &&  !defined(_DEBUG)
+    // Microsoft promotes many common application errors to exceptions.
+    // This includes occurrences such as dereference of a NULL pointer and
+    // walking off of a dangling pointer.  The catch-all is lifted only in
+    // debug mode to permit easy inspection of such error conditions, while
+    // maintaining safety of production, release-mode applications.
+    NCBI_CATCH("CThread::Wrapper: CThread::OnExit() failed");
+#else
     NCBI_CATCH_ALL("CThread::Wrapper: CThread::OnExit() failed");
+#endif
 
     // Cleanup local storages used by this thread
     thread_obj->m_UsedTls.ClearAll();
@@ -748,6 +766,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/12/06 15:56:09  dicuccio
+ * Added conditional compilation to remove catch-all from debug builds under MSVC,
+ * as MSVC will promote a variety of application errors to exceptions and unwind
+ * the stack (preventing inspection of dereference of a NULL or dangling pointer,
+ * for example).
+ *
  * Revision 1.37  2006/04/03 21:42:29  vakatov
  * Use PTHREAD_SCOPE_PROCESS rather than PTHREAD_SCOPE_SYSTEM on Cygwin,
  * as Cygwin (like BSD) returns an error otherwise
