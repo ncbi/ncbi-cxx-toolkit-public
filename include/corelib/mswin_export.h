@@ -1197,6 +1197,7 @@
 #  define NCBI_FORMAT_EXPORT
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
+#  define NCBI_GENOME_COLLECTION_EXPORT
 #  define NCBI_ID1_EXPORT
 #  define NCBI_ID2_EXPORT
 #  define NCBI_ID2_SPLIT_EXPORT
@@ -1302,6 +1303,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.119  2006/12/06 19:54:07  dicuccio
+ * Added genome collection export specifier for non-windows builds...
+ *
  * Revision 1.118  2006/12/04 13:37:00  dicuccio
  * Added export specifier for genome collections ASN library
  *
