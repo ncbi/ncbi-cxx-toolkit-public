@@ -167,14 +167,14 @@ public:
         return m_Locale;
     }
 
-    static CS_RETCODE CTLIB_cserr_handler(CS_CONTEXT* context,
-                                          CS_CLIENTMSG* msg);
-    static CS_RETCODE CTLIB_cterr_handler(CS_CONTEXT* context,
-                                          CS_CONNECTION* con,
-                                          CS_CLIENTMSG* msg);
-    static CS_RETCODE CTLIB_srverr_handler(CS_CONTEXT* context,
-                                           CS_CONNECTION* con,
-                                           CS_SERVERMSG* msg);
+    static CS_RETCODE CS_PUBLIC CTLIB_cserr_handler(CS_CONTEXT* context,
+                                                    CS_CLIENTMSG* msg);
+    static CS_RETCODE CS_PUBLIC CTLIB_cterr_handler(CS_CONTEXT* context,
+                                                    CS_CONNECTION* con,
+                                                    CS_CLIENTMSG* msg);
+    static CS_RETCODE CS_PUBLIC CTLIB_srverr_handler(CS_CONTEXT* context,
+                                                     CS_CONNECTION* con,
+                                                     CS_SERVERMSG* msg);
 
     CS_INT GetTDSVersion(void) const
     {
@@ -852,6 +852,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/12/06 17:39:20  ssikorsk
+ * Changed calling convention of CTLIB_cserr_handler, CTLIB_cterr_handler,
+ * CTLIB_srverr_handler to __stdcall (on Windows).
+ *
  * Revision 1.53  2006/11/24 20:13:58  ssikorsk
  * Added methods Drop, IsOpen, Open, Close to the ctlib::GetCTLContext;
  *
