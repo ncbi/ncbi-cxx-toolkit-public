@@ -116,7 +116,7 @@ public:
         return true; /// Always true for sparce alignments
     }
     TNumrow GetAnchor() const {
-        return m_AnchoredAln.GetAnchorRow();
+        return m_AnchoredAln->GetAnchorRow();
     }
 
     /// Sequence range in alignment coords (strand ignored)
@@ -161,7 +161,7 @@ protected:
     typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
     typedef CAnchoredAln::TSeqIdVector TSeqIdVector;
 
-    const CAnchoredAln& m_AnchoredAln;
+    const CConstRef<CAnchoredAln> m_AnchoredAln;
     const TPairwiseAlnVector& m_PairwiseAlns;
     const TSeqIdVector& m_SeqIds;
     mutable CRef<objects::CScope> m_Scope;
@@ -182,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/06 21:29:55  todorov
+ * Using CConstRef instead of const & for m_AnchoredAln.
+ *
  * Revision 1.3  2006/12/01 17:53:54  todorov
  * + NCBI_XALNMGR_EXPORT
  *

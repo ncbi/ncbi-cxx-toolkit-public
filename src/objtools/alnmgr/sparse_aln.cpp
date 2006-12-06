@@ -44,9 +44,9 @@ USING_SCOPE(ncbi::objects);
 
 CSparseAln::CSparseAln(const CAnchoredAln& anchored_aln,
                        objects::CScope& scope)
-    : m_AnchoredAln(anchored_aln),
-      m_PairwiseAlns(m_AnchoredAln.GetPairwiseAlns()),
-      m_SeqIds(m_AnchoredAln.GetSeqIds()),
+    : m_AnchoredAln(&anchored_aln),
+      m_PairwiseAlns(m_AnchoredAln->GetPairwiseAlns()),
+      m_SeqIds(m_AnchoredAln->GetSeqIds()),
       m_Scope(&scope),
       m_GapChar('-')
 {
@@ -62,12 +62,12 @@ CSparseAln::~CSparseAln()
 
 CSparseAln::TDim CSparseAln::GetDim() const {
     _ASSERT(m_PairwiseAlns.size() == m_SeqIds.size());
-    return m_AnchoredAln.GetDim();
+    return m_AnchoredAln->GetDim();
 }
 
 void CSparseAln::UpdateCache()
 {
-    const TDim& dim = m_AnchoredAln.GetDim();
+    const TDim& dim = m_AnchoredAln->GetDim();
 
     m_BioseqHandles.clear();
     m_BioseqHandles.resize(dim);
@@ -391,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/06 21:30:12  todorov
+ * Using CConstRef instead of const & for m_AnchoredAln.
+ *
  * Revision 1.1  2006/11/16 13:46:28  todorov
  * Moved over from gui/widgets/aln_data and refactored to adapt to the
  * new aln framework.
