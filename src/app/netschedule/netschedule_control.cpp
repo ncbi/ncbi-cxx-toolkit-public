@@ -37,18 +37,192 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netschedule_client.hpp>
-#include <connect/ncbi_socket.hpp>
-
-#if defined(NCBI_OS_UNIX) && defined(HAVE_LIBCONNEXT)
-#include <grp.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
+#include <corelib/ncbiexpt.hpp>
 
 #include "client_admin.hpp"
 
+#include <connect/services/srv_connections.hpp>
+
+
+BEGIN_NCBI_SCOPE
+
+CNetScheduleClient_Control* s_CreateNSClient(const string& host, unsigned int port,
+                                             const string& queue, int retry = 1) 
+{
+    auto_ptr<CNetScheduleClient_Control> cln(new CNetScheduleClient_Control(host,port,queue));
+    if (retry > 1) {
+        for (int i = 0; i < retry; ++i) {
+            try {
+                cln->CheckConnect(kEmptyStr);
+                break;
+            } catch (exception&) {
+                SleepMilliSec(5 * 1000);
+            }
+        }
+    }
+    return cln.release();
+}
+
+class CNSConnections;
+template<>
+struct CServiceClientTraits<CNSConnections> {
+    typedef CNetScheduleClient_Control client_type;
+};
+
+struct CNSConnections : public CServiceConnections<CNSConnections>
+{
+public:
+    typedef CNetScheduleClient_Control TClient;
+    typedef CServiceConnections<CNSConnections> TParent;
+
+    CNSConnections(const string& service, const string& queue, int retry = 1) 
+        : TParent(service), m_Queue(queue), m_Retry(retry)
+    {}
+
+    const string& GetQueueName() const { return m_Queue; }
+
+    TClient* CreateClient(const string& host, unsigned int port)
+    {
+        return s_CreateNSClient(host,port,m_Queue,m_Retry);
+    }
+private:
+    string m_Queue;
+    int m_Retry;
+};
+
+
+typedef ICtrlCmd<CNetScheduleClient_Control> INSCtrlCmd;
+
+END_NCBI_SCOPE
+
 USING_NCBI_SCOPE;
+
+class VersionCmd : public INSCtrlCmd
+{
+public:
+    
+    explicit VersionCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        GetStream() << cln.ServerVersion() << endl;
+    }
+};
+
+class QueueListCmd : public INSCtrlCmd
+{
+public:
+    explicit QueueListCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        GetStream() << cln.GetQueueList() << endl;
+    }
+};
+class ReconfCmd : public INSCtrlCmd
+{
+public:
+    explicit ReconfCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        cln.ReloadServerConfig();
+        GetStream() << "Reconfigured." << endl;
+    }
+};
+
+class QueueCreateCmd : public INSCtrlCmd
+{
+public:
+    QueueCreateCmd(CNcbiOstream& os, const string& new_queue, const  string& qclass) 
+        : INSCtrlCmd(os), m_QueueName(new_queue), m_QClass(qclass) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        cln.CreateQueue(m_QueueName, m_QClass);
+        GetStream() << "Queue: \"" << m_QueueName << "\" is created." << endl;
+    }
+private:
+    string m_QueueName;
+    string m_QClass;
+};
+class DeleteQueueCmd : public INSCtrlCmd
+{
+public:
+    explicit DeleteQueueCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        cln.DeleteQueue(cln.GetQueueName());
+        GetStream() << "Queue deleted: " << cln.GetQueueName() << endl;
+    }
+};
+
+class StatCmd : public INSCtrlCmd
+{
+public:
+    explicit StatCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        GetStream() << "Queue: \"" << cln.GetQueueName() << "\"" << endl;
+        cln.PrintStatistics(GetStream());
+        GetStream() << endl;
+    }
+};
+class DropJobsCmd : public INSCtrlCmd
+{
+public:
+    explicit DropJobsCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        cln.DropQueue();
+        GetStream() << "Queue: \"" << cln.GetQueueName() << "\" dropped." << endl;
+    }
+};
+class DumpCmd : public INSCtrlCmd
+{
+public:
+    DumpCmd(CNcbiOstream& os, const string& jid) : INSCtrlCmd(os), m_Jid(jid) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        GetStream() << "Queue: \"" << cln.GetQueueName() << "\"" << endl;
+        cln.DumpQueue(GetStream(), m_Jid);
+        GetStream() << endl;
+    }
+private:
+    string m_Jid;
+};
+
+class PrintQueueCmd : public INSCtrlCmd
+{
+public:
+    PrintQueueCmd(CNcbiOstream& os, 
+                  CNetScheduleClient::EJobStatus status) : INSCtrlCmd(os), m_Status(status) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        GetStream() << "Queue: \"" << cln.GetQueueName() << "\"" << endl;
+        cln.PrintQueue(NcbiCout, m_Status);
+        GetStream() << endl;
+    }
+private:
+    CNetScheduleClient::EJobStatus m_Status;
+};
+
+class AffinityStatCmd : public INSCtrlCmd
+{
+public:
+    AffinityStatCmd(CNcbiOstream& os, const string& affinity) 
+        : INSCtrlCmd(os), m_Affinity(affinity) {}
+
+    virtual void Execute(CNetScheduleClient_Control& cln) {;
+        GetStream() << "Queue: \"" << cln.GetQueueName() << "\"" << endl;
+        CNetScheduleClient::TStatusMap st_map;
+        cln.StatusSnapshot(&st_map, m_Affinity);
+        ITERATE(CNetScheduleClient::TStatusMap, it, st_map) {
+            GetStream() << CNetScheduleClient::StatusToString(it->first) << ": "
+                        << it->second
+                        << endl;
+        }
+        GetStream() << endl;
+    }
+private:
+    string m_Affinity;
+};
 
 
 /// NetSchedule control application
@@ -62,9 +236,73 @@ public:
     int Run(void);
 
 private:
+    typedef CCtrlCmdRunner<CNetScheduleClient_Control,CNSConnections> TCmdRunner;
+
+    void x_ExecCmd(INSCtrlCmd& cmd, bool queue_requered)
+    {
+        auto_ptr<CNSConnections> conn(x_CreateConnections(queue_requered));
+        TCmdRunner runner(*conn, cmd);
+        conn->for_each(runner);
+    }
+
+    void x_GetConnectionArgs(string& service, string& queue, int& retry, 
+                             bool queue_requered);
+    CNetScheduleClient_Control* x_CreateClient(bool queue_requered);
+    CNSConnections* x_CreateConnections(bool queue_requered);
+
     bool CheckPermission();
 };
 
+
+void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, int& retry,
+                                              bool queue_requered)
+{
+    const CArgs& args = GetArgs();
+    if (!args["service"]) 
+        NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -service");
+    if (queue_requered && !args["queue"] )
+        NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -queue");
+
+    queue = "noname";
+    if (queue_requered && args["queue"] )
+        queue = args["queue"].AsString();
+
+    retry = 1;
+    if (args["retry"]) {
+        retry = args["retry"].AsInteger();
+        if (retry < 1) {
+            ERR_POST(Error << "Invalid retry count: " << retry);
+            retry = 1;
+        }
+    }
+    service = args["service"].AsString();               
+}
+
+CNSConnections* CNetScheduleControl::x_CreateConnections(bool queue_requered)
+{
+    string service,queue;
+    int retry;
+    x_GetConnectionArgs(service, queue, retry, queue_requered);
+    return new CNSConnections(service, queue, retry); 
+}
+
+CNetScheduleClient_Control* CNetScheduleControl::x_CreateClient(bool queue_requered)
+{
+    string service,queue;
+    int retry;
+    x_GetConnectionArgs(service, queue, retry, queue_requered);
+
+    string sport, host;
+    if ( NStr::SplitInTwo(service, ":", host, sport) ) {
+        try {
+            unsigned int port = NStr::StringToInt(sport);
+            return s_CreateNSClient(host,port,queue,retry);
+        } catch (...) {
+        }
+    }
+    NCBI_THROW(CArgException, eNoArg, 
+               "Wrong service format: \"" + service + "\". It should be host:port.");
+}
 
 
 void CNetScheduleControl::Init(void)
@@ -74,71 +312,58 @@ void CNetScheduleControl::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "NCBI NetSchedule control.");
     
-    arg_desc->AddPositional("hostname", 
-                            "NetSchedule host name.", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("service",
+                             "service_name",
+                             "NetSchedule service name. Format: service|host:port", 
+                             CArgDescriptions::eString);
 
-    arg_desc->AddPositional("port",
-                            "Port number.", 
-                            CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("queue", 
+                             "queue_name",
+                             "NetSchedule queue name.", 
+                             CArgDescriptions::eString);
 
-    arg_desc->AddFlag("s", "Shutdown server");
+    arg_desc->AddOptionalKey("jid", 
+                             "job_id",
+                             "NetSchedule job id.", 
+                             CArgDescriptions::eString);
+
+    
+    arg_desc->AddFlag("shutdown", "Shutdown server");
     arg_desc->AddFlag("die", "Shutdown server");
-    arg_desc->AddFlag("v", "Server version");
-    arg_desc->AddFlag("reconf", "Reload server configuration");
-    arg_desc->AddFlag("qlist", "List available queues");
-
     arg_desc->AddOptionalKey("log",
                              "server_logging",
                              "Switch server side logging",
                              CArgDescriptions::eBoolean);
+    arg_desc->AddFlag("monitor", "Queue monitoring");
 
-    arg_desc->AddOptionalKey("drop",
-                             "drop_queue",
-                             "Drop ALL jobs in the queue (no questions asked!)",
-                             CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("qcreate",
-                             "queue_create",
-                             "Create queue (qclass should be present)",
-                             CArgDescriptions::eString);
+    arg_desc->AddFlag("ver", "Server version");
+    arg_desc->AddFlag("reconf", "Reload server configuration");
+    arg_desc->AddFlag("qlist", "List available queues");
+
+    arg_desc->AddFlag("qcreate", "Create queue (qclass should be present)");
 
     arg_desc->AddOptionalKey("qclass",
                              "queue_class",
                              "Class for queue creation",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("qdelete",
-                             "queue_delete",
-                             "Delete queue",
-                             CArgDescriptions::eString);
+    arg_desc->AddFlag("qdelete","Delete queue");
 
-    arg_desc->AddOptionalKey("stat",
-                             "stat_queue",
-                             "Print queue statistics",
-                             CArgDescriptions::eString);
-
+    arg_desc->AddFlag("drop", "Drop ALL jobs in the queue (no questions asked!)");
+    arg_desc->AddFlag("stat", "Print queue statistics");
     arg_desc->AddOptionalKey("affstat",
-                             "aff_stat_queue",
-                             "Print queue statistics summary based on affinity(queue:affinity)",
+                             "affinity",
+                             "Print queue statistics summary based on affinity",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey(
-        "dump",
-        "dump_queue",
-        "Print queue dump or job dump (queuename:job_key)",
-        CArgDescriptions::eString);
+    arg_desc->AddFlag("dump", "Print queue dump or job dump if -jid parameter is specified");
 
-    arg_desc->AddOptionalKey(
-        "qprint",
-        "print_queue",
-        "Print queue content for the specified status (queuename:status)",
-        CArgDescriptions::eString);
-
-
-    arg_desc->AddOptionalKey("monitor",
-                             "monitor",
-                             "Queue monitoring (-monitor queue_name)",
+    arg_desc->AddOptionalKey("qprint",
+                             "job_status",
+                             "Print queue content for the specified job status",
                              CArgDescriptions::eString);
+
 
     arg_desc->AddOptionalKey("retry",
                              "retry",
@@ -149,161 +374,95 @@ void CNetScheduleControl::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-
-
 int CNetScheduleControl::Run(void)
 {
-    CArgs args = GetArgs();
-    const string& host  = args["hostname"].AsString();
-    unsigned short port = args["port"].AsInteger();
 
+    const CArgs& args = GetArgs();
+    CNcbiOstream& os = NcbiCout;
 
-    CNetScheduleClient_Control nc_client(host, port);
-
-    if (args["retry"]) {
-        int retry = args["retry"].AsInteger();
-        if (retry < 0) {
-            ERR_POST(Error << "Invalid retry count: " << retry);
-        }
-        for (int i = 0; i < retry; ++i) {
-            try {
-                nc_client.CheckConnect(kEmptyStr);
-                break;
-            } 
-            catch (exception&) {
-                SleepMilliSec(5 * 1000);
-            }
-        }
+    // commands which can be performed only on a single server
+    auto_ptr<CNetScheduleClient_Control> ctl;
+    if (args["shutdown"]) {
+        ctl.reset(x_CreateClient(false));
+        ctl->ShutdownServer();
+        os << "Shutdown request has been sent to server" << endl;
     }
-
-    if (args["log"]) {  // logging control
-        
+    else if (args["die"]) {
+        ctl.reset(x_CreateClient(false));
+        ctl->ShutdownServer(CNetScheduleClient::eDie);
+        os << "Die request has been sent to server" << endl;
+    }
+    else if (args["log"]) {
+        ctl.reset(x_CreateClient(false));
         bool on_off = args["log"].AsBoolean();
-
-        nc_client.Logging(on_off);
-        NcbiCout << "Logging turned " 
-                 << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
+        ctl->Logging(on_off);
+        os << "Logging turned " 
+           << (on_off ? "ON" : "OFF") << " on the server" << endl;
     }
-    if (args["drop"]) {
-        string queue = args["drop"].AsString();
-        CNetScheduleClient_Control drop_client(host, port, queue);
-        drop_client.DropQueue();
-        NcbiCout << "Queue droppped: " << queue << NcbiEndl;
+    else if (args["monitor"]) {
+        ctl.reset(x_CreateClient(true));
+        ctl->Monitor(os);
     }
 
-    if (args["qcreate"]) {
-        string queue = args["qcreate"].AsString();
+    if (ctl.get())
+        return 0;
+
+    auto_ptr<INSCtrlCmd> cmd;
+    // commands which don't requeire a queue name as a parameter
+    if (args["ver"]) 
+        cmd.reset(new VersionCmd(os));
+
+    else if (args["qlist"]) 
+        cmd.reset(new QueueListCmd(os));
+
+    else if (args["reconf"]) 
+        cmd.reset(new ReconfCmd(os));
+
+    else if (args["qcreate"]) {
+        if (!args["qclass"] )
+            NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -qclass");
+        if (!args["queue"] )
+            NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -queue");
+        string new_queue = args["queue"].AsString();
         string qclass = args["qclass"].AsString();
-        CNetScheduleClient_Control qcreate_client(host, port);
-        qcreate_client.CreateQueue(queue, qclass);
-        NcbiCout << "Queue created: " << queue << NcbiEndl;
+        cmd.reset(new QueueCreateCmd(os, new_queue, qclass));
     }
-
-    if (args["qdelete"]) {
-        string queue = args["qdelete"].AsString();
-        CNetScheduleClient_Control qdelete_client(host, port);
-        qdelete_client.DeleteQueue(queue);
-        NcbiCout << "Queue deleted: " << queue << NcbiEndl;
+    if (cmd.get()) {
+        x_ExecCmd(*cmd, false);
+        return 0;
     }
-
-    if (args["stat"]) {
-        string queue = args["stat"].AsString();
-        CNetScheduleClient_Control cl(host, port, queue);
-        cl.PrintStatistics(NcbiCout);
-        NcbiCout << NcbiEndl;
+    
+    // commands which requeire a queue name as a parameter
+    if (args["stat"]) 
+        cmd.reset(new StatCmd(os));
+    else if (args["drop"])
+        cmd.reset(new DropJobsCmd(os));
+    else if (args["dump"]) {
+        string jid;
+        if (args["jid"] )
+            jid = args["jid"].AsString();
+        cmd.reset(new DumpCmd(os, jid));
     }
-
-    if (args["affstat"]) {
-        string queue_aff = args["affstat"].AsString();
-        string queue, aff;
-        NStr::SplitInTwo(queue_aff, ":", queue, aff);
-        if (queue.empty()) {
-            queue = queue_aff;
-        }
-        CNetScheduleClient_Control cl(host, port, queue);
-
-        CNetScheduleClient::TStatusMap st_map;
-        cl.StatusSnapshot(&st_map, aff);
-        ITERATE(CNetScheduleClient::TStatusMap, it, st_map) {
-            NcbiCout << CNetScheduleClient::StatusToString(it->first) << ": "
-                     << it->second
-                     << NcbiEndl;
-        }
-    }
-
-    if (args["dump"]) {
-        string param = args["dump"].AsString();
-        string queue, job_key;
-
-        NStr::SplitInTwo(param, ":", queue, job_key);
-
-        CNetScheduleClient_Control cl(host, port, queue);
-        cl.DumpQueue(NcbiCout, job_key);
-        NcbiCout << NcbiEndl;
-    }
-
-    if (args["qprint"]) {
-        string param = args["qprint"].AsString();
-        string queue, status_str;
-
-        NStr::SplitInTwo(param, ":", queue, status_str);
-
+    else if (args["qprint"]) {
+        string sstatus = args["qprint"].AsString();
         CNetScheduleClient::EJobStatus status =
-            CNetScheduleClient::StringToStatus(status_str);
+            CNetScheduleClient::StringToStatus(sstatus);
         if (status == CNetScheduleClient::eJobNotFound) {
-            ERR_POST("Status string unknown:" << status_str);
+            ERR_POST("Status string unknown:" << sstatus);
             return 1;
         }
-
-        CNetScheduleClient_Control cl(host, port, queue);
-        cl.PrintQueue(NcbiCout, status);
-        NcbiCout << NcbiEndl;
+        cmd.reset(new PrintQueueCmd(os, status));
     }
-
-    if (args["qlist"]) {
-        CNetScheduleClient_Control cl(host, port, "noname");
-        string ql = nc_client.GetQueueList();
-        NcbiCout << "Queues: " << ql << NcbiEndl;
+    else if (args["affstat"]) {
+        string affinity = args["affstat"].AsString();
+        cmd.reset(new AffinityStatCmd(os, affinity));
     }
+    else if (args["qdelete"])
+        cmd.reset(new DeleteQueueCmd(os));
 
-    if (args["reconf"]) {
-        CNetScheduleClient_Control cl(host, port);
-        cl.ReloadServerConfig();
-    }
-
-
-    if (args["monitor"]) {
-        string queue = args["monitor"].AsString();
-        CNetScheduleClient_Control cl(host, port, queue);
-        cl.Monitor(NcbiCout);
-    }
-
-    if (args["s"]) {  // shutdown
-        if( !CheckPermission() ) {
-            NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
-            return 1;
-        }
-        nc_client.ShutdownServer();
-        NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
+    if (cmd.get()) {
+        x_ExecCmd(*cmd, true);
         return 0;
-    }
-    if (args["die"]) {  // shutdown
-        if( !CheckPermission() ) {
-            NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
-            return 1;
-        }
-        nc_client.ShutdownServer(CNetScheduleClient::eDie);
-        NcbiCout << "Die request has been sent to server" << NcbiEndl;
-        return 0;
-    }
-
-    if (args["v"]) {  // version
-        string version = nc_client.ServerVersion();
-        if (version.empty()) {
-            NcbiCout << "NetCache server communication error." << NcbiEndl;
-            return 1;
-        }
-        NcbiCout << version << NcbiEndl;
     }
 
     return 0;
@@ -311,6 +470,7 @@ int CNetScheduleControl::Run(void)
 
 bool CNetScheduleControl::CheckPermission()
 {
+    /*
 #if defined(NCBI_OS_UNIX) && defined(HAVE_LIBCONNEXT)
     static gid_t gids[NGROUPS_MAX + 1];
     static int n_groups = 0;
@@ -332,6 +492,7 @@ bool CNetScheduleControl::CheckPermission()
     return false;
         
 #endif
+    */
     return true;
 }
 
@@ -344,6 +505,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/12/06 15:04:21  didenko
+ * Added a new version of netschedule_control util, renamed the old one to netschedule_control_old
+ *
  * Revision 1.22  2006/12/04 21:58:32  joukovv
  * netschedule_control commands for dynamic queue creation, access control
  * centralized
