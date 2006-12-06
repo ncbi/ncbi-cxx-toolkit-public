@@ -884,7 +884,7 @@ inline ESwitch CSocketAPI::SetReuseAddress(ESwitch reuse)
 
 inline bool CSocketAPI::isip(const string& host)
 {
-    return bool(SOCK_isip(host.c_str()));
+    return SOCK_isip(host.c_str()) ? true : false;
 }
 
 
@@ -927,6 +927,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2006/12/06 14:39:13  lavr
+ * Heed MSVC performance warning in CSocket::isip()
+ *
  * Revision 6.49  2006/10/23 20:53:46  lavr
  * +CSocketAPI::isip()
  *
