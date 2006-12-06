@@ -60,9 +60,10 @@ struct DBFunc<CBioseq_set_EditHandle,CBioseq_set::T##type> {      \
     typedef CBioseq_set::T##type            T;                    \
     typedef MemetoTrait<T,IsCRef<T>::value> TTrait;               \
     typedef TTrait::TRef                    TRef;                 \
+    typedef TTrait::TConstRef               TConstRef;            \
                                                                   \
     static inline void Set(IEditSaver& saver,                     \
-                           const Handle& handle, const TRef data, \
+                           const Handle& handle, TConstRef data,  \
                            IEditSaver::ECallMode mode)            \
     { saver.SetBioseqSet##type(handle, data, mode); }             \
     static inline void Reset(IEditSaver& saver,                   \
@@ -240,6 +241,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/12/06 17:54:03  didenko
+* Fixed compilation warning on MSVC
+*
 * Revision 1.3  2006/05/01 16:56:45  didenko
 * Attach SeqEntry edit command revamp
 *

@@ -101,6 +101,7 @@ struct MemetoTrait {
     typedef T TValue;
     typedef T TStorage;
     typedef T TRef;
+    typedef T TConstRef;
 
     static inline TStorage Store(TRef t) {return t;}
     static inline TRef     Restore(TStorage t) {return t;}
@@ -108,9 +109,10 @@ struct MemetoTrait {
 
 template<typename T>
 struct MemetoTrait<T,true> {
-    typedef T       TValue;
-    typedef CRef<T> TStorage;
-    typedef T&      TRef;
+    typedef T         TValue;
+    typedef CRef<T>   TStorage;
+    typedef T&        TRef;
+    typedef const T&  TConstRef;
 
     static inline TStorage Store(TRef t) {return TStorage(&t);}
     static inline TRef     Restore(TStorage t)  {return *t;}
@@ -128,6 +130,7 @@ struct MemetoFunctions {
     typedef typename TTrait::TValue         TValue;
     typedef typename TTrait::TStorage       TStorage;
     typedef typename TTrait::TRef           TRef;
+    typedef typename TTrait::TConstRef      TConstRef;
 
     static inline bool IsSet(const TEditHandle& handle);
     static inline TStorage Get(const TEditHandle& handle);
@@ -142,6 +145,7 @@ public:
     typedef MemetoTrait<T,IsCRef<T>::value> TTrait;
     typedef typename TTrait::TStorage       TStorage;
     typedef typename TTrait::TRef           TRef;
+    typedef typename TTrait::TConstRef      TConstRef;
 
     CMemeto() : m_Storage(), m_WasSet(false) {}
 
@@ -173,9 +177,10 @@ template<typename THandle, typename T>
 struct DBFunc {
     typedef MemetoTrait<T,IsCRef<T>::value> TTrait;
     typedef typename TTrait::TRef           TRef;
+    typedef typename TTrait::TConstRef      TConstRef;
 
     static inline void Set(IEditSaver&, const THandle&, 
-                           const TRef, IEditSaver::ECallMode);
+                           TConstRef, IEditSaver::ECallMode);
     static inline void Reset(IEditSaver&, const THandle&, 
                              IEditSaver::ECallMode);
 };
@@ -547,6 +552,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/12/06 17:54:03  didenko
+* Fixed compilation warning on MSVC
+*
 * Revision 1.3  2006/05/01 16:56:45  didenko
 * Attach SeqEntry edit command revamp
 *
