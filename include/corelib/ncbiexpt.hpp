@@ -415,6 +415,12 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     }
 
 /// Catch CExceptions as well
+#define NCBI_CATCH(message)                                   \
+    catch (NCBI_NS_NCBI::CException& e) {                     \
+        NCBI_REPORT_EXCEPTION(message, e);                    \
+    }                                                         \
+    STD_CATCH(message)
+
 #define NCBI_CATCH_ALL(message)                               \
     catch (NCBI_NS_NCBI::CException& e) {                     \
         NCBI_REPORT_EXCEPTION(message, e);                    \
@@ -1166,6 +1172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/12/06 15:54:44  dicuccio
+ * Added NCBI_CATCH() macro
+ *
  * Revision 1.74  2006/11/29 15:04:05  grichenk
  * Get stack trace from x_Init.
  * Added Abort_If_Critical flag.
