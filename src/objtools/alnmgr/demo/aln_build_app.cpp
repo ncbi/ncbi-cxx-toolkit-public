@@ -72,11 +72,13 @@ public:
         aln->Validate(true);
         return true;
     }
+    void ReportTime(const string& msg);
 
 private:
     mutable CRef<CObjectManager> m_ObjMgr;
     mutable CRef<CScope>         m_Scope;
     CAlnContainer                m_AlnContainer;
+    CStopWatch                   m_StopWatch;
 };
 
 
@@ -95,14 +97,22 @@ void CAlnBuildApp::Init(void)
          "and specifies the type of the top-level ASN.1 object.\n",
          CArgDescriptions::eString, "");
 
+    arg_desc->AddDefaultKey
+        ("noobjmgr", "bool",
+        // ObjMgr is used to identify sequences and obtain a bioseqhandle.
+        // Also used to calc scores and determine the type of molecule
+         "Skip ObjMgr in identifying sequences, calculating scores, etc.",
+         CArgDescriptions::eBoolean, "f");
+
     // Merge option
     arg_desc->AddDefaultKey
-        ("m", "merge_option",
+        ("algo", "merge_algo",
          "eMergeAllSeqs      = 0, ///< Merge all sequences\n"
          "eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, \n"
          "ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence)\n"
          "eDefault           = eMergeAllSeqs",
          CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("algo", new CArgAllow_Integers(0,2));
 
     // Program description
     string prog_description = "Alignment build application.\n";
@@ -110,6 +120,9 @@ void CAlnBuildApp::Init(void)
                               prog_description, false);
 
     SetupArgDescriptions(arg_desc.release());
+
+    // Start the timer
+    m_StopWatch.Start();
 }
 
 
@@ -144,13 +157,22 @@ CScope& CAlnBuildApp::GetScope(void) const
 }
 
 
+void CAlnBuildApp::ReportTime(const string& msg)
+{
+    cerr << "time:\t" 
+         << m_StopWatch.AsSmartString(CTimeSpan::eSSP_Millisecond) 
+         << "\t" << msg << endl;
+    m_StopWatch.Restart();
+}
+
+
 int CAlnBuildApp::Run(void)
 {
     // Setup application registry, error log, and MT-lock for CONNECT library
     CONNECT_Init(&GetConfig());
 
     LoadInputAlns();
-
+    ReportTime("LoadInputAlns");
 
     /// Types we use here:
     typedef CSeq_align::TDim TDim;
@@ -175,6 +197,7 @@ int CAlnBuildApp::Run(void)
 
     /// Create a vector of seq-ids per seq-align
     TAlnSeqIdVector aln_seq_id_vector(aln_vector, comp);
+    ReportTime("TAlnSeqIdVector");
 
     /// TEMP
 //     typedef set<CSeq_id_Handle> TIdSet;
@@ -198,6 +221,7 @@ int CAlnBuildApp::Run(void)
 
     /// Create an alignment bitmap to obtain statistics.
     TSeqIdAlnBitmap id_aln_bitmap(aln_seq_id_vector, GetScope(), comp);
+    ReportTime("TSeqIdAlnBitmap");
 
 
     /// Crete align statistics object
@@ -212,11 +236,13 @@ int CAlnBuildApp::Run(void)
     typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVector;
     TAnchoredAlnVector anchored_aln_vector;
     CreateAnchoredAlnVector(aln_stats, anchored_aln_vector);
+    ReportTime("TAnchoredAlnVector");
 
 
     /// Choose user options
     CAlnUserOptions aln_user_options;
-    aln_user_options.m_MergeOption = GetArgs()["m"].AsInteger();
+    aln_user_options.m_MergeAlgo = 
+        (CAlnUserOptions::EMergeAlgo) GetArgs()["algo"].AsInteger();
 
 
     /// Build a single anchored aln
@@ -225,11 +251,13 @@ int CAlnBuildApp::Run(void)
              built_anchored_aln,
              aln_user_options,
              comp);
+    ReportTime("BuildAln");
     built_anchored_aln.Dump(cout);
 
 
     /// Get sequence:
     CSparseAln sparse_aln(built_anchored_aln, GetScope());
+    ReportTime("CSparseAln");
     for (TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
         string sequence;
         sparse_aln.GetAlnSeqString
@@ -255,6 +283,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/12/06 20:06:35  todorov
+* Added a stop watch.
+*
 * Revision 1.12  2006/12/04 19:56:16  todorov
 * Allow reading from stdin.
 *
