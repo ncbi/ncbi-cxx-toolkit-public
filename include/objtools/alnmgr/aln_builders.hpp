@@ -97,7 +97,7 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
 
     /// 2. Build a single anchored_aln
     _ASSERT(out_aln.GetDim() == 0);
-    switch (options.m_MergeOption) {
+    switch (options.m_MergeAlgo) {
     case CAlnUserOptions::eQuerySeqMergeOnly:
         ITERATE(typename TAnchoredAlns, aln_it, in_alns) {
             const CAnchoredAln& aln = **aln_it;
@@ -147,19 +147,17 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
     default: 
         {
             typedef map<TSeqIdPtr, CRef<CPairwiseAln>, TSeqIdPtrComp> TIdAlnMap;
-            TIdAlnMap id_aln_map(comp);
+            TIdAlnMap id_aln_map(comp); // store the id-aln
+
+            typedef vector<pair<TSeqIdPtr, CRef<CPairwiseAln> > > TIdAlnVec;
+            
+
             TSeqIdPtr anchor_id;
             CRef<CPairwiseAln> anchor_pairwise;
             ITERATE(typename TAnchoredAlns, aln_it, in_alns) {
                 const CAnchoredAln& aln = **aln_it;
                 for (TDim row = 0; row < aln.GetDim(); ++row) {
-                    if (row == aln.GetAnchorRow()) {
-                        if (aln_it == in_alns.begin()) {
-                            anchor_id = aln.GetSeqIds()[row];
-                        }
-                        _ASSERT( !(comp(anchor_id, aln.GetSeqIds()[row])  ||
-                                   comp(aln.GetSeqIds()[row], anchor_id)) );
-                    }
+
                     CRef<CPairwiseAln>& pairwise = id_aln_map[aln.GetSeqIds()[row]];
                     if (pairwise.Empty()) {
                         pairwise.Reset
@@ -171,26 +169,27 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
                                         CAlnUserOptions::fTruncateOverlaps :
                                         options.m_MergeFlags);
                     }
+
+                    if (row == aln.GetAnchorRow()) {
+                        // if anchor
+                        if (aln_it == in_alns.begin()) {
+                            anchor_id = aln.GetSeqIds()[row];
+                            anchor_pairwise.Reset(pairwise);
+                        }
+                        _ASSERT( !(comp(anchor_id, aln.GetSeqIds()[row])  ||
+                                   comp(aln.GetSeqIds()[row], anchor_id)) );
+                    } else {
+                        // else add to the out vectors
+                        out_aln.SetSeqIds().push_back(aln.GetSeqIds()[row]);
+                        out_aln.SetPairwiseAlns().push_back(pairwise);
+                    }
+                    
                 }
             }
-            _ASSERT(out_aln.GetPairwiseAlns().empty());
-            TDim dim = id_aln_map.size();
-            TDim target_anchor_row = dim - 1;
-            TDim target_row = 0;
-            out_aln.SetPairwiseAlns().resize(dim);
-            out_aln.SetSeqIds().resize(dim);
-            NON_CONST_ITERATE (typename TIdAlnMap, map_it, id_aln_map) {
-                if (comp(map_it->first, anchor_id) ||  comp(anchor_id, map_it->first)) {
-                    // not the anchor
-                    out_aln.SetSeqIds()[target_row].Reset(map_it->first);
-                    out_aln.SetPairwiseAlns()[target_row].Reset(map_it->second);
-                    ++target_row;
-                } else {
-                    // anchor case
-                    out_aln.SetSeqIds()[target_anchor_row].Reset(map_it->first);
-                    out_aln.SetPairwiseAlns()[target_anchor_row].Reset(map_it->second);
-                }
-            }
+
+            // finally, add the anchor
+            out_aln.SetSeqIds().push_back(anchor_id);
+            out_aln.SetPairwiseAlns().push_back(anchor_pairwise);
         }
         break;
     }
@@ -206,6 +205,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/12/06 20:08:31  todorov
+* 1) Preserve the order of seq-ids.
+* 2) MergeOption -> MergeAlgo
+*
 * Revision 1.5  2006/12/01 21:21:02  todorov
 * - NCBI_XALNMGR_EXPORT
 *
