@@ -1,4 +1,4 @@
--- $Id: genome_collection.asn,v 1.1 2006/12/04 13:37:27 dicuccio Exp $
+-- $Id: genome_collection.asn,v 1.2 2006/12/06 19:55:46 dicuccio Exp $
 -- **********************************************************************
 --
 --  NCBI Genome Collections
@@ -17,7 +17,7 @@ IMPORTS Dbtag FROM NCBI-General
         Seq-id FROM NCBI-Seqloc
         BioSource FROM NCBI-BioSource;
 
-Genome ::= SEQUENCE
+GC-Genome ::= SEQUENCE
 {
     -- The identifier for this genome
     id SET OF Dbtag,
@@ -40,16 +40,16 @@ Genome ::= SEQUENCE
 
     -- the bits that make up this genome
     -- this preserves the expected display order
-    parts SET OF GenomicPart
+    parts SET OF GC-GenomicPart
 }
 
-GenomicPart ::= CHOICE {
-    assembly Assembly,
-    mol Molecule,
-    seqs SequenceBag
+GC-GenomicPart ::= CHOICE {
+    assembly GC-Assembly,
+    mol GC-Molecule,
+    seqs GC-SequenceBag
 }
 
-ChromosomeName ::= SEQUENCE
+GC-ChromosomeName ::= SEQUENCE
 {
     -- the name used in a particular genomic part
     name           VisibleString,
@@ -63,7 +63,7 @@ ChromosomeName ::= SEQUENCE
 }
 
 
-Assembly ::= SEQUENCE
+GC-Assembly ::= SEQUENCE
 {
     -- The identifier of this assembly
     id SET OF Dbtag,
@@ -85,20 +85,20 @@ Assembly ::= SEQUENCE
     coverage INTEGER OPTIONAL,
 
     -- collections of molecules for this assembly
-    mols SET OF Molecule,
+    mols SET OF GC-Molecule,
 
     -- unplaced bits for this asssembly
-    unplaced SET OF SequenceBag OPTIONAL
+    unplaced SET OF GC-SequenceBag OPTIONAL
 }
 
 
-Molecule ::= SEQUENCE
+GC-Molecule ::= SEQUENCE
 {
     -- id for this molecule
     id SET OF Dbtag,
 
     -- name for this molecule
-    name ChromosomeName,
+    name GC-ChromosomeName,
 
     -- biosrc provides taxonomic information for this molecule
     biosrc BioSource OPTIONAL,
@@ -118,17 +118,17 @@ Molecule ::= SEQUENCE
     },
     
     -- components used to produce this molecule
-    components SequenceBag OPTIONAL,
+    components GC-SequenceBag OPTIONAL,
 
     -- unlinked components in this molecule
-    unlinked SET OF SequenceBag OPTIONAL
+    unlinked SET OF GC-SequenceBag OPTIONAL
 }
 
 
-SequenceBag ::= SEQUENCE
+GC-SequenceBag ::= SEQUENCE
 {
     -- name for this bag
-    name ChromosomeName OPTIONAL,
+    name GC-ChromosomeName OPTIONAL,
 
     -- biosrc provides taxonomic information for this bag
     biosrc BioSource OPTIONAL,
@@ -147,6 +147,9 @@ END
 
 -- --------------------------------------------------------------------------
 -- $Log: genome_collection.asn,v $
+-- Revision 1.2  2006/12/06 19:55:46  dicuccio
+-- Prefix all local type names with 'GC-'
+--
 -- Revision 1.1  2006/12/04 13:37:27  dicuccio
 -- Initial revision
 --
