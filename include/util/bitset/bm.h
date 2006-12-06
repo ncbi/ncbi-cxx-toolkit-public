@@ -181,7 +181,7 @@ public:
         /*! Bitwise AND. Performs operation: bit = bit AND value */
         const reference& operator&=(bool value) const
         {
-            bv_.set(position_, value);
+            bv_.set_bit_and(position_, value);
             return *this;
         }
 
@@ -961,6 +961,17 @@ public:
         return set_bit_no_check(n, val);
     }
 
+    /*!
+       \brief Sets bit n using bit AND with the provided value.
+       \param n - index of the bit to be set. 
+       \param val - new bit value
+       \return  TRUE if bit was changed
+    */
+    bool set_bit_and(bm::id_t n, bool val = true)
+    {
+        BM_ASSERT(n < size_);
+        return and_bit_no_check(n, val);
+    }
 
     /*!
         \brief Sets bit n if val is true, clears bit n if val is false
@@ -1428,9 +1439,14 @@ private:
     bm::id_t check_or_next_extract(bm::id_t prev);
 
     /**
-        \brief Set spacified bit without checking preconditions (size, etc)
+        \brief Set specified bit without checking preconditions (size, etc)
     */
     bool set_bit_no_check(bm::id_t n, bool val);
+
+    /**
+        \brief AND specified bit without checking preconditions (size, etc)
+    */
+    bool and_bit_no_check(bm::id_t n, bool val);
 
 
     void combine_operation(const bm::bvector<Alloc, MS>& bvect, 
@@ -2128,6 +2144,78 @@ bool bvector<Alloc, MS>::set_bit_no_check(bm::id_t n, bool val)
 
 // -----------------------------------------------------------------------
 
+
+template<class Alloc, class MS> 
+bool bvector<Alloc, MS>::and_bit_no_check(bm::id_t n, bool val)
+{
+    // calculate logical block number
+    unsigned nblock = unsigned(n >>  bm::set_block_shift); 
+
+    int block_type;
+    bm::word_t* blk = 
+        blockman_.check_allocate_block(nblock, 
+                                       val,
+                                       get_new_blocks_strat(), 
+                                       &block_type);
+    if (!blk) return false;
+
+    // calculate word number in block and bit
+    unsigned nbit   = unsigned(n & bm::set_block_mask); 
+
+    if (block_type == 1) // gap
+    {
+        bm::gap_word_t* gap_blk = BMGAP_PTR(blk);
+        bool old_val = (gap_test(gap_blk, nbit) != 0);
+
+        bool new_val = val & old_val;
+        if (new_val != old_val)
+        {
+            unsigned is_set;
+            unsigned new_block_len = 
+                gap_set_value(new_val, gap_blk, nbit, &is_set);
+            BM_ASSERT(is_set);
+            BMCOUNT_ADJ(val)
+
+            unsigned threshold = 
+                bm::gap_limit(gap_blk, blockman_.glen());
+            if (new_block_len > threshold) 
+            {
+                extend_gap_block(nblock, gap_blk);
+            }
+            return true;
+        }
+    }
+    else  // bit block
+    {
+        unsigned nword  = unsigned(nbit >> bm::set_word_shift); 
+        nbit &= bm::set_word_mask;
+
+        bm::word_t* word = blk + nword;
+        bm::word_t  mask = (((bm::word_t)1) << nbit);
+        bool is_set = ((*word) & mask) != 0;
+
+        bool new_val = is_set & val;
+        if (new_val != val)    // need to change bit
+        {
+            if (new_val)       // set bit
+            {
+                *word |= mask;
+                BMCOUNT_INC;
+            }
+            else               // clear bit
+            {
+                *word &= ~mask;
+                BMCOUNT_DEC;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+
+// -----------------------------------------------------------------------
+
 template<class Alloc, class MS> 
 void bvector<Alloc, MS>::stat(unsigned blocks) const
 {
@@ -2653,22 +2741,22 @@ void bvector<Alloc, MS>::combine_operation_with_block(unsigned nb,
                 
                 if (arg_blk == 0)  // Combining against an empty block
                 {
-                if (opcode == BM_OR  || 
-                    opcode == BM_SUB || 
-                    opcode == BM_XOR)
-                {
-                    return; // nothing to do
-                }
-                    
-                if (opcode == BM_AND) // ("Value" AND  0) == 0
-                {
-                    blockman_.set_block_ptr(nb, 0);
-                    blockman_.set_block_bit(nb);
-                    blockman_.get_allocator().
-                                    free_gap_block(BMGAP_PTR(blk),
-                                                blockman_.glen());
-                    return;
-                }
+                    if (opcode == BM_OR  || 
+                        opcode == BM_SUB || 
+                        opcode == BM_XOR)
+                    {
+                        return; // nothing to do
+                    }
+                        
+                    if (opcode == BM_AND) // ("Value" AND  0) == 0
+                    {
+                        blockman_.set_block_ptr(nb, 0);
+                        blockman_.set_block_bit(nb);
+                        blockman_.get_allocator().
+                                        free_gap_block(BMGAP_PTR(blk),
+                                                    blockman_.glen());
+                        return;
+                    }
                 }
 
                 blk = blockman_.convert_gap2bitset(nb, BMGAP_PTR(blk));
@@ -2678,26 +2766,26 @@ void bvector<Alloc, MS>::combine_operation_with_block(unsigned nb,
         {
             if (arg_gap) // argument block is GAP-type
             {
-            if (IS_VALID_ADDR(blk))
-            {
-                // special case, maybe we can do the job without 
-                // converting the GAP argument to bitblock
-                switch (opcode)
+                if (IS_VALID_ADDR(blk))
                 {
-                case BM_OR:
-                        gap_add_to_bitset(blk, BMGAP_PTR(arg_blk));
-                        return;                         
-                case BM_SUB:
-                        gap_sub_to_bitset(blk, BMGAP_PTR(arg_blk));
-                        return;
-                case BM_XOR:
-                        gap_xor_to_bitset(blk, BMGAP_PTR(arg_blk));
-                        return;
-                case BM_AND:
-                        gap_and_to_bitset(blk, BMGAP_PTR(arg_blk));
-                        return;
-                        
-                } // switch
+                    // special case, maybe we can do the job without 
+                    // converting the GAP argument to bitblock
+                    switch (opcode)
+                    {
+                    case BM_OR:
+                            gap_add_to_bitset(blk, BMGAP_PTR(arg_blk));
+                            return;                         
+                    case BM_SUB:
+                            gap_sub_to_bitset(blk, BMGAP_PTR(arg_blk));
+                            return;
+                    case BM_XOR:
+                            gap_xor_to_bitset(blk, BMGAP_PTR(arg_blk));
+                            return;
+                    case BM_AND:
+                            gap_and_to_bitset(blk, BMGAP_PTR(arg_blk));
+                            return;
+                            
+                    } // switch
                 }
                 
                 // the worst case we need to convert argument block to 
@@ -2799,7 +2887,7 @@ void bvector<Alloc, MS>::combine_operation_with_block(unsigned nb,
             }
             break;
         default:
-            assert(0);
+            BM_ASSERT(0);
             ret = 0;
         }
 
@@ -2892,22 +2980,19 @@ void bvector<Alloc, MS>::set_range_no_check(bm::id_t left,
             block = blockman_.get_block(nb);
             if (block == 0)  // nothing to do
                 continue;
-
-            blockman_.set_block(nb, 0);
-            blockman_.set_block_bit(nb);
-
             bool is_gap = BM_IS_GAP(blockman_, block, nb);
+            blockman_.set_block(nb, 0, false /*bit*/);
+            //blockman_.set_block_bit(nb);
 
             if (is_gap) 
             {
                 blockman_.get_allocator().free_gap_block(BMGAP_PTR(block),
-                                                            blockman_.glen());
+                                                         blockman_.glen());
             }
             else
             {
                 blockman_.get_allocator().free_bit_block(block);
             }
-
 
         } // for
     } // if value else 

@@ -170,6 +170,20 @@ const char first_bit_table<T>::_idx[256] = {
     bm::bit_count_table<true>::_count[(unsigned char)((w) >> 16)] + \
     bm::bit_count_table<true>::_count[(unsigned char)((w) >> 24)];
 
+/*!
+    Returns bit count
+    @ingroup bitfunc 
+*/
+BMFORCEINLINE
+bm::id_t word_bitcount(bm::id_t w)
+{
+    return
+    bm::bit_count_table<true>::_count[(unsigned char)(w)] + 
+    bm::bit_count_table<true>::_count[(unsigned char)((w) >> 8)] + 
+    bm::bit_count_table<true>::_count[(unsigned char)((w) >> 16)] + 
+    bm::bit_count_table<true>::_count[(unsigned char)((w) >> 24)];
+}
+
 #ifdef BM64OPT
 /*! 
 	Function calculates number of 1 bits in 64-bit word.
@@ -192,15 +206,57 @@ inline bm::id_t word_bitcount64(bm::id64_t w)
 //---------------------------------------------------------------------
 
 /**
+    Nomenclature of set operations
+*/
+enum set_operation
+{
+    set_AND         = 0,
+    set_OR          = 1,
+    set_SUB         = 2,
+    set_XOR         = 3,
+    set_ASSIGN      = 4,
+    set_COUNT       = 5,
+    set_COUNT_AND   = 6,
+    set_COUNT_XOR   = 7,
+    set_COUNT_OR    = 8,
+    set_COUNT_SUB_AB= 9,
+    set_COUNT_SUB_BA= 10,
+    set_COUNT_A     = 11,
+    set_COUNT_B     = 12,
+
+    set_END
+};
+
+/// Returns true if set operation is constant (bitcount)
+inline
+bool is_const_set_operation(set_operation op)
+{
+    return (int(op) >= int(set_COUNT));
+}
+
+/**
     Bit operations enumeration.
 */
 enum operation
 {
-    BM_AND = 0,
-    BM_OR,
-    BM_SUB,
-    BM_XOR
+    BM_AND = set_AND,
+    BM_OR  = set_OR,
+    BM_SUB = set_SUB,
+    BM_XOR = set_XOR
 };
+
+/**
+    Convert set operation to operation
+*/
+inline
+bm::operation setop2op(bm::set_operation op)
+{
+    BM_ASSERT(op == set_AND || 
+              op == set_OR  || 
+              op == set_SUB || 
+              op == set_XOR);
+    return (bm::operation) op;
+}
 
 //---------------------------------------------------------------------
 
@@ -3340,6 +3396,225 @@ bool improve_gap_levels(const T* length,
 
 }
 
+
+
+/**
+    Bit-block get adapter, takes bitblock and represents it as a 
+    get_32() accessor function
+    /internal
+*/
+class bitblock_get_adapter
+{
+public:
+    bitblock_get_adapter(const bm::word_t* bit_block) : b_(bit_block) {}
+    
+    BMFORCEINLINE
+    bm::word_t get_32() { return *b_++; }
+private:
+    const bm::word_t*  b_;
+};
+
+
+/**
+    Bit-block store adapter, takes bitblock and saves results into it
+    /internal
+*/
+class bitblock_store_adapter
+{
+public:
+    bitblock_store_adapter(bm::word_t* bit_block) : b_(bit_block) {}
+    BMFORCEINLINE
+    void push_back(bm::word_t w) { *b_++ = w; }
+private:
+    bm::word_t* b_;
+};
+
+/**
+    Bit-block sum adapter, takes values and sums it
+    /internal
+*/
+class bitblock_sum_adapter
+{
+public:
+    bitblock_sum_adapter() : sum_(0) {}
+    BMFORCEINLINE
+    void push_back(bm::word_t w) { this->sum_+= w; }
+    /// Get accumulated sum
+    bm::word_t sum() const { return this->sum_; }
+private:
+    bm::word_t sum_;
+};
+
+/**
+    Adapter to get words from a range stream 
+    (see range serialized bit-block)
+    \internal
+*/
+template<class DEC> class decoder_range_adapter
+{
+public: 
+    decoder_range_adapter(DEC& dec, unsigned from_idx, unsigned to_idx)
+    : decoder_(dec),
+      from_(from_idx),
+      to_(to_idx),
+      cnt_(0)
+    {}
+
+    bm::word_t get_32()
+    {
+        if (cnt_ < from_ || cnt_ > to_)
+        {    
+            ++cnt_; return 0;
+        }
+        ++cnt_;
+        return decoder_.get_32();
+    }
+
+private:
+    DEC&     decoder_;
+    unsigned from_;
+    unsigned to_;
+    unsigned cnt_;
+};
+
+
+/*!
+    Abstract recombination algorithm for two bit-blocks
+    Bit blocks can come as dserialization decoders or bit-streams
+*/
+template<class It1, class It2, class BinaryOp, class Encoder>
+void bit_recomb(It1& it1, It2& it2, 
+                BinaryOp& op, 
+                Encoder& enc, 
+                unsigned block_size = bm::set_block_size)
+{
+    for (unsigned i = 0; i < block_size; ++i)
+    {
+        bm::word_t w1 = it1.get_32();
+        bm::word_t w2 = it2.get_32();
+        bm::word_t w = op(w1, w2);
+        enc.push_back( w );
+    } // for
+}
+
+/// Bit AND functor
+template<typename W> struct bit_AND
+{
+    W operator()(W w1, W w2) { return w1 & w2; }
+};
+
+/// Bit OR functor
+template<typename W> struct bit_OR
+{
+    W operator()(W w1, W w2) { return w1 | w2; }
+};
+
+/// Bit SUB functor
+template<typename W> struct bit_SUB
+{
+    W operator()(W w1, W w2) { return w1 & ~w2; }
+};
+
+/// Bit XOR functor
+template<typename W> struct bit_XOR
+{
+    W operator()(W w1, W w2) { return w1 ^ w2; }
+};
+
+/// Bit ASSIGN functor
+template<typename W> struct bit_ASSIGN
+{
+    W operator()(W w1, W w2) { return w2; }
+};
+
+/// Bit COUNT functor
+template<typename W> struct bit_COUNT
+{
+    W operator()(W w1, W w2) 
+    {
+        w1 = 0;
+        BM_INCWORD_BITCOUNT(w1, w2);
+        return w1;
+    }
+};
+
+/// Bit COUNT AND functor
+template<typename W> struct bit_COUNT_AND
+{
+    W operator()(W w1, W w2) 
+    {
+        W r = 0;
+        BM_INCWORD_BITCOUNT(r, w1 & w2);
+        return r;
+    }
+};
+
+/// Bit COUNT XOR functor
+template<typename W> struct bit_COUNT_XOR
+{
+    W operator()(W w1, W w2) 
+    {
+        W r = 0;
+        BM_INCWORD_BITCOUNT(r, w1 ^ w2);
+        return r;
+    }
+};
+
+/// Bit COUNT OR functor
+template<typename W> struct bit_COUNT_OR
+{
+    W operator()(W w1, W w2) 
+    {
+        W r = 0;
+        BM_INCWORD_BITCOUNT(r, w1 | w2);
+        return r;
+    }
+};
+
+
+/// Bit COUNT SUB AB functor
+template<typename W> struct bit_COUNT_SUB_AB
+{
+    W operator()(W w1, W w2) 
+    {
+        W r = 0;
+        BM_INCWORD_BITCOUNT(r, w1 & (~w2));
+        return r;
+    }
+};
+
+/// Bit SUB BA functor
+template<typename W> struct bit_COUNT_SUB_BA
+{
+    W operator()(W w1, W w2) 
+    {
+        W r = 0;
+        BM_INCWORD_BITCOUNT(r, w2 & (~w1));
+        return r;
+    }
+};
+
+/// Bit COUNT A functor
+template<typename W> struct bit_COUNT_A
+{
+    W operator()(W w1, W w2) 
+    {
+        W r = 0;
+        BM_INCWORD_BITCOUNT(r, w1);
+        return r;
+    }
+};
+
+/// Bit COUNT B functor
+template<typename W> struct bit_COUNT_B
+{
+    W operator()(W w1, W w2) 
+    {
+        W r = 0;
+        BM_INCWORD_BITCOUNT(r, w2);
+        return r;
+    }
+};
 
 
 } // namespace bm

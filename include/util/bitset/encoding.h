@@ -70,6 +70,9 @@ public:
     /// Returns size of the current decoding stream.
     BMFORCEINLINE 
     unsigned size() const { return (unsigned)(buf_ - start_); }
+    /// change current position
+    BMFORCEINLINE
+    void seek(int delta) { buf_ += delta; }
 protected:
    const unsigned char*   buf_;
    const unsigned char*   start_;
@@ -204,7 +207,8 @@ BMFORCEINLINE void encoder::put_32(bm::word_t w)
 /*!
     \brief Encodes array of 32-bit words
 */
-inline void encoder::put_32(const bm::word_t* w, unsigned count)
+inline 
+void encoder::put_32(const bm::word_t* w, unsigned count)
 {
     unsigned char* buf = buf_;
     const bm::word_t* w_end = w + count;
@@ -270,7 +274,11 @@ BMFORCEINLINE bm::word_t decoder::get_32()
 */
 inline void decoder::get_32(bm::word_t* w, unsigned count)
 {
-
+    if (!w) 
+    {
+        seek(count * 4);
+        return;
+    }
     const unsigned char* buf = buf_;
     const bm::word_t* w_end = w + count;
     do 
@@ -291,6 +299,12 @@ inline void decoder::get_32(bm::word_t* w, unsigned count)
 */
 inline void decoder::get_16(bm::short_t* s, unsigned count)
 {
+    if (!s) 
+    {
+        seek(count * 2);
+        return;
+    }
+
     const unsigned char* buf = buf_;
     const bm::short_t* s_end = s + count;
     do 
@@ -328,6 +342,12 @@ BMFORCEINLINE bm::word_t decoder_little_endian::get_32()
 
 inline void decoder_little_endian::get_32(bm::word_t* w, unsigned count)
 {
+    if (!w) 
+    {
+        seek(count * 4);
+        return;
+    }
+
     const unsigned char* buf = buf_;
     const bm::word_t* w_end = w + count;
     do 
@@ -342,6 +362,12 @@ inline void decoder_little_endian::get_32(bm::word_t* w, unsigned count)
 
 inline void decoder_little_endian::get_16(bm::short_t* s, unsigned count)
 {
+    if (!s) 
+    {
+        seek(count * 2);
+        return;
+    }
+
     const unsigned char* buf = buf_;
     const bm::short_t* s_end = s + count;
     do 

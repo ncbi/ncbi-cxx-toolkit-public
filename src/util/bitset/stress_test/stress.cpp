@@ -43,6 +43,7 @@
 #include <util/bitset/bm.h>
 #include <util/bitset/bmalgo.h>
 #include <util/bitset/bmserial.h>
+#include <util/bitset/bitset_debug.hpp>
 
 using namespace bm;
 using namespace std;
@@ -727,6 +728,132 @@ void FillSetsRandomMethod(bvect_mini* bvect_min,
     }
 }
 
+// do logical operation through serialization
+unsigned SerializationOperation(bvect*             bv_target,
+                                /*const*/ bvect&   bv1,
+                                /*const*/ bvect&   bv2,
+                                set_operation      op,
+                                bool               check_reverse=false)
+{
+    bvect bv_tmp;
+    if (!bv_target)
+    {
+        bv_target = &bv_tmp;
+    }
+
+    if (op == set_COUNT_SUB_AB ||
+        op == set_COUNT_SUB_BA)
+    {
+        check_reverse = false;
+    }
+    // serialize input vectors
+
+   struct bvect::statistics st1, st2;
+   bv1.calc_stat(&st1);
+   bv2.calc_stat(&st2);
+
+   unsigned char* smem1 = new unsigned char[st1.max_serialize_mem];
+   unsigned char* smem2 = new unsigned char[st2.max_serialize_mem];
+
+   unsigned slen1 = bm::serialize(bv1, smem1);
+   unsigned slen2 = bm::serialize(bv2, smem2);
+
+   unsigned count =
+       operation_deserializer<bvect>::deserialize(*bv_target,
+                                                  smem1,
+                                                  0,
+                                                  set_ASSIGN);
+   int res = bv1.compare(*bv_target);
+   if (res != 0)
+   {
+       cout << "set_ASSIGN 1 failed!" << endl;
+       exit (1);
+   }
+//   PrintSet(cout, *bv_target);
+//bv2.stat();
+    count=
+       operation_deserializer<bvect>::deserialize(*bv_target,
+                                                  smem2,
+                                                  0,
+                                                  op);
+
+   if (check_reverse)
+   {
+        bvect bv_tmp2(BM_GAP);
+        operation_deserializer<bvect>::deserialize(bv_tmp2,
+                                                   smem2,
+                                                   0,
+                                                   set_ASSIGN);
+        int res = bv_tmp2.compare(bv2);
+        if (res != 0)
+        {
+            cout << "set_ASSIGN failed 2! " << endl;
+            exit(1);
+        }
+//        PrintSet(cout, bv_tmp2);
+//bv1.stat();
+        unsigned count_rev =
+        operation_deserializer<bvect>::deserialize(bv_tmp2,
+                                                   smem1,
+                                                   0,
+                                                   op);
+        if (count != count_rev)
+        {
+            bv1.stat();
+            cout << "Serialization operation reverse check failed"
+                 << " count = " << count 
+                 << " count rev= " << count_rev
+                 << endl;
+            exit(1);
+        }
+
+   }
+
+   delete [] smem1;
+   delete [] smem2;
+
+   return count;
+}
+
+void SerializationOperation2Test(bvect*        bv_target,
+                                 bvect&        bv1,
+                                 bvect&        bv2,
+                                 unsigned      predicted_count,
+                                 set_operation op_count,
+                                 set_operation op_combine)
+{
+    bv_target->clear(true);
+    unsigned scount1 = SerializationOperation(0, 
+                                              bv1,
+                                              bv2,
+                                              op_count,
+                                              true /*reverse check*/);
+
+    unsigned scount2 = SerializationOperation(bv_target, 
+                                              bv1,
+                                              bv2,
+                                              op_combine);
+    scount2 = bv_target->count();
+    if (predicted_count != scount2 || scount1 != scount2)
+    {
+        cout << "Serialization count != predicted" << endl 
+             << " predicted=" << predicted_count 
+             << " scount1="   << scount1
+             << " scount2="   << scount2
+             << endl;
+
+        cout << endl << "target:" << endl;
+        bv_target->stat();
+        cout << endl << endl << "reference" << endl;
+        if (op_combine == set_AND)
+        {
+            bv1 &= bv2;
+            bv1.stat();
+        }
+
+        exit(1);
+    }
+}
 
 
 void print_mv(const bvect_mini &bvect_min, unsigned size)
@@ -1000,8 +1127,6 @@ void CheckVectors(bvect_mini &bvect_min,
     cout << "OK" << endl;
 
     return;
-    
-
 }
 
 
@@ -1328,6 +1453,8 @@ void RangeRandomFillTest()
 
 }
 
+
+
 void AndOperationsTest()
 {
     assert(ITERATIONS < BITVECT_SIZE);
@@ -1366,6 +1493,15 @@ void AndOperationsTest()
 
     bm::id_t predicted_count = bm::count_and(bvect_full1, bvect_full2);
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_AND,
+                                set_AND);
+
+
     bvect_full1.bit_and(bvect_full2);
 
     bm::id_t count = bvect_full1.count();
@@ -1376,6 +1512,7 @@ void AndOperationsTest()
     }
 
     CheckVectors(bvect_min1, bvect_full1, 256);
+    CheckVectors(bvect_min1, bv_target_s, 256);
     CheckCountRange(bvect_full1, 0, 256);
 
     }
@@ -1410,6 +1547,14 @@ void AndOperationsTest()
 
     bm::id_t predicted_count = bm::count_and(bvect_full1,bvect_full2);
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_AND,
+                                set_AND);
+
     bvect_full1.bit_and(bvect_full2);
 
     bm::id_t count = bvect_full1.count();
@@ -1420,6 +1565,7 @@ void AndOperationsTest()
     }
 
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE/10+10);
+    CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE/10+10);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE/10+10);
 
     }
@@ -1443,6 +1589,14 @@ void AndOperationsTest()
 
     bm::id_t predicted_count = bm::count_and(bvect_full1,bvect_full2);
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_AND,
+                                set_AND);
+
     bvect_min1.combine_and(bvect_min2);
 
     bvect_full1.bit_and(bvect_full2);
@@ -1456,6 +1610,7 @@ void AndOperationsTest()
     }
 
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE/10+10);
+    CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE/10+10);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE/10+10);
 
     }
@@ -1480,6 +1635,14 @@ void AndOperationsTest()
     bvect_min1.combine_and(bvect_min2);
 
     bm::id_t predicted_count = bm::count_and(bvect_full1, bvect_full2);
+    
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_AND,
+                                set_AND);
 
     bvect_full1.bit_and(bvect_full2);
 
@@ -1491,6 +1654,7 @@ void AndOperationsTest()
     }
 
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE);
+    CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE);
 
     bvect_full1.optimize();
@@ -1498,9 +1662,37 @@ void AndOperationsTest()
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE);
     CheckCountRange(bvect_full1, BITVECT_SIZE/2, BITVECT_SIZE);
 
-
     }
 
+    cout << "------------------------------" << endl;
+    printf("AND test stage 4. combine_and_sorted\n");
+    {
+    unsigned ids[] = {0, 1, 2, 3, 10, 65535, 65536, 65535*2, 65535*3};
+    unsigned to_add = sizeof(ids)/sizeof(unsigned);
+    bvect        bvect_full1;
+    bvect        bvect_full2;    
+    bvect_mini   bvect_min1(BITVECT_SIZE);
+    bvect_mini   bvect_min2(BITVECT_SIZE);
+
+    bvect_full1.set_new_blocks_strat(bm::BM_GAP);
+    bvect_full2.set_new_blocks_strat(bm::BM_GAP);
+    
+    for (unsigned i = 2; i < to_add; ++i)
+    {
+        bvect_full1.set(ids[i]);
+        bvect_min1.set_bit(ids[i]);
+        bvect_full2.set(ids[i]);
+        bvect_min2.set_bit(ids[i]);
+    }
+    
+    unsigned* first = ids;
+    unsigned* last = ids + to_add;
+    
+    bvect_min1.combine_and(bvect_min2);
+
+    bm::combine_and_sorted(bvect_full1, first, last);
+    CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE);
+    }
 
 }
 
@@ -1543,6 +1735,15 @@ void OrOperationsTest()
     
     bm::id_t predicted_count = bm::count_or(bvect_full1, bvect_full2);    
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_OR,
+                                set_OR);
+
+
     bvect_full1.bit_or(bvect_full2);
 
     bm::id_t count = bvect_full1.count();
@@ -1556,6 +1757,7 @@ void OrOperationsTest()
 
 
     CheckVectors(bvect_min1, bvect_full1, 256);
+    CheckVectors(bvect_min1, bv_target_s, 256);
     CheckCountRange(bvect_full1, 0, 256);
     CheckCountRange(bvect_full1, 128, 256);
     }
@@ -1580,6 +1782,15 @@ void OrOperationsTest()
 
     bm::id_t predicted_count = bm::count_or(bvect_full1, bvect_full2);    
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_OR,
+                                set_OR);
+
+
     bvect_full1.bit_or(bvect_full2);
 
     bm::id_t count = bvect_full1.count();
@@ -1589,6 +1800,7 @@ void OrOperationsTest()
         exit(1);
     }
 
+    CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE/10+10);
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE/10+10);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE/10+10);
 
@@ -1615,6 +1827,14 @@ void OrOperationsTest()
     
     bm::id_t predicted_count = bm::count_or(bvect_full1, bvect_full2);    
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_OR,
+                                set_OR);
+
     bvect_full1.bit_or(bvect_full2);
 
     bm::id_t count = bvect_full1.count();
@@ -1629,6 +1849,7 @@ void OrOperationsTest()
     bvect_full1.optimize();
 
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE);
+    CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE);
 
 
@@ -1742,6 +1963,15 @@ void SubOperationsTest()
 
     bm::id_t predicted_count = bm::count_sub(bvect_full1, bvect_full2);
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_SUB_AB,
+                                set_SUB);
+
+
     bvect_full1.bit_sub(bvect_full2);
     
     bm::id_t count = bvect_full1.count();
@@ -1752,6 +1982,7 @@ void SubOperationsTest()
     }
 
     CheckVectors(bvect_min1, bvect_full1, 256);
+    CheckVectors(bvect_min1, bv_target_s, 256);
     CheckCountRange(bvect_full1, 0, 256);
 
     }
@@ -1776,6 +2007,14 @@ void SubOperationsTest()
 
     bm::id_t predicted_count = bm::count_sub(bvect_full1, bvect_full2);
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_SUB_AB,
+                                set_SUB);
+
     bvect_full1.bit_sub(bvect_full2);
     
     bm::id_t count = bvect_full1.count();
@@ -1790,6 +2029,7 @@ bvect_full1.stat();
     
 
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE/10+10);
+    CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE/10+10);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE/10+10);
 
     }
@@ -1815,6 +2055,14 @@ bvect_full1.stat();
     
     bm::id_t predicted_count = bm::count_sub(bvect_full1, bvect_full2);
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_SUB_AB,
+                                set_SUB);
+
     bvect_full1.bit_sub(bvect_full2);
 
     bm::id_t count = bvect_full1.count();
@@ -1829,8 +2077,8 @@ bvect_full1.stat();
 
     bvect_full1.optimize();
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE);
+    CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE);
-
 
     }
 
@@ -1876,6 +2124,15 @@ void XorOperationsTest()
 
     bm::id_t predicted_count = bm::count_xor(bvect_full1, bvect_full2);
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_XOR,
+                                set_XOR);
+
+
     bvect_full1.bit_xor(bvect_full2);
 
     bm::id_t count = bvect_full1.count();
@@ -1886,6 +2143,7 @@ void XorOperationsTest()
     }
 
     CheckVectors(bvect_min1, bvect_full1, 256);
+    CheckVectors(bvect_min1, bv_target_s, 256);
     CheckCountRange(bvect_full1, 0, 256);
     CheckCountRange(bvect_full1, 128, 256);
 
@@ -1909,6 +2167,14 @@ void XorOperationsTest()
 
         bm::id_t predicted_count = bm::count_xor(bvect1, bvect2);
 
+        bvect    bv_target_s;
+        SerializationOperation2Test(&bv_target_s,
+                                    bvect1,
+                                    bvect2,
+                                    predicted_count,
+                                    set_COUNT_XOR,
+                                    set_XOR);
+
         bvect1.bit_xor(bvect2);
         
         bm::id_t count = bvect1.count();
@@ -1920,6 +2186,7 @@ void XorOperationsTest()
         
         bvect_min1.combine_xor(bvect_min2);
         CheckVectors(bvect_min1, bvect1, BITVECT_SIZE, true);
+        CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE, true);
         CheckCountRange(bvect1, 0, BITVECT_SIZE);
     }
 
@@ -1942,6 +2209,14 @@ void XorOperationsTest()
         
         bm::id_t predicted_count = bm::count_xor(bvect1, bvect2);
 
+        bvect    bv_target_s;
+        SerializationOperation2Test(&bv_target_s,
+                                    bvect1,
+                                    bvect2,
+                                    predicted_count,
+                                    set_COUNT_XOR,
+                                    set_XOR);
+
         bvect1.bit_xor(bvect2);
 
         bm::id_t count = bvect1.count();
@@ -1953,6 +2228,7 @@ void XorOperationsTest()
         
         bvect_min1.combine_xor(bvect_min2);
         CheckVectors(bvect_min1, bvect1, BITVECT_SIZE, true);
+        CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE, true);
     }
 
 
@@ -1975,6 +2251,14 @@ void XorOperationsTest()
         bvect1.optimize();
         
         bm::id_t predicted_count = bm::count_xor(bvect1, bvect2);
+
+        bvect    bv_target_s;
+        SerializationOperation2Test(&bv_target_s,
+                                    bvect1,
+                                    bvect2,
+                                    predicted_count,
+                                    set_COUNT_XOR,
+                                    set_XOR);
 
         bvect1.bit_xor(bvect2);
 
@@ -2005,14 +2289,22 @@ void XorOperationsTest()
 
     printf("XOR test stage 2.\n");
 
-
     FillSets(&bvect_min1, &bvect_full1, 1, BITVECT_SIZE/7, 0);
     FillSets(&bvect_min2, &bvect_full2, 1, BITVECT_SIZE/7, 0);
 
     bvect_min1.combine_xor(bvect_min2);
     
     bm::id_t predicted_count = bm::count_xor(bvect_full1, bvect_full2);
-    
+
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_XOR,
+                                set_XOR);
+
+
     bvect_full1.bit_xor(bvect_full2);
     
     bm::id_t count = bvect_full1.count();
@@ -2025,6 +2317,7 @@ void XorOperationsTest()
     }
 
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE/10+10);
+    CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE/10+10);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE/10+10);
 
     }
@@ -2048,6 +2341,14 @@ void XorOperationsTest()
 
     bm::id_t predicted_count = bm::count_xor(bvect_full1, bvect_full2);
 
+    bvect    bv_target_s;
+    SerializationOperation2Test(&bv_target_s,
+                                bvect_full1,
+                                bvect_full2,
+                                predicted_count,
+                                set_COUNT_XOR,
+                                set_XOR);
+
     bvect_min1.combine_xor(bvect_min2);
 
     bvect_full1.bit_xor(bvect_full2);
@@ -2064,6 +2365,7 @@ void XorOperationsTest()
 
     bvect_full1.optimize();
     CheckVectors(bvect_min1, bvect_full1, BITVECT_SIZE);
+    CheckVectors(bvect_min1, bv_target_s, BITVECT_SIZE);
     CheckCountRange(bvect_full1, 0, BITVECT_SIZE);
 
 
@@ -2377,7 +2679,19 @@ void DesrializationTest2()
    slen2 = 0;
 
    bm::deserialize(bvtotal, sermem);
+    bvect  bv_target_s;
+    operation_deserializer<bvect>::deserialize(bv_target_s,
+                                                sermem,
+                                                0,
+                                                set_OR);
+
    bvtotal.optimize();
+   int res = bvtotal.compare(bv_target_s);
+   if (res != 0)
+   {
+       cout << "Operation deserialization error 1" << endl;
+       exit(1);
+   }
 
    for (i = 55000; i < 165536; ++i)
    {
@@ -2397,6 +2711,16 @@ void DesrializationTest2()
 
    bm::deserialize(bvtotal, sermem2);
    bvtotal.stat();
+    operation_deserializer<bvect>::deserialize(bv_target_s,
+                                               sermem2,
+                                               0,
+                                               set_OR);
+    res = bvtotal.compare(bv_target_s);
+    if (res != 0)
+    {
+        cout << "Operation deserialization error 2" << endl;
+        exit(1);
+    }
 
 //   bvtotal.optimize();
  //  bvtotal.stat();
@@ -2405,11 +2729,28 @@ void DesrializationTest2()
 
    bm::deserialize(bvtotal, sermem);
 
+    operation_deserializer<bvect>::deserialize(bv_target_s,
+                                               sermem2,
+                                               0,
+                                               set_OR);
+    operation_deserializer<bvect>::deserialize(bv_target_s,
+                                               sermem,
+                                               0,
+                                               set_OR);
+
+    res = bvtotal.compare(bv_target_s);
+    if (res != 0)
+    {
+        cout << "Deserialization test failed! 3" << endl;
+        exit(1);
+    }
+
    delete [] sermem;
    delete [] sermem2;
 
 
    bvtotal.clear();
+   bv_target_s.clear(false);
 
    int clcnt = 0;
 
@@ -2439,11 +2780,22 @@ void DesrializationTest2()
 //       cout << "Before deserialization" << endl;
 //       bvtotal.stat();
        bm::deserialize(bvtotal, smem);
+        operation_deserializer<bvect>::deserialize(bv_target_s,
+                                                smem,
+                                                0,
+                                                set_OR);
+        res = bvtotal.compare(bv_target_s);
+        if (res != 0)
+        {
+            cout << "Operation deserialization error 2" << endl;
+            exit(1);
+        }
 
 //       cout << "After deserialization" << endl;
 //       bvtotal.stat();
 
        bvtotal.optimize();
+       bv_target_s.optimize();
 
 //       cout << "After optimization" << endl;
 //       bvtotal.stat();
@@ -2453,6 +2805,7 @@ void DesrializationTest2()
        {
           clcnt = 0;
           bvtotal.clear();
+          bv_target_s.clear();
 
 //          cout << "Post clear." << endl;
 //          bvtotal.stat();
@@ -2637,6 +2990,14 @@ void StressTest(int repetitions)
 
             bm::id_t predicted_count = bm::count_or(*bvect_full1, *bvect_full2);
             
+            bvect    bv_target_s;
+            SerializationOperation2Test(&bv_target_s,
+                                        *bvect_full1,
+                                        *bvect_full2,
+                                        predicted_count,
+                                        set_COUNT_OR,
+                                        set_OR);
+
             bvect_full1->bit_or(*bvect_full2);
             
             bm::id_t count = bvect_full1->count();
@@ -2645,6 +3006,12 @@ void StressTest(int repetitions)
             {
                 cout << "Predicted count error!" << endl;
                 cout << "Count = " << count << "Predicted count = " << predicted_count << endl;
+                exit(1);
+            }
+            int res = bvect_full1->compare(bv_target_s);
+            if (res != 0)
+            {
+                cout << "Serialization operation failed!" << endl;
                 exit(1);
             }
             
@@ -2657,6 +3024,14 @@ void StressTest(int repetitions)
             
             bm::id_t predicted_count = bm::count_sub(*bvect_full1, *bvect_full2);
             
+            bvect    bv_target_s;
+            SerializationOperation2Test(&bv_target_s,
+                                        *bvect_full1,
+                                        *bvect_full2,
+                                        predicted_count,
+                                        set_COUNT_SUB_AB,
+                                        set_SUB);
+
             bvect_full1->bit_sub(*bvect_full2);
             
             bm::id_t count = bvect_full1->count();
@@ -2665,6 +3040,12 @@ void StressTest(int repetitions)
             {
                 cout << "Predicted count error!" << endl;
                 cout << "Count = " << count << "Predicted count = " << predicted_count << endl;
+                exit(1);
+            }
+            int res = bvect_full1->compare(bv_target_s);
+            if (res != 0)
+            {
+                cout << "Serialization operation failed!" << endl;
                 exit(1);
             }
             
@@ -2677,6 +3058,14 @@ void StressTest(int repetitions)
             cout << "Operation XOR" << endl;
            
             bm::id_t predicted_count = bm::count_xor(*bvect_full1, *bvect_full2);
+
+            bvect    bv_target_s;
+            SerializationOperation2Test(&bv_target_s,
+                                        *bvect_full1,
+                                        *bvect_full2,
+                                        predicted_count,
+                                        set_COUNT_XOR,
+                                        set_XOR);
             
             bvect_full1->bit_xor(*bvect_full2);
             
@@ -2686,6 +3075,12 @@ void StressTest(int repetitions)
             {
                 cout << "Predicted count error!" << endl;
                 cout << "Count = " << count << "Predicted count = " << predicted_count << endl;
+                exit(1);
+            }
+            int res = bvect_full1->compare(bv_target_s);
+            if (res != 0)
+            {
+                cout << "Serialization operation failed!" << endl;
                 exit(1);
             }
             
@@ -2699,6 +3094,14 @@ void StressTest(int repetitions)
 
             bm::id_t predicted_count = bm::count_and(*bvect_full1, *bvect_full2);
 
+            bvect    bv_target_s;
+            SerializationOperation2Test(&bv_target_s,
+                                        *bvect_full1,
+                                        *bvect_full2,
+                                        predicted_count,
+                                        set_COUNT_AND,
+                                        set_AND);
+
             bvect_full1->bit_and(*bvect_full2);
 
             bm::id_t count = bvect_full1->count();
@@ -2707,6 +3110,12 @@ void StressTest(int repetitions)
             {
                 cout << "Predicted count error!" << endl;
                 cout << "Count = " << count << "Predicted count = " << predicted_count << endl;
+                exit(1);
+            }
+            int res = bvect_full1->compare(bv_target_s);
+            if (res != 0)
+            {
+                cout << "Serialization operation failed!" << endl;
                 exit(1);
             }
 
@@ -2802,6 +3211,12 @@ void StressTest(int repetitions)
 
         bm::deserialize(bvtotal, new_sermem);
 
+        bvect* bv_target_s=new bvect();
+        operation_deserializer<bvect>::deserialize(*bv_target_s,
+                                            new_sermem,
+                                            0,
+                                            set_OR);
+
         cout << "Ok." << endl;
         delete [] new_sermem;
 
@@ -2818,9 +3233,15 @@ void StressTest(int repetitions)
         }
 
         cout << "Serialization comparison" << endl;
+
         CheckVectors(*bvect_min1, *bvect_full3, size, true);
+        int res = bv_target_s->compare(*bvect_full3);
+        if (res != 0)
+        {
+            CheckVectors(*bvect_min1, *bv_target_s, size, true);
+        }
 
-
+        delete bv_target_s;
         delete bvect_min1;
         delete bvect_full3;
 
@@ -3982,6 +4403,7 @@ void SerializationTest()
     bvect_mini*   bvect_min1= new bvect_mini(BITVECT_SIZE);
     bvect*        bvect_full1= new bvect();
     bvect*        bvect_full2= new bvect();
+    bvect*        bv_target_s= new bvect();
 
     bvect_full1->set_new_blocks_strat(bm::BM_BIT);
     bvect_full2->set_new_blocks_strat(bm::BM_BIT);
@@ -4007,15 +4429,21 @@ void SerializationTest()
          << endl;
 
     bm::deserialize(*bvect_full2, sermem);
+    operation_deserializer<bvect>::deserialize(*bv_target_s,
+                                               sermem,
+                                               0,
+                                               set_OR);
     delete [] sermem;
 
 
     CheckVectors(*bvect_min1, *bvect_full2, size, true);
+    CheckVectors(*bvect_min1, *bv_target_s, size, true);
 
 
     delete bvect_full2;
     delete bvect_min1;
     delete bvect_full1;
+    delete bv_target_s;
 
     }
 
@@ -4027,6 +4455,7 @@ void SerializationTest()
     bvect_mini*   bvect_min1= new bvect_mini(BITVECT_SIZE);
     bvect*        bvect_full1= new bvect();
     bvect*        bvect_full2= new bvect();
+    bvect*        bv_target_s= new bvect();
 
     bvect_full1->set_new_blocks_strat(bm::BM_BIT);
     bvect_full2->set_new_blocks_strat(bm::BM_BIT);
@@ -4047,13 +4476,20 @@ void SerializationTest()
          << endl;
 
     bm::deserialize(*bvect_full2, sermem);
+    operation_deserializer<bvect>::deserialize(*bv_target_s,
+                                               sermem,
+                                               0,
+                                               set_OR);
+
     delete [] sermem;
 
     CheckVectors(*bvect_min1, *bvect_full2, size, true);
+    CheckVectors(*bvect_min1, *bv_target_s, size, true);
 
     delete bvect_full2;
     delete bvect_min1;
     delete bvect_full1;
+    delete bv_target_s;
 
     }
 
@@ -4098,9 +4534,17 @@ void SerializationTest()
 
     bvect        bvect_full3;
     bm::deserialize(bvect_full3, sermem);
+    bvect*  bv_target_s = new bvect();
+    operation_deserializer<bvect>::deserialize(*bv_target_s,
+                                               sermem,
+                                               0,
+                                               set_OR);
+
     CheckVectors(bvect_min1, bvect_full3, max+10, true);
+    CheckVectors(bvect_min1, *bv_target_s, max+10, true);
 
     delete [] sermem;
+    delete bv_target_s;
 
     }
 
@@ -4136,12 +4580,18 @@ cout << "Serialization" << endl;
 cout << "Deserialization" << endl;
     bm::deserialize(*bvect_full2, sermem);
 cout << "Deserialization ok" << endl;
+    bvect*  bv_target_s=new bvect();
+    operation_deserializer<bvect>::deserialize(*bv_target_s,
+                                               sermem,
+                                               0,
+                                               set_OR);
 
     CheckVectors(*bvect_min1, *bvect_full2, BITVECT_SIZE, true);
+    CheckVectors(*bvect_min1, *bv_target_s, BITVECT_SIZE, true);
 
     delete [] sermem;
 
-
+    delete bv_target_s;
     delete bvect_full2;
     delete bvect_min1;
     delete bvect_full1;
@@ -4163,8 +4613,8 @@ cout << "Deserialization ok" << endl;
     bvect_full2->set_new_blocks_strat(bm::BM_GAP);
 
 
-    FillSetsRandomMethod(bvect_min1, bvect_full1, 1, BITVECT_SIZE-10, 1);
-    FillSetsRandomMethod(bvect_min2, bvect_full2, 1, BITVECT_SIZE-10, 1);
+    FillSetsRandomMethod(bvect_min1, bvect_full1, 1, BITVECT_SIZE, 1);
+    FillSetsRandomMethod(bvect_min2, bvect_full2, 1, BITVECT_SIZE, 1);
 
     bvect::statistics st;
     bvect_full1->calc_stat(&st);
@@ -4176,15 +4626,25 @@ cout << "Deserialization ok" << endl;
          << " size= " << slen 
          << " Ratio=" << (slen*100)/st.max_serialize_mem << "%"
          << endl;
+
+    bvect*  bv_target_s=new bvect(*bvect_full2);
+    bv_target_s->stat();
+
     bm::deserialize(*bvect_full2, sermem);
+
+    operation_deserializer<bvect>::deserialize(*bv_target_s,
+                                               sermem,
+                                               0,
+                                               set_OR);
     delete [] sermem;
     
     bvect_min2->combine_or(*bvect_min1);
     delete bvect_min1;
 
     CheckVectors(*bvect_min2, *bvect_full2, BITVECT_SIZE, true);
+    CheckVectors(*bvect_min2, *bv_target_s, BITVECT_SIZE, true);
 
-
+    delete bv_target_s;
     delete bvect_full2;
     delete bvect_min2;    
 
@@ -4241,11 +4701,19 @@ cout << "Deserialization ok" << endl;
     unsigned char* new_sermem = new unsigned char[st.max_serialize_mem];
     ::memcpy(new_sermem, sermem, slen);
 
+    bvect  bv_target_s(*bvect_full2);
+
     bm::deserialize(*bvect_full2, new_sermem);
+    operation_deserializer<bvect>::deserialize(bv_target_s,
+                                               new_sermem,
+                                               0,
+                                               set_OR);
+
     delete [] sermem;
     delete [] new_sermem;
 
     CheckVectors(*bvect_min1, *bvect_full2, size, true);
+    CheckVectors(*bvect_min1, bv_target_s, size, true);
 
 
     delete bvect_full2;
@@ -4804,6 +5272,33 @@ void SetTest()
     if (cnt != bm::id_max-2)
     {
         cout << "Set invert test failed!." << endl;
+        exit(1);
+    }
+
+    bv.clear();
+    bv[1] &= true;
+    bool v = bv[1];
+    if (v)
+    {
+        cout << "Set &= test failed!" << endl;
+        exit(1);
+    }
+
+    bv[1] = true;
+    bv[1] &= true;
+    v = bv[1];
+    if (!v)
+    {
+        cout << "Set &= test failed (2)!" << endl;
+        exit(1);
+    }
+    bv.clear(true);
+    bv.invert();
+    bv[1] &= true;
+    v = bv[1];
+    if (!v)
+    {
+        cout << "Set &= test failed (2)!" << endl;
         exit(1);
     }
 }
@@ -5482,11 +5977,55 @@ void ExportTest()
 }
 
 
+void TestRecomb()
+{
+    bm::word_t b1[bm::set_block_size]= {0,};
+    bm::word_t b2[bm::set_block_size]= {0,};
+    bm::word_t br[bm::set_block_size]= {0,};
+ 
+    b1[0] = 1;
+    b1[1] = 1;
+    b2[0] = 1;
+
+    bitblock_get_adapter bga1(b1);
+    bitblock_get_adapter bga2(b2);
+    bitblock_store_adapter bbsa(br);
+    bm::bit_AND<bm::word_t> and_func;
+    bit_recomb<bitblock_get_adapter,
+               bitblock_get_adapter,
+               bm::bit_AND<bm::word_t>,
+               bitblock_store_adapter>
+           (bga1, bga2,and_func, bbsa);
+/*
+    bit_recomb(bitblock_get_adapter(b1),
+               bitblock_get_adapter(b2),
+               bit_AND<bm::word_t>(),
+               bitblock_store_adapter(br)
+               );
+
+    assert(br[0] == 1);
+    for (int i = 1; i < bm::set_block_size; ++i)
+    {
+        assert(br[i] == 0);
+    }
+
+    bitblock_sum_adapter sa;
+    bit_recomb(bitblock_get_adapter(b1),
+               bitblock_get_adapter(b2),
+               bit_COUNT_AND<bm::word_t>(),
+               sa
+               );
+    assert(sa.sum() == 1);
+*/
+}
+
 
 int main(void)
 {
     time_t      start_time = time(0);
     time_t      finish_time;
+
+    TestRecomb();
 
     OptimGAPTest();
 
@@ -5504,8 +6043,8 @@ int main(void)
 
 //   ::srand((unsigned)::time(NULL));
 
-    ExportTest();
-    ResizeTest();
+     ExportTest();
+     ResizeTest();
 
      MiniSetTest();
 
@@ -5546,7 +6085,7 @@ int main(void)
      MutationTest();
 
      MutationOperationsTest();
-   
+
      SerializationTest();
 
      DesrializationTest2();
