@@ -66,10 +66,10 @@ public:
     // create a new SQLite interface class around a file.  This file will
     // optionally be deleted on destruction (i.e., temporary out-of-core
     // database)
-    NCBI_DEPRECATED CSQLite(const string& dbname, bool delete_file = false);
+    NCBI_DEPRECATED_CTOR(CSQLite(const string& dbname, bool delete_file = false));
 
     // create a new SQLite interface class for an in-memory database
-    NCBI_DEPRECATED CSQLite();
+    NCBI_DEPRECATED_CTOR(CSQLite());
 
     virtual ~CSQLite();
 
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/06 14:47:25  ucko
+ * Use NCBI_DEPRECATED_CTOR to compensate fully for compilers' syntax variations.
+ *
  * Revision 1.2  2006/12/04 13:47:51  dicuccio
  * Deprecate sqlite
  *
