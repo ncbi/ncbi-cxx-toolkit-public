@@ -55,7 +55,7 @@ void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name,
             // if (pos != string::npos) {
             //    host.erase(pos, host.size());
             // }
-            services.push_back(make_pair(host,sinfo->port));
+            services.push_back(make_pair(host, (unsigned int)sinfo->port));
         } // while
         SERV_Close(srv_it);
     }
@@ -66,6 +66,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/12/06 16:41:37  ucko
+ * Fix compilation errors on WorkShop, which restricts pair<> conversion.
+ *
  * Revision 6.1  2006/12/06 15:00:00  didenko
  * Added service connections template classes
  *
