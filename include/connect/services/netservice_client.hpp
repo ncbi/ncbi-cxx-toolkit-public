@@ -147,6 +147,9 @@ public:
     /// @note thread sync. method
     CSocket* GetPoolSocket();
 
+    const string& GetHost() const { return m_Host; }
+    unsigned short GetPort() const { return m_Port; }
+
 protected:
     bool ReadStr(CSocket& sock, string* str);
     void WriteStr(const char* str, size_t len);
@@ -228,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/12/06 14:57:07  didenko
+ * Added methods for retrieving connection info
+ *
  * Revision 1.17  2006/02/17 17:05:27  kuznets
  * Added explicit timeout to WaitForServer()
  *
