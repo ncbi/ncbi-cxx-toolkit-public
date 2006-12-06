@@ -45,14 +45,13 @@ class CAlnUserOptions : public CObject
 {
 public:
 
-    enum EMergeOptions {
+    enum EMergeAlgo {
         eMergeAllSeqs      = 0, ///< Merge all sequences
         eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, 
-        ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence)
+        ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence) (coresponds to separate alignments)
         eDefault           = eMergeAllSeqs
     };
-    typedef int TMergeOption;
-    TMergeOption m_MergeOption;
+    EMergeAlgo m_MergeAlgo;
 
     enum EMergeFlags {
         fTruncateOverlaps = 0x0001, ///< Otherwise put on separate rows
@@ -100,6 +99,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/12/06 20:09:43  todorov
+* MergeOptions => MergeAlgo
+*
 * Revision 1.4  2006/12/01 21:23:25  todorov
 * - NCBI_XALNMGR_EXPORT
 *
