@@ -230,17 +230,20 @@ private:
 
 END_NCBI_SCOPE
 
+/* @} */
+
 #endif  /* HAVE_NCBI_C */
 
 #endif  /* ASNTYPES__HPP */
 
 
-/* @} */
-
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.45  2006/12/07 18:59:30  gouriano
+ * Reviewed doxygen groupping, added documentation
+ *
  * Revision 1.44  2006/10/12 15:08:23  gouriano
  * Some header files moved into impl
  *

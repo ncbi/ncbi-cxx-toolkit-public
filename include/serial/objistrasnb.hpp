@@ -48,19 +48,61 @@ BEGIN_NCBI_SCOPE
 
 class CObjectOStreamAsnBinary;
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectIStreamAsnBinary --
+///
+/// Decode input data in ASN.1 binary format (BER)
 class NCBI_XSERIAL_EXPORT CObjectIStreamAsnBinary : public CObjectIStream,
                                                     public CAsnBinaryDefs
 {
 public:
-    // constructors
+
+    /// Constructor.
+    ///
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsnBinary(EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param in
+    ///   input stream    
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsnBinary(CNcbiIstream& in,
                             EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param in
+    ///   input stream    
+    /// @param deleteIn
+    ///   when TRUE, the input stream will be deleted automatically
+    ///   when the reader is deleted
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsnBinary(CNcbiIstream& in,
                             bool deleteIn,
                             EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param reader
+    ///   Data source
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsnBinary(CByteSourceReader& reader,
                             EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param buffer
+    ///   Data source memory buffer
+    /// @param size
+    ///   Memory buffer size
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsnBinary(const char* buffer,
                             size_t size,
                             EFixNonPrint how = eFNP_Default);
@@ -263,6 +305,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.58  2006/11/30 20:15:39  vasilche
 * Allow direct reading from memory.
 *

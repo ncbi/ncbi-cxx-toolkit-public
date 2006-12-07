@@ -35,7 +35,7 @@
 #include <corelib/ncbiexpt.hpp>
 
 
-/** @addtogroup SerialExcep
+/** @addtogroup ObjStreamSupport
  *
  * @{
  */
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.23  2006/12/04 14:53:09  gouriano
 * Moved GetErrCodeString method into src
 *

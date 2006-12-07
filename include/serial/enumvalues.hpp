@@ -40,7 +40,7 @@
 #include <memory>
 
 
-/** @addtogroup TypeInfoCPP
+/** @addtogroup FieldsComplex
  *
  * @{
  */
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.13  2006/10/12 15:08:23  gouriano
 * Some header files moved into impl
 *

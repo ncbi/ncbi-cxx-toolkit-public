@@ -157,6 +157,15 @@ public:
     CVoidTypeInfo(void);
 };
 
+class NCBI_XSERIAL_EXPORT CNullTypeInfo : public CVoidTypeInfo
+{
+    typedef CVoidTypeInfo CParent;
+public:
+    CNullTypeInfo(void);
+
+    static TTypeInfo GetTypeInfo(void);
+};
+
 // template for getting type info of standard types
 template<typename T>
 class CStdTypeInfo
@@ -379,6 +388,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/12/07 18:59:31  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.34  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

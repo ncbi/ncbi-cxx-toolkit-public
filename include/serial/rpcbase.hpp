@@ -40,7 +40,7 @@
 #include <serial/serial.hpp>
 
 
-/** @addtogroup UserCodeSupport
+/** @addtogroup GenClassSupport
  *
  * @{
  */
@@ -321,6 +321,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/12/07 18:59:30  gouriano
+ * Reviewed doxygen groupping, added documentation
+ *
  * Revision 1.14  2006/04/19 02:14:06  lavr
  * CRPCClient::x_Connect: Use PostOverrideArg instead of AppendArg
  *

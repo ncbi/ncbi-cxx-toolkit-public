@@ -44,17 +44,47 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectOStreamAsn --
+///
+/// Encode serial data object using ASN text format
 class NCBI_XSERIAL_EXPORT CObjectOStreamAsn : public CObjectOStream
 {
 public:
+    
+    /// Constructor.
+    ///
+    /// @param out
+    ///   Output stream
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectOStreamAsn(CNcbiOstream& out,
                       EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param out
+    ///   Output stream    
+    /// @param deleteOut
+    ///   when TRUE, the output stream will be deleted automatically
+    ///   when the writer is deleted
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectOStreamAsn(CNcbiOstream& out,
                       bool deleteOut,
                       EFixNonPrint how = eFNP_Default);
+
+    /// Destructor.
     virtual ~CObjectOStreamAsn(void);
 
+    /// Get current stream position as string.
+    /// Useful for diagnostic and information messages.
+    ///
+    /// @return
+    ///   string
     virtual string GetPosition(void) const;
+
 
     virtual void WriteFileHeader(TTypeInfo type);
     virtual void WriteEnum(const CEnumeratedTypeValues& values,
@@ -177,6 +207,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.55  2006/10/12 15:08:27  gouriano
 * Some header files moved into impl
 *

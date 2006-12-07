@@ -580,14 +580,17 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 #endif
 
+/* @} */
+
 #endif  /* SERIALBASE__HPP */
 
-
-/* @} */
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.43  2006/01/19 18:22:34  gouriano
 * Added possibility to save bit string data in compressed format
 *

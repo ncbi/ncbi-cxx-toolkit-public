@@ -84,73 +84,239 @@ class CReadObjectList;
 
 class CPackString;
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectIStream --
+///
+/// Base class of serial object stream decoders
 class NCBI_XSERIAL_EXPORT CObjectIStream : public CObjectStack
 {
 public:
-    // constructors are protected
-    // use any one of 'Create' methods to construct the stream
+    /// Destructor.
+    ///
+    /// Constructors are protected;
+    /// use any one of 'Create' methods to construct the stream
     virtual ~CObjectIStream(void);
 
 //---------------------------------------------------------------------------
 // Create methods
     // CObjectIStream will be created on heap, and must be deleted later on
+
+    /// Create serial object reader and attach it to an input stream.
+    ///
+    /// @param format
+    ///   Format of the input data
+    /// @param inStream
+    ///   Input stream
+    /// @param deleteInStream
+    ///   When TRUE, the input stream will be deleted automatically
+    ///   when the reader is deleted
+    /// @return
+    ///   Reader (created on heap)
     static CObjectIStream* Open(ESerialDataFormat format,
                                 CNcbiIstream& inStream,
                                 bool deleteInStream = false);
+
+    /// Create serial object reader and attach it to a file stream.
+    ///
+    /// @param format
+    ///   Format of the input data
+    /// @param fileName
+    ///   Input file name
+    /// @param openFlags
+    ///   File open flags
+    /// @return
+    ///   Reader (created on heap)
+    /// @sa ESerialOpenFlags
     static CObjectIStream* Open(ESerialDataFormat format,
                                 const string& fileName,
                                 TSerialOpenFlags openFlags = 0);
+
+    /// Create serial object reader and attach it to a file stream.
+    ///
+    /// @param fileName
+    ///   Input file name
+    /// @param format
+    ///   Format of the input data
+    /// @return
+    ///   Reader (created on heap)
     static CObjectIStream* Open(const string& fileName,
                                 ESerialDataFormat format);
+
+    /// Create serial object reader.
+    /// The reader must be attached to a data source later on.
+    ///
+    /// @param format
+    ///   Format of the input data
+    /// @return
+    ///   Reader (created on heap)
     static CObjectIStream* Create(ESerialDataFormat format);
+
+    /// Create serial object reader and attach it to a data source
+    ///
+    /// @param format
+    ///   Format of the input data
+    /// @param source
+    ///   Data source
+    /// @return
+    ///   Reader (created on heap)
+    /// @sa CByteSource
     static CObjectIStream* Create(ESerialDataFormat format,
                                   CByteSource& source);
+
+    /// Create serial object reader and attach it to a data source
+    ///
+    /// @param format
+    ///   Format of the input data
+    /// @param reader
+    ///   Data source
+    /// @return
+    ///   Reader (created on heap)
+    /// @sa CByteSourceReader
     static CObjectIStream* Create(ESerialDataFormat format,
                                   CByteSourceReader& reader);
+
+    /// Create serial object reader and attach it to a data source
+    ///
+    /// @param format
+    ///   Format of the input data
+    /// @param buffer
+    ///   Data source memory buffer
+    /// @param size
+    ///   Memory buffer size
+    /// @return
+    ///   Reader (created on heap)
     static CObjectIStream* CreateFromBuffer(ESerialDataFormat format,
                                             const char* buffer, size_t size);
-    // Get data format
+    /// Get data format
+    ///
+    /// @return
+    ///   Input data format
     ESerialDataFormat GetDataFormat(void) const;
 
 //---------------------------------------------------------------------------
 // Open methods
+
+    /// Attach reader to a data source
+    ///
+    /// @param reader
+    ///   Data source
     void Open(CByteSourceReader& reader);
+
+    /// Attach reader to a data source
+    ///
+    /// @param source
+    ///   Data source
     void Open(CByteSource& source);
+
+    /// Attach reader to an input stream
+    ///
+    /// @param inStream
+    ///   Input stream
+    /// @param deleteInStream
+    ///   When TRUE, the input stream will be deleted automatically
+    ///   when the reader is deleted
     void Open(CNcbiIstream& inStream, bool deleteInStream = false);
+
+    /// Attach reader to a data source
+    ///
+    /// @param buffer
+    ///   Data source memory buffer
+    /// @param size
+    ///   Memory buffer size
     void OpenFromBuffer(const char* buffer, size_t size);
+    
+    /// Detach reader from a data source
     void Close(void);
 
 //---------------------------------------------------------------------------
 // Data verification setup
-    // When enabled, stream verifies data on input
-    // and throws CSerialException with eFormatError err.code
 
-    // For this particular stream
+    /// Set up input data verification for this particular stream
+    ///
+    /// @param verify
+    ///   Data verification parameter
     void SetVerifyData(ESerialVerifyData verify);
+
+    /// Get input data verification parameter.
+    /// When verification is enabled, stream verifies data on input
+    /// and throws CSerialException with eFormatError err.code
+    ///
+    /// @return
+    ///   Data verification parameter
     ESerialVerifyData GetVerifyData(void) const;
-    // For streams created by the current thread
+
+    /// Set up default input data verification for streams
+    /// created by the current thread
+    ///
+    /// @param verify
+    ///   Data verification parameter
     static  void SetVerifyDataThread(ESerialVerifyData verify);
-    // For streams created by the current process
+
+    /// Set up default input data verification for streams
+    /// created by the current process
+    ///
+    /// @param verify
+    ///   Data verification parameter
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
-    // For this particular stream
+    /// Set up skipping unknown members for this particular stream
+    ///
+    /// @param skip
+    ///   Skip unknown members parameter
     void SetSkipUnknownMembers(ESerialSkipUnknown skip);
+
+    /// Get skip unknown members parameter
+    ///
+    /// @return
+    ///   Skip unknown members parameter
     ESerialSkipUnknown GetSkipUnknownMembers(void);
-    // For streams created by the current thread
+
+    /// Set up default skipping unknown members for streams
+    /// created by the current thread
+    ///
+    /// @param skip
+    ///   Skip unknown members parameter
     static  void SetSkipUnknownThread(ESerialSkipUnknown skip);
-    // For streams created by the current process
+
+    /// Set up default skipping unknown members for streams
+    /// created by the current process
+    ///
+    /// @param skip
+    ///   Skip unknown members parameter
     static  void SetSkipUnknownGlobal(ESerialSkipUnknown skip);
 
-    // For this particular stream
+    /// Set up skipping unknown choice variants for
+    /// this particular stream
+    ///
+    /// @param skip
+    ///   Skip unknown choice variants parameter
     void SetSkipUnknownVariants(ESerialSkipUnknown skip);
+
+    /// Get skip unknown choice variants parameter
+    ///
+    /// @return
+    ///   Skip unknown choice variants parameter
     ESerialSkipUnknown GetSkipUnknownVariants(void);
-    // For streams created by the current thread
+
+    /// Set up default skipping unknown choice variants for streams
+    /// created by the current thread
+    ///
+    /// @param skip
+    ///   Skip unknown choice variants parameter
     static  void SetSkipUnknownVariantsThread(ESerialSkipUnknown skip);
-    // For streams created by the current process
+
+    /// Set up default skipping unknown choice variants for streams
+    /// created by the current process
+    ///
+    /// @param skip
+    ///   Skip unknown choice variants parameter
     static  void SetSkipUnknownVariantsGlobal(ESerialSkipUnknown skip);
 
 //---------------------------------------------------------------------------
 // Stream state
+
+    /// Fail flags
     enum EFailFlags {
         /// No error
         fNoError       = 0,             eNoError     = fNoError,
@@ -185,32 +351,79 @@ public:
     };
     typedef int TFailFlags;
 
-    // Check if any of fail flags is set
+    /// Check if any of fail flags is set
+    ///
+    /// @return
+    ///   TRUE or FALSE
     bool fail(void) const;
+    
+    /// Get fail flags
+    ///
+    /// @return
+    ///   Fail flags
     TFailFlags GetFailFlags(void) const;
+
+    /// Set fail flags
+    ///
+    /// @param flags
+    ///   Fail flags
+    /// @param message
+    ///   Optional text message
     TFailFlags SetFailFlags(TFailFlags flags, const char* message=0);
+
+    /// Reset fail flags
+    ///
+    /// @param flags
+    ///   Flags to reset
     TFailFlags ClearFailFlags(TFailFlags flags);
-    // Check fail flags and also the state of m_Input (CIStreamBuffer)
+
+    /// Check fail flags and also the state of input data source
+    ///
+    /// @return
+    ///   TRUE is there is no errors
     bool InGoodState(void);
 
-    // Check if there is still some meaningful data that can be read;
-    // in text streams this function will skip white spaces and comments
+    /// Check if there is still some meaningful data that can be read;
+    /// in text streams this function will skip white spaces and comments
+    ///
+    /// @return
+    ///   TRUE if there is no more data
     virtual bool EndOfData(void);
 
     /// @deprecated
     ///   Use GetStreamPos() instead
     /// @sa GetStreamPos()
     NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
+    
+    /// Get the current stream position
+    ///
+    /// @return
+    ///   stream position
     CNcbiStreampos GetStreamPos(void) const;
 
     /// @deprecated
     ///  Use SetStreamPos() instead
     /// @sa SetStreamPos() 
     NCBI_DEPRECATED void   SetStreamOffset(CNcbiStreampos pos);
+
+    /// Set the current stream position
+    ///
+    /// @param pos
+    ///   stream position
     void   SetStreamPos(CNcbiStreampos pos);
 
-    // Useful for diagnostic and information messages
+    /// Get current stack trace as string.
+    /// Useful for diagnostic and information messages.
+    ///
+    /// @return
+    ///   string
     virtual string GetStackTrace(void) const;
+
+    /// Get current stream position as string.
+    /// Useful for diagnostic and information messages.
+    ///
+    /// @return
+    ///   string
     virtual string GetPosition(void) const;
 
 //---------------------------------------------------------------------------
@@ -770,6 +983,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.123  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.122  2006/11/30 20:15:39  vasilche
 * Allow direct reading from memory.
 *

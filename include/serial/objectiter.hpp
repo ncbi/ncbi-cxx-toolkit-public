@@ -36,7 +36,7 @@
 #include <serial/objectinfo.hpp>
 
 
-/** @addtogroup UserCodeSupport
+/** @addtogroup ObjStreamSupport
  *
  * @{
  */
@@ -479,6 +479,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.15  2006/10/05 19:23:04  gouriano
 * Some headers moved into impl
 *

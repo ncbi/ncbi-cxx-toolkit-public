@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.7  2004/06/07 13:59:30  gouriano
 * Corrected reading of class aliases (set proper Create() function)
 *
@@ -61,6 +64,11 @@
 #include <serial/ptrinfo.hpp>
 #include <serial/typeref.hpp>
 
+
+/** @addtogroup TypeInfoCPP
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 
@@ -110,5 +118,7 @@ private:
 
 
 END_NCBI_SCOPE
+
+/* @} */
 
 #endif  /* TYPEDEFINFO__HPP */

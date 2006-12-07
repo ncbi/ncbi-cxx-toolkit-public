@@ -48,16 +48,41 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStreamAsnBinary;
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectOStreamAsnBinary --
+///
+/// Encode serial object using ASN binary format (BER)
 class NCBI_XSERIAL_EXPORT CObjectOStreamAsnBinary : public CObjectOStream,
                                                     public CAsnBinaryDefs
 {
 public:
+
+    /// Constructor.
+    ///
+    /// @param out
+    ///   Output stream
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectOStreamAsnBinary(CNcbiOstream& out,
                             EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param out
+    ///   Output stream    
+    /// @param deleteOut
+    ///   when TRUE, the output stream will be deleted automatically
+    ///   when the writer is deleted
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectOStreamAsnBinary(CNcbiOstream& out,
                             bool deleteOut,
                             EFixNonPrint how = eFNP_Default);
+    /// Destructor.
     virtual ~CObjectOStreamAsnBinary(void);
+
+
 
     virtual void WriteEnum(const CEnumeratedTypeValues& values, 
                            TEnumValueType value);
@@ -227,6 +252,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.57  2006/10/12 15:08:27  gouriano
 * Some header files moved into impl
 *

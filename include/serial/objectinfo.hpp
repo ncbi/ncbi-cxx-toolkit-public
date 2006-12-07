@@ -44,7 +44,7 @@
 #include <memory>
 
 
-/** @addtogroup UserCodeSupport
+/** @addtogroup ObjStreamSupport
  *
  * @{
  */
@@ -367,6 +367,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.15  2006/10/12 15:08:24  gouriano
 * Some header files moved into impl
 *

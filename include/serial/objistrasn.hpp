@@ -45,24 +45,67 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectIStreamAsn --
+///
+/// Decode input data in ASN.1 text format
 class NCBI_XSERIAL_EXPORT CObjectIStreamAsn : public CObjectIStream
 {
 public:
-    // constructors
+    /// Constructor.
+    ///
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsn(EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param in
+    ///   input stream    
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsn(CNcbiIstream& in,
                       EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param in
+    ///   input stream    
+    /// @param deleteIn
+    ///   when TRUE, the input stream will be deleted automatically
+    ///   when the reader is deleted
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsn(CNcbiIstream& in,
                       bool deleteIn,
                       EFixNonPrint how = eFNP_Default);
+
+    /// Constructor.
+    ///
+    /// @param buffer
+    ///   Data source memory buffer
+    /// @param size
+    ///   Memory buffer size
+    /// @param how
+    ///   Defines how to fix unprintable characters in ASN VisiableString
     CObjectIStreamAsn(const char* buffer, size_t size,
                       EFixNonPrint how = eFNP_Default);
 
-    // check if there is still some meaningful data that can be read;
-    // this function will skip white spaces and comments
+    /// Check if there is still some meaningful data that can be read;
+    /// this function will skip white spaces and comments
+    ///
+    /// @return
+    ///   TRUE if there is no more data
     virtual bool EndOfData(void);
 
+    /// Get current stream position as string.
+    /// Useful for diagnostic and information messages.
+    ///
+    /// @return
+    ///   string
     virtual string GetPosition(void) const;
+
 
     virtual string ReadFileHeader(void);
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
@@ -228,6 +271,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.69  2006/11/30 20:15:39  vasilche
 * Allow direct reading from memory.
 *

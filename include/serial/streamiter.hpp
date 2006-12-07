@@ -39,7 +39,7 @@
 #include <serial/objistr.hpp>
 
 
-/** @addtogroup UserCodeSupport
+/** @addtogroup ObjStreamSupport
  *
  * @{
  */
@@ -298,6 +298,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/12/07 18:59:31  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.1  2005/12/13 19:42:13  gouriano
 * Initial revision
 *

@@ -909,14 +909,16 @@ public:
 
 END_NCBI_SCOPE
 
-#endif  /* STLTYPES__HPP */
-
-
 /* @} */
+
+#endif  /* STLTYPES__HPP */
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2006/12/07 18:59:31  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.77  2005/11/21 16:18:06  vasilche
 * Implemented serialization of set and map with custom comparator.
 *

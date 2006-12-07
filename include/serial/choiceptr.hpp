@@ -85,25 +85,19 @@ private:
     TMemberIndex m_NullPointerIndex;
 };
 
-class NCBI_XSERIAL_EXPORT CNullTypeInfo : public CVoidTypeInfo
-{
-    typedef CVoidTypeInfo CParent;
-public:
-    CNullTypeInfo(void);
-
-    static TTypeInfo GetTypeInfo(void);
-};
-
 END_NCBI_SCOPE
+
+/* @} */
 
 #endif  /* CHOICEPTR__HPP */
 
 
-/* @} */
-
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2006/12/07 18:59:30  gouriano
+* Reviewed doxygen groupping, added documentation
+*
 * Revision 1.28  2006/10/12 15:08:23  gouriano
 * Some header files moved into impl
 *
