@@ -265,10 +265,10 @@ s_CodonToAA (Uint1* codon, const Uint1* codes)
                                1,     /* A */
                                4 };   /* G */
    
-   // Arithmetic should be faster than conditionals (i.e. with &&s.)
-   // The OR cannot result in anything larger than 15 unless it is a
-   // FENCE_SENTRY byte or an error, but I poll the individual bytes
-   // just in case.
+   /* Arithmetic should be faster than conditionals (i.e. with &&s.)
+      The OR cannot result in anything larger than 15 unless it is a
+      FENCE_SENTRY byte or an error, but I poll the individual bytes
+      just in case. */
    
    if ((codon[0] | codon[1] | codon[2]) > 15) {
        if ((codon[0] == FENCE_SENTRY) ||
