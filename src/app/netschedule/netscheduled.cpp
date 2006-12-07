@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.5.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.6.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -98,7 +98,8 @@ enum ENSRequestField {
     eNSRF_Option,
     eNSRF_Status,
     eNSRF_QueueName,
-    eNSRF_QueueClass
+    eNSRF_QueueClass,
+    eNSRF_QueueComment
 };
 struct SJS_Request
 {
@@ -116,6 +117,7 @@ struct SJS_Request
     string             err_msg;
     string             param1;
     string             param2;
+    string             param3;
 
     void Init()
     {
@@ -189,6 +191,10 @@ struct SJS_Request
             param2.erase();
             param2.append(val, eff_size);
             break;
+        case eNSRF_QueueComment:
+            param3.erase();
+            param3.append(val, eff_size);
+            break;
         default:
             break;
         }
@@ -238,6 +244,10 @@ public:
                   const char*   msg,
                   bool          comm_control = false,
                   bool          msg_size_control = true);
+    void WriteMsg(const char* prefix, const string& msg)
+    {
+        WriteMsg(prefix, msg.c_str());
+    }
 
 private:
     // Message processing phases
@@ -560,18 +570,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     }
     catch (CNetScheduleException &ex)
     {
-        switch(ex.GetErrCode()) {
-        case CNetScheduleException::eUnknownQueue:
-            WriteMsg("ERR:", "QUEUE_NOT_FOUND");
-            break;
-        case CNetScheduleException::eOperationAccessDenied:
-            WriteMsg("ERR:", "OPERATION_ACCESS_DENIED");
-            break;
-        default:
-            string err = NStr::PrintableString(ex.what());
-            WriteMsg("ERR:", err.c_str());
-            break;
-        }
+        WriteMsg("ERR:", string(ex.GetErrCodeString()) + ":" + ex.GetMsg());
         string msg = x_FormatErrorMessage("Server error", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
@@ -579,7 +578,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     }
     catch (CNetServiceException &ex)
     {
-        WriteMsg("ERR:", ex.what());
+        WriteMsg("ERR:", string(ex.GetErrCodeString()) + ":" + ex.GetMsg());
         string msg = x_FormatErrorMessage("Server error", ex.what());
         ERR_POST(msg);
         x_WriteErrorToMonitor(msg);
@@ -587,8 +586,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     }
     catch (CBDB_ErrnoException& ex)
     {
-        int err_no = ex.BDB_GetErrno();
-        if (err_no == DB_RUNRECOVERY) {
+        if (ex.BDB_GetErrno() == DB_RUNRECOVERY) {
             string msg = x_FormatErrorMessage("Fatal Berkeley DB error: DB_RUNRECOVERY. " 
                                               "Emergency shutdown initiated!", ex.what());
             ERR_POST(msg);
@@ -599,7 +597,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
             ERR_POST(msg);
             x_WriteErrorToMonitor(msg);
 
-            string err = "Internal database error:";
+            string err = "eInternalError:Internal database error - ";
             err += ex.what();
             err = NStr::PrintableString(err);
             WriteMsg("ERR:", err.c_str());
@@ -608,7 +606,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     }
     catch (CBDB_Exception &ex)
     {
-        string err = "Internal database (BDB) error:";
+        string err = "eInternalError:Internal database (BDB) error - ";
         err += ex.what();
         err = NStr::PrintableString(err);
         WriteMsg("ERR:", err.c_str());
@@ -677,7 +675,7 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
                                  m_QueueName, m_PeerAddr));
         m_Monitor = m_Queue->GetMonitor();
 
-        if (!m_Queue->IsVersionControl()) {
+        if (m_Queue->IsVersionControl()) {
             m_VersionControl = true;
         }
     }
@@ -719,7 +717,7 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
         // bypass for admin tools
         !m_AdminAccess) {
         if (!x_CheckVersion()) {
-            WriteMsg("ERR:", "CLIENT_VERSION");
+            WriteMsg("ERR:", "eInvalidClientOrVersion:");
             CSocket& socket = GetSocket();
             socket.Close();
             return;
@@ -841,7 +839,8 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
     } else {
         if (ttype != eNST_Id || tsize != 4 || strncmp(token, "ENDS", 4) != 0) {
             BUF_Read(buffer, 0, BUF_Size(buffer));
-            WriteMsg("ERR:", "Batch submit error: BATCH expected");
+            WriteMsg("ERR:", "eProtocolSyntaxError:"
+                             "Batch submit error - BATCH expected");
         }
     }
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
@@ -861,7 +860,8 @@ void CNetScheduleHandler::ProcessMsgBatchItem(BUF buffer)
     int tsize;
     ENSTokenType ttype = x_GetToken(s, token, tsize);
     if (ttype != eNST_Str) {
-        WriteMsg("ERR:", "Invalid batch submission, syntax error");
+        WriteMsg("ERR:", "eProtocolSyntaxError:"
+                         "Invalid batch submission, syntax error");
         m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
         return;
     }
@@ -879,7 +879,8 @@ void CNetScheduleHandler::ProcessMsgBatchItem(BUF buffer)
     } else if (ttype == eNST_None) {
         // Do nothing - legal absense of affinity token
     } else {
-        WriteMsg("ERR:", "Batch submit error: unrecognized affinity clause");
+        WriteMsg("ERR:", "eProtocolSyntaxError:"
+                         "Batch submit error - unrecognized affinity clause");
         m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
         return;
     }
@@ -901,7 +902,8 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
     ENSTokenType ttype = x_GetToken(s, token, tsize);
     if (ttype != eNST_Id || tsize != 4 || strncmp(token, "ENDB", tsize) != 0) {
         BUF_Read(buffer, 0, BUF_Size(buffer));
-        WriteMsg("ERR:", "Batch submit error: unexpected end of batch");
+        WriteMsg("ERR:", "eProtocolSyntaxError:"
+                         "Batch submit error - unexpected end of batch");
     }
 
     double comm_elapsed = m_BatchStopWatch.Elapsed();
@@ -993,7 +995,8 @@ void CNetScheduleHandler::ProcessStatusSnapshot()
 
     bool aff_exists = m_Queue->CountStatus(&st_map, aff_token);
     if (!aff_exists) {
-        WriteMsg("ERR:", "Unknown affinity token.");
+        WriteMsg("ERR:", string("eProtocolSyntaxError:Unknown affinity token \"")
+                         + aff_token + "\"");
         return;
     }
     ITERATE(CJobStatusTracker::TStatusSummaryMap,
@@ -1272,7 +1275,7 @@ void CNetScheduleHandler::ProcessQList()
 
 
 void CNetScheduleHandler::ProcessError() {
-    WriteMsg("ERR:", m_JobReq.err_msg.c_str());
+    WriteMsg("ERR:", m_JobReq.err_msg);
 }
 
 
@@ -1347,7 +1350,7 @@ void CNetScheduleHandler::ProcessPrintQueue()
 
     if (job_status == CNetScheduleClient::eJobNotFound) {
         string err_msg = "Status unknown: " + m_JobReq.param1;
-        WriteMsg("ERR:", err_msg.c_str());
+        WriteMsg("ERR:", err_msg);
         return;
     }
 
@@ -1564,7 +1567,7 @@ void CNetScheduleHandler::ProcessLog()
         m_Server->SetLogging(false);
         LOG_POST("Logging turned OFF");
     } else {
-        WriteMsg("ERR:", "Incorrect LOG syntax");
+        WriteMsg("ERR:", "eProtocolSyntaxError:Incorrect LOG syntax");
     }
     WriteMsg("OK:", "");
 }
@@ -1593,24 +1596,16 @@ void CNetScheduleHandler::ProcessCreateQueue()
 {
     const string& qname  = m_JobReq.param1;
     const string& qclass = m_JobReq.param2;
-    if (m_Server->GetQueueDB()->CreateQueue(qname, qclass)) {
-        WriteMsg("OK:", "");
-    } else {
-        WriteMsg("ERR:", "Can not create.");
-        LOG_POST(Warning << "Can not create queue: " << qname <<
-                 " of class " << qclass);
-    }
+    const string& comment = m_JobReq.param3;
+    m_Server->GetQueueDB()->CreateQueue(qname, qclass, comment);
+    WriteMsg("OK:", "");
 }
 
 void CNetScheduleHandler::ProcessDeleteQueue()
 {
     const string& qname = m_JobReq.param1;
-    if (m_Server->GetQueueDB()->DeleteQueue(qname)) {
-        WriteMsg("OK:", "");
-    } else {
-        WriteMsg("ERR:", "Can not delete.");
-        LOG_POST(Warning << "Can not delete queue: " << qname);
-    }
+    m_Server->GetQueueDB()->DeleteQueue(qname);
+    WriteMsg("OK:", "");
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1722,10 +1717,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // STSN [ affinity_token : keystr(aff) ]
     { "STSN",     &CNetScheduleHandler::ProcessStatusSnapshot, eNSCR_Queue,
         { { eNSA_Optional, eNST_KeyStr, eNSRF_AffinityToken, "", "aff" }, sm_End} },
-    // QCRE qname : id  qclass : id
+    // QCRE qname : id  qclass : id [ comment : str ]
     { "QCRE",     &CNetScheduleHandler::ProcessCreateQueue, eNSCR_Admin,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName },
-          { eNSA_Required, eNST_Id, eNSRF_QueueClass }, sm_End} },
+          { eNSA_Required, eNST_Id, eNSRF_QueueClass },
+          { eNSA_Optional, eNST_Str, eNSRF_QueueComment }, sm_End} },
     // QDEL qname : id
     { "QDEL",     &CNetScheduleHandler::ProcessDeleteQueue, eNSCR_Admin,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName }, sm_End } },
@@ -1874,7 +1870,7 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
     int tsize;
     ENSTokenType ttype = x_GetToken(s, token, tsize);
     if (ttype != eNST_Id) {
-        req->err_msg = "Command absent";
+        req->err_msg = "eProtocolSyntaxError:Command absent";
         return &CNetScheduleHandler::ProcessError;
     }
     SArgument *argsDescr = 0;
@@ -1889,7 +1885,7 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
         }
     }
     if (!argsDescr) {
-        req->err_msg = "Unknown request";
+        req->err_msg = "eProtocolSyntaxError:Unknown request";
         return &CNetScheduleHandler::ProcessError;
     }
     x_CheckAccess(sm_CommandMap[n_cmd].role);
@@ -1924,7 +1920,7 @@ CNetScheduleHandler::FProcessor CNetScheduleHandler::ParseRequest(
     while (argsDescr->atype != eNSA_None && argsDescr->atype != eNSA_Required)
         ++argsDescr;
     if (ttype == eNST_Error || argsDescr->atype != eNSA_None) {
-        req->err_msg = "Malformed ";
+        req->err_msg = "eProtocolSyntaxError:Malformed ";
         req->err_msg.append(sm_CommandMap[n_cmd].cmd);
         req->err_msg.append(" request");
         return &CNetScheduleHandler::ProcessError;
@@ -2352,6 +2348,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.112  2006/12/07 16:22:11  joukovv
+ * Transparent server-to-client exception report implemented. Version control
+ * bug fixed.
+ *
  * Revision 1.111  2006/12/04 23:31:30  joukovv
  * Access control/version control checks corrected.
  *

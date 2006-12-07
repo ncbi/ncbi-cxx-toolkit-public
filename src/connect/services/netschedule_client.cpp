@@ -159,6 +159,32 @@ void CNetSchedule_GenerateJobKey(string*        key,
     *key += tmp;
 }
 
+CNetScheduleExceptionMap::CNetScheduleExceptionMap()
+{
+    m_Map["eInternalError"] = CNetScheduleException::eInternalError;
+    m_Map["eProtocolSyntaxError"] = CNetScheduleException::eProtocolSyntaxError;
+    m_Map["eAuthenticationError"] = CNetScheduleException::eAuthenticationError;
+    m_Map["eKeyFormatError"] = CNetScheduleException::eKeyFormatError;
+    m_Map["eInvalidJobStatus"] = CNetScheduleException::eInvalidJobStatus;
+    m_Map["eUnknownQueue"] = CNetScheduleException::eUnknownQueue;
+    m_Map["eUnknownQueueClass"] = CNetScheduleException::eUnknownQueueClass;
+    m_Map["eTooManyPendingJobs"] = CNetScheduleException::eTooManyPendingJobs;
+    m_Map["eDataTooLong"] = CNetScheduleException::eDataTooLong;
+    m_Map["eInvalidClientOrVersion"] = CNetScheduleException::eInvalidClientOrVersion;
+    m_Map["eOperationAccessDenied"] = CNetScheduleException::eOperationAccessDenied;
+    m_Map["eDuplicateName"] = CNetScheduleException::eDuplicateName;
+}
+
+bool CNetScheduleExceptionMap::GetCode(const string& name, int& code)
+{
+    map<string, int>::iterator it = m_Map.find(name);
+    if (it == m_Map.end())
+        return false;
+    code = it->second;
+    return true;
+}
+
+CNetScheduleExceptionMap CNetScheduleClient::sm_ExceptionMap;
 
 CNetScheduleClient::CNetScheduleClient(const string& client_name,
                                        const string& queue_name)
@@ -631,7 +657,7 @@ void CNetScheduleClient::CancelJob(const string& job_key)
 
     CommandInitiate("CANCEL ", job_key, &m_Tmp, connected);
 
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -646,7 +672,7 @@ void CNetScheduleClient::DropJob(const string& job_key)
 
     CommandInitiate("DROJ ", job_key, &m_Tmp, connected);
 
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -656,7 +682,7 @@ void CNetScheduleClient::Logging(bool on_off)
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     CommandInitiate("LOG ", on_off ? "ON" : "OFF", &m_Tmp, connected);
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -682,7 +708,7 @@ void CNetScheduleClient::SetRunTimeout(const string& job_key,
                    "Communication error");
     }
 
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -708,7 +734,7 @@ void CNetScheduleClient::JobDelayExpiration(const string& job_key,
                    "Communication error");
     }
 
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1210,7 +1236,7 @@ void CNetScheduleClient::PutResult(const string& job_key,
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1315,7 +1341,7 @@ void CNetScheduleClient::PutProgressMsg(const string& job_key,
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1384,7 +1410,7 @@ void CNetScheduleClient::PutFailure(const string& job_key,
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1411,17 +1437,7 @@ void CNetScheduleClient::StatusSnapshot(TStatusMap*   status_map,
         if (!ReadStr(*m_Sock, &m_Tmp)) {
             break;
         }
-        if (m_Tmp.find("OK:") != 0) {
-            if (m_Tmp.find("ERR:") == 0) {
-                string msg = "Server error:";
-                TrimErr(&m_Tmp);
-                msg += m_Tmp;
-                NCBI_THROW(CNetServiceException, eCommunicationError, msg);
-            }
-        } else {
-            m_Tmp.erase(0, 3); // "OK:"
-        }
-
+        TrimPrefix(&m_Tmp);
         if (m_Tmp == "END")
             break;
 
@@ -1456,7 +1472,7 @@ void CNetScheduleClient::ReturnJob(const string& job_key)
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 void CNetScheduleClient::RegUnregClient(const string&  cmd, 
@@ -1476,7 +1492,7 @@ void CNetScheduleClient::RegUnregClient(const string&  cmd,
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1518,7 +1534,7 @@ void CNetScheduleClient::ShutdownServer(CNetScheduleClient::EShutdownLevel level
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1570,7 +1586,8 @@ string CNetScheduleClient::ServerVersion()
 }
 
 
-void CNetScheduleClient::CreateQueue(const string& qname, const string& qclass)
+void CNetScheduleClient::CreateQueue(const string& qname, const string& qclass,
+                                     const string& comment)
 {
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
@@ -1579,9 +1596,15 @@ void CNetScheduleClient::CreateQueue(const string& qname, const string& qclass)
     bool connected = CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    CommandInitiate("QCRE ", qname + " " + qclass, &m_Tmp, connected);
+    string param = qname + " " + qclass;
+    if (!comment.empty()) {
+        param.append(" \"");
+        param.append(comment);
+        param.append("\"");
+    }
+    CommandInitiate("QCRE ", param, &m_Tmp, connected);
 
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1596,7 +1619,7 @@ void CNetScheduleClient::DeleteQueue(const string& qname)
 
     CommandInitiate("QDEL ", qname, &m_Tmp, connected);
 
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1713,7 +1736,7 @@ void CNetScheduleClient::DropQueue()
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     CommandInitiate("DROPQ ", "", &m_Tmp, connected);
-    CheckOK(&m_Tmp);
+    CheckServerOK(&m_Tmp);
 }
 
 
@@ -1736,34 +1759,28 @@ void CNetScheduleClient::CommandInitiate(const string& command,
 
 void CNetScheduleClient::TrimPrefix(string* str)
 {
-    CheckOK(str);
+    CheckServerOK(str);
     str->erase(0, 3); // "OK:"
 }
 
 
-void CNetScheduleClient::CheckOK(string* str)
+void CNetScheduleClient::ProcessServerError(string* response, bool trim_err)
 {
-    if (str->find("OK:") != 0) {
-        // Answer is not in "OK:....." format
-        string msg = "Server error:";
-        TrimErr(str);
-
-        if (*str == "CLIENT_VERSION") {
-            NCBI_THROW(CNetScheduleException, eInvalidClientOrVersion, 
-                       "Client name or version incompatibility");
-        } else 
-        if (*str == "QUEUE_NOT_FOUND") {
-            NCBI_THROW(CNetScheduleException, eUnknownQueue, 
-                       "Queue not found.");
-        } else
-        if (*str == "OPERATION_ACCESS_DENIED") {
-            NCBI_THROW(CNetScheduleException, eOperationAccessDenied, 
-                       "Access to operation denied.");
-        }
-
-        msg += *str;
-        NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+    if (trim_err && NStr::StartsWith(*response, "ERR:")) {
+        TrimErr(response);
     }
+    string code;
+    string msg;
+    if (NStr::SplitInTwo(*response, ":", code, msg)) {
+        // Map code into numeric value
+        int n_code;
+        if (sm_ExceptionMap.GetCode(code, n_code)) {
+            NCBI_THROW(CNetScheduleException,
+                       CNetScheduleException::EErrCode(n_code),
+                       msg);
+        }
+    }
+    CNetServiceClient::ProcessServerError(response, false);
 }
 
 
@@ -1781,10 +1798,9 @@ void CNetScheduleClient::MakeCommandPacket(string*       out_str,
 
     // command with full connection establishment
 
-    unsigned client_len = m_ClientName.length();
-    if (client_len < 3) {
+    if (m_ClientName.length() < 3) {
         NCBI_THROW(CNetScheduleException, 
-                   eAuthenticationError, "Client name too small or empty");
+                   eAuthenticationError, "Client name too short or empty");
     }
     if (m_Queue.empty()) {
         NCBI_THROW(CNetScheduleException, 
@@ -1932,6 +1948,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/12/07 16:22:11  joukovv
+ * Transparent server-to-client exception report implemented. Version control
+ * bug fixed.
+ *
  * Revision 1.66  2006/12/04 21:58:32  joukovv
  * netschedule_control commands for dynamic queue creation, access control
  * centralized

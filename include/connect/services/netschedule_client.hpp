@@ -62,6 +62,16 @@ struct CNetSchedule_Key
     unsigned     port;      ///< TCP/IP port number
 };
 
+/// Map from exception names to codes
+/// @internal
+class CNetScheduleExceptionMap
+{
+public:
+    CNetScheduleExceptionMap();
+    bool GetCode(const string& name, int& code);
+private:
+    map<string, int> m_Map;
+};
 
 /// Client API for NCBI NetSchedule server
 ///
@@ -578,7 +588,8 @@ public:
     /// @param qclass
     ///    Parameter set described in config file in qclass_* section
     virtual
-    void CreateQueue(const string& qname, const string& qclass);
+    void CreateQueue(const string& qname, const string& qclass,
+                     const string& comment = "");
 
     /// Delete queue
     /// Applicable only to queues, created through CreateQueue method
@@ -690,8 +701,8 @@ protected:
     /// check string for "OK:" prefix, throws an exception if "ERR:"
     void TrimPrefix(string* str);
 
-    /// Check if server returned "OK:"
-    void CheckOK(string* str);
+    /// Error processing
+    virtual void ProcessServerError(string* response, bool trim_err);
 
     void CommandInitiate(const string& command, 
                          const string& job_key,
@@ -731,6 +742,7 @@ protected:
 private:
     CNetScheduleClient(const CNetScheduleClient&);
     CNetScheduleClient& operator=(const CNetScheduleClient&);
+    static CNetScheduleExceptionMap sm_ExceptionMap;
 
 protected:
     ///< Flag indicates authentication prefix has been added already
@@ -928,31 +940,39 @@ NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleClient,  "xnetschedule", 1, 1, 0);
 class CNetScheduleException : public CNetServiceException
 {
 public:
+    // NB: if you update this enum, update constructor for
+    // CNetScheduleExceptionMap to include new mapping.
     enum EErrCode {
+        eInternalError,
         eProtocolSyntaxError,
         eAuthenticationError,
         eKeyFormatError,
         eInvalidJobStatus,
         eUnknownQueue,
+        eUnknownQueueClass,
         eTooManyPendingJobs,
         eDataTooLong,
         eInvalidClientOrVersion,
-        eOperationAccessDenied
+        eOperationAccessDenied,
+        eDuplicateName
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
+        case eInternalError:          return "eInternalError";
         case eProtocolSyntaxError:    return "eProtocolSyntaxError";
         case eAuthenticationError:    return "eAuthenticationError";
         case eKeyFormatError:         return "eKeyFormatError";
         case eInvalidJobStatus:       return "eInvalidJobStatus";
         case eUnknownQueue:           return "eUnknownQueue";
+        case eUnknownQueueClass:      return "eUnknownQueueClass";
         case eTooManyPendingJobs:     return "eTooManyPendingJobs";
         case eDataTooLong:            return "eDataTooLong";
         case eInvalidClientOrVersion: return "eInvalidClientOrVersion";
         case eOperationAccessDenied:  return "eOperationAccessDenied";
+        case eDuplicateName:          return "eDuplicateName";
         default:                      return CException::GetErrCodeString();
         }
     }
@@ -1020,6 +1040,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/12/07 16:22:10  joukovv
+ * Transparent server-to-client exception report implemented. Version control
+ * bug fixed.
+ *
  * Revision 1.62  2006/12/04 21:58:31  joukovv
  * netschedule_control commands for dynamic queue creation, access control
  * centralized

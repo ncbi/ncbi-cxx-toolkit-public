@@ -159,6 +159,9 @@ protected:
     static
     void TrimErr(string* err_msg);
     void PrintServerOut(CNcbiOstream & out);
+    /// Error processing
+    void CheckServerOK(string* response);
+    virtual void ProcessServerError(string* response, bool trim_err);
 
     /// @internal
     class CSockGuard
@@ -231,6 +234,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/12/07 16:22:10  joukovv
+ * Transparent server-to-client exception report implemented. Version control
+ * bug fixed.
+ *
  * Revision 1.18  2006/12/06 14:57:07  didenko
  * Added methods for retrieving connection info
  *

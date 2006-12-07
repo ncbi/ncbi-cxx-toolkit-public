@@ -328,21 +328,29 @@ void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
         if (!ReadStr(*m_Sock, &m_Tmp)) {
             break;
         }
-        if (m_Tmp.find("OK:") != 0) {
-            if (m_Tmp.find("ERR:") == 0) {
-                string msg = "Server error:";
-                TrimErr(&m_Tmp);
-                msg += m_Tmp;
-                NCBI_THROW(CNetServiceException, eCommunicationError, msg);
-            }
-        } else {
-            m_Tmp.erase(0, 3); // "OK:"
-        }
+        CheckServerOK(&m_Tmp);
+        m_Tmp.erase(0, 3); // "OK:"
 
         if (m_Tmp == "END")
             break;
         out << m_Tmp << "\n";
     }
+}
+
+
+void CNetServiceClient::CheckServerOK(string* response)
+{
+    if (!NStr::StartsWith(*response, "OK:"))
+        ProcessServerError(response, true);
+}
+
+
+void CNetServiceClient::ProcessServerError(string* response, bool trim_err)
+{
+    if (trim_err && NStr::StartsWith(*response, "ERR:")) {
+        TrimErr(response);
+    }
+    NCBI_THROW(CNetServiceException, eCommunicationError, *response);
 }
 
 
@@ -367,6 +375,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/12/07 16:22:11  joukovv
+ * Transparent server-to-client exception report implemented. Version control
+ * bug fixed.
+ *
  * Revision 1.17  2006/02/17 17:06:50  kuznets
  * Fixed the infinite loop in WaitForServer
  *

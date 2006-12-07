@@ -516,7 +516,7 @@ public:
     bool QueueExists(const string& qname) const;
 
     /// Collection takes ownership of queue
-    void AddQueue(const string& name, SLockedQueue* queue);
+    SLockedQueue& AddQueue(const string& name, SLockedQueue* queue);
 
     CQueueIterator begin() const;
     CQueueIterator end() const;
@@ -596,8 +596,9 @@ public:
                     const string& qclass,
                     const SQueueParameters& params);
 
-    bool CreateQueue(const string& qname, const string& qclass);
-    bool DeleteQueue(const string& qname);
+    void CreateQueue(const string& qname, const string& qclass,
+                     const string& comment = "");
+    void DeleteQueue(const string& qname);
 
     void UpdateQueueParameters(const string& qname,
                                const SQueueParameters& params);
@@ -690,6 +691,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/12/07 16:22:11  joukovv
+ * Transparent server-to-client exception report implemented. Version control
+ * bug fixed.
+ *
  * Revision 1.61  2006/12/01 00:10:58  joukovv
  * Dynamic queue creation implemented.
  *

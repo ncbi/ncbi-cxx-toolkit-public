@@ -117,6 +117,7 @@ CQueueCollection::CQueueCollection(const CQueueDataBase& db) :
     m_QueueDataBase(db)
 {}
 
+
 CQueueCollection::~CQueueCollection()
 {
     NON_CONST_ITERATE(TQueueMap, it, m_QMap) {
@@ -124,6 +125,7 @@ CQueueCollection::~CQueueCollection()
         delete q;
     }
 }
+
 
 void CQueueCollection::Close()
 {
@@ -138,6 +140,7 @@ void CQueueCollection::Close()
     m_QMap.clear();
 
 }
+
 
 SLockedQueue& CQueueCollection::GetLockedQueue(const string& name)
 {
@@ -159,26 +162,33 @@ bool CQueueCollection::QueueExists(const string& name) const
     return (it != m_QMap.end());
 }
 
-void CQueueCollection::AddQueue(const string& name, SLockedQueue* queue)
+
+SLockedQueue& CQueueCollection::AddQueue(const string& name,
+                                         SLockedQueue* queue)
 {
     CWriteLockGuard guard(m_Lock);
     m_QMap[name] = queue;
+    return *queue;
 }
+
 
 CQueueIterator CQueueCollection::begin() const
 {
     return CQueueIterator(m_QueueDataBase, m_QMap.begin());
 }
 
+
 CQueueIterator CQueueCollection::end() const
 {
     return CQueueIterator(m_QueueDataBase, m_QMap.end());
 }
 
+
 CQueueIterator::CQueueIterator(const CQueueDataBase& db,
                                CQueueCollection::TQueueMap::const_iterator iter) :
     m_QueueDataBase(db), m_Iter(iter), m_Queue(db)
 {}
+
 
 CQueueIterator::CQueueIterator(const CQueueIterator& rhs) :
     m_QueueDataBase(rhs.m_QueueDataBase),
@@ -187,16 +197,19 @@ CQueueIterator::CQueueIterator(const CQueueIterator& rhs) :
 {
 }
 
+
 CQueue& CQueueIterator::operator*()
 {
     m_Queue.x_Assume(m_Iter->second);
     return m_Queue;
 }
 
+
 const string CQueueIterator::GetName()
 {
     return m_Iter->first;
 }
+
 
 void CQueueIterator::operator++()
 {
@@ -528,9 +541,7 @@ void CQueueDataBase::MountQueue(const string& qname,
 
     q->affinity_dict.Open(*m_Env, qname);
 
-    m_QueueCollection.AddQueue(qname, q.release());
-
-    SLockedQueue& queue = m_QueueCollection.GetLockedQueue(qname);
+    SLockedQueue& queue = m_QueueCollection.AddQueue(qname, q.release());
 
     queue.run_timeout = params.run_timeout;
     if (params.run_timeout) {
@@ -587,18 +598,20 @@ void CQueueDataBase::MountQueue(const string& qname,
     LOG_POST(Info << "Queue records = " << recs);
 }
 
-bool CQueueDataBase::CreateQueue(const string& qname, const string& qclass)
+
+void CQueueDataBase::CreateQueue(const string& qname, const string& qclass,
+                                 const string& comment)
 {
     CFastMutexGuard guard(m_ConfigureLock);
     if (m_QueueCollection.QueueExists(qname)) {
-        LOG_POST(Error << "Queue " << qname << " already exists");
-        return false;
+        string err = string("Queue \"") + qname + "\" already exists";
+        NCBI_THROW(CNetScheduleException, eDuplicateName, err);
     }
     TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
     if (it == m_QueueParamMap.end()) {
-        LOG_POST(Error << "Can not find class " << qclass <<
-                          " for queue " << qname);
-        return false;
+        string err = string("Can not find class \"") + qclass +
+                            "\" for queue \"" + qname + "\"";
+        NCBI_THROW(CNetScheduleException, eUnknownQueueClass, err);
     }
     CBDB_Transaction trans(*m_Env, 
                            CBDB_Transaction::eTransASync,
@@ -612,12 +625,13 @@ bool CQueueDataBase::CreateQueue(const string& qname, const string& qclass)
     const SQueueParameters& params = *(it->second);
     MountQueue(qname, qclass, params);
     UpdateQueueLBParameters(qname, params);
-    return true;
 }
 
-bool CQueueDataBase::DeleteQueue(const string& qname)
+
+void CQueueDataBase::DeleteQueue(const string& qname)
 {
-    return false;
+    CFastMutexGuard guard(m_ConfigureLock);
+    NCBI_THROW(CNetScheduleException, eInternalError, "Not implemented");
 }
 
 
@@ -3949,6 +3963,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2006/12/07 16:22:10  joukovv
+ * Transparent server-to-client exception report implemented. Version control
+ * bug fixed.
+ *
  * Revision 1.98  2006/12/04 23:31:30  joukovv
  * Access control/version control checks corrected.
  *
