@@ -1103,6 +1103,8 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
 // Gene Clusters can optionally take subfeatures on either
 // strand (gene_cluster_opp_strand is flag).
 // Promoters will match up to features that are adjacent.
+// Introns will match up to coding regions if the intron
+// location is the space between two coding region intervals.
 // Any feature on an mRNA sequence groups locationally.
 // All other feature matches must be that the feature to
 // go into the clause must fit inside the location of the
@@ -1139,7 +1141,30 @@ bool CAutoDefFeatureClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base 
         } else if (promoter_stop + 1 == parent_start) {
             return true;
         }
+    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_intron
+               && parent_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_cdregion
+               && parent_clause->SameStrand(*m_ClauseLocation)) {               
+        CSeq_loc_CI seq_loc_it(*(parent_clause->GetLocation()));
+        if (seq_loc_it) {
+            int intron_start = sequence::GetStart(*m_ClauseLocation, &(m_BH.GetScope()), eExtreme_Biological);
+            int intron_stop = sequence::GetStop (*m_ClauseLocation, &(m_BH.GetScope()), eExtreme_Biological);
+            int prev_start = seq_loc_it.GetRange().GetFrom();
+            int prev_stop = seq_loc_it.GetRange().GetTo();
+            ++seq_loc_it;
+            while (seq_loc_it) {
+                int cds_start = seq_loc_it.GetRange().GetFrom();
+                int cds_stop = seq_loc_it.GetRange().GetTo();
+                if ((intron_start == prev_stop + 1 && intron_stop == cds_start - 1)
+                    || (intron_start == cds_stop + 1 && intron_stop == prev_start - 1)) {
+                    return true;
+                }
+                prev_start = cds_start;
+                prev_stop = cds_stop;
+                ++seq_loc_it;
+            }
+        }                              
     }
+               
     return false;
 }
 
@@ -1530,6 +1555,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2006/12/07 16:30:21  bollin
+* When deciding whether to associate an intron with a coding region for an
+* definition line clause, determine whether the intron location is exactly the
+* same as the space between two consecutive intervals for the coding region.
+*
 * Revision 1.21  2006/06/13 15:37:12  bollin
 * fixed bugs in calculating alternate splicing for segmented sets
 *
