@@ -237,7 +237,6 @@ int CTestApplication::Run(void)
     //        CExceptionReporter::EnableDefault(true);
     //        CExceptionReporter::SetDefault(0);
     
-    SetupDiag(eDS_ToStdout);
     /*      
     CExceptionReporter::EnableDefault(true);
     cerr << endl;
@@ -270,6 +269,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.23  2006/12/07 19:21:59  kuznets
+ * warning fix
+ *
  * Revision 1.22  2004/07/22 15:50:47  vakatov
  * Get rid of "unused var" warning
  *

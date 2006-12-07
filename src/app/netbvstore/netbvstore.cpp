@@ -693,10 +693,10 @@ int CNetBVStoreDApp::Run(void)
             LOG_POST("Network IO timeout " << network_timeout);
         }
 
-        bool is_log =
-            reg.GetBool("server", "log", false, 0, CNcbiRegistry::eReturn);
-        unsigned tls_size =
-            reg.GetInt("server", "tls_size", 64 * 1024, 0, CNcbiRegistry::eReturn);
+        //bool is_log =
+            //reg.GetBool("server", "log", false, 0, CNcbiRegistry::eReturn);
+        //unsigned tls_size =
+            //reg.GetInt("server", "tls_size", 64 * 1024, 0, CNcbiRegistry::eReturn);
 
         auto_ptr<CNetBVSServer> thr_srv(
             new CNetBVSServer(port, 
@@ -742,6 +742,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/07 19:25:44  kuznets
+ * warning fix
+ *
  * Revision 1.5  2006/11/30 16:52:50  vasilche
  * Fixed for new API.
  *

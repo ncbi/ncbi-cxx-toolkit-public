@@ -116,7 +116,6 @@ int CTestApplication::Run(void)
     //        CExceptionReporter::EnableDefault(true);
     //        CExceptionReporter::SetDefault(0);
     
-    SetupDiag(eDS_ToStdout);
 
 	CTaxon1 tax;
 	bool res = tax.Init();
@@ -406,6 +405,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/07 19:22:42  kuznets
+ * warning fix
+ *
  * Revision 1.5  2004/11/17 17:54:15  kuznets
  * New test
  *

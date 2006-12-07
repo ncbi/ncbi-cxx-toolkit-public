@@ -566,7 +566,6 @@ int CAlgoTreeTestApplication::Run(void)
     //        CExceptionReporter::EnableDefault(true);
     //        CExceptionReporter::SetDefault(0);
     
-    SetupDiag(eDS_ToStdout);
     /*      
     CExceptionReporter::EnableDefault(true);
     cerr << endl;
@@ -605,6 +604,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2006/12/07 19:20:38  kuznets
+ * warning fix
+ *
  * Revision 1.3  2005/10/27 16:48:48  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.
