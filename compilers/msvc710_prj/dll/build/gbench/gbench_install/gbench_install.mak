@@ -81,8 +81,8 @@ CORELIBS = \
         $(GBENCH)\bin\gui_core.dll              \
         $(GBENCH)\bin\gui_dialogs.dll           \
         $(GBENCH)\bin\gui_graph.dll             \
-        $(GBENCH)\bin\gui_utils.dll             \
         $(GBENCH)\bin\gui_services.dll          \
+        $(GBENCH)\bin\gui_utils.dll             \
         $(GBENCH)\bin\gui_widgets.dll           \
         $(GBENCH)\bin\gui_widgets_aln.dll       \
         $(GBENCH)\bin\gui_widgets_misc.dll      \
@@ -156,90 +156,91 @@ INTERNAL_PLUGINS = \
 #
 RESOURCES = \
         share\gbench\about.png              \
+        share\gbench\alignment_symbol.png     \
+        share\gbench\annot_aligns_symbol.png     \
+        share\gbench\annot_feats_symbol.png     \
         share\gbench\annot_folder.png       \
+        share\gbench\annot_graphs_symbol.png     \
+        share\gbench\annot_ids_symbol.png     \
         share\gbench\annot_item.png         \
+        share\gbench\annot_locs_symbol.png     \
         share\gbench\attachment_item.png    \
         share\gbench\back.png               \
         share\gbench\broadcast.png          \
         share\gbench\broadcast_options.png  \
         share\gbench\check.png              \
         share\gbench\close_container.png    \
+        share\gbench\cross_align_view.png     \
         share\gbench\doc_item.png           \
         share\gbench\doc_item_disabled.png  \
+        share\gbench\dot_matrix_view.png     \
         share\gbench\export.png             \
+        share\gbench\feature_symbol.png     \
+        share\gbench\feature_table_view.png     \
         share\gbench\folder.png             \
+        share\gbench\folder_closed.png     \
+        share\gbench\folder_open.png     \
         share\gbench\forward.png            \
         share\gbench\gbench_about.png       \
+        share\gbench\graphical_view.png     \
         share\gbench\help.png               \
         share\gbench\history_folder.png     \
+        share\gbench\home.png               \
         share\gbench\import.png             \
+        share\gbench\insp_brief_text_mode.png           \
+        share\gbench\insp_table_mode.png    \
+        share\gbench\insp_text_mode.png     \
         share\gbench\mouse_mode_def.png        \
         share\gbench\mouse_mode_pan.png        \
         share\gbench\mouse_mode_zoom_in.png    \
         share\gbench\mouse_mode_zoom_out.png   \
         share\gbench\mouse_mode_zoom_rect.png  \
+        share\gbench\multi_align_view.png     \
+        share\gbench\phylo_tree_view.png     \
         share\gbench\project_item.png       \
         share\gbench\radio.png              \
         share\gbench\search.png             \
+        share\gbench\sequence_dna_symbol.png     \
+        share\gbench\sequence_id_dna_symbol.png     \
+        share\gbench\sequence_id_protein_symbol.png     \
+        share\gbench\sequence_id_symbol.png     \
+        share\gbench\sequence_protein_symbol.png     \
+        share\gbench\sequence_set_symbol.png     \
+        share\gbench\sequence_symbol.png     \
+        share\gbench\sequence_text_view.png     \
         share\gbench\splash.png             \
         share\gbench\splitter_2x2.png       \
         share\gbench\splitter_horz.png      \
         share\gbench\splitter_vert.png      \
         share\gbench\tab_control.png        \
+        share\gbench\text_view.png     \
         share\gbench\tool.png               \
         share\gbench\view_item.png          \
         share\gbench\viewer_item.png        \
+        share\gbench\wm_close.png           \
+        share\gbench\wm_maximize.png        \
         share\gbench\wm_menu.png        \
         share\gbench\wm_minimize.png        \
-        share\gbench\wm_maximize.png        \
         share\gbench\wm_restore.png        \
-        share\gbench\wm_close.png           \
         share\gbench\workspace_item.png     \
         share\gbench\zoom_all.png           \
         share\gbench\zoom_in.png            \
         share\gbench\zoom_out.png           \
         share\gbench\zoom_sel.png           \
         share\gbench\zoom_seq.png           \
-        share\gbench\insp_table_mode.png    \
-        share\gbench\insp_brief_text_mode.png           \
-        share\gbench\insp_text_mode.png     \
-        share\gbench\folder_open.png     \
-        share\gbench\folder_closed.png     \
-        share\gbench\sequence_symbol.png     \
-        share\gbench\sequence_dna_symbol.png     \
-        share\gbench\sequence_protein_symbol.png     \
-        share\gbench\sequence_id_symbol.png     \
-        share\gbench\sequence_id_dna_symbol.png     \
-        share\gbench\sequence_id_protein_symbol.png     \
-        share\gbench\sequence_set_symbol.png     \
-        share\gbench\annot_aligns_symbol.png     \
-        share\gbench\annot_feats_symbol.png     \
-        share\gbench\annot_graphs_symbol.png     \
-        share\gbench\annot_ids_symbol.png     \
-        share\gbench\annot_locs_symbol.png     \
-        share\gbench\feature_symbol.png     \
-        share\gbench\alignment_symbol.png     \
-        share\gbench\text_view.png     \
-        share\gbench\multi_align_view.png     \
-        share\gbench\dot_matrix_view.png     \
-        share\gbench\cross_align_view.png     \
-        share\gbench\feature_table_view.png     \
-        share\gbench\graphical_view.png     \
-        share\gbench\phylo_tree_view.png     \
-        share\gbench\sequence_text_view.png     \
         \
         etc\algo_urls                       \
         etc\gbench.asn                      \
+        etc\gbench_cache_agent.ini          \
         etc\news.ini                        \
         etc\plugin_config.asn               \
         etc\web_pages.ini                   \
-        etc\gbench_cache_agent.ini          \
         \
         etc\dialogs\feat_edit               \
         etc\dialogs\feat_edit_res           \
         \
-        etc\align_scores\aa-shapely-colors  \
         etc\align_scores\aa-rasmol-colors   \
+        etc\align_scores\aa-shapely-colors  \
         etc\align_scores\blosum45           \
         etc\align_scores\blosum62           \
         etc\align_scores\blosum80           \
@@ -373,6 +374,9 @@ $(GBENCH)/plugins/plugin-cache : $(PLUGINS) $(GBENCH)\bin\gbench_plugin_scan.exe
 
 ###############################################################
 # $Log$
+# Revision 1.7  2006/12/07 17:50:01  dicuccio
+# MAGIC: added home.png; sort|uniq'd all items
+#
 # Revision 1.6  2006/12/05 15:51:40  yazhuk
 # MAGIC Added sequence_text_view.png
 #
