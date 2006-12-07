@@ -190,7 +190,7 @@ class CIndexedDb : public CObject
             TSeqMap::size_type i = LocateIndex( oid );
             const CConstRef< CDbIndex::CSearchResults > & results = results_[i];
             if( i > 0 ) oid -= seqmap_[i-1];
-            return results->GetResults( oid, 0 ) != 0;
+            return results->CheckResults( oid );
         }
 
         /** Invoke the seed search procedure on each of the loaded indices.
@@ -701,6 +701,9 @@ static void s_MB_IdbGetResults(
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/07 20:58:32  morgulis
+ * Fixed CheckOid().
+ *
  * Revision 1.4  2006/11/20 20:20:02  papadopo
  * from Alex Morgulis: remove compiler warning
  *
