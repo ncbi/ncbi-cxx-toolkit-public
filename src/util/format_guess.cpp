@@ -860,8 +860,6 @@ CFormatGuess::Format(const unsigned char* buffer,
 
 CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input)
 {
-    EFormat format = eUnknown;
-
     CT_POS_TYPE orig_pos = input.tellg();
 
     unsigned char buf[1024];
@@ -879,6 +877,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/12/07 19:09:00  kuznets
+ * Unused variable warning fix
+ *
  * Revision 1.30  2006/09/26 20:30:49  jcherry
  * ASN.1 text: look for "::=" instead of "{", and tolerate blank lines and
  * comment lines at top of file
