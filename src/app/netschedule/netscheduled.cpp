@@ -1620,9 +1620,11 @@ void CNetScheduleHandler::ProcessDeleteQueue()
 void CNetScheduleHandler::ProcessQueueInfo()
 {
     const string& qname = m_JobReq.param1;
-    SLockedQueue& queue =
-        m_Server->GetQueueDB()->GetQueueCollection().GetLockedQueue(qname);
-    WriteMsg("OK:", string(queue.qclass) + "\tNo comment");
+    int kind;
+    string qclass;
+    string comment;
+    m_Server->GetQueueDB()->QueueInfo(qname, kind, &qclass, &comment);
+    WriteMsg("OK:", qclass + "\t" + comment);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -2367,6 +2369,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.115  2006/12/07 22:58:10  joukovv
+ * comment and kind added to queue database
+ *
  * Revision 1.114  2006/12/07 21:26:06  joukovv
  * Error processing fixed.
  *

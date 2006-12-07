@@ -599,6 +599,8 @@ public:
     void CreateQueue(const string& qname, const string& qclass,
                      const string& comment = "");
     void DeleteQueue(const string& qname);
+    void QueueInfo(const string& qname, int& kind,
+                   string* qclass, string* comment);
 
     void UpdateQueueParameters(const string& qname,
                                const SQueueParameters& params);
@@ -691,6 +693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/12/07 22:58:10  joukovv
+ * comment and kind added to queue database
+ *
  * Revision 1.63  2006/12/07 19:28:48  joukovv
  * Build errors fixed, queue info command introduced.
  *

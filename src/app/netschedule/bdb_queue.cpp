@@ -461,8 +461,8 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
         *min_run_timeout = 
             std::min(*min_run_timeout, (unsigned)params->run_timeout_precision);
         if (!no_default_queues && NStr::CompareNocase(tmp, "queue") == 0) {
-            m_QueueDescriptionDB.queue_name = qclass;
-            m_QueueDescriptionDB.qclass_name = qclass;
+            m_QueueDescriptionDB.queue = qclass;
+            m_QueueDescriptionDB.qclass = qclass;
             m_QueueDescriptionDB.UpdateInsert();
         }
     }
@@ -473,8 +473,9 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
         const string& qname = *it;
         string qclass = reg.GetString("queues", qname, "");
         if (!qclass.empty()) {
-            m_QueueDescriptionDB.queue_name = qname;
-            m_QueueDescriptionDB.qclass_name = qclass;
+            m_QueueDescriptionDB.queue = qname;
+            m_QueueDescriptionDB.kind = 0;
+            m_QueueDescriptionDB.qclass = qclass;
             m_QueueDescriptionDB.UpdateInsert();
         }
     }
@@ -486,8 +487,8 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
 
     string qname;
     while (cur.Fetch() == eBDB_Ok) {
-        qname = m_QueueDescriptionDB.queue_name;
-        qclass = m_QueueDescriptionDB.qclass_name;
+        qname = m_QueueDescriptionDB.queue;
+        qclass = m_QueueDescriptionDB.qclass;
         TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
         if (it == m_QueueParamMap.end()) {
             LOG_POST(Error << "Can not find class " << qclass << " for queue " << qname);
@@ -617,8 +618,10 @@ void CQueueDataBase::CreateQueue(const string& qname, const string& qclass,
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
     m_QueueDescriptionDB.SetTransaction(&trans);
-    m_QueueDescriptionDB.queue_name = qname;
-    m_QueueDescriptionDB.qclass_name = qclass;
+    m_QueueDescriptionDB.queue = qname;
+    m_QueueDescriptionDB.kind = 1;
+    m_QueueDescriptionDB.qclass = qclass;
+    m_QueueDescriptionDB.comment = comment;
     m_QueueDescriptionDB.UpdateInsert();
     trans.Commit();
     m_QueueDescriptionDB.Sync();
@@ -632,6 +635,25 @@ void CQueueDataBase::DeleteQueue(const string& qname)
 {
     CFastMutexGuard guard(m_ConfigureLock);
     NCBI_THROW(CNetScheduleException, eInternalError, "Not implemented");
+}
+
+
+void CQueueDataBase::QueueInfo(const string& qname, int& kind,
+                               string* qclass, string* comment)
+{
+    CFastMutexGuard guard(m_ConfigureLock);
+    m_QueueDescriptionDB.SetTransaction(0);
+    m_QueueDescriptionDB.queue = qname;
+    if (m_QueueDescriptionDB.Fetch() != eBDB_Ok) {
+        string msg = "Job queue not found: ";
+        msg += qname;
+        NCBI_THROW(CNetScheduleException, eUnknownQueue, msg);
+    }
+    kind = m_QueueDescriptionDB.kind;
+    string qclass_str(m_QueueDescriptionDB.qclass);
+    *qclass = qclass_str;
+    string comment_str(m_QueueDescriptionDB.comment);
+    *comment = comment_str;
 }
 
 
@@ -3963,6 +3985,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.101  2006/12/07 22:58:10  joukovv
+ * comment and kind added to queue database
+ *
  * Revision 1.100  2006/12/07 19:28:48  joukovv
  * Build errors fixed, queue info command introduced.
  *

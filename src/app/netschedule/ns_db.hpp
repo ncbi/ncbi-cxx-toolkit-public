@@ -196,13 +196,17 @@ struct SAffinityDictTokenIdx : public CBDB_File
 ///
 struct SQueueDescriptionDB : public CBDB_File
 {
-    CBDB_FieldString queue_name;
-    CBDB_FieldString qclass_name;
+    CBDB_FieldString queue;
+    CBDB_FieldUint4  kind; // static - 0 or dynamic - 1
+    CBDB_FieldString qclass;
+    CBDB_FieldString comment;
     SQueueDescriptionDB()
     {
         DisableNull();
-        BindKey("queue", &queue_name, kNetScheduleMaxDBDataSize);
-        BindData("qclass", &qclass_name, kNetScheduleMaxDBDataSize);
+        BindKey("queue", &queue);
+        BindData("kind", &kind);
+        BindData("qclass", &qclass);
+        BindData("comment", &comment);
     }
 };
 
@@ -211,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/12/07 22:58:10  joukovv
+ * comment and kind added to queue database
+ *
  * Revision 1.7  2006/12/01 00:10:58  joukovv
  * Dynamic queue creation implemented.
  *
