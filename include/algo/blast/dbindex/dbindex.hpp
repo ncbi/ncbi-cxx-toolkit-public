@@ -243,6 +243,30 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                 BlastInitHitList * GetResults( TSeqNum subj, TSeqNum chunk ) const
                 { return GetResults( MapSubject( subj, chunk ) ); }
 
+                /** Check if any results are available for a given subject sequence.
+
+                    @param subj The subject id.
+
+                    @return true if there are seeds available for this subject,
+                            false otherwise.
+                */
+                bool CheckResults( TSeqNum subj ) const
+                {
+                    if( subj >= map_.size() ) return false;
+                    bool res = false;
+                    
+                    for( TSeqNum chunk = 0; ; ++chunk ) {
+                        TSeqNum seq = MapSubject( subj, chunk );
+                        if( seq == 0 || seq - start_ - 1 >= results_.size() ) break;
+                        if( GetResults( seq ) != 0 ) {
+                            res = true;
+                            break;
+                        }
+                    }
+
+                    return res;
+                }
+
                 /** Set the result set for a given logical subject.
                     @param seq  [I]     logical subject number
                     @param res  [I]     pointer to the C structure describing
