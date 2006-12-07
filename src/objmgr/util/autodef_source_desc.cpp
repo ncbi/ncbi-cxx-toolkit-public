@@ -85,7 +85,7 @@ void CAutoDefSourceDescription::GetAvailableModifiers (TAvailableModifierVector 
     for (k = 0; k < modifier_list.size(); k++) {
         bool found = false;
         if (modifier_list[k].IsOrgMod()) {
-            if (m_BS.CanGetOrg() && m_BS.GetOrg().CanGetOrgname() && m_BS.GetOrg().GetOrgname().CanGetMod()) {
+            if (m_BS.CanGetOrg() && m_BS.GetOrg().CanGetOrgname() && m_BS.GetOrg().GetOrgname().IsSetMod()) {
                 ITERATE (COrgName::TMod, modI, m_BS.GetOrg().GetOrgname().GetMod()) {
                     if ((*modI)->GetSubtype() == modifier_list[k].GetOrgModType()) {
                         found = true;
@@ -132,7 +132,7 @@ bool CAutoDefSourceDescription::IsTrickyHIV()
     }   
     
     found = false;
-    if (m_BS.CanGetOrg() && m_BS.GetOrg().CanGetOrgname() && m_BS.GetOrg().GetOrgname().CanGetMod()) {
+    if (m_BS.CanGetOrg() && m_BS.GetOrg().CanGetOrgname() && m_BS.GetOrg().GetOrgname().IsSetMod()) {
         ITERATE (COrgName::TMod, modI, m_BS.GetOrg().GetOrgname().GetMod()) {
             if ((*modI)->GetSubtype() == COrgMod::eSubtype_isolate) {
                 found = true;
@@ -149,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/12/07 16:30:59  bollin
+* Use IsSet rather than CanGet.
+*
 * Revision 1.6  2006/05/04 11:44:52  bollin
 * improvements to method for finding unique organism description
 *

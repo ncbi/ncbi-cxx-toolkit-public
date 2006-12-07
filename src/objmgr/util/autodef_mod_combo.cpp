@@ -531,7 +531,7 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
         }
     }
 
-    if (bsrc.CanGetOrg() && bsrc.GetOrg().CanGetOrgname() && bsrc.GetOrg().GetOrgname().CanGetMod()) {
+    if (bsrc.CanGetOrg() && bsrc.GetOrg().CanGetOrgname() && bsrc.GetOrg().GetOrgname().IsSetMod()) {
         for (k = 0; k < GetNumOrgMods() && (m_MaxModifiers == 0 || mods_used < m_MaxModifiers); k++) {
             if (x_AddOrgModString (source_description, bsrc, GetOrgMod(k))) {
                 mods_used++;
@@ -549,6 +549,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2006/12/07 16:30:59  bollin
+* Use IsSet rather than CanGet.
+*
 * Revision 1.9  2006/05/16 18:15:42  bollin
 * improvements to modifier labels in organism descriptions for automatically
 * generated definition lines
