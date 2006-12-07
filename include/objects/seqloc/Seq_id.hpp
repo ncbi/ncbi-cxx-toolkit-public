@@ -200,7 +200,7 @@ public:
         eAcc_gb_patent      = e_Genbank | eAcc_div_patent /* | fAcc_nuc */, //I
         eAcc_gb_patent_prot = e_Genbank | eAcc_div_patent | fAcc_prot, // AAE
         eAcc_gb_htgs        = e_Genbank | eAcc_htgs       | fAcc_nuc,  // AC
-        eAcc_gb_con         = e_Genbank | eAcc_con,                    // CH
+        eAcc_gb_con         = e_Genbank | eAcc_con        | fAcc_nuc,  // CH
         eAcc_gb_segset      = eAcc_gb_con, // for compatibility
         eAcc_gb_wgs_nuc     = e_Genbank | eAcc_wgs        | fAcc_nuc,  // AAAA
         eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot, // EAA
@@ -230,7 +230,7 @@ public:
         eAcc_refseq_genome          = e_Other | eAcc_genome | fAcc_nuc,   //NS_
         eAcc_refseq_wgs_nuc         = e_Other | eAcc_wgs    | fAcc_nuc,   //NZ_
         eAcc_refseq_wgs_prot        = e_Other | eAcc_wgs    | fAcc_prot,  //ZP_
-        eAcc_refseq_contig          = e_Other | eAcc_segset,              //NT_
+        eAcc_refseq_contig          = e_Other | eAcc_segset | fAcc_nuc,   //NT_
         eAcc_refseq_unreserved      = e_Other | 128 << 8,                 //AA_
         eAcc_refseq_mrna            = e_Other | 129 << 8    | fAcc_nuc,   //NM_
         eAcc_refseq_chromosome      = e_Other | 130 << 8    | fAcc_nuc,   //NC_
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.56  2006/12/07 17:26:24  dicuccio
+ * Identify CON and RefSeq contig records as nucleotide
+ *
  * Revision 1.55  2006/11/14 19:14:23  ucko
  * Note that TPA embl proteins do exist, albeit mixed in with non-TPA ones.
  *
