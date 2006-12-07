@@ -280,12 +280,11 @@ public:
                             // chain is ignored
     };
     enum ENSAccess {
-        eNSAC_Queue     = 1,
-        eNSAC_Worker    = 2,
-        eNSAC_Submitter = 4,
-        eNSAC_Admin     = 8
-    };
-    enum ENSClientRole {
+        eNSAC_Queue     = 1 << 0,
+        eNSAC_Worker    = 1 << 1,
+        eNSAC_Submitter = 1 << 2,
+        eNSAC_Admin     = 1 << 3,
+        // Combination of flags for client roles
         eNSCR_Any        = 0,
         eNSCR_Queue      = eNSAC_Queue,
         eNSCR_Worker     = eNSAC_Worker + eNSAC_Queue,
@@ -293,6 +292,7 @@ public:
         eNSCR_Admin      = eNSAC_Admin,
         eNSCR_QueueAdmin = eNSAC_Admin + eNSAC_Queue 
     };
+    typedef int TNSClientRole;
     typedef void (CNetScheduleHandler::*FProcessor)(void);
     struct SArgument {
         ENSArgType      atype;
@@ -305,7 +305,7 @@ public:
     struct SCommandMap {
         const char*   cmd;
         FProcessor    processor;
-        ENSClientRole role;
+        TNSClientRole role;
         SArgument     args[kMaxArgs+1]; // + end of record
     };
 private:
@@ -348,6 +348,7 @@ private:
     void ProcessQuitSession();
     void ProcessCreateQueue();
     void ProcessDeleteQueue();
+    void ProcessQueueInfo();
 
 private:
     static
@@ -361,7 +362,7 @@ private:
                     const char*&val, int& vsize);
 
     bool x_CheckVersion(void);
-    void x_CheckAccess(ENSClientRole role);
+    void x_CheckAccess(TNSClientRole role);
     string x_FormatErrorMessage(string header, string what);
     void x_WriteErrorToMonitor(string msg);
     // Moved from CNetScheduleServer
@@ -674,10 +675,8 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
         m_Queue.reset(new CQueue(*(m_Server->GetQueueDB()),
                                  m_QueueName, m_PeerAddr));
         m_Monitor = m_Queue->GetMonitor();
-
-        if (m_Queue->IsVersionControl()) {
+        if (m_Queue->IsVersionControl())
             m_VersionControl = true;
-        }
     }
 
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
@@ -760,7 +759,7 @@ bool CNetScheduleHandler::x_CheckVersion()
     return true;
 }
 
-void CNetScheduleHandler::x_CheckAccess(ENSClientRole role)
+void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
 {
     if (((role & eNSAC_Queue) && m_Queue.get() == 0) ||
         ((role & eNSAC_Worker) && !m_Queue->IsWorkerAllowed()) ||
@@ -1608,6 +1607,15 @@ void CNetScheduleHandler::ProcessDeleteQueue()
     WriteMsg("OK:", "");
 }
 
+
+void CNetScheduleHandler::ProcessQueueInfo()
+{
+    const string& qname = m_JobReq.param1;
+    SLockedQueue& queue =
+        m_Server->GetQueueDB()->GetQueueCollection().GetLockedQueue(qname);
+    WriteMsg("OK:", string(queue.qclass) + "\tNo comment");
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 /// NetSchedule command parser
@@ -1724,6 +1732,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { eNSA_Optional, eNST_Str, eNSRF_QueueComment }, sm_End} },
     // QDEL qname : id
     { "QDEL",     &CNetScheduleHandler::ProcessDeleteQueue, eNSCR_Admin,
+        { { eNSA_Required, eNST_Id, eNSRF_QueueName }, sm_End } },
+    { "QINF",     &CNetScheduleHandler::ProcessQueueInfo, eNSCR_Any,
         { { eNSA_Required, eNST_Id, eNSRF_QueueName }, sm_End } },
     { 0,          &CNetScheduleHandler::ProcessError },
 };
@@ -2348,6 +2358,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.113  2006/12/07 19:28:48  joukovv
+ * Build errors fixed, queue info command introduced.
+ *
  * Revision 1.112  2006/12/07 16:22:11  joukovv
  * Transparent server-to-client exception report implemented. Version control
  * bug fixed.

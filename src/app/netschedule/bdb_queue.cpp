@@ -142,10 +142,10 @@ void CQueueCollection::Close()
 }
 
 
-SLockedQueue& CQueueCollection::GetLockedQueue(const string& name)
+SLockedQueue& CQueueCollection::GetLockedQueue(const string& name) const
 {
     CReadLockGuard guard(m_Lock);
-    TQueueMap::iterator it = m_QMap.find(name);
+    TQueueMap::const_iterator it = m_QMap.find(name);
     if (it == m_QMap.end()) {
         string msg = "Job queue not found: ";
         msg += name;
@@ -3963,6 +3963,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2006/12/07 19:28:48  joukovv
+ * Build errors fixed, queue info command introduced.
+ *
  * Revision 1.99  2006/12/07 16:22:10  joukovv
  * Transparent server-to-client exception report implemented. Version control
  * bug fixed.

@@ -512,7 +512,7 @@ public:
 
     void Close();
 
-    SLockedQueue& GetLockedQueue(const string& qname);
+    SLockedQueue& GetLockedQueue(const string& qname) const;
     bool QueueExists(const string& qname) const;
 
     /// Collection takes ownership of queue
@@ -691,6 +691,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/12/07 19:28:48  joukovv
+ * Build errors fixed, queue info command introduced.
+ *
  * Revision 1.62  2006/12/07 16:22:11  joukovv
  * Transparent server-to-client exception report implemented. Version control
  * bug fixed.

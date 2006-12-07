@@ -1776,7 +1776,7 @@ void CNetScheduleClient::ProcessServerError(string* response, bool trim_err)
         int n_code;
         if (sm_ExceptionMap.GetCode(code, n_code)) {
             NCBI_THROW(CNetScheduleException,
-                       CNetScheduleException::EErrCode(n_code),
+                       EErrCode(n_code),
                        msg);
         }
     }
@@ -1948,6 +1948,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/12/07 19:28:48  joukovv
+ * Build errors fixed, queue info command introduced.
+ *
  * Revision 1.67  2006/12/07 16:22:11  joukovv
  * Transparent server-to-client exception report implemented. Version control
  * bug fixed.
