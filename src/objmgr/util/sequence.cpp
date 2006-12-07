@@ -1928,16 +1928,25 @@ void CFastaOstream::Write(const CSeq_entry_Handle& handle,
 void CFastaOstream::Write(const CBioseq_Handle& handle,
                           const CSeq_loc* location)
 {
-    WriteTitle(handle);
+    WriteTitle(handle, location);
     WriteSequence(handle, location);
 }
 
 
-void CFastaOstream::WriteTitle(const CBioseq_Handle& handle)
+void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
+                               const CSeq_loc* location)
 {
     m_Out << '>' << CSeq_id::GetStringDescr(*handle.GetBioseqCore(),
-                                            CSeq_id::eFormat_FastA)
-          << ' ' << sequence::GetTitle(handle) << NcbiEndl;
+                                            CSeq_id::eFormat_FastA);
+    if (location != NULL  &&  !location->IsWhole() ) {
+        char delim = ':';
+        for (CSeq_loc_CI it(*location);  it;  ++it) {
+            CSeq_loc::TRange range = it.GetRange();
+            m_Out << delim << range.GetFrom() + 1 << '-' << range.GetTo() + 1;
+            delim = ',';
+        }
+    }
+    m_Out << ' ' << sequence::GetTitle(handle) << NcbiEndl;
 }
 
 
@@ -3006,6 +3015,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.149  2006/12/07 20:33:44  ucko
+* CFastaOstream::WriteTitle: take an optional location, and display
+* range information as appropriate.
+*
 * Revision 1.148  2006/11/30 16:06:07  vasilche
 * Fixed wrong call in _ASSERT().
 *

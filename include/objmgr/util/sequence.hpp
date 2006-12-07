@@ -543,7 +543,8 @@ public:
                        const CSeq_loc* location = 0);
     void Write        (const CBioseq_Handle& handle,
                        const CSeq_loc* location = 0);
-    void WriteTitle   (const CBioseq_Handle& handle);
+    void WriteTitle   (const CBioseq_Handle& handle,
+                       const CSeq_loc* location = 0);
     void WriteSequence(const CBioseq_Handle& handle,
                        const CSeq_loc* location = 0);
 
@@ -809,6 +810,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.69  2006/12/07 20:33:36  ucko
+* CFastaOstream::WriteTitle: take an optional location, and display
+* range information as appropriate.
+*
 * Revision 1.68  2006/11/30 14:22:47  vasilche
 * Use feature lookup by feat-id in GetBestXxxForXxx().
 *
