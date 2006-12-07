@@ -371,7 +371,7 @@ public:
         if (!bioseq_handle)
             return false;
         CConstRef<CBioseq> bseq = bioseq_handle.GetCompleteObject();
-        if (m_BSeq->Equals(*bseq));
+        if (m_BSeq->Equals(*bseq))
             return true;
         return false;
     }
@@ -772,6 +772,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/07 20:04:10  didenko
+ * Fixed an empty if statment
+ *
  * Revision 1.5  2006/10/12 14:45:00  didenko
  * Fixed problem with CRemoveFeatChecker
  *
