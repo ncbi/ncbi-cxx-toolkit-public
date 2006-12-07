@@ -728,7 +728,7 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
     xxx->host    = strdup(host);
     xxx->port    = port ? port : 21;
     xxx->user    = strdup(user ? user : "ftp");
-    xxx->pass    = strdup(pass ? pass : "none");
+    xxx->pass    = strdup(pass ? pass : "-none");
     xxx->path    = path  &&  *path ? strdup(path) : 0;
     xxx->name    = 0;
     xxx->flag    = flag;
@@ -747,6 +747,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2006/12/07 16:21:02  lavr
+ * Use minus sign in default password to try to turn off human-readable msgs
+ *
  * Revision 1.18  2006/10/23 21:19:07  lavr
  * Empty while() extended with a dummy continue (to avoid misplaced ; warning)
  *
