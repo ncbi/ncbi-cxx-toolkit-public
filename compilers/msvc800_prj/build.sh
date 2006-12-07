@@ -32,7 +32,7 @@ error()
 
 generate_msvc8_error_check_file() {
   cat <<-EOF >$1
-	/.*--*E:\cxx\compilers\msvc800_prj\build.sh (Reb|B)uild( All | )started: Project:/ {
+	/.*--* (Reb|B)uild( All | )started: Project:/ {
 	  expendable = ""
 	}
 
@@ -119,12 +119,12 @@ for cfg in $cfgs ; do
        echo "INFO: Building \"$dir\\$cfg\\$alias\""
        $build_dir/build_exec.bat "$dir\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
        status=$?
-       cat $out
+###       cat $out
        echo "Build time: $start - `eval $timer`"
        if [ $status -ne 0 ] ; then
          # Check on errors (skip expendable projects)
          failed="1"
-         grep '^ *Build: .* succeeded, .* failed' /tmp/build.$$ >/dev/null 2>&1  && \
+         grep '^==* Build: .* succeeded, .* failed' $out >/dev/null 2>&1  && \
            awk -f $check_awk $out >$out.res 2>/dev/null  &&  test ! -s $out.res  &&  failed="0"
          rm -f $out.res >/dev/null 2>&1
          rm -f $out     >/dev/null 2>&1
