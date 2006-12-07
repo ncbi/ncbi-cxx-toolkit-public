@@ -902,6 +902,8 @@ void CValidError_imp::ValidatePubdesc
 {
     int uid = 0;
 
+    ValidatePubHasAuthor(pubdesc, obj);
+    
     ITERATE( CPub_equiv::Tdata, pub_iter, pubdesc.GetPub().Get() ) {
         const CPub& pub = **pub_iter;
 
@@ -933,6 +935,9 @@ void CValidError_imp::ValidatePubdesc
             
         case CPub::e_Article:
             ValidatePubArticle(pub.GetArticle(), uid, obj);
+            if ( ! pubdesc.IsSetFig()  ||  IsBlankString(pubdesc.GetFig()) ) {
+                // ValidateArticleHasJournal(pub.GetArticle(), obj);
+            }
             break;
 
         case CPub::e_Equiv:
@@ -965,6 +970,23 @@ void CValidError_imp::ValidatePubGen
 }
 
 
+void CValidError_imp::ValidateArticleHasJournal
+(const CCit_art& art,
+ const CSerialObject& obj)
+{
+    if ( art.GetFrom().IsJournal() ) {
+        const CCit_jour& jour = art.GetFrom().GetJournal();
+        if ( !HasTitle(jour.GetTitle()) ) {
+            PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+                    "Journal title missing", obj);
+        }
+        if ( jour.CanGetImp() ) {
+            const CImprint& imp = jour.GetImp();
+        }
+    }
+}
+
+
 void CValidError_imp::ValidatePubArticle
 (const CCit_art& art,
  int uid,
@@ -975,23 +997,10 @@ void CValidError_imp::ValidatePubArticle
             "Publication has no title", obj);
     }
     
-    if ( art.IsSetAuthors() ) {
-        const CAuth_list::C_Names& names = art.GetAuthors().GetNames();
-
-        bool has_name = false;
-        if ( names.IsStd() ) {
-            has_name = HasName(names.GetStd());
-        } 
-        if ( names.IsMl() ) {
-            has_name = !IsBlankStringList(names.GetMl());
-        }
-        if ( names.IsStr() ) {
-            has_name = !IsBlankStringList(names.GetStr());
-        }
-
-        if ( !has_name ) {
+    if ( art.IsSetAuthors() ) { 
+        if ( ! HasName(art.GetAuthors()) ) {
             PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-                "Publication has no author names", obj);
+                "Article has no author names", obj);
         }
     }
     
@@ -1229,17 +1238,100 @@ bool CValidError_imp::HasIsoJTA(const CTitle& title)
 }
 
 
-bool CValidError_imp::HasName(const list< CRef< CAuthor > >& authors)
+bool CValidError_imp::HasName(const CAuth_list& authors)
 {
-    ITERATE ( list< CRef< CAuthor > >, auth, authors ) {
-        const CPerson_id& pid = (*auth)->GetName();
-        if ( pid.IsName() ) {
-            if ( !IsBlankString(pid.GetName().GetLast()) ) {
-                return true;
-            }
+    if ( authors.CanGetNames() ) {
+        const CAuth_list::TNames& names = authors.GetNames();
+        switch ( names.Which() ) {
+            case CAuth_list::TNames::e_Std:
+                ITERATE ( list< CRef< CAuthor > >, auth, names.GetStd() ) {
+                    const CPerson_id& pid = (*auth)->GetName();
+                    if ( pid.IsName() ) {
+                        if ( ! IsBlankString(pid.GetName().GetLast()) ) {
+                            return true;
+                        }
+                    }
+                }
+                break;
+                
+            case CAuth_list::TNames::e_Ml:
+                if ( ! IsBlankStringList(names.GetMl()) ) {
+                    return true;
+                }
+                break;
+                
+            case CAuth_list::TNames::e_Str:
+                if ( ! IsBlankStringList(names.GetStr()) ) {
+                    return true;
+                }
+                break;
+                
+            default:
+                break;
         }
     }
     return false;
+}
+
+
+void CValidError_imp::ValidatePubHasAuthor
+(const CPubdesc& pubdesc,
+ const CSerialObject& obj)
+{
+    bool no_figs = ! pubdesc.IsSetFig()  ||  IsBlankString(pubdesc.GetFig());
+    
+    const CPub_equiv::Tdata& pubs = pubdesc.GetPub().Get();
+    bool only_pmid = pubs.size() == 1  && pubs.front()->IsPmid();
+    
+    bool no_patent_pub = true;
+    ITERATE( CPub_equiv::Tdata, pub, pubs ) {
+        if ( (*pub)->IsPatent() ) {
+            no_patent_pub = false;
+            break;
+        }
+    }
+    
+    bool no_names = true;
+    ITERATE( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
+        const CAuth_list* authors = 0;
+        switch ( (*pub)->Which() ) {
+            case CPub::e_Gen:
+                if ( (*pub)->GetGen().IsSetAuthors() ) {
+                    authors = &((*pub)->GetGen().GetAuthors());
+                }
+                break;
+            case CPub::e_Sub:
+                authors = &((*pub)->GetSub().GetAuthors());
+                break;
+            case CPub::e_Article:
+                if ( (*pub)->GetArticle().IsSetAuthors() ) {
+                    authors = &((*pub)->GetArticle().GetAuthors());
+                }
+                break;
+            case CPub::e_Book:
+                authors = &((*pub)->GetBook().GetAuthors());
+                break;
+            case CPub::e_Proc:
+                authors = &((*pub)->GetProc().GetBook().GetAuthors());
+                break;
+            case CPub::e_Man:
+                authors = &((*pub)->GetMan().GetCit().GetAuthors());
+                break;
+            default:
+                break;
+        }
+        
+        if ( authors  && HasName(*authors) ) {
+            no_names = false;
+            break;
+        }
+    }
+    
+    if ( no_figs  &&  ! only_pmid  &&  no_patent_pub  &&  no_names ) {
+        PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+                "Publication has no author names", obj);
+    }
+    
 }
 
 
@@ -1584,36 +1676,7 @@ void CValidError_imp::ValidateCitSub
 
     if ( cs.CanGetAuthors() ) {
         const CAuth_list& authors = cs.GetAuthors();
-
-        if ( authors.CanGetNames() ) {
-            const CAuth_list::TNames& names = cs.GetAuthors().GetNames();
-            switch ( names.Which() ) {
-            case CAuth_list::TNames::e_Std:
-                has_name = HasName(names.GetStd());
-                break;
-                
-            case CAuth_list::TNames::e_Ml:
-                ITERATE( CAuth_list::TNames::TMl, it, names.GetMl() ) {
-                    if ( !IsBlankString(*it) ) {
-                        has_name = true;
-                        break;
-                    }
-                }
-                break;
-                
-            case CAuth_list::TNames::e_Str:
-                ITERATE( CAuth_list::TNames::TStr, it, names.GetStr() ) {
-                    if ( !IsBlankString(*it) ) {
-                        has_name = true;
-                        break;
-                    }
-                }
-                break;
-                
-            default:
-                break;
-            }
-        }
+        has_name = HasName(authors);
 
         if ( authors.CanGetAffil() ) {
             const CAffil& affil = authors.GetAffil();
@@ -2676,6 +2739,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2006/12/07 18:32:07  rsmith
+* Make sure publications have authors.
+*
 * Revision 1.73  2006/04/03 17:07:40  rsmith
 * regularize name of INTERNAL error
 *

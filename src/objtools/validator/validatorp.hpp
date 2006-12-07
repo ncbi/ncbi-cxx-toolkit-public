@@ -64,7 +64,7 @@ class CProt_ref;
 class CSeq_loc;
 class CFeat_CI;
 class CPub_set;
-class CAuthor;
+class CAuth_list;
 class CTitle;
 class CMolInfo;
 class CUser_object;
@@ -256,8 +256,11 @@ private:
     void ValidatePubArticle(const CCit_art& art, int uid, const CSerialObject& obj);
     void x_ValidatePages(const string& pages, const CSerialObject& obj);
     void ValidateEtAl(const CPubdesc& pubdesc, const CSerialObject& obj);
+    void ValidatePubHasAuthor(const CPubdesc& pubdesc, const CSerialObject& obj);
+    void ValidateArticleHasJournal(const CCit_art& art, const CSerialObject& obj);
     
-    bool HasName(const list< CRef< CAuthor > >& authors);
+    
+    bool HasName(const CAuth_list& authors);
     bool HasTitle(const CTitle& title);
     bool HasIsoJTA(const CTitle& title);
 
@@ -739,6 +742,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.85  2006/12/07 18:32:07  rsmith
+* Make sure publications have authors.
+*
 * Revision 1.84  2006/04/03 17:10:08  rsmith
 * make Err values permanent. Move into objects/valerr
 *
