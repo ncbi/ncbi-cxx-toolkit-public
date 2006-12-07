@@ -325,12 +325,9 @@ void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
 {
     WaitForServer();
     while (1) {
-        if (!ReadStr(*m_Sock, &m_Tmp)) {
+        if (!ReadStr(*m_Sock, &m_Tmp))
             break;
-        }
         CheckServerOK(&m_Tmp);
-        m_Tmp.erase(0, 3); // "OK:"
-
         if (m_Tmp == "END")
             break;
         out << m_Tmp << "\n";
@@ -340,16 +337,18 @@ void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
 
 void CNetServiceClient::CheckServerOK(string* response)
 {
-    if (!NStr::StartsWith(*response, "OK:"))
-        ProcessServerError(response, true);
+    if (NStr::StartsWith(*response, "OK:")) {
+        m_Tmp.erase(0, 3); // "OK:"
+    } else if (NStr::StartsWith(*response, "ERR:")) {
+        ProcessServerError(response, eTrimErr);
+    }
 }
 
 
-void CNetServiceClient::ProcessServerError(string* response, bool trim_err)
+void CNetServiceClient::ProcessServerError(string* response, ETrimErr trim_err)
 {
-    if (trim_err && NStr::StartsWith(*response, "ERR:")) {
+    if (trim_err == eTrimErr)
         TrimErr(response);
-    }
     NCBI_THROW(CNetServiceException, eCommunicationError, *response);
 }
 
@@ -375,6 +374,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/12/07 21:26:06  joukovv
+ * Error processing fixed.
+ *
  * Revision 1.18  2006/12/07 16:22:11  joukovv
  * Transparent server-to-client exception report implemented. Version control
  * bug fixed.

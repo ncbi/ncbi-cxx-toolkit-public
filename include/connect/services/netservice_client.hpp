@@ -161,7 +161,11 @@ protected:
     void PrintServerOut(CNcbiOstream & out);
     /// Error processing
     void CheckServerOK(string* response);
-    virtual void ProcessServerError(string* response, bool trim_err);
+    enum ETrimErr {
+        eNoTrimErr,
+        eTrimErr
+    };
+    virtual void ProcessServerError(string* response, ETrimErr trim_err);
 
     /// @internal
     class CSockGuard
@@ -234,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/12/07 21:26:06  joukovv
+ * Error processing fixed.
+ *
  * Revision 1.19  2006/12/07 16:22:10  joukovv
  * Transparent server-to-client exception report implemented. Version control
  * bug fixed.

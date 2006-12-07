@@ -548,13 +548,13 @@ void CNetScheduleHandler::OnOpen(void)
 
 void CNetScheduleHandler::OnTimeout()
 {
-    ERR_POST("OnTimeout!");
+//    ERR_POST("OnTimeout!");
 }
 
 
 void CNetScheduleHandler::OnOverflow() 
 { 
-    ERR_POST("OnOverflow!");
+//    ERR_POST("OnOverflow!");
 }
 
 
@@ -761,12 +761,21 @@ bool CNetScheduleHandler::x_CheckVersion()
 
 void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
 {
-    if (((role & eNSAC_Queue) && m_Queue.get() == 0) ||
-        ((role & eNSAC_Worker) && !m_Queue->IsWorkerAllowed()) ||
+    if (((role & eNSAC_Queue)     && m_Queue.get() == 0) ||
+        ((role & eNSAC_Worker)    && !m_Queue->IsWorkerAllowed()) ||
         ((role & eNSAC_Submitter) && !m_Queue->IsSubmitAllowed()) ||
-        ((role & eNSAC_Admin) && !m_AdminAccess))
+        ((role & eNSAC_Admin)     && !m_AdminAccess))
     {
-        NCBI_THROW(CNetScheduleException, eOperationAccessDenied, "");
+        string msg = "Access denied:";
+        if ((role & eNSAC_Queue)     && m_Queue.get() == 0)
+            msg.append(" queue required");
+        if ((role & eNSAC_Worker)    && !m_Queue->IsWorkerAllowed())
+            msg.append(" worker node privileges required");
+        if ((role & eNSAC_Submitter) && !m_Queue->IsSubmitAllowed())
+            msg.append(" submitter privileges required");
+        if ((role & eNSAC_Admin)     && !m_AdminAccess)
+            msg.append(" admin privileges required");
+        NCBI_THROW(CNetScheduleException, eOperationAccessDenied, msg);
     }
 }
 
@@ -2358,6 +2367,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.114  2006/12/07 21:26:06  joukovv
+ * Error processing fixed.
+ *
  * Revision 1.113  2006/12/07 19:28:48  joukovv
  * Build errors fixed, queue info command introduced.
  *

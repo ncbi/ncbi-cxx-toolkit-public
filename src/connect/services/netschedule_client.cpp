@@ -175,13 +175,12 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eDuplicateName"] = CNetScheduleException::eDuplicateName;
 }
 
-bool CNetScheduleExceptionMap::GetCode(const string& name, int& code)
+CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
 {
-    map<string, int>::iterator it = m_Map.find(name);
+    TMap::iterator it = m_Map.find(name);
     if (it == m_Map.end())
-        return false;
-    code = it->second;
-    return true;
+        return CException::eInvalid;
+    return it->second;
 }
 
 CNetScheduleExceptionMap CNetScheduleClient::sm_ExceptionMap;
@@ -317,12 +316,12 @@ string CNetScheduleClient::SubmitJob(const string& input,
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
 
     //cerr << "Input: " << input << endl;
-    MakeCommandPacket(&m_Tmp, "SUBMIT \"", connected);
+    MakeCommandPacket(&m_Tmp, "SUBMIT \"");
     m_Tmp.append(NStr::PrintableString(input));
     m_Tmp.append("\"");
 
@@ -393,13 +392,13 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     m_Sock->DisableOSSendDelay(true);
 
     // batch command
-    MakeCommandPacket(&m_Tmp, "BSUB", connected);
+    MakeCommandPacket(&m_Tmp, "BSUB");
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
 
     // check if server is ready for the batch submit
@@ -551,10 +550,10 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
     *output = kEmptyStr;
 
     {{
-        bool connected = CheckConnect(kEmptyStr);
+        CheckConnect(kEmptyStr);
         CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-        MakeCommandPacket(&m_Tmp, "SUBMIT \"", connected);
+        MakeCommandPacket(&m_Tmp, "SUBMIT \"");
         m_Tmp.append(NStr::PrintableString(input));
         m_Tmp.append("\" ");
         m_Tmp.append(NStr::UIntToString(udp_port));
@@ -652,10 +651,10 @@ void CNetScheduleClient::CancelJob(const string& job_key)
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    CommandInitiate("CANCEL ", job_key, &m_Tmp, connected);
+    CommandInitiate("CANCEL ", job_key, &m_Tmp);
 
     CheckServerOK(&m_Tmp);
 }
@@ -667,10 +666,10 @@ void CNetScheduleClient::DropJob(const string& job_key)
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    CommandInitiate("DROJ ", job_key, &m_Tmp, connected);
+    CommandInitiate("DROJ ", job_key, &m_Tmp);
 
     CheckServerOK(&m_Tmp);
 }
@@ -678,10 +677,10 @@ void CNetScheduleClient::DropJob(const string& job_key)
 
 void CNetScheduleClient::Logging(bool on_off)
 {
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    CommandInitiate("LOG ", on_off ? "ON" : "OFF", &m_Tmp, connected);
+    CommandInitiate("LOG ", on_off ? "ON" : "OFF", &m_Tmp);
     CheckServerOK(&m_Tmp);
 }
 
@@ -692,10 +691,10 @@ void CNetScheduleClient::SetRunTimeout(const string& job_key,
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "JRTO ", connected);
+    MakeCommandPacket(&m_Tmp, "JRTO ");
 
     m_Tmp.append(job_key);
     m_Tmp.append(" ");
@@ -718,10 +717,10 @@ void CNetScheduleClient::JobDelayExpiration(const string& job_key,
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "JDEX ", connected);
+    MakeCommandPacket(&m_Tmp, "JDEX ");
 
     m_Tmp.append(job_key);
     m_Tmp.append(" ");
@@ -754,7 +753,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
 
     EJobStatus status;
 
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 /*
     if (m_JobKey.id) {
@@ -774,7 +773,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
         CommandInitiate("STATUS ", job_key, &m_Tmp);
     }
 */
-    CommandInitiate("STATUS ", job_key, &m_Tmp, connected);
+    CommandInitiate("STATUS ", job_key, &m_Tmp);
 
     TrimPrefix(&m_Tmp);
 
@@ -886,13 +885,13 @@ bool CNetScheduleClient::GetJob(string*        job_key,
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     if (udp_port == 0) {
-        CommandInitiate("GET ", kEmptyStr, &m_Tmp, connected);
+        CommandInitiate("GET ", kEmptyStr, &m_Tmp);
     } else {
-        MakeCommandPacket(&m_Tmp, "GET ", connected);
+        MakeCommandPacket(&m_Tmp, "GET ");
         m_Tmp.append(NStr::IntToString(udp_port));
 
         WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
@@ -946,10 +945,10 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
     }
 
     {{
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "WGET ", connected);
+    MakeCommandPacket(&m_Tmp, "WGET ");
     m_Tmp.append(NStr::IntToString(udp_port));
     m_Tmp.append(" ");
     m_Tmp.append(NStr::IntToString(wait_time));
@@ -1214,10 +1213,10 @@ void CNetScheduleClient::PutResult(const string& job_key,
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "PUT ", connected);
+    MakeCommandPacket(&m_Tmp, "PUT ");
 
     m_Tmp.append(job_key);
     m_Tmp.append(" ");
@@ -1266,13 +1265,13 @@ bool CNetScheduleClient::PutResultGetJob(const string& done_job_key,
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
-    bool connected = CheckConnect(done_job_key);
+    CheckConnect(done_job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     //cerr << done_output << endl << "==================" << endl;
     //cerr << done_output.size() << endl;
 
-    MakeCommandPacket(&m_Tmp, "JXCG ", connected);
+    MakeCommandPacket(&m_Tmp, "JXCG ");
 
     m_Tmp.append(done_job_key);
     m_Tmp.append(" ");
@@ -1325,10 +1324,10 @@ void CNetScheduleClient::PutProgressMsg(const string& job_key,
                    "Progress message too long");
     }
 
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "MPUT ", connected);
+    MakeCommandPacket(&m_Tmp, "MPUT ");
 
     m_Tmp.append(job_key);
     m_Tmp.append(" \"");
@@ -1351,10 +1350,10 @@ string CNetScheduleClient::GetProgressMsg(const string& job_key)
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "MGET ", connected);
+    MakeCommandPacket(&m_Tmp, "MGET ");
 
     m_Tmp.append(job_key);
 
@@ -1389,10 +1388,10 @@ void CNetScheduleClient::PutFailure(const string& job_key,
                    "Error message too long");
     }
     
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "FPUT ", connected);
+    MakeCommandPacket(&m_Tmp, "FPUT ");
 
     m_Tmp.append(job_key);
     m_Tmp.append(" ");
@@ -1422,10 +1421,10 @@ void CNetScheduleClient::StatusSnapshot(TStatusMap*   status_map,
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "STSN ", connected);
+    MakeCommandPacket(&m_Tmp, "STSN ");
     m_Tmp.append(" aff=\"");
     m_Tmp.append(affinity_token);
     m_Tmp.append("\"");
@@ -1460,10 +1459,10 @@ void CNetScheduleClient::ReturnJob(const string& job_key)
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "RETURN ", connected);
+    MakeCommandPacket(&m_Tmp, "RETURN ");
     m_Tmp.append(job_key);
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
@@ -1481,10 +1480,10 @@ void CNetScheduleClient::RegUnregClient(const string&  cmd,
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, cmd, connected);
+    MakeCommandPacket(&m_Tmp, cmd);
     m_Tmp.append(NStr::IntToString(udp_port));
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
@@ -1509,7 +1508,7 @@ void CNetScheduleClient::UnRegisterClient(unsigned short udp_port)
 
 void CNetScheduleClient::ShutdownServer(CNetScheduleClient::EShutdownLevel level)
 {
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     string cmd = "SHUTDOWN ";
@@ -1524,7 +1523,7 @@ void CNetScheduleClient::ShutdownServer(CNetScheduleClient::EShutdownLevel level
         break;
     }
                                 
-    MakeCommandPacket(&m_Tmp, cmd, connected);
+    MakeCommandPacket(&m_Tmp, cmd);
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     if (level == eDie)
         return;
@@ -1544,10 +1543,10 @@ void CNetScheduleClient::ReloadServerConfig()
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "RECO ", connected);
+    MakeCommandPacket(&m_Tmp, "RECO ");
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -1564,10 +1563,10 @@ string CNetScheduleClient::ServerVersion()
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "VERSION ", connected);
+    MakeCommandPacket(&m_Tmp, "VERSION ");
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
 
@@ -1593,7 +1592,7 @@ void CNetScheduleClient::CreateQueue(const string& qname, const string& qclass,
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     string param = qname + " " + qclass;
@@ -1602,7 +1601,7 @@ void CNetScheduleClient::CreateQueue(const string& qname, const string& qclass,
         param.append(comment);
         param.append("\"");
     }
-    CommandInitiate("QCRE ", param, &m_Tmp, connected);
+    CommandInitiate("QCRE ", param, &m_Tmp);
 
     CheckServerOK(&m_Tmp);
 }
@@ -1614,10 +1613,10 @@ void CNetScheduleClient::DeleteQueue(const string& qname)
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    CommandInitiate("QDEL ", qname, &m_Tmp, connected);
+    CommandInitiate("QDEL ", qname, &m_Tmp);
 
     CheckServerOK(&m_Tmp);
 }
@@ -1630,10 +1629,10 @@ void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(job_key);
+    CheckConnect(job_key);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "DUMP ", connected);
+    MakeCommandPacket(&m_Tmp, "DUMP ");
     m_Tmp += job_key;
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
 
@@ -1648,12 +1647,12 @@ void CNetScheduleClient::PrintQueue(CNcbiOstream& out,
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     string status_str = CNetScheduleClient::StatusToString(status);
 
-    MakeCommandPacket(&m_Tmp, "QPRT ", connected);
+    MakeCommandPacket(&m_Tmp, "QPRT ");
     m_Tmp += status_str;
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
 
@@ -1670,10 +1669,10 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out,
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "STAT ", connected);
+    MakeCommandPacket(&m_Tmp, "STAT ");
     if (opt == eStatisticsAll) {
         m_Tmp.append("ALL");
     }
@@ -1686,10 +1685,10 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out,
 
 void CNetScheduleClient::Monitor(CNcbiOstream & out)
 {
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(*m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "MONI ", connected);
+    MakeCommandPacket(&m_Tmp, "MONI ");
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     m_Tmp = "QUIT";
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
@@ -1720,10 +1719,10 @@ void CNetScheduleClient::Monitor(CNcbiOstream & out)
 
 string CNetScheduleClient::GetQueueList()
 {
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    CommandInitiate("QLST ", "", &m_Tmp, connected);
+    CommandInitiate("QLST ", "", &m_Tmp);
     TrimPrefix(&m_Tmp);
 
     return m_Tmp;
@@ -1732,21 +1731,20 @@ string CNetScheduleClient::GetQueueList()
 
 void CNetScheduleClient::DropQueue()
 {
-    bool connected = CheckConnect(kEmptyStr);
+    CheckConnect(kEmptyStr);
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    CommandInitiate("DROPQ ", "", &m_Tmp, connected);
+    CommandInitiate("DROPQ ", "", &m_Tmp);
     CheckServerOK(&m_Tmp);
 }
 
 
 void CNetScheduleClient::CommandInitiate(const string& command, 
                                          const string& job_key,
-                                         string*       answer,
-                                         bool          add_prefix)
+                                         string*       answer)
 {
     _ASSERT(answer);
-    MakeCommandPacket(&m_Tmp, command, add_prefix);
+    MakeCommandPacket(&m_Tmp, command);
     m_Tmp.append(job_key);
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
@@ -1760,33 +1758,28 @@ void CNetScheduleClient::CommandInitiate(const string& command,
 void CNetScheduleClient::TrimPrefix(string* str)
 {
     CheckServerOK(str);
-    str->erase(0, 3); // "OK:"
 }
 
 
-void CNetScheduleClient::ProcessServerError(string* response, bool trim_err)
+void CNetScheduleClient::ProcessServerError(string* response, ETrimErr trim_err)
 {
-    if (trim_err && NStr::StartsWith(*response, "ERR:")) {
+    if (trim_err == eTrimErr)
         TrimErr(response);
-    }
     string code;
     string msg;
     if (NStr::SplitInTwo(*response, ":", code, msg)) {
         // Map code into numeric value
-        int n_code;
-        if (sm_ExceptionMap.GetCode(code, n_code)) {
-            NCBI_THROW(CNetScheduleException,
-                       EErrCode(n_code),
-                       msg);
+        CException::TErrCode n_code = sm_ExceptionMap.GetCode(code);
+        if (n_code != CException::eInvalid) {
+            NCBI_THROW(CNetScheduleException, EErrCode(n_code), msg);
         }
     }
-    CNetServiceClient::ProcessServerError(response, false);
+    CNetServiceClient::ProcessServerError(response, eNoTrimErr);
 }
 
 
 void CNetScheduleClient::MakeCommandPacket(string*       out_str,
-                                           const string& cmd_str,
-                                           bool          /*connected*/)
+                                           const string& cmd_str)
 {
     // Check if authentication prefix has already been added
     // and sent to the server
@@ -1948,6 +1941,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/12/07 21:26:06  joukovv
+ * Error processing fixed.
+ *
  * Revision 1.68  2006/12/07 19:28:48  joukovv
  * Build errors fixed, queue info command introduced.
  *

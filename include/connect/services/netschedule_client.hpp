@@ -62,16 +62,19 @@ struct CNetSchedule_Key
     unsigned     port;      ///< TCP/IP port number
 };
 
+
 /// Map from exception names to codes
 /// @internal
 class CNetScheduleExceptionMap
 {
 public:
     CNetScheduleExceptionMap();
-    bool GetCode(const string& name, int& code);
+    CException::TErrCode GetCode(const string& name);
 private:
-    map<string, int> m_Map;
+    typedef map<string, CException::TErrCode> TMap;
+    TMap m_Map;
 };
+
 
 /// Client API for NCBI NetSchedule server
 ///
@@ -695,19 +698,17 @@ protected:
     ///    connection established 
     ///
     void MakeCommandPacket(string*       out_str, 
-                           const string& cmd_str,
-                           bool          connected);
+                           const string& cmd_str);
 
     /// check string for "OK:" prefix, throws an exception if "ERR:"
     void TrimPrefix(string* str);
 
     /// Error processing
-    virtual void ProcessServerError(string* response, bool trim_err);
+    virtual void ProcessServerError(string* response, ETrimErr trim_err);
 
     void CommandInitiate(const string& command, 
                          const string& job_key,
-                         string*       answer,
-                         bool          add_prefix);
+                         string*       answer);
 
     void ParseGetJobResponse(string*        job_key, 
                              string*        input, 
@@ -1040,6 +1041,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/12/07 21:26:06  joukovv
+ * Error processing fixed.
+ *
  * Revision 1.63  2006/12/07 16:22:10  joukovv
  * Transparent server-to-client exception report implemented. Version control
  * bug fixed.

@@ -86,10 +86,10 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
                                             0.15,
                                             0,
                                             IRegistry::eReturn);
-        LOG_POST(Info << sname 
-                      << " initializing linear LB curve"
-                      << " y0=" << lb_curve_high
-                      << " yN=" << lb_curve_linear_low);
+//        LOG_POST(Info << sname 
+//                      << " initializing linear LB curve"
+//                      << " y0=" << lb_curve_high
+//                      << " yN=" << lb_curve_linear_low);
     } else if (NStr::CompareNocase(curve_type, "regression") == 0) {
         lb_curve = eLBRegression;
         lb_curve_high = reg.GetDouble(sname,
@@ -102,10 +102,10 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
                                               -0.2,
                                               0,
                                               IRegistry::eReturn);
-        LOG_POST(Info << sname 
-                      << " initializing regression LB curve."
-                      << " y0=" << lb_curve_high 
-                      << " a="  << lb_curve_regression_a);
+//        LOG_POST(Info << sname 
+//                      << " initializing regression LB curve."
+//                      << " y0=" << lb_curve_high 
+//                      << " a="  << lb_curve_regression_a);
     }
 }
 
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/07 21:26:06  joukovv
+ * Error processing fixed.
+ *
  * Revision 1.5  2006/12/01 00:10:58  joukovv
  * Dynamic queue creation implemented.
  *
