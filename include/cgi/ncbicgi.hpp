@@ -631,7 +631,7 @@ public:
     size_t GetContentLength(void) const;
 
     /// Get request content. The content is saved only when fSaveRequestContent
-    /// flag is set. Otherwise the method will throw exception.
+    /// flag is set. Otherwise the method will throw an exception.
     const string& GetContent(void) const;
 
     /// Retrieve the request cookies
@@ -944,6 +944,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.87  2006/12/07 19:03:46  lavr
+* Fix a typo
+*
 * Revision 1.86  2006/06/12 18:44:34  didenko
 * Fixed cgi sessionid logging
 *
