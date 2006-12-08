@@ -5420,13 +5420,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if (args.GetServerType() == CTestArguments::eSybase &&
-        args.GetDriverName() != "ftds"
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
+    // This test was working fine all the time.
+    // The only problem is that the LINK_OS server is not available always.
+//     if (args.GetServerType() == CTestArguments::eSybase &&
+//         args.GetDriverName() != "ftds"
+//         ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov, DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
 
     if (args.GetServerType() == CTestArguments::eMsSql &&
         (args.GetDriverName() == "ftds64_odbc"
@@ -5648,6 +5650,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.116  2006/12/08 15:40:22  ssikorsk
+ * Disable Test_Iskhakov. The LINK_OS server is not available from time to time.
+ *
  * Revision 1.115  2006/12/05 17:20:07  ssikorsk
  * Replaced server name for Test_Authentication with a new one.
  *
