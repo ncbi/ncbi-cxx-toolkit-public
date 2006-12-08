@@ -62,14 +62,14 @@ private:
 
 void CTestServer::AddHello()
 {
-    CFastMutexGuard(m_HelloMutex);
+    CFastMutexGuard guard(m_HelloMutex);
     ++m_HelloCount;
 }
 
 
 int CTestServer::CountHellos()
 {
-    CFastMutexGuard(m_HelloMutex);
+    CFastMutexGuard guard(m_HelloMutex);
     return m_HelloCount;
 }
 
@@ -226,6 +226,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/12/08 16:28:08  joukovv
+ * Slip of mind fixed.
+ *
  * Revision 6.2  2006/09/27 21:26:06  joukovv
  * Thread-per-request is finally implemented. Interface changed to enable
  * streams, line-based message handler added, netscedule adapted.
