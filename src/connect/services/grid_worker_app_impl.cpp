@@ -190,7 +190,7 @@ public:
     }
     void Schedule() 
     { 
-        CFastMutexGuard(m_Mutext);
+        CFastMutexGuard guard(m_Mutext);
         m_AutoShutdownSW.Restart();
         if (m_StopFlag) {
             m_StopFlag = false; 
@@ -199,7 +199,7 @@ public:
     }
     void Suspend() 
     { 
-        CFastMutexGuard(m_Mutext);
+        CFastMutexGuard guard(m_Mutext);
         m_AutoShutdownSW.Restart();
         m_AutoShutdownSW.Stop();
         if (!m_StopFlag) {
@@ -633,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.30  2006/12/08 15:49:56  didenko
+ * Fixed a mutex guard usage
+ *
  * Revision 6.29  2006/11/30 15:33:33  didenko
  * Moved to a new log system
  *
