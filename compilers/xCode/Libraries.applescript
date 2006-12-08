@@ -72,7 +72,7 @@ property xconnect : {name:"xconnect", path:"connect", exc:{"ncbi_lbsm_ipc.c", "n
 --property cserial : {name:"cserial", path:"serial", inc:{"asntypes.cpp", "serialasn.cpp"}}
 property xser : {name:"xser", path:"serial", exc:{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"}}
 property xutil : {name:"xutil", path:"util"}
-property bdb : {name:"bdb", path:"bdb", exc:{"bdb_query_bison.tab.c", "bdb_query_lexer.cpp", "bdb_blobcache.cpp"}}
+property bdb : {name:"bdb", path:"bdb", exc:{"bdb_query_bison.tab.c", "bdb_query_lexer.cpp", "bdb_blobcache.cpp", "bdb_result_store.cpp"}}
 property xcache_bdb : {name:"xcache_bdb", path:"bdb", inc:{"bdb_blobcache.cpp"}}
 property xcache_netcache : {name:"xcache_netcache", path:"connect:services"}
 property xsqlite : {name:"xsqlite", path:"sqlite"}
@@ -193,7 +193,7 @@ property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 
 
 (* GUI Libraries *)
-property gui__core : {name:"gui__core", path:"gui:core", exc:{"OS_ver.cpp", "GBProject_ver2.cpp", "GBenchInitReply.cpp", "GBenchServiceRequest.cpp", "GBenchVersionReply.cpp", "GBenchVersionRequest.cpp", "NCBI_GBenchService_module.cpp", "GBenchServiceReply.cpp", "DataHandle.cpp", "DataHandleAction.cpp", "DataHandleSelector.cpp", "DataHandleTransformer.cpp", "DataHandleViewer.cpp", "NCBI_Data_Handle_module.cpp", "GBenchVersionInfo.cpp", "GBenchInitRequest.cpp", "GBenchFeedbackRequest.cpp", "NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "data_handle__.cpp", "data_handle___.cpp", "gbench_svc__.cpp", "gbench_svc___.cpp", "gbench_svc_cli.cpp", "gbench_svc_cli_.cpp", "plugin__.cpp", "plugin___.cpp"}}
+property gui__core : {name:"gui__core", path:"gui:core", exc:{"OS_ver.cpp", "GBProject_ver2.cpp", "GBenchInitReply.cpp", "GBenchServiceRequest.cpp", "GBenchVersionReply.cpp", "GBenchVersionRequest.cpp", "NCBI_GBenchService_module.cpp", "GBenchServiceReply.cpp", "DataHandle.cpp", "DataHandleAction.cpp", "DataHandleSelector.cpp", "DataHandleTransformer.cpp", "DataHandleViewer.cpp", "NCBI_Data_Handle_module.cpp", "GBenchVersionInfo.cpp", "GBenchInitRequest.cpp", "GBenchFeedbackRequest.cpp", "NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "PluginIconInfo.cpp", "GBenchToolResults.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "data_handle__.cpp", "data_handle___.cpp", "gbench_svc__.cpp", "gbench_svc___.cpp", "gbench_svc_cli.cpp", "gbench_svc_cli_.cpp", "plugin__.cpp", "plugin___.cpp"}}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true, asn1Name:"gui_project"}
 property data_handle : {name:"data_handle", path:"gui:core", inc:{"data_handle__.cpp", "data_handle___.cpp"}, asn1:true, asn1Name:"data_handle"}
 property gbench_svc : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc__.cpp", "gbench_svc___.cpp"}, asn1:true, asn1Name:"gbench_svc"}
@@ -319,7 +319,7 @@ property gui_services : {name:"gui_services", libs:{gui__services}, dep:"gui_cor
 
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xcache_bdb ncbi_bdb ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
-property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_cdd ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
+property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_cdd ncbi_xloader_genbank ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
 
 property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb ncbi_xloader_genbank", bundle:true, req:true}
 property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
@@ -442,6 +442,11 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.115  2006/12/08 15:56:51  rsmith
+ * bdb exc bdb_result_store.cpp
+ * gui__core exc PluginIconInfo.cpp, GBenchToolResults.cpp
+ * algo_basic now depends on ncbi_validator
+ *
  * Revision 1.114  2006/11/15 19:46:41  lebedev
  * gui_dialogs += ncbi_pub
  *
