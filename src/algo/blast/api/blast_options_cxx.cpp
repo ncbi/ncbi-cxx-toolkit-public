@@ -520,6 +520,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
         x_SetParam("FilterString", v);
         return;
         
+    case eBlastOpt_RepeatFilteringDB:
+        x_SetParam("RepeatFilteringDB", v);
+        return;
+        
     case eBlastOpt_MatrixName:
         x_SetParam("MatrixName", v);
         return;
@@ -597,11 +601,20 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
         return;
 
     case eBlastOpt_SegFiltering:
-        {
-            const char* filter_string = v ? "T" : "F";
-            x_SetParam("FilterString", filter_string);
-            return;
-        }
+        x_SetParam("SegFiltering", v);
+        return;
+
+    case eBlastOpt_DustFiltering:
+        x_SetParam("DustFiltering", v);
+        return;
+
+    case eBlastOpt_RepeatFiltering:
+        x_SetParam("RepeatFiltering", v);
+        return;
+
+    case eBlastOpt_MaskAtHash:
+        x_SetParam("MaskAtHash", v);
+        return;
         
     default:
         break;
@@ -1950,6 +1963,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.87  2006/12/08 14:23:35  madden
+* Add support for dust and repeat filtering as well as the repeat db
+*
 * Revision 1.86  2006/11/21 17:16:10  papadopo
 * use enum for lookup table types
 *
