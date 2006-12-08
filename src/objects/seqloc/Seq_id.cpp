@@ -636,14 +636,18 @@ static const TTpeRange sc_TpeRanges[] = {
     TTpeRange("CAJ70649", "CAJ70647"),
     TTpeRange("CAJ77886", "CAJ77880"),
     SingleTPE("CAK26553"),
-    SingleTPE("CAK32514")
+    TTpeRange("CAK26786", "CAK26777"),
+    SingleTPE("CAK32514"),
+    SingleTPE("CAL10024")
 };
 typedef CStaticArrayMap<const char*, const char*, PNocase_CStr> TTpeRangeMap;
 static const TTpeRangeMap sc_TpeRangeMap(sc_TpeRanges, sizeof(sc_TpeRanges));
 
 static CSeq_id::EAccessionInfo s_IdentifyCxxAcc(const string& acc)
 {
-    if (acc > "CAL69448") { // make no assumptions about as yet unassigned IDs
+    if (acc > "CAL73973") {
+        // make no assumptions about as yet unassigned IDs
+        // (still not entirely safe due to fill-ins, though :-/ )
         return CSeq_id::eAcc_unreserved_prot;
     } else {
         TTpeRangeMap::const_iterator it
@@ -1730,6 +1734,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.140  2006/12/08 20:32:36  ucko
+ * Update EMBL/TPE protein info.
+ *
  * Revision 6.139  2006/12/05 15:31:32  ucko
  * IdentifyAccession: EI -> eAcc_gb_gss
  *
