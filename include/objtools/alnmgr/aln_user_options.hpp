@@ -37,6 +37,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+//#include <objmgr/bioseq_handle.hpp>
+#include <objtools/alnmgr/pairwise_aln.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -44,6 +47,7 @@ BEGIN_NCBI_SCOPE
 class CAlnUserOptions : public CObject
 {
 public:
+    typedef CPairwiseAln::TPos TPos;
 
     enum EMergeAlgo {
         eMergeAllSeqs      = 0, ///< Merge all sequences
@@ -57,9 +61,49 @@ public:
         fTruncateOverlaps = 0x0001, ///< Otherwise put on separate rows
         fAllowMixedStrand = 0x0002, ///< Allow mixed strand on the same row
     };
-    typedef int TMergeFlags;
-    TMergeFlags m_MergeFlags;
 
+    enum EShowUnalignedOption {
+        eHideUnaligned,
+        eShowFlankingN, // show N residues on each side
+        eShowAllUnaligned,
+
+    };
+    typedef int TMergeFlags;
+
+    objects::CBioseq_Handle  m_Anchor; // if null then a multiple alignment shall be built    
+    EMergeAlgo   m_MergeOption;
+    TMergeFlags  m_MergeFlags;
+    
+    bool    m_ClipAlignment;
+    objects::CBioseq_Handle  m_ClipSeq;
+    TPos m_ClipStart;
+    TPos m_ClipEnd;
+
+    bool m_ExtendAlignment;
+    TPos m_Extension; 
+
+    EShowUnalignedOption  m_UnalignedOption;
+    TPos m_ShowUnalignedN;
+
+    CAlnUserOptions()
+    :   m_MergeOption(eQuerySeqMergeOnly),
+        m_MergeFlags(0),
+        m_ClipAlignment(false),
+        m_ClipStart(0), m_ClipEnd(1),
+        m_ExtendAlignment(false),
+        m_Extension(0),
+        m_UnalignedOption(eHideUnaligned),
+        m_ShowUnalignedN(10)
+    {
+    }
+
+    void    SetMergeFlags(TMergeFlags flags, bool set)  {
+        if(set) {
+            m_MergeFlags |= flags;
+        } else {
+            m_MergeFlags &= ~flags;
+        }
+    }
 
 //     enum EAddFlags {
 //         // Determine score of each aligned segment in the process of mixing
@@ -99,6 +143,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/12/11 20:43:42  yazhuk
+* Extended CAlnUserOptions.
+*
 * Revision 1.5  2006/12/06 20:09:43  todorov
 * MergeOptions => MergeAlgo
 *
