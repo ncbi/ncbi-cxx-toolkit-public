@@ -59,6 +59,7 @@ class CSeq_loc;
 class CSeq_loc_CI;
 class CSeq_feat;
 class CSeq_align;
+class CSeq_align_Mapper_Base;
 
 
 class NCBI_SEQ_EXPORT CMappingRange : public CObject
@@ -596,6 +597,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/12/11 20:48:23  ucko
+* Add a forward declaration for CSeq_align_Mapper_Base.
+*
 * Revision 1.1  2006/12/11 17:11:34  grichenk
 * Initial revision
 *
