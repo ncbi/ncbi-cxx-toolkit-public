@@ -69,7 +69,7 @@ public:
     CServer_Connection(IServer_ConnectionHandler* handler)
         : m_Handler(handler), m_Open(true)
         { m_Handler->SetSocket(this); }
-    virtual EIO_Event GetEventsToPollFor() 
+    virtual EIO_Event GetEventsToPollFor() const
         { return m_Handler->GetEventsToPollFor(); }
     virtual CStdRequest* CreateRequest(EIO_Event event,
                                        CServer_ConnectionPool& connPool,
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2006/12/11 16:17:42  joukovv
+ * Dangerous warning fixed.
+ *
  * Revision 6.3  2006/10/19 20:38:20  joukovv
  * Works in thread-per-request mode. Errors in BDB layer fixed.
  *
