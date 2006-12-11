@@ -142,7 +142,8 @@ static double s_IEEE754_Exp(double x)	/* default IEEE double exp */
 		     return x+x; 		/* NaN */
 		else return (xsb==0)? x:0.0;	/* exp(+-inf)={inf,0} */
 	    }
-	    if(x > o_threshold) return huge*huge; /* overflow */
+	    if(x > o_threshold)
+                return huge*huge; /* NCBI_FAKE_WARNING [deliberate overflow] */
 	    if(x < u_threshold) return twom1000*twom1000; /* underflow */
 	}
 
@@ -473,6 +474,9 @@ double NCBI_ErfC(double x)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/12/11 16:14:01  ucko
+* s_IEEE754_Exp: mark the intentional overflow case with NCBI_FAKE_WARNING.
+*
 * Revision 1.3  2005/12/20 22:39:19  vakatov
 * Typo fixed
 *
