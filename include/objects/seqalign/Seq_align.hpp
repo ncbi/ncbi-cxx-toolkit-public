@@ -166,6 +166,22 @@ private:
 };
 
 
+/// Remap seq-align row to the seq-loc.
+/// Treats the given row as being relative to the location, maps it
+/// to the sequence(s) referenced by this location.
+/// @param align
+///   The seq-align object to be mapped (the object will be modified!).
+/// @param row
+///   Row to be mapped.
+/// @param loc
+///   Seq-loc to which the row should be mapped.
+/// @result
+///   Reference to the new seq-align with the mapped row.
+NCBI_SEQALIGN_EXPORT
+CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
+                                 CSeq_align::TDim  row,
+                                 const CSeq_loc&   loc);
+
 
 /////////////////// CSeq_align inline methods
 
@@ -188,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2006/12/11 17:14:11  grichenk
+* Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
+*
 * Revision 1.20  2006/11/13 16:54:15  grichenk
 * Fixed comments and default value.
 *

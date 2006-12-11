@@ -117,21 +117,6 @@ public:
 };
 
 
-/// Seq-loc mapper exceptions
-class NCBI_XOBJMGR_EXPORT CLocMapperException : public CObjMgrException
-{
-public:
-    enum EErrCode {
-        eBadLocation,    ///< Attempt to map from/to invalid seq-loc
-        eUnknownLength,  ///< Can not resolve sequence length
-        eBadAlignment,   ///< Unsuported or invalid alignment
-        eOtherError
-    };
-    virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CLocMapperException, CObjMgrException);
-};
-
-
 /// Data loader exceptions, used by GenBank loader.
 class NCBI_XOBJMGR_EXPORT CLoaderException : public CObjMgrException
 {
@@ -232,6 +217,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/12/11 17:14:11  grichenk
+* Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
+*
 * Revision 1.18  2006/09/21 19:18:15  vasilche
 * Added check for self-references in CSeqMap_CI.
 *

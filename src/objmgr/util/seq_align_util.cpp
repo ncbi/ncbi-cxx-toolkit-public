@@ -54,9 +54,9 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
     }
     const CSeq_id* orig_id = loc.GetId();
     if ( !orig_id ) {
-        NCBI_THROW(CLocMapperException, eBadLocation,
-                    "Location with multiple ids can not be used to "
-                    "remap seq-aligns.");
+        NCBI_THROW(CAnnotMapperException, eBadLocation,
+                   "Location with multiple ids can not be used to "
+                   "remap seq-aligns.");
     }
     CRef<CSeq_id> id(new CSeq_id);
     id->Assign(*orig_id);
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/12/11 17:14:12  grichenk
+* Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
+*
 * Revision 1.2  2006/11/20 17:49:49  grichenk
 * Fixed problems with scope.
 *

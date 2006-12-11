@@ -45,6 +45,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seq/seq_loc_mapper_base.hpp>
 #include <serial/iterator.hpp>
 
 // generated includes
@@ -983,6 +984,40 @@ void CSeq_align::RemapToLoc(TDim row,
 }
 
 
+CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
+                                 CSeq_align::TDim  row,
+                                 const CSeq_loc&   loc)
+{
+    if ( loc.IsWhole() ) {
+        CRef<CSeq_align> copy(new CSeq_align);
+        copy->Assign(align);
+        return copy;
+    }
+    const CSeq_id* orig_id = loc.GetId();
+    if ( !orig_id ) {
+        NCBI_THROW(CAnnotMapperException, eBadLocation,
+                   "Location with multiple ids can not be used to "
+                   "remap seq-aligns.");
+    }
+    CRef<CSeq_id> id(new CSeq_id);
+    id->Assign(*orig_id);
+
+    // Create source seq-loc
+    TSeqPos len = 0;
+    for (CSeq_loc_CI it(loc); it; ++it) {
+        if ( it.IsWhole() ) {
+            NCBI_THROW(CAnnotMapperException, eBadLocation,
+                    "Whole seq-loc can not be used to "
+                    "remap seq-aligns.");
+        }
+        len += it.GetRange().GetLength();
+    }
+    CSeq_loc src_loc(*id, 0, len - 1);
+    CSeq_loc_Mapper_Base mapper(src_loc, loc);
+    return mapper.Map(align);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -992,6 +1027,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2006/12/11 17:14:12  grichenk
+* Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
+*
 * Revision 1.30  2006/08/08 19:45:34  jcherry
 * Handle disc alignments in CSeq_align::GetSeq_id
 *

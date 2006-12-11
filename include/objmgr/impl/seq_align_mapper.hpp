@@ -38,205 +38,51 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seq/seq_align_mapper_base.hpp>
 #include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CDense_seg;
-class CPacked_seg;
-class CSeq_align_set;
-class CMappingRange;
-class CSeq_loc_Mapper;
 
-struct NCBI_XOBJMGR_EXPORT SAlignment_Segment
-{
-    struct NCBI_XOBJMGR_EXPORT SAlignment_Row
-    {
-        SAlignment_Row(void);
-
-        void SetMapped(void);
-        int GetSegStart(void) const;
-        bool SameStrand(const SAlignment_Row& r) const;
-
-        CSeq_id_Handle m_Id;
-        TSeqPos        m_Start; ///< kInvalidSeqPos means skipped segment
-        bool           m_IsSetStrand;
-        ENa_strand     m_Strand;
-        int            m_Width; ///< not stored in ASN.1, width of a character
-        bool           m_Mapped;
-    };
-    typedef vector<SAlignment_Row> TRows;
-
-    SAlignment_Segment(int len, size_t dim);
-
-    SAlignment_Row& GetRow(size_t idx);
-    SAlignment_Row& CopyRow(size_t idx, const SAlignment_Row& src_row);
-    SAlignment_Row& AddRow(size_t idx,
-                           const CSeq_id& id,
-                           int start,
-                           bool is_set_strand,
-                           ENa_strand strand,
-                           int width);
-    SAlignment_Row& AddRow(size_t idx,
-                           const CSeq_id_Handle& id,
-                           int start,
-                           bool is_set_strand,
-                           ENa_strand strand,
-                           int width);
-
-    typedef vector< CRef<CScore> >     TScores;
-
-    void SetScores(const TScores& scores);
-
-    int       m_Len;
-    TRows     m_Rows;
-    bool      m_HaveStrands;
-    TScores   m_Scores;
-};
-
-
-class NCBI_XOBJMGR_EXPORT CSeq_align_Mapper : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_align_Mapper : public CSeq_align_Mapper_Base
 {
 public:
-    typedef CSeq_align::C_Segs::TDendiag TDendiag;
-    typedef CSeq_align::C_Segs::TStd TStd;
-
     CSeq_align_Mapper(const CSeq_align& align,
                       bool map_widths,
                       CScope* scope = 0);
     ~CSeq_align_Mapper(void);
 
-    void Convert(CSeq_loc_Conversion_Set& cvts,
-                 unsigned int loc_index_shift = 0);
-    void Convert(CSeq_loc_Mapper& mapper);
-
-    CRef<CSeq_align> GetDstAlign(void) const;
-
-    size_t GetDim() const;
-    const CSeq_id_Handle& GetRowId(size_t idx) const;
-
-    typedef list<SAlignment_Segment>   TSegments;
-    const TSegments& GetSegments() const;
+protected:
+    virtual int GetSeqWidth(const CSeq_id& id) const;
 
 private:
-
-    // Segment insertion functions
-    SAlignment_Segment& x_PushSeg(int len, size_t dim);
-    SAlignment_Segment& x_InsertSeg(TSegments::iterator& where,
-                                    int len,
-                                    size_t dim);
-
-    void x_Init(const TDendiag& diags);
-    void x_Init(const CDense_seg& denseg);
-    void x_Init(const TStd& sseg);
-    void x_Init(const CPacked_seg& pseg);
-    void x_Init(const CSeq_align_set& align_set);
-
     typedef CSeq_loc_Conversion_Set::TRange       TRange;
     typedef CSeq_loc_Conversion_Set::TRangeMap    TRangeMap;
     typedef CSeq_loc_Conversion_Set::TIdMap       TIdMap;
     typedef CSeq_loc_Conversion_Set::TConvByIndex TConvByIndex;
 
+    friend class CSeq_loc_Conversion_Set;
+
+    void Convert(CSeq_loc_Conversion_Set& cvts,
+                 unsigned int loc_index_shift = 0);
+
     // Mapping through CSeq_loc_Conversion
-    void x_ConvertAlign(CSeq_loc_Conversion_Set& cvts,
-                        unsigned int loc_index_shift);
-    void x_ConvertRow(CSeq_loc_Conversion& cvt,
-                      size_t row);
-    void x_ConvertRow(TIdMap& cvts,
-                      size_t row);
-    CSeq_id_Handle x_ConvertSegment(TSegments::iterator& seg_it,
-                                    CSeq_loc_Conversion& cvt,
-                                    size_t row);
-    CSeq_id_Handle x_ConvertSegment(TSegments::iterator& seg_it,
-                                    TIdMap& id_map,
-                                    size_t row);
+    void x_ConvertAlignCvt(CSeq_loc_Conversion_Set& cvts,
+                           unsigned int loc_index_shift);
+    void x_ConvertRowCvt(CSeq_loc_Conversion& cvt,
+                         size_t row);
+    void x_ConvertRowCvt(TIdMap& cvts,
+                         size_t row);
+    CSeq_id_Handle x_ConvertSegmentCvt(TSegments::iterator& seg_it,
+                                       CSeq_loc_Conversion& cvt,
+                                       size_t row);
+    CSeq_id_Handle x_ConvertSegmentCvt(TSegments::iterator& seg_it,
+                                       TIdMap& id_map,
+                                       size_t row);
 
-    // Mapping through CSeq_loc_Mapper
-    void x_ConvertAlign(CSeq_loc_Mapper& mapper);
-    void x_ConvertRow(CSeq_loc_Mapper& mapper,
-                      size_t row);
-    CSeq_id_Handle x_ConvertSegment(TSegments::iterator& seg_it,
-                                    CSeq_loc_Mapper& mapper,
-                                    size_t row);
-
-    typedef vector<ENa_strand> TStrands;
-    void x_FillKnownStrands(TStrands& strands) const;
-
-    void x_GetDstDendiag(CRef<CSeq_align>& dst) const;
-    void x_GetDstDenseg(CRef<CSeq_align>& dst) const;
-    void x_GetDstStd(CRef<CSeq_align>& dst) const;
-    void x_GetDstPacked(CRef<CSeq_align>& dst) const;
-    void x_GetDstDisc(CRef<CSeq_align>& dst) const;
-
-    int x_GetWidth(const CSeq_id& id) const;
-
-    // Used for e_Disc alignments
-    typedef vector<CSeq_align_Mapper>  TSubAligns;
-    
-    // Flags to indicate possible destination alignment types:
-    // multi-dim or multi-id alignments can be packed into std-seg
-    // or dense-diag only.
-    enum EAlignFlags {
-        eAlign_Normal,      // Normal alignment, may be packed into any type
-        eAlign_Empty,       // Empty alignment
-        eAlign_MultiId,     // A row contains different IDs
-        eAlign_MultiDim     // Segments have different number of rows
-    };
-
-    mutable CRef<CScope>         m_Scope;
-    CConstRef<CSeq_align>        m_OrigAlign;
-    mutable CRef<CSeq_align>     m_DstAlign;
-    TSegments                    m_Segs;
-    TSubAligns                   m_SubAligns;
-    bool                         m_HaveStrands;
-    bool                         m_HaveWidths;
-    bool                         m_MapWidths;
-    bool                         m_OnlyNucs;
-    size_t                       m_Dim;
-    EAlignFlags                  m_AlignFlags;
+    mutable CRef<CScope> m_Scope;
 };
-
-
-inline
-SAlignment_Segment::SAlignment_Row::SAlignment_Row(void)
-    : m_Start(kInvalidSeqPos),
-      m_IsSetStrand(false),
-      m_Strand(eNa_strand_unknown),
-      m_Width(0),
-      m_Mapped(false)
-{
-    return;
-}
-
-
-inline
-void SAlignment_Segment::SAlignment_Row::SetMapped(void)
-{
-    m_Mapped = true;
-}
-
-
-inline
-bool SAlignment_Segment::SAlignment_Row::
-SameStrand(const SAlignment_Row& r) const
-{
-    return m_IsSetStrand  &&  SameOrientation(m_Strand, r.m_Strand);
-}
-
-
-inline
-int SAlignment_Segment::SAlignment_Row::GetSegStart(void) const
-{
-    return m_Start != kInvalidSeqPos ? int(m_Start) : -1;
-}
-
-
-inline
-const CSeq_align_Mapper::TSegments& CSeq_align_Mapper::GetSegments(void) const
-{
-    return m_Segs;
-}
 
 
 END_SCOPE(objects)
@@ -245,6 +91,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/12/11 17:14:11  grichenk
+* Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
+*
 * Revision 1.16  2006/11/29 20:44:04  grichenk
 * Set correct strand for gaps.
 *
