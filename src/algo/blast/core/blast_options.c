@@ -161,6 +161,125 @@ Int2 SBlastFilterOptionsNew(SBlastFilterOptions* *filter_options,  EFilterOption
     return status;
 }
 
+
+static SDustOptions* s_MergeDustOptions(const SDustOptions* opt1, const SDustOptions* opt2)
+{
+     SDustOptions* retval = NULL;
+
+     if (!opt1 && !opt2)
+         return NULL;
+
+     SDustOptionsNew(&retval);
+
+     if (opt1 && !opt2)
+     {
+           retval->level = opt1->level;
+           retval->window = opt1->window;
+           retval->linker = opt1->linker;
+     }
+     else if (!opt1 && opt2)
+     {
+           retval->level = opt2->level;
+           retval->window = opt2->window;
+           retval->linker = opt2->linker;
+     }
+     else 
+     {
+          retval->level = (opt1->level != kDustLevel) ? opt1->level : opt2->level;
+          retval->window = (opt1->window != kDustWindow) ? opt1->window : opt2->window;
+          retval->linker = (opt1->linker != kDustLinker) ? opt1->linker : opt2->linker;
+     }
+
+     return retval;
+}
+
+
+static SSegOptions* s_MergeSegOptions(const SSegOptions* opt1, const SSegOptions* opt2)
+{
+    SSegOptions* retval = NULL;
+
+    if (!opt1 && !opt2)
+        return NULL;
+
+    SSegOptionsNew(&retval);
+
+    if (opt1 && !opt2)
+    {
+         retval->window = opt1->window;
+         retval->locut = opt1->locut;
+         retval->hicut = opt1->hicut;
+    }
+    else if (!opt1 && opt2)
+    {
+         retval->window = opt2->window;
+         retval->locut = opt2->locut;
+         retval->hicut = opt2->hicut;
+    }
+    else
+    {
+         retval->window = (opt1->window != kSegWindow) ? opt1->window : opt2->window;
+         retval->locut = (opt1->locut != kSegLocut) ? opt1->locut : opt2->locut;
+         retval->hicut = (opt1->hicut != kSegHicut) ? opt1->hicut : opt2->hicut;
+    }
+    return retval;
+}
+
+static SRepeatFilterOptions* s_MergeRepeatOptions(const SRepeatFilterOptions* opt1, const SRepeatFilterOptions* opt2)
+{
+      SRepeatFilterOptions* retval = NULL;
+  
+      if (!opt1 && !opt2)
+         return NULL;
+
+      SRepeatFilterOptionsNew(&retval);
+
+      if (opt1 && !opt2)
+      {
+           SRepeatFilterOptionsResetDB(&retval, opt1->database);
+      }
+      else if (!opt1 && opt2)
+      {
+           SRepeatFilterOptionsResetDB(&retval, opt2->database);
+      }
+      else 
+      {  /* TODO : handle different db's. */
+           SRepeatFilterOptionsResetDB(&retval, opt2->database); 
+      }
+      return retval;
+}
+
+Int2 SBlastFilterOptionsMerge(SBlastFilterOptions** combined, const SBlastFilterOptions* opt1,
+       const SBlastFilterOptions* opt2)
+{
+     SBlastFilterOptions* retval = NULL;
+     Int2 status = 0;
+
+     *combined = NULL;
+
+     if (opt1 == NULL && opt2 == NULL)
+         return 0;
+
+     status = SBlastFilterOptionsNew(&retval, eEmpty);
+     if (status != 0)
+         return status;
+
+     *combined = retval;
+
+     if ((opt1 && opt1->mask_at_hash) || (opt2 && opt2->mask_at_hash))
+         retval->mask_at_hash = TRUE;
+
+     retval->dustOptions = 
+         s_MergeDustOptions(opt1 ? opt1->dustOptions : NULL, opt2 ? opt2->dustOptions : NULL);
+     retval->segOptions = 
+         s_MergeSegOptions(opt1 ? opt1->segOptions : NULL, opt2 ? opt2->segOptions : NULL);
+     retval->repeatFilterOptions = 
+         s_MergeRepeatOptions(opt1 ? opt1->repeatFilterOptions : NULL, opt2 ? opt2->repeatFilterOptions : NULL);
+
+     return 0;
+}
+
+
+
 Boolean SBlastFilterOptionsMaskAtHash(const SBlastFilterOptions* filter_options)
 {
        if (filter_options == NULL)
@@ -1328,6 +1447,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.190  2006/12/11 14:34:02  madden
+ * Add  SBlastFilterOptionsMerge
+ *
  * Revision 1.189  2006/11/21 17:06:04  papadopo
  * rearrange headers, use enum for lookup table types
  *

@@ -495,6 +495,16 @@ Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions* *repeat_options);
  */
 SBlastFilterOptions* SBlastFilterOptionsFree(SBlastFilterOptions* filter_options);
 
+/**  Merges two sets of options together, taking the non-default one as preferred.  if
+ * both are non-default then one or the other is taken.
+ * @param combined object that is returned [in|out]
+ * @param opt1 first set of options [in]
+ * @param opt2 second set of options [in]
+ * @return zero on success. 
+ */
+Int2 SBlastFilterOptionsMerge(SBlastFilterOptions** combined, const SBlastFilterOptions* opt1,
+       const SBlastFilterOptions* opt2);
+
 /** Types of filtering options. */
 typedef enum EFilterOptions {
     eSeg,            /**< low-complexity for proteins. */
