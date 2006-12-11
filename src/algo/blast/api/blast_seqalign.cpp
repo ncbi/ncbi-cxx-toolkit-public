@@ -1262,7 +1262,7 @@ s_RemapToSubjectLoc(CRef<CSeq_align> subj_aligns, const CSeq_loc& subj_loc)
     /// Iterate over this subject's HSPs...
     NON_CONST_ITERATE(CSeq_align_set::Tdata, hsp, 
                       subj_aligns->SetSegs().SetDisc().Set()) {
-        hsp->Reset(sequence::RemapAlignToLoc(**hsp, kSubjDimension, subj_loc));
+        hsp->Reset(RemapAlignToLoc(**hsp, kSubjDimension, subj_loc));
     }
 }
 
@@ -1624,8 +1624,8 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.82  2006/12/11 19:06:43  camacho
-* Revert previous commit
+* Revision 1.83  2006/12/11 22:05:40  camacho
+* Rollback change, as this was deliberate to achieve OM-independence
 *
 * Revision 1.81  2006/12/11 17:14:11  grichenk
 * Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
