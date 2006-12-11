@@ -1650,7 +1650,7 @@ void CCleanup_imp::x_Common (list< CRef< COrgMod > >& mod_list1,
             (o1).Reset##x(); \
         } else { \
             list <string>::iterator it1 = (o1).Set##x().begin(); \
-            while (it1 != (o1).Get##x().end()) { \
+            while (it1 != (o1).Set##x().end()) { \
                 list <string>::const_iterator it2 = (o2).Get##x().begin(); \
                 while (it2 != (o2).Get##x().end() \
                        && !NStr::Equal(*it1, *it2)) { \
@@ -2267,6 +2267,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2006/12/11 20:21:53  ucko
+ * One more fix to COMMON_STRING_LIST: compare it1 to SetX().end() rather
+ * than GetX().end(), which is a const_iterator.
+ *
  * Revision 1.19  2006/12/11 17:50:15  ucko
  * COMMON_*: drop some gratuitous uses of ## that modern GCC rejects.
  *
