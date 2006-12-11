@@ -63,7 +63,7 @@ public:
         eCleanOrgmod,
         // Set when fields are moved or have content changes
         eRepairBioseqMol,
-        eChangeFeatureKey,
+        eChangeFeatureKey, //10
         eNormalizeAuthors,
         eChangePublication,
         eChangeQualifiers,
@@ -74,7 +74,7 @@ public:
         eChangeException,
         eChangeComment,
         // Set when fields are rescued
-        eChange_tRna,
+        eChange_tRna, //20
         eChange_rRna,
         eChangeITS,
         eChangeAnticodon,
@@ -85,7 +85,7 @@ public:
         // set when locations are repaired
         eChangeSeqloc,
         eChangeStrand,
-        eChangeWholeLocation,
+        eChangeWholeLocation, //30
         // set when MolInfo descriptors are affected
         eChangeMolInfo,
         // set when prot-xref is removed
@@ -118,6 +118,7 @@ public:
         eChangeBioSourceGenome,
         eChangeBioSourceOrigin,
         eChangeBioSourceOther,
+        eChangeSeqId,
         // set when any other change is made.
         eChangeOther,
         
@@ -153,6 +154,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/12/11 17:11:32  bollin
+ * Added new flag to CCleanupChange
+ *
  * Revision 1.5  2006/10/24 12:12:19  bollin
  * Added more change flags for ExtendedCleanup
  *
