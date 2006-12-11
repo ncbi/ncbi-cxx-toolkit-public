@@ -1001,7 +1001,7 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
             // ok
         } else if (src.key == "CDS" &&  NStr::EndsWith(dest.key, "_codon")
             &&  !(x_GetFlags() & fNoGTF) ) {
-            dest.key == "CDS";
+            dest.key = "CDS";
         } else {
             x_Warn("Merging features with different keys: " + dest.key
                    + " != " + src.key, src.line_no);
@@ -1240,6 +1240,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/12/11 15:46:50  ucko
+* x_MergeRecords: fix a typo that turned an assignment into a comparison.
+*
 * Revision 1.28  2006/10/06 17:32:14  dicuccio
 * Added code to handle gene refs seamlessly: build map of GFF gene_id ->
 * gene-ref, re-assign gene refs at the end of processing
