@@ -946,7 +946,7 @@ void ScanFastaFile(IFastaEntryScan* scanner,
             if (se->IsSeq()) {
                 scanner->EntryFound(se, pos);
             }
-        } catch (CObjReaderParseException& e) {
+        } catch (CObjReaderParseException&) {
             if ( !lr.AtEOF() ) {
                 throw;
             }
@@ -1438,6 +1438,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2006/12/11 15:49:24  ucko
+* ScanFastaFile: don't bother naming catch's argument (only used implicitly).
+*
 * Revision 1.34  2006/09/20 19:27:42  ucko
 * - When a defline specifies a range of locations, give the excerpt a
 *   local ID and an appropriate hist.assembly record to avoid
