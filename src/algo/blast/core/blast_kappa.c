@@ -293,7 +293,7 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
                                 int oid,
                                 BlastQueryInfo* queryInfo)
 {
-    int status;                    /* return code for any routine called */
+    int status = 0;                    /* return code for any routine called */
     const int unknown_value = 0;   /* dummy constant to use when a
                                       parameter value is not known */
     BlastCompo_Alignment * align;  /* an alignment in the list */
@@ -1856,7 +1856,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     /* loop index */
     int query_index;
     /* number of queries in the concatenated query */
-    int numQueries;
+    int numQueries = queryInfo->num_queries;
     /* keeps track of gapped alignment params */
     BlastGapAlignStruct* gapAlign = NULL;
     /* All alignments above this value will be reported, no matter how
@@ -1963,7 +1963,6 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         status_code = -1;
         goto function_cleanup;
     }
-    numQueries = queryInfo->num_queries;
     query_info = s_GetQueryInfo(queryBlk->sequence, queryInfo);
     if (query_info == NULL) {
         status_code = -1;
