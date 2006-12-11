@@ -626,8 +626,8 @@ static Int4 s_BlastSmallNaScanSubject_4_1(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 4);
-    ASSERT(lookup_wrap->scan_step == 1);
+    ASSERT(lookup->lut_word_length == 4);
+    ASSERT(lookup->scan_step == 1);
 
     switch (s_off % COMPRESSION_RATIO) {
     case 1:
@@ -712,8 +712,8 @@ static Int4 s_BlastSmallNaScanSubject_5_1(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 5);
-    ASSERT(lookup_wrap->scan_step == 1);
+    ASSERT(lookup->lut_word_length == 5);
+    ASSERT(lookup->scan_step == 1);
 
     switch (s_off % COMPRESSION_RATIO) {
     case 1:
@@ -797,8 +797,8 @@ static Int4 s_BlastSmallNaScanSubject_6_1(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 6);
-    ASSERT(lookup_wrap->scan_step == 1);
+    ASSERT(lookup->lut_word_length == 6);
+    ASSERT(lookup->scan_step == 1);
 
     switch (s_off % COMPRESSION_RATIO) {
     case 1:
@@ -883,8 +883,8 @@ static Int4 s_BlastSmallNaScanSubject_6_2(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 6);
-    ASSERT(lookup_wrap->scan_step == 2);
+    ASSERT(lookup->lut_word_length == 6);
+    ASSERT(lookup->scan_step == 2);
 
     if (s_off % COMPRESSION_RATIO == 2) {
         init_index = s[0] << 8 | s[1];
@@ -945,8 +945,8 @@ static Int4 s_BlastSmallNaScanSubject_7_1(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 7);
-    ASSERT(lookup_wrap->scan_step == 1);
+    ASSERT(lookup->lut_word_length == 7);
+    ASSERT(lookup->scan_step == 1);
 
     switch (s_off % COMPRESSION_RATIO) {
     case 1:
@@ -1031,8 +1031,8 @@ static Int4 s_BlastSmallNaScanSubject_7_2(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 7);
-    ASSERT(lookup_wrap->scan_step == 2);
+    ASSERT(lookup->lut_word_length == 7);
+    ASSERT(lookup->scan_step == 2);
 
     if (s_off % COMPRESSION_RATIO == 2) {
         init_index = s[0] << 8 | s[1];
@@ -1094,8 +1094,8 @@ static Int4 s_BlastSmallNaScanSubject_7_3(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 7);
-    ASSERT(lookup_wrap->scan_step == 3);
+    ASSERT(lookup->lut_word_length == 7);
+    ASSERT(lookup->scan_step == 3);
 
     switch (s_off % COMPRESSION_RATIO) {
     case 1:
@@ -1185,8 +1185,8 @@ static Int4 s_BlastSmallNaScanSubject_8_1Mod4(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 8);
-    ASSERT(lookup_wrap->scan_step % COMPRESSION_RATIO == 1);
+    ASSERT(lookup->lut_word_length == 8);
+    ASSERT(lookup->scan_step % COMPRESSION_RATIO == 1);
 
     switch (s_off % COMPRESSION_RATIO) {
     case 1: goto base_1;
@@ -1272,8 +1272,8 @@ static Int4 s_BlastSmallNaScanSubject_8_2Mod4(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 8);
-    ASSERT(lookup_wrap->scan_step % COMPRESSION_RATIO == 2);
+    ASSERT(lookup->lut_word_length == 8);
+    ASSERT(lookup->scan_step % COMPRESSION_RATIO == 2);
 
     if (s_off % COMPRESSION_RATIO == 2)
         goto base_2;
@@ -1336,8 +1336,8 @@ static Int4 s_BlastSmallNaScanSubject_8_3Mod4(
 
     max_hits -= lookup->longest_chain;
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
-    ASSERT(lookup_wrap->lut_word_length == 8);
-    ASSERT(lookup_wrap->scan_step % COMPRESSION_RATIO == 3);
+    ASSERT(lookup->lut_word_length == 8);
+    ASSERT(lookup->scan_step % COMPRESSION_RATIO == 3);
 
     switch (s_off % COMPRESSION_RATIO) {
     case 1: 
