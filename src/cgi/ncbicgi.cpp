@@ -1099,14 +1099,7 @@ void CCgiRequest::x_ProcessQueryString(TFlags flags, const CNcbiArguments* args)
 
 void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd)
 {
-    if ( (flags & fSaveRequestContent) ) {
-        m_Content.reset(new string);
-    }
-    else {
-        if ( m_Content.get() ) {
-            m_Content.reset();
-        }
-    }
+    m_Content.reset();
     // POST method?
     if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase()) ) {
 
@@ -1121,35 +1114,36 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
              content_type == "application/x-www-form-urlencoded"  ||
              NStr::StartsWith(content_type, "multipart/form-data"))) {
             // Automagically retrieve and parse content into entries
-            string str;
+            auto_ptr<string> temp_str;
+            string* pstr = 0;
+            // Check if the conent must be saved
+            if ( (flags & fSaveRequestContent) ) {
+                m_Content.reset(new string);
+                pstr = m_Content.get();
+            }
+            else {
+                temp_str.reset(new string);
+                pstr = temp_str.get();
+            }
             size_t len = GetContentLength();
             if (len == kContentLengthUnknown) {
                 // read data until end of file
-                for (;;) {
-                    char buffer[1024];
-                    istr->read(buffer, sizeof(buffer));
-                    size_t count = istr->gcount();
-                    if ( count == 0 ) {
-                        if ( istr->eof() ) {
-                            break; // end of data
-                        }
-                        else {
-                            NCBI_THROW2(CCgiParseException, eRead,
-                                       "Failed read of HTTP request body",
-                                        str.length());
-                        }
-                    }
-                    str.append(buffer, count);
+                CNcbiOstrstream buf;
+                if ( !NcbiStreamCopy(buf, *istr) ) {
+                    NCBI_THROW2(CCgiParseException, eRead,
+                                "Failed read of HTTP request body",
+                                istr->gcount());
                 }
+                *pstr = CNcbiOstrstreamToString(buf);
             }
             else {
-                str.resize(len);
+                pstr->resize(len);
                 for (size_t pos = 0;  pos < len;  ) {
                     size_t rlen = len - pos;
-                    istr->read(&str[pos], rlen);
+                    istr->read(&(*pstr)[pos], rlen);
                     size_t count = istr->gcount();
                     if ( count == 0 ) {
-                        str.resize(pos);
+                        pstr->resize(pos);
                         if ( istr->eof() ) {
                             string err =
                                 "Premature EOF while reading HTTP request"
@@ -1159,7 +1153,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                             err += NStr::UIntToString(len);
                             err += "):\n";
                             if (m_ErrBufSize  &&  pos) {
-                                string content = NStr::PrintableString(str);
+                                string content = NStr::PrintableString(*pstr);
                                 if (content.length() > m_ErrBufSize) {
                                     content.resize(m_ErrBufSize);
                                     content += "\n[truncated...]";
@@ -1178,14 +1172,22 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 }
             }
             // parse query from the POST content
-            s_ParsePostQuery(content_type, str, m_Entries);
+            s_ParsePostQuery(content_type, *pstr, m_Entries);
             m_Input    = 0;
             m_InputFD = -1;
-            if ( m_Content.get() ) {
-                m_Content->swap(str);
-            }
         }
         else {
+            if ( (flags & fSaveRequestContent) ) {
+                // Save content to string
+                CNcbiOstrstream buf;
+                if ( !NcbiStreamCopy(buf, *istr) ) {
+                    NCBI_THROW2(CCgiParseException, eRead,
+                                "Failed read of HTTP request body",
+                                istr->gcount());
+                }
+                m_Content.reset(new string);
+                *m_Content = CNcbiOstrstreamToString(buf);
+            }
             // Let the user to retrieve and parse the content
             m_Input    = istr;
             m_InputFD  = ifd;
@@ -1415,6 +1417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.112  2006/12/11 21:26:00  grichenk
+ * Save request content even if not parsing the data.
+ *
  * Revision 1.111  2006/06/12 18:44:34  didenko
  * Fixed cgi sessionid logging
  *
