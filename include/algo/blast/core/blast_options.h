@@ -160,15 +160,15 @@ extern const double kPSSM_NoImpalaScaling;
 
 /** Types of the lookup table */
 typedef enum {
-    eMBLookupTable = 1,  /**< megablast lookup table (includes both
+    eMBLookupTable,  /**< megablast lookup table (includes both
                                 contiguous and discontiguous megablast) */
-    eSmallNaLookupTable = 2,  /**< lookup table for blastn with small query*/
-    eNaLookupTable = 3,  /**< blastn lookup table */
-    eAaLookupTable = 4,  /**< standard protein (blastp) lookup table */
-    ePhiLookupTable = 5,  /**< protein lookup table specialized for phi-blast */
-    ePhiNaLookupTable = 6,  /**< nucleotide lookup table for phi-blast */
-    eRPSLookupTable = 7, /**< RPS lookup table (rpsblast and rpstblastn) */
-    eIndexedMBLookupTable = 8 /**< use database index as a lookup structure */
+    eSmallNaLookupTable,  /**< lookup table for blastn with small query*/
+    eNaLookupTable,  /**< blastn lookup table */
+    eAaLookupTable,  /**< standard protein (blastp) lookup table */
+    ePhiLookupTable,  /**< protein lookup table specialized for phi-blast */
+    ePhiNaLookupTable,  /**< nucleotide lookup table for phi-blast */
+    eRPSLookupTable, /**< RPS lookup table (rpsblast and rpstblastn) */
+    eIndexedMBLookupTable /**< use database index as a lookup structure */
 } ELookupTableType;
 
 /** Options needed to construct a lookup table 
