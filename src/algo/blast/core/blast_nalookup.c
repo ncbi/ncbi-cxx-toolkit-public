@@ -94,11 +94,16 @@ BlastChooseNaLookupTable(const LookupTableOptions* lookup_options,
       break;
 
    case 9:
-      lut_type = eSmallNaLookupTable;
-      if (approx_table_entries < 1250)
+      if (approx_table_entries < 1250) {
          *lut_width = 7;
-      else
+         lut_type = eSmallNaLookupTable;
+      } else if (approx_table_entries < 21000) {
          *lut_width = 8;
+         lut_type = eSmallNaLookupTable;
+      } else {
+         *lut_width = 9;
+         lut_type = eMBLookupTable;
+      }
       break;
 
    case 10:
@@ -118,10 +123,7 @@ BlastChooseNaLookupTable(const LookupTableOptions* lookup_options,
       break;
       
    case 11:
-      /* For word size 11 the standard lookup table is 
-         especially efficient, so the cutoff before switching
-         over to the megablast lookup table is larger */
-      if (approx_table_entries < 20000) {
+      if (approx_table_entries < 12000) {
          *lut_width = 8;
          lut_type = eSmallNaLookupTable;
       } else if (approx_table_entries < 180000) {
