@@ -74,6 +74,7 @@ typedef struct BlastSmallNaLookupTable {
     Int4  overflow_size;   /**< Number of elements in the overflow array */
     Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if 
                                  TRUE, so that not every base is checked.  */
+    void *scansub_callback;  /**< function for scanning subject sequences */
 } BlastSmallNaLookupTable;
 
 /** Create a new small nucleotide lookup table.
@@ -147,6 +148,7 @@ typedef struct BlastNaLookupTable {
                                 backbone cell contains hits */
     Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if 
                                  TRUE, so that not every base is checked.  */
+    void *scansub_callback;  /**< function for scanning subject sequences */
 } BlastNaLookupTable;
   
 /** Create a new nucleotide lookup table.
@@ -252,6 +254,7 @@ typedef struct BlastMBLookupTable {
                           the backbone */
    Int4 longest_chain; /**< Largest number of query positions for a given 
                           word */
+   void *scansub_callback;  /**< function for scanning subject sequences */
 
    Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
    Int4 num_words_added; /**< Number of words added to the l.t. */
