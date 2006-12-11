@@ -90,6 +90,10 @@ struct SSimpleUnlock
 ///
 ///
 
+enum EEmptyGuard {
+    eEmptyGuard
+};
+
 template <class Resource,
           class Lock = SSimpleLock<Resource>,
           class Unlock = SSimpleUnlock<Resource> >
@@ -101,8 +105,8 @@ public:
     typedef Lock lock_type;
     typedef Unlock unlock_type;
     typedef CGuard<Resource, Lock, Unlock> TThisType;
-    
-    CGuard(void)
+
+    explicit CGuard(EEmptyGuard /*empty*/)
         {
         }
     
@@ -112,7 +116,8 @@ public:
             Guard(resource);
         }
     
-    explicit CGuard(const lock_type& lock,
+    explicit CGuard(EEmptyGuard /*empty*/,
+                    const lock_type& lock,
                     const unlock_type& unlock = unlock_type())
         : m_Data(lock, pair_base_member<unlock_type, resource_ptr>(unlock, 0))
         {
@@ -203,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/11 16:26:50  vasilche
+ * Prevent accidental incorrect use of guards by explicit empty constructor.
+ *
  * Revision 1.5  2006/03/24 22:06:37  grichenk
  * Added CNoLock, CNoMutex. Redesigned CCache to use TWriteLockGuard typedef.
  *

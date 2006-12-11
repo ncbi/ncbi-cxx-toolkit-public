@@ -850,7 +850,7 @@ void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
 {
     _ASSERT(&object.GetTSE_Info() == this);
     if ( object.x_DirtyAnnotIndex() ) {
-        CDataSource::TAnnotLockWriteGuard guard;
+        CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
         if (HasDataSource())
             guard.Guard(GetDataSource());
         TAnnotLockWriteGuard guard2(GetAnnotLock());

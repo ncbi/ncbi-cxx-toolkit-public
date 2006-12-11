@@ -165,7 +165,7 @@ void CTSE_Default_Assigner::AddAssemblyInfo(CTSE_Info& tse,
 void CTSE_Default_Assigner::UpdateAnnotIndex(CTSE_Info& tse, 
                                              CTSE_Chunk_Info& chunk)
 {
-    CDataSource::TAnnotLockWriteGuard guard1;
+    CDataSource::TAnnotLockWriteGuard guard1(eEmptyGuard);
     if( tse.HasDataSource() )
         guard1.Guard(tse.GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());          
@@ -186,13 +186,13 @@ void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
 {
     CRef<CSeq_annot_Info> annot_info;
     {{
-        CDataSource::TMainLock::TWriteLockGuard guard;
+        CDataSource::TMainLock::TWriteLockGuard guard(eEmptyGuard);
         if( tse.HasDataSource() )
             guard.Guard(tse.GetDataSource().GetMainLock());
         annot_info.Reset(x_GetBase(tse, place).AddAnnot(*annot));
     }}
     {{
-        CDataSource::TAnnotLockWriteGuard guard;
+        CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
         if( tse.HasDataSource() )
             guard.Guard(tse.GetDataSource());
         tse.UpdateAnnotIndex(*annot_info);
@@ -204,7 +204,7 @@ void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
                                        CRef<CSeq_entry> entry)
 {
     {{
-        CDataSource::TMainLock::TWriteLockGuard guard;
+        CDataSource::TMainLock::TWriteLockGuard guard(eEmptyGuard);
         if( tse.HasDataSource() )
             guard.Guard(tse.GetDataSource().GetMainLock());
         if (place == TPlace(CSeq_id_Handle(), kTSE_Place_id)) {
@@ -256,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/12/11 16:26:50  vasilche
+ * Prevent accidental incorrect use of guards by explicit empty constructor.
+ *
  * Revision 1.9  2006/06/05 13:42:58  vasilche
  * Removed unused variables.
  *

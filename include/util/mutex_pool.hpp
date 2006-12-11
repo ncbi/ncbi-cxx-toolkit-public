@@ -226,7 +226,7 @@ class CInitGuard
 {
 public:
     CInitGuard(CInitMutex_Base& init, CInitMutexPool& pool)
-        : m_Init(init)
+        : m_Init(init), m_Guard(eEmptyGuard)
         {
             if ( !init && pool.AcquireMutex(init, m_Mutex) ) {
                 m_Guard.Guard(m_Mutex->GetMutex());
@@ -274,6 +274,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/12/11 16:26:50  vasilche
+* Prevent accidental incorrect use of guards by explicit empty constructor.
+*
 * Revision 1.10  2006/02/27 15:42:13  vasilche
 * CMutexPool moved from xobjmgr to xutil.
 *

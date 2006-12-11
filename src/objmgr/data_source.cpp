@@ -662,7 +662,9 @@ void CDataSource::x_ResetDirtyAnnotIndex(CTSE_Info& tse)
 }
 
 
-CDSAnnotLockReadGuard::CDSAnnotLockReadGuard()
+CDSAnnotLockReadGuard::CDSAnnotLockReadGuard(EEmptyGuard)
+    : m_MainGuard(eEmptyGuard),
+      m_AnnotGuard(eEmptyGuard)
 {
 }
 
@@ -678,7 +680,9 @@ void CDSAnnotLockReadGuard::Guard(CDataSource& ds)
 }
 
 
-CDSAnnotLockWriteGuard::CDSAnnotLockWriteGuard()
+CDSAnnotLockWriteGuard::CDSAnnotLockWriteGuard(EEmptyGuard)
+    : m_MainGuard(eEmptyGuard),
+      m_AnnotGuard(eEmptyGuard)
 {
 }
 CDSAnnotLockWriteGuard::CDSAnnotLockWriteGuard(CDataSource& ds)

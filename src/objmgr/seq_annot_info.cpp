@@ -859,7 +859,7 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
     }
 
     CTSE_Info& tse = GetTSE_Info();
-    CDataSource::TAnnotLockWriteGuard guard;
+    CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
     if (HasDataSource())
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
@@ -990,7 +990,7 @@ void CSeq_annot_Info::x_RemapAnnotObject(CAnnotObject_Info& info)
 
 
     CTSE_Info& tse = GetTSE_Info();
-    CDataSource::TAnnotLockWriteGuard guard;
+    CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
     if (HasDataSource())
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
@@ -1034,7 +1034,7 @@ void CSeq_annot_Info::x_UnmapAnnotObject(CAnnotObject_Info& info)
     }
 
     CTSE_Info& tse = GetTSE_Info();
-    CDataSource::TAnnotLockWriteGuard guard;
+    CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
     if (HasDataSource())
         guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
@@ -1341,6 +1341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/12/11 16:26:50  vasilche
+ * Prevent accidental incorrect use of guards by explicit empty constructor.
+ *
  * Revision 1.45  2006/11/14 19:21:58  vasilche
  * Added feature ids index and retrieval.
  *

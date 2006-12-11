@@ -442,8 +442,8 @@ private:
 class NCBI_XOBJMGR_EXPORT CDSAnnotLockReadGuard
 {
 public:
-    CDSAnnotLockReadGuard();
-    CDSAnnotLockReadGuard(CDataSource& ds);
+    explicit CDSAnnotLockReadGuard(EEmptyGuard);
+    explicit CDSAnnotLockReadGuard(CDataSource& ds);
 
     void Guard(CDataSource& ds);
 
@@ -456,8 +456,8 @@ private:
 class NCBI_XOBJMGR_EXPORT CDSAnnotLockWriteGuard
 {
 public:
-    CDSAnnotLockWriteGuard();
-    CDSAnnotLockWriteGuard(CDataSource& ds);
+    explicit CDSAnnotLockWriteGuard(EEmptyGuard);
+    explicit CDSAnnotLockWriteGuard(CDataSource& ds);
 
     void Guard(CDataSource& ds);
 
