@@ -137,7 +137,6 @@ public:
         m_IsQueryAnchoredTestDone(false),
         m_NucProtBitmapsInitialized(false)
     {
-        typedef typename TAlnSeqIdVector::value_type::value_type TSeqIdPtr;
         TSeqIdPtr seq_id;
 
         for (size_t aln_i = 0; aln_i < m_AlnCount; ++aln_i) {
@@ -351,6 +350,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2006/12/11 20:43:09  yazhuk
+* Removed conflicting TSeqIdPtr definition.
+*
 * Revision 1.9  2006/11/27 19:39:19  todorov
 * Require comp in CSeqIdAlnBitmap
 *
