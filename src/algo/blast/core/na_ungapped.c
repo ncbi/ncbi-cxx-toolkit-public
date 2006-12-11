@@ -912,21 +912,23 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
                        BlastInitHitList * init_hitlist,
                        BlastUngappedStats * ungapped_stats)
 {
-    ELookupTableType lut_type = lookup_wrap->lut_type;
     Int4 hitsfound, total_hits = 0;
     Int4 hits_extended = 0;
     Int4 start_offset = 0;
+    TNaScanSubjectFunction scansub;
     Int4 last_start;
 
-    if (lut_type == eSmallNaLookupTable) {
+    if (lookup_wrap->lut_type == eSmallNaLookupTable) {
         BlastSmallNaLookupTable *lookup = 
                                 (BlastSmallNaLookupTable *) lookup_wrap->lut;
         last_start = subject->length - lookup->lut_word_length;
+        scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
     }
     else {
         BlastNaLookupTable *lookup = 
                                 (BlastNaLookupTable *) lookup_wrap->lut;
         last_start = subject->length - lookup->lut_word_length;
+        scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
     }
     start_offset = 0;
 
@@ -934,16 +936,8 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
         /* Pass the last word ending offset */
         Int4 next_start = last_start;
 
-        if (lut_type == eSmallNaLookupTable) {
-            hitsfound = BlastSmallNaScanSubject(lookup_wrap, subject, 
-                                                start_offset, offset_pairs, 
-                                                max_hits, &next_start);
-        }
-        else {
-            hitsfound = BlastNaScanSubject(lookup_wrap, subject, start_offset,
-                                           offset_pairs, max_hits, &next_start);
-        }
-
+        hitsfound = scansub(lookup_wrap, subject, start_offset, 
+                            offset_pairs, max_hits, &next_start);
         total_hits += hitsfound;
 
         hits_extended +=
@@ -1156,6 +1150,8 @@ Int2 MB_WordFinder(BLAST_SequenceBlk * subject,
     Int4 start_offset, next_start, last_start = 0, last_end = 0;
     Int4 subject_length = subject->length;
     Int4 hits_extended = 0;
+    TNaScanSubjectFunction scansub = 
+                       (TNaScanSubjectFunction)(mb_lt->scansub_callback);
 
     ASSERT(mb_lt->discontiguous ||
            word_params->extension_method == eRightAndLeft);
@@ -1175,15 +1171,8 @@ Int2 MB_WordFinder(BLAST_SequenceBlk * subject,
         /* Set the last argument's value to the end of the last word, without 
            the extra bases for the discontiguous case */
         next_start = last_end;
-        if (mb_lt->discontiguous) {
-            hitsfound =
-                MB_DiscWordScanSubject(lookup_wrap, subject, start_offset,
-                                       offset_pairs, max_hits, &next_start);
-        } else {
-            hitsfound = MB_AG_ScanSubject(lookup_wrap, subject, start_offset,
-                                          offset_pairs, max_hits,
-                                          &next_start);
-        }
+        hitsfound = scansub(lookup_wrap, subject, start_offset,
+                            offset_pairs, max_hits, &next_start);
 
         switch (word_params->extension_method) {
         case eRightAndLeft:
@@ -1236,34 +1225,27 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk * subject,
     Int4 hitsfound, total_hits = 0;
     Int4 start_offset, end_offset, next_start;
     Int4 hits_extended = 0;
-    ELookupTableType lut_type = lookup_wrap->lut_type;
+    TNaScanSubjectFunction scansub;
 
-    if (lut_type == eSmallNaLookupTable) {
+    if (lookup_wrap->lut_type == eSmallNaLookupTable) {
         BlastSmallNaLookupTable *lookup = 
                                 (BlastSmallNaLookupTable *)lookup_wrap->lut;
         end_offset = subject->length - lookup->lut_word_length;
+        scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
     }
     else {
         BlastNaLookupTable *lookup = 
                                 (BlastNaLookupTable *)lookup_wrap->lut;
         end_offset = subject->length - lookup->lut_word_length;
+        scansub = (TNaScanSubjectFunction)lookup->scansub_callback;
     }
     start_offset = 0;
 
     /* start_offset points to the beginning of the word; end_offset is the
        beginning of the last word */
     while (start_offset <= end_offset) {
-        if (lut_type == eSmallNaLookupTable) {
-            hitsfound = BlastSmallNaScanSubject_AG(lookup_wrap, subject, 
-                                                   start_offset, offset_pairs, 
-                                                   max_hits, &next_start);
-        }
-        else {
-            hitsfound = BlastNaScanSubject_AG(lookup_wrap, subject, 
-                                              start_offset, offset_pairs, 
-                                              max_hits, &next_start);
-        }
-
+        hitsfound = scansub(lookup_wrap, subject, start_offset, 
+                            offset_pairs, max_hits, &next_start);
         total_hits += hitsfound;
 
         hits_extended +=
