@@ -74,7 +74,7 @@ NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
                                  CSeq_align::TDim  row,
                                  const CSeq_loc&   loc,
-                                 CScope*           scope);
+                                 CScope*           scope = NULL);
 
 
 /* @} */
@@ -87,6 +87,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/12/11 19:29:41  ucko
+* RemapAlignToLoc: make scope optional again, as it may legally be NULL
+* and not all callers supply it.
+*
 * Revision 1.3  2006/12/11 17:14:11  grichenk
 * Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
 *
