@@ -62,6 +62,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_aalookup.h>
 #include <algo/blast/core/blast_nalookup.h>
+#include <algo/blast/core/blast_nascan.h>
 #include <algo/blast/core/blast_sw.h>
 #include <algo/blast/core/aa_ungapped.h>
 #include <algo/blast/core/na_ungapped.h>
@@ -647,6 +648,7 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    BlastCoreAuxStruct* aux_struct;
    Boolean blastp = (lookup_wrap->lut_type == eAaLookupTable ||
                      lookup_wrap->lut_type == eRPSLookupTable);
+   Boolean small_na = (lookup_wrap->lut_type == eSmallNaLookupTable);
    Boolean mb_lookup = (lookup_wrap->lut_type == eMBLookupTable);
    Boolean indexed_mb_lookup = (lookup_wrap->lut_type == eIndexedMBLookupTable);
    Boolean phi_lookup = (lookup_wrap->lut_type == ePhiLookupTable ||
@@ -667,6 +669,7 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    if (smith_waterman) {
       aux_struct->WordFinder = NULL;
    } else if (mb_lookup) {
+      BlastMBChooseScanSubject(lookup_wrap);
       aux_struct->WordFinder = MB_WordFinder;
    } else if (indexed_mb_lookup) {
       aux_struct->WordFinder = MB_IndexedWordFinder;
@@ -674,10 +677,16 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
       aux_struct->WordFinder = PHIBlastWordFinder;
    } else if (blastp) {
       aux_struct->WordFinder = BlastAaWordFinder;
-   } else if (word_params->extension_method == eRightAndLeft) { /* Used AG word finding. */
-      aux_struct->WordFinder = BlastNaWordFinder_AG;
    } else {
-      aux_struct->WordFinder = BlastNaWordFinder;
+      if (small_na)
+         BlastSmallNaChooseScanSubject(lookup_wrap);
+      else
+         BlastNaChooseScanSubject(lookup_wrap);
+
+      if (word_params->extension_method == eRightAndLeft)
+         aux_struct->WordFinder = BlastNaWordFinder_AG;
+      else
+         aux_struct->WordFinder = BlastNaWordFinder;
    }
    
    aux_struct->offset_pairs = 
