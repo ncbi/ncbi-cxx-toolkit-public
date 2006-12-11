@@ -76,13 +76,34 @@ public:
     ///
     /// @note key should be initialized before calling this method
     EBDB_ErrCode ReadVector(TBitVector* bv);
+	
+	/// Fetch and deserialize the *current* bitvector using deserialization operation
+	///
+    /// @param bv
+    ///    Target bitvector to read from the database
+	/// @param op
+	///    Logical set operation
+	/// @param count
+	///    Output for (bit)count set operations
+	///
+    /// @note key should be initialized before calling this method
+	///
+	EBDB_ErrCode ReadVector(TBitVector*       bv, 
+	                        bm::set_operation op,
+							unsigned*         count = 0);
 
     /// Fetch a given vector and perform a logical AND 
     /// with the supplied vector
+	/// 
+	/// deprecated (use operation ReadVector)
+	NCBI_DEPRECATED
     EBDB_ErrCode ReadVectorAnd(TBitVector* bv);
 
     /// Fetch a given vector and perform a logical OR 
     /// with the supplied vector
+	///
+	/// deprecated (use operation ReadVector)
+	NCBI_DEPRECATED
     EBDB_ErrCode ReadVectorOr(TBitVector* bv);
 
     /// Compression options for vector storage
@@ -291,17 +312,57 @@ public:
         eScanAllVolumes,  // scan all volumes
         eScanFirstFound   // scan first volume returning result
     };
+	
+	/// Find the bitvector
+	/// 
+	/// @param id
+	///     identificator
+	/// @param bv
+	///     Target bitvector
+	/// @param op
+	///     Logical operation
+	/// @param count
+	///     bit-count (for counting set operations)
+	///
+	EBDB_ErrCode ReadVector(unsigned          id, 
+                            TBitVector*       bv, 
+							bm::set_operation op,
+							unsigned*         count,
+                            EScanMode         scan_mode  = eScanAllVolumes,
+                            SplitStat*        split_stat = 0);
 
+	/// Look for bitvector in the specified slice(volume) file
+	///
+	/// @param v
+	///    Volume file
+	/// @param bv_descr
+	///    Volume descriptor (contains all volume ids)
+	/// @param id
+	///    bitvector id to read
+	/// @param bv
+	///    Target bitvector
+	/// @param op
+	///    Logical operation
+	///
+    EBDB_ErrCode ReadVector(TBvStoreVolumeFile& v,
+                            const TBitVector*   bv_descr, 
+                            unsigned            id, 
+                            TBitVector*         bv,
+							bm::set_operation   op,
+							unsigned*           count);
+
+
+	NCBI_DEPRECATED
     EBDB_ErrCode ReadVectorOr(unsigned    id, 
                               TBitVector* bv, 
                               EScanMode   scan_mode = eScanAllVolumes,
                               SplitStat*  split_stat = 0);
 
+	NCBI_DEPRECATED
     EBDB_ErrCode ReadVectorOr(TBvStoreVolumeFile& v,
                               const TBitVector*   bv_descr, 
                               unsigned            id, 
                               TBitVector*         bv);
-
 
     EBDB_ErrCode BlobSize(unsigned   id, 
                           size_t*    blob_size, 
@@ -483,6 +544,34 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadVector(TBitVector* bv)
 }
 
 template<class TBV>
+EBDB_ErrCode CBDB_BvStore<TBV>::ReadVector(TBitVector*       bv, 
+				   	                       bm::set_operation op,
+	  					                   unsigned*         count)
+{
+	_ASSERT(bv);
+	
+	EBDB_ErrCode err = CBDB_BLobFile::ReadRealloc(m_Buffer);
+    if (err != eBDB_Ok) {
+        return err;
+    }
+	
+    if (m_STmpBlock == 0) {
+        m_STmpBlock = m_TmpBVec.allocate_tempblock();
+    }
+	
+	unsigned cnt = 
+       bm::operation_deserializer<TBV>::deserialize(*bv,
+                                                    &(m_Buffer[0]),
+      	                                            m_STmpBlock,
+                                                    op);
+	if (count) {
+		*count = cnt;
+	}
+	return err;
+}
+
+
+template<class TBV>
 EBDB_ErrCode CBDB_BvStore<TBV>::ReadVectorAnd(TBitVector* bv)
 {
     _ASSERT(bv);
@@ -575,9 +664,14 @@ template<class TBV>
 EBDB_ErrCode CBDB_BvStore<TBV>::Read(TBitVector*  bv, 
                                      bool         clear_target_vec)
 {
+    if (m_Buffer.size() < m_Buffer.capacity()) {
+        m_Buffer.resize(m_Buffer.size());
+    }	
+	else
     if (m_Buffer.size() == 0) {
         m_Buffer.resize(16384);
     }
+	
     void* p = &m_Buffer[0];
     EBDB_ErrCode err = Fetch(&p, m_Buffer.size(), eReallocForbidden);
     if (err != eBDB_Ok) {
@@ -677,6 +771,92 @@ int CBDB_IdSplitBvStore<TBV>::FindVolume(unsigned id)
 
 template<class TBV>
 EBDB_ErrCode 
+CBDB_IdSplitBvStore<TBV>::ReadVector(TBvStoreVolumeFile& v,
+                        			 const TBitVector*   bv_descr, 
+			                         unsigned            id, 
+             			             TBitVector*         bv,
+		   						     bm::set_operation   op,
+			 						 unsigned*           count)
+{
+    // first check if description bitvector contains this id
+    // pre-screening eliminates a lot of expensive BDB scans
+    bool search_in_slice = bv_descr && bv_descr->test(id);
+    if (search_in_slice) {
+        v.id = id;
+        return v.ReadVector(bv, op, count);
+    }
+    return eBDB_NotFound;
+
+}
+
+template<class TBV>
+EBDB_ErrCode CBDB_IdSplitBvStore<TBV>::ReadVector(
+							unsigned          id, 
+                            TBitVector*       bv, 
+							bm::set_operation op,
+							unsigned*         count,
+                            EScanMode         scan_mode,
+                            SplitStat*        split_stat)
+
+{
+    EBDB_ErrCode err = eBDB_NotFound;
+    for (unsigned int i = 0; i < m_VolumeDict.size(); ++i) {
+        const TBitVector* bv_dict = m_VolumeDict[i];
+        if (bv_dict && bv_dict->test(id)) {
+            SVolume& vol = GetVolume(i);
+
+            {{
+            EBDB_ErrCode e = this->ReadVector(
+										 *vol.db_large, 
+                                          vol.bv_descr_large, id, bv,
+										  op, count);
+            if (e == eBDB_Ok) { 
+                if (split_stat) {
+                    split_stat->large_cnt++;
+                }
+                err = e;
+                if (scan_mode == eScanFirstFound) break;
+            }
+            
+            }}
+            {{
+            EBDB_ErrCode e = this->ReadVector(
+										 *vol.db_medium,
+                                          vol.bv_descr_medium,
+                                          id, bv,
+										  op, count);
+            if (e == eBDB_Ok) { 
+                if (split_stat) {
+                    split_stat->medium_cnt++;
+                }
+                err = e;
+                if (scan_mode == eScanFirstFound) break;
+            }
+            }}
+            {{
+            EBDB_ErrCode e = this->ReadVector(
+			                             *vol.db_small, 
+                                          vol.bv_descr_small,
+                                          id, bv,
+										  op, count);
+            if (e == eBDB_Ok) { 
+                if (split_stat) {
+                    split_stat->small_cnt++;
+                }
+                err = e;
+                if (scan_mode == eScanFirstFound) break;
+            }
+            }}
+
+        }
+    } // for
+    return err;
+}
+
+
+
+template<class TBV>
+EBDB_ErrCode 
 CBDB_IdSplitBvStore<TBV>::ReadVectorOr(TBvStoreVolumeFile& v,
                                        const TBitVector*   bv_descr,
                                        unsigned            id, 
@@ -686,7 +866,7 @@ CBDB_IdSplitBvStore<TBV>::ReadVectorOr(TBvStoreVolumeFile& v,
     // pre-screening eliminates a lot of expensive BDB scans
     bool search_in_slice;
     if (bv_descr) {
-        search_in_slice = (*bv_descr)[id]; 
+        search_in_slice = bv_descr->test(id); 
     } else {
         search_in_slice = true;  // no descriptor vector, search in file
     }
@@ -709,7 +889,7 @@ CBDB_IdSplitBvStore<TBV>::ReadVectorOr(unsigned    id,
     EBDB_ErrCode err = eBDB_NotFound;
     for (unsigned int i = 0; i < m_VolumeDict.size(); ++i) {
         const TBitVector* bv_dict = m_VolumeDict[i];
-        if (bv_dict && (*bv_dict)[id]) {
+        if (bv_dict && bv_dict->test(id)) {
             SVolume& vol = GetVolume(i);
 
             {{
@@ -1324,6 +1504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/12/11 15:34:54  kuznets
+ * Integration with new bvector serialization
+ *
  * Revision 1.14  2006/12/04 12:49:49  dicuccio
  * Added low-level ReadRealloc()
  *
