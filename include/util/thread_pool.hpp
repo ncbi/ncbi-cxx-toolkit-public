@@ -564,6 +564,9 @@ protected:
     virtual void ProcessRequest(const CRef<CStdRequest>& req)
     { const_cast<CStdRequest&>(*req).Process(); }
 
+    // Avoid shadowing the handle-based version.
+    virtual void ProcessRequest(TItemHandle handle)
+    { TParent::ProcessRequest(handle); }
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1079,6 +1082,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2006/12/11 15:43:12  ucko
+* CStdThreadInPool::ProcessRequest: explicitly keep the handle-based
+* version so as not to shadow it.
+*
 * Revision 1.52  2006/08/18 14:36:44  ucko
 * Revise exception handling somewhat, introducing an eForciblyCaught
 * status for requests whose processing let an exception escape.
