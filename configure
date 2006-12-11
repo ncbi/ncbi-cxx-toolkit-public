@@ -20265,11 +20265,11 @@ echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db_version" >&5
 echo "${ECHO_T}$ncbi_cv_lib_berkeley_db_version" >&6
       case "$ncbi_cv_lib_berkeley_db_version" in
          1.* | 2.* | 3.* | 4.[0-2].* )
-            { echo "$as_me:$LINENO: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.3.)" >&5
-echo "$as_me: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.3.)" >&2;}
+            { echo "$as_me:$LINENO: WARNING: Your Berkeley DB version is too old to use.  (Needed >= 4.3.)" >&5
+echo "$as_me: WARNING: Your Berkeley DB version is too old to use.  (Needed >= 4.3.)" >&2;}
             with_bdb=no
             ;;
-         4.3.* | 4.4.* ) ;;
+         4.[3-5].* ) ;;
          * )
             { echo "$as_me:$LINENO: WARNING: Untested Berkeley DB version; may prove incompatible." >&5
 echo "$as_me: WARNING: Untested Berkeley DB version; may prove incompatible." >&2;}

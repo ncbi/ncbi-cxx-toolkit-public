@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.445 2006/11/17 19:06:31 ucko Exp $
+#  $Id: configure.ac,v 1.446 2006/12/11 16:42:02 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3327,10 +3327,10 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
       case "$ncbi_cv_lib_berkeley_db_version" in
          1.* | 2.* | 3.* | 4.[[0-2]].* )
             AC_MSG_WARN(
-               [Your Berkeley DB version is too old to use.  (Needed 4.3.)])
+               [Your Berkeley DB version is too old to use.  (Needed >= 4.3.)])
             with_bdb=no
             ;;
-         4.3.* | 4.4.* ) ;;
+         4.[[3-5]].* ) ;;
          * )
             AC_MSG_WARN(
                [Untested Berkeley DB version; may prove incompatible.])
