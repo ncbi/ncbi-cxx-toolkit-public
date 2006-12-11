@@ -913,6 +913,8 @@ CStatementBase::x_BindParam_ODBC(const CDB_Object& param,
     case eDB_Numeric:
     case eDB_UnsupportedType:
         return false;
+    default:
+        break;
     }
 
     indicator_base[pos] = x_GetIndicator(param);
@@ -976,6 +978,8 @@ CStatementBase::x_GetCType(const CDB_Object& param)
     case eDB_DateTime:
         type = SQL_C_TYPE_TIMESTAMP;
         break;
+    default:
+        break;
     }
 
     return type;
@@ -1030,6 +1034,8 @@ CStatementBase::x_GetSQLType(const CDB_Object& param)
     case eDB_DateTime:
         type = SQL_TYPE_TIMESTAMP;
         break;
+    default:
+        break;
     }
 
     return type;
@@ -1080,6 +1086,8 @@ CStatementBase::x_GetMaxDataSize(const CDB_Object& param)
     case eDB_DateTime:
         size = 23;
         break;
+    default:
+        break;
     }
 
     return size;
@@ -1116,6 +1124,8 @@ CStatementBase::x_GetCurDataSize(const CDB_Object& param)
     case eDB_DateTime:
         size = sizeof(SQL_TIMESTAMP_STRUCT);
         break;
+    default:
+        break;
     }
 
     return size;
@@ -1143,6 +1153,8 @@ CStatementBase::x_GetIndicator(const CDB_Object& param)
     case eDB_SmallDateTime:
     case eDB_DateTime:
         return sizeof(SQL_TIMESTAMP_STRUCT);
+        break;
+    default:
         break;
     }
 
@@ -1229,6 +1241,8 @@ CStatementBase::x_GetData(const CDB_Object& param,
 
             data = ts;
         }
+        break;
+    default:
         break;
     }
 
@@ -1393,6 +1407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/12/11 17:16:05  ssikorsk
+ * Get rid of warnings with GCC on Solaris.
+ *
  * Revision 1.60  2006/11/14 16:34:48  ssikorsk
  * In x_MakeFreeTDSVersion set default TDS version to 8.0.
  *

@@ -266,7 +266,7 @@ bool CODBC_RowResult::CheckSIENoD_Text(CDB_Stream* val)
         }
     case SQL_SUCCESS:
         if(f > 0) {
-            if(f > sizeof(buffer)-1) {
+            if(f > SQLLEN(sizeof(buffer) - 1)) {
                 f = sizeof(buffer)-1;
             }
 
@@ -307,7 +307,7 @@ bool CODBC_RowResult::CheckSIENoD_WText(CDB_Stream* val)
         }
     case SQL_SUCCESS:
         if(f > 0) {
-            if(f > sizeof(buffer)-1) {
+            if(f > SQLLEN(sizeof(buffer) - 1)) {
                 f = sizeof(buffer)-1;
             }
 
@@ -340,11 +340,11 @@ bool CODBC_RowResult::CheckSIENoD_Binary(CDB_Stream* val)
 
     switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
     case SQL_SUCCESS_WITH_INFO:
-        if(f == SQL_NO_TOTAL || f > sizeof(buffer)) f= sizeof(buffer);
+        if(f == SQL_NO_TOTAL || f > SQLLEN(sizeof(buffer))) f = sizeof(buffer);
         else ReportErrors();
     case SQL_SUCCESS:
         if(f > 0) {
-            if(f > sizeof(buffer)) f= sizeof(buffer);
+            if(f > SQLLEN(sizeof(buffer))) f = sizeof(buffer);
             val->Append(buffer, f);
         }
         return true;
@@ -1395,6 +1395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/12/11 17:16:05  ssikorsk
+ * Get rid of warnings with GCC on Solaris.
+ *
  * Revision 1.42  2006/10/30 16:00:19  ssikorsk
  * Convert data to client's encoding instead of UTF8.
  *
