@@ -15,3 +15,4 @@ CHECK_CMD = test_objmgr_loaders_id2.sh test_objmgr_data_ids.sh test_objmgr_data
 CHECK_CMD = test_objmgr_loaders_id1.sh test_objmgr_data.sh
 CHECK_CMD = test_objmgr_loaders_id2.sh test_objmgr_data.sh
 CHECK_CMD = test_objmgr_loaders_pubseqos.sh test_objmgr_data.sh
+CHECK_CMD = test_objmgr_data -prefetch
