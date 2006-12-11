@@ -221,19 +221,19 @@ private:
 
     unsigned int x_GetInterval() const 
     {
-        CFastMutexGuard(m_Mutext);
+        CFastMutexGuard guard(m_Mutext);
         return  m_AutoShutdown > 0 ?
                 min( m_AutoShutdown - (unsigned int)m_AutoShutdownSW.Elapsed(), m_RunInterval ) 
                 : m_RunInterval;
     }
     bool x_GetStopFlag() const 
     { 
-        CFastMutexGuard(m_Mutext); 
+        CFastMutexGuard guard(m_Mutext);
         return m_StopFlag; 
     }
     bool x_IsAutoShutdownTime() const 
     {
-        CFastMutexGuard(m_Mutext); 
+        CFastMutexGuard guard(m_Mutext);
         return m_AutoShutdown > 0 ? m_AutoShutdownSW.Elapsed() > m_AutoShutdown : false;
     }
 
@@ -633,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.31  2006/12/11 16:17:46  vasilche
+ * Fixed use of mutex guard.
+ *
  * Revision 6.30  2006/12/08 15:49:56  didenko
  * Fixed a mutex guard usage
  *
