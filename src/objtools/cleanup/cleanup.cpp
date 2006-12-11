@@ -287,7 +287,7 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Clean Orgmod List",
     // Set when fields are moved or have content changes
     "Repair BioseqMol",
-    "Change Feature Key",
+    "Change Feature Key", //10
     "Normalize Authors",
     "Change Publication",
     "Change Qualifiers",
@@ -298,7 +298,7 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Change Exception",
     "Change Comment",
     // Set when fields are rescued
-    "Change tRna",
+    "Change tRna", //20
     "Change rRna",
     "Change ITS",
     "Change Anticodon",
@@ -309,7 +309,7 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     // set when locations are repaired
     "Change Seqloc",
     "Change Strand",
-    "Change WholeLocation",
+    "Change WholeLocation", //30
     // set when MolInfo descriptors are affected
     "Change MolInfo Descriptor",
     // set when prot-xref is removed
@@ -328,18 +328,22 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Add GeneXref",
     // set when descriptor is removed
     "Remove Descriptor",
-    "Convert Feature to Descriptor",
+    "Remove Keyword", //40
+    "Add Descriptor",
+    "Convert Feature to Descriptor", 
     "Collapse Set",
     "Change Feature Location",
     "Remove Annotation",
+    "Convert Feature",
     "Remove Comment",
     "Add BioSource OrgMod",
     "Add BioSource SubSource",
-    "Change BioSource Genome",
-    "Change BioSource Origin",
+    "Change BioSource Genome", //50
+    "Change BioSource Origin", 
     "Change BioSource Other",
+    "Change SeqId", 
     // set when any other change is made.
-    "Change Other",
+    "Change Other", 
     "Invalid Change Code"
 };
 
@@ -351,6 +355,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/12/11 17:14:43  bollin
+* Made changes to ExtendedCleanup per the meetings and new document describing
+* the expected behavior for BioSource features and descriptors.  The behavior
+* for BioSource descriptors on GenBank, WGS, Mut, Pop, Phy, and Eco sets has
+* not been implemented yet because it has not yet been agreed upon.
+*
 * Revision 1.18  2006/10/24 12:13:02  bollin
 * Added more flags for ExtendedCleanup.
 *

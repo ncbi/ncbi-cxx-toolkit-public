@@ -38,6 +38,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Pubdesc.hpp>
@@ -708,7 +709,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 {
     x_MoveGeneQuals (bss);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     // These two steps were EntryChangeImpFeat in the C Toolkit
@@ -745,7 +745,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 
         x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
         x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-        x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     
@@ -754,6 +753,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
         x_RemoveMarkedGeneXrefs(bss);
         x_MergeAdjacentAnnots(bss);
+        
+        // Clean up BioSource features and descriptors last
+        x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bss);
     } else {
         CBioseq_EditHandle bsh = seh.GetSeq().GetEditHandle();
         x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
@@ -764,7 +766,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 
         x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
         x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-        x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     
@@ -773,6 +774,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
         x_RemoveMarkedGeneXrefs(bsh);
         x_MergeAdjacentAnnots(bsh);
+        
+        // Clean up BioSource features and descriptors last
+        x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh);
     }
 }
 
@@ -782,7 +786,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 {
     x_MoveGeneQuals (bsh);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-    x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
@@ -812,7 +815,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-    x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
     
@@ -821,13 +823,15 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
     x_RemoveMarkedGeneXrefs(bsh);
     x_MergeAdjacentAnnots(bsh);
+    
+    // Clean up BioSource features and descriptors last
+    x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh);
 }
 
 
 void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
 {
     x_MoveGeneQuals (sa);
-    x_ConvertFullLenSourceFeatureToDescriptor(sa);
     x_ConvertFullLenPubFeatureToDescriptor(sa);    
     x_RemoveEmptyFeatures(sa);
 
@@ -1148,6 +1152,83 @@ void CCleanup_imp::x_RemoveEmptyFeatures (CSeq_annot_Handle sa)
 }
 
 
+void CCleanup_imp::x_RemoveEmptyFeatureAnnots (CBioseq_Handle bs)
+{
+    CBioseq_EditHandle bseh = bs.GetEditHandle();
+    bool any_left = false;
+    
+    // combine adjacent annotations
+    vector<CSeq_annot_EditHandle> sah; // copy annot handles to not to break iterator while moving
+    CSeq_annot_CI annot_it(bseh.GetSeq_entry_Handle(), CSeq_annot_CI::eSearch_entry);
+    while (annot_it) {
+        if ((*annot_it).IsFtable()
+            && (! (*annot_it).Seq_annot_CanGetId() 
+                || (*annot_it).Seq_annot_GetId().size() == 0)
+            && (! (*annot_it).Seq_annot_CanGetName() 
+                || NStr::IsBlank((*annot_it).Seq_annot_GetName()))
+            && (! (*annot_it).Seq_annot_CanGetDb()
+                || (*annot_it).Seq_annot_GetDb() == 0)
+            && (! (*annot_it).Seq_annot_CanGetDesc()
+                || (*annot_it).Seq_annot_GetDesc().Get().size() == 0)) {
+            CFeat_CI feat_ci((*annot_it));
+            if (!feat_ci) {
+                // add annot_it to list of annotations to remove
+                (*annot_it).GetEditHandle().Remove();
+                ChangeMade (CCleanupChange::eRemoveAnnot);
+            } else {
+                ++annot_it;
+                any_left = true;
+            }
+        } else {
+            ++annot_it;
+            any_left = true;
+        }
+    }
+    if (!any_left) {
+        // TODO: Need to reset Annot list if empty
+    }    
+}
+
+
+void CCleanup_imp::x_RemoveEmptyFeatureAnnots (CBioseq_set_Handle bs)
+{
+    CBioseq_set_EditHandle bseh = bs.GetEditHandle();
+    
+    bool any_left = false;
+    
+    // combine adjacent annotations
+    vector<CSeq_annot_EditHandle> sah; // copy annot handles to not to break iterator while moving
+    CSeq_annot_CI annot_it(bseh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    while (annot_it) {
+        if ((*annot_it).IsFtable()
+            && (! (*annot_it).Seq_annot_CanGetId() 
+                || (*annot_it).Seq_annot_GetId().size() == 0)
+            && (! (*annot_it).Seq_annot_CanGetName() 
+                || NStr::IsBlank((*annot_it).Seq_annot_GetName()))
+            && (! (*annot_it).Seq_annot_CanGetDb()
+                || (*annot_it).Seq_annot_GetDb() == 0)
+            && (! (*annot_it).Seq_annot_CanGetDesc()
+                || (*annot_it).Seq_annot_GetDesc().Get().size() == 0)) {
+            CFeat_CI feat_ci((*annot_it));
+            if (!feat_ci) {
+                // add annot_it to list of annotations to remove
+                (*annot_it).GetEditHandle().Remove();
+                ChangeMade (CCleanupChange::eRemoveAnnot);                
+            } else {
+                ++annot_it;
+                any_left = true;
+            }
+        } else {
+            ++annot_it;
+            any_left = true;
+        }
+    }
+    if (!any_left) {
+        // TODO: Need to reset annot list if empty
+    }    
+}
+
+
 // combine CSeq_annot objects if two adjacent objects in the list are both
 // feature table annotations, both have no id, no name, no db, and no description
 // Was MergeAdjacentAnnotsCallback in C Toolkit
@@ -1287,32 +1368,32 @@ void CCleanup_imp::x_ConvertFullLenFeatureToDescriptor (CSeq_annot_Handle sa, CS
             const CSeq_feat& cf = feat_ci->GetOriginalFeature();
             if (cf.CanGetData() && cf.GetData().Which()  == choice
                 && IsFeatureFullLength(cf, m_Scope)) {
-                CBioseq_Handle bh = m_Scope->GetBioseqHandle(cf.GetLocation());                
-                CRef<CSeqdesc> desc(new CSeqdesc);
+                CBioseq_Handle bh = m_Scope->GetBioseqHandle(cf.GetLocation());  
+                
+                if (choice == CSeqFeatData::e_Biosrc
+                    && !x_OkToConvertToDescriptor(bh, cf.GetData().GetBiosrc())) {
+                    // don't convert
+                } else {
+                    CRef<CSeqdesc> desc(new CSeqdesc);
              
-                if (choice == CSeqFeatData::e_Biosrc) {
-                    desc->Select(CSeqdesc::e_Source);
-                    desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));
-                } else if (choice == CSeqFeatData::e_Pub) {
-                    desc->Select(CSeqdesc::e_Pub);
-                    desc->SetPub(const_cast< CPubdesc& >(cf.GetData().GetPub()));
-                }
+                    if (choice == CSeqFeatData::e_Biosrc) {
+                        desc->Select(CSeqdesc::e_Source);
+                        desc->SetSource(const_cast< CBioSource& >(cf.GetData().GetBiosrc()));
+                    } else if (choice == CSeqFeatData::e_Pub) {
+                        desc->Select(CSeqdesc::e_Pub);
+                        desc->SetPub(const_cast< CPubdesc& >(cf.GetData().GetPub()));
+                    }
             
-                CBioseq_EditHandle eh = bh.GetEditHandle();
-                eh.AddSeqdesc(*desc);
-                CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
-                efh.Remove();
-                ChangeMade (CCleanupChange::eConvertFeatureToDescriptor);
+                    CBioseq_EditHandle eh = bh.GetEditHandle();
+                    eh.AddSeqdesc(*desc);
+                    CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
+                    efh.Remove();
+                    ChangeMade (CCleanupChange::eConvertFeatureToDescriptor);
+                }
             }
             ++feat_ci;                
         }
     }
-}
-
-
-void CCleanup_imp::x_ConvertFullLenSourceFeatureToDescriptor (CSeq_annot_Handle sah)
-{
-    x_ConvertFullLenFeatureToDescriptor(sah, CSeqFeatData::e_Biosrc);
 }
 
 
@@ -1517,6 +1598,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.54  2006/12/11 17:14:43  bollin
+ * Made changes to ExtendedCleanup per the meetings and new document describing
+ * the expected behavior for BioSource features and descriptors.  The behavior
+ * for BioSource descriptors on GenBank, WGS, Mut, Pop, Phy, and Eco sets has
+ * not been implemented yet because it has not yet been agreed upon.
+ *
  * Revision 1.53  2006/11/29 13:47:55  rsmith
  * fix Seq-loc whole cleanup.
  *

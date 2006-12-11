@@ -51,6 +51,7 @@
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/feat_ci.hpp>
 
 #include "cleanupp.hpp"
 
@@ -900,7 +901,7 @@ void CCleanup_imp::x_RemoveNucProtSetTitle(CBioseq_set_EditHandle bsh, const CSe
         if ((*desc_it)->Which() == CSeqdesc::e_Title) {
             string npstitle = (*desc_it)->GetTitle();
             string nuctitle = nuc_desc_it->GetTitle();
-            int title_len = nuctitle.length();
+            size_t title_len = nuctitle.length();
             if (NStr::StartsWith(npstitle, nuctitle)
                 && (npstitle.length() == title_len
                     || NStr::EqualCase (npstitle.substr(title_len), ", and translated products"))) {
@@ -1155,6 +1156,8 @@ static CMolInfo::ECompleteness s_ModifToCompleteness(CSeqdesc::TModif modif)
             case eGIBB_mod_no_right:
                 return CMolInfo::eCompleteness_no_right;
                 break;
+            default:
+                break;
         }
     }
     return CMolInfo::eCompleteness_unknown;
@@ -1173,6 +1176,8 @@ static CMolInfo::ETech s_ModifToTech(CSeqdesc::TModif modif)
                 break;
             case eGIBB_mod_survey:
                 return CMolInfo::eTech_survey;
+                break;
+            default:
                 break;
         }
     }
@@ -1217,6 +1222,8 @@ static CBioSource::EGenome s_ModifToGenome(CSeqdesc::TModif modif)
             case eGIBB_mod_chromoplast:
                 return CBioSource::eGenome_chromoplast;
                 break;
+            default:
+                break;
         }
     }
     return CBioSource::eGenome_unknown;
@@ -1236,6 +1243,8 @@ static CBioSource::EOrigin s_ModifToOrigin(CSeqdesc::TModif modif)
             case eGIBB_mod_synthetic:
                 return CBioSource::eOrigin_synthetic;
                 break;                            
+            default:
+                break;
         }
     }
     return CBioSource::eOrigin_unknown;
@@ -1466,30 +1475,10 @@ void CCleanup_imp::x_FixMissingSources (CBioseq_set_Handle bh)
         has_source_feats = x_ConvertOrgAndImpFeatToSource (bh);
         CSeq_descr::Tdata remove_list;    
         CBioseq_set_EditHandle edith = m_Scope->GetEditHandle(bh);     
-        // This was part of CombineBSFeat in the C Toolkit.
-        // The other portion of CombineBSFeat, where full length source
-        // features are converted to source descriptors, is handled
-        // in x_ConvertOrgAndImpFeatToSource   
-        x_RecurseDescriptorsForMerge(edith.SetDescr(),
-                                     &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource,
-                                     &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources,
-                                     remove_list);           
-        for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
-            it1 != remove_list.end(); ++it1) { 
-            edith.RemoveSeqdesc(**it1);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
-        }
 
         x_SetMolInfoWithOldDescriptors (bh);    
     }
     
-    // These two steps were CombineBSFeat in the C Toolkit
-    for (CSeq_annot_CI annot_it(bh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
-         annot_it; ++annot_it) {            
-        x_ConvertFullLenSourceFeatureToDescriptor (*annot_it);
-    }
-    x_RecurseDescriptorsForMerge(bh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
-                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     
     if (!has_source && has_source_feats) {    
         CSeqdesc_CI after(bh.GetParentEntry(), CSeqdesc::e_Source, 1);
@@ -1555,10 +1544,6 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     // this step was EntryChangeGBSource in the C Toolkit
     x_ChangeGenBankBlocks(bh.GetParentEntry());
  
-    x_FixSegSetSource(bh);
-    
-    // this step was FixNucProtSet in the C Toolkit
-    x_FixNucProtSources(bh);    
     // this step was FixProtMolInfo in the C Toolkit
     x_AddMissingProteinMolInfo(bh.GetParentEntry());
     // this step was FuseMolInfos in the C Toolkit
@@ -1570,10 +1555,19 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_ConvertUserObjectToAnticodon);
     // this step was called MapsToGenref in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_MoveMapQualsToGeneMaploc);
-#if 0    
-    // missing steps
-	CheckGeneticCode(sep);
-#endif        
+    
+    // these steps were part of CheckGeneticCode in the C Toolkit
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_FixProteinIDs);
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_CheckConflictFlag);
+    // NOTE - this is still part of CheckGeneticCode in the C Toolkit.
+    // This step must be performed after the x_CheckConflictFlag step
+    CBioseq_CI bioseq_ci(bh);
+    while (bioseq_ci) {
+        x_SetMolInfoTechForConflictCDS (*bioseq_ci);
+        ++bioseq_ci;
+    }
+    // final portion of CheckGeneticCode
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveAsn2ffGeneratedComments);
     
     x_NormalizeMolInfo (bh);
 }
@@ -1611,11 +1605,18 @@ void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_ConvertUserObjectToAnticodon);
     // this step was called MapsToGenref in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_MoveMapQualsToGeneMaploc);
-#if 0    
-    // missing steps
-	CheckGeneticCode(sep);
-#endif        
-    
+
+    // these steps were part of CheckGeneticCode in the C Toolkit
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_FixProteinIDs);
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_CheckConflictFlag);
+    // NOTE - this is still part of CheckGeneticCode in the C Toolkit.
+    // This step must be performed after the x_CheckConflictFlag step
+    x_SetMolInfoTechForConflictCDS (bh);
+    // final portion of CheckGeneticCode
+    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveAsn2ffGeneratedComments);
+
+    // The NormalizeSegSeqMolInfo from the C Toolkit is eliminated here, as it only
+    // applies to MolInfo descriptors that need to be moved from sequences to sets
 }
 
 
@@ -1783,6 +1784,46 @@ void CCleanup_imp::x_NormalizeMolInfo(CBioseq_set_Handle bh)
 }
 
 
+// This step was part of CheckGCode in the C Toolkit
+// It should be called after x_CheckConflictFlag has been called for the relevant
+// features - x_CheckConflictFlag may clear conflict flags if the translation matches
+void CCleanup_imp::x_SetMolInfoTechForConflictCDS (CBioseq_Handle bh)
+{
+    bool need_tech = false;
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+    CFeat_CI feat_ci (bh, sel);    
+    while (feat_ci && !need_tech) {
+        if (feat_ci->GetData().GetCdregion().CanGetConflict()
+            && feat_ci->GetData().GetCdregion().GetConflict()
+            && feat_ci->IsSetProduct()) {
+            need_tech = true;
+        }
+        ++feat_ci;
+    }
+    
+    if (need_tech) {
+        CBioseq_EditHandle eh(bh);
+        bool need_new_desc = true;        
+        if (eh.IsSetDescr()) {
+            NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
+                if ((*desc_it)->Which() == CSeqdesc::e_Molinfo) {
+                    (*desc_it)->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans_a);
+                    ChangeMade (CCleanupChange::eChangeMolInfo);
+                    need_new_desc = false;
+                    break;
+                }
+            }
+        }
+        if (need_new_desc) {
+            CRef<CSeqdesc> new_desc(new CSeqdesc);
+            new_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans_a);
+            eh.AddSeqdesc(*new_desc);
+            ChangeMade (CCleanupChange::eChangeMolInfo);
+        }
+    }    
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -1791,6 +1832,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/12/11 17:14:43  bollin
+ * Made changes to ExtendedCleanup per the meetings and new document describing
+ * the expected behavior for BioSource features and descriptors.  The behavior
+ * for BioSource descriptors on GenBank, WGS, Mut, Pop, Phy, and Eco sets has
+ * not been implemented yet because it has not yet been agreed upon.
+ *
  * Revision 1.12  2006/10/24 12:15:22  bollin
  * Added more steps to LoopToAsn3, including steps for creating and combining
  * MolInfo descriptors and BioSource descriptors.

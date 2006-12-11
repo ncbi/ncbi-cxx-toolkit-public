@@ -52,6 +52,9 @@
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -906,7 +909,7 @@ void CCleanup_imp::x_MoveDbxrefs(CSeq_feat& feat)
                 } else {
                     tag->SetDb(qval.substr(0, pos));
                     tag->SetTag().Select(CObject_id::e_Str);
-                    tag->SetTag().SetStr(qval.substr(pos));
+                    tag->SetTag().SetStr(qval.substr(pos + 1));
                 }
                 feat.SetDbxref().push_back(tag);
             } else {
@@ -2641,7 +2644,6 @@ bool CCleanup_imp::x_ConvertOrgAndImpFeatToSource(CSeq_annot_Handle sa)
         ++feat_ci;
     }
     
-    x_ConvertFullLenSourceFeatureToDescriptor(sa);    
     return added_source;
 }
 
@@ -2666,6 +2668,284 @@ bool CCleanup_imp::x_ConvertOrgAndImpFeatToSource(CBioseq_Handle bh)
 }
 
 
+// This was a step in CheckGCode in the C Toolkit
+bool CCleanup_imp::x_RemovePIDXrefs (CSeq_feat& feat)
+{
+    bool change_made = false;
+    if (feat.IsSetProduct() && feat.IsSetDbxref()) {
+        CSeq_feat::TDbxref& xrefs = feat.SetDbxref();
+        CSeq_feat::TDbxref::iterator it = xrefs.begin();
+        while (it != xrefs.end()) {
+            CDbtag& xref = **it;
+            if (xref.CanGetDb() && NStr::StartsWith(xref.GetDb(), "PID")) {
+                it = xrefs.erase(it);
+                ChangeMade(CCleanupChange::eChangeDbxrefs);
+                change_made = true;
+            } else {
+                ++it;
+            }
+        }
+    }
+    return change_made;
+}
+
+
+bool CCleanup_imp::x_FixPIDDbtag (CSeq_id& id)
+{
+    bool change_made = false;
+    
+    if (id.IsGeneral()) {
+        CDbtag& dbtag = id.SetGeneral();
+        if (dbtag.IsSetDb()) {
+            if (NStr::StartsWith(dbtag.GetDb(), "PIDe")) {
+                string new_str = "e" + NStr::DoubleToString(dbtag.GetTag().GetId());
+                dbtag.SetDb("PID");
+                dbtag.SetTag().SetStr(new_str);
+                change_made = true;
+            } else if (NStr::StartsWith(dbtag.GetDb(), "PIDd")) {
+                string new_str = "d" + NStr::DoubleToString(dbtag.GetTag().GetId());
+                dbtag.SetDb("PID");
+                dbtag.SetTag().SetStr(new_str);
+                change_made = true;
+            }
+        }
+    }
+    return change_made;
+}
+
+
+bool CCleanup_imp::x_FixPIDDbtag (CSeq_loc& loc)
+{
+    bool change_made = false;
+    switch (loc.Which()) {
+        case CSeq_loc::e_Int:
+            if (loc.GetInt().CanGetId()) {
+                change_made = x_FixPIDDbtag (loc.SetInt().SetId());
+            }
+            break; 
+        case CSeq_loc::e_Pnt:
+            if (loc.GetPnt().CanGetId()) {
+                change_made = x_FixPIDDbtag (loc.SetPnt().SetId());
+            }
+            break;
+        case CSeq_loc::e_Bond:
+        {
+            CSeq_bond& bond = loc.SetBond();
+            if (bond.CanGetA() && bond.GetA().CanGetId()) {
+                change_made = x_FixPIDDbtag (bond.SetA().SetId());
+            }
+            if (bond.CanGetB() && bond.GetB().CanGetId()) {
+                change_made |= x_FixPIDDbtag (bond.SetA().SetId());
+            }
+            break;
+        }
+        case CSeq_loc::e_Empty:
+            change_made = x_FixPIDDbtag(loc.SetEmpty());
+            break;
+        case CSeq_loc::e_Whole:
+            change_made = x_FixPIDDbtag(loc.SetWhole());
+            break;
+        case CSeq_loc::e_Equiv:
+            NON_CONST_ITERATE (CSeq_loc::TLocations, loc_it, loc.SetEquiv().Set()) {
+                change_made |= x_FixPIDDbtag(**loc_it);
+            }
+            break;
+        case CSeq_loc::e_Mix:
+            NON_CONST_ITERATE (CSeq_loc::TLocations, loc_it, loc.SetMix().Set()) {
+                change_made |= x_FixPIDDbtag(**loc_it);
+            }
+            break;
+        case CSeq_loc::e_Packed_int:
+            NON_CONST_ITERATE (CSeq_loc::TIntervals, loc_it, loc.SetPacked_int().Set()) {
+                if ((*loc_it)->CanGetId()) {
+                    change_made |= x_FixPIDDbtag((*loc_it)->SetId());
+                }
+            }
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            if (loc.GetPacked_pnt().CanGetId()) {
+                change_made = x_FixPIDDbtag(loc.SetPacked_pnt().SetId());
+            }
+            break;
+        case CSeq_loc::e_Feat:
+        case CSeq_loc::e_not_set:
+        case CSeq_loc::e_Null:
+            break;
+    }
+    if (change_made) {
+        ChangeMade(CCleanupChange::eChangeSeqloc);
+    }
+    return change_made;
+}
+
+
+bool CCleanup_imp::x_FixPIDDbtag (CSeq_feat& feat)
+{
+    bool feat_change_made = false;
+    
+    if (feat.IsSetProduct()) {
+        CSeq_loc& product_loc = feat.SetProduct();
+        CBioseq_EditHandle product(m_Scope->GetBioseqHandle(product_loc));
+        feat_change_made = x_FixPIDDbtag(product_loc);
+        if (feat_change_made) {
+            feat.SetProduct(product_loc);
+        }
+        
+        if (product.IsSetId()) {
+            list <CSeq_id_Handle> remove_list;
+            list <CSeq_id_Handle> add_list;
+            for (unsigned int i = 0; i < product.GetId().size(); i++) {
+                if (product.GetId()[i].GetSeqId()->IsGeneral()) {
+                    CRef<CSeq_id> new_id(new CSeq_id);
+                    new_id->Assign(*(product.GetId()[i].GetSeqId()));
+                    if (x_FixPIDDbtag(*new_id)) {
+                        feat_change_made = true;
+                        add_list.push_back(CSeq_id_Handle::GetHandle (*new_id));
+                        remove_list.push_back(product.GetId()[i]);
+                        ChangeMade(CCleanupChange::eChangeSeqId);
+                    }
+                }
+            }
+            if (remove_list.size() > 0 || add_list.size() > 0) {
+                ITERATE (list <CSeq_id_Handle>, id_it, remove_list) {
+                    product.RemoveId(*id_it);
+                }
+                ITERATE (list <CSeq_id_Handle>, id_it, add_list) {
+                    product.AddId(*id_it);
+                }
+            }
+            CFeat_CI feat_ci(product);
+            while (feat_ci) {
+                CSeq_feat_EditHandle feath(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+                CRef <CSeq_feat> new_feat(new CSeq_feat);
+                new_feat->Assign (feat_ci->GetOriginalFeature());
+                if (x_FixPIDDbtag(*new_feat)) {
+                    feath.Replace(*new_feat);
+                }
+                ++feat_ci;
+            }
+        }
+    }
+    return feat_change_made;
+}
+
+
+// This step was part of CheckGCode in the C Toolkit
+void CCleanup_imp::x_FixProteinIDs (CSeq_annot_Handle sa)
+{
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+
+    CFeat_CI feat_ci(sa, sel);
+    while (feat_ci) {
+        bool change_made = false;
+        CSeq_feat_EditHandle feath(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+        CRef <CSeq_feat> new_feat(new CSeq_feat);
+        new_feat->Assign (feat_ci->GetOriginalFeature());
+        change_made = x_RemovePIDXrefs (*new_feat);
+        change_made |= x_FixPIDDbtag(*new_feat);
+        if (change_made) {
+            feath.Replace(*new_feat);
+        }
+        ++feat_ci;
+    }
+}
+
+
+// This step was part of CheckGCode in the C Toolkit
+bool CCleanup_imp::x_CheckConflictFlag (CSeq_feat& feat)
+{
+    bool change_made = false;
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() 
+        || !feat.GetData().GetCdregion().IsSetConflict()
+        || !feat.GetData().GetCdregion().GetConflict()
+        || !feat.IsSetProduct()) {
+        return false;
+    }
+    CBioseq_Handle product = m_Scope->GetBioseqHandle(feat.GetProduct());
+    CSeqVector prot_vector = product.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    
+    string product_str;
+    prot_vector.GetSeqData (0, product.GetBioseqLength(), product_str);    
+    string transl_prot;   // translated protein
+    bool alt_start = false;
+    try {
+        CCdregion_translate::TranslateCdregion(
+            transl_prot, 
+            feat, 
+            *m_Scope,
+            false,   // do not include stop codons
+            true,  // remove trailing X/B/Z
+            &alt_start);
+    } catch (CException&) {
+    }
+    if (!transl_prot.empty() 
+        && NStr::EqualNocase(transl_prot, product_str)) {
+        feat.SetData().SetCdregion().ResetConflict();
+        change_made = true;
+    }
+    return change_made;
+}
+
+
+void CCleanup_imp::x_CheckConflictFlag(CSeq_annot_Handle sa)
+{
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+
+    CFeat_CI feat_ci(sa, sel);
+    while (feat_ci) {
+        CSeq_feat_EditHandle feath(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+        CRef <CSeq_feat> new_feat(new CSeq_feat);
+        new_feat->Assign (feat_ci->GetOriginalFeature());
+        if (x_CheckConflictFlag (*new_feat)) {
+            ChangeMade (CCleanupChange::eChangeOther);
+            feath.Replace(*new_feat);
+        }
+        ++feat_ci;
+    }
+}
+
+
+static const string sc_Asn2FFAuthor("Author-given protein sequence is in conflict with the conceptual translation.");
+static const string sc_Asn2FFMethod("Method: conceptual translation supplied by author.");
+
+bool CCleanup_imp::x_RemoveAsn2ffGeneratedComments (CSeq_feat& feat)
+{
+    if (!feat.IsSetComment()) return false;
+    string comment = feat.GetComment();
+    
+    NStr::ReplaceInPlace (comment, sc_Asn2FFAuthor, "");
+    NStr::ReplaceInPlace (comment, sc_Asn2FFMethod, "");
+    NStr::TruncateSpacesInPlace (comment);
+    if (comment[comment.length() - 1] == ';') {
+        comment = comment.substr(0, comment.length() - 1);
+    }
+    if (!NStr::Equal(comment, feat.GetComment())) {
+        feat.SetComment(comment);
+        ChangeMade (CCleanupChange::eChangeComment);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CCleanup_imp::x_RemoveAsn2ffGeneratedComments(CSeq_annot_Handle sa)
+{
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+
+    CFeat_CI feat_ci(sa, sel);
+    while (feat_ci) {
+        CSeq_feat_EditHandle feath(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+        CRef <CSeq_feat> new_feat(new CSeq_feat);
+        new_feat->Assign (feat_ci->GetOriginalFeature());
+        if (x_RemoveAsn2ffGeneratedComments (*new_feat)) {
+            feath.Replace(*new_feat);
+        }
+        ++feat_ci;
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -2674,6 +2954,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2006/12/11 17:14:43  bollin
+ * Made changes to ExtendedCleanup per the meetings and new document describing
+ * the expected behavior for BioSource features and descriptors.  The behavior
+ * for BioSource descriptors on GenBank, WGS, Mut, Pop, Phy, and Eco sets has
+ * not been implemented yet because it has not yet been agreed upon.
+ *
  * Revision 1.41  2006/10/24 12:16:49  bollin
  * Added functions for converting obsolete Org and imp_source features to
  * source features.

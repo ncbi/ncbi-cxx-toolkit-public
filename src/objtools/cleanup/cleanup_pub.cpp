@@ -1148,6 +1148,7 @@ void CCleanup_imp::x_ConvertPubsToAsn4 (CSeq_entry_Handle seh)
 {
     CBioseq_CI bs_ci (seh);
     while (bs_ci) {
+        // Change any "citation" qualifiers to real citations
         x_ChangeCitationQualToCitationPub(*bs_ci);
         ++bs_ci;
     }
@@ -1164,9 +1165,6 @@ void CCleanup_imp::x_ConvertPubsToAsn4 (CSeq_entry_Handle seh)
 	if (!IS_Bioseq(sep)) {
 		bioset = (BioseqSetPtr) (sep->data.ptrvalue); /* top level set */
 	} 
-	SeqEntryExplore(sep, &vnp, FindCit);
-	SeqEntryExplore(sep, &vnp, ChangeCitQual);
-	vnp_psp_free(vnp); 
 	
 	VisitFeaturesInSep (sep, (Pointer) &foundSitRef, HasSiteRef);
 	if (foundSitRef) {
@@ -1205,6 +1203,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2006/12/11 17:14:43  bollin
+ * Made changes to ExtendedCleanup per the meetings and new document describing
+ * the expected behavior for BioSource features and descriptors.  The behavior
+ * for BioSource descriptors on GenBank, WGS, Mut, Pop, Phy, and Eco sets has
+ * not been implemented yet because it has not yet been agreed upon.
+ *
  * Revision 1.10  2006/10/04 14:17:47  bollin
  * Added step to ExtendedCleanup to move coding regions on nucleotide sequences
  * in nuc-prot sets to the nuc-prot set (was move_cds_ex in C Toolkit).
