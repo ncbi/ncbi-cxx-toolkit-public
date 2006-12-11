@@ -1631,7 +1631,7 @@ void CCleanup_imp::x_Common (list< CRef< COrgMod > >& mod_list1,
         && (o1).Get##x() != (o2).Get##x()) { \
         (o1).Reset##x(); \
         if (b) { \
-            ChangeMade (##y); \
+            ChangeMade (y); \
         } \
     }
 
@@ -1640,7 +1640,7 @@ void CCleanup_imp::x_Common (list< CRef< COrgMod > >& mod_list1,
         && !NStr::Equal((o1).Get##x(), (o2).Get##x())) { \
         (o1).Reset##x(); \
         if (b) { \
-            ChangeMade (##y); \
+            ChangeMade (y); \
         } \
     }
 
@@ -1659,7 +1659,7 @@ void CCleanup_imp::x_Common (list< CRef< COrgMod > >& mod_list1,
                 if (it2 == (o2).Get##x().end()) { \
                     it1 = (o1).Set##x().erase(it1); \
                     if (b) { \
-                        ChangeMade (##y); \
+                        ChangeMade (y); \
                     } \
                 } else { \
                     ++ it1; \
@@ -2267,6 +2267,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2006/12/11 17:50:15  ucko
+ * COMMON_*: drop some gratuitous uses of ## that modern GCC rejects.
+ *
  * Revision 1.18  2006/12/11 17:14:43  bollin
  * Made changes to ExtendedCleanup per the meetings and new document describing
  * the expected behavior for BioSource features and descriptors.  The behavior
