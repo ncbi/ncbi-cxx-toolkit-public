@@ -84,9 +84,9 @@ void CCoil_ComputeScores(const Seq& seq, vector<double>& scores,
 
     // calculate 'preliminary' scores (one per frame per window position;
     // score is recorded in position corresponing to the start of the window)
+	double prod;
     for (unsigned int frame = 0;  frame < 7;  frame++) {
         for (TSeqPos start = 0;  start < seq.size() - win_len + 1;  start++) {
-            double prod;
             if (start > 0  &&
                 CCoiledCoil::sm_Propensities
                     [static_cast<unsigned>(seq[start - 1])]
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/12 15:01:59  jcherry
+ * Bug fix (was working on linux, but not on windows)
+ *
  * Revision 1.5  2005/01/04 17:47:49  jcherry
  * Casts to eliminate compiler warnings
  *
