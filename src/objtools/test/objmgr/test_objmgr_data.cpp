@@ -45,8 +45,10 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/annot_ci.hpp>
-#include <objmgr/prefetch_manager.hpp>
-#include <objmgr/prefetch_actions.hpp>
+#ifdef NCBI_THREADS
+# include <objmgr/prefetch_manager.hpp>
+# include <objmgr/prefetch_actions.hpp>
+#endif
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -730,11 +732,13 @@ bool CTestOM::TestApp_Init(void)
     m_no_external = args["no_external"];
     m_adaptive = args["adaptive"];
     m_pause    = args["pause"].AsInteger();
+#ifdef NCBI_THREADS
     if ( args["prefetch"] ) {
         LOG_POST("Using prefetch");
         // Initialize prefetch token;
         m_prefetch_manager = new CPrefetchManager();
     }
+#endif
     m_verbose = args["verbose"];
     m_pass_count = args["pass_count"].AsInteger();
     m_count_all = args["count_all"];
@@ -783,6 +787,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/12/12 14:27:15  vasilche
+* Ignore -prefetch in single-thread mode.
+*
 * Revision 1.28  2006/08/16 15:19:23  vasilche
 * Added option -release_all_memory for memory leaks check.
 * Propely handle withdrawn and confidential records.
