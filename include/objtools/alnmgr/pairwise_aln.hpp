@@ -83,15 +83,14 @@ public:
     /// Dump in human readable text format
     template <class TOutStream>
     void Dump(TOutStream& os) const {
-        char s[32];
-        sprintf(s, "%X", (unsigned int) GetFlags());
         os << "CPairwiseAln";
 
         os << " BaseWidths: " 
            << m_FirstBaseWidth << ", "
            << m_SecondBaseWidth << " ";
 
-        os << " Flags = " << s << ":" << endl;
+        os << " Flags = " << NStr::UIntToString(GetFlags(), 0, 16)
+           << ":" << endl;
 
         if (m_Flags & fKeepNormalized) os << "fKeepNormalized" << endl;
         if (m_Flags & fAllowMixedDir) os << "fAllowMixedDir" << endl;
@@ -287,6 +286,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/12/12 19:38:28  ucko
+* CPairwiseAln::Dump: use NStr::UIntToString rather than sprintf, which
+* might not have been declared.
+*
 * Revision 1.14  2006/12/01 21:24:09  todorov
 * - NCBI_XALNMGR_EXPORT
 *
