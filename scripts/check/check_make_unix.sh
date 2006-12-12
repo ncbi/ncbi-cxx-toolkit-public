@@ -93,10 +93,11 @@ else
 fi
 
 # Check for a imported project or intree project
-res=`pwd | grep "/internal/c++/src/"`
-if [ ! -z "$res" ] ; then
+if [ -f Makefile.out ] ; then
    x_import_prj="yes"
-   x_compile_dir="`pwd | sed -e 's%/internal/c++/src.*$%%g'`/internal/c++/src"
+   x_import_root=`sed -ne 's/^import_root *= *//p' Makefile`
+   # x_compile_dir="`pwd | sed -e 's%/internal/c++/src.*$%%g'`/internal/c++/src"
+   x_compile_dir=`cd $x_import_root; pwd`
 else
    x_import_prj="no"
    x_compile_dir="$x_build_dir"
