@@ -45,10 +45,8 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/annot_ci.hpp>
-#ifdef NCBI_THREADS
-# include <objmgr/prefetch_manager.hpp>
-# include <objmgr/prefetch_actions.hpp>
-#endif
+#include <objmgr/prefetch_manager.hpp>
+#include <objmgr/prefetch_actions.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -787,6 +785,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2006/12/12 16:29:56  vasilche
+* Fixed compilation error on ST-platforms.
+*
 * Revision 1.29  2006/12/12 14:27:15  vasilche
 * Ignore -prefetch in single-thread mode.
 *
