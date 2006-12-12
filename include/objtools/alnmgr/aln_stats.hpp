@@ -38,6 +38,8 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <util/bitset/ncbi_bitset.hpp>
+#include <objtools/alnmgr/aln_seqid.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -228,6 +230,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/12/12 20:48:58  todorov
+* + #include <objtools/alnmgr/aln_seqid.hpp>
+*
 * Revision 1.3  2006/12/12 20:40:01  todorov
 * Stats are now generated upon construction and offer multiple views of the
 * relationships between ids and alignments.
