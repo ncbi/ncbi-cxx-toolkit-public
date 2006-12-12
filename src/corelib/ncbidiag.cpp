@@ -571,21 +571,19 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
             need_space = true;
         }
         prop = GetProperty(kProperty_BytesRd);
-        if ( !prop.empty() ) {
-            if (need_space) {
-                ostr << " ";
-            }
-            ostr << prop;
-            need_space = true;
+        if ( prop.empty() ) {
+            prop = "0";
         }
+        if (need_space) {
+            ostr << " ";
+        }
+        ostr << prop << " ";
         prop = GetProperty(kProperty_BytesWr);
-        if ( !prop.empty() ) {
-            if (need_space) {
-                ostr << " ";
-            }
-            ostr << prop;
-            need_space = true;
+        if ( prop.empty() ) {
+            prop = "0";
         }
+        ostr << prop;
+        need_space = true;
         break;
     }
     if ( !message.empty() ) {
@@ -3539,6 +3537,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.141  2006/12/12 16:42:43  grichenk
+ * Always print bytes in/out in request-stop message.
+ *
  * Revision 1.140  2006/11/21 15:26:54  grichenk
  * Fixed initialization of s_PostFlags.
  *
