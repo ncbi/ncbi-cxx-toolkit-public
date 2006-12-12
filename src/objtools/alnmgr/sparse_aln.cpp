@@ -46,11 +46,9 @@ CSparseAln::CSparseAln(const CAnchoredAln& anchored_aln,
                        objects::CScope& scope)
     : m_AnchoredAln(&anchored_aln),
       m_PairwiseAlns(m_AnchoredAln->GetPairwiseAlns()),
-      m_SeqIds(m_AnchoredAln->GetSeqIds()),
       m_Scope(&scope),
       m_GapChar('-')
 {
-    _ASSERT(m_PairwiseAlns.size() == m_SeqIds.size());
     UpdateCache();
 }
 
@@ -61,7 +59,6 @@ CSparseAln::~CSparseAln()
 
 
 CSparseAln::TDim CSparseAln::GetDim() const {
-    _ASSERT(m_PairwiseAlns.size() == m_SeqIds.size());
     return m_AnchoredAln->GetDim();
 }
 
@@ -125,7 +122,7 @@ CSparseAln::GetAlignCollection(TNumrow row)
 const CSeq_id& CSparseAln::GetSeqId(TNumrow row) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    return *m_SeqIds[row];
+    return m_PairwiseAlns[row]->GetSecondId()->GetSeqId();
 }
 
 
@@ -368,7 +365,7 @@ const CBioseq_Handle&  CSparseAln::GetBioseqHandle(TNumrow row) const
     _ASSERT(row >= 0  &&  row < GetDim());
 
     if ( !m_BioseqHandles[row] ) {
-        m_BioseqHandles[row] = m_Scope->GetBioseqHandle(*m_SeqIds[row]);
+        m_BioseqHandles[row] = m_Scope->GetBioseqHandle(GetSeqId(row));
     }
     return m_BioseqHandles[row];
 }
@@ -391,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/12 20:54:11  todorov
+ * Seq-ids are now in the CPairwiseAln's.
+ *
  * Revision 1.2  2006/12/06 21:30:12  todorov
  * Using CConstRef instead of const & for m_AnchoredAln.
  *

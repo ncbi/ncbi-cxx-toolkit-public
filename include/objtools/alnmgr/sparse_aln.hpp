@@ -159,11 +159,9 @@ public:
 
 protected:
     typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
-    typedef CAnchoredAln::TSeqIdVector TSeqIdVector;
 
     const CConstRef<CAnchoredAln> m_AnchoredAln;
     const TPairwiseAlnVector& m_PairwiseAlns;
-    const TSeqIdVector& m_SeqIds;
     mutable CRef<objects::CScope> m_Scope;
     TRng m_FirstRange; ///< the extent of all segments in aln coords
     vector<TRng> m_SecondRanges;
@@ -182,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/12 20:53:54  todorov
+ * Seq-ids are now in the CPairwiseAln's.
+ *
  * Revision 1.4  2006/12/06 21:29:55  todorov
  * Using CConstRef instead of const & for m_AnchoredAln.
  *
