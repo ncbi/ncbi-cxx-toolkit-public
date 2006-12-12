@@ -126,8 +126,9 @@ public:
             }
             break;
         case TSegs::e_Denseg:
-            seq_id_vec.assign(segs.GetDenseg().GetIds().begin(), 
-                              segs.GetDenseg().GetIds().end());
+            seq_id_vec.resize(segs.GetDenseg().GetIds().size());
+            copy(segs.GetDenseg().GetIds().begin(), 
+                 segs.GetDenseg().GetIds().end(), seq_id_vec.begin());
             return;
         case TSegs::e_Std: 
             {
@@ -183,8 +184,9 @@ public:
             }
             break;
         case TSegs::e_Packed:
-            seq_id_vec.assign(segs.GetPacked().GetIds().begin(), 
-                              segs.GetPacked().GetIds().end());
+            seq_id_vec.resize(segs.GetPacked().GetIds().size());
+            copy(segs.GetPacked().GetIds().begin(), 
+                 segs.GetPacked().GetIds().end(), seq_id_vec.begin());
             break;
         case TSegs::e_not_set:
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
@@ -207,6 +209,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/12/12 20:23:10  ucko
+* Replace heterogenous assign() with resize() + copy() for compatibility
+* with WorkShop's STL implementation.
+*
 * Revision 1.1  2006/10/17 19:19:33  todorov
 * Initial revision.
 *
