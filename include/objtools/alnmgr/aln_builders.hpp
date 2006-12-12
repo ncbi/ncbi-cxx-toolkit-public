@@ -52,7 +52,7 @@ MergeAlnRngColl(CPairwiseAln& existing,
                 const CPairwiseAln& addition,
                 const CAlnUserOptions::TMergeFlags& flags)
 {
-    CPairwiseAln difference;
+    CPairwiseAln difference(existing.GetFirstId(), existing.GetSecondId());
     SubtractAlnRngCollections(addition,
                               existing,
                               difference);
@@ -76,18 +76,15 @@ MergeAlnRngColl(CPairwiseAln& existing,
 }
 
 
-template <class TAnchoredAlns,
-          class TSeqIdPtrComp>
+template <class TAnchoredAlns>
 void 
 BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
          CAnchoredAln& out_aln,          ///< Output
-         const CAlnUserOptions& options, ///< Input Options
-         const TSeqIdPtrComp& comp)      ///< TSeqIdPtr comparison functor
+         const CAlnUserOptions& options) ///< Input Options
 {
     // Types
     typedef CAnchoredAln::TDim TDim;
     typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
-    typedef CAnchoredAln::TSeqIdPtr TSeqIdPtr;
 
     /// 1. Sort the anchored alns by score (best to worst)
     sort(in_alns.begin(),
@@ -118,9 +115,6 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
                     out_aln.SetPairwiseAlns().back().Reset
                         (new CPairwiseAln(*aln.GetPairwiseAlns()[row]));
                     out_aln.SetPairwiseAlns().push_back(anchor_pairwise);
-                    TSeqIdPtr anchor_id(out_aln.GetSeqIds().back());
-                    out_aln.SetSeqIds().back().Reset(aln.GetSeqIds()[row]);
-                    out_aln.SetSeqIds().push_back(anchor_id);
                 }
             }
         }
@@ -146,19 +140,18 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
     case CAlnUserOptions::eMergeAllSeqs:
     default: 
         {
-            typedef map<TSeqIdPtr, CRef<CPairwiseAln>, TSeqIdPtrComp> TIdAlnMap;
-            TIdAlnMap id_aln_map(comp); // store the id-aln
+            typedef map<TAlnSeqIdIRef, CRef<CPairwiseAln>, SAlnSeqIdIRefComp> TIdAlnMap;
+            TIdAlnMap id_aln_map; // store the id-aln
 
-            typedef vector<pair<TSeqIdPtr, CRef<CPairwiseAln> > > TIdAlnVec;
+            typedef vector<pair<TAlnSeqIdIRef, CRef<CPairwiseAln> > > TIdAlnVec;
             
 
-            TSeqIdPtr anchor_id;
             CRef<CPairwiseAln> anchor_pairwise;
             ITERATE(typename TAnchoredAlns, aln_it, in_alns) {
                 const CAnchoredAln& aln = **aln_it;
                 for (TDim row = 0; row < aln.GetDim(); ++row) {
 
-                    CRef<CPairwiseAln>& pairwise = id_aln_map[aln.GetSeqIds()[row]];
+                    CRef<CPairwiseAln>& pairwise = id_aln_map[aln.GetId(row)];
                     if (pairwise.Empty()) {
                         pairwise.Reset
                             (new CPairwiseAln(*aln.GetPairwiseAlns()[row]));
@@ -173,14 +166,10 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
                     if (row == aln.GetAnchorRow()) {
                         // if anchor
                         if (aln_it == in_alns.begin()) {
-                            anchor_id = aln.GetSeqIds()[row];
                             anchor_pairwise.Reset(pairwise);
                         }
-                        _ASSERT( !(comp(anchor_id, aln.GetSeqIds()[row])  ||
-                                   comp(aln.GetSeqIds()[row], anchor_id)) );
                     } else {
                         // else add to the out vectors
-                        out_aln.SetSeqIds().push_back(aln.GetSeqIds()[row]);
                         out_aln.SetPairwiseAlns().push_back(pairwise);
                     }
                     
@@ -188,12 +177,11 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
             }
 
             // finally, add the anchor
-            out_aln.SetSeqIds().push_back(anchor_id);
             out_aln.SetPairwiseAlns().push_back(anchor_pairwise);
         }
         break;
     }
-    out_aln.SetAnchorRow(out_aln.GetSeqIds().size() - 1);
+    out_aln.SetAnchorRow(out_aln.GetPairwiseAlns().size() - 1);
     /// 3. Sort the ids and alns according to score, how to collect score?
 }
 
@@ -205,6 +193,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/12/12 20:46:26  todorov
+* Pairwise aln now contains it's ids.
+*
 * Revision 1.6  2006/12/06 20:08:31  todorov
 * 1) Preserve the order of seq-ids.
 * 2) MergeOption -> MergeAlgo
