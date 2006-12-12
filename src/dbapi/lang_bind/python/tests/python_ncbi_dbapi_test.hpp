@@ -67,17 +67,17 @@ public:
     {
         return m_DriverName;
     }
-    
+
     string GetServerName(void) const
     {
         return m_ServerName;
     }
-    
+
     string GetUserName(void) const
     {
         return m_UserName;
     }
-    
+
     string GetUserPassword(void) const
     {
         return m_UserPassword;
@@ -92,7 +92,7 @@ public:
     {
         return m_DatabaseName;
     }
-    
+
     string GetServerTypeStr(void) const;
     EServerType GetServerType(void) const;
 
@@ -110,10 +110,11 @@ private:
 };
 
 
-class CPythonDBAPITest 
+class CPythonDBAPITest
 {
 public:
     CPythonDBAPITest(const CTestArguments& args);
+    ~CPythonDBAPITest(void);
 
 public:
     // Test IStatement interface.
@@ -142,7 +143,7 @@ private:
     static void ExecuteSQL(const string& sql);
 
 private:
-    pythonpp::CEngine m_Engine;
+    pythonpp::CEngine* m_Engine;
     const CTestArguments m_args;
 };
 
@@ -160,6 +161,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2006/12/12 15:45:07  ssikorsk
+ * + CPythonDBAPITest:~CPythonDBAPITest;
+ * Allocate pythonpp::CEngine dynamicaly;
+ *
  * Revision 1.12  2005/10/19 15:52:46  ssikorsk
  * Added TestScenario_1 test to the test-suite
  *
