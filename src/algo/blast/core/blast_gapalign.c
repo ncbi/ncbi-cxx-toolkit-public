@@ -3344,6 +3344,9 @@ AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr,
  * @param init_hsp The initial HSP information [in]
  * @param restricted_alignment If true and search is not out-of-frame, 
  *              use a faster approximate gapped alignment algorithm [in]
+ * @param fence_hit If not NULL, pointer to a boolean that is set to
+ *                  TRUE if gapped extension reaches a neighborhood
+ *                  of the subject sequence that is not initialized [in][out]
  */
 static Int2 
 s_BlastProtGappedAlignment(EBlastProgramType program, 
