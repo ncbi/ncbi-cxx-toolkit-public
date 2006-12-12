@@ -49,6 +49,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/alnmgr/seqid_comp.hpp>
+#include <objtools/alnmgr/aln_seqid.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -56,29 +57,23 @@ USING_SCOPE(objects);
 
 
 
-template <class TSeqIdPtrComp>
-class CSeqIdsExtractor
+/// IAlnSeqId extracting functor
+template <class TAlnSeqId>
+class CAlnSeqIdsExtract
 {
 public:
-    CSeqIdsExtractor(TSeqIdPtrComp&  seq_id_ptr_comp)
-        : m_Comp(seq_id_ptr_comp)
-    {}
+    typedef vector<TAlnSeqIdIRef> TIdVector;
 
-private:
-    typedef const CSeq_id* TSeqIdPtr;
-    typedef vector<TSeqIdPtr> TSeqIdVector;
-
-public:
-    void operator()(const CSeq_align& seq_align, TSeqIdVector& seq_id_vec) const
+    void operator()(const CSeq_align& seq_align, //< Input aln
+                    TIdVector& id_vec) const     //< Output (ids for that aln)
     {
-        _ASSERT(seq_id_vec.empty());
-
-        seq_align.Validate(true);
+        _ASSERT(id_vec.empty());
 
         typedef CSeq_align::TDim TDim;
-        
         typedef CSeq_align::TSegs TSegs;
 
+        seq_align.Validate(true);
+        
         const TSegs& segs = seq_align.GetSegs();
 
         switch (segs.Which()) {
@@ -88,12 +83,12 @@ public:
                 ITERATE(CSeq_align_set::Tdata, sa_it, segs.GetDisc().Get()) {
                     if (first_disc) {
                         first_disc = false;
-                        this->operator()(**sa_it, seq_id_vec);
+                        this->operator()(**sa_it, id_vec);
                     } else {
                         /// Need to make sure ids are identical across all alignments
-                        TSeqIdVector next_seq_id_vec;
-                        this->operator()(**sa_it, next_seq_id_vec);
-                        if (seq_id_vec != next_seq_id_vec) {
+                        TIdVector next_id_vec;
+                        this->operator()(**sa_it, next_id_vec);
+                        if (id_vec != next_id_vec) {
                             NCBI_THROW(CSeqalignException, eInvalidSeqId,
                                        "Inconsistent Seq-ids across the disc alignments.");
                         }
@@ -104,21 +99,20 @@ public:
         case TSegs::e_Dendiag:
             /// Need to make sure ids are identical across all alignments
             ITERATE(TSegs::TDendiag, diag_it, segs.GetDendiag()) {
-                CDense_diag::TIds ids = (*diag_it)->GetIds();
-
+                const CDense_diag::TIds& ids = (*diag_it)->GetIds();
+            
                 bool first = true;
                 if (first) {
-                    seq_id_vec.resize(ids.size());
-                } else if (seq_id_vec.size() != ids.size()) {
+                    id_vec.resize(ids.size());
+                } else if (id_vec.size() != ids.size()) {
                     NCBI_THROW(CSeqalignException, eInvalidSeqId,
                                "Inconsistent Seq-ids.");
                 }
                 size_t i = 0;
-                ITERATE(CDense_diag::TIds, id_it, (*diag_it)->GetIds()) {
+                ITERATE(CDense_diag::TIds, id_it, ids) {
                     if (first) {
-                        seq_id_vec[i] = *id_it;
-                    } else if (m_Comp(seq_id_vec[i], *id_it)  ||
-                               m_Comp(*id_it, seq_id_vec[i])) {
+                        id_vec[i].Reset(new TAlnSeqId(**id_it));
+                    } else if (*id_vec[i] != TAlnSeqId(**id_it)) {
                         NCBI_THROW(CSeqalignException, eInvalidSeqId,
                                    "Inconsistent Seq-ids.");
                     }
@@ -126,38 +120,49 @@ public:
             }
             break;
         case TSegs::e_Denseg:
-            seq_id_vec.resize(segs.GetDenseg().GetIds().size());
-            copy(segs.GetDenseg().GetIds().begin(), 
-                 segs.GetDenseg().GetIds().end(), seq_id_vec.begin());
-            return;
+            {
+                const CDense_seg::TIds& ids = segs.GetDenseg().GetIds();
+                id_vec.resize(ids.size());
+                for(size_t i = 0;  i < ids.size();  ++i) {
+                    id_vec[i].Reset(new TAlnSeqId(*ids[i]));
+                }
+            }
+            break;
         case TSegs::e_Std: 
             {
                 bool first_seg = true;
 
+                typedef CSeq_loc::TRange::position_type TLen;
+                typedef vector<TLen> TLenVec;
+
                 ITERATE(TSegs::TStd, std_it, segs.GetStd()) {
                     const CStd_seg& std_seg = **std_it;
                     if (first_seg) {
-                        seq_id_vec.resize(std_seg.GetDim());
-                    } else if (seq_id_vec.size() != (size_t) std_seg.GetDim()) {
+                        id_vec.resize(std_seg.GetDim());
+                    } else if (id_vec.size() != (size_t) std_seg.GetDim()) {
                         NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                                   "The Std-seg dim's need to be consistens.");
+                                   "The Std-seg dim's need to be consistent.");
                     }
-                    if (std_seg.GetLoc().size() != seq_id_vec.size()) {
+                    if (std_seg.GetLoc().size() != id_vec.size()) {
                         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                                    "Number of seq-locs inconsistent with dim.");
                     }
                     size_t i = 0;
-                    TSeqIdPtr seq_id_ptr;
+                    TAlnSeqIdIRef id;
+
+                    // Will record the seg_lens here:
+                    TLenVec seg_lens(std_seg.GetDim());
+
                     ITERATE (CStd_seg::TLoc, loc_it, std_seg.GetLoc()) {
                         switch ((*loc_it)->Which()) {
                         case CSeq_loc::e_Empty:
-                            seq_id_ptr = &(*loc_it)->GetEmpty();
+                            id.Reset(new TAlnSeqId((*loc_it)->GetEmpty()));
                             break;
                         case CSeq_loc::e_Int:
-                            seq_id_ptr = &(*loc_it)->GetInt().GetId();
+                            id.Reset(new TAlnSeqId((*loc_it)->GetInt().GetId()));
                             break;
                         case CSeq_loc::e_Pnt:
-                            seq_id_ptr = &(*loc_it)->GetPnt().GetId();
+                            id.Reset(new TAlnSeqId((*loc_it)->GetPnt().GetId()));
                             break;
                         default:
                             string err_str =
@@ -166,27 +171,55 @@ public:
                                 "is not supported.";
                             NCBI_THROW(CSeqalignException, eUnsupported, err_str);
                         }
+
+                        // Store the lengths
+                        seg_lens[i] = (*loc_it)->GetTotalRange().GetLength();
+
                         if (first_seg) {
-                            seq_id_vec[i] = seq_id_ptr;
-                        } else if (m_Comp(seq_id_vec[i], seq_id_ptr)  ||
-                                   m_Comp(seq_id_ptr, seq_id_vec[i])) {
+                            id_vec[i].Reset(id);
+                        } else if (*id_vec[i] != *id) {
                             string err("Inconsistent Seq-ids found in seg ");
                             err += NStr::IntToString(i) + 
-                                ".  Excpected " + seq_id_vec[i]->AsFastaString() +
-                                ", encountered " + seq_id_ptr->AsFastaString() + ".";
+                                ".  Excpected " + id_vec[i]->AsString() +
+                                ", encountered " + id->AsString() + ".";
                             NCBI_THROW(CSeqalignException, eInvalidSeqId, err);
                         }
                         ++i;
                     }
+
+                    // Try to figure out the base_widths
+                    // by examining the seg_lens
+                    TLen min_len = 0;
+                    TLen max_len = 0;
+                    ITERATE(TLenVec, len_i, seg_lens) {
+                        if (min_len == 0  ||  min_len > *len_i) {
+                            min_len = *len_i;
+                        }
+                        if (max_len < *len_i) {
+                            max_len = *len_i;
+                        }
+                    }
+                    if (min_len < max_len) {
+                        _ASSERT(min_len == max_len / 3  ||
+                                min_len == (max_len + 1) / 3);
+                        for (size_t i=0;  i< seg_lens.size();  ++i) {
+                            id_vec[i]->SetBaseWidth(seg_lens[i] == min_len ? 3 : 1);
+                        }                                
+                    }
+
                     first_seg = false;
                 }
                 
             }
             break;
         case TSegs::e_Packed:
-            seq_id_vec.resize(segs.GetPacked().GetIds().size());
-            copy(segs.GetPacked().GetIds().begin(), 
-                 segs.GetPacked().GetIds().end(), seq_id_vec.begin());
+            {
+                const CPacked_seg::TIds& ids = segs.GetPacked().GetIds();
+                id_vec.resize(ids.size());
+                for(size_t i = 0;  i < ids.size();  ++i) {
+                    id_vec[i].Reset(new TAlnSeqId(*ids[i]));
+                }
+            }
             break;
         case TSegs::e_not_set:
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
@@ -195,10 +228,8 @@ public:
             NCBI_THROW(CSeqalignException, eUnsupported,
                        "This type of alignment is not supported.");
         }
-    }
     
-private:
-    TSeqIdPtrComp& m_Comp;
+    }
 };
 
 
@@ -209,6 +240,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/12/12 20:53:21  todorov
+* Update CAlnSeqIdsExtract per the new IAlnSeqId.
+* Deduce the base widths automatically.
+*
 * Revision 1.2  2006/12/12 20:23:10  ucko
 * Replace heterogenous assign() with resize() + copy() for compatibility
 * with WorkShop's STL implementation.
