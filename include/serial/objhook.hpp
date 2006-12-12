@@ -317,7 +317,7 @@ private:
 
 
 template <class T>
-class CObjectHookGuard : CObjectHookGuardBase
+class CObjectHookGuard : public CObjectHookGuardBase
 {
     typedef CObjectHookGuardBase CParent;
 public:
@@ -487,6 +487,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/12/12 17:52:08  gouriano
+* Corrected access control
+*
 * Revision 1.20  2006/12/07 18:59:30  gouriano
 * Reviewed doxygen groupping, added documentation
 *

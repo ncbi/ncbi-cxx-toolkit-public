@@ -58,10 +58,25 @@ class CCopyObjectHook;
 class CCopyClassMemberHook;
 class CCopyChoiceVariantHook;
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CObjectStreamCopier --
+///
+/// Read serial data object from one stream and immediately write
+/// it into another one, usually using different encoding format.
+/// The benefit of using Copier is that converted data is not stored in memory
 class NCBI_XSERIAL_EXPORT CObjectStreamCopier
 {
 public:
+    /// Constructor
+    ///
+    /// @param in
+    ///   Input stream reader
+    /// @param out
+    ///   Output stream writer    
     CObjectStreamCopier(CObjectIStream& in, CObjectOStream& out);
+    
+    /// Destructor
     ~CObjectStreamCopier(void);
 
     CObjectIStream& In(void) const;
@@ -69,7 +84,10 @@ public:
 
     void ResetLocalHooks(void);
 
-    // main copy
+    /// Copy data
+    ///
+    /// @param type
+    ///   Serial class type description
     void Copy(const CObjectTypeInfo& type);
 
     enum ENoFileHeader {
@@ -146,6 +164,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2006/12/12 17:52:08  gouriano
+* Corrected access control
+*
 * Revision 1.19  2006/10/12 15:08:24  gouriano
 * Some header files moved into impl
 *
