@@ -490,17 +490,36 @@ CBlastOptionsLocal::GetFilterString() const
 inline void
 CBlastOptionsLocal::SetFilterString(const char* f)
 {
-    if (!f)
+   if (!f)
         return;
 
-    sfree(m_QueryOpts->filter_string);
-    m_QueryOpts->filter_string = strdup(f);
+   sfree(m_QueryOpts->filter_string);
+   m_QueryOpts->filter_string = strdup(f);
 
-    m_QueryOpts->filtering_options = 
+   SBlastFilterOptions* old_opts = NULL;
+   if (strcmp("F", f) == 0)
+   {  // Simply turns off the options.
+       m_QueryOpts->filtering_options = 
             SBlastFilterOptionsFree(m_QueryOpts->filtering_options);
+       m_QueryOpts->filtering_options = NULL;
+       return;
+   }
+   else
+   {
+       old_opts = m_QueryOpts->filtering_options;
+   }
 
-    BlastFilteringOptionsFromString(GetProgramType(), f, 
-            &(m_QueryOpts->filtering_options), NULL);
+   SBlastFilterOptions* new_opts = NULL;
+   BlastFilteringOptionsFromString(GetProgramType(), f, &(new_opts), NULL);
+
+   if (old_opts)
+   {
+      SBlastFilterOptionsMerge(&(m_QueryOpts->filtering_options), old_opts, new_opts);
+   } 
+   else
+   {
+       m_QueryOpts->filtering_options = new_opts;
+   }
 
    // Repeat filtering is only allowed for blastn.
    if (GetProgramType() != eBlastTypeBlastn && 
