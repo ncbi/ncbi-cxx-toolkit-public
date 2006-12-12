@@ -476,7 +476,7 @@ void CFasta2CD::Init(void)
 int CFasta2CD::Run(void)
 {
 
-    const string fa2cdVersion = "fa2cd -- Version 1.0.0  ($Date$) \n\nFile conversion utiltiy to generate a .cn3 file, usable as input to Cn3D and CDTree,\nfrom a file containing a mFASTA formatted multiple alignment.\n";
+    const string fa2cdVersion = "fa2cd -- Version 1.1.0  ($Date$) \n\nFile conversion utiltiy to generate a .cn3 file, usable as input to Cn3D and CDTree,\nfrom a file containing a mFASTA formatted multiple alignment.\n";
 
     //    bool useLocalIds, useAlignmentAsis;
     unsigned int nSeq = 1;
@@ -707,6 +707,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/12 16:18:38  lanczyck
+ * change version number to '1.1.0'
+ *
  * Revision 1.5  2006/09/01 15:44:05  lanczyck
  * add -v (version) flag
  *
