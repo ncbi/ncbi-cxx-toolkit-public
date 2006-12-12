@@ -41,17 +41,22 @@ BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////////////////////////////
 CPythonDBAPITest::CPythonDBAPITest(const CTestArguments& args)
-: m_args(args)
+: m_Engine(new pythonpp::CEngine)
+, m_args(args)
 {
 }
 
-void 
+CPythonDBAPITest::~CPythonDBAPITest(void)
+{
+}
+
+void
 CPythonDBAPITest::ExecuteStr(const char* cmd)
 {
     pythonpp::CEngine::ExecuteStr(cmd);
 }
 
-void 
+void
 CPythonDBAPITest::ExecuteSQL(const string& sql)
 {
     string cmd = string("cursor.execute('''") + sql + "''') \n";
@@ -70,10 +75,10 @@ CPythonDBAPITest::MakeTestPreparation(void)
                                 m_args.GetUserPassword() );
 
         string connection_str( "connection = python_ncbi_dbapi.connect('" +
-                                connection_args + 
+                                connection_args +
                                 "', True)\n");
-        string conn_simple_str( "conn_simple = python_ncbi_dbapi.connect('" + 
-                                connection_args + 
+        string conn_simple_str( "conn_simple = python_ncbi_dbapi.connect('" +
+                                connection_args +
                                 "')\n");
 
         ExecuteStr("import python_ncbi_dbapi\n");
@@ -82,16 +87,14 @@ CPythonDBAPITest::MakeTestPreparation(void)
 
         ExecuteStr("cursor_simple = conn_simple.cursor() \n");
         ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int )') \n");
-        
-        if ( m_args.GetServerName() != "MOZART" ) {
-            ExecuteStr("cursor_simple.execute("
-                "'CREATE TABLE #t2 ( "
-                "   int_val int null, "
-                // "   vc1900_field varchar(255) null, "
-                "   vc1900_field varchar(1900) null, "
-                "   text_val text null)') \n"
-                );
-        }
+
+        ExecuteStr("cursor_simple.execute("
+            "'CREATE TABLE #t2 ( "
+            "   int_val int null, "
+            // "   vc1900_field varchar(255) null, "
+            "   vc1900_field varchar(1900) null, "
+            "   text_val text null)') \n"
+            );
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -301,14 +304,14 @@ void
 CPythonDBAPITest::TestFromFile(void)
 {
     try {
-        m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample9.py");
+        m_Engine->ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample9.py");
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
     }
 }
 
-void 
+void
 CPythonDBAPITest::Test_callproc(void)
 {
     try {
@@ -320,13 +323,13 @@ CPythonDBAPITest::Test_callproc(void)
 
         // CALL stored procedure ...
         ExecuteStr("cursor.callproc('sp_databases')\n");
-        BOOST_CHECK_THROW( 
-            ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
-            string 
+        BOOST_CHECK_THROW(
+            ExecuteStr("rc = cursor.get_proc_return_status()\n"),
+            string
             );
-        BOOST_CHECK_THROW( 
-            ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
-            string 
+        BOOST_CHECK_THROW(
+            ExecuteStr("rc = cursor.get_proc_return_status()\n"),
+            string
             );
 
         ExecuteStr("cursor.fetchall()\n");
@@ -345,7 +348,7 @@ CPythonDBAPITest::Test_callproc(void)
 }
 
 
-void 
+void
 CPythonDBAPITest::TestExecuteStoredProc(void)
 {
     try {
@@ -363,13 +366,13 @@ CPythonDBAPITest::TestExecuteStoredProc(void)
 
         // EXECUTE stored procedure with parameters ...
         ExecuteStr("cursor.execute('execute sp_server_info 1')\n");
-        BOOST_CHECK_THROW( 
-            ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
-            string 
+        BOOST_CHECK_THROW(
+            ExecuteStr("rc = cursor.get_proc_return_status()\n"),
+            string
             );
-        BOOST_CHECK_THROW( 
-            ExecuteStr("rc = cursor.get_proc_return_status()\n"), 
-            string 
+        BOOST_CHECK_THROW(
+            ExecuteStr("rc = cursor.get_proc_return_status()\n"),
+            string
             );
         ExecuteStr("cursor.fetchall()\n");
         ExecuteStr("rc = cursor.get_proc_return_status()\n");
@@ -387,17 +390,17 @@ CPythonDBAPITest::TestExecuteStoredProc(void)
 }
 
 
-void 
+void
 CPythonDBAPITest::Test_SelectStmt(void)
 {
     string sql;
-    
+
     try {
         // Prepare ...
         {
             ExecuteStr("cursor = conn_simple.cursor()\n");
-            
-            sql = 
+
+            sql =
             "CREATE TABLE #Overlaps ( \n"
             "	pairId int NOT NULL , \n"
             "	overlapNum smallint NOT NULL , \n"
@@ -419,11 +422,11 @@ CPythonDBAPITest::Test_SelectStmt(void)
             "		overlapNum \n"
             "	) \n"
             ") \n";
-            
+
             ExecuteSQL(sql);
-            
+
             // Insert data into the table ...
-            string long_string = 
+            string long_string =
                 "Seq-align ::= { type partial, dim 2, score "
                 "{ { id str \"score\", value int 6771 }, { id str "
                 "\"e_value\", value real { 0, 10, 0 } }, { id str "
@@ -432,17 +435,17 @@ CPythonDBAPITest::Test_SelectStmt(void)
                 "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts "
                 "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, "
                 "strands { minus, minus, minus, minus, minus, minus } } }";
-            
+
             sql  = "long_str = '"+ long_string + "' \n";
             ExecuteStr( sql.c_str() );
-            sql  = 
+            sql  =
                 "INSERT INTO #Overlaps VALUES( \n"
                 "1, 1, 0, 25794, 7126, 32916, '--', 1, 21, 7124, 7127, 0, \n";
             sql += "'" + long_string + "', 'n')";
-            
+
             ExecuteSQL(sql);
         }
-        
+
         // Check ...
         {
             sql = "SELECT * FROM #Overlaps";
@@ -463,21 +466,21 @@ CPythonDBAPITest::Test_SelectStmt(void)
     }
 }
 
-void 
+void
 CPythonDBAPITest::Test_LOB(void)
 {
     string sql;
-    
+
     try {
         // Prepare ...
         {
             ExecuteStr( "cursor = conn_simple.cursor()\n" );
             ExecuteSQL( "DELETE FROM #t2" );
         }
-        
+
         // Insert data ...
         {
-            string long_string = 
+            string long_string =
                 "Seq-align ::= { type partial, dim 2, score "
                 "{ { id str \"score\", value int 6771 }, { id str "
                 "\"e_value\", value real { 0, 10, 0 } }, { id str "
@@ -486,15 +489,15 @@ CPythonDBAPITest::Test_LOB(void)
                 "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts "
                 "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, "
                 "strands { minus, minus, minus, minus, minus, minus } } }";
-            
+
             sql  = "long_str = '"+ long_string + "' \n";
             ExecuteStr( sql.c_str() );
-            
+
             sql  = "cursor.execute('INSERT INTO #t2(vc1900_field, text_val) VALUES(@vcv, @tv)', ";
             sql += " {'@vcv':long_str, '@tv':long_str} ) \n";
             ExecuteStr( sql.c_str() );
         }
-        
+
         // Check ...
         {
             sql = "SELECT vc1900_field, text_val FROM #t2";
@@ -514,21 +517,21 @@ CPythonDBAPITest::Test_LOB(void)
     catch( const string& ex ) {
         BOOST_FAIL( ex );
     }
-           
+
 }
 
 // From example8.py
-void 
+void
 CPythonDBAPITest::TestScenario_1(void)
 {
     string sql;
-    
+
     try {
         // Prepare ...
         {
             ExecuteStr( "cursor = conn_simple.cursor()\n" );
         }
-        
+
         // Create a table ...
         {
             sql = " CREATE TABLE #sale_stat ( \n"
@@ -538,7 +541,7 @@ CPythonDBAPITest::TestScenario_1(void)
                 " ) ";
             ExecuteSQL(sql);
         }
-        
+
         // Insert data ..
         {
             ExecuteStr("month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']");
@@ -576,15 +579,13 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     // add member function test cases to a test suite
     boost::shared_ptr<CPythonDBAPITest> DBAPIInstance( new CPythonDBAPITest( args ) );
     boost::unit_test::test_case* tc = NULL;
-    boost::unit_test::test_case* tc_init = 
+    boost::unit_test::test_case* tc_init =
         BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::MakeTestPreparation, DBAPIInstance);
 
     add(tc_init);
 
-    if ( ( args.GetDriverName() == "ctlib" && 
-           args.GetServerName() != "MOZART"
-         ) ||
-         ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63") && 
+    if ( ( args.GetDriverName() == "ctlib") ||
+         ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63") &&
            args.GetServerType() == CTestArguments::eMsSql )
          ) {
         // This test doen't work with the dblib driver currently ...
@@ -596,8 +597,8 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-    
-    
+
+
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_SelectStmt, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
@@ -617,7 +618,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestExecuteMany, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
-        
+
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_callproc, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
@@ -630,11 +631,11 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-    
+
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestScenario_1, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
-    
+
 //     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFromFile, DBAPIInstance);
 //     tc->depends_on(tc_init);
 //     add(tc);
@@ -662,7 +663,7 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
 #else
-#define DEF_SERVER    "STRAUSS"
+#define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
 #endif
@@ -708,6 +709,7 @@ CTestArguments::GetServerType(void) const
 {
     if ( GetServerName() == "STRAUSS" ||
          GetServerName() == "MOZART" ||
+         GetServerName() == "OBERON" ||
          GetServerName().compare(0, 6, "BARTOK") == 0) {
         return eSybase;
     } else if ( NStr::EqualNocase( GetServerName(), 0, sizeof("MS_DEV") - 1, "MS_DEV") ) {
@@ -720,15 +722,14 @@ CTestArguments::GetServerType(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ( GetDriverName() == "ctlib" && 
-         GetServerName() != "MOZART" &&
+    if ( GetDriverName() == "ctlib" &&
          GetServerName().compare(0, 6, "BARTOK") != 0 ) {
       m_DatabaseParameters["version"] = "125";
     } else if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
         m_DatabaseParameters["version"] = "125";
-    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") && 
+    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") &&
                 GetServerType() == eSybase ) {
         // ftds forks with Sybase databases using protocol v42 only ...
         m_DatabaseParameters["version"] = "42";
@@ -777,6 +778,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.25  2006/12/12 15:43:56  ssikorsk
+* Replaced STRAUSS with OBERON
+*
 * Revision 1.24  2006/02/28 12:09:46  ivanov
 * #include <test/test_assert.h>
 *

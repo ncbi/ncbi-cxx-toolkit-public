@@ -4,7 +4,7 @@
 # Declare drivers and servers
 # Tere are problems with ftds63 currently
 driver_list="ctlib dblib ftds odbc msdblib" # mysql
-server_list="MS_DEV1 STRAUSS"
+server_list="MS_DEV1 OBERON"
 server_mssql="MS_DEV1"
 
 # DBLIB does not work (on Linux at least) when this limit is > 1024
