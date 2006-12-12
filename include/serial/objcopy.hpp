@@ -93,10 +93,19 @@ public:
     enum ENoFileHeader {
         eNoFileHeader
     };
-    // copy without source typename
+    /// Copy without source typename
+    ///
+    /// @param type
+    ///   Type information
+    /// @param noFileHeader
+    ///   Omit file header in the input stream
     void Copy(TTypeInfo type, ENoFileHeader noFileHeader);
 
-    // copy object
+    /// Copy object, omitting file header both
+    /// in input and output streams
+    ///
+    /// @param type
+    ///   Type information
     void CopyObject(TTypeInfo type);
 
     void CopyExternalObject(TTypeInfo type);
@@ -164,6 +173,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/12/12 18:01:24  gouriano
+* Added documentation
+*
 * Revision 1.20  2006/12/12 17:52:08  gouriano
 * Corrected access control
 *
