@@ -12,5 +12,5 @@ LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(PYTHON_LIBS) $(ORIG_LIBS)
 
 # CHECK_REQUIRES = mswin
 CHECK_REQUIRES = DLL
-# CHECK_CMD = python_ncbi_dbapi_test.sh
+CHECK_CMD = python_ncbi_dbapi_test.sh
 CHECK_COPY = python_ncbi_dbapi_test.sh
