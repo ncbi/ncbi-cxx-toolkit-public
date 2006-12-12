@@ -41,7 +41,11 @@
 
 
 #include <corelib/ncbidiag.hpp>
-
+// Use standard _ASSERT macro on MSVC in Debug modes.
+// See NCBI_ASSERT declaration below.
+#if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
+#  include <crtdbg.h>
+#endif
 
 /** @addtogroup Debug
  *
@@ -61,10 +65,23 @@ BEGIN_NCBI_SCOPE
 #  define NCBI_TROUBLE(mess) \
     NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, mess)
 
-#  define NCBI_ASSERT(expr, mess) \
-    do { if ( !(expr) ) \
-        NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
-    } while ( 0 )
+#  if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
+    // Use standard _ASSERT macro on MSVC in Debug modes
+#    define NCBI_ASSERT(expr, mess) \
+      if ( !(expr) ) { \
+          NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Error, eDPF_Trace) << \
+              "Assertion failed: (" << \
+              (#expr ? #expr : "") << ") " << \
+              (mess ? mess : "") << Endm; \
+          _ASSERT_BASE((expr), NULL); \
+      }
+#  else
+#    define NCBI_ASSERT(expr, mess) \
+      do { if ( !(expr) ) \
+          NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
+      } while ( 0 )
+#  endif
+
 
 #  define NCBI_VERIFY(expr, mess) NCBI_ASSERT(expr, mess)
 
@@ -85,12 +102,13 @@ BEGIN_NCBI_SCOPE
 
 #endif  /* else!_DEBUG */
 
+
 #ifdef _ASSERT
-#  undef _ASSERT
+#   undef _ASSERT
 #endif
-#define _TROUBLE        NCBI_TROUBLE(NULL)
 #define _ASSERT(expr)   NCBI_ASSERT(expr, NULL)
 #define _VERIFY(expr)   NCBI_VERIFY(expr, NULL)
+#define _TROUBLE        NCBI_TROUBLE(NULL)
 
 
 /// Which action to perform.
@@ -119,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.40  2006/12/12 16:55:34  ivanov
+ * Use standard _ASSERT macro on MSVC in Debug modes
+ *
  * Revision 1.39  2006/10/24 19:11:55  ivanov
  * Cosmetics: replaced tabulation with spaces
  *
