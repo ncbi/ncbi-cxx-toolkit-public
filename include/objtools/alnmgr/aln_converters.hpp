@@ -115,9 +115,7 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
                            CSeq_align::TDim row_1,             ///< which pair of rows 
                            CSeq_align::TDim row_2)
 {
-    ITERATE (CSeq_align::TSegs::TStd, 
-             std_it,
-             std) {
+    ITERATE (CSeq_align::TSegs::TStd, std_it, std) {
 
         const CStd_seg::TLoc& loc = (*std_it)->GetLoc();
         
@@ -136,12 +134,24 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
 
             const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
             const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
-            _ASSERT(len_1 * base_width_1 == len_2 * base_width_2);
+
+            TSeqPos len;
+            if (base_width_1 == base_width_2) {
+                _ASSERT(len_1 == len_2);
+                len = len_1 * base_width_1;
+            } else if (base_width_1 == 1) {
+                len = len_1;
+            } else if (base_width_2 == 1) {
+                len = len_2;
+            } else {
+                _ASSERT(len_1 * base_width_1 == len_2 * base_width_2);
+                len = len_1 * base_width_1;
+            }
 
             pairwise_aln.insert
                 (CPairwiseAln::TAlnRng(rng_1.GetFrom() * base_width_1,
                                        rng_2.GetFrom() * base_width_2,
-                                       len_1 * base_width_1,
+                                       len,
                                        direct));
         }
     }
@@ -195,21 +205,19 @@ CRef<CAnchoredAln>
 CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
                          size_t aln_idx)
 {
-    _ASSERT(aln_stats.IsAnchored());
-
     typedef typename TAlnStats::TDim TDim;
     TDim dim = aln_stats.GetDimForAln(aln_idx);
-    TDim anchor_row = aln_stats.GetAnchorRowForAln(aln_idx);
+    TDim anchor_row = aln_stats.GetRowVecVec()[0][aln_idx];
+    _ASSERT(anchor_row >= 0);
     TDim target_row;
     TDim target_anchor_row = dim - 1; ///< anchor row goes at the last row (TODO: maybe a candidate for a user option?)
 
     CRef<CAnchoredAln> anchored_aln(new CAnchoredAln);
 
-    typedef typename TAlnStats::TSeqIdVector TSeqIdVector;
-    TSeqIdVector ids = aln_stats.GetSeqIdsForAln(aln_idx);
+    typedef typename TAlnStats::TIdVector TIdVector;
+    TIdVector ids = aln_stats.GetSeqIdsForAln(aln_idx);
 
-    anchored_aln->SetSeqIds().resize(dim);
-    anchored_aln->SetPairwiseAlns().resize(dim);
+    anchored_aln->SetDim(dim);
 
     int anchor_flags =
         CPairwiseAln::fKeepNormalized;
@@ -232,19 +240,15 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
 
         /// Create a pairwise
         CRef<CPairwiseAln> pairwise_aln
-            (new CPairwiseAln(row == anchor_row ? anchor_flags : flags,
-                              aln_stats.GetBaseWidthForAlnRow(aln_idx, anchor_row),
-                              aln_stats.GetBaseWidthForAlnRow(aln_idx, row)));
+            (new CPairwiseAln(ids[anchor_row],
+                              ids[row],
+                              row == anchor_row ? anchor_flags : flags));
         ConvertSeqAlignToPairwiseAln
             (*pairwise_aln,
              *aln_stats.GetAlnVector()[aln_idx],
              anchor_row,
              row);
         anchored_aln->SetPairwiseAlns()[target_row].Reset(pairwise_aln);
-
-        /// Create an id;
-        CConstRef<CSeq_id> id(ids[row]);
-        anchored_aln->SetSeqIds()[target_row].Reset(id);
     }
     anchored_aln->SetAnchorRow(target_anchor_row);
     return anchored_aln;
@@ -285,6 +289,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2006/12/12 20:48:27  todorov
+* Deduce the base widths in case of std-seg.
+*
 * Revision 1.11  2006/12/01 21:22:34  todorov
 * - NCBI_XALNMGR_EXPORT
 *
