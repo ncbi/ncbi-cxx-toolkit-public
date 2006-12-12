@@ -69,10 +69,10 @@ BEGIN_NCBI_SCOPE
     // Use standard _ASSERT macro on MSVC in Debug modes
 #    define NCBI_ASSERT(expr, mess) \
       if ( !(expr) ) { \
-          NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Error, eDPF_Trace) << \
+          NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Error, NCBI_NS_NCBI::eDPF_Trace) << \
               "Assertion failed: (" << \
               (#expr ? #expr : "") << ") " << \
-              (mess ? mess : "") << Endm; \
+              (mess ? mess : "") << NCBI_NS_NCBI::Endm; \
           _ASSERT_BASE((expr), NULL); \
       }
 #  else
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.41  2006/12/12 18:28:46  ucko
+ * Fix special MSVC version of NCBI_ASSERT to use NCBI_NS_NCBI:: throughout.
+ *
  * Revision 1.40  2006/12/12 16:55:34  ivanov
  * Use standard _ASSERT macro on MSVC in Debug modes
  *
