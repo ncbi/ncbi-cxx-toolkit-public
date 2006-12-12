@@ -103,7 +103,7 @@ void CAlignmentRefiner::Init(void)
 
      // input/output CD
     argDescr->AddKey("i", "CdFilenameIn", "full filename of input CD w/ alignment to refine (ascii or binary)", argDescr->eString);
-    argDescr->AddDefaultKey("o", "CdBasenameOut", "basename of output CD(s) containing refined alignment; output saved to 'basename_<number>.acd'; ascii text by default", argDescr->eString, "refiner");
+    argDescr->AddDefaultKey("o", "CdBasenameOut", "basename of output CD(s) containing refined alignment; output saved to 'basename_<number>.cn3'; ascii text by default", argDescr->eString, "refiner");
 
     //  Number of trials
     argDescr->AddDefaultKey("n", "integer", "number of independent trials (restarts from original alignment)\nNOTE:  only relevant if use random selection order of rows; ignored if deterministic selection order used (see 'selection_order' below)", argDescr->eInteger, "1");
@@ -269,7 +269,7 @@ int CAlignmentRefiner::Run(void)
     // Get arguments
     CArgs args = GetArgs();
     string fname, err;
-    string basename = args["o"].AsString() + "_", suffix = ".acd"; 
+    string basename = args["o"].AsString() + "_", suffix = ".cn3"; 
 
     // Stream to results file, if provided, or cout
     // (NOTE: "x_lg" is just a workaround for bug in SUN WorkShop 5.1 compiler)
@@ -828,6 +828,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/12/12 16:04:47  lanczyck
+ * use 'cn3' as file extension for created cd files
+ *
  * Revision 1.12  2006/09/01 15:31:54  lanczyck
  * make CTime 'start' const
  *
