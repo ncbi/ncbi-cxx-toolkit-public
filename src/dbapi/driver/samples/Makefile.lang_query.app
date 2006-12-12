@@ -8,4 +8,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD  = test_lang_query.sh
 CHECK_COPY = test_lang_query.sh
-CHECK_TIMEOUT = 300
+CHECK_TIMEOUT = 400
