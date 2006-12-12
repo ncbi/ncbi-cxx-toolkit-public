@@ -2269,12 +2269,12 @@ base_3:
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-static Int4 s_MB_DiscWordScanSubject_Any(const LookupTableWrap* lookup, 
+static Int4 s_MB_DiscWordScanSubject_Any(const LookupTableWrap* lookup_wrap, 
        const BLAST_SequenceBlk* subject, Int4 start_offset,
        BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits, 
        Int4* end_offset)
 {
-   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
    Int4 total_hits = 0;
    Uint4 q_off, s_off;
@@ -2289,7 +2289,7 @@ static Int4 s_MB_DiscWordScanSubject_Any(const LookupTableWrap* lookup,
    Uint4 curr_base = COMPRESSION_RATIO - (start_offset % COMPRESSION_RATIO);
    Uint4 last_base = *end_offset;
 
-   ASSERT(lookup->lut_type == eMBLookupTable);
+   ASSERT(lookup_wrap->lut_type == eMBLookupTable);
 
    /* Since the test for number of hits here is done after adding them, 
       subtract the longest chain length from the allowed offset array size. */
@@ -2443,12 +2443,12 @@ static Int4 s_MB_DiscWordScanSubject_Any(const LookupTableWrap* lookup,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-static Int4 s_MB_DiscWordScanSubject_1(const LookupTableWrap* lookup, 
+static Int4 s_MB_DiscWordScanSubject_1(const LookupTableWrap* lookup_wrap, 
        const BLAST_SequenceBlk* subject, Int4 start_offset,
        BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits, 
        Int4* end_offset)
 {
-   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
    Int4 total_hits = 0;
    Uint4 s_off = start_offset;
@@ -2458,7 +2458,7 @@ static Int4 s_MB_DiscWordScanSubject_1(const LookupTableWrap* lookup,
    Uint4 template_length = mb_lt->template_length;
    Uint4 last_offset = *end_offset - template_length;
 
-   ASSERT(lookup->lut_type == eMBLookupTable);
+   ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    max_hits -= mb_lt->longest_chain;
 
    /* fill the accumulator */
@@ -2534,12 +2534,12 @@ base_3:
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
 static Int4 s_MB_DiscWordScanSubject_11_18_1(
-       const LookupTableWrap* lookup, 
+       const LookupTableWrap* lookup_wrap, 
        const BLAST_SequenceBlk* subject, Int4 start_offset,
        BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits, 
        Int4* end_offset)
 {
-   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
    Int4 total_hits = 0;
    Uint4 s_off = start_offset;
@@ -2549,7 +2549,7 @@ static Int4 s_MB_DiscWordScanSubject_11_18_1(
    Uint4 lo = 0; 
    Uint4 hi = 0;
 
-   ASSERT(lookup->lut_type == eMBLookupTable);
+   ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    ASSERT(mb_lt->lut_word_length == 11);
    ASSERT(mb_lt->template_length == 18);
    ASSERT(mb_lt->template_type == eDiscTemplate_11_18_Coding);
@@ -2651,12 +2651,12 @@ base_3:
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
 static Int4 s_MB_DiscWordScanSubject_11_21_1(
-       const LookupTableWrap* lookup, 
+       const LookupTableWrap* lookup_wrap, 
        const BLAST_SequenceBlk* subject, Int4 start_offset,
        BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits, 
        Int4* end_offset)
 {
-   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
    Int4 total_hits = 0;
    Uint4 s_off = start_offset;
@@ -2666,7 +2666,7 @@ static Int4 s_MB_DiscWordScanSubject_11_21_1(
    Uint4 lo = 0; 
    Uint4 hi = 0;
 
-   ASSERT(lookup->lut_type == eMBLookupTable);
+   ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    ASSERT(mb_lt->lut_word_length == 11);
    ASSERT(mb_lt->template_length == 21);
    ASSERT(mb_lt->template_type == eDiscTemplate_11_21_Coding);
