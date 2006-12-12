@@ -37,120 +37,152 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <objects/seqalign/Seq_align.hpp>
-
+#include <util/bitset/ncbi_bitset.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-template <class _TAlnVector,
-          class _TSeqIdVector,
-          class _TAlnSeqIdVector>
+template <class _TAlnSeqIdVector>
 class CAlnStats : public CObject
 {
 public:
     /// Typedefs
-    typedef _TAlnVector TAlnVector;
-    typedef _TSeqIdVector TSeqIdVector;
     typedef _TAlnSeqIdVector TAlnSeqIdVector;
-    typedef objects::CSeq_align::TDim TDim;
-    typedef vector< vector<int> > TBaseWidths;
-    typedef vector<TDim> TAnchorRows;
+    typedef typename _TAlnSeqIdVector::TAlnVector TAlnVector;
+    typedef typename _TAlnSeqIdVector::TIdVector TIdVector;
+    typedef int TDim;
+    typedef vector<TDim> TRowVec;
+    typedef vector<TRowVec> TRowVecVec;
+    typedef bm::bvector<> TBitVec;
+    typedef vector<TBitVec> TBitVecVec;
+    typedef vector<size_t> TIdxVec;
+    typedef map<TAlnSeqIdIRef, TIdxVec, SAlnSeqIdIRefComp> TIdMap;
+
 
     /// Constructor
-    CAlnStats(const TAlnVector& aln_vector,
-              const TAlnSeqIdVector& aln_seq_id_vector,
-              const TAnchorRows& anchor_rows,
-              const TBaseWidths& base_widths) :
-        m_AlnVector(aln_vector),
-        m_AlnSeqIdVector(aln_seq_id_vector),
-        m_AnchorRows(anchor_rows),
-        m_BaseWidths(base_widths)
+    CAlnStats(const TAlnSeqIdVector& aln_seq_id_vector) :
+        m_AlnIdVec(aln_seq_id_vector),
+        m_AlnVec(aln_seq_id_vector.GetAlnVector()),
+        m_AlnCount(m_AlnVec.size())
     {
-        _ASSERT(m_AlnVector.size() == GetAlnCount());
-        _ASSERT(m_AlnSeqIdVector.size() == GetAlnCount());
-        _ASSERT(m_AnchorRows.empty()  ||  m_AnchorRows.size() == GetAlnCount());
-        _ASSERT(m_BaseWidths.empty()  ||  m_BaseWidths.size() == GetAlnCount());
+        _ASSERT(m_AlnVec.size() == m_AlnIdVec.size());
+        
+        // Construct the m_IdAlnBitmap
+        for (size_t aln_i = 0; aln_i < m_AlnCount; ++aln_i) {
+            for (size_t row_i = 0;  row_i < m_AlnIdVec[aln_i].size();  ++row_i) {
+                
+                const TAlnSeqIdIRef& id = m_AlnIdVec[aln_i][row_i];
+                TIdMap::iterator it = m_IdMap.lower_bound(id);
+                if (it == m_IdMap.end()  ||  *id < *it->first) { // id encountered for a first time, insert it
+                    it = m_IdMap.insert
+                        (it,
+                         TIdMap::value_type(id, TIdxVec()));
+                    it->second.push_back(x_AddId(id, aln_i, row_i));
+                } else { // id exists already
+                    TIdxVec& idx_vec = it->second;
+                    TIdxVec::iterator idx_it = idx_vec.begin();
+                    while (idx_it != idx_vec.end()) {
+                        if (m_RowVecVec[*idx_it][aln_i] == -1) {
+                            break;
+                        }
+                        ++idx_it;
+                    }
+                    if (idx_it == idx_vec.end()) {
+                        // we have already encountered this id in the
+                        // current alignment, this means the sequence
+                        // is aligned to itself
+                        idx_vec.push_back(x_AddId(id, aln_i, row_i));
+                    } else {
+                        m_RowVecVec[*idx_it][aln_i] = row_i;
+                    }
+                }
+            }
+        }
     }
+
 
     /// How many alignments do we have?
     size_t GetAlnCount() const {
-        _ASSERT(m_AlnVector.size() ==  m_AlnSeqIdVector.size());
-        return m_AlnVector.size();
+        return m_AlnCount;
     }
+
 
     /// Access the underlying vector of alignments
     const TAlnVector& GetAlnVector() const {
-        return m_AlnVector;
+        return m_AlnVec;
     }
 
 
     /// What is the dimension of an alignment?
     TDim GetDimForAln(size_t aln_idx) const {
         _ASSERT(aln_idx < GetAlnCount());
-        return m_AlnSeqIdVector[aln_idx].size();
+        return m_AlnIdVec[aln_idx].size();
     }
+
 
     /// Access a vector of seq-ids for an alignment
-    const TSeqIdVector& GetSeqIdsForAln(size_t aln_idx) const {
+    const TIdVector& GetSeqIdsForAln(size_t aln_idx) const {
         _ASSERT(aln_idx < GetAlnCount());
-        return m_AlnSeqIdVector[aln_idx];
+        return m_AlnIdVec[aln_idx];
+    }
+
+    
+    const TRowVecVec& GetRowVecVec() const {
+        return m_RowVecVec;
     }
 
 
-    /// Do the alignments share a common sequence (anchor)?
-    bool IsAnchored() const {
-        _ASSERT(m_AnchorRows.empty()  ||  m_AnchorRows.size() == GetAlnCount());
-        return !m_AnchorRows.empty();
+    const TIdMap& GetIdMap() const {
+        return m_IdMap;
+    }
+        
+
+    const TIdVector& GetIdVector() const {
+        return m_IdVec;
     }
 
-    /// Get the anchor row within an alignment
-    TDim GetAnchorRowForAln(size_t aln_idx) const {
-        if (IsAnchored()) {
-            _ASSERT(m_AnchorRows.size() == GetAlnCount());
-            _ASSERT(aln_idx < m_AnchorRows.size());
-            _ASSERT(m_AnchorRows[aln_idx] >= 0);
-            _ASSERT(m_AnchorRows[aln_idx] < GetDimForAln(aln_idx));
-            return m_AnchorRows[aln_idx];
-        } else {
-            return -1;
+
+    /// Canonical query-anchored: all alignments have 2 or 3 rows and
+    /// exactly 2 sequences (A and B), A is present on all alignments
+    /// on row 1, B on rows 2 and 3. B can be present on 2 rows only
+    /// if they represent different strands.
+    bool IsCanonicalQueryAnchored() const {
+        switch (m_IdVec.size()) {
+        case 2:
+            // Is the first sequence present in all aligns?
+            if (m_BitVecVec[0].count() == m_AlnCount) {
+                return true;
+            }
+            break;
+        default:
+            break;
         }
+        return false;
     }
 
-
-    /// What are the base widths?
-    const int GetBaseWidthForAlnRow(size_t aln_idx, TDim row) const {
-        if ( !m_BaseWidths.empty() ) {
-            _ASSERT(m_BaseWidths.size() == GetAlnCount());
-            _ASSERT(aln_idx < m_BaseWidths.size());
-            _ASSERT((TDim)m_BaseWidths[aln_idx].size() == GetDimForAln(aln_idx));
-            _ASSERT(row < (TDim)m_BaseWidths[aln_idx].size());
-            return m_BaseWidths[aln_idx][row];
-        } else {
-            return 1;
-        }
-    }
-
-
+    
     /// Dump in human readable text format:
     template <class TOutStream>
     void Dump(TOutStream& os) const {
         os << "Number of alignments: " << GetAlnCount() << endl;
-        os << "QueryAnchoredTest:"     << IsAnchored() << endl;
+        os << "QueryAnchoredTest:"     << IsCanonicalQueryAnchored() << endl;
+        os << endl;
+        os << "IdVector:" << endl;
+        ITERATE(typename TIdVector, it, GetIdVector()) {
+            os << (*it)->AsString() << " (base_width=" << (*it)->GetBaseWidth() << ")" << endl;
+        }
+        os << endl;
+        os << "IdMap:" << endl;
+        ITERATE(TIdMap, it, GetIdMap()) {
+            os << it->first->AsString() << " (base_width=" << it->first->GetBaseWidth() << ")" << endl;
+        }
         os << endl;
         for (size_t aln_idx = 0;  aln_idx < GetAlnCount();  ++aln_idx) {
             TDim dim = GetDimForAln(aln_idx);
             os << "Alignment " << aln_idx << " has " 
                << dim << " rows:" << endl;
             for (TDim row = 0;  row < dim;  ++row) {
-                GetSeqIdsForAln(aln_idx)[row]->WriteAsFasta(os);
-                os << " [base width: " 
-                   << GetBaseWidthForAlnRow(aln_idx, row)
-                   << "]";
-                if (IsAnchored()  &&  
-                    row == GetAnchorRowForAln(aln_idx)) {
-                    os << " (anchor)";
-                }
+                os << GetSeqIdsForAln(aln_idx)[row]->AsString();
                 os << endl;
             }
             os << endl;
@@ -159,10 +191,33 @@ public:
 
 
 private:
-    const TAlnVector& m_AlnVector;
-    const TAlnSeqIdVector& m_AlnSeqIdVector;
-    const TAnchorRows& m_AnchorRows;
-    const TBaseWidths& m_BaseWidths;
+    size_t x_AddId(const TAlnSeqIdIRef& id, size_t aln_i, size_t row_i) {
+        m_IdVec.push_back(id);
+        {
+            m_BitVecVec.push_back(TBitVec());
+            TBitVec& bit_vec = m_BitVecVec.back();
+            bit_vec.resize(m_AlnCount);
+            bit_vec[aln_i] = true;
+            _ASSERT(m_IdVec.size() == m_BitVecVec.size());
+        }
+        {
+            m_RowVecVec.push_back(TRowVec());
+            TRowVec& rows = m_RowVecVec.back();
+            rows.resize(m_AlnCount, -1);
+            rows[aln_i] = row_i;
+            _ASSERT(m_IdVec.size() == m_RowVecVec.size());
+        }
+        return m_IdVec.size() - 1;
+    }
+
+
+    const TAlnSeqIdVector& m_AlnIdVec;
+    const TAlnVector& m_AlnVec;
+    size_t m_AlnCount;
+    TIdMap m_IdMap;
+    TIdVector m_IdVec;
+    TRowVecVec m_RowVecVec;
+    TBitVecVec m_BitVecVec;
 };
 
 
@@ -173,6 +228,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/12/12 20:40:01  todorov
+* Stats are now generated upon construction and offer multiple views of the
+* relationships between ids and alignments.
+*
 * Revision 1.2  2006/11/20 18:43:23  todorov
 * anchor rows and base widtsh are now const refs.
 *
