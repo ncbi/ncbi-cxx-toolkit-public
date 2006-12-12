@@ -37,10 +37,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <objects/seqalign/Seq_align.hpp>
-
 #include <util/align_range.hpp>
 #include <util/align_range_coll.hpp>
+
+#include <objtools/alnmgr/aln_seqid.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -61,33 +61,39 @@ public:
 
 
     /// Constructor
-    CPairwiseAln(int flags = fDefaultPoicy,
-                 int first_base_width = 1,
-                 int second_base_width = 1)
+    CPairwiseAln(const TAlnSeqIdIRef& first_id,
+                 const TAlnSeqIdIRef& second_id,
+                 int flags = fDefaultPoicy)
         : TAlnRngColl(flags),
-          m_FirstBaseWidth(first_base_width),
-          m_SecondBaseWidth(second_base_width) {}
+          m_FirstId(first_id),
+          m_SecondId(second_id) {}
 
 
     /// Base width of the first row
     int GetFirstBaseWidth() const {
-        return m_FirstBaseWidth;
+        return m_FirstId->GetBaseWidth();
     }
 
     /// Base width of the second row
     int GetSecondBaseWidth() const {
-        return m_SecondBaseWidth;
+        return m_SecondId->GetBaseWidth();
     }
 
+    const TAlnSeqIdIRef& GetFirstId() const {
+        return m_FirstId;
+    }
+
+    const TAlnSeqIdIRef& GetSecondId() const {
+        return m_SecondId;
+    }
 
     /// Dump in human readable text format
     template <class TOutStream>
     void Dump(TOutStream& os) const {
         os << "CPairwiseAln";
 
-        os << " BaseWidths: " 
-           << m_FirstBaseWidth << ", "
-           << m_SecondBaseWidth << " ";
+        os << GetFirstId()->AsString() << " (base_width=" << GetFirstId()->GetBaseWidth() << ") , "
+           << GetSecondId()->AsString() << " (base_width=" << GetSecondId()->GetBaseWidth() << ") ";
 
         os << " Flags = " << NStr::UIntToString(GetFlags(), 0, 16)
            << ":" << endl;
@@ -118,8 +124,8 @@ public:
     }
 
 private:
-    int m_FirstBaseWidth;
-    int m_SecondBaseWidth;
+    TAlnSeqIdIRef m_FirstId;
+    TAlnSeqIdIRef m_SecondId;
 };
 
 
@@ -128,9 +134,7 @@ class CAnchoredAln : public CObject
 {
 public:
     // Types
-    typedef CSeq_align::TDim TDim;
-    typedef CConstRef<CSeq_id> TSeqIdPtr;
-    typedef vector<TSeqIdPtr> TSeqIdVector;
+    typedef int TDim;
     typedef vector<CRef<CPairwiseAln> > TPairwiseAlnVector;
 
 
@@ -145,7 +149,6 @@ public:
     /// pairwise_alns can be modified
     CAnchoredAln(const CAnchoredAln& c)
         : m_AnchorRow(c.m_AnchorRow),
-          m_SeqIds(c.m_SeqIds),
           m_Score(c.m_Score)
     {
         m_PairwiseAlns.resize(c.GetDim());
@@ -165,7 +168,6 @@ public:
             return *this; // prevent self-assignment
         }
         m_AnchorRow = c.m_AnchorRow;
-        m_SeqIds = c.m_SeqIds;
         m_Score = c.m_Score;
         m_PairwiseAlns.resize(c.GetDim());
         for (TDim row = 0;  row < c.GetDim();  ++row) {
@@ -179,14 +181,13 @@ public:
 
     /// How many rows
     TDim GetDim() const {
-        _ASSERT(m_SeqIds.size() == m_PairwiseAlns.size());
-        _ASSERT(m_AnchorRow == (TDim) m_SeqIds.size() - 1);
-        return (TDim) m_SeqIds.size();
+        _ASSERT(m_AnchorRow == (TDim) m_PairwiseAlns.size() - 1);
+        return (TDim) m_PairwiseAlns.size();
     }
 
     /// Seq ids of the rows
-    const TSeqIdVector& GetSeqIds() const { 
-        return m_SeqIds;
+    const TAlnSeqIdIRef& GetId(TDim row) const { 
+        return GetPairwiseAlns()[row]->GetSecondId();
     }
 
     /// The vector of pairwise alns
@@ -202,8 +203,8 @@ public:
     }
 
     /// What is the seq id of the anchor?
-    const TSeqIdPtr& GetAnchorId() const {
-        return m_SeqIds[m_AnchorRow];
+    const TAlnSeqIdIRef& GetAnchorId() const {
+        return GetId(m_AnchorRow);
     }
 
     /// What is the total score?
@@ -217,13 +218,7 @@ public:
     /// you know what you're doing)
     void SetDim(TDim dim) {
         _ASSERT(m_AnchorRow == kInvalidAnchorRow); // make sure anchor is not set yet
-        m_SeqIds.resize(dim);
         m_PairwiseAlns.resize(dim);
-    }
-
-    /// Modify seq-ids
-    TSeqIdVector& SetSeqIds() {
-        return m_SeqIds;
     }
 
     /// Modify pairwise alns
@@ -263,7 +258,6 @@ public:
 private:
     static const TDim  kInvalidAnchorRow = -1;
     TDim               m_AnchorRow;
-    TSeqIdVector       m_SeqIds;
     TPairwiseAlnVector m_PairwiseAlns;
     int                m_Score;
 };
@@ -286,6 +280,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/12/12 20:51:49  todorov
+* Moved the ids from CAnchoredAln to CPairwiseAln.
+*
 * Revision 1.15  2006/12/12 19:38:28  ucko
 * CPairwiseAln::Dump: use NStr::UIntToString rather than sprintf, which
 * might not have been declared.
