@@ -56,6 +56,8 @@
 #include <objtools/alnmgr/sparse_aln.hpp> //< Temp, just to test it
 #include <objtools/alnmgr/aln_builders.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
+#include <objtools/alnmgr/seqids_extractor.hpp>
+
 using namespace ncbi;
 using namespace objects;
 
@@ -179,11 +181,9 @@ int CAlnBuildApp::Run(void)
     typedef vector<const CSeq_align*> TAlnVector;
     typedef const CSeq_id* TSeqIdPtr;
     typedef vector<TSeqIdPtr> TSeqIdVector;
-    typedef CSeqIdBioseqHandleComp<TSeqIdPtr> TComp;
-    //typedef SCompareOrdered<TSeqIdPtr> TComp;
-    typedef CAlnSeqIdVector<TAlnVector, TComp> TAlnSeqIdVector;
-    typedef CSeqIdAlnBitmap<TAlnSeqIdVector> TSeqIdAlnBitmap;
-    typedef CAlnStats<TAlnVector, TSeqIdVector, TAlnSeqIdVector> TAlnStats;
+    typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
+    typedef CAlnSeqIdVector<TAlnVector, TIdExtract> TAlnSeqIdVector;
+    typedef CAlnStats<TAlnSeqIdVector> TAlnStats;
 
 
     /// Create a vector of alignments based on m_AlnContainer
@@ -191,44 +191,14 @@ int CAlnBuildApp::Run(void)
     aln_vector.assign(m_AlnContainer.begin(), m_AlnContainer.end());
 
 
-    /// Create a comparison functor
-    TComp comp(GetScope());
-
-
     /// Create a vector of seq-ids per seq-align
-    TAlnSeqIdVector aln_seq_id_vector(aln_vector, comp);
+    TAlnSeqIdVector aln_seq_id_vector(aln_vector, TIdExtract());
     ReportTime("TAlnSeqIdVector");
-
-    /// TEMP
-//     typedef set<CSeq_id_Handle> TIdSet;
-//     TIdSet id_set;
-//     TSeqIdPtr seq_id;
-//     for (size_t aln_i = 0; aln_i < aln_vector.size(); ++aln_i) {
-//         for (size_t seq_i = 0;  seq_i < aln_seq_id_vector[aln_i].size();  ++seq_i) {
-//             seq_id = aln_seq_id_vector[aln_i][seq_i];
-//             CSeq_id_Handle handle = CSeq_id_Handle::GetHandle(*seq_id);
-//             id_set.insert(handle);
-//             cerr << handle.GetHash() << endl;
-//         }
-//     }
-//     cerr << endl;
-//     ITERATE(TIdSet, id_i, id_set) {
-//         cerr << id_i->GetHash() << endl;
-//     }
-//     return 0;
-        
-
-
-    /// Create an alignment bitmap to obtain statistics.
-    TSeqIdAlnBitmap id_aln_bitmap(aln_seq_id_vector, GetScope(), comp);
-    ReportTime("TSeqIdAlnBitmap");
 
 
     /// Crete align statistics object
-    TAlnStats aln_stats(aln_vector,
-                        aln_seq_id_vector,
-                        id_aln_bitmap.GetAnchorRows(),
-                        id_aln_bitmap.GetBaseWidths());
+    TAlnStats aln_stats(aln_seq_id_vector);
+    ReportTime("TAlnStats");
     aln_stats.Dump(cout);
 
 
@@ -249,8 +219,7 @@ int CAlnBuildApp::Run(void)
     CAnchoredAln built_anchored_aln;
     BuildAln(anchored_aln_vector,
              built_anchored_aln,
-             aln_user_options,
-             comp);
+             aln_user_options);
     ReportTime("BuildAln");
     built_anchored_aln.Dump(cout);
 
@@ -283,6 +252,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/12/12 20:55:12  todorov
+* Updated per the latest changes (mainly IAlnSeqId-related).
+*
 * Revision 1.13  2006/12/06 20:06:35  todorov
 * Added a stop watch.
 *
