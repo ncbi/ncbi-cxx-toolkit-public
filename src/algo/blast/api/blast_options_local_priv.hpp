@@ -501,7 +501,8 @@ CBlastOptionsLocal::SetFilterString(const char* f)
    {  // Simply turns off the options.
        m_QueryOpts->filtering_options = 
             SBlastFilterOptionsFree(m_QueryOpts->filtering_options);
-       m_QueryOpts->filtering_options = NULL;
+       // Need an empty object as filtering_options is accessed.
+       SBlastFilterOptionsNew( &(m_QueryOpts->filtering_options), eEmpty);
        return;
    }
    else
