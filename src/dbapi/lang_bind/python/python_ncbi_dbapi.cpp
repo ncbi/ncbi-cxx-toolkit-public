@@ -89,7 +89,7 @@ CRowID::~CRowID(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-void 
+void
 CStmtStr::SetStr(const string& str, EStatementType default_type)
 {
     m_StmType = RetrieveStatementType(str, default_type);
@@ -118,7 +118,7 @@ CStmtStr::SetStr(const string& str, EStatementType default_type)
                 }
             }
         }
-    } 
+    }
     */
 
     m_StmtStr = str;
@@ -165,7 +165,7 @@ CConnParam::CConnParam(
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
         m_DatabaseParameters["version"] = "125";
-    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63")  && 
+    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63")  &&
                 GetServerType() == eSybase ) {
         // ftds forks with Sybase databases using protocol v42 only ...
         m_DatabaseParameters["version"] = "42";
@@ -348,10 +348,7 @@ CConnection::~CConnection(void)
         m_DM.DestroyDs( m_ConnParam.GetDriverName() );
         m_DS = NULL;                        // ;-)
     }
-    catch ( ... )
-    {
-        // Just ignore it ...
-    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 IConnection*
@@ -606,10 +603,7 @@ CTransaction::~CTransaction(void)
         // Unregister this transaction with the parent connection ...
         GetParentConnection().DestroyTransaction(this);
     }
-    catch ( ... )
-    {
-        // Ignore it ...
-    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 pythonpp::CObject
@@ -801,9 +795,7 @@ CStmtHelper::~CStmtHelper(void)
     try {
         Close();
     }
-    catch ( ... )
-    {
-    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -986,7 +978,7 @@ CStmtHelper::HasRS(void) const
     return m_RS.get() != NULL;
 }
 
-int 
+int
 CStmtHelper::GetReturnStatus(void)
 {
     if ( !m_ResultStatusAvailable ) {
@@ -1053,10 +1045,7 @@ CCallableStmtHelper::~CCallableStmtHelper(void)
     try {
         Close();
     }
-    catch ( ... )
-    {
-        // Ignore all exceptions ...
-    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -1208,7 +1197,7 @@ CCallableStmtHelper::HasRS(void) const
     return m_RS.get() != NULL;
 }
 
-int 
+int
 CCallableStmtHelper::GetReturnStatus(void)
 {
     if ( !m_ResultStatusAvailable ) {
@@ -1243,18 +1232,18 @@ CCallableStmtHelper::NextRS(void)
 pythonpp::CTuple
 MakeTupleFromResult(IResultSet& rs)
 {
-    // Previous implementation of GetColumnNo/GetTotalColumns used to return 
+    // Previous implementation of GetColumnNo/GetTotalColumns used to return
     // invalid value ...
     // col_num = (col_num > 0 ? col_num - 1 : col_num);
-    
+
     // Set data. Make a sequence (tuple) ...
     int col_num = rs.GetTotalColumns();
-    
+
     pythonpp::CTuple tuple(col_num);
 
     for ( int i = 0; i < col_num; ++i) {
         const CVariant& value = rs.GetVariant (i + 1);
-        
+
         if ( value.IsNull() ) {
             continue;
         }
@@ -1322,7 +1311,7 @@ MakeTupleFromResult(IResultSet& rs)
             {
                 size_t lob_size = value.GetBlobSize();
                 string tmp_str;
-                
+
                 tmp_str.resize(lob_size);
                 value.Read( (void*)tmp_str.c_str(), lob_size );
                 tuple[i] = pythonpp::CString(tmp_str);
@@ -1366,10 +1355,7 @@ CCursor::~CCursor(void)
         // Unregister this cursor with the parent transaction ...
         GetTransaction().DestroyCursor(this);
     }
-    catch ( ... )
-    {
-        // Just ignore it ...
-    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 void
@@ -1746,7 +1732,7 @@ CCursor::fetchall(const pythonpp::CTuple& args)
     return py_list;
 }
 
-bool 
+bool
 CCursor::NextSetInternal(void)
 {
     try {
@@ -1798,7 +1784,7 @@ CCursor::setoutputsize(const pythonpp::CTuple& args)
     return pythonpp::CNone();
 }
 
-pythonpp::CObject 
+pythonpp::CObject
 CCursor::get_proc_return_status(const pythonpp::CTuple& args)
 {
     try {
@@ -2584,6 +2570,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/12/12 15:41:12  ssikorsk
+* Replaced catch(...) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
+*
 * Revision 1.28  2006/02/21 19:21:53  ssikorsk
 * Replaced GetColumnNo with GetTotalColumns.
 *
