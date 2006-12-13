@@ -79,12 +79,12 @@ BlastChooseNaLookupTable(const LookupTableOptions* lookup_options,
 
    case 7:
       lut_type = eSmallNaLookupTable;
-      if (approx_table_entries < 625)
+      if (approx_table_entries < 250)
          *lut_width = 6;
       else
          *lut_width = 7;
       break;
-      
+
    case 8:
       lut_type = eSmallNaLookupTable;
       if (approx_table_entries < 8500)
@@ -326,16 +326,10 @@ Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query,
     lookup->backbone_size = 1 << (BITS_PER_NUC * lookup->lut_word_length);
     lookup->mask = lookup->backbone_size - 1;
     lookup->overflow = NULL;
+    lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
 
     thin_backbone = (Int4 **) calloc(lookup->backbone_size, sizeof(Int4 *));
     ASSERT(thin_backbone != NULL);
-
-    /* the standard word size and lookup width will not use
-       AG striding, but all other combinations do */
-    if (lookup->lut_word_length != 8 || lookup->word_length != 11) {
-        lookup->ag_scanning_mode = TRUE;
-        lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
-    }
 
     BlastLookupIndexQueryExactMatches(thin_backbone,
                                       lookup->word_length,
@@ -492,16 +486,10 @@ Int4 BlastNaLookupTableNew(BLAST_SequenceBlk* query,
     lookup->backbone_size = 1 << (BITS_PER_NUC * lookup->lut_word_length);
     lookup->mask = lookup->backbone_size - 1;
     lookup->overflow = NULL;
+    lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
 
     thin_backbone = (Int4 **) calloc(lookup->backbone_size, sizeof(Int4 *));
     ASSERT(thin_backbone != NULL);
-
-    /* the standard word size and lookup width will not use
-       AG striding, but all other combinations do */
-    if (lookup->lut_word_length != 8 || lookup->word_length != 11) {
-        lookup->ag_scanning_mode = TRUE;
-        lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
-    }
 
     BlastLookupIndexQueryExactMatches(thin_backbone,
                                       lookup->word_length,
@@ -924,7 +912,9 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
    if (lookup_options->mb_template_length > 0) {
         /* discontiguous megablast */
-        mb_lt->full_byte_scan = lookup_options->full_byte_scan; 
+        mb_lt->scan_step = 1;
+        if (lookup_options->full_byte_scan)
+            mb_lt->scan_step = 4;
         status = s_FillDiscMBTable(query, location, mb_lt, lookup_options);
    }
    else {
