@@ -49,6 +49,47 @@ USING_SCOPE(objects);
 
 
 void
+ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
+                             const CSeq_align& sa,        ///< input Seq-align
+                             CSeq_align::TDim row_1,      ///< which pair of rows
+                             CSeq_align::TDim row_2)
+{
+    _ASSERT(sa.GetDim() > max(row_1, row_2));
+
+    typedef CSeq_align::TSegs TSegs;
+    const TSegs& segs = sa.GetSegs();
+
+    switch(segs.Which())    {
+    case CSeq_align::TSegs::e_Dendiag:
+        break;
+    case CSeq_align::TSegs::e_Denseg: {
+        ConvertDensegToPairwiseAln(pairwise_aln, segs.GetDenseg(),
+                                   row_1, row_2);
+        break;
+    }
+    case CSeq_align::TSegs::e_Std:
+        ConvertStdsegToPairwiseAln(pairwise_aln, segs.GetStd(),
+                                   row_1, row_2);
+        break;
+    case CSeq_align::TSegs::e_Packed:
+        break;
+    case CSeq_align::TSegs::e_Disc:
+        ITERATE(CSeq_align_set::Tdata, sa_it, segs.GetDisc().Get()) {
+            ConvertSeqAlignToPairwiseAln(pairwise_aln, **sa_it,
+                                         row_1, row_2);
+        }
+        break;
+    case CSeq_align::TSegs::e_Spliced:
+        break;
+    case CSeq_align::TSegs::e_Sparse:
+        break;
+    case CSeq_align::TSegs::e_not_set:
+        break;
+    }
+}
+
+
+void
 ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                            const CDense_seg& ds,        ///< input Dense-seg
                            CDense_seg::TDim row_1,      ///< which pair of rows
@@ -157,47 +198,6 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
             }
             pairwise_aln.insert(aln_rng);
         }
-    }
-}
-
-
-void
-ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
-                             const CSeq_align& sa,        ///< input Seq-align
-                             CSeq_align::TDim row_1,      ///< which pair of rows
-                             CSeq_align::TDim row_2)
-{
-    _ASSERT(sa.GetDim() > max(row_1, row_2));
-
-    typedef CSeq_align::TSegs TSegs;
-    const TSegs& segs = sa.GetSegs();
-
-    switch(segs.Which())    {
-    case CSeq_align::TSegs::e_Dendiag:
-        break;
-    case CSeq_align::TSegs::e_Denseg: {
-        ConvertDensegToPairwiseAln(pairwise_aln, segs.GetDenseg(),
-                                   row_1, row_2);
-        break;
-    }
-    case CSeq_align::TSegs::e_Std:
-        ConvertStdsegToPairwiseAln(pairwise_aln, segs.GetStd(),
-                                   row_1, row_2);
-        break;
-    case CSeq_align::TSegs::e_Packed:
-        break;
-    case CSeq_align::TSegs::e_Disc:
-        ITERATE(CSeq_align_set::Tdata, sa_it, segs.GetDisc().Get()) {
-            ConvertSeqAlignToPairwiseAln(pairwise_aln, **sa_it,
-                                         row_1, row_2);
-        }
-        break;
-    case CSeq_align::TSegs::e_Spliced:
-        break;
-    case CSeq_align::TSegs::e_Sparse:
-        break;
-    case CSeq_align::TSegs::e_not_set:
-        break;
     }
 }
 
@@ -545,6 +545,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/12/13 18:58:26  todorov
+* Cosmetic.
+*
 * Revision 1.4  2006/12/13 18:45:03  todorov
 * Moved definitions from .hpp
 *
