@@ -58,7 +58,7 @@ public:
     virtual const CSeq_id& GetSeqId() const = 0;
 
 
-    virtual string NCBI_SEQ_EXPORT AsString(void) const = 0;
+    virtual string AsString(void) const = 0;
 
 
     // Check sequence type
@@ -115,7 +115,7 @@ public:
 
 
     // Sequence label
-    string NCBI_SEQ_EXPORT AsString(void) const;
+    string AsString(void) const;
 
 
     // Comparison operators
@@ -170,7 +170,7 @@ const CSeq_id& CAlnSeqId::GetSeqId(void) const {
 
 
 inline
-string NCBI_SEQ_EXPORT CAlnSeqId::AsString(void) const {
+string CAlnSeqId::AsString(void) const {
     return CSeq_id_Handle::AsString();
 }
 
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/12/13 14:51:36  dicuccio
+* Drop unneeded export specifiers
+*
 * Revision 1.1  2006/12/12 20:18:17  todorov
 * Initial revision.
 *
