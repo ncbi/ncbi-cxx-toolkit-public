@@ -170,7 +170,6 @@ public:
     void SetValue(EBlastOptIdx opt, const char                * x);
     void SetValue(EBlastOptIdx opt, const TSeqLocVector       & x);
     void SetValue(EBlastOptIdx opt, const ESeedContainerType   & x);
-    void SetValue(EBlastOptIdx opt, const ESeedExtensionMethod & x);
     void SetValue(EBlastOptIdx opt, const bool                & x);
     void SetValue(EBlastOptIdx opt, const Int8                & x);
     
@@ -555,20 +554,6 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const TSeqLocVector & v)
 }
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const ESeedContainerType & v)
-{
-    if (m_DefaultsMode) {
-        return;
-    }
-    
-    char errbuf[1024];
-    
-    sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
-            int(opt), v, __LINE__);
-    
-    x_Throwx(string("err:") + errbuf);
-}
-
-void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const ESeedExtensionMethod & v)
 {
     if (m_DefaultsMode) {
         return;
@@ -1963,6 +1948,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.88  2006/12/13 20:16:42  papadopo
+* remove seed extension method
+*
 * Revision 1.87  2006/12/08 14:23:35  madden
 * Add support for dust and repeat filtering as well as the repeat db
 *
