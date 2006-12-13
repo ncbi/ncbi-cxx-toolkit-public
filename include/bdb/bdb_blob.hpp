@@ -68,6 +68,9 @@ public:
     /// @param size data size in bytes
     EBDB_ErrCode Insert(const void* data, size_t size);
 
+    /// Insert BLOB 
+    EBDB_ErrCode Insert(const TBuffer& buf);
+
     unsigned Append(const void* data, size_t size);
 
     /// Insert or update BLOB 
@@ -76,6 +79,9 @@ public:
     /// @param data BLOB data
     /// @param size data size in bytes
     EBDB_ErrCode UpdateInsert(const void* data, size_t size);
+
+    /// Insert or update BLOB 
+    EBDB_ErrCode UpdateInsert(const TBuffer& buf);
 
 
     /// Fetche the record corresponding to the current key value.
@@ -262,6 +268,20 @@ inline EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id)
     return Fetch(lob_id, 0, 0, eReallocForbidden);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_BLobFile::
+//
+
+inline EBDB_ErrCode CBDB_BLobFile::Insert(const TBuffer& buf) 
+{ 
+    return Insert(&buf[0], buf.size(); 
+}
+
+inline EBDB_ErrCode CBDB_BLobFile::UpdateInsert(const TBuffer& buf)
+{
+    return UpdateInsert(&buf[0], buf.size(); 
+}
+
 
 END_NCBI_SCOPE
 
@@ -270,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/12/13 20:27:50  kuznets
+ * + Insert(Update) working with TBuffer
+ *
  * Revision 1.22  2006/12/05 13:04:26  dicuccio
  * Added accessor for key
  *
