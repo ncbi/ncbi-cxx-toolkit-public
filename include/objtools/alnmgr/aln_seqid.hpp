@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class IAlnSeqId
+class NCBI_XALNMGR_EXPORT IAlnSeqId
 {
 public:
     // Comparison operators
@@ -91,13 +91,7 @@ struct SAlnSeqIdIRefComp :
 };
 
 
-// bool operator< (const TAlnSeqIdIRef& l_id_ref,
-//                 const TAlnSeqIdIRef& r_id_ref) {
-//     return *l_id_ref < *r_id_ref;
-// }
-
-
-class CAlnSeqId : 
+class NCBI_XALNMGR_EXPORT CAlnSeqId : 
     public CObject, 
     public CSeq_id_Handle,
     public IAlnSeqId
@@ -145,91 +139,6 @@ private:
 };
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-// inline methods
-/////////////////////////////////////////////////////////////////////////////
-
-
-inline
-bool IAlnSeqId::IsProtein(void) const {
-    return CSeq_inst::IsAa(GetSequenceType());
-}
-
-
-inline
-bool IAlnSeqId::IsNucleotide(void) const {
-    return CSeq_inst::IsNa(GetSequenceType());
-}
-
-
-inline
-const CSeq_id& CAlnSeqId::GetSeqId(void) const {
-    return *CSeq_id_Handle::GetSeqId();
-}
-
-
-inline
-string CAlnSeqId::AsString(void) const {
-    return CSeq_id_Handle::AsString();
-}
-
-
-inline
-void CAlnSeqId::SetBioseqHandle(const CBioseq_Handle& handle) {
-    m_BioseqHandle = handle;
-    m_Mol = handle.GetSequenceType();
-}
-
-
-inline
-IAlnSeqId::TMol CAlnSeqId::GetSequenceType(void) const {
-    if (m_Mol == CSeq_inst::eMol_not_set) {
-        switch(IdentifyAccession()) {
-        case CSeq_id::fAcc_nuc:
-            m_Mol = CSeq_inst::eMol_na;
-            break;
-        case CSeq_id::fAcc_prot:
-            m_Mol = CSeq_inst::eMol_aa;
-            break;
-        default:
-            break;
-        }
-    }
-    return m_Mol;
-}
-
-
-inline
-int CAlnSeqId::GetBaseWidth(void) const {
-    return m_BaseWidth;
-} 
-
-
-inline
-void CAlnSeqId::SetBaseWidth(int base_width) {
-    m_BaseWidth = base_width;
-} 
-
-
-inline
-bool CAlnSeqId::operator== (const IAlnSeqId& id) const {
-    return CSeq_id_Handle::operator== (dynamic_cast<const CSeq_id_Handle&>(id));
-}
-
-inline
-bool CAlnSeqId::operator!= (const IAlnSeqId& id) const {
-    return CSeq_id_Handle::operator!= (dynamic_cast<const CSeq_id_Handle&>(id));
-}
-
-
-inline
-bool CAlnSeqId::operator<  (const IAlnSeqId& id) const {
-    return CSeq_id_Handle::operator< (dynamic_cast<const CSeq_id_Handle&>(id));
-} 
-
-
-
 END_NCBI_SCOPE
 
 
@@ -237,6 +146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/12/13 18:11:47  todorov
+* Move inlined methods to the .cpp and add NCBI_XALNMGR_EXPORT.
+*
 * Revision 1.2  2006/12/13 14:51:36  dicuccio
 * Drop unneeded export specifiers
 *
