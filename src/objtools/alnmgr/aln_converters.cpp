@@ -34,7 +34,176 @@
 
 #include <ncbi_pch.hpp>
 
-// #include <objtools/alnmgr/aln_converters.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
+#include <objtools/alnmgr/aln_converters.hpp>
+
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+
+
+void
+ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
+                           const CDense_seg& ds,        ///< input Dense-seg
+                           CDense_seg::TDim row_1,      ///< which pair of rows
+                           CDense_seg::TDim row_2)
+{
+    _ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
+    _ASSERT(row_2 >=0  &&  row_2 < ds.GetDim());
+
+    const CDense_seg::TNumseg numseg = ds.GetNumseg();
+    const CDense_seg::TDim dim = ds.GetDim();
+    const CDense_seg::TStarts& starts = ds.GetStarts();
+    const CDense_seg::TLens& lens = ds.GetLens();
+    const CDense_seg::TStrands* strands = 
+        ds.IsSetStrands() ? &ds.GetStrands() : NULL;
+
+    CDense_seg::TNumseg seg;
+    int pos_1, pos_2;
+    for (seg = 0, pos_1 = row_1, pos_2 = row_2;
+         seg < numseg;
+         ++seg, pos_1 += dim, pos_2 += dim) {
+        TSignedSeqPos from_1 = starts[pos_1];
+        TSignedSeqPos from_2 = starts[pos_2];
+        TSeqPos len = lens[seg];
+
+        /// if not a gap, insert it to the collection
+        if (from_1 >= 0  &&  from_2 >= 0)  {
+            /// determinte the strands
+            bool direct = true;
+            if (strands) {
+                bool minus_1 = (*strands)[pos_1] == eNa_strand_minus;
+                bool minus_2 = (*strands)[pos_2] == eNa_strand_minus;
+                direct = minus_1 == minus_2;
+            }
+
+            /// base-width adjustments
+            const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
+            const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
+            if (base_width_1 > 1  ||  base_width_2 > 1) {
+                if (base_width_1 > 1) {
+                    from_1 *= base_width_1;
+                }
+                if (base_width_2 > 1) {
+                    from_2 *= base_width_2;
+                }
+                if (base_width_1 == base_width_2) {
+                    len *= base_width_1;
+                }
+            }
+
+            /// insert the range
+            pairwise_aln.insert(CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+        }
+    }
+}
+
+
+void
+ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
+                           const CSeq_align::TSegs::TStd& std, ///< input Std
+                           CSeq_align::TDim row_1,             ///< which pair of rows 
+                           CSeq_align::TDim row_2)
+{
+    ITERATE (CSeq_align::TSegs::TStd, std_it, std) {
+
+        const CStd_seg::TLoc& loc = (*std_it)->GetLoc();
+        
+        _ASSERT((CSeq_align::TDim) loc.size() > max(row_1, row_2));
+
+        CSeq_loc::TRange rng_1 = loc[row_1]->GetTotalRange();
+        CSeq_loc::TRange rng_2 = loc[row_2]->GetTotalRange();
+
+        TSeqPos len_1 = rng_1.GetLength();
+        TSeqPos len_2 = rng_2.GetLength();
+
+        if (len_1 > 0  &&  len_2 > 0) {
+
+            bool direct = 
+                loc[row_1]->IsReverseStrand() == loc[row_2]->IsReverseStrand();
+
+            const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
+            const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
+
+            CAlnRng aln_rng(rng_1.GetFrom() * base_width_1,
+                            rng_2.GetFrom() * base_width_2,
+                            CAlnRng::GetEmptyLength(), // temporarily
+                            direct);
+                                          
+            if (base_width_1 == base_width_2) {
+                _ASSERT(len_1 == len_2);
+                aln_rng.SetLength(len_1 * base_width_1);
+            } else if (base_width_1 == 1) {
+                _ASSERT(base_width_2 == 3);
+                aln_rng.SetLength(len_1);
+                if (len_1 / base_width_2 < len_2) {
+                    aln_rng.SetMissingNucBases();
+                }
+            } else if (base_width_2 == 1) {
+                _ASSERT(base_width_1 == 3);
+                aln_rng.SetLength(len_2);
+                if (len_2 / base_width_1 < len_1) {
+                    aln_rng.SetMissingNucBases();
+                }
+            } else {
+                _ASSERT(len_1 * base_width_1 == len_2 * base_width_2);
+                aln_rng.SetLength(len_1 * base_width_1);
+            }
+            pairwise_aln.insert(aln_rng);
+        }
+    }
+}
+
+
+void
+ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
+                             const CSeq_align& sa,        ///< input Seq-align
+                             CSeq_align::TDim row_1,      ///< which pair of rows
+                             CSeq_align::TDim row_2)
+{
+    _ASSERT(sa.GetDim() > max(row_1, row_2));
+
+    typedef CSeq_align::TSegs TSegs;
+    const TSegs& segs = sa.GetSegs();
+
+    switch(segs.Which())    {
+    case CSeq_align::TSegs::e_Dendiag:
+        break;
+    case CSeq_align::TSegs::e_Denseg: {
+        ConvertDensegToPairwiseAln(pairwise_aln, segs.GetDenseg(),
+                                   row_1, row_2);
+        break;
+    }
+    case CSeq_align::TSegs::e_Std:
+        ConvertStdsegToPairwiseAln(pairwise_aln, segs.GetStd(),
+                                   row_1, row_2);
+        break;
+    case CSeq_align::TSegs::e_Packed:
+        break;
+    case CSeq_align::TSegs::e_Disc:
+        ITERATE(CSeq_align_set::Tdata, sa_it, segs.GetDisc().Get()) {
+            ConvertSeqAlignToPairwiseAln(pairwise_aln, **sa_it,
+                                         row_1, row_2);
+        }
+        break;
+    case CSeq_align::TSegs::e_Spliced:
+        break;
+    case CSeq_align::TSegs::e_Sparse:
+        break;
+    case CSeq_align::TSegs::e_not_set:
+        break;
+    }
+}
+
+
+
+
 // #include <objtools/alnmgr/pairwise_aln.hpp>
 
 // #include <objects/seqalign/Sparse_align.hpp>
@@ -371,11 +540,14 @@
 // }
 
 
-// END_NCBI_SCOPE
+END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2006/12/13 18:45:03  todorov
+* Moved definitions from .hpp
+*
 * Revision 1.3  2006/11/21 20:04:33  todorov
 * Comment out this file until the code is reused in aln_converters.hpp
 *
