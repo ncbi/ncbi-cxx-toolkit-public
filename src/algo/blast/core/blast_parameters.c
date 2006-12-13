@@ -118,57 +118,6 @@ s_BlastFindSmallestLambda(Blast_KarlinBlk** kbp_in,
     return min_lambda;
 }
 
-/** Determines optimal extension method given 1.) the type of
- * search (e.g., program, whether rps, discontig. mb etc.).
- * 2.) whether a flag is set specifying the AG stride option
- * if 2.) is true then the lookup table has been set up for AG stride
- *
- * @param lookup_wrap pointer to lookup table [in]
- * @return suggested extension method.  eMaxSeedExtensionMethod means 
- *     the input lookup table was not found. 
- */
-static ESeedExtensionMethod
-s_GetBestExtensionMethod(const LookupTableWrap* lookup_wrap)
-{
-   ESeedExtensionMethod retval = eMaxSeedExtensionMethod;
-
-   ASSERT(lookup_wrap);
-
-   switch (lookup_wrap->lut_type) {
-     case eAaLookupTable:
-     case ePhiLookupTable:  
-     case ePhiNaLookupTable:
-     case eRPSLookupTable:
-         retval = eRight;
-         break;
-     case eSmallNaLookupTable:
-         if (((BlastSmallNaLookupTable*)
-              lookup_wrap->lut)->ag_scanning_mode == TRUE)
-               retval = eRightAndLeft;
-         else
-               retval = eRight;
-         break;
-     case eNaLookupTable:
-         if (((BlastNaLookupTable*)lookup_wrap->lut)->ag_scanning_mode == TRUE)
-               retval = eRightAndLeft;
-         else
-               retval = eRight;
-         break;
-     case eMBLookupTable:
-         if (((BlastMBLookupTable*)lookup_wrap->lut)->template_length > 0)
-               retval = eUpdateDiag;   /* Used for discontiguous megablast. */
-         else
-               retval = eRightAndLeft;
-         break;
-     case eIndexedMBLookupTable:
-         retval = eRightAndLeft;
-         break;
-   }
-   ASSERT(retval != eMaxSeedExtensionMethod);
-
-   return retval;
-}
-
 BlastInitialWordParameters*
 BlastInitialWordParametersFree(BlastInitialWordParameters* parameters)
 
@@ -261,8 +210,6 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
        p->container_type = eDiagHash;
    else
        p->container_type = eDiagArray;
-
-   p->extension_method = s_GetBestExtensionMethod(lookup_wrap);
 
    status = BlastInitialWordParametersUpdate(program_number,
                hit_params, sbp, query_info, subject_length, p);
@@ -992,6 +939,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2006/12/13 19:12:56  papadopo
+ * remove dynamic choice of seed extension method (no practical difference between the various methods now)
+ *
  * Revision 1.31  2006/12/01 16:52:25  papadopo
  * choose mini-extension type for improved blastn lookup tables
  *
