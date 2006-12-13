@@ -108,6 +108,7 @@
  *  SOCK_gethostname
  *  SOCK_ntoa
  *  SOCK_isip
+ *  SOCK_isipEx
  *  SOCK_HostToNetShort
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
@@ -1354,14 +1355,25 @@ extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
  );
 
 
-/**
- * @param host
- *  [in] host name to check against being a plain IP address
- * @return
- *  Non-zero (true) if given string is an IP address, zero (false) otherwise.
+/** Equivalent to SOCK_isipEx(host, strlen(host)).
+ * @sa SOCK_isipEx
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip
 (const char* host
+ );
+
+
+/**
+ * @param host
+ *  [in] host name to check against being a plain IP address
+ * @param len
+ *  [in] length of "host" to check for
+ * @return
+ *  Non-zero (true) if given string is an IP address, zero (false) otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isipEx
+(const char* host,
+ size_t      len
  );
 
 
@@ -1498,6 +1510,9 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.63  2006/12/13 21:17:17  lavr
+ * +SOCK_isipEx()
+ *
  * Revision 6.62  2006/10/23 20:53:19  lavr
  * +SOCK_isip;  some inline doc formatting (not yet done completely)
  *

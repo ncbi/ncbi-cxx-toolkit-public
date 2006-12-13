@@ -4260,9 +4260,15 @@ extern int SOCK_ntoa(unsigned int host,
 
 extern int/*bool*/ SOCK_isip(const char* host)
 {
-    size_t i, len = strlen(host);
+    return SOCK_isipEx(host, strlen(host));
+}
+
+
+extern int/*bool*/ SOCK_isipEx(const char* host, size_t len)
+{
     const char* dot = 0;
     int dots = 0;
+    size_t i;
 
     if (len > 15)
         return 0/*longer than the longest 255.255.255.255*/;
@@ -4603,6 +4609,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.195  2006/12/13 21:16:09  lavr
+ * +SOCK_isipEx()
+ *
  * Revision 6.194  2006/11/27 15:09:08  kans
  * for C toolkit CodeWarrior Mac OS9 only, include carbon_netdb.h from within local mitsock folder, avoids unwanted collision with real netdb.h
  *
