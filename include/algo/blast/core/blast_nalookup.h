@@ -72,8 +72,6 @@ typedef struct BlastSmallNaLookupTable {
     Int2 * overflow;       /**< the overflow array for the compacted 
                                 lookup table */
     Int4  overflow_size;   /**< Number of elements in the overflow array */
-    Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if 
-                                 TRUE, so that not every base is checked.  */
     void *scansub_callback;  /**< function for scanning subject sequences */
 } BlastSmallNaLookupTable;
 
@@ -146,8 +144,6 @@ typedef struct BlastNaLookupTable {
     PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
                                 are set indicate that the corresponding thick
                                 backbone cell contains hits */
-    Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if 
-                                 TRUE, so that not every base is checked.  */
     void *scansub_callback;  /**< function for scanning subject sequences */
 } BlastNaLookupTable;
   
@@ -242,8 +238,6 @@ typedef struct BlastMBLookupTable {
    EDiscTemplateType second_template_type; /**< Type of the second 
                                                discontiguous word template */
    Int4 scan_step;     /**< Step size for scanning the database */
-   Boolean full_byte_scan; /**< In discontiguous case: is scanning done by full
-                              bytes or at each sequence base (2 bits)? */
    Int4* hashtable;   /**< Array of positions              */
    Int4* hashtable2;  /**< Array of positions for second template */
    Int4* next_pos;    /**< Extra positions stored here     */
