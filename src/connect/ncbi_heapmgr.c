@@ -238,7 +238,7 @@ HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
     if (size != heap->size << _HEAP_ALIGNSHIFT) {
         CORE_LOGF(eLOG_Warning,
                   ("Heap Attach: Heap size alignment (%u->%u) can result in"
-                   " data garbage", size, heap->size << _HEAP_ALIGNSHIFT));
+                   " garbage in data", size, heap->size << _HEAP_ALIGNSHIFT));
     }
     return heap;
 }
@@ -760,8 +760,10 @@ SHEAP_Block* HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     assert(!heap->base == !heap->size);
 
     if (s_HEAP_fast) {
-        SHEAP_HeapBlock* p = (SHEAP_HeapBlock*) ptr;
-        SHEAP_HeapBlock* b = p ? HEAP_NEXT(p) : heap->base;
+        SHEAP_HeapBlock* b = (SHEAP_HeapBlock*) ptr;
+        if (!b)
+            return &heap->base->head;
+        b = HEAP_NEXT(b);
         return b < heap->base + heap->size ? &b->head : 0;
     }
     return s_HEAP_Walk(heap, ptr);
@@ -952,6 +954,9 @@ void HEAP_Options(ESwitch fast, ESwitch newalk)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2006/12/13 21:15:37  lavr
+ * Fix compilation warnings
+ *
  * Revision 6.35  2006/11/21 14:45:32  lavr
  * HEAP_AttachFast() to warn against possibly adverse size alignment
  *
