@@ -52,6 +52,8 @@ CBlast4Field::CBlast4Field(std::string nm, CBlast4_value::E_Choice ty)
     m_Fields[nm] = *this;
 }
 
+map<string, CBlast4Field> CBlast4Field::m_Fields;
+
 typedef CBlast4Field TField;
 
 TField B4Param_CompositionBasedStats ("CompositionBasedStats", CBlast4_value::e_Integer);
@@ -101,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/12/13 18:58:47  ucko
+* Actually define m_Fields.
+*
 * Revision 1.1  2006/12/13 18:15:32  bealer
 * - Define standard set of parameters for blast4.
 *
