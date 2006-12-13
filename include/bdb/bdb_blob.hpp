@@ -274,12 +274,12 @@ inline EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id)
 
 inline EBDB_ErrCode CBDB_BLobFile::Insert(const TBuffer& buf) 
 { 
-    return Insert(&buf[0], buf.size(); 
+    return Insert(&buf[0], buf.size());
 }
 
 inline EBDB_ErrCode CBDB_BLobFile::UpdateInsert(const TBuffer& buf)
 {
-    return UpdateInsert(&buf[0], buf.size(); 
+    return UpdateInsert(&buf[0], buf.size());
 }
 
 
@@ -290,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/12/13 20:43:33  ucko
+ * Fix typo (missing parentheses) in previous revision.
+ *
  * Revision 1.23  2006/12/13 20:27:50  kuznets
  * + Insert(Update) working with TBuffer
  *
