@@ -195,14 +195,7 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
              (h.GetTopLevelEntry().GetCompleteSeq_entry().GetPointer()));
     } else if (infmt == "fasta") {
         // return ReadFasta(args["in"].AsInputFile());
-        CRef<ILineReader> line_reader;
-        try {
-            line_reader.Reset(new CMemoryLineReader
-                              (new CMemoryFile(args["in"].AsString()),
-                               eTakeOwnership));
-        } catch (...) { // fall back to streams, which are somewhat slower
-            line_reader.Reset(new CStreamLineReader(args["in"].AsInputFile()));
-        }
+        CRef<ILineReader> line_reader(ILineReader::New(args["in"].AsString()));
         CFastaReader fasta_reader(*line_reader);
         return fasta_reader.ReadSet();
     } else if (infmt == "gff") {
@@ -322,6 +315,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/12/13 16:48:16  ucko
+* Take advantage of ILineReader::New().
+*
 * Revision 1.12  2006/10/03 13:23:15  dicuccio
 * Tweak GFF import flags
 *
