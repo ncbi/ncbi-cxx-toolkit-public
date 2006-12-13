@@ -106,6 +106,11 @@ void CAlnBuildApp::Init(void)
          "Skip ObjMgr in identifying sequences, calculating scores, etc.",
          CArgDescriptions::eBoolean, "f");
 
+    arg_desc->AddDefaultKey
+        ("print", "bool",
+         "Print the sequence strings",
+         CArgDescriptions::eBoolean, "f");
+
     // Merge option
     arg_desc->AddDefaultKey
         ("algo", "merge_algo",
@@ -199,7 +204,10 @@ int CAlnBuildApp::Run(void)
     /// Crete align statistics object
     TAlnStats aln_stats(aln_seq_id_vector);
     ReportTime("TAlnStats");
-    aln_stats.Dump(cout);
+    {
+        aln_stats.Dump(cout);
+        m_StopWatch.Restart();
+    }
 
 
     /// Construct a vector of anchored alignments
@@ -207,6 +215,12 @@ int CAlnBuildApp::Run(void)
     TAnchoredAlnVector anchored_aln_vector;
     CreateAnchoredAlnVector(aln_stats, anchored_aln_vector);
     ReportTime("TAnchoredAlnVector");
+    {
+        ITERATE(TAnchoredAlnVector, aln_vector_it, anchored_aln_vector) {
+            (*aln_vector_it)->Dump(cout);
+        }
+        m_StopWatch.Restart();
+    }
 
 
     /// Choose user options
@@ -221,20 +235,26 @@ int CAlnBuildApp::Run(void)
              built_anchored_aln,
              aln_user_options);
     ReportTime("BuildAln");
-    built_anchored_aln.Dump(cout);
+    {
+        built_anchored_aln.Dump(cout);
+        m_StopWatch.Restart();
+    }
 
 
     /// Get sequence:
     CSparseAln sparse_aln(built_anchored_aln, GetScope());
     ReportTime("CSparseAln");
-    for (TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
-        string sequence;
-        sparse_aln.GetAlnSeqString
-            (row, 
-             sequence, 
-             sparse_aln.GetSeqAlnRange(row));
-        cout << sparse_aln.GetSeqId(row).AsFastaString() << "\t"
-             << sequence << endl;
+    if (GetArgs()["print"].AsBoolean()) {
+        for (TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
+            string sequence;
+            sparse_aln.GetAlnSeqString
+                (row, 
+                 sequence, 
+                 sparse_aln.GetSeqAlnRange(row));
+            cout << sparse_aln.GetSeqId(row).AsFastaString() << "\t"
+                 << sequence << endl;
+        }
+        ReportTime("GetAlnSeqString");
     }
 
 
@@ -252,6 +272,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/12/13 18:08:28  todorov
+* Added a print option.  Added a dump for the anchored_aln_vector.
+*
 * Revision 1.14  2006/12/12 20:55:12  todorov
 * Updated per the latest changes (mainly IAlnSeqId-related).
 *
