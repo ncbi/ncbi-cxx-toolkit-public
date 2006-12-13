@@ -89,17 +89,6 @@ typedef enum ESeedContainerType {
     eMaxContainerType   /**< maximum value for this enumeration */
 } ESeedContainerType;
 
-/** when performing mini-extensions on hits from the
- *  blastn or megablast lookup table, this determines
- *  the direction in which the mini-extension is attempted 
- */
-typedef enum ESeedExtensionMethod {
-    eRight,             /**< extend only to the right */
-    eRightAndLeft,      /**< extend to left and right (used with AG method) */
-    eUpdateDiag,        /**< update match info on corresponding diagonal record*/
-    eMaxSeedExtensionMethod   /**< maximum value for this enumeration */
-} ESeedExtensionMethod;
-
 /** All the ungapped cutoff values that can change 
  *  from context to context
  */
@@ -124,8 +113,6 @@ typedef struct BlastInitialWordParameters {
    BlastUngappedCutoffs *cutoffs;   /**< cutoff values (one per context) */
    ESeedContainerType container_type; /**< How to store offset pairs for initial
                                         seeds? */
-   ESeedExtensionMethod extension_method; /**< How should exact matches be 
-                                            extended? */
    Int4 nucl_score_table[256]; /**< the combined score of all match/mismatch
                                     combinations for aligning four bases */
 } BlastInitialWordParameters;
