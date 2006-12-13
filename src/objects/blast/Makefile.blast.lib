@@ -1,2 +1,2 @@
 LIB = xnetblast
-SRC = blast__ blast___
+SRC = blast__ blast___ names
