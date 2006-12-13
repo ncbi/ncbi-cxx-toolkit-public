@@ -46,6 +46,15 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+NCBI_XALNMGR_EXPORT
+void
+ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
+                             const CSeq_align& sa,        ///< input Seq-align
+                             CSeq_align::TDim row_1,      ///< which pair of rows
+                             CSeq_align::TDim row_2);
+
+
+NCBI_XALNMGR_EXPORT
 void
 ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                            const CDense_seg& ds,        ///< input Dense-seg
@@ -53,18 +62,12 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                            CDense_seg::TDim row_2);
 
 
+NCBI_XALNMGR_EXPORT
 void
 ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
                            const CSeq_align::TSegs::TStd& std, ///< input Std
                            CSeq_align::TDim row_1,             ///< which pair of rows 
                            CSeq_align::TDim row_2);
-
-
-void
-ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
-                             const CSeq_align& sa,        ///< input Seq-align
-                             CSeq_align::TDim row_1,      ///< which pair of rows
-                             CSeq_align::TDim row_2);
 
 
 /// Create an anchored alignment from Seq-align using hints
@@ -157,6 +160,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/12/13 18:57:37  todorov
+* + NCBI_XALNMGR_EXPORT
+*
 * Revision 1.13  2006/12/13 18:45:17  todorov
 * Moved definitions to .cpp
 *
