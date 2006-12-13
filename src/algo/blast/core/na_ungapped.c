@@ -630,8 +630,6 @@ BlastNaExtendDirect(const BlastOffsetPair * offset_pairs, Int4 num_hits,
                     BlastInitHitList * init_hitlist)
 {
     Int4 index;
-    Uint4 query_length = query->length;
-    Uint4 subject_length = subject->length;
     Uint4 lut_word_length;
     Uint4 min_step = 0;
     Int4 hits_extended = 0;
