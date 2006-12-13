@@ -1055,8 +1055,12 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
 
         hitsfound = scansub(lookup_wrap, subject, start_offset, 
                             offset_pairs, max_hits, &next_start);
-        total_hits += hitsfound;
 
+        start_offset = next_start;
+        if (hitsfound == 0)
+            continue;
+
+        total_hits += hitsfound;
         if (!extend_to_wordsize) {
             hits_extended +=
                 BlastNaExtendDirect(offset_pairs, hitsfound, word_params,
@@ -1075,8 +1079,6 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk * subject,
                               lookup_wrap, query, subject, matrix, 
                               query_info, ewp, init_hitlist);
         }
-
-        start_offset = next_start;
     }
 
     Blast_ExtendWordExit(ewp, subject->length);
@@ -1140,6 +1142,11 @@ Int2 MB_WordFinder(BLAST_SequenceBlk * subject,
         hitsfound = scansub(lookup_wrap, subject, start_offset,
                             offset_pairs, max_hits, &next_start);
 
+        start_offset = next_start;
+        if (hitsfound == 0)
+            continue;
+
+        total_hits += hitsfound;
         if (!extend_to_wordsize) {
             hits_extended +=
                 BlastNaExtendDirect(offset_pairs, hitsfound, word_params,
@@ -1158,10 +1165,6 @@ Int2 MB_WordFinder(BLAST_SequenceBlk * subject,
                               lookup_wrap, query, subject, matrix, 
                               query_info, ewp, init_hitlist);
         }
-        /* next_start returned from the ScanSubject points to the beginning
-           of the word */
-        start_offset = next_start;
-        total_hits += hitsfound;
     }
 
     Blast_ExtendWordExit(ewp, subject_length);
