@@ -51,7 +51,7 @@
 BEGIN_NCBI_SCOPE
 
 /// Abstract base class for lightweight line-by-line reading.
-class ILineReader : public CObject
+class NCBI_XUTIL_EXPORT ILineReader : public CObject
 {
 public:
     /// Return a new ILineReader object corresponding to the given
@@ -133,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/13 17:46:54  ucko
+ * Export ILineReader (for the sake of New)
+ *
  * Revision 1.2  2006/12/13 16:47:41  ucko
  * Add a static convenience method (ILineReader::New) for constructing a
  * line reader corresponding to a filename; to facilitate that, allow
