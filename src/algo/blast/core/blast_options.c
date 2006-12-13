@@ -162,6 +162,12 @@ Int2 SBlastFilterOptionsNew(SBlastFilterOptions* *filter_options,  EFilterOption
 }
 
 
+/** Merges together two sets of dust options, choosing the most non-default one.
+ * 
+ * @param opt1 first set to be merged [in]
+ * @param opt2 second set to be merged [in]
+ * @return the merged options.
+ */
 static SDustOptions* s_MergeDustOptions(const SDustOptions* opt1, const SDustOptions* opt2)
 {
      SDustOptions* retval = NULL;
@@ -194,6 +200,12 @@ static SDustOptions* s_MergeDustOptions(const SDustOptions* opt1, const SDustOpt
 }
 
 
+/** Merges together two sets of SEG options, choosing the most non-default one.
+ * 
+ * @param opt1 first set to be merged [in]
+ * @param opt2 second set to be merged [in]
+ * @return the merged options.
+ */
 static SSegOptions* s_MergeSegOptions(const SSegOptions* opt1, const SSegOptions* opt2)
 {
     SSegOptions* retval = NULL;
@@ -224,6 +236,12 @@ static SSegOptions* s_MergeSegOptions(const SSegOptions* opt1, const SSegOptions
     return retval;
 }
 
+/** Merges together two sets of repeat filter options, choosing the most non-default one.
+ * 
+ * @param opt1 first set to be merged [in]
+ * @param opt2 second set to be merged [in]
+ * @return the merged options.
+ */
 static SRepeatFilterOptions* s_MergeRepeatOptions(const SRepeatFilterOptions* opt1, const SRepeatFilterOptions* opt2)
 {
       SRepeatFilterOptions* retval = NULL;
@@ -1447,6 +1465,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.191  2006/12/13 14:13:37  madden
+ * Doxygen fixes
+ *
  * Revision 1.190  2006/12/11 14:34:02  madden
  * Add  SBlastFilterOptionsMerge
  *
