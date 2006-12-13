@@ -678,15 +678,11 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    } else if (blastp) {
       aux_struct->WordFinder = BlastAaWordFinder;
    } else {
+      aux_struct->WordFinder = BlastNaWordFinder;
       if (small_na)
          BlastSmallNaChooseScanSubject(lookup_wrap);
       else
          BlastNaChooseScanSubject(lookup_wrap);
-
-      if (word_params->extension_method == eRightAndLeft)
-         aux_struct->WordFinder = BlastNaWordFinder_AG;
-      else
-         aux_struct->WordFinder = BlastNaWordFinder;
    }
    
    aux_struct->offset_pairs = 
