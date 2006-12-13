@@ -37,6 +37,7 @@
 #include <corelib/ncbireg.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
+#include <objtools/blast_format/blastfmtutil.hpp>
 #include <cgi/cgictx.hpp>
 
 //forward declarations
@@ -82,12 +83,12 @@ public:
     ///@param seqalign: input seqalign
     ///@param scope: scope to fetch sequences
     ///@param line_length: length of defline desired
-    ///@param num_defline_to_show: number of seqalign hits to show
+    ///@param deflines_to_show: number of seqalign hits to show
     ///
     CShowBlastDefline(const CSeq_align_set& seqalign,                       
                       CScope& scope,
                       size_t line_length = 65,
-                      size_t num_defline_to_show = 100,
+                      size_t deflines_to_show = kBlastFmtDflt_NumDescriptions,
                       bool translated_nuc_alignment = false);
     
     ~CShowBlastDefline();
@@ -335,6 +336,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.9  2006/12/13 17:08:11  camacho
++ kBlastFmtDflt_NumDescriptions, kBlastFmtDflt_NumAlignments
+
 Revision 1.8  2006/11/28 15:40:37  jianye
 adding sorting seqalign functions
 

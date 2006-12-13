@@ -50,6 +50,13 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE (objects);
 
+/*** Default number of one-line descriptions to display in the traditional
+ * BLAST report */
+extern const size_t kBlastFmtDflt_NumDescriptions;
+
+/*** Default number of alignments to display in the traditional BLAST report */
+extern const size_t kBlastFmtDflt_NumAlignments;
+
 ///blast related url
 
 ///class info
@@ -321,11 +328,11 @@ public:
     ///references the original seqalign
     ///@param source_aln: the original alnset
     ///@param new_aln: the new alnset
-    ///@param number: the specified number
+    ///@param num: the specified number
     ///
     static void PruneSeqalign(CSeq_align_set& source_aln, 
                               CSeq_align_set& new_aln,
-                              unsigned int number);
+                              unsigned int num = kBlastFmtDflt_NumAlignments);
 
     /// Count alignment length, number of gap openings and total number of gaps
     /// in a single alignment.
@@ -558,6 +565,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.27  2006/12/13 17:08:11  camacho
++ kBlastFmtDflt_NumDescriptions, kBlastFmtDflt_NumAlignments
+
 Revision 1.26  2006/11/28 15:40:37  jianye
 adding sorting seqalign functions
 
