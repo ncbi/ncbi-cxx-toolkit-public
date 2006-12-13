@@ -238,7 +238,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
     bool plus = IsPositiveStrand(row);
 
     // if out-of-range, return either -1 or the closest seg in dir direction
-    if (sseq_pos < GetSeqStart(row)) {
+    if (sseq_pos < (TSignedSeqPos)GetSeqStart(row)) {
         if (dir == eNone) {
             return -1;
         } else if (dir == eForward  || 
@@ -261,7 +261,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
                 }
             }
         }
-    } else if (sseq_pos > GetSeqStop(row)) {
+    } else if (sseq_pos > (TSignedSeqPos)GetSeqStop(row)) {
         if (dir == eNone) {
             return -1;
         } else if (dir == eBackwards  ||
@@ -495,6 +495,8 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
                 dir = eBackwards; break;
             case eBackwards:
                 dir = eForward; break;
+            default:
+                break;
             }
         }
     }
@@ -782,7 +784,7 @@ TSignedSeqPos CAlnMap::GetSeqAlnStart(TNumrow row) const
 {
     if (IsSetAnchor()) {
         TNumseg seg = -1;
-        while (++seg < m_AlnSegIdx.size()) {
+        while (++seg < (TNumseg) m_AlnSegIdx.size()) {
             if (m_Starts[m_AlnSegIdx[seg] * m_NumRows + row] >= 0) {
                 return GetAlnStart(seg);
             }
@@ -1211,6 +1213,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2006/12/13 18:07:23  todorov
+* Fixed a few warnings.
+*
 * Revision 1.52  2004/11/04 14:11:07  dicuccio
 * Always return something from GetRawSeg()
 *
