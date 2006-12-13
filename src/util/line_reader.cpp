@@ -37,24 +37,51 @@
 
 BEGIN_NCBI_SCOPE
 
+ILineReader* ILineReader::New(const string& filename)
+{
+    if (filename == "-") {
+        return new CStreamLineReader(NcbiCin, eNoOwnership);
+    } else {
+        try {
+            // favor memory mapping, which tends to be more efficient
+            // but isn't always possible
+            auto_ptr<CMemoryFile> mf(new CMemoryFile(filename));
+            return new CMemoryLineReader(mf.release(), eTakeOwnership);
+        } catch (...) { // fall back to streams, which are somewhat slower
+            auto_ptr<CNcbiIfstream> ifs(new CNcbiIfstream(filename.c_str()));
+            if (ifs.get()  &&  ifs->is_open()) {
+                return new CStreamLineReader(*ifs.release(), eTakeOwnership);
+            } else {
+                NCBI_THROW(CFileException, eNotExists,
+                           "Unable to construct a line reader on " + filename);
+            }
+        }
+    }
+}
+
+
+CStreamLineReader::~CStreamLineReader()
+{
+    if (m_OwnStream) {
+        delete &m_Stream;
+    }
+}
+
 bool CStreamLineReader::AtEOF(void) const
 {
     return m_Stream.eof()  ||  CT_EQ_INT_TYPE(m_Stream.peek(), CT_EOF);
 }
-
 
 char CStreamLineReader::PeekChar(void) const
 {
     return m_Stream.peek();
 }
 
-
 CStreamLineReader& CStreamLineReader::operator++(void)
 {
     NcbiGetlineEOL(m_Stream, m_Line);
     return *this;
 }
-
 
 CTempString CStreamLineReader::operator*(void) const
 {
@@ -123,6 +150,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/12/13 16:47:47  ucko
+* Add a static convenience method (ILineReader::New) for constructing a
+* line reader corresponding to a filename; to facilitate that, allow
+* CStreamLineReader to take ownership.
+*
 * Revision 1.2  2006/11/17 19:16:29  ucko
 * CMemoryLineReader::operator++: make sure to advance m_Pos (to m_End)
 * in the absence of a final delimiter.

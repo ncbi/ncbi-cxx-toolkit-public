@@ -54,6 +54,10 @@ BEGIN_NCBI_SCOPE
 class ILineReader : public CObject
 {
 public:
+    /// Return a new ILineReader object corresponding to the given
+    /// filename, taking "-" (but not "./-") to mean standard input.
+    static ILineReader* New(const string& filename);
+
     /// Indicates (negatively) whether there is any more input.
     virtual bool AtEOF(void) const = 0;
 
@@ -76,7 +80,10 @@ public:
 class NCBI_XUTIL_EXPORT CStreamLineReader : public ILineReader
 {
 public:
-    CStreamLineReader(CNcbiIstream& is) : m_Stream(is) { }
+    CStreamLineReader(CNcbiIstream& is, EOwnership own = eNoOwnership)
+        : m_Stream(is), m_OwnStream(own) { }
+    ~CStreamLineReader();
+
     bool               AtEOF(void) const;
     char               PeekChar(void) const;
     CStreamLineReader& operator++(void);
@@ -85,6 +92,7 @@ public:
 
 private:
     CNcbiIstream& m_Stream;
+    EOwnership    m_OwnStream;
     string        m_Line;
 };
 
@@ -125,6 +133,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/13 16:47:41  ucko
+ * Add a static convenience method (ILineReader::New) for constructing a
+ * line reader corresponding to a filename; to facilitate that, allow
+ * CStreamLineReader to take ownership.
+ *
  * Revision 1.1  2006/04/13 14:42:15  ucko
  * Add a lightweight interface for getting lines of data with minimal
  * memory copying, along with two implementations -- one for input
