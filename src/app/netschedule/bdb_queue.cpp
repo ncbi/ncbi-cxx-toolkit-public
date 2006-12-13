@@ -1067,7 +1067,7 @@ void CQueueDataBase::RunNotifThread(void)
 
     LOG_POST(Info << "Starting client notification thread...");
     m_NotifThread.Reset(
-        new CJobNotificationThread(*this, 5));
+        new CJobNotificationThread(*this, 1));
     m_NotifThread->Run();
     LOG_POST(Info << "Started.");
 }
@@ -3985,6 +3985,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.102  2006/12/13 17:18:10  didenko
+ * reduced run frequency for the job notification thread
+ *
  * Revision 1.101  2006/12/07 22:58:10  joukovv
  * comment and kind added to queue database
  *
