@@ -338,7 +338,7 @@ void BlastNaChooseScanSubject(LookupTableWrap *lookup_wrap)
 
     ASSERT(lookup_wrap->lut_type == eNaLookupTable);
 
-    if (lookup->lut_word_length == 8 && lookup->scan_step == 0)
+    if (lookup->lut_word_length == 8 && lookup->scan_step == 4)
         lookup->scansub_callback = s_BlastNaScanSubject_8_4;
     else
         lookup->scansub_callback = s_BlastNaScanSubject_Any;
@@ -1448,7 +1448,7 @@ void BlastSmallNaChooseScanSubject(LookupTableWrap *lookup_wrap)
         break;
 
     case 8:
-        if (scan_step == 0 || scan_step == 4) {
+        if (scan_step == 4) {
             lookup->scansub_callback = s_BlastSmallNaScanSubject_8_4;
         }
         else {
@@ -2297,7 +2297,7 @@ static Int4 s_MB_DiscWordScanSubject_Any(const LookupTableWrap* lookup_wrap,
 
    accum = (Uint8)(*s++);
 
-   if (mb_lt->full_byte_scan) {
+   if (mb_lt->scan_step == 4) {
 
       /* The accumulator is filled with the first (template_length -
          COMPRESSION_RATIO) bases to scan, 's' points to the first byte
@@ -2774,7 +2774,7 @@ void BlastMBChooseScanSubject(LookupTableWrap *lookup_wrap)
     ASSERT(lookup_wrap->lut_type == eMBLookupTable);
 
     if (mb_lt->discontiguous) {
-        if (!mb_lt->full_byte_scan && !mb_lt->two_templates) {
+        if (mb_lt->scan_step == 1 && !mb_lt->two_templates) {
             if (mb_lt->template_type == eDiscTemplate_11_18_Coding)
                 mb_lt->scansub_callback = s_MB_DiscWordScanSubject_11_18_1;
             else if (mb_lt->template_type == eDiscTemplate_11_21_Coding)
