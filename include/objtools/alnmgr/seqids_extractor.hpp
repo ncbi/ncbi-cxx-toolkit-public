@@ -201,7 +201,7 @@ public:
                     }
                     if (min_len < max_len) {
                         _ASSERT(min_len == max_len / 3  ||
-                                min_len == (max_len + 1) / 3);
+                                min_len - 1 == max_len / 3);
                         for (size_t i=0;  i< seg_lens.size();  ++i) {
                             id_vec[i]->SetBaseWidth(seg_lens[i] == min_len ? 3 : 1);
                         }                                
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/12/13 14:38:35  todorov
+* Adjusted min_len / max_len assertion.
+*
 * Revision 1.3  2006/12/12 20:53:21  todorov
 * Update CAlnSeqIdsExtract per the new IAlnSeqId.
 * Deduce the base widths automatically.
