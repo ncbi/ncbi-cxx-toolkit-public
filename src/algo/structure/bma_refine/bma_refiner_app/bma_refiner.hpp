@@ -55,6 +55,7 @@ public:
 //    CAlignmentRefiner() : m_quietMode(false), m_quietDetails(false), m_nTrials(1), m_nCycles(1), m_forcedThreshold(-1), m_scoreDeviationThreshold(0.01)
     CAlignmentRefiner() : m_quietMode(false), m_quietDetails(false), m_nTrials(1), m_nCycles(1), m_scoreDeviationThreshold(0.01)
 {
+    SetVersion(CVersionInfo(1,1,0, "a Block-based Multiple Alignment Refinement program"));
     };
 
     ~CAlignmentRefiner() {
@@ -98,6 +99,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/14 17:02:26  lanczyck
+ * add version to app
+ *
  * Revision 1.2  2006/03/27 16:44:49  lanczyck
  * add selection-order option; modify parameter printing; fix block freezing for consistency between LOO and BE phases
  *
