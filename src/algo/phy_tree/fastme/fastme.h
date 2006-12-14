@@ -83,10 +83,8 @@ typedef char boolean;
 
 #define MAXSIZE 70000
 
-static int numSpecies;
-static int edgeCount;
+extern int verbose;
 
-static boolean verbose;
 boolean whitespace(char c);
 
 END_SCOPE(fastme)
@@ -100,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/14 19:59:17  jcherry
+ * Eliminated compiler warnings and fixed static/extern in header files
+ *
  * Revision 1.2  2004/02/10 20:24:22  ucko
  * Get rid of any previous definition of INFINITY before supplying our
  * own, since some compilers (such as IBM VisualAge) forbid immediate

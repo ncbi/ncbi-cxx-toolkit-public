@@ -110,8 +110,6 @@ meEdge *makeEdge(char *label, meNode *tail, meNode *head, double weight);
 meSet *addToSet(meNode *v, meSet *X);
 meTree *newTree();
 
-static meSet *species;
-
 END_SCOPE(fastme)
 END_NCBI_SCOPE
 
@@ -121,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/14 19:59:17  jcherry
+ * Eliminated compiler warnings and fixed static/extern in header files
+ *
  * Revision 1.1  2004/02/10 15:16:02  jcherry
  * Initial version
  *

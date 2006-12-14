@@ -42,6 +42,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(fastme)
 
+int verbose;
+
 /*functions from newickstring.c*/
 meTree *loadNewickTree(FILE *ifile, int numLeaves);
 void NewickPrintTree(meTree *T, FILE *ofile);
@@ -241,6 +243,7 @@ meTree* fastme_run(double** D_in, int numSpecies_in, char **labels, int btype_in
 //  FILE *ifile2, *ofile;
 
   double **D, **A;
+  int numSpecies;
 
   meSet *species, *slooper;
 
@@ -395,6 +398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/14 19:59:17  jcherry
+ * Eliminated compiler warnings and fixed static/extern in header files
+ *
  * Revision 1.4  2006/01/09 19:47:51  jcherry
  * Removed unused variables
  *

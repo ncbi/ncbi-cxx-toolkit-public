@@ -65,6 +65,9 @@ boolean whiteSpace(char c)
   else return(FALSE_FASTME);
 }
 
+static int nodeCount;
+static int edgeCount;
+
 /*decodeNewickSubmeTree is used to turn a string of the form
   "(v1:d1,v2:d2,(subtree) v3:d3....vk:dk) subroot:d," into a subtree
   rooted at subrooted, with corresponding subtrees and leaves at v1
@@ -391,6 +394,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/14 19:59:17  jcherry
+ * Eliminated compiler warnings and fixed static/extern in header files
+ *
  * Revision 1.3  2006/01/09 19:47:51  jcherry
  * Removed unused variables
  *
