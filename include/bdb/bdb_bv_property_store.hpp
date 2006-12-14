@@ -1,0 +1,240 @@
+#ifndef BDB___BV_PROPERTY_STORE__HPP
+#define BDB___BV_PROPERTY_STORE__HPP
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Mike DiCuccio
+ *
+ * File Description:
+ *
+ */
+
+
+#include <bdb/bdb_bv_split_store.hpp>
+#include <bdb/bdb_types.hpp>
+
+
+BEGIN_NCBI_SCOPE
+
+
+template <class PropKey, class PropValue>
+class CBDB_PropertyDictionary : public CBDB_BLobFile
+{
+public:
+    typedef pair<PropKey, PropValue> TKey;
+    typedef Uint4 TKeyId;
+
+    CBDB_PropertyDictionary();
+
+    /// @name Interface required for split dictionary store
+    /// @{
+
+    Uint4 GetKey(const TKey& key);
+    Uint4 PutKey(const TKey& key);
+
+    /// @}
+
+    TKey GetKey();
+
+    EBDB_ErrCode Read(TKeyId* key_idx);
+    EBDB_ErrCode Read(const PropKey& prop,
+                      const PropValue& value,
+                      TKeyId* key_idx);
+    EBDB_ErrCode Write(const PropKey& prop,
+                       const PropValue& value,
+                       TKeyId key_idx);
+
+private:
+    typename SBDB_TypeTraits<PropKey>::TFieldType   m_PropKey;
+    typename SBDB_TypeTraits<PropValue>::TFieldType m_PropVal;
+    TKeyId m_MaxUid;
+};
+
+
+template <typename PropKey, typename PropValue,
+          typename Dictionary = CBDB_PropertyDictionary<PropKey, PropValue>,
+          typename BvStore    = CBDB_PersistentSplitStore< bm::bvector<> >
+          >
+class CBDB_BvPropertyStore
+    : public CBDB_BvSplitDictStore< pair<PropKey, PropValue>,
+                                    Dictionary, BvStore >
+{
+public:
+    typedef CBDB_BvSplitDictStore< pair<PropKey, PropValue>,
+                                   Dictionary, BvStore > TParent;
+    typedef pair<PropKey, PropValue> TKey;
+    typedef Dictionary               TDictionary;
+    typedef BvStore                  TStore;
+    typedef Uint4                    TKeyId;
+
+    CBDB_BvPropertyStore(const string& demux_path = kEmptyStr);
+    CBDB_BvPropertyStore(TDictionary& dict, TStore& store,
+                         EOwnership own = eTakeOwnership);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+template <class PropKey, class PropValue>
+inline
+CBDB_PropertyDictionary<PropKey, PropValue>::CBDB_PropertyDictionary()
+: m_MaxUid(0)
+{
+    BindKey("key", &m_PropKey);
+    BindKey("val", &m_PropVal);
+}
+
+
+template <class PropKey, class PropValue>
+inline
+Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::GetKey(const TKey& key)
+{
+    TKeyId uid = 0;
+    Read(key.first, key.second, &uid);
+    return uid;
+}
+
+
+template <class PropKey, class PropValue>
+inline
+typename CBDB_PropertyDictionary<PropKey, PropValue>::TKey
+CBDB_PropertyDictionary<PropKey, PropValue>::GetKey()
+{
+    TKey key((PropKey)m_PropKey, (PropValue)m_PropVal);
+    return key;
+}
+
+
+template <class PropKey, class PropValue>
+inline
+Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::PutKey(const TKey& key)
+{
+    if (m_MaxUid == 0) {
+        /// scan the database looking for the maximal UID
+        CBDB_FileCursor cursor(*this);
+        cursor.SetCondition(CBDB_FileCursor::eFirst);
+        TKeyId this_uid = 0;
+        void* p = &this_uid;
+        while (cursor.Fetch(CBDB_FileCursor::eDefault,
+                            &p, sizeof(this_uid),
+                            CBDB_RawFile::eReallocForbidden) == eBDB_Ok) {
+            m_MaxUid = max(m_MaxUid, this_uid);
+        }
+    }
+
+    TKeyId uid = m_MaxUid + 1;
+    if (Write(key.first, key.second, uid) == eBDB_Ok) {
+        m_MaxUid = uid;
+        return uid;
+    } else {
+        return 0;
+    }
+}
+
+
+template <class PropKey, class PropValue>
+inline EBDB_ErrCode
+CBDB_PropertyDictionary<PropKey, PropValue>::Read(TKeyId* key_idx)
+{
+    void* p = key_idx;
+    return Fetch(&p, sizeof(TKeyId), CBDB_RawFile::eReallocForbidden);
+}
+
+
+template <class PropKey, class PropValue>
+inline EBDB_ErrCode
+CBDB_PropertyDictionary<PropKey, PropValue>::Read(const PropKey& prop,
+                                                  const PropValue& value,
+                                                  TKeyId* key_idx)
+{
+    m_PropKey = prop;
+    m_PropVal = value;
+    return Read(key_idx);
+}
+
+
+template <class PropKey, class PropValue>
+inline EBDB_ErrCode
+CBDB_PropertyDictionary<PropKey, PropValue>::Write(const PropKey& prop,
+                                                   const PropValue& value,
+                                                   TKeyId key_idx)
+{
+    m_PropKey = prop;
+    m_PropVal = value;
+    return UpdateInsert(&key_idx, sizeof(key_idx));
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+template <typename PropKey, typename PropValue,
+          typename Dictionary, typename BvStore>
+inline CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore>
+::CBDB_BvPropertyStore(const string& demux_path)
+: TParent(demux_path)
+{
+}
+
+
+template <typename PropKey, typename PropValue,
+          typename Dictionary, typename BvStore>
+inline CBDB_BvPropertyStore<PropKey, PropValue, Dictionary, BvStore>
+::CBDB_BvPropertyStore(TDictionary& dict,
+                       TStore& store,
+                       EOwnership own)
+: TParent(dict, store, own)
+{
+}
+
+
+END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2006/12/14 13:11:31  dicuccio
+ * Added components for creating split blob stores with arbitrarily defined key
+ * spaces (including multi-component keys)
+ *
+ * Revision 1.4  2006/12/05 19:38:35  dicuccio
+ * Use new bv store ship
+ *
+ * Revision 1.3  2006/12/04 12:54:42  dicuccio
+ * Added template parameter for underlying BV store
+ *
+ * Revision 1.2  2006/12/01 13:16:38  dicuccio
+ * Use standard buffer types.  Permit dictionary to be supplied externally
+ *
+ * Revision 1.1  2006/11/21 13:52:39  dicuccio
+ * Large-scale reorganization of indexing.  Support multiple index types, split
+ * dictionary-based index stores.
+ *
+ * ===========================================================================
+ */
+
+#endif  // BDB___BV_PROPERTY_STORE__HPP
