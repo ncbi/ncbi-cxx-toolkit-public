@@ -397,7 +397,7 @@ public:
     (const string&   host,
      const string&   file     = kEmptyStr,
      const string&   user     = "ftp",
-     const string&   pass     = "none",
+     const string&   pass     = "-none",  // "-" often helps make login quiter
      const string&   path     = kEmptyStr,
      unsigned short  port     = 0,
      TFCDC_Flags     flag     = 0,
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.50  2006/12/14 23:19:03  lavr
+ * Prepend anonymous FTP login pass with -
+ *
  * Revision 6.49  2006/12/14 04:43:17  lavr
  * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
  *
