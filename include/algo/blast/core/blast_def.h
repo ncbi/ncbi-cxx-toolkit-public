@@ -103,7 +103,7 @@ extern const int kUngappedHSPNumMax;
 
 /** Safe free a pointer: belongs to a higher level header. */
 #ifndef sfree
-#define sfree(x) __sfree((void**)&(x))
+#define sfree(x) __sfree((void**)(void*)&(x))
 #endif
 
 /** Implemented in blast_util.c. @sa sfree */
