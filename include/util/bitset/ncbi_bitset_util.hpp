@@ -33,7 +33,7 @@
 /// @file ncbi_bitset_util.hpp
 /// Bitset relates utilities
 
-#include <util/bitset/ncbi_bitset.h>
+#include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/bmserial.h>
 
 #include <vector>
@@ -64,6 +64,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/12/14 19:00:14  kuznets
+* fixed typo
+*
 * Revision 1.1  2006/12/13 20:25:19  kuznets
 * initial revision
 *
