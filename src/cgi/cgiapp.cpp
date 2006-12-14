@@ -34,6 +34,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/rwstream.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <util/stream_utils.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
@@ -46,6 +47,12 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+NCBI_PARAM_DECL(bool, CGI, Print_Http_Referer);
+NCBI_PARAM_DEF_EX(bool, CGI, Print_Http_Referer, false, eParam_NoThread,
+                  CGI_PRINT_HTTP_REFERER);
+static NCBI_PARAM_TYPE(CGI, Print_Http_Referer) s_PrintRefererParam;
 
 
 ///////////////////////////////////////////////////////
@@ -193,6 +200,13 @@ int CCgiApplication::Run(void)
                     ref += "?" + args;
                 }
                 GetConfig().Set("CONN", "HTTP_REFERER", ref);
+            }
+            // Print HTTP_REFERER
+            if ( s_PrintRefererParam.Get() ) {
+                ref = m_Context->GetRequest().GetProperty(eCgi_HttpReferer);
+                if ( !ref.empty() ) {
+                    GetDiagContext().PrintExtra("HTTP_REFERER=" + ref);
+                }
             }
             result = ProcessRequest(*m_Context);
             if (result != 0) {
@@ -1142,6 +1156,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.91  2006/12/14 22:07:25  grichenk
+* Print HTTP_REFERER to log.
+*
 * Revision 1.90  2006/10/31 18:41:17  grichenk
 * Redesigned diagnostics setup.
 * Moved the setup function to ncbidiag.cpp.
