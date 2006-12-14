@@ -80,6 +80,7 @@ class CObjectInfoMI;
 class CObjectInfoCV;
 class CObjectInfoEI;
 
+/// Facilitate access to the data type information
 class NCBI_XSERIAL_EXPORT CObjectTypeInfo
 {
 public:
@@ -125,32 +126,130 @@ public:
     // only when GetTypeFamily() == CTypeInfo::eTypePointer
     CObjectTypeInfo GetPointedType(void) const;
 
+    /// Set local (for the specified stream) read hook
+    /// @param stream
+    ///   Input data stream reader
+    /// @param hook
+    ///   Pointer to hook object
     void SetLocalReadHook(CObjectIStream& stream,
                           CReadObjectHook* hook) const;
+
+    /// Set global (for all streams) read hook
+    /// @param hook
+    ///   Pointer to hook object
     void SetGlobalReadHook(CReadObjectHook* hook) const;
+
+    /// Reset local read hook
+    /// @param stream
+    ///   Input data stream reader
     void ResetLocalReadHook(CObjectIStream& stream) const;
+
+    /// Reset global read hooks
     void ResetGlobalReadHook(void) const;
+
+    /// Set local context-specific read hook
+    /// @param stream
+    ///   Input data stream reader
+    /// @param path
+    ///   Context (stack path)
+    /// @param hook
+    ///   Pointer to hook object
     void SetPathReadHook(CObjectIStream* stream, const string& path,
                          CReadObjectHook* hook) const;
+
+
+    /// Set local (for the specified stream) write hook
+    /// @param stream
+    ///   Output data stream writer
+    /// @param hook
+    ///   Pointer to hook object
     void SetLocalWriteHook(CObjectOStream& stream,
                           CWriteObjectHook* hook) const;
+
+    /// Set global (for all streams) write hook
+    /// @param hook
+    ///   Pointer to hook object
     void SetGlobalWriteHook(CWriteObjectHook* hook) const;
+
+    /// Reset local write hook
+    /// @param stream
+    ///   Output data stream writer
     void ResetLocalWriteHook(CObjectOStream& stream) const;
+
+    /// Reset global write hooks
     void ResetGlobalWriteHook(void) const;
+
+    /// Set local context-specific write hook
+    /// @param stream
+    ///   Output data stream writer
+    /// @param path
+    ///   Context (stack path)
+    /// @param hook
+    ///   Pointer to hook object
     void SetPathWriteHook(CObjectOStream* stream, const string& path,
                           CWriteObjectHook* hook) const;
+
+
+    /// Set local (for the specified stream) skip hook
+    /// @param stream
+    ///   Input data stream reader
+    /// @param hook
+    ///   Pointer to hook object
     void SetLocalSkipHook(CObjectIStream& stream,
                           CSkipObjectHook* hook) const;
+
+    /// Set global (for all streams) skip hook
+    /// @param hook
+    ///   Pointer to hook object
     void SetGlobalSkipHook(CSkipObjectHook* hook) const;
+
+    /// Reset local skip hook
+    /// @param stream
+    ///   Input data stream reader
     void ResetLocalSkipHook(CObjectIStream& stream) const;
+
+    /// Reset global skip hooks
     void ResetGlobalSkipHook(void) const;
+
+    /// Set local context-specific skip hook
+    /// @param stream
+    ///   Input data stream reader
+    /// @param path
+    ///   Context (stack path)
+    /// @param hook
+    ///   Pointer to hook object
     void SetPathSkipHook(CObjectIStream* stream, const string& path,
                          CSkipObjectHook* hook) const;
+
+
+    /// Set local (for the specified stream) copy hook
+    /// @param stream
+    ///   Data copier
+    /// @param hook
+    ///   Pointer to hook object
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyObjectHook* hook) const;
+
+    /// Set global (for all streams) copy hook
+    /// @param hook
+    ///   Pointer to hook object
     void SetGlobalCopyHook(CCopyObjectHook* hook) const;
+
+    /// Reset local copy hook
+    /// @param stream
+    ///   Data copier
     void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
+
+    /// Reset global read hooks
     void ResetGlobalCopyHook(void) const;
+
+    /// Set local context-specific copy hook
+    /// @param stream
+    ///   Data copier
+    /// @param path
+    ///   Context (stack path)
+    /// @param hook
+    ///   Pointer to hook object
     void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
                          CCopyObjectHook* hook) const;
 
@@ -184,6 +283,9 @@ private:
     CTypeInfo* GetNCTypeInfo(void) const;
 };
 
+
+/// Facilitate read access to a particular instance of an object
+/// of the specified type.
 class NCBI_XSERIAL_EXPORT CConstObjectInfo : public CObjectTypeInfo
 {
 public:
@@ -196,24 +298,24 @@ public:
         eNonCObject
     };
 
-    // create empty CObjectInfo
+    /// Create empty CObjectInfo
     CConstObjectInfo(void);
-    // initialize CObjectInfo
+    /// Initialize CObjectInfo
     CConstObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo);
     CConstObjectInfo(pair<TConstObjectPtr, TTypeInfo> object);
     CConstObjectInfo(pair<TObjectPtr, TTypeInfo> object);
-    // initialize CObjectInfo when we are sure that object 
-    // is not inherited from CObject (for efficiency)
+    /// Initialize CObjectInfo when we are sure that object 
+    /// is not inherited from CObject (for efficiency)
     CConstObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo,
                      ENonCObject nonCObject);
 
-    // reset CObjectInfo to empty state
+    /// Reset CObjectInfo to empty state
     void Reset(void);
-    // set CObjectInfo
+    /// Set CObjectInfo
     CConstObjectInfo& operator=(pair<TConstObjectPtr, TTypeInfo> object);
     CConstObjectInfo& operator=(pair<TObjectPtr, TTypeInfo> object);
 
-    // check if CObjectInfo initialized with valid object
+    /// Check if CObjectInfo initialized with valid object
     bool Valid(void) const
         {
             return m_ObjectPtr != 0;
@@ -231,7 +333,7 @@ public:
 
     void ResetObjectPtr(void);
 
-    // get pointer to object
+    /// Get pointer to object
     TConstObjectPtr GetObjectPtr(void) const;
     pair<TConstObjectPtr, TTypeInfo> GetPair(void) const;
 
@@ -284,6 +386,8 @@ private:
     CConstRef<CObject> m_Ref; // hold reference to CObject for correct removal
 };
 
+/// Facilitate read/write access to a particular instance of an object
+/// of the specified type.
 class NCBI_XSERIAL_EXPORT CObjectInfo : public CConstObjectInfo
 {
     typedef CConstObjectInfo CParent;
@@ -293,22 +397,22 @@ public:
     typedef CObjectInfoMI CMemberIterator;
     typedef CObjectInfoCV CChoiceVariant;
 
-    // create empty CObjectInfo
+    /// Create empty CObjectInfo
     CObjectInfo(void);
-    // initialize CObjectInfo
+    /// Initialize CObjectInfo
     CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo);
     CObjectInfo(pair<TObjectPtr, TTypeInfo> object);
-    // initialize CObjectInfo when we are sure that object 
-    // is not inherited from CObject (for efficiency)
+    /// Initialize CObjectInfo when we are sure that object 
+    /// is not inherited from CObject (for efficiency)
     CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo,
                 ENonCObject nonCObject);
-    // create CObjectInfo with new object
+    /// Create CObjectInfo with new object
     explicit CObjectInfo(TTypeInfo typeInfo);
 
-    // set CObjectInfo to point to another object
+    /// Set CObjectInfo to point to another object
     CObjectInfo& operator=(pair<TObjectPtr, TTypeInfo> object);
     
-    // get pointer to object
+    /// Get pointer to object
     TObjectPtr GetObjectPtr(void) const;
     pair<TObjectPtr, TTypeInfo> GetPair(void) const;
 
@@ -367,6 +471,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/12/14 19:31:00  gouriano
+* Added documentation
+*
 * Revision 1.16  2006/12/07 18:59:30  gouriano
 * Reviewed doxygen groupping, added documentation
 *

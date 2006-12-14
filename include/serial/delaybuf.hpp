@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Memory buffer to hold unparsed input data
 */
 
 #include <corelib/ncbistd.hpp>
@@ -49,6 +49,11 @@ BEGIN_NCBI_SCOPE
 class CByteSource;
 class CItemInfo;
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CDelayBuffer
+///
+///  Memory buffer to hold unparsed input data
 class NCBI_XSERIAL_EXPORT CDelayBuffer
 {
 public:
@@ -115,7 +120,6 @@ private:
     auto_ptr<SInfo> m_Info;
 };
 
-
 /* @} */
 
 
@@ -127,6 +131,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/12/14 19:31:00  gouriano
+* Added documentation
+*
 * Revision 1.12  2006/12/07 18:59:30  gouriano
 * Reviewed doxygen groupping, added documentation
 *

@@ -123,7 +123,7 @@ public:
         }
 };
 
-// Base class for all serializable objects
+/// Base class for all serializable objects
 class NCBI_XSERIAL_EXPORT CSerialObject : public CObject
 {
 public:
@@ -214,11 +214,11 @@ private:
     vector<CSerialAttribInfoItem> m_Attlist;
 };
 
-// Base class for user-defined serializable classes
-// to allow for objects assignment and comparison.
-// EXAMPLE:
-//   class CSeq_entry : public CSeq_entry_Base, CSerialUserOp
-//
+/// Base class for user-defined serializable classes
+/// to allow for objects assignment and comparison.
+///
+/// EXAMPLE:
+///   class CSeq_entry : public CSeq_entry_Base, CSerialUserOp
 class NCBI_XSERIAL_EXPORT CSerialUserOp
 {
     friend class CClassTypeInfo;
@@ -226,17 +226,17 @@ class NCBI_XSERIAL_EXPORT CSerialUserOp
 public:
     virtual ~CSerialUserOp() { }
 protected:
-    // will be called after copying the datatool-generated members
+    /// Will be called after copying the datatool-generated members
     virtual void UserOp_Assign(const CSerialUserOp& source) = 0;
-    // will be called after comparing the datatool-generated members
+    /// Will be called after comparing the datatool-generated members
     virtual bool UserOp_Equals(const CSerialUserOp& object) const = 0;
 };
 
 
 /////////////////////////////////////////////////////////////////////
-//
-// Alias wrapper templates
-//
+///
+/// Alias wrapper templates
+///
 
 template <class TPrim>
 class NCBI_XSERIAL_EXPORT CAliasBase
@@ -588,6 +588,9 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2006/12/14 19:33:18  gouriano
+* Added documentation
+*
 * Revision 1.44  2006/12/07 18:59:30  gouriano
 * Reviewed doxygen groupping, added documentation
 *

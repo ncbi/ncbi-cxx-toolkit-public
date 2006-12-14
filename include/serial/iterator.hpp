@@ -53,8 +53,8 @@ BEGIN_NCBI_SCOPE
 
 class CTreeIterator;
 
-// class holding information about root of non-modifiable object hierarchy
-// Do not use it directly
+/// Class holding information about root of non-modifiable object hierarchy
+/// Do not use it directly
 class NCBI_XSERIAL_EXPORT CBeginInfo : public pair<TObjectPtr, TTypeInfo>
 {
     typedef pair<TObjectPtr, TTypeInfo> CParent;
@@ -81,8 +81,8 @@ public:
     bool m_DetectLoops;
 };
 
-// class holding information about root of non-modifiable object hierarchy
-// Do not use it directly
+/// Class holding information about root of non-modifiable object hierarchy
+/// Do not use it directly
 class NCBI_XSERIAL_EXPORT CConstBeginInfo : public pair<TConstObjectPtr, TTypeInfo>
 {
     typedef pair<TConstObjectPtr, TTypeInfo> CParent;
@@ -115,8 +115,8 @@ public:
     bool m_DetectLoops;
 };
 
-// class describing stack level of traversal
-// do not use it directly
+/// Class describing stack level of traversal
+/// do not use it directly
 class NCBI_XSERIAL_EXPORT CConstTreeLevelIterator {
 public:
     typedef CConstBeginInfo TBeginInfo;
@@ -166,8 +166,8 @@ protected:
     virtual void SetItemInfo(const CItemInfo* info) = 0;
 };
 
-// CTreeIterator is base class for all iterators over non-modifiable object
-// Do not use it directly
+/// Base class for all iterators over non-modifiable object
+/// Do not use it directly
 template<class LevelIterator>
 class CTreeIteratorTmpl
 {
@@ -203,25 +203,25 @@ public:
             Reset();
         }
 
-    // get information about current object
+    /// Get information about current object
     TObjectInfo& Get(void)
         {
             _ASSERT(CheckValid());
             return m_CurrentObject;
         }
-    // get information about current object
+    /// Get information about current object
     const TObjectInfo& Get(void) const
         {
             _ASSERT(CheckValid());
             return m_CurrentObject;
         }
-    // get type information of current object
+    /// Get type information of current object
     TTypeInfo GetCurrentTypeInfo(void) const
         {
             return Get().GetTypeInfo();
         }
 
-    // reset iterator to initial state
+    /// Reset iterator to initial state
     void Reset(void)
         {
             m_CurrentObject.Reset();
@@ -256,20 +256,21 @@ public:
     // check whether iterator is not finished
     DECLARE_OPERATOR_BOOL(IsValid());
 
-    // go to next object
+    /// Go to next object
     TThis& operator++(void)
         {
             Next();
             return *this;
         }
 
-    // initialize iterator to new root of object hierarchy
+    /// Initialize iterator to new root of object hierarchy
     TThis& operator=(const TBeginInfo& beginInfo)
         {
             Init(beginInfo);
             return *this;
         }
 
+    /// Get raw context data
     TIteratorContext GetContextData(void) const
         {
             TIteratorContext stk_info;
@@ -290,6 +291,7 @@ public:
             return stk_info;
         }
 
+    /// Get context data as string
     string GetContext(void) const
         {
             string loc;
@@ -318,6 +320,10 @@ public:
             }
             return loc;
         }
+    /// Set context filter
+    ///
+    /// @param filter
+    ///   Context filter string
     void SetContextFilter(const string& filter)
         {
             m_ContextFilter = filter;
@@ -437,7 +443,7 @@ private:
 
 typedef CTreeIteratorTmpl<CConstTreeLevelIterator> CTreeConstIterator;
 
-// CTreeIterator is base class for all iterators over modifiable object
+/// Base class for all iterators over modifiable object
 class NCBI_XSERIAL_EXPORT CTreeIterator : public CTreeIteratorTmpl<CTreeLevelIterator>
 {
     typedef CTreeIteratorTmpl<CTreeLevelIterator> CParent;
@@ -465,12 +471,12 @@ public:
             return *this;
         }
 
-    // delete currently pointed object (throws exception if failed)
+    /// Delete currently pointed object (throws exception if failed)
     void Erase(void);
 };
 
-// template base class for CTypeIterator<> and CTypeConstIterator<>
-// Do not use it directly
+/// template base class for CTypeIterator<> and CTypeConstIterator<>
+/// Do not use it directly
 template<class Parent>
 class CTypeIteratorBase : public Parent
 {
@@ -514,8 +520,8 @@ private:
     TTypeInfo m_NeedType;
 };
 
-// template base class for CTypeIterator<> and CTypeConstIterator<>
-// Do not use it directly
+/// Template base class for CTypeIterator<> and CTypeConstIterator<>
+/// Do not use it directly
 template<class Parent>
 class CLeafTypeIteratorBase : public CTypeIteratorBase<Parent>
 {
@@ -542,8 +548,8 @@ protected:
     virtual bool CanSelect(const CConstObjectInfo& object);
 };
 
-// template base class for CTypesIterator and CTypesConstIterator
-// Do not use it directly
+/// Template base class for CTypesIterator and CTypesConstIterator
+/// Do not use it directly
 template<class Parent>
 class CTypesIteratorBase : public Parent
 {
@@ -651,7 +657,7 @@ private:
     TTypeInfo m_MatchType;
 };
 
-// template class for iteration on objects of class C
+/// Template class for iteration on objects of class C
 template<class C, class TypeGetter = C>
 class CTypeIterator : public CTypeIteratorBase<CTreeIterator>
 {
@@ -700,7 +706,7 @@ public:
         }
 };
 
-// template class for iteration on objects of class C (non-medifiable version)
+/// Template class for iteration on objects of class C (non-medifiable version)
 template<class C, class TypeGetter = C>
 class CTypeConstIterator : public CTypeIteratorBase<CTreeConstIterator>
 {
@@ -741,7 +747,7 @@ public:
         }
 };
 
-// template class for iteration on objects of class C
+/// Template class for iteration on objects of class C
 template<class C>
 class CLeafTypeIterator : public CLeafTypeIteratorBase<CTreeIterator>
 {
@@ -790,7 +796,7 @@ public:
         }
 };
 
-// template class for iteration on objects of class C (non-medifiable version)
+/// Template class for iteration on objects of class C (non-medifiable version)
 template<class C>
 class CLeafTypeConstIterator : public CLeafTypeIteratorBase<CTreeConstIterator>
 {
@@ -831,7 +837,7 @@ public:
         }
 };
 
-// template class for iteration on objects of standard C++ type T
+/// Template class for iteration on objects of standard C++ type T
 template<typename T>
 class CStdTypeIterator : public CTypeIterator<T, CStdTypeInfo<T> >
 {
@@ -862,8 +868,8 @@ public:
         }
 };
 
-// template class for iteration on objects of standard C++ type T
-// (non-modifiable version)
+/// Template class for iteration on objects of standard C++ type T
+/// Non-modifiable version
 template<typename T>
 class CStdTypeConstIterator : public CTypeConstIterator<T, CStdTypeInfo<T> >
 {
@@ -917,7 +923,7 @@ enum EDetectLoops {
     eDetectLoops
 };
 
-// get starting point of object hierarchy
+/// Get starting point of object hierarchy
 template<class C>
 inline
 CBeginInfo Begin(C& obj)
@@ -925,7 +931,7 @@ CBeginInfo Begin(C& obj)
     return CBeginInfo(&obj, C::GetTypeInfo(), false);
 }
 
-// get starting point of non-modifiable object hierarchy
+/// Get starting point of non-modifiable object hierarchy
 template<class C>
 inline
 CConstBeginInfo ConstBegin(const C& obj)
@@ -940,7 +946,7 @@ CConstBeginInfo Begin(const C& obj)
     return CConstBeginInfo(&obj, C::GetTypeInfo(), false);
 }
 
-// get starting point of object hierarchy with loop detection
+/// Get starting point of object hierarchy with loop detection
 template<class C>
 inline
 CBeginInfo Begin(C& obj, EDetectLoops)
@@ -948,7 +954,7 @@ CBeginInfo Begin(C& obj, EDetectLoops)
     return CBeginInfo(&obj, C::GetTypeInfo(), true);
 }
 
-// get starting point of non-modifiable object hierarchy with loop detection
+/// Get starting point of non-modifiable object hierarchy with loop detection
 template<class C>
 inline
 CConstBeginInfo ConstBegin(const C& obj, EDetectLoops)
@@ -974,6 +980,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2006/12/14 19:31:00  gouriano
+* Added documentation
+*
 * Revision 1.39  2006/10/12 15:08:24  gouriano
 * Some header files moved into impl
 *

@@ -55,25 +55,33 @@ class CObjectInfo;
 class CConstObjectInfo;
 class CObjectTypeInfo;
 
+/// Read hook for a standalone object
 class NCBI_XSERIAL_EXPORT CReadObjectHook : public CObject
 {
 public:
     virtual ~CReadObjectHook(void);
     
+    /// This method will be called at approriate time
+    /// when the object of requested type is to be read
     virtual void ReadObject(CObjectIStream& in,
                             const CObjectInfo& object) = 0;
     // Default actions
+    /// Default read
     void DefaultRead(CObjectIStream& in,
                      const CObjectInfo& object);
+    /// Default skip
     void DefaultSkip(CObjectIStream& in,
                      const CObjectInfo& object);
 };
 
+/// Read hook for data member of a containing object (eg, SEQUENCE)
 class NCBI_XSERIAL_EXPORT CReadClassMemberHook : public CObject
 {
 public:
     virtual ~CReadClassMemberHook(void);
 
+    /// This method will be called at approriate time
+    /// when the object of requested type is to be read
     virtual void ReadClassMember(CObjectIStream& in,
                                  const CObjectInfoMI& member) = 0;
     virtual void ReadMissingClassMember(CObjectIStream& in,
@@ -87,11 +95,14 @@ public:
                          CObjectInfoMI::eErase_Optional);
 };
 
+/// Read hook for a choice variant (CHOICE)
 class NCBI_XSERIAL_EXPORT CReadChoiceVariantHook : public CObject
 {
 public:
     virtual ~CReadChoiceVariantHook(void);
 
+    /// This method will be called at approriate time
+    /// when the object of requested type is to be read
     virtual void ReadChoiceVariant(CObjectIStream& in,
                                    const CObjectInfoCV& variant) = 0;
     void DefaultRead(CObjectIStream& in,
@@ -99,6 +110,7 @@ public:
     // No default skip method - can not skip variants
 };
 
+/// Read hook for a container element (SEQUENCE OF)
 class NCBI_XSERIAL_EXPORT CReadContainerElementHook : public CObject
 {
 public:
@@ -108,17 +120,21 @@ public:
                                       const CObjectInfo& container) = 0;
 };
 
+/// Write hook for a standalone object
 class NCBI_XSERIAL_EXPORT CWriteObjectHook : public CObject
 {
 public:
     virtual ~CWriteObjectHook(void);
     
+    /// This method will be called at approriate time
+    /// when the object of requested type is to be written
     virtual void WriteObject(CObjectOStream& out,
                              const CConstObjectInfo& object) = 0;
     void DefaultWrite(CObjectOStream& out,
                       const CConstObjectInfo& object);
 };
 
+/// Write hook for data member of a containing object (eg, SEQUENCE)
 class NCBI_XSERIAL_EXPORT CWriteClassMemberHook : public CObject
 {
 public:
@@ -130,6 +146,7 @@ public:
                       const CConstObjectInfoMI& member);
 };
 
+/// Write hook for a choice variant (CHOICE)
 class NCBI_XSERIAL_EXPORT CWriteChoiceVariantHook : public CObject
 {
 public:
@@ -141,6 +158,7 @@ public:
                       const CConstObjectInfoCV& variant);
 };
 
+/// Skip hook for a standalone object
 class NCBI_XSERIAL_EXPORT CSkipObjectHook : public CObject
 {
 public:
@@ -152,6 +170,7 @@ public:
 //                     const CObjectTypeInfo& type);
 };
 
+/// Skip hook for data member of a containing object (eg, SEQUENCE)
 class NCBI_XSERIAL_EXPORT CSkipClassMemberHook : public CObject
 {
 public:
@@ -165,6 +184,7 @@ public:
 //                     const CObjectTypeInfoMI& member);
 };
 
+/// Skip hook for a choice variant (CHOICE)
 class NCBI_XSERIAL_EXPORT CSkipChoiceVariantHook : public CObject
 {
 public:
@@ -177,6 +197,7 @@ public:
 };
 
 
+/// Copy hook for a standalone object
 class NCBI_XSERIAL_EXPORT CCopyObjectHook : public CObject
 {
 public:
@@ -188,6 +209,7 @@ public:
                      const CObjectTypeInfo& type);
 };
 
+/// Copy hook for data member of a containing object (eg, SEQUENCE)
 class NCBI_XSERIAL_EXPORT CCopyClassMemberHook : public CObject
 {
 public:
@@ -201,6 +223,7 @@ public:
                      const CObjectTypeInfoMI& member);
 };
 
+/// Copy hook for a choice variant (CHOICE)
 class NCBI_XSERIAL_EXPORT CCopyChoiceVariantHook : public CObject
 {
 public:
@@ -316,58 +339,118 @@ private:
 };
 
 
+/// Helper class: installs hooks in constructor, and uninstalls in destructor
 template <class T>
 class CObjectHookGuard : public CObjectHookGuardBase
 {
     typedef CObjectHookGuardBase CParent;
 public:
-    // object read hook
+    /// Install object read hook
+    ///
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(CReadObjectHook& hook,
                      CObjectIStream* stream = 0)
         : CParent(CType<T>(), hook, stream)
         {
         }
-    // object write hook
+    /// Install object write hook
+    ///
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(CWriteObjectHook& hook,
                      CObjectOStream* stream = 0)
         : CParent(CType<T>(), hook, stream)
         {
         }
-    // object skip hook
+    /// Install object skip hook
+    ///
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(CSkipObjectHook& hook,
                      CObjectIStream* stream = 0)
         : CParent(CType<T>(), hook, stream)
         {
         }
-    // object copy hook
+    /// Install object copy hook
+    ///
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(CCopyObjectHook& hook,
                      CObjectStreamCopier* stream = 0)
         : CParent(CType<T>(), hook, stream)
         {
         }
 
-    // member read hook
+    /// Install member read hook
+    ///
+    /// @param id
+    ///   Member id
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(const string& id,
                      CReadClassMemberHook& hook,
                      CObjectIStream* stream = 0)
         : CParent(CType<T>(), id, hook, stream)
         {
         }
-    // member write hook
+
+    /// Install member write hook
+    ///
+    /// @param id
+    ///   Member id
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(const string& id,
                      CWriteClassMemberHook& hook,
                      CObjectOStream* stream = 0)
         : CParent(CType<T>(), id, hook, stream)
         {
         }
-    // member skip hook
+
+    /// Install member skip hook
+    ///
+    /// @param id
+    ///   Member id
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(const string& id,
                      CSkipClassMemberHook& hook,
                      CObjectIStream* stream = 0)
         : CParent(CType<T>(), id, hook, stream)
         {
         }
-    // member copy hook
+
+    /// Install member copy hook
+    ///
+    /// @param id
+    ///   Member id
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(const string& id,
                      CCopyClassMemberHook& hook,
                      CObjectStreamCopier* stream = 0)
@@ -375,28 +458,63 @@ public:
         {
         }
 
-    // choice variant read hook
+    /// Install choice variant read hook
+    ///
+    /// @param id
+    ///   Variant id
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(const string& id,
                      CReadChoiceVariantHook& hook,
                      CObjectIStream* stream = 0)
         : CParent(CType<T>(), id, hook, stream)
         {
         }
-    // choice variant write hook
+
+    /// Install choice variant write hook
+    ///
+    /// @param id
+    ///   Variant id
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(const string& id,
                      CWriteChoiceVariantHook& hook,
                      CObjectOStream* stream = 0)
         : CParent(CType<T>(), id, hook, stream)
         {
         }
-    // choice variant skip hook
+
+    /// Install choice variant skip hook
+    ///
+    /// @param id
+    ///   Variant id
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(const string& id,
                      CSkipChoiceVariantHook& hook,
                      CObjectIStream* stream = 0)
         : CParent(CType<T>(), id, hook, stream)
         {
         }
-    // choice variant copy hook
+
+    /// Install choice variant copy hook
+    ///
+    /// @param id
+    ///   Variant id
+    /// @param hook
+    ///   Hook object
+    /// @param stream
+    ///   Data stream:  if 0, the global hook is installed,
+    ///   otherwise - local one
     CObjectHookGuard(const string& id,
                      CCopyChoiceVariantHook& hook,
                      CObjectStreamCopier* stream = 0)
@@ -420,7 +538,8 @@ public:
     }
 };
 
-// Helper hook for Serial_FilterObjects function template
+/// Helper hook for Serial_FilterObjects function template;
+/// User hook class should be derived from this base class
 template<typename TObject>
 class CSerial_FilterObjectsHook : public CSkipObjectHook
 {
@@ -431,11 +550,13 @@ public:
         type.GetTypeInfo()->DefaultReadData(in, &obj);
         Process(obj);
     }
+    /// This meathod will be called when the object of the
+    /// requested class is read
     virtual void Process(const TObject& obj) = 0;
 };
 
 class CEofException;
-// Scan input stream, finding objects of requested type (TObject) only
+/// Scan input stream, finding objects of requested type (TObject) only
 template<typename TRoot, typename TObject>
 void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>* hook,
                           bool readall=true)
@@ -454,7 +575,7 @@ void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>
     } while (readall);
 }
 
-// Scan input stream, finding objects that are not derived from CSerialObject
+/// Scan input stream, finding objects that are not derived from CSerialObject
 template<typename TRoot, typename TObject>
 void Serial_FilterStdObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>* hook,
                           bool readall=true)
@@ -487,6 +608,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/12/14 19:33:18  gouriano
+* Added documentation
+*
 * Revision 1.21  2006/12/12 17:52:08  gouriano
 * Corrected access control
 *

@@ -93,7 +93,7 @@ public:
     enum ENoFileHeader {
         eNoFileHeader
     };
-    /// Copy without source typename
+    /// Copy data when the input file header is already read
     ///
     /// @param type
     ///   Type information
@@ -173,6 +173,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/12/14 19:31:00  gouriano
+* Added documentation
+*
 * Revision 1.21  2006/12/12 18:01:24  gouriano
 * Added documentation
 *

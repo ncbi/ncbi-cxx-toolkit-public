@@ -439,32 +439,74 @@ public:
 // User interface
 
     // root reader
+
+    /// Read object of know type
     void Read(const CObjectInfo& object);
+    /// Read object of know type
     void Read(TObjectPtr object, TTypeInfo type);
+    /// Read object of know type
     CObjectInfo Read(const CObjectTypeInfo& type);
+    /// Read object of know type
     CObjectInfo Read(TTypeInfo type);
+    /// Skip object of know type
     void Skip(const CObjectTypeInfo& type);
+    /// Skip object of know type
     void Skip(TTypeInfo type);
 
-    // file header readers
+    /// Read file header
+    ///
+    /// Text data files have data type name in the very beginning of a file.
+    /// By inspecting the header, we know what to expect next.
+    /// Binary ASN.1 input files have no such information; so, the data type
+    /// should be known in advance.
+    ///
+    /// @return
+    ///   Data type name
     virtual string ReadFileHeader(void);
+    
+    /// Read file header and compare the type name with the expected one
+    ///
+    /// @param typeInfo
+    ///   Expected data type
     void SkipFileHeader(TTypeInfo typeInfo);
-    virtual string PeekNextTypeName(void);
 
     enum ENoFileHeader {
         eNoFileHeader
     };
+    
+    /// Read object of know type when the file header is already read
     void Read(const CObjectInfo& object, ENoFileHeader noFileHeader);
+
+    /// Read object of know type when the file header is already read
     void Read(TObjectPtr object, TTypeInfo type, ENoFileHeader noFileHeader);
+
+    /// Skip object of know type when the file header is already read
     void Skip(TTypeInfo type, ENoFileHeader noFileHeader);
 
-    // subtree reader
+    /// Read child object
+    ///
+    /// Newly created child object will be instantiated as a member
+    /// of its parent object.
     void ReadObject(const CObjectInfo& object);
+
+    /// Read child object
+    ///
+    /// Newly created child object will be instantiated as a member
+    /// of its parent object.
     void ReadObject(TObjectPtr object, TTypeInfo typeInfo);
+
+    /// Skip child object
     void SkipObject(const CObjectTypeInfo& objectType);
+    /// Skip child object
     void SkipObject(TTypeInfo typeInfo);
 
-    // temporary reader
+    /// Temporary reader
+    ///
+    /// Method instantiates the child object in the local temporary variable only,
+    /// the corresponding data member in the parent object is set to an appropriate null
+    /// representation for that data type.
+    /// An attempt to reference this child object after exiting the scope where it was
+    /// created generates an error.
     void ReadSeparateObject(const CObjectInfo& object);
 
     // member
@@ -473,18 +515,22 @@ public:
     // variant
     void ReadChoiceVariant(const CObjectInfoCV& object);
 
-    // Call this function inside hooks to discard the object,
-    // which has been just read.
-    // Such an object was created before the hook function was called,
-    // and can be deleted only after the hook processing completes.
-    // The option lets save memory when processing large amount of data.
-    // Please keep in mind though, that the 'root' object constructed by
-    // such read operation will be invalid.
+    /// Discard the object, which has been just read.
+    ///
+    /// Call this function inside hooks to discard the object,
+    /// which has been just read.
+    /// Such an object was created before the hook function was called,
+    /// and can be deleted only after the hook processing completes.
+    /// The option lets save memory when processing large amount of data.
+    /// Please keep in mind though, that the 'root' object constructed by
+    /// such read operation will be invalid.
     void SetDiscardCurrObject(bool discard=true)
         {m_DiscardCurrObject = discard;}
     bool GetDiscardCurrObject(void) const
         {return m_DiscardCurrObject;}
 
+    /// Peek next data type name in XML stream
+    virtual string PeekNextTypeName(void);
 //---------------------------------------------------------------------------
 // Standard type readers
     // bool
@@ -926,7 +972,7 @@ void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line = 0);
 
 /// Guard class for CObjectIStream::StartDelayBuffer/EndDelayBuffer
 ///
-/// CObjectIStream::StartDelayBuffer() should be follwed by 
+/// CObjectIStream::StartDelayBuffer() should be followed by 
 /// CObjectIStream::EndDelayBuffer() call. If it's not called we have a delay 
 /// buffer leak. This class works as an guard (or auto pointer) to avoid call
 /// leaks.
@@ -939,7 +985,8 @@ public:
     /// Construct instance on a given CObjectIStream object.
     /// Call istr.StartDelayBuffer()
     ///
-    /// @param istr  guard protected instance
+    /// @param istr
+    ///   Guard protected instance
     CStreamDelayBufferGuard(CObjectIStream& istr);
 
     ~CStreamDelayBufferGuard(void);
@@ -948,7 +995,8 @@ public:
     /// Start deley buffer collection on a given CObjectIStream object.
     /// Call istr.StartDelayBuffer()
     ///
-    /// @param istr  guard protected instance
+    /// @param istr
+    ///   Guard protected instance
     void StartDelayBuffer(CObjectIStream& istr);
 
     /// Redirect call to protected CObjectIStream
@@ -969,7 +1017,6 @@ private:
 };
 
 
-
 /* @} */
 
 
@@ -983,6 +1030,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.124  2006/12/14 19:33:18  gouriano
+* Added documentation
+*
 * Revision 1.123  2006/12/07 18:59:30  gouriano
 * Reviewed doxygen groupping, added documentation
 *

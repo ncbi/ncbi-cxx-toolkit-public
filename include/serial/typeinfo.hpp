@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Data type information: members and memory layout
 */
 
 #include <corelib/ncbistd.hpp>
@@ -68,8 +68,8 @@ class CTypeInfoFunctions;
 class CNamespaceInfoItem;
 class CObjectMemoryPool;
 
-// CTypeInfo class contains all information about C++ types (both basic and
-// classes): members and layout in memory.
+/// CTypeInfo class contains all information about C++ types (both basic and
+/// classes): members and layout in memory.
 class NCBI_XSERIAL_EXPORT CTypeInfo
 {
 protected:
@@ -85,49 +85,58 @@ public:
 
     ETypeFamily GetTypeFamily(void) const;
 
-    // name of this type
+    /// Get name of this type
+    /// @return
+    ///   Data type name
     const string& GetName(void) const;
 
-    // namespace name
+    /// Check if data type has namespace name
     bool HasNamespaceName(void) const;
+    /// Get namespace name
     const string& GetNamespaceName(void) const;
+    /// Set namespace name
     void SetNamespaceName(const string& ns_name) const;
 
-    // namespace prefix
+    /// Check if data type has namespace prefix
     bool HasNamespacePrefix(void) const;
+    /// Get namespace prefix
     const string& GetNamespacePrefix(void) const;
+    /// Set namespace prefix
     void SetNamespacePrefix(const string& ns_prefix) const;
 
-    // name of module
+    /// Get module name
     virtual const string& GetModuleName(void) const;
+    /// Set module name
     void SetModuleName(const string& name);
+    /// Set module name
     void SetModuleName(const char* name);
 
-    // size of data object in memory (like sizeof in C)
+    /// Get size of data object in memory (like sizeof in C)
     size_t GetSize(void) const;
 
-    // creates object of this type in heap (can be deleted by operator delete)
+    /// Create object of this type on heap (can be deleted by operator delete)
     TObjectPtr Create(CObjectMemoryPool* memoryPool = 0) const;
 
-    // deletes object
+    /// Delete object
     virtual void Delete(TObjectPtr object) const;
+
     // clear object contents so Delete will not leave unused memory allocated
     // note: object contents is not guaranteed to be in initial state
     //       (as after Create), to do so you should call SetDefault after
     virtual void DeleteExternalObjects(TObjectPtr object) const;
 
-    // check, whether object contains default value
+    /// Check, whether the object contains default value
     virtual bool IsDefault(TConstObjectPtr object) const = 0;
-    // check if both objects contain the same values
+    /// Check if both objects contain the same values
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
                         ESerialRecursionMode how = eRecursive) const = 0;
-    // set object to default value
+    /// Set object to default value
     virtual void SetDefault(TObjectPtr dst) const = 0;
-    // set object to copy of another one
+    /// Set object to copy of another one
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src,
                         ESerialRecursionMode how = eRecursive) const = 0;
 
-    // return true if type is inherited from CObject
+    /// Check is the object class is inherited from CObject
     bool IsCObject(void) const;
     virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
     // return true CTypeInfo of object (redefined in polymorphic classes)
@@ -154,31 +163,51 @@ public:
     virtual EMayContainType GetMayContainType(TTypeInfo type) const;
 
     // hooks
+    /// Set global (for all input streams) read hook
     void SetGlobalReadHook(CReadObjectHook* hook);
+    /// Set local (for a specific input stream) read hook
     void SetLocalReadHook(CObjectIStream& in, CReadObjectHook* hook);
+    /// Reset global read hooks
     void ResetGlobalReadHook(void);
+    /// Reset local read hook
     void ResetLocalReadHook(CObjectIStream& in);
+    /// Set local context-specific read hook
     void SetPathReadHook(CObjectIStream* in, const string& path,
                          CReadObjectHook* hook);
 
+    /// Set global (for all input streams) write hook
     void SetGlobalWriteHook(CWriteObjectHook* hook);
+    /// Set local (for a specific input stream) write hook
     void SetLocalWriteHook(CObjectOStream& out, CWriteObjectHook* hook);
+    /// Reset global write hooks
     void ResetGlobalWriteHook(void);
+    /// Reset local write hook
     void ResetLocalWriteHook(CObjectOStream& out);
+    /// Set local context-specific write hook
     void SetPathWriteHook(CObjectOStream* out, const string& path,
                           CWriteObjectHook* hook);
 
+    /// Set global (for all input streams) skip hook
     void SetGlobalSkipHook(CSkipObjectHook* hook);
+    /// Set local (for a specific input stream) skip hook
     void SetLocalSkipHook(CObjectIStream& in, CSkipObjectHook* hook);
+    /// Reset global skip hooks
     void ResetGlobalSkipHook(void);
+    /// Reset local skip hook
     void ResetLocalSkipHook(CObjectIStream& in);
+    /// Set local context-specific skip hook
     void SetPathSkipHook(CObjectIStream* in, const string& path,
                          CSkipObjectHook* hook);
 
+    /// Set global (for all input streams) copy hook
     void SetGlobalCopyHook(CCopyObjectHook* hook);
+    /// Set local (for a specific input stream) copy hook
     void SetLocalCopyHook(CObjectStreamCopier& copier, CCopyObjectHook* hook);
+    /// Reset global copy hooks
     void ResetGlobalCopyHook(void);
+    /// Reset local copy hook
     void ResetLocalCopyHook(CObjectStreamCopier& copier);
+    /// Set local context-specific copy hook
     void SetPathCopyHook(CObjectStreamCopier* copier, const string& path,
                          CCopyObjectHook* hook);
 
@@ -237,6 +266,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2006/12/14 19:33:19  gouriano
+* Added documentation
+*
 * Revision 1.49  2006/10/05 19:23:05  gouriano
 * Some headers moved into impl
 *

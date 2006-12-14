@@ -86,18 +86,15 @@ private:
 };
 
 
-/*************************
-//class for writing class members
-//   suggested use:
-
-    CObjectOStream& out;
-    CObjectTypeInfo::CMemberIterator member;
-
-    { // block for automatic call of COStreamClassMember destructor
-        COStreamClassMember o(out, member);
-        ... // write member object
-    } // here COStreamClassMember destructor will be called
-**************************/
+/// Writing class members
+///
+/// Suggested use:
+///    CObjectOStream& out;
+///    CObjectTypeInfo::CMemberIterator member;
+///    { // block for automatic call of COStreamClassMember destructor
+///        COStreamClassMember o(out, member);
+///        ... // write member object
+///    } // here COStreamClassMember destructor will be called
 class NCBI_XSERIAL_EXPORT COStreamClassMember : public COStreamFrame
 {
     typedef COStreamFrame CParent;
@@ -108,19 +105,15 @@ public:
 };
 
 
-/*************************
-// class for reading (iterating through)
-// members of the class (SET, SEQUENCE)
-//   suggested use:
-
-   CObjectIStream& in;
-   CObjectTypeInfo classMemberType;
-
-   for ( CIStreamClassMemberIterator i(in, classMemberType); i; ++i ) {
-       CElementClass element;
-       i >> element;
-   }
-**************************/
+/// Reading (iterating through) members of the class (SET, SEQUENCE)
+///
+/// Suggested use:
+///   CObjectIStream& in;
+///   CObjectTypeInfo classMemberType;
+///   for ( CIStreamClassMemberIterator i(in, classMemberType); i; ++i ) {
+///       CElementClass element;
+///       i >> element;
+///   }
 class NCBI_XSERIAL_EXPORT CIStreamClassMemberIterator : public CIStreamFrame
 {
     typedef CIStreamFrame CParent;
@@ -156,19 +149,15 @@ private:
 };
 
 
-/*************************
-// class for reading (iterating through)
-// elements of containers (SET OF, SEQUENCE OF).
-//   suggested use:
-
-   CObjectIStream& in;
-   CObjectTypeInfo containerType;
-
-   for ( CIStreamContainerIterator i(in, containerType); i; ++i ) {
-       CElementClass element;
-       i >> element;
-   }
-**************************/
+/// Reading (iterating through) elements of containers (SET OF, SEQUENCE OF).
+///
+/// Suggested use:
+///   CObjectIStream& in;
+///   CObjectTypeInfo containerType;
+///   for ( CIStreamContainerIterator i(in, containerType); i; ++i ) {
+///       CElementClass element;
+///       i >> element;
+///   }
 class NCBI_XSERIAL_EXPORT CIStreamContainerIterator : public CIStreamFrame
 {
     typedef CIStreamFrame CParent;
@@ -221,23 +210,20 @@ void operator>>(CIStreamContainerIterator& i, T& element)
     i.ReadElement(ObjectInfo(element));
 }
 
-/*************************
-//class for writing containers (SET OF, SEQUENCE OF).
-//   suggested use:
-
-    CObjectOStream& out;
-    CObjectTypeInfo containerType;
-    set<CElementClass> container;
-
-    { // block for automatic call of COStreamContainer destructor
-        COStreamContainer o(out, containerType);
-        for ( set<CElementClass>::const_iterator i = container.begin();
-              i != container.end(); ++i ) {
-            const CElementClass& element = *i;
-            o << element;
-        }
-    } // here COStreamContainer destructor will be called
-**************************/
+/// Writing containers (SET OF, SEQUENCE OF).
+///
+/// Suggested use:
+///    CObjectOStream& out;
+///    CObjectTypeInfo containerType;
+///    set<CElementClass> container;
+///    {
+///        COStreamContainer o(out, containerType);
+///        for ( set<CElementClass>::const_iterator i = container.begin();
+///              i != container.end(); ++i ) {
+///            const CElementClass& element = *i;
+///            o << element;
+///        }
+///    }
 class NCBI_XSERIAL_EXPORT COStreamContainer : public COStreamFrame
 {
     typedef COStreamFrame CParent;
@@ -278,6 +264,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/12/14 19:33:18  gouriano
+* Added documentation
+*
 * Revision 1.12  2006/12/07 18:59:30  gouriano
 * Reviewed doxygen groupping, added documentation
 *

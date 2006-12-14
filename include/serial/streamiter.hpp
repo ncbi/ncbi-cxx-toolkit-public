@@ -225,17 +225,17 @@ protected:
     CIStreamIteratorThread_Base< TRoot, TObject > *m_Reader;
 };
 
-// Stream iterator for serial objects
-//
-// Usage:
-//    CObjectIStream* is = CObjectIStream::Open(...);
-//    CIStreamObjectIterator<CRootClass,CObjectClass> i(*is);
-//    for ( ; i.IsValid(); ++i) {
-//        const CObjectClass& obj = *i;
-//        ...
-//    }
-// IMPORTANT:
-//     This API requires multi-threading!
+/// Stream iterator for serial objects
+///
+/// Usage:
+///    CObjectIStream* is = CObjectIStream::Open(...);
+///    CIStreamObjectIterator<CRootClass,CObjectClass> i(*is);
+///    for ( ; i.IsValid(); ++i) {
+///        const CObjectClass& obj = *i;
+///        ...
+///    }
+/// IMPORTANT:
+///     This API requires multi-threading!
 
 template<typename TRoot, typename TObject>
 class CIStreamObjectIterator
@@ -255,17 +255,17 @@ public:
     }
 };
 
-// Stream iterator for std objects
-//
-// Usage:
-//    CObjectIStream* is = CObjectIStream::Open(...);
-//    CIStreamStdIterator<CRootClass,string> i(*is);
-//    for ( ; i.IsValid(); ++i) {
-//        const string& obj = *i;
-//        ...
-//    }
-// IMPORTANT:
-//     This API requires multi-threading!
+/// Stream iterator for stadard type objects
+///
+/// Usage:
+///    CObjectIStream* is = CObjectIStream::Open(...);
+///    CIStreamStdIterator<CRootClass,string> i(*is);
+///    for ( ; i.IsValid(); ++i) {
+///        const string& obj = *i;
+///        ...
+///    }
+/// IMPORTANT:
+///     This API requires multi-threading!
 
 template<typename TRoot, typename TObject>
 class CIStreamStdIterator
@@ -298,6 +298,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/12/14 19:33:18  gouriano
+* Added documentation
+*
 * Revision 1.2  2006/12/07 18:59:31  gouriano
 * Reviewed doxygen groupping, added documentation
 *

@@ -67,11 +67,12 @@ typedef CTypeInfo* (*TTypeInfoCreator)(void);
 typedef CTypeInfo* (*TTypeInfoCreator1)(TTypeInfo);
 typedef CTypeInfo* (*TTypeInfoCreator2)(TTypeInfo, TTypeInfo);
 
+/// Data file format
 enum ESerialDataFormat {
     eSerial_None         = 0,
-    eSerial_AsnText      = 1,      // open ASN.1 text format
-    eSerial_AsnBinary    = 2,      // open ASN.1 binary format
-    eSerial_Xml          = 3       // open XML format
+    eSerial_AsnText      = 1,      ///< ASN.1 text
+    eSerial_AsnBinary    = 2,      ///< ASN.1 binary
+    eSerial_Xml          = 3       ///< XML
 };
 
 
@@ -79,36 +80,39 @@ enum ESerialDataFormat {
 #define SERIAL_VERIFY_DATA_WRITE  "SERIAL_VERIFY_DATA_WRITE"
 #define SERIAL_VERIFY_DATA_READ   "SERIAL_VERIFY_DATA_READ"
 
+/// Data verification parameters
 enum ESerialVerifyData {
-    eSerialVerifyData_Default = 0, // use current default
-    eSerialVerifyData_No,          // do not verify
-    eSerialVerifyData_Never,       // never verify (even if set to verify later on)
-    eSerialVerifyData_Yes,         // do verify
-    eSerialVerifyData_Always,      // always verify (even if set not to later on)
-    eSerialVerifyData_DefValue,    // initialize field with default
-    eSerialVerifyData_DefValueAlways // initialize field with default
+    eSerialVerifyData_Default = 0,   ///< use current default
+    eSerialVerifyData_No,            ///< do not verify
+    eSerialVerifyData_Never,         ///< never verify (even if set to verify later on)
+    eSerialVerifyData_Yes,           ///< do verify
+    eSerialVerifyData_Always,        ///< always verify (even if set not to later on)
+    eSerialVerifyData_DefValue,      ///< initialize field with default
+    eSerialVerifyData_DefValueAlways ///< initialize field with default
 };
 
 #define SERIAL_SKIP_UNKNOWN_MEMBERS    "SERIAL_SKIP_UNKNOWN_MEMBERS"
+/// Skip unknown members parameters
 enum ESerialSkipUnknown {
-    eSerialSkipUnknown_Default = 0, // use current default
-    eSerialSkipUnknown_No,          // do not skip (throw exception)
-    eSerialSkipUnknown_Never,       // never skip (even if set to skip later on)
-    eSerialSkipUnknown_Yes,         // do skip
-    eSerialSkipUnknown_Always       // always skip (even if set not to later on)
+    eSerialSkipUnknown_Default = 0, ///< use current default
+    eSerialSkipUnknown_No,          ///< do not skip (throw exception)
+    eSerialSkipUnknown_Never,       ///< never skip (even if set to skip later on)
+    eSerialSkipUnknown_Yes,         ///< do skip
+    eSerialSkipUnknown_Always       ///< always skip (even if set not to later on)
 };
 
+/// File open flags
 enum ESerialOpenFlags {
-    eSerial_StdWhenEmpty = 1 << 0, // use std stream when filename is empty
-    eSerial_StdWhenDash  = 1 << 1, // use std stream when filename is "-"
-    eSerial_StdWhenStd   = 1 << 2, // use std when filename is "stdin"/"stdout"
+    eSerial_StdWhenEmpty = 1 << 0, ///< use std stream when filename is empty
+    eSerial_StdWhenDash  = 1 << 1, ///< use std stream when filename is "-"
+    eSerial_StdWhenStd   = 1 << 2, ///< use std when filename is "stdin"/"stdout"
     eSerial_StdWhenMask  = 15,
     eSerial_StdWhenAny   = eSerial_StdWhenMask,
     eSerial_UseFileForReread = 1 << 4
 };
 typedef int TSerialOpenFlags;
 
-// type family
+/// Type family
 enum ETypeFamily {
     eTypeFamilyPrimitive,
     eTypeFamilyClass,
@@ -117,62 +121,62 @@ enum ETypeFamily {
     eTypeFamilyPointer
 };
 
+/// Primitive value type
 enum EPrimitiveValueType {
-    ePrimitiveValueSpecial,        // null, void
-    ePrimitiveValueBool,           // bool
-    ePrimitiveValueChar,           // char
-    ePrimitiveValueInteger,        // (signed|unsigned) (char|short|int|long)
-    ePrimitiveValueReal,           // float|double
-    ePrimitiveValueString,         // string|char*|const char*
-    ePrimitiveValueEnum,           // enum
-    ePrimitiveValueOctetString,    // vector<(signed|unsigned)? char>
+    ePrimitiveValueSpecial,        ///< null, void
+    ePrimitiveValueBool,           ///< bool
+    ePrimitiveValueChar,           ///< char
+    ePrimitiveValueInteger,        ///< (signed|unsigned) (char|short|int|long)
+    ePrimitiveValueReal,           ///< float|double
+    ePrimitiveValueString,         ///< string|char*|const char*
+    ePrimitiveValueEnum,           ///< enum
+    ePrimitiveValueOctetString,    ///< vector<(signed|unsigned)? char>
     ePrimitiveValueBitString,      //
     ePrimitiveValueOther
 };
 
 enum EContainerType {
-    eContainerVector,              // allows indexing & access to size
-    eContainerList,                // only sequential access
+    eContainerVector,              ///< allows indexing & access to size
+    eContainerList,                ///< only sequential access
     eContainerSet,
     eContainerMap
 };
 
 
-// How to process non-printing character in the ASN VisibleString
-//
+/// How to process non-printing character in the ASN VisibleString
 enum EFixNonPrint {
-    eFNP_Allow,            // pass through unchanged, post no error message
-    eFNP_Replace,          // replace with '#' silently
-    eFNP_ReplaceAndWarn,   // replace with '#', post an error of severity ERROR
-    eFNP_Throw,            // replace with '#', throw an exception
-    eFNP_Abort,            // replace with '#', post an error of severity FATAL
+    eFNP_Allow,            ///< pass through unchanged, post no error message
+    eFNP_Replace,          ///< replace with '#' silently
+    eFNP_ReplaceAndWarn,   ///< replace with '#', post an error of severity ERROR
+    eFNP_Throw,            ///< replace with '#', throw an exception
+    eFNP_Abort,            ///< replace with '#', post an error of severity FATAL
 
     eFNP_Default = eFNP_ReplaceAndWarn
 };
 
+/// String type
 enum EStringType {
-    eStringTypeVisible,
-    eStringTypeUTF8
+    eStringTypeVisible,  ///< VisibleString (in ASN.1 sense)
+    eStringTypeUTF8      ///< UTF8-encoded string
 };
 
-// How to assign and compare child sub-objects of serial objects
-
+/// How to assign and compare child sub-objects of serial objects
 enum ESerialRecursionMode {
-    eRecursive,            // Recursively
-    eShallow,              // Assign/Compare pointers only
-    eShallowChildless      // Set sub-object pointers to 0
+    eRecursive,            ///< Recursively
+    eShallow,              ///< Assign/Compare pointers only
+    eShallowChildless      ///< Set sub-object pointers to 0
 };
 
-//type used for indexing class members and choice variants
+/// Type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
 
 typedef int TEnumValueType;
 
-// start if member indexing
+/// Start if member indexing
 const TMemberIndex kFirstMemberIndex = 1;
-// special value returned from FindMember
+/// Special value returned from FindMember
 const TMemberIndex kInvalidMember = kFirstMemberIndex - 1;
-// special value for marking empty choice
+/// Special value for marking empty choice
 const TMemberIndex kEmptyChoice = kInvalidMember;
 
 typedef ssize_t TPointerOffsetType;
@@ -189,6 +193,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/12/14 19:33:18  gouriano
+* Added documentation
+*
 * Revision 1.33  2006/12/07 18:59:30  gouriano
 * Reviewed doxygen groupping, added documentation
 *

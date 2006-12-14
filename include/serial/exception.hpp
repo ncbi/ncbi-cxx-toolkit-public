@@ -43,21 +43,22 @@
 
 BEGIN_NCBI_SCOPE
 
-// root class for all serialization exceptions
+/// Root class for all serialization exceptions
 class NCBI_XSERIAL_EXPORT CSerialException : public CException
 {
 public:
+    /// Error codes
     enum EErrCode {
-        eNotImplemented,
-        eEOF,
-        eIoError,
-        eFormatError,
-        eOverflow,
-        eInvalidData,
-        eIllegalCall,
-        eFail,
-        eNotOpen,
-        eMissingValue
+        eNotImplemented,  ///< Attempt to use unimplemented funtionality
+        eEOF,             ///< Unexpected end-of-file
+        eIoError,         ///< An unknown error during serialization
+        eFormatError,     ///< Malformed input data
+        eOverflow,        ///< Data is beyond the allowed limits
+        eInvalidData,     ///< Data is incorrect
+        eIllegalCall,     ///< Illegal in a given context function call
+        eFail,            ///< Internal error, the real reason is unclear
+        eNotOpen,         ///< No input or output file
+        eMissingValue     ///< Mandatory value was missing in the input.
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CSerialException,CException);
@@ -71,7 +72,7 @@ private:
 };
 
 
-
+/// Thrown on an attempt to write unassigned data member
 class NCBI_XSERIAL_EXPORT CUnassignedMember : public CSerialException
 {
 public:
@@ -86,7 +87,10 @@ public:
 };
 
 
-
+/// Thrown on an attempt to access wrong choice variant
+///
+/// For example, if in a choice (a|b), the variant 'a' is selected;
+/// this exception will be thrown on an attempt to access variant 'b' data
 class NCBI_XSERIAL_EXPORT CInvalidChoiceSelection : public CSerialException
 {
 public:
@@ -132,6 +136,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/12/14 19:31:00  gouriano
+* Added documentation
+*
 * Revision 1.24  2006/12/07 18:59:30  gouriano
 * Reviewed doxygen groupping, added documentation
 *
