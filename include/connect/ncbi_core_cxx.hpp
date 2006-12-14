@@ -81,6 +81,22 @@ extern NCBI_XCONNECT_EXPORT void CONNECT_Init(IRWRegistry*      reg  = 0,
                                               FConnectInitFlags flag = 0);
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Helper hook-up class that installs default logging/registry/locking
+/// (but only if they have not yet been installed explicitly by user).
+///
+
+class NCBI_XCONNECT_EXPORT CConnIniter
+{
+protected:
+    CConnIniter();
+
+private:
+    static bool sm_Inited;
+};
+
+
 END_NCBI_SCOPE
 
 
@@ -90,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2006/12/14 04:41:37  lavr
+ * CConnIniter class added
+ *
  * Revision 6.15  2004/12/20 16:44:39  ucko
  * Accept any IRWRegistry rather than specifically requiring a CNcbiRegistry.
  *

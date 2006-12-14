@@ -277,12 +277,27 @@ extern void CONNECT_InitInternal(void)
 }
 
 
+bool CConnIniter::sm_Inited = false;
+
+
+CConnIniter::CConnIniter()
+{
+    if (!sm_Inited) {
+        CONNECT_InitInternal();
+        sm_Inited = true;
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2006/12/14 04:43:54  lavr
+ * CConnIniter class added
+ *
  * Revision 6.34  2006/02/01 17:12:51  lavr
  * Initialize g_NCBI_ConnectRandomSeed conditionally
  *
