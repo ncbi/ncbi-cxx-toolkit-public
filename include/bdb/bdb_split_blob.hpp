@@ -435,7 +435,25 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CBDB_BlobSplitStore(TObjDeMux* de_mux)
 template<class TBV, class TObjDeMux, class TL>
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::~CBDB_BlobSplitStore()
 {
-    CloseVolumes();
+    try {
+        CloseVolumes();
+    }
+    catch (std::exception& e) {
+        LOG_POST(Error
+                 << "CBDB_BlobSplitStore<>::~CBDB_BlobSplitStore(): "
+                 "error in CloseVolumes(): " << e.what());
+    }
+
+    try {
+        if (m_OpenMode == CBDB_RawFile::eReadWriteCreate) {
+            Save();
+        }
+    }
+    catch (std::exception& e) {
+        LOG_POST(Error
+                 << "CBDB_BlobSplitStore<>::~CBDB_BlobSplitStore(): "
+                 "error in Save(): " << e.what());
+    }
 }
 
 template<class TBV, class TObjDeMux, class TL>
@@ -781,6 +799,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/12/14 13:10:17  dicuccio
+ * Call Save() in dtor of split blob store
+ *
  * Revision 1.15  2006/11/30 14:19:59  kuznets
  * Removed buf_size parameter (ReadRealloc()) size passed as vector property
  *
