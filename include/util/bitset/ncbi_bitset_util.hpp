@@ -52,7 +52,7 @@ void BV_Serialize(const TBV&                   bv,
     bv.calc_stat(&st);
 
     if (st.max_serialize_mem > buf.size()) {
-        buf.resize(st1.max_serialize_mem);
+        buf.resize(st.max_serialize_mem);
     }
     size_t size = bm::serialize(bv, &buf[0], tmp_block);
     buf.resize(size);
@@ -64,6 +64,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/12/14 19:05:25  kuznets
+* fixed typo
+*
 * Revision 1.2  2006/12/14 19:00:14  kuznets
 * fixed typo
 *
