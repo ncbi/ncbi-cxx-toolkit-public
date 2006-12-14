@@ -1493,34 +1493,23 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 //
 
 CPipe::CPipe()
-    : m_PipeHandle(0), m_ReadHandle(eStdOut),
+    : m_PipeHandle(new CPipeHandle), m_ReadHandle(eStdOut),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
  
 {
-    // Create new OS-specific pipe handle
-    m_PipeHandle = new CPipeHandle();
-    if ( !m_PipeHandle ) {
-        NCBI_THROW(CPipeException, eInit,
-                   "Cannot create OS-specific pipe handle");
-    }
 }
 
 
-CPipe::CPipe(const string& cmd, const vector<string>& args,
-             TCreateFlags  create_flags,
-             const string& current_dir,
-             const char*   const env[])
-    : m_PipeHandle(0), m_ReadHandle(eStdOut),
+CPipe::CPipe(const string&         cmd,
+             const vector<string>& args,
+             TCreateFlags          create_flags,
+             const string&         current_dir,
+             const char*   const   env[])
+    : m_PipeHandle(new CPipeHandle), m_ReadHandle(eStdOut),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
 {
-    // Create new OS-specific pipe handle
-    m_PipeHandle = new CPipeHandle();
-    if ( !m_PipeHandle ) {
-        NCBI_THROW(CPipeException, eInit,
-                   "Cannot create OS-specific pipe handle");
-    }
     EIO_Status status = Open(cmd, args, create_flags, current_dir, env);
     if (status != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen, "CPipe::Open() failed");
@@ -1528,7 +1517,7 @@ CPipe::CPipe(const string& cmd, const vector<string>& args,
 }
 
 
-CPipe::~CPipe(void)
+CPipe::~CPipe()
 {
     Close();
     if ( m_PipeHandle ) {
@@ -1636,11 +1625,7 @@ EIO_Status CPipe::Write(const void* buf, size_t count, size_t* written)
 CPipe::TChildPollMask CPipe::Poll(TChildPollMask mask, 
                                   const STimeout* timeout)
 {
-    if ( !m_PipeHandle ) {
-        NCBI_THROW(CPipeException, eInit,
-                   "OS-specific pipe handle is not created");
-    }
-    if ( !mask ) {
+    if (!mask  ||  !m_PipeHandle) {
         return 0;
     }
     TChildPollMask x_mask = mask;
@@ -1725,27 +1710,28 @@ CPipe::IProcessWatcher::~IProcessWatcher()
 {
 }
 
+
 /* static */
-CPipe::EFinish CPipe::ExecWait(const string&         cmd,
-                               const vector<string>& args,
-                               CNcbiIstream&         in,
-                               CNcbiOstream&         out,
-                               CNcbiOstream&         err,
-                               int&                  exit_value,
-                               const string&         current_dir,
-                               const char* const     env[],
+CPipe::EFinish CPipe::ExecWait(const string&           cmd,
+                               const vector<string>&   args,
+                               CNcbiIstream&           in,
+                               CNcbiOstream&           out,
+                               CNcbiOstream&           err,
+                               int&                    exit_value,
+                               const string&           current_dir,
+                               const char* const       env[],
                                CPipe::IProcessWatcher* watcher)
 {
     CPipe pipe;
-    EIO_Status st = pipe.Open(cmd, args, CPipe::fStdErr_Open,current_dir, env);
-    if (st != eIO_Success)
-        NCBI_THROW(CException, eInvalid, 
-                   "Could not execute " + cmd + " file.");
+    EIO_Status st = pipe.Open(cmd, args, fStdErr_Open, current_dir, env);
+    if (st != eIO_Success) {
+        NCBI_THROW(CException, eInvalid, "Cannot execute \"" + cmd + "\"");
+    }
  
     EFinish finish = eDone;
     bool out_done = false;
     bool err_done = false;
-    bool in_done = false;
+    bool in_done  = false;
     
     const size_t buf_size = 4096;
     char buf[buf_size];
@@ -1753,70 +1739,72 @@ CPipe::EFinish CPipe::ExecWait(const string&         cmd,
     size_t total_bytes_written = 0;
     char inbuf[buf_size];
 
-    CPipe::TChildPollMask mask = CPipe::fStdIn | CPipe::fStdOut | CPipe::fStdErr;
+    TChildPollMask mask = fStdIn | fStdOut | fStdErr;
     try {
-    STimeout wait_time = {1, 0};
-    while (!out_done || !err_done) {
-        EIO_Status rstatus;
-        size_t bytes_read;
+        STimeout wait_time = {1, 0};
+        while (!out_done  ||  !err_done) {
+            EIO_Status rstatus;
+            size_t bytes_read;
 
-        CPipe::TChildPollMask rmask = pipe.Poll(mask, &wait_time);
-        if (rmask & CPipe::fStdIn && !in_done) {
-            if ( in.good() && bytes_in_inbuf == 0) {
-                bytes_in_inbuf = CStreamUtils::Readsome(in, inbuf, buf_size);
-                total_bytes_written = 0;
-            }
-        
-            size_t bytes_written;
-            if (bytes_in_inbuf > 0) {
-                rstatus = pipe.Write(inbuf + total_bytes_written, bytes_in_inbuf,
-                                     &bytes_written);
-                if (rstatus != eIO_Success) {
-                    ERR_POST("Not all the data is written to stdin of a child process.");
-                    in_done = true;
+            TChildPollMask rmask = pipe.Poll(mask, &wait_time);
+            if (rmask & fStdIn  &&  !in_done) {
+                if (in.good()  &&  bytes_in_inbuf == 0) {
+                    bytes_in_inbuf =
+                        CStreamUtils::Readsome(in, inbuf, buf_size);
+                    total_bytes_written = 0;
                 }
-                total_bytes_written += bytes_written;
-                bytes_in_inbuf -= bytes_written;
-            }
 
-            if ((!in.good() && bytes_in_inbuf == 0) || in_done) {
-                pipe.CloseHandle(CPipe::eStdIn);
-                mask &= ~CPipe::fStdIn;
-            }
+                size_t bytes_written;
+                if (bytes_in_inbuf > 0) {
+                    rstatus =
+                        pipe.Write(inbuf + total_bytes_written,
+                                   bytes_in_inbuf, &bytes_written);
+                    if (rstatus != eIO_Success) {
+                        ERR_POST("Not all data sent to child process.");
+                        in_done = true;
+                    }
+                    total_bytes_written += bytes_written;
+                    bytes_in_inbuf      -= bytes_written;
+                }
 
-        } if (rmask & CPipe::fStdOut) {
-            // read stdout
-            if (!out_done) {
-                rstatus = pipe.Read(buf, buf_size, &bytes_read);
-                out.write(buf, bytes_read);
-                if (rstatus != eIO_Success) {
-                    out_done = true;
-                    mask &= ~CPipe::fStdOut;
-            }
-        }
+                if ((!in.good()  &&  bytes_in_inbuf == 0)  ||  in_done) {
+                    pipe.CloseHandle(eStdIn);
+                    mask &= ~fStdIn;
+                }
 
+            } if (rmask & fStdOut) {
+                // read stdout
+                if (!out_done) {
+                    rstatus = pipe.Read(buf, buf_size, &bytes_read);
+                    out.write(buf, bytes_read);
+                    if (rstatus != eIO_Success) {
+                        out_done = true;
+                        mask &= ~fStdOut;
+                    }
+                }
 
-        } if (rmask & CPipe::fStdErr) {
-            if (!err_done) {
-                rstatus = pipe.Read(buf, buf_size, &bytes_read, CPipe::eStdErr);
-                err.write(buf, bytes_read);
-                if (rstatus != eIO_Success) {
-                    err_done = true;
-                    mask &= ~CPipe::fStdErr;
+            } if (rmask & fStdErr) {
+                if (!err_done) {
+                    rstatus =
+                        pipe.Read(buf, buf_size, &bytes_read, eStdErr);
+                    err.write(buf, bytes_read);
+                    if (rstatus != eIO_Success) {
+                        err_done = true;
+                        mask &= ~fStdErr;
+                    }
                 }
             }
-        }
-        if (!CProcess(pipe.GetProcessHandle()).IsAlive())
-            break;
-        if (watcher) {
-            if (watcher->Watch(pipe.GetProcessHandle()) != 
-                IProcessWatcher::eContinue) {
-                CProcess(pipe.GetProcessHandle()).Kill();
-                finish = eCanceled;
+            if (!CProcess(pipe.GetProcessHandle()).IsAlive())
                 break;
+            if (watcher) {
+                if (watcher->Watch(pipe.GetProcessHandle()) != 
+                    IProcessWatcher::eContinue) {
+                    CProcess(pipe.GetProcessHandle()).Kill();
+                    finish = eCanceled;
+                    break;
+                }
             }
         }
-    }    
     } catch (...) {
         CProcess(pipe.GetProcessHandle()).Kill();
         throw;
@@ -1824,6 +1812,7 @@ CPipe::EFinish CPipe::ExecWait(const string&         cmd,
     pipe.Close(&exit_value);
     return finish;
 }
+
 
 const char* CPipeException::GetErrCodeString(void) const
 {
@@ -1835,12 +1824,16 @@ const char* CPipeException::GetErrCodeString(void) const
     }
 }
 
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/12/14 14:50:34  lavr
+ * Remove checks for NULL after new;  some formatting
+ *
  * Revision 1.67  2006/12/14 04:45:21  lavr
  * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
  *
