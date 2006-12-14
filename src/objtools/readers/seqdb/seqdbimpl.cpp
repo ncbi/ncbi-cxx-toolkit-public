@@ -115,7 +115,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
         m_UserGiList.Reset();
         m_VolSet.UnLease();
         m_FlushCB.SetImpl(0);
-        throw;
+        throw e;
     }
     
     SetIterationRange(oid_begin, oid_end);
