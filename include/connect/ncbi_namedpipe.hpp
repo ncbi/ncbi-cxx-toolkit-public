@@ -109,10 +109,10 @@ public:
     };
 
     /// Constructor.
-    CNamedPipe(void);
+    CNamedPipe();
 
     /// Destructor. 
-    virtual ~CNamedPipe(void);
+    virtual ~CNamedPipe();
 
     // Implemented in derived specializations (Client/Server).
     virtual EIO_Status Open  (const string&, const STimeout*, size_t) = 0;
@@ -234,7 +234,7 @@ class NCBI_XCONNECT_EXPORT CNamedPipeClient : public CNamedPipe
 {
 public:
     /// Default constructor.
-    CNamedPipeClient(void);
+    CNamedPipeClient();
 
     /// Constructor.
     ///
@@ -276,7 +276,7 @@ class NCBI_XCONNECT_EXPORT CNamedPipeServer : public CNamedPipe
 {
 public:
     /// Default constructor.
-    CNamedPipeServer(void);
+    CNamedPipeServer();
 
     /// Constructor.
     ///
@@ -353,10 +353,12 @@ inline const string& CNamedPipe::GetName(void) const
 END_NCBI_SCOPE
 
 
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/12/14 14:49:19  lavr
+ * Formatting
+ *
  * Revision 1.13  2006/12/14 04:43:17  lavr
  * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
  *

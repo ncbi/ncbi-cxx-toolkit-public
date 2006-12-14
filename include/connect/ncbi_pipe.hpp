@@ -373,10 +373,9 @@ public:
                             CNcbiOstream&         out,
                             CNcbiOstream&         err,
                             int&                  exit_value,
-                            const string&         current_dir  = kEmptyStr,
-                            const char* const     env[]        = 0,
-                            IProcessWatcher*      watcher      = 0);
-                        
+                            const string&         current_dir = kEmptyStr,
+                            const char* const     env[]       = 0,
+                            IProcessWatcher*      watcher     = 0);
 
 protected:
     CPipeHandle*   m_PipeHandle;        ///< Internal pipe handle that handles
@@ -437,6 +436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/12/14 14:49:26  lavr
+ * Formatting
+ *
  * Revision 1.35  2006/12/14 04:43:17  lavr
  * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
  *

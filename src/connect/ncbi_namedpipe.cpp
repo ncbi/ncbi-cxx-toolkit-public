@@ -116,8 +116,8 @@ const DWORD kSleepTime = 100;  // sleep time for timeouts
 class CNamedPipeHandle
 {
 public:
-    CNamedPipeHandle(void);
-    ~CNamedPipeHandle(void);
+    CNamedPipeHandle();
+    ~CNamedPipeHandle();
 
     // client-side
 
@@ -152,7 +152,7 @@ private:
 };
 
 
-CNamedPipeHandle::CNamedPipeHandle(void)
+CNamedPipeHandle::CNamedPipeHandle()
     : m_Pipe(INVALID_HANDLE_VALUE), m_PipeName(kEmptyStr),
       m_PipeBufSize(0),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed)
@@ -161,7 +161,7 @@ CNamedPipeHandle::CNamedPipeHandle(void)
 }
 
 
-CNamedPipeHandle::~CNamedPipeHandle(void)
+CNamedPipeHandle::~CNamedPipeHandle()
 {
     Close();
 }
@@ -527,8 +527,8 @@ const int kListenQueueSize = 32;
 class CNamedPipeHandle
 {
 public:
-    CNamedPipeHandle(void);
-    ~CNamedPipeHandle(void);
+    CNamedPipeHandle();
+    ~CNamedPipeHandle();
 
     // client-side
 
@@ -564,14 +564,14 @@ private:
 };
 
 
-CNamedPipeHandle::CNamedPipeHandle(void)
+CNamedPipeHandle::CNamedPipeHandle()
     : m_LSocket(-1), m_IoSocket(0), m_PipeBufSize(0)
 {
     return;
 }
 
 
-CNamedPipeHandle::~CNamedPipeHandle(void)
+CNamedPipeHandle::~CNamedPipeHandle()
 {
     Close();
 }
@@ -1010,7 +1010,7 @@ bool CNamedPipeHandle::x_SetSocketBufSize(int sock, size_t bufsize, int dir)
 //
 
 
-CNamedPipe::CNamedPipe(void)
+CNamedPipe::CNamedPipe()
     : m_PipeName(kEmptyStr), m_PipeBufSize(kDefaultPipeBufSize),
       m_OpenTimeout(0), m_ReadTimeout(0), m_WriteTimeout(0)
 {
@@ -1018,7 +1018,7 @@ CNamedPipe::CNamedPipe(void)
 }
 
 
-CNamedPipe::~CNamedPipe(void)
+CNamedPipe::~CNamedPipe()
 {
     Close();
     delete m_NamedPipeHandle;
@@ -1030,7 +1030,7 @@ CNamedPipe::~CNamedPipe(void)
 }
 
 
-EIO_Status CNamedPipe::Close()
+EIO_Status CNamedPipe::Close(void)
 {
     return m_NamedPipeHandle ? m_NamedPipeHandle->Close() : eIO_Unknown;
 }
@@ -1178,7 +1178,7 @@ void CNamedPipe::x_SetName(const string& pipename)
 // CNamedPipeClient
 //
 
-CNamedPipeClient::CNamedPipeClient(void)
+CNamedPipeClient::CNamedPipeClient()
 {
     m_IsClientSide = true;
 }
@@ -1222,7 +1222,7 @@ EIO_Status CNamedPipeClient::Create(const string&, const STimeout*, size_t)
 //
 
 
-CNamedPipeServer::CNamedPipeServer(void)
+CNamedPipeServer::CNamedPipeServer()
 {
     m_IsClientSide = false;
 }
@@ -1281,6 +1281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/12/14 14:49:57  lavr
+ * Formatting
+ *
  * Revision 1.34  2006/12/14 04:45:21  lavr
  * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
  *
