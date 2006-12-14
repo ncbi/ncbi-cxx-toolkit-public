@@ -43,7 +43,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbistre.hpp>
-#include <connect/ncbi_core.h>
+#include <connect/ncbi_core_cxx.hpp>
 #include <vector>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
@@ -78,7 +78,7 @@ class CPipeHandle;
 /// @sa
 ///   CNamedPipe, CExec
 
-class NCBI_XCONNECT_EXPORT CPipe
+class NCBI_XCONNECT_EXPORT CPipe : public virtual CConnIniter
 {
 public:
     /// Flags for creating standard I/O handles of child process.
@@ -437,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/12/14 04:43:17  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 1.34  2006/12/04 14:53:43  gouriano
  * Moved GetErrCodeString method into src
  *

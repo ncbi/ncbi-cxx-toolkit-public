@@ -32,7 +32,6 @@
 #include <connect/ncbi_pipe.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
-#include "ncbi_core_cxxp.hpp"
 #include <assert.h>
 #include <memory>
 #include <stdio.h>
@@ -1493,13 +1492,12 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 // CPipe
 //
 
-CPipe::CPipe(void)
+CPipe::CPipe()
     : m_PipeHandle(0), m_ReadHandle(eStdOut),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
  
 {
-    CONNECT_InitInternal();
     // Create new OS-specific pipe handle
     m_PipeHandle = new CPipeHandle();
     if ( !m_PipeHandle ) {
@@ -1517,7 +1515,6 @@ CPipe::CPipe(const string& cmd, const vector<string>& args,
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
 {
-    CONNECT_InitInternal();
     // Create new OS-specific pipe handle
     m_PipeHandle = new CPipeHandle();
     if ( !m_PipeHandle ) {
@@ -1844,6 +1841,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/12/14 04:45:21  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 1.66  2006/12/04 14:53:54  gouriano
  * Moved GetErrCodeString method into src
  *

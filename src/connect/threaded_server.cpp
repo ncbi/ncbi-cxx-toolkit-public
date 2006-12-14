@@ -30,7 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "ncbi_core_cxxp.hpp"
 #include <connect/threaded_server.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <util/thread_pool.hpp>
@@ -51,17 +50,12 @@ private:
     SOCK             m_Sock;
 };
 
+
 void CSocketRequest::Process(void)
 {
     try {
         m_Server.Process(m_Sock);
     } STD_CATCH_ALL("CThreadedServer")
-}
-
-
-void CThreadedServer::x_Init(void)
-{
-    CONNECT_InitInternal();
 }
 
 
@@ -125,6 +119,7 @@ void CThreadedServer::Run(void)
     pool.KillAllThreads(true);
 }
 
+
 const char* CThreadedServerException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
@@ -134,6 +129,7 @@ const char* CThreadedServerException::GetErrCodeString(void) const
     }
 }
 
+
 END_NCBI_SCOPE
 
 
@@ -141,6 +137,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.20  2006/12/14 04:45:22  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 6.19  2006/12/04 14:53:54  gouriano
  * Moved GetErrCodeString method into src
  *

@@ -37,7 +37,6 @@
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
 
 
@@ -68,7 +67,7 @@ class  CServer_ConnectionPool;
 /// ProcessTimeout and set parameter accept_timeout to non-zero value).
 ///
 
-class NCBI_XCONNECT_EXPORT CServer
+class NCBI_XCONNECT_EXPORT CServer : public virtual CConnIniter
 {
 public:
     // 'ctors
@@ -333,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/14 04:43:17  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 1.4  2006/12/04 14:53:43  gouriano
  * Moved GetErrCodeString method into src
  *

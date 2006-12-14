@@ -31,13 +31,10 @@
 /// Framework for a multithreaded network server
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_buffer.h>
-
 #include "connection_pool.hpp"
 #include "server_connection.hpp"
+#include <connect/ncbi_buffer.h>
 #include <connect/server.hpp>
-
-#include "ncbi_core_cxxp.hpp"
 #include <util/thread_pool.hpp>
 
 
@@ -288,7 +285,6 @@ CServer::CServer(void)
     m_Parameters = new SServer_Parameters();
     m_ConnectionPool = new CServer_ConnectionPool(
         m_Parameters->max_connections);
-    CONNECT_InitInternal();
 }
 
 
@@ -409,6 +405,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.6  2006/12/14 04:45:22  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 6.5  2006/12/04 14:53:54  gouriano
  * Moved GetErrCodeString method into src
  *

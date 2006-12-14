@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 #include <connect/ncbi_namedpipe.hpp>
 #include <corelib/ncbi_system.hpp>
-#include "ncbi_core_cxxp.hpp"
 #include <assert.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -1015,7 +1014,6 @@ CNamedPipe::CNamedPipe(void)
     : m_PipeName(kEmptyStr), m_PipeBufSize(kDefaultPipeBufSize),
       m_OpenTimeout(0), m_ReadTimeout(0), m_WriteTimeout(0)
 {
-    CONNECT_InitInternal();
     m_NamedPipeHandle = new CNamedPipeHandle;
 }
 
@@ -1283,6 +1281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/12/14 04:45:21  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 1.33  2006/02/15 22:01:55  lavr
  * Properly use stat() [not lstat()] to detect writeable-for-all
  * default directory to store socket files on UNIX

@@ -73,14 +73,13 @@ public:
 ///   connection; .../src/connect/test_threaded_server.cpp illustrates
 ///   how you might do this.
 
-class NCBI_XCONNECT_EXPORT CThreadedServer
+class NCBI_XCONNECT_EXPORT CThreadedServer : public virtual CConnIniter
 {
 public:
     CThreadedServer(unsigned short port) :
         m_InitThreads(5), m_MaxThreads(10), m_QueueSize(20),
         m_SpawnThreshold(1), m_AcceptTimeout(kInfiniteTimeout),
-        m_TemporarilyStopListening(false), m_Port(port)
-    { x_Init(); }
+        m_TemporarilyStopListening(false), m_Port(port) { }
 
     virtual ~CThreadedServer() { }
 
@@ -120,8 +119,6 @@ protected:
     bool            m_TemporarilyStopListening;
 
 private:
-    void            x_Init(void); ///< Init connect library (if necessary)
-
     unsigned short  m_Port; ///< TCP port to listen on
 };
 
@@ -135,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2006/12/14 04:43:17  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 6.17  2006/12/04 14:53:43  gouriano
  * Moved GetErrCodeString method into src
  *

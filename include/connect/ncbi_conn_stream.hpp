@@ -68,6 +68,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_ftp_connector.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_namedpipe_connector.hpp>
@@ -92,19 +93,6 @@ class CConn_Streambuf; // Forward declaration
 const streamsize kConn_DefaultBufSize = 4096;
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// Helper hook-up class that installs default logging/registry/locking
-/// (but only if they have not yet been installed explicitly by user).
-///
-
-class NCBI_XCONNECT_EXPORT CConn_IOStreamBase
-{
-protected:
-    CConn_IOStreamBase();
-};
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -118,7 +106,7 @@ protected:
 /// further buffering, if needed).
 ///
 
-class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConn_IOStreamBase,
+class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConnIniter,
                                             public CNcbiIostream
 {
 public:
@@ -434,6 +422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.49  2006/12/14 04:43:17  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 6.48  2006/11/13 18:16:36  lavr
  * Extend CConn_HttpStream's default ctor with two more parameters
  *

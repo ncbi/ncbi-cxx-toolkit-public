@@ -34,6 +34,7 @@
  */
 
 #include <corelib/reader_writer.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
 
 
@@ -46,18 +47,8 @@
 BEGIN_NCBI_SCOPE
 
 
-/*
- * Helper hook-up class that installs default logging/registry/locking
- * (but only if they have not yet been installed explicitly by user).
- */
-class NCBI_XCONNECT_EXPORT CConnReaderWriterBase : public IReaderWriter
-{
-protected:
-    CConnReaderWriterBase();
-};
-
-
-class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public CConnReaderWriterBase
+class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public virtual CConnIniter,
+                                                 public IReaderWriter
 {
 public:
     CSocketReaderWriter(CSocket* sock, EOwnership if_to_own = eNoOwnership);
@@ -105,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/12/14 04:43:17  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 1.7  2006/02/15 18:25:50  lavr
  * IReader/IWriter moved to corelib
  *

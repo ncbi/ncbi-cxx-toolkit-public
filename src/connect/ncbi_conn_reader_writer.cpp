@@ -31,17 +31,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "ncbi_core_cxxp.hpp"
 #include <connect/ncbi_conn_reader_writer.hpp>
 
 
 BEGIN_NCBI_SCOPE
-
-
-CConnReaderWriterBase::CConnReaderWriterBase()
-{
-    CONNECT_InitInternal();
-}
 
 
 ERW_Result CSocketReaderWriter::PendingCount(size_t* count)
@@ -115,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2006/12/14 04:45:21  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 1.6  2006/02/01 16:22:50  lavr
  * Introduce CConnReaderWriterBase to be able to init connect lib if needed
  *

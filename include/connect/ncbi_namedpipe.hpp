@@ -42,7 +42,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
-#include <connect/ncbi_core.h>
+#include <connect/ncbi_core_cxx.hpp>
 #include <vector>
 
 #if defined(NCBI_OS_MSWIN)
@@ -99,7 +99,7 @@ class CNamedPipeHandle;
 /// @sa
 ///   CNamedPipeClient, CNamedPipeServer, CPipe
 
-class NCBI_XCONNECT_EXPORT CNamedPipe
+class NCBI_XCONNECT_EXPORT CNamedPipe : public virtual CConnIniter
 {
 public:
     /// Default pipe buffer size.
@@ -357,6 +357,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/12/14 04:43:17  lavr
+ * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
+ *
  * Revision 1.12  2006/01/27 16:56:15  lavr
  * Headers rearranged to pickup corelib stuff first
  *
