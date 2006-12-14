@@ -84,12 +84,12 @@ public:
     void LoadFreeList();
 
     /// Save free list
-    Save();
+    EBDB_ErrCode Save();
 
     /// Add remapping range. The range should NOT intersect with any existing range
     /// Optionally new range can be added to the free id list.
-    void AddRange(unsigned from, unsigned to, unsigned dest, 
-                  bool add_to_free_list);
+    EBDB_ErrCode AddRange(unsigned from, unsigned to, unsigned dest, 
+                          bool add_to_free_list);
 
     /// Get list of free ids.
     const TBitVector& GetFreeList() const { return *m_FreeList; }
@@ -112,7 +112,7 @@ public:
     ///
     void Remap(const TBitVector& bv_src, 
                TBitVector*       bv_dst, 
-               TBitVector*       bv_remapped,
+               TBitVector*       bv_remapped = 0,
                bool              ignore_free_list=false);
 protected:
     TBitVector*   m_FreeList;
@@ -126,7 +126,7 @@ protected:
 
 template<class TBV>
 CBDB_RangeMap<TBV>::CBDB_RangeMap()
-    : m_FreeList(new TBitVector(BM_GAP)
+: m_FreeList(new TBitVector(bm::BM_GAP))
 {
     this->BindKey("FromId", &FromId);
     this->BindKey("ToId",   &ToId);
@@ -138,11 +138,13 @@ CBDB_RangeMap<TBV>::~CBDB_RangeMap()
     try {
         Save();
     } 
-    catch (exception&)
+    catch (CException& ex)
     {
+        ERR_POST("Exception in ~CBDB_RangeMap()" << ex.GetMsg());
     }
-    catch (CException&)
+    catch (exception& ex)
     {
+        ERR_POST("Exception in ~CBDB_RangeMap()" << ex.what());
     }
 
     delete m_FreeList;
@@ -158,14 +160,14 @@ void CBDB_RangeMap<TBV>::LoadFreeList()
     this->ToId = 0;
     EBDB_ErrCode err = CBDB_BLobFile::ReadRealloc(buf);
     if (err == eBDB_Ok) {
-        bm::deserialize(*m_FreeList, buf);
+        bm::deserialize(*m_FreeList, &(buf[0]));
     } else {
         m_FreeList->clear(true);
     }
 }
 
 template<class TBV>
-void CBDB_RangeMap<TBV>::Save()
+EBDB_ErrCode CBDB_RangeMap<TBV>::Save()
 {
     _ASSERT(m_FreeList);
 
@@ -177,16 +179,16 @@ void CBDB_RangeMap<TBV>::Save()
 }
 
 template<class TBV>
-void CBDB_RangeMap<TBV>::AddRange(unsigned  from, 
-                                  unsigned  to, 
-                                  unsigned  dest, 
-                                  bool      add_to_free_list)
+EBDB_ErrCode CBDB_RangeMap<TBV>::AddRange(unsigned  from, 
+                                          unsigned  to, 
+                                          unsigned  dest, 
+                                          bool      add_to_free_list)
 {
     if (from == 0 && to == 0) {
-        BDB_THROW(eInvalidValue, "0-0 range is reserved.")
+        BDB_THROW(eInvalidValue, "0-0 range is reserved.");
     }
     if (from > to) {
-        BDB_THROW(eInvalidValue, "Incorrect range values.")
+        BDB_THROW(eInvalidValue, "Incorrect range values.");
     }
 
     {{
@@ -211,7 +213,7 @@ void CBDB_RangeMap<TBV>::AddRange(unsigned  from,
 
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << to;
-    EBDB_ErrCode ret = cur.FetchFirst();
+    ret = cur.FetchFirst();
     if (ret == eBDB_Ok) {
         unsigned from_db = this->FromId;
         unsigned to_db = this->ToId;
@@ -286,7 +288,9 @@ void CBDB_RangeMap<TBV>::Remap(const TBitVector& bv_src,
         
         if (from_id <= id && id <= to_id) {
             bv_dst->set(dst + (id - from_id));
-            bv_remapped && bv_remapped->set(id);
+            if (bv_remapped) {
+                bv_remapped->set(id);
+            }
         } else {
             cur.SetCondition(CBDB_FileCursor::eLE);
             cur.From << id;
@@ -298,7 +302,9 @@ void CBDB_RangeMap<TBV>::Remap(const TBitVector& bv_src,
                 to_id = this->ToId;
                 if (from_id <= id && id <= to_id) {
                     bv_dst->set(dst + (id - from_id));
-                    bv_remapped && bv_remapped->set(id);
+                    if (bv_remapped) {
+                        bv_remapped->set(id);
+                    }
                 }
             }
         }
@@ -311,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/14 19:08:51  kuznets
+ * Compilation fixes
+ *
  * Revision 1.2  2006/12/14 17:22:47  kuznets
  * Added implementation
  *
