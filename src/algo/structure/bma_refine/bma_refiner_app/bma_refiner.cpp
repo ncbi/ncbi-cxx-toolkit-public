@@ -105,52 +105,61 @@ void CAlignmentRefiner::Init(void)
     argDescr->AddKey("i", "CdFilenameIn", "full filename of input CD w/ alignment to refine (ascii or binary)", argDescr->eString);
     argDescr->AddDefaultKey("o", "CdBasenameOut", "basename of output CD(s) containing refined alignment; output saved to 'basename_<number>.cn3'; ascii text by default", argDescr->eString, "refiner");
 
-    //  Number of trials
-    argDescr->AddDefaultKey("n", "integer", "number of independent trials (restarts from original alignment)\nNOTE:  only relevant if use random selection order of rows; ignored if deterministic selection order used (see 'selection_order' below)", argDescr->eInteger, "1");
-    argDescr->SetConstraint("n", new CArgAllow_Integers(1, N_MAX_TRIALS));
+    // output binary
+    argDescr->AddFlag("ob", "output binary data");
+
+    // File for data from the refinement process
+    argDescr->AddOptionalKey
+        ("details", "filename",
+         "create a file to save refinenment process details",
+         CArgDescriptions::eOutputFile,
+         CArgDescriptions::fPreOpen);
+    // quiet reporting of details (only at end of temp steps and trials)
+
+    // quiet reporting (only 'Error' level messages)
+    argDescr->AddFlag("q", "shortened report; only Error level messages");
+
 
     //  Number of cycles per trial (a cycle consists of a LOO phase followed by a 
     //  block-editing phase, either of which may be disabled for all cycles)
     //  In each LOO phase, each row is left out exactly once unless overriden by the 'nr' option.
     //  The alignment is NOT reset after a cycle; alignment IS reset after a trial.
-    argDescr->AddDefaultKey("nc", "integer", "number of cycles per trial; a cycle consists of one LOO phase, followed by a block editing phase.  Either, but not both, of the phases in a cycle may be turned off.\n(Note:  alignments do NOT reset between cycles)\n", argDescr->eInteger, "1");
+    argDescr->AddDefaultKey("nc", "integer", "number of cycles per trial; a cycle consists of one leave-one-out (LOO) phase, followed by a block editing phase.  Either, but not both, of the phases in a cycle may be turned off.\n(Note:  alignments do NOT reset between cycles)\n", argDescr->eInteger, "1");
     argDescr->SetConstraint("nc", new CArgAllow_Integers(1, N_MAX_CYCLES));
 
+    //  Row selection order for LOO: randomly or based on the self-hit to the initial alignment.
+    argDescr->AddDefaultKey("selection_order", "integer", "Method for row selection in LOO phase:\n0 == randomly (default)\n1 == increasing self-hit row score to input alignment's PSSM\n2 == decreasing self-hit row score to input alignment's PSSM\n", argDescr->eInteger, "1");
+    argDescr->SetConstraint("selection_order", new CArgAllow_Integers(0, 2));
 
-    argDescr->AddDefaultKey("nout", "integer", "number of output CDs; save CDs from the top 'nout' trials", argDescr->eInteger, "1");
-    argDescr->SetConstraint("nout", new CArgAllow_Integers(1, N_MAX_TRIALS));
+    // Convergence criteria
+    argDescr->AddDefaultKey("convSameScore", "double", "when >= this % of LOO attempts fail to change the score, stop further cycles", argDescr->eDouble, "0.95");
+    argDescr->SetConstraint("convSameScore", new CArgAllow_Doubles(0, 1.0));
 
 
-    // output binary
-    argDescr->AddFlag("ob", "output binary data");
-
-    // quiet reporting (only 'Error' level messages)
-    argDescr->AddFlag("q", "shortened report; only Error level messages");
 
 
     //
     //  Leave-one-out parameters & options
     //
 
+    argDescr->SetCurrentGroup("  Leave-one-out phase parameters and options  ");
+
     //  disable LOO phase
     argDescr->AddFlag("no_LOO", "do not perform the LOO phase of each cycle", true);
+
+    //  switch from 'leave-one-out' to 'leave-N-out':  recompute PSSM only after
+    //  lno rows refined.
+    argDescr->AddDefaultKey("lno", "integer", "leave-N-out mode:  speed up program by recomputing PSSM after 'lno' rows have been left out\n(values exceeding the number of rows interpreted as Nrows - 1)\nFor best results, value should be < 20% of number of rows in input alignment.\n", argDescr->eInteger, "1");
+    argDescr->SetConstraint("lno", new CArgAllow_Integers(0, kMax_Int));
 
     //  Number of row LOO events per cycle (may be equal to, more than or less than 
     //  number of rows in the CD, and it is not guaranteed that each row will be chosen)
 //    argDescr->AddOptionalKey("nr", "integer", "absolute number of LOO attempts per LOO cycle (defaults to all eligible rows in alignment except the master)\n", argDescr->eInteger);
 //    argDescr->SetConstraint("nr", new CArgAllow_Integers(1, N_MAX_ROWS));
 
-    //  Row selection order for LOO: randomly or based on the self-hit to the initial alignment.
-    argDescr->AddDefaultKey("selection_order", "integer", "Method for row selection in LOO phase:\n0 == randomly (default)\n1 == increasing self-hit row score to input alignment's PSSM\n2 == decreasing self-hit row score to input alignment's PSSM\n", argDescr->eInteger, "0");
-    argDescr->SetConstraint("selection_order", new CArgAllow_Integers(0, 2));
-
     //  declare whether structures are to be among the rows left out
     argDescr->AddFlag("fix_structs", "do not perform LOO refinement on structures (i.e., those sequences having a PDB identifier)", true);
 
-    //  switch from 'leave-one-out' to 'leave-N-out':  recompute PSSM only after
-    //  lno rows refined.
-    argDescr->AddDefaultKey("lno", "integer", "leave-N-out mode:  recompute PSSM after 'lno' rows have been left out\n(values exceeding the number of rows interpreted as Nrows - 1)\n", argDescr->eInteger, "1");
-    argDescr->SetConstraint("lno", new CArgAllow_Integers(0, kMax_Int));
 
     //
     //  Block aligner parameters / constraints on search space
@@ -183,11 +192,15 @@ void CAlignmentRefiner::Init(void)
     //  Flag to tell whether the extra args are row numbers (if not present) or block numbers (if present).
     argDescr->AddFlag("extras_are_blocks", "treat extra arguments as block numbers (default is to treat them as row numbers)", true);
 
+    argDescr->SetCurrentGroup("");
+
 
 
     //
     //  Block editing options
     //
+
+    argDescr->SetCurrentGroup("  Block-editing phase parameters and options  ");
 
     argDescr->AddFlag("be_fix", "do not modify block boundaries", true);
     argDescr->AddFlag("be_noShrink", "do not attempt to shrink block boundaries", true);
@@ -225,29 +238,29 @@ void CAlignmentRefiner::Init(void)
     argDescr->AddOptionalKey("be_sThresh", "double", "shrinkage threshold (ignored if -be_noShrink not specified):\n column score below which a column is removed from a block\nif not given, assumes same values as 'be_eThresh', or if neither is present an error is reported\n** with 'vote' scoring, must be in [0, 1]\n", argDescr->eDouble);
 //    argDescr->SetConstraint("be_sThresh", new CArgAllow_Doubles(-1000, 1000));
 
+    argDescr->SetCurrentGroup("");
 
+
+
+    argDescr->SetCurrentGroup("  Random selection order specific options  ");
+
+    //  Number of trials
+    argDescr->AddDefaultKey("n", "integer", "number of independent trials (restarts from original alignment)\nNOTE:  only relevant if use random selection order of rows; ignored if deterministic selection order used (see 'selection_order' below)", argDescr->eInteger, "1");
+    argDescr->SetConstraint("n", new CArgAllow_Integers(1, N_MAX_TRIALS));
+
+    argDescr->AddDefaultKey("nout", "integer", "number of output CDs; save CDs from the top 'nout' trials", argDescr->eInteger, "1");
+    argDescr->SetConstraint("nout", new CArgAllow_Integers(1, N_MAX_TRIALS));
+
+    argDescr->AddDefaultKey("convScoreChange", "double", "when avg. deviation <= this % of mean score for M trials, stop further trials", argDescr->eDouble, "0.001");
+    argDescr->SetConstraint("convScoreChange", new CArgAllow_Doubles(0, 1.0));
 
     // Specify seed to RNG
     argDescr->AddOptionalKey("seed", "positive_integer", "specify the seed for random number generation\n", argDescr->eInteger);
     argDescr->SetConstraint("seed", new CArgAllow_Integers(1000, kMax_Int-1));
 
 
+    argDescr->SetCurrentGroup("");
 
-    // Convergence criteria
-    argDescr->AddDefaultKey("convSameScore", "double", "when >= this % of LOO attempts fail to change the score, stop further cycles", argDescr->eDouble, "0.95");
-    argDescr->SetConstraint("convSameScore", new CArgAllow_Doubles(0, 1.0));
-    argDescr->AddDefaultKey("convScoreChange", "double", "when avg. deviation <= this % of mean score for M trials, stop further trials", argDescr->eDouble, "0.001");
-    argDescr->SetConstraint("convScoreChange", new CArgAllow_Doubles(0, 1.0));
-
-
-
-    // File for data from the refinement process
-    argDescr->AddOptionalKey
-        ("details", "filename",
-         "create a file to save refinenment process details",
-         CArgDescriptions::eOutputFile,
-         CArgDescriptions::fPreOpen);
-    // quiet reporting of details (only at end of temp steps and trials)
     // argDescr->AddFlag("qd", "shortened details report; only report details at end of cycles and trials.  Has an affect only if '-details' is provided");
 
     // Setup arg.descriptions for this application
@@ -371,7 +384,7 @@ int CAlignmentRefiner::Run(void)
 
     unsigned int n = 0;
     unsigned int trial;
-    unsigned int nToWrite = args["nout"].AsInteger();
+    unsigned int nToWrite = (m_nTrials > 1) ? args["nout"].AsInteger() : 1;
 
     const RefinedAlignments& optimizedAlignments = refinerEngine.GetAllResults();
     RefinedAlignmentsRevCIt rcit = optimizedAlignments.rbegin(), rend = optimizedAlignments.rend();
@@ -828,6 +841,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/12/14 17:03:29  lanczyck
+ * use groups to better organize options in Init
+ *
  * Revision 1.13  2006/12/12 16:04:47  lanczyck
  * use 'cn3' as file extension for created cd files
  *
