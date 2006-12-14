@@ -188,6 +188,15 @@ void x_PredictSignalSeq(const Seq& seq, CSignalSeq::EDomain domain,
                         TSeqPos max_pos, TSeqPos& pos, double& score)
 {
 
+    if (seq.size() < 15) {
+        throw runtime_error("Sequence length must be at least 15 "
+                            "to predict signal sequence");
+    }
+    if (max_pos < 12) {
+        throw runtime_error("max_pos must be at least 12 "
+                            "to predict signal sequence");
+    }
+
     const double (*Mat)[15];
     if (domain == CSignalSeq::eBacterial) {
         Mat = const_BacMat;
@@ -198,7 +207,7 @@ void x_PredictSignalSeq(const Seq& seq, CSignalSeq::EDomain domain,
     TSeqPos max_index = min((TSeqPos)seq.size() - 15, max_pos - 12);
     
     double max_score = -1e6;
-    TSeqPos max_loc;
+    TSeqPos max_loc = 0;  // initialize to avoid compiler warning
     for (unsigned int i = 0;  i <= max_index;  i++) {
         double sum = 0;
         for (unsigned int j = 0;  j < 15;  j++) {
@@ -245,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/12/14 21:06:08  jcherry
+ * Eliminated compiler warning.  Throw exception on bad parameters.
+ *
  * Revision 1.7  2004/05/21 21:41:04  gorelenk
  * Added PCH ncbi_pch.hpp
  *
