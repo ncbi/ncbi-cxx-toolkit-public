@@ -5131,21 +5131,22 @@ void
 CDBAPIUnitTest::Test_Authentication(void)
 {
     // MSSQL10 has SSL certificate.
-    {
-        auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
-
-        auto_conn->Connect(
-            "NCBI_NT\\anyone",
-            "Perm1tted",
-            "MSSQL10"
-            );
-
-        auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
-
-        auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version" ) );
-        BOOST_CHECK( rs.get() != NULL );
-        BOOST_CHECK( rs->Next() );
-    }
+    // There is no MSSQL10 any more ...
+//     {
+//         auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
+//
+//         auto_conn->Connect(
+//             "NCBI_NT\\anyone",
+//             "Perm1tted",
+//             "MSSQL10"
+//             );
+//
+//         auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
+//
+//         auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version" ) );
+//         BOOST_CHECK( rs.get() != NULL );
+//         BOOST_CHECK( rs->Next() );
+//     }
 
     // No SSL certificate.
     {
@@ -5649,6 +5650,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.118  2006/12/14 17:29:10  ssikorsk
+ * Test_Authentication: disable test with MSSQL10.
+ *
  * Revision 1.117  2006/12/08 15:52:03  ssikorsk
  * Rolled back previous change.
  *
