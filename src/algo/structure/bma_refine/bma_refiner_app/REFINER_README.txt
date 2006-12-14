@@ -16,14 +16,22 @@ Contact Chris Lanczycki (lanczyck@ncbi.nlm.nih.gov) or Saikat Chakrabarti
 (chakraba@ncbi.nlm.nih.gov) for comments or reports of problems with this
 program. 
 
-Last modified:  $Date: 2006/12/12 16:43:43 $
+Last modified:  $Date: 2006/12/14 17:04:48 $
+
+**  12/12/2006:  
+    v1.0.0 -> v1.1.0  Added -selection_order and -lno options in 'bma_refiner' to allow speedup of runs, particularly for larger models.
+    Changes to 'fa2cd' command-line options.
+    
+**
+
 
 ============================================================================
 Contents:
 1)  Overview
 2)  Input & Output formats
 3)  Command options
-4)  Examples
+4)  fa2cd:  A FASTA -> CD file conversion utility
+5)  Examples
 ============================================================================
 
 =============================
@@ -76,24 +84,11 @@ The native format for alignments is the same as that used by CDD
 (http://www.ncbi.nlm.nih.gov/Structure/cdd/cdd.shtml) and the 3D structure
 viewer/alignment editor Cn3D
 (http://www.ncbi.nlm.nih.gov/Structure/CN3D/cn3d.shtml).  Namely, the
-bma_refiner takes so-called 'acd' files.  Such files can be saved from Cn3D
-directly or via the CDD service.  These files contain the alignment formatted
-according the NCBI data specification in ASN.1.  See the NCBI & CDD web sites
-for details.   
+bma_refiner takes so-called CD files with a default file extension '.cn3'. [Formerly called 'acd' files, only the default file extension has been changed and the data in the files remains unchanged.  The bma_refiner program does not require any particular file extension for the input alignment file.].  
 
-The initial, alpha version of a tool to convert FASTA-formatted multiple
-alignments to our acd format is called 'fasta2cd'.  This program will
-produce a blocked alignment that by default has all aligned columns in the FASTA
-alignment.  The refinement algorithm's extension phase alone will not have any
-effect in this case as every block is optimally extended, unless the first
-block-shifting phase of refinement has made changes to the alignment.  Run the
-converter as: 
+Such CD files can be saved from Cn3D directly or acquired via the CDD service.  These files contain the alignment formatted according the NCBI data specification in ASN.1.  See the NCBI & CDD web sites for details.   
 
-fasta2cd -i <input fasta file> -a <name for alignment/output file>
-
-An optional -t <value> argument instructs the converter to trim 'bad' columns
-from the output alignment.  Here, <value> is the minumum median PSSM score of a
-column in the output alignment (3 is often a good choice).
+To support user-created alignments a utility, 'fa2cd' [formerly named 'fasta2cd'], to convert FASTA-formatted multiple alignments to a CD file is available.  See section (4) below for more details, or the web site http://www.ncbi.nlm.nih.gov/Structure/cdtree/fa2cd.shtml.  
 
 
 NOTE:  A 'data' subdirectory contains some basic information used in
@@ -107,23 +102,71 @@ A full list of command options is available by using the flag -h (for a brief
 summary) or -help (list with descriptions):  e.g,  ./bma_refiner -help 
 
 
-There is one mandatory argument, -i, the initial alignment in 'acd' format.  Other simple options include:
+There is one mandatory argument, -i, the initial alignment in CD file format.  
 
--o    		(specifies the base file name for refined alignments)
--n    		(number of independent trials; each uses a different order of rows in the first refinement phase)
--nout  	(of the 'n' trials, save the best 'nout' of them; saves only the best by default)
--nc  		(number of cycles per trial; 3-5 is a good starting value)
--be_noShrink (do not allow blocks to shrink in size)
--be_fix 	(do not modify block boundaries; i.e., skip the second phase of refinement)
--no_LOO 	(only modify block boundaries; i.e., skip the first phase of refinement)
--q		(minimal information printed during refinement)
--details/-logfile     (redirect program log to the specified file)
+Other simple options include:
 
-<More details about remaining options to come soon....>
+-o               (specifies the base file name for refined alignments)
+-selection_order (how to choose order sequences are refined) 
+-lno             (recompute PSSM after this many sequences refined; default = 1)
+-nc              (number of cycles per trial; 3-5 is a typical value)
+
+-be_noShrink     (do not allow blocks to shrink in size)
+-be_fix          (do not modify block boundaries; i.e., skip the second phase of refinement)
+-no_LOO          (only modify block boundaries; i.e., skip the first phase of refinement)
+-ex              (extension of input alignment fragment; see below)
+
+-q               (minimal information printed during refinement)
+-n               (number of independent trials; each uses a different order of rows 
+                  in the first refinement phase for random selection_order; no affect otherwise)
+-nout            (of the 'n' trials, save the best 'nout' of them; default = 1)
+-details         (redirect program log to the specified file)
+
+
+-selection_order 1:  this is the default value that refines sequences in worst-to-best order, as measured by the score of the sequence against the original PSSM.  You can choose a random order by specifying selection_order 0.  In this case, the -n and -nout options are enabled as the order is no longer deterministic and you may therefore request multiple trials.
+
+-lno > 1:  the majority of time in bma_refiner is spent in re-computing the PSSM after each individual sequence is realigned.  To make the program finish more quickly, provide the option "-lno X", where X is an integer.  This requests an approximate refinement that recomputes the PSSM after every X-th sequence.  However, if X is too large the benefits of refinement are rapidly lost.  Therefore, in practice make X < 20% of the total number of rows in your alignment.
+
+-ex:  this option directs the refiner to expand its search outside of the original start/stop range, considering up to the specified number of residues beyond the first and last aligned residues.  This assumes that the sequences to be refined are not aligned over their full length; when this assumption holds, -ex 20 has typically worked well.
+
+<More details about remaining options to come ....>
+
 
 
 =============================
-4)  Examples:
+4)  fa2cd:  A FASTA -> CD file conversion utility:
+
+This program will produce a blocked alignment that by default has all aligned columns in the FASTA alignment.  The refinement algorithm's extension phase alone will not have any
+effect in this case as every block is optimally extended, unless the first
+block-shifting phase of refinement has made changes to the alignment.  Run the
+converter as: 
+
+fa2cd -i <input fasta file> 
+
+The '-parseIds' flag will try and interpret the description line for each sequence in terms of recognized sequence accession formats.  The '-ibm' flag creates a CD whose alignment is the subset of columns from the input multiple alignment that contain no gap characters.
+
+An optional -t <value> argument instructs the converter to trim 'bad' columns
+from the output alignment.  Here, <value> is the minumum median PSSM score of a
+column in the output alignment (3 is often a good choice).
+
+(Use the -h or -help flags to see all available options.)
+
+A few notes on FASTA file format:
+
+a)  In general, input FASTA files are expected to follow the standard protein FASTA file format (for example, http://www.ncbi.nlm.nih.gov/blast/fasta.shtml).  Further, it is important that each sequence input has a unique identifier to avoid downstream errors.  By default, fa2cd assigns each sequence an integer as its local accession.  With the '-parseIds' option you instruct fa2cd to use information in your file to build sequence identifiers.
+
+b)  When using '-parseIds', the description line (i.e., those with a leading '>' character; we may also use the term 'defline') is parsed by fa2cd, generating a sequence identifier based on the characters in the defline up to the first whitespace.  Therefore, to ensure unique identifiers make sure multiple definition lines do not start with the identical same word.  
+For example, if two sequences have deflines ">ABC 1" and ">ABC 2", they will be assigned the same identifier when -parseIds is used.   
+
+c)  Try and avoid using small integers as your defline (e.g., ">1"), unless you've done this for all deflines without repeating a number.  When using '-parseIds', unparseable identifiers may inadvertently duplicate a number you have already used.  Future versions of fa2cd will fix such conflicts. 
+
+
+
+[Information about fa2cd is also available at http://www.ncbi.nlm.nih.gov/Structure/cdtree/cdtree.shtml.  fa2cd is also distributed as part of the CDTree software, a GUI-based application to aid in the classification of protein sequences and investigate their evolutionary relationships.  See http://www.ncbi.nlm.nih.gov/Structure/cdtree/cdtree.shtml to learn more about CDTree.]
+
+
+=============================
+5)  Examples:
 
 Sample data is available in the 'examples' subdirectory.  Example command line parameters are:
 
@@ -145,6 +188,8 @@ blocks cannot be allowed to grow without bound.  To that end, using the
 parameters -p 1.0 -ex 20 has provided a good compromise between rendering enough
 of 'alignment space' accessible our algorithm while avoiding unrealistically
 long loops being generated. 
+
+
 
 
 * ===========================================================================
