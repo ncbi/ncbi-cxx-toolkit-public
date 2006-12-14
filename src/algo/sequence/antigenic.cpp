@@ -103,7 +103,7 @@ void x_PredictAGSites(const Seq& seq, CAntigenic::TLocVec& results,
     // now look for runs of Pa >= thresh of length >= min_len
 
     int count = 0;
-    int begin;
+    int begin = 0;  // initialize to avoid compiler warning
 
     // NOTE: we go one extra residue, in the knowledge that
     // its Pa entry will be zero, so it will end any run
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/14 20:23:19  jcherry
+ * Eliminate compiler warning
+ *
  * Revision 1.5  2005/01/04 17:47:49  jcherry
  * Casts to eliminate compiler warnings
  *
