@@ -496,7 +496,6 @@ CBlastOptionsLocal::SetFilterString(const char* f)
    sfree(m_QueryOpts->filter_string);
    m_QueryOpts->filter_string = strdup(f);
 
-   SBlastFilterOptions* old_opts = NULL;
    if (strcmp("F", f) == 0)
    {  // Simply turns off the options.
        m_QueryOpts->filtering_options = 
@@ -505,21 +504,22 @@ CBlastOptionsLocal::SetFilterString(const char* f)
        SBlastFilterOptionsNew( &(m_QueryOpts->filtering_options), eEmpty);
        return;
    }
-   else
-   {
-       old_opts = m_QueryOpts->filtering_options;
-   }
 
    SBlastFilterOptions* new_opts = NULL;
    BlastFilteringOptionsFromString(GetProgramType(), f, &(new_opts), NULL);
 
-   if (old_opts)
+   if (m_QueryOpts->filtering_options)
    {
+      SBlastFilterOptions* old_opts = m_QueryOpts->filtering_options;
+      m_QueryOpts->filtering_options = NULL;
       SBlastFilterOptionsMerge(&(m_QueryOpts->filtering_options), old_opts, new_opts);
+      old_opts = SBlastFilterOptionsFree(old_opts);
+      new_opts = SBlastFilterOptionsFree(new_opts);
    } 
    else
    {
        m_QueryOpts->filtering_options = new_opts;
+       new_opts = NULL;
    }
 
    // Repeat filtering is only allowed for blastn.
