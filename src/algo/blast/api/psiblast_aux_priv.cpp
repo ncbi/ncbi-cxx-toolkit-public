@@ -90,7 +90,8 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     }
 
     // Assign the gapped Karlin-Altschul block
-    if (pssm->GetPssm().GetFinalData().GetLambda() > 0) {
+    if (pssm->GetPssm().GetFinalData().CanGetLambda() &&
+        pssm->GetPssm().GetFinalData().GetLambda() > 0) {
         score_blk->kbp_gap_psi[0]->Lambda =
             pssm->GetPssm().GetFinalData().GetLambda();
     } else {
@@ -105,7 +106,8 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     }
     score_blk->kbp_gap_psi[0]->logK = log(score_blk->kbp_gap_psi[0]->K);
 
-    if (pssm->GetPssm().GetFinalData().GetH() > 0) {
+    if (pssm->GetPssm().GetFinalData().CanGetH() &&
+        pssm->GetPssm().GetFinalData().GetH() > 0) {
         score_blk->kbp_gap_psi[0]->H = pssm->GetPssm().GetFinalData().GetH();
     } else {
         score_blk->kbp_gap_psi[0]->H = score_blk->kbp_gap_std[0]->H;
