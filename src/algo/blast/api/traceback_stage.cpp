@@ -45,6 +45,7 @@ static char const rcsid[] =
 #include "blast_seqsrc_adapter_priv.hpp"
 #include "blast_seqalign.hpp"
 #include "blast_aux_priv.hpp"
+#include "psiblast_aux_priv.hpp"
 
 // CORE BLAST includes
 #include <algo/blast/core/blast_setup.h>
@@ -73,7 +74,7 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
       m_ResultType(eDatabaseSearch),
       m_DBscanInfo(0)
 {
-    x_Init(qf, opts, db.GetDatabaseName());
+    x_Init(qf, opts, CRef<CPssmWithParameters>(), db.GetDatabaseName());
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
     m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
     m_OwnSeqInfoSrc = true;
@@ -82,9 +83,10 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
 }
 
 CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
-                                             CRef<CBlastOptions>     opts,
-                                             CRef<CSeqDB>            db,
-                                             CRef<TBlastHSPStream>   hsps)
+                             CRef<CBlastOptions>     opts,
+                             CRef<CSeqDB>            db,
+                             CRef<TBlastHSPStream>   hsps,
+                             CConstRef<objects::CPssmWithParameters> pssm)
     : m_QueryFactory (qf),
       m_Options      (opts),
       m_InternalData (new SInternalData),
@@ -95,7 +97,7 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
       m_ResultType(eDatabaseSearch),
       m_DBscanInfo(0)
 {
-    x_Init(qf, opts, db->GetDBNameList());
+    x_Init(qf, opts, pssm, db->GetDBNameList());
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
     m_SeqInfoSrc = InitSeqInfoSrc(&*db);
     m_OwnSeqInfoSrc = true;
@@ -120,7 +122,7 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>    qf,
     BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
     m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
     m_OwnSeqInfoSrc = true;
-    x_Init(qf, opts, BlastSeqSrcGetName(seqsrc));
+    x_Init(qf, opts, CRef<CPssmWithParameters>(), BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
     m_InternalData->m_HspStream.Reset(hsps);
 }
@@ -139,7 +141,7 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
       m_ResultType(eDatabaseSearch),
       m_DBscanInfo(0)
 {
-    x_Init(qf, opts, BlastSeqSrcGetName(seqsrc));
+    x_Init(qf, opts, CRef<CPssmWithParameters>(), BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
     m_InternalData->m_HspStream.Reset(hsps);
 }
@@ -184,6 +186,7 @@ CBlastTracebackSearch::SetDBScanInfo(CRef<SDatabaseScanData> dbscan_info)
 void
 CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
                               CRef<CBlastOptions>   opts,
+                              CConstRef<objects::CPssmWithParameters> pssm,
                               const string        & dbname)
 {
     opts->Validate();
@@ -218,6 +221,9 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
                                         m, 0, m_InternalData->m_RpsData);
     m_InternalData->m_ScoreBlk.Reset
         (new TBlastScoreBlk(sbp, BlastScoreBlkFree));
+    if (pssm.NotEmpty()) {
+        PsiBlastSetupScoreBlock(sbp, pssm, m, opts);
+    }
     m_Messages.Combine(m);
 
     // N.B.: Only PHI BLAST pseudo lookup table is necessary

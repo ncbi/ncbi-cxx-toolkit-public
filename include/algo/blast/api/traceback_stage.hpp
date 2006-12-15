@@ -39,6 +39,7 @@
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -59,7 +60,8 @@ public:
     CBlastTracebackSearch(CRef<IQueryFactory>     qf,
                           CRef<CBlastOptions>     opts,
                           CRef<CSeqDB>            dbinfo,
-                          CRef<TBlastHSPStream>   hsps);
+                          CRef<TBlastHSPStream>   hsps,
+                          CConstRef<objects::CPssmWithParameters> pssm = null);
     
     // Create a BlastSeqSrc using a new constructed CSeqDB.
     CBlastTracebackSearch(CRef<IQueryFactory>     qf,
@@ -103,6 +105,7 @@ private:
     /// Common initialization performed when doing traceback only
     void x_Init(CRef<IQueryFactory>   qf, 
                 CRef<CBlastOptions>   opts,
+                CConstRef<objects::CPssmWithParameters> pssm,
                 const string        & dbname);
     
     /// Prohibit copy constructor
