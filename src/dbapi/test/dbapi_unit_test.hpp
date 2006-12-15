@@ -187,6 +187,8 @@ public:
     void Test_Iskhakov(void);
     void Test_NCBI_LS(void);
     void Test_Authentication(void);
+    void Test_DriverContext_One(void);
+    void Test_DriverContext_Many(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -244,6 +246,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2006/12/15 16:47:17  ssikorsk
+ * Added Test_DriverContext_One and Test_DriverContext_Many.
+ *
  * Revision 1.47  2006/11/13 19:56:28  ssikorsk
  * Added Test_Authentication.
  *
