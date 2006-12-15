@@ -429,7 +429,7 @@ CTLibContext::x_SetRegistry(CTLibContextRegistry* registry)
 
 bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     I_DriverContext::SetLoginTimeout(nof_secs);
 
@@ -448,7 +448,7 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
     if (impl::CDriverContext::SetTimeout(nof_secs)) {
-        CFastMutexGuard mg(m_Mtx);
+        CMutexGuard mg(m_CtxMtx);
 
         CS_INT t_out = (CS_INT) GetTimeout();
         t_out = (t_out == 0 ? CS_NO_LIMIT : t_out);
@@ -469,7 +469,7 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
 
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     CS_INT ti_size = (CS_INT) GetMaxTextImageSize();
     return Check(ct_config(CTLIB_GetContext(),
@@ -541,47 +541,45 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 void
 CTLibContext::x_Close(bool delete_conn)
 {
+    CMutexGuard mg(m_CtxMtx);
+
     if ( CTLIB_GetContext() ) {
-        CFastMutexGuard mg(m_Mtx);
-        if (CTLIB_GetContext()) {
-
-            if (x_SafeToFinalize()) {
-                if (delete_conn) {
-                    DeleteAllConn();
-                } else {
-                    CloseAllConn();
-                }
+        if (x_SafeToFinalize()) {
+            if (delete_conn) {
+                DeleteAllConn();
+            } else {
+                CloseAllConn();
             }
-
-            CS_INT       outlen;
-            CPointerPot* p_pot = 0;
-
-            if (Check(cs_config(CTLIB_GetContext(),
-                          CS_GET,
-                          CS_USERDATA,
-                          (void*) &p_pot,
-                          (CS_INT) sizeof(p_pot),
-                          &outlen)) == CS_SUCCEED
-                &&  p_pot != 0) {
-                p_pot->Remove(this);
-                if (p_pot->NofItems() == 0) {
-                    // this is a last driver for this context
-                    delete p_pot;
-
-                    if (x_SafeToFinalize()) {
-                        if (Check(ct_exit(CTLIB_GetContext(),
-                                          CS_UNUSED)) != CS_SUCCEED) {
-                            Check(ct_exit(CTLIB_GetContext(),
-                                          CS_FORCE_EXIT));
-                        }
-                        Check(cs_ctx_drop(CTLIB_GetContext()));
-                    }
-                }
-            }
-
-            m_Context = NULL;
-            x_RemoveFromRegistry();
         }
+
+        CS_INT       outlen;
+        CPointerPot* p_pot = 0;
+
+        if (Check(cs_config(CTLIB_GetContext(),
+                        CS_GET,
+                        CS_USERDATA,
+                        (void*) &p_pot,
+                        (CS_INT) sizeof(p_pot),
+                        &outlen)) == CS_SUCCEED
+            &&  p_pot != 0) {
+            p_pot->Remove(this);
+            if (p_pot->NofItems() == 0) {
+                // this is a last driver for this context
+                delete p_pot;
+
+                if (x_SafeToFinalize()) {
+                    if (Check(ct_exit(CTLIB_GetContext(),
+                                        CS_UNUSED)) != CS_SUCCEED) {
+                        Check(ct_exit(CTLIB_GetContext(),
+                                        CS_FORCE_EXIT));
+                    }
+                    Check(cs_ctx_drop(CTLIB_GetContext()));
+                }
+            }
+        }
+
+        m_Context = NULL;
+        x_RemoveFromRegistry();
     } else {
         if (delete_conn && x_SafeToFinalize()) {
             DeleteAllConn();
@@ -1252,6 +1250,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.103  2006/12/15 16:42:09  ssikorsk
+ * Replaced CFastMutex with CMutex. Improved thread-safety.
+ *
  * Revision 1.102  2006/12/08 19:40:06  ssikorsk
  * Error message about TDS protocol version was downgraded to a warning.
  *

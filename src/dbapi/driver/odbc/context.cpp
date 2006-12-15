@@ -336,7 +336,7 @@ CODBCContext::x_SetRegistry(CODBCContextRegistry* registry)
 impl::CConnection*
 CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     return new CODBC_Connection(*this, conn_attr);
 }
@@ -352,36 +352,35 @@ CODBCContext::~CODBCContext()
 void
 CODBCContext::x_Close(bool delete_conn)
 {
-    if ( m_Context ) {
-        CFastMutexGuard mg(m_Mtx);
-        if (m_Context) {
-            // Unregister first for sake of exception safety.
-            x_RemoveFromRegistry();
+    CMutexGuard mg(m_CtxMtx);
 
-            // close all connections first
-            if (delete_conn) {
-                DeleteAllConn();
-            } else {
-                CloseAllConn();
-            }
+    if (m_Context) {
+        // Unregister first for sake of exception safety.
+        x_RemoveFromRegistry();
 
-            int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
-            switch( rc ) {
-            case SQL_INVALID_HANDLE:
-            case SQL_ERROR:
-                m_Reporter.ReportErrors();
-                break;
-            case SQL_SUCCESS_WITH_INFO:
-                m_Reporter.ReportErrors();
-            case SQL_SUCCESS:
-                break;
-            default:
-                m_Reporter.ReportErrors();
-                break;
-            };
-
-            m_Context = NULL;
+        // close all connections first
+        if (delete_conn) {
+            DeleteAllConn();
+        } else {
+            CloseAllConn();
         }
+
+        int rc = SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+        switch( rc ) {
+        case SQL_INVALID_HANDLE:
+        case SQL_ERROR:
+            m_Reporter.ReportErrors();
+            break;
+        case SQL_SUCCESS_WITH_INFO:
+            m_Reporter.ReportErrors();
+        case SQL_SUCCESS:
+            break;
+        default:
+            m_Reporter.ReportErrors();
+            break;
+        };
+
+        m_Context = NULL;
     } else {
         x_RemoveFromRegistry();
         if (delete_conn) {
@@ -393,7 +392,7 @@ CODBCContext::x_Close(bool delete_conn)
 
 void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     m_PacketSize = (SQLULEN)packet_size;
 }
@@ -667,6 +666,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/12/15 16:43:36  ssikorsk
+ * Replaced CFastMutex with CMutex. Improved thread-safety.
+ *
  * Revision 1.70  2006/10/26 14:56:08  ssikorsk
  * Initialize CODBCContext with client charset set to UTF-8 in case of UNICODE API.
  *

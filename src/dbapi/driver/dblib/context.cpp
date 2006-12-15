@@ -232,6 +232,7 @@ extern "C" {
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(s_CtxMutex);
 static CDBLibContext* g_pContext = NULL;
 
 
@@ -239,11 +240,9 @@ CDBLibContext::CDBLibContext(DBINT version)
 : m_PacketSize( 0 )
 , m_TDSVersion( version )
 {
-    DEFINE_STATIC_FAST_MUTEX(xMutex);
-
     SetApplicationName("DBLibDriver");
 
-    CFastMutexGuard mg(xMutex);
+    CFastMutexGuard mg(s_CtxMutex);
 
     CHECK_DRIVER_ERROR(
         g_pContext != NULL,
@@ -321,6 +320,7 @@ int CDBLibContext::GetTDSVersion(void) const
 bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
     if (I_DriverContext::SetLoginTimeout(nof_secs)) {
+        CFastMutexGuard ctx_mg(s_CtxMutex);
         return Check(dbsetlogintime(GetLoginTimeout())) == SUCCEED;
     }
 
@@ -331,6 +331,7 @@ bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 bool CDBLibContext::SetTimeout(unsigned int nof_secs)
 {
     if (impl::CDriverContext::SetTimeout(nof_secs)) {
+        CFastMutexGuard ctx_mg(s_CtxMutex);
         return Check(dbsettime(GetTimeout())) == SUCCEED;
     }
 
@@ -342,11 +343,10 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
 
-    CFastMutexGuard mg(m_Mtx);
-
     char s[64];
     sprintf(s, "%lu", (unsigned long) GetMaxTextImageSize());
 
+    CFastMutexGuard ctx_mg(s_CtxMutex);
 #ifdef MS_DBLIB_IN_USE
     return Check(dbsetopt(0, DBTEXTLIMIT, s)) == SUCCEED;
 #else
@@ -361,6 +361,7 @@ void CDBLibContext::SetClientCharset(const string& charset)
 
     impl::CDriverContext::SetClientCharset(charset);
 
+    CMutexGuard mg(m_CtxMtx);
 #ifndef MS_DBLIB_IN_USE
     DBSETLCHARSET( m_Login, const_cast<char*>(charset.c_str()) );
 #endif
@@ -369,7 +370,7 @@ void CDBLibContext::SetClientCharset(const string& charset)
 impl::CConnection*
 CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name,
                                          conn_attr.user_name,
@@ -431,16 +432,18 @@ CDBLibContext::~CDBLibContext()
 void
 CDBLibContext::x_Close(bool delete_conn)
 {
+    CMutexGuard mg(m_CtxMtx);
+
     if (g_pContext) {
-        CFastMutexGuard mg(m_Mtx);
+        CFastMutexGuard ctx_mg(s_CtxMutex);
+
         if (g_pContext) {
+            // Unregister itself before any other poeration
+            // for sake of exception safety.
+            g_pContext = NULL;
+            x_RemoveFromRegistry();
 
             if (x_SafeToFinalize()) {
-                // Unregister itself before any other poeration
-                // for sake of exception safety.
-                g_pContext = NULL;
-                x_RemoveFromRegistry();
-
                 // close all connections first
                 try {
                     if (delete_conn) {
@@ -468,9 +471,6 @@ CDBLibContext::x_Close(bool delete_conn)
                 NCBI_CATCH_ALL( "dbexit() call failed. This usually happens when "
                     "Sybase client has been used to connect to a MS SQL Server." )
 #endif
-            } else {
-                g_pContext = NULL;
-                x_RemoveFromRegistry();
             }
         }
     } else {
@@ -511,6 +511,7 @@ void CDBLibContext::DBLIB_SetPacketSize(int p_size)
 
 bool CDBLibContext::DBLIB_SetMaxNofConns(int n)
 {
+    CFastMutexGuard ctx_mg(s_CtxMutex);
     return Check(dbsetmaxprocs(n)) == SUCCEED;
 }
 
@@ -762,7 +763,7 @@ I_DriverContext* MSDBLIB_CreateContext(const map<string,string>* attr = 0)
 
 I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
 {
-    DBINT version= DBVERSION_UNKNOWN;
+    DBINT version = DBVERSION_UNKNOWN;
     map<string,string>::const_iterator citer;
     string client_charset;
 
@@ -770,6 +771,8 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
         //
         citer = attr->find("reuse_context");
         if ( citer != attr->end() ) {
+            CFastMutexGuard mg(s_CtxMutex);
+
             if ( citer->second == "true" && g_pContext ) {
                 return g_pContext;
             }
@@ -799,7 +802,8 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
         }
 
     }
-    CDBLibContext* cntx=  new CDBLibContext(version);
+
+    CDBLibContext* cntx =  new CDBLibContext(version);
     if ( cntx && attr ) {
 
         string page_size;
@@ -818,6 +822,7 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
             cntx->SetClientCharset( client_charset.c_str() );
         }
     }
+
     return cntx;
 }
 
@@ -826,7 +831,7 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
 
 I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
 {
-    DBINT version= DBVERSION_46;
+    DBINT version = DBVERSION_46;
     string client_charset;
 
     if ( attr ) {
@@ -835,6 +840,8 @@ I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
         //
         citer = attr->find("reuse_context");
         if ( citer != attr->end() ) {
+            CFastMutexGuard mg(s_CtxMutex);
+
             if ( citer->second == "true" && g_pContext ) {
                 return g_pContext;
             }
@@ -848,9 +855,9 @@ I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
         }
 
         if ( vers.find("46") != string::npos )
-            version= DBVERSION_46;
+            version = DBVERSION_46;
         else if ( vers.find("100") != string::npos )
-            version= DBVERSION_100;
+            version = DBVERSION_100;
 
 
         //
@@ -860,7 +867,7 @@ I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
         }
     }
 
-    CDBLibContext* cntx= new CDBLibContext(version);
+    CDBLibContext* cntx = new CDBLibContext(version);
     if ( cntx && attr ) {
 
         string page_size;
@@ -879,6 +886,7 @@ I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
             cntx->SetClientCharset( client_charset.c_str() );
         }
     }
+
     return cntx;
 }
 
@@ -1059,6 +1067,8 @@ CDbapiFtdsCFBase::CreateInstance(
 
                 if ( v.id == "reuse_context" ) {
                     bool reuse_context = (v.value != "false");
+                    CFastMutexGuard mg(s_CtxMutex);
+
                     if ( reuse_context && g_pContext ) {
                         return g_pContext;
                     }
@@ -1266,6 +1276,8 @@ CDbapiDblibCF2::CreateInstance(
 
                 if ( v.id == "reuse_context" ) {
                     bool reuse_context = (v.value != "false");
+                    CFastMutexGuard mg(s_CtxMutex);
+
                     if ( reuse_context && g_pContext ) {
                         return g_pContext;
                     }
@@ -1348,6 +1360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2006/12/15 16:42:45  ssikorsk
+ * Replaced CFastMutex with CMutex. Improved thread-safety.
+ *
  * Revision 1.92  2006/11/28 20:08:09  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

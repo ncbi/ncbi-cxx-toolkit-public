@@ -187,6 +187,7 @@ extern "C" {
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(s_CtxMutex);
 static CTDSContext* g_pTDSContext = NULL;
 
 
@@ -195,8 +196,7 @@ CTDSContext::CTDSContext(DBINT version) :
     m_TDSVersion(version),
     m_Registry(NULL)
 {
-    DEFINE_STATIC_FAST_MUTEX(xMutex);
-    CFastMutexGuard mg(xMutex);
+    CFastMutexGuard mg(s_CtxMutex);
 
     SetApplicationName("TDSDriver");
 
@@ -276,11 +276,10 @@ bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     impl::CDriverContext::SetMaxTextImageSize(nof_bytes);
 
-    CFastMutexGuard mg(m_Mtx);
-
     char s[64];
     sprintf(s, "%lu", (unsigned long) GetMaxTextImageSize());
 
+    CFastMutexGuard ctx_mg(s_CtxMutex);
     return Check(dbsetopt(0, DBTEXTLIMIT, s, -1)) == SUCCEED
         /* && dbsetopt(0, DBTEXTSIZE, s, -1) == SUCCEED */;
 }
@@ -293,13 +292,14 @@ void CTDSContext::SetClientCharset(const string& charset)
 
     impl::CDriverContext::SetClientCharset(charset);
 
+    CMutexGuard mg(m_CtxMtx);
     DBSETLCHARSET( m_Login, const_cast<char*>(charset.c_str()) );
 }
 
 impl::CConnection*
 CTDSContext::MakeIConnection(const SConnAttr& conn_attr)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name,
                                          conn_attr.user_name,
@@ -354,15 +354,17 @@ CTDSContext::~CTDSContext()
 void
 CTDSContext::x_Close(bool delete_conn)
 {
+    CMutexGuard mg(m_CtxMtx);
+
     if (g_pTDSContext) {
-        CFastMutexGuard mg(m_Mtx);
+        CFastMutexGuard ctx_mg(s_CtxMutex);
+
         if (g_pTDSContext) {
+            // Unregister first
+            g_pTDSContext = NULL;
+            x_RemoveFromRegistry();
 
             if (x_SafeToFinalize()) {
-                // Unregister first
-                g_pTDSContext = NULL;
-                x_RemoveFromRegistry();
-
                 // close all connections first
                 try {
                     if (delete_conn) {
@@ -378,9 +380,6 @@ CTDSContext::x_Close(bool delete_conn)
                 CheckFunctCall();
                 dbexit();
                 CheckFunctCall();
-            } else {
-                g_pTDSContext = NULL;
-                x_RemoveFromRegistry();
             }
         }
     } else {
@@ -416,6 +415,7 @@ void CTDSContext::TDS_SetPacketSize(int p_size)
 
 bool CTDSContext::TDS_SetMaxNofConns(int n)
 {
+    CFastMutexGuard mg(s_CtxMutex);
     return Check(dbsetmaxprocs(n)) == SUCCEED;
 }
 
@@ -658,12 +658,14 @@ void CTDSContext::CheckFunctCall(void)
 
 I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
 {
-    DBINT version= DBVERSION_UNKNOWN;
+    DBINT version = DBVERSION_UNKNOWN;
     map<string,string>::const_iterator citer;
 
     if ( attr ) {
         citer = attr->find("reuse_context");
         if ( citer != attr->end() ) {
+            CFastMutexGuard mg(s_CtxMutex);
+
             if ( citer->second == "true" &&
                  g_pTDSContext ) {
                 return g_pTDSContext;
@@ -676,16 +678,17 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
             vers = citer->second;
         }
         if ( vers.find("42") != string::npos )
-            version= DBVERSION_42;
+            version = DBVERSION_42;
         else if ( vers.find("46") != string::npos )
-            version= DBVERSION_46;
+            version = DBVERSION_46;
         else if ( vers.find("70") != string::npos )
-            version= DBVERSION_70;
+            version = DBVERSION_70;
         else if ( vers.find("100") != string::npos )
-            version= DBVERSION_100;
+            version = DBVERSION_100;
 
     }
-    CTDSContext* cntx=  new CTDSContext(version);
+
+    CTDSContext* cntx =  new CTDSContext(version);
     if ( cntx && attr ) {
         string page_size;
         citer = attr->find("packet");
@@ -697,6 +700,7 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
             cntx->TDS_SetPacketSize(s);
         }
     }
+
     return cntx;
 }
 
@@ -781,6 +785,8 @@ CDbapiFtdsCF2::CreateInstance(
 
                 if ( v.id == "reuse_context" ) {
                     reuse_context = (v.value != "false");
+                    CFastMutexGuard mg(s_CtxMutex);
+
                     if ( reuse_context && g_pTDSContext ) {
                         return g_pTDSContext;
                     }
@@ -883,6 +889,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2006/12/15 16:43:07  ssikorsk
+ * Replaced CFastMutex with CMutex. Improved thread-safety.
+ *
  * Revision 1.84  2006/11/28 20:08:07  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

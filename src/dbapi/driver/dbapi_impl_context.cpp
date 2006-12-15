@@ -64,7 +64,7 @@ CDriverContext::~CDriverContext(void)
 bool CDriverContext::SetTimeout(unsigned int nof_secs)
 {
     bool success = true;
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     try {
         if (I_DriverContext::SetTimeout(nof_secs)) {
@@ -79,7 +79,7 @@ bool CDriverContext::SetTimeout(unsigned int nof_secs)
 
 bool CDriverContext::SetMaxTextImageSize(size_t nof_bytes)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     m_MaxTextImageSize = nof_bytes;
 
@@ -91,26 +91,26 @@ bool CDriverContext::SetMaxTextImageSize(size_t nof_bytes)
 void CDriverContext::PushCntxMsgHandler(CDB_UserHandler* h,
                                          EOwnership ownership)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
     m_CntxHandlers.Push(h, ownership);
 }
 
 void CDriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
     m_CntxHandlers.Pop(h);
 }
 
 void CDriverContext::PushDefConnMsgHandler(CDB_UserHandler* h,
                                             EOwnership ownership)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
     m_ConnHandlers.Push(h, ownership);
 }
 
 void CDriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
     m_ConnHandlers.Pop(h);
 
     // Remove this handler from all connections
@@ -128,7 +128,7 @@ void CDriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 
 void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     TConnPool::iterator it = find(m_InUse.begin(), m_InUse.end(), conn);
 
@@ -146,7 +146,7 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 void CDriverContext::CloseUnusedConnections(const string&   srv_name,
                                              const string&   pool_name)
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     TConnPool::value_type con;
 
@@ -165,7 +165,7 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
 unsigned int CDriverContext::NofConnections(const string& srv_name,
                                           const string& pool_name) const
 {
-    CFastMutexGuard mg(m_Mtx);
+    CMutexGuard mg(m_CtxMtx);
 
     if ( srv_name.empty() && pool_name.empty()) {
         return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
@@ -201,6 +201,8 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
 CDB_Connection*
 CDriverContext::MakePooledConnection(const SConnAttr& conn_attr)
 {
+    CMutexGuard mg(m_CtxMtx);
+
     if (conn_attr.reusable && !m_NotInUse.empty()) {
         // try to get a connection from the pot
         if (!conn_attr.pool_name.empty()) {
@@ -394,6 +396,8 @@ bool CDriverContext::ConnectedToMSSQLServer(void) const
 
 void CDriverContext::SetClientCharset(const string& charset)
 {
+    CMutexGuard mg(m_CtxMtx);
+
     m_ClientCharset = charset;
     m_ClientEncoding = eEncoding_Unknown;
 
@@ -478,6 +482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/15 16:41:37  ssikorsk
+ * Replaced CFastMutex with CMutex. Improved thread-safety.
+ *
  * Revision 1.4  2006/09/15 19:20:35  ssikorsk
  * Translate exceptions into return code in CDriverContext::SetTimeout.
  *
