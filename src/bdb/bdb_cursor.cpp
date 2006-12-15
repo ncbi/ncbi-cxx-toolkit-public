@@ -504,7 +504,8 @@ CBDB_FileCursor::FetchFirst(void**       buf,
     // up or down to reach the interval criteria.
     if (m_CondFrom == eGT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT | m_FetchFlags);
+            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT | m_FetchFlags,
+                                   buf, buf_size, allow_realloc);
             if (ret != eBDB_Ok)
                 return ret;
         }
@@ -512,7 +513,8 @@ CBDB_FileCursor::FetchFirst(void**       buf,
     else
     if (m_CondFrom == eLT) {
         while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
-            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags);
+            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags,
+                                   buf, buf_size, allow_realloc);
             if (ret != eBDB_Ok)
                 return ret;
         }
@@ -856,6 +858,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/12/15 14:28:55  dicuccio
+ * Use correct ReadCursor() variant when evaluating eGT and eLT conditionals
+ *
  * Revision 1.30  2006/12/04 12:50:05  dicuccio
  * Fix compiler warnings
  *
