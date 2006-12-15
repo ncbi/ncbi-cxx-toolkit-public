@@ -881,14 +881,14 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                         if (delta > 0) {
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 delta /= width1;
-                                if (delta < len) {
+                                if (delta < (TSignedSeqPos)len) {
                                     // target above
                                     // x----- x-)-)
                                     // (----x (---x
                                     // target below
                                     len -= delta;
                                     start2 += delta * width2;
-                                } else if (delta > len  &&
+                                } else if (delta > (TSignedSeqPos)len  &&
                                            m_MergeFlags & fAllowTranslocation) {
                                     // Translocation
                                     // below target above
@@ -899,7 +899,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                              starts2_i->second->m_Len - start1) /
                                         width1;
                                     if (delta > 0) {
-                                        if (delta < len) {
+                                        if (delta < (TSignedSeqPos)len) {
                                             start1 += delta * width1;
                                             len -= delta;
                                         } else {
@@ -921,7 +921,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                         if (delta > 0) {
                             if (m_MergeFlags & fTruncateOverlaps) {
                                 delta /= width1;
-                                if (len > delta) {
+                                if (len > (TSeqPos)delta) {
                                     // below target
                                     // x---- x-)--)
                                     // x---) x----)
@@ -929,7 +929,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                     len -= delta;
                                     start1 += delta * width1;
                                     start2 += delta * width2;
-                                } else if (delta > len  &&
+                                } else if (delta > (TSignedSeqPos)len  &&
                                            m_MergeFlags & fAllowTranslocation) {
                                     // Translocation
                                     //       target above
@@ -937,7 +937,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                                     // x---) x----)
                                     // below target
                                     delta = (existing_start1 - start1) / width1;
-                                    if (delta < len) {
+                                    if (delta < (TSignedSeqPos)len) {
                                         len = delta;
                                         if ( !len ) {
                                             return eIgnoreMatch;
@@ -965,7 +965,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                 // below target
                 if (m_MergeFlags & fTruncateOverlaps) {
                     delta /= width2;
-                    if (len > delta) {
+                    if (len > (TSeqPos)delta) {
                         len -= delta;
                         start2 += delta * width2;
                         if ( !match->m_StrandsDiffer ) {
@@ -1040,7 +1040,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                             // (---x (----x
                             // above target
                             if (m_MergeFlags & fTruncateOverlaps) {
-                                if (len > delta / width1) {
+                                if (len > (TSeqPos)(delta / width1)) {
                                     len -= delta / width1;
                                     start1 += delta;
                                 } else {
@@ -1062,7 +1062,7 @@ CAlnMixMerger::x_SecondRowFits(CAlnMixMatch * match) const
                             // x----) x---)
                             // target above
                             if (m_MergeFlags & fTruncateOverlaps) {
-                                if (len <= delta / width1) {
+                                if (len <= (TSeqPos)delta / width1) {
                                     if (m_MergeFlags & fAllowTranslocation) {
                                         return eFirstRowOverlapAbove;
                                     } else {
@@ -1225,7 +1225,7 @@ CAlnMixMerger::x_SetSeqFrame(CAlnMixMatch* match, CAlnMixSeq*& seq)
     if (seq->GetStarts().empty()) {
         seq->m_Frame = frame;
     } else {
-        while (seq->m_Frame != frame) {
+        while ((unsigned)seq->m_Frame != frame) {
             if (!seq->m_ExtraRow) {
                 // create an extra frame
                 CRef<CAlnMixSeq> new_seq (new CAlnMixSeq);
@@ -1258,6 +1258,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2006/12/15 16:37:09  todorov
+* Fixed warnings.
+*
 * Revision 1.21  2006/10/13 15:35:24  todorov
 * Stripped off the conditional compilation directives of a consistency
 * check for segment's start iterators.  The code has negligible

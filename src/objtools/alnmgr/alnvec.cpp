@@ -230,8 +230,8 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
             if (start >= 0) {
                 // record the insert if requested
                 if (record_inserts) {
-                    if (prev_aln_pos == (aln_pos / width)  &&
-                        start == (plus ? prev_start + prev_len :
+                    if (prev_aln_pos == (TSignedSeqPos)(aln_pos / width)  &&
+                        start == (TSignedSeqPos)(plus ? prev_start + prev_len :
                                   prev_start - len)) {
                         // consolidate the adjacent inserts
                         ttl_len += len;
@@ -396,10 +396,10 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
     // segment is.  this must be rounded to be at least 50%.
     int gap_seg_thresh = m_NumRows - m_NumRows / 2;
 
-    for (j = 0;  j < m_NumSegs;  ++j) {
+    for (j = 0;  j < (size_t)m_NumSegs;  ++j) {
         // evaluate for gap / no gap
         int gap_count = 0;
-        for (i = 0;  i < m_NumRows;  ++i) {
+        for (i = 0;  i < (size_t)m_NumRows;  ++i) {
             if (m_Starts[ j*m_NumRows + i ] == -1) {
                 ++gap_count;
             }
@@ -413,7 +413,7 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
 
             // retrieve all sequences for this segment
             vector<string> segs(m_NumRows);
-            for (i = 0;  i < m_NumRows;  ++i) {
+            for (i = 0;  i < (size_t)m_NumRows;  ++i) {
                 if (m_Starts[ j*m_NumRows + i ] != -1) {
                     TSeqPos start = m_Starts[j*m_NumRows+i];
                     TSeqPos stop  = start + m_Lens[j];
@@ -527,7 +527,7 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
 
     for (i = 0;  i < consens.size();  ++i) {
         // copy the old entries
-        for (j = 0;  j < m_NumRows;  ++j) {
+        for (j = 0;  j < (size_t)m_NumRows;  ++j) {
             int idx = i * m_NumRows + j;
             new_ds->SetStarts().push_back(m_Starts[idx]);
             if ( !m_Strands.empty() ) {
@@ -853,6 +853,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2006/12/15 16:37:27  todorov
+* Fixed warnings.
+*
 * Revision 1.64  2005/07/25 20:30:05  todorov
 * Pass genetic code to TranslateNAToAA
 *
