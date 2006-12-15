@@ -126,7 +126,7 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
 {
     TSegTypeFlags flags = 0;
     TNumseg       l_seg, r_seg, l_index, r_index, index;
-    TSeqPos       cont_next_start, cont_prev_stop;
+    TSeqPos       cont_next_start = 0, cont_prev_stop = 0;
 
     l_seg = r_seg = seg;
     l_index = r_index = index = seg * m_NumRows + row;
@@ -581,7 +581,7 @@ void CAlnMap::GetResidueIndexMap(TNumrow row0,
     TSeqPos aln_stop = aln_rng.GetTo();
     int l_idx0 = row0;
     int l_idx1 = row1;
-    TSeqPos aln_pos = 0, next_aln_pos, l_len, r_len, l_delta, r_delta;
+    TSeqPos aln_pos = 0, next_aln_pos, l_len = 0, r_len = 0, l_delta, r_delta;
     bool plus0 = IsPositiveStrand(row0);
     bool plus1 = IsPositiveStrand(row1);
     TSeqPos l_pos0, r_pos0, l_pos1, r_pos1;
@@ -862,15 +862,9 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
     }
 
     // determine the participating segments range
-    TNumseg first_seg, last_seg;
+    TNumseg first_seg = 0, last_seg = m_NumSegs - 1;
 
-    if (range.GetFrom() < GetSeqStart(row)) {
-        if (IsPositiveStrand(row)) {
-            first_seg = 0;
-        } else {
-            last_seg = m_NumSegs - 1;
-        }
-    } else {        
+    if (range.GetFrom() >= GetSeqStart(row)) {
         if (IsPositiveStrand(row)) {
             first_seg = GetRawSeg(row, range.GetFrom());
             vec->m_LeftDelta = range.GetFrom() - x_GetRawStart(row, first_seg);
@@ -879,13 +873,7 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
             vec->m_RightDelta = range.GetFrom() - x_GetRawStart(row, last_seg);
         }
     }
-    if (range.GetTo() > GetSeqStop(row)) {
-        if (IsPositiveStrand(row)) {
-            last_seg = m_NumSegs - 1;
-        } else {
-            first_seg = 0;
-        }
-    } else {
+    if (range.GetTo() <= GetSeqStop(row)) {
         if (IsPositiveStrand(row)) {
             last_seg = GetRawSeg(row, range.GetTo());
             if ( !(flags & fDoNotTruncateSegs) ) {
@@ -1213,6 +1201,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2006/12/15 16:09:35  ucko
+* Fix unused-variable warnings.
+*
 * Revision 1.53  2006/12/13 18:07:23  todorov
 * Fixed a few warnings.
 *
