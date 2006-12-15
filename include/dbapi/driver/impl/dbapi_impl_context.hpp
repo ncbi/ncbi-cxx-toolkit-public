@@ -185,7 +185,7 @@ public:
 protected:
     typedef list<CConnection*> TConnPool;
 
-    mutable CFastMutex m_Mtx;
+    mutable CMutex m_CtxMtx;
 
     // To allow children of CDriverContext to create CDB_Connection
     CDB_Connection* MakeCDBConnection(CConnection* connection);
@@ -245,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/15 16:40:27  ssikorsk
+ * Replaced CFastMutex with CMutex.
+ *
  * Revision 1.3  2006/10/23 22:00:57  ssikorsk
  * + IsMultibyteClientEncoding()
  *
