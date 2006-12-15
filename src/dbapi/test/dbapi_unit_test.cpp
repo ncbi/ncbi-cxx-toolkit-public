@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbithr.hpp>
 
 #include <ncbi_source_ver.h>
 #include <dbapi/dbapi.hpp>
@@ -199,7 +200,7 @@ void
 CDBAPIUnitTest::TestInit(void)
 {
     try {
-        DBLB_INSTALL_DEFAULT();
+//         DBLB_INSTALL_DEFAULT();
 
         if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
             m_max_varchar_size = 8000;
@@ -589,25 +590,25 @@ void CDBAPIUnitTest::Test_Iskhakov(void)
     bool rc = auto_stmt->Send();
     BOOST_CHECK( rc );
 
-	auto_ptr<I_ITDescriptor> descr;
+    auto_ptr<I_ITDescriptor> descr;
 
-	while(auto_stmt -> HasMoreResults()) {
-		auto_ptr<CDB_Result> rs(auto_stmt -> Result());
+    while(auto_stmt -> HasMoreResults()) {
+        auto_ptr<CDB_Result> rs(auto_stmt -> Result());
 
-		if (rs.get() == NULL) {
-			continue;
-		}
+        if (rs.get() == NULL) {
+            continue;
+        }
 
-		if (rs->ResultType() != eDB_RowResult) {
-			continue;
-		}
+        if (rs->ResultType() != eDB_RowResult) {
+            continue;
+        }
 
-		while(rs->Fetch()) {
-			rs->ReadItem(NULL, 0);
+        while(rs->Fetch()) {
+            rs->ReadItem(NULL, 0);
 
-			descr.reset(rs->GetImageOrTextDescriptor());
-		}
-	}
+            descr.reset(rs->GetImageOrTextDescriptor());
+        }
+    }
 }
 
 
@@ -884,6 +885,7 @@ void
 CDBAPIUnitTest::Test_Insert(void)
 {
     string sql;
+    const string small_msg("%");
     const string test_msg(300, 'A');
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
@@ -899,11 +901,22 @@ CDBAPIUnitTest::Test_Insert(void)
             );
 
         // Using parameters ...
+        string sql = "INSERT INTO " + GetTableName() + "(int_field, vc1000_field) "
+                     "VALUES(@id, @vc_val)";
+
+        auto_stmt->SetParam( CVariant( Int4(2) ), "@id" );
         auto_stmt->SetParam( CVariant::LongChar(test_msg.c_str(), test_msg.size()), "@vc_val" );
-        auto_stmt->ExecuteUpdate(
-            "INSERT INTO " + GetTableName() + "(int_field, vc1000_field) "
-            "VALUES(2, @vc_val)"
-            );
+        auto_stmt->ExecuteUpdate( sql );
+
+        auto_stmt->SetParam( CVariant( Int4(3) ), "@id" );
+        auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(), small_msg.size()), "@vc_val" );
+        auto_stmt->ExecuteUpdate( sql );
+
+        CVariant var_value(CVariant::LongChar(NULL, 1024));
+        var_value = CVariant::LongChar(small_msg.c_str(), small_msg.size());
+        auto_stmt->SetParam( CVariant( Int4(4) ), "@id" );
+        auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(), small_msg.size()), "@vc_val" );
+        auto_stmt->ExecuteUpdate( sql );
     }
 
     // Retrieve data ...
@@ -926,8 +939,16 @@ CDBAPIUnitTest::Test_Insert(void)
 
             string vc1000_value = rs->GetVariant(2).GetString();
 
-            BOOST_CHECK_EQUAL( test_msg.size(), vc1000_value.size() );
+            BOOST_CHECK_EQUAL( test_msg, vc1000_value );
         }
+
+        BOOST_CHECK( rs->Next() );
+        string small_value1 = rs->GetVariant(2).GetString();
+        BOOST_CHECK_EQUAL( small_msg, small_value1 );
+
+        BOOST_CHECK( rs->Next() );
+        string small_value2 = rs->GetVariant(2).GetString();
+        BOOST_CHECK_EQUAL( small_msg, small_value2 );
     }
 };
 
@@ -2716,77 +2737,83 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 // Ignore it
                 BOOST_CHECK( drv_err_handler->GetSucceed() );
             }
+            catch( const CException& ) {
+                BOOST_FAIL( "CException was catched instead of CDB_Exception." );
+            }
+            catch( ... ) {
+                BOOST_FAIL( "... was catched instead of CDB_Exception." );
+            }
 
             drv_err_handler->Init();
         }
 
-        // Current connection should not be affected ...
-        {
-            try {
-                Test_ES_01(*local_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( !drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // New connection should not be affected ...
-        {
-            // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-            Connect(conn);
-
-            // Reinit the errot handler because it can be affected during connection.
-            drv_err_handler->Init();
-
-            try {
-                Test_ES_01(*conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( !drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Push a message handler into a connection ...
-        {
-            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-
-            local_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
-
-            try {
-                Test_ES_01(*local_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( msg_handler->GetSucceed() );
-            }
-
-            // Remove handler ...
-            local_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
-        }
-
-        // New connection should not be affected
-        // after pushing a message handler into another connection
-        {
-            // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-            Connect(conn);
-
-            // Reinit the errot handler because it can be affected during connection.
-            drv_err_handler->Init();
-
-            try {
-                Test_ES_01(*conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( !drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Remove all inserted handlers ...
+//         // Current connection should not be affected ...
+//         {
+//             try {
+//                 Test_ES_01(*local_conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
+//             }
+//         }
+//
+//         // New connection should not be affected ...
+//         {
+//             // Create a new connection ...
+//             auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+//             Connect(conn);
+//
+//             // Reinit the errot handler because it can be affected during connection.
+//             drv_err_handler->Init();
+//
+//             try {
+//                 Test_ES_01(*conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
+//             }
+//         }
+//
+//         // Push a message handler into a connection ...
+//         {
+//             auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+//
+//             local_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
+//
+//             try {
+//                 Test_ES_01(*local_conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( msg_handler->GetSucceed() );
+//             }
+//
+//             // Remove handler ...
+//             local_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
+//         }
+//
+//         // New connection should not be affected
+//         // after pushing a message handler into another connection
+//         {
+//             // Create a new connection ...
+//             auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+//             Connect(conn);
+//
+//             // Reinit the errot handler because it can be affected during connection.
+//             drv_err_handler->Init();
+//
+//             try {
+//                 Test_ES_01(*conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
+//             }
+//         }
+//
+//         // Remove all inserted handlers ...
         drv_context->PopCntxMsgHandler( drv_err_handler.get() );
     }
 
@@ -2794,137 +2821,137 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // Check PushDefConnMsgHandler ...
     // PushDefConnMsgHandler - Add `per-connection' err.message handler "h" to the stack of default
     // handlers which are inherited by all newly created connections.
-    {
-        auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
-
-
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
-        Connect(local_conn);
-
-        drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
-
-        // Current connection should not be affected ...
-        {
-            try {
-                Test_ES_01(*local_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( !drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Push a message handler into a connection ...
-        // This is supposed to be okay.
-        {
-            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-
-            local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
-
-            try {
-                Test_ES_01(*local_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( msg_handler->GetSucceed() );
-            }
-
-            // Remove handler ...
-            local_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
-        }
-
-
-        ////////////////////////////////////////////////////////////////////////
-        // Create a new connection.
-        auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
-        Connect(new_conn);
-
-        // New connection should be affected ...
-        {
-            try {
-                Test_ES_01(*new_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Push a message handler into a connection ...
-        // This is supposed to be okay.
-        {
-            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-
-            new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
-
-            try {
-                Test_ES_01(*new_conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( msg_handler->GetSucceed() );
-            }
-
-            // Remove handler ...
-            new_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
-        }
-
-        // New connection should be affected
-        // after pushing a message handler into another connection
-        {
-            // Create a new connection ...
-            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-            Connect(conn);
-
-            try {
-                Test_ES_01(*conn);
-            }
-            catch( const CDB_Exception& ) {
-                // Ignore it
-                BOOST_CHECK( drv_err_handler->GetSucceed() );
-            }
-        }
-
-        // Remove handlers ...
-        drv_context->PopDefConnMsgHandler( drv_err_handler.get() );
-    }
+//     {
+//         auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+//
+//
+//         auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+//         Connect(local_conn);
+//
+//         drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
+//
+//         // Current connection should not be affected ...
+//         {
+//             try {
+//                 Test_ES_01(*local_conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
+//             }
+//         }
+//
+//         // Push a message handler into a connection ...
+//         // This is supposed to be okay.
+//         {
+//             auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+//
+//             local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+//
+//             try {
+//                 Test_ES_01(*local_conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( msg_handler->GetSucceed() );
+//             }
+//
+//             // Remove handler ...
+//             local_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+//         }
+//
+//
+//         ////////////////////////////////////////////////////////////////////////
+//         // Create a new connection.
+//         auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
+//         Connect(new_conn);
+//
+//         // New connection should be affected ...
+//         {
+//             try {
+//                 Test_ES_01(*new_conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( drv_err_handler->GetSucceed() );
+//             }
+//         }
+//
+//         // Push a message handler into a connection ...
+//         // This is supposed to be okay.
+//         {
+//             auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+//
+//             new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
+//
+//             try {
+//                 Test_ES_01(*new_conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( msg_handler->GetSucceed() );
+//             }
+//
+//             // Remove handler ...
+//             new_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
+//         }
+//
+//         // New connection should be affected
+//         // after pushing a message handler into another connection
+//         {
+//             // Create a new connection ...
+//             auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+//             Connect(conn);
+//
+//             try {
+//                 Test_ES_01(*conn);
+//             }
+//             catch( const CDB_Exception& ) {
+//                 // Ignore it
+//                 BOOST_CHECK( drv_err_handler->GetSucceed() );
+//             }
+//         }
+//
+//         // Remove handlers ...
+//         drv_context->PopDefConnMsgHandler( drv_err_handler.get() );
+//     }
 
     // SetLogStream ...
-    {
-        {
-            IConnection* conn = NULL;
-
-            // Enable multiexception ...
-            m_DS->SetLogStream(0);
-
-            try {
-                // Create a new connection ...
-                conn = m_DS->CreateConnection();
-            } catch(...)
-            {
-                delete conn;
-            }
-
-            m_DS->SetLogStream(&cerr);
-        }
-
-        {
-            IConnection* conn = NULL;
-
-            // Enable multiexception ...
-            m_DS->SetLogStream(0);
-
-            try {
-                // Create a new connection ...
-                conn = m_DS->CreateConnection();
-
-                m_DS->SetLogStream(&cerr);
-            } catch(...)
-            {
-                delete conn;
-            }
-        }
-    }
+//     {
+//         {
+//             IConnection* conn = NULL;
+//
+//             // Enable multiexception ...
+//             m_DS->SetLogStream(0);
+//
+//             try {
+//                 // Create a new connection ...
+//                 conn = m_DS->CreateConnection();
+//             } catch(...)
+//             {
+//                 delete conn;
+//             }
+//
+//             m_DS->SetLogStream(&cerr);
+//         }
+//
+//         {
+//             IConnection* conn = NULL;
+//
+//             // Enable multiexception ...
+//             m_DS->SetLogStream(0);
+//
+//             try {
+//                 // Create a new connection ...
+//                 conn = m_DS->CreateConnection();
+//
+//                 m_DS->SetLogStream(&cerr);
+//             } catch(...)
+//             {
+//                 delete conn;
+//             }
+//         }
+//     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3330,7 +3357,7 @@ CDBAPIUnitTest::Test_NULL(void)
     enum {rec_num = 10};
     string sql;
 
-    // Initialize data ...
+    // Initialize data (strings are NOT empty) ...
     {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
@@ -3444,7 +3471,7 @@ CDBAPIUnitTest::Test_NULL(void)
             BOOST_CHECK(auto_stmt->HasMoreResults());
             BOOST_CHECK(auto_stmt->HasRows());
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-            BOOST_CHECK(rs.get());
+            BOOST_CHECK(rs.get() != NULL);
 
             for (long ind = 0; ind < rec_num; ++ind) {
                 BOOST_CHECK(rs->Next());
@@ -3475,7 +3502,7 @@ CDBAPIUnitTest::Test_NULL(void)
             BOOST_CHECK(auto_stmt->HasMoreResults());
             BOOST_CHECK(auto_stmt->HasRows());
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-            BOOST_CHECK(rs.get());
+            BOOST_CHECK(rs.get() != NULL);
 
             for (long ind = 0; ind < rec_num; ++ind) {
                 BOOST_CHECK(rs->Next());
@@ -3523,6 +3550,80 @@ CDBAPIUnitTest::Test_NULL(void)
         {
         }
     }
+
+
+    // Special case: empty strings.
+    if (false) {
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        // Initialize data (strings are EMPTY) ...
+        {
+            // Drop all records ...
+            sql  = " DELETE FROM " + GetTableName();
+            auto_stmt->ExecuteUpdate(sql);
+
+            sql  = " INSERT INTO " + GetTableName() +
+                "(int_field, vc1000_field) "
+                "VALUES(@int_field, @vc1000_field) \n";
+
+            // CVariant variant(eDB_Text);
+            // variant.Append(" ", 1);
+
+            // Insert data ...
+            for (long ind = 0; ind < rec_num; ++ind) {
+                if (ind % 2 == 0) {
+                    auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
+                    auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
+                } else {
+                    auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
+                    auto_stmt->SetParam( CVariant(string()), "@vc1000_field" );
+                }
+
+                // Execute a statement with parameters ...
+                auto_stmt->ExecuteUpdate( sql );
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+            }
+
+            // Check record number ...
+            BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+        }
+
+        // Check ...
+        {
+            sql = "SELECT int_field, vc1000_field FROM " + GetTableName() + " ORDER BY id";
+
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK(rs.get() != NULL);
+
+            for (long ind = 0; ind < rec_num; ++ind) {
+                BOOST_CHECK(rs->Next());
+
+                const CVariant& int_field = rs->GetVariant(1);
+                const CVariant& vc1000_field = rs->GetVariant(2);
+
+                if (ind % 2 == 0) {
+                    BOOST_CHECK( !int_field.IsNull() );
+                    BOOST_CHECK_EQUAL( int_field.GetInt4(), ind );
+
+                    BOOST_CHECK( vc1000_field.IsNull() );
+                } else {
+                    BOOST_CHECK( int_field.IsNull() );
+
+                    BOOST_CHECK( !vc1000_field.IsNull() );
+                    BOOST_CHECK_EQUAL( vc1000_field.GetString(), string() );
+                }
+            }
+
+            DumpResults(auto_stmt.get());
+        }
+    }
+
 }
 
 
@@ -4762,7 +4863,6 @@ void
 CDBAPIUnitTest::Test_NCBI_LS(void)
 {
     if (true) {
-        static C_DriverMgr s_dbdrivers;
         static time_t s_tTimeOut = 30; // in seconds
         CDB_Connection* pDbLink = NULL;
 
@@ -5149,7 +5249,7 @@ CDBAPIUnitTest::Test_Authentication(void)
 //     }
 
     // No SSL certificate.
-    {
+    if (true) {
         auto_ptr<IConnection> auto_conn( m_DS->CreateConnection() );
 
         auto_conn->Connect(
@@ -5164,6 +5264,117 @@ CDBAPIUnitTest::Test_Authentication(void)
         BOOST_CHECK( rs.get() != NULL );
         BOOST_CHECK( rs->Next() );
     }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+class CContextThread : public CThread
+{
+public:
+    CContextThread(CDriverManager& dm, const CTestArguments& args);
+
+protected:
+    virtual ~CContextThread(void);
+    virtual void* Main(void);
+    virtual void  OnExit(void);
+
+private:
+    const CTestArguments    m_Args;
+    CDriverManager&         m_DM;
+    IDataSource*            m_DS;
+};
+
+
+CContextThread::CContextThread(CDriverManager& dm,
+                               const CTestArguments& args) :
+    m_Args(args),
+    m_DM(dm),
+    m_DS(NULL)
+{
+}
+
+
+CContextThread::~CContextThread(void)
+{
+}
+
+
+void*
+CContextThread::Main(void)
+{
+    try {
+        m_DS = m_DM.CreateDs( m_Args.GetDriverName(), &m_Args.GetDBParameters() );
+        return m_DS;
+    } catch (const CDB_ClientEx&) {
+        // Ignore it ...
+    } catch (...) {
+        _ASSERT(false);
+    }
+
+    return NULL;
+}
+
+
+void  CContextThread::OnExit(void)
+{
+    if (m_DS) {
+        m_DM.DestroyDs(m_Args.GetDriverName());
+    }
+}
+
+
+void
+CDBAPIUnitTest::Test_DriverContext_One(void)
+{
+    enum {eNumThreadsMax = 5};
+    void* ok;
+    int succeeded_num = 0;
+    CRef<CContextThread> thr[eNumThreadsMax];
+
+    // Spawn more threads
+    for (int i = 0; i < eNumThreadsMax; ++i) {
+        thr[i] = new CContextThread(m_DM, m_args);
+        // Allow threads to run even in single thread environment
+        thr[i]->Run(CThread::fRunAllowST);
+    }
+
+    // Wait for all threads
+    for (unsigned int i = 0; i < eNumThreadsMax; ++i) {
+        thr[i]->Join(&ok);
+        if (ok != NULL) {
+            ++succeeded_num;
+        }
+    }
+
+    BOOST_CHECK(succeeded_num >= 1);
+}
+
+
+void
+CDBAPIUnitTest::Test_DriverContext_Many(void)
+{
+    enum {eNumThreadsMax = 5};
+    void* ok;
+    int succeeded_num = 0;
+    CRef<CContextThread> thr[eNumThreadsMax];
+
+    // Spawn more threads
+    for (int i = 0; i < eNumThreadsMax; ++i) {
+        thr[i] = new CContextThread(m_DM, m_args);
+        // Allow threads to run even in single thread environment
+        thr[i]->Run(CThread::fRunAllowST);
+    }
+
+    // Wait for all threads
+    for (unsigned int i = 0; i < eNumThreadsMax; ++i) {
+        void* ok;
+        thr[i]->Join(&ok);
+        if (ok != NULL) {
+            ++succeeded_num;
+        }
+    }
+
+    BOOST_CHECK_EQUAL(succeeded_num, int(eNumThreadsMax));
 }
 
 
@@ -5231,10 +5442,43 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // add member function test cases to a test suite
     boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
     boost::unit_test::test_case* tc = NULL;
+
+    // Test DriverContext
+    if (args.GetDriverName() == "ftds" ||
+        args.GetDriverName() == "ftds63" ||
+        args.GetDriverName() == "ftds64_dblib" ||
+        args.GetDriverName() == "dblib" ||
+        args.GetDriverName() == "msdblib"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One, DBAPIInstance);
+        add(tc);
+    }
+
+    // We cannot run this test till we have an appropriate method in DBAPI
+    // to destroy a context.
+//     if (args.GetDriverName() == "ctlib" ||
+//         args.GetDriverName() == "ftds64_ctlib" ||
+//         args.GetDriverName() == "odbc" ||
+//         args.GetDriverName() == "ftds64_odbc"
+//         ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many, DBAPIInstance);
+//         add(tc);
+//     }
+
     boost::unit_test::test_case* tc_init =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
     add(tc_init);
+
+
+    if (args.GetServerType() == CTestArguments::eMsSql &&
+        (args.GetDriverName() == "ftds64_odbc"
+         || args.GetDriverName() == "ftds64_ctlib")
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     //
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
@@ -5430,6 +5674,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    /*
     if (args.GetServerType() == CTestArguments::eMsSql &&
         (args.GetDriverName() == "ftds64_odbc"
          || args.GetDriverName() == "ftds64_ctlib")
@@ -5438,16 +5683,17 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+    */
 
-    if (args.GetServerType() == CTestArguments::eMsSql
-        && args.GetDriverName() != "odbc" // Doesn't work ...
-        && args.GetDriverName() != "odbcw" // Doesn't work ...
-        // && args.GetDriverName() != "ftds64_odbc"
-        && args.GetDriverName() != "msdblib"
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NCBI_LS, DBAPIInstance);
-        add(tc);
-    }
+//     if (args.GetServerType() == CTestArguments::eMsSql
+//         && args.GetDriverName() != "odbc" // Doesn't work ...
+//         && args.GetDriverName() != "odbcw" // Doesn't work ...
+//         // && args.GetDriverName() != "ftds64_odbc"
+//         && args.GetDriverName() != "msdblib"
+//         ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_NCBI_LS, DBAPIInstance);
+//         add(tc);
+//     }
 
     // development ....
     if (false) {
@@ -5650,6 +5896,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.119  2006/12/15 16:49:19  ssikorsk
+ * Implemented Test_DriverContext_One and Test_DriverContext_Many;
+ * Enabled Test_DriverContext_One;
+ *
  * Revision 1.118  2006/12/14 17:29:10  ssikorsk
  * Test_Authentication: disable test with MSSQL10.
  *
