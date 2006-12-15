@@ -378,6 +378,29 @@ static NCBI_INLINE Int4 s_BlastSmallNaRetrieveHits(
     }
 }
 
+/** access the small-query lookup table */
+#define SMALL_NA_ACCESS_HITS()                                  \
+    if (index != -1) {                                          \
+        if (total_hits > max_hits)                              \
+            break;                                              \
+        total_hits += s_BlastSmallNaRetrieveHits(offset_pairs,  \
+                                                 index, s_off,  \
+                                                 total_hits,    \
+                                                 overflow);     \
+    }
+
+#define SMALL_NA_ACCESS_HITS2(x)                                  \
+    if (index != -1) {                                          \
+        if (total_hits > max_hits) {                            \
+            s_off += (x);                                       \
+            break;                                              \
+        }                                                       \
+        total_hits += s_BlastSmallNaRetrieveHits(offset_pairs,  \
+                                                 index, s_off + (x),  \
+                                                 total_hits,    \
+                                                 overflow);     \
+    }
+
 /** Scan the compressed subject sequence, returning 8-letter word hits
  * with stride 4. Assumes a small-query nucleotide lookup table
  * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
@@ -398,48 +421,73 @@ static Int4 s_BlastSmallNaScanSubject_8_4(const LookupTableWrap * lookup_wrap,
     BlastSmallNaLookupTable *lookup = 
                         (BlastSmallNaLookupTable *) lookup_wrap->lut;
     const Int4 kLutWordLength = 8;
-    Uint1 *abs_start = subject->sequence;
-    Uint1 *s = abs_start + start_offset / COMPRESSION_RATIO;
-    Uint1 *s_end = abs_start + (subject->length - kLutWordLength) /
-                                   COMPRESSION_RATIO;
+    const Int4 kLutWordMask = (1 << (2 * kLutWordLength)) - 1;
+    Int4 s_off = start_offset;
+    Int4 last_offset = subject->length - kLutWordLength;
+    Int4 num_words = (last_offset - start_offset) / 4 + 1;
+    Uint1 *s = subject->sequence + start_offset / COMPRESSION_RATIO;
     Int4 total_hits = 0;
     Int2 *backbone = lookup->final_backbone;
     Int2 *overflow = lookup->overflow;
+    Int4 init_index;
+    Int4 index;
 
     ASSERT(lookup_wrap->lut_type == eSmallNaLookupTable);
     ASSERT(lookup->lut_word_length == 8);
+    ASSERT(lookup->scan_step == 4);
     max_hits -= lookup->longest_chain;
 
-    for (; s <= s_end; s++) {
-
-        Int4 index = s[0] << 8 | s[1];
-        Int4 s_off;
-
-        index = backbone[index];
-        if (index != -1) {
-            if (total_hits > max_hits)
-                break;
-    
-            s_off = (s - abs_start) * COMPRESSION_RATIO;
-            total_hits += s_BlastSmallNaRetrieveHits(offset_pairs, index,
-                                            s_off, total_hits, overflow);
-        }
+    init_index = s[0];
+    switch (num_words % 8) {
+    case 1: s -= 7; s_off -= 28; goto byte_7;
+    case 2: s -= 6; s_off -= 24; goto byte_6;
+    case 3: s -= 5; s_off -= 20; goto byte_5;
+    case 4: s -= 4; s_off -= 16; goto byte_4;
+    case 5: s -= 3; s_off -= 12; goto byte_3;
+    case 6: s -= 2; s_off -=  8; goto byte_2;
+    case 7: s -= 1; s_off -=  4; goto byte_1;
     }
 
-    *end_offset = (s - abs_start) * COMPRESSION_RATIO;
+    while (s_off <= last_offset) {
+
+        init_index = init_index << 8 | s[1];
+        index = backbone[init_index & kLutWordMask];
+        SMALL_NA_ACCESS_HITS2(0);
+byte_1:
+        init_index = init_index << 8 | s[2];
+        index = backbone[init_index & kLutWordMask];
+        SMALL_NA_ACCESS_HITS2(4);
+byte_2:
+        init_index = init_index << 8 | s[3];
+        index = backbone[init_index & kLutWordMask];
+        SMALL_NA_ACCESS_HITS2(8);
+byte_3:
+        init_index = init_index << 8 | s[4];
+        index = backbone[init_index & kLutWordMask];
+        SMALL_NA_ACCESS_HITS2(12);
+byte_4:
+        init_index = init_index << 8 | s[5];
+        index = backbone[init_index & kLutWordMask];
+        SMALL_NA_ACCESS_HITS2(16);
+byte_5:
+        init_index = init_index << 8 | s[6];
+        index = backbone[init_index & kLutWordMask];
+        SMALL_NA_ACCESS_HITS2(20);
+byte_6:
+        init_index = init_index << 8 | s[7];
+        index = backbone[init_index & kLutWordMask];
+        SMALL_NA_ACCESS_HITS2(24);
+byte_7:
+        init_index = init_index << 8 | s[8];
+        s += 8;
+        index = backbone[init_index & kLutWordMask];
+        SMALL_NA_ACCESS_HITS2(28);
+        s_off += 32;
+    }
+
+    *end_offset = s_off;
     return total_hits;
 }
-
-/** access the small-query lookup table */
-#define SMALL_NA_ACCESS_HITS()                                  \
-    if (index != -1) {                                          \
-        if (total_hits > max_hits)                              \
-            break;                                              \
-        total_hits += s_BlastSmallNaRetrieveHits(offset_pairs,  \
-                                                 index, s_off,  \
-                                                 total_hits,    \
-                                                 overflow);     \
-    }
 
 /** Scan the compressed subject sequence, returning 4-to-8-letter word hits
  * with arbitrary stride. Assumes a small-query nucleotide lookup table
