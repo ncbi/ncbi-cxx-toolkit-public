@@ -5447,7 +5447,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetDriverName() == "ftds" ||
         args.GetDriverName() == "ftds63" ||
         args.GetDriverName() == "ftds64_dblib" ||
-        args.GetDriverName() == "dblib" ||
+        // args.GetDriverName() == "dblib" ||
         args.GetDriverName() == "msdblib"
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One, DBAPIInstance);
@@ -5896,6 +5896,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.120  2006/12/15 17:18:56  ssikorsk
+ * Disable Test_DriverContext_One with the dblib driver.
+ *
  * Revision 1.119  2006/12/15 16:49:19  ssikorsk
  * Implemented Test_DriverContext_One and Test_DriverContext_Many;
  * Enabled Test_DriverContext_One;
