@@ -156,41 +156,55 @@ void Decode(const void* data, size_t size, CScoreVector<Key, Score>& vec)
 
 
 ///
-/// TUid-based keys
+/// Uint4-based keys
 ///
 
 template<>
-void Serialize<TUid, TReal>(CNcbiOstream& ostr, const TRawScoreVector& vec);
+void Serialize<Uint4, float>(CNcbiOstream& ostr,
+                             const CRawScoreVector<Uint4, float>& vec);
 template<>
-void Deserialize<TUid, TReal>(CNcbiIstream& istr, TRawScoreVector& vec);
+void Deserialize<Uint4, float>(CNcbiIstream& istr,
+                               CRawScoreVector<Uint4, float>& vec);
 
 template<>
-void Encode<TUid, TReal>(const TRawScoreVector& vec, vector<unsigned char>& data);
+void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
+                          vector<unsigned char>& data);
 template<>
-void Encode<TUid, TReal>(const TRawScoreVector& vec, vector<char>& data);
+void Encode<Uint4, float>(const CRawScoreVector<Uint4, float>& vec,
+                          vector<char>& data);
 template<>
-void Decode<TUid, TReal>(const vector<unsigned char>& data, TRawScoreVector& vec);
+void Decode<Uint4, float>(const vector<unsigned char>& data,
+                          CRawScoreVector<Uint4, float>& vec);
 template<>
-void Decode<TUid, TReal>(const vector<char>& data, TRawScoreVector& vec);
+void Decode<Uint4, float>(const vector<char>& data,
+                          CRawScoreVector<Uint4, float>& vec);
 template<>
-void Decode<TUid, TReal>(const void* data, size_t size, TRawScoreVector& vec);
+void Decode<Uint4, float>(const void* data, size_t size,
+                          CRawScoreVector<Uint4, float>& vec);
 
 
 template<>
-void Serialize<TUid, TReal>(CNcbiOstream& ostr, const TScoreVector& vec);
+void Serialize<Uint4, float>(CNcbiOstream& ostr,
+                             const CScoreVector<Uint4, float>& vec);
 template<>
-void Deserialize<TUid, TReal>(CNcbiIstream& istr, TScoreVector& vec);
+void Deserialize<Uint4, float>(CNcbiIstream& istr,
+                               CScoreVector<Uint4, float>& vec);
 
 template<>
-void Encode<TUid, TReal>(const TScoreVector& vec, vector<char>& data);
+void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
+                          vector<char>& data);
 template<>
-void Encode<TUid, TReal>(const TScoreVector& vec, vector<unsigned char>& data);
+void Encode<Uint4, float>(const CScoreVector<Uint4, float>& vec,
+                          vector<unsigned char>& data);
 template<>
-void Decode<TUid, TReal>(const vector<char>& data, TScoreVector& vec);
+void Decode<Uint4, float>(const vector<char>& data,
+                          CScoreVector<Uint4, float>& vec);
 template<>
-void Decode<TUid, TReal>(const vector<unsigned char>& data, TScoreVector& vec);
+void Decode<Uint4, float>(const vector<unsigned char>& data,
+                          CScoreVector<Uint4, float>& vec);
 template<>
-void Decode<TUid, TReal>(const void* data, size_t size, TScoreVector& vec);
+void Decode<Uint4, float>(const void* data, size_t size,
+                          CScoreVector<Uint4, float>& vec);
 
 
 ///
@@ -199,27 +213,27 @@ void Decode<TUid, TReal>(const void* data, size_t size, TScoreVector& vec);
 ///
 
 template<>
-void Serialize<string, TReal>(CNcbiOstream& ostr,
-                              const CScoreVector<string, TReal>& vec);
+void Serialize<string, float>(CNcbiOstream& ostr,
+                              const CScoreVector<string, float>& vec);
 template<>
-void Deserialize<string, TReal>(CNcbiIstream& istr,
-                                CScoreVector<string, TReal>& vec);
+void Deserialize<string, float>(CNcbiIstream& istr,
+                                CScoreVector<string, float>& vec);
 
 template<>
-void Encode<string, TReal>(const CScoreVector<string, TReal>& vec,
+void Encode<string, float>(const CScoreVector<string, float>& vec,
                            vector<unsigned char>& data);
 template<>
-void Encode<string, TReal>(const CScoreVector<string, TReal>& vec,
+void Encode<string, float>(const CScoreVector<string, float>& vec,
                            vector<char>& data);
 template<>
-void Decode<string, TReal>(const vector<unsigned char>& data,
-                           CScoreVector<string, TReal>& vec);
+void Decode<string, float>(const vector<unsigned char>& data,
+                           CScoreVector<string, float>& vec);
 template<>
-void Decode<string, TReal>(const vector<char>& data,
-                           CScoreVector<string, TReal>& vec);
+void Decode<string, float>(const vector<char>& data,
+                           CScoreVector<string, float>& vec);
 template<>
-void Decode<string, TReal>(const void* data, size_t size,
-                           CScoreVector<string, TReal>& vec);
+void Decode<string, float>(const void* data, size_t size,
+                           CScoreVector<string, float>& vec);
 
 
 /// @}
@@ -231,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/17 17:20:02  dicuccio
+ * Removed unnecessary typedefs
+ *
  * Revision 1.1  2006/12/17 14:12:19  dicuccio
  * Initial revision
  *

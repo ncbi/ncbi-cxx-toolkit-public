@@ -33,7 +33,6 @@
  */
 
 #include <corelib/ncbiobj.hpp>
-#include <text/types.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -42,9 +41,6 @@ class CScoreVector;
 
 template <class Key, class Score>
 class CRawScoreVector;
-
-typedef CRawScoreVector<TUid, TReal> TRawScoreVector;
-typedef CScoreVector<TUid, TReal> TScoreVector;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -57,11 +53,11 @@ template <class Key, class Score>
 class CRawScoreVector : public CObject
 {
 public:
-    typedef Key                     key_type;
-    typedef Score                   score_type;
-    typedef pair<Key, Score>        TIdxScore;
-    typedef vector<TIdxScore>       TVector;
-    typedef TIdxScore               value_type;
+    typedef Key               key_type;
+    typedef Score             score_type;
+    typedef pair<Key, Score>  TIdxScore;
+    typedef vector<TIdxScore> TVector;
+    typedef TIdxScore         value_type;
     typedef typename TVector::iterator       iterator;
     typedef typename TVector::const_iterator const_iterator;
 
@@ -100,14 +96,14 @@ public:
     ///
     /// setup functions
     ///
-    TUid GetId() const;
-    void SetId(TUid uid);
+    key_type GetId() const;
+    void SetId(key_type uid);
     Score Get(Key idx) const;
     void Set(Key idx, Score weight);
     void Add(Key idx, Score weight = Score(1));
     void Set(const_iterator begin, const_iterator end);
 
-    void TrimLength(TReal  trim_pct);
+    void TrimLength(float  trim_pct);
     void TrimCount (size_t max_words);
     void TrimThresh(Score  min_score);
 
@@ -121,8 +117,8 @@ public:
     ///
     /// math functions
     ///
-    TReal Length2() const;
-    TReal Length() const;
+    float Length2() const;
+    float Length() const;
     void Normalize();
     void ProbNormalize();
 
@@ -136,7 +132,7 @@ public:
     
 protected:
     /// UID for this set
-    TUid m_Uid;
+    key_type m_Uid;
 
     /// the data for this document
     TVector m_Data;
@@ -188,14 +184,14 @@ public:
     ///
     /// setup functions
     ///
-    TUid GetId() const;
-    void SetId(TUid uid);
+    key_type GetId() const;
+    void SetId(key_type uid);
     size_t GetSize() const { return m_Data.size(); }
     Score Get(Key idx) const;
     void Set(Key idx, Score weight);
     void Add(Key idx, Score weight = Score(1));
 
-    void TrimLength(TReal  trim_pct);
+    void TrimLength(float  trim_pct);
     void TrimCount (size_t max_words);
     void TrimThresh(Score  min_score);
 
@@ -205,8 +201,8 @@ public:
     ///
     /// math functions
     ///
-    TReal Length2() const;
-    TReal Length() const;
+    float Length2() const;
+    float Length() const;
     void Normalize();
     void ProbNormalize();
 
@@ -220,7 +216,7 @@ public:
     
 protected:
     /// UID for this set
-    TUid m_Uid;
+    key_type m_Uid;
 
     /// the data for this document
     TVector m_Data;
@@ -232,25 +228,25 @@ protected:
 /// @{
 
 template <class ScoreVectorA, class ScoreVectorB>
-TReal ScoreCombined(const ScoreVectorA& query, const ScoreVectorB& vec);
+float ScoreCombined(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
-TReal ScoreCosine(const ScoreVectorA& query, const ScoreVectorB& vec);
+float ScoreCosine(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
-TReal ScoreDice(const ScoreVectorA& query, const ScoreVectorB& vec);
+float ScoreDice(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
-TReal ScoreDistance(const ScoreVectorA& query, const ScoreVectorB& vec);
+float ScoreDistance(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
-TReal ScoreDot(const ScoreVectorA& query, const ScoreVectorB& vec);
+float ScoreDot(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
-TReal ScoreJaccard(const ScoreVectorA& query, const ScoreVectorB& vec);
+float ScoreJaccard(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 template <class ScoreVectorA, class ScoreVectorB>
-TReal ScoreOverlap(const ScoreVectorA& query, const ScoreVectorB& vec);
+float ScoreOverlap(const ScoreVectorA& query, const ScoreVectorB& vec);
 
 /// @}
 
@@ -264,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/17 17:20:02  dicuccio
+ * Removed unnecessary typedefs
+ *
  * Revision 1.1  2006/12/17 14:12:19  dicuccio
  * Initial revision
  *

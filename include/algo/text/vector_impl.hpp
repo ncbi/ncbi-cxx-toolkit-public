@@ -152,7 +152,7 @@ void CRawScoreVector<Key, Score>::Swap(CRawScoreVector<Key, Score>& other)
 
 template <class Key, class Score>
 inline
-TUid CRawScoreVector<Key, Score>::GetId() const
+Key CRawScoreVector<Key, Score>::GetId() const
 {
     return m_Uid;
 }
@@ -160,7 +160,7 @@ TUid CRawScoreVector<Key, Score>::GetId() const
 
 template <class Key, class Score>
 inline
-void CRawScoreVector<Key, Score>::SetId(TUid uid)
+void CRawScoreVector<Key, Score>::SetId(Key uid)
 {
     m_Uid = uid;
 }
@@ -372,7 +372,7 @@ void CRawScoreVector<Key, Score>::Add(Key idx, Score weight)
 
 template <class Key, class Score>
 inline
-void CRawScoreVector<Key, Score>::TrimLength(TReal trim_pct)
+void CRawScoreVector<Key, Score>::TrimLength(float trim_pct)
 {
     if (trim_pct >= 1) {
         return;
@@ -492,7 +492,7 @@ void CRawScoreVector<Key, Score>::SortByIndex()
 ///
 template <class Key, class Score>
 inline
-TReal CRawScoreVector<Key, Score>::Length2() const
+float CRawScoreVector<Key, Score>::Length2() const
 {
     Score len = 0;
     ITERATE (typename TVector, iter, m_Data) {
@@ -504,7 +504,7 @@ TReal CRawScoreVector<Key, Score>::Length2() const
 
 template <class Key, class Score>
 inline
-TReal CRawScoreVector<Key, Score>::Length() const
+float CRawScoreVector<Key, Score>::Length() const
 {
     return sqrt(Length2());
 }
@@ -698,7 +698,7 @@ CScoreVector<Key, Score>& CScoreVector<Key, Score>::operator=(const CRawScoreVec
 
 template <class Key, class Score>
 inline
-TUid CScoreVector<Key, Score>::GetId() const
+Key CScoreVector<Key, Score>::GetId() const
 {
     return m_Uid;
 }
@@ -706,7 +706,7 @@ TUid CScoreVector<Key, Score>::GetId() const
 
 template <class Key, class Score>
 inline
-void CScoreVector<Key, Score>::SetId(TUid uid)
+void CScoreVector<Key, Score>::SetId(key_type uid)
 {
     m_Uid = uid;
 }
@@ -791,7 +791,7 @@ inline
 void CScoreVector<Key, Score>::clear()
 {
     m_Data.clear();
-    m_Uid = 0;
+    //m_Uid = 0;
 }
 
 
@@ -907,7 +907,7 @@ void CScoreVector<Key, Score>::Add(Key idx, Score weight)
 
 template <class Key, class Score>
 inline
-TReal CScoreVector<Key, Score>::Length2() const
+float CScoreVector<Key, Score>::Length2() const
 {
     Score len = 0;
     ITERATE (typename TVector, iter, m_Data) {
@@ -919,7 +919,7 @@ TReal CScoreVector<Key, Score>::Length2() const
 
 template <class Key, class Score>
 inline
-TReal CScoreVector<Key, Score>::Length() const
+float CScoreVector<Key, Score>::Length() const
 {
     return sqrt(Length2());
 }
@@ -1017,7 +1017,7 @@ CScoreVector<Key, Score>& CScoreVector<Key, Score>::operator-=(const CScoreVecto
 
 template <class Key, class Score>
 inline
-void CScoreVector<Key, Score>::TrimLength(TReal trim_pct)
+void CScoreVector<Key, Score>::TrimLength(float trim_pct)
 {
     if (trim_pct < 1.0f) {
 
@@ -1172,7 +1172,7 @@ CScoreVector<Key, Score>::AddScores(const CScoreVector<Key, Score>& other)
 
 template <class ScoreVectorA, class ScoreVectorB>
 inline
-TReal ScoreCombined(const ScoreVectorA& vec1, const ScoreVectorB& vec2)
+float ScoreCombined(const ScoreVectorA& vec1, const ScoreVectorB& vec2)
 {
     typename ScoreVectorA::score_type dot = 0;
     typename ScoreVectorA::score_type distance = 0;
@@ -1185,7 +1185,7 @@ TReal ScoreCombined(const ScoreVectorA& vec1, const ScoreVectorB& vec2)
 
 template <class ScoreVectorA, class ScoreVectorB>
 inline
-TReal ScoreCosine(const ScoreVectorA& vec1, const ScoreVectorB& vec2)
+float ScoreCosine(const ScoreVectorA& vec1, const ScoreVectorB& vec2)
 {
     return ncbi::Cosine(vec1.begin(), vec1.end(),
                         vec2.begin(), vec2.end());
@@ -1200,7 +1200,7 @@ TReal ScoreCosine(const ScoreVectorA& vec1, const ScoreVectorB& vec2)
 
 template <class ScoreVectorA, class ScoreVectorB>
 inline
-TReal ScoreDice(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
+float ScoreDice(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 {
     return ncbi::Dice(vec_a.begin(), vec_a.end(),
                       vec_b.begin(), vec_b.end());
@@ -1209,7 +1209,7 @@ TReal ScoreDice(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 
 template <class ScoreVectorA, class ScoreVectorB>
 inline
-TReal ScoreDistance(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
+float ScoreDistance(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 {
     return ncbi::Distance(vec_a.begin(), vec_a.end(),
                           vec_b.begin(), vec_b.end());
@@ -1218,7 +1218,7 @@ TReal ScoreDistance(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 
 template <class ScoreVectorA, class ScoreVectorB>
 inline
-TReal ScoreDot(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
+float ScoreDot(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 {
     return ncbi::Dot(vec_a.begin(), vec_a.end(),
                      vec_b.begin(), vec_b.end());
@@ -1233,7 +1233,7 @@ TReal ScoreDot(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 
 template <class ScoreVectorA, class ScoreVectorB>
 inline
-TReal ScoreJaccard(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
+float ScoreJaccard(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 {
     return ncbi::Jaccard(vec_a.begin(), vec_a.end(),
                          vec_b.begin(), vec_b.end());
@@ -1246,7 +1246,7 @@ TReal ScoreJaccard(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 ///
 template <class ScoreVectorA, class ScoreVectorB>
 inline
-TReal ScoreOverlap(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
+float ScoreOverlap(const ScoreVectorA& vec_a, const ScoreVectorB& vec_b)
 {
     return ncbi::Overlap(vec_a.begin(), vec_a.end(),
                          vec_b.begin(), vec_b.end());
@@ -1259,6 +1259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/17 17:20:02  dicuccio
+ * Removed unnecessary typedefs
+ *
  * Revision 1.1  2006/12/17 14:12:19  dicuccio
  * Initial revision
  *

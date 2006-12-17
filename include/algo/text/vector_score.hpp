@@ -43,16 +43,16 @@ BEGIN_NCBI_SCOPE
 ///
 
 template <class iterator1, class iterator2>
-TReal Cosine(iterator1 iter1, iterator1 end1,
+float Cosine(iterator1 iter1, iterator1 end1,
              iterator2 iter2, iterator2 end2)
 {
-    TReal cosine = 0;
-    TReal len_a = 0;
-    TReal len_b = 0;
+    float cosine = 0;
+    float len_a = 0;
+    float len_b = 0;
 
     for ( ;  iter1 != end1  &&  iter2 != end2; ) {
         if (iter1->first == iter2->first) {
-            cosine += TReal(iter1->second) * TReal(iter2->second);
+            cosine += float(iter1->second) * float(iter2->second);
             len_a += iter1->second * iter1->second;
             len_b += iter2->second * iter2->second;
             ++iter1;
@@ -86,17 +86,17 @@ TReal Cosine(iterator1 iter1, iterator1 end1,
 ///
 
 template <class iterator1, class iterator2>
-TReal Minkowski(iterator1 iter1, iterator1 end1,
+float Minkowski(iterator1 iter1, iterator1 end1,
                 iterator2 iter2, iterator2 end2,
                 size_t power)
 {
-    TReal mink = 0;
-    TReal len_a = 0;
-    TReal len_b = 0;
+    float mink = 0;
+    float len_a = 0;
+    float len_b = 0;
 
     for ( ;  iter1 != end1  &&  iter2 != end2; ) {
         if (iter1->first == iter2->first) {
-            mink += TReal(iter1->second) * TReal(iter2->second);
+            mink += float(iter1->second) * float(iter2->second);
             len_a += pow(iter1->second, power);
             len_b += pow(iter2->second, power);
             ++iter1;
@@ -120,7 +120,7 @@ TReal Minkowski(iterator1 iter1, iterator1 end1,
         len_b += pow(iter2->second, power);
     }
 
-    mink /= pow(len_a * len_b, 1.0f / TReal(power));
+    mink /= pow(len_a * len_b, 1.0f / float(power));
     return mink;
 }
 
@@ -129,14 +129,14 @@ TReal Minkowski(iterator1 iter1, iterator1 end1,
 /// Dot-product similarity
 ///
 template <class iterator1, class iterator2>
-TReal Dot(iterator1 iter1, iterator1 end1,
+float Dot(iterator1 iter1, iterator1 end1,
           iterator2 iter2, iterator2 end2)
 {
-    TReal dot = 0;
+    float dot = 0;
 
     for ( ;  iter1 != end1  &&  iter2 != end2; ) {
         if (iter1->first == iter2->first) {
-            dot += TReal(iter1->second) * TReal(iter2->second);
+            dot += float(iter1->second) * float(iter2->second);
             ++iter1;
             ++iter2;
         } else {
@@ -157,13 +157,13 @@ TReal Dot(iterator1 iter1, iterator1 end1,
 ///
 
 template <class iterator1, class iterator2>
-TReal Distance(iterator1 iter1, iterator1 end1,
+float Distance(iterator1 iter1, iterator1 end1,
                iterator2 iter2, iterator2 end2)
 {
-    TReal dist = 0;
+    float dist = 0;
     for ( ;  iter1 != end1  &&  iter2 != end2; ) {
         if (iter1->first == iter2->first) {
-            TReal diff = TReal(iter1->second) - iter2->second;
+            float diff = float(iter1->second) - iter2->second;
             dist += diff * diff;
             ++iter1;
             ++iter2;
@@ -197,13 +197,13 @@ TReal Distance(iterator1 iter1, iterator1 end1,
 template <class iterator1, class iterator2>
 void DotAndDistance(iterator1 iter1, iterator1 end1,
                     iterator2 iter2, iterator2 end2,
-                    TReal* dot_in, TReal* dist_in)
+                    float* dot_in, float* dist_in)
 {
-    TReal dot = 0;
-    TReal dist = 0;
+    float dot = 0;
+    float dist = 0;
     for ( ;  iter1 != end1  &&  iter2 != end2; ) {
         if (iter1->first == iter2->first) {
-            TReal diff = iter1->second - iter2->second;
+            float diff = iter1->second - iter2->second;
             dist += diff * diff;
             dot += iter1->second * iter2->second;
 
@@ -245,17 +245,17 @@ void DotAndDistance(iterator1 iter1, iterator1 end1,
 ///
 
 template <class iterator1, class iterator2>
-TReal Jaccard(iterator1 iter1, iterator1 end1,
+float Jaccard(iterator1 iter1, iterator1 end1,
               iterator2 iter2, iterator2 end2)
 {
-    TReal dot = 0;
-    TReal score_a = 0;
-    TReal score_b = 0;
+    float dot = 0;
+    float score_a = 0;
+    float score_b = 0;
 
     for ( ;  iter1 != end1  &&  iter2 != end2; ) {
         if (iter1->first == iter2->first) {
-            TReal v1 = TReal(iter1->second);
-            TReal v2 = TReal(iter2->second);
+            float v1 = float(iter1->second);
+            float v2 = float(iter2->second);
 
             dot     += v1 * v2;
             score_a += v1 * v1;
@@ -291,17 +291,17 @@ TReal Jaccard(iterator1 iter1, iterator1 end1,
 ///
 
 template <class iterator1, class iterator2>
-TReal Dice(iterator1 iter1, iterator1 end1,
+float Dice(iterator1 iter1, iterator1 end1,
            iterator2 iter2, iterator2 end2)
 {
-    TReal dot = 0;
-    TReal score_a = 0;
-    TReal score_b = 0;
+    float dot = 0;
+    float score_a = 0;
+    float score_b = 0;
 
     for ( ;  iter1 != end1  &&  iter2 != end2; ) {
         if (iter1->first == iter2->first) {
-            TReal v1 = TReal(iter1->second);
-            TReal v2 = TReal(iter2->second);
+            float v1 = float(iter1->second);
+            float v2 = float(iter2->second);
 
             dot     += v1 * v2;
             score_a += iter1->second;
@@ -337,15 +337,15 @@ TReal Dice(iterator1 iter1, iterator1 end1,
 ///
 
 template <class iterator1, class iterator2>
-TReal Overlap(iterator1 iter1, iterator1 end1,
+float Overlap(iterator1 iter1, iterator1 end1,
               iterator2 iter2, iterator2 end2)
 {
-    TReal dot = 0;
-    TReal sum_a = 0;
-    TReal sum_b = 0;
+    float dot = 0;
+    float sum_a = 0;
+    float sum_b = 0;
     for ( ;  iter1 != end1  &&  iter2 != end2; ) {
         if (iter1->first == iter2->first) {
-            dot += TReal(iter1->second) * TReal(iter2->second);
+            dot += float(iter1->second) * float(iter2->second);
             sum_a += iter1->second;
             sum_b += iter2->second;
             ++iter1;
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/17 17:20:02  dicuccio
+ * Removed unnecessary typedefs
+ *
  * Revision 1.1  2006/12/17 14:12:19  dicuccio
  * Initial revision
  *
