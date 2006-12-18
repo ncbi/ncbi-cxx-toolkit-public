@@ -3037,14 +3037,18 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
                 new_byte = m_FastNcbi4naNcbi2na->m_Table[0][c1] |
                     (m_FastNcbi4naNcbi2na->m_Table[1][c2] & 0xFC);
                 break;
-            default: 
+            default:
+                // This is a bogus assignment, just to suppress a
+                // compiler warning. The value will not actually be
+                // used (see the "uOverhang > 0" condition below)
+                new_byte = 0;
                 break;
             }
 
             // Assign respective parts of the new byte to the remaining parts
             // of the output sequence. Output iterator only needs to be 
-            // incremented if the overhang is greater than the unfilled remainder 
-            // of the last output byte.
+            // incremented if the overhang is greater than the unfilled
+            // remainder  of the last output byte.
             if (uOverhang > 0) {
                 (*i_out) |= ((new_byte & kOneByteMask) >> rbit);
                 if (2*uOverhang > lbit) {
@@ -6759,6 +6763,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2006/12/18 21:24:34  vakatov
+ * MapIupacnaToNcbi2na() -- a bogus assignment of 'new_byte' to suppress
+ * a compiler warning
+ *
  * Revision 6.30  2006/09/19 17:44:32  ucko
  * Reinstate the 28-letter version of ncbistdaa, for which BLAST is now ready.
  *
