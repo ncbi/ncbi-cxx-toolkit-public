@@ -221,22 +221,27 @@ void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 }
 
 
-void CBDB_RawFile::Open(const char* filename,
-                        const char* database,
-                        EOpenMode   open_mode,
-                        bool        support_dirty_read,
-                        unsigned    rec_len)
+void CBDB_RawFile::Open(const string& filename,
+                        const string& database,
+                        EOpenMode     open_mode,
+                        bool          support_dirty_read,
+                        unsigned      rec_len)
 {
     if ( !m_FileName.empty() )
         Close();
 
-    if (!database  ||  !*database)
-        database = 0; // database = kDefaultDatabase;
+    const char * db;
+    if (database.empty()) {
+        db = 0; 
+    } else {
+        db = database.c_str();
+    }
 
-    x_Open(filename, database, open_mode, support_dirty_read, rec_len);
+
+    x_Open(filename.c_str(), db, open_mode, support_dirty_read, rec_len);
 
     m_FileName = filename;
-    if (database)
+    if (db)
         m_Database = database;
     else
         m_Database = "";
@@ -263,10 +268,14 @@ void CBDB_RawFile::Reopen(EOpenMode open_mode,
 }
 
 
-void CBDB_RawFile::Remove(const char* filename, const char* database)
+void CBDB_RawFile::Remove(const string& filename, const string& database)
 {
-    if (!database  ||  !*database)
-        database = 0; // database = kDefaultDatabase;
+    const char* db_name;
+    if (database.empty()) {
+        db_name = 0; 
+    } else {
+        db_name = database.c_str();
+    }
 
     if (m_DB_Attached) {
         BDB_THROW(eInvalidOperation, "Cannot remove attached object");
@@ -279,12 +288,12 @@ void CBDB_RawFile::Remove(const char* filename, const char* database)
     int ret = db_create(&db, m_Env ? m_Env->GetEnv() : 0, 0);
     BDB_CHECK(ret, 0);
 
-    ret = db->remove(db, filename, database, 0);
+    ret = db->remove(db, filename.c_str(), db_name, 0);
     guard.release();
     if (ret == ENOENT || ret == EINVAL)
         return;  // Non existent table cannot be removed
 
-    BDB_CHECK(ret, filename);
+    BDB_CHECK(ret, filename.c_str());
 }
 
 
@@ -779,11 +788,11 @@ void CBDB_File::BindData(const char* field_name,
 }
 
 
-void CBDB_File::Open(const char* filename,
-                     const char* database,
-                     EOpenMode   open_mode,
-                     bool        support_dirty_read,
-                     unsigned    rec_len)
+void CBDB_File::Open(const string& filename,
+                     const string& database,
+                     EOpenMode     open_mode,
+                     bool          support_dirty_read,
+                     unsigned      rec_len)
 {
     if ( IsOpen() )
         Close();
@@ -1457,6 +1466,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/12/18 19:53:29  kuznets
+ * Use string not const char* for db opening, etc.
+ *
  * Revision 1.70  2006/11/30 12:42:09  dicuccio
  * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
  * vector<unsigned char>

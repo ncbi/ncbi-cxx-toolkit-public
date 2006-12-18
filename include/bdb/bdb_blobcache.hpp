@@ -327,8 +327,8 @@ public:
     ///
     /// @sa OpenReadOnly
     ///
-    void Open(const char*  cache_path,
-              const char*  cache_name,
+    void Open(const string&  cache_path,
+              const string&  cache_name,
               ELockMode    lm = eNoLock,
               unsigned int cache_ram_size = 0,
               ETRansact    use_trans = eUseTrans,
@@ -341,10 +341,10 @@ public:
     /// @param err_file
     ///    Name of the error file
     ///    When NULL errors are dumped to stderr
-    void Verify(const char*  cache_path,
-                const char*  cache_name,
-                const char*  err_file = 0,
-                bool         force_remove = false);
+    void Verify(const string&  cache_path,
+                const string&  cache_name,
+                const string&  err_file = 0,
+                bool           force_remove = false);
 
     /// Open local cache in read-only mode.
     /// This is truely passive mode of operations.
@@ -353,9 +353,9 @@ public:
     ///
     /// @sa Open
     ///
-    void OpenReadOnly(const char*  cache_path,
-                      const char*  cache_name,
-                      unsigned int cache_ram_size = 0);
+    void OpenReadOnly(const string&  cache_path,
+                      const string&  cache_name,
+                      unsigned int   cache_ram_size = 0);
 
     void Close();
 
@@ -822,6 +822,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/12/18 19:52:01  kuznets
+ * Use string not const char* for db opening, etc.
+ *
  * Revision 1.66  2006/08/17 20:46:48  kuznets
  * Added support of in-memory logs
  *

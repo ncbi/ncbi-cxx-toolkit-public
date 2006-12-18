@@ -78,20 +78,20 @@ public:
     ///
     /// @param db_home destination directory for the database
     /// @param flags - Berkeley DB flags (see documentation on DB_ENV->open)
-    void Open(const char* db_home, int flags);
+    void Open(const string& db_home, int flags);
 
     /// Open environment with database locking (DB_INIT_LOCK)
     ///
     /// @param db_home destination directory for the database
-    void OpenWithLocks(const char* db_home);
+    void OpenWithLocks(const string& db_home);
 
     /// Open-create private environment
-    void OpenPrivate(const char* db_home);
+    void OpenPrivate(const string& db_home);
 
     /// Open environment with CDB locking (DB_INIT_CDB)
     ///
     /// @param db_home destination directory for the database
-    void OpenConcurrentDB(const char* db_home);
+    void OpenConcurrentDB(const string& db_home);
 
     /// Open environment using transaction
     ///
@@ -99,7 +99,7 @@ public:
     ///    destination directory for the database
     /// @param flags
     
-    void OpenWithTrans(const char* db_home, TEnvOpenFlags opt = 0);
+    void OpenWithTrans(const string& db_home, TEnvOpenFlags opt = 0);
 
     /// Open error reporting file for the environment
     ///
@@ -107,7 +107,7 @@ public:
     ///    file_name - name of the error file
     ///    if file_name == "stderr" or "stdout" 
     ///    all errors are redirected to that device
-    void OpenErrFile(const char* file_name);
+    void OpenErrFile(const string& file_name);
 
     /// Join the existing environment
     ///
@@ -116,7 +116,7 @@ public:
     /// @param 
     ///    opt environment options (see EEnvOptions)
     /// @sa EEnvOptions
-    void JoinEnv(const char* db_home, TEnvOpenFlags opt = 0);
+    void JoinEnv(const string& db_home, TEnvOpenFlags opt = 0);
 
     /// Return underlying DB_ENV structure pointer for low level access.
     DB_ENV* GetEnv() { return m_Env; }
@@ -232,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/12/18 19:52:01  kuznets
+ * Use string not const char* for db opening, etc.
+ *
  * Revision 1.26  2006/03/30 17:27:42  kuznets
  * +SetTransactionMax()
  *

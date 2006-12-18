@@ -1091,12 +1091,12 @@ void CBDB_Cache::SetOverflowLimit(unsigned limit)
     m_OverflowLimit = limit;
 }
 
-void CBDB_Cache::Open(const char* cache_path,
-                      const char* cache_name,
-                      ELockMode lm,
-                      unsigned int cache_ram_size,
-                      ETRansact    use_trans,
-                      unsigned int log_mem_size)
+void CBDB_Cache::Open(const string& cache_path,
+                      const string& cache_name,
+                      ELockMode     lm,
+                      unsigned int  cache_ram_size,
+                      ETRansact     use_trans,
+                      unsigned int  log_mem_size)
 {
     {{
 
@@ -1315,9 +1315,9 @@ void CBDB_Cache::StopPurgeThread()
 # endif
 }
 
-void CBDB_Cache::OpenReadOnly(const char*  cache_path,
-                              const char*  cache_name,
-                              unsigned int cache_ram_size)
+void CBDB_Cache::OpenReadOnly(const string&  cache_path,
+                              const string&  cache_name,
+                              unsigned int   cache_ram_size)
 {
     {{
 
@@ -2544,10 +2544,10 @@ void CBDB_Cache::Purge(const string&    key,
 
 }
 
-void CBDB_Cache::Verify(const char*  cache_path,
-                        const char*  cache_name,
-                        const char*  err_file,
-                        bool         force_remove)
+void CBDB_Cache::Verify(const string&  cache_path,
+                        const string&  cache_name,
+                        const string&  err_file,
+                        bool           force_remove)
 {
     Close();
 
@@ -2556,7 +2556,7 @@ void CBDB_Cache::Verify(const char*  cache_path,
     m_Env = new CBDB_Env();
 
     m_Env->SetCacheSize(10 * 1024 * 1024);
-    m_Env->OpenErrFile(err_file ? err_file : "stderr");
+    m_Env->OpenErrFile(!err_file.empty() ? err_file : string("stderr"));
     try {
         m_Env->Open(cache_path, DB_INIT_MPOOL | DB_USE_ENVIRON);
     }
@@ -3331,6 +3331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.135  2006/12/18 19:53:29  kuznets
+ * Use string not const char* for db opening, etc.
+ *
  * Revision 1.134  2006/08/17 20:46:59  kuznets
  * Added support of in-memory logs
  *

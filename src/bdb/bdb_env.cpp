@@ -98,9 +98,9 @@ void CBDB_Env::SetLogBSize(unsigned lg_bsize)
 }
 
 
-void CBDB_Env::Open(const char* db_home, int flags)
+void CBDB_Env::Open(const string& db_home, int flags)
 {
-    int ret = x_Open(db_home, flags);
+    int ret = x_Open(db_home.c_str(), flags);
     BDB_CHECK(ret, "DB_ENV");
 }
 
@@ -146,20 +146,20 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
     return ret;
 }
 
-void CBDB_Env::OpenWithLocks(const char* db_home)
+void CBDB_Env::OpenWithLocks(const string& db_home)
 {
     Open(db_home, DB_CREATE/*|DB_RECOVER*/|DB_INIT_LOCK|DB_INIT_MPOOL);
 }
 
-void CBDB_Env::OpenPrivate(const char* db_home)
+void CBDB_Env::OpenPrivate(const string& db_home)
 {
-    int ret = x_Open(db_home, 
+    int ret = x_Open(db_home.c_str(), 
                      DB_CREATE|DB_PRIVATE|DB_INIT_MPOOL);
     BDB_CHECK(ret, "DB_ENV");
 }
 
 
-void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
+void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
 {
     int ret = m_Env->set_lk_detect(m_Env, DB_LOCK_DEFAULT);
     BDB_CHECK(ret, "DB_ENV");
@@ -190,7 +190,7 @@ void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
             recover_flag |= DB_PRIVATE;
         }
 
-        ret = x_Open(db_home, recover_flag);
+        ret = x_Open(db_home.c_str(), recover_flag);
         BDB_CHECK(ret, "DB_ENV");
         
         // non-private recovery
@@ -216,7 +216,7 @@ void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
             recover_flag |= DB_PRIVATE;
         }
         
-        ret = x_Open(db_home, recover_flag);
+        ret = x_Open(db_home.c_str(), recover_flag);
         BDB_CHECK(ret, "DB_ENV");
         
         // non-private recovery
@@ -241,17 +241,16 @@ void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
     m_Transactional = true;
 }
 
-void CBDB_Env::OpenConcurrentDB(const char* db_home)
+void CBDB_Env::OpenConcurrentDB(const string& db_home)
 {
     int ret = 
-      m_Env->set_flags(m_Env, 
-                       DB_CDB_ALLDB | DB_DIRECT_DB, 1);
+      m_Env->set_flags(m_Env, DB_CDB_ALLDB | DB_DIRECT_DB, 1);
     BDB_CHECK(ret, "DB_ENV::set_flags");
 
     Open(db_home, DB_INIT_CDB | DB_INIT_MPOOL);
 }
 
-void CBDB_Env::JoinEnv(const char* db_home, TEnvOpenFlags opt)
+void CBDB_Env::JoinEnv(const string& db_home, TEnvOpenFlags opt)
 {
     int flag = DB_JOINENV;
     if (opt & eThreaded) {
@@ -413,23 +412,23 @@ void CBDB_Env::SetTasSpins(unsigned tas_spins)
 #endif
 }
 
-void CBDB_Env::OpenErrFile(const char* file_name)
+void CBDB_Env::OpenErrFile(const string& file_name)
 {
     if (m_ErrFile) {
         fclose(m_ErrFile);
         m_ErrFile = 0;
     }
 
-    if (::strcmp(file_name, "stderr") == 0) {
+    if (file_name == "stderr") {
         m_Env->set_errfile(m_Env, stderr);
         return;
     }
-    if (::strcmp(file_name, "stdout") == 0) {
+    if (file_name == "stdout") {
         m_Env->set_errfile(m_Env, stdout);
         return;
     }
 
-    m_ErrFile = fopen(file_name, "a");
+    m_ErrFile = fopen(file_name.c_str(), "a");
     if (m_ErrFile) {
         m_Env->set_errfile(m_Env, m_ErrFile);
     }
@@ -508,6 +507,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/12/18 19:53:29  kuznets
+ * Use string not const char* for db opening, etc.
+ *
  * Revision 1.38  2006/10/19 20:38:20  joukovv
  * Works in thread-per-request mode. Errors in BDB layer fixed.
  *

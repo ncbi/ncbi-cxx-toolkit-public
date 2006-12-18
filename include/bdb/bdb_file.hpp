@@ -136,13 +136,14 @@ public:
     CBDB_Env* GetEnv() { return m_Env; }
 
     /// Open file with specified access mode
-    void Open(const char* filename, 
-              EOpenMode   open_mode, 
-              bool        support_dirty_read = false,
-              unsigned    rec_len = 0);
+    void Open(const string& filename, 
+              EOpenMode     open_mode, 
+              bool          support_dirty_read = false,
+              unsigned      rec_len = 0);
     /// Open file with specified filename and database name.
     /// (Berkeley DB supports having several database tables in one file.) 
-    void Open(const char* filename, const char* database,
+    void Open(const string& filename, 
+              const string& database,
               EOpenMode   open_mode,
               bool        support_dirty_read = false,
               unsigned    rec_len = 0);
@@ -157,7 +158,7 @@ public:
                 unsigned  rec_len = 0);
 
     /// Remove the database specified by the filename and database arguments
-    void Remove(const char* filename, const char* database = 0);
+    void Remove(const string& filename, const string& database = kEmptyStr);
     /// Empty the database. Return number of records removed.
     unsigned int Truncate();
 
@@ -336,17 +337,18 @@ public:
               EDBType        db_type  = eBtree);
 
     /// Open file with specified access mode
-    void Open(const char* filename, 
-              EOpenMode   open_mode, 
-              bool        support_dirty_read = false,
-              unsigned    rec_len = 0);
+    void Open(const string& filename, 
+              EOpenMode     open_mode, 
+              bool          support_dirty_read = false,
+              unsigned      rec_len = 0);
 
     /// Open file with specified filename and database name.
     /// (Berkeley DB supports having several database tables in one file.) 
-    void Open(const char* filename, const char* database,
-              EOpenMode   open_mode,
-              bool        support_dirty_read = false,
-              unsigned    rec_len = 0);
+    void Open(const string& filename, 
+              const string& database,
+              EOpenMode     open_mode,
+              bool          support_dirty_read = false,
+              unsigned      rec_len = 0);
     /// Reopen the db file
     void Reopen(EOpenMode open_mode, bool support_dirty_read = false);
 
@@ -600,7 +602,7 @@ CBDB_File::TUnifiedFieldIndex BDB_GetUFieldIdx(int fidx, bool key)
 
 inline 
 void CBDB_RawFile::Open(
-        const char* filename, EOpenMode open_mode, 
+        const string& filename, EOpenMode open_mode, 
         bool support_dirty_read,
         unsigned rec_len)
 {
@@ -650,7 +652,7 @@ bool CBDB_RawFile::IsAttached() const
 
 inline 
 void CBDB_File::Open(
-  const char* filename, EOpenMode open_mode, 
+  const string& filename, EOpenMode open_mode, 
   bool support_dirty_read, unsigned rec_len)
 {
     Open(filename, 0, open_mode, support_dirty_read, rec_len);
@@ -678,6 +680,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/12/18 19:52:01  kuznets
+ * Use string not const char* for db opening, etc.
+ *
  * Revision 1.50  2006/11/30 12:42:08  dicuccio
  * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
  * vector<unsigned char>
