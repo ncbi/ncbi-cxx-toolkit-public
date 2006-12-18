@@ -77,22 +77,6 @@ void CDiagParserApp::Init(void)
 }
 
 
-const int kNumFlags = 12;
-static TDiagPostFlags s_TestFlags[kNumFlags] = {
-    eDPF_File + eDPF_LongFilename,
-    eDPF_Line,
-    eDPF_Severity,
-    eDPF_ErrorID,
-    eDPF_DateTime,
-    eDPF_Location,
-    eDPF_PID,
-    eDPF_TID,
-    eDPF_SerialNo,
-    eDPF_SerialNo_Thread,
-    eDPF_RequestId,
-    eDPF_UID
-};
-
 int CDiagParserApp::Run(void)
 {
     // Valid messages
@@ -332,6 +316,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/18 16:42:36  grichenk
+ * Removed unused variables.
+ *
  * Revision 1.5  2006/11/16 20:12:10  grichenk
  * Added CParam state (stage of initialization).
  *
