@@ -201,6 +201,10 @@ int CId1FetchApp::Run(void)
     } else if (fmt == "xml") {
         format = eSerial_Xml;
     }
+    else {
+        _TROUBLE;
+        return 1;
+    }
 
     {{
         auto_ptr<CObjectOStream> id1_client_output
@@ -239,6 +243,9 @@ int main(int argc, const char* argv[])
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2006/12/18 20:37:09  vakatov
+ * Heed a compiler warning
+ *
  * Revision 1.14  2004/09/07 14:25:09  vasilche
  * Allow to change ID1 service name by command line arguments.
  *
