@@ -204,28 +204,28 @@ public:
     CConn_HttpStream
     (const string&        host,
      const string&        path,
-     const string&        args         = kEmptyStr,
-     const string&        user_header  = kEmptyStr,
-     unsigned short       port         = 80,
-     THCC_Flags           flags        = fHCC_AutoReconnect,
-     const STimeout*      timeout      = kDefaultTimeout,
-     streamsize           buf_size     = kConn_DefaultBufSize
+     const string&        args            = kEmptyStr,
+     const string&        user_header     = kEmptyStr,
+     unsigned short       port            = 80,
+     THCC_Flags           flags           = fHCC_AutoReconnect,
+     const STimeout*      timeout         = kDefaultTimeout,
+     streamsize           buf_size        = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
     (const string&        url,
-     THCC_Flags           flags        = fHCC_AutoReconnect,
-     const STimeout*      timeout      = kDefaultTimeout,
-     streamsize           buf_size     = kConn_DefaultBufSize
+     THCC_Flags           flags           = fHCC_AutoReconnect,
+     const STimeout*      timeout         = kDefaultTimeout,
+     streamsize           buf_size        = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
     (const string&        url,
      const SConnNetInfo*  net_info,
-     const string&        user_header  = kEmptyStr,
-     THCC_Flags           flags        = fHCC_AutoReconnect,
-     const STimeout*      timeout      = kDefaultTimeout,
-     streamsize           buf_size     = kConn_DefaultBufSize
+     const string&        user_header     = kEmptyStr,
+     THCC_Flags           flags           = fHCC_AutoReconnect,
+     const STimeout*      timeout         = kDefaultTimeout,
+     streamsize           buf_size        = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
@@ -291,8 +291,8 @@ class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
 {
 public:
     CConn_MemoryStream(streamsize  buf_size = kConn_DefaultBufSize);
-    /// Build a stream on top of NCBI buffer (which in turn
-    /// can be have built over a memory area of a specified size).
+    /// Build a stream on top of an NCBI buffer (which in turn
+    /// could have been built over a memory area of a specified size).
     /// BUF's ownership is assumed by the stream as specified in "owner".
     CConn_MemoryStream(BUF         buf,
                        EOwnership  owner    = eTakeOwnership,
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.51  2006/12/18 21:08:24  lavr
+ * Formatting
+ *
  * Revision 6.50  2006/12/14 23:19:03  lavr
  * Prepend anonymous FTP login pass with -
  *
