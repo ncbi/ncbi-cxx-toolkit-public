@@ -37,6 +37,11 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
+// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
+#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
+#  undef numeric_limits
+#endif
+
 #include <boost/test/unit_test.hpp>
 
 using boost::unit_test_framework::test_suite;
@@ -246,6 +251,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.49  2006/12/18 15:39:03  ucko
+ * Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
+ *
  * Revision 1.48  2006/12/15 16:47:17  ssikorsk
  * Added Test_DriverContext_One and Test_DriverContext_Many.
  *
