@@ -360,7 +360,7 @@ BOOST_AUTO_UNIT_TEST(ConstructMissing)
         
         CHECK(num1 >= 1);
         CHECK_EQUAL(num1, num2);
-    } catch( CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -377,7 +377,7 @@ BOOST_AUTO_UNIT_TEST(InvalidSeqType)
     
     try {
         CSeqDB local1("data/seqp", CSeqDB::ESeqType(99));
-    } catch(   CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -411,7 +411,7 @@ BOOST_AUTO_UNIT_TEST(InvalidPath)
         local1.GetTotals(CSeqDB::eFilteredAll, & num1, 0);
         
         CHECK(num1 >= 1);
-    } catch( CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -1371,7 +1371,7 @@ BOOST_AUTO_UNIT_TEST(GetLenHighOID)
         int len = dbp.GetSeqLength(num_seqs);
         
         CHECK_EQUAL(int(11112222), len);
-    } catch(       CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -1391,7 +1391,7 @@ BOOST_AUTO_UNIT_TEST(GetLenNegOID)
         Uint4 len = dbp.GetSeqLength(Uint4(-1));
         
         CHECK_EQUAL(Uint4(11112222), len);
-    } catch(        CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -1416,7 +1416,7 @@ BOOST_AUTO_UNIT_TEST(GetSeqHighOID)
         Uint4 len = dbp.GetSequence(nseqs, & buffer);
         
         CHECK_EQUAL(Uint4(11112222), len);
-    } catch(       CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -1438,7 +1438,7 @@ BOOST_AUTO_UNIT_TEST(GetSeqNegOID)
         Uint4 len = dbp.GetSequence(Uint4(-1), & buffer);
         
         CHECK_EQUAL(Uint4(11112222), len);
-    } catch(        CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -1461,7 +1461,7 @@ BOOST_AUTO_UNIT_TEST(Offset2OidBadOffset)
         nr.GetTotals(CSeqDB::eUnfilteredAll, 0, & vlength);
         
         nr.GetOidAtOffset(0, vlength + 1);
-    } catch( CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -1483,7 +1483,7 @@ BOOST_AUTO_UNIT_TEST(Offset2OidBadOid)
         nr.GetTotals(CSeqDB::eUnfilteredAll, & noids, 0);
         
         nr.GetOidAtOffset(noids + 1, 0);
-    } catch(    CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -1775,7 +1775,7 @@ BOOST_AUTO_UNIT_TEST(EmptyDBList)
     
     try {
         CSeqDB db("", CSeqDB::eProtein);
-    } catch( CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -2252,7 +2252,7 @@ BOOST_AUTO_UNIT_TEST(ExpertIdBoundsNoPig)
         
         CHECK(low < high);
         CHECK(count);
-    } catch( CSeqDBException & e) {
+    } catch(CSeqDBException &) {
         caught_exception = true;
     }
     
@@ -2328,6 +2328,9 @@ void s_ForceSymbolDefinitions(CObjectIStream& ois,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2006/12/18 18:01:33  bealer
+ * - Fix warnings.
+ *
  * Revision 1.9  2006/11/28 20:49:01  bealer
  * - Fix signedness issue for Irix.
  *
