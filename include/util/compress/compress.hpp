@@ -323,6 +323,7 @@ private:
     // Friend classes
     friend class CCompressionStream;
     friend class CCompressionStreambuf;
+    friend class CCompressionStreamProcessor;
 };
 
 
@@ -455,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/12/18 19:37:06  ivanov
+ * CCompressionProcessor: added friend class CCompressionStreamProcessor
+ *
  * Revision 1.14  2006/11/23 03:52:37  ivanov
  * CCompressionProcessor::EStatus += eStatus_Unknown
  *
