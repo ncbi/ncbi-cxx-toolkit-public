@@ -645,7 +645,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                    "Specified file is empty.");
     } else if (isdigit((unsigned char)(*((char*) fbeginp)))) {
         is_binary = false;
-    } else if ((file_size >= 8) && (*fbeginp & 0xFF == 0xFF)) {
+    } else if ((file_size >= 8) && ((*fbeginp & 0xFF) == 0xFF)) {
         is_binary = true;
     } else {
         NCBI_THROW(CSeqDBException,
