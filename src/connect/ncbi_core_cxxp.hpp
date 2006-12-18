@@ -35,11 +35,17 @@
 
 #include <connect/ncbi_core_cxx.hpp>
 
+#ifdef __GNUC__
+// Warn at least for GNU compilations :-(
+#  warning \
+"This header is obsolele and scheduled for removal, please don't use it!!"
+#endif /*__GNUC__*/
+
 
 BEGIN_NCBI_SCOPE
 
 
-extern NCBI_XCONNECT_EXPORT void CONNECT_InitInternal(void);
+extern NCBI_XCONNECT_EXPORT NCBI_DEPRECATED void CONNECT_InitInternal(void);
 
 
 END_NCBI_SCOPE
@@ -48,6 +54,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2006/12/18 21:07:41  lavr
+ * Mark both CONNECT_InitInternal() and the entire header as obsolete
+ *
  * Revision 1.1  2004/09/09 16:44:54  lavr
  * Initial revision
  *
