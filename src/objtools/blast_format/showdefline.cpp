@@ -93,7 +93,7 @@ static const string kRepeatHeader = "Sequences used in model and found again:";
 static const string kNewSeqHeader = "Sequences not found previously or not pr\
 eviously below threshold:";
 static const string kMaxScore = "Max score";
-static const string kTotalScore = "Tot score";
+static const string kTotalScore = "Total score";
 static const string kTotal = "Total";
 static const string kIdentity = "Max ident";
 static const string kPercent = "Percent";
@@ -1727,6 +1727,9 @@ CShowBlastDefline::x_GetHitDeflineInfo(const CSeq_align_set& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.35  2006/12/18 20:20:33  jianye
+*spell out full total score
+*
 *Revision 1.34  2006/11/28 20:28:10  zaretska
 *Removed limitting defilne length for table output. Fixed bugs
 *
