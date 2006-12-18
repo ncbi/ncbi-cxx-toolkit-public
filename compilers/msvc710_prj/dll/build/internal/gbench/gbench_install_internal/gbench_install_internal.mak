@@ -112,7 +112,7 @@ proteus :
     @if not exist $(GBENCH)\extra\proteus mkdir $(GBENCH)\extra\proteus
     @if exist $(DLLBIN)\proteus.dll copy $(DLLBIN)\proteus.dll $(GBENCH)\extra\proteus\proteus.dll
     @if exist $(DLLBIN)\proteus.pdb copy $(DLLBIN)\proteus.pdb $(GBENCH)\extra\proteus\proteus.pdb
-    @if exist $(SRCDIR)\internal\gbench\plugins\proteus\Tree\proteus-config.asn copy $(SRCDIR)\internal\gbench\plugins\proteus\Tree\proteus-config.asn $(GBENCH)\extra\proteus\proteus-config.asn
+    @if exist $(SRCDIR)\internal\gbench\plugins\proteus\Proteus\proteus-config.asn copy $(SRCDIR)\internal\gbench\plugins\proteus\Proteus\proteus-config.asn $(GBENCH)\extra\proteus\proteus-config.asn
     @$(GBENCH)\bin\gbench_plugin_scan -strict $(GBENCH)\extra\proteus
 
 radar :
@@ -137,6 +137,9 @@ contig :
 
 #################################################################
 # $Log$
+# Revision 1.3  2006/12/18 19:54:15  dicuccio
+# MAGIC rewire Proteus library
+#
 # Revision 1.2  2006/06/27 15:48:29  jcherry
 # MAGIC  Added contig plugins
 #
