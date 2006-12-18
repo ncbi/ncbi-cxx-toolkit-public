@@ -173,6 +173,13 @@ public:
         eNoDelete           ///< do not delete processor object
     };
 
+    /// Stream processor state
+    enum EState {
+        eActive,            ///< processor ready to read/write
+        eFinalize,          ///< Finalize() already done, but End() not yet
+        eDone               ///< End() done, processor cannot process data
+    };
+
     /// Constructor
     CCompressionStreamProcessor(
         CCompressionProcessor* processor,
@@ -180,15 +187,12 @@ public:
         streamsize             in_bufsize   = kCompressionDefaultBufSize,
         streamsize             out_bufsize  = kCompressionDefaultBufSize
     );
+
     /// Destructor
     virtual ~CCompressionStreamProcessor(void);
 
-    /// Stream processor state
-    enum EState {
-        eActive,            ///< processor ready to read/write
-        eFinalize,          ///< Finalize() already done, but End() not yet
-        eDone               ///< End() done, processor cannot process data
-    };
+    /// (Re)Initialize stream processor
+    void CCompressionStreamProcessor::Init(void);
 
 private:
     CCompressionProcessor* m_Processor;   ///< (De)compression processor.
@@ -312,6 +316,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/12/18 19:37:58  ivanov
+ * + CCompressionStreamProcessor::Init()
+ *
  * Revision 1.17  2006/11/23 04:18:46  ivanov
  * Fixed cut & paste error
  *

@@ -50,17 +50,11 @@ CCompressionStreamProcessor::CCompressionStreamProcessor(
     streamsize              out_bufsize)
 
     : m_Processor(processor), 
-      m_InBuf(0),
       m_InBufSize(in_bufsize <= 1 ? kCompressionDefaultBufSize : in_bufsize),
-      m_OutBuf(0),
       m_OutBufSize(out_bufsize <= 1 ? kCompressionDefaultBufSize :out_bufsize),
-      m_LastOutAvail(0),
-      m_Begin(0),
-      m_End(0),
-      m_NeedDelete(need_delete),
-      m_LastStatus(CCompressionProcessor::eStatus_Success),
-      m_State(eActive)
+      m_NeedDelete(need_delete)
 {
+    Init();
     return;
 }
 
@@ -73,6 +67,20 @@ CCompressionStreamProcessor::~CCompressionStreamProcessor(void)
     m_Processor = 0;
 }
 
+
+void CCompressionStreamProcessor::Init(void)
+{
+    if ( m_Processor ) {
+        m_Processor->Init();
+    }
+    m_InBuf         = 0;
+    m_OutBuf        = 0;
+    m_LastOutAvail  = 0;
+    m_Begin         = 0;
+    m_End           = 0;
+    m_LastStatus    = CCompressionProcessor::eStatus_Success;
+    m_State         = eActive;
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -179,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/12/18 19:38:19  ivanov
+ * + CCompressionStreamProcessor::Init()
+ *
  * Revision 1.12  2006/11/23 04:16:12  ivanov
  * Fixed warning about hidden GetStatus function on Workshop compiler
  *
