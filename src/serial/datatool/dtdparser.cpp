@@ -783,7 +783,7 @@ CDataType* DTDParser::x_Type(
     const DTDElement& node, DTDElement::EOccurrence occ,
     bool fromInside, bool ignoreAttrib)
 {
-    CDataType* type;
+    CDataType* type=0;
 
 // if the node contains single embedded element - prune it
     if ((!fromInside || node.IsEmbedded()) && !node.HasAttributes()) {
@@ -1297,6 +1297,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.37  2006/12/18 17:37:00  gouriano
+ * Get rid of compiler warnings
+ *
  * Revision 1.36  2006/10/31 20:01:33  gouriano
  * Added data spec source line info
  *

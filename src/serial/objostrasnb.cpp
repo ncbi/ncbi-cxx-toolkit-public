@@ -382,7 +382,7 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
 #else
     bool compressed = TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed();
 #endif
-    char* buf;
+    char* buf=0;
     unsigned int len = obj.size();
     if (compressed) {
         CBitString::statistics st;
@@ -1244,6 +1244,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.110  2006/12/18 17:37:00  gouriano
+* Get rid of compiler warnings
+*
 * Revision 1.109  2006/11/02 17:00:46  gouriano
 * Corrected writing of double
 *
