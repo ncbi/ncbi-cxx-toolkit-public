@@ -26,7 +26,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   C++->C conversion functions for basic CORE connect stuff:
+ *   C++->C conversion tools for basic CORE connect stuff:
  *     Registry
  *     Logging
  *     Locking
@@ -35,8 +35,8 @@
 
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
-#include "ncbi_core_cxxp.hpp"
 #include "ncbi_priv.h"
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
@@ -246,21 +246,7 @@ static void s_Init(IRWRegistry*      reg = 0,
 }
 
 
-/* PUBLIC */
-extern void CONNECT_Init(IRWRegistry*      reg,
-                         CRWLock*          lock,
-                         FConnectInitFlags flags)
-{
-    CFastMutexGuard guard(s_ConnectInitMutex);
-    try {
-        s_Init(reg, lock, flags, eConnectInit_Explicit);
-    }
-    NCBI_CATCH_ALL("CONNECT_Init() failed");
-}
-
-
-/* PRIVATE */
-extern void CONNECT_InitInternal(void)
+static void s_InitInternal(void)
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
     if (!g_CORE_Registry  &&  !g_CORE_Log  &&  !g_CORE_MT_Lock) {
@@ -277,15 +263,35 @@ extern void CONNECT_InitInternal(void)
 }
 
 
+/* PUBLIC */
+extern void CONNECT_Init(IRWRegistry*      reg,
+                         CRWLock*          lock,
+                         FConnectInitFlags flags)
+{
+    CFastMutexGuard guard(s_ConnectInitMutex);
+    try {
+        s_Init(reg, lock, flags, eConnectInit_Explicit);
+    }
+    NCBI_CATCH_ALL("CONNECT_Init() failed");
+}
+
+
 bool CConnIniter::sm_Inited = false;
 
 
 CConnIniter::CConnIniter()
 {
     if (!sm_Inited) {
-        CONNECT_InitInternal();
+        s_InitInternal();
         sm_Inited = true;
     }
+}
+
+
+/* PRIVATE, DEPRECATED */
+extern void CONNECT_InitInternal(void)
+{
+    s_InitInternal();
 }
 
 
@@ -295,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2006/12/18 21:08:00  lavr
+ * Mark CONNECT_InitInternal() as obsolete
+ *
  * Revision 6.35  2006/12/14 04:43:54  lavr
  * CConnIniter class added
  *
