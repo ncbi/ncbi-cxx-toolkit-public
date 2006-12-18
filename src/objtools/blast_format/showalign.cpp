@@ -2111,7 +2111,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                 const CSeq_loc& loc = feat->GetLocation();
                 bool has_id = false;
                 list<CSeq_loc_CI::TRange> isolated_range;
-                ENa_strand feat_strand = eNa_strand_plus, prev_strand;
+                ENa_strand feat_strand = eNa_strand_plus, prev_strand = eNa_strand_plus;
                 bool first_loc = true, mixed_strand = false, mix_loc = false;
                 CRange<TSeqPos> feat_seq_range;
                 TSeqPos other_seqloc_length = 0;
@@ -3132,6 +3132,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.128  2006/12/18 17:57:39  jianye
+*fix compile warning
+*
 *Revision 1.127  2006/11/30 22:33:37  jianye
 *adjust user defined url for eHitInMapviewer bit
 *

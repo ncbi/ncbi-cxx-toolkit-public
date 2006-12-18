@@ -314,7 +314,7 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
             aln_info->id = &id;
             aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);
         }
-    } catch (const CException& e){
+    } catch (const CException&){
         aln_info->gi = 0;
         aln_info->id = &id;
         aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);        
@@ -773,6 +773,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.12  2006/12/18 17:59:52  jianye
+*fix compile warning
+*
 *Revision 1.11  2006/10/26 20:57:14  jianye
 *add ability to show only the sub-region of master sequence
 *

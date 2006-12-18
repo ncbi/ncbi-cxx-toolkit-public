@@ -1213,7 +1213,7 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
                 target[0]->Set().push_back(*iter);
             }
             
-        } catch (const CException& e){
+        } catch (const CException&){
             target[0]->Set().push_back(*iter); //no bioseq found, leave untouched
         }
         
