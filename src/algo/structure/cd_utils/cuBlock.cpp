@@ -819,6 +819,14 @@ BlockModelPair::~BlockModelPair()
 	delete m_slave;
 }
 
+void BlockModelPair::reset()
+{
+    delete m_master;
+    delete m_slave;
+    m_master = new BlockModel();
+    m_slave = new BlockModel();
+}
+
 BlockModel& BlockModelPair::getMaster()
 {
 	return *m_master;
@@ -928,6 +936,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/12/18 17:01:11  lanczyck
+ * add a reset method for BlockModelPair
+ *
  * Revision 1.4  2006/01/10 16:54:51  lanczyck
  * eliminate unused variable warnings
  *

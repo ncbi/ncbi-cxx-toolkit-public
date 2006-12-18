@@ -153,6 +153,8 @@ public:
 	void remaster(const BlockModelPair& guide);
 	//reverse the master vs slave
 	void reverse();
+    //  clear out m_master, m_slave.
+    void reset();
 private:
 	void extendMidway(int blockNum);
 	
