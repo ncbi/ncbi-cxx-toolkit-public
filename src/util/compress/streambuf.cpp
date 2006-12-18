@@ -78,17 +78,18 @@ CCompressionStreambuf::CCompressionStreambuf(
 
     // Init processors and set the buffer pointers
     if ( m_Reader ) {
+        m_Reader->Init();
         m_Reader->m_InBuf  = m_Buf;
         m_Reader->m_OutBuf = m_Buf + m_Reader->m_InBufSize;
         m_Reader->m_Begin  = m_Reader->m_InBuf;
         m_Reader->m_End    = m_Reader->m_InBuf;
         // We wish to have underflow() called at the first read
         setg(m_Reader->m_OutBuf, m_Reader->m_OutBuf, m_Reader->m_OutBuf);
-        m_Reader->m_Processor->Init();
     } else {
         setg(0,0,0);
     }
     if ( m_Writer ) {
+        m_Writer->Init();
         m_Writer->m_InBuf  = m_Buf + read_bufsize;
         m_Writer->m_OutBuf = m_Writer->m_InBuf + m_Writer->m_InBufSize;
         m_Writer->m_Begin  = m_Writer->m_OutBuf;
@@ -96,7 +97,6 @@ CCompressionStreambuf::CCompressionStreambuf(
         // Use one character less for the input buffer than the really
         // available one (see overflow())
         setp(m_Writer->m_InBuf, m_Writer->m_InBuf + m_Writer->m_InBufSize - 1);
-        m_Writer->m_Processor->Init();
     } else {
         setp(0,0);
     }
@@ -528,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/12/18 19:39:23  ivanov
+ * Added possibility to reuse stream reader/writer
+ *
  * Revision 1.27  2006/10/26 15:34:04  ivanov
  * Added automatic finalization for input streams, if no more data
  * in the underlying stream
