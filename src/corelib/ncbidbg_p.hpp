@@ -58,7 +58,7 @@ BEGIN_NCBI_SCOPE
 #else // _DEBUG
 
 // 'simple' verify - just evaluate the expression
-#  define xncbi_Verify(expression) ((void)(expression))
+#  define xncbi_Verify(expression) while ( expr ) break
 
 // Throw exception if "expression" evaluates to FALSE.
 #  define xncbi_Validate(expression, message) \
@@ -76,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/12/18 17:50:05  gouriano
+ * Get rid of compiler warnings
+ *
  * Revision 1.12  2006/10/24 18:56:17  ivanov
  * Cosmetics: replaced tabulation with spaces
  *

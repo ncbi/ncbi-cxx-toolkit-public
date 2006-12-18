@@ -783,7 +783,7 @@ CDataType* DTDParser::x_Type(
     const DTDElement& node, DTDElement::EOccurrence occ,
     bool fromInside, bool ignoreAttrib)
 {
-    CDataType* type=0;
+    CDataType* type;
 
 // if the node contains single embedded element - prune it
     if ((!fromInside || node.IsEmbedded()) && !node.HasAttributes()) {
@@ -872,6 +872,7 @@ CDataType* DTDParser::x_Type(
 
         default:
             ParseError("Unknown element", "element");
+            type = 0;
             break;
         }
     }
@@ -1297,6 +1298,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.38  2006/12/18 17:49:16  gouriano
+ * Get rid of compiler warnings
+ *
  * Revision 1.37  2006/12/18 17:37:00  gouriano
  * Get rid of compiler warnings
  *
