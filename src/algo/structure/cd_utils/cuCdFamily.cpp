@@ -108,6 +108,18 @@ CDFamilyIterator CDFamily::findCD(CCdCore* cd) const
 	return end();
 }
 
+CDFamilyIterator CDFamily::findCDByAccession(CCdCore* cd) const
+{
+	// return find(begin(), end(), CDNode(cd));
+    string acc = (cd) ? cd->GetAccession() : "";
+	for (iterator it = begin();  it != end();  ++it) {
+		if (it->cd->GetAccession() == acc) {
+			return it;
+		}
+	}
+	return end();
+}
+
 //parent=0, get from root
 void CDFamily::getChildren(vector<CCdCore*>& cds, CCdCore* parentCD) const
 {
@@ -242,6 +254,49 @@ int CDFamily::getPathToRoot(CCdCore* initialCD, vector<CCdCore*>& path) const {
     return path.size();
 }
 
+
+CDFamilyIterator  CDFamily::convergeTo(CCdCore* cd1, CCdCore* cd2, bool byAccession)const
+{
+	vector<CCdCore*> path1, path2;
+	getPathToRoot(cd1, path1);
+	getPathToRoot(cd2, path2);
+	vector<CCdCore*>::reverse_iterator rit1 = path1.rbegin();
+	vector<CCdCore*>::reverse_iterator rit2 = path2.rbegin();
+	if( (rit1 == path1.rend()) || (rit2 == path2.rend()))
+		return end();
+	assert((*rit1) = (*rit2)); //both should point to the root
+	CCdCore* lastConvergedPoint = *rit1;
+	for (; rit1 != path1.rend() && rit2 != path2.rend(); rit1++, rit2++)
+	{
+		if ((!byAccession && *rit1 == *rit2) || (byAccession && (*rit1)->GetAccession() == (*rit2)->GetAccession()))
+			lastConvergedPoint = *rit1;
+		else
+			break;
+	}
+    return (byAccession) ? findCDByAccession(lastConvergedPoint) : findCD(lastConvergedPoint);
+}
+
+CDFamilyIterator CDFamily::convergeTo(const set<CCdCore*>& cds, bool byAccession)const
+{
+	if (cds.size() == 0)
+		return end();
+	set<CCdCore*>::const_iterator cit = cds.begin();
+	CCdCore* lastConvergedPoint = *cit;
+	CDFamilyIterator fit = (byAccession) ? findCDByAccession(lastConvergedPoint) : findCD(lastConvergedPoint);
+	if (fit == begin() || fit == end())
+		return fit;
+	cit++;
+	for (; cit != cds.end(); cit++)
+	{
+		fit = convergeTo(lastConvergedPoint, *cit, byAccession);
+		if (fit == begin() || fit == end())
+			break;
+		lastConvergedPoint = fit->cd;
+	}
+	return fit;
+}
+
+
 //  Return list of all CDs in the family not on the direct (classical) path from initialCD to the root.  
 //  Returns all CDs if initialCD is null.
 int CDFamily::getCdsNotOnPathToRoot(CCdCore* initialCD, vector<CCdCore*>& notOnPath) const {
@@ -289,8 +344,7 @@ bool CDFamily::isDescendant(CCdCore* cd, CCdCore* potentialDescendantCd) const {
 
     return isDirectAncestor(potentialDescendantCd, cd);
 }
-    
-    
+
 bool CDFamily::IsFamilyValid(const CDFamily* family, string& err) {
     bool hasError = false;
     if (!family) {
@@ -443,6 +497,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/12/18 17:02:34  lanczyck
+ * add convergeTo and findCDByAccession to CDFamily
+ *
  * Revision 1.2  2005/04/19 22:00:22  ucko
  * Don't try to use find() on a tree<>, because it's not 100% STL-compatible.
  *

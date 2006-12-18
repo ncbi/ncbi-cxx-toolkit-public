@@ -83,7 +83,8 @@ public:
 	int  getSelectedCDs(vector<CCdCore*>& cds);
 
 	CDFamilyIterator findCD(CCdCore* cd) const;
-//	CDFamilyIterator findCDByAccession(CCdCore* cd) const;  //  in case have a different pointer than used to build family
+    CDFamilyIterator findCDByAccession(CCdCore* cd) const;  //  in case have a different pointer than used to build family
+
 	int getCDCounts() const;
 	int getAllCD(vector<CCdCore*>& cds) const;
 
@@ -105,13 +106,12 @@ public:
     //  or alternatively, if potentialDescendantCd is in cd's subtree.
     bool isDescendant(CCdCore* cd, CCdCore* potentialDescendantCd) const;
 
-    //  Return iterator to the deepest common ancestor in the tree between the two
-    //  inputs.  Return 'end' if there is no common ancestor.
-    //  In the first form, if the 'byAccession' flag is true, cd1 and cd2 are located in the family 
-    //  by accession, and not the pointer values themselves (i.e., findCDByAccession vs. findCD).
-    //  The second form always compares the CD pointers found in the input iterators.
-//    CDFamilyIterator getFirstCommonAncestor(CCdCore* cd1, CCdCore* cd2, bool byAccession) const;
-//    CDFamilyIterator getFirstCommonAncestor(CDFamilyIterator cd1, CDFamilyIterator cd2) const;
+    //  Return iterator to the deepest common ancestor in the tree for the input cds.
+    //  Return 'end' if there is no common ancestor.
+    //  If the 'byAccession' flag is true, cds are located in the family 
+    //  by accession, otherwise, cds are located by pointer values (i.e., findCDByAccession vs. findCD).
+	CDFamilyIterator convergeTo(CCdCore* cd1, CCdCore* cd2, bool byAccession = false)const;
+	CDFamilyIterator convergeTo(const set<CCdCore*>& cds, bool byAccession = false)const;
 
     //  sanity check on pointer, root and number of nodes
     static bool IsFamilyValid(const CDFamily* family, string& err);
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/12/18 17:02:10  lanczyck
+ * add convergeTo and findCDByAccession to CDFamily
+ *
  * Revision 1.2  2006/08/09 18:42:34  lanczyck
  * add export macros for ncbi_algo_structure.dll;
  * includes commented out declarations for new methods
