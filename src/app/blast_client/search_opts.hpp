@@ -125,9 +125,13 @@ enum EListPick {
 /// and CArgs interface adjustments.
 /// @sa NetblastSearchOpts - see also.
 
-class COptionWalker
-{
+class COptionWalker {
 public:
+    /// Destructor.
+    virtual ~COptionWalker()
+    {
+    }
+    
     /// Read a boolean field.
     void ReadOpt(const CArgs & args,
                  TOptBool    & field,
@@ -400,6 +404,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/12/18 17:46:15  bealer
+ * - Fix warning.
+ *
  * Revision 1.5  2003/12/29 19:48:30  bealer
  * - Change code to accomodate first half of new ASN changes.
  *
