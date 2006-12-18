@@ -228,6 +228,12 @@ CNcbiOstrstreamToString::operator string(void) const
 }
 
 
+CNcbiOstream& operator<<(CNcbiOstream& out, const CTempString& str)
+{
+    return out.write(str.data(), str.length());
+}
+
+
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 {
     ITERATE ( string, c, s.m_String ) {
@@ -429,6 +435,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/12/18 13:01:26  dicuccio
+ * Make CTempString more congruent with std::string
+ *
  * Revision 1.45  2006/09/07 17:48:08  lavr
  * +NcbiStreamCopy()
  *

@@ -694,7 +694,8 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
     }
 
     // Conversion
-    string s = str;
+    string s;
+    str.Copy(s, 0, str.size());
     char* endptr = 0;
     const char* begptr = s.c_str() + pos;
 
@@ -2154,6 +2155,11 @@ extern char* strdup(const char* str)
 }
 #endif
 
+/////////////////////////////////////////////////////////////////////////////
+//  CTempString
+
+const CTempString::size_type CTempString::npos = NPOS;
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8
@@ -2558,6 +2564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.187  2006/12/18 13:01:26  dicuccio
+ * Make CTempString more congruent with std::string
+ *
  * Revision 1.186  2006/11/29 13:56:29  gouriano
  * Moved GetErrorCodeString method into cpp
  *
