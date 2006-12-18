@@ -42,6 +42,23 @@
 
 BEGIN_NCBI_SCOPE
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+template <class T>
+inline T InitialValue(T* t)
+{
+    return 0;
+}
+
+template<>
+inline string InitialValue<string>(string* t)
+{
+    return kEmptyStr;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 template<class T, class U>
@@ -83,8 +100,8 @@ struct SSortBySecond : public binary_function<pair<T,U>, pair<T,U>, bool>
 template <class Key, class Score>
 inline
 CRawScoreVector<Key, Score>::CRawScoreVector()
-: m_Uid(0)
 {
+    m_Uid = InitialValue(&m_Uid);
 }
 
 
@@ -251,7 +268,7 @@ inline
 void CRawScoreVector<Key, Score>::clear()
 {
     m_Data.clear();
-    m_Uid = 0;
+    m_Uid = InitialValue(&m_Uid);
 }
 
 
@@ -315,7 +332,7 @@ template <class Key, class Score>
 inline
 void CRawScoreVector<Key, Score>::Set(Key idx, Score weight)
 {
-    insert(make_pair(idx, weight));
+    insert(value_type(idx, weight));
 }
 
 
@@ -649,8 +666,8 @@ CRawScoreVector<Key, Score>::operator/=(Score val)
 template <class Key, class Score>
 inline
 CScoreVector<Key, Score>::CScoreVector()
-: m_Uid(0)
 {
+    m_Uid = InitialValue(&m_Uid);
 }
 
 
@@ -791,7 +808,7 @@ inline
 void CScoreVector<Key, Score>::clear()
 {
     m_Data.clear();
-    //m_Uid = 0;
+    m_Uid = InitialValue(&m_Uid);
 }
 
 
@@ -1259,6 +1276,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/18 02:41:12  dicuccio
+ * Added initializer for key values using template specialization
+ *
  * Revision 1.2  2006/12/17 17:20:02  dicuccio
  * Removed unnecessary typedefs
  *
