@@ -91,9 +91,6 @@ class NCBI_XCONNECT_EXPORT CConnIniter
 {
 protected:
     CConnIniter();
-
-private:
-    static bool sm_Inited;
 };
 
 
@@ -106,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2006/12/19 21:55:05  lavr
+ * CConnIniter simplified not to contain SM
+ *
  * Revision 6.16  2006/12/14 04:41:37  lavr
  * CConnIniter class added
  *
