@@ -201,7 +201,7 @@ protected:
 
 private:
     SQLHENV         m_Context;
-    SQLULEN         m_PacketSize;
+    SQLUINTEGER     m_PacketSize;
     CODBC_Reporter  m_Reporter;
     bool            m_UseDSN;
     CODBCContextRegistry* m_Registry;
@@ -874,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/12/19 20:45:06  ssikorsk
+ * Changed type of m_PacketSize from SQLULEN to SQLUINTEGER.
+ *
  * Revision 1.51  2006/10/30 15:49:58  ssikorsk
  * Define UNICODE only if HAVE_WSTRING is defined.
  *
