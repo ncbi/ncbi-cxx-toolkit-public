@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.447 2006/12/19 15:21:04 ucko Exp $
+#  $Id: configure.ac,v 1.448 2006/12/19 16:06:08 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1776,7 +1776,7 @@ case "$compiler" in
         ;;
    esac
    orig_LDFLAGS=$LDFLAGS
-   LDFLAGS="-Wl,--no-allow-shlib-undefined $LDFLAGS"
+   LDFLAGS="-shared -Wl,--no-allow-shlib-undefined $LDFLAGS"
    AC_CACHE_CHECK([whether $CC supports -Wl,--no-allow-shlib-undefined],
       ncbi_cv_prog_cc_wl_no_asu,
       [AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],

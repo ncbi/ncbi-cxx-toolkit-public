@@ -7013,7 +7013,7 @@ case "$compiler" in
         ;;
    esac
    orig_LDFLAGS=$LDFLAGS
-   LDFLAGS="-Wl,--no-allow-shlib-undefined $LDFLAGS"
+   LDFLAGS="-shared -Wl,--no-allow-shlib-undefined $LDFLAGS"
    echo "$as_me:$LINENO: checking whether $CC supports -Wl,--no-allow-shlib-undefined" >&5
 echo $ECHO_N "checking whether $CC supports -Wl,--no-allow-shlib-undefined... $ECHO_C" >&6
 if test "${ncbi_cv_prog_cc_wl_no_asu+set}" = set; then
