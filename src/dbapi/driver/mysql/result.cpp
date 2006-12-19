@@ -248,9 +248,9 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
     }
     case eDB_BigInt: {
         if ( item_buff )
-            *((CDB_BigInt*) item_buff) = Int8(int_val);
+            *((CDB_BigInt*) item_buff) = int8_val;
         else
-            item_buff = new CDB_BigInt(Int8(int_val));
+            item_buff = new CDB_BigInt(int8_val);
         break;
     }
     case eDB_Float: {
@@ -342,6 +342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/12/19 17:13:14  ssikorsk
+ * Improved handling of eDB_BigInt in s_GetItem().
+ *
  * Revision 1.12  2006/06/09 19:59:22  ssikorsk
  * Fixed CDB_BaseEnt garbage collector logic.
  *
