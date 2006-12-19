@@ -120,9 +120,13 @@ public:
                         ECallMode mode);
     virtual void Remove(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
     virtual void Attach(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
-    
-    using CUnsupportedEditSaver::AddDesc;
-    using CUnsupportedEditSaver::RemoveDesc;
+
+    virtual void AddDesc(const CBioseq_set_Handle& h, const CSeqdesc& d,
+                         ECallMode m)
+        { return CUnsupportedEditSaver::AddDesc(h, d, m); }
+    virtual void RemoveDesc(const CBioseq_set_Handle& h, const CSeqdesc& d,
+                            ECallMode m)
+        { return CUnsupportedEditSaver::RemoveDesc(h, d, m); }
   
 private:
     CTestApp& m_App;
@@ -580,6 +584,9 @@ int main(int argc, const char* argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2006/12/19 18:35:36  ucko
+* Replace newly added using declarations with wrappers for the sake of GCC 2.95.
+*
 * Revision 1.6  2006/12/19 15:16:10  didenko
 * Got rid of compilation warning
 *
