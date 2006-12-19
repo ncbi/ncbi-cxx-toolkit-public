@@ -81,7 +81,7 @@ public:
         }
         // fill in the Karlin blocks for that context, if they
         // are valid
-        if (sbp->kbp_std) {
+        if (i < context_per_query && sbp->kbp_std) {
             Blast_KarlinBlk *kbp = 
                         sbp->kbp_std[query_number * context_per_query + i];
             if (kbp && kbp->Lambda >= 0) {
@@ -89,7 +89,7 @@ public:
                 Blast_KarlinBlkCopy(m_UngappedKarlinBlk, kbp);
             }
         }
-        if (sbp->kbp_gap) {
+        if (i < context_per_query && sbp->kbp_gap) {
             Blast_KarlinBlk *kbp = 
                         sbp->kbp_gap[query_number * context_per_query + i];
             if (kbp && kbp->Lambda >= 0) {
