@@ -937,6 +937,7 @@ DBT* CBDB_File::CloneDBT_Key()
         unsigned char* p = (unsigned char*)malloc(dbt->size);
         ::memcpy(p, m_DBT_Key->data, m_DBT_Key->size);
         dbt->data = p;
+        dbt->flags = DB_DBT_USERMEM;
     }
     return dbt;
 }
@@ -944,7 +945,7 @@ DBT* CBDB_File::CloneDBT_Key()
 void CBDB_File::DestroyDBT_Clone(DBT* dbt)
 {
     unsigned char* p = (unsigned char*)dbt->data;
-    free(p);
+    free(p); dbt->data = NULL;
     delete dbt;
 }
 
@@ -1466,6 +1467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/12/19 19:56:22  yazhuk
+ * kuznets: Fixed missing buffer management flag (critical for 4.50.xx)
+ *
  * Revision 1.71  2006/12/18 19:53:29  kuznets
  * Use string not const char* for db opening, etc.
  *
