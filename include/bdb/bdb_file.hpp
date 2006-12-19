@@ -655,7 +655,7 @@ void CBDB_File::Open(
   const string& filename, EOpenMode open_mode, 
   bool support_dirty_read, unsigned rec_len)
 {
-    Open(filename, 0, open_mode, support_dirty_read, rec_len);
+    Open(filename, "", open_mode, support_dirty_read, rec_len);
 }
 
 
@@ -680,6 +680,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/12/19 17:03:12  yazhuk
+ * Fixed NULL ptr passing as a string
+ *
  * Revision 1.51  2006/12/18 19:52:01  kuznets
  * Use string not const char* for db opening, etc.
  *
