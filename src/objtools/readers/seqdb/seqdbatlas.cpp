@@ -377,8 +377,6 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
     if (Uint8(m_CurAlloc) <= reduce_to) {
         return;
     }
-
-    reduce_to = 0;
     
     if (m_FlushCB) {
         (*m_FlushCB)();
