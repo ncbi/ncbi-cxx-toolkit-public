@@ -174,7 +174,14 @@ LINK_DLL      = @LINK_DLL@
 LINK_LOADABLE = @LINK_LOADABLE@
 CFLAGS_DLL    = @CFLAGS_DLL@
 CXXFLAGS_DLL  = @CXXFLAGS_DLL@
-LDFLAGS_DLL   = $(LDFLAGS)
+
+# For various reasons, we traditionally allow shared libraries to have
+# undefined symbols; however, it's also possible to ask the linker to
+# be stricter by switching DLL_UNDEF_FLAGS to $(FORBID_UNDEF).
+ALLOW_UNDEF     = @ALLOW_UNDEF@
+FORBID_UNDEF    = @FORBID_UNDEF@
+DLL_UNDEF_FLAGS = $(ALLOW_UNDEF)
+LDFLAGS_DLL     = $(LDFLAGS) $(DLL_UNDEF_FLAGS)
 
 ### To enable extra, potentially unsafe, optimization, use these flags
 ### INSTEAD of $(ORIG_*FLAGS).

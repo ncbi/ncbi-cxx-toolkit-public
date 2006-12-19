@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.446 2006/12/11 16:42:02 ucko Exp $
+#  $Id: configure.ac,v 1.447 2006/12/19 15:21:04 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1736,12 +1736,16 @@ fi
 
 #### Linker command-line to build DLL (may depend on runpath)
 has_dll_loadable="@# "
+ALLOW_UNDEF=
+FORBID_UNDEF=
 case "$compiler" in
- GCC | MIPSpro73 | ICC | Compaq )
+ GCC | ICC )
+   LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
    case "$host_os" in
       solaris* )
         # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
         LINK_DLL="$LINK $ARCH_CFLAGS -shared -mimpure-text -o"
+        FORBID_UNDEF="-Wl,-z,defs"
         ;;
       darwin* )
         # There is a distinction between shared libraries (dylibs)
@@ -1749,28 +1753,60 @@ case "$compiler" in
         # See <http://fink.sourceforge.net/doc/porting/shared.php>.
         has_dll_loadable=""
         if $CXX -v 2>&1 | grep -q Apple; then
-           LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -undefined suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -undefined suppress -o"
+           LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -o"
+           ALLOW_UNDEF='-undefined suppress'
+           FORBID_UNDEF='-undefined error'
         else
-           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-undefined,suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
+           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-read_only_relocs,warning -lbundle1.o -o"
+           ALLOW_UNDEF='-Wl,-undefined,suppress'
+           FORBID_UNDEF='-Wl,-undefined,error'
         fi
         ;;
-      * )
-        LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
+      linux* | *bsd* | *gnu* )
+        FORBID_UNDEF='-Wl,--no-undefined'
+        ;;
+      irix* )
+        FORBID_UNDEF='-Wl,-no_unresolved'
+        ;;
+      osf* )
+        ALLOW_UNDEF='-Wl,-expect_unresolved,\*'
+        FORBID_UNDEF='-Wl,-error_unresolved'
         ;;
    esac
+   orig_LDFLAGS=$LDFLAGS
+   LDFLAGS="-Wl,--no-allow-shlib-undefined $LDFLAGS"
+   AC_CACHE_CHECK([whether $CC supports -Wl,--no-allow-shlib-undefined],
+      ncbi_cv_prog_cc_wl_no_asu,
+      [AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+          [ncbi_cv_prog_cc_wl_no_asu=yes], [ncbi_cv_prog_cc_wl_no_asu=no])])
+   if test "$ncbi_cv_prog_cc_wl_no_asu" = yes; then
+      FORBID_UNDEF="$FORBID_UNDEF -Wl,--no-allow-shlib-undefined"
+   fi
+   LDFLAGS=$orig_LDFLAGS
+  ;;
+ MIPSpro73 )
+   LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
+   FORBID_UNDEF="-no_unresolved"
+   ;;
+ Compaq )
+   ALLOW_UNDEF='-expect_unresolved \*'
+   FORBID_UNDEF='-error_unresolved'
    ;;
  WorkShop* )
    LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -G -h \$@ -o"
+   FORBID_UNDEF="-z defs"
    ;;
  KCC )
    LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG --soname \$@ -o"
+   FORBID_UNDEF="-z defs"
    ;;
  VisualAge )
    # NOTE: --without-dll still recommended, as the linker doesn't seem
    # to support building shared libraries with undefined symbols.
    LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -qmkshrobj -o"
+   # ALLOW_UNDEF="???"
    ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
@@ -5385,6 +5421,8 @@ AC_SUBST(has_dll_loadable)
 AC_SUBST(LINK_LOADABLE)
 AC_SUBST(CFLAGS_DLL)
 AC_SUBST(CXXFLAGS_DLL)
+AC_SUBST(ALLOW_UNDEF)
+AC_SUBST(FORBID_UNDEF)
 
 AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
