@@ -123,10 +123,10 @@ public:
 
     virtual void AddDesc(const CBioseq_set_Handle& h, const CSeqdesc& d,
                          ECallMode m)
-        { return CUnsupportedEditSaver::AddDesc(h, d, m); }
+        { CUnsupportedEditSaver::AddDesc(h, d, m); }
     virtual void RemoveDesc(const CBioseq_set_Handle& h, const CSeqdesc& d,
                             ECallMode m)
-        { return CUnsupportedEditSaver::RemoveDesc(h, d, m); }
+        { CUnsupportedEditSaver::RemoveDesc(h, d, m); }
   
 private:
     CTestApp& m_App;
@@ -584,6 +584,9 @@ int main(int argc, const char* argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2006/12/19 21:34:01  ucko
+* Tweak once more to fix compilation errors under MIPSpro.  (Oops.)
+*
 * Revision 1.7  2006/12/19 18:35:36  ucko
 * Replace newly added using declarations with wrappers for the sake of GCC 2.95.
 *
