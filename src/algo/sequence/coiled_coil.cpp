@@ -84,7 +84,7 @@ void CCoil_ComputeScores(const Seq& seq, vector<double>& scores,
 
     // calculate 'preliminary' scores (one per frame per window position;
     // score is recorded in position corresponing to the start of the window)
-	double prod;
+    double prod = 1;  // initialize to avoid compiler warning
     for (unsigned int frame = 0;  frame < 7;  frame++) {
         for (TSeqPos start = 0;  start < seq.size() - win_len + 1;  start++) {
             if (start > 0  &&
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/12/19 22:04:48  jcherry
+ * Eliminate compiler warning
+ *
  * Revision 1.6  2006/12/12 15:01:59  jcherry
  * Bug fix (was working on linux, but not on windows)
  *
