@@ -212,7 +212,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                          0,
                          (data_type == eDB_Image ? 1 : SQL_VARLEN_DATA),
                          static_cast<const LPCBYTE>(x_GetDataTerminator(data_type)),
-                         x_GetBCPDataSize(data_type),
+                         static_cast<INT>(x_GetBCPDataSize(data_type)),
                          x_GetBCPDataType(data_type),
                          i + 1);
 
@@ -585,7 +585,7 @@ bool CODBC_BCPInCmd::HasFailed(void) const
 
 int CODBC_BCPInCmd::RowCount(void) const
 {
-    return m_RowCount;
+    return static_cast<int>(m_RowCount);
 }
 
 CODBC_BCPInCmd::~CODBC_BCPInCmd()
@@ -608,6 +608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/12/19 20:45:56  ssikorsk
+ * Get rid of compilation warnings on vc8 x64.
+ *
  * Revision 1.27  2006/11/20 18:15:58  ssikorsk
  * Revamp code to use GetQuery() and GetParams() methods.
  *

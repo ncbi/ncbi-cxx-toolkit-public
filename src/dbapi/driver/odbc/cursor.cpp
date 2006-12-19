@@ -63,7 +63,7 @@ bool CODBC_CursorCmdBase::BindParam(const string& param_name, CDB_Object* param_
 
 int CODBC_CursorCmdBase::RowCount(void) const
 {
-    return m_RowCount;
+    return static_cast<int>(m_RowCount);
 }
 
 
@@ -399,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/12/19 20:45:56  ssikorsk
+ * Get rid of compilation warnings on vc8 x64.
+ *
  * Revision 1.26  2006/08/18 15:16:53  ssikorsk
  * Implemented the CODBC_CursorCmdExpl class.
  *

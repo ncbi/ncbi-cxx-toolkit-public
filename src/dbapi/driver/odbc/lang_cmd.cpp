@@ -261,7 +261,7 @@ bool CODBC_LangCmd::HasFailed() const
 
 int CODBC_LangCmd::RowCount() const
 {
-    return m_RowCount;
+    return static_cast<int>(m_RowCount);
 }
 
 
@@ -342,7 +342,7 @@ void CODBC_LangCmd::SetCursorName(const string& name) const
     CheckSIE(SQLSetStmtAttr(GetHandle(), SQL_ATTR_CURSOR_TYPE, (void*)SQL_CURSOR_FORWARD_ONLY, SQL_NTS),
              "SQLSetStmtAttr(SQL_ATTR_CURSOR_TYPE) failed", 420018);
 
-    CheckSIE(SQLSetCursorName(GetHandle(), CODBCString(name, GetClientEncoding()), name.size()),
+    CheckSIE(SQLSetCursorName(GetHandle(), CODBCString(name, GetClientEncoding()), static_cast<SQLSMALLINT>(name.size())),
              "SQLSetCursorName failed", 420016);
 }
 
@@ -361,6 +361,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/12/19 20:45:56  ssikorsk
+ * Get rid of compilation warnings on vc8 x64.
+ *
  * Revision 1.36  2006/11/20 18:15:59  ssikorsk
  * Revamp code to use GetQuery() and GetParams() methods.
  *

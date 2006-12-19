@@ -171,21 +171,21 @@ CODBC_Connection::x_SetConnAttributesBefore(
     if(GetCDriverContext().GetTimeout()) {
         SQLSetConnectAttr(m_Link,
                           SQL_ATTR_CONNECTION_TIMEOUT,
-                          (SQLPOINTER)GetCDriverContext().GetTimeout(),
+                          (SQLPOINTER)SQLULEN(GetCDriverContext().GetTimeout()),
                           0);
     }
 
     if(GetCDriverContext().GetLoginTimeout()) {
         SQLSetConnectAttr(m_Link,
                           SQL_ATTR_LOGIN_TIMEOUT,
-                          (SQLPOINTER)GetCDriverContext().GetLoginTimeout(),
+                          (SQLPOINTER)SQLULEN(GetCDriverContext().GetLoginTimeout()),
                           0);
     }
 
     if(cntx.GetPacketSize()) {
         SQLSetConnectAttr(m_Link,
                           SQL_ATTR_PACKET_SIZE,
-                          (SQLPOINTER)cntx.GetPacketSize(),
+                          (SQLPOINTER)SQLULEN(cntx.GetPacketSize()),
                           0);
     }
 
@@ -1407,6 +1407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/12/19 20:45:56  ssikorsk
+ * Get rid of compilation warnings on vc8 x64.
+ *
  * Revision 1.61  2006/12/11 17:16:05  ssikorsk
  * Get rid of warnings with GCC on Solaris.
  *

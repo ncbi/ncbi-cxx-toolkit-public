@@ -289,7 +289,7 @@ bool CODBC_RPCCmd::HasFailed() const
 
 int CODBC_RPCCmd::RowCount() const
 {
-    return m_RowCount;
+    return static_cast<int>(m_RowCount);
 }
 
 
@@ -390,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/12/19 20:45:56  ssikorsk
+ * Get rid of compilation warnings on vc8 x64.
+ *
  * Revision 1.35  2006/11/20 18:15:59  ssikorsk
  * Revamp code to use GetQuery() and GetParams() methods.
  *
