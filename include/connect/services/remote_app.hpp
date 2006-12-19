@@ -65,7 +65,7 @@ public:
     /// original name in the command line will be replaced with the new temprary name.
     virtual void AddFileForTransfer(const string& fname) = 0;
 
-    virtual void SetAppRunTimeout(unsigned int sec) = 0;;
+    virtual void SetAppRunTimeout(unsigned int sec) = 0;
 
     /// Serialize a request to a given stream. After call to this method the instance
     /// cleans itself an it can be reused.
@@ -180,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/19 13:42:46  didenko
+ * Got rid of compilation warning
+ *
  * Revision 1.2  2006/07/13 15:25:18  didenko
  * Added missing  NCBI_XCONNECT_EXPORT
  *
