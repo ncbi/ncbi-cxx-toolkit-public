@@ -49,6 +49,8 @@ BEGIN_SCOPE(blast)
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
+static const int kInvalidFilterValue = -1;
+
 // Forward declarations
 class CBlastOptionsMemento;
 
@@ -576,7 +578,7 @@ inline int
 CBlastOptionsLocal::GetDustFilteringLevel() const
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+       return kInvalidFilterValue;
 
     return m_QueryOpts->filtering_options->dustOptions->level;
 }
@@ -594,7 +596,7 @@ inline int
 CBlastOptionsLocal::GetDustFilteringWindow() const
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+       return kInvalidFilterValue;
 
     return m_QueryOpts->filtering_options->dustOptions->window;
 }
@@ -613,7 +615,7 @@ inline int
 CBlastOptionsLocal::GetDustFilteringLinker() const
 {
     if (m_QueryOpts->filtering_options->dustOptions == NULL)
-       SDustOptionsNew(&(m_QueryOpts->filtering_options->dustOptions));
+       return kInvalidFilterValue;
 
     return m_QueryOpts->filtering_options->dustOptions->linker;
 }
@@ -658,7 +660,7 @@ inline int
 CBlastOptionsLocal::GetSegFilteringWindow() const
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       return kInvalidFilterValue;
       
     return m_QueryOpts->filtering_options->segOptions->window;
 }
@@ -678,7 +680,7 @@ inline double
 CBlastOptionsLocal::GetSegFilteringLocut() const
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       return kInvalidFilterValue;
       
     return m_QueryOpts->filtering_options->segOptions->locut;
 }
@@ -698,7 +700,7 @@ inline double
 CBlastOptionsLocal::GetSegFilteringHicut() const
 {
     if (m_QueryOpts->filtering_options->segOptions == NULL)
-       SSegOptionsNew(&(m_QueryOpts->filtering_options->segOptions)); 
+       return kInvalidFilterValue;
       
     return m_QueryOpts->filtering_options->segOptions->hicut;
 }
@@ -743,7 +745,7 @@ inline const char*
 CBlastOptionsLocal::GetRepeatFilteringDB() const
 {
     if (m_QueryOpts->filtering_options->repeatFilterOptions == NULL)
-      SRepeatFilterOptionsNew(&(m_QueryOpts->filtering_options->repeatFilterOptions));
+      return NULL;
 
     return m_QueryOpts->filtering_options->repeatFilterOptions->database;
 }
