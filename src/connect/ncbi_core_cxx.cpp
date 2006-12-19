@@ -276,22 +276,10 @@ extern void CONNECT_Init(IRWRegistry*      reg,
 }
 
 
-bool CConnIniter::sm_Inited = false;
-
-
 CConnIniter::CConnIniter()
 {
-    if (!sm_Inited) {
+    if (s_ConnectInit == eConnectInit_Intact)
         s_InitInternal();
-        sm_Inited = true;
-    }
-}
-
-
-/* PRIVATE, DEPRECATED */
-extern void CONNECT_InitInternal(void)
-{
-    s_InitInternal();
 }
 
 
@@ -301,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2006/12/19 21:53:45  lavr
+ * -CONNECT_InitInternal()
+ *
  * Revision 6.36  2006/12/18 21:08:00  lavr
  * Mark CONNECT_InitInternal() as obsolete
  *
