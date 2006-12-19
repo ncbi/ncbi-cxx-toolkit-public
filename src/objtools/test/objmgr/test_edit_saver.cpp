@@ -121,6 +121,9 @@ public:
     virtual void Remove(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
     virtual void Attach(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
     
+    using CUnsupportedEditSaver::AddDesc;
+    using CUnsupportedEditSaver::RemoveDesc;
+  
 private:
     CTestApp& m_App;
 };
@@ -577,6 +580,9 @@ int main(int argc, const char* argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/12/19 15:16:10  didenko
+* Got rid of compilation warning
+*
 * Revision 1.5  2006/09/28 18:45:50  vasilche
 * Fixed warning and add test for TakeAnnot().
 *
