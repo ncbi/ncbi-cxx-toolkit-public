@@ -963,211 +963,223 @@ CDBAPIUnitTest::Test_DateTime(void)
     CVariant null_date(empty_ctime, eLong);
     CTime dt_value;
 
-    // Initialization ...
-    {
-        sql =
-            "CREATE TABLE #test_datetime ( \n"
-            "   id INT , \n"
-            "   dt_field DATETIME NULL \n"
-            ") \n";
-
-        auto_stmt->ExecuteUpdate( sql );
-    }
-
-    {
+    if (true) {
         // Initialization ...
         {
-            sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, GETDATE() )";
+            sql =
+                "CREATE TABLE #test_datetime ( \n"
+                "   id INT, \n"
+                "   dt_field DATETIME NULL \n"
+                ") \n";
 
             auto_stmt->ExecuteUpdate( sql );
         }
 
-        // Retrieve data ...
         {
-            sql = "SELECT * FROM #test_datetime";
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-            BOOST_CHECK( rs.get() != NULL );
-            BOOST_CHECK( rs->Next() );
-
-            value = rs->GetVariant(2);
-
-            BOOST_CHECK( !value.IsNull() );
-
-            dt_value = value.GetCTime();
-            BOOST_CHECK( !dt_value.IsEmpty() );
-        }
-
-        // Insert data using parameters ...
-        {
-            auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
-
-            auto_stmt->SetParam( value, "@dt_val" );
-
-            sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val)";
-
-            auto_stmt->ExecuteUpdate( sql );
-        }
-
-        // Retrieve data again ...
-        {
-            sql = "SELECT * FROM #test_datetime";
-
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-            BOOST_CHECK( rs.get() != NULL );
-            BOOST_CHECK( rs->Next() );
-
-            const CVariant& value2 = rs->GetVariant(2);
-
-            BOOST_CHECK( !value2.IsNull() );
-
-            const CTime& dt_value2 = value2.GetCTime();
-            BOOST_CHECK( !dt_value2.IsEmpty() );
-
-            // Failed for some reason ...
-            // BOOST_CHECK(dt_value2 == dt_value);
-        }
-
-        // Insert NULL data using parameters ...
-        {
-            auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
-
-            auto_stmt->SetParam( null_date, "@dt_val" );
-
-            sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val)";
-
-            auto_stmt->ExecuteUpdate( sql );
-        }
-
-
-        // Retrieve data again ...
-        {
-            sql = "SELECT * FROM #test_datetime";
-
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
-
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-
-            BOOST_CHECK( rs.get() != NULL );
-            BOOST_CHECK( rs->Next() );
-
-            const CVariant& value2 = rs->GetVariant(2);
-
-            BOOST_CHECK( value2.IsNull() );
-        }
-    }
-
-    // Insert data using stored procedure ...
-    {
-        // Create a stored procedure ...
-        {
-            bool already_exist = false;
-
-            // auto_stmt->SendSql( "select * FROM sysobjects WHERE xtype = 'P' AND name = 'sp_test_datetime'" );
-            auto_stmt->SendSql( "select * FROM sysobjects WHERE name = 'sp_test_datetime'" );
-            while( auto_stmt->HasMoreResults() ) {
-                if( auto_stmt->HasRows() ) {
-                    auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
-                    while ( rs->Next() ) {
-                        already_exist = true;
-                    }
-                }
-            }
-
-            if ( !already_exist ) {
-                sql =
-                    " CREATE PROC sp_test_datetime(@dt_val datetime) \n"
-                    " AS \n"
-                    " INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val) \n";
+            // Initialization ...
+            {
+                sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, GETDATE() )";
 
                 auto_stmt->ExecuteUpdate( sql );
             }
 
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM #test_datetime";
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                value = rs->GetVariant(2);
+
+                BOOST_CHECK( !value.IsNull() );
+
+                dt_value = value.GetCTime();
+                BOOST_CHECK( !dt_value.IsEmpty() );
+            }
+
+            // Insert data using parameters ...
+            {
+                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+
+                auto_stmt->SetParam( value, "@dt_val" );
+
+                sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val)";
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+            // Retrieve data again ...
+            {
+                sql = "SELECT * FROM #test_datetime";
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant& value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( !value2.IsNull() );
+
+                const CTime& dt_value2 = value2.GetCTime();
+                BOOST_CHECK( !dt_value2.IsEmpty() );
+
+                // Failed for some reason ...
+                // BOOST_CHECK(dt_value2 == dt_value);
+            }
+
+            // Insert NULL data using parameters ...
+            {
+                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+
+                auto_stmt->SetParam( null_date, "@dt_val" );
+
+                sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val)";
+
+                auto_stmt->ExecuteUpdate( sql );
+            }
+
+
+            // Retrieve data again ...
+            {
+                sql = "SELECT * FROM #test_datetime";
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant& value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( value2.IsNull() );
+            }
         }
 
-        // Insert data using parameters ...
+        // Insert data using stored procedure ...
         {
-            auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+            // Set a database ...
+            {
+                auto_stmt->ExecuteUpdate("use DBAPI_Sample");
+            }
+            // Create a stored procedure ...
+            {
+                bool already_exist = false;
 
-            auto_ptr<ICallableStatement> call_auto_stmt( m_Conn->GetCallableStatement("sp_test_datetime", 1) );
+                // auto_stmt->SendSql( "select * FROM sysobjects WHERE xtype = 'P' AND name = 'sp_test_datetime'" );
+                auto_stmt->SendSql( "select * FROM sysobjects WHERE name = 'sp_test_datetime'" );
+                while( auto_stmt->HasMoreResults() ) {
+                    if( auto_stmt->HasRows() ) {
+                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                        while ( rs->Next() ) {
+                            already_exist = true;
+                        }
+                    }
+                }
 
-            call_auto_stmt->SetParam( value, "@dt_val" );
-            call_auto_stmt->Execute();
-        }
+                if ( !already_exist ) {
+                    sql =
+                        " CREATE PROC sp_test_datetime(@dt_val datetime) \n"
+                        " AS \n"
+                        " INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val) \n";
 
-        // Retrieve data ...
-        {
-            sql = "SELECT * FROM #test_datetime";
+                    auto_stmt->ExecuteUpdate( sql );
+                }
 
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
+            }
 
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            // Insert data using parameters ...
+            {
+                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
 
-            BOOST_CHECK( rs.get() != NULL );
-            BOOST_CHECK( rs->Next() );
+                auto_ptr<ICallableStatement> call_auto_stmt( m_Conn->GetCallableStatement("sp_test_datetime", 1) );
 
-            const CVariant& value2 = rs->GetVariant(2);
+                call_auto_stmt->SetParam( value, "@dt_val" );
+                call_auto_stmt->Execute();
+                DumpResults(call_auto_stmt.get());
 
-            BOOST_CHECK( !value2.IsNull() );
+                auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime" );
+                int nRows = auto_stmt->GetRowCount();
+                BOOST_CHECK_EQUAL(nRows, 1);
+            }
 
-            const CTime& dt_value2 = value2.GetCTime();
-            BOOST_CHECK( !dt_value2.IsEmpty() );
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM #test_datetime";
 
-            // Failed for some reason ...
-            // BOOST_CHECK(dt_value2 == dt_value);
-        }
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
 
-        // Insert NULL data using parameters ...
-        {
-            auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-            auto_ptr<ICallableStatement> call_auto_stmt( m_Conn->GetCallableStatement("sp_test_datetime", 1) );
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
 
-            call_auto_stmt->SetParam( null_date, "@dt_val" );
-            call_auto_stmt->Execute();
-        }
+                const CVariant& value2 = rs->GetVariant(2);
 
-        // Retrieve data ...
-        {
-            sql = "SELECT * FROM #test_datetime";
+                BOOST_CHECK( !value2.IsNull() );
 
-            // !!! Do not forget to clear a parameter list ....
-            // Workaround for the ctlib driver ...
-            auto_stmt->ClearParamList();
+                const CTime& dt_value2 = value2.GetCTime();
+                BOOST_CHECK( !dt_value2.IsEmpty() );
 
-            auto_stmt->SendSql( sql );
-            BOOST_CHECK( auto_stmt->HasMoreResults() );
-            BOOST_CHECK( auto_stmt->HasRows() );
-            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                // Failed for some reason ...
+                // BOOST_CHECK(dt_value2 == dt_value);
+            }
 
-            BOOST_CHECK( rs.get() != NULL );
-            BOOST_CHECK( rs->Next() );
+            // Insert NULL data using parameters ...
+            {
+                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
 
-            const CVariant& value2 = rs->GetVariant(2);
+                auto_ptr<ICallableStatement> call_auto_stmt( m_Conn->GetCallableStatement("sp_test_datetime", 1) );
 
-            BOOST_CHECK( value2.IsNull() );
+                call_auto_stmt->SetParam( null_date, "@dt_val" );
+                call_auto_stmt->Execute();
+                DumpResults(call_auto_stmt.get());
+            }
+
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM #test_datetime";
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant& value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( value2.IsNull() );
+            }
         }
     }
 }
@@ -5641,6 +5653,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    // There is a preblem when this test is executed after Test_Bulk_Overflow ...
+    if ( args.GetDriverName() != "ftds64_odbc"  // Strange ....
+         ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
     // !!! There are still problems ...
     if ( args.GetDriverName() == "dblib"
          || args.GetDriverName() == "ftds"
@@ -5707,16 +5727,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //     if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
 //          args.GetServerType() == CTestArguments::eMsSql ) {
 //         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
-//         tc->depends_on(tc_init);
-//         add(tc);
-//     }
-
-    // !!! There are still problems ...
-    // !!! It does not work in case of a new FTDS driver.
-//     if ( args.GetDriverName() != "ctlib" &&
-//          args.GetDriverName() != "dblib" &&
-//          args.GetDriverName() != "ftds63" ) {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
 //         tc->depends_on(tc_init);
 //         add(tc);
 //     }
@@ -5896,6 +5906,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.121  2006/12/19 16:47:42  ssikorsk
+ * Improved and enabled Test_DateTime.
+ *
  * Revision 1.120  2006/12/15 17:18:56  ssikorsk
  * Disable Test_DriverContext_One with the dblib driver.
  *
