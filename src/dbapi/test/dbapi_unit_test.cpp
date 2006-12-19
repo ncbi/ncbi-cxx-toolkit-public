@@ -5379,7 +5379,6 @@ CDBAPIUnitTest::Test_DriverContext_Many(void)
 
     // Wait for all threads
     for (unsigned int i = 0; i < eNumThreadsMax; ++i) {
-        void* ok;
         thr[i]->Join(&ok);
         if (ok != NULL) {
             ++succeeded_num;
@@ -5906,6 +5905,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.122  2006/12/19 17:35:55  ssikorsk
+ * Fixed a compilation warning with Test_DriverContext_Many.
+ *
  * Revision 1.121  2006/12/19 16:47:42  ssikorsk
  * Improved and enabled Test_DateTime.
  *
