@@ -100,6 +100,45 @@ protected:
 };
 
 
+////////////////////////////////////////////////////////////////////////////
+// Default locker class for CRef/CConstRef templates
+////////////////////////////////////////////////////////////////////////////
+
+class CObject;
+class CObjectCounterLocker
+{
+public:
+    // Mark object as "locked" from deletion.
+    void Lock(const CObject* object) const;
+
+    // Mark object as "locked" from deletion if it was already locked by
+    // another locker object.
+    // Preconditions: this locker was assigned from the another locker object.
+    void Relock(const CObject* object) const;
+
+    // Mark object as "unlocked" for deletion,
+    // delete it if last lock was removed.
+    void Unlock(const CObject* object) const;
+
+    // Mark object as "unlocked" for deletion, but do not delete it.
+    void UnlockRelease(const CObject* object) const;
+
+    static
+    void NCBI_XNCBI_EXPORT ReportIncompatibleType(const type_info& type);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Traits for default locker parameter
+/////////////////////////////////////////////////////////////////////////////
+
+template <class C>
+class CLockerTraits
+{
+public:
+    typedef CObjectCounterLocker TLockerType;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -113,6 +152,8 @@ protected:
 class CObject : public CDebugDumpable
 {
 public:
+    /// Default locker type for CRef
+    typedef CObjectCounterLocker TLockerType;
     /// Constructor.
     NCBI_XNCBI_EXPORT
     CObject(void);
@@ -433,42 +474,35 @@ void CObject::RemoveReference(void) const
 
 
 ////////////////////////////////////////////////////////////////////////////
-// Default locker class for CRef/CConstRef templates
+// CObjectCounterLocker inline methods
 ////////////////////////////////////////////////////////////////////////////
 
-class CObjectCounterLocker
+inline
+void CObjectCounterLocker::Lock(const CObject* object) const
 {
-public:
-    // Mark object as "locked" from deletion.
-    void Lock(const CObject* object) const
-        {
-            object->AddReference();
-        }
+    object->AddReference();
+}
 
-    // Mark object as "locked" from deletion if it was already locked by
-    // another locker object.
-    // Preconditions: this locker was assigned from the another locker object.
-    void Relock(const CObject* object) const
-        {
-            Lock(object);
-        }
 
-    // Mark object as "unlocked" for deletion,
-    // delete it if last lock was removed.
-    void Unlock(const CObject* object) const
-        {
-            object->RemoveReference();
-        }
+inline
+void CObjectCounterLocker::Relock(const CObject* object) const
+{
+    Lock(object);
+}
 
-    // Mark object as "unlocked" for deletion, but do not delete it.
-    void UnlockRelease(const CObject* object) const
-        {
-            object->ReleaseReference();
-        }
 
-    static
-    void NCBI_XNCBI_EXPORT ReportIncompatibleType(const type_info& type);
-};
+inline
+void CObjectCounterLocker::Unlock(const CObject* object) const
+{
+    object->RemoveReference();
+}
+
+
+inline
+void CObjectCounterLocker::UnlockRelease(const CObject* object) const
+{
+    object->ReleaseReference();
+}
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -526,7 +560,7 @@ private:
 /// Define a template class that stores a pointer to an object and defines
 /// methods for referencing that object.
 
-template<class C, class Locker = CObjectCounterLocker>
+template<class C, class Locker = typename CLockerTraits<C>::TLockerType>
 class CRef {
 public:
     typedef C element_type;             ///< Define alias element_type
@@ -1941,6 +1975,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/12/19 21:37:32  joukovv
+ * Default for CRef is generalized, prepared for weak reference implementation
+ *
  * Revision 1.71  2006/11/29 13:55:39  gouriano
  * Moved GetErrorCodeString method into cpp
  *
