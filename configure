@@ -4587,13 +4587,13 @@ if test "$with_64" = "yes" ; then
       ;;
     sparc-sun-solaris*:WorkShop51 )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS -lc"
       ;;
     sparc-sun-solaris*:WorkShop5* )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
-      LIBS="-lCstd $LIBS"
+      LIBS="-lCstd -lCrun $LIBS -lc"
       ;;
     mips*:GCC )
       ARCH_CFLAGS="-mips64"
@@ -4654,7 +4654,7 @@ echo "$as_me: WARNING: Do not know how to compile 32-bit with compiler $CXX $com
       MATH_LIBS=" "
       ;;
     *solaris*:WorkShop51 )
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS -lc"
       MATH_LIBS=" "
       ;;
     sparc-sun-solaris*:WorkShop54 )
@@ -4665,12 +4665,13 @@ echo "$as_me: WARNING: Do not know how to compile 32-bit with compiler $CXX $com
       # caused misterios basic_string<> related crashes in the
       # WorkShop54 -xarch=v8 -mt configuration).
       ARCH_CFLAGS="-xarch=v8plus"
+      LIBS="-lCstd $LIBS -lCrun -lc"
       ;;
     *solaris*:WorkShop5* )
       # MATH_LIBS=" "
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
-      LIBS="-lCstd $LIBS"
+      LIBS="-lCstd $LIBS -lCrun -lc"
       ;;
     *irix*:MIPSpro73 | *irix*:KCC )
       ARCH_CFLAGS="-n32"

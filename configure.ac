@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.448 2006/12/19 16:06:08 ucko Exp $
+#  $Id: configure.ac,v 1.449 2006/12/19 16:27:40 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -952,14 +952,14 @@ if test "$with_64" = "yes" ; then
       ;;
     sparc-sun-solaris*:WorkShop51 )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS -lc"
       ;;
 changequote(, )dnl
     sparc-sun-solaris*:WorkShop5* )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
-      LIBS="-lCstd $LIBS"
+      LIBS="-lCstd -lCrun $LIBS -lc"
       ;;
 changequote([, ])dnl
     mips*:GCC )
@@ -1018,7 +1018,7 @@ else
       MATH_LIBS=" "
       ;;
     *solaris*:WorkShop51 )
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS -lc"
       MATH_LIBS=" "
       ;;
     sparc-sun-solaris*:WorkShop54 )
@@ -1029,13 +1029,14 @@ else
       # caused misterios basic_string<> related crashes in the
       # WorkShop54 -xarch=v8 -mt configuration).
       ARCH_CFLAGS="-xarch=v8plus"
+      LIBS="-lCstd $LIBS -lCrun -lc"
       ;;
 changequote(, )dnl
     *solaris*:WorkShop5* )
       # MATH_LIBS=" "
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
-      LIBS="-lCstd $LIBS"
+      LIBS="-lCstd $LIBS -lCrun -lc"
       ;;
 changequote([, ])dnl
     *irix*:MIPSpro73 | *irix*:KCC )
