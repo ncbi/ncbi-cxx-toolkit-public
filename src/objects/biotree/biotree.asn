@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --*********************************************************************
 --
 --  biotree.asn
@@ -11,7 +11,7 @@
 NCBI-BioTree DEFINITIONS ::=
 BEGIN
 
-EXPORTS BioTreeContainer;
+EXPORTS BioTreeContainer, DistanceMatrix;
 
 BioTreeContainer ::= SEQUENCE {
    treetype  VisibleString OPTIONAL,  -- hint on what kind of tree is that
