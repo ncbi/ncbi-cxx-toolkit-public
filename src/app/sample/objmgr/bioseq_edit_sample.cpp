@@ -285,6 +285,8 @@ public:
                         CBioseq_CI::eLevel_Mains);
         for(; iter; ++iter) {
             CBioseq_Handle bs = *iter;
+            if( bs.GetParentEntry().GetParentBioseq_set() != bioseq_set_handle)
+                continue;
             CBioseq_Handle::TId ids = bs.GetId();
             if (!ids.empty()) {
                 m_SIH = *ids.begin();
@@ -418,7 +420,7 @@ public:
         if (!bioseq_handle)
             return false;
         CConstRef<CBioseq> bseq = bioseq_handle.GetCompleteObject();
-        if (m_BSeq->Equals(*bseq));
+        if (m_BSeq->Equals(*bseq))
             return true;
         return false;
     }
@@ -466,7 +468,7 @@ public:
         if (!bioseq_handle)
             return false;
         CConstRef<CBioseq> bseq = bioseq_handle.GetCompleteObject();
-        if (m_BSeq->Equals(*bseq));
+        if (m_BSeq->Equals(*bseq))
             return true;
         return false;
     }
@@ -772,6 +774,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/12/19 14:23:46  didenko
+ * Fixed if statments
+ *
  * Revision 1.6  2006/12/07 20:04:10  didenko
  * Fixed an empty if statment
  *
