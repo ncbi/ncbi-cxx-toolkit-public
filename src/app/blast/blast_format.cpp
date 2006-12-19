@@ -258,8 +258,9 @@ CBlastFormat::PrintOneAlignSet(CSearchResults& results,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, false);
 
-    // quit early (without a footer) if there are no hits
-    if (aln_set.Get().front()->GetSegs().GetDisc().Get().empty()) {
+    // quit early if there are no hits
+    if (aln_set.Get().empty() ||
+        aln_set.Get().front()->GetSegs().GetDisc().Get().empty()) {
         m_Outfile << "\n\n ***** No hits found *****\n\n" << endl;
         x_PrintOneQueryFooter(*results.GetAncillaryData(), options);
         return;
