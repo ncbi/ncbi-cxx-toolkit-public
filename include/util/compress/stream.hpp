@@ -192,7 +192,7 @@ public:
     virtual ~CCompressionStreamProcessor(void);
 
     /// (Re)Initialize stream processor
-    void CCompressionStreamProcessor::Init(void);
+    void Init(void);
 
 private:
     CCompressionProcessor* m_Processor;   ///< (De)compression processor.
@@ -316,6 +316,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/12/19 15:52:38  ucko
+ * Drop redundant CCompressionStreamProcessor:: qualifier from Init's
+ * in-class declaration, per GCC 4.1.x.
+ *
  * Revision 1.18  2006/12/18 19:37:58  ivanov
  * + CCompressionStreamProcessor::Init()
  *
