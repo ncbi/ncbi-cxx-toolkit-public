@@ -1026,7 +1026,11 @@ CS_INT GetCtlibTdsVersion(int version)
 I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
 {
     bool reuse_context = true;
+#ifdef FTDS_IN_USE
+    int  tds_version   = 80;
+#else
     int  tds_version   = NCBI_CTLIB_TDS_VERSION;
+#endif
 
     if ( attr ) {
         map<string,string>::const_iterator citer = attr->find("reuse_context");
@@ -1117,7 +1121,12 @@ CDbapiCtlibCFBase::CreateInstance(
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
         bool reuse_context = true;
+
+#ifdef FTDS_IN_USE
+        int  tds_version   = 80;
+#else
         int  tds_version   = NCBI_CTLIB_TDS_VERSION;
+#endif
 
         // Optional parameters ...
         CS_INT page_size = 0;
@@ -1250,6 +1259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.104  2006/12/20 23:09:02  ssikorsk
+ * Set default TDS version to 80 in case of the ftds64_ctlib driver.
+ *
  * Revision 1.103  2006/12/15 16:42:09  ssikorsk
  * Replaced CFastMutex with CMutex. Improved thread-safety.
  *
