@@ -1201,7 +1201,7 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
     // Initialization ...
     {
         sql =
-            "CREATE TABLE #test_datetime_bcp ( \n"
+            "CREATE TABLE #test_bcp_datetime ( \n"
             "   id INT, \n"
             "   dt_field DATETIME NULL \n"
             ") \n";
@@ -1218,9 +1218,9 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
             CVariant col1(eDB_Int);
             CVariant col2(eDB_DateTime);
 
-            auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime_bcp" );
+            auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
 
-            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_datetime_bcp", 2) );
+            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_bcp_datetime", 2) );
 
             bi->Bind(1, &col1);
             bi->Bind(2, &col2);
@@ -1231,14 +1231,14 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
             bi->AddRow();
             bi->Complete();
 
-            auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime_bcp" );
+            auto_stmt->ExecuteUpdate( "SELECT * FROM #test_bcp_datetime" );
             int nRows = auto_stmt->GetRowCount();
             BOOST_CHECK_EQUAL(nRows, 1);
         }
 
         // Retrieve data ...
         {
-            sql = "SELECT * FROM #test_datetime_bcp";
+            sql = "SELECT * FROM #test_bcp_datetime";
 
             // !!! Do not forget to clear a parameter list ....
             // Workaround for the ctlib driver ...
@@ -1270,9 +1270,9 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
             CVariant col1(eDB_Int);
             CVariant col2(eDB_DateTime);
 
-            auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime_bcp" );
+            auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
 
-            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_datetime_bcp", 2) );
+            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_bcp_datetime", 2) );
 
             bi->Bind(1, &col1);
             bi->Bind(2, &col2);
@@ -1282,14 +1282,14 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
             bi->AddRow();
             bi->Complete();
 
-            auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime_bcp" );
+            auto_stmt->ExecuteUpdate( "SELECT * FROM #test_bcp_datetime" );
             int nRows = auto_stmt->GetRowCount();
             BOOST_CHECK_EQUAL(nRows, 1);
         }
 
         // Retrieve data ...
         {
-            sql = "SELECT * FROM #test_datetime_bcp";
+            sql = "SELECT * FROM #test_bcp_datetime";
 
             // !!! Do not forget to clear a parameter list ....
             // Workaround for the ctlib driver ...
@@ -6082,6 +6082,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.125  2006/12/20 20:31:44  ssikorsk
+ * Replaced #test_datetime_bcp with #test_bcp_datetime.
+ *
  * Revision 1.124  2006/12/20 20:08:55  ssikorsk
  * Moved BCP code from Test_DateTime() into Test_DateTimeBCP();
  * Enabled Test_DateTimeBCP;
