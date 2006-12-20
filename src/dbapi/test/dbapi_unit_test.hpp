@@ -184,6 +184,7 @@ public:
     void Test_BulkInsertBlob(void);
     void Test_UNIQUE(void);
     void Test_DateTime(void);
+    void Test_DateTimeBCP(void);
     void Test_Insert(void);
     void Test_HasMoreResults(void);
     void Test_Create_Destroy(void);
@@ -251,6 +252,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.50  2006/12/20 20:08:08  ssikorsk
+ * Added Test_DateTimeBCP().
+ *
  * Revision 1.49  2006/12/18 15:39:03  ucko
  * Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
  *
