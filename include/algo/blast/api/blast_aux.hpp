@@ -320,6 +320,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_HSPResultsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(PSIMatrix, PSIMatrixFree);
+DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsRequest, PSIDiagnosticsRequestFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsResponse, PSIDiagnosticsResponseFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastSeqSrc, BlastSeqSrcFree);
@@ -342,6 +343,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2006/12/20 15:05:58  camacho
+* + CPSIDiagnosticsRequest
+*
 * Revision 1.77  2006/08/30 19:25:58  camacho
 * Add TSeqRange conversion operator from CSeqLocInfo
 *

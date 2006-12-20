@@ -369,6 +369,22 @@ CPSIMatrix::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 }
 
 void
+CPSIDiagnosticsRequest::DebugDump(CDebugDumpContext ddc, 
+                                   unsigned int /*depth*/) const
+{
+    ddc.SetFrame("CPSIDiagnosticsRequest");
+    if (!m_Ptr)
+        return;
+
+    ddc.Log("information_content", m_Ptr->information_content);
+    ddc.Log("residue_frequencies", m_Ptr->residue_frequencies);
+    ddc.Log("weighted_residue_frequencies", 
+            m_Ptr->weighted_residue_frequencies);
+    ddc.Log("frequency_ratios", m_Ptr->frequency_ratios);
+    ddc.Log("gapless_column_weights", m_Ptr->gapless_column_weights);
+}
+
+void
 CPSIDiagnosticsResponse::DebugDump(CDebugDumpContext ddc, 
                                    unsigned int /*depth*/) const
 {
@@ -874,6 +890,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.101  2006/12/20 15:06:05  camacho
+ * + CPSIDiagnosticsRequest
+ *
  * Revision 1.100  2006/10/03 13:01:30  madden
  * Added filtering_options to CQuerySetUpOptions::DebugDump
  *
