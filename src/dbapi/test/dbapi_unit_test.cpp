@@ -6052,9 +6052,8 @@ CTestArguments::SetDatabaseParameters(void)
                 m_DatabaseParameters["version"] = "50";
             }
         } else if (GetDriverName() == "ftds64_ctlib"  &&
-                   GetServerType() == eMsSql) {
-            m_DatabaseParameters["version"] = "80";
-//             m_DatabaseParameters["version"] = "70";
+                   GetServerType() == eSybase) {
+            m_DatabaseParameters["version"] = "125";
         }
     } else {
         m_DatabaseParameters["version"] = m_TDSVersion;
@@ -6093,6 +6092,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.129  2006/12/20 23:11:22  ssikorsk
+ * Adjust TDS version in case of the ftds64_ctlib driver and Sybase.
+ *
  * Revision 1.128  2006/12/20 21:44:36  ssikorsk
  * Restored original state of Test_UserErrorHandler().
  * Some code was commented out during debugging.
