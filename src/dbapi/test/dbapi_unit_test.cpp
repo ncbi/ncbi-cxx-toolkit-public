@@ -1036,9 +1036,8 @@ CDBAPIUnitTest::Test_DateTime(void)
 
                 const CTime& dt_value2 = value2.GetCTime();
                 BOOST_CHECK( !dt_value2.IsEmpty() );
-
-                // Failed for some reason ...
-                // BOOST_CHECK(dt_value2 == dt_value);
+                CTime dt_value3 = value.GetCTime();
+                BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
             }
 
             // Insert NULL data using parameters ...
@@ -1077,6 +1076,8 @@ CDBAPIUnitTest::Test_DateTime(void)
 
         // Insert data using stored procedure ...
         {
+            value = CTime(CTime::eCurrent);
+
             // Set a database ...
             {
                 auto_stmt->ExecuteUpdate("use DBAPI_Sample");
@@ -1144,6 +1145,97 @@ CDBAPIUnitTest::Test_DateTime(void)
 
                 const CTime& dt_value2 = value2.GetCTime();
                 BOOST_CHECK( !dt_value2.IsEmpty() );
+                CTime dt_value3 = value.GetCTime();
+                BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
+
+                // Failed for some reason ...
+                // BOOST_CHECK(dt_value2 == dt_value);
+            }
+
+            // Insert NULL data using parameters ...
+            {
+                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+
+                auto_ptr<ICallableStatement> call_auto_stmt( m_Conn->GetCallableStatement("sp_test_datetime", 1) );
+
+                call_auto_stmt->SetParam( null_date, "@dt_val" );
+                call_auto_stmt->Execute();
+                DumpResults(call_auto_stmt.get());
+            }
+
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM #test_datetime";
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant& value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( value2.IsNull() );
+            }
+        }
+
+        // Insert data using BCP ...
+        {
+            value = CTime(CTime::eCurrent);
+
+            // Insert data using parameters ...
+            {
+                CVariant col1(eDB_Int);
+                CVariant col2(eDB_DateTime);
+
+                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+
+                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_datetime", 2) );
+
+                bi->Bind(1, &col1);
+                bi->Bind(2, &col2);
+
+                col1 = 1;
+                col2 = value;
+
+                bi->AddRow();
+                bi->Complete();
+
+                auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime" );
+                int nRows = auto_stmt->GetRowCount();
+                BOOST_CHECK_EQUAL(nRows, 1);
+            }
+
+            // Retrieve data ...
+            {
+                sql = "SELECT * FROM #test_datetime";
+
+                // !!! Do not forget to clear a parameter list ....
+                // Workaround for the ctlib driver ...
+                auto_stmt->ClearParamList();
+
+                auto_stmt->SendSql( sql );
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+
+                const CVariant& value2 = rs->GetVariant(2);
+
+                BOOST_CHECK( !value2.IsNull() );
+
+                const CTime& dt_value2 = value2.GetCTime();
+                BOOST_CHECK( !dt_value2.IsEmpty() );
+                CTime dt_value3 = value.GetCTime();
+                BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
 
                 // Failed for some reason ...
                 // BOOST_CHECK(dt_value2 == dt_value);
@@ -4004,36 +4096,47 @@ CDBAPIUnitTest::Test_Variant(void)
     {
         const CVariant variant_Int8( value_Int8 );
         BOOST_CHECK( !variant_Int8.IsNull() );
+        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
 
         const CVariant variant_Int4( value_Int4 );
         BOOST_CHECK( !variant_Int4.IsNull() );
+        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
 
         const CVariant variant_Int2( value_Int2 );
         BOOST_CHECK( !variant_Int2.IsNull() );
+        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
 
         const CVariant variant_Uint1( value_Uint1 );
         BOOST_CHECK( !variant_Uint1.IsNull() );
+        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
 
         const CVariant variant_float( value_float );
         BOOST_CHECK( !variant_float.IsNull() );
+        BOOST_CHECK( variant_float.GetFloat() == value_float );
 
         const CVariant variant_double( value_double );
         BOOST_CHECK( !variant_double.IsNull() );
+        BOOST_CHECK( variant_double.GetDouble() == value_double );
 
         const CVariant variant_bool( value_bool );
         BOOST_CHECK( !variant_bool.IsNull() );
+        BOOST_CHECK( variant_bool.GetBit() == value_bool );
 
         const CVariant variant_string( value_string );
         BOOST_CHECK( !variant_string.IsNull() );
+        BOOST_CHECK( variant_string.GetString() == value_string );
 
         const CVariant variant_char( value_char );
         BOOST_CHECK( !variant_char.IsNull() );
+        BOOST_CHECK( variant_char.GetString() == value_char );
 
         const CVariant variant_CTimeShort( value_CTime, eShort );
         BOOST_CHECK( !variant_CTimeShort.IsNull() );
+        BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
 
         const CVariant variant_CTimeLong( value_CTime, eLong );
         BOOST_CHECK( !variant_CTimeLong.IsNull() );
+        BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
 
 //        explicit CVariant(CDB_Object* obj);
 
@@ -4184,69 +4287,90 @@ CDBAPIUnitTest::Test_Variant(void)
     {
         const CVariant variant_Int8 = CVariant(value_Int8);
         BOOST_CHECK( !variant_Int8.IsNull() );
+        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
 
         const CVariant variant_Int4 = CVariant(value_Int4);
         BOOST_CHECK( !variant_Int4.IsNull() );
+        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
 
         const CVariant variant_Int2 = CVariant(value_Int2);
         BOOST_CHECK( !variant_Int2.IsNull() );
+        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
 
         const CVariant variant_Uint1 = CVariant(value_Uint1);
         BOOST_CHECK( !variant_Uint1.IsNull() );
+        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
 
         const CVariant variant_float = CVariant(value_float);
         BOOST_CHECK( !variant_float.IsNull() );
+        BOOST_CHECK( variant_float.GetFloat() == value_float );
 
         const CVariant variant_double = CVariant(value_double);
         BOOST_CHECK( !variant_double.IsNull() );
+        BOOST_CHECK( variant_double.GetDouble() == value_double );
 
         const CVariant variant_bool = CVariant(value_bool);
         BOOST_CHECK( !variant_bool.IsNull() );
+        BOOST_CHECK( variant_bool.GetBit() == value_bool );
 
         const CVariant variant_string = CVariant(value_string);
         BOOST_CHECK( !variant_string.IsNull() );
+        BOOST_CHECK( variant_string.GetString() == value_string );
 
         const CVariant variant_char = CVariant(value_char);
         BOOST_CHECK( !variant_char.IsNull() );
+        BOOST_CHECK( variant_char.GetString() == value_char );
 
         const CVariant variant_CTimeShort = CVariant( value_CTime, eShort );
         BOOST_CHECK( !variant_CTimeShort.IsNull() );
+        BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
 
         const CVariant variant_CTimeLong = CVariant( value_CTime, eLong );
         BOOST_CHECK( !variant_CTimeLong.IsNull() );
+        BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
     }
 
     // Call Factories for different types
     {
         const CVariant variant_Int8 = CVariant::BigInt( const_cast<Int8*>(&value_Int8) );
         BOOST_CHECK( !variant_Int8.IsNull() );
+        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
 
         const CVariant variant_Int4 = CVariant::Int( const_cast<Int4*>(&value_Int4) );
         BOOST_CHECK( !variant_Int4.IsNull() );
+        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
 
         const CVariant variant_Int2 = CVariant::SmallInt( const_cast<Int2*>(&value_Int2) );
         BOOST_CHECK( !variant_Int2.IsNull() );
+        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
 
         const CVariant variant_Uint1 = CVariant::TinyInt( const_cast<Uint1*>(&value_Uint1) );
         BOOST_CHECK( !variant_Uint1.IsNull() );
+        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
 
         const CVariant variant_float = CVariant::Float( const_cast<float*>(&value_float) );
         BOOST_CHECK( !variant_float.IsNull() );
+        BOOST_CHECK( variant_float.GetFloat() == value_float );
 
         const CVariant variant_double = CVariant::Double( const_cast<double*>(&value_double) );
         BOOST_CHECK( !variant_double.IsNull() );
+        BOOST_CHECK( variant_double.GetDouble() == value_double );
 
         const CVariant variant_bool = CVariant::Bit( const_cast<bool*>(&value_bool) );
         BOOST_CHECK( !variant_bool.IsNull() );
+        BOOST_CHECK( variant_bool.GetBit() == value_bool );
 
         const CVariant variant_LongChar = CVariant::LongChar( value_char, strlen(value_char) );
         BOOST_CHECK( !variant_LongChar.IsNull() );
+        BOOST_CHECK( variant_LongChar.GetString() == value_char );
 
         const CVariant variant_VarChar = CVariant::VarChar( value_char, strlen(value_char) );
         BOOST_CHECK( !variant_VarChar.IsNull() );
+        BOOST_CHECK( variant_VarChar.GetString() == value_char );
 
         const CVariant variant_Char = CVariant::Char( strlen(value_char), const_cast<char*>(value_char) );
         BOOST_CHECK( !variant_Char.IsNull() );
+        BOOST_CHECK( variant_Char.GetString() == value_char );
 
         const CVariant variant_LongBinary = CVariant::LongBinary( strlen(value_binary), value_binary, strlen(value_binary)) ;
         BOOST_CHECK( !variant_LongBinary.IsNull() );
@@ -4259,9 +4383,11 @@ CDBAPIUnitTest::Test_Variant(void)
 
         const CVariant variant_SmallDateTime = CVariant::SmallDateTime( const_cast<CTime*>(&value_CTime) );
         BOOST_CHECK( !variant_SmallDateTime.IsNull() );
+        BOOST_CHECK( variant_SmallDateTime.GetCTime() == value_CTime );
 
         const CVariant variant_DateTime = CVariant::DateTime( const_cast<CTime*>(&value_CTime) );
         BOOST_CHECK( !variant_DateTime.IsNull() );
+        BOOST_CHECK( variant_DateTime.GetCTime() == value_CTime );
 
 //        CVariant variant_Numeric = CVariant::Numeric  (unsigned int precision, unsigned int scale, const char* p);
     }
@@ -4341,55 +4467,75 @@ CDBAPIUnitTest::Test_Variant(void)
         CVariant variant_Int8( value_Int8 );
         BOOST_CHECK( !variant_Int8.IsNull() );
         variant_Int8 = CVariant( value_Int8 );
+        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
         variant_Int8 = value_Int8;
+        BOOST_CHECK( variant_Int8.GetInt8() == value_Int8 );
 
         CVariant variant_Int4( value_Int4 );
         BOOST_CHECK( !variant_Int4.IsNull() );
         variant_Int4 = CVariant( value_Int4 );
+        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
         variant_Int4 = value_Int4;
+        BOOST_CHECK( variant_Int4.GetInt4() == value_Int4 );
 
         CVariant variant_Int2( value_Int2 );
         BOOST_CHECK( !variant_Int2.IsNull() );
         variant_Int2 = CVariant( value_Int2 );
+        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
         variant_Int2 = value_Int2;
+        BOOST_CHECK( variant_Int2.GetInt2() == value_Int2 );
 
         CVariant variant_Uint1( value_Uint1 );
         BOOST_CHECK( !variant_Uint1.IsNull() );
         variant_Uint1 = CVariant( value_Uint1 );
+        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
         variant_Uint1 = value_Uint1;
+        BOOST_CHECK( variant_Uint1.GetByte() == value_Uint1 );
 
         CVariant variant_float( value_float );
         BOOST_CHECK( !variant_float.IsNull() );
         variant_float = CVariant( value_float );
+        BOOST_CHECK( variant_float.GetFloat() == value_float );
         variant_float = value_float;
+        BOOST_CHECK( variant_float.GetFloat() == value_float );
 
         CVariant variant_double( value_double );
         BOOST_CHECK( !variant_double.IsNull() );
         variant_double = CVariant( value_double );
+        BOOST_CHECK( variant_double.GetDouble() == value_double );
         variant_double = value_double;
+        BOOST_CHECK( variant_double.GetDouble() == value_double );
 
         CVariant variant_bool( value_bool );
         BOOST_CHECK( !variant_bool.IsNull() );
         variant_bool = CVariant( value_bool );
+        BOOST_CHECK( variant_bool.GetBit() == value_bool );
         variant_bool = value_bool;
+        BOOST_CHECK( variant_bool.GetBit() == value_bool );
 
         CVariant variant_string( value_string );
         BOOST_CHECK( !variant_string.IsNull() );
         variant_string = CVariant( value_string );
+        BOOST_CHECK( variant_string.GetString() == value_string );
         variant_string = value_string;
+        BOOST_CHECK( variant_string.GetString() == value_string );
 
         CVariant variant_char( value_char );
         BOOST_CHECK( !variant_char.IsNull() );
         variant_char = CVariant( value_char );
+        BOOST_CHECK( variant_char.GetString() == value_char );
         variant_char = value_char;
+        BOOST_CHECK( variant_char.GetString() == value_char );
 
         CVariant variant_CTimeShort( value_CTime, eShort );
         BOOST_CHECK( !variant_CTimeShort.IsNull() );
         variant_CTimeShort = CVariant( value_CTime, eShort );
+        BOOST_CHECK( variant_CTimeShort.GetCTime() == value_CTime );
 
         CVariant variant_CTimeLong( value_CTime, eLong );
         BOOST_CHECK( !variant_CTimeLong.IsNull() );
         variant_CTimeLong = CVariant( value_CTime, eLong );
+        BOOST_CHECK( variant_CTimeLong.GetCTime() == value_CTime );
 
 //        explicit CVariant(CDB_Object* obj);
 
@@ -5905,6 +6051,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.123  2006/12/20 19:32:10  ssikorsk
+ * Added test of BCP of DateTime into Test_DateTime.
+ *
  * Revision 1.122  2006/12/19 17:35:55  ssikorsk
  * Fixed a compilation warning with Test_DriverContext_Many.
  *
