@@ -244,8 +244,6 @@ public:
     TIndex GetMapToIndex(ESeq_code_type from_type,
                          ESeq_code_type to_type,
                          TIndex         from_idx);
-private:
-
     // Template wrapper class used to create data type specific
     // classes to delete code tables on exit from main
     template <class T>
@@ -306,6 +304,8 @@ private:
         int m_StartAt_D1;
         int m_StartAt_D2;
     };
+
+private:
 
     // Typedefs making use of wrapper classes above.
     typedef CWrapper_table<char>           CCode_table;
@@ -6763,6 +6763,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2006/12/20 17:30:54  ucko
+ * Make CSeqportUtil_implementation::CWrapper_* (nominally) public as an
+ * attempt to work around weird MSVC 7.1 behavior.
+ *
  * Revision 6.31  2006/12/18 21:24:34  vakatov
  * MapIupacnaToNcbi2na() -- a bogus assignment of 'new_byte' to suppress
  * a compiler warning
