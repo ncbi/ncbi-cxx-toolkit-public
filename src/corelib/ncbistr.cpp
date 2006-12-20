@@ -2156,12 +2156,6 @@ extern char* strdup(const char* str)
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-//  CTempString
-
-const CTempString::size_type CTempString::npos = NPOS;
-
-
-/////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8
 
 SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
@@ -2564,6 +2558,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.188  2006/12/20 13:22:59  dicuccio
+ * Further updates to CTempString:
+ * - Code rearrangements and patches from Eugene Vasilchenko: Unified
+ *   initialization; reordered functions for better inlining.
+ * - Implemented find()
+ *
  * Revision 1.187  2006/12/18 13:01:26  dicuccio
  * Make CTempString more congruent with std::string
  *

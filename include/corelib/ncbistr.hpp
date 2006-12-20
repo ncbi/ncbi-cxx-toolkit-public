@@ -109,9 +109,13 @@ static const SIZE_TYPE NPOS = NCBI_NS_STD::string::npos;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CTempString --
+/// CTempString implements a light-weight string on top of a storage buffer
+/// whose lifetime management is known and controlled.  CTempString is designed
+/// to perform no memory allocation but provide a string interaction interface
+/// conrguent with std::basic_string<char>.  As such, CTempString provides a
+/// const-only access interface to its underlying storage.  Care has been taken
+/// to avoid allocations and other expensive operations wherever possible.
 ///
-/// Class to store pointer to string
 
 class CTempString
 {
@@ -120,7 +124,7 @@ public:
     /// @{
     typedef size_t      size_type;
     typedef const char* const_iterator;
-    NCBI_XNCBI_EXPORT static const size_type npos;
+    static const size_type	npos = static_cast<size_type>(string::npos);
     /// @}
 
     CTempString(void);
@@ -128,12 +132,15 @@ public:
     CTempString(const char* str, size_type length);
     CTempString(const char* str, size_type pos, size_type length);
 
+    // initialization from string literal
+    template<size_t Size> CTempString(const char (&str)[Size]);
+
     CTempString(const string& str);
     CTempString(const string& str, size_type length);
     CTempString(const string& str, size_type pos, size_type length);
 
     CTempString(const CTempString& str);
-    CTempString(const CTempString& str, size_type length);
+    CTempString(const CTempString& str, size_type pos);
     CTempString(const CTempString& str, size_type pos, size_type length);
 
     /// copy a substring into a string
@@ -145,28 +152,51 @@ public:
 
     const_iterator begin() const;
     const_iterator end() const;
+
     const char* data(void)   const;
     size_type   length(void) const;
     size_type   size(void) const;
     bool        empty(void)  const;
 
-    size_type   find_first_of(const CTempString& match) const;
-    size_type   find_first_of(const CTempString& match, size_type pos) const;
+    /// Find the first instance of the entire matching string within the
+    /// current string, beginning at an optional offset.
+    size_type find(const CTempString& match,
+                   size_type pos = 0) const;
 
-    size_type   find_first_not_of(const CTempString& match) const;
-    size_type   find_first_not_of(const CTempString& match, size_type pos) const;
+    /// Find the first occurrence of any character in the matching string
+    /// within the current string, beginning at an optional offset.
+    size_type find_first_of(const CTempString& match,
+                            size_type pos = 0) const;
 
+    /// Find the first occurrence of any character not in the matching string
+    /// within the current string, beginning at an optional offset.
+    size_type find_first_not_of(const CTempString& match,
+                                size_type pos = 0) const;
+
+    /// Obtain a substring from this string, beginning at a given offset
     CTempString substr(size_type pos) const;
+
+    /// Obtain a substring from this string, beginning at a given offset
+    /// and extending a specified length
     CTempString substr(size_type pos, size_type len) const;
 
+    /// Index into the current string and provide its character in a read-
+    /// only fashion.  If the index is beyond the length of the string,
+    /// a NULL character is returned.
     char operator[] (size_type pos) const;
 
+    /// operator== for C-style strings
     bool operator==(const char* str) const;
+    /// operator== for std::string strings
     bool operator==(const string& str) const;
+    /// operator== for CTempString strings
     bool operator==(const CTempString& str) const;
 
+    /// operator< for C-style strings
     bool operator<(const char* str) const;
+    /// operator< for std::string strings
     bool operator<(const string& str) const;
+    /// operator< for CTempString strings
     bool operator<(const CTempString& str) const;
 
     /// @}
@@ -174,9 +204,14 @@ public:
     operator string(void) const;
 
 private:
+
     const char* m_String;  ///< Stored pointer to string
     size_type   m_Length;  ///< Length of string
 
+    // Initialize CTempString with bounds checks
+    void x_Reset(void);
+    void x_Init(const char* str, size_type str_length,
+                size_type pos, size_type length);
     bool x_Equals(const_iterator it1, const_iterator it2) const;
     bool x_Less(const_iterator it1, const_iterator it2) const;
 };
@@ -2691,89 +2726,6 @@ const string& CNcbiEmptyString::Get(void)
 //
 
 inline
-CTempString::CTempString(void)
-    : m_String(""), m_Length(0)
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const char* str)
-    : m_String(str), m_Length(strlen(str))
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const char* str, size_type length)
-    : m_String(str), m_Length(length)
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const char* str, size_type pos, size_type length)
-    : m_String(str+pos), m_Length(length)
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const string& str)
-    : m_String(str.data()), m_Length(str.size())
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const string& str, size_type length)
-    : m_String(str.data()), m_Length(length)
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const string& str, size_type pos, size_type length)
-    : m_String(str.data() + pos), m_Length(length)
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const CTempString& str)
-    : m_String(str.data()), m_Length(str.size())
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const CTempString& str, size_type length)
-    : m_String(str.data()), m_Length(length)
-{
-    return;
-}
-
-inline
-CTempString::CTempString(const CTempString& str, size_type pos, size_type length)
-    : m_String(str.data() + pos), m_Length(length)
-{
-    return;
-}
-
-/// copy a substring into a string
-/// These are analogs of basic_string::assign()
-inline
-void CTempString::Copy(string& dst, size_type pos, size_type len) const
-{
-    if (pos < length()) {
-        size_type end = min(length(), pos + len);
-        dst.assign(begin() + pos, begin() + end);
-    } else {
-        dst.erase();
-    }
-}
-
-inline
 CTempString::const_iterator CTempString::begin() const
 {
     return m_String;
@@ -2805,6 +2757,142 @@ CTempString::size_type CTempString::size(void) const
 }
 
 inline
+bool CTempString::empty(void) const
+{
+    return m_Length == 0;
+}
+
+inline
+char CTempString::operator[] (size_type pos) const
+{
+    if ( pos < m_Length ) {
+        return m_String[pos];
+    }
+    return '\0';
+}
+
+inline
+void CTempString::x_Reset(void)
+{
+    m_String = "";
+    m_Length = 0;
+}
+
+inline
+void CTempString::x_Init(const char* str, size_type str_length,
+                         size_type pos, size_type length)
+{
+    if ( pos >= str_length ) {
+        x_Reset();
+        return;
+    }
+    m_String = str + pos;
+    m_Length = min(length, str_length - pos);
+    return;
+}
+
+inline
+CTempString::CTempString(void)
+{
+    x_Reset();
+    return;
+}
+
+inline
+CTempString::CTempString(const char* str)
+{
+    if ( !str ) {
+        x_Reset();
+        return;
+    }
+    m_String = str;
+    m_Length = strlen(str);
+    return;
+}
+
+template<size_t Size>
+inline
+CTempString::CTempString(const char (&str)[Size])
+    : m_String(str), m_Length(Size-1)
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const char* str, size_type length)
+    : m_String(str), m_Length(length)
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const char* str, size_type pos, size_type length)
+    : m_String(str+pos), m_Length(length)
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const string& str)
+    : m_String(str.data()), m_Length(str.size())
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const string& str, size_type length)
+    : m_String(str.data()), m_Length(min(str.size(), length))
+{
+    return;
+}
+
+inline
+CTempString::CTempString(const string& str, size_type pos, size_type length)
+    : m_String(NULL)
+    , m_Length(0)
+{
+    x_Init(str.data(), str.size(), pos, length);
+    _ASSERT(m_String);
+    return;
+}
+
+
+inline
+CTempString::CTempString(const CTempString& str)
+    : m_String(NULL)
+    , m_Length(0)
+{
+    x_Init(str.data(), str.size(), 0, str.size());
+}
+
+inline
+CTempString::CTempString(const CTempString& str, size_type pos)
+    : m_String(NULL)
+    , m_Length(0)
+{
+    x_Init(str.data(), str.size(), pos, str.size() - pos);
+}
+
+inline
+CTempString::CTempString(const CTempString& str, size_type pos, size_type length)
+{
+    x_Init(str.data(), str.size(), pos, length);
+}
+
+/// copy a substring into a string
+/// These are analogs of basic_string::assign()
+inline
+void CTempString::Copy(string& dst, size_type pos, size_type len) const
+{
+    if (pos < length()) {
+        len = min(len, length()-pos);
+        dst.assign(begin() + pos, begin() + pos + len);
+    } else {
+        dst.erase();
+    }
+}
+
+inline
 CTempString::size_type CTempString::find_first_of(const CTempString& match,
                                                   size_type pos) const
 {
@@ -2816,13 +2904,6 @@ CTempString::size_type CTempString::find_first_of(const CTempString& match,
         }
     }
     return npos;
-}
-
-
-inline
-CTempString::size_type CTempString::find_first_of(const CTempString& match) const
-{
-    return find_first_of(match, 0);
 }
 
 
@@ -2854,44 +2935,48 @@ CTempString::size_type CTempString::find_first_not_of(const CTempString& match,
 
 
 inline
-CTempString::size_type CTempString::find_first_not_of(const CTempString& match) const
+CTempString::size_type CTempString::find(const CTempString& match,
+                                         size_type pos) const
 {
-    return find_first_not_of(match, 0);
+    if (pos + match.length() > length()) {
+        return npos;
+    }
+    if (match.length() == 0) {
+        return pos;
+    }
+
+    size_type length_limit = length() - match.length();
+    while ( (pos = find_first_of(CTempString(match, 0, 1), pos)) !=
+            string::npos) {
+        if (pos > length_limit) {
+            return npos;
+        }
+
+        int res = memcmp(begin() + pos + 1,
+                         match.begin() + 1,
+                         match.length() - 1);
+        if (res == 0) {
+            return pos;
+        }
+        ++pos;
+    }
+    return npos;
 }
 
 
 inline
 CTempString CTempString::substr(size_type pos) const
 {
-    return CTempString(begin() + pos, min(pos, length() - pos));
+    return CTempString(*this, pos, npos);
 }
 
 
 inline
 CTempString CTempString::substr(size_type pos, size_type len) const
 {
-    if (pos < length()) {
-        return CTempString(begin() + pos, min(len, length() - pos));
-    } else {
-        return CTempString();
-    }
+    return CTempString(*this, pos, len);
 }
 
-
-inline
-bool CTempString::empty(void) const
-{
-    return m_Length == 0;
-}
-
-inline
-char CTempString::operator[] (size_type pos) const
-{
-    if ( pos < m_Length ) {
-        return m_String[pos];
-    }
-    return '\0';
-}
 
 inline
 CTempString::operator string(void) const
@@ -2913,10 +2998,8 @@ bool CTempString::x_Equals(const_iterator it2, const_iterator end2) const
 inline
 bool CTempString::operator==(const char* str) const
 {
-    if ( !str  &&  !m_String ) {
-        return true;
-    } else if ( !str  ||  !m_String ) {
-        return false;
+    if ( !str || !m_String ) {
+        return !str && !m_String;
     }
     return x_Equals(str, str + strlen(str));
 }
@@ -2939,10 +3022,8 @@ bool CTempString::x_Less(const_iterator it2, const_iterator end2) const
     size_type other_len = end2 - it2;
     size_type comp_len = min(other_len, length());
     int res = memcmp(begin(), it2, comp_len);
-    if (res < 0) {
-        return true;
-    } else if (res > 0) {
-        return false;
+    if ( res != 0 ) {
+        return res < 0;
     }
     return length() < other_len;
 }
@@ -2951,12 +3032,8 @@ bool CTempString::x_Less(const_iterator it2, const_iterator end2) const
 inline
 bool CTempString::operator<(const char* str) const
 {
-    if ( !str  &&  !m_String ) {
-        return false;
-    } else if ( !str  && m_String) {
-        return false;
-    } else if (str  &&  !m_String) {
-        return true;
+    if ( !str || !m_String ) {
+        return str  &&  !m_String;
     }
     return x_Less(str, str + strlen(str));
 }
@@ -3472,6 +3549,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.114  2006/12/20 13:22:59  dicuccio
+ * Further updates to CTempString:
+ * - Code rearrangements and patches from Eugene Vasilchenko: Unified
+ *   initialization; reordered functions for better inlining.
+ * - Implemented find()
+ *
  * Revision 1.113  2006/12/18 13:01:26  dicuccio
  * Make CTempString more congruent with std::string
  *
