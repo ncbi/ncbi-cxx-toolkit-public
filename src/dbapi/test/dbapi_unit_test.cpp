@@ -1184,94 +1184,128 @@ CDBAPIUnitTest::Test_DateTime(void)
                 BOOST_CHECK( value2.IsNull() );
             }
         }
+    }
+}
 
-        // Insert data using BCP ...
+///////////////////////////////////////////////////////////////////////////////
+void
+CDBAPIUnitTest::Test_DateTimeBCP(void)
+{
+    string sql;
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    CVariant value(eDB_DateTime);
+    CTime empty_ctime;
+    CVariant null_date(empty_ctime, eLong);
+    CTime dt_value;
+
+    // Initialization ...
+    {
+        sql =
+            "CREATE TABLE #test_datetime_bcp ( \n"
+            "   id INT, \n"
+            "   dt_field DATETIME NULL \n"
+            ") \n";
+
+        auto_stmt->ExecuteUpdate( sql );
+    }
+
+    // Insert data using BCP ...
+    {
+        value = CTime(CTime::eCurrent);
+
+        // Insert data using parameters ...
         {
-            value = CTime(CTime::eCurrent);
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_DateTime);
 
-            // Insert data using parameters ...
-            {
-                CVariant col1(eDB_Int);
-                CVariant col2(eDB_DateTime);
+            auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime_bcp" );
 
-                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_datetime_bcp", 2) );
 
-                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_datetime", 2) );
+            bi->Bind(1, &col1);
+            bi->Bind(2, &col2);
 
-                bi->Bind(1, &col1);
-                bi->Bind(2, &col2);
+            col1 = 1;
+            col2 = value;
 
-                col1 = 1;
-                col2 = value;
+            bi->AddRow();
+            bi->Complete();
 
-                bi->AddRow();
-                bi->Complete();
+            auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime_bcp" );
+            int nRows = auto_stmt->GetRowCount();
+            BOOST_CHECK_EQUAL(nRows, 1);
+        }
 
-                auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime" );
-                int nRows = auto_stmt->GetRowCount();
-                BOOST_CHECK_EQUAL(nRows, 1);
-            }
+        // Retrieve data ...
+        {
+            sql = "SELECT * FROM #test_datetime_bcp";
 
-            // Retrieve data ...
-            {
-                sql = "SELECT * FROM #test_datetime";
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
 
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
 
-                auto_stmt->SendSql( sql );
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-                BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
 
-                BOOST_CHECK( rs.get() != NULL );
-                BOOST_CHECK( rs->Next() );
+            const CVariant& value2 = rs->GetVariant(2);
 
-                const CVariant& value2 = rs->GetVariant(2);
+            BOOST_CHECK( !value2.IsNull() );
 
-                BOOST_CHECK( !value2.IsNull() );
+            const CTime& dt_value2 = value2.GetCTime();
+            BOOST_CHECK( !dt_value2.IsEmpty() );
+            CTime dt_value3 = value.GetCTime();
+            BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
 
-                const CTime& dt_value2 = value2.GetCTime();
-                BOOST_CHECK( !dt_value2.IsEmpty() );
-                CTime dt_value3 = value.GetCTime();
-                BOOST_CHECK_EQUAL( dt_value2.AsString(), dt_value3.AsString() );
+            // Failed for some reason ...
+            // BOOST_CHECK(dt_value2 == dt_value);
+        }
 
-                // Failed for some reason ...
-                // BOOST_CHECK(dt_value2 == dt_value);
-            }
+        // Insert NULL data using parameters ...
+        {
+            CVariant col1(eDB_Int);
+            CVariant col2(eDB_DateTime);
 
-            // Insert NULL data using parameters ...
-            {
-                auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
+            auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime_bcp" );
 
-                auto_ptr<ICallableStatement> call_auto_stmt( m_Conn->GetCallableStatement("sp_test_datetime", 1) );
+            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_datetime_bcp", 2) );
 
-                call_auto_stmt->SetParam( null_date, "@dt_val" );
-                call_auto_stmt->Execute();
-                DumpResults(call_auto_stmt.get());
-            }
+            bi->Bind(1, &col1);
+            bi->Bind(2, &col2);
 
-            // Retrieve data ...
-            {
-                sql = "SELECT * FROM #test_datetime";
+            col1 = 1;
 
-                // !!! Do not forget to clear a parameter list ....
-                // Workaround for the ctlib driver ...
-                auto_stmt->ClearParamList();
+            bi->AddRow();
+            bi->Complete();
 
-                auto_stmt->SendSql( sql );
-                BOOST_CHECK( auto_stmt->HasMoreResults() );
-                BOOST_CHECK( auto_stmt->HasRows() );
-                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+            auto_stmt->ExecuteUpdate( "SELECT * FROM #test_datetime_bcp" );
+            int nRows = auto_stmt->GetRowCount();
+            BOOST_CHECK_EQUAL(nRows, 1);
+        }
 
-                BOOST_CHECK( rs.get() != NULL );
-                BOOST_CHECK( rs->Next() );
+        // Retrieve data ...
+        {
+            sql = "SELECT * FROM #test_datetime_bcp";
 
-                const CVariant& value2 = rs->GetVariant(2);
+            // !!! Do not forget to clear a parameter list ....
+            // Workaround for the ctlib driver ...
+            auto_stmt->ClearParamList();
 
-                BOOST_CHECK( value2.IsNull() );
-            }
+            auto_stmt->SendSql( sql );
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+
+            BOOST_CHECK( rs.get() != NULL );
+            BOOST_CHECK( rs->Next() );
+
+            const CVariant& value2 = rs->GetVariant(2);
+
+            BOOST_CHECK( value2.IsNull() );
         }
     }
 }
@@ -5806,6 +5840,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    if ( args.GetDriverName() != "ftds64_odbc"  // No BCP at the moment ...
+         || args.GetDriverName() != "odbcw"     // No BCP at the moment ...
+         ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTimeBCP, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
     // !!! There are still problems ...
     if ( args.GetDriverName() == "dblib"
          || args.GetDriverName() == "ftds"
@@ -5838,17 +5880,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-
-    /*
-    if (args.GetServerType() == CTestArguments::eMsSql &&
-        (args.GetDriverName() == "ftds64_odbc"
-         || args.GetDriverName() == "ftds64_ctlib")
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
-    */
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
 //         && args.GetDriverName() != "odbc" // Doesn't work ...
@@ -6051,6 +6082,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.124  2006/12/20 20:08:55  ssikorsk
+ * Moved BCP code from Test_DateTime() into Test_DateTimeBCP();
+ * Enabled Test_DateTimeBCP;
+ *
  * Revision 1.123  2006/12/20 19:32:10  ssikorsk
  * Added test of BCP of DateTime into Test_DateTime.
  *
