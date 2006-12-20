@@ -124,7 +124,7 @@ public:
     /// @{
     typedef size_t      size_type;
     typedef const char* const_iterator;
-    static const size_type	npos = static_cast<size_type>(string::npos);
+    static const size_type	npos = static_cast<size_type>(-1);
     /// @}
 
     CTempString(void);
@@ -3549,6 +3549,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.115  2006/12/20 16:39:02  gouriano
+ * Fixed MSVC2005 compiler error
+ *
  * Revision 1.114  2006/12/20 13:22:59  dicuccio
  * Further updates to CTempString:
  * - Code rearrangements and patches from Eugene Vasilchenko: Unified
