@@ -5675,14 +5675,22 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception, DBAPIInstance));
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    if (!(args.GetDriverName() == "ftds64_ctlib"
+          && args.GetServerType() == CTestArguments::eSybase) // Something
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     //
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Multiple_Close, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    if (!(args.GetDriverName() == "ftds64_ctlib"
+          && args.GetServerType() == CTestArguments::eSybase) // Something
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Multiple_Close, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
     //
     boost::unit_test::test_case* tc_parameters =
@@ -5841,6 +5849,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if ( args.GetDriverName() != "ftds64_odbc"  // No BCP at the moment ...
+         && args.GetDriverName() != "ftds64_ctlib"  // Something is broken in ftds64_ctlib ...
          && args.GetDriverName() != "odbcw"     // No BCP at the moment ...
          && !(args.GetDriverName() == "ftds" &&
               args.GetServerType() == CTestArguments::eSybase)
@@ -6084,6 +6093,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.127  2006/12/20 21:03:40  ssikorsk
+ * Disabled Test_DateTimeBCP with the ftds64_ctlib driver.
+ *
  * Revision 1.126  2006/12/20 20:42:25  ssikorsk
  * Disabled Test_DateTimeBCP with the ftds driver and Sybase.
  *
