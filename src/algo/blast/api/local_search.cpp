@@ -93,11 +93,6 @@ CLocalSearchFactory::GetOptions(EProgram program)
 // Seq Search
 //
 
-CLocalSeqSearch::~CLocalSeqSearch()
-{
-    BlastSeqSrcFree(m_SeqSrc);
-}
-
 // NOTE: Local search object is re-created every time it is run.
 CSearchResultSet 
 CLocalSeqSearch::Run()
@@ -105,7 +100,7 @@ CLocalSeqSearch::Run()
     if ( m_QueryFactory.Empty() ) {
         NCBI_THROW(CSearchException, eConfigErr, "No queries specified");
     }
-    if ( !m_SeqSrc ) {
+    if ( m_Database.Empty() ) {
         NCBI_THROW(CSearchException, eConfigErr, "No database name specified");
     }
     if ( !m_SearchOpts ) {
@@ -115,7 +110,7 @@ CLocalSeqSearch::Run()
     // populated
     
     m_LocalBlast.Reset(new CLocalBlast(m_QueryFactory, m_SearchOpts,
-                                       m_SeqSrc));
+                                       *m_Database));
     
     return m_LocalBlast->Run();
 }
@@ -129,17 +124,13 @@ CLocalSeqSearch::SetOptions(CRef<CBlastOptionsHandle> opts)
 void 
 CLocalSeqSearch::SetSubject(CConstRef<CSearchDatabase> subject)
 {
-    m_SeqSrc = SeqDbBlastSeqSrcInit(subject->GetDatabaseName(),
-        (subject->GetMoleculeType() == CSearchDatabase::eBlastDbIsProtein));
+    m_Database = subject;
 }
 
 void 
 CLocalSeqSearch::SetQueryFactory(CRef<IQueryFactory> query_factory)
 {
-    if (query_factory.Empty()) {
-        NCBI_THROW(CSearchException, eConfigErr, "No query factory specified");
-    }
-    m_QueryFactory.Reset(query_factory);
+    m_QueryFactory = query_factory;
 }
 
 //

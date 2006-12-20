@@ -53,8 +53,6 @@ BEGIN_SCOPE(blast)
 /// sequence queries.
 class NCBI_XBLAST_EXPORT CLocalSeqSearch : public ISeqSearch {
 public:
-    virtual ~CLocalSeqSearch();
-    
     /// Configure the search.
     virtual void SetOptions(CRef<CBlastOptionsHandle> options);
     
@@ -74,8 +72,8 @@ private:
     /// Local database search class
     CRef<CLocalBlast>         m_LocalBlast;
 
-    /// Sequence source for the search class to use
-    BlastSeqSrc*              m_SeqSrc;
+    /// BLAST database for the search class to use
+    CConstRef<CSearchDatabase> m_Database;
 
     /// Factory which provides the query data to be populated in m_Queries
     CRef<IQueryFactory>       m_QueryFactory;
