@@ -1501,9 +1501,9 @@ ostream& operator<< (ostream& os, const CStopWatch& sw)
 /// The time will be printed out using format
 /// returned by CTime::GetFormat().
 inline
-ostream& operator<< (ostream& os, const CTime& time)
+ostream& operator<< (ostream& os, const CTime& t)
 {
-    return os << time.AsString();
+    return os << t.AsString();
 }
 
 
@@ -2062,6 +2062,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/12/20 17:34:52  ssikorsk
+ * Renamed argument of CTime::operator<<() from "time" to "t".
+ *
  * Revision 1.67  2006/12/20 17:15:27  ssikorsk
  * Fixed comments for a stream write operator of CTime.
  *
