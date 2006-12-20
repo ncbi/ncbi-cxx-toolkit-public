@@ -5841,7 +5841,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if ( args.GetDriverName() != "ftds64_odbc"  // No BCP at the moment ...
-         || args.GetDriverName() != "odbcw"     // No BCP at the moment ...
+         && args.GetDriverName() != "odbcw"     // No BCP at the moment ...
+         && !(args.GetDriverName() == "ftds" &&
+              args.GetServerType() == CTestArguments::eSybase)
          ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTimeBCP, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -6082,6 +6084,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.126  2006/12/20 20:42:25  ssikorsk
+ * Disabled Test_DateTimeBCP with the ftds driver and Sybase.
+ *
  * Revision 1.125  2006/12/20 20:31:44  ssikorsk
  * Replaced #test_datetime_bcp with #test_bcp_datetime.
  *
