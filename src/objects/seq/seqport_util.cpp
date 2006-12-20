@@ -305,8 +305,6 @@ public:
         int m_StartAt_D2;
     };
 
-private:
-
     // Typedefs making use of wrapper classes above.
     typedef CWrapper_table<char>           CCode_table;
     typedef CWrapper_table<string>         CCode_table_str;
@@ -320,6 +318,7 @@ private:
     typedef CWrapper_2D<unsigned char>     CFast_4_1;
     typedef CWrapper_2D<unsigned char>     CFast_2_1;
 
+private:
     // String to initialize CSeq_code_set
     // This string is initialized in seqport_util.h
     static const char* sm_StrAsnData[];
@@ -6763,6 +6762,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2006/12/20 18:53:38  dicuccio
+ * Expose typedefs as public to mollify MSVC
+ *
  * Revision 6.32  2006/12/20 17:30:54  ucko
  * Make CSeqportUtil_implementation::CWrapper_* (nominally) public as an
  * attempt to work around weird MSVC 7.1 behavior.
