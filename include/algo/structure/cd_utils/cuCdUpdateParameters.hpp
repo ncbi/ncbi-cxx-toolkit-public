@@ -130,6 +130,7 @@ public:
     bool useNRPrefs;  //  if true, use BlastDbInfo preferences; otherwise, query Blast server w/o reseting preference values
 	bool noFilter;
 	bool replaceOldAcc;
+	int identityThreshold;
 };
 
 END_SCOPE(cd_utils)

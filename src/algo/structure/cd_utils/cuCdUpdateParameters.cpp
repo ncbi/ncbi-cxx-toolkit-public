@@ -91,8 +91,8 @@ CdUpdateParameters::CdUpdateParameters()
     refresh(false),
     useNRPrefs(false),
 	noFilter(false),
-	replaceOldAcc(true)
-
+	replaceOldAcc(true),
+	identityThreshold(-1)
 {
 }
 

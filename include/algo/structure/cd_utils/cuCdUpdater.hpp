@@ -99,7 +99,7 @@ private:
 class NCBI_CDUTILS_EXPORT UpdaterInterface
 {
 public:
-	virtual int  submitBlast(bool wait=false) = 0;
+	virtual int  submitBlast(bool wait=false, int row = 0) = 0;
 	virtual bool getBlastHits() = 0;
 	virtual bool processBlastHits() = 0; //true: new sequences recruited.
 	virtual void getCds(vector<CCdCore*>&) = 0;
@@ -126,14 +126,14 @@ public:
 	virtual ~CDUpdater();
 	
 	//UpdaterInterface
-	int  submitBlast(bool wait = false);
+	int  submitBlast(bool wait = false, int row = 0);
 	bool getBlastHits();
 	bool processBlastHits();
 	void getCds(vector<CCdCore*>&);
 	bool hasCd(CCdCore*);
 
 	//blast
-	bool blast(bool wait = false);
+	bool blast(bool wait = false, int row = 0);
 	const string getRid() {return m_rid;}
 	const string getLastError() {return m_lastError;}
 	bool getHits(CRef<CSeq_align_set> & hits);
@@ -142,6 +142,7 @@ public:
 	CRef<CSeq_align_set> getAlignments() {return m_hits;}
 	//drive update
 	bool checkBlastAndUpdate();
+	void setHitsNeeded(int num) {m_hitsNeeded = num;}
 	bool update(CCdCore* cd, CSeq_align_set& alignments);
 
 	//for making a new CD
@@ -200,6 +201,8 @@ private:
 	int m_processPendingThreshold; //<0, don't do it
 	CRef< CSeq_id > m_masterPdb;
 	CRef<CSeq_align_set> m_hits;
+	int m_hitsNeeded;
+	int m_blastQueryRow;
 };
 
 class NCBI_CDUTILS_EXPORT GroupUpdater : public UpdaterInterface
@@ -209,7 +212,7 @@ public:
 	virtual ~GroupUpdater(); //delete all in m_cdUpdaters
 	
 	//UpdaterInterface
-	int  submitBlast(bool wait=false);
+	int  submitBlast(bool wait=false, int row=0);
 	bool getBlastHits();
 	bool processBlastHits();
 	void getCds(vector<CCdCore*>&);

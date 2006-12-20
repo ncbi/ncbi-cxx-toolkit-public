@@ -246,12 +246,12 @@ GroupUpdater::~GroupUpdater() //delete all in m_cdUpdaters
 }
 	
 	//UpdaterInterface
-int GroupUpdater::submitBlast(bool wait)
+int GroupUpdater::submitBlast(bool wait, int row)
 {
     int count = 0;
     for (int i = 0; i < m_cdUpdaters.size(); i++)
 	{
-        if (!(m_cdUpdaters[i])->submitBlast(wait)) {
+        if (!(m_cdUpdaters[i])->submitBlast(wait,row)) {
 			return 0;  // return 0 if one fails so legacy "if" statements still work.
         }
         else {
@@ -320,7 +320,8 @@ bool GroupUpdater::hasCd(CCdCore* cd)
 /*---------------------------------------------------------------------------------*/
 
 CDUpdater::CDUpdater(CCdCore* cd, CdUpdateParameters& config) 
-: m_config(config), m_cd(cd), m_guideAlignment(0), m_processPendingThreshold(-1)
+: m_config(config), m_cd(cd), m_guideAlignment(0), m_processPendingThreshold(-1), m_hitsNeeded(-1),
+m_blastQueryRow(0)
 {
 }
 
@@ -331,12 +332,12 @@ CDUpdater::~CDUpdater()
 		delete m_guideAlignment;
 }
 
-int CDUpdater::submitBlast(bool wait)
+int CDUpdater::submitBlast(bool wait, int row)
 {
-	/* moved from cdFrameUpdate::submitBlast */
+	m_blastQueryRow = row;
 	bool blasted = false;
 	try {
-		blasted = blast(wait);
+		blasted = blast(wait, row);
 	}
 	catch (blast::CBlastException& be) {
 		blasted = false;
@@ -421,7 +422,7 @@ bool CDUpdater::hasCd(CCdCore* cd)
 	return m_cd == cd;
 }
 
-bool CDUpdater::blast(bool wait)
+bool CDUpdater::blast(bool wait, int row)
 {
 	blast::CRemoteBlast* rblast;
 	blast::CBlastProteinOptionsHandle* blastopt;
@@ -438,11 +439,13 @@ bool CDUpdater::blast(bool wait)
 		rblast = new blast::CRemoteBlast(psiopt);
 		blastopt = psiopt;
 	}
-	blastopt->SetSegFiltering(false);
+	//blastopt->SetSegFiltering(false);
 	if (m_config.numHits > 0)
 		blastopt->SetHitlistSize(m_config.numHits);
 	if (m_config.evalue > 0)
 		blastopt->SetEvalueThreshold(m_config.evalue);
+	if (m_config.identityThreshold > 0)
+		blastopt->SetPercentIdentity((double)m_config.identityThreshold);
 	rblast->SetDatabase(CdUpdateParameters::getBlastDatabaseName(m_config.database));
 
 	string entrezQuery;
@@ -462,14 +465,14 @@ bool CDUpdater::blast(bool wait)
 		CRef<objects::CBioseq_set> bioseqs(new CBioseq_set);
 		list< CRef< CSeq_entry > >& seqList = bioseqs->SetSeq_set();
 		CRef< CSeq_entry > seqOld;
-		if (!m_cd->GetSeqEntryForRow(0, seqOld))
+		if (!m_cd->GetSeqEntryForRow(row, seqOld))
 			return false;
 		seqList.push_back(seqOld);
 		CRef< CSeq_id > seqId = seqOld->SetSeq().SetId().front();
 		blast::TMaskedQueryRegions masks;
-		int lo = m_cd->GetLowerBound(0);
-		int hi = m_cd->GetUpperBound(0);
-		int len = m_cd->GetSequenceStringByRow(0).length();
+		int lo = m_cd->GetLowerBound(row);
+		int hi = m_cd->GetUpperBound(row);
+		int len = m_cd->GetSequenceStringByRow(row).length();
 		if (lo > 0)
 			masks.push_back(CRef<CSeqLocInfo>( new CSeqLocInfo(new CSeq_interval(*seqId, 0,lo-1),0)));
 		if (hi < (len-1))
@@ -497,14 +500,8 @@ bool CDUpdater::blast(bool wait)
 		bool useConsensus = true;
 		PssmMaker pm(m_cd, useConsensus, true);
 		PssmMakerOptions config;
-		//config.unalignedSegThreshold = 50;
+		config.unalignedSegThreshold = 35;
 		config.requestFrequencyRatios = true;
-		/*
-		config.requestResidueFrequencies = true;
-		config.gaplessColumnWeights = true;
-		config.requestInformationContent = true;
-		config.requestResidueFrequencies = true;
-		config.requestWeightedResidueFrequencies = true;*/
 		pm.setOptions(config);
 		CRef<CPssmWithParameters> pssm = pm.make();
 
@@ -567,18 +564,7 @@ bool CDUpdater::getHits(CRef<CSeq_align_set> & hits)
 		//LOG_POST("Returned from RemoteBlast::CheckDone().\n");
 		if (done)
 		{
-			//CCdCore::UpdateInfo ui = m_cd->GetUpdateInfo();
-			//ui.status = CCdCore::BLAST_DONE;
-			//m_cd->SetUpdateInfo(ui);
-			//LOG_POST("Calling RemoteBlast::GetAlignments().\n");
 			hits = rblast.GetAlignments();
-			//LOG_POST("Returned from RemoteBlast::GetAlignments().\n");
-			//debug
-			/*
-			string err;
-			if (hits && !WriteASNToFile("hits", *hits, false,&err))
-				LOG_POST("Failed to write to %s because of %s\n", "hits", err.c_str());
-			*/
 			return true;
 		}
 	} catch (...) {
@@ -616,7 +602,6 @@ bool CDUpdater::checkBlastAndUpdate()
 	{
 		if(!seqAligns.Empty())
 		{
-//			m_Data.cacheCD(m_cd->GetAccession().c_str(),"Updated by Blast",EDITTYPE_ALIGNMENT);
 			update(m_cd, *seqAligns);
 			SetUpdateDate(m_cd);
 			LOG_POST("Stats of Updating "<<m_cd->GetAccession()<<" are "<<getStats().toString());
@@ -627,8 +612,7 @@ bool CDUpdater::checkBlastAndUpdate()
 		else
 		{
 			LOG_POST("Got no alignment for BLAST hits. will try again to retrieve the hits.\n");
-            //cdLog::WarningPrintf("Update retrieved no new alignments for %s.\n",m_cd->GetAccession().c_str());
-			return true; // true NOT false: no alignment is a completely reasonable result. VAHAN
+			return true; 
 		}
 		return true;
 	}
@@ -660,11 +644,6 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	//debug
 	//seqTable.dump("seqTable.txt");
 	LOG_POST("Retrieved "<<bioseqs.size()<<" Bioseqs for blast hits\n"); 
-	
-	/* wxString title = "Updating ";
-	title += cd->GetAccession().c_str();
-	wxProgressDialog progbar(title, "Process BLAST Hits and add them to CD", 100, 0, 
-		wxPD_AUTO_HIDE |wxPD_APP_MODAL);*/
 	LOG_POST("Process BLAST Hits and add them to "<<cd->GetAccession());
 	int completed = 0;
 	list< CRef< CSeq_align > >::iterator it = seqAligns.begin();
@@ -680,7 +659,7 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 		CRef< CSeq_align::C_Segs::TDenseg> denseg( &(oldSegs.SetDenseg()) );
 		vector< CRef< CSeq_id > >& seqIds= denseg->SetIds();
 		CRef< CSeq_entry > masterSeq;
-		cd->GetSeqEntryForRow(0, masterSeq);
+		cd->GetSeqEntryForRow(m_blastQueryRow, masterSeq);
 		vector< CRef< CSeq_id > > pdbIds;
 		GetAllIdsFromSeqEntry(masterSeq, pdbIds, true);
 		if ((pdbIds.size() > 0) && SeqEntryHasSeqId(masterSeq, *seqIds[0]) && (!seqIds[0] ->IsPdb()))
@@ -769,6 +748,11 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 		else
 			m_stats.noSeq.push_back(gi);
 		completed++;
+		if (m_hitsNeeded > 0)
+		{
+			if (completed >= m_hitsNeeded)
+				break;
+		}
 		if ((completed % 500) == 0)
 			LOG_POST("Added "<<completed<<" of "<<m_stats.numBlastHits<<" hits.");
 	}
