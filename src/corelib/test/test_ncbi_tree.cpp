@@ -103,12 +103,16 @@ static void s_TEST_Tree()
     TTree* sr = new TTree(0);
     sr->AddNode(10);
     sr->AddNode(11);
+    delete sr;
+    sr = 0;
 
     TTree* ur = new TTree(0);
     ur->AddNode(10);
     ur->AddNode(11);
     ur->AddNode(20);
     ur->AddNode(21);
+    delete ur;
+    ur = 0;
     
 
 //    TreePrint(cout, *tr, (IntConvType) NStr::IntToString);
@@ -269,6 +273,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.24  2006/12/20 18:49:23  gouriano
+ * Fixed memory leak
+ *
  * Revision 1.23  2006/12/07 19:21:59  kuznets
  * warning fix
  *

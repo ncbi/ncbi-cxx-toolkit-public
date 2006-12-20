@@ -1046,6 +1046,7 @@ static void s_TEST_MemoryFile(void)
         }
         // Unmap all other segments
         assert( m.UnmapAll() );
+        delete [] buf;
     }}
     // Remove the file
     assert( f.Remove() );
@@ -1115,6 +1116,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/12/20 18:49:23  gouriano
+ * Fixed memory leak
+ *
  * Revision 1.63  2006/11/20 12:49:16  ivanov
  * Added more tests for CDirEntry::GetDir()
  *
