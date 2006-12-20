@@ -823,11 +823,11 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             switch (pfx[1]) {
             case 'A': case 'B': case 'C':           return eAcc_ddbj_est;
             case 'D':                               return eAcc_ddbj_patent;
-            case 'E':                               return eAcc_ddbj_gss;
+            case 'E': case 'H':                     return eAcc_ddbj_gss;
             case 'F': case 'G':                     return eAcc_ddbj_con;
-                // no specific assignments for DH-DM yet
-            case 'H': case 'I': case 'J': case 'K':
-            case 'L': case 'M':                     return eAcc_ddbj_other_nuc;
+                // no specific assignments for DI-DM yet
+            case 'I': case 'J': case 'K': case 'L':
+            case 'M':                               return eAcc_ddbj_other_nuc;
             case 'N': case 'R': case 'T': case 'V':
             case 'W': case 'Y':                     return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
@@ -1734,6 +1734,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.141  2006/12/20 15:07:48  ucko
+ * IdentifyAccession: specifically assign DH to eAcc_ddbj_gss.
+ *
  * Revision 6.140  2006/12/08 20:32:36  ucko
  * Update EMBL/TPE protein info.
  *
