@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.449 2006/12/19 16:27:40 ucko Exp $
+#  $Id: configure.ac,v 1.450 2006/12/20 14:57:10 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1765,7 +1765,7 @@ case "$compiler" in
            FORBID_UNDEF='-Wl,-undefined,error'
         fi
         ;;
-      linux* | *bsd* | *gnu* )
+      linux* | *gnu* ) # | *bsd*
         FORBID_UNDEF='-Wl,--no-undefined'
         ;;
       irix* )

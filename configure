@@ -7002,7 +7002,7 @@ case "$compiler" in
            FORBID_UNDEF='-Wl,-undefined,error'
         fi
         ;;
-      linux* | *bsd* | *gnu* )
+      linux* | *gnu* ) # | *bsd*
         FORBID_UNDEF='-Wl,--no-undefined'
         ;;
       irix* )
