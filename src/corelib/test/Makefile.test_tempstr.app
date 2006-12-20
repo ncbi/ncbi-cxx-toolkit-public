@@ -1,0 +1,8 @@
+APP = test_tempstr
+SRC = test_tempstr
+
+CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
+LIB = xncbi
+LIBS = $(BOOST_LIBPATH) $(BOOST_TEST_UTF_LIBS) $(ORIG_LIBS)
+
+REQUIRES = Boost.Test
