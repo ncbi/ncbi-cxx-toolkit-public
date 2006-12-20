@@ -227,7 +227,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,2,4) );
+    SetVersion( CVersionInfo(1,2,5) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -1173,6 +1173,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2006/12/20 18:51:42  gouriano
+ * Added FixedBaseAddress
+ *
  * Revision 1.88  2006/11/17 15:49:45  gouriano
  * Request truncation of log
  *

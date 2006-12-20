@@ -357,6 +357,7 @@ public:
         }
 	    return add + m_AdditionalLibraryDirectories;
     }
+    SUPPORT_LINKER_OPTION(FixedBaseAddress)
 
 private:
     string      m_AdditionalOptions;
@@ -420,6 +421,7 @@ public:
     }
 
     SUPPORT_DUMMY_OPTION(AdditionalLibraryDirectories)
+    SUPPORT_DUMMY_OPTION(FixedBaseAddress)
 
 private:
     CLinkerToolDummyImpl(const CLinkerToolDummyImpl&);
@@ -782,6 +784,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/12/20 18:51:55  gouriano
+ * Added FixedBaseAddress
+ *
  * Revision 1.28  2006/11/01 15:45:19  gouriano
  * Added LargeAddressAware
  *

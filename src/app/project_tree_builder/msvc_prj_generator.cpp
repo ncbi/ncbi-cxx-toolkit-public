@@ -179,6 +179,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.Linker(), IgnoreDefaultLibraryNames);
             BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalLibraryDirectories);
             BIND_TOOLS(tool, msvc_tool.Linker(), LargeAddressAware);
+            BIND_TOOLS(tool, msvc_tool.Linker(), FixedBaseAddress);
 
             conf->SetTool().push_back(tool);
         }}
@@ -488,6 +489,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/12/20 18:51:42  gouriano
+ * Added FixedBaseAddress
+ *
  * Revision 1.51  2006/11/01 15:44:51  gouriano
  * Added LargeAddressAware
  *

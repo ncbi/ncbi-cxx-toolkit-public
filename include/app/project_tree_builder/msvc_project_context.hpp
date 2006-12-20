@@ -383,6 +383,7 @@ struct ILinkerTool : public ITool
     virtual string IgnoreAllDefaultLibraries(void)	  const = 0;
     virtual string IgnoreDefaultLibraryNames(void)	  const = 0;
     virtual string AdditionalLibraryDirectories(void) const = 0;
+    virtual string FixedBaseAddress(void)			  const = 0;
 };
 
 
@@ -550,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/12/20 18:51:55  gouriano
+ * Added FixedBaseAddress
+ *
  * Revision 1.29  2006/11/01 15:45:19  gouriano
  * Added LargeAddressAware
  *

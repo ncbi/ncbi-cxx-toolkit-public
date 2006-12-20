@@ -33,6 +33,7 @@ GlobalOptimizations=FALSE
 InlineFunctionExpansion=0
 FavorSizeOrSpeed=0
 OmitFramePointers=FALSE
+# use "0" to 'purify', 'quantify', 'vtune' etc; "3" - otherwise
 BasicRuntimeChecks=3
 BrowseInformation=0
 EnableFunctionLevelLinking=FALSE
@@ -68,6 +69,8 @@ ProgramDatabaseFile=
 ImportLibrary=
 IgnoreAllDefaultLibraries=FALSE
 IgnoreDefaultLibraryNames=FALSE
+# use "1" to 'purify', 'quantify', 'vtune' etc; "0" - otherwise
+FixedBaseAddress=0
 
 [Linker.x64]
 TargetMachine=17
