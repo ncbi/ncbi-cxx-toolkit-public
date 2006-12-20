@@ -1498,12 +1498,12 @@ ostream& operator<< (ostream& os, const CStopWatch& sw)
 }
 
 /// Dumps the current CTime time to an output stream.
-/// The time will be printed out using format specified
-/// by CStopWatch::GetFormat().
+/// The time will be printed out using format
+/// returned by CTime::GetFormat().
 inline
 ostream& operator<< (ostream& os, const CTime& time)
 {
-    return os << static_cast<string>(time);
+    return os << time.AsString();
 }
 
 
@@ -2062,6 +2062,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/12/20 17:15:27  ssikorsk
+ * Fixed comments for a stream write operator of CTime.
+ *
  * Revision 1.66  2006/12/20 16:52:37  ssikorsk
  * Added a stream write operator to CTime.
  *
