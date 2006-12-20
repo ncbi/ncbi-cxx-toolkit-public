@@ -2885,73 +2885,73 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             drv_err_handler->Init();
         }
 
-//         // Current connection should not be affected ...
-//         {
-//             try {
-//                 Test_ES_01(*local_conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
-//             }
-//         }
-//
-//         // New connection should not be affected ...
-//         {
-//             // Create a new connection ...
-//             auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-//             Connect(conn);
-//
-//             // Reinit the errot handler because it can be affected during connection.
-//             drv_err_handler->Init();
-//
-//             try {
-//                 Test_ES_01(*conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
-//             }
-//         }
-//
-//         // Push a message handler into a connection ...
-//         {
-//             auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-//
-//             local_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
-//
-//             try {
-//                 Test_ES_01(*local_conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( msg_handler->GetSucceed() );
-//             }
-//
-//             // Remove handler ...
-//             local_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
-//         }
-//
-//         // New connection should not be affected
-//         // after pushing a message handler into another connection
-//         {
-//             // Create a new connection ...
-//             auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-//             Connect(conn);
-//
-//             // Reinit the errot handler because it can be affected during connection.
-//             drv_err_handler->Init();
-//
-//             try {
-//                 Test_ES_01(*conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
-//             }
-//         }
-//
-//         // Remove all inserted handlers ...
+        // Current connection should not be affected ...
+        {
+            try {
+                Test_ES_01(*local_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( !drv_err_handler->GetSucceed() );
+            }
+        }
+
+        // New connection should not be affected ...
+        {
+            // Create a new connection ...
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            Connect(conn);
+
+            // Reinit the errot handler because it can be affected during connection.
+            drv_err_handler->Init();
+
+            try {
+                Test_ES_01(*conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( !drv_err_handler->GetSucceed() );
+            }
+        }
+
+        // Push a message handler into a connection ...
+        {
+            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            local_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
+
+            try {
+                Test_ES_01(*local_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( msg_handler->GetSucceed() );
+            }
+
+            // Remove handler ...
+            local_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
+        }
+
+        // New connection should not be affected
+        // after pushing a message handler into another connection
+        {
+            // Create a new connection ...
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            Connect(conn);
+
+            // Reinit the errot handler because it can be affected during connection.
+            drv_err_handler->Init();
+
+            try {
+                Test_ES_01(*conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( !drv_err_handler->GetSucceed() );
+            }
+        }
+
+        // Remove all inserted handlers ...
         drv_context->PopCntxMsgHandler( drv_err_handler.get() );
     }
 
@@ -2959,137 +2959,137 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // Check PushDefConnMsgHandler ...
     // PushDefConnMsgHandler - Add `per-connection' err.message handler "h" to the stack of default
     // handlers which are inherited by all newly created connections.
-//     {
-//         auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
-//
-//
-//         auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
-//         Connect(local_conn);
-//
-//         drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
-//
-//         // Current connection should not be affected ...
-//         {
-//             try {
-//                 Test_ES_01(*local_conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
-//             }
-//         }
-//
-//         // Push a message handler into a connection ...
-//         // This is supposed to be okay.
-//         {
-//             auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-//
-//             local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
-//
-//             try {
-//                 Test_ES_01(*local_conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( msg_handler->GetSucceed() );
-//             }
-//
-//             // Remove handler ...
-//             local_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
-//         }
-//
-//
-//         ////////////////////////////////////////////////////////////////////////
-//         // Create a new connection.
-//         auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
-//         Connect(new_conn);
-//
-//         // New connection should be affected ...
-//         {
-//             try {
-//                 Test_ES_01(*new_conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( drv_err_handler->GetSucceed() );
-//             }
-//         }
-//
-//         // Push a message handler into a connection ...
-//         // This is supposed to be okay.
-//         {
-//             auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-//
-//             new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
-//
-//             try {
-//                 Test_ES_01(*new_conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( msg_handler->GetSucceed() );
-//             }
-//
-//             // Remove handler ...
-//             new_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
-//         }
-//
-//         // New connection should be affected
-//         // after pushing a message handler into another connection
-//         {
-//             // Create a new connection ...
-//             auto_ptr<IConnection> conn( m_DS->CreateConnection() );
-//             Connect(conn);
-//
-//             try {
-//                 Test_ES_01(*conn);
-//             }
-//             catch( const CDB_Exception& ) {
-//                 // Ignore it
-//                 BOOST_CHECK( drv_err_handler->GetSucceed() );
-//             }
-//         }
-//
-//         // Remove handlers ...
-//         drv_context->PopDefConnMsgHandler( drv_err_handler.get() );
-//     }
+    {
+        auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+
+
+        auto_ptr<IConnection> local_conn( m_DS->CreateConnection() );
+        Connect(local_conn);
+
+        drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
+
+        // Current connection should not be affected ...
+        {
+            try {
+                Test_ES_01(*local_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( !drv_err_handler->GetSucceed() );
+            }
+        }
+
+        // Push a message handler into a connection ...
+        // This is supposed to be okay.
+        {
+            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+
+            try {
+                Test_ES_01(*local_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( msg_handler->GetSucceed() );
+            }
+
+            // Remove handler ...
+            local_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
+        }
+
+
+        ////////////////////////////////////////////////////////////////////////
+        // Create a new connection.
+        auto_ptr<IConnection> new_conn( m_DS->CreateConnection() );
+        Connect(new_conn);
+
+        // New connection should be affected ...
+        {
+            try {
+                Test_ES_01(*new_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() );
+            }
+        }
+
+        // Push a message handler into a connection ...
+        // This is supposed to be okay.
+        {
+            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
+
+            try {
+                Test_ES_01(*new_conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( msg_handler->GetSucceed() );
+            }
+
+            // Remove handler ...
+            new_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
+        }
+
+        // New connection should be affected
+        // after pushing a message handler into another connection
+        {
+            // Create a new connection ...
+            auto_ptr<IConnection> conn( m_DS->CreateConnection() );
+            Connect(conn);
+
+            try {
+                Test_ES_01(*conn);
+            }
+            catch( const CDB_Exception& ) {
+                // Ignore it
+                BOOST_CHECK( drv_err_handler->GetSucceed() );
+            }
+        }
+
+        // Remove handlers ...
+        drv_context->PopDefConnMsgHandler( drv_err_handler.get() );
+    }
 
     // SetLogStream ...
-//     {
-//         {
-//             IConnection* conn = NULL;
-//
-//             // Enable multiexception ...
-//             m_DS->SetLogStream(0);
-//
-//             try {
-//                 // Create a new connection ...
-//                 conn = m_DS->CreateConnection();
-//             } catch(...)
-//             {
-//                 delete conn;
-//             }
-//
-//             m_DS->SetLogStream(&cerr);
-//         }
-//
-//         {
-//             IConnection* conn = NULL;
-//
-//             // Enable multiexception ...
-//             m_DS->SetLogStream(0);
-//
-//             try {
-//                 // Create a new connection ...
-//                 conn = m_DS->CreateConnection();
-//
-//                 m_DS->SetLogStream(&cerr);
-//             } catch(...)
-//             {
-//                 delete conn;
-//             }
-//         }
-//     }
+    {
+        {
+            IConnection* conn = NULL;
+
+            // Enable multiexception ...
+            m_DS->SetLogStream(0);
+
+            try {
+                // Create a new connection ...
+                conn = m_DS->CreateConnection();
+            } catch(...)
+            {
+                delete conn;
+            }
+
+            m_DS->SetLogStream(&cerr);
+        }
+
+        {
+            IConnection* conn = NULL;
+
+            // Enable multiexception ...
+            m_DS->SetLogStream(0);
+
+            try {
+                // Create a new connection ...
+                conn = m_DS->CreateConnection();
+
+                m_DS->SetLogStream(&cerr);
+            } catch(...)
+            {
+                delete conn;
+            }
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -6093,6 +6093,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.128  2006/12/20 21:44:36  ssikorsk
+ * Restored original state of Test_UserErrorHandler().
+ * Some code was commented out during debugging.
+ *
  * Revision 1.127  2006/12/20 21:03:40  ssikorsk
  * Disabled Test_DateTimeBCP with the ftds64_ctlib driver.
  *
