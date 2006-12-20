@@ -411,6 +411,7 @@ bool CWinSecurity::GetFilePermissions(const string& path,
         memset(&mapping, 0, sizeof(GENERIC_MAPPING));
 
         PRIVILEGE_SET  privileges;
+        memset(&privileges, 0, sizeof(PRIVILEGE_SET));
         DWORD          privileges_size = sizeof(PRIVILEGE_SET);
         BOOL           status = true;
 
@@ -439,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2006/12/20 18:48:54  gouriano
+ * Init memory buffer before using it
+ *
  * Revision 1.4  2005/12/08 14:15:49  ivanov
  * Rewritten CWinSecurity::GetFilePermissions() using AccessCheck()
  * instead of GetEffectiveRightsFromAcl(), which is not recommended to use.
