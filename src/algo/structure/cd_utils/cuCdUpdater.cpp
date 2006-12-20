@@ -383,6 +383,7 @@ bool CDUpdater::processBlastHits()
 		LOG_POST("Got no alignment for BLAST hits. will try again to retrieve the hits.\n");
 	}
 	//write update date and stats to scrapbook
+	/*
 	string updateStr("This CD is updated on ");
 	CTime cur(CTime::eCurrent);
 	CDate curDate(cur, CDate::ePrecision_day);
@@ -408,7 +409,7 @@ bool CDUpdater::processBlastHits()
 		scrapbook = new CCdd_descr;
 		descList.push_back(scrapbook);
 	}
-	scrapbook->SetScrapbook().push_back(updateStr);
+	scrapbook->SetScrapbook().push_back(updateStr);*/
 	return updated;
 }
 
