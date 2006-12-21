@@ -158,6 +158,11 @@ public:
     size_type   size(void) const;
     bool        empty(void)  const;
 
+    /// truncate the string at some specified position
+    /// NB: basic_string<> supports additional erase() options that we
+    /// do not provide here
+    void erase(size_type pos = 0);
+
     /// Find the first instance of the entire matching string within the
     /// current string, beginning at an optional offset.
     size_type find(const CTempString& match,
@@ -2879,6 +2884,16 @@ CTempString::CTempString(const CTempString& str, size_type pos, size_type length
     x_Init(str.data(), str.size(), pos, length);
 }
 
+
+inline
+void CTempString::erase(size_type pos)
+{
+    if (pos < m_Length) {
+        m_Length = pos;
+    }
+}
+
+
 /// copy a substring into a string
 /// These are analogs of basic_string::assign()
 inline
@@ -3549,6 +3564,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.116  2006/12/21 12:46:55  dicuccio
+ * Added erase() for simple truncation
+ *
  * Revision 1.115  2006/12/20 16:39:02  gouriano
  * Fixed MSVC2005 compiler error
  *
