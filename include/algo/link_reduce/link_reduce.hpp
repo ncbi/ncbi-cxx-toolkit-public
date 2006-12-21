@@ -86,7 +86,7 @@ template<class TBV, class TMapFunc1, class TMapFunc2>
 class CLinkReduce
 {
 public:
-    typedef  BV                     TBitVector;
+    typedef  TBV                    TBitVector;
     typedef  vector<unsigned char>  TBuffer;
 public:
     CLinkReduce(TMapFunc1& map_func1, TMapFunc2& map_func2);
@@ -103,7 +103,7 @@ public:
     ///
     void Remap(TBV& src_set, TBV& dst_set);
 private:
-    CLinkReduce(const& CLinkReduce);
+    CLinkReduce(const CLinkReduce&);
     CLinkReduce& operator=(const CLinkReduce&);
 private:
     TMapFunc1&    m_MapFunc1;
@@ -115,7 +115,7 @@ private:
 ///////////////////////////////////////////////////////////////////////////
 //
 
-template<class BV>
+template<class TBV, class TMapFunc1, class TMapFunc2 >
 inline
 CLinkReduce<TBV, TMapFunc1, TMapFunc2>::CLinkReduce(
                                TMapFunc1& map_func1, TMapFunc2& map_func2)
@@ -124,7 +124,7 @@ CLinkReduce<TBV, TMapFunc1, TMapFunc2>::CLinkReduce(
 {
 }
 
-template<class BV>
+template<class TBV, class TMapFunc1, class TMapFunc2>
 inline
 CLinkReduce<TBV, TMapFunc1, TMapFunc2>::~CLinkReduce()
 {
@@ -134,7 +134,7 @@ CLinkReduce<TBV, TMapFunc1, TMapFunc2>::~CLinkReduce()
 }
 
 
-template<class BV>
+template<class TBV, class TMapFunc1, class TMapFunc2>
 inline
 void CLinkReduce<TBV, TMapFunc1, TMapFunc2>::Remap(TBV& src_set, TBV& dst_set)
 {
@@ -182,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/21 20:07:37  kuznets
+ * Fixed immediate compilation issues
+ *
  * Revision 1.1  2006/12/21 19:05:24  kuznets
  * initial revision
  *
