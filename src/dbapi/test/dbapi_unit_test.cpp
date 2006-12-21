@@ -5848,11 +5848,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    if ( args.GetDriverName() != "ftds64_odbc"  // No BCP at the moment ...
+    if ( args.IsBCPAvailable()
          && args.GetDriverName() != "ftds64_ctlib"  // Something is broken in ftds64_ctlib ...
-         && args.GetDriverName() != "odbcw"     // No BCP at the moment ...
-         && !(args.GetDriverName() == "ftds" &&
-              args.GetServerType() == CTestArguments::eSybase)
+         && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
          ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTimeBCP, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -6028,6 +6026,31 @@ CTestArguments::GetProgramBasename(void) const
 }
 
 
+bool
+CTestArguments::IsBCPAvailable(void) const
+{
+#if defined(NCBI_OS_SOLARIS)
+    const bool os_solaris = true;
+#else
+    const bool os_solaris = false;
+#endif
+
+    if (os_solaris && HOST_CPU[0] == 'i' &&
+        (GetDriverName() == "dblib" || GetDriverName() == "ctlib")
+        ) {
+        // Solaris Intel native Sybase drivers ...
+        // There is no apropriate client
+        return false;
+    } else if ( GetDriverName() == "ftds64_odbc"
+         || GetDriverName() != "odbcw"
+         ) {
+        return false;
+    }
+
+    return true;
+}
+
+
 void
 CTestArguments::SetDatabaseParameters(void)
 {
@@ -6092,6 +6115,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.130  2006/12/21 22:26:49  ssikorsk
+ * Implemented CTestArguments::IsBCPAvailable().
+ *
  * Revision 1.129  2006/12/20 23:11:22  ssikorsk
  * Adjust TDS version in case of the ftds64_ctlib driver and Sybase.
  *
