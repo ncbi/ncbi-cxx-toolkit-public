@@ -118,6 +118,8 @@ public:
 
     string GetProgramBasename(void) const;
 
+    bool IsBCPAvailable(void) const;
+
 
 private:
     void SetDatabaseParameters(void);
@@ -252,6 +254,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2006/12/21 22:25:32  ssikorsk
+ * Added CTestArguments::IsBCPAvailable().
+ *
  * Revision 1.50  2006/12/20 20:08:08  ssikorsk
  * Added Test_DateTimeBCP().
  *
