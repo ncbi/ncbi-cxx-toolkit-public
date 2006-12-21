@@ -595,7 +595,8 @@ Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc,
                 Int4 from, to;
                 SSeqRange* seq_range = itr->ssr;
                 /* masks should be 0-offset */
-                ASSERT(dna_length > seq_range->right);
+                ASSERT(seq_range->right < dna_length);
+                ASSERT(seq_range->left  >= 0);
                 if (frame < 0) {
                     from = (dna_length + frame - seq_range->right)/CODON_LENGTH;
                     to = (dna_length + frame - seq_range->left)/CODON_LENGTH;
@@ -603,6 +604,21 @@ Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc,
                     from = (seq_range->left - frame + 1)/CODON_LENGTH;
                     to = (seq_range->right - frame + 1)/CODON_LENGTH;
                 }
+
+                if (from < 0)
+                    from = 0;
+                if (to   < 0)
+                    to   = 0;
+                if (from >= query_info->contexts[ctx_idx+context].query_length)
+                    from = query_info->contexts[ctx_idx+context].query_length - 1;
+                if (to >= query_info->contexts[ctx_idx+context].query_length)
+                    to = query_info->contexts[ctx_idx+context].query_length - 1;
+
+                ASSERT(from >= 0);
+                ASSERT(to   >= 0);
+                ASSERT(from < query_info->contexts[ctx_idx+context].query_length);
+                ASSERT(to   < query_info->contexts[ctx_idx+context].query_length);
+
                 /* Cache the tail of the list to avoid the overhead of
                  * traversing the list when appending to it */
                 prot_tail = BlastSeqLocNew((prot_tail 
@@ -660,6 +676,21 @@ Int2 BlastMaskLocProteinToDNA(BlastMaskLoc* mask_loc,
                    from = CODON_LENGTH*seq_range->left + frame - 1;
                    to = CODON_LENGTH*seq_range->right + frame - 1;
                }
+
+               if (from < 0)
+                   from = 0;
+               if (to   < 0)
+                   to   = 0;
+               if (from >= dna_length)
+                   from = dna_length - 1;
+               if (to   >= dna_length)
+                   to   = dna_length - 1;
+                   
+               ASSERT(from >= 0);
+               ASSERT(to   >= 0);
+               ASSERT(from < dna_length);
+               ASSERT(to   < dna_length);
+
                seq_range->left = from;
                seq_range->right = to;
            }
