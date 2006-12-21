@@ -611,6 +611,13 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row,
 }
 
 
+CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
+{
+    CSeq_id id("lcl|consensus");
+    return CreateConsensus(consensus_row, id);
+}
+
+
 static SNCBIFullScoreMatrix s_FullScoreMatrix;
 
 int CAlnVec::CalculateScore(const string& s1, const string& s2,
@@ -864,6 +871,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2006/12/21 20:34:19  jcherry
+* Altered CreateConsensus signatures to allow linux compilation
+*
 * Revision 1.66  2006/12/21 19:57:10  jcherry
 * CreateConsensus: added means of getting Bioseq without adding it to
 * scope, and added means of specifying id of Bioseq

@@ -128,11 +128,10 @@ public:
     int      GetGenCode(TNumrow row)       const;
 
     // Functions for obtaining a consensus sequence
-    // This version adds the consensus Bioseq to the scope.
-    CRef<CDense_seg>
-        CreateConsensus(int& consensus_row,
-                        const CSeq_id& consensus_id = CSeq_id("lcl|consensus"))
-                        const;
+    // These versions add the consensus Bioseq to the scope.
+    CRef<CDense_seg> CreateConsensus(int& consensus_row) const;
+    CRef<CDense_seg> CreateConsensus(int& consensus_row,
+                                     const CSeq_id& consensus_id) const;
     // This version returns the consensus Bioseq (in a parameter)
     // without adding it to the scope.
     CRef<CDense_seg> CreateConsensus(int& consensus_row,
@@ -466,6 +465,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2006/12/21 20:34:19  jcherry
+ * Altered CreateConsensus signatures to allow linux compilation
+ *
  * Revision 1.40  2006/12/21 19:57:09  jcherry
  * CreateConsensus: added means of getting Bioseq without adding it to
  * scope, and added means of specifying id of Bioseq
