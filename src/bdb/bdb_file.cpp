@@ -450,7 +450,7 @@ void CBDB_RawFile::x_Open(const char* filename,
     }
 
     if (open_mode == eCreate) {
-        Remove(filename, database);
+        Remove(filename, database ? database : "");
         x_Create(filename, database);
     }
     else {
@@ -1467,6 +1467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/12/21 14:51:11  kuznets
+ * Fixed accidental construction of std::string from a zero pointer
+ *
  * Revision 1.72  2006/12/19 19:56:22  yazhuk
  * kuznets: Fixed missing buffer management flag (critical for 4.50.xx)
  *
