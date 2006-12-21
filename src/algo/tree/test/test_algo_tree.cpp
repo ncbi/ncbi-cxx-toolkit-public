@@ -150,6 +150,8 @@ static void s_TEST_TreeOperations()
   TreePrint(cout, *corr2, s_IntToStr, false);
   cout << endl;
   */
+    delete orig->GetRoot();
+    delete corr->GetRoot();
 }
 
 static void s_TEST_Tree()
@@ -329,6 +331,8 @@ static void s_TEST_Tree()
     TreePrint(cout, *tr5, s_IntToStr);
 
     delete tr5;
+    delete ur;
+    delete sr;
 }
 
 struct IdValue
@@ -604,6 +608,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2006/12/21 17:30:23  gouriano
+ * Fixed memory leaks
+ *
  * Revision 1.4  2006/12/07 19:20:38  kuznets
  * warning fix
  *
