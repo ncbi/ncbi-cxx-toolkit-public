@@ -153,6 +153,10 @@ public:
     void SetMoleculeType(EMoleculeType mol_type);
     /// Accessor for the molecule type
     EMoleculeType GetMoleculeType() const;
+    /// Determine whether this database contains protein sequences or not
+    bool IsProtein() const {
+        return GetMoleculeType() == eBlastDbIsProtein;
+    }
 
     /// Mutator for the entrez query
     /// @param entrez_query entrez query string [in]
