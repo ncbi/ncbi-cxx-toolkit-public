@@ -1411,7 +1411,7 @@ void CSeedRoots::Add( const SSeedRoot & root, TSeqNum subject )
 {
     SSubjRootsInfo & rinfo = rinfo_[subject];
 
-    if( rinfo.len_ < n_subj_roots_ ) {
+    if( rinfo.len_ < n_subj_roots_ - 1 ) {
         *(roots_ + (subject<<subj_roots_len_bits_) + (rinfo.len_++)) 
             = root;
     }else {
@@ -1625,7 +1625,9 @@ void CTrackedSeeds::Append(
 
         if( bs_soff_corr == seed.soff_ ) {
             if( seed.qright_ < tmp_it->qright_ ) {
-                tmp_it->len_ -= (tmp_it->qright_ - seed.qright_ );
+                if( tmp_it->len_ > 0 ) {
+                    tmp_it->len_ -= (tmp_it->qright_ - seed.qright_ );
+                }
 
                 if( tmp_it->len_ < word_size ) {
                     seeds_.erase( tmp_it );
@@ -1841,15 +1843,21 @@ void CSearch< index_impl_t >::ExtendLeft(
     while( nmax >= CR ) {
         Uint1 sbyte = *spos--;
         Uint1 qbyte = 0;
+        unsigned int i = 0;
 
-        for( unsigned int i = 0; i < CR; ++i ) {
+        for( ; i < CR; ++i ) {
             qbyte = qbyte + ((*--qpos)<<(2*i));
-            if( *qpos > 3 ) return;
+
+            if( *qpos > 3 ) {
+                ++qpos;
+                sbyte = qbyte + 1;
+                break;
+            }
         }
 
         if( sbyte != qbyte ){
             ++spos;
-            qpos += CR;
+            qpos += i;
             break;
         }
 
@@ -2101,8 +2109,14 @@ void CSearch< index_impl_t >::SearchInt()
         }
 
         if( roots_.Overflow() ) {
+            TSeqPos old_qstart = qstart_;
+            TSeqPos old_qstop  = qstop_;
+
             ComputeSeeds();
             roots_.Reset();
+
+            qstart_ = old_qstart;
+            qstop_  = old_qstop;
         }
     }
 }
