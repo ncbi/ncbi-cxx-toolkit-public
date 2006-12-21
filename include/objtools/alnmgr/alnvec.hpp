@@ -127,8 +127,17 @@ public:
     bool     IsSetGenCode()                const;
     int      GetGenCode(TNumrow row)       const;
 
-    // functions for manipulating the consensus sequence
-    CRef<CDense_seg> CreateConsensus(int& consensus_row) const;
+    // Functions for obtaining a consensus sequence
+    // This version adds the consensus Bioseq to the scope.
+    CRef<CDense_seg>
+        CreateConsensus(int& consensus_row,
+                        const CSeq_id& consensus_id = CSeq_id("lcl|consensus"))
+                        const;
+    // This version returns the consensus Bioseq (in a parameter)
+    // without adding it to the scope.
+    CRef<CDense_seg> CreateConsensus(int& consensus_row,
+                                     CBioseq& consensus_seq,
+     	                             const CSeq_id& consensus_id) const;
 
     // utilities
     int CalculateScore          (TNumrow row1, TNumrow row2) const;
@@ -457,6 +466,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2006/12/21 19:57:09  jcherry
+ * CreateConsensus: added means of getting Bioseq without adding it to
+ * scope, and added means of specifying id of Bioseq
+ *
  * Revision 1.39  2005/07/29 15:59:00  todorov
  * Pass genetic code to TranslateNAToAA
  *

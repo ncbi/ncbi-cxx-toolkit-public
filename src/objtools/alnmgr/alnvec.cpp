@@ -380,8 +380,11 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
 //     a tie, the consensus is considered muddied, and the consensus is
 //     so marked
 //
-CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
+CRef<CDense_seg>
+CAlnVec::CreateConsensus(int& consensus_row, CBioseq& consensus_seq,
+                         const CSeq_id& consensus_id) const
 {
+    consensus_seq.Reset();
     if ( !m_DS ) {
         return CRef<CDense_seg>();
     }
@@ -509,7 +512,7 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
 
     //
     // now, create a new CDense_seg
-    // we create a new CBioseq for our data, add it to our scope, and
+    // we create a new CBioseq for our data and
     // copy the contents of the CDense_seg
     //
     string data;
@@ -559,27 +562,24 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
         new_ds->SetIds().push_back(m_Ids[i]);
     }
 
-    // now, we construct a new Bioseq and add it to our scope
-    // this bioseq must have a local ID; it will be named "consensus"
-    // once this is in, the Denseg should resolve all IDs correctly
+    // now, we construct a new Bioseq
     {{
-         CRef<CBioseq> bioseq(new CBioseq());
 
-         // construct a local sequence ID for this sequence
+         // sequence ID
          CRef<CSeq_id> id(new CSeq_id());
-         bioseq->SetId().push_back(id);
-         id->SetLocal().SetStr("consensus");
+         id->Assign(consensus_id);
+         consensus_seq.SetId().push_back(id);
 
          new_ds->SetIds().push_back(id);
 
          // add a description for this sequence
-         CSeq_descr& desc = bioseq->SetDescr();
+         CSeq_descr& desc = consensus_seq.SetDescr();
          CRef<CSeqdesc> d(new CSeqdesc);
          desc.Set().push_back(d);
          d->SetComment("This is a generated consensus sequence");
 
          // the main one: Seq-inst
-         CSeq_inst& inst = bioseq->SetInst();
+         CSeq_inst& inst = consensus_seq.SetInst();
          inst.SetRepr(CSeq_inst::eRepr_raw);
          inst.SetMol(CSeq_inst::eMol_na);
          inst.SetLength(data.length());
@@ -588,15 +588,26 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
          CIUPACna& na = seq_data.SetIupacna();
          na = CIUPACna(data);
 
-         // once we've created the bioseq, we need to add it to the
-         // scope
-         CRef<CSeq_entry> entry(new CSeq_entry());
-         entry->SetSeq(*bioseq);
-         GetScope().AddTopLevelSeqEntry(*entry);
     }}
 
     consensus_row = new_ds->GetIds().size() - 1;
     return new_ds;
+}
+
+
+CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row,
+                                          const CSeq_id& consensus_id) const
+{
+    CRef<CBioseq> bioseq(new CBioseq);
+    CRef<CDense_seg> ds = CreateConsensus(consensus_row,
+                                          *bioseq, consensus_id);
+
+    // add bioseq to the scope
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSeq(*bioseq);
+    GetScope().AddTopLevelSeqEntry(*entry);
+
+    return ds;
 }
 
 
@@ -853,6 +864,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2006/12/21 19:57:10  jcherry
+* CreateConsensus: added means of getting Bioseq without adding it to
+* scope, and added means of specifying id of Bioseq
+*
 * Revision 1.65  2006/12/15 16:37:27  todorov
 * Fixed warnings.
 *
