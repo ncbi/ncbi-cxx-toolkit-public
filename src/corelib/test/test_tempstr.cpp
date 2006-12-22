@@ -63,6 +63,27 @@ void TestTempString()
     /// test find()
     ///
 
+    /// find() for single character
+    LOG_POST(Info << "str.find('o')      = " << str.find('o'));
+    LOG_POST(Info << "temp_str.find('o') = " << temp_str.find('o'));
+    BOOST_CHECK(str.find('o') == temp_str.find('o'));
+    BOOST_CHECK(str.find('o') == temp_str.find('o'));
+
+    /// find() for single character
+    LOG_POST(Info << "str.find('z')      = " << str.find('z'));
+    LOG_POST(Info << "temp_str.find('z') = " << temp_str.find('z'));
+    BOOST_CHECK(str.find('z') == temp_str.find('z'));
+
+    /// find() for single character
+    LOG_POST(Info << "str.find('o', 6)      = " << str.find('o', 6));
+    LOG_POST(Info << "temp_str.find('o', 6) = " << temp_str.find('o', 6));
+    BOOST_CHECK(str.find('o', 6) == temp_str.find('o', 6));
+
+    /// find() for single character
+    LOG_POST(Info << "str.find('d', 25)      = " << str.find('d', 25));
+    LOG_POST(Info << "temp_str.find('d', 25) = " << temp_str.find('d', 25));
+    BOOST_CHECK(str.find('d', 25) == temp_str.find('d', 25));
+
     /// find() for empty string
     LOG_POST(Info << "str.find(\"\")      = " << str.find(""));
     LOG_POST(Info << "temp_str.find(\"\") = " << temp_str.find(""));
@@ -145,6 +166,7 @@ void TestTempString()
     LOG_POST(Info << "  " << temp_str << " == " << str << ": "
              << (temp_str == str ? "true" : "false"));
     BOOST_CHECK(temp_str == str);
+    BOOST_CHECK(str == temp_str);
 
     string test1("help");
     CTempString temp_test1(test1);
@@ -168,6 +190,7 @@ void TestTempString()
     BOOST_CHECK( (temp_str < temp_str) == (str < str) );
     BOOST_CHECK( (temp_str < temp_test1) == (str < test1) );
     BOOST_CHECK( (temp_test1 < temp_str) == (test1 < str) );
+    BOOST_CHECK(temp_str < test1);
 
     string test2("hello");
     CTempString temp_test2(test2);
@@ -205,6 +228,37 @@ void TestTempString()
     LOG_POST(Info << "temp_str.substr() = " << temp_sub);
     BOOST_CHECK(temp_sub == sub);
 
+    /// test erase()
+    sub = str;
+    sub.erase(5);
+    temp_sub = temp_str;
+    temp_sub.erase(5);
+    LOG_POST(Info << "str.erase(5)      = " << sub);
+    LOG_POST(Info << "temp_str.erase(5) = " << temp_sub);
+    BOOST_CHECK(temp_sub == sub);
+
+    /// test NStr::TruncateSpaces
+    sub = "  hello, world  ";
+    temp_sub = "  hello, world  ";
+    sub = NStr::TruncateSpaces(sub);
+    temp_sub = NStr::TruncateSpaces(temp_sub);
+    LOG_POST(Info << "NStr::TruncateSpaces(sub)      = >>" << sub << "<<");
+    LOG_POST(Info << "NStr::TruncateSpaces(temp_sub) = >>" << temp_sub << "<<");
+    BOOST_CHECK(temp_sub == sub);
+    BOOST_CHECK(temp_sub == temp_str);
+    BOOST_CHECK(sub == str);
+
+    sub = "-";
+    sub = NStr::TruncateSpaces(sub);
+    LOG_POST(Info << "NStr::TruncateSpaces(\"-\")      = >>" << sub << "<<");
+    BOOST_CHECK(sub == "-");
+
+    sub = "- ";
+    sub = NStr::TruncateSpaces(sub);
+    LOG_POST(Info << "NStr::TruncateSpaces(\"- \")      = >>" << sub << "<<");
+    BOOST_CHECK(sub == "-");
+
+
     /// test CopySubstr
     string s;
     sub = str.substr(0, 5);
@@ -240,6 +294,10 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/22 12:43:22  dicuccio
+ * Split CTempString into its own header.  Added NStr::TruncateSpaces() variant to
+ * handle CTempString.
+ *
  * Revision 1.1  2006/12/20 13:44:37  dicuccio
  * Added unit test for CTempString
  *

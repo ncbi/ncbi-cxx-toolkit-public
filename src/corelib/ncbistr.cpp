@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/tempstr.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <memory>
 #include <algorithm>
@@ -1303,37 +1304,54 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
 }
 
 
-string NStr::TruncateSpaces(const string& str, ETrunc where)
+template <class TStr>
+static TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
+                             const TStr& empty_str)
 {
     SIZE_TYPE length = str.length();
     if (length == 0) {
-        return kEmptyStr;
+        return empty_str;
     }
     SIZE_TYPE beg = 0;
-    if (where == eTrunc_Begin  ||  where == eTrunc_Both) {
+    if (where == NStr::eTrunc_Begin  ||  where == NStr::eTrunc_Both) {
         _ASSERT(beg < length);
         while ( isspace((unsigned char) str[beg]) ) {
             if (++beg == length) {
-                return kEmptyStr;
+                return empty_str;
             }
         }
     }
     SIZE_TYPE end = length;
-    if ( where == eTrunc_End  ||  where == eTrunc_Both ) {
+    if ( where == NStr::eTrunc_End  ||  where == NStr::eTrunc_Both ) {
         _ASSERT(end > beg);
-        do {
-            --end;
-        } while ( isspace((unsigned char) str[end]) );
+        for (--end;  end > beg  &&  isspace((unsigned char)str[end]);  --end) {
+        }
         _ASSERT(end >= beg && !isspace((unsigned char) str[end]));
         ++end;
     }
-    _ASSERT(beg < end);
-    if ( (beg - 0) | (end - length) ) { // if either beg != 0 or end != length
+    _ASSERT(beg <= end);
+    if (beg == end) {
+        return empty_str;
+    }
+    else if ( !beg  ||  (end - length) ) {
+        // if either beg != 0 or end != length
         return str.substr(beg, end - beg);
     }
     else {
         return str;
     }
+}
+
+
+string NStr::TruncateSpaces(const string& str, ETrunc where)
+{
+    return s_TruncateSpaces(str, where, kEmptyStr);
+}
+
+
+CTempString NStr::TruncateSpaces(const CTempString& str, ETrunc where)
+{
+    return s_TruncateSpaces(str, where, CTempString());
 }
 
 
@@ -2558,6 +2576,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.189  2006/12/22 12:43:22  dicuccio
+ * Split CTempString into its own header.  Added NStr::TruncateSpaces() variant to
+ * handle CTempString.
+ *
  * Revision 1.188  2006/12/20 13:22:59  dicuccio
  * Further updates to CTempString:
  * - Code rearrangements and patches from Eugene Vasilchenko: Unified
