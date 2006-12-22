@@ -1348,11 +1348,12 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
     return s_TruncateSpaces(str, where, kEmptyStr);
 }
 
-
+/**
 CTempString NStr::TruncateSpaces(const CTempString& str, ETrunc where)
 {
     return s_TruncateSpaces(str, where, CTempString());
 }
+**/
 
 
 void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
@@ -2576,6 +2577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.190  2006/12/22 13:01:52  dicuccio
+ * Temporarily remove new TruncateSpaces() prototype
+ *
  * Revision 1.189  2006/12/22 12:43:22  dicuccio
  * Split CTempString into its own header.  Added NStr::TruncateSpaces() variant to
  * handle CTempString.

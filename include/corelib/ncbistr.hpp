@@ -1388,8 +1388,10 @@ public:
     /// @param where
     ///   Which end of the string to truncate space from. Default is to
     ///   truncate space from both ends (eTrunc_Both).
+    /**
     static CTempString TruncateSpaces(const CTempString& str,
                                       ETrunc where=eTrunc_Both);
+                                      **/
 
     /// Truncate spaces in a string (in-place)
     ///
@@ -3119,6 +3121,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.118  2006/12/22 13:01:51  dicuccio
+ * Temporarily remove new TruncateSpaces() prototype
+ *
  * Revision 1.117  2006/12/22 12:43:22  dicuccio
  * Split CTempString into its own header.  Added NStr::TruncateSpaces() variant to
  * handle CTempString.
