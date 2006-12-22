@@ -571,7 +571,7 @@ void CCodeGenerator::GenerateCvsignore(
                     char buf[256];
                     while (extraFile.good()) {
                         extraFile.getline(buf, sizeof(buf));
-                        string sbuf(NStr::TruncateSpaces(buf));
+                        CTempString sbuf(NStr::TruncateSpaces(CTempString(buf)));
                         if (!sbuf.empty()) {
                             ignoreFile << sbuf << endl;
                         }
@@ -1051,6 +1051,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2006/12/22 12:44:22  dicuccio
+* Use CTempString in char array call to NStr::TruncateSpaces()
+*
 * Revision 1.68  2006/11/13 18:47:07  ucko
 * GenerateCvsignore: add the name of the specification dump (if any)
 * requested with -fd.
