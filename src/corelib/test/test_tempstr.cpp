@@ -238,6 +238,7 @@ void TestTempString()
     BOOST_CHECK(temp_sub == sub);
 
     /// test NStr::TruncateSpaces
+    /**
     sub = "  hello, world  ";
     temp_sub = "  hello, world  ";
     sub = NStr::TruncateSpaces(sub);
@@ -247,6 +248,7 @@ void TestTempString()
     BOOST_CHECK(temp_sub == sub);
     BOOST_CHECK(temp_sub == temp_str);
     BOOST_CHECK(sub == str);
+    **/
 
     sub = "-";
     sub = NStr::TruncateSpaces(sub);
@@ -294,6 +296,9 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/22 13:12:34  dicuccio
+ * Temporarily remove tests of NStr::TruncateSpaces()
+ *
  * Revision 1.2  2006/12/22 12:43:22  dicuccio
  * Split CTempString into its own header.  Added NStr::TruncateSpaces() variant to
  * handle CTempString.
