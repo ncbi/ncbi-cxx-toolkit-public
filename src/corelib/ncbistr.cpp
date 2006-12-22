@@ -1333,7 +1333,7 @@ static TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
     if (beg == end) {
         return empty_str;
     }
-    else if ( !beg  ||  (end - length) ) {
+    else if ( beg  ||  (end - length) ) {
         // if either beg != 0 or end != length
         return str.substr(beg, end - beg);
     }
@@ -2577,6 +2577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.191  2006/12/22 17:49:12  dicuccio
+ * Fix typo in logic in s_TruncateSpaces()
+ *
  * Revision 1.190  2006/12/22 13:01:52  dicuccio
  * Temporarily remove new TruncateSpaces() prototype
  *
