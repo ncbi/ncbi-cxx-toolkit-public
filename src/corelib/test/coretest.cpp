@@ -996,7 +996,7 @@ static CTestApplication theTestApplication;
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
     // Post error message
-    ERR_POST("This message goes to the default diag.stream, CERR");
+    ERR_POST("This message goes to the default diag.stream, CERR (2 times)");
     // Execute main application function
     return theTestApplication.AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }
@@ -1005,6 +1005,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.111  2006/12/26 21:28:13  grichenk
+ * Fixed message
+ *
  * Revision 1.110  2006/12/04 19:02:18  vasilche
  * Removed accidentally added code.
  *
