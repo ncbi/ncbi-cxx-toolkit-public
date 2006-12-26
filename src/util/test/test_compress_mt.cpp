@@ -46,8 +46,8 @@
 USING_NCBI_SCOPE;
 
 
-const size_t        kDataLen    = 100*1024;
-const size_t        kBufLen     = 102*1024;
+const size_t        kDataLen    = 40*1024;
+const size_t        kBufLen     = 42*1024;
 
 const int           kUnknownErr = kMax_Int;
 const unsigned int  kUnknown    = kMax_UInt;
@@ -93,7 +93,8 @@ void CTestCompressor<TCompression, TCompressionFile,
     TStreamCompressor, TStreamDecompressor>
     ::Run(const char* src_buf, int idx)
 {
-    const string kFileName = "compressed.file."+NStr::IntToString(idx);
+    const string kFileName_str = "compressed.file." + NStr::IntToString(idx);
+    const char*  kFileName = kFileName_str.c_str();
 #   include "test_compress_run.inl"
 }
 
@@ -105,16 +106,18 @@ template<class TCompression,
 void CTestCompressor<TCompression, TCompressionFile,
                      TStreamCompressor, TStreamDecompressor>
     ::PrintResult(EPrintType type, int last_errcode, 
-                  size_t src_len,
-                  size_t dst_len,
-                  size_t out_len)
+                  size_t src_len, size_t dst_len, size_t out_len)
 {
     LOG_POST(((type == eCompress) ? "Compress   ": "Decompress ")
              << "errcode = "
-             << ((last_errcode == kUnknownErr) ? '?' : last_errcode) << ", "
-             << ((src_len == kUnknown) ? '?' : src_len) << " -> "
-             << ((out_len == kUnknown) ? '?' : out_len) << ", limit "
-             << ((dst_len == kUnknown) ? '?' : dst_len)
+             << ((last_errcode == kUnknownErr) ? 
+                    "?" : NStr::IntToString(last_errcode)) << ", "
+             << ((src_len == kUnknown) ? 
+                    "?" : NStr::UIntToString(src_len)) << " -> "
+             << ((out_len == kUnknown) ? 
+                    "?" : NStr::UIntToString(out_len)) << ", limit "
+             << ((dst_len == kUnknown) ? 
+                    "?" : NStr::UIntToString(dst_len))
     );
 }
 
@@ -163,7 +166,6 @@ bool CTest::Thread_Run(int idx)
         ::Run(src_buf, idx);
 
     LOG_POST("--------------- Zlib ---------------\n");
-    
     CTestCompressor<CZipCompression, CZipCompressionFile,
                     CZipStreamCompressor, CZipStreamDecompressor>
         ::Run(src_buf, idx);
@@ -190,6 +192,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/26 16:12:58  ivanov
+ * Fixed PrintResult(). Reduced test buffer sizes for MT test.
+ *
  * Revision 1.3  2006/10/26 19:01:50  ivanov
  * Moved common code from for method CTestCompressor::Run() of
  * test_compress.cpp and test_compress_mt.cpp into separate include file
