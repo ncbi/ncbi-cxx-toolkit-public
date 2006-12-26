@@ -163,6 +163,7 @@ corelib/plugin_manager_impl.hpp
 corelib/reader_writer.hpp
 corelib/rwstream.hpp
 corelib/syslog.hpp
+corelib/tempstr.hpp
 corelib/version.hpp
 
 util/align_range.hpp
@@ -406,6 +407,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/12/26 15:44:10  jcherry
+ * Added tempstr.hpp
+ *
  * Revision 1.24  2006/11/13 15:14:02  jcherry
  * Removed deleted connect/ncbi_service_misc.h
  *
