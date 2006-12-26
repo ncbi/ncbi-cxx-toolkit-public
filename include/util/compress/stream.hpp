@@ -105,9 +105,9 @@ class NCBI_XUTIL_EXPORT CCompressionStream : virtual public CNcbiIos
 public:
     /// Stream processing direction.
     enum EDirection {
-        eRead,                      // Reading from stream
-        eWrite,                     // Writing into stream
-        eReadWrite                  // eRead + eWrite
+        eRead,                      ///< Reading from stream
+        eWrite,                     ///< Writing into stream
+        eReadWrite                  ///< eRead + eWrite
     };
 
     /// Which of the objects (passed in the constructor) should be
@@ -115,13 +115,13 @@ public:
     /// NOTE:  if the reader and writer are in fact one object, it will
     ///        not be deleted twice.
     enum EOwnership {
-        fOwnStream = (1<<1),        // Delete the underlying I/O stream
-        fOwnReader = (1<<2),        // Delete the reader
-        fOwnWriter = (1<<3),        // Delete the writer
+        fOwnStream = (1<<1),        ///< Delete the underlying I/O stream.
+        fOwnReader = (1<<2),        ///< Delete the reader.
+        fOwnWriter = (1<<3),        ///< Delete the writer.
         fOwnProcessor = fOwnReader + fOwnWriter,
         fOwnAll       = fOwnStream + fOwnProcessor
     };
-    typedef int TOwnership;         // Bitwise OR of EOwnership
+    typedef int TOwnership;         ///< Bitwise OR of EOwnership.
 
     /// Constructor
     ///
@@ -143,16 +143,18 @@ protected:
     /// Get status of last compression/decompression stream operation.
     CCompressionProcessor::EStatus 
         x_GetStatus(CCompressionStream::EDirection dir);
-    // Return number of processed/output bytes.
+
+    /// Return number of processed bytes.
     unsigned long x_GetProcessedSize(CCompressionStream::EDirection dir);
+    /// Return number of output bytes.
     unsigned long x_GetOutputSize(CCompressionStream::EDirection dir);
 
 protected:
-    CNcbiIos*                    m_Stream;    // Underlying stream
-    CCompressionStreambuf*       m_StreamBuf; // Stream buffer
-    CCompressionStreamProcessor* m_Reader;    // Read processor
-    CCompressionStreamProcessor* m_Writer;    // Write processor
-    TOwnership                   m_Ownership; // Bitwise OR of EOwnership
+    CNcbiIos*                    m_Stream;    ///< Underlying stream.
+    CCompressionStreambuf*       m_StreamBuf; ///< Stream buffer.
+    CCompressionStreamProcessor* m_Reader;    ///< Read processor.
+    CCompressionStreamProcessor* m_Writer;    ///< Write processor.
+    TOwnership                   m_Ownership; ///< Bitwise OR of EOwnership.
 };
 
 
@@ -167,20 +169,20 @@ protected:
 class NCBI_XUTIL_EXPORT CCompressionStreamProcessor 
 {
 public:
-    /// If to delete the used compression processor in the destructor
+    /// If to delete the used compression processor in the destructor.
     enum EDeleteProcessor {
-        eDelete,            ///< do     delete processor object 
-        eNoDelete           ///< do not delete processor object
+        eDelete,            ///< Do     delete processor object.
+        eNoDelete           ///< Do not delete processor object.
     };
 
-    /// Stream processor state
+    /// Stream processor state.
     enum EState {
-        eActive,            ///< processor ready to read/write
-        eFinalize,          ///< Finalize() already done, but End() not yet
-        eDone               ///< End() done, processor cannot process data
+        eActive,            ///< Processor ready to read/write.
+        eFinalize,          ///< Finalize() already done, but End() not yet.
+        eDone               ///< End() done, processor cannot process data.
     };
 
-    /// Constructor
+    /// Constructor.
     CCompressionStreamProcessor(
         CCompressionProcessor* processor,
         EDeleteProcessor       need_delete  = eNoDelete,
@@ -188,10 +190,10 @@ public:
         streamsize             out_bufsize  = kCompressionDefaultBufSize
     );
 
-    /// Destructor
+    /// Destructor.
     virtual ~CCompressionStreamProcessor(void);
 
-    /// (Re)Initialize stream processor
+    /// (Re)Initialize stream processor.
     void Init(void);
 
 private:
@@ -316,6 +318,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/12/26 15:53:50  ivanov
+ * Cosmetics
+ *
  * Revision 1.19  2006/12/19 15:52:38  ucko
  * Drop redundant CCompressionStreamProcessor:: qualifier from Init's
  * in-class declaration, per GCC 4.1.x.
