@@ -195,6 +195,7 @@ public:
     }
 
     bool CheckSIE(int rc, SQLHDBC con);
+    void SetupErrorReporter(const I_DriverContext::SConnAttr& conn_attr);
 
 protected:
     virtual impl::CConnection* MakeIConnection(const SConnAttr& conn_attr);
@@ -874,6 +875,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/12/26 17:40:55  ssikorsk
+ * Added method SetupErrorReporter() to CODBCContext.
+ *
  * Revision 1.52  2006/12/19 20:45:06  ssikorsk
  * Changed type of m_PacketSize from SQLULEN to SQLUINTEGER.
  *
