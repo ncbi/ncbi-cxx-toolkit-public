@@ -36,6 +36,8 @@
 
 BEGIN_NCBI_SCOPE
 
+// Macro to check flags
+#define F_ISSET(mask) ((GetFlags() & (mask)) == (mask))
 
 // Get compression stream pointer
 #define STREAM ((bz_stream*)m_Stream)
@@ -143,6 +145,16 @@ bool CBZip2Compression::DecompressBuffer(
     int errcode = BZ2_bzBuffToBuffDecompress(
                       (char*)dst_buf, &x_dst_len,
                       (char*)src_buf, (unsigned int)src_len, 0, 0 );
+
+    // Decompression error: data error
+    if ((errcode == BZ_DATA_ERROR_MAGIC  ||  errcode == BZ_DATA_ERROR)
+        &&  F_ISSET(fAllowTransparentRead)) {
+        // But transparent read is allowed
+        *dst_len = (dst_size < src_len) ? dst_size : src_len;
+        memcpy(dst_buf, src_buf, *dst_len);
+        return (dst_size >= src_len);
+    }
+    // Standard decompression results processing
     *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK ) {
@@ -285,11 +297,12 @@ CBZip2CompressionFile::~CBZip2CompressionFile(void)
 bool CBZip2CompressionFile::Open(const string& file_name, EMode mode)
 {
     int errcode;
-   
+
     if ( mode == eMode_Read ) {
         m_FileStream = fopen(file_name.c_str(), "rb");
         m_File = BZ2_bzReadOpen (&errcode, m_FileStream, m_SmallDecompress,
                                  m_Verbosity, 0, 0);
+        m_DecompressMode = eMode_Unknown;
         m_EOF = false;
     } else {
         m_FileStream = fopen(file_name.c_str(), "wb");
@@ -317,16 +330,32 @@ long CBZip2CompressionFile::Read(void* buf, size_t len)
     LIMIT_SIZE_PARAM(len);
 
     int errcode;
-    int nread = BZ2_bzRead(&errcode, m_File, buf, (int)len);
-    SetError(errcode, GetBZip2ErrorDescription(errcode));
+    int nread = 0;
 
-    if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
-        ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Read", false));
-        return -1;
-    }; 
-    if ( errcode == BZ_STREAM_END ) {
-        m_EOF = true;
-    }; 
+    if ( m_DecompressMode != eMode_TransparentRead ) {
+        nread = BZ2_bzRead(&errcode, m_File, buf, (int)len);
+        // Decompression error: data error
+        if ((errcode == BZ_DATA_ERROR_MAGIC  ||  errcode == BZ_DATA_ERROR)
+            &&  m_DecompressMode == eMode_Unknown
+            &&  F_ISSET(fAllowTransparentRead)) {
+            // But transparent read is allowed
+            m_DecompressMode = eMode_TransparentRead;
+            fseek(m_FileStream, 0, SEEK_SET);
+        } else {
+            m_DecompressMode = eMode_Decompress;
+            SetError(errcode, GetBZip2ErrorDescription(errcode));
+            if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
+                ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Read", false));
+                return -1;
+            } 
+            if ( errcode == BZ_STREAM_END ) {
+                m_EOF = true;
+            } 
+        }
+    }
+    if ( m_DecompressMode == eMode_TransparentRead ) {
+        nread = fread(buf, 1, len, m_FileStream);
+    }
     return nread;
 }
 
@@ -384,9 +413,10 @@ bool CBZip2CompressionFile::Close(void)
 
 
 CBZip2Compressor::CBZip2Compressor(
-                  ELevel level, int verbosity, int work_factor)
+                  ELevel level, int verbosity, int work_factor, TFlags flags)
     : CBZip2Compression(level, verbosity, work_factor, 0)
 {
+    SetFlags(flags);
 }
 
 
@@ -529,9 +559,11 @@ CCompressionProcessor::EStatus CBZip2Compressor::End(void)
 //
 
 
-CBZip2Decompressor::CBZip2Decompressor(int verbosity, int small_decompress)
+CBZip2Decompressor::CBZip2Decompressor(int verbosity, int small_decompress,
+                                       TFlags flags)
     : CBZip2Compression(eLevel_Default, verbosity, 0, small_decompress)
 {
+    SetFlags(flags);
 }
 
 
@@ -572,27 +604,61 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
     LIMIT_SIZE_PARAM_U(in_len);
     LIMIT_SIZE_PARAM_U(out_size);
 
-    STREAM->next_in   = const_cast<char*>(in_buf);
-    STREAM->avail_in  = (unsigned int)in_len;
-    STREAM->next_out  = out_buf;
-    STREAM->avail_out = (unsigned int)out_size;
-
-    int errcode = BZ2_bzDecompress(STREAM);
-    SetError(errcode, GetBZip2ErrorDescription(errcode));
-
-    *in_avail  = STREAM->avail_in;
-    *out_avail = out_size - STREAM->avail_out;
-    IncreaseProcessedSize(in_len - *in_avail);
-    IncreaseOutputSize(*out_avail);
-
-    switch (errcode) {
-    case BZ_OK:
-        return eStatus_Success;
-    case BZ_STREAM_END:
-        return eStatus_EndOfData;
+    // By default we consider that data is compressed
+    if ( m_DecompressMode == eMode_Unknown  &&
+        !F_ISSET(CCompression::fAllowTransparentRead) ) {
+        m_DecompressMode = eMode_Decompress;
     }
-    ERR_POST(FormatErrorMessage("CBZip2Decompressor::Process"));
-    return eStatus_Error;
+
+    // If data is compressed, or the read mode is undefined yet
+    if ( m_DecompressMode != eMode_TransparentRead ) {
+
+        STREAM->next_in   = const_cast<char*>(in_buf);
+        STREAM->avail_in  = (unsigned int)in_len;
+        STREAM->next_out  = out_buf;
+        STREAM->avail_out = (unsigned int)out_size;
+
+        int errcode = BZ2_bzDecompress(STREAM);
+
+        if ( m_DecompressMode == eMode_Unknown ) {
+            // The flag fAllowTransparentRead is set
+            _VERIFY(F_ISSET(CCompression::fAllowTransparentRead));
+            // Determine decompression mode for following operations
+            if (errcode == BZ_DATA_ERROR_MAGIC  || errcode == BZ_DATA_ERROR) {
+                m_DecompressMode = eMode_TransparentRead;
+            } else {
+                m_DecompressMode = eMode_Decompress;
+            }
+        }
+        if ( m_DecompressMode == eMode_Decompress ) {
+            SetError(errcode, GetBZip2ErrorDescription(errcode));
+            *in_avail  = STREAM->avail_in;
+            *out_avail = out_size - STREAM->avail_out;
+            IncreaseProcessedSize(in_len - *in_avail);
+            IncreaseOutputSize(*out_avail);
+
+            switch (errcode) {
+            case BZ_OK:
+                return eStatus_Success;
+            case BZ_STREAM_END:
+                return eStatus_EndOfData;
+            }
+            ERR_POST(FormatErrorMessage("CBZip2Decompressor::Process"));
+            return eStatus_Error;
+        }
+        /* else eMode_ThansparentRead :  see below */
+    }
+
+    // Transparent read
+
+    _VERIFY(m_DecompressMode == eMode_TransparentRead);
+    size_t n = min(in_len, out_size);
+    memcpy(out_buf, in_buf, n);
+    *in_avail  = in_len - n;
+    *out_avail = n;
+    IncreaseProcessedSize(n);
+    IncreaseOutputSize(n);
+    return eStatus_Success;
 }
 
 
@@ -614,7 +680,8 @@ CCompressionProcessor::EStatus CBZip2Decompressor::End(void)
 {
     int errcode = BZ2_bzDecompressEnd(STREAM);
     SetBusy(false);
-    if ( errcode == BZ_OK ) {
+    if ( m_DecompressMode != eMode_Decompress   ||
+         errcode == BZ_OK ) {
         return eStatus_Success;
     }
     ERR_POST(FormatErrorMessage("CBZip2Decompressor::End"));
@@ -628,6 +695,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/12/26 15:57:37  ivanov
+ * Add a possibility to detect a fact that data in the buffer/file/stream
+ * is uncompressed, and allow to use transparent reading (instead of
+ * decompression) from it. Added flag CCompression::fAllowTransparentRead.
+ *
  * Revision 1.16  2005/08/22 14:29:42  ivanov
  * Call End() in the CBZip2Compressor destrustor for terminated sessions
  *

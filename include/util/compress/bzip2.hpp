@@ -200,26 +200,29 @@ public:
     virtual bool Close(void);
 
 protected:
-    FILE*  m_FileStream;  // Underlying file stream
-    bool   m_EOF;         // EOF flag for read mode
+    FILE*      m_FileStream;   ///< Underlying file stream
+    bool       m_EOF;          ///< EOF flag for read mode
 };
 
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// CBZip2Compressor class
-//
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CBZip2Compressor -- bzip2 based compressor
+///
+/// Used in CBZip2StreamCompressor.
+/// @sa CBZip2StreamCompressor, CBZip2Compression, CCompressionProcessor
 
 class NCBI_XUTIL_EXPORT CBZip2Compressor : public CBZip2Compression,
                                            public CCompressionProcessor
 {
 public:
-    // 'ctors
+    /// Constructor.
     CBZip2Compressor(
-        ELevel level       = eLevel_Default,
-        int    verbosity   = 0,              // [0..4]
-        int    work_factor = 0               // [0..250] 
+        ELevel               level       = eLevel_Default,
+        int                  verbosity   = 0,           // [0..4]
+        int                  work_factor = 0,           // [0..250] 
+        CCompression::TFlags flags       = 0
     );
     virtual ~CBZip2Compressor(void);
 
@@ -237,19 +240,25 @@ protected:
 };
 
 
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CBZip2Decompressor class
-//
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CBZip2Decompressor -- bzip2 based decompressor
+///
+/// Used in CBZip2StreamCompressor.
+/// @sa CBZip2StreamCompressor, CBZip2Compression, CCompressionProcessor
 
 class NCBI_XUTIL_EXPORT CBZip2Decompressor : public CBZip2Compression,
                                              public CCompressionProcessor
 {
 public:
-    // 'ctors
-    CBZip2Decompressor(int verbosity        = 0,          // [0..4]
-                       int small_decompress = 0);         // [0,1]
+    /// Constructor.
+    CBZip2Decompressor(
+        int                  verbosity        = 0,  // [0..4]
+        int                  small_decompress = 0,  // [0,1]
+        CCompression::TFlags flags            = 0
+    );
+
+    /// Destructor.
     virtual ~CBZip2Decompressor(void);
 
 protected:
@@ -294,15 +303,24 @@ class NCBI_XUTIL_EXPORT CBZip2StreamDecompressor
     : public CCompressionStreamProcessor
 {
 public:
+    /// Full constructor
     CBZip2StreamDecompressor(
-        streamsize  in_bufsize       = kCompressionDefaultBufSize,
-        streamsize  out_bufsize      = kCompressionDefaultBufSize,
-        int         verbosity        = 0,
-        int         small_decompress = 0)
-
+        streamsize           in_bufsize,
+        streamsize           out_bufsize,
+        int                  verbosity,
+        int                  small_decompress,
+        CCompression::TFlags flags   = 0
+        )
         : CCompressionStreamProcessor(
-             new CBZip2Decompressor(verbosity, small_decompress),
+             new CBZip2Decompressor(verbosity, small_decompress, flags),
              eDelete, in_bufsize, out_bufsize)
+    {}
+
+    /// Conventional constructor
+    CBZip2StreamDecompressor(CCompression::TFlags flags = 0)
+        : CCompressionStreamProcessor( 
+              new CBZip2Decompressor(0, 0, flags),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 };
 
@@ -316,6 +334,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/12/26 15:57:16  ivanov
+ * Add a possibility to detect a fact that data in the buffer/file/stream
+ * is uncompressed, and allow to use transparent reading (instead of
+ * decompression) from it. Added flag CCompression::fAllowTransparentRead.
+ *
  * Revision 1.12  2005/06/06 10:54:25  ivanov
  * Removed redundand comment
  *

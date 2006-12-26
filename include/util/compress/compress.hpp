@@ -100,12 +100,30 @@ public:
     int    GetErrorCode(void) const;
     string GetErrorDescription(void) const;
 
-    // Compression flags. The flag selection depends from realization.
+    /// Compression flags. The flag selection depends from compression
+    /// algorithm implementation, only common flags presents here.
+    enum EFlags {
+        ///< Allow transparent reading data from buffer/file/stream
+        ///< regardless is it compressed or not. But be aware,
+        ///< if data source contains broken data and API cannot detect that
+        ///< it is compressed data, that you can get binary instead of
+        ///< decompressed data. By default this flag is OFF.
+        fAllowTransparentRead = (1<<0), 
+        ///< Special value used to define flags in 
+        fCommonFlagLast       = fAllowTransparentRead
+    };
     typedef unsigned int TFlags;    // Bitwise OR of EFlags*
 
     // Get/set flags
     TFlags GetFlags(void) const;
     void SetFlags(TFlags flags);
+
+    /// Decompression mode (see fAllowTransparentRead flag).
+    enum EDecompressMode {
+        eMode_Decompress,      ///< Generic decompression
+        eMode_TransparentRead, ///< Transparent read, the data is uncompressed
+        eMode_Unknown,         ///< Not known yet (decompress/transparent read)
+    };
 
 
     //
@@ -159,6 +177,10 @@ protected:
     // Set last action error/status code and description
     void SetError(int status, const char* description = 0);
 
+protected:
+    ///< Decompress mode (Decompress/TransparentRead/Unknown).
+    EDecompressMode m_DecompressMode;
+
 private:
     ELevel  m_Level;      // Compression level
     int     m_ErrorCode;  // Last compressor action error/status
@@ -184,18 +206,18 @@ private:
 class NCBI_XUTIL_EXPORT CCompressionFile
 {
 public:
-    // Compression file hadler
+    /// Compression file handler
     typedef void* TFile;
 
-    // File open mode
+    /// File open mode
     enum EMode {
-        eMode_Read,   // for reading from compressed file
-        eMode_Write   // for writing compressed data to file
+        eMode_Read,         ///< Reading from compressed file
+        eMode_Write         ///< Writing compressed data to file
     };
 
     // 'ctors
     CCompressionFile(void);
-    //CCompressionFile(const string& path, EMode mode) = 0; 
+    CCompressionFile(const string& path, EMode mode) = 0; 
     virtual ~CCompressionFile(void);
 
     // Opens a compressed file for reading or writing.
@@ -216,8 +238,8 @@ public:
     virtual bool Close(void) = 0;
 
 protected:
-    TFile  m_File;   // File handler
-    EMode  m_Mode;   // File open mode
+    TFile  m_File;   ///< File handler.
+    EMode  m_Mode;   ///< File open mode.
 };
 
 
@@ -456,6 +478,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/12/26 15:57:16  ivanov
+ * Add a possibility to detect a fact that data in the buffer/file/stream
+ * is uncompressed, and allow to use transparent reading (instead of
+ * decompression) from it. Added flag CCompression::fAllowTransparentRead.
+ *
  * Revision 1.15  2006/12/18 19:37:06  ivanov
  * CCompressionProcessor: added friend class CCompressionStreamProcessor
  *

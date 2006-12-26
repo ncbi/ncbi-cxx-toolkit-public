@@ -108,14 +108,14 @@ class NCBI_XUTIL_EXPORT CZipCompression : public CCompression
 {
 public:
     /// Data processing flags.
-    /// @sa EFlags
+    /// @sa CCompression::EFlags
     enum EFlags {
-        ///< Check & skip file header for decompression stream
-        fCheckFileHeader = (1<<1), 
-        ///< Use .gz file format to write into compression stream
+        ///< Check (and skip) file header for decompression stream
+        fCheckFileHeader = (fCommonFlagLast << 1), 
+        ///< Use gzip (.gz) file format to write into compression stream
         ///< (the archive also can store file name and file modification
         ///< date in this format)
-        fWriteGZipFormat = (1<<2)
+        fWriteGZipFormat = (fCommonFlagLast << 2)
     };
 
     /// Constructor.
@@ -476,7 +476,7 @@ public:
         int                   window_bits,
         int                   mem_level,
         int                   strategy,
-        CCompression::TFlags  flags
+        CCompression::TFlags  flags = 0
         ) 
         : CCompressionStreamProcessor(
               new CZipCompressor(level,window_bits,mem_level,strategy,flags),
@@ -547,6 +547,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/12/26 15:57:16  ivanov
+ * Add a possibility to detect a fact that data in the buffer/file/stream
+ * is uncompressed, and allow to use transparent reading (instead of
+ * decompression) from it. Added flag CCompression::fAllowTransparentRead.
+ *
  * Revision 1.18  2006/10/18 14:19:26  ivanov
  * Comments changes
  *
