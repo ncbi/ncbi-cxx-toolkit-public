@@ -217,7 +217,7 @@ public:
 
     // 'ctors
     CCompressionFile(void);
-    CCompressionFile(const string& path, EMode mode) = 0; 
+    CCompressionFile(const string& path, EMode mode); 
     virtual ~CCompressionFile(void);
 
     // Opens a compressed file for reading or writing.
@@ -478,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/12/26 16:06:53  ivanov
+ * Fixed compilation error
+ *
  * Revision 1.16  2006/12/26 15:57:16  ivanov
  * Add a possibility to detect a fact that data in the buffer/file/stream
  * is uncompressed, and allow to use transparent reading (instead of
