@@ -101,17 +101,7 @@ public:
     string GetErrorDescription(void) const;
 
     /// Compression flags. The flag selection depends from compression
-    /// algorithm implementation, only common flags presents here.
-    enum EFlags {
-        ///< Allow transparent reading data from buffer/file/stream
-        ///< regardless is it compressed or not. But be aware,
-        ///< if data source contains broken data and API cannot detect that
-        ///< it is compressed data, that you can get binary instead of
-        ///< decompressed data. By default this flag is OFF.
-        fAllowTransparentRead = (1<<0), 
-        ///< Special value used to define flags in 
-        fCommonFlagLast       = fAllowTransparentRead
-    };
+    /// algorithm implementation.
     typedef unsigned int TFlags;    // Bitwise OR of EFlags*
 
     // Get/set flags
@@ -478,6 +468,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/12/26 17:32:26  ivanov
+ * Move fAllowTransparentRead flag definition from CCompression class
+ * to each compresson algorithm definition.
+ *
  * Revision 1.18  2006/12/26 17:06:28  ivanov
  * Removed extra comma in EDecompressMode declaration
  *

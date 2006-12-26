@@ -88,13 +88,25 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CBZip2Compression : public CCompression 
 {
 public:
-    // 'ctors
+    /// Compression/decompression flags.
+    enum EFlags {
+        ///< Allow transparent reading data from buffer/file/stream
+        ///< regardless is it compressed or not. But be aware,
+        ///< if data source contains broken data and API cannot detect that
+        ///< it is compressed data, that you can get binary instead of
+        ///< decompressed data. By default this flag is OFF.
+        fAllowTransparentRead = (1<<0)
+    };
+
+    /// Constructor.
     CBZip2Compression(
         ELevel level            = eLevel_Default,
         int    verbosity        = 0,              // [0..4]
         int    work_factor      = 0,              // [0..250] 
         int    small_decompress = 0               // [0,1]
     );
+
+    /// Destructor.
     virtual ~CBZip2Compression(void);
 
     // Get compression level.
@@ -102,6 +114,7 @@ public:
     //       So the "eLevel_NoCompression" will be translated to
     //       "eLevel_Lowest".
     virtual ELevel GetLevel(void) const;
+
     // Return default compression level for a BZip compression algorithm
     virtual ELevel GetDefaultLevel(void) const
         { return eLevel_VeryHigh; };
@@ -334,6 +347,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/12/26 17:32:26  ivanov
+ * Move fAllowTransparentRead flag definition from CCompression class
+ * to each compresson algorithm definition.
+ *
  * Revision 1.13  2006/12/26 15:57:16  ivanov
  * Add a possibility to detect a fact that data in the buffer/file/stream
  * is uncompressed, and allow to use transparent reading (instead of

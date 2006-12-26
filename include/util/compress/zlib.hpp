@@ -107,15 +107,20 @@ const int kZlibDefaultCompression = -1;
 class NCBI_XUTIL_EXPORT CZipCompression : public CCompression
 {
 public:
-    /// Data processing flags.
-    /// @sa CCompression::EFlags
+    /// Compression/decompression flags.
     enum EFlags {
+        ///< Allow transparent reading data from buffer/file/stream
+        ///< regardless is it compressed or not. But be aware,
+        ///< if data source contains broken data and API cannot detect that
+        ///< it is compressed data, that you can get binary instead of
+        ///< decompressed data. By default this flag is OFF.
+        fAllowTransparentRead = (1<<0), 
         ///< Check (and skip) file header for decompression stream
-        fCheckFileHeader = (fCommonFlagLast << 1), 
+        fCheckFileHeader      = (1<<1), 
         ///< Use gzip (.gz) file format to write into compression stream
         ///< (the archive also can store file name and file modification
         ///< date in this format)
-        fWriteGZipFormat = (fCommonFlagLast << 2)
+        fWriteGZipFormat      = (1<<2)
     };
 
     /// Constructor.
@@ -126,7 +131,7 @@ public:
         int    strategy    = kZlibDefaultStrategy   // [0..2]
     );
 
-    /// Destructor
+    /// Destructor.
     virtual ~CZipCompression(void);
 
     /// Returns default compression level for a compression algorithm.
@@ -547,6 +552,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/12/26 17:32:26  ivanov
+ * Move fAllowTransparentRead flag definition from CCompression class
+ * to each compresson algorithm definition.
+ *
  * Revision 1.19  2006/12/26 15:57:16  ivanov
  * Add a possibility to detect a fact that data in the buffer/file/stream
  * is uncompressed, and allow to use transparent reading (instead of

@@ -606,7 +606,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
 
     // By default we consider that data is compressed
     if ( m_DecompressMode == eMode_Unknown  &&
-        !F_ISSET(CCompression::fAllowTransparentRead) ) {
+        !F_ISSET(fAllowTransparentRead) ) {
         m_DecompressMode = eMode_Decompress;
     }
 
@@ -622,7 +622,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
 
         if ( m_DecompressMode == eMode_Unknown ) {
             // The flag fAllowTransparentRead is set
-            _VERIFY(F_ISSET(CCompression::fAllowTransparentRead));
+            _VERIFY(F_ISSET(fAllowTransparentRead));
             // Determine decompression mode for following operations
             if (errcode == BZ_DATA_ERROR_MAGIC  || errcode == BZ_DATA_ERROR) {
                 m_DecompressMode = eMode_TransparentRead;
@@ -695,6 +695,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/12/26 17:32:41  ivanov
+ * Move fAllowTransparentRead flag definition from CCompression class
+ * to each compresson algorithm definition.
+ *
  * Revision 1.17  2006/12/26 15:57:37  ivanov
  * Add a possibility to detect a fact that data in the buffer/file/stream
  * is uncompressed, and allow to use transparent reading (instead of

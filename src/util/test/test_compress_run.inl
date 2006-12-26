@@ -61,8 +61,11 @@
         LOG_POST("Decompress buffer (transparent read)...");
         INIT_BUFFERS;
 
+        _VERIFY(CZipCompression::fAllowTransparentRead == 
+                CBZip2Compression::fAllowTransparentRead);
+
         TCompression c(CCompression::eLevel_Medium);
-        c.SetFlags(CCompression::fAllowTransparentRead);
+        c.SetFlags(CZipCompression::fAllowTransparentRead);
 
         // "Decompress" source buffer, which is uncompressed
         result = c.DecompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
@@ -153,7 +156,7 @@
 
         TCompressionFile zf;
         // Set flag to allow transparent read on decompression
-        zf.SetFlags(CCompression::fAllowTransparentRead |
+        zf.SetFlags(CZipCompression::fAllowTransparentRead |
                     CZipCompression::fCheckFileHeader);
 
         //
@@ -351,7 +354,8 @@
         CNcbiIstrstream is_str(src_buf, kDataLen);
 
         // Create decompressor and set flags to allow transparent read
-        TStreamDecompressor decompressor(CCompression::fAllowTransparentRead);
+        TStreamDecompressor 
+            decompressor(CZipCompression::fAllowTransparentRead);
 
         // Read uncompressed data from stream
         CCompressionIStream ids_zip(is_str, &decompressor);
