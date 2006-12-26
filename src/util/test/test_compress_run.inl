@@ -61,8 +61,8 @@
         LOG_POST("Decompress buffer (transparent read)...");
         INIT_BUFFERS;
 
-        _VERIFY(CZipCompression::fAllowTransparentRead == 
-                CBZip2Compression::fAllowTransparentRead);
+        _VERIFY((unsigned int)CZipCompression::fAllowTransparentRead == 
+                (unsigned int)CBZip2Compression::fAllowTransparentRead);
 
         TCompression c(CCompression::eLevel_Medium);
         c.SetFlags(CZipCompression::fAllowTransparentRead);
