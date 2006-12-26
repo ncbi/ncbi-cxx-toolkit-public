@@ -390,6 +390,16 @@ CODBCContext::x_Close(bool delete_conn)
 }
 
 
+void
+CODBCContext::SetupErrorReporter(const I_DriverContext::SConnAttr& conn_attr)
+{
+    string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
+
+    CMutexGuard mg(m_CtxMtx);
+    m_Reporter.SetExtraMsg( extra_msg );
+}
+
+
 void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 {
     CMutexGuard mg(m_CtxMtx);
@@ -666,6 +676,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/12/26 17:41:39  ssikorsk
+ * Implemented CODBCContext::SetupErrorReporter().
+ *
  * Revision 1.71  2006/12/15 16:43:36  ssikorsk
  * Replaced CFastMutex with CMutex. Improved thread-safety.
  *
