@@ -9,6 +9,7 @@
     assert(dst_buf);
     assert(cmp_buf);
 
+
     //------------------------------------------------------------------------
     // Compress/decomress buffer
     //------------------------------------------------------------------------
@@ -54,12 +55,41 @@
     }}
 
     //------------------------------------------------------------------------
+    // Decompress buffer: transparent read
+    //------------------------------------------------------------------------
+    {{
+        LOG_POST("Decompress buffer (transparent read)...");
+        INIT_BUFFERS;
+
+        TCompression c(CCompression::eLevel_Medium);
+        c.SetFlags(CCompression::fAllowTransparentRead);
+
+        // "Decompress" source buffer, which is uncompressed
+        result = c.DecompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
+                                    &dst_len);
+        PrintResult(eDecompress, c.GetErrorCode(), kDataLen, kBufLen, dst_len);
+        assert(result);
+        // Should have the same buffer as output
+        assert(dst_len == kDataLen);
+        assert(memcmp(src_buf, dst_buf, dst_len) == 0);
+
+        // Overflow test
+        dst_len = 100;
+        result = c.DecompressBuffer(src_buf, kDataLen, dst_buf, dst_len,
+                                    &out_len);
+        PrintResult(eDecompress, c.GetErrorCode(), kDataLen, dst_len,out_len);
+        assert(!result);
+        assert(dst_len == out_len);
+
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
     // File compression/decompression test
     //------------------------------------------------------------------------
     {{
         LOG_POST("File compress/decompress test...");
-
-        long n;
+        size_t n;
 
         // First test
 
@@ -99,17 +129,71 @@
             {{
                 // Read data from compressed file
                 TCompressionFile zf(kFileName, TCompressionFile::eMode_Read);
-                long nread = 0;
+                size_t nread = 0;
                 do {
                     n = zf.Read(cmp_buf + nread, 100);
                     nread += n;
-                } while ( n > 0 );
+                } while ( n != 0 );
                 assert(nread == (int)kDataLen);
             }}
 
             // Compare original and decompressed data
             assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
         }}
+        CFile(kFileName).Remove();
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
+    // File decompression: transparent read test
+    //------------------------------------------------------------------------
+    {{
+        LOG_POST("Decompress file - transparent read...");
+        INIT_BUFFERS;
+
+        TCompressionFile zf;
+        // Set flag to allow transparent read on decompression
+        zf.SetFlags(CCompression::fAllowTransparentRead |
+                    CZipCompression::fCheckFileHeader);
+
+        //
+        // Test for usual compression/decompression
+        //
+
+        // Compress data to file
+        assert(zf.Open(kFileName, TCompressionFile::eMode_Write)); 
+        size_t n = zf.Write(src_buf, kDataLen);
+        assert(n == (int)kDataLen);
+        assert(zf.Close()); 
+        assert(CFile(kFileName).GetLength() > 0);
+        
+        // Decompress data from file
+        assert(zf.Open(kFileName, TCompressionFile::eMode_Read)); 
+        assert(zf.Read(cmp_buf, kDataLen) == (int)kDataLen);
+        assert(zf.Close()); 
+
+        // Compare original and decompressed data
+        assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
+
+        //
+        // Test to read uncompressed data
+        //
+
+        // Create file with uncompressed data
+        CNcbiOfstream os(kFileName, IOS_BASE::out | IOS_BASE::binary);
+        assert(os.good());
+        os.write(src_buf, kDataLen);
+        os.close();
+        assert(CFile(kFileName).GetLength() == kDataLen);
+
+        // Transparent read from this file
+        assert(zf.Open(kFileName, TCompressionFile::eMode_Read)); 
+        assert(zf.Read(cmp_buf, kDataLen) == (int)kDataLen);
+        assert(zf.Close()); 
+
+        // Compare original and "decompressed" data
+        assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
+
         CFile(kFileName).Remove();
         OK;
     }}
@@ -257,6 +341,34 @@
     }}
 
     //------------------------------------------------------------------------
+    // Decompression input stream test: transparent read
+    //------------------------------------------------------------------------
+    {{
+        LOG_POST("Testing decompression input stream (transparent read)...");
+        INIT_BUFFERS;
+
+        // Create test input stream with uncompressed data
+        CNcbiIstrstream is_str(src_buf, kDataLen);
+
+        // Create decompressor and set flags to allow transparent read
+        TStreamDecompressor decompressor(CCompression::fAllowTransparentRead);
+
+        // Read uncompressed data from stream
+        CCompressionIStream ids_zip(is_str, &decompressor);
+
+        ids_zip.read(dst_buf, kDataLen);
+        out_len = ids_zip.gcount();
+        PrintResult(eDecompress, kUnknownErr, kDataLen, kBufLen, out_len);
+        assert(ids_zip.GetProcessedSize() == out_len);
+        assert(ids_zip.GetOutputSize() == out_len);
+
+        // Compare original and uncompressed data
+        assert(out_len == kDataLen);
+        assert(memcmp(src_buf, dst_buf, kDataLen) == 0);
+        OK;
+    }}
+
+    //------------------------------------------------------------------------
     // IO stream tests
     //------------------------------------------------------------------------
     {{
@@ -268,8 +380,9 @@
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
                                           new TStreamCompressor(),
                                           CCompressionStream::fOwnProcessor);
+            assert(zip  &&  zip.good()  &&  stm.good());
             zip.write(src_buf, kDataLen);
-            assert(zip.good()  &&  stm.good());
+            assert(zip  &&  zip.good()  &&  stm.good());
             zip.Finalize(CCompressionStream::eWrite);
             assert(!zip.eof()  &&  zip.good());
             assert(!stm.eof()  &&  stm.good());
@@ -295,6 +408,7 @@
             char c; 
             zip >> c;
             assert(zip.eof());
+            assert(!zip);
 
             // Compare buffers
             assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
@@ -328,43 +442,48 @@
     }}
 
     //------------------------------------------------------------------------
-    // Advanced I/O stream test
+    // Advanced I/O stream test:
+    //      - read/write;
+    //      - reusing compression/decompression stream processors.
     //------------------------------------------------------------------------
     {{
         LOG_POST("Advanced I/O stream test...");
         INIT_BUFFERS;
 
+        TStreamCompressor   compressor;
+        TStreamDecompressor decompressor;
         int v;
-        // Compress output
-        CNcbiOstrstream os_str;
-        {{
-            CCompressionOStream ocs_zip(os_str, new TStreamCompressor(),
-                                        CCompressionStream::fOwnWriter);
+
+        for (int count = 0; count<5; count++) {
+            // Compress data to output stream
+            CNcbiOstrstream os_str;
+            {{
+                CCompressionOStream ocs_zip(os_str, &compressor);
+                for (int i = 0; i < 1000; i++) {
+                    v = i * 2;
+                    ocs_zip << v << endl;
+                }
+            }}
+            const char* str = os_str.str();
+            size_t os_str_len = os_str.pcount();
+            PrintResult(eCompress, kUnknownErr, kUnknown, kUnknown,os_str_len);
+
+            // Decompress data from input stream
+            CNcbiIstrstream is_str(str, os_str_len);
+            CCompressionIStream ids_zip(is_str, &decompressor);
             for (int i = 0; i < 1000; i++) {
-                v = i * 2;
-                ocs_zip << v << endl;
+                ids_zip >> v;
+                assert(!ids_zip.eof());
+                assert( i*2 == v);
             }
-        }}
-        const char* str = os_str.str();
-        size_t os_str_len = os_str.pcount();
-        PrintResult(eCompress, kUnknownErr, kUnknown, kUnknown,os_str_len);
 
-        // Decompress input
-        CNcbiIstrstream is_str(str, os_str_len);
-        CCompressionIStream ids_zip(is_str, new TStreamDecompressor(),
-                                    CCompressionStream::fOwnReader);
-        for (int i = 0; i < 1000; i++) {
+            PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown,
+                        kUnknown);
+            // Check EOF
             ids_zip >> v;
-            assert(!ids_zip.eof());
-            assert( i*2 == v);
+            assert(ids_zip.eof());
+            os_str.rdbuf()->freeze(0);
         }
-
-        // Check EOF
-        ids_zip >> v;
-        PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown,
-                    kUnknown);
-        assert(ids_zip.eof());
-        os_str.rdbuf()->freeze(0);
         OK;
     }}
     //------------------------------------------------------------------------
