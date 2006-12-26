@@ -91,7 +91,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     TStreamCompressor, TStreamDecompressor>
     ::Run(const char* src_buf)
 {
-    const string kFileName = "compressed.file";
+    const char* kFileName = "compressed.file";
 #   include "test_compress_run.inl"
 }
 
@@ -103,16 +103,18 @@ template<class TCompression,
 void CTestCompressor<TCompression, TCompressionFile,
                      TStreamCompressor, TStreamDecompressor>
     ::PrintResult(EPrintType type, int last_errcode, 
-                  size_t src_len,
-                  size_t dst_len,
-                  size_t out_len)
+                  size_t src_len, size_t dst_len, size_t out_len)
 {
     LOG_POST(((type == eCompress) ? "Compress   ": "Decompress ")
              << "errcode = "
-             << ((last_errcode == kUnknownErr) ? '?' : last_errcode) << ", "
-             << ((src_len == kUnknown) ? '?' : src_len) << " -> "
-             << ((out_len == kUnknown) ? '?' : out_len) << ", limit "
-             << ((dst_len == kUnknown) ? '?' : dst_len)
+             << ((last_errcode == kUnknownErr) ? 
+                    "?" : NStr::IntToString(last_errcode)) << ", "
+             << ((src_len == kUnknown) ? 
+                    "?" : NStr::UIntToString(src_len)) << " -> "
+             << ((out_len == kUnknown) ? 
+                    "?" : NStr::UIntToString(out_len)) << ", limit "
+             << ((dst_len == kUnknown) ? 
+                    "?" : NStr::UIntToString(dst_len))
     );
 }
 
@@ -159,7 +161,6 @@ int CTest::Run(void)
         ::Run(src_buf);
 
     LOG_POST("--------------- Zlib ---------------\n");
-    
     CTestCompressor<CZipCompression, CZipCompressionFile,
                     CZipStreamCompressor, CZipStreamDecompressor>
         ::Run(src_buf);
@@ -168,7 +169,6 @@ int CTest::Run(void)
  
     return 0;
 }
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -186,6 +186,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/12/26 16:12:23  ivanov
+ * Fixed PrintResult()
+ *
  * Revision 1.16  2006/10/26 19:01:50  ivanov
  * Moved common code from for method CTestCompressor::Run() of
  * test_compress.cpp and test_compress_mt.cpp into separate include file
