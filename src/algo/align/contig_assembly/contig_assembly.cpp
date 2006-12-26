@@ -538,7 +538,8 @@ CRef<CDense_seg> CContigAssembly::BestLocalSubAlignment(const CDense_seg& ds_in,
 
     // Find the (or a) place where score is max
     int max_score = 0;
-    unsigned int right_end, left_end;
+    unsigned int right_end = 0;  // initialize to avoid compiler warning
+    unsigned int left_end;
     for (unsigned int i = 0; i < scores.size(); ++i) {
         if (scores[i] > max_score) {
             max_score = scores[i];
@@ -903,6 +904,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/12/26 21:21:39  jcherry
+ * Eliminated compiler warning
+ *
  * Revision 1.13  2006/11/01 21:38:09  jcherry
  * Added signature of CContigAssembly::Blastn that takes sequence locations
  *
