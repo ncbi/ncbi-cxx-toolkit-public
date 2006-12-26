@@ -313,8 +313,7 @@ CRef<CSeq_annot> CUsrFeatDataLoader::GetAnnot(const CSeq_id_Handle& idh)
         CUser_object& user = feat->SetData().SetUser();
 
         // fill in our columns
-        TSeqPos from;
-        TSeqPos to;
+        TSeqPos from = 0, to = 0;  // initialize to avoid compiler warnings
         string strand_str;
         for (unsigned int i = 0;  i < data.size();  ++i) {
             switch (m_ColAssign[i]) {
@@ -469,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/12/26 20:58:56  jcherry
+ * Eliminated compiler warnings
+ *
  * Revision 1.14  2006/05/08 15:54:37  ucko
  * Tweak settings-retrieval APIs to account for the fact that the
  * supplied default string value may be a reference to a temporary, and
