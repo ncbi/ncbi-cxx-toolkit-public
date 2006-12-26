@@ -122,7 +122,7 @@ public:
     enum EDecompressMode {
         eMode_Decompress,      ///< Generic decompression
         eMode_TransparentRead, ///< Transparent read, the data is uncompressed
-        eMode_Unknown,         ///< Not known yet (decompress/transparent read)
+        eMode_Unknown          ///< Not known yet (decompress/transparent read)
     };
 
 
@@ -478,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/12/26 17:06:28  ivanov
+ * Removed extra comma in EDecompressMode declaration
+ *
  * Revision 1.17  2006/12/26 16:06:53  ivanov
  * Fixed compilation error
  *
