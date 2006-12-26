@@ -68,8 +68,13 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                         const_cast<SQLHDBC*>(&m_Link));
 
     if((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
-        DATABASE_DRIVER_ERROR( "Cannot allocate a connection hanle.", 100011 );
+        DATABASE_DRIVER_ERROR( "Cannot allocate a connection handle.", 100011 );
     }
+
+    // This might look strange, but in current design all errors related to
+    // opening of a connection to a database are reported by a DriverContext.
+    // Have fun.
+    cntx.SetupErrorReporter(conn_attr);
 
     x_SetupErrorReporter(conn_attr);
 
@@ -1407,6 +1412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/12/26 17:42:18  ssikorsk
+ * Revamp code to use CODBCContext::SetupErrorReporter().
+ *
  * Revision 1.62  2006/12/19 20:45:56  ssikorsk
  * Get rid of compilation warnings on vc8 x64.
  *
