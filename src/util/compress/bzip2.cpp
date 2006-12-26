@@ -354,7 +354,8 @@ long CBZip2CompressionFile::Read(void* buf, size_t len)
         }
     }
     if ( m_DecompressMode == eMode_TransparentRead ) {
-        nread = fread(buf, 1, len, m_FileStream);
+        // 'len' never exceed kMax_Int here.
+        nread = (int)fread(buf, 1, len, m_FileStream);
     }
     return nread;
 }
@@ -695,6 +696,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/12/26 17:48:53  ivanov
+ * Get rid of warning on 64-bit WorkShop compiler
+ *
  * Revision 1.18  2006/12/26 17:32:41  ivanov
  * Move fAllowTransparentRead flag definition from CCompression class
  * to each compresson algorithm definition.
