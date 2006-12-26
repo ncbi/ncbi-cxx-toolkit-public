@@ -42,8 +42,8 @@ BEGIN_NCBI_SCOPE
 //
 
 CCompression::CCompression(ELevel level)
-    : m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr), m_Flags(0),
-      m_DecompressMode(eMode_Unknown)
+    : m_DecompressMode(eMode_Unknown),
+      m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr), m_Flags(0)
 {
     return;
 }
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/12/26 16:16:51  ivanov
+ * Get rid of compilation warning
+ *
  * Revision 1.12  2006/12/26 15:57:37  ivanov
  * Add a possibility to detect a fact that data in the buffer/file/stream
  * is uncompressed, and allow to use transparent reading (instead of
