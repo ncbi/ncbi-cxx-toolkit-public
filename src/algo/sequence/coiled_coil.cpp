@@ -219,8 +219,8 @@ void CCoiledCoil::x_PredictRegions(const vector<double>& scores,
                                    vector<CRef<CSeq_loc> >& regions,
                                    vector<double>& max_scores)
 {
-    bool in_a_run = 0;
-    TSeqPos begin, end;
+    bool in_a_run = false;
+    TSeqPos begin = 0, end;  // initialize to avoid compiler warning
     double max_score;  // max score for the run
     for (unsigned int i = 0;  i < scores.size();  i++) {
         if (CCoiledCoil::ScoreToProb(scores[i]) >= 0.5) {
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/12/26 20:53:00  jcherry
+ * Eliminated compiler warning
+ *
  * Revision 1.7  2006/12/19 22:04:48  jcherry
  * Eliminate compiler warning
  *
