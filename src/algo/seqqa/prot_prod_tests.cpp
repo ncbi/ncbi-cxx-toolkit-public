@@ -170,7 +170,7 @@ bool CTestProtProd_EntrezNeighbors::CanTest(const CSerialObject& obj,
     try {
         sequence::GetId(hand, sequence::eGetId_ForceGi).GetGi();
     }
-    catch (std::exception& e) {
+    catch (std::exception&) {
         return false;
     }
     return true;
@@ -230,7 +230,7 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
             index[neigh_subset[i]] = i;
         }
         unsigned int lowest_index = neigh_subset.size();
-        int first_gi;
+        int first_gi = 0;  // initialize to avoid compiler warning
         for (unsigned int i = 0;  i < sp_neigh.size();  ++i) {
             if (index[sp_neigh[i]] < lowest_index) {
                 lowest_index = index[sp_neigh[i]];
@@ -256,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/12/26 21:09:51  jcherry
+ * Eliminated compiler warnings
+ *
  * Revision 1.6  2006/07/12 13:58:46  jcherry
  * Run Entrez neigbors test only if the is is resolvable to a gi
  * (required for Entrez query)

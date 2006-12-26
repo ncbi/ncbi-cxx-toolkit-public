@@ -88,9 +88,9 @@ void AgpRead(CNcbiIstream& is,
     string current_object;
     CRef<CBioseq> bioseq;
     CRef<CSeq_inst> seq_inst;
-    int last_to;
-    int part_num, last_part_num;
-    TSeqPos length = 0;  // initialize to avoid compilation warning
+    int last_to = 0;                 // initialize to avoid compilation warning
+    int part_num, last_part_num = 0; //                "
+    TSeqPos length = 0;              //                "
 
     int line_num = 0;
     while (NcbiGetlineEOL(is, line)) {
@@ -303,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.20  2006/12/26 21:05:57  jcherry
+ * Eliminated compiler warnings
+ *
  * Revision 1.19  2006/10/10 19:34:33  jcherry
  * Support "repeat" gap type
  *
