@@ -380,9 +380,9 @@
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
                                           new TStreamCompressor(),
                                           CCompressionStream::fOwnProcessor);
-            assert(zip  &&  zip.good()  &&  stm.good());
+            assert((bool)zip  &&  zip.good()  &&  stm.good());
             zip.write(src_buf, kDataLen);
-            assert(zip  &&  zip.good()  &&  stm.good());
+            assert((bool)zip  &&  zip.good()  &&  stm.good());
             zip.Finalize(CCompressionStream::eWrite);
             assert(!zip.eof()  &&  zip.good());
             assert(!stm.eof()  &&  stm.good());
