@@ -59,6 +59,7 @@ CDBExceptionStorage::CDBExceptionStorage(void)
 {
 }
 
+
 CDBExceptionStorage::~CDBExceptionStorage(void) throw()
 {
     try {
@@ -69,12 +70,14 @@ CDBExceptionStorage::~CDBExceptionStorage(void) throw()
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
+
 void CDBExceptionStorage::Accept(CDB_Exception const& e)
 {
     CFastMutexGuard mg(m_Mutex);
 
     m_Exceptions.push_back(e.Clone());
 }
+
 
 void CDBExceptionStorage::Handle(CDBHandlerStack& handler)
 {
@@ -93,12 +96,24 @@ void CDBExceptionStorage::Handle(CDBHandlerStack& handler)
 }
 
 
+void CDBExceptionStorage::Handle(CDBHandlerStack& handler, const string& msg)
+{
+    if (msg.empty()) {
+        handler.SetExtraMsg(msg);
+    }
+
+    Handle(handler);
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/27 21:05:54  ssikorsk
+ * Implemented method CDBExceptionStorage::Handle().
+ *
  * Revision 1.3  2006/07/12 16:29:30  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
