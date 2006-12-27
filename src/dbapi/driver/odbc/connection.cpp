@@ -354,6 +354,9 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
         DATABASE_DRIVER_ERROR( err_message, 410003 );
     }
 
+    string extra_msg = "BCP Table: " + table_name;
+    m_Reporter.SetExtraMsg( extra_msg );
+
     CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(this, m_Link, table_name, nof_columns);
     return Create_BCPInCmd(*bcmd);
 #endif
@@ -1412,6 +1415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/12/27 21:17:54  ssikorsk
+ * Set context info in CODBC_Connection::BCPIn.
+ *
  * Revision 1.63  2006/12/26 17:42:18  ssikorsk
  * Revamp code to use CODBCContext::SetupErrorReporter().
  *
