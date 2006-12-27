@@ -791,19 +791,13 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     
     x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
                                       &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
-    x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
-                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
     LoopToAsn3(bsh.GetSeq_entry_Handle());
-    x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
-                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
                                           
     RemoveEmptyFeaturesDescriptorsAndAnnots(bsh);
     
     x_ChangeGenBankBlocks (bsh.GetParentEntry());
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
-    x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource, 
-                                      &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources);
 
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
@@ -1594,6 +1588,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.56  2006/12/27 20:18:40  bollin
+ * Removed steps for merging duplicate BioSource descriptors.
+ *
  * Revision 1.55  2006/12/27 19:18:19  bollin
  * Avoid creating empty Seqdesc sets, removed steps that merged duplicate biosource
  * descriptors (should all be handled in
