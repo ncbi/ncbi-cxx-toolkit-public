@@ -102,6 +102,16 @@ void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 }
 
 
+void CDBHandlerStack::SetExtraMsg(const string& msg)
+{
+    TContainer& s = m_Stack;
+    NON_CONST_ITERATE(TContainer, cit, s) {
+        if ( cit->NotNull() ) {
+            (*cit)->GetHandler()->SetExtraMsg(msg);
+        }
+    }
+}
+
 CDBHandlerStack::CDBHandlerStack(const CDBHandlerStack& s) :
 m_Stack( s.m_Stack )
 {
@@ -152,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/12/27 21:03:18  ssikorsk
+ * Implemented CDBHandlerStack::SetExtraMsg().
+ *
  * Revision 1.14  2006/06/22 18:39:50  ssikorsk
  * Changed CDBHandlerStack::Pushb to guard all objects with eNoOwnership.
  *
