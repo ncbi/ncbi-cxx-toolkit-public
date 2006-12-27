@@ -113,7 +113,7 @@ CDemoeApp::Run(void)
                 lcmd(con->LangCmd("CREATE TABLE BulkSample ("
                                   "id INT NOT NULL,"
                                   "ord INT NOT NULL,"
-                                  "mode TONYINT NOT NULL,"
+                                  "mode TINYINT NOT NULL,"
                                   "date DATETIME NOT NULL )"
                                   ));
             lcmd->Send();
@@ -194,6 +194,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/27 22:54:01  ssikorsk
+ * Fixed typo.
+ *
  * Revision 1.3  2006/08/31 18:46:11  ssikorsk
  * Get rid of unused variables.
  *
