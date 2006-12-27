@@ -320,9 +320,16 @@ private:
         CheckFunctCall();
         return rc;
     }
+    template <typename T>
+    T Check(T rc, const string& extra_msg)
+    {
+        CheckFunctCall(extra_msg);
+        return rc;
+    }
     RETCODE CheckDead(RETCODE rc);
 
     void CheckFunctCall(void);
+    void CheckFunctCall(const string& extra_msg);
 
 #ifdef FTDS_IN_USE
     /// Function name keept same as with ftds.
@@ -369,17 +376,27 @@ public:
 
     RETCODE Check(RETCODE rc)
     {
-        return GetConnection().Check(rc);
+        return GetConnection().Check(rc, GetExecCntxInfo());
     }
     void CheckFunctCall(void)
     {
-        GetConnection().CheckFunctCall();
+        GetConnection().CheckFunctCall(GetExecCntxInfo());
+    }
+
+    void SetExecCntxInfo(const string& info)
+    {
+        m_ExecCntxInfo = info;
+    }
+    const string& GetExecCntxInfo(void) const
+    {
+        return m_ExecCntxInfo;
     }
 
 protected:
     bool             m_HasFailed;
     bool             m_WasSent;
     int              m_RowCount;
+    string           m_ExecCntxInfo;
 
 private:
     CDBL_Connection* m_Connect;
@@ -1064,6 +1081,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/12/27 21:14:29  ssikorsk
+ * Added a member CDBL_Cmd::m_ExecCntxInfo.
+ *
  * Revision 1.52  2006/12/04 15:35:05  ssikorsk
  * - #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
  *
