@@ -59,6 +59,9 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     m_Cntx(&cntx),
     m_Handle(cntx, this)
 {
+    string extra_msg = " SERVER: " + conn_attr.srv_name + "; USER: " + conn_attr.user_name;
+    SetExtraMsg(extra_msg);
+
     GetCTLibContext().Check(ct_callback(NULL,
                            x_GetSybaseConn(),
                            CS_SET,
@@ -221,6 +224,14 @@ CTL_Connection::Check(CS_RETCODE rc)
 }
 
 
+CS_RETCODE
+CTL_Connection::Check(CS_RETCODE rc, const string& extra_msg)
+{
+    GetCTLExceptionStorage().Handle(GetMsgHandlers(), extra_msg);
+
+    return rc;
+}
+
 CS_RETCODE CTL_Connection::CheckSFB(CS_RETCODE rc,
                                     const char* msg,
                                     unsigned int msg_num)
@@ -293,6 +304,9 @@ CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
 {
     CS_COMMAND* cmd;
 
+    string extra_msg = "SQL Command: \"" + lang_query + "\"";
+    SetExtraMsg(extra_msg);
+
     x_CmdAlloc(&cmd);
 
     CTL_LangCmd* lcmd = new CTL_LangCmd(this, cmd, lang_query, nof_params);
@@ -304,6 +318,9 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
                                 unsigned int  nof_args)
 {
     CS_COMMAND* cmd;
+
+    string extra_msg = "RPC Command: " + rpc_name;
+    SetExtraMsg(extra_msg);
 
     x_CmdAlloc(&cmd);
 
@@ -322,6 +339,9 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
         DATABASE_DRIVER_ERROR( "blk_alloc failed", 110004 );
     }
 
+    string extra_msg = "BCP Table: " + table_name;
+    SetExtraMsg(extra_msg);
+
     CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(this, cmd, table_name, nof_columns);
     return Create_BCPInCmd(*bcmd);
 }
@@ -333,6 +353,10 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
                                       unsigned int  batch_size)
 {
     CS_COMMAND* cmd;
+
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
+        query + "\"";
+    SetExtraMsg(extra_msg);
 
     x_CmdAlloc(&cmd);
 
@@ -811,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/12/27 21:27:58  ssikorsk
+ * Revamp code to call SetExtraMsg().
+ *
  * Revision 1.49  2006/11/28 20:08:10  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *
