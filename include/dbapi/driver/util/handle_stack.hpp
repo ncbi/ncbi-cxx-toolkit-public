@@ -51,6 +51,7 @@ public:
 public:
     void Push(CDB_UserHandler* h, EOwnership ownership = eNoOwnership);
     void Pop (CDB_UserHandler* h, bool last = true);
+    void SetExtraMsg(const string& msg);
 
     void PostMsg(CDB_Exception* ex);
     // Return TRUE if exceptions have been successfully processed.
@@ -149,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/12/27 21:02:17  ssikorsk
+ * Added method SetExtraMsg() to CDBHandlerStack.
+ *
  * Revision 1.10  2006/06/22 18:30:37  ssikorsk
  * Added copy ctor and copy operator to CDBHandlerStack::CUserHandlerWrapper::CObjGuard.
  *
