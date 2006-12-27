@@ -126,6 +126,13 @@ void CDriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
     }
 }
 
+
+void CDriverContext::SetExtraMsg(const string& msg)
+{
+    GetCtxHandlerStack().SetExtraMsg(msg);
+}
+
+
 void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 {
     CMutexGuard mg(m_CtxMtx);
@@ -482,6 +489,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/27 21:08:03  ssikorsk
+ * Implemented method CDriverContext::SetExtraMsg().
+ *
  * Revision 1.5  2006/12/15 16:41:37  ssikorsk
  * Replaced CFastMutex with CMutex. Improved thread-safety.
  *
