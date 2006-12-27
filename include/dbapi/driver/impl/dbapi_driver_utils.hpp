@@ -54,6 +54,7 @@ private:
 public:
     void Accept(const CDB_Exception& e);
     void Handle(CDBHandlerStack& handler);
+    void Handle(CDBHandlerStack& handler, const string& msg);
 
 private:
     CFastMutex                      m_Mutex;
@@ -109,6 +110,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/27 21:05:07  ssikorsk
+ * Added method Handle(CDBHandlerStack& handler, const string& msg)
+ * to CDBExceptionStorage.
+ *
  * Revision 1.2  2006/07/12 16:28:48  ssikorsk
  * Separated interface and implementation of CDB classes.
  *
