@@ -346,7 +346,7 @@ int CDUpdater::submitBlast(bool wait, int row)
 		
 	if (blasted)
 	{
-		LOG_POST("RID of Blast for updating"<<m_cd->GetAccession()<<" is "<<getRid());
+		LOG_POST("RID of Blast for updating "<<m_cd->GetAccession()<<" is "<<getRid());
 	}
 	else
 	{
@@ -372,7 +372,7 @@ bool CDUpdater::processBlastHits()
 	{
 		updated = true;
 		update(m_cd, *m_hits);
-		LOG_POST("Stats of Updating "<<m_cd->GetAccession()<< ":\n"<<getStats().toString());
+		//LOG_POST("Stats of Updating "<<m_cd->GetAccession()<< ":\n"<<getStats().toString());
 		unsigned numNoAlignment = getStats().badAlign.size();
 		if (numNoAlignment > 0)
 			LOG_POST("There are "<<numNoAlignment
@@ -445,7 +445,7 @@ bool CDUpdater::blast(bool wait, int row)
 		blastopt->SetHitlistSize(m_config.numHits);
 	if (m_config.evalue > 0)
 		blastopt->SetEvalueThreshold(m_config.evalue);
-	if (m_config.identityThreshold > 0)
+	if (m_config.identityThreshold > 0) //does not seem to do anything with RemoteBlast
 		blastopt->SetPercentIdentity((double)m_config.identityThreshold);
 	rblast->SetDatabase(CdUpdateParameters::getBlastDatabaseName(m_config.database));
 
@@ -537,7 +537,7 @@ bool CDUpdater::blast(bool wait, int row)
 		{
 			blasted = rblast-> SubmitSync();
 			m_rid = rblast->GetRID();
-			LOG_POST("RID="<<m_rid);
+			//LOG_POST("RID="<<m_rid);
 			getBlastHits();
 		}
 		blasted = rblast->Submit();
@@ -605,7 +605,7 @@ bool CDUpdater::checkBlastAndUpdate()
 		{
 			update(m_cd, *seqAligns);
 			SetUpdateDate(m_cd);
-			LOG_POST("Stats of Updating "<<m_cd->GetAccession()<<" are "<<getStats().toString());
+			//LOG_POST("Stats of Updating "<<m_cd->GetAccession()<<" are "<<getStats().toString());
 			unsigned numNoAlignment = getStats().badAlign.size();
 			if (numNoAlignment > 0)
 				LOG_POST("There are hits whose alignments do not overlap with the CD.  This may indicate there are long insert to the CD alignment.  You find the GIs for those hits in the log\n");
@@ -629,7 +629,7 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	list< CRef< CSeq_align > >& seqAligns = alignments.Set();
 	m_stats.numBlastHits = seqAligns.size();
 	vector< CRef< CBioseq > > bioseqs;
-	LOG_POST("Got "<<m_stats.numBlastHits<<" blast hits. Start to retrieve sequence data.");
+	LOG_POST("Got "<<m_stats.numBlastHits<<" blast hits.");
 	retrieveAllSequences(alignments, bioseqs);
 	SequenceTable seqTable;
 	CDRefresher* refresher = 0;
@@ -644,8 +644,8 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	}
 	//debug
 	//seqTable.dump("seqTable.txt");
-	LOG_POST("Retrieved "<<bioseqs.size()<<" Bioseqs for blast hits\n"); 
-	LOG_POST("Process BLAST Hits and add them to "<<cd->GetAccession());
+	//LOG_POST("Retrieved "<<bioseqs.size()<<" Bioseqs for blast hits\n"); 
+	//LOG_POST("Process BLAST Hits and add them to "<<cd->GetAccession());
 	int completed = 0;
 	list< CRef< CSeq_align > >::iterator it = seqAligns.begin();
 	//CID1Client id1Client;
@@ -669,6 +669,13 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	for(; it != seqAligns.end(); it++)
 	{
 		CRef< CSeq_align > seqAlignRef = *it;
+		if (m_config.identityThreshold > 0)
+		{
+			double pidScore = 0.0;
+			seqAlignRef->GetNamedScore(CSeq_align::eScore_IdentityCount, pidScore);
+			if ((int)pidScore < m_config.identityThreshold)
+				break; //stop
+		}
 		//seqAlign from BLAST is in Denseg
 		CSeq_align::C_Segs::TDenseg& denseg = (*it)->SetSegs().SetDenseg();
 		//the second is slave
@@ -755,11 +762,11 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 				break;
 		}
 		if ((completed % 500) == 0)
-			LOG_POST("Added "<<completed<<" of "<<m_stats.numBlastHits<<" hits.");
+			LOG_POST("Processed "<<completed<<" of "<<m_stats.numBlastHits<<" hits.");
 	}
 
     //  always keep normal rows w/ automatic NR
-    LOG_POST("Finishing adding hits to "<<cd->GetAccession());
+    LOG_POST("Finishing processing hits for "<<cd->GetAccession());
 	/*
 	if(m_config.nonRedundify)
 	{
@@ -1163,16 +1170,16 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 			string errors, warnings;
 			vector< CRef< CBioseq > > bioseqBatch;
 			try {
-				LOG_POST("Calling RemoteBlast::GetSequences().\n");
+				//LOG_POST("Calling RemoteBlast::GetSequences().\n");
 				CRemoteBlast::GetSequences(seqids, "nr", 'p', bioseqBatch, errors,warnings);
-				LOG_POST("Returned from RemoteBlast::GetSequences().\n");
+				//LOG_POST("Returned from RemoteBlast::GetSequences().\n");
 			}
 			catch (blast::CBlastException& be)
 			{
 				if (seqids.size() > maxBatchSize)
 				{
 					seqids.clear(); //give up on retrieving sequence on these hits.
-					LOG_POST("Retrieving sequences from RemoteBlast failed after repeated tries. Giving up on these %d blast hits");
+					//LOG_POST("Retrieving sequences from RemoteBlast failed after repeated tries. Giving up on these %d blast hits");
 				}
 				else
 					LOG_POST("Retrieving sequences from RemoteBlast failed with an exception of "<<be.GetErrCodeString());
