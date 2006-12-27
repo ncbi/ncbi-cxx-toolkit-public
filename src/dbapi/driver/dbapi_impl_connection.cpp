@@ -228,6 +228,13 @@ CConnection::GetClientEncoding(void) const
 }
 
 
+void
+CConnection::SetExtraMsg(const string& msg)
+{
+    GetMsgHandlers().SetExtraMsg(msg);
+}
+
+
 END_SCOPE(impl)
 
 END_NCBI_SCOPE
@@ -235,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/12/27 21:10:50  ssikorsk
+ * Implemented method CConnection::SetExtraMsg().
+ *
  * Revision 1.7  2006/10/26 18:14:50  ssikorsk
  * + CConnection::GetClientEncoding()
  *
