@@ -421,6 +421,18 @@ public:
 
     // d-tor
     virtual ~CDB_UserHandler();
+
+    const string& GetExtraMsg(void) const
+    {
+        return m_ExtraMsg;
+    }
+    void SetExtraMsg(const string& msg)
+    {
+        m_ExtraMsg = msg;
+    }
+
+private:
+    string  m_ExtraMsg;
 };
 
 
@@ -517,6 +529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/12/27 21:00:34  ssikorsk
+ * Added member m_ExtraMsg and a getter/setter to CDB_UserHandler.
+ *
  * Revision 1.32  2006/09/14 18:51:56  ssikorsk
  * CDB_Exception: fixed methods Type and Clone.
  *
