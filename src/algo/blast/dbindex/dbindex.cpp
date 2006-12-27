@@ -80,7 +80,6 @@ CDbIndex::SOptions CDbIndex::DefaultSOptions()
         UNCOMPRESSED,           // no compression of offset lists
         WIDTH_32,               // 32-bit index
         FASTA,                  // FastA input
-        CHUNKS,                 // allow sequences to be split between index volumes
         12,                     // default Nmer size
         MAX_DBSEQ_LEN,          // defined by BLAST
         DBSEQ_CHUNK_OVERLAP,    // defined by BLAST

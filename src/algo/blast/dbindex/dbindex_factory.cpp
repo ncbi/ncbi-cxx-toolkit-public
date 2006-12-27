@@ -192,6 +192,12 @@ class CSubjectMap_Base
         /** Container type used to store compressed sequence information. */
         typedef std::vector< Uint1 > TSeqStore;
 
+        /** Increment used to increase seqstore capacity. */
+        static const TSeqStore::size_type SS_INCR = 100*1024*1024;
+
+        /** Threshold for the difference between seqstore size and capacity. */
+        static const TSeqStore::size_type SS_THRESH = 10*1024*1024;
+
         /** Type for storing mapping from subject oids to the chunk numbers. */
         typedef std::vector< TSeqNum > TSubjects;
 
@@ -309,6 +315,7 @@ class CSubjectMap_Base
         TSeq c_seq_;                            /**< Sequence data of the sequence currently being processed. */
         CRef<objects::CObjectManager> om_;      /**< Reference to the ObjectManager instance. */
         TSeqStore seq_store_;                   /**< Container for storing the packed sequence data. */
+        TSeqStore::size_type ss_cap_;           /**< Current seq_store capacity. */
         TSubjects subjects_;                    /**< Mapping from subject oid to chunk information. */
         CRef< CMaskHelper > mask_helper_;       /**< Auxiliary object used to compute unmasked parts of the sequences. */
 
@@ -327,6 +334,7 @@ class CSubjectMap_Base
               committed_( 0 ), last_chunk_( 0 ),
               om_( objects::CObjectManager::GetInstance() ),
               seq_store_( STRIDE, 0 ),
+              ss_cap_( SS_INCR ),
               mask_helper_( null )
         {}
 
@@ -352,26 +360,11 @@ class CSubjectMap_Base
         void NewSequenceInit( TSeqData & sd, TSeqNum start_chunk );
 };
 
-/** Template declaration for the family of subject map classes.
-    The correct specialization of this class is selected based on
-    the options given to the index creation procedure.
-    @param word_t type of the natural machine word. Used to support
-                  32 and 64 bit wide indices.
-    @param OFF_TYPE offset representation. This parameter controls
-                    how the offset information is encoded in the
-                    offset lists.
-*/
-template< typename word_t, unsigned long OFF_TYPE >
-class CSubjectMap {};
-
-/** Specialization of CSubjectMap for raw offsets.
-    Raw offsets do not contain subject id information encoded into
-    the offset data. This means that a variant of a binary search
-    is needed to lookup the subject information for a given raw 
-    offset.
+/** Part of the subject map that depends on the word type.
+    @param word_t type of the natural machine word.
 */
 template< typename word_t >
-class CSubjectMap< word_t, OFFSET_RAW > : public CSubjectMap_Base
+class CSubjectMap_TBase : public CSubjectMap_Base
 {
     public:
 
@@ -383,7 +376,7 @@ class CSubjectMap< word_t, OFFSET_RAW > : public CSubjectMap_Base
                                  chunks of one input sequence
             @param report_level [I]     level of progress reporting requested by the user
         */
-        CSubjectMap( 
+        CSubjectMap_TBase( 
                 unsigned long chunk_size, 
                 unsigned long chunk_overlap,
                 unsigned long report_level ) 
@@ -397,16 +390,17 @@ class CSubjectMap< word_t, OFFSET_RAW > : public CSubjectMap_Base
 
         /** Append the next chunk of the input sequence currently being
             processed to the subject map.
+
+            This function only computes the valid segments and decides whether
+            iteration over chunks is complete.
+
             The return value of false should be used as iteration termination
             condition.
+
+            @param seq_off The start of the chunk data.
             @return true for success; false if no more chunks were available
         */
-        bool AddSequenceChunk();
-
-        /** Remove information about the last added chunk from the 
-            subject map.
-        */
-        void DelLastChunk();
+        bool AddSequenceChunk( TSeqStore::size_type seq_off );
 
         /** Finalize processing of the current input sequence.
         */
@@ -431,22 +425,7 @@ class CSubjectMap< word_t, OFFSET_RAW > : public CSubjectMap_Base
         */
         TSeqNum LastGoodSequence() const { return last_chunk_; }
 
-        /** Encode an offset given a pointer to the compressed sequence
-            data and relative offset.
-            @param seq start of the buffer containing the compressed sequence
-            @param off offset relative to the start of seq
-            @return encoded offset that can be added to an offset list
-        */
-        TWord MakeOffset( const Uint1 * seq, TSeqPos off ) const;
-
-        /** Encode an offset given an internal oid and relative offset.
-            @param seq internal oid of a sequence
-            @param off offset relative to the start of seq
-            @return encoded offset that can be added to an offset list
-        */
-        TWord MakeOffset( TSeqNum seq, TSeqPos off ) const;
-
-    private:
+    protected:
 
         /** Information about the sequence chunk. */
         struct SSeqInfo
@@ -511,6 +490,195 @@ class CSubjectMap< word_t, OFFSET_RAW > : public CSubjectMap_Base
             current input sequence.
         */
         void RollBack();
+};
+
+/** Subject map parts dependent on offset encoding. 
+    @param word_t type representing the natural machine word
+    @param OFF_TYPE type of offset encoding
+*/
+template< typename word_t, unsigned long OFF_TYPE >
+class CSubjectMap {};
+
+/** Specialization of CSubjectMap for raw ofset encoding. */
+template< typename word_t >
+class CSubjectMap< word_t, OFFSET_RAW > 
+    : public CSubjectMap_TBase< word_t >
+{
+    /** Base class template. */
+    typedef CSubjectMap_TBase< word_t > TBase;
+
+    /** @name Aliases to the names from the base class. */
+    /**@{*/
+    typedef typename TBase::TSeqNum TSeqNum;
+    typedef typename TBase::TSeqData TSeqData;
+    /**@}*/
+
+    public:
+
+        /** Alias to the name from the base class. */
+        typedef typename TBase::TWord TWord;
+
+        /** Object constructor.
+            @param chunk_size maximum internal sequecnce size
+            @param chunk_overlap amount of overlap between consecutive
+                                 chunks of one input sequence
+            @param report_level [I]     level of progress reporting requested by the user
+        */
+        CSubjectMap( 
+                unsigned long chunk_size, 
+                unsigned long chunk_overlap,
+                unsigned long report_level )
+            : TBase( chunk_size, chunk_overlap, report_level )
+        {}
+
+        /** Check if index information should be produced for this offset.
+            
+            Typically it computes the full offset in way typical for the
+            corresponding version of index and checks if it is a multiple
+            of STRIDE.
+
+            @param seq Start of the buffer containing the compressed sequence.
+            @param off Offset relative to the start of seq.
+            @return true if information about this offset should be in the index;
+                    false otherwise.
+        */
+        bool CheckOffset( const Uint1 * seq, TSeqPos off ) const;
+
+        /** Encode an offset given a pointer to the compressed sequence
+            data and relative offset.
+            @param seq start of the buffer containing the compressed sequence
+            @param off offset relative to the start of seq
+            @return encoded offset that can be added to an offset list
+        */
+        TWord MakeOffset( const Uint1 * seq, TSeqPos off ) const;
+
+        /** Encode an offset given an internal oid and relative offset.
+            @param seq internal oid of a sequence
+            @param off offset relative to the start of seq
+            @return encoded offset that can be added to an offset list
+        */
+        TWord MakeOffset( TSeqNum seq, TSeqPos off ) const;
+
+        /** Append the next chunk of the input sequence currently being
+            processed to the subject map.
+            The return value of false should be used as iteration termination
+            condition.
+            @return true for success; false if no more chunks were available
+        */
+        bool AddSequenceChunk();
+};
+
+template< typename word_t >
+class CSubjectMap< word_t, OFFSET_COMBINED >
+    : public CSubjectMap_TBase< word_t >
+{
+    /** Base class template. */
+    typedef CSubjectMap_TBase< word_t > TBase;
+
+    /** @name Aliases to the names from the base class. */
+    /**@{*/
+    typedef typename TBase::TSeqNum TSeqNum;
+    typedef typename TBase::TSeqData TSeqData;
+    /**@}*/
+
+    public:
+
+        /** Alias to the name from the base class. */
+        typedef typename TBase::TWord TWord;
+
+    private:
+
+        /** Type of lengths table. */
+        typedef vector< TWord > TLengthTable;
+
+        /** Element of mapping of local sequence ids to chunks. */
+        struct SLIdMapElement
+        {
+            TSeqNum start_;     /**< First chunk. */
+            TSeqNum end_;       /**< One past the last chunk. */
+            TSeqPos seq_start_; /**< Start of the combined sequence in seq_store. */
+            TSeqPos seq_end_;   /**< End of the combined sequence in seq_store. */
+        };
+
+        /** Type of mapping of local sequence ids to chunks. */
+        typedef vector< SLIdMapElement > TLIdMap;
+
+    public:
+
+        /** Object constructor.
+            @param chunk_size maximum internal sequecnce size
+            @param chunk_overlap amount of overlap between consecutive
+                                 chunks of one input sequence
+            @param report_level [I]     level of progress reporting requested by the user
+        */
+        CSubjectMap( 
+                unsigned long chunk_size, 
+                unsigned long chunk_overlap,
+                unsigned long report_level );
+
+        /** Start processing of the new input sequence.
+
+            In addition to base class functionality this function adds
+            an entry to the lengths table.
+
+            @param sd new input sequence data
+            @param start_chunk only store data related to chunks numbered
+                               higher than the value of this parameter
+        */
+        void NewSequenceInit( TSeqData & sd, TSeqNum start_chunk )
+        {
+            TBase::NewSequenceInit( sd, start_chunk );
+            lengths_.push_back( this->c_seq_.size() );
+        }
+
+        /** Append the next chunk of the input sequence currently being
+            processed to the subject map.
+            The return value of false should be used as iteration termination
+            condition.
+            @return true for success; false if no more chunks were available
+        */
+        bool AddSequenceChunk();
+
+        /** Check if index information should be produced for this offset.
+            
+            Typically it computes the full offset in way typical for the
+            corresponding version of index and checks if it is a multiple
+            of STRIDE.
+
+            @param seq Start of the buffer containing the compressed sequence.
+            @param off Offset relative to the start of seq.
+            @return true if information about this offset should be in the index;
+                    false otherwise.
+        */
+        bool CheckOffset( const Uint1 * seq, TSeqPos off ) const;
+
+        /** Encode an offset given a pointer to the compressed sequence
+            data and relative offset.
+            @param seq start of the buffer containing the compressed sequence
+            @param off offset relative to the start of seq
+            @return encoded offset that can be added to an offset list
+        */
+        TWord MakeOffset( const Uint1 * seq, TSeqPos off ) const;
+
+        /** Encode an offset given an internal oid and relative offset.
+            @param seq internal oid of a sequence
+            @param off offset relative to the start of seq
+            @return encoded offset that can be added to an offset list
+        */
+        TWord MakeOffset( TSeqNum seq, TSeqPos off ) const;
+
+        /** Save the subject map and sequence info.
+            @param os output stream open in binary mode
+            @param version index format version
+        */
+        void Save( CNcbiOstream & os, unsigned long version ) const;
+
+    private:
+
+        TLengthTable lengths_;  /**< The table of subject sequence lengths. */
+        TLIdMap lid_map_;       /**< Maping of local sequence ids to chunks. */
+        TSeqPos cur_lid_len_;   /**< Current length of local sequence. */
+        Uint1 offset_bits_;     /**< Number of bits used to encode offset. */
 };
 
 //-------------------------------------------------------------------------
@@ -662,7 +830,7 @@ void CSubjectMap_Base::NewSequenceInit(
 
 //-------------------------------------------------------------------------
 template< typename word_t >
-void CSubjectMap< word_t, OFFSET_RAW >::Save( 
+void CSubjectMap_TBase< word_t >::Save( 
         CNcbiOstream & os, unsigned long version ) const
 {
     TWord tmp = subjects_.size();
@@ -693,25 +861,22 @@ void CSubjectMap< word_t, OFFSET_RAW >::Save(
 
 //-------------------------------------------------------------------------
 template< typename word_t >
-bool CSubjectMap< word_t, OFFSET_RAW >::AddSequenceChunk()
+bool CSubjectMap_TBase< word_t >::AddSequenceChunk( 
+        TSeqStore::size_type seq_off )
 {
     TSeqPos chunk_start = (chunk_size_ - chunk_overlap_)*(c_chunk_++);
-    TSeq::size_type seqlen = c_seq_.size();
 
-    if( chunk_start >= seqlen ) {
+    if( chunk_start >= c_seq_.size() ) {
         --c_chunk_;
         return false;
     }
 
-    TSeqStore::size_type seq_off = seq_store_.size();
     TSeqPos chunk_end = 
         std::min( (TSeqPos)(chunk_start + chunk_size_), c_seq_.size() );
     TSeqPos chunk_len = chunk_end - chunk_start;
     typename SSeqInfo::TSegs segs;
 
     if( chunk_len > 0 ) {
-        seq_store_.reserve( seq_store_.size() + (chunk_len - 1)/CR + 1 );
-        Uint1 accum = 0;
         unsigned int lc = 0;
         bool in = false, in1;
         mask_helper_->Adjust( chunk_start );
@@ -725,12 +890,6 @@ bool CSubjectMap< word_t, OFFSET_RAW >::AddSequenceChunk()
             }else {
                 in1 = false;
                 --letter;
-            }
-
-            accum = (accum << 2) + letter;
-
-            if( lc == 3 ) {
-                seq_store_.push_back( accum );
             }
 
             in1 = (in1 || mask_helper_->In( pos ));
@@ -755,19 +914,10 @@ bool CSubjectMap< word_t, OFFSET_RAW >::AddSequenceChunk()
 
             segs.rbegin()->stop_ = chunk_end - chunk_start;
         }
-
-        if( lc != 0 ) {
-            accum <<= (CR - lc)*2;
-            seq_store_.push_back( accum );
-        }
-
-        while( seq_store_.size()%STRIDE != 0 ) {
-            seq_store_.push_back( 0 );
-        }
     }
 
     chunks_.push_back( 
-            TSeqInfo( seq_off, seqlen, segs ) );
+            TSeqInfo( seq_off, c_seq_.size(), segs ) );
     
     if( *subjects_.rbegin() == 0 ) {
         *subjects_.rbegin() = chunks_.size();
@@ -786,7 +936,7 @@ bool CSubjectMap< word_t, OFFSET_RAW >::AddSequenceChunk()
 
 //-------------------------------------------------------------------------
 template< typename word_t >
-void CSubjectMap< word_t, OFFSET_RAW >::RollBack()
+void CSubjectMap_TBase< word_t >::RollBack()
 {
     CProgressReporter( REPORT_VERBOSE, report_level_ ) << "ROLLBACK: ";
 
@@ -802,27 +952,7 @@ void CSubjectMap< word_t, OFFSET_RAW >::RollBack()
 
 //-------------------------------------------------------------------------
 template< typename word_t >
-void CSubjectMap< word_t, OFFSET_RAW >::DelLastChunk()
-{
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) << "DC: ";
-
-    if( !subjects_.empty() ) {
-        if( *subjects_.rbegin() == chunks_.size() ) {
-            RollBack();
-        }else {
-            last_chunk_ = chunks_.size() - 1;
-            --c_chunk_;
-            CProgressReporter( REPORT_VERBOSE, report_level_ ) 
-                << last_chunk_;
-        }
-    }
-
-    CProgressReporter( REPORT_VERBOSE, report_level_ ) << "\n";
-}
-
-//-------------------------------------------------------------------------
-template< typename word_t >
-void CSubjectMap< word_t, OFFSET_RAW >::Commit()
+void CSubjectMap_TBase< word_t >::Commit()
 {
     if( last_chunk_ < chunks_.size() ) {
         TSeqStore::size_type newsize = 
@@ -839,17 +969,208 @@ void CSubjectMap< word_t, OFFSET_RAW >::Commit()
 
 //-------------------------------------------------------------------------
 template< typename word_t >
-inline word_t CSubjectMap< word_t, OFFSET_RAW >::MakeOffset(
-        const Uint1 * seq, TSeqPos off ) const
-{ return MIN_OFFSET + (CR*((TWord)(seq - &seq_store_[0])) + off)/STRIDE; }
+bool CSubjectMap< word_t, OFFSET_RAW >::AddSequenceChunk()
+{
+    TSeqPos chunk_start = 
+        (this->chunk_size_ - this->chunk_overlap_)*(this->c_chunk_);
+    TSeqPos chunk_end = 
+        std::min( (TSeqPos)(chunk_start + this->chunk_size_), 
+                  this->c_seq_.size() );
+    TSeqPos chunk_len = chunk_end - chunk_start;
+    typename TBase::TSeqStore::size_type seq_off = this->seq_store_.size();
+    if( !TBase::AddSequenceChunk( seq_off ) ) return false;
+
+    if( chunk_len > 0 ) {
+        if( this->ss_cap_ <= this->seq_store_.size() + TBase::SS_THRESH ) {
+            this->ss_cap_ += TBase::SS_INCR; 
+            this->seq_store_.reserve( this->ss_cap_ );
+        }
+
+        Uint1 accum = 0;
+        unsigned int lc = 0;
+
+        for( TSeqPos pos = chunk_start; 
+                pos < chunk_end; ++pos, lc = (lc + 1)%CR ) {
+            Uint1 letter = base_value( this->c_seq_[pos] );
+            if( letter != 0 ) --letter;
+            accum = (accum << 2) + letter;
+            if( lc == 3 ) this->seq_store_.push_back( accum );
+        }
+
+        if( lc != 0 ) {
+            accum <<= (CR - lc)*2;
+            this->seq_store_.push_back( accum );
+        }
+
+        while( this->seq_store_.size()%STRIDE != 0 ) {
+            this->seq_store_.push_back( 0 );
+        }
+    }
+
+    report_progress( REPORT_NORMAL, this->report_level_, "+" );
+    return true;
+}
 
 //-------------------------------------------------------------------------
 template< typename word_t >
-inline word_t CSubjectMap< word_t, OFFSET_RAW >::MakeOffset(
+inline bool CSubjectMap< word_t, OFFSET_RAW >::CheckOffset(
+        const Uint1 * , TSeqPos off ) const
+{ return (off%STRIDE == 0); }
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+inline typename CSubjectMap< word_t, OFFSET_RAW >::TWord 
+CSubjectMap< word_t, OFFSET_RAW >::MakeOffset(
+        const Uint1 * seq, TSeqPos off ) const
+{ return MIN_OFFSET + (CR*((TWord)(seq - &(this->seq_store_)[0])) + off)/STRIDE; }
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+inline typename CSubjectMap< word_t, OFFSET_RAW >::TWord 
+CSubjectMap< word_t, OFFSET_RAW >::MakeOffset(
         TSeqNum seqnum, TSeqPos off ) const
 {
-    const Uint1 * seq = &seq_store_[0] + chunks_[seqnum].seq_start_;
+    const Uint1 * seq = 
+        &(this->seq_store_)[0] + (this->chunks_)[seqnum].seq_start_;
     return MakeOffset( seq, off );
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+CSubjectMap< word_t, OFFSET_COMBINED >::CSubjectMap( 
+        unsigned long chunk_size, unsigned long chunk_overlap,
+        unsigned long report_level ) 
+    : TBase( chunk_size, chunk_overlap, report_level ),
+      cur_lid_len_( 0 ), offset_bits_( 16 )
+{
+    unsigned long max_len = (1 + chunk_size/5) + MIN_OFFSET;
+    while( (max_len>>offset_bits_) != 0 ) ++offset_bits_;
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+bool CSubjectMap< word_t, OFFSET_COMBINED >::AddSequenceChunk()
+{
+    bool starting = (this->c_chunk_ == 0);
+    TSeqPos chunk_start = 
+        (this->chunk_size_ - this->chunk_overlap_)*this->c_chunk_;
+    typename TBase::TSeqStore::size_type seq_off = 
+        starting ? this->seq_store_.size() :
+                   this->chunks_.rbegin()->seq_start_
+                   + (this->chunk_size_ - this->chunk_overlap_)/CR;
+    if( !TBase::AddSequenceChunk( seq_off ) ) return false;
+    typename TBase::TSeq::size_type seqlen = this->c_seq_.size();
+    
+    // Combining sequences.
+    //
+    TSeqPos length_limit = (1<<(offset_bits_ - 1));
+    TSeqPos chunk_end = std::min( 
+            (TSeqPos)(chunk_start + this->chunk_size_), seqlen );
+    TSeqPos chunk_len = chunk_end - chunk_start;
+    
+    if( lid_map_.empty() || cur_lid_len_ + chunk_len > length_limit ) {
+        SLIdMapElement newlid = { this->chunks_.size() - 1, 0, seq_off };
+        lid_map_.push_back( newlid );
+        report_progress( REPORT_NORMAL, this->report_level_, "." );
+        cur_lid_len_ = 0;
+    }
+
+    lid_map_.rbegin()->end_ = this->chunks_.size();
+    cur_lid_len_ += chunk_len;
+    lid_map_.rbegin()->seq_end_ = 
+        lid_map_.rbegin()->seq_start_ + cur_lid_len_;
+    
+    if( starting && seqlen > 0 ) {
+        if( this->ss_cap_ <= this->seq_store_.size() + TBase::SS_THRESH ) {
+            this->ss_cap_ += TBase::SS_INCR; 
+            this->seq_store_.reserve( this->ss_cap_ );
+        }
+        Uint1 accum = 0;
+        unsigned int lc = 0;
+
+        for( TSeqPos pos = 0; pos < seqlen; ++pos, lc = (lc + 1)%CR ) {
+            Uint1 letter = base_value( this->c_seq_[pos] );
+            if( letter != 0 ) --letter;
+            accum = (accum << 2) + letter;
+            if( lc == 3 ) this->seq_store_.push_back( accum );
+        }
+
+        if( lc != 0 ) {
+            accum <<= (CR - lc)*2;
+            this->seq_store_.push_back( accum );
+        }
+    }
+
+    return true;
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+inline bool CSubjectMap< word_t, OFFSET_COMBINED >::CheckOffset(
+        const Uint1 * seq, TSeqPos off ) const
+{
+    TSeqPos soff = seq - &(this->seq_store_[0]);
+    typename TLIdMap::const_reverse_iterator iter = lid_map_.rbegin();
+    while( iter != lid_map_.rend() && iter->seq_start_ > soff ) ++iter;
+    ASSERT( iter->seq_start_ <= soff );
+    off += (soff - iter->seq_start_)*CR;
+    return (off%STRIDE == 0);
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+inline typename CSubjectMap< word_t, OFFSET_COMBINED >::TWord 
+CSubjectMap< word_t, OFFSET_COMBINED >::MakeOffset(
+        const Uint1 * seq, TSeqPos off ) const
+{
+    TSeqPos soff = seq - &(this->seq_store_[0]);
+    typename TLIdMap::const_reverse_iterator iter = lid_map_.rbegin();
+    while( iter != lid_map_.rend() && iter->seq_start_ > soff ) ++iter;
+    ASSERT( iter->seq_start_ <= soff );
+    off += (soff - iter->seq_start_)*CR;
+    off /= STRIDE;
+    off += MIN_OFFSET;
+    TWord result = ((lid_map_.rend() - iter - 1)<<offset_bits_) + off;
+    return result;
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+inline typename CSubjectMap< word_t, OFFSET_COMBINED >::TWord 
+CSubjectMap< word_t, OFFSET_COMBINED >::MakeOffset(
+        TSeqNum seqnum, TSeqPos off ) const
+{
+    const Uint1 * seq = 
+        &(this->seq_store_)[0] + (this->chunks_)[seqnum].seq_start_;
+    return MakeOffset( seq, off );
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+void CSubjectMap< word_t, OFFSET_COMBINED >::Save( 
+        CNcbiOstream & os, unsigned long version ) const
+{
+    TWord sz = sizeof( TWord )*lengths_.size();
+    WriteWord( os, sz );
+    WriteWord( os, (TWord)offset_bits_ );
+
+    for( typename TLengthTable::const_iterator it = lengths_.begin();
+            it != lengths_.end(); ++it ) {
+        WriteWord( os, (TWord)(*it) );
+    }
+
+    sz = 4*sizeof( TWord )*lid_map_.size();
+    WriteWord( os, sz );
+
+    for( typename TLIdMap::const_iterator it = lid_map_.begin();
+            it != lid_map_.end(); ++it ) {
+        WriteWord( os, (TWord)(it->start_) );
+        WriteWord( os, (TWord)(it->end_) );
+        WriteWord( os, (TWord)(it->seq_start_) );
+        WriteWord( os, (TWord)(it->seq_end_) );
+    }
+
+    TBase::Save( os, version );
 }
 
 //-------------------------------------------------------------------------
@@ -916,7 +1237,7 @@ inline void COffsetList< word_t, UNCOMPRESSED >::Save(
             WriteWord( os, *cit );
         }
     }
-    else if( version == 4 ) {
+    else if( version >= 4 ) {
         for( typename TData::const_iterator cit = data_.begin(); 
                 cit != data_.end(); ++cit ) {
             if( *cit < MIN_OFFSET ) {
@@ -1210,7 +1531,7 @@ void COffsetData< word_t, subject_map_t, COMPRESSION >::AddSeqSeg(
         nmer = ((nmer<<2)&nmer_mask) + letter;
 
         if( count >= hkey_width_ - 1 ) {
-            if( curr%STRIDE == 0 ) {
+            if( subject_map_.CheckOffset( seq, curr ) ) {
                 TWord offset = subject_map_.MakeOffset( seq, curr );
                 EncodeAndAddOffset( nmer, start, stop, curr, offset );
             }
@@ -1268,7 +1589,6 @@ void COffsetData< word_t, subject_map_t, COMPRESSION >::Update()
             << "AS: " << last_seq_ + 1 << "\n";
         AddSeqInfo( *sinfo );
         ++last_seq_;
-        report_progress( REPORT_NORMAL, report_level_, "+" );
     }
 }
 
@@ -1370,7 +1690,7 @@ void CDbIndex_Factory< WIDTH >::SaveHeader(
                 TSeqNum stop,
                 TSeqNum stop_chunk )
 {
-    ASSERT( version == 1 || version == 2 || version == 3 || version == 4 );
+    ASSERT( version >= 1 && version < 6 );
 
     switch( version ) {
         case 1:
@@ -1387,7 +1707,7 @@ void CDbIndex_Factory< WIDTH >::SaveHeader(
         os << std::flush;
         break;
 
-        case 2: case 3: case 4:
+        case 2: case 3: case 4: case 5:
 
         {
             WriteWord( os, (unsigned char)version );
@@ -1441,6 +1761,13 @@ void CDbIndex_Factory< WIDTH >::do_create(
         case 1: case 2: case 3: case 4:
 
             do_create_1_2< OFF_TYPE, COMPRESSION >(
+                input, oname, start, start_chunk, 
+                stop, stop_chunk, options );
+            break;
+
+        case 5:
+
+            do_create_1_2< OFFSET_COMBINED, COMPRESSION >(
                 input, oname, start, start_chunk, 
                 stop, stop_chunk, options );
             break;
@@ -1499,12 +1826,7 @@ void CDbIndex_Factory< WIDTH >::do_create_1_2(
                 sizeof( TWord )*offset_data.total();
 
             if( total > MEGABYTE*options.max_index_size ) {
-                if( options.whole_seq == WHOLE_SEQ ) {
-                    subject_map.RollBack();
-                }else {
-                    subject_map.DelLastChunk();
-                }
-
+                subject_map.RollBack();
                 offset_data.Update();
                 subject_map.Commit();
                 stop = start + subject_map.GetLastSequence() - 1;

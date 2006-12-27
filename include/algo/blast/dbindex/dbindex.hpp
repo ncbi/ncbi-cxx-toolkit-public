@@ -71,10 +71,6 @@ const unsigned long FASTA       = 0UL;  /**< FASTA formatted input with
                                              masking information encoded
                                              in lower case letters. */
 
-// Is it possible to break sequences between indices?
-const unsigned long WHOLE_SEQ   = 0UL;  /**< Index should contain whole sequences.    */
-const unsigned long CHUNKS      = 1UL;  /**< Index can be broken on a chunk boundary. */
-
 // Level of progress reporting.
 const unsigned long REPORT_QUIET   = 0UL;       /**< No progress reporting. */
 const unsigned long REPORT_NORMAL  = 1UL;       /**< Normal reporting. */
@@ -135,7 +131,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         static const unsigned long CODE_BITS = 3;       
 
         /** Index version that this library handles. */
-        static const unsigned char VERSION = (unsigned char)4;
+        static const unsigned char VERSION = (unsigned char)5;
 
         /** Simple record type used to specify index creation parameters.
 
@@ -163,8 +159,6 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
             unsigned long compression;          /**< Type of compression to use. */
             unsigned long bit_width;            /**< Creating 32 or 64 bit wide index. */
             unsigned long input_type;           /**< Input format for index creation. */
-            unsigned long whole_seq;            /**< Whether the index can be broken on 
-                                                  chunk boundaries. */
             unsigned long hkey_width;           /**< Width of the hash key in bits. */
             unsigned long chunk_size;           /**< Long sequences are split into chunks
                                                   of this size. */
@@ -499,6 +493,40 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
             @return the number of the last sequence chunk in the index
         */
         TSeqNum StopChunk() const { return stop_chunk_; }
+
+        /** Get the length of the subject sequence.
+            
+            @param oid Ordinal id of the subject sequence.
+
+            @return Length of the sequence in bases.
+        */
+        virtual TSeqPos GetSeqLen( TSeqNum oid ) const
+        {
+            NCBI_THROW( 
+                    CDbIndex_Exception, eBadVersion,
+                    "GetSeqLen() is not supported in this index version." );
+            return 0;
+        }
+
+        /** Get the sequence data of the subject sequence.
+            
+            @param oid Ordinal id of the subject sequence.
+
+            @return Pointer to the sequence data.
+        */
+        virtual const Uint1 * GetSeqData( TSeqNum oid ) const
+        {
+            NCBI_THROW( 
+                    CDbIndex_Exception, eBadVersion,
+                    "GetSeqData() is not supported in this index version." );
+            return 0;
+        }
+
+        /** Get the index format version.
+
+            @return The index format version.
+        */
+        virtual unsigned long Version() const { return 0; }
 
     protected:
 

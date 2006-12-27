@@ -30,13 +30,6 @@
  *
  */
 
-/*
-TODO:
-
-1. Modify to work on chunk granularity.
-
-*/
-
 #include <ncbi_pch.hpp>
 
 #include <memory>
@@ -133,7 +126,6 @@ int CMkIndexApplication::Run()
         options.stat_file_name = GetArgs()["stat"].AsString();
     }
 
-    options.whole_seq = WHOLE_SEQ;
     unsigned int vol_num = 0;
 
     CDbIndex::TSeqNum start, orig_stop( kMax_UI4 ), stop = 0;
@@ -168,6 +160,13 @@ int CMkIndexApplication::Run()
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2006/12/27 19:30:25  morgulis
+ * Implementation of version 5 of index structure:
+ * 	1. Combining of short sequences to improve performance in nt-like
+ *            databases.
+ * 	2. Suitable to feed sequence data to BLAST for extension directly from
+ *            index.
+ *
  * Revision 1.4  2006/11/16 20:40:11  morgulis
  * Optimization changes:
  * 	0-terminated offset lists;

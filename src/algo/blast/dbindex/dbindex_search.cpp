@@ -53,6 +53,10 @@ BEGIN_SCOPE( blastdbindex )
 #define INLINE 
 #endif
 
+// Comment this out for production.
+#define SEEDDEBUG 1
+// #define PRINTSUBJMAP 1
+
 namespace {
 
 /** Forwarding declaration for convenience. */
@@ -91,6 +95,12 @@ struct SIndexHeader< 3 > : public SIndexHeader< 1 >
 /** Header structure of index format version 4. */
 template<>
 struct SIndexHeader< 4 > : public SIndexHeader< 1 >
+{
+};
+
+/** Header structure of index format version 5. */
+template<>
+struct SIndexHeader< 5 > : public SIndexHeader< 1 >
 {
 };
 
@@ -848,7 +858,16 @@ class CSubjectMap_Base
         /** Type used for compressed subject sequence data storage. */
         typedef CVectorWrap< Uint1 > TSeqStore;
 
+        /** Type for storing the chunk data.
+            For raw offset encoding the offset into the vector serves also
+            as the internal logical sequence id.
+        */
+        typedef CVectorWrap< TWord > TChunks;
+
     public:
+
+        /** Trivial constructor. */
+        CSubjectMap_Base() : total_( 0 ) {}
 
         /** Constructs object from the data in the given input stream.
             @param is           [I/O]   input stream containing the 
@@ -869,6 +888,15 @@ class CSubjectMap_Base
         */
         CSubjectMap_Base( TWord ** map, TSeqNum start, TSeqNum stop );
 
+        /** Loads index by mapping to the memory segment.
+            @param map          [I/O]   pointer to the memory segment
+            @param start        [I]     database oid of the first sequence
+                                        in the map
+            @param stop         [I]     database oid of the last sequence
+                                        in the map
+        */
+        void Load( TWord ** map, TSeqNum start, TSeqNum stop );
+
         /** Provides a mapping from real subject ids and chunk numbers to
             internal logical subject ids.
             @return start of the (subject,chunk)->id mapping
@@ -880,6 +908,31 @@ class CSubjectMap_Base
             @return start of the sequence data storage
         */
         const Uint1 * GetSeqStoreBase() const { return &seq_store_[0]; }
+
+        /** Get the total number of sequence chunks in the map.
+            @return number of chunks in the map
+        */
+        TSeqNum NumChunks() const { return (TSeqNum)(chunks_.size()); }
+
+        /** Get the logical sequence id from the database oid and the
+            chunk number.
+            @param subject      [I]     database oid
+            @param chunk        [I]     the chunk number
+            @return logical sequence id corresponding to subject and chunk
+        */
+        TSeqNum MapSubject( TSeqNum subject, TSeqNum chunk ) const
+        {
+            if( subject < this->subjects_.size() ) {
+                TSeqNum result = 
+                    (TSeqNum)(this->subjects_[subject]) + chunk;
+
+                if( result < chunks_.size() ) {
+                    return result;
+                }
+            }
+
+            return 0;
+        }
 
     protected:
 
@@ -898,6 +951,7 @@ class CSubjectMap_Base
         TWord total_;           /**< Size in bytes of the raw sequence storage.
                                      (only valid after the complete object has
                                      been constructed) */
+        TChunks chunks_;        /**< Collection of individual chunk descriptors. */
 };
 
 //-------------------------------------------------------------------------
@@ -912,6 +966,20 @@ CSubjectMap_Base< word_t, OFF_TYPE >::CSubjectMap_Base(
     ReadWord( is, total_ );
     is.read( (char *)(&subjects_[0]), sizeof( TSeqNum )*n_subjects );
     total_ -= sizeof( TSeqNum )*n_subjects;
+
+    if( total_%sizeof( TWord ) != 0 ) {
+        NCBI_THROW( 
+                CDbIndex_Exception, eBadData, 
+                "bad alignment of subject map data" );
+    }
+
+    chunks_.resize( 
+            (typename TChunks::size_type)(
+                1 + this->total_/sizeof( TWord )), 
+            0 );
+    is.read( (char *)(&chunks_[0]), (std::streamsize)(total_) );
+    ReadSeqData( is );
+    chunks_[chunks_.size() - 1] = seq_store_.size();
 }
 
 //-------------------------------------------------------------------------
@@ -920,6 +988,14 @@ CSubjectMap_Base< word_t, OFF_TYPE >::CSubjectMap_Base(
         TWord ** map, TSeqNum start, TSeqNum stop )
     : total_( 0 )
 {
+    Load( map, start, stop );
+}
+
+//-------------------------------------------------------------------------
+template< typename word_t, unsigned long OFF_TYPE >
+void CSubjectMap_Base< word_t, OFF_TYPE >::Load( 
+        TWord ** map, TSeqNum start, TSeqNum stop )
+{
     if( *map ) {
         typename TSubjects::size_type n_subjects 
             = (typename TSubjects::size_type)(stop - start + 1);
@@ -927,6 +1003,18 @@ CSubjectMap_Base< word_t, OFF_TYPE >::CSubjectMap_Base(
         subjects_.SetPtr( *map, n_subjects );
         total_ -= sizeof( TWord )*n_subjects;
         *map += n_subjects;
+
+#ifdef PRINTSUBJMAP
+        for( unsigned long i = 0; i < n_subjects; ++i ) {
+            cerr << i << " ---> " << subjects_[i] - 1 << endl;
+        }
+#endif
+
+        typename TChunks::size_type chunks_size = 
+            (typename TChunks::size_type)( 1 + total_/sizeof( TWord ));
+        chunks_.SetPtr( *map, chunks_size ); 
+        *map += chunks_.size();
+        SetSeqDataFromMap( map );
     }
 }
 
@@ -967,12 +1055,7 @@ class CSubjectMap< word_t, OFFSET_RAW >
 {
     typedef CSubjectMap_Base< word_t, OFFSET_RAW > TBase;       /**< Alias for convenience. */
     typedef typename TBase::TWord TWord;                        /**< Alias for convenience. */
-
-    /** Type for storing the chunk data.
-        For raw offset encoding the offset into the vector serves also
-        as the internal logical sequence id.
-    */
-    typedef CVectorWrap< TWord > TChunks;
+    typedef typename TBase::TChunks TChunks;                    /**< Alias for convenience. */
 
     public:
 
@@ -1020,34 +1103,54 @@ class CSubjectMap< word_t, OFFSET_RAW >
                 TSeqNum subj, TWord & start_off, TWord & end_off,
                 TWord & start, TWord & end ) const;
 
-        /** Get the total number of sequence chunks in the map.
+        /** Decode offset.
+
+            @param subject Chunk number.
+            @param offset The offset value.
+
+            @return Corresponding position in the subject sequence.
+        */
+        TSeqPos DecodeOffset( TSeqNum subject, TWord offset ) const;
+
+        /** Unused. */
+        TSeqPos DecodeOffset( TWord offset ) const { ASSERT(0); return 0; }
+
+        /** Map logical sequence id and logical sequence offset to 
+            relative chunk number and chunk offset.
+
+            @param lid The logical sequence id.
+            @param soff The logical sequence offset.
+
+            @return Pair of relative chunk number and chunk offset.
+        */
+        std::pair< TSeqNum, TSeqPos > MapSubjOff( 
+            TSeqNum lid, TSeqPos soff ) const
+        { return std::make_pair( (TSeqNum)0, soff ); }
+
+        TSeqNum MapLId2Chunk( TSeqNum lid, TSeqNum lchunk ) const
+        { return lid; }
+
+        /** Get number of chunks combined into a given logical sequence.
+
+            @param lid The logical sequence id.
+
+            @return Corresponding number of chunks.
+        */
+        TSeqNum GetNumChunks( TSeqNum lid ) const { return 1; }
+
+        /** Get the total number of logical sequences in the map.
             @return number of chunks in the map
         */
-        TSeqNum NumSubjects() const { return (TSeqNum)(chunks_.size()); }
+        TSeqNum NumSubjects() const { return this->NumChunks(); }
 
-        /** Get the logical sequence id from the database oid and the
-            chunk number.
-            @param subject      [I]     database oid
-            @param chunk        [I]     the chunk number
-            @return logical sequence id corresponding to subject and chunk
-        */
-        TSeqNum MapSubject( TSeqNum subject, TSeqNum chunk ) const
-        {
-            if( subject < this->subjects_.size() ) {
-                TSeqNum result = 
-                    (TSeqNum)(this->subjects_[subject]) + chunk;
+        /** Unused. */
+        TSeqPos GetSeqLen( TSeqNum oid ) const { return 0; }
 
-                if( result < chunks_.size() ) {
-                    return result;
-                }
-            }
-
-            return 0;
-        }
+        /** Unused. */
+        const Uint1 * GetSeqData( TSeqNum oid ) const { return 0; }
 
     private:
 
-        TChunks chunks_;        /**< Collection of individual chunk descriptors. */
         TChunks chunks_off_;    /**< Encoded starting offsets of the sequences in seq_store_. */
 };
 
@@ -1057,32 +1160,20 @@ CSubjectMap< word_t, OFFSET_RAW >::CSubjectMap(
         CNcbiIstream & is, TSeqNum start, TSeqNum stop )
     : TBase( is, start, stop )
 {
-    if( this->total_%sizeof( TWord ) != 0 ) {
-        NCBI_THROW( 
-                CDbIndex_Exception, eBadData, 
-                "bad alignment of subject map data" );
-    }
-
-    chunks_.resize( 
-            (typename TChunks::size_type)(
-                1 + this->total_/sizeof( TWord )), 
-            0 );
     chunks_off_.resize( 
             (typename TChunks::size_type)(
                 1 + this->total_/sizeof( TWord )), 
             0 );
-    is.read( (char *)(&chunks_[0]), (std::streamsize)(this->total_) );
 
     for( typename TChunks::size_type i = 0; 
-            i < chunks_.size() - 1; ++i ) {
+            i < this->chunks_.size() - 1; ++i ) {
         chunks_off_[i] = CDbIndex::MIN_OFFSET +
-                chunks_[i]*(CDbIndex::CR)/(CDbIndex::STRIDE);
+                this->chunks_[i]*(CDbIndex::CR)/(CDbIndex::STRIDE);
     }
 
-    this->ReadSeqData( is );
-    chunks_[chunks_.size() - 1] = this->seq_store_.size();
-    chunks_off_[chunks_.size() - 1] = CDbIndex::MIN_OFFSET +
-        chunks_[chunks_.size() - 1]*(CDbIndex::CR)/(CDbIndex::STRIDE);
+    chunks_off_[this->chunks_.size() - 1] = CDbIndex::MIN_OFFSET +
+        this->chunks_[this->chunks_.size() - 1]*
+            (CDbIndex::CR)/(CDbIndex::STRIDE);
 }
 
 //-------------------------------------------------------------------------
@@ -1092,22 +1183,17 @@ CSubjectMap< word_t, OFFSET_RAW >::CSubjectMap(
     : TBase( map, start, stop )
 {
     if( *map ){
-        typename TChunks::size_type chunks_size = 
-            (typename TChunks::size_type)(
-                1 + this->total_/sizeof( TWord ));
-        chunks_.SetPtr( *map, chunks_size ); 
-        chunks_off_.resize( chunks_size );
+        chunks_off_.resize( this->chunks_.size() );
 
         for( typename TChunks::size_type i = 0; 
-                i < chunks_.size() - 1; ++i ) {
+                i < this->chunks_.size() - 1; ++i ) {
             chunks_off_[i] = CDbIndex::MIN_OFFSET +
-                    chunks_[i]*(CDbIndex::CR)/(CDbIndex::STRIDE);
+                    this->chunks_[i]*(CDbIndex::CR)/(CDbIndex::STRIDE);
         }
 
-        chunks_off_[chunks_.size() - 1] = CDbIndex::MIN_OFFSET +
-            chunks_[chunks_.size() - 1]*(CDbIndex::CR)/(CDbIndex::STRIDE);
-        *map += chunks_size;
-        this->SetSeqDataFromMap( map );
+        chunks_off_[this->chunks_.size() - 1] = CDbIndex::MIN_OFFSET +
+            this->chunks_[this->chunks_.size() - 1]*
+                (CDbIndex::CR)/(CDbIndex::STRIDE);
     }
 }
 
@@ -1118,12 +1204,22 @@ void CSubjectMap< word_t, OFFSET_RAW >::SetSubjInfo(
         TSeqNum subj, TWord & start_off, TWord & end_off, 
         TWord & start, TWord & end ) const
 {
-    end       = chunks_[subj + 1];
+    end       = this->chunks_[subj + 1];
     end_off   = chunks_off_[subj + 1];
-    start     = chunks_[subj];
+    start     = this->chunks_[subj];
     start_off = chunks_off_[subj];
 }
 
+//-------------------------------------------------------------------------
+template< typename word_t >
+INLINE
+TSeqPos CSubjectMap< word_t, OFFSET_RAW >::DecodeOffset(
+        TSeqNum subject, TWord offset ) const
+{
+    TWord start = chunks_off_[subject];
+    return CDbIndex::MIN_OFFSET + 
+        (TSeqPos)(offset - start)*CDbIndex::STRIDE;
+}
 //-------------------------------------------------------------------------
 template< typename word_t > 
 INLINE
@@ -1136,12 +1232,180 @@ TSeqNum CSubjectMap< word_t, OFFSET_RAW >::Update(
     ASSERT( it != chunks_off_.end() );
     curr_subj = it - chunks_off_.begin();
 
-    end = chunks_[curr_subj];
+    end = this->chunks_[curr_subj];
     end_off = chunks_off_[curr_subj];
-    start = chunks_[--curr_subj];
+    start = this->chunks_[--curr_subj];
     start_off = chunks_off_[curr_subj];
 
     return curr_subj;
+}
+
+//-------------------------------------------------------------------------
+/** Details of the database to internal sequence mapping that are 
+    specific for the combined offset encoding.
+    @param word_t bit width of the corresponding index type
+*/
+template< typename word_t >
+class CSubjectMap< word_t, OFFSET_COMBINED > 
+    : public CSubjectMap_Base< word_t, OFFSET_COMBINED >
+{
+    typedef CSubjectMap_Base< word_t, OFFSET_COMBINED > TBase;  /**< Alias for convenience. */
+    typedef typename TBase::TWord TWord;                        /**< Alias for convenience. */
+    typedef typename TBase::TChunks TChunks;                    /**< Alias for convenience. */
+
+    typedef CVectorWrap< TWord > TLengths;      /**< Subject lengths storage type. */
+    typedef CVectorWrap< TWord > TLIdMap;       /**< Local id -> chunks map storage type. */
+
+    public:
+
+        /** Constructs the object from the mapped memory segment.
+            @param map          [I/O]   points to the memory segment
+            @param start        [I]     database oid of the first sequence in the map
+            @param stop         [I]     database oid of the last sequence in the map
+        */
+        CSubjectMap( TWord ** map, TSeqNum start, TSeqNum stop );
+
+        /** Get number of chunks combined into a given logical sequence.
+
+            @param lid The logical sequence id.
+
+            @return Corresponding number of chunks.
+        */
+        TSeqNum GetNumChunks( TSeqNum lid ) const 
+        {
+            TWord * ptr = (TWord *)&lid_map_[0] + (lid<<2);
+            return *(ptr + 1) - *ptr;
+        }
+
+        /** Decode offset.
+
+            @param offset The encoded offset value.
+
+            @return A pair with first element being the local subject sequence
+                    id and the second element being the subject offset.
+        */
+        std::pair< TSeqNum, TSeqPos > DecodeOffset( TWord offset ) const 
+        {
+            offset -= CDbIndex::MIN_OFFSET;
+            return std::make_pair( 
+                    (TSeqNum)(offset>>offset_bits_),
+                    (TSeqPos)(CDbIndex::MIN_OFFSET + 
+                              (offset&offset_mask_)*CDbIndex::STRIDE) );
+        }
+
+        /** Return the subject information based on the given logical subject
+            id.
+            @param subj         [I]     logical subject id
+            @param start        [0]     starting offset of subj in the sequence store
+            @param end          [0]     1 + ending offset of subj in the sequence store
+        */
+        void SetSubjInfo( 
+                TSeqNum subj, TWord & start, TWord & end ) const
+        {
+            TWord * ptr = (TWord *)&lid_map_[0] + (subj<<2) + 2;
+            start = *ptr++;
+            end   = *ptr;
+        }
+
+        /** Map logical sequence id and logical sequence offset to 
+            relative chunk number and chunk offset.
+
+            @param lid The logical sequence id.
+            @param soff The logical sequence offset.
+
+            @return Pair of relative chunk number and chunk offset.
+        */
+        std::pair< TSeqNum, TSeqPos > MapSubjOff( 
+            TSeqNum lid, TSeqPos soff ) const
+        {
+            static const unsigned long CR = CDbIndex::CR;
+
+            TWord * ptr = (TWord *)&lid_map_[0] + (lid<<2);
+            TSeqNum start = (TSeqNum)*ptr++;
+            TSeqNum end   = (TSeqNum)*ptr++;
+            TWord lid_start = *ptr;
+            TWord abs_offset = lid_start + (TWord)soff/CR;
+
+            typedef typename TChunks::const_iterator TChunksIter;
+            TChunksIter siter = this->chunks_.begin() + start;
+            TChunksIter eiter = this->chunks_.begin() + end;
+            ASSERT( siter != eiter );
+            TChunksIter res = std::upper_bound( siter, eiter, abs_offset );
+            ASSERT( res != siter );
+            --res;
+
+            return std::make_pair( 
+                    (TSeqNum)(res - siter), 
+                    (TSeqPos)(soff - (*res - lid_start)*CR) );
+        }
+
+        TSeqNum MapLId2Chunk( TSeqNum lid, TSeqNum lchunk ) const
+        {
+            TWord * ptr = (TWord *)&lid_map_[0] + (lid<<2);
+            TSeqNum start = (TSeqNum)*ptr++;
+            return start + lchunk;
+        }
+
+        /** Get the total number of logical sequences in the map.
+            @return number of chunks in the map
+        */
+        TSeqNum NumSubjects() const
+        { return 1 + (lid_map_.size()>>2); }
+
+        /** Get the length of the subject sequence.
+            
+            @param oid Ordinal id of the subject sequence.
+
+            @return Length of the sequence in bases.
+        */
+        TSeqPos GetSeqLen( TSeqNum oid ) const
+        { return lengths_[oid]; }
+
+        /** Get the sequence data of the subject sequence.
+            
+            @param oid Ordinal id of the subject sequence.
+
+            @return Pointer to the sequence data.
+        */
+        const Uint1 * GetSeqData( TSeqNum oid ) const
+        {
+            TWord chunk = this->subjects_[oid] - 1;
+            TWord start_index = this->chunks_[chunk];
+            return &this->seq_store_[0] + start_index;
+        }
+
+    private:
+
+        TLengths lengths_;      /** Subject lengths storage. */
+        TLIdMap lid_map_;       /** Local id -> chunk map storage. */
+        Uint1 offset_bits_;     /** Number of bits used to encode offset. */
+        TWord offset_mask_;     /** Mask to extract offsets. */
+};
+
+//-------------------------------------------------------------------------
+template< typename word_t >
+CSubjectMap< word_t, OFFSET_COMBINED >::CSubjectMap(
+        TWord ** map, TSeqNum start, TSeqNum stop )
+{
+    TWord nlengths = *(*map)++;
+    nlengths /= sizeof( TWord );
+    offset_bits_ = (Uint1)(*(*map)++);
+    offset_mask_ = (1<<offset_bits_) - 1;
+    lengths_.SetPtr( *map, nlengths );
+    *map += nlengths;
+
+#ifdef PRINTSUBJMAP
+    for( unsigned long i = 0; i < nlengths; ++i ) {
+        cerr << "length( " << i << ") = " << lengths_[i] << endl;
+    }
+#endif
+
+    TWord nlidmap = *(*map)++;
+    nlidmap /= sizeof( TWord );
+    lid_map_.SetPtr( *map, nlidmap );
+    *map += nlidmap;
+
+    TBase::Load( map, start, stop );
 }
 
 //-------------------------------------------------------------------------
@@ -1466,28 +1730,46 @@ struct STrackedSeed
 /** Representation of a collection of tacked seeds for a specific subject
     sequence.
 */
+template< typename subject_map_t >
 class CTrackedSeeds
 {
     /**@name Some convenience type declaration. */
     /**@{*/
+    typedef subject_map_t TSubjectMap;
     typedef std::list< STrackedSeed > TSeeds;
     typedef TSeeds::iterator TIter;
+    typedef std::vector< BlastInitHitList * > THitLists;
     /**@}*/
 
     public:
 
-        /** Object constructor. */
-        CTrackedSeeds() 
-            : hitlist_( 0 )
+        /** Object constructor. 
+
+            @param subject_map The subject map instance.
+        */
+        CTrackedSeeds( const TSubjectMap & subject_map ) 
+            : subject_map_( &subject_map ), lid_( 0 )
         { it_ = seeds_.begin(); }
 
         /** Object copy constructor.
             @param rhs  [I]     source object to copy
         */
         CTrackedSeeds( const CTrackedSeeds & rhs )
-            : hitlist_( rhs.hitlist_ ), 
-              seeds_( rhs.seeds_ )
+            : hitlists_( rhs.hitlists_ ), 
+              seeds_( rhs.seeds_ ), subject_map_( rhs.subject_map_ ),
+              lid_( rhs.lid_ )
         { it_ = seeds_.begin(); }
+
+        /** Set the correspondence between this object and a
+            logical sequence.
+
+            @param lid The logical sequence id.
+        */
+        void SetLId( TSeqNum lid )
+        { 
+            lid_ = lid; 
+            hitlists_.resize( subject_map_->GetNumChunks( lid_ ), 0 );
+        }
 
         /** Prepare for processing of the next query position. */
         void Reset();
@@ -1523,22 +1805,29 @@ class CTrackedSeeds
         void SaveSeed( const STrackedSeed & seed );
 
         /** Get the list of saved seeds.
+
+            @param num The relative chunk number.
+
             @return the results set for the subject sequence to which
                     this object corresponds
         */
-        BlastInitHitList * GetHitList() const { return hitlist_; }
+        BlastInitHitList * GetHitList( TSeqNum num ) const 
+        { return hitlists_[num]; }
 
     private:
 
-        BlastInitHitList * hitlist_;    /**< The result set. */
-        TSeeds seeds_;                  /**< List of seed candidates. */
-        TIter it_;                      /**< Iterator pointing to the tracked seed that
-                                             is about to be inspected. */
+        THitLists hitlists_;              /**< The result sets (one per chunk). */
+        TSeeds seeds_;                    /**< List of seed candidates. */
+        TIter it_;                        /**< Iterator pointing to the tracked seed that
+                                               is about to be inspected. */
+        const TSubjectMap * subject_map_; /**< The subject map object. */
+        TSeqNum lid_;                     /**< Logical sequence number. */
 };
 
 //-------------------------------------------------------------------------
+template< typename subject_map_t >
 INLINE
-void CTrackedSeeds::Reset()
+void CTrackedSeeds< subject_map_t >::Reset()
 { it_ = seeds_.begin(); }
 
 /* This code is for testing purposes only.
@@ -1579,28 +1868,35 @@ void CTrackedSeeds::Reset()
 */
 
 //-------------------------------------------------------------------------
+template< typename subject_map_t >
 INLINE
-void CTrackedSeeds::SaveSeed( const STrackedSeed & seed )
+void CTrackedSeeds< subject_map_t >::SaveSeed( const STrackedSeed & seed )
 {
     if( seed.len_ > 0 ) {
-        if( hitlist_ == 0 ) {
-            hitlist_ = BLAST_InitHitListNew();
-        }
-
         TSeqPos qoff = seed.qright_ - seed.len_ + 1;
         TSeqPos soff = seed.soff_ - (seed.qoff_ - qoff);
-        BLAST_SaveInitialHit( hitlist_, (Int4)qoff, (Int4)soff, 0 );
+        std::pair< TSeqNum, TSeqPos > mapval = 
+            subject_map_->MapSubjOff( lid_, soff );
+        BlastInitHitList * hitlist = hitlists_[mapval.first];
+        
+        if( hitlist == 0 ) {
+            hitlists_[mapval.first] = hitlist = BLAST_InitHitListNew();
+        }
+
+        BLAST_SaveInitialHit( hitlist, (Int4)qoff, (Int4)mapval.second, 0 );
 
 #ifdef SEEDDEBUG
-        cerr << "SEED: " << qoff << "\t" << soff << "\t"
-            << seed.len_ << "\n";
+        TSeqNum chunk = subject_map_->MapLId2Chunk( lid_, mapval.first );
+        cerr << "SEED: " << qoff << "\t" << mapval.second << "\t"
+            << seed.len_ << "\t" << chunk << "\n";
 #endif
     }
 }
 
 //-------------------------------------------------------------------------
+template< typename subject_map_t >
 INLINE
-void CTrackedSeeds::Finalize()
+void CTrackedSeeds< subject_map_t >::Finalize()
 {
     for( TSeeds::const_iterator cit = seeds_.begin(); 
             cit != seeds_.end(); ++cit ) {
@@ -1609,13 +1905,16 @@ void CTrackedSeeds::Finalize()
 }
 
 //-------------------------------------------------------------------------
+template< typename subject_map_t >
 INLINE
-void CTrackedSeeds::AppendSimple( const STrackedSeed & seed )
+void CTrackedSeeds< subject_map_t >::AppendSimple( 
+        const STrackedSeed & seed )
 { seeds_.insert( it_, seed ); }
 
 //-------------------------------------------------------------------------
+template< typename subject_map_t >
 INLINE
-void CTrackedSeeds::Append( 
+void CTrackedSeeds< subject_map_t >::Append( 
         const STrackedSeed & seed, unsigned long word_size )
 {
     if( it_ != seeds_.begin() ) {
@@ -1644,8 +1943,10 @@ void CTrackedSeeds::Append(
 }
 
 //-------------------------------------------------------------------------
+template< typename subject_map_t >
 INLINE
-bool CTrackedSeeds::EvalAndUpdate( const STrackedSeed & seed )
+bool CTrackedSeeds< subject_map_t >::EvalAndUpdate( 
+        const STrackedSeed & seed )
 {
     while( it_ != seeds_.end() ) {
         TSeqPos step = seed.qoff_ - it_->qoff_;
@@ -1671,20 +1972,49 @@ bool CTrackedSeeds::EvalAndUpdate( const STrackedSeed & seed )
     return true;
 }
 
+}
+
 //-------------------------------------------------------------------------
+// Forward declaration.
+//
+template< 
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER >
+class CDbIndex_Impl;
+
 /** This is the object representing the state of a search over the index.
     Use of a separate class for searches allows for multiple simultaneous
     searches against the same index.
-    @param index_impl_t index implementation type
+
+    @param word_t      Index word type.
+    @param OFF_TYPE    Offset encoding.
+    @param COMPRESSION Offset compresion type.
+    @param VER         Index version used.
 */
-template< typename index_impl_t >
-class CSearch
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
+class CSearch_Base
 {
-    typedef CDbIndex::SSearchOptions TSearchOptions;    /**< Alias for convenience. */
+    protected:
+
+        typedef CDbIndex::SSearchOptions TSearchOptions;    /**< Alias for convenience. */
 
     public:
 
-        typedef index_impl_t TIndex_Impl;       /**< Alias for convenience. */
+        /** @name Aliases for convenience. */
+        /**@{*/
+        typedef CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER > TIndex_Impl;
+        typedef typename TIndex_Impl::TSubjectMap TSubjectMap;
+        typedef CTrackedSeeds< TSubjectMap > TTrackedSeeds;
+        typedef derived_t TDerived;
+        /**@}*/
 
         /** Object constructor.
             @param index_impl   [I]     the index implementation object
@@ -1692,7 +2022,7 @@ class CSearch
             @param locs         [I]     set of query locations to search
             @param options      [I]     search options
         */
-        CSearch( 
+        CSearch_Base( 
                 const TIndex_Impl & index_impl,
                 const BLAST_SequenceBlk * query,
                 const BlastSeqLoc * locs,
@@ -1704,14 +2034,14 @@ class CSearch
         */
         CConstRef< CDbIndex::CSearchResults > operator()();
 
-    private:
+    protected:
 
         typedef typename TIndex_Impl::TWord TWord;      /**< Alias for convenience. */
 
         /** Representation of the set of currently tracked seeds for
             all subject sequences. 
         */
-        typedef std::vector< CTrackedSeeds > TTrackedSeeds;     
+        typedef std::vector< TTrackedSeeds > TTrackedSeedsSet;     
 
         /** Helper method to search a particular segment of the query. 
             The segment is taken from state of the search object.
@@ -1735,11 +2065,6 @@ class CSearch
             @param offset       [I]     uncompressed offset value
         */
         void ProcessOffset( TWord offset );
-
-        /** Find the subject sequence containing the given offset value.
-            @param offset       [I]     uncompressed offset value
-        */
-        void UpdateSubject( TWord offset );
 
         /** Extend a seed candidate to the left.
             No more than word_length - hkey_width positions are inspected.
@@ -1768,7 +2093,7 @@ class CSearch
             @param root         [I]     root to process
             @return 1 for normal offsets, 2 for boundary offsets
         */
-        unsigned long ProcessRoot( CTrackedSeeds & seeds, const SSeedRoot * root );
+        unsigned long ProcessRoot( TTrackedSeeds & seeds, const SSeedRoot * root );
 
         const TIndex_Impl & index_impl_;        /**< The index implementation object. */
         const BLAST_SequenceBlk * query_;       /**< The query sequence encoded in BLASTNA. */
@@ -1777,23 +2102,29 @@ class CSearch
         unsigned long off_mod_;                 /**< Only subject offsets that are 0 mod off_mod_
                                                      are considered as seed candidates. */
 
-        TTrackedSeeds seeds_;   /**< The set of currently tracked seeds. */
-        TSeqNum subject_;       /**< Logical id of the subject sequence containing the offset
-                                     value currently being considered. */
-        TWord subj_start_off_;  /**< Start offset of subject_. */
-        TWord subj_end_off_;    /**< End offset of subject_. */
-        TWord subj_start_;      /**< Start position of subject_. */
-        TWord subj_end_;        /**< One past the end position of subject_. */
-        TSeqPos qoff_;          /**< Current query offset. */
-        TSeqPos soff_;          /**< Current subject offset. */
-        TSeqPos qstart_;        /**< Start of the current query segment. */
-        TSeqPos qstop_;         /**< One past the end of the current query segment. */
-        CSeedRoots roots_;      /**< Collection of initial soff/qoff pairs. */
+        TTrackedSeedsSet seeds_; /**< The set of currently tracked seeds. */
+        TSeqNum subject_;        /**< Logical id of the subject sequence containing the offset
+                                      value currently being considered. */
+        TWord subj_start_off_;   /**< Start offset of subject_. */
+        TWord subj_end_off_;     /**< End offset of subject_. */
+        TWord subj_start_;       /**< Start position of subject_. */
+        TWord subj_end_;         /**< One past the end position of subject_. */
+        TSeqPos qoff_;           /**< Current query offset. */
+        TSeqPos soff_;           /**< Current subject offset. */
+        TSeqPos qstart_;         /**< Start of the current query segment. */
+        TSeqPos qstop_;          /**< One past the end of the current query segment. */
+        CSeedRoots roots_;       /**< Collection of initial soff/qoff pairs. */
 };
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t >
-CSearch< index_impl_t >::CSearch(
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
+CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::CSearch_Base(
         const TIndex_Impl & index_impl,
         const BLAST_SequenceBlk * query,
         const BlastSeqLoc * locs,
@@ -1805,13 +2136,24 @@ CSearch< index_impl_t >::CSearch(
     off_mod_ = 
         (options_.word_size - index_impl_.hkey_width() + 1)/
         CDbIndex::STRIDE;
-    seeds_.resize( index_impl_.NumSubjects() );
+    seeds_.resize( 
+            index_impl_.NumSubjects() - 1, 
+            TTrackedSeeds( index_impl_.GetSubjectMap() ) );
+    for( typename TTrackedSeedsSet::size_type i = 0; i < seeds_.size(); ++i ) {
+        seeds_[i].SetLId( (TSeqNum)i );
+    }
 }
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t > 
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
 INLINE
-void CSearch< index_impl_t >::ExtendLeft( 
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ExtendLeft( 
         STrackedSeed & seed, TSeqPos nmax ) const
 {
     static const unsigned long CR = CDbIndex::CR;
@@ -1876,9 +2218,15 @@ void CSearch< index_impl_t >::ExtendLeft(
 }
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t > 
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
 INLINE
-void CSearch< index_impl_t >::ExtendRight( 
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ExtendRight( 
         STrackedSeed & seed, TSeqPos nmax ) const
 {
     static const unsigned long CR = CDbIndex::CR;
@@ -1938,28 +2286,22 @@ void CSearch< index_impl_t >::ExtendRight(
 }
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t > 
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
 INLINE
-void CSearch< index_impl_t >::UpdateSubject( TWord offset )
-{
-    if( offset >= subj_end_off_ ) {
-        subject_ = index_impl_.UpdateSubject( 
-                subject_, subj_start_off_, subj_end_off_, 
-                subj_start_, subj_end_, offset );
-    }
-}
-
-//-------------------------------------------------------------------------
-template< typename index_impl_t > 
-INLINE
-void CSearch< index_impl_t >::ProcessBoundaryOffset( 
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ProcessBoundaryOffset( 
         TWord offset, TWord bounds )
 {
     TSeqPos nmaxleft  = (TSeqPos)(bounds>>CDbIndex::CODE_BITS);
     TSeqPos nmaxright = (TSeqPos)(bounds&((1<<CDbIndex::CODE_BITS) - 1));
     STrackedSeed seed = 
         { qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ };
-    CTrackedSeeds & subj_seeds = seeds_[subject_];
+    TTrackedSeeds & subj_seeds = seeds_[subject_];
     subj_seeds.EvalAndUpdate( seed );
 
     if( nmaxleft > 0 ) {
@@ -1985,13 +2327,19 @@ void CSearch< index_impl_t >::ProcessBoundaryOffset(
 }
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t > 
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
 INLINE
-void CSearch< index_impl_t >::ProcessOffset( TWord offset )
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ProcessOffset( TWord offset )
 {
     STrackedSeed seed = 
         { qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ };
-    CTrackedSeeds & subj_seeds = seeds_[subject_];
+    TTrackedSeeds & subj_seeds = seeds_[subject_];
 
     if( subj_seeds.EvalAndUpdate( seed ) ) {
         ExtendLeft( seed );
@@ -2002,10 +2350,17 @@ void CSearch< index_impl_t >::ProcessOffset( TWord offset )
 }
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t > 
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
 INLINE
-unsigned long CSearch< index_impl_t >::ProcessRoot( 
-        CTrackedSeeds & seeds, const SSeedRoot * root )
+unsigned long 
+CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ProcessRoot( 
+        TTrackedSeeds & seeds, const SSeedRoot * root )
 {
     if( qoff_ != root->qoff_ ) {
         seeds.Reset();
@@ -2032,17 +2387,22 @@ unsigned long CSearch< index_impl_t >::ProcessRoot(
 }
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t > 
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
 INLINE
-void CSearch< index_impl_t >::ComputeSeeds()
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ComputeSeeds()
 {
     TSeqNum num_subjects = index_impl_.NumSubjects() - 1;
 
     for( subject_ = 0; subject_ < num_subjects; ++subject_ ) {
-        index_impl_.SetSubjInfo( 
-                subject_, subj_start_off_, subj_end_off_,
-                subj_start_, subj_end_ );
-        CTrackedSeeds & seeds = seeds_[subject_];
+        TDerived * self = static_cast< TDerived * >( this );
+        self->SetSubjInfo();
+        TTrackedSeeds & seeds = seeds_[subject_];
         const SSubjRootsInfo & rinfo = roots_.GetSubjInfo( subject_ );
 
         if( rinfo.len_ > 0 ) {
@@ -2069,11 +2429,17 @@ void CSearch< index_impl_t >::ComputeSeeds()
 }
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t > 
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
 INLINE
-void CSearch< index_impl_t >::SearchInt()
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::SearchInt()
 {
-    CNmerIterator< index_impl_t > nmer_it( 
+    CNmerIterator< TIndex_Impl > nmer_it( 
             index_impl_, query_->sequence, qstart_, qstop_ );
 
     while( nmer_it.Next() ) {
@@ -2087,21 +2453,17 @@ void CSearch< index_impl_t >::SearchInt()
 
             while( off_it.Next() ) {
                 TWord offset = off_it.Offset();
+                TDerived * self = static_cast< TDerived * >( this );
 
                 if( offset < CDbIndex::MIN_OFFSET ) {
                     off_it.Next();
                     TWord real_offset = off_it.Offset();
-                    UpdateSubject( real_offset );
-                    TSeqPos soff = CDbIndex::MIN_OFFSET + 
-                        (TSeqPos)(real_offset - 
-                                subj_start_off_)*CDbIndex::STRIDE;
+                    TSeqPos soff = self->DecodeOffset( real_offset );
                     SSeedRoot r1 = { qoff_, (TSeqPos)offset, qstart_, qstop_ };
                     SSeedRoot r2 = { qoff_, soff, qstart_, qstop_ };
                     roots_.Add2( r1, r2, subject_ );
                 }else {
-                    UpdateSubject( offset );
-                    TSeqPos soff = CDbIndex::MIN_OFFSET + 
-                        (TSeqPos)(offset - subj_start_off_)*CDbIndex::STRIDE;
+                    TSeqPos soff = self->DecodeOffset( offset );
                     SSeedRoot r = { qoff_, soff, qstart_, qstop_ };
                     roots_.Add( r, subject_ );
                 }
@@ -2122,8 +2484,15 @@ void CSearch< index_impl_t >::SearchInt()
 }
 
 //-------------------------------------------------------------------------
-template< typename index_impl_t >
-CConstRef< CDbIndex::CSearchResults > CSearch< index_impl_t >::operator()()
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER,
+    typename derived_t
+>
+CConstRef< CDbIndex::CSearchResults > 
+CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::operator()()
 {
     const BlastSeqLoc * curloc = locs_;
 
@@ -2131,7 +2500,7 @@ CConstRef< CDbIndex::CSearchResults > CSearch< index_impl_t >::operator()()
         if( curloc->ssr != 0 ) {
             qstart_ = curloc->ssr->left;
             qstop_  = curloc->ssr->right + 1;
-            // cerr << qstart_ << " - " << qstop_ << endl;
+            // cerr << "SEGMENT: " << qstart_ << " - " << qstop_ << endl;
             SearchInt();
         }
 
@@ -2139,21 +2508,188 @@ CConstRef< CDbIndex::CSearchResults > CSearch< index_impl_t >::operator()()
     }
 
     ComputeSeeds();
+    const TSubjectMap & subject_map = index_impl_.GetSubjectMap();
     CRef< CDbIndex::CSearchResults > result( 
             new CDbIndex::CSearchResults( 
-                0, index_impl_.NumSubjects(), index_impl_.GetSubjectMap(), 
+                0, index_impl_.NumChunks(), subject_map.GetSubjectMap(), 
                 index_impl_.StopSeq() - index_impl_.StartSeq() ) );
 
-    for( TTrackedSeeds::iterator it = seeds_.begin(); 
-            it != seeds_.end(); ++it ) {
-        it->Finalize();
-        result->SetResults( it - seeds_.begin() + 1, it->GetHitList() );
+    for( typename TTrackedSeedsSet::size_type i = 0, k = 1; 
+            i < seeds_.size(); ++i ) {
+        seeds_[i].Finalize();
+        TSeqNum nchunks = subject_map.GetNumChunks( (TSeqNum)i );
+
+        for( TSeqNum j = 0; j < nchunks; ++j ) {
+            result->SetResults( 
+                    (TSeqNum)(k++), seeds_[i].GetHitList( j ) );
+        }
     }
 
     return result;
 }
 
+//-------------------------------------------------------------------------
+/** CSearch CRTP. */
+template<
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER
+>
+class CSearch;
+
+/** Implementation for OFFSET_RAW. */
+template<
+    typename word_t, 
+    unsigned long COMPRESSION,
+    unsigned long VER
+>
+class CSearch< word_t, OFFSET_RAW, COMPRESSION, VER > : public CSearch_Base< 
+    word_t, OFFSET_RAW, COMPRESSION, VER, 
+    CSearch< word_t, OFFSET_RAW, COMPRESSION, VER > >
+{
+    /** @name Convenience declarations. */
+    /**@{*/
+    typedef CSearch_Base< word_t, OFFSET_RAW, COMPRESSION, VER, CSearch > TBase;
+    typedef typename TBase::TIndex_Impl TIndex_Impl;
+    typedef typename TBase::TSearchOptions TSearchOptions;
+    typedef typename TBase::TWord TWord;
+    /**@}*/
+
+    public:
+
+        /** Object constructor.
+            @param index_impl   [I]     the index implementation object
+            @param query        [I]     query data encoded in BLASTNA
+            @param locs         [I]     set of query locations to search
+            @param options      [I]     search options
+        */
+        CSearch( 
+                const TIndex_Impl & index_impl,
+                const BLAST_SequenceBlk * query,
+                const BlastSeqLoc * locs,
+                const TSearchOptions & options )
+            : TBase( index_impl, query, locs, options )
+        {}
+
+        /** Find the subject sequence containing the given offset value.
+            @param offset       [I]     uncompressed offset value
+        */
+        void UpdateSubject( TWord offset );
+
+        /** Set the parameters of the current subject sequence. */
+        void SetSubjInfo();
+
+        /** Decode offset value into subject position.
+
+            @param offset Offset value.
+
+            @return Corresponding position in the subject.
+        */
+        TSeqPos DecodeOffset( TWord offset ) 
+        { 
+            UpdateSubject( offset );
+            return this->index_impl_.DecodeOffset( 
+                    this->subject_, offset ); 
+        }
+};
+
+//-------------------------------------------------------------------------
+template<
+    typename word_t, 
+    unsigned long COMPRESSION,
+    unsigned long VER
+>
+INLINE
+void CSearch< word_t, OFFSET_RAW, COMPRESSION, VER >::UpdateSubject( TWord offset )
+{
+    if( offset >= this->subj_end_off_ ) {
+        this->subject_ = this->index_impl_.UpdateSubject( 
+                this->subject_, this->subj_start_off_, this->subj_end_off_, 
+                this->subj_start_, this->subj_end_, offset );
+    }
 }
+
+//-------------------------------------------------------------------------
+template<
+    typename word_t, 
+    unsigned long COMPRESSION,
+    unsigned long VER
+>
+INLINE
+void CSearch< word_t, OFFSET_RAW, COMPRESSION, VER >::SetSubjInfo()
+{
+    this->index_impl_.SetSubjInfo( 
+            this->subject_, this->subj_start_off_, this->subj_end_off_,
+            this->subj_start_, this->subj_end_ );
+}
+
+//-------------------------------------------------------------------------
+/** Implementation for OFFSET_COMBINED. */
+template<
+    typename word_t, 
+    unsigned long COMPRESSION,
+    unsigned long VER
+>
+class CSearch< word_t, OFFSET_COMBINED, COMPRESSION, VER > 
+    : public CSearch_Base< 
+        word_t, OFFSET_COMBINED, COMPRESSION, VER, 
+        CSearch< word_t, OFFSET_COMBINED, COMPRESSION, VER > >
+{
+    /** @name Convenience declarations. */
+    /**@{*/
+    typedef CSearch_Base< 
+        word_t, OFFSET_COMBINED, COMPRESSION, VER, CSearch > TBase;
+    typedef typename TBase::TIndex_Impl TIndex_Impl;
+    typedef typename TBase::TSearchOptions TSearchOptions;
+    typedef typename TBase::TWord TWord;
+    /**@}*/
+
+    public:
+
+        /** Object constructor.
+            @param index_impl   [I]     the index implementation object
+            @param query        [I]     query data encoded in BLASTNA
+            @param locs         [I]     set of query locations to search
+            @param options      [I]     search options
+        */
+        CSearch( 
+                const TIndex_Impl & index_impl,
+                const BLAST_SequenceBlk * query,
+                const BlastSeqLoc * locs,
+                const TSearchOptions & options )
+            : TBase( index_impl, query, locs, options )
+        {}
+
+
+        /** Set the parameters of the current subject sequence. */
+        void SetSubjInfo()
+        {
+            typedef typename TIndex_Impl::TSubjectMap TSubjectMap;
+            const TSubjectMap & subject_map = 
+                this->index_impl_.GetSubjectMap();
+            subject_map.SetSubjInfo( 
+                    this->subject_, this->subj_start_, this->subj_end_ );
+        }
+
+        /** Decode offset value into subject position.
+
+            @param offset Offset value.
+
+            @return Corresponding position in the subject.
+        */
+        TSeqPos DecodeOffset( TWord offset )
+        {
+            typedef typename TIndex_Impl::TSubjectMap TSubjectMap;
+            const TSubjectMap & subject_map = 
+                this->index_impl_.GetSubjectMap();
+            std::pair< TSeqNum, TSeqPos > decoded = 
+                subject_map.DecodeOffset( offset );
+            this->subject_ = decoded.first;
+            SetSubjInfo();
+            return decoded.second;
+        }
+};
 
 //-------------------------------------------------------------------------
 /** This class computes the values of subject map and offset data types
@@ -2202,6 +2738,22 @@ template<
     unsigned long COMPRESSION 
 >
 struct CDbIndex_Traits< word_t, OFF_TYPE, COMPRESSION, 4 >
+{
+    typedef COffsetData< 
+        word_t, 
+        CPreOrderedOffsetIterator< word_t, UNCOMPRESSED >, 
+        COMPRESSION 
+    > TOffsetData;
+    typedef CSubjectMap< word_t, OFF_TYPE > TSubjectMap;
+};
+
+/** Specialization for index format version 4. */
+template< 
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION 
+>
+struct CDbIndex_Traits< word_t, OFF_TYPE, COMPRESSION, 5 >
 {
     typedef COffsetData< 
         word_t, 
@@ -2309,23 +2861,87 @@ class CDbIndex_Impl : public CDbIndex
                     subject, start_off, end_off, start, end ); 
         }
 
-        /** Get the total number of logical chunks in the index.
+        /** Get the total number of sequence chunks in the index.
+            @sa CSubjectMap::NumChunks()
+        */
+        TSeqNum NumChunks() const { return subject_map_->NumChunks(); }
+
+        /** Get the total number of logical sequences in the index.
             @sa CSubjectMap::NumSubjects()
         */
         TSeqNum NumSubjects() const { return subject_map_->NumSubjects(); }
 
-        /** Provides a mapping from real subject ids and chunk numbers to
-            internal logical subject ids.
-            @return start of the (subject,chunk)->id mapping
+        /** Get the subject map instance from the index object.
+
+            @return The subject map instance.
         */
-        const TWord * GetSubjectMap() const 
-        { return subject_map_->GetSubjectMap(); }
+        const TSubjectMap & GetSubjectMap() const
+        { return *subject_map_; }
 
         /** Get the start of compressed raw sequence data.
             @sa CSubjectMap::GetSeqStoreBase()
         */
         const Uint1 * GetSeqStoreBase() const 
         { return subject_map_->GetSeqStoreBase(); }
+
+        /** Decode offset.
+
+            @param subject Chunk number.
+            @param offset The offset value.
+
+            @return Corresponding position in the subject sequence.
+        */
+        TSeqPos DecodeOffset( TSeqNum subject, TWord offset ) const
+        { return subject_map_->DecodeOffset( subject, offset ); }
+
+        /** Decode offset.
+
+            @param offset The offset value.
+
+            @return Corresponding position in the subject sequence.
+        */
+        TSeqPos DecodeOffset( TWord offset ) const
+        { return subject_map_->DecodeOffset( offset ); }
+
+        /** Get the length of the subject sequence.
+            
+            @param oid Ordinal id of the subject sequence.
+
+            @return Length of the sequence in bases.
+        */
+        virtual TSeqPos GetSeqLen( TSeqNum oid ) const
+        {
+            if( VER != 5 ) {
+                NCBI_THROW( 
+                        CDbIndex_Exception, eBadVersion,
+                        "GetSeqLen() is not supported in this index version." );
+                return 0;
+            }
+            else return subject_map_->GetSeqLen( oid - this->start_ );
+        }
+
+        /** Get the sequence data of the subject sequence.
+            
+            @param oid Ordinal id of the subject sequence.
+
+            @return Pointer to the sequence data.
+        */
+        virtual const Uint1 * GetSeqData( TSeqNum oid ) const
+        {
+            if( VER != 5 ) {
+                NCBI_THROW( 
+                        CDbIndex_Exception, eBadVersion,
+                        "GetSeqData() is not supported in this index version." );
+                return 0;
+            }
+            else return subject_map_->GetSeqData( oid - this->start_ );
+        }
+
+        /** Get the index format version.
+
+            @return The index format version.
+        */
+        virtual unsigned long Version() const { return version_; }
 
     private:
 
@@ -2366,6 +2982,7 @@ class CDbIndex_Impl : public CDbIndex
         TWord * map_;                   /**< Start of memory mapped file data. */
         TOffsetData * offset_data_;     /**< Offset lists. */
         TSubjectMap * subject_map_;     /**< Subject sequence information. */
+        unsigned long version_;         /**< Index format version. */
 };
 
 //-------------------------------------------------------------------------
@@ -2376,7 +2993,7 @@ template<
     unsigned long VER >
 CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::CDbIndex_Impl(
         CNcbiIstream & is, const SIndexHeader< 1 > & header )
-    : mapfile_( 0 ), map_( 0 )
+    : mapfile_( 0 ), map_( 0 ), version_( VER )
 {
     start_ = header.start_;
     stop_  = header.stop_;
@@ -2395,7 +3012,7 @@ template<
     unsigned long VER >
 CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::CDbIndex_Impl(
         CMemoryFile * map, const SIndexHeader< 1 > & header )
-    : mapfile_( map )
+    : mapfile_( map ), version_( VER )
 {
     start_ = header.start_;
     stop_  = header.stop_;
@@ -2459,7 +3076,7 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::DoSearch(
         const BlastSeqLoc * locs,
         const SSearchOptions & search_options )
 {
-    CSearch< CDbIndex_Impl > searcher( 
+    CSearch< word_t, OFF_TYPE, COMPRESSION, VER > searcher( 
             *this, query, locs, search_options );
     return searcher();
 }
@@ -2525,6 +3142,13 @@ CRef< CDbIndex > CDbIndex::LoadIndex( const std::string & fname )
                 );
             }
         }else if( header.off_type_ == OFFSET_COMBINED ) {
+            if( header.compression_ == UNCOMPRESSED ) {
+                result.Reset(
+                        new CDbIndex_Impl<
+                            TWord, OFFSET_COMBINED, UNCOMPRESSED, VER
+                        >( map, header )
+                );
+            }
         }
     }else if( header.width_ == WIDTH_64 ) {
         typedef Uint8 TWord;
@@ -2580,6 +3204,9 @@ CRef< CDbIndex > CDbIndex::Load( const std::string & fname )
         case 4:
                 index_stream.close();
                 return LoadIndex< 4 >( fname );
+        case 5:
+                index_stream.close();
+                return LoadIndex< 5 >( fname );
         default: 
             
             NCBI_THROW( 
