@@ -47,6 +47,7 @@ CTL_RPCCmd::CTL_RPCCmd(CTL_Connection* conn, CS_COMMAND* cmd,
     CTL_Cmd(conn, cmd),
     impl::CBaseCmd(proc_name, nof_params)
 {
+    SetExecCntxInfo("RPC Command: " + proc_name);
 }
 
 
@@ -220,6 +221,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/12/27 21:29:37  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.25  2006/11/28 20:08:09  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

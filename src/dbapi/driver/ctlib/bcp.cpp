@@ -54,6 +54,7 @@ CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
     m_Bind(nof_columns),
     m_RowCount(0)
 {
+    SetExecCntxInfo("BCP table name: " + table_name);
 }
 
 bool CTL_BCPInCmd::Bind(unsigned int column_num, CDB_Object* pVal)
@@ -576,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/12/27 21:26:48  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.30  2006/11/28 20:08:10  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

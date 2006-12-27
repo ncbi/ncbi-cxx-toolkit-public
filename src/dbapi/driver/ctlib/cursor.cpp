@@ -49,6 +49,9 @@ CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn, CS_COMMAND* cmd,
     m_FetchSize(fetch_size),
     m_Used(false)
 {
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
+        query + "\"";
+    SetExecCntxInfo(extra_msg);
 }
 
 
@@ -374,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/12/27 21:28:51  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.27  2006/11/28 20:08:09  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

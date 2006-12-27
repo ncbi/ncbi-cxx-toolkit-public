@@ -531,6 +531,7 @@ CTL_LangCmd::CTL_LangCmd(CTL_Connection* conn, CS_COMMAND* cmd,
     CTL_Cmd(conn, cmd),
     impl::CBaseCmd(lang_query, nof_params)
 {
+    SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 }
 
 
@@ -700,6 +701,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/12/27 21:29:16  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.26  2006/11/28 20:09:05  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION);
  *
