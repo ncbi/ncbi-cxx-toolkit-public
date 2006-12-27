@@ -2119,6 +2119,44 @@ void CCleanup_imp::x_FixSegSetSource (CBioseq_set_Handle bh, CBioseq_set_Handle 
 }
 
 
+bool s_ContainsDescriptor (const CBioseq& bs, CSeqdesc::E_Choice desc_type)
+{
+    if (bs.IsSetDescr()) {
+        ITERATE (CSeq_descr::Tdata, desc_it, bs.GetDescr().Get()) {
+            if ((*desc_it)->Which() == desc_type) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool s_ContainsDescriptor (const CBioseq_set& bs, CSeqdesc::E_Choice desc_type)
+{
+    if (bs.IsSetDescr()) {
+        ITERATE (CSeq_descr::Tdata, desc_it, bs.GetDescr().Get()) {
+            if ((*desc_it)->Which() == desc_type) {
+                return true;
+            }
+        }
+    }
+    
+    if (bs.CanGetSeq_set()) {
+        ITERATE (list < CRef <CSeq_entry > >, it, bs.GetSeq_set()) {
+            if ((*it)->Which() == CSeq_entry::e_Seq
+                && s_ContainsDescriptor ((*it)->GetSeq(), desc_type)) {
+                return true;
+            } else if ((*it)->Which() == CSeq_entry::e_Set
+                && s_ContainsDescriptor((*it)->GetSet(), desc_type)) {
+                return true;
+            }                
+        }
+    }
+    return false;
+}
+
+
 // If a BioSource descriptor appears on a WGS, Mut, Pop, Phy, or Eco set, 
 // place a copy of the  BioSource descriptor on each member of the set 
 // that does not already have a BioSource descriptor anywhere on or in 
@@ -2130,19 +2168,20 @@ void CCleanup_imp::x_FixSetSource (CBioseq_set_Handle bh)
     if (!desc_ci) return;
     
     ITERATE (list < CRef < CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
-        CSeqdesc_CI member_desc_ci (m_Scope->GetSeq_entryHandle (**it), CSeqdesc::e_Source, 0);
-        if (!member_desc_ci) {
+        if ((*it)->Which() == CSeq_entry::e_Seq 
+            && ! s_ContainsDescriptor ((*it)->GetSeq(), CSeqdesc::e_Source)) {
             CRef<CSeqdesc> new_desc(new CSeqdesc);
-            new_desc->Assign (*member_desc_ci);
-            if ((*it)->Which() == CSeq_entry::e_Seq) {
-                CBioseq_EditHandle beh (m_Scope->GetBioseqHandle((**it).GetSeq()));
-                beh.AddSeqdesc (*new_desc);
-                ChangeMade (CCleanupChange::eAddDescriptor);
-            } else if ((*it)->Which() == CSeq_entry::e_Set) {
-                CBioseq_set_EditHandle beh (m_Scope->GetBioseq_setHandle((**it).GetSet()));
-                beh.AddSeqdesc (*new_desc);
-                ChangeMade (CCleanupChange::eAddDescriptor);
-            }
+            new_desc->Assign (*desc_ci);
+            CBioseq_EditHandle beh (m_Scope->GetBioseqHandle((**it).GetSeq()));
+            beh.AddSeqdesc (*new_desc);
+            ChangeMade (CCleanupChange::eAddDescriptor);
+        } else if ((*it)->Which() == CSeq_entry::e_Set
+            && ! s_ContainsDescriptor ((*it)->GetSet(), CSeqdesc::e_Source)) {
+            CRef<CSeqdesc> new_desc(new CSeqdesc);
+            new_desc->Assign (*desc_ci);
+            CBioseq_set_EditHandle beh (m_Scope->GetBioseq_setHandle((**it).GetSet()));
+            beh.AddSeqdesc (*new_desc);
+            ChangeMade (CCleanupChange::eAddDescriptor);
         }
     }
     CBioseq_set_EditHandle bseh (bh);
@@ -2301,6 +2340,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2006/12/27 20:19:20  bollin
+ * Corrected bug in x_FixSetSource.
+ *
  * Revision 1.21  2006/12/27 19:27:11  bollin
  * Fixed bug in mechanism for extended cleanup of sets inside other sets.
  * Added step for cleaning up BioSource descriptors on WGS, pop, phy, mut, and
