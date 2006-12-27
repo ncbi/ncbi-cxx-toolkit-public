@@ -167,18 +167,20 @@ void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_Handle bh, IsMergeCandid
 
 void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_set_Handle bh, IsMergeCandidate is_can, Merge do_merge)
 {
-    CSeq_descr::Tdata remove_list;    
+    if (bh.IsSetDescr()) {
+        CSeq_descr::Tdata remove_list;    
 
-    CBioseq_set_EditHandle edith = m_Scope->GetEditHandle(bh);
+        CBioseq_set_EditHandle edith = m_Scope->GetEditHandle(bh);
      
-    remove_list.clear();
+        remove_list.clear();
 
-    x_RecurseDescriptorsForMerge(edith.SetDescr(), is_can, do_merge, remove_list);
+        x_RecurseDescriptorsForMerge(edith.SetDescr(), is_can, do_merge, remove_list);
     
-    for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
-        it1 != remove_list.end(); ++it1) { 
-        edith.RemoveSeqdesc(**it1);
-        ChangeMade(CCleanupChange::eRemoveDescriptor);
+        for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+            it1 != remove_list.end(); ++it1) { 
+            edith.RemoveSeqdesc(**it1);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        }
     }
     
     if (bh.GetCompleteBioseq_set()->IsSetSeq_set()) {
@@ -1368,6 +1370,8 @@ void CCleanup_imp::x_SetMolInfoWithOldDescriptors(CSeq_descr& sdr, CSeq_descr::T
 
 void CCleanup_imp::x_SetMolInfoWithOldDescriptors(CBioseq_Handle bh)
 {
+    if (!bh.IsSetDescr()) return;
+    
     CSeq_descr::Tdata remove_list;
     CSeq_descr::Tdata add_list;
     CBioseq_EditHandle eh(bh);
@@ -1388,6 +1392,8 @@ void CCleanup_imp::x_SetMolInfoWithOldDescriptors(CBioseq_Handle bh)
 
 void CCleanup_imp::x_SetMolInfoWithOldDescriptors(CBioseq_set_Handle bh)
 {
+    if (!bh.IsSetDescr()) return;
+    
     CSeq_descr::Tdata remove_list;
     CSeq_descr::Tdata add_list;
     CBioseq_set_EditHandle eh(bh);
@@ -1417,21 +1423,6 @@ void CCleanup_imp::x_FixMissingSources (CBioseq_Handle bh)
         // These steps were part of FixToAsn in the C Toolkit
         has_source |= x_ConvertOrgDescToSourceDescriptor (bh);
         has_source_feats = x_ConvertOrgAndImpFeatToSource (bh);
-        CSeq_descr::Tdata remove_list;    
-        CBioseq_EditHandle edith = m_Scope->GetEditHandle(bh);     
-        // This was part of CombineBSFeat in the C Toolkit.
-        // The other portion of CombineBSFeat, where full length source
-        // features are converted to source descriptors, is handled
-        // in x_ConvertOrgAndImpFeatToSource   
-        x_RecurseDescriptorsForMerge(edith.SetDescr(),
-                                     &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource,
-                                     &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources,
-                                     remove_list);           
-        for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
-            it1 != remove_list.end(); ++it1) { 
-            edith.RemoveSeqdesc(**it1);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
-        }
 
         x_SetMolInfoWithOldDescriptors (bh);    
     }
@@ -1464,6 +1455,7 @@ void CCleanup_imp::x_FixMissingSources (CBioseq_Handle bh)
 
 void CCleanup_imp::x_FixMissingSources (CBioseq_set_Handle bh)
 {
+    
     CSeqdesc_CI src_desc (bh.GetParentEntry(), CSeqdesc::e_Source, 1);
     bool has_source = false;
     bool has_source_feats = false;
@@ -1472,6 +1464,7 @@ void CCleanup_imp::x_FixMissingSources (CBioseq_set_Handle bh)
     } else {
         // These steps were part of FixToAsn in the C Toolkit
         has_source |= x_ConvertOrgDescToSourceDescriptor (bh);
+
         has_source_feats = x_ConvertOrgAndImpFeatToSource (bh);
         CSeq_descr::Tdata remove_list;    
         CBioseq_set_EditHandle edith = m_Scope->GetEditHandle(bh);     
@@ -1527,6 +1520,7 @@ void CCleanup_imp::x_FixMissingSources (const CSeq_entry& se)
 // This function was LoopSeqEntryToAsn3 in the C Toolkit
 void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
 {
+    
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubDescriptors);
@@ -1832,6 +1826,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/12/27 19:25:24  bollin
+ * Avoid creating empty Seqdesc sets.
+ * Removed steps for merging duplicate BioSource descriptors (should be handled
+ * by x_ExtendedCleanupBioSourceDescriptorsAndFeatures)
+ *
  * Revision 1.13  2006/12/11 17:14:43  bollin
  * Made changes to ExtendedCleanup per the meetings and new document describing
  * the expected behavior for BioSource features and descriptors.  The behavior
