@@ -49,6 +49,7 @@
 #include <objects/general/Dbtag.hpp>
 
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include "cleanupp.hpp"
@@ -2118,6 +2119,38 @@ void CCleanup_imp::x_FixSegSetSource (CBioseq_set_Handle bh, CBioseq_set_Handle 
 }
 
 
+// If a BioSource descriptor appears on a WGS, Mut, Pop, Phy, or Eco set, 
+// place a copy of the  BioSource descriptor on each member of the set 
+// that does not already have a BioSource descriptor anywhere on or in 
+// the set member and remove the BioSource descriptor from the parent set.
+void CCleanup_imp::x_FixSetSource (CBioseq_set_Handle bh)
+{
+    if (bh.IsEmptySeq_set()) return;
+    CSeqdesc_CI desc_ci (bh.GetParentEntry(), CSeqdesc::e_Source, 1);
+    if (!desc_ci) return;
+    
+    ITERATE (list < CRef < CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
+        CSeqdesc_CI member_desc_ci (m_Scope->GetSeq_entryHandle (**it), CSeqdesc::e_Source, 0);
+        if (!member_desc_ci) {
+            CRef<CSeqdesc> new_desc(new CSeqdesc);
+            new_desc->Assign (*member_desc_ci);
+            if ((*it)->Which() == CSeq_entry::e_Seq) {
+                CBioseq_EditHandle beh (m_Scope->GetBioseqHandle((**it).GetSeq()));
+                beh.AddSeqdesc (*new_desc);
+                ChangeMade (CCleanupChange::eAddDescriptor);
+            } else if ((*it)->Which() == CSeq_entry::e_Set) {
+                CBioseq_set_EditHandle beh (m_Scope->GetBioseq_setHandle((**it).GetSet()));
+                beh.AddSeqdesc (*new_desc);
+                ChangeMade (CCleanupChange::eAddDescriptor);
+            }
+        }
+    }
+    CBioseq_set_EditHandle bseh (bh);
+    bseh.RemoveSeqdesc(*desc_ci);
+    ChangeMade (CCleanupChange::eRemoveDescriptor);
+}
+
+
 // cleanup up BioSource Descriptors and Features
 // This process should start at the lowest levels and work its way up.
 // First, convert appropriate features to descriptors and merge biosource features
@@ -2210,8 +2243,11 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Hand
 
 void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss)
 {
-    // First, clean the members of this set
-    if (bss.GetCompleteBioseq_set()->IsSetSeq_set()) {
+    // First, clean the members of this set, unless this is a nuc-prot or segset
+    if (bss.GetCompleteBioseq_set()->IsSetSeq_set()
+        && (!bss.CanGetClass() 
+            || (bss.GetClass() != CBioseq_set::eClass_segset 
+                && bss.GetClass() != CBioseq_set::eClass_nuc_prot))) {
        CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
        list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
        
@@ -2223,10 +2259,7 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_
                 case CSeq_entry::e_Set:
                 {
                     CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle((**it).GetSet());
-                    if (bssh.GetClass() != CBioseq_set::eClass_segset
-                        && bssh.GetClass() != CBioseq_set::eClass_nuc_prot) {
-                        x_ExtendedCleanupBioSourceDescriptorsAndFeatures(bssh);
-                    }
+                    x_ExtendedCleanupBioSourceDescriptorsAndFeatures(bssh);
                 }
                     break;
                 case CSeq_entry::e_not_set:
@@ -2251,6 +2284,7 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_
             case CBioseq_set::eClass_pop_set:
             case CBioseq_set::eClass_phy_set:
             case CBioseq_set::eClass_eco_set:
+                x_FixSetSource (bss);
                 break;
             default:
                 break;
@@ -2267,6 +2301,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2006/12/27 19:27:11  bollin
+ * Fixed bug in mechanism for extended cleanup of sets inside other sets.
+ * Added step for cleaning up BioSource descriptors on WGS, pop, phy, mut, and
+ * eco sets.
+ *
  * Revision 1.20  2006/12/11 20:21:53  ucko
  * One more fix to COMMON_STRING_LIST: compare it1 to SetX().end() rather
  * than GetX().end(), which is a const_iterator.

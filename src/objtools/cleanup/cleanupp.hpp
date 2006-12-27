@@ -397,6 +397,8 @@ private:
     
     void x_FixSegSetSource (CBioseq_set_Handle segset, CBioseq_set_Handle parts, CBioseq_set_Handle *nuc_prot_parent = NULL);
     void x_FixSegSetSource (CBioseq_set_Handle bh, CBioseq_set_Handle *nuc_prot_parent = NULL);
+
+    void x_FixSetSource (CBioseq_set_Handle bh);
     
     bool x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh);
     bool x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh);
@@ -485,6 +487,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.50  2006/12/27 19:27:11  bollin
+ * Fixed bug in mechanism for extended cleanup of sets inside other sets.
+ * Added step for cleaning up BioSource descriptors on WGS, pop, phy, mut, and
+ * eco sets.
+ *
  * Revision 1.49  2006/12/11 17:14:43  bollin
  * Made changes to ExtendedCleanup per the meetings and new document describing
  * the expected behavior for BioSource features and descriptors.  The behavior
