@@ -208,6 +208,8 @@ protected:
     void UpdateConnMaxTextImageSize(void) const;
     void UpdateConnTimeout(void) const;
 
+    void SetExtraMsg(const string& msg);
+
 
 private:
     /// Used connections
@@ -245,6 +247,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/12/27 21:07:27  ssikorsk
+ * Added method CDriverContext::SetExtraMsg().
+ *
  * Revision 1.4  2006/12/15 16:40:27  ssikorsk
  * Replaced CFastMutex with CMutex.
  *
