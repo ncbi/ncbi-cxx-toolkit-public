@@ -54,6 +54,8 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection* conn,
     m_HasTextImage(false),
     m_WasBound(false)
 {
+    SetExecCntxInfo("BCP table name: " + table_name);
+
     if (Check(bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN)) != SUCCEED) {
         DATABASE_DRIVER_ERROR( "bcp_init failed", 223001 );
     }
@@ -527,6 +529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/12/27 21:37:38  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.29  2006/11/28 20:08:09  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

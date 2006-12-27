@@ -47,6 +47,7 @@ CTDS_LangCmd::CTDS_LangCmd(CTDS_Connection* conn, DBPROCESS* cmd,
     CDBL_Cmd( conn, cmd ),
     impl::CBaseCmd(lang_query, nof_params)
 {
+    SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 
     m_Res       =  0;
     m_Status    =  0;
@@ -470,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/12/27 21:38:27  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.29  2006/11/28 20:08:07  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

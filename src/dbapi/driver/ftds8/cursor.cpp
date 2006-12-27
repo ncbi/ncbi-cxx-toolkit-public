@@ -49,6 +49,9 @@ CTDS_CursorCmd::CTDS_CursorCmd(CTDS_Connection* conn, DBPROCESS* cmd,
     m_LCmd(0),
     m_Res(0)
 {
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
+        query + "\"";
+    SetExecCntxInfo(extra_msg);
 }
 
 
@@ -514,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/12/27 21:38:21  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.29  2006/11/28 20:08:07  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

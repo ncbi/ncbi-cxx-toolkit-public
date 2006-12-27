@@ -50,6 +50,7 @@ CDBL_LangCmd::CDBL_LangCmd(CDBL_Connection* conn, DBPROCESS* cmd,
     m_Res( 0 ),
     m_Status( 0 )
 {
+    SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 }
 
 
@@ -522,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/12/27 21:37:53  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.34  2006/11/28 20:08:08  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

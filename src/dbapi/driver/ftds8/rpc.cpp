@@ -49,7 +49,7 @@ CTDS_RPCCmd::CTDS_RPCCmd(CTDS_Connection* conn, DBPROCESS* cmd,
     m_Res(0),
     m_Status(0)
 {
-    return;
+    SetExecCntxInfo("RPC Command: " + proc_name);
 }
 
 
@@ -512,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/12/27 21:38:33  ssikorsk
+ * Call SetExecCntxInfo() in constructor.
+ *
  * Revision 1.27  2006/11/28 20:08:07  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *
