@@ -71,6 +71,9 @@ bool CTDS_Connection::IsAlive()
 CDB_LangCmd* CTDS_Connection::LangCmd(const string& lang_query,
                                       unsigned int nof_parms)
 {
+    string extra_msg = "SQL Command: \"" + lang_query + "\"";
+    SetExtraMsg(extra_msg);
+
     CTDS_LangCmd* lcmd = new CTDS_LangCmd(this, GetDBLibConnection(), lang_query, nof_parms);
     return Create_LangCmd(*lcmd);
 }
@@ -78,18 +81,25 @@ CDB_LangCmd* CTDS_Connection::LangCmd(const string& lang_query,
 
 CDB_RPCCmd* CTDS_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 {
+    string extra_msg = "RPC Command: " + rpc_name;
+    SetExtraMsg(extra_msg);
+
     CTDS_RPCCmd* rcmd = new CTDS_RPCCmd(this, GetDBLibConnection(), rpc_name, nof_args);
     return Create_RPCCmd(*rcmd);
 }
 
 
-CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& tab_name,
+CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& table_name,
                                      unsigned int nof_cols)
 {
     if (!IsBCPable()) {
         DATABASE_DRIVER_ERROR( "No bcp on this connection", 210003 );
     }
-    CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(this, GetDBLibConnection(), tab_name, nof_cols);
+
+    string extra_msg = "BCP Table: " + table_name;
+    SetExtraMsg(extra_msg);
+
+    CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(this, GetDBLibConnection(), table_name, nof_cols);
     return Create_BCPInCmd(*bcmd);
 }
 
@@ -99,6 +109,10 @@ CDB_CursorCmd* CTDS_Connection::Cursor(const string& cursor_name,
                                        unsigned int nof_params,
                                        unsigned int)
 {
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
+        query + "\"";
+    SetExtraMsg(extra_msg);
+
     CTDS_CursorCmd* ccmd = new CTDS_CursorCmd(this, GetDBLibConnection(), cursor_name,
                                               query, nof_params);
     return Create_CursorCmd(*ccmd);
@@ -450,9 +464,16 @@ RETCODE CTDS_Connection::CheckDead(RETCODE rc)
     return rc;
 }
 
+
 void CTDS_Connection::CheckFunctCall(void)
 {
     GetFTDS8ExceptionStorage().Handle(GetMsgHandlers());
+}
+
+
+void CTDS_Connection::CheckFunctCall(const string& extra_msg)
+{
+    GetFTDS8ExceptionStorage().Handle(GetMsgHandlers(), extra_msg);
 }
 
 
@@ -532,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/12/27 21:39:25  ssikorsk
+ * Revamp code to call SetExtraMsg().
+ *
  * Revision 1.34  2006/11/28 20:08:07  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *

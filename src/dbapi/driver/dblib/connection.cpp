@@ -72,6 +72,9 @@ bool CDBL_Connection::IsAlive()
 CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
                                       unsigned int nof_parms)
 {
+    string extra_msg = "SQL Command: \"" + lang_query + "\"";
+    SetExtraMsg(extra_msg);
+
     CDBL_LangCmd* lcmd = new CDBL_LangCmd(this, GetDBLibConnection(), lang_query, nof_parms);
     return Create_LangCmd(*lcmd);
 }
@@ -79,16 +82,23 @@ CDB_LangCmd* CDBL_Connection::LangCmd(const string& lang_query,
 
 CDB_RPCCmd* CDBL_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 {
+    string extra_msg = "RPC Command: " + rpc_name;
+    SetExtraMsg(extra_msg);
+
     CDBL_RPCCmd* rcmd = new CDBL_RPCCmd(this, GetDBLibConnection(), rpc_name, nof_args);
     return Create_RPCCmd(*rcmd);
 }
 
 
-CDB_BCPInCmd* CDBL_Connection::BCPIn(const string& tab_name,
+CDB_BCPInCmd* CDBL_Connection::BCPIn(const string& table_name,
                                      unsigned int nof_cols)
 {
     CHECK_DRIVER_ERROR( !IsBCPable(), "No bcp on this connection", 210003 );
-    CDBL_BCPInCmd* bcmd = new CDBL_BCPInCmd(this, GetDBLibConnection(), tab_name, nof_cols);
+
+    string extra_msg = "BCP Table: " + table_name;
+    SetExtraMsg(extra_msg);
+
+    CDBL_BCPInCmd* bcmd = new CDBL_BCPInCmd(this, GetDBLibConnection(), table_name, nof_cols);
     return Create_BCPInCmd(*bcmd);
 }
 
@@ -98,6 +108,10 @@ CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
                                        unsigned int nof_params,
                                        unsigned int)
 {
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
+        query + "\"";
+    SetExtraMsg(extra_msg);
+
     CDBL_CursorCmd* ccmd = new CDBL_CursorCmd(this, GetDBLibConnection(), cursor_name,
                                               query, nof_params);
     return Create_CursorCmd(*ccmd);
@@ -532,10 +546,18 @@ RETCODE CDBL_Connection::CheckDead(RETCODE rc)
     return rc;
 }
 
+
 void CDBL_Connection::CheckFunctCall(void)
 {
     GetDBLExceptionStorage().Handle(GetMsgHandlers());
 }
+
+
+void CDBL_Connection::CheckFunctCall(const string& extra_msg)
+{
+    GetDBLExceptionStorage().Handle(GetMsgHandlers(), extra_msg);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -615,6 +637,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/12/27 21:39:15  ssikorsk
+ * Revamp code to call SetExtraMsg().
+ *
  * Revision 1.41  2006/11/28 20:08:09  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *
