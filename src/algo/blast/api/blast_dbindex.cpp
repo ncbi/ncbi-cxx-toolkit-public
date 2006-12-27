@@ -36,6 +36,7 @@
 #include <corelib/ncbithr.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_util.h>
 
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 
@@ -43,6 +44,9 @@
 #include <algo/blast/dbindex/dbindex.hpp>
 
 #include "algo/blast/core/mb_indexed_lookup.h"
+
+// Comment this out to continue with extensions.
+// #define STOP_AFTER_PRESEARCH 1
 
 /** @addtogroup AlgoBlast
  *
@@ -114,6 +118,9 @@ class CIndexedDb : public CObject
         /** Type used to map loaded indices to subject ids. */
         typedef vector< CDbIndex::TSeqNum > TSeqMap;
 
+        /** Type of the collection of currently loaded indices. */
+        typedef vector< CRef< CDbIndex > > TIndexSet;
+
         /** Data local to a running thread.
         */
         struct SThreadLocal 
@@ -145,6 +152,10 @@ class CIndexedDb : public CObject
 
         unsigned long threads_;         /**< Number of threads to use for seed search. */
         vector< string > index_names_;  /**< List of index volume names. */
+        bool seq_from_index_;   /**< Indicates if it is OK to serve sequence data
+                                     directly from the index. */
+        TIndexSet indices_;     /**< Currently loaded indices. */
+
 
     public:
 
@@ -218,6 +229,34 @@ class CIndexedDb : public CObject
                 CDbIndex::TSeqNum oid,
                 CDbIndex::TSeqNum chunk,
                 BlastInitHitList * init_hitlist ) const;
+
+        /** Check if sequences can be supplied directly from the index.
+
+            @return true if sequences can be provided from the index;
+                    false otherwise.
+        */
+        bool SeqFromIndex() const { return seq_from_index_; }
+
+        /** Get the length of the subject sequence.
+
+            @param oid Subject ordinal id.
+
+            @return Length of the subject sequence in bases.
+        */
+        TSeqPos GetSeqLength( CDbIndex::TSeqNum oid ) const
+        { return indices_[LocateIndex( oid )]->GetSeqLen( oid ); }
+
+        /** Get the subject sequence data.
+
+            @param oid Subject ordinal id.
+
+            @return Pointer to the start of the subject sequence data.
+        */
+        Uint1 * GetSeqData( CDbIndex::TSeqNum oid ) const
+        { 
+            return const_cast< Uint1 * >(
+                    indices_[LocateIndex( oid )]->GetSeqData( oid )); 
+        }
 };
 
 //------------------------------------------------------------------------------
@@ -239,11 +278,15 @@ static void IndexedDbPreSearch(
     lt_wrap->lut = (void *)idb;
     lt_wrap->read_indexed_db = (void *)(&s_MB_IdbGetResults);
     idb->PreSearch( queries, locs, lut_options, word_options );
+
+#ifdef STOP_AFTER_PRESEARCH
+    exit( 0 );
+#endif
 }
 
 //------------------------------------------------------------------------------
 CIndexedDb::CIndexedDb( const string & indexname, BlastSeqSrc * db )
-    : db_( db ), threads_( 1 )
+    : db_( db ), threads_( 1 ), seq_from_index_( false )
 {
     // Parse the indexname as a comma separated list
     string::size_type start = 0, end = 0;
@@ -316,6 +359,10 @@ CIndexedDb::CIndexedDb( const string & indexname, BlastSeqSrc * db )
     }
 
     PreSearchFn = &IndexedDbPreSearch;
+    
+    if( threads_ >= index_names_.size() ) {
+        seq_from_index_ = true;
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -372,8 +419,7 @@ void CIndexedDb::PreSearch(
 
     for( vector< string >::size_type v = 0; 
             v < index_names_.size(); v += threads_ ) {
-        typedef vector< CRef< CDbIndex > > TIndexSet;
-        TIndexSet indices;
+        indices_.clear();
 
         for( vector< string >::size_type ind = 0; 
                 ind < threads_ && v + ind < index_names_.size(); ++ind ) {
@@ -385,19 +431,20 @@ void CIndexedDb::PreSearch(
                         + index_names_[v+ind]).c_str() );
             }
 
-            indices.push_back( index );
+            if( index->Version() != 5 ) seq_from_index_ = false;
+            indices_.push_back( index );
             results_.push_back( CConstRef< CDbIndex::CSearchResults >( null ) );
             CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();
             seqmap_.push_back( s + (index->StopSeq() - index->StartSeq()) );
         }
 
-        if( indices.size() > 1 ) {
-            vector< CPreSearchThread * > threads( indices.size(), 0 );
+        if( indices_.size() > 1 ) {
+            vector< CPreSearchThread * > threads( indices_.size(), 0 );
 
             for( vector< CPreSearchThread * >::size_type i = 0;
                     i < threads.size(); ++i ) {
                 threads[i] = new CPreSearchThread(
-                        queries, locs, sopt, indices[i], results_[v+i] );
+                        queries, locs, sopt, indices_[i], results_[v+i] );
                 threads[i]->Run();
             }
 
@@ -409,7 +456,7 @@ void CIndexedDb::PreSearch(
             }
         }
         else {
-            CRef< CDbIndex > & index = indices[0];
+            CRef< CDbIndex > & index = indices_[0];
             CConstRef< CDbIndex::CSearchResults > & results = results_[v];
             results = index->Search( queries, locs, sopt );
         }
@@ -528,9 +575,29 @@ static Boolean s_IDbGetIsProt( void * handle, void * x )
 /** Forwards the call to CIndexedDb::db_. */
 static Int2 s_IDbGetSequence( void * handle, void * x )
 {
-    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
-    void * fw_handle = s_GetForwardSeqDb( handle );
-    return _BlastSeqSrcImpl_GetGetSequence( fw_seqsrc )( fw_handle, x );
+    CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
+    CRef< CIndexedDb > idb = idb_handle->idb_;
+    BlastSeqSrcGetSeqArg * seq_arg = (BlastSeqSrcGetSeqArg *)x;
+
+
+    if( !idb->SeqFromIndex() || seq_arg->encoding != 0 ) {
+        BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+        void * fw_handle = s_GetForwardSeqDb( handle );
+        return _BlastSeqSrcImpl_GetGetSequence( fw_seqsrc )( fw_handle, x );
+    }
+    else {
+        if( seq_arg->seq == 0 ) {
+            BLAST_SequenceBlk * new_seq_blk;
+            if( BlastSeqBlkNew( &new_seq_blk ) < 0 ) return -1;
+            seq_arg->seq = new_seq_blk;
+        }
+
+        BlastSequenceBlkClean( seq_arg->seq );
+        seq_arg->seq->oid = seq_arg->oid;
+        seq_arg->seq->sequence = idb->GetSeqData( seq_arg->oid );
+        seq_arg->seq->length = idb->GetSeqLength( seq_arg->oid );
+        return 0;
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -565,6 +632,8 @@ static Int4 s_IDbIteratorNext( void * handle, BlastSeqSrcIterator * itr )
 /** Forwards the call to CIndexedDb::db_. */
 static void s_IDbReleaseSequence( void * handle, void * x )
 {
+    CIndexedDb::TThreadLocal * idb_handle = (CIndexedDb::TThreadLocal *)handle;
+    CRef< CIndexedDb > idb = idb_handle->idb_;
     BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
     void * fw_handle = s_GetForwardSeqDb( handle );
     _BlastSeqSrcImpl_GetReleaseSequence( fw_seqsrc )( fw_handle, x );
@@ -701,6 +770,9 @@ static void s_MB_IdbGetResults(
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/12/27 19:58:41  morgulis
+ * Providing sequence data for BLAST extension directly from the index.
+ *
  * Revision 1.5  2006/12/07 20:58:32  morgulis
  * Fixed CheckOid().
  *

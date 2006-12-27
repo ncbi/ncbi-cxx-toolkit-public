@@ -54,7 +54,7 @@ BEGIN_SCOPE( blastdbindex )
 #endif
 
 // Comment this out for production.
-#define SEEDDEBUG 1
+// #define SEEDDEBUG 1
 // #define PRINTSUBJMAP 1
 
 namespace {
