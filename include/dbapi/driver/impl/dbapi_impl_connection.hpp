@@ -89,6 +89,8 @@ public:
     bool IsMultibyteClientEncoding(void) const;
     EEncoding GetClientEncoding(void) const;
 
+    void SetExtraMsg(const string& msg);
+
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
@@ -244,7 +246,7 @@ protected:
     }
 
 private:
-    typedef deque<impl::CCommand*> TCommandList;
+    typedef deque<impl::CCommand*>  TCommandList;
 
     CDriverContext*                 m_DriverContext;
     CDBHandlerStack                 m_MsgHandlers;
@@ -269,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/12/27 21:10:01  ssikorsk
+ * Added method CConnection::SetExtraMsg().
+ *
  * Revision 1.10  2006/10/26 18:13:53  ssikorsk
  * + CConnection::GetClientEncoding()
  *
