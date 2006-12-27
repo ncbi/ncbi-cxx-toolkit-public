@@ -476,13 +476,17 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
         if ( m_Prefix.empty() ) {
             LOG_POST(Severity(ex->GetSeverity()) << ex->what() <<
                      " SERVER: '" << ex->GetServerName() <<
-                     "' USER: '" << ex->GetUserName() << "'"
+                     "' USER: '" << ex->GetUserName() << "'" <<
+                     (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+                      GetExtraMsg()) << "'"
                      );
         } else {
             LOG_POST(Severity(ex->GetSeverity()) << m_Prefix << ' ' <<
                      ex->what() <<
                      " SERVER: '" << ex->GetServerName() <<
-                     "' USER: '" << ex->GetUserName() << "'"
+                     "' USER: '" << ex->GetUserName() << "'" <<
+                     (GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+                      GetExtraMsg()) << "'"
                      );
         }
     }
@@ -548,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/12/27 21:16:19  ssikorsk
+ * Report context info with CDB_UserHandler_Diag::HandleIt.
+ *
  * Revision 1.32  2006/09/14 18:52:26  ssikorsk
  * CDB_Exception: fixed methods Type and Clone.
  *
