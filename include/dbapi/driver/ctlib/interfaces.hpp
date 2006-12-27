@@ -238,6 +238,7 @@ protected:
 
 public:
     CS_RETCODE Check(CS_RETCODE rc);
+    CS_RETCODE Check(CS_RETCODE rc, const string& extra_msg);
     CS_INT GetBLKVersion(void) const;
 
     const CTLibContext& GetCTLibContext(void) const
@@ -371,10 +372,20 @@ protected:
     bool ProcessResultInternal(CDB_Result& res);
     bool ProcessResults(void);
 
+    void SetExecCntxInfo(const string& info)
+    {
+        m_ExecCntxInfo = info;
+    }
+    const string& GetExecCntxInfo(void) const
+    {
+        return m_ExecCntxInfo;
+    }
+
 protected:
     bool            m_HasFailed;
     bool            m_WasSent;
     int             m_RowCount;
+    string          m_ExecCntxInfo;
 
 private:
     CTL_Connection* m_Connect;
@@ -732,7 +743,7 @@ inline
 CS_RETCODE CTL_Cmd::Check(CS_RETCODE rc)
 {
     _ASSERT(m_Connect);
-    return m_Connect->Check(rc);
+    return m_Connect->Check(rc, GetExecCntxInfo());
 }
 
 inline
@@ -852,6 +863,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/12/27 21:13:14  ssikorsk
+ * Added a member CTL_Cmd::m_ExecCntxInfo.
+ *
  * Revision 1.54  2006/12/06 17:39:20  ssikorsk
  * Changed calling convention of CTLIB_cserr_handler, CTLIB_cterr_handler,
  * CTLIB_srverr_handler to __stdcall (on Windows).
