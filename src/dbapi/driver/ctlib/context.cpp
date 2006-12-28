@@ -1252,6 +1252,28 @@ extern "C" {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+#ifdef FTDS_IN_USE
+
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
+void
+DBAPI_RegisterDriver_FTDS(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_ctlib );
+}
+
+
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
+void
+DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("ftds", CTLIB_CreateContext);
+    DBAPI_RegisterDriver_FTDS();
+}
+
+#endif
+
+
 END_NCBI_SCOPE
 
 
@@ -1259,6 +1281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2006/12/28 19:28:50  ssikorsk
+ * Added DBAPI_RegisterDriver_FTDS().
+ *
  * Revision 1.104  2006/12/20 23:09:02  ssikorsk
  * Set default TDS version to 80 in case of the ftds64_ctlib driver.
  *
