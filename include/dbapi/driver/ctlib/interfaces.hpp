@@ -43,6 +43,32 @@
 #include <ctpublic.h>
 #include <bkpublic.h>
 
+#ifdef FTDS_IN_USE
+// Make it look like the ftds driver ...
+#    define CTLibContext            CTDSContext
+#    define CTL_Connection          CTDS_Connection
+#    define CTL_Cmd                 CTDS_Cmd
+#    define CTL_LangCmd             CTDS_LangCmd
+#    define CTL_RPCCmd              CTDS_RPCCmd
+#    define CTL_CursorCmd           CTDS_CursorCmd
+#    define CTL_BCPInCmd            CTDS_BCPInCmd
+#    define CTL_SendDataCmd         CTDS_SendDataCmd
+#    define CTL_Result              CTDS_Result
+#    define CTL_RowResult           CTDS_RowResult
+#    define CTL_ParamResult         CTDS_ParamResult
+#    define CTL_ComputeResult       CTDS_ComputeResult
+#    define CTL_StatusResult        CTDS_StatusResult
+#    define CTL_CursorResult        CTDS_CursorResult
+#    define CTL_BlobResult          CTDS_BlobResult
+#    define CTL_ITDescriptor        CTDS_ITDescriptor
+#    define CTLibContextRegistry    CTDSContextRegistry
+
+#    define CTLIB_SetApplicationName    TDS_SetApplicationName
+#    define CTLIB_SetHostName           TDS_SetHostName
+#    define CTLIB_SetPacketSize         TDS_SetPacketSize
+#    define CTLIB_SetMaxNofConns        TDS_SetMaxNofConns
+
+#endif // FTDS_IN_USE
 
 BEGIN_NCBI_SCOPE
 
@@ -863,6 +889,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/12/28 22:20:06  ssikorsk
+ * Redefine ctlib's symbols in order to make code compatible with the ftds driver.
+ *
  * Revision 1.55  2006/12/27 21:13:14  ssikorsk
  * Added a member CTL_Cmd::m_ExecCntxInfo.
  *
