@@ -113,7 +113,7 @@ struct CStrDummyTargetReserve
 template<class TStr, 
          class TV, 
          class TP = CStrDummyTokenPos, 
-         class TCount = CStrDummyTokenCount<TStr, TV>,
+         class TCount = CStrDummyTokenCount<TStr>,
          class TReserve = CStrDummyTargetReserve<TStr, TV, TP, TCount> > 
 class CStrTokenize : public CStrTokenizeBase
 {
@@ -211,7 +211,7 @@ struct CStringTokenCount
 
         // Count number of tokens         
         for (pos = 0;;) {
-            prev_pos = (merge == NStr::eMergeDelims ? 
+            prev_pos = (merge == CStrTokenizeBase::eMergeDelims ? 
                             str.find_first_not_of(delim, pos) : pos);
             if (prev_pos == NPOS) {
                 break;
@@ -292,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/28 16:58:27  vasilche
+ * Fixed compilation errors.
+ *
  * Revision 1.1  2006/12/28 16:09:32  kuznets
  * Initial revision
  *

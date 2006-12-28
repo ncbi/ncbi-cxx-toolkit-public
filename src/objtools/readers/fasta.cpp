@@ -318,9 +318,9 @@ void CFastaReader::ParseDefLine(const TStr& s)
                     break;
                 }
             }
-            range_len = ParseRange(TStr(s.data(), start, pos - start),
+            range_len = ParseRange(TStr(s.data() + start, pos - start),
                                    range_start, range_end);
-            has_id = ParseIDs(TStr(s.data(), start, pos - start - range_len));
+            has_id = ParseIDs(TStr(s.data() + start, pos - start - range_len));
             title_start = pos + 1;
             // trim leading whitespace from title (is this appropriate?)
             while (isspace((unsigned char) s[title_start])) {
@@ -338,7 +338,7 @@ void CFastaReader::ParseDefLine(const TStr& s)
             title_start = start;
         }
         if (pos <= len) {
-            ParseTitle(TStr(s.data(), title_start, pos - title_start));
+            ParseTitle(TStr(s.data() + title_start, pos - title_start));
         }
         start = pos + 1;
     } while (TestFlag(fAllSeqIds)  &&  start < len  &&  s[start - 1] == '\1'
@@ -1438,6 +1438,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2006/12/28 16:59:44  vasilche
+* Fixed compilation errors.
+*
 * Revision 1.35  2006/12/11 15:49:24  ucko
 * ScanFastaFile: don't bother naming catch's argument (only used implicitly).
 *
