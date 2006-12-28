@@ -90,11 +90,17 @@ public:
     CTempString(const CTempString& str, size_type pos, size_type length);
 
     /// copy a substring into a string
-    /// These are analogs of basic_string::assign()
+    /// Somewhat similar to basic_string::assign()
     void Copy(string& dst, size_type pos, size_type length) const;
 
     /// @name std::basic_string<> compatibility interface
-    /// @{
+    /// @{\
+    
+    /// Assign new values to the content of the a string
+    CTempString& assign(const CTempString& src_str,
+                        size_type          off, 
+                        size_type          count);
+    
 
     /// Return an iterator to the string's starting position
     const_iterator begin() const;
@@ -188,9 +194,6 @@ private:
 NCBI_XNCBI_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& out, const CTempString& str);
 
-/*
- * @}
- */
 
 /// Global operator== for string and CTempString
 inline
@@ -198,6 +201,10 @@ bool operator==(const string& str1, const CTempString& str2)
 {
     return str2 == str1;
 }
+
+/*
+ * @}
+ */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -469,6 +476,15 @@ CTempString::size_type CTempString::find(char match, size_type pos) const
     return npos;
 }
 
+inline
+CTempString& CTempString::assign(const CTempString& src_str,
+                                 size_type          off, 
+                                 size_type          count)
+{
+    m_String = src_str.m_String + off;
+    m_Length = count;
+}
+
 
 inline
 CTempString CTempString::substr(size_type pos) const
@@ -563,6 +579,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/12/28 16:10:05  kuznets
+ * +assign()
+ *
  * Revision 1.1  2006/12/22 12:42:06  dicuccio
  * Initial revision - split out from ncbistr.hpp
  *
