@@ -74,27 +74,29 @@ public:
 
     CTempString(void);
     CTempString(const char* str);
-    CTempString(const char* str, size_type length);
-    CTempString(const char* str, size_type pos, size_type length);
+    CTempString(const char* str, size_type len);
+    /// Use CTempString(const char* str, size_type len) instead
+    NCBI_DEPRECATED_CTOR(CTempString(const char* str, size_type pos, size_type len));
 
     /// Templatized initialization from a string literal.  This version is
     /// optimized to deal specifically with constant-sized built-in arrays.
     template<size_t Size> CTempString(const char (&str)[Size]);
 
     CTempString(const string& str);
-    CTempString(const string& str, size_type length);
-    CTempString(const string& str, size_type pos, size_type length);
+    /// Use CTempString(const char* str, size_type pos, size_type len) instead
+    NCBI_DEPRECATED_CTOR(CTempString(const string& str, size_type length));
+    CTempString(const string& str, size_type pos, size_type len);
 
     CTempString(const CTempString& str);
     CTempString(const CTempString& str, size_type pos);
-    CTempString(const CTempString& str, size_type pos, size_type length);
+    CTempString(const CTempString& str, size_type pos, size_type len);
 
     /// copy a substring into a string
     /// Somewhat similar to basic_string::assign()
     void Copy(string& dst, size_type pos, size_type length) const;
 
     /// @name std::basic_string<> compatibility interface
-    /// @{\
+    /// @{
     
     /// Assign new values to the content of the a string
     CTempString& assign(const CTempString& src_str,
@@ -149,7 +151,6 @@ public:
 
     /// Obtain a substring from this string, beginning at a given offset
     CTempString substr(size_type pos) const;
-
     /// Obtain a substring from this string, beginning at a given offset
     /// and extending a specified length
     CTempString substr(size_type pos, size_type len) const;
@@ -184,8 +185,10 @@ private:
 
     // Initialize CTempString with bounds checks
     void x_Reset(void);
-    void x_Init(const char* str, size_type str_length,
-                size_type pos, size_type length);
+    void x_Init(const char* str, size_type str_len,
+                size_type pos, size_type len);
+    void x_Init(const char* str, size_type str_len,
+                size_type pos);
     bool x_Equals(const_iterator it1, const_iterator it2) const;
     bool x_Less(const_iterator it1, const_iterator it2) const;
 };
@@ -215,11 +218,13 @@ CTempString::const_iterator CTempString::begin() const
     return m_String;
 }
 
+
 inline
 CTempString::const_iterator CTempString::end() const
 {
     return m_String + m_Length;
 }
+
 
 inline
 const char* CTempString::data(void) const
@@ -228,11 +233,13 @@ const char* CTempString::data(void) const
     return m_String;
 }
 
+
 inline
 CTempString::size_type CTempString::length(void) const
 {
     return m_Length;
 }
+
 
 inline
 CTempString::size_type CTempString::size(void) const
@@ -240,11 +247,13 @@ CTempString::size_type CTempString::size(void) const
     return m_Length;
 }
 
+
 inline
 bool CTempString::empty(void) const
 {
     return m_Length == 0;
 }
+
 
 inline
 char CTempString::operator[] (size_type pos) const
@@ -255,6 +264,7 @@ char CTempString::operator[] (size_type pos) const
     return '\0';
 }
 
+
 inline
 void CTempString::x_Reset(void)
 {
@@ -264,30 +274,44 @@ void CTempString::x_Reset(void)
     m_Length = 0;
 }
 
+
 inline
-void CTempString::x_Init(const char* str, size_type str_length,
-                         size_type pos, size_type length)
+void CTempString::x_Init(const char* str, size_type str_len,
+                         size_type pos)
 {
-    if ( pos >= str_length ) {
+    if ( pos >= str_len ) {
         x_Reset();
-        return;
     }
-    m_String = str + pos;
-    m_Length = min(length, str_length - pos);
-    return;
+    else {
+        m_String = str + pos;
+        m_Length = str_len - pos;
+    }
 }
+
+
+inline
+void CTempString::x_Init(const char* str, size_type str_len,
+                         size_type pos, size_type len)
+{
+    if ( pos >= str_len ) {
+        x_Reset();
+    }
+    else {
+        m_String = str + pos;
+        m_Length = min(len, str_len - pos);
+    }
+}
+
 
 inline
 CTempString::CTempString(void)
-    : m_String(NULL), m_Length(0)
 {
     x_Reset();
-    return;
 }
+
 
 inline
 CTempString::CTempString(const char* str)
-    : m_String(NULL), m_Length(0)
 {
     if ( !str ) {
         x_Reset();
@@ -295,74 +319,70 @@ CTempString::CTempString(const char* str)
     }
     m_String = str;
     m_Length = strlen(str);
-    return;
 }
+
 
 template<size_t Size>
 inline
 CTempString::CTempString(const char (&str)[Size])
     : m_String(str), m_Length(Size-1)
 {
-    return;
 }
 
-inline
-CTempString::CTempString(const char* str, size_type length)
-    : m_String(str), m_Length(length)
-{
-    return;
-}
 
 inline
-CTempString::CTempString(const char* str, size_type pos, size_type length)
-    : m_String(str+pos), m_Length(length)
+CTempString::CTempString(const char* str, size_type len)
+    : m_String(str), m_Length(len)
 {
-    return;
 }
+
+
+inline
+CTempString::CTempString(const char* str, size_type pos, size_type len)
+    : m_String(str+pos), m_Length(len)
+{
+}
+
 
 inline
 CTempString::CTempString(const string& str)
     : m_String(str.data()), m_Length(str.size())
 {
-    return;
 }
 
-inline
-CTempString::CTempString(const string& str, size_type length)
-    : m_String(str.data()), m_Length(min(str.size(), length))
-{
-    return;
-}
 
 inline
-CTempString::CTempString(const string& str, size_type pos, size_type length)
-    : m_String(NULL), m_Length(0)
+CTempString::CTempString(const string& str, size_type len)
+    : m_String(str.data()), m_Length(min(len, str.size()))
 {
-    x_Init(str.data(), str.size(), pos, length);
-    _ASSERT(m_String);
-    return;
+}
+
+
+inline
+CTempString::CTempString(const string& str, size_type pos, size_type len)
+{
+    x_Init(str.data(), str.size(), pos, len);
 }
 
 
 inline
 CTempString::CTempString(const CTempString& str)
-    : m_String(NULL), m_Length(0)
+    : m_String(str.data()), m_Length(str.size())
 {
-    x_Init(str.data(), str.size(), 0, str.size());
 }
+
 
 inline
 CTempString::CTempString(const CTempString& str, size_type pos)
-    : m_String(NULL), m_Length(0)
 {
-    x_Init(str.data(), str.size(), pos, str.size() - pos);
+    x_Init(str.data(), str.size(), pos);
 }
 
+
 inline
-CTempString::CTempString(const CTempString& str, size_type pos, size_type length)
-    : m_String(NULL), m_Length(0)
+CTempString::CTempString(const CTempString& str, size_type pos, size_type len)
 {
-    x_Init(str.data(), str.size(), pos, length);
+    x_Init(str.data(), str.size(), pos, len);
 }
 
 
@@ -383,10 +403,12 @@ void CTempString::Copy(string& dst, size_type pos, size_type len) const
     if (pos < length()) {
         len = min(len, length()-pos);
         dst.assign(begin() + pos, begin() + pos + len);
-    } else {
+    }
+    else {
         dst.erase();
     }
 }
+
 
 inline
 CTempString::size_type CTempString::find_first_of(const CTempString& match,
@@ -481,15 +503,15 @@ CTempString& CTempString::assign(const CTempString& src_str,
                                  size_type          off, 
                                  size_type          count)
 {
-    m_String = src_str.m_String + off;
-    m_Length = count;
+    x_Init(src_str.data(), src_str.size(), off, count);
+    return *this;
 }
 
 
 inline
 CTempString CTempString::substr(size_type pos) const
 {
-    return CTempString(*this, pos, npos);
+    return CTempString(*this, pos);
 }
 
 
@@ -505,6 +527,7 @@ CTempString::operator string(void) const
 {
     return string(data(), length());
 }
+
 
 inline
 bool CTempString::x_Equals(const_iterator it2, const_iterator end2) const
@@ -526,17 +549,20 @@ bool CTempString::operator==(const char* str) const
     return x_Equals(str, str + strlen(str));
 }
 
+
 inline
 bool CTempString::operator==(const string& str) const
 {
     return x_Equals(str.data(), str.data() + str.size());
 }
 
+
 inline
 bool CTempString::operator==(const CTempString& str) const
 {
     return x_Equals(str.data(), str.data() + str.size());
 }
+
 
 inline
 bool CTempString::x_Less(const_iterator it2, const_iterator end2) const
@@ -560,11 +586,13 @@ bool CTempString::operator<(const char* str) const
     return x_Less(str, str + strlen(str));
 }
 
+
 inline
 bool CTempString::operator<(const string& str) const
 {
     return x_Less(str.data(), str.data() + str.size());
 }
+
 
 inline
 bool CTempString::operator<(const CTempString& str) const
@@ -579,6 +607,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/12/28 17:02:24  vasilche
+ * Deprecate ambigious constructors.
+ * Fixed CTempString::assign().
+ * Some formatting.
+ *
  * Revision 1.2  2006/12/28 16:10:05  kuznets
  * +assign()
  *
