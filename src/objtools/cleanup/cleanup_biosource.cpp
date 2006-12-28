@@ -2052,15 +2052,17 @@ void CCleanup_imp::x_FixSegSetSource
         CBioseq_set_EditHandle set_eh(segset);
         bool found = false;
         CRef<CSeqdesc> found_src;
-        NON_CONST_ITERATE (CSeq_descr::Tdata, segset_src_it, set_eh.SetDescr().Set()) {
-            if ((*segset_src_it)->Which() == CSeqdesc::e_Source) {
-                found = true;
+        if (set_eh.IsSetDescr()) {
+            NON_CONST_ITERATE (CSeq_descr::Tdata, segset_src_it, set_eh.SetDescr().Set()) {
+                if ((*segset_src_it)->Which() == CSeqdesc::e_Source) {
+                    found = true;
                 
-                ITERATE (CSeq_descr::Tdata, desc_it, src_list) {
-                    x_Common((*segset_src_it)->SetSource(), (*desc_it)->GetSource(), true);
+                    ITERATE (CSeq_descr::Tdata, desc_it, src_list) {
+                        x_Common((*segset_src_it)->SetSource(), (*desc_it)->GetSource(), true);
+                    }
+                    found_src = *segset_src_it;
+                    break;
                 }
-                found_src = *segset_src_it;
-                break;
             }
         }
         if (found) {
@@ -2265,18 +2267,20 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Hand
 {
     // First, clean up the features
     x_ExtendedCleanupBioSourceFeatures (bh);
-    // Now merge descriptors
-    CSeq_descr::Tdata remove_list;    
-    CBioseq_EditHandle edith = m_Scope->GetEditHandle(bh);     
-    x_RecurseDescriptorsForMerge(edith.SetDescr(),
-                                 &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource,
-                                 &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources,
-                                 remove_list);           
-    for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
-        it1 != remove_list.end(); ++it1) { 
-        edith.RemoveSeqdesc(**it1);
-        ChangeMade(CCleanupChange::eRemoveDescriptor);
-    }        
+    if (bh.IsSetDescr()) {
+        // Now merge descriptors
+        CSeq_descr::Tdata remove_list;    
+        CBioseq_EditHandle edith = m_Scope->GetEditHandle(bh);     
+        x_RecurseDescriptorsForMerge(edith.SetDescr(),
+                                     &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource,
+                                     &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources,
+                                     remove_list);           
+        for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+            it1 != remove_list.end(); ++it1) { 
+            edith.RemoveSeqdesc(**it1);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        }        
+    }
 }
 
 
@@ -2340,6 +2344,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2006/12/28 13:56:03  bollin
+ * Avoid creating empty Seqdescr sets.
+ *
  * Revision 1.22  2006/12/27 20:19:20  bollin
  * Corrected bug in x_FixSetSource.
  *

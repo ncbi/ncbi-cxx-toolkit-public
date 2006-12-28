@@ -90,6 +90,9 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor
             eh.RemoveSeqdesc(**it1);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
         }        
+        if (eh.GetDescr().Get().empty()) {
+            eh.ResetDescr();
+        }
     }
 }
 
@@ -107,7 +110,10 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescr
             it1 != remove_list.end(); ++it1) { 
             eh.RemoveSeqdesc(**it1);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
-        }        
+        }   
+        if (eh.GetDescr().Get().empty()) {
+            eh.ResetDescr();
+        }             
     }
 
     if (bss.GetCompleteBioseq_set()->IsSetSeq_set()) {
@@ -149,6 +155,9 @@ void CCleanup_imp::x_RecurseDescriptorsForMerge(CSeq_descr& desc, IsMergeCandida
 
 void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_Handle bh, IsMergeCandidate is_can, Merge do_merge)
 {
+    if (!bh.IsSetDescr()) {
+        return;
+    }
     CSeq_descr::Tdata remove_list;    
 
     CBioseq_EditHandle edith = m_Scope->GetEditHandle(bh);
@@ -1826,6 +1835,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/12/28 13:56:03  bollin
+ * Avoid creating empty Seqdescr sets.
+ *
  * Revision 1.14  2006/12/27 19:25:24  bollin
  * Avoid creating empty Seqdesc sets.
  * Removed steps for merging duplicate BioSource descriptors (should be handled

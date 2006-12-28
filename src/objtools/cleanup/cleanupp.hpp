@@ -360,6 +360,7 @@ private:
     void x_MergeDuplicatePubsOnSet(CBioseq_set_Handle bsh);    
     void x_ConvertPubsToAsn4 (CSeq_entry_Handle seh);
 
+    // BioSource Cleanup functions
     bool x_Merge (COrgName& on1, const COrgName& on2);
     bool x_Merge (COrg_ref::TDb& db1, const COrg_ref::TDb& db2);
     bool x_Merge (COrg_ref& org, const COrg_ref& add_org);
@@ -397,7 +398,7 @@ private:
     
     void x_FixSegSetSource (CBioseq_set_Handle segset, CBioseq_set_Handle parts, CBioseq_set_Handle *nuc_prot_parent = NULL);
     void x_FixSegSetSource (CBioseq_set_Handle bh, CBioseq_set_Handle *nuc_prot_parent = NULL);
-
+    void x_FixNucProtSources (CBioseq_set_Handle bh);
     void x_FixSetSource (CBioseq_set_Handle bh);
     
     bool x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh);
@@ -444,7 +445,6 @@ private:
     void x_SetMolInfoWithOldDescriptors(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list, CSeq_descr::Tdata& add_list);    
     void x_SetMolInfoWithOldDescriptors (CBioseq_Handle bh);    
     void x_SetMolInfoWithOldDescriptors (CBioseq_set_Handle bh); 
-    void x_FixNucProtSources (CBioseq_set_Handle bh);
 
     void LoopToAsn3 (CSeq_entry_Handle seh);
     void LoopToAsn3 (CBioseq_set_Handle bh);
@@ -487,6 +487,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2006/12/28 13:56:03  bollin
+ * Avoid creating empty Seqdescr sets.
+ *
  * Revision 1.50  2006/12/27 19:27:11  bollin
  * Fixed bug in mechanism for extended cleanup of sets inside other sets.
  * Added step for cleaning up BioSource descriptors on WGS, pop, phy, mut, and
