@@ -250,8 +250,6 @@ private:
     void x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot pmf);
     void x_RecurseForSeqAnnots (CBioseq_set_Handle bs, RecurseSeqAnnot pmf);
     
-    void x_MolInfoUpdate(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
-    
     void x_RemoveEmptyGenbankDesc(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
 
     void x_CleanGenbankBlockStrings (CGB_block& block);
@@ -442,9 +440,6 @@ private:
     void x_FixMissingSources (CBioseq_Handle bh);
     void x_FixMissingSources (CBioseq_set_Handle bh);
     void x_FixMissingSources (const CSeq_entry& se);
-    void x_SetMolInfoWithOldDescriptors(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list, CSeq_descr::Tdata& add_list);    
-    void x_SetMolInfoWithOldDescriptors (CBioseq_Handle bh);    
-    void x_SetMolInfoWithOldDescriptors (CBioseq_set_Handle bh); 
 
     void LoopToAsn3 (CSeq_entry_Handle seh);
     void LoopToAsn3 (CBioseq_set_Handle bh);
@@ -487,6 +482,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.52  2006/12/28 19:51:50  bollin
+ * Removed steps for handling obsolete descriptors mol-type, method, and modif.
+ *
  * Revision 1.51  2006/12/28 13:56:03  bollin
  * Avoid creating empty Seqdescr sets.
  *

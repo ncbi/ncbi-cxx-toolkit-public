@@ -289,77 +289,6 @@ static CMolInfo::ETech s_MethodToTech (CSeqdesc::TMethod method)
 }
 
 
-//   For any Bioseq or BioseqSet that has a MolInfo descriptor,
-//1) If the Bioseq or BioseqSet also has a MolType descriptor, if the MolInfo biomol value is not set 
-//   and the value from the MolType descriptor is MOLECULE_TYPE_GENOMIC, MOLECULE_TYPE_PRE_MRNA, 
-//   MOLECULE_TYPE_MRNA, MOLECULE_TYPE_RRNA, MOLECULE_TYPE_TRNA, MOLECULE_TYPE_SNRNA, MOLECULE_TYPE_SCRNA, 
-//   MOLECULE_TYPE_PEPTIDE, MOLECULE_TYPE_OTHER_GENETIC_MATERIAL, MOLECULE_TYPE_GENOMIC_MRNA_MIX, or 255, 
-//   the value from the MolType descriptor will be used to set the MolInfo biomol value.  The MolType descriptor
-//   will be removed, whether its value was copied to the MolInfo descriptor or not.
-//2) If the Bioseq or BioseqSet also has a Method descriptor, if the MolInfo technique value has not been set and 
-//   the Method descriptor value is “concept_trans”, “seq_pept”, “both”, “seq_pept_overlap”,  “seq_pept_homol”, 
-//   “concept_transl_a”, or “other”, then the Method descriptor value will be used to set the MolInfo technique value.  
-//   The Method descriptor will be removed, whether its value was copied to the MolInfo descriptor or not.
-void CCleanup_imp::x_MolInfoUpdate(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
-{
-    bool has_molinfo = false;
-    CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
-    CMolInfo::TTech   tech = CMolInfo::eTech_unknown;
-    bool changed = false;
-    
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-        if ((*it)->Which() == CSeqdesc::e_Molinfo) {
-            if (!has_molinfo) {
-                has_molinfo = true;
-                const CMolInfo& mol_info = (*it)->GetMolinfo();
-                if (mol_info.CanGetBiomol()) {
-                    biomol = mol_info.GetBiomol();
-                }
-                if (mol_info.CanGetTech()) {
-                    tech = mol_info.GetTech();
-                }
-            }          
-        } else if ((*it)->Which() == CSeqdesc::e_Mol_type) {
-            if (biomol == CMolInfo::eBiomol_unknown) {
-                biomol = s_MolTypeToBioMol ((*it)->GetMol_type());
-            }
-        } else if ((*it)->Which() == CSeqdesc::e_Method) {
-            if (tech == CMolInfo::eTech_unknown) {
-                tech = s_MethodToTech ((*it)->GetMethod());
-            }
-        }
-            
-    }
-    if (!has_molinfo) {
-        return;
-    }    
-    
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-        if ((*it)->Which() == CSeqdesc::e_Molinfo) {
-            CSeqdesc::TMolinfo& mi = (*it)->SetMolinfo();
-            if (biomol != CMolInfo::eBiomol_unknown) {
-                if (!mi.CanGetBiomol() || mi.GetBiomol() != biomol) {
-                    changed = true;
-                    mi.SetBiomol (biomol);
-                }
-            }
-            if (tech != CMolInfo::eTech_unknown) {
-                if (!mi.CanGetTech() || mi.GetTech() != tech) {
-                    changed = true;
-                    mi.SetTech (tech);
-                }
-            }
-        } else if ((*it)->Which() == CSeqdesc::e_Method
-                   || (*it)->Which() == CSeqdesc::e_Mol_type) {
-            remove_list.push_back(*it);
-        }
-    }
-    if (changed) {
-        ChangeMade(CCleanupChange::eChangeMolInfo);
-    }
-}
-
-
 bool IsEmpty (CGB_block& block) 
 {
     if ((!block.CanGetExtra_accessions() || block.GetExtra_accessions().size() == 0)
@@ -870,27 +799,13 @@ void CCleanup_imp::x_MoveIdenticalPartDescriptorsToSegSet (CBioseq_set_Handle se
             eh.AddSeqdesc(**(desc_list.begin())); 
             ChangeMade(CCleanupChange::eAddDescriptor);
             remove_from_parts = true;
-        } else if (desctype != CSeqdesc::e_Mol_type || x_SeqDescMatch(*desc_it, **(desc_list.begin()))) {
+        } else if (x_SeqDescMatch(*desc_it, **(desc_list.begin()))) {
 	        remove_from_parts = true;
 	    }
 	    if (remove_from_parts) {
 	        x_RemoveDescrForAllInSet (parts, desctype);
 	    }
 	}
-}
-
-
-static bool s_IsExtractableEGIBBMod (const CSeqdesc::TModif& modif)
-{
-    if (*(modif.begin()) == eGIBB_mod_dna
-        || *(modif.begin()) == eGIBB_mod_rna
-        || *(modif.begin()) == eGIBB_mod_est
-        || *(modif.begin()) == eGIBB_mod_complete
-        || *(modif.begin()) == eGIBB_mod_partial) {
-        return false;
-    } else {
-        return true;
-    }
 }
 
 
@@ -936,9 +851,7 @@ void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const
         CBioseq_EditHandle eh(m_Scope->GetBioseqHandle(se.GetSeq()));
         if (eh.IsSetDescr()) {
             NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
-                if ((*desc_it)->Which() == desctype 
-                    && (desctype != CSeqdesc::e_Modif 
-                        || s_IsExtractableEGIBBMod((*desc_it)->GetModif()))) {
+                if ((*desc_it)->Which() == desctype) {
                     desc_list.push_back(*desc_it);
                 }
             }
@@ -954,9 +867,7 @@ void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const
         CBioseq_set_EditHandle eh(m_Scope->GetBioseq_setHandle(se.GetSet()));
         if (eh.IsSetDescr()) {
             NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
-                if ((*desc_it)->Which() == desctype 
-                    && (desctype != CSeqdesc::e_Modif 
-                        || s_IsExtractableEGIBBMod((*desc_it)->GetModif()))) {
+                if ((*desc_it)->Which() == desctype) {
                     desc_list.push_back(*desc_it);
                 }
             }
@@ -975,9 +886,6 @@ void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const
 void CCleanup_imp::x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh, bool recurse)
 {
     // remove old descriptors
-    x_RemoveDescrByType (bh, CSeqdesc::e_Modif, recurse);
-    x_RemoveDescrByType (bh, CSeqdesc::e_Mol_type, recurse);
-    x_RemoveDescrByType (bh, CSeqdesc::e_Method, recurse);
     x_RemoveDescrByType (bh, CSeqdesc::e_Org, recurse);
     
     // remove old features
@@ -997,9 +905,6 @@ void CCleanup_imp::x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh, bool
 void CCleanup_imp::x_StripOldDescriptorsAndFeatures (CBioseq_Handle bh)
 {
     // remove old descriptors
-    x_RemoveDescrByType (bh, CSeqdesc::e_Modif);
-    x_RemoveDescrByType (bh, CSeqdesc::e_Mol_type);
-    x_RemoveDescrByType (bh, CSeqdesc::e_Method);
     x_RemoveDescrByType (bh, CSeqdesc::e_Org);
     
     // remove old features
@@ -1042,6 +947,8 @@ void CCleanup_imp::x_AddMissingProteinMolInfo(CSeq_entry_Handle seh)
 
 
 // was FuseMolInfos in C Toolkit
+// If a Bioseq or BioseqSet has more than one MolInfo descriptor, the biomol, tech, completeness, and techexp values will be combined
+// into the first MolInfo descriptor and the rest of the MolInfo descriptors will be removed.
 void CCleanup_imp::x_FuseMolInfos (CSeq_descr& desc_set, CSeq_descr::Tdata& desc_list)
 {
     NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, desc_set.Set()) {
@@ -1262,165 +1169,6 @@ static CBioSource::EOrigin s_ModifToOrigin(CSeqdesc::TModif modif)
 }
 
 
-void CCleanup_imp::x_SetMolInfoWithOldDescriptors(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list, CSeq_descr::Tdata& add_list)
-{
-    CSeq_descr::Tdata biosrc_list;
-    CSeq_descr::Tdata molinfo_list;
-    
-    CMolInfo::EBiomol       biomol       = CMolInfo::eBiomol_unknown;
-    CMolInfo::ETech         tech         = CMolInfo::eTech_unknown;
-    CMolInfo::ECompleteness completeness = CMolInfo::eCompleteness_unknown;
-    CBioSource::EGenome     genome       = CBioSource::eGenome_unknown;
-    CBioSource::EOrigin     origin       = CBioSource::eOrigin_unknown;
-    
-    NON_CONST_REVERSE_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-        if ((*it)->Which() == CSeqdesc::e_Source ) {
-            biosrc_list.push_back(*it);
-        } else if ((*it)->Which() == CSeqdesc::e_Molinfo) {
-            molinfo_list.push_back(*it);
-        } else if ((*it)->Which() == CSeqdesc::e_Mol_type) {
-            if (biomol == CMolInfo::eBiomol_unknown) {
-                biomol = s_MolTypeToBioMol ((*it)->GetMol_type());
-            }
-            remove_list.push_back(*it);
-        } else if ((*it)->Which() == CSeqdesc::e_Method) {
-            if (tech == CMolInfo::eTech_unknown) {
-                tech = s_MethodToTech ((*it)->GetMethod());
-            }
-            remove_list.push_back(*it);
-        } else if ((*it)->Which() == CSeqdesc::e_Modif) {
-            CSeqdesc::TModif modif = (*it)->GetModif();
-            if (completeness == CMolInfo::eCompleteness_unknown) {
-                completeness = s_ModifToCompleteness(modif);
-            }
-            if (tech == CMolInfo::eTech_unknown) {
-                tech = s_ModifToTech (modif);
-            }
-            if (genome == CBioSource::eGenome_unknown) {
-                genome = s_ModifToGenome (modif);
-            }
-            if (origin == CBioSource::eOrigin_unknown) {
-                origin = s_ModifToOrigin(modif);
-            }
-            remove_list.push_back(*it);
-        }
-    }
-    
-    if (biosrc_list.size() > 0) {
-        CBioSource& src = (*(biosrc_list.begin()))->SetSource();
-        // set genome with info from old descriptors
-        if (genome != CBioSource::eGenome_unknown
-            && (!src.CanGetGenome() 
-                || src.GetGenome() == CBioSource::eGenome_unknown)) {
-            src.SetGenome (genome);
-            ChangeMade (CCleanupChange::eChangeBioSourceGenome);
-        }
-        // set origin with info from old descriptors
-        if (origin != CBioSource::eOrigin_unknown
-            && (!src.CanGetOrigin()
-                || src.GetOrigin() == CBioSource::eOrigin_unknown)) {
-            src.SetOrigin(origin);
-            ChangeMade (CCleanupChange::eChangeBioSourceOrigin);
-        }
-    } else if (genome != CBioSource::eGenome_unknown 
-               || origin != CBioSource::eOrigin_unknown) {
-        // create new source descriptor to hold info from old descriptors
-        CRef<CSeqdesc> new_src(new CSeqdesc());
-        if (genome != CBioSource::eGenome_unknown) {
-            new_src->SetSource().SetGenome(genome);
-        }
-        if (origin != CBioSource::eOrigin_unknown) {
-            new_src->SetSource().SetOrigin(origin);
-        }
-        add_list.push_back (new_src);
-        ChangeMade (CCleanupChange::eAddDescriptor);
-    }
-    
-    if (molinfo_list.size() > 0) {
-        CMolInfo& mol = (*(molinfo_list.begin()))->SetMolinfo();
-        // set biomol with info from old descriptors
-        if (biomol != CMolInfo::eBiomol_unknown
-            && (!mol.CanGetBiomol() || mol.GetBiomol() == CMolInfo::eBiomol_unknown)) {
-            mol.SetBiomol(biomol);
-            ChangeMade(CCleanupChange::eChangeMolInfo);
-        }
-        // set tech with info from old descriptors
-        if (tech != CMolInfo::eTech_unknown
-            && (!mol.CanGetTech() || mol.GetTech() == CMolInfo::eTech_unknown)) {
-            mol.SetTech(tech);
-            ChangeMade(CCleanupChange::eChangeMolInfo);
-        }
-        // set completeness with info from old descriptors
-        if (completeness != CMolInfo::eCompleteness_unknown
-            && (!mol.CanGetCompleteness() 
-                || mol.GetCompleteness() == CMolInfo::eCompleteness_unknown)) {
-            mol.SetCompleteness(completeness);
-        }
-    } else if (biomol != CMolInfo::eBiomol_unknown
-               || tech != CMolInfo::eTech_unknown
-               || completeness != CMolInfo::eCompleteness_unknown) {
-        // create new molinfo descriptor to hold info from old descriptors
-        CRef<CSeqdesc> new_mol(new CSeqdesc());
-        if (biomol != CMolInfo::eBiomol_unknown) {
-            new_mol->SetMolinfo().SetBiomol(biomol);
-        }
-        if (tech != CMolInfo::eTech_unknown) {
-            new_mol->SetMolinfo().SetTech(tech);
-        }
-        if (completeness != CMolInfo::eCompleteness_unknown) {
-            new_mol->SetMolinfo().SetCompleteness(completeness);
-        }
-        add_list.push_back (new_mol);
-        ChangeMade (CCleanupChange::eAddDescriptor);
-    }    
-    
-}
-
-
-void CCleanup_imp::x_SetMolInfoWithOldDescriptors(CBioseq_Handle bh)
-{
-    if (!bh.IsSetDescr()) return;
-    
-    CSeq_descr::Tdata remove_list;
-    CSeq_descr::Tdata add_list;
-    CBioseq_EditHandle eh(bh);
-    x_SetMolInfoWithOldDescriptors(eh.SetDescr(), remove_list, add_list);
-
-    for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
-         it1 != remove_list.end(); ++it1) { 
-        eh.RemoveSeqdesc(**it1);
-        ChangeMade(CCleanupChange::eRemoveDescriptor);
-    }
-    for (CSeq_descr::Tdata::iterator it1 = add_list.begin();
-         it1 != add_list.end(); ++it1) { 
-        eh.AddSeqdesc(**it1);
-        ChangeMade(CCleanupChange::eAddDescriptor);
-    }
-}
-
-
-void CCleanup_imp::x_SetMolInfoWithOldDescriptors(CBioseq_set_Handle bh)
-{
-    if (!bh.IsSetDescr()) return;
-    
-    CSeq_descr::Tdata remove_list;
-    CSeq_descr::Tdata add_list;
-    CBioseq_set_EditHandle eh(bh);
-    x_SetMolInfoWithOldDescriptors(eh.SetDescr(), remove_list, add_list);
-
-    for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
-         it1 != remove_list.end(); ++it1) { 
-        eh.RemoveSeqdesc(**it1);
-        ChangeMade(CCleanupChange::eRemoveDescriptor);
-    }
-    for (CSeq_descr::Tdata::iterator it1 = add_list.begin();
-         it1 != add_list.end(); ++it1) { 
-        eh.AddSeqdesc(**it1);
-        ChangeMade(CCleanupChange::eAddDescriptor);
-    }
-}
-
-
 void CCleanup_imp::x_FixMissingSources (CBioseq_Handle bh)
 {
     CSeqdesc_CI src_desc (bh, CSeqdesc::e_Source, 1);
@@ -1433,7 +1181,6 @@ void CCleanup_imp::x_FixMissingSources (CBioseq_Handle bh)
         has_source |= x_ConvertOrgDescToSourceDescriptor (bh);
         has_source_feats = x_ConvertOrgAndImpFeatToSource (bh);
 
-        x_SetMolInfoWithOldDescriptors (bh);    
     }
     
     if (!has_source && has_source_feats) {    
@@ -1478,7 +1225,6 @@ void CCleanup_imp::x_FixMissingSources (CBioseq_set_Handle bh)
         CSeq_descr::Tdata remove_list;    
         CBioseq_set_EditHandle edith = m_Scope->GetEditHandle(bh);     
 
-        x_SetMolInfoWithOldDescriptors (bh);    
     }
     
     
@@ -1835,6 +1581,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/12/28 19:51:50  bollin
+ * Removed steps for handling obsolete descriptors mol-type, method, and modif.
+ *
  * Revision 1.15  2006/12/28 13:56:03  bollin
  * Avoid creating empty Seqdescr sets.
  *

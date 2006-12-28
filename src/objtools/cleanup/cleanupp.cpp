@@ -737,7 +737,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
-        x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
         x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
@@ -756,7 +755,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_ChangeGenBankBlocks (bsh.GetParentEntry());
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
-        x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
         x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
@@ -799,7 +797,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
-    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MolInfoUpdate);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
@@ -1533,8 +1530,6 @@ void CCleanup_imp::CheckSegSet(CBioseq_set_Handle bss)
             CBioseq_set_Handle parts = m_Scope->GetBioseq_setHandle((*se_it)->GetSet());
 
             x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Org);
-            x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Mol_type);
-            x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Modif);
             x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Update_date);
         }
 	}
@@ -1567,7 +1562,6 @@ void CCleanup_imp::CheckNucProtSet (CBioseq_set_Handle bss)
         x_RemoveNucProtSetTitle(eh, **se_it);
         
         // promote descriptors on nuc to nuc-prot set if type not already on nuc-prot set
-        x_ExtractNucProtDescriptors(eh, **se_it, CSeqdesc::e_Modif);
         x_ExtractNucProtDescriptors(eh, **se_it, CSeqdesc::e_Org);
         x_ExtractNucProtDescriptors(eh, **se_it, CSeqdesc::e_Update_date);
 
@@ -1588,6 +1582,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.57  2006/12/28 19:51:50  bollin
+ * Removed steps for handling obsolete descriptors mol-type, method, and modif.
+ *
  * Revision 1.56  2006/12/27 20:18:40  bollin
  * Removed steps for merging duplicate BioSource descriptors.
  *
