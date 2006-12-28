@@ -488,6 +488,8 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         printf ("%s\n", label.c_str());
     }   
     
+    ESerialDataFormat outFormat = eSerial_AsnText;
+
     string file_name = args["o"].AsString();
     
     if (!args["nocleanup"]) {
@@ -495,7 +497,15 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         CCleanup cleanup;
         cleanup.SetScope(scope);
         try {
-            cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(entry.GetCompleteSeq_entry())));
+            CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(entry.GetCompleteSeq_entry())));
+            vector<string> changes_str = changes->GetAllDescriptions();
+            if (changes_str.size() == 0) {
+              printf ("No changes\n");
+            } else {
+              ITERATE(vector<string>, vit, changes_str) {
+                printf ("%s\n", (*vit).c_str());
+              }
+            }
         }
         catch (CException& e) {
             LOG_POST(Error << "error in extended cleanup: " << e.GetMsg() << label);
@@ -503,7 +513,6 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         }
     }
 
-    ESerialDataFormat outFormat = eSerial_AsnText;
     auto_ptr<CObjectOStream> out(!args["o"]? 0:
                                  CObjectOStream::Open(outFormat, file_name,
                                                       eSerial_StdWhenAny));
@@ -581,6 +590,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/12/28 20:16:28  bollin
+* Print change flags from cleanup.
+*
 * Revision 1.1  2006/07/21 13:31:09  bollin
 * added cleanup utility
 *
