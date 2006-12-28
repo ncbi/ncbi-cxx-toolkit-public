@@ -33,7 +33,7 @@
 
 #include "../../dbapi_driver_sample_base.hpp"
 #include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/ctlib/interfaces.hpp>
+#include <interfaces.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -69,7 +69,11 @@ CDemoApp::RunSample(void)
     try {
         DBLB_INSTALL_DEFAULT();
 
+#ifdef FTDS_IN_USE
+        CTDSContext my_context(true, GetTDSVersion());
+#else
         CTLibContext my_context(true, GetTDSVersion());
+#endif
 
         auto_ptr<CDB_Connection> con(my_context.Connect(GetServerName(),
                                                         GetUserName(),
@@ -129,6 +133,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/12/28 22:21:45  ssikorsk
+ * Make code compatible with the ftds driver.
+ *
  * Revision 1.14  2006/11/16 22:31:40  ssikorsk
  * Revamp code to use CDbapiDriverSampleApp.
  *
