@@ -831,7 +831,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
     }
 
     // Convert to number
-    Uint8 n = StringToUInt8(CTempString(str.data(), numpos, pos-numpos),
+    Uint8 n = StringToUInt8(CTempString(str.data()+numpos, pos-numpos),
                             flags, base);
     if ( errno ) {
         // If exceptions enabled by flags that it has been already thrown.
@@ -2611,6 +2611,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.193  2006/12/28 16:58:03  vasilche
+ * Avoid using deprecated constructor.
+ *
  * Revision 1.192  2006/12/28 16:07:36  kuznets
  * Use string utility templates for splitting
  *
