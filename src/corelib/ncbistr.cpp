@@ -34,6 +34,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/tempstr.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbistr_util.hpp>
 #include <memory>
 #include <algorithm>
 #include <errno.h>
@@ -1470,6 +1471,22 @@ list<string>& NStr::Split(const string& str, const string& delim,
                           list<string>& arr, EMergeDelims merge,
                           vector<SIZE_TYPE>* token_pos)
 {
+
+    typedef list<string>                                    TContainer;
+    typedef CStrTokenPosAdapter<vector<SIZE_TYPE> >         TPosArray;
+    typedef CStrDummyTargetReserve<string, TContainer, 
+            TPosArray, CStrDummyTokenCount<string > >       TReserve;
+    typedef CStrTokenize<string, TContainer, 
+                        TPosArray,
+                        CStrDummyTokenCount<string>,
+                        TReserve>                           TSplitter;
+    TPosArray token_pos_proxy(token_pos);
+    TSplitter::Do(str, delim, arr, 
+                  (CStrTokenizeBase::EMergeDelims)merge, 
+                  token_pos_proxy,
+                  kEmptyStr);
+    return arr;
+/*
     // Special cases
     if (str.empty()) {
         return arr;
@@ -1507,6 +1524,7 @@ list<string>& NStr::Split(const string& str, const string& delim,
         }
     }
     return arr;
+*/
 }
 
 
@@ -1514,6 +1532,21 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
                                vector<string>& arr, EMergeDelims merge,
                                vector<SIZE_TYPE>* token_pos)
 {
+    typedef vector<string>                                  TContainer;
+    typedef CStrTokenPosAdapter<vector<SIZE_TYPE> >         TPosArray;
+    typedef CStrTargetReserve<string, TContainer, 
+                              TPosArray, CStringTokenCount> TReserve;
+    typedef CStrTokenize<string, TContainer, 
+                        TPosArray,
+                        CStringTokenCount,
+                        TReserve>                            TSplitter;
+    TPosArray token_pos_proxy(token_pos);
+    TSplitter::Do(str, delim, arr, 
+                  (CStrTokenizeBase::EMergeDelims)merge,
+                  token_pos_proxy,
+                  kEmptyStr);
+    return arr;
+/*
     // Special cases
     if (str.empty()) {
         return arr;
@@ -1578,6 +1611,7 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
         }
     }
     return arr;
+*/
 }
 
 
@@ -2577,6 +2611,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.192  2006/12/28 16:07:36  kuznets
+ * Use string utility templates for splitting
+ *
  * Revision 1.191  2006/12/22 17:49:12  dicuccio
  * Fix typo in logic in s_TruncateSpaces()
  *
