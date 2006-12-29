@@ -129,8 +129,8 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("lcase", "lcase", "Should lower case be masked?",
                             CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("lookup", "lookup", 
-        "Type of lookup table: 0 default, 1 megablast",
-        CArgDescriptions::eInteger, "0");
+        "Type of lookup table: -1 default, 0 megablast",
+        CArgDescriptions::eInteger, "-1");
     arg_desc->AddDefaultKey("matrix", "matrix", "Scoring matrix name",
                             CArgDescriptions::eString, "BLOSUM62");
     arg_desc->AddDefaultKey("mismatch", "penalty", "Penalty score for a mismatch",
@@ -220,7 +220,7 @@ CBlast2seqApplication::ProcessCommandLineArgs()
 
     EProgram prog = ProgramNameToEnum(args["program"].AsString());
 
-    if (args["lookup"].AsInteger() == 1) {
+    if (args["lookup"].AsInteger() == 0) {
         prog = eMegablast;
         if (args["templen"].AsInteger() > 0) 
             prog = eDiscMegablast;
@@ -241,7 +241,7 @@ CBlast2seqApplication::ProcessCommandLineArgs()
     opt.SetFilterString(args["filter"].AsString().c_str());
     // FIXME: Handle lcase masking
 
-    if (args["lookup"].AsInteger()) {
+    if (args["lookup"].AsInteger() >= 0) {
         opt.SetLookupTableType((ELookupTableType)(args["lookup"].AsInteger()));
     }
     if (args["matrix"]) {
