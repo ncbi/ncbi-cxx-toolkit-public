@@ -99,6 +99,8 @@ public:
     /// @{
     
     /// Assign new values to the content of the a string
+    CTempString& assign(const char* src_str, size_type len);
+    CTempString& assign(const CTempString& src_str);
     CTempString& assign(const CTempString& src_str,
                         size_type          off, 
                         size_type          count);
@@ -121,9 +123,13 @@ public:
     /// Return the length of the represented array.
     size_type   size(void) const;
 
+
     /// Return true if the represented string is empty (i.e., the length is
     /// zero)
     bool        empty(void)  const;
+
+    /// Clears the string
+    void clear(void);
 
     /// Truncate the string at some specified position
     /// Note: basic_string<> supports additional erase() options that we
@@ -184,7 +190,6 @@ private:
     size_type   m_Length;  ///< Length of string
 
     // Initialize CTempString with bounds checks
-    void x_Reset(void);
     void x_Init(const char* str, size_type str_len,
                 size_type pos, size_type len);
     void x_Init(const char* str, size_type str_len,
@@ -266,9 +271,9 @@ char CTempString::operator[] (size_type pos) const
 
 
 inline
-void CTempString::x_Reset(void)
+void CTempString::clear(void)
 {
-    // x_Reset() assures that m_String points to a NULL-terminated c-style
+    // clear() assures that m_String points to a NULL-terminated c-style
     // string as a fall-back.
     m_String = "";
     m_Length = 0;
@@ -280,7 +285,7 @@ void CTempString::x_Init(const char* str, size_type str_len,
                          size_type pos)
 {
     if ( pos >= str_len ) {
-        x_Reset();
+        clear();
     }
     else {
         m_String = str + pos;
@@ -294,7 +299,7 @@ void CTempString::x_Init(const char* str, size_type str_len,
                          size_type pos, size_type len)
 {
     if ( pos >= str_len ) {
-        x_Reset();
+        clear();
     }
     else {
         m_String = str + pos;
@@ -306,7 +311,7 @@ void CTempString::x_Init(const char* str, size_type str_len,
 inline
 CTempString::CTempString(void)
 {
-    x_Reset();
+    clear();
 }
 
 
@@ -314,7 +319,7 @@ inline
 CTempString::CTempString(const char* str)
 {
     if ( !str ) {
-        x_Reset();
+        clear();
         return;
     }
     m_String = str;
@@ -499,6 +504,22 @@ CTempString::size_type CTempString::find(char match, size_type pos) const
 }
 
 inline
+CTempString& CTempString::assign(const char* src, size_type len)
+{
+    m_String = src;
+    m_Length = len;
+    return *this;
+}
+
+
+inline
+CTempString& CTempString::assign(const CTempString& src_str)
+{
+    return *this = src_str;
+}
+
+
+inline
 CTempString& CTempString::assign(const CTempString& src_str,
                                  size_type          off, 
                                  size_type          count)
@@ -607,6 +628,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/29 15:39:52  vasilche
+ * Implemented clear() and bunch of assign() methods.
+ *
  * Revision 1.3  2006/12/28 17:02:24  vasilche
  * Deprecate ambigious constructors.
  * Fixed CTempString::assign().
