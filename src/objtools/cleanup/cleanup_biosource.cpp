@@ -761,7 +761,7 @@ bool CCleanup_imp::x_OkToMerge (const COrg_ref::TDb& db1, const COrg_ref::TDb& d
     if (db1.size() == 0 || db2.size() == 0) return true;
     
     for (unsigned int i1 = 0; i1 < db1.size(); i1++) {
-        if (!db1[11]->IsSetDb()) continue;
+        if (!db1[i1]->IsSetDb()) continue;
         string db1_db = db1[i1]->GetDb();
         if (NStr::IsBlank (db1_db)) continue;
         
@@ -2344,6 +2344,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2006/12/29 14:57:46  bollin
+ * Fixed typo bug.
+ *
  * Revision 1.23  2006/12/28 13:56:03  bollin
  * Avoid creating empty Seqdescr sets.
  *
