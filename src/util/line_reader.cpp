@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko
+* Author:  Aaron Ucko, Anatoliy Kuznetsov
 *
 * File Description:
 *   Lightweight interface for getting lines of data with minimal
@@ -34,6 +34,9 @@
 
 #include <ncbi_pch.hpp>
 #include <util/line_reader.hpp>
+#include <util/util_exception.hpp>
+
+#include <string.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -144,12 +147,156 @@ CT_POS_TYPE CMemoryLineReader::GetPosition(void) const
 }
 
 
+
+
+CIReaderLineReader::CIReaderLineReader(IReader* reader, EOwnership ownership)
+: m_Reader(reader),
+  m_OwnReader(ownership),
+  m_Buffer(1024 * 1024),
+  m_BufferDataSize(0),
+  m_RW_Result(eRW_Success),
+  m_Eof(false),
+  m_BufferReadSize(0)
+{}
+
+CIReaderLineReader::~CIReaderLineReader()
+{
+    if (eTakeOwnership == m_OwnReader) {
+        delete m_Reader;
+    }
+}
+
+void CIReaderLineReader::SetBufferSize(size_t buf_size)
+{
+    m_Buffer.resize(buf_size);
+}
+
+bool CIReaderLineReader::AtEOF(void) const
+{
+    return m_Eof;
+}
+
+char  CIReaderLineReader::PeekChar(void) const
+{
+    return m_Buffer[m_BufferReadSize];
+}
+
+CIReaderLineReader& CIReaderLineReader::operator++(void)
+{
+    // check if we are at the buffer end
+    if (m_BufferReadSize == m_BufferDataSize) {
+        m_BufferDataSize = m_BufferReadSize = 0;
+        if (x_ReadBuffer() != eRW_Success) {
+            m_Eof = true;
+            return *this;
+        }
+    }
+
+    // find the next line-end in the current buffer
+
+    size_t line_start = m_BufferReadSize;
+    while (1) {
+        const char* p = &(m_Buffer[0]) + m_BufferReadSize;
+        for (;m_BufferReadSize < m_BufferDataSize;  ++m_BufferReadSize, ++p) {
+            if (*p == '\r'  || *p == '\n') {
+                m_Line = 
+                    CTempString(&(m_Buffer[0]) + line_start, m_BufferReadSize - line_start);
+                // skip over delimiters
+                if (++m_BufferReadSize < m_BufferDataSize && 
+                    *p == '\r'  &&  p[1] == '\n') {
+                    ++m_BufferReadSize;
+                }
+                return *this;
+            }
+        }
+
+        // no final delimiter: load next portion of data to keep searching
+
+        if (line_start) {
+            _ASSERT(m_BufferReadSize > line_start);
+            m_BufferDataSize = m_BufferReadSize = m_BufferReadSize - line_start;
+            ::memmove(&(m_Buffer[0]), &(m_Buffer[0]) + line_start, m_BufferDataSize);
+            line_start = 0;
+            if (x_ReadBuffer() != eRW_Success) {
+                m_Line = 
+                    CTempString(&(m_Buffer[0]) + line_start, 
+                                m_BufferReadSize - line_start);
+                return *this;
+            }
+        } else {
+            if (m_BufferDataSize < m_Buffer.size()) {
+                if (x_ReadBuffer() != eRW_Success) {
+                    m_Line = 
+                        CTempString(&(m_Buffer[0]) + line_start, 
+                                    m_BufferReadSize - line_start);
+                    return *this;
+                }
+            } else {
+                // string too long?
+                NCBI_THROW(CIOException, eRead, "Buffer too small to accomodate line");
+            }
+        }
+
+    } // while
+
+    return *this;
+}
+
+ERW_Result CIReaderLineReader::x_ReadBuffer()
+{
+    _ASSERT(m_Reader);
+
+    if (m_RW_Result == eRW_Eof) {
+        return eRW_Eof;
+    }
+
+    // compute buffer availability
+    size_t buf_avail = m_Buffer.size() - m_BufferDataSize;
+    size_t bytes_read;
+    for (bool flag = true; flag; ) {
+        m_RW_Result = 
+            m_Reader->Read(&(m_Buffer[0]) + m_BufferDataSize, buf_avail, &bytes_read);
+        switch (m_RW_Result) {
+        case eRW_NotImplemented:
+        case eRW_Error:
+            NCBI_THROW(CIOException, eRead, "Read error");
+            break;
+        case eRW_Success:
+            m_BufferDataSize += bytes_read;
+            flag = false;
+            break;
+        case eRW_Timeout:
+            // keep spinning around
+            break;
+        case eRW_Eof:
+            flag = false;
+            break;
+        default:
+            _ASSERT(0);
+        }
+    } // for
+    return m_RW_Result;
+}
+
+CTempString CIReaderLineReader::operator*(void) const
+{
+    return m_Line;
+}
+
+CT_POS_TYPE CIReaderLineReader::GetPosition(void) const
+{
+    _ASSERT(0);
+    return 0; // TODO: implement position counter
+}
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/12/29 20:25:27  kuznets
+* + CIReaderLineReader class
+*
 * Revision 1.3  2006/12/13 16:47:47  ucko
 * Add a static convenience method (ILineReader::New) for constructing a
 * line reader corresponding to a filename; to facilitate that, allow

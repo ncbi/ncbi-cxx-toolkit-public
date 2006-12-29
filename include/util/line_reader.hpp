@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Aaron Ucko
+ * Author:  Aaron Ucko, Anatoliy Kuznetsov
  *
  */
 
@@ -39,6 +39,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/reader_writer.hpp>
 
 #include <memory>
 
@@ -123,6 +124,38 @@ private:
     auto_ptr<CMemoryFile> m_MemFile;
 };
 
+/// Implementation of ILineReader for IReader
+///
+class NCBI_XUTIL_EXPORT CIReaderLineReader : public ILineReader
+{
+public:
+    /// Work with the half-open range [start, end).
+    CIReaderLineReader(IReader* reader, EOwnership ownership);
+    virtual ~CIReaderLineReader();
+
+    /// In this implementation buffer size MUST be larger than line 
+    /// length we expect
+    void SetBufferSize(size_t buf_size);
+
+    bool                AtEOF(void) const;
+    char                PeekChar(void) const;
+    CIReaderLineReader& operator++(void);
+    CTempString         operator*(void) const;
+    CT_POS_TYPE         GetPosition(void) const;
+private:
+    ERW_Result x_ReadBuffer();
+private:
+    IReader*      m_Reader;
+    EOwnership    m_OwnReader;
+    vector<char>  m_Buffer;
+    size_t        m_BufferDataSize;
+    ERW_Result    m_RW_Result;
+    bool          m_Eof;
+    size_t        m_BufferReadSize;
+    CTempString   m_Line;
+};
+
+
 
 END_NCBI_SCOPE
 
@@ -133,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/29 20:25:37  kuznets
+ * + CIReaderLineReader class
+ *
  * Revision 1.3  2006/12/13 17:46:54  ucko
  * Export ILineReader (for the sake of New)
  *
