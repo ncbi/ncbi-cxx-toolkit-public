@@ -439,6 +439,23 @@ bool CDB_UserHandler::HandleAll(const TExceptions& exceptions)
     return false;
 }
 
+
+string CDB_UserHandler::GetExtraMsg(void) const
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    return m_ExtraMsg;
+}
+
+
+void CDB_UserHandler::SetExtraMsg(const string& msg)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    m_ExtraMsg = msg;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_UserHandler_Diag::
 //
@@ -552,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/12/29 20:42:04  ssikorsk
+ * Temporary mt fix for memory corruption.
+ *
  * Revision 1.33  2006/12/27 21:16:19  ssikorsk
  * Report context info with CDB_UserHandler_Diag::HandleIt.
  *

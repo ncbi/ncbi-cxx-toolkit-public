@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 
 #include <deque>
 
@@ -422,17 +423,14 @@ public:
     // d-tor
     virtual ~CDB_UserHandler();
 
-    const string& GetExtraMsg(void) const
-    {
-        return m_ExtraMsg;
-    }
-    void SetExtraMsg(const string& msg)
-    {
-        m_ExtraMsg = msg;
-    }
+    string GetExtraMsg(void) const;
+    void SetExtraMsg(const string& msg);
+
+protected:
+    mutable CFastMutex  m_Mtx;
 
 private:
-    string  m_ExtraMsg;
+    string              m_ExtraMsg;
 };
 
 
@@ -529,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/12/29 20:41:56  ssikorsk
+ * Temporary mt fix for memory corruption.
+ *
  * Revision 1.33  2006/12/27 21:00:34  ssikorsk
  * Added member m_ExtraMsg and a getter/setter to CDB_UserHandler.
  *
