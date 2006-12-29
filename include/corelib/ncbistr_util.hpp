@@ -152,7 +152,7 @@ public:
             const TString&     delim,
             TContainer&        target,
             EMergeDelims       merge,
-            TPosContainer&     token_pos = TPosContainer(0),
+            TPosContainer&     token_pos,
             const TString&     empty_str = TString())
     {
         // Special cases
@@ -292,6 +292,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/12/29 00:07:51  ucko
+ * CStrTokenize::Do(): make TPosContainer mandatory because giving non-const
+ * references default values can be problematic (particularly under MIPSpro).
+ *
  * Revision 1.3  2006/12/28 20:40:47  vasilche
  * Fixed incorrect constructor call.
  *
