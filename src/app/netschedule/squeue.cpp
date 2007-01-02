@@ -120,14 +120,14 @@ SLockedQueue::SLockedQueue(const string& queue_name, const string& qclass_name)
     last_notif(0), 
     q_notif("NCBI_JSQ_"),
     run_time_line(0),
-
     rec_dump("jsqd_"+queue_name+".dump", 10 * (1024 * 1024)),
     rec_dump_flag(false),
     lb_flag(false),
     lb_coordinator(0),
     lb_stall_delay_type(eNSLB_Constant),
     lb_stall_time(6),
-    lb_stall_time_mult(1.0)
+    lb_stall_time_mult(1.0),
+    delete_database(false)
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
@@ -143,6 +143,12 @@ SLockedQueue::~SLockedQueue()
     }
     delete run_time_line;
     delete lb_coordinator;
+    if (delete_database) {
+        // TODO: remove queue database files
+    }
+    void *pData;
+    m_StatThread->RequestStop();
+    m_StatThread->Join(&pData);
 }
 
 
@@ -163,28 +169,25 @@ SLockedQueue::CStatisticsThread::CStatisticsThread(TContainer& container)
 
 void SLockedQueue::CStatisticsThread::DoJob(void) {
     unsigned counter;
-    counter = m_Container.m_GetCounter.Get();
-    m_Container.m_GetCounter.Add(-counter);
-    m_Container.m_GetAverage = (kDecayExp * m_Container.m_GetAverage +
+    for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
+        counter = m_Container.m_EventCounter[n].Get();
+        m_Container.m_EventCounter[n].Add(-counter);
+        m_Container.m_Average[n] = (kDecayExp * m_Container.m_Average[n] +
                                 (kFixed_1-kDecayExp) * (counter << kFixedShift)
-                                ) >> kFixedShift;
-    counter = m_Container.m_PutCounter.Get();
-    m_Container.m_PutCounter.Add(-counter);
-    m_Container.m_PutAverage = (kDecayExp * m_Container.m_PutAverage +
-                                (kFixed_1-kDecayExp) * (counter << kFixedShift)
-                                ) >> kFixedShift;
+                                   ) >> kFixedShift;
+    }
 }
 
 
-double SLockedQueue::GetGetAverage(void)
+void SLockedQueue::CountEvent(TStatEvent event)
 {
-    return m_GetAverage / double(kFixed_1 * kMeasureInterval);
+    m_EventCounter[event].Add(1);
 }
 
 
-double SLockedQueue::GetPutAverage(void)
+double SLockedQueue::GetAverage(TStatEvent n_event)
 {
-    return m_PutAverage / double(kFixed_1 * kMeasureInterval);
+    return m_Average[n_event] / double(kFixed_1 * kMeasureInterval);
 }
 
 
@@ -193,6 +196,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2007/01/02 18:50:54  joukovv
+ * Queue deletion implemented (does not delete actual database files - need a
+ * method of enumerating them). Draft implementation of weak reference. Minor
+ * corrections.
+ *
  * Revision 1.6  2006/12/07 21:26:06  joukovv
  * Error processing fixed.
  *

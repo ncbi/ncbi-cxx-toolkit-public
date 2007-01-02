@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.6.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.7.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -472,7 +472,6 @@ public:
     string& GetHost() { return m_Host; }
     unsigned GetPort() { return m_Port; }
     unsigned GetHostNetAddr() { return m_HostNetAddr; }
-    // GetPort inherited from CThreadedServer
     const CTime& GetStartTime(void) const { return m_StartTime; }
     const CNetSchedule_AccessList& GetAccessList(void) const { return m_AdminHosts; }
 
@@ -1189,7 +1188,7 @@ CNetScheduleHandler::ProcessJobExchange()
         done_job_id = 0;
     }
     m_Queue->PutResultGetJob(done_job_id, m_JobReq.job_return_code,
-                             m_JobReq.output, false /*don't change the timeline*/,
+                             m_JobReq.output,
                              m_PeerAddr, &job_id,
                              m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
                              m_AuthString,
@@ -1205,9 +1204,6 @@ CNetScheduleHandler::ProcessJobExchange()
     } else {
         WriteMsg("OK:", "");
     }
-    // postpone removal from the timeline, so we remove while 
-    // request response is network transferred
-    m_Queue->TimeLineExchange(done_job_id, job_id, time(0));
 
     if (m_Monitor && m_Monitor->IsMonitorActive()) {
         CSocket& socket = GetSocket();
@@ -1244,7 +1240,7 @@ void CNetScheduleHandler::ProcessWaitGet()
 
     // job not found, initiate waiting mode
 
-    WriteMsg("OK:", kEmptyStr.c_str());
+    WriteMsg("OK:", kEmptyStr);
 
     m_Queue->RegisterNotificationListener(
         m_PeerAddr, m_JobReq.port, m_JobReq.timeout,
@@ -1257,7 +1253,7 @@ void CNetScheduleHandler::ProcessRegisterClient()
     m_Queue->RegisterNotificationListener(
         m_PeerAddr, m_JobReq.port, 1, m_AuthString);
 
-    WriteMsg("OK:", kEmptyStr.c_str());
+    WriteMsg("OK:", kEmptyStr);
 }
 
 
@@ -1267,17 +1263,14 @@ void CNetScheduleHandler::ProcessUnRegisterClient()
                                             m_JobReq.port);
     m_Queue->ClearAffinity(m_PeerAddr, m_AuthString);
 
-    WriteMsg("OK:", kEmptyStr.c_str());
+    WriteMsg("OK:", kEmptyStr);
 }
 
 
 void CNetScheduleHandler::ProcessQList()
 {
     string qnames;
-    ITERATE(CQueueCollection, it, 
-            m_Server->GetQueueDB()->GetQueueCollection()) {
-        qnames += it.GetName(); qnames += ";";
-    }
+    m_Server->GetQueueDB()->GetQueueNames(&qnames, ";");
     WriteMsg("OK:", qnames.c_str());
 }
 
@@ -1304,19 +1297,16 @@ void CNetScheduleHandler::ProcessPutFailure()
     m_Queue->JobFailed(job_id, m_JobReq.err_msg, m_JobReq.output,
                        m_JobReq.job_return_code,
                        m_PeerAddr, m_AuthString);
-    WriteMsg("OK:", kEmptyStr.c_str());
+    WriteMsg("OK:", kEmptyStr);
 }
 
 
 void CNetScheduleHandler::ProcessPut()
 {
     unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
-    m_Queue->PutResult(job_id, 
-                       m_JobReq.job_return_code, m_JobReq.output, 
-                       false // don't remove from tl
-                       );
-    WriteMsg("OK:", kEmptyStr.c_str());
-    m_Queue->RemoveFromTimeLine(job_id);
+    m_Queue->PutResult(job_id,
+                       m_JobReq.job_return_code, m_JobReq.output);
+    WriteMsg("OK:", kEmptyStr);
 }
 
 
@@ -1324,14 +1314,14 @@ void CNetScheduleHandler::ProcessReturn()
 {
     unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
     m_Queue->ReturnJob(job_id);
-    WriteMsg("OK:", kEmptyStr.c_str());
+    WriteMsg("OK:", kEmptyStr);
 }
 
 
 void CNetScheduleHandler::ProcessDropQueue()
 {
     m_Queue->Truncate();
-    WriteMsg("OK:", kEmptyStr.c_str());
+    WriteMsg("OK:", kEmptyStr);
 }
 
 
@@ -1455,9 +1445,9 @@ void CNetScheduleHandler::ProcessStatistics()
     WriteMsg("OK:", started.c_str());
 
     string load_str = "Load: jobs dispatched: ";
-    load_str.append(NStr::DoubleToString(m_Queue->GetGetAverage()));
+    load_str.append(NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatGetEvent)));
     load_str += "/sec, jobs complete: ";
-    load_str.append(NStr::DoubleToString(m_Queue->GetPutAverage()));
+    load_str.append(NStr::DoubleToString(m_Queue->GetAverage(SLockedQueue::eStatPutEvent)));
     load_str += "/sec";
     WriteMsg("OK:", load_str.c_str());
 
@@ -1624,7 +1614,7 @@ void CNetScheduleHandler::ProcessQueueInfo()
     string qclass;
     string comment;
     m_Server->GetQueueDB()->QueueInfo(qname, kind, &qclass, &comment);
-    WriteMsg("OK:", qclass + "\t" + comment);
+    WriteMsg("OK:", NStr::IntToString(kind) + "\t" + qclass + "\t" + comment);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1684,7 +1674,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { eNSA_Required, eNST_Int, eNSRF_Port },
           { eNSA_Required, eNST_Int, eNSRF_Timeout }, sm_End} },
     // JRTO job_key : id  timeout : uint
-    { "JRTO",     &CNetScheduleHandler::ProcessJobRunTimeout, eNSCR_Queue, // ?? Worker/Submitter
+    { "JRTO",     &CNetScheduleHandler::ProcessJobRunTimeout, eNSCR_Worker,
         { { eNSA_Required, eNST_Id,  eNSRF_JobKey },
           { eNSA_Required, eNST_Int, eNSRF_Timeout }, sm_End} },
     // DROJ job_key : id
@@ -2369,6 +2359,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.116  2007/01/02 18:50:54  joukovv
+ * Queue deletion implemented (does not delete actual database files - need a
+ * method of enumerating them). Draft implementation of weak reference. Minor
+ * corrections.
+ *
  * Revision 1.115  2006/12/07 22:58:10  joukovv
  * comment and kind added to queue database
  *

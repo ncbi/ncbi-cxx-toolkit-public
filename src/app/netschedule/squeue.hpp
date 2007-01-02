@@ -47,6 +47,8 @@
 #include "queue_monitor.hpp"
 #include "ns_affinity.hpp"
 
+#include "weak_ref.hpp"
+
 BEGIN_NCBI_SCOPE
 
 
@@ -92,6 +94,7 @@ struct SQueueParameters
         subm_hosts(""),
         wnode_hosts(""),
         dump_db(false),
+
         lb_flag(false),
         lb_service(""),
         lb_collect_time(5),
@@ -159,6 +162,7 @@ struct SQueueListener
     {}
 };
 
+
 class CQueueComparator
 {
 public:
@@ -172,6 +176,7 @@ private:
     unsigned m_Host;
     unsigned m_Port;
 };
+
 
 /// Runtime queue statistics
 ///
@@ -188,6 +193,7 @@ struct SQueueStatictics
     {}
 };
 
+
 class CJobTimeLine;
 class CNSLB_Coordinator;
 /// Mutex protected Queue database with job status FSM 
@@ -198,7 +204,7 @@ class CNSLB_Coordinator;
 ///
 /// @internal
 ///
-struct SLockedQueue
+struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 {
     string                       qclass;           ///< Parameter class
     SQueueDB                     db;               ///< Main queue database
@@ -226,7 +232,7 @@ struct SLockedQueue
 
     TListenerList                wnodes;       ///< worker node listeners
     time_t                       last_notif;   ///< last notification time
-    CRWLock                      wn_lock;      ///< wnodes locker
+    mutable CRWLock              wn_lock;      ///< wnodes locker
     string                       q_notif;      ///< Queue notification message
 
     // Timeline object to control job execution timeout
@@ -268,6 +274,8 @@ struct SLockedQueue
     SQueueStatictics             qstat;
     CFastMutex                   qstat_lock;
 
+    bool                         delete_database;
+
     SLockedQueue(const string& queue_name, const string& qclass_name);
     ~SLockedQueue();
 
@@ -283,13 +291,27 @@ struct SLockedQueue
         TContainer& m_Container;
     };
     CRef<CStatisticsThread> m_StatThread;
-    CAtomicCounter m_GetCounter;
-    CAtomicCounter m_PutCounter;
-    unsigned m_GetAverage;
-    unsigned m_PutAverage;
+
+    // Statistics
+    enum EStatEvent {
+        eStatGetEvent  = 0,
+        eStatPutEvent  = 1,
+        eStatNumEvents
+    };
+    typedef unsigned TStatEvent;
+    CAtomicCounter m_EventCounter[eStatNumEvents];
+    unsigned m_Average[eStatNumEvents];
 //public:
-    double GetGetAverage(void);
-    double GetPutAverage(void);
+    void CountEvent(TStatEvent);
+    double GetAverage(TStatEvent);
+};
+
+
+template <>
+class CLockerTraits<SLockedQueue>
+{
+public:
+    typedef CIntrusiveLocker<SLockedQueue> TLockerType;
 };
 
 
@@ -298,6 +320,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2007/01/02 18:50:54  joukovv
+ * Queue deletion implemented (does not delete actual database files - need a
+ * method of enumerating them). Draft implementation of weak reference. Minor
+ * corrections.
+ *
  * Revision 1.4  2006/12/04 21:58:32  joukovv
  * netschedule_control commands for dynamic queue creation, access control
  * centralized

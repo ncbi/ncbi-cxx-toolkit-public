@@ -54,19 +54,6 @@
 BEGIN_NCBI_SCOPE
 
 
-
-class CParameterSet
-{
-    typedef map<string, SLockedQueue*> TQueueMap;
-public:
-    void Read(const IRegistry& reg, const string& sname)
-    {
-        m_Params.Read(reg, sname);
-    }
-private:
-    SQueueParameters   m_Params;
-};
-
 /// Batch submit record
 ///
 /// @internal
@@ -111,7 +98,7 @@ public:
 
     /// Submit job batch
     /// @return 
-    ///    ID of the first job, second is first_id+1
+    ///    ID of the first job, second is first_id+1 etc.
     unsigned int SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
                              unsigned      host_addr = 0,
                              unsigned      port = 0,
@@ -125,13 +112,11 @@ public:
 
     void PutResult(unsigned int  job_id,
                    int           ret_code,
-                   const char*   output,
-                   bool          remove_from_tl);
+                   const char*   output);
 
     void PutResultGetJob(unsigned int   done_job_id,
                          int            ret_code,
                          const char*    output,
-                         bool           update_tl,
                          unsigned int   worker_node,
                          unsigned int*  job_id, 
                          char*          input,
@@ -154,14 +139,6 @@ public:
     void GetJobKey(char* key_buf, unsigned job_id,
                    const string& host, unsigned port);
 
-
-    /// Get job with load balancing
-    void GetJobLB(unsigned int   worker_node,
-                  unsigned int*  job_id, 
-                  char*          input,
-                  char*          jout,
-                  char*          jerr,
-                  unsigned*      job_mask);
 
     void GetJob(unsigned int   worker_node,
                 unsigned int*  job_id, 
@@ -233,14 +210,6 @@ public:
     /// Remove job from the queue
     void DropJob(unsigned job_id);
 
-    /// Free unsued memory (status storage)
-    void FreeUnusedMem(void)
-        { m_LQueue->status_tracker.FreeUnusedMem(); }
-
-    /// All returned jobs come back to pending status
-    void Returned2Pending(void)
-        { m_LQueue->status_tracker.Returned2Pending(); }
-
     /// @param host_addr
     ///    host address in network BO
     ///
@@ -262,7 +231,7 @@ public:
     void SetMonitorSocket(SOCK sock);
 
     /// Return monitor (no ownership transfer)
-    CNetScheduleMonitor* GetMonitor(void) { return &m_LQueue->monitor; }
+    CNetScheduleMonitor* GetMonitor(void);
 
     /// UDP notification to all listeners
     void NotifyListeners(void);
@@ -303,52 +272,37 @@ public:
 
     void PrintJobStatusMatrix(CNcbiOstream & out);
 
-    bool IsVersionControl() const
-    {
-        return m_LQueue->program_version_list.IsConfigured();
-    }
-
-    bool IsMatchingClient(const CQueueClientInfo& cinfo) const
-    {
-        return m_LQueue->program_version_list.IsMatchingClient(cinfo);
-    }
-
+    bool IsVersionControl() const;
+    bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
     /// Check if client is a configured submitter
-    bool IsSubmitAllowed() const
-    {
-        return (m_ClientHostAddr == 0) || 
-                m_LQueue->subm_hosts.IsAllowed(m_ClientHostAddr);
-    }
-
+    bool IsSubmitAllowed() const;
     /// Check if client is a configured worker node
-    bool IsWorkerAllowed() const
-    {
-        return (m_ClientHostAddr == 0) || 
-                m_LQueue->wnode_hosts.IsAllowed(m_ClientHostAddr);
-    }
+    bool IsWorkerAllowed() const;
 
-    void RemoveFromTimeLine(unsigned job_id);
-    void TimeLineExchange(unsigned remove_job_id, 
-                          unsigned add_job_id,
-                          time_t   curr);
+    typedef SLockedQueue::TStatEvent TStatEvent;
+    double GetAverage(TStatEvent);
 
-    double GetGetAverage(void) { return m_LQueue->GetGetAverage(); }
-    double GetPutAverage(void) { return m_LQueue->GetPutAverage(); }
+    // Service for CQueueDataBase
+    /// Free unsued memory (status storage)
+    void FreeUnusedMem(void)
+        { x_GetLQueue()->status_tracker.FreeUnusedMem(); }
+
+    /// All returned jobs come back to pending status
+    void Returned2Pending(void)
+        { x_GetLQueue()->status_tracker.Returned2Pending(); }
 
 private:
     // Transitional - for support of CQueue iterators
-    // Can not be declared private because of circular
-    // dependency
     friend class CQueueIterator;
     CQueue(const CQueueDataBase& db) :
         m_Db(const_cast<CQueueDataBase&>(db)), // HACK! - legitimate here,
                                                // because iterator access is
                                                // const, and this constructor
                                                // is for CQueueIterator only
-        m_LQueue(0),
         m_ClientHostAddr(0),
         m_QueueDbAccessCounter(0) {}
-    void x_Assume(SLockedQueue* slq) { m_LQueue = slq; }
+
+    void x_Assume(CRef<SLockedQueue> slq) { m_LQueue = slq; }
 
     /// Find the listener if it is registered
     /// @return NULL if not found
@@ -367,10 +321,18 @@ private:
     ///
     /// @return job_id
     unsigned 
-    FindPendingJob(const string&  client_name,
-                   unsigned       client_addr);
+    x_FindPendingJob(const string&  client_name,
+                     unsigned       client_addr);
 
-    CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
+    /// Get job with load balancing
+    void x_GetJobLB(unsigned int   worker_node,
+                    unsigned int*  job_id, 
+                    char*          input,
+                    char*          jout,
+                    char*          jerr,
+                    unsigned*      job_mask);
+
+    CBDB_FileCursor* x_GetCursor(CBDB_Transaction& trans);
 
 
     time_t x_ComputeExpirationTime(unsigned time_run, 
@@ -469,8 +431,17 @@ private:
     void x_ReadAffIdx_NoLock(unsigned             aff_id,
                              bm::bvector<>*       job_candidates);
 
-    void x_CountGet(void) { m_LQueue->m_GetCounter.Add(1); }
-    void x_CountPut(void) { m_LQueue->m_PutCounter.Add(1); }
+    void x_Count(TStatEvent event)
+        { x_GetLQueue()->CountEvent(event); }
+
+    CRef<SLockedQueue> x_GetLQueue(void);
+    const CRef<SLockedQueue> x_GetLQueue(void) const;
+
+    void x_AddToTimeLine(unsigned job_id, time_t curr);
+    void x_RemoveFromTimeLine(unsigned job_id);
+    void x_TimeLineExchange(unsigned remove_job_id, 
+                            unsigned add_job_id,
+                            time_t   curr);
 
 private:
     CQueue(const CQueue&);
@@ -478,9 +449,10 @@ private:
 
 private:
     // Per queue data
-    CQueueDataBase& m_Db;      ///< Parent structure reference
-    SLockedQueue*   m_LQueue;  
-    unsigned        m_ClientHostAddr;
+    CQueueDataBase&    m_Db;      ///< Parent structure reference
+    mutable CFastMutex m_LQueueLock;
+    CWeakRef<SLockedQueue> m_LQueue;
+    unsigned           m_ClientHostAddr;
 
     // Per client data
     /// For private DB
@@ -493,7 +465,6 @@ private:
 }; // CQueue
 
 
-
 /// Queue database manager
 ///
 /// @internal
@@ -502,7 +473,7 @@ class CQueueIterator;
 class CQueueCollection
 {
 public:
-    typedef map<string, SLockedQueue*> TQueueMap;
+    typedef map<string, CRef<SLockedQueue> > TQueueMap;
     typedef CQueueIterator iterator;
     typedef CQueueIterator const_iterator; // HACK
 
@@ -512,11 +483,14 @@ public:
 
     void Close();
 
-    SLockedQueue& GetLockedQueue(const string& qname) const;
+    CRef<SLockedQueue> GetLockedQueue(const string& qname) const;
     bool QueueExists(const string& qname) const;
 
     /// Collection takes ownership of queue
     SLockedQueue& AddQueue(const string& name, SLockedQueue* queue);
+    // Remove queue from collection, notifying every interested party
+    // through week reference mechanism.
+    bool RemoveQueue(const string& name);
 
     CQueueIterator begin() const;
     CQueueIterator end() const;
@@ -539,11 +513,12 @@ class CQueueIterator
 {
 public:
     CQueueIterator(const CQueueDataBase& db,
-        CQueueCollection::TQueueMap::const_iterator iter);
+        CQueueCollection::TQueueMap::const_iterator iter, CRWLock* lock);
     // MSVC8 (Studio 2005) can not (or does not want to) perform
-    // copy constructor optimization on return etc. thus it needs
+    // copy constructor optimization on return, thus it needs
     // explicit copy constructor because CQueue does not have it.
     CQueueIterator(const CQueueIterator& rhs);
+    ~CQueueIterator();
     CQueue& operator*();
     const string GetName();
     void operator++();
@@ -557,6 +532,7 @@ private:
     const CQueueDataBase&                       m_QueueDataBase;
     CQueueCollection::TQueueMap::const_iterator m_Iter;
     CQueue                                      m_Queue;
+    mutable CRWLock*                            m_Lock;
 };
 
 
@@ -601,6 +577,7 @@ public:
     void DeleteQueue(const string& qname);
     void QueueInfo(const string& qname, int& kind,
                    string* qclass, string* comment);
+    void GetQueueNames(string *list, const string& sep) const;
 
     void UpdateQueueParameters(const string& qname,
                                const SQueueParameters& params);
@@ -629,11 +606,6 @@ public:
     void SetUdpPort(unsigned short port) { m_UdpPort = port; }
     unsigned short GetUdpPort(void) const { return m_UdpPort; }
 
-    const CQueueCollection& GetQueueCollection() const 
-    { 
-        return m_QueueCollection; 
-    }
-
     /// Force transaction checkpoint
     void TransactionCheckPoint();
 
@@ -657,7 +629,7 @@ private:
     string                          m_Path;
     string                          m_Name;
 
-    CFastMutex                      m_ConfigureLock;
+    mutable CFastMutex              m_ConfigureLock;
     typedef map<string, SQueueParameters*> TQueueParamMap;
     TQueueParamMap                  m_QueueParamMap;
     SQueueDescriptionDB             m_QueueDescriptionDB;
@@ -693,6 +665,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2007/01/02 18:50:54  joukovv
+ * Queue deletion implemented (does not delete actual database files - need a
+ * method of enumerating them). Draft implementation of weak reference. Minor
+ * corrections.
+ *
  * Revision 1.64  2006/12/07 22:58:10  joukovv
  * comment and kind added to queue database
  *
