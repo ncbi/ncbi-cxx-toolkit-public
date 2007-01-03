@@ -237,7 +237,7 @@ static void s_InframeUpstreamStart(const CSeq_id& id,
 
     EKozakStrength strength;
     EKozakStrength best_strength = eNone;
-    TSeqPos pos_nearest_best_start;
+    TSeqPos pos_nearest_best_start = 0; // initialize to avoid compiler warning
     for (int i = upstream_length - 3;  i >= 0;  i -= 3) {
         if (vec[i] == 'A' && vec[i + 1] == 'T' && vec[i + 2] == 'G') {
             strength = s_GetKozakStrength(vec, i);
@@ -532,8 +532,6 @@ static void s_PrematureStopCodon(const CSeq_id& id, const CSeqTestContext* ctx,
     case CCdregion::eFrame_three:
         start_translating = 2;
         break;
-    default:
-        _ASSERT(false);
     }
 
     bool premature_stop_found = false;
@@ -731,7 +729,7 @@ CTestTranscript_Orfs::RunTest(const CSerialObject& obj,
     COrf::FindOrfs(vec, orfs);
     TSeqPos max_orf_length_forward = 0;
     TSeqPos max_orf_length_either = 0;
-    TSeqPos largest_forward_orf_end;
+    TSeqPos largest_forward_orf_end = 0;  // intialized to avoid comp. warning
     ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
         TSeqPos orf_length = sequence::GetLength(**orf, 0);
         max_orf_length_either = max(max_orf_length_either, orf_length);
@@ -924,6 +922,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2007/01/03 17:18:39  jcherry
+ * Eliminated compiler warnings (or tried)
+ *
  * Revision 1.24  2006/06/29 19:38:12  jcherry
  * Take annotated frame into account when looking for premature stop codon.
  *
