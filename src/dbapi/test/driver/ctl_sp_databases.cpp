@@ -66,7 +66,6 @@ CDemoApp::~CDemoApp(void)
 int
 CDemoApp::RunSample(void)
 {
-    map<string, string> attr;
     IDataSource* data_source = NULL;
 
     try {
@@ -74,14 +73,12 @@ CDemoApp::RunSample(void)
 
         CDriverManager& dm = CDriverManager::GetInstance();
 
-        attr["version"] = NStr::IntToString(GetTDSVersion());
-
 #ifdef FTDS_IN_USE
         DBAPI_RegisterDriver_FTDS();
-        data_source = dm.CreateDs("ftds", &attr);
+        data_source = dm.CreateDs("ftds");
 #else
         DBAPI_RegisterDriver_CTLIB();
-        data_source = dm.CreateDs("ctlib", &attr);
+        data_source = dm.CreateDs("ctlib");
 #endif
 
 
@@ -152,6 +149,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2007/01/03 19:53:38  ssikorsk
+ * Removed setting of a TDS version. Use default version instead.
+ *
  * Revision 1.1  2007/01/03 19:44:04  ssikorsk
  * Added new tests for DriverManager and statically linked drivers.
  *
