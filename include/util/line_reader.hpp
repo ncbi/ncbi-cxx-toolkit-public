@@ -143,6 +143,9 @@ public:
     CTempString         operator*(void) const;
     CT_POS_TYPE         GetPosition(void) const;
 private:
+    CIReaderLineReader(const CIReaderLineReader&);
+    CIReaderLineReader& operator=(const CIReaderLineReader&);
+private:
     ERW_Result x_ReadBuffer();
 private:
     IReader*      m_Reader;
@@ -166,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2007/01/03 21:56:34  kuznets
+ * Added private copy-ctor, etc.
+ *
  * Revision 1.4  2006/12/29 20:25:37  kuznets
  * + CIReaderLineReader class
  *
