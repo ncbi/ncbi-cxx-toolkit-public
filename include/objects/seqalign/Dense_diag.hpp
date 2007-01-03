@@ -72,7 +72,7 @@ public:
     TSeqPos         GetSeqStop (TDim row) const;
 
     /// Offset row's coords
-    void OffsetRow(TDim row, TSeqPos offset);
+    void OffsetRow(TDim row, TSignedSeqPos offset);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2007/01/03 15:52:31  todorov
+* Allow negative offsets in OffsetRow
+*
 * Revision 1.3  2006/07/12 23:03:24  todorov
 * Added CheckNumRows() and Validate() methods.
 *

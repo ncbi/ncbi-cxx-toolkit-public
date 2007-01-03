@@ -145,7 +145,7 @@ public:
 
 
     /// Offset row's coords
-    void OffsetRow(TDim row, TSeqPos offset);
+    void OffsetRow(TDim row, TSignedSeqPos offset);
 
     /// @deprecated (use sequence::RemapAlignToLoc())
     /// @sa RemapAlignToLoc
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2007/01/03 15:52:31  todorov
+* Allow negative offsets in OffsetRow
+*
 * Revision 1.21  2006/12/11 17:14:11  grichenk
 * Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
 *

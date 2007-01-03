@@ -110,7 +110,7 @@ public:
     void TrimEndGaps();
 
     /// Offset row's coords
-    void OffsetRow(TDim row, TSeqPos offset);
+    void OffsetRow(TDim row, TSignedSeqPos offset);
 
     /// @deprecated (use sequence::RemapAlignToLoc())
     /// @sa RemapAlignToLoc
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2007/01/03 15:52:31  todorov
+* Allow negative offsets in OffsetRow
+*
 * Revision 1.19  2006/11/13 16:54:15  grichenk
 * Fixed comments and default value.
 *

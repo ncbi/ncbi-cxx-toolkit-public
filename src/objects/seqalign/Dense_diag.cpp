@@ -67,20 +67,24 @@ void CDense_diag::Validate() const
 
 
 void CDense_diag::OffsetRow(TDim row,
-                           TSeqPos offset)
+                            TSignedSeqPos offset)
 {
     if (offset == 0) return;
 
-    _ASSERT(offset > 0);
-    
     CheckNumRows();
     if (row >= GetDim()) {
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
-                   "CDense_seg::OffsetRow: row > dim");
+                   "row > dim");
     }
-    if (GetStarts()[row] >= 0) {
-        SetStarts()[row] += offset;
+    _ASSERT(GetStarts()[row] >= 0);
+    if (offset < 0) {
+        _ASSERT((TSignedSeqPos)GetStarts()[row] + offset >= 0);
+        if (GetStarts()[row] < -offset) {
+            NCBI_THROW(CSeqalignException, eOutOfRange,
+                       "Negative offset greater than seq position");
+        }
     }
+    SetStarts()[row] += offset;
 }
 
 
@@ -93,6 +97,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2007/01/03 15:51:57  todorov
+* Allow negative offsets in OffsetRow
+*
 * Revision 1.3  2006/07/17 15:47:59  todorov
 * Using strands and numrows vars.
 *

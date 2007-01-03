@@ -620,12 +620,26 @@ ExtractSlice(TDim row, TSeqPos from, TSeqPos to) const
 
 
 void CDense_seg::OffsetRow(TDim row,
-                           TSeqPos offset)
+                           TSignedSeqPos offset)
 {
     if (offset == 0) return;
 
-    _ASSERT(offset > 0);
+    // Check for out-of-range negative offset
+    if (offset < 0) {
+        for (TNumseg seg = 0, pos = row;
+             seg < GetNumseg();
+             ++seg, pos += GetDim()) {
 
+            if (GetStarts()[pos] >= 0) {
+                if (GetStarts()[pos] < -offset) {
+                    NCBI_THROW(CSeqalignException, eOutOfRange,
+                               "Negative offset greater than seq position");
+                }
+            }
+        }
+    }
+
+    // Modify positions
     for (TNumseg seg = 0, pos = row;
          seg < GetNumseg();
          ++seg, pos += GetDim()) {
@@ -1153,6 +1167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2007/01/03 15:51:57  todorov
+* Allow negative offsets in OffsetRow
+*
 * Revision 1.31  2006/06/06 22:42:54  todorov
 * Added OffsetRow method.
 * Marked RemapToLoc for deprecation.

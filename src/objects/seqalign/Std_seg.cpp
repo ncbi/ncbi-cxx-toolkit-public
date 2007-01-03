@@ -150,21 +150,33 @@ CRange<TSignedSeqPos> CStd_seg::GetSeqRange(TDim row) const
 
 
 void CStd_seg::OffsetRow(TDim row,
-                        TSeqPos offset)
+                         TSignedSeqPos offset)
 
 {
     if (offset == 0) return;
-
-    _ASSERT(offset > 0);
 
     CSeq_loc& src_loc = *SetLoc()[row];
 
     switch (src_loc.Which()) {
     case CSeq_loc::e_Int:
+        if (offset < 0) {
+            _ASSERT((TSignedSeqPos)src_loc.GetInt().GetFrom() + offset >= 0);
+            if ((TSignedSeqPos)src_loc.GetInt().GetFrom() < -offset) {
+                NCBI_THROW(CSeqalignException, eOutOfRange,
+                           "Negative offset greater than seq position");
+            }
+        }   
         src_loc.SetInt().SetFrom() += offset;
         src_loc.SetInt().SetTo() += offset;
         break;
     case CSeq_loc::e_Pnt:
+        if (offset < 0) {
+            _ASSERT((TSignedSeqPos)src_loc.GetPnt().GetPoint() + offset >= 0);
+            if ((TSignedSeqPos)src_loc.GetPnt().GetPoint() < -offset) {
+                NCBI_THROW(CSeqalignException, eOutOfRange,
+                           "Negative offset greater than seq position");
+            }
+        }
         src_loc.SetPnt().SetPoint() += offset;
         break;
     case CSeq_loc::e_Empty:
@@ -269,6 +281,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2007/01/03 15:51:57  todorov
+* Allow negative offsets in OffsetRow
+*
 * Revision 1.7  2006/06/06 22:42:54  todorov
 * Added OffsetRow method.
 * Marked RemapToLoc for deprecation.

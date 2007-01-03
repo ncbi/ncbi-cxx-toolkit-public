@@ -68,7 +68,7 @@ public:
     
 
     /// Offset row's coords
-    void OffsetRow(TDim row, TSeqPos offset);
+    void OffsetRow(TDim row, TSignedSeqPos offset);
 
     /// @deprecated
     NCBI_DEPRECATED void RemapToLoc(TDim row,
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2007/01/03 15:52:31  todorov
+* Allow negative offsets in OffsetRow
+*
 * Revision 1.4  2006/06/06 22:44:47  todorov
 * Added OffsetRow method.
 * Marked RemapToLoc for deprecation.

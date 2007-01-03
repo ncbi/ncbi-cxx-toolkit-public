@@ -914,11 +914,9 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
 
 
 void CSeq_align::OffsetRow(TDim row,
-                          TSeqPos offset)
+                          TSignedSeqPos offset)
 {
     if (offset == 0) return;
-
-    _ASSERT(offset > 0);
 
     switch (SetSegs().Which()) {
     case TSegs::e_Dendiag:
@@ -1027,6 +1025,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2007/01/03 15:51:57  todorov
+* Allow negative offsets in OffsetRow
+*
 * Revision 1.31  2006/12/11 17:14:12  grichenk
 * Added CSeq_loc_Mapper_Base and CSeq_align_Mapper_Base.
 *
