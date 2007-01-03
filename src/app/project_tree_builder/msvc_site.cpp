@@ -380,12 +380,14 @@ void CMsvcSite::GetLibChoiceIncludes(
                     lib_info.m_IncludeDir.end(), back_inserter(*abs_includes));
             } else {
                 const string& rel_include_path = *p;
-                string abs_include_path = 
-                    GetApp().GetProjectTreeInfo().m_Include;
-                abs_include_path = 
-                    CDirEntry::ConcatPath(abs_include_path, rel_include_path);
-                abs_include_path = CDirEntry::NormalizePath(abs_include_path);
-                abs_includes->push_back(abs_include_path);
+                if (*p != ".") {
+                    string abs_include_path = 
+                        GetApp().GetProjectTreeInfo().m_Include;
+                    abs_include_path = 
+                        CDirEntry::ConcatPath(abs_include_path, rel_include_path);
+                    abs_include_path = CDirEntry::NormalizePath(abs_include_path);
+                    abs_includes->push_back(abs_include_path);
+                }
             }
             lib_id.erase();
         }
@@ -577,6 +579,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2007/01/03 16:54:25  gouriano
+ * Minor correction in GetLibChoiceIncludes
+ *
  * Revision 1.43  2006/11/15 15:33:17  gouriano
  * Added handling DLL requirement
  *
