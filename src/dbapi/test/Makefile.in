@@ -1,6 +1,7 @@
 # $Id$
 
 APP_PROJ = dbapi_unit_test
+SUB_PROJ = driver
 
 REQUIRES = Boost.Test
 
