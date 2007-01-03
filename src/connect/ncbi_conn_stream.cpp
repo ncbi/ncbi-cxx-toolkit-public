@@ -405,6 +405,24 @@ char* CConn_MemoryStream::ToCStr(void)
 }
 
 
+void CConn_MemoryStream::ToVector(vector<char>* vec)
+{
+    flush();
+    if (!vec) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_MemoryStream::ToVector(NULL) is not allowed");
+    }
+    CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
+    streamsize size = sb ? (size_t)(tellp() - tellg()) : 0;
+    vec->resize(size);
+    if (sb) {
+        streamsize s = sb->sgetn(&(*vec)[0], size);
+        _ASSERT(size == s);
+        vec->resize(s);  // NB: this is essentially a NOP when size == s
+    }
+}
+
+
 CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const vector<string>& args,
                                    CPipe::TCreateFlags   create_flags,
@@ -483,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.65  2007/01/03 14:47:18  vasilche
+ * Added ToVector().
+ *
  * Revision 6.64  2006/12/14 04:45:21  lavr
  * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
  *

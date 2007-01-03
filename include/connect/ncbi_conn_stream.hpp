@@ -76,7 +76,7 @@
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
-
+#include <vector>
 
 /** @addtogroup ConnStreams
  *
@@ -318,6 +318,7 @@ public:
     string& ToString(string&); ///< fill in the data, return the argument
 
     void    ToString(string*); ///< fill in the data, NULL is not accepted
+    void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
     char*   ToCStr(void);      ///< '\0'-terminated; delete when done using it 
 
 protected:
@@ -422,6 +423,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.52  2007/01/03 14:47:18  vasilche
+ * Added ToVector().
+ *
  * Revision 6.51  2006/12/18 21:08:24  lavr
  * Formatting
  *
