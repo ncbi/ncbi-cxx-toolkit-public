@@ -52,7 +52,7 @@ CCompressionStreamProcessor::CCompressionStreamProcessor(
     : m_Processor(processor), 
       m_InBufSize(in_bufsize <= 1 ? kCompressionDefaultBufSize : in_bufsize),
       m_OutBufSize(out_bufsize <= 1 ? kCompressionDefaultBufSize :out_bufsize),
-      m_NeedDelete(need_delete)
+      m_NeedDelete(need_delete), m_State(eDone)
 {
     Init();
     return;
@@ -71,7 +71,12 @@ CCompressionStreamProcessor::~CCompressionStreamProcessor(void)
 void CCompressionStreamProcessor::Init(void)
 {
     if ( m_Processor ) {
-        m_Processor->Init();
+        if ( m_State == eDone ) {
+            m_Processor->Init();
+        } else if (m_InBuf != 0) { // reinitializing
+            m_Processor->End(); // avoid leaking memory
+            m_Processor->Init();
+        }
     }
     m_InBuf         = 0;
     m_OutBuf        = 0;
@@ -187,6 +192,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2007/01/04 01:49:15  ucko
+ * CCompressionStreamProcessor::Init(): avoid leaking memory from repeated
+ * calls to m_Processor->Init() when invoked explicitly (post-construction).
+ *
  * Revision 1.13  2006/12/18 19:38:19  ivanov
  * + CCompressionStreamProcessor::Init()
  *
