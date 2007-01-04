@@ -502,7 +502,7 @@ void CCleanup_imp::x_MergeMultipleDates (CSeq_descr& sdr, CSeq_descr::Tdata& rem
 // Used by x_ChangeGenBankBlocks
 void CCleanup_imp::x_CheckGenbankBlockTechKeywords(CGB_block& gb_block, CMolInfo::TTech tech)
 {
-    if (!gb_block.CanGetKeywords()) {
+    if (!gb_block.IsSetKeywords()) {
         return;
     }
     
@@ -625,8 +625,7 @@ void CCleanup_imp::x_ChangeGenBankBlocks(CSeq_entry_Handle seh)
                 if ((*gbdesc_i).GetGenbank().CanGetSource()) {
                     string gb_src = (*gbdesc_i).GetGenbank().GetSource();
                     if (NStr::EndsWith(gb_src, '.')) {
-                        gb_src = gb_src.substr(0, gb_src.length() - 2);
-                        changed = true;
+                        gb_src = gb_src.substr(0, gb_src.length() - 1);
                     }
                     if (NStr::EqualNocase(src, gb_src)) {
                         CGB_block& gb_block = const_cast<CGB_block&> ((*gbdesc_i).GetGenbank());
@@ -1581,6 +1580,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2007/01/04 13:12:54  bollin
+ * Fixed bug in GenBank cleanup.
+ *
  * Revision 1.16  2006/12/28 19:51:50  bollin
  * Removed steps for handling obsolete descriptors mol-type, method, and modif.
  *
