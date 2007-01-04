@@ -298,6 +298,7 @@ bool CZipCompression::CompressBuffer(
         ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
+    *dst_len = 0;
     if (src_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
         ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
@@ -395,6 +396,7 @@ bool CZipCompression::DecompressBuffer(
         ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
+    *dst_len = 0;
     if (src_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
         ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
@@ -1184,6 +1186,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2007/01/04 20:18:36  ivanov
+ * (De)compressBuffer: initialize size of compressed data in
+ * the destination buffer with zero.
+ *
  * Revision 1.34  2007/01/04 14:04:32  ivanov
  * EstimateCompressionBufferSize() -- fixed possible memory leak
  *
