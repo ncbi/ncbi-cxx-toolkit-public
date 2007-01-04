@@ -121,13 +121,27 @@ public:
     virtual void Remove(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
     virtual void Attach(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
 
+
+
     virtual void AddDesc(const CBioseq_set_Handle& h, const CSeqdesc& d,
                          ECallMode m)
         { CUnsupportedEditSaver::AddDesc(h, d, m); }
     virtual void RemoveDesc(const CBioseq_set_Handle& h, const CSeqdesc& d,
                             ECallMode m)
         { CUnsupportedEditSaver::RemoveDesc(h, d, m); }
-  
+    virtual void Add(const CSeq_annot_Handle& h, const CSeq_graph& g, ECallMode m)
+    { CUnsupportedEditSaver::Add(h, g, m); }
+    virtual void Add(const CSeq_annot_Handle& h, const CSeq_align& a, ECallMode m)
+    { CUnsupportedEditSaver::Add(h, a, m); }
+    virtual void Replace(const CSeq_graph_Handle& h, const CSeq_graph& g, ECallMode m)
+    { CUnsupportedEditSaver::Replace(h, g, m); }
+    virtual void Replace(const CSeq_align_Handle& h, const CSeq_align& a, ECallMode m)
+    { CUnsupportedEditSaver::Replace(h, a, m); }
+    virtual void Remove(const CSeq_annot_Handle& h, const CSeq_graph& g, ECallMode m)
+    { CUnsupportedEditSaver::Remove(h, g, m); }
+    virtual void Remove(const CSeq_annot_Handle& h, const CSeq_align& a, ECallMode m)
+    { CUnsupportedEditSaver::Remove(h, a, m); }
+
 private:
     CTestApp& m_App;
 };
@@ -584,6 +598,9 @@ int main(int argc, const char* argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2007/01/04 17:54:26  didenko
+* Got rid of compilation warnings
+*
 * Revision 1.8  2006/12/19 21:34:01  ucko
 * Tweak once more to fix compilation errors under MIPSpro.  (Oops.)
 *
