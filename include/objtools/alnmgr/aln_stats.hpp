@@ -144,7 +144,7 @@ public:
     }
 
 
-    /// Canonical query-anchored: all alignments have 2 or 3 rows and
+    /// Canonical Query-Anchored: all alignments have 2 or 3 rows and
     /// exactly 2 sequences (A and B), A is present on all alignments
     /// on row 1, B on rows 2 and 3. B can be present on 2 rows only
     /// if they represent different strands.
@@ -163,18 +163,25 @@ public:
     }
 
     
+    /// Canonical Multiple: one alignment only.
+    bool IsCanonicalMultiple() const {
+        return (GetAlnCount() == 1);
+    }
+
+
     /// Dump in human readable text format:
     template <class TOutStream>
     void Dump(TOutStream& os) const {
         os << "Number of alignments: " << GetAlnCount() << endl;
-        os << "QueryAnchoredTest:"     << IsCanonicalQueryAnchored() << endl;
+        os << "IsCanonicalQueryAnchored:" << IsCanonicalQueryAnchored() << endl;
+        os << "IsCanonicalMultiple:" << IsCanonicalMultiple() << endl;
         os << endl;
-        os << "IdVector:" << endl;
+        os << "IdVector (" << GetIdVector().size() << "):" << endl;
         ITERATE(typename TIdVector, it, GetIdVector()) {
             os << (*it)->AsString() << " (base_width=" << (*it)->GetBaseWidth() << ")" << endl;
         }
         os << endl;
-        os << "IdMap:" << endl;
+        os << "IdMap (" << GetIdMap().size() << "):" << endl;
         ITERATE(TIdMap, it, GetIdMap()) {
             os << it->first->AsString() << " (base_width=" << it->first->GetBaseWidth() << ")" << endl;
         }
@@ -230,6 +237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2007/01/04 21:12:02  todorov
+* + IsCanonicalMultiple()
+*
 * Revision 1.4  2006/12/12 20:48:58  todorov
 * + #include <objtools/alnmgr/aln_seqid.hpp>
 *
