@@ -166,7 +166,9 @@ void CSL3_LangCmd::DumpResults()
 
 bool CSL3_LangCmd::HasFailed() const
 {
-    return sqlite3_errcode(m_Connect->GetSQLite3()) != SQLITE_OK;
+    int rc = sqlite3_errcode(m_Connect->GetSQLite3());
+
+    return (rc != SQLITE_OK && rc != SQLITE_ROW && rc != SQLITE_DONE);
 }
 
 
@@ -372,6 +374,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2007/01/04 23:13:47  ssikorsk
+ * Handle SQLITE_ROW and SQLITE_DONE in CSL3_LangCmd::HasFailed.
+ *
  * Revision 1.5  2006/11/28 20:08:07  ssikorsk
  * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
  *
