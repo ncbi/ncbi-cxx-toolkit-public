@@ -1476,6 +1476,8 @@ bool CCleanup_imp::x_Identical (const COrg_ref::TDb& db1, const COrg_ref::TDb& d
         if (!(*it1)->Match (**it2)) {
             return false;
         }
+        ++it1;
+        ++it2;
     }
     if (it1 != db1.end() || it2 != db2.end()) {
         return false;
@@ -2344,6 +2346,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2007/01/04 13:12:30  bollin
+ * Fixed bug in BioSource cleanup
+ *
  * Revision 1.24  2006/12/29 14:57:46  bollin
  * Fixed typo bug.
  *
