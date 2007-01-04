@@ -66,7 +66,7 @@ int g_dblib_version = DBVERSION_100;
 #ifdef TDS46
 int g_dblib_version = DBVERSION_46;
 #endif
-/* I'm taking some liberties here, there is no such thing as DBVERSION_70 in 
+/* I'm taking some liberties here, there is no such thing as DBVERSION_70 in
 ** the real world, so we make it up as we go along */
 #ifdef TDS70
 int g_dblib_version = DBVERSION_70;
@@ -158,12 +158,12 @@ static void buffer_delete_rows(
       count = buf->rows_in_buf;
    }
 
-   
+
    buf->oldest        = (buf->oldest + count) % buf->elcount;
    buf->rows_in_buf  -= count;
    buf->first_in_buf  = count==buf->rows_in_buf ? buf->next_row-1 : buf->first_in_buf + count;
 
-   
+
    assert(buf->first_in_buf >= 0);
 } /* buffer_delete_rows() */
 
@@ -194,7 +194,7 @@ static int buffer_start_resultset(
    buf->elcount          = buf->buffering_on ? buf->elcount : 1;
    buf->element_size     = element_size;
    buf->rows_in_buf      = 0;
-   space_needed          = element_size * buf->elcount;   
+   space_needed          = element_size * buf->elcount;
    buf->rows             = malloc(space_needed);
 
    return buf->rows==NULL ? FAIL : SUCCEED;
@@ -223,7 +223,7 @@ static int buffer_index_of_resultset_row(
    }
    else
    {
-      result = ((row_number - buf->first_in_buf) 
+      result = ((row_number - buf->first_in_buf)
                 + buf->oldest) % buf->elcount;
    }
    return result;
@@ -260,7 +260,7 @@ static void buffer_add_row(
 
    assert(row_size > 0);
    assert(row_size == buf->element_size);
-   
+
    assert(buf->elcount >= 1);
 #ifdef NCBI_FTDS
    if(++buf->newest >= buf->elcount){
@@ -278,7 +278,7 @@ static void buffer_add_row(
    }
    buf->rows_in_buf++;
 
-   /* 
+   /*
     * if we have wrapped around we need to adjust oldest
     * and rows_in_buf
     */
@@ -288,12 +288,12 @@ static void buffer_add_row(
       buf->first_in_buf++;
       buf->rows_in_buf--;
    }
-   
+
    assert(buf->elcount >= buf->rows_in_buf);
    assert( buf->rows_in_buf==0
            || (((buf->oldest+buf->rows_in_buf) - 1)%buf->elcount)==buf->newest);
    assert(buf->rows_in_buf>0 || (buf->first_in_buf==buf->next_row-1));
-   assert(buf->rows_in_buf==0 || 
+   assert(buf->rows_in_buf==0 ||
           (buf->first_in_buf<=buf->next_row));
    assert(buf->next_row-1 <= (buf->first_in_buf + buf->rows_in_buf));
 
@@ -302,7 +302,7 @@ static void buffer_add_row(
    memcpy(dest, row, row_size);*/
    memcpy((char*)buf->rows + buf->rows_offset,row,row_size);
 #else
-   
+
    buf->newest = (buf->newest + 1) % buf->elcount;
    if (buf->rows_in_buf==0 && buf->first_in_buf==0)
    {
@@ -310,7 +310,7 @@ static void buffer_add_row(
    }
    buf->rows_in_buf++;
 
-   /* 
+   /*
     * if we have wrapped around we need to adjust oldest
     * and rows_in_buf
     */
@@ -320,12 +320,12 @@ static void buffer_add_row(
       buf->first_in_buf++;
       buf->rows_in_buf--;
    }
-   
+
    assert(buf->elcount >= buf->rows_in_buf);
    assert( buf->rows_in_buf==0
            || (((buf->oldest+buf->rows_in_buf) - 1)%buf->elcount)==buf->newest);
    assert(buf->rows_in_buf>0 || (buf->first_in_buf==buf->next_row-1));
-   assert(buf->rows_in_buf==0 || 
+   assert(buf->rows_in_buf==0 ||
           (buf->first_in_buf<=buf->next_row));
    assert(buf->next_row-1 <= (buf->first_in_buf + buf->rows_in_buf));
 
@@ -343,12 +343,12 @@ static void buffer_set_buffering(
    DBPROC_ROWBUF *buf,      /* (U)                                         */
    int            buf_size) /* (I) number of rows to buffer, 0 to turn off */
 {
-   /* XXX If the user calls this routine in the middle of 
+   /* XXX If the user calls this routine in the middle of
     * a result set and changes the size of the buffering
     * they are pretty much toast.
     *
-    * We need to figure out what to do if the user shrinks the 
-    * size of the row buffer.  What rows should be thrown out, 
+    * We need to figure out what to do if the user shrinks the
+    * size of the row buffer.  What rows should be thrown out,
     * what should happen to the current row, etc?
     */
 
@@ -395,10 +395,10 @@ BYTE          *src;
 int            desttype;
 int            destlen;
 /* this should probably go somewhere else */
-   
+
 	tds     = (TDSSOCKET *) dbproc->tds_socket;
 	resinfo = tds->res_info;
-   
+
 	for (i=0;i<resinfo->num_cols;i++) {
 		curcol = resinfo->columns[i];
 		if (curcol->column_nullbind) {
@@ -411,7 +411,7 @@ int            destlen;
 		if (curcol->varaddr) {
  			DBINT srclen = -1;
 			int   index = buffer_index_of_resultset_row(buf, row_num);
-         
+
 			assert (index >= 0);
 				/* XXX now what? */
 				
@@ -419,7 +419,7 @@ int            destlen;
 				srclen =  curcol->column_textsize;
 				src = (BYTE *)curcol->column_textvalue;
 			} else {
-				src = ((BYTE *)buffer_row_address(buf, index)) 
+				src = ((BYTE *)buffer_row_address(buf, index))
 					+ curcol->column_offset;
 			}
 			desttype = _db_get_server_type(curcol->column_bindtype);
@@ -427,7 +427,7 @@ int            destlen;
 				curcol->column_size);
 
 			if (tds_get_null(resinfo->current_row,i)) {
-				_set_null_value(dbproc, curcol->varaddr, desttype, 
+				_set_null_value(dbproc, curcol->varaddr, desttype,
 					curcol->column_bindlen);
 	  		} else {
 
@@ -437,7 +437,7 @@ int            destlen;
 	                    destlen = -1;
 	                 else
 	                    destlen = curcol->column_bindlen;
-                     
+
                     // !!! dbconvert may return -1 as an error.
                     // !!! Errors are not handler here for some reason.
             		dbconvert(dbproc,
@@ -470,7 +470,7 @@ RETCODE dbinit()
 
 	if( g_dblib_ctx->tds_ctx->locale && !g_dblib_ctx->tds_ctx->locale->date_fmt ) {
 		/* set default in case there's no locale file */
-		g_dblib_ctx->tds_ctx->locale->date_fmt = strdup("%b %e %Y %l:%M:%S:%z%p"); 
+		g_dblib_ctx->tds_ctx->locale->date_fmt = strdup("%b %e %Y %l:%M:%S:%z%p");
 	}
 
 	return SUCCEED;
@@ -578,13 +578,13 @@ RETCODE dbsetlbool(LOGINREC *login, int value, int which)
 DBPROCESS *tdsdbopen(LOGINREC *login,char *server)
 {
 DBPROCESS *dbproc;
-   
+
 	dbproc = (DBPROCESS *) malloc(sizeof(DBPROCESS));
 	memset(dbproc,'\0',sizeof(DBPROCESS));
 	dbproc->avail_flag = TRUE;
 	
 	tds_set_server(login->tds_login,server);
-   
+
    dbproc->tds_socket = (void *) tds_connect(login->tds_login, g_dblib_ctx->tds_ctx, (void *)dbproc);
    dbproc->dbbuf = NULL;
    dbproc->dbbufsz = 0;
@@ -597,9 +597,9 @@ DBPROCESS *dbproc;
       free(dbproc); /* memory leak fix (mlilback, 11/17/01) */
       return NULL;
    }
-   
+
    buffer_init(&(dbproc->row_buf));
-   
+
    return dbproc;
 }
 
@@ -662,16 +662,16 @@ TDSSOCKET *tds;
    tds = (TDSSOCKET *) dbproc->tds_socket;
    if (!tds || !tds->s) return FAIL;
 
-   if (tds->res_info && tds->res_info->more_results) 
+   if (tds->res_info && tds->res_info->more_results)
    /* if (dbproc->more_results && tds_is_end_of_results(dbproc->tds_socket)) */
    {
       dbresults(dbproc);
    }
-      
+
    if (SUCCEED == (rc = dbsqlsend(dbproc)))
    {
-      /* 
-       * XXX We need to observe the timeout value and abort 
+      /*
+       * XXX We need to observe the timeout value and abort
        * if this times out.
        */
       rc = dbsqlok(dbproc);
@@ -756,6 +756,10 @@ int i;
 		}
 	}
 	tds_free_context(g_dblib_ctx->tds_ctx);
+
+    /* Free allocated memory to prevent a memory leak. */
+    free(g_dblib_ctx);
+    g_dblib_ctx = NULL;
 }
 
 
@@ -764,9 +768,9 @@ RETCODE dbresults_r(DBPROCESS *dbproc, int recursive)
 RETCODE       retcode = FAIL;
 TDSSOCKET *tds;
 
-   
-   /* 
-    * For now let's assume we have only 5 possible classes of tokens 
+
+   /*
+    * For now let's assume we have only 5 possible classes of tokens
     * at the next byte in the TDS stream
     *   1) The start of a result set, either TDS_RESULT_TOKEN (tds ver 5.0)
     *      or TDS_COL_NAME_TOKEN (tds ver 4.2).
@@ -798,18 +802,18 @@ TDSSOCKET *tds;
 	}
    }
    if (retcode == TDS_SUCCEED) {
-   	retcode = buffer_start_resultset(&(dbproc->row_buf), 
+   	retcode = buffer_start_resultset(&(dbproc->row_buf),
                                       tds->res_info->row_size);
    }
    return retcode;
 }
-   
+
 /* =============================== dbresults() ===============================
- * 
- * Def: 
- * 
+ *
+ * Def:
+ *
  * Ret:  SUCCEED, FAIL, NO_MORE_RESULTS, or NO_MORE_RPC_RESULTS
- * 
+ *
  * ===========================================================================
  */
 RETCODE dbresults(DBPROCESS *dbproc)
@@ -839,12 +843,12 @@ char *dbcolname(DBPROCESS *dbproc, int column)
 #ifdef NCBI_FTDS
     TDSRESULTINFO *resinfo;
     TDSSOCKET *tds;
-    
+
     tds = (TDSSOCKET *) dbproc->tds_socket;
     resinfo = tds->res_info;
     if (column < 1 || column > resinfo->num_cols || !resinfo->columns[column-1]) return NULL;
     return resinfo->columns[column-1]->column_name;
-#else    
+#else
 static char buf[255];
 TDSRESULTINFO *resinfo;
 TDSSOCKET *tds;
@@ -858,7 +862,7 @@ TDSSOCKET *tds;
 }
 
 RETCODE dbgetrow(
-   DBPROCESS *dbproc, 
+   DBPROCESS *dbproc,
    DBINT row)
 {
    RETCODE   result = FAIL;
@@ -884,7 +888,7 @@ RETCODE dbnextrow(DBPROCESS *dbproc)
    TDSSOCKET     *tds;
    int            rc;
    RETCODE        result = FAIL;
-   
+
    tdsdump_log(TDS_DBG_FUNC, "%L inside dbnextrow()\n");
 
    if (dbproc == NULL) return FAIL;
@@ -901,18 +905,18 @@ RETCODE dbnextrow(DBPROCESS *dbproc)
    }
 
    if (dbproc->row_buf.buffering_on && buffer_is_full(&(dbproc->row_buf))
-       && (-1 == buffer_index_of_resultset_row(&(dbproc->row_buf), 
+       && (-1 == buffer_index_of_resultset_row(&(dbproc->row_buf),
                                                dbproc->row_buf.next_row)))
    {
       result = BUF_FULL;
    }
-   else 
+   else
    {
       /*
        * Now try to get the dbproc->row_buf.next_row item into the row
        * buffer
        */
-      if (-1 != buffer_index_of_resultset_row(&(dbproc->row_buf), 
+      if (-1 != buffer_index_of_resultset_row(&(dbproc->row_buf),
                                               dbproc->row_buf.next_row))
       {
          /*
@@ -923,13 +927,13 @@ RETCODE dbnextrow(DBPROCESS *dbproc)
       }
       else
       {
-            /* 
+            /*
              * XXX Note- we need to handle "compute" results as well.
              * I don't believe the current src/tds/token.c handles those
              * so we don't handle them yet either.
              */
 
-            /* 
+            /*
              * Get the row from the TDS stream.
              */
             rc = tds_process_row_tokens(dbproc->tds_socket);
@@ -938,7 +942,7 @@ RETCODE dbnextrow(DBPROCESS *dbproc)
                /*
                 * Add the row to the row buffer
                 */
-               buffer_add_row(&(dbproc->row_buf), resinfo->current_row, 
+               buffer_add_row(&(dbproc->row_buf), resinfo->current_row,
                               resinfo->row_size);
                result = REG_ROW;
             }
@@ -946,19 +950,19 @@ RETCODE dbnextrow(DBPROCESS *dbproc)
             {
                result = NO_MORE_ROWS;
             }
-            else 
+            else
             {
                result = FAIL;
             }
       }
-   
+
       if (result == REG_ROW)
       {
          /*
-          * The data is in the row buffer, now transfer it to the 
+          * The data is in the row buffer, now transfer it to the
           * bound variables
           */
-         buffer_transfer_bound_data(&(dbproc->row_buf), dbproc, 
+         buffer_transfer_bound_data(&(dbproc->row_buf), dbproc,
                                     dbproc->row_buf.next_row);
          dbproc->row_buf.next_row++;
       }
@@ -1024,23 +1028,23 @@ static int _db_get_server_type(int bindtype)
 }
 /**
  * Conversion functions are handled in the TDS layer.
- * 
+ *
  * The main reason for this is that ctlib and ODBC (and presumably DBI) need
  * to be able to do conversions between datatypes. This is possible because
  * the format of complex data (dates, money, numeric, decimal) is defined by
  * its representation on the wire; thus what we call DBMONEY is exactly its
- * format on the wire. CLIs that need a different representation (ODBC?) 
+ * format on the wire. CLIs that need a different representation (ODBC?)
  * need to convert from this format anyway, so the code would already be in
  * place.
- * 
- * Each datatype is also defined by its Server-type so all CLIs should be 
+ *
+ * Each datatype is also defined by its Server-type so all CLIs should be
  * able to map native types to server types as well.
  *
  * tds_convert copies from src to dest and returns the output data length,
  * period.  All padding and termination is the responsibility of the API library
  * and is done post-conversion.  The peculiar rule in dbconvert() is that
  * a destlen of -1 and a desttype of SYBCHAR means the output buffer
- * should be null-terminated.  
+ * should be null-terminated.
  */
 
 DBINT dbconvert(DBPROCESS *dbproc,
@@ -1073,14 +1077,14 @@ DBNUMERIC   *num;
     }
 
     /* srclen of -1 means the source data is definitely NULL terminated */
-    if (srclen == -1) 
+    if (srclen == -1)
        srclen = strlen((char *)src);
 
     if (dest == NULL) {
        /* FIX call error handler */
        return -1;
     }
-    
+
 
     /* oft times we are asked to convert a data type to itself */
 
@@ -1109,7 +1113,7 @@ DBNUMERIC   *num;
 
                /* srclen of -1 means the source data is definitely NULL terminated */
 
-           	   if (srclen == -1) 
+           	   if (srclen == -1)
                   srclen = strlen((char *)src);
 
                if (destlen == 0 || destlen < -2) {
@@ -1118,7 +1122,7 @@ DBNUMERIC   *num;
                else if (destlen == -1) { /* rtrim and null terminate */
                   for (i = srclen-1; i>=0 && src[i] == ' '; --i) {
 		      srclen = i;
-		  } 
+		  }
                   memcpy(dest,src,srclen);
                   dest[srclen] = '\0';
                   ret = srclen;
@@ -1141,9 +1145,9 @@ DBNUMERIC   *num;
                      ret = srclen;
                   }
                }
-                  
+
                break;
-          case SYBINT1: 
+          case SYBINT1:
           case SYBINT2:
           case SYBINT4:
           case SYBINT8:
@@ -1190,9 +1194,9 @@ DBNUMERIC   *num;
 		
 	tdsdump_log(TDS_DBG_INFO1, "%L inside dbconvert() calling tds_convert\n");
 
-	len = tds_convert (g_dblib_ctx->tds_ctx, srctype, (TDS_CHAR *)src, srclen, 
+	len = tds_convert (g_dblib_ctx->tds_ctx, srctype, (TDS_CHAR *)src, srclen,
                        desttype, &dres);
-				   
+				
 	if( len == TDS_FAIL )
 		return 0;
 
@@ -1294,7 +1298,7 @@ DBNUMERIC   *num;
                        dest[i] = ' ';
                    ret = len;
              }
-                
+
              free(dres.c);
 
              break;
@@ -1348,19 +1352,19 @@ RETCODE dbbind(
    TDSCOLINFO    *colinfo = NULL;
    TDSRESULTINFO *resinfo = NULL;
    TDSSOCKET     *tds     = NULL;
-   int            srctype = -1;   
-   int            desttype = -1;   
+   int            srctype = -1;
+   int            desttype = -1;
    int            okay    = TRUE; /* so far, so good */
 
 	tdsdump_log(TDS_DBG_INFO1, "%L dbbind() column = %d %d %d\n",column, vartype, varlen);
 	dbproc->avail_flag = FALSE;
-   /* 
+   /*
     * Note on logic-  I'm using a boolean variable 'okay' to tell me if
-    * everything that has happened so far has gone okay.  Basically if 
-    * something happened that wasn't okay we don't want to keep doing 
-    * things, but I also don't want to have a half dozen exit points from 
-    * this function.  So basically I've wrapped each set of operation in a 
-    * "if (okay)" statement.  Once okay becomes false we skip everything 
+    * everything that has happened so far has gone okay.  Basically if
+    * something happened that wasn't okay we don't want to keep doing
+    * things, but I also don't want to have a half dozen exit points from
+    * this function.  So basically I've wrapped each set of operation in a
+    * "if (okay)" statement.  Once okay becomes false we skip everything
     * else.
     */
 	okay = (dbproc!=NULL && dbproc->tds_socket!=NULL && varaddr!=NULL);
@@ -1369,7 +1373,7 @@ RETCODE dbbind(
 		tds = (TDSSOCKET *) dbproc->tds_socket;
 		resinfo = tds->res_info;
 	}
-   
+
 	okay = okay && ((column >= 1) && (column <= resinfo->num_cols));
 
 	if (okay) {
@@ -1383,7 +1387,7 @@ RETCODE dbbind(
 		okay = okay && dbwillconvert(srctype, _db_get_server_type(vartype));
 	}
 
-	if (okay) {   
+	if (okay) {
 		colinfo->varaddr         = (char *)varaddr;
 		colinfo->column_bindtype = vartype;
 		colinfo->column_bindlen  = varlen;
@@ -1420,7 +1424,7 @@ TDSSOCKET * tds;
 
 	tds = (TDSSOCKET *) dbproc->tds_socket;
 	resinfo = tds->res_info;
-	if (resinfo) 
+	if (resinfo)
 		return resinfo->row_count;
 	else return tds->rows_affected;
 }
@@ -1454,7 +1458,7 @@ TDSSOCKET * tds;
 	colinfo = resinfo->columns[column-1];
 	switch (colinfo->column_type) {
 		case SYBVARCHAR:
-			return SYBCHAR; 
+			return SYBCHAR;
 		case SYBVARBINARY:
 			return SYBBINARY;
 		case SYBDATETIMN:
@@ -1477,9 +1481,9 @@ TDSSOCKET * tds;
 			if (colinfo->column_size==4)
 				return SYBINT4;
 			else if (colinfo->column_size==2)
-				return SYBINT2; 
+				return SYBINT2;
 			else if (colinfo->column_size==1)
-				return SYBINT1; 
+				return SYBINT1;
 			else if (colinfo->column_size==8)
 			    return SYBINT8;
 		default:
@@ -1504,7 +1508,7 @@ TDSSOCKET * tds;
 
 DBTYPEINFO *dbcoltypeinfo(DBPROCESS *dbproc, int column)
 {
-/* moved typeinfo from static into dbproc structure to make thread safe. 
+/* moved typeinfo from static into dbproc structure to make thread safe.
 	(mlilback 11/7/01) */
 TDSCOLINFO * colinfo;
 TDSRESULTINFO * resinfo;
@@ -1553,7 +1557,7 @@ TDSSOCKET *tds;
 
 	tds = (TDSSOCKET *) dbproc->tds_socket;
 	resinfo = tds->res_info;
-	if (column<1 || column>resinfo->num_cols) 
+	if (column<1 || column>resinfo->num_cols)
 		return FALSE;
 	colinfo = resinfo->columns[column-1];
 
@@ -1628,7 +1632,7 @@ TDS_VARBINARY *varbin;
 	t= colinfo->column_type;
 	if (is_blob_type(t)) {
 		return (BYTE *)colinfo->column_textvalue;
-	} 
+	}
 	if (t == SYBVARBINARY) {
 		varbin = (TDS_VARBINARY *)
 			&(resinfo->current_row[colinfo->column_offset]);
@@ -1686,7 +1690,7 @@ RETCODE ret;
 
 	buffer[0]='\0';
 
-	if ((ret = dbnextrow(dbproc))!=REG_ROW) 
+	if ((ret = dbnextrow(dbproc))!=REG_ROW)
 		return ret;
 
 	for (col=0;col<resinfo->num_cols;col++)
@@ -1716,7 +1720,7 @@ RETCODE ret;
 			buf_cur++;
 		}
 	}
-	if (strlen(buffer)<buf_len) 
+	if (strlen(buffer)<buf_len)
 		strcat(buffer,"\n");
 	return ret;
 }
@@ -1825,7 +1829,7 @@ int buf_cur=0;
 		collen = _get_printable_size(colinfo);
 		namlen = strlen(colinfo->column_name);
 		len = collen > namlen ? collen : namlen;
-		for (i=0;i<len;i++) 
+		for (i=0;i<len;i++)
 			strcat(dest,line_str);
 		if (strlen(dest)<buf_len-buf_cur) {
 			strcat(buffer,dest);
@@ -1836,7 +1840,7 @@ int buf_cur=0;
 			buf_cur++;
 		}
 	}
-	if (strlen(dest)<buf_len-buf_cur) 
+	if (strlen(dest)<buf_len-buf_cur)
 		strcat(buffer,"\n");
 	return SUCCEED;
 }
@@ -1872,7 +1876,7 @@ int buf_cur=0;
 			buf_cur++;
 		}
 	}
-	if (strlen(dest) < buf_len-buf_cur) 
+	if (strlen(dest) < buf_len-buf_cur)
 		strcat(buffer,"\n");
 	return SUCCEED;
 }
@@ -1979,7 +1983,7 @@ int dbaltcolid(DBPROCESS *dbproc, int computeid, int column)
 	tdsdump_log (TDS_DBG_FUNC, "%L UNIMPLEMENTED dbaltcolid()\n");
 	return -1;
 }
-DBINT 
+DBINT
 dbadlen(DBPROCESS *dbproc,int computeid, int column)
 {
 	tdsdump_log (TDS_DBG_FUNC, "%L UNIMPLEMENTED dbaddlen()\n");
@@ -2072,7 +2076,7 @@ TDSSOCKET *tds;
 		if (tds_process_default_tokens(tds, marker)!=TDS_SUCCEED) {
 			rc=FAIL;
 		}
-	} 
+	}
 */
 	do {
 		marker = tds_peek(tds);
@@ -2351,7 +2355,7 @@ RETCODE dbcanquery(DBPROCESS *dbproc)
 	if (dbproc == NULL)
 		return FAIL;
 	tds = (TDSSOCKET *) dbproc->tds_socket;
-	if (!tds || !tds->s) 
+	if (!tds || !tds->s)
 		return FAIL;
 
 	/*
@@ -2443,7 +2447,7 @@ int squote = FALSE, dquote = FALSE;
 	if (srclen<-1 || destlen<-1)
 		return FAIL;
 
-	if (srclen==-1) 
+	if (srclen==-1)
 		srclen = strlen(src);
 
 	if (quotetype == DBSINGLE || quotetype == DBBOTH)
@@ -2484,7 +2488,7 @@ char *dbprtype(int token)
 {
    char  *result = NULL;
 
-	/* 
+	/*
 	 * I added several types, but came up with my own result names
 	 * since I don't have an MS platform to compare to.	--jkl
 	 */
@@ -2495,7 +2499,7 @@ char *dbprtype(int token)
       case SYBAOPMAX:       result = "max";             	break;
       case SYBAOPMIN:       result = "min";             	break;
       case SYBAOPSUM:       result = "sum";             	break;
-	 
+	
       case SYBBINARY:       result = "binary";          	break;
       case SYBBIT:          result = "bit";             	break;
       case SYBBITN:         result = "bit-null";        	break;
@@ -2536,7 +2540,7 @@ char *dbprtype(int token)
       default:              result = "";                	break;
    }
    return result;
-} 
+}
 
 DBBINARY *dbtxtimestamp(DBPROCESS *dbproc, int column)
 {
@@ -2579,10 +2583,10 @@ TDSSOCKET *tds = (TDSSOCKET *) dbproc->tds_socket;
     if (dbconvert(dbproc, SYBBINARY, (TDS_CHAR *)timestamp, 8, SYBCHAR, timestamp_string, -1) == -1) {
         return FAIL;
     }
-    
+
 
 	sprintf(query, "writetext bulk %s 0x%s timestamp = 0x%s",
-		objname, textptr_string, timestamp_string); 
+		objname, textptr_string, timestamp_string);
 	if (tds_submit_query(dbproc->tds_socket, query)!=TDS_SUCCEED) {
 		return FAIL;
 	}
@@ -2645,7 +2649,7 @@ int cpbytes, bytes_avail, rc;
 	curcol = tds->res_info->columns[0];
 
 	/* if the current position is beyond the end of the text
-	** set pos to 0 and return 0 to denote the end of the 
+	** set pos to 0 and return 0 to denote the end of the
 	** text */
 	if (curcol->column_textpos &&
 	   curcol->column_textpos>=curcol->column_textsize) {
@@ -2654,7 +2658,7 @@ int cpbytes, bytes_avail, rc;
 	}
 
 	/* if pos is 0 (first time through or last call exhausted the text)
-	** then read another row */ 
+	** then read another row */
 	if (curcol->column_textpos==0) {
         	rc = tds_process_row_tokens(dbproc->tds_socket);
         	if (rc != TDS_SUCCEED) {
@@ -2742,21 +2746,21 @@ TDSSOCKET *tds;
 
 	tds = (TDSSOCKET *) dbproc->tds_socket;
 	if (tds->res_info && tds->res_info->more_results) {
-      /* 
+      /*
        * XXX If I read the documentation correctly it gets a
        * bit more complicated than this.
        *
-       * You see if the person did a query and retrieved all 
-       * the rows but didn't call dbresults() and if the query 
+       * You see if the person did a query and retrieved all
+       * the rows but didn't call dbresults() and if the query
        * didn't return multiple results then this routine should
        * just end the TDS_DONE_TOKEN packet and be done with it.
        *
-       * Unfortunately the only way we can know that is by peeking 
+       * Unfortunately the only way we can know that is by peeking
        * ahead to the next byte.  Peeking could block and this is supposed
-       * to be a non-blocking call.  
+       * to be a non-blocking call.
        *
        */
- 
+
       result = FAIL;
    }
    else
@@ -2837,7 +2841,7 @@ int dbiowdesc(DBPROCESS *dbproc)
 {
    return dbproc->tds_socket->s;
 }
- 
+
 static void _set_null_value(DBPROCESS *dbproc, BYTE *varaddr, int datatype, int maxlen)
 {
 	switch (datatype) {
