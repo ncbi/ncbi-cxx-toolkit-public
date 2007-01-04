@@ -430,7 +430,7 @@ private:
 
     ERW_Result x_SaveBlob(ICursor& cur)
     {
-        ERW_Result ret;
+        ERW_Result ret = eRW_Error;
         if (m_Buffer) {
             ostream& out = cur.GetBlobOStream(1, m_BytesInBuffer);
             ret = x_SaveBlob(out);
@@ -1271,6 +1271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2007/01/04 15:20:10  kuznets
+ * warning fix
+ *
  * Revision 1.22  2006/12/04 15:40:10  ssikorsk
  * Added implementation of CDBAPI_ICacheException::GetErrCodeString.
  *
