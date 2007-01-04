@@ -90,12 +90,12 @@ public:
     /// Dump in human readable text format
     template <class TOutStream>
     void Dump(TOutStream& os) const {
-        os << "CPairwiseAln";
+        os << "CPairwiseAln" << endl;
 
         os << GetFirstId()->AsString() << " (base_width=" << GetFirstId()->GetBaseWidth() << ") , "
            << GetSecondId()->AsString() << " (base_width=" << GetSecondId()->GetBaseWidth() << ") ";
 
-        os << " Flags = " << NStr::UIntToString(GetFlags(), 0, 16)
+        os << " Flags = " << NStr::UIntToString(GetFlags(), 0, 2)
            << ":" << endl;
 
         if (m_Flags & fKeepNormalized) os << "fKeepNormalized" << endl;
@@ -117,7 +117,7 @@ public:
                << rng.GetFirstFrom() << ", " 
                << rng.GetSecondFrom() << ", "
                << rng.GetLength() << ", " 
-               << (rng.IsDirect() ? "true" : "false") 
+               << (rng.IsDirect() ? "direct" : "reverse") 
                << "]";
         }
         os << endl;
@@ -280,6 +280,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2007/01/04 21:10:15  todorov
+* Cosmetic fixes in Dump()
+*
 * Revision 1.16  2006/12/12 20:51:49  todorov
 * Moved the ids from CAnchoredAln to CPairwiseAln.
 *
