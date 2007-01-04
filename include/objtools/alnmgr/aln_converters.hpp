@@ -91,7 +91,8 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
     anchored_aln->SetDim(dim);
 
     int anchor_flags =
-        CPairwiseAln::fKeepNormalized;
+        CPairwiseAln::fKeepNormalized |
+        CPairwiseAln::fAllowAbutting;
 
     int flags = 
         CPairwiseAln::fAllowMixedDir |
@@ -160,6 +161,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2007/01/04 21:10:45  todorov
+* + fAllowAbutting
+*
 * Revision 1.14  2006/12/13 18:57:37  todorov
 * + NCBI_XALNMGR_EXPORT
 *
