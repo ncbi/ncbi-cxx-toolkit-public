@@ -53,7 +53,7 @@ typedef enum {
     eError,
     eGet,
     eShutdown,
-    eVersion,
+    eVersion
 } EBVS_RequestType;
 
 
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2007/01/04 15:05:12  kuznets
+ * Minor warning fix
+ *
  * Revision 1.2  2006/11/30 14:23:50  dicuccio
  * Update to use buffer typedefs from CBDB_RawFile
  *

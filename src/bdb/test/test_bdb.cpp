@@ -1578,7 +1578,7 @@ static void s_TEST_BDB_BLOB_File(void)
 
     cout << "Testing BLOB based update cursor" << endl;
 
-    unsigned i2;
+    unsigned i2 = 0;
     {{
     CBDB_FileCursor cur(blob);
     cur.SetCondition(CBDB_FileCursor::eEQ);
@@ -2200,6 +2200,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2007/01/04 15:09:06  kuznets
+ * Minor warning fix
+ *
  * Revision 1.65  2006/11/15 13:49:14  rsmith
  * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
  *
