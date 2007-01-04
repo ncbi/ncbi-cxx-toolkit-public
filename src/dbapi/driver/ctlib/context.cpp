@@ -1195,6 +1195,7 @@ public:
     }
 };
 
+
 class CDbapiCtlibCF_ftds64_ctlib : public CDbapiCtlibCFBase
 {
 public:
@@ -1203,6 +1204,20 @@ public:
     {
     }
 };
+
+
+#ifdef FTDS_IN_USE
+
+class CDbapiCtlibCF_ftds : public CDbapiCtlibCFBase
+{
+public:
+    CDbapiCtlibCF_ftds(void)
+    : CDbapiCtlibCFBase("ftds")
+    {
+    }
+};
+
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1257,9 +1272,18 @@ extern "C" {
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
+NCBI_EntryPoint_xdbapi_ftds(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiCtlibCF_ftds>::NCBI_EntryPointImpl( info_list, method );
+}
+
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
+void
 DBAPI_RegisterDriver_FTDS(void)
 {
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_ctlib );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
 }
 
 
@@ -1281,6 +1305,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2007/01/04 15:02:07  ssikorsk
+ * Added an entry point for the "ftds" driver.
+ *
  * Revision 1.105  2006/12/28 19:28:50  ssikorsk
  * Added DBAPI_RegisterDriver_FTDS().
  *
