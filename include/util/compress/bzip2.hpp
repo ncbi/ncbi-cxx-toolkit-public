@@ -303,10 +303,12 @@ public:
         streamsize           in_bufsize  = kCompressionDefaultBufSize,
         streamsize           out_bufsize = kCompressionDefaultBufSize,
         int                  verbosity   = 0,
-        int                  work_factor = 0)
+        int                  work_factor = 0,
+        CCompression::TFlags flags       = 0
+        )
 
         : CCompressionStreamProcessor(
-              new CBZip2Compressor(level, verbosity, work_factor),
+              new CBZip2Compressor(level, verbosity, work_factor, flags),
               eDelete, in_bufsize, out_bufsize)
     {}
 };
@@ -347,6 +349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2007/01/04 20:19:48  ivanov
+ * CBZip2StreamCompressor: added missed flag parameter to constructor
+ *
  * Revision 1.14  2006/12/26 17:32:26  ivanov
  * Move fAllowTransparentRead flag definition from CCompression class
  * to each compresson algorithm definition.
