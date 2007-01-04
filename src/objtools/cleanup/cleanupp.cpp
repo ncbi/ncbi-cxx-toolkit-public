@@ -719,7 +719,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
-    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CorrectExceptText);
     x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
                                       &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
     LoopToAsn3(bss);                                  
@@ -785,8 +784,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
-    x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CorrectExceptText);
-    
     x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
                                       &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
     LoopToAsn3(bsh.GetSeq_entry_Handle());
@@ -821,8 +818,6 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
     x_ChangeImpFeatToCDS(sa);
     x_ChangeImpFeatToProt(sa);
    
-    x_CorrectExceptText(sa);
-    
     x_RemovePseudoProducts(sa);   
     
     x_MoveDbxrefs(sa);
@@ -1582,6 +1577,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.58  2007/01/04 13:13:38  bollin
+ * Moved ExtendedCleanup function for exception text to BasicCleanup.
+ *
  * Revision 1.57  2006/12/28 19:51:50  bollin
  * Removed steps for handling obsolete descriptors mol-type, method, and modif.
  *

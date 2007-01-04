@@ -278,10 +278,6 @@ private:
     void x_ConvertFullLenFeatureToDescriptor (CSeq_annot_Handle sa, CSeqFeatData::E_Choice choice);
     void x_ConvertFullLenPubFeatureToDescriptor (CSeq_annot_Handle sah);
 
-    bool x_CorrectExceptText (string& except_text);
-    void x_CorrectExceptText( CSeq_feat& feat);
-    void x_CorrectExceptText (CSeq_annot_Handle sa);
-
     void x_MoveDbxrefs( CSeq_feat& feat);
     void x_MoveDbxrefs (CSeq_annot_Handle sa);
     
@@ -412,6 +408,21 @@ private:
     void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss);
     void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Handle bh);
 
+    // MolInfo Cleanup Functions
+    void x_FuseMolInfos (CBioseq::TDescr& desc_set, CSeq_descr::Tdata& desc_list);
+    void x_FuseMolInfos (CBioseq_Handle bh);    
+    void x_FuseMolInfos (CBioseq_set_Handle bh);
+    void x_FuseMolInfos (CSeq_entry_Handle seh);
+    void x_AddMissingProteinMolInfo(CSeq_entry_Handle seh);
+    void x_GetGenBankTaxonomy(const CSeq_entry& se, string &taxonomy);
+    void x_GetGenBankTaxonomy(CSeq_entry_Handle seh, string& taxonomy);
+    void x_GetGenBankTaxonomy(CBioseq_Handle bs, string &taxonomy);
+    void x_GetGenBankTaxonomy(CBioseq_set_Handle bss, string &taxonomy);
+
+    void x_NormalizeMolInfo(CBioseq_set_Handle bh);
+    void x_SetMolInfoTechForConflictCDS (CBioseq_Handle bh);
+
+    // Other Cleanup Functions    
     bool x_RemovePIDXrefs (CSeq_feat& feat);
     bool x_FixPIDDbtag (CSeq_id& id);
     bool x_FixPIDDbtag (CSeq_loc& loc);
@@ -449,18 +460,6 @@ private:
     void CheckNucProtSet (CBioseq_set_Handle bss);
     void x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh, bool recurse = true);
     void x_StripOldDescriptorsAndFeatures (CBioseq_Handle bh);
-    void x_FuseMolInfos (CBioseq::TDescr& desc_set, CSeq_descr::Tdata& desc_list);
-    void x_FuseMolInfos (CBioseq_Handle bh);    
-    void x_FuseMolInfos (CBioseq_set_Handle bh);
-    void x_FuseMolInfos (CSeq_entry_Handle seh);
-    void x_AddMissingProteinMolInfo(CSeq_entry_Handle seh);
-    void x_GetGenBankTaxonomy(const CSeq_entry& se, string &taxonomy);
-    void x_GetGenBankTaxonomy(CSeq_entry_Handle seh, string& taxonomy);
-    void x_GetGenBankTaxonomy(CBioseq_Handle bs, string &taxonomy);
-    void x_GetGenBankTaxonomy(CBioseq_set_Handle bss, string &taxonomy);
-
-    void x_NormalizeMolInfo(CBioseq_set_Handle bh);
-    void x_SetMolInfoTechForConflictCDS (CBioseq_Handle bh);
 
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);
@@ -482,6 +481,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.53  2007/01/04 13:13:38  bollin
+ * Moved ExtendedCleanup function for exception text to BasicCleanup.
+ *
  * Revision 1.52  2006/12/28 19:51:50  bollin
  * Removed steps for handling obsolete descriptors mol-type, method, and modif.
  *

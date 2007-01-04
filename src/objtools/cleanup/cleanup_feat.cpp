@@ -89,7 +89,8 @@ void CCleanup_imp::x_CleanupExcept_text(string& except_text)
         NStr::Find(except_text, "trans splicing") == NPOS        &&
         NStr::Find(except_text, "alternate processing") == NPOS  &&
         NStr::Find(except_text, "adjusted for low quality genome") == NPOS  &&
-        NStr::Find(except_text, "non-consensus splice site") == NPOS) {
+        NStr::Find(except_text, "non-consensus splice site") == NPOS &&
+        NStr::Find(except_text, "reasons cited in publication") == NPOS) {
         return;
     }
 
@@ -118,6 +119,9 @@ void CCleanup_imp::x_CleanupExcept_text(string& except_text)
                 ChangeMade(CCleanupChange::eChangeException);
             } else if (text == "non-consensus splice site") {
                 text = "nonconsensus splice site";
+                ChangeMade(CCleanupChange::eChangeException);
+            } else if (NStr::Equal(except_text, "reasons cited in publication")) {
+                text = "reasons given in citation";
                 ChangeMade(CCleanupChange::eChangeException);
             }
         }
@@ -849,44 +853,6 @@ void CCleanup_imp::BasicCleanup(CImp_feat& imf)
 
 
 // Extended Cleanup methods
-
-// changes "reasons cited in publication" in feature exception text
-// to "reasons given in citation"
-bool CCleanup_imp::x_CorrectExceptText (string& except_text)
-{
-    if (NStr::Equal(except_text, "reasons cited in publication")) {
-        except_text = "reasons given in citation";
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-void CCleanup_imp::x_CorrectExceptText(CSeq_feat& feat)
-{
-    if (feat.IsSetExcept_text()) {
-        if (x_CorrectExceptText(feat.SetExcept_text())) {
-            ChangeMade(CCleanupChange::eChangeException);
-        }
-    }    
-}
-
-
-void CCleanup_imp::x_CorrectExceptText (CSeq_annot_Handle sa)
-{
-    if (sa.IsFtable()) {
-        CFeat_CI feat_ci(sa);
-        while (feat_ci) {
-            if (feat_ci->IsSetExcept_text()) {
-                x_CorrectExceptText(const_cast<CSeq_feat &> (feat_ci->GetOriginalFeature()));
-            }
-            ++feat_ci;                
-        }
-    }
-
-}
-
 
 // move GenBank qualifiers named "db_xref" on a feature to real dbxrefs
 // Was SeqEntryMoveDbxrefs in C Toolkit
@@ -2954,6 +2920,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2007/01/04 13:13:38  bollin
+ * Moved ExtendedCleanup function for exception text to BasicCleanup.
+ *
  * Revision 1.42  2006/12/11 17:14:43  bollin
  * Made changes to ExtendedCleanup per the meetings and new document describing
  * the expected behavior for BioSource features and descriptors.  The behavior
