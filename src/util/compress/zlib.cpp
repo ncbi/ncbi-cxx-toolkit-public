@@ -492,7 +492,9 @@ long CZipCompression::EstimateCompressionBufferSize(size_t src_len)
         SetError(errcode, zError(errcode));
         return -1;
     }
-    return deflateBound(STREAM, src_len) + header_len;
+    long n = deflateBound(STREAM, src_len) + header_len;
+    deflateEnd(STREAM);
+    return n;
 #endif
 }
 
@@ -1182,6 +1184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2007/01/04 14:04:32  ivanov
+ * EstimateCompressionBufferSize() -- fixed possible memory leak
+ *
  * Revision 1.33  2006/12/26 17:32:41  ivanov
  * Move fAllowTransparentRead flag definition from CCompression class
  * to each compresson algorithm definition.
