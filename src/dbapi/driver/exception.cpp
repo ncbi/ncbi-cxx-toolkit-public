@@ -534,11 +534,14 @@ CDB_UserHandler_Stream::CDB_UserHandler_Stream(ostream*      os,
 CDB_UserHandler_Stream::~CDB_UserHandler_Stream()
 {
     try {
+        CFastMutexGuard mg(m_Mtx);
+
         if ( m_OwnOutput ) {
             delete m_Output;
             m_OwnOutput = false;
             m_Output = 0;
         }
+
         m_Prefix.erase();
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -547,6 +550,8 @@ CDB_UserHandler_Stream::~CDB_UserHandler_Stream()
 
 bool CDB_UserHandler_Stream::HandleIt(CDB_Exception* ex)
 {
+    CFastMutexGuard mg(m_Mtx);
+
     if ( !ex )
         return true;
 
@@ -556,8 +561,10 @@ bool CDB_UserHandler_Stream::HandleIt(CDB_Exception* ex)
     if ( !m_Prefix.empty() ) {
         *m_Output << m_Prefix << ' ';
     }
+
     *m_Output << ex->what();
     *m_Output << endl;
+
     return m_Output->good();
 }
 
@@ -569,6 +576,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2007/01/04 19:34:02  ssikorsk
+ * Improved thread-safety of CDB_UserHandler_Stream.
+ *
  * Revision 1.34  2006/12/29 20:42:04  ssikorsk
  * Temporary mt fix for memory corruption.
  *
