@@ -843,7 +843,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'A':                               return eAcc_gb_patent;
             case 'B': case 'C': case 'E': case 'G':
             case 'H':                               return eAcc_gb_est;
-            case 'D': case 'I':                     return eAcc_gb_gss;
+            case 'D': case 'I': case 'J': case 'K': return eAcc_gb_gss;
             case 'F':                               return eAcc_gb_dirsub;
             default:                                return eAcc_unreserved_nuc;
             }
@@ -1734,6 +1734,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.142  2007/01/04 16:02:01  ucko
+ * IdentifyAccession: EJ, EK -> eAcc_gb_gss.
+ *
  * Revision 6.141  2006/12/20 15:07:48  ucko
  * IdentifyAccession: specifically assign DH to eAcc_ddbj_gss.
  *
