@@ -127,6 +127,7 @@ CCompressionStreambuf::~CCompressionStreambuf()
             }
         }
         sp->m_Processor->End();
+        sp->m_State = CCompressionStreamProcessor::eDone;
     }
     // Write processor
     sp = GetStreamProcessor(CCompressionStream::eWrite);
@@ -141,6 +142,7 @@ CCompressionStreambuf::~CCompressionStreambuf()
             }
         }
         sp->m_Processor->End();
+        sp->m_State = CCompressionStreamProcessor::eDone;
         // Write remaining data from buffers to underlying stream
         if ( m_Writer->m_Begin != m_Writer->m_End ) {
             WriteOutBufToStream(true /*force write*/);
@@ -528,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2007/01/04 01:45:58  ucko
+ * CCompressionStreambuf::~CCompressionStreambuf: mark processors as eDone.
+ *
  * Revision 1.28  2006/12/18 19:39:23  ivanov
  * Added possibility to reuse stream reader/writer
  *
