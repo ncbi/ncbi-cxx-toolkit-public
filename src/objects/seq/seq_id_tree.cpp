@@ -1576,7 +1576,15 @@ inline string CSeq_id_PDB_Tree::x_IdToStrKey(const CPDB_seq_id& id) const
     switch (char chain = (char)id.GetChain()) {
     case '\0': skey += " ";   break;
     case '|':  skey += "VB";  break;
-    default:   skey += chain; break;
+    default:
+        if ( islower((unsigned char)chain) ) {
+            skey.append(2, (char)toupper((unsigned char)chain));
+            break;
+        }
+        else {
+            skey += chain;
+            break;
+        }
     }
     return skey;
 }
@@ -1710,6 +1718,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2007/01/04 19:57:46  vasilche
+* PDB chain is case sensitive.
+*
 * Revision 1.24  2006/01/26 13:59:34  ludwigf
 * NOTE: This checkin is to attach a checkin note to the PRIOR checkin. Somehow
 *  CVS managed to discard my note and proceed with the checkin anyway.
