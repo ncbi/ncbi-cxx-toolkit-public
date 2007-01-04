@@ -85,6 +85,7 @@ void CNetCacheServer::Process_IC_SetVersionRetention(ICache&           ic,
         policy = ICache::eDropAll;
     } else {
         WriteMsg(sock, "ERR:", "Invalid version retention code");
+        return;
     }
     ic.SetVersionRetention(policy);
     WriteMsg(sock, "OK:", "");
@@ -461,6 +462,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2007/01/04 15:24:43  kuznets
+ * Fixed logic in version retention syntax validator
+ *
  * Revision 1.13  2006/05/18 13:27:51  kuznets
  * Implemented cache cleaning function
  *
