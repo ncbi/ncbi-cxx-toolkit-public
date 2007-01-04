@@ -78,7 +78,7 @@ static ENa_strand s_GetSeqStrand(const CSeq_align& aln, CSeq_align::TDim row)
 {
     try {
         return aln.GetSeqStrand(row);
-    } catch(CSeqalignException& e) {
+    } catch(CSeqalignException&) {
         return eNa_strand_plus;
     }
 }
@@ -111,8 +111,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     sel.SetResolveDepth(0);
     CFeat_CI it(xcript_hand, sel);
     bool has_cds(it);
-    TSeqPos cds_from;
-    TSeqPos cds_to;
+    TSeqPos cds_from = 0, cds_to = 0;  // initialize to avoid compiler warning
     CAlnVec::TSignedRange cds_range;
     const CSeq_id& genomic_id = disc.front()->GetSeq_id(1);
     CBioseq_Handle genomic_hand = scope.GetBioseqHandle(genomic_id);
@@ -193,9 +192,9 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     TSeqPos exon_length, intron_length;
     TSeqPos exon_match_count, exon_possible_match_count;
     double worst_exon_match_frac = 1.1;  // guarantee that something is worse
-    TSeqPos worst_exon_match_count;
-    TSeqPos worst_exon_possible_match_count;
-    TSeqPos worst_exon_length;
+    TSeqPos worst_exon_match_count = 0;           // initialize to
+    TSeqPos worst_exon_possible_match_count = 0;  // avoid
+    TSeqPos worst_exon_length = 0;                // compiler warnings
     int indel_count = 0;
     int cds_indel_count = 0;
 
@@ -205,7 +204,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     CSeq_data genomic_cds_seq_data;
     string& genomic_cds_seq = genomic_cds_seq_data.SetIupacna().Set();
 
-    int lag;  // cumulative gaps in xcript minus genomic in cds
+    int lag = 0;  // cumulative gaps in xcript minus genomic in cds;
+                  // initialize to avoid compiler warnings
     int frame;
 
     ITERATE (CSeq_align_set::Tdata, iter, disc) {
@@ -654,6 +654,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2007/01/04 14:20:45  jcherry
+ * Eliminated compiler warnings
+ *
  * Revision 1.23  2006/11/21 18:51:44  jcherry
  * Added genomic_ambiguity_count and genomic_cds_ambiguity_count
  *
