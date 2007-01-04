@@ -70,23 +70,25 @@ CDriverManager::~CDriverManager()
 {
     try {
         typedef map<string, IDataSource*> TContainer;
-        
+
+        CMutexGuard mg(m_Mutex);
+
         ITERATE(TContainer, it, m_ds_list) {
             IDataSource* ds = it->second;
-            
+
             if (ds) {
-                // We won't delete IDataSource unless all connections 
-                // are closed, because deleting of IDataSource will also 
+                // We won't delete IDataSource unless all connections
+                // are closed, because deleting of IDataSource will also
                 // delete all connections.
                 // This will cause a memory leak but it also will prevent from
                 // accessing an already freed memory or even application
                 // crash..
                 if (ds->GetDriverContext()->NofConnections() == 0) {
                     delete ds;
-                }            
+                }
             }
         }
-        
+
         m_ds_list.clear();
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -96,6 +98,8 @@ CDriverManager::~CDriverManager()
 IDataSource* CDriverManager::CreateDs(const string&        driver_name,
                                       const map<string, string>* attr)
 {
+    CMutexGuard mg(m_Mutex);
+
     map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
     if (i_ds != m_ds_list.end()) {
         return (*i_ds).second;
@@ -114,6 +118,8 @@ IDataSource* CDriverManager::CreateDs(const string&        driver_name,
 IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
                                           const IRegistry* reg)
 {
+    CMutexGuard mg(m_Mutex);
+
     list<string> names;
     NStr::Split(drivers, ":", names);
 
@@ -144,36 +150,33 @@ IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
 IDataSource* CDriverManager::RegisterDs(const string& driver_name,
                                         I_DriverContext* ctx)
 {
-    IDataSource *ds = CreateDs( ctx );
+    CMutexGuard mg(m_Mutex);
+
+    IDataSource *ds = new CDataSource(ctx);
     m_ds_list[driver_name] = ds;
     return ds;
 }
 
 void CDriverManager::DestroyDs(const string& driver_name)
 {
+    CMutexGuard mg(m_Mutex);
+
     map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
     if (i_ds != m_ds_list.end()) {
-        DeleteDs(i_ds->second);
+        delete i_ds->second;
         m_ds_list.erase(i_ds);
     }
 }
 
-IDataSource*
-CDriverManager::CreateDs(I_DriverContext* ctx)
-{
-    return new CDataSource(ctx);
-}
-
-void CDriverManager::DeleteDs(const IDataSource* const ds)
-{
-    delete ds;
-}
 
 END_NCBI_SCOPE
 
 /*
 *
 * $Log$
+* Revision 1.24  2007/01/04 22:24:04  ssikorsk
+* Revamp code to use m_Mutex.
+*
 * Revision 1.23  2006/05/15 16:53:17  ssikorsk
 * Increased lifetime of the CDriverManager singleton.
 *
