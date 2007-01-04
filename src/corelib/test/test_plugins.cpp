@@ -46,6 +46,7 @@ struct ITest
 {
     int  a;
     ITest() : a(10) {}
+    virtual ~ITest() {}
 
     virtual int GetA() const = 0;
 };
@@ -54,12 +55,14 @@ struct ITest2
 {
     int  b;
     ITest2() : b(0) {}
+    virtual ~ITest2() {}
 };
 
 class CTestDriver : public ITest
 {
 public:
     CTestDriver() {}
+    virtual ~CTestDriver() {}
 
     int GetA() const { return a; }
 };
@@ -68,6 +71,7 @@ class CTestDriver2 : public ITest
 {
 public:
     CTestDriver2() {}
+    virtual ~CTestDriver2() {}
 
     int GetA() const { return 15; }
 };
@@ -338,6 +342,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2007/01/04 15:00:12  kuznets
+ * Added some virtual destructors to fix warnings
+ *
  * Revision 1.10  2005/10/27 16:48:49  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.
