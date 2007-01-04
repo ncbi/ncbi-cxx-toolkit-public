@@ -1349,12 +1349,15 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
     return s_TruncateSpaces(str, where, kEmptyStr);
 }
 
-/**
 CTempString NStr::TruncateSpaces(const CTempString& str, ETrunc where)
 {
     return s_TruncateSpaces(str, where, CTempString());
 }
-**/
+
+CTempString NStr::TruncateSpaces(const char* str, ETrunc where)
+{
+    return s_TruncateSpaces(CTempString(str), where, CTempString());
+}
 
 
 void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
@@ -2611,6 +2614,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.194  2007/01/04 12:42:35  dicuccio
+ * Restore TruncateSpaces() for CTempString.  Added additional checks for TruncateSpaces() functionality in unit test
+ *
  * Revision 1.193  2006/12/28 16:58:03  vasilche
  * Avoid using deprecated constructor.
  *

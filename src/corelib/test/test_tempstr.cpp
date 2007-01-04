@@ -238,7 +238,6 @@ void TestTempString()
     BOOST_CHECK(temp_sub == sub);
 
     /// test NStr::TruncateSpaces
-    /**
     sub = "  hello, world  ";
     temp_sub = "  hello, world  ";
     sub = NStr::TruncateSpaces(sub);
@@ -248,17 +247,26 @@ void TestTempString()
     BOOST_CHECK(temp_sub == sub);
     BOOST_CHECK(temp_sub == temp_str);
     BOOST_CHECK(sub == str);
-    **/
 
     sub = "-";
     sub = NStr::TruncateSpaces(sub);
-    LOG_POST(Info << "NStr::TruncateSpaces(\"-\")      = >>" << sub << "<<");
+    LOG_POST(Info << "NStr::TruncateSpaces(\"-\")  = >>" << sub << "<<");
     BOOST_CHECK(sub == "-");
 
     sub = "- ";
     sub = NStr::TruncateSpaces(sub);
-    LOG_POST(Info << "NStr::TruncateSpaces(\"- \")      = >>" << sub << "<<");
+    LOG_POST(Info << "NStr::TruncateSpaces(\"- \") = >>" << sub << "<<");
     BOOST_CHECK(sub == "-");
+
+    sub = " hello ";
+    sub = NStr::TruncateSpaces(sub);
+    LOG_POST(Info << "NStr::TruncateSpaces(\" hello \") = >>" << sub << "<<");
+    BOOST_CHECK(sub == "hello");
+
+    sub = " hello";
+    sub = NStr::TruncateSpaces(sub);
+    LOG_POST(Info << "NStr::TruncateSpaces(\" hello\")  = >>" << sub << "<<");
+    BOOST_CHECK(sub == "hello");
 
 
     /// test CopySubstr
@@ -296,6 +304,9 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2007/01/04 12:42:35  dicuccio
+ * Restore TruncateSpaces() for CTempString.  Added additional checks for TruncateSpaces() functionality in unit test
+ *
  * Revision 1.3  2006/12/22 13:12:34  dicuccio
  * Temporarily remove tests of NStr::TruncateSpaces()
  *
