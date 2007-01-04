@@ -152,7 +152,7 @@ public:
     ///   Size of data in source  buffer.
     /// @param dst_buf
     ///   Destination buffer.
-    /// @param dst_len
+    /// @param dst_size
     ///   Size of destination buffer.
     /// @param dst_len
     ///   Size of compressed data in destination buffer.
@@ -177,7 +177,7 @@ public:
     ///   Size of data in source  buffer.
     /// @param dst_buf
     ///   Destination buffer.
-    /// @param dst_len
+    /// @param dst_size
     ///   Size of destination buffer.
     /// @param dst_len
     ///   Size of compressed data in destination buffer.
@@ -552,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2007/01/04 13:46:56  ivanov
+ * Minor doxygen comment fixes
+ *
  * Revision 1.20  2006/12/26 17:32:26  ivanov
  * Move fAllowTransparentRead flag definition from CCompression class
  * to each compresson algorithm definition.
