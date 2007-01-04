@@ -64,7 +64,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     list<string> entries;
 
     CNcbiOstrstream os;
-    const char*  os_str;
+    const char*  os_str = 0;
     string       test_str("\" V481\" \n\"V482 ");
 
     // Compose a test registry
@@ -313,6 +313,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2007/01/04 14:27:43  ivanov
+ * Fixed compiler warning
+ *
  * Revision 6.9  2005/11/07 23:30:13  vakatov
  * Recent fix in the registry code caught a bug in the test (ironic, isn't it?)
  *
