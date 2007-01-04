@@ -908,8 +908,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
 {
     EAccessionInfo type = (EAccessionInfo)Which();
     switch (type) {
-    case e_Pir: case e_Swissprot: case e_Prf:
-    case e_Pdb:
+    case e_Pir: case e_Swissprot: case e_Prf: // but *NOT* e_Pdb
         return (EAccessionInfo)(type | fAcc_prot); // always just protein
         
     case e_Genbank: case e_Embl: case e_Ddbj:
@@ -1734,6 +1733,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.143  2007/01/04 20:08:03  ucko
+ * IdentifyAccession: allow for nucleotide(!) PDB accessions.
+ *
  * Revision 6.142  2007/01/04 16:02:01  ucko
  * IdentifyAccession: EJ, EK -> eAcc_gb_gss.
  *

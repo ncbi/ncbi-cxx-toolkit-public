@@ -258,7 +258,7 @@ public:
         eAcc_ddbj_gss       = e_Ddbj | 128 << 8        | fAcc_nuc,  // DE
 
         eAcc_prf = e_Prf | eAcc_other | fAcc_prot,
-        eAcc_pdb = e_Pdb | eAcc_other | fAcc_prot,
+        eAcc_pdb = e_Pdb | eAcc_other, // not necessarily protein!
 
         eAcc_gb_tpa_nuc  = e_Tpg | eAcc_other | fAcc_nuc,    // BK
         eAcc_gb_tpa_prot = e_Tpg | eAcc_other | fAcc_prot,   // DAA
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.57  2007/01/04 20:07:58  ucko
+ * IdentifyAccession: allow for nucleotide(!) PDB accessions.
+ *
  * Revision 1.56  2006/12/07 17:26:24  dicuccio
  * Identify CON and RefSeq contig records as nucleotide
  *
