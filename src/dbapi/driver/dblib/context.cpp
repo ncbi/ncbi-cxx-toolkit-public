@@ -259,11 +259,17 @@ CDBLibContext::CDBLibContext(DBINT version)
 #ifdef MS_DBLIB_IN_USE
     if (Check(dbinit()) == NULL || version == 31415)
 #else
-    if (Check(dbinit()) != SUCCEED || Check(dbsetversion(version)) != SUCCEED)
+    if (Check(dbinit()) != SUCCEED)
 #endif
     {
         DATABASE_DRIVER_ERROR( "dbinit failed", 200001 );
     }
+
+#ifndef MS_DBLIB_IN_USE
+    if (Check(dbsetversion(version)) != SUCCEED) {
+        DATABASE_DRIVER_ERROR( "dbsetversion failed", 200001 );
+    }
+#endif
 
     Check(dberrhandle(s_DBLIB_err_callback));
     Check(dbmsghandle(s_DBLIB_msg_callback));
@@ -1360,6 +1366,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2007/01/04 22:28:18  ssikorsk
+ * Handle dbinit and dbsetversion separately in CDBLibContext::CDBLibContext.
+ *
  * Revision 1.93  2006/12/15 16:42:45  ssikorsk
  * Replaced CFastMutex with CMutex. Improved thread-safety.
  *
