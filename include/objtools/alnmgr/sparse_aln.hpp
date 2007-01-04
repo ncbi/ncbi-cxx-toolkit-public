@@ -43,8 +43,10 @@
 #include <gui/widgets/aln_data/data_elements.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objtools/alnmgr/pairwise_aln.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -154,11 +156,24 @@ public:
                           const TUtils::TSignedRange& range,
                           IAlnSegmentIterator::EFlags flags) const;
 
-    /// Whethere the alignment is translated (heterogenous), e.g. nuc-prot
+    /// Wheather the alignment is translated (heterogenous), e.g. nuc-prot
     bool IsTranslated() const;
 
+
+    // genetic code
+    enum EConstants {
+        kDefaultGenCode = 1
+    };
+
+    // Static utilities:
+    static void TranslateNAToAA(const string& na, string& aa,
+                                int gen_code = kDefaultGenCode); //< per http://www.ncbi.nlm.nih.gov/collab/FT/#7.5.5
 protected:
+    CSeqVector& x_GetSeqVector(TNumrow row) const;
+
+
     typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
+
 
     const CConstRef<CAnchoredAln> m_AnchoredAln;
     const TPairwiseAlnVector& m_PairwiseAlns;
@@ -167,6 +182,8 @@ protected:
     vector<TRng> m_SecondRanges;
     TResidue m_GapChar;
     mutable vector<objects::CBioseq_Handle> m_BioseqHandles;
+    mutable vector<CRef<CSeqVector> > m_SeqVectors;
+
 };
 
 
@@ -180,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2007/01/04 21:13:24  todorov
+ * Added the ability to display translated alignments.
+ *
  * Revision 1.5  2006/12/12 20:53:54  todorov
  * Seq-ids are now in the CPairwiseAln's.
  *

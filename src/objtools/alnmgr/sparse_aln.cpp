@@ -35,6 +35,7 @@
 #include <objtools/alnmgr/sparse_ci.hpp>
 
 #include <objects/seqalign/Sparse_align.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 
 #include <objmgr/seq_vector.hpp>
 
@@ -68,6 +69,9 @@ void CSparseAln::UpdateCache()
 
     m_BioseqHandles.clear();
     m_BioseqHandles.resize(dim);
+
+    m_SeqVectors.clear();
+    m_SeqVectors.resize(dim);
     
     m_SecondRanges.resize(dim);
     for (TDim row = 0;  row < dim;  ++row) {
@@ -251,6 +255,65 @@ TSignedSeqPos CSparseAln::GetSeqPosFromAlnPos(TNumrow row, TSeqPos aln_pos,
 }
 
 
+const CBioseq_Handle&  CSparseAln::GetBioseqHandle(TNumrow row) const
+{
+    _ASSERT(row >= 0  &&  row < GetDim());
+
+    if ( !m_BioseqHandles[row] ) {
+        m_BioseqHandles[row] = m_Scope->GetBioseqHandle(GetSeqId(row));
+    }
+    return m_BioseqHandles[row];
+}
+
+
+CSeqVector& CSparseAln::x_GetSeqVector(TNumrow row) const
+{
+    _ASSERT(row >= 0  &&  row < GetDim());
+
+    if ( !m_SeqVectors[row] ) {
+        CSeqVector vec = GetBioseqHandle(row).GetSeqVector
+            (CBioseq_Handle::eCoding_Iupac,
+             IsPositiveStrand(row) ? 
+             CBioseq_Handle::eStrand_Plus :
+             CBioseq_Handle::eStrand_Minus);
+        m_SeqVectors[row].Reset(new CSeqVector(vec));
+    }
+    return *m_SeqVectors[row];
+}
+
+
+void CSparseAln::TranslateNAToAA(const string& na,
+                                 string& aa,
+                                 int gencode)
+{
+    const CTrans_table& tbl = CGen_code_table::GetTransTable(gencode);
+
+    size_t na_remainder = na.size() % 3;
+    size_t na_size = na.size() - na_remainder;
+
+    if (aa != na) {
+        aa.resize(na_size / 3 + (na_remainder ? 1 : 0));
+    }
+    
+    size_t aa_i = 0;
+    int state = 0;
+    for (size_t na_i = 0;  na_i < na_size; ) {
+        for (size_t i = 0;  i < 3;  ++i, ++na_i) {
+            state = tbl.NextCodonState(state, na[na_i]);
+        }
+        aa[aa_i++] = tbl.GetCodonResidue(state);
+    }
+    if (na_remainder) {
+        aa[aa_i++] = '\\';
+    }
+    
+    if (aa == na) {
+        aa[aa_i] = 0;
+        aa.resize(aa_i);
+    }
+}
+
+
 string& CSparseAln::GetSeqString(TNumrow row, string &buffer,
                                  TSeqPos seq_from, TSeqPos seq_to) const
 {
@@ -258,18 +321,12 @@ string& CSparseAln::GetSeqString(TNumrow row, string &buffer,
 
     buffer.erase();
     if (seq_to >= seq_from) {
-        const CBioseq_Handle& handle = GetBioseqHandle(row);
-        bool positive = IsPositiveStrand(row);
-        CBioseq_Handle::EVectorStrand strand = positive ?
-                CBioseq_Handle::eStrand_Plus : CBioseq_Handle::eStrand_Minus;
-
-        CSeqVector seq_vector =
-            handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, strand);
+        CSeqVector& seq_vector = x_GetSeqVector(row);
 
         size_t size = seq_to - seq_from + 1;
         buffer.resize(size, m_GapChar);
 
-        if (positive) {
+        if (IsPositiveStrand(row)) {
             seq_vector.GetSeqData(seq_from, seq_to + 1, buffer);
         } else {
             TSeqPos vec_size = seq_vector.size();
@@ -293,19 +350,16 @@ string& CSparseAln::GetAlnSeqString(TNumrow row, string &buffer,
                                     const TSignedRange &aln_range) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
-    _ASSERT(m_PairwiseAlns[row]->GetSecondBaseWidth() == 1); //< TODO: add support
+
+    bool translated = true;
 
     buffer.erase();
 
     if(aln_range.GetLength() > 0)   {
-        const CBioseq_Handle& handle = GetBioseqHandle(row);
-        bool positive = IsPositiveStrand(row);
-        CBioseq_Handle::EVectorStrand strand = positive ?
-                CBioseq_Handle::eStrand_Plus : CBioseq_Handle::eStrand_Minus;
-
-        CSeqVector seq_vector =
-            handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, strand);
+        CSeqVector& seq_vector = x_GetSeqVector(row);
         TSeqPos vec_size = seq_vector.size();
+
+        const int base_width = m_PairwiseAlns[row]->GetSecondBaseWidth();
 
         // buffer holds sequence for "aln_range", 0 index corresonds to aln_range.GetFrom()
         size_t size = aln_range.GetLength();
@@ -322,20 +376,44 @@ string& CSparseAln::GetAlnSeqString(TNumrow row, string &buffer,
         while (it)   {
             const IAlnSegment::TSignedRange& aln_r = it->GetAlnRange(); // in alignment
             const IAlnSegment::TSignedRange& r = it->GetRange(); // on sequence
+
+            size_t off;
             //LOG_POST("Aln [" << aln_r.GetFrom() << ", " << aln_r.GetTo() << "], Seq  "
             //                 << r.GetFrom() << ", " << r.GetTo());
-
-            // TODO performance issue - waiting for better API
-            if(positive)    {
-                seq_vector.GetSeqData(r.GetFrom(), r.GetTo() + 1, s);
+            if (base_width == 1) {
+                // TODO performance issue - waiting for better API
+                if (IsPositiveStrand(row)) {
+                    seq_vector.GetSeqData(r.GetFrom(), r.GetToOpen(), s);
+                } else {
+                    seq_vector.GetSeqData(vec_size - r.GetToOpen(),
+                                          vec_size - r.GetFrom(), s);
+                }
+                if (translated) {
+                    TranslateNAToAA(s, s);
+                }
+                off = aln_r.GetFrom() - aln_range.GetFrom();
+                if (translated) {
+                    off /= 3;
+                }
+                off = max(prev_to_open, off);
             } else {
-                seq_vector.GetSeqData(vec_size - r.GetTo() - 1,
-                                      vec_size - r.GetFrom(), s);
+                _ASSERT(base_width == 3);
+                IAlnSegment::TSignedRange prot_r = r;
+                prot_r.SetFrom(r.GetFrom() / 3);
+                prot_r.SetLength(r.GetLength() < 3 ? 1 : r.GetLength() / 3);
+                if (IsPositiveStrand(row)) {
+                    seq_vector.GetSeqData(prot_r.GetFrom(),
+                                          prot_r.GetToOpen(), s);
+                } else {
+                    seq_vector.GetSeqData(vec_size - prot_r.GetToOpen(),
+                                          vec_size - prot_r.GetFrom(), s);
+                }
+                off = max((TSignedSeqPos) prev_to_open,
+                          (aln_r.GetFrom() - aln_range.GetFrom()) / 3);
             }
             /*if(it->IsReversed())    {
                 std::reverse(s.begin(), s.end());
             }*/
-            size_t off = max((TSignedSeqPos) 0, aln_r.GetFrom() - aln_range.GetFrom());
             size_t len = min(buffer.size() - off, s.size());
 
             if(prev_to_open != string::npos) {   // this is not the first segement
@@ -360,17 +438,6 @@ string& CSparseAln::GetAlnSeqString(TNumrow row, string &buffer,
 }
 
 
-const CBioseq_Handle&  CSparseAln::GetBioseqHandle(TNumrow row) const
-{
-    _ASSERT(row >= 0  &&  row < GetDim());
-
-    if ( !m_BioseqHandles[row] ) {
-        m_BioseqHandles[row] = m_Scope->GetBioseqHandle(GetSeqId(row));
-    }
-    return m_BioseqHandles[row];
-}
-
-
 IAlnSegmentIterator*
 CSparseAln::CreateSegmentIterator(TNumrow row,
                                   const TUtils::TSignedRange& range,
@@ -388,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2007/01/04 21:13:49  todorov
+ * Added the ability to display translated alignments.
+ *
  * Revision 1.3  2006/12/12 20:54:11  todorov
  * Seq-ids are now in the CPairwiseAln's.
  *
