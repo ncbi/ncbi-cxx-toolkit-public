@@ -219,6 +219,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch()
 CRef<SInternalData>
 CBlastPrelimSearch::Run()
 {
+    BlastSeqSrcResetChunkIterator(m_InternalData->m_SeqSrc->GetPointer());
     int retval =
         (IsMultiThreaded()
          ? x_LaunchMultiThreadedSearch()

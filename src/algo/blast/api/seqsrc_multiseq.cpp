@@ -320,6 +320,13 @@ s_MultiSeqGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
     return BLAST_SEQSRC_SUCCESS;
 }
 
+/// Resets the internal bookmark iterator (N/A in this case)
+static void
+s_MultiSeqResetChunkIter(void* /*multiseq_handle*/)
+{
+    return;
+}
+
 /// Gets the next sequence index, given a BlastSeqSrc pointer.
 /// @param multiseq_handle Handle to access the underlying object over which
 ///                        iteration occurs. [in]
@@ -410,6 +417,7 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     _BlastSeqSrcImpl_SetGetSequence(retval, &s_MultiSeqGetSequence);
     _BlastSeqSrcImpl_SetGetSeqLen(retval, &s_MultiSeqGetSeqLen);
     _BlastSeqSrcImpl_SetIterNext(retval, &s_MultiSeqIteratorNext);
+    _BlastSeqSrcImpl_SetResetChunkIterator(retval, &s_MultiSeqResetChunkIter);
     _BlastSeqSrcImpl_SetReleaseSequence(retval, &s_MultiSeqReleaseSequence);
 
     return retval;
@@ -445,6 +453,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2007/01/04 22:17:56  camacho
+ * + interface to reset iteration bookmark
+ *
  * Revision 1.38  2006/06/14 15:58:54  camacho
  * Replace ASSERT (defined in CORE) for _ASSERT (defined by C++ toolkit)
  *

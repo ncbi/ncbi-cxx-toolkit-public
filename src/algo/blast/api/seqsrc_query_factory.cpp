@@ -306,6 +306,13 @@ s_QueryFactoryGetNextChunk(void* multiseq_handle, BlastSeqSrcIterator* itr)
     return BLAST_SEQSRC_SUCCESS;
 }
 
+/// Resets the internal bookmark iterator (N/A in this case)
+static void
+s_QueryFactoryResetChunkIter(void* /*multiseq_handle*/)
+{
+    return;
+}
+
 /// Gets the next sequence index, given a BlastSeqSrc pointer.
 /// @param multiseq_handle Handle to access the underlying object over which
 ///                        iteration occurs. [in]
@@ -396,6 +403,8 @@ s_QueryFactorySrcNew(BlastSeqSrc* retval, void* args)
     _BlastSeqSrcImpl_SetGetSequence(retval, &s_QueryFactoryGetSequence);
     _BlastSeqSrcImpl_SetGetSeqLen(retval, &s_QueryFactoryGetSeqLen);
     _BlastSeqSrcImpl_SetIterNext(retval, &s_QueryFactoryIteratorNext);
+    _BlastSeqSrcImpl_SetResetChunkIterator(retval, 
+                                           &s_QueryFactoryResetChunkIter);
     _BlastSeqSrcImpl_SetReleaseSequence(retval, &s_QueryFactoryReleaseSequence);
 
     return retval;

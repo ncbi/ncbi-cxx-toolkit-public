@@ -324,6 +324,17 @@ s_SeqDbIteratorNext(void* seqdb_handle, BlastSeqSrcIterator* itr)
     return retval;
 }
 
+/// Resets CSeqDB's internal chunk bookmark
+/// @param seqdb_handle Reference to the database object, cast to void* to 
+///                     satisfy the signature requirement. [in]
+static void
+s_SeqDbResetChunkIterator(void* seqdb_handle)
+{
+    ASSERT(seqdb_handle);
+    CRef<CSeqDB>* seqdb = (CRef<CSeqDB>*) seqdb_handle;
+    (*seqdb)->ResetInternalChunkBookmark();
+}
+
 }
 
 BEGIN_NCBI_SCOPE
@@ -418,6 +429,7 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
     _BlastSeqSrcImpl_SetGetSequence   (retval, & s_SeqDbGetSequence);
     _BlastSeqSrcImpl_SetGetSeqLen     (retval, & s_SeqDbGetSeqLen);
     _BlastSeqSrcImpl_SetIterNext      (retval, & s_SeqDbIteratorNext);
+    _BlastSeqSrcImpl_SetResetChunkIterator(retval, & s_SeqDbResetChunkIterator);
     _BlastSeqSrcImpl_SetReleaseSequence   (retval, & s_SeqDbReleaseSequence);
 #ifdef KAPPA_PRINT_DIAGNOSTICS
     _BlastSeqSrcImpl_SetGetGis        (retval, & s_SeqDbGetGiList);
@@ -526,6 +538,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2007/01/04 22:17:56  camacho
+ * + interface to reset iteration bookmark
+ *
  * Revision 1.41  2006/11/29 17:25:50  bealer
  * - HSP range support.
  *

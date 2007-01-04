@@ -36,9 +36,6 @@
  * - Provide possibility of retrieving an error from BlastSeqSrc (not just 
  *   initialization errors).                                               
  * - Constrain all use of the BlastSeqSrc to CORE BLAST                         
- * - Remove BlastSeqSrcCopier as MT-safe copying of BlastSeqSrc objects inside 
- *   CORE BLAST should not be needed (threading should be done outside CORE
- *   BLAST)
  */
 
 #ifndef ALGO_BLAST_CORE__BLAST_SEQSRC__H
@@ -64,7 +61,10 @@ extern "C" {
  *    id (index into a set)
  *  - Retrieving the length of a given sequence in a set by ordinal id
  *  - Allow MT-safe iteration over sequences in a set through the
- *    BlastSeqSrcIterator abstraction
+ *    BlastSeqSrcIterator abstraction, as well as resetting of any applicable
+ *    implementation internal 'bookmarks' which keep track of the iteration
+ *    progress, as to allow multiple passes over the set of sequences (@sa
+ *    BlastSeqSrcResetChunkIterator).
  *  .
  *
  *  Currently available client implementations of the BlastSeqSrc API include:
@@ -321,6 +321,13 @@ BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr);
 NCBI_XBLAST_EXPORT
 Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src, 
                              BlastSeqSrcIterator* itr);
+
+/** Reset the internal "bookmark" of the last chunk for iteration provided by 
+ * this object.
+ * @param seq_src the BLAST sequence source [in]
+ */
+NCBI_XBLAST_EXPORT
+void BlastSeqSrcResetChunkIterator(BlastSeqSrc* seq_src);
 
 /*****************************************************************************/
 

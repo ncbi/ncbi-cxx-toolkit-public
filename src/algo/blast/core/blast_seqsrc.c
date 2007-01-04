@@ -71,6 +71,10 @@ struct BlastSeqSrc {
 
    /* Functions to iterate over sequences in the database */
     AdvanceIteratorFnPtr IterNext;    /**< Gets next oid from the iterator */
+
+    ResetChunkIteratorFnPtr ResetChunkIterator; /**< Reset the implementation's
+                                                  chunk "bookmark"
+                                                  */
    
     void*             DataStructure;  /**< ADT holding the sequence data */
 
@@ -369,6 +373,14 @@ Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src,
     return (*seq_src->IterNext)(seq_src->DataStructure, itr);
 }
 
+void
+BlastSeqSrcResetChunkIterator(BlastSeqSrc* seq_src)
+{
+    ASSERT(seq_src);
+    ASSERT(seq_src->ResetChunkIterator);
+    (*seq_src->ResetChunkIterator)(seq_src->DataStructure);
+}
+
 /*****************************************************************************/
 
 /* The following macros implement the "member functions" of the BlastSeqSrc
@@ -421,3 +433,5 @@ DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext)
 #ifdef KAPPA_PRINT_DIAGNOSTICS
 DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetGisFnPtr, GetGis)
 #endif /* KAPPA_PRINT_DIAGNOSTICS */
+DEFINE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(ResetChunkIteratorFnPtr, 
+                                      ResetChunkIterator)

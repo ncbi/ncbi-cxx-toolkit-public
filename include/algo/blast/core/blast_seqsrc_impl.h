@@ -206,6 +206,13 @@ typedef Int2 (*GetNextChunkFnPtr)
                                 iteration being performed */
      );
 
+/** Function pointer typedef to reset the internal "bookmark" of the last chunk
+ * provided for iteration by the data structure embedded in the BlastSeqSrc 
+ * structure.
+ */
+typedef void (*ResetChunkIteratorFnPtr)
+    (void* seqsrc_impl); /**< BlastSeqSrc implementation's data structure */
+
 /*****************************************************************************/
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -251,6 +258,8 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext);
 #ifdef KAPPA_PRINT_DIAGNOSTICS
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(GetGisFnPtr, GetGis);
 #endif /* KAPPA_PRINT_DIAGNOSTICS */
+DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(ResetChunkIteratorFnPtr,
+                                       ResetChunkIterator);
 
 /* Not really a member functions, but fields */
 DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(void*, DataStructure);
@@ -312,6 +321,8 @@ DECLARE_BLAST_SEQ_SRC_MEMBER_FUNCTIONS(char*, InitErrorStr);
  *  void MyDatabaseFormatReleaseSequence(void*, void*);
  *  // required signature: AdvanceIteratorFnPtr
  *  Int4 MyDatabaseFormatItrNext(void*, BlastSeqSrcIterator* itr);
+ *  // required signature: ResetChunkIteratorFnPtr
+ *  Int4 MyDatabaseFormatResetChunkIterator(void*);
  *  }
  *  @endcode
  *  
