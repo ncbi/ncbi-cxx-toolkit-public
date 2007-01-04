@@ -222,15 +222,15 @@ const char* CBZip2Compression::GetBZip2ErrorDescription(int errcode)
 {
     const int kErrorCount = 9;
     static const char* kErrorDesc[kErrorCount] = {
-        "Incorrect dunction calls sequence",
-        "Incorrect parameter",
-        "Memory allocation failed",
-        "Data integrity error",
-        "'Magic' leading bytes are missed",
-        "I/O error",
-        "Unexpected EOF",
-        "Output buffer overflow",
-        "libbzip2 configuration error"
+        /* BZ_SEQUENCE_ERROR  */  "Incorrect dunction calls sequence",
+        /* BZ_PARAM_ERROR     */  "Incorrect parameter",
+        /* BZ_MEM_ERROR       */  "Memory allocation failed",
+        /* BZ_DATA_ERROR      */  "Data integrity error",
+        /* BZ_DATA_ERROR_MAGIC*/  "'Magic' leading bytes are missed",
+        /* BZ_IO_ERROR        */  "I/O error",
+        /* BZ_UNEXPECTED_EOF  */  "Unexpected EOF",
+        /* BZ_OUTBUFF_FULL    */  "Output buffer overflow",
+        /* BZ_CONFIG_ERROR    */  "libbzip2 configuration error"
     };
     // errcode must be negative
     if ( errcode >= 0  ||  errcode < -kErrorCount ) {
@@ -696,6 +696,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2007/01/04 13:45:32  ivanov
+ * GetBZip2ErrorDescription: added error codes
+ *
  * Revision 1.19  2006/12/26 17:48:53  ivanov
  * Get rid of warning on 64-bit WorkShop compiler
  *
