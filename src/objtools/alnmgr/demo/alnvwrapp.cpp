@@ -59,6 +59,7 @@
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/alnmgr/alnpos_ci.hpp>
 
+#include <objtools/alnmgr/aln_asn_reader.hpp>
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -87,6 +88,15 @@ class CAlnVwrApp : public CNcbiApplication
     void             View10(int row0, int row1);
     void             GetSeqPosFromAlnPosDemo();
     void             GetAlnPosFromSeqPosDemo();
+    bool             AddAlnToMix   (const CSeq_align* aln) {
+        if (aln->GetSegs().IsDenseg()) {
+            m_AV = new CAlnVec(aln->GetSegs().GetDenseg(), *m_Scope);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 private:
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>  m_Scope;
@@ -108,6 +118,12 @@ void CAlnVwrApp::Init(void)
         ("in", "InputFile",
          "Name of file to read the Dense-seg from (standard input by default)",
          CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
+
+    arg_desc->AddDefaultKey
+        ("b", "bin_obj_type",
+         "This forced the input file to be read in binary ASN.1 mode\n"
+         "and specifies the type of the top-level ASN.1 object.\n",
+         CArgDescriptions::eString, "");
 
     arg_desc->AddOptionalKey
         ("se_in", "SeqEntryInputFile",
@@ -179,23 +195,6 @@ void CAlnVwrApp::Init(void)
 
 void CAlnVwrApp::LoadDenseg(void)
 {
-    CArgs args = GetArgs();
-
-    CNcbiIstream& is = args["in"].AsInputFile();
-    
-    string asn_type;
-    {{
-        auto_ptr<CObjectIStream> in
-            (CObjectIStream::Open(eSerial_AsnText, is));
-
-        asn_type = in->ReadFileHeader();
-        in->Close();
-        is.seekg(0);
-    }}
-
-    auto_ptr<CObjectIStream> in
-        (CObjectIStream::Open(eSerial_AsnText, is));
-    
     //create scope
     {{
         m_ObjMgr = CObjectManager::GetInstance();
@@ -205,44 +204,22 @@ void CAlnVwrApp::LoadDenseg(void)
         m_Scope->AddDefaults();
     }}
 
-    if (asn_type == "Dense-seg") {
-        CRef<CDense_seg> ds(new CDense_seg);
-        *in >> *ds;
-        ds->Validate();
-        m_AV = new CAlnVec(*ds, *m_Scope);
-    } else if (asn_type == "Seq-align") {
-        CRef<CSeq_align> sa(new CSeq_align);
-        *in >> *sa;
-        if ( !sa->GetSegs().IsDenseg() ) {
-            NCBI_THROW(CAlnException, eMergeFailure,
-                       "CAlnMix::LoadDenseg(): "
-                       "Seq-align segs must be of type Dense-seg.");
-        } 
-        const CDense_seg& ds = sa->GetSegs().GetDenseg();
-        ds.Validate();
-        m_AV = new CAlnVec(ds, *m_Scope);
-    } else if (asn_type == "Seq-submit") {
-        CRef<CSeq_submit> ss(new CSeq_submit);
-        *in >> *ss;
-        CTypesIterator i;
-        CType<CDense_seg>::AddTo(i);
-        CType<CSeq_entry>::AddTo(i);
-        int tse_cnt = 0;
-        for (i = Begin(*ss); i; ++i) {
-            if (CType<CDense_seg>::Match(i)) {
-                m_AV = new CAlnVec(*(CType<CDense_seg>::Get(i)), *m_Scope);
-            } else if (CType<CSeq_entry>::Match(i)) {
-                if ( !(tse_cnt++) ) {
-                    m_Scope->AddTopLevelSeqEntry
-                        (*(CType<CSeq_entry>::Get(i)));
-                }
-            }
-        }
-    } else {
-        cerr << "Cannot read: " << asn_type;
-        return;
-    }
+    const CArgs& args = GetArgs();
+    string sname = args["in"].AsString();
+    
+    // get the asn type of the top-level object
+    string asn_type = args["b"].AsString();
+    bool binary = !asn_type.empty();
+    auto_ptr<CObjectIStream> in
+        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
+    
+    CAlnAsnReader reader(m_Scope);
+    reader.Read(in.get(),
+                bind1st(mem_fun(&CAlnVwrApp::AddAlnToMix), this),
+                asn_type);
 
+
+    // read the seq-entry if provided
     if ( args["se_in"] ) {
         CNcbiIstream& se_is = args["se_in"].AsInputFile();
     
@@ -473,6 +450,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2007/01/04 17:09:39  todorov
+* 1) Using aln_asn_reader.hpp.
+* 2) Added the ability to read binary files.
+*
 * Revision 1.8  2005/03/16 19:30:08  todorov
 * Use CAlnVecPrinter::eUseAlnSeqString for Clustal
 *
