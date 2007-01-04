@@ -856,15 +856,15 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
     CRef<CAlnChunkVec> vec(new CAlnChunkVec(*this, row));
 
     // boundaries check
-    if (range.GetTo() < GetSeqStart(row)  ||
-        range.GetFrom() > GetSeqStop(row)) {
+    if (range.GetTo() < (TSignedSeqPos)GetSeqStart(row)  ||
+        range.GetFrom() > (TSignedSeqPos)GetSeqStop(row)) {
         return vec;
     }
 
     // determine the participating segments range
     TNumseg first_seg = 0, last_seg = m_NumSegs - 1;
 
-    if (range.GetFrom() >= GetSeqStart(row)) {
+    if (range.GetFrom() >= (TSignedSeqPos)GetSeqStart(row)) {
         if (IsPositiveStrand(row)) {
             first_seg = GetRawSeg(row, range.GetFrom());
             vec->m_LeftDelta = range.GetFrom() - x_GetRawStart(row, first_seg);
@@ -873,7 +873,7 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
             vec->m_RightDelta = range.GetFrom() - x_GetRawStart(row, last_seg);
         }
     }
-    if (range.GetTo() <= GetSeqStop(row)) {
+    if (range.GetTo() <= (TSignedSeqPos)GetSeqStop(row)) {
         if (IsPositiveStrand(row)) {
             last_seg = GetRawSeg(row, range.GetTo());
             if ( !(flags & fDoNotTruncateSegs) ) {
@@ -1201,6 +1201,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2007/01/04 19:42:04  todorov
+* Fixed warnings.
+*
 * Revision 1.54  2006/12/15 16:09:35  ucko
 * Fix unused-variable warnings.
 *
