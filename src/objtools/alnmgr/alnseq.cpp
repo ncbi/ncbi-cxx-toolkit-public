@@ -248,8 +248,7 @@ CAlnMixSequences::x_IdentifyAlnMixSeq(CRef<CAlnMixSeq>& aln_seq, const CSeq_id& 
         m_Seqs.push_back(aln_seq);
             
         // AA or NA?
-        if (aln_seq->m_BioseqHandle->GetBioseqCore()
-            ->GetInst().GetMol() == CSeq_inst::eMol_aa) {
+        if (aln_seq->m_BioseqHandle->IsProtein()) {
             aln_seq->m_IsAA = true;
             m_ContainsAA = true;
         } else {
@@ -380,6 +379,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2007/01/04 19:19:56  todorov
+* Use CBioseq_Handle::IsProtein().
+*
 * Revision 1.6  2006/12/04 13:46:59  dicuccio
 * Added dtor
 *
