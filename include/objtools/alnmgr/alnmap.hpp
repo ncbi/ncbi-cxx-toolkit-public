@@ -370,7 +370,7 @@ public:
                    CNcbiOstream&  out);
 
     /// Printing methods
-    void CsvTable();
+    void CsvTable(char delim = ',');
     void Segments();
     void Chunks  (CAlnMap::TGetChunkFlags flags = CAlnMap::fAlnSegsOnly);
 
@@ -705,6 +705,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2007/01/04 19:43:40  todorov
+* Introduced delimiter as a default parameter.
+*
 * Revision 1.45  2006/02/14 21:38:23  todorov
 * Removed unused code.
 *

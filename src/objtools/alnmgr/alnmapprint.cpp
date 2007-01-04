@@ -89,18 +89,18 @@ CAlnMapPrinter::PrintSeqPos(TSeqPos pos) const
 }
 
 
-void CAlnMapPrinter::CsvTable()
+void CAlnMapPrinter::CsvTable(char delim)
 {
-    *m_Out << ",";
+    *m_Out << delim;
     for (int seg = 0; seg < m_AlnMap.GetNumSegs(); seg++) {
-        *m_Out << "," << m_AlnMap.GetLen(seg) << ",";
+        *m_Out << delim << m_AlnMap.GetLen(seg) << delim;
     }
     *m_Out << endl;
     for (int row = 0; row < m_NumRows; row++) {
-        *m_Out << row << ",";
+        *m_Out << row << delim;
         for (int seg = 0; seg < m_AlnMap.GetNumSegs(); seg++) {
-            *m_Out << m_AlnMap.GetStart(row, seg) << "," 
-                 << m_AlnMap.GetStop(row, seg) << ",";
+            *m_Out << m_AlnMap.GetStart(row, seg) << delim 
+                 << m_AlnMap.GetStop(row, seg) << delim;
         }
         *m_Out << endl;
     }
@@ -195,6 +195,9 @@ void CAlnMapPrinter::Chunks(CAlnMap::TGetChunkFlags flags)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2007/01/04 19:42:56  todorov
+ * Introduced delimiter as a default parameter.
+ *
  * Revision 1.4  2005/03/17 16:59:19  ucko
  * Use our portable IOS_BASE macro rather than hardcoding ios_base,
  * which GCC 2.95 lacks.
