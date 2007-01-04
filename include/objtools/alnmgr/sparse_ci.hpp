@@ -47,8 +47,8 @@ class NCBI_XALNMGR_EXPORT CSparseSegment : public  IAlnSegment
 {
     friend class CSparseIterator;
 public:
-    typedef CSparseAln::TAlignRange TAlignRange;
-    typedef CSparseAln::TAlignColl  TAlignColl;
+    typedef CSparseAln::TAlnRng     TAlignRange;
+    typedef CSparseAln::TAlnRngColl TAlnRngColl;
 
     CSparseSegment();
     void    Init(TSignedSeqPos aln_from, TSignedSeqPos aln_to,
@@ -73,8 +73,8 @@ protected:
 class NCBI_XALNMGR_EXPORT CSparse_CI : public IAlnSegmentIterator
 {
 public:
-    typedef CSparseAln::TAlignRange   TAlignRange;
-    typedef CSparseAln::TAlignColl   TAlignColl;
+    typedef CSparseAln::TAlnRng     TAlignRange;
+    typedef CSparseAln::TAlnRngColl TAlignColl;
     typedef CRange<TSignedSeqPos>   TSignedRange;
 
     CSparse_CI();
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2007/01/04 21:15:48  todorov
+ * Fixed some typedefs.
+ *
  * Revision 1.2  2006/12/01 17:54:05  todorov
  * + NCBI_XALNMGR_EXPORT
  *
