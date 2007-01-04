@@ -92,12 +92,8 @@ protected:
     class IDataSource* RegisterDs(const string& driver_name,
                   class I_DriverContext* ctx);
 
+    mutable CMutex                  m_Mutex;
     map<string, class IDataSource*> m_ds_list;
-
-private:
-    static IDataSource* CreateDs(I_DriverContext* ctx);
-    // This function will just call the delete operator.
-    static void DeleteDs(const IDataSource* const ds);
 };
 
 END_NCBI_SCOPE
@@ -109,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2007/01/04 22:23:04  ssikorsk
+ * Added m_Mutex, removed CreateDs() and DeleteDs().
+ *
  * Revision 1.15  2005/12/28 13:09:51  ssikorsk
  * Restore CSafeStaticPtr-based singleton
  *
