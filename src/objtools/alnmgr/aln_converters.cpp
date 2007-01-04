@@ -172,32 +172,62 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
             const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
             const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
 
-            CPairwiseAln::TAlnRng aln_rng
-                (rng_1.GetFrom() * base_width_1,
-                 rng_2.GetFrom() * base_width_2,
-                 CPairwiseAln::TAlnRng::GetEmptyLength(),
-                 direct);
-                                          
+            CPairwiseAln::TAlnRng aln_rng;
+            aln_rng.SetDirect(direct);
             if (base_width_1 == base_width_2) {
                 _ASSERT(len_1 == len_2);
+                if (base_width_1 == 1) {
+                    aln_rng.SetFirstFrom(rng_1.GetFrom());
+                    aln_rng.SetSecondFrom(rng_2.GetFrom());
+                } else {
+                    aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
+                    aln_rng.SetSecondFrom(rng_2.GetFrom() * base_width_2);
+                }
                 aln_rng.SetLength(len_1 * base_width_1);
+                pairwise_aln.insert(aln_rng);
             } else if (base_width_1 == 1) {
                 _ASSERT(base_width_2 == 3);
-                aln_rng.SetLength(len_1);
-//                 if (len_1 / base_width_2 < len_2) {
-//                     aln_rng.SetMissingNucBases();
-//                 }
+                aln_rng.SetFirstFrom(rng_1.GetFrom());
+                aln_rng.SetSecondFrom(rng_2.GetFrom() * base_width_2);
+                if (len_1 / base_width_2 < len_2) {
+                    _ASSERT(len_1 / base_width_2 == len_2 - 1);
+                    TSeqPos remainder = len_1 % base_width_2;
+                    aln_rng.SetLength(len_1 - remainder);
+                    pairwise_aln.insert(aln_rng);
+                    pairwise_aln.insert
+                        (CPairwiseAln::TAlnRng
+                         (aln_rng.GetFirstToOpen(),
+                          aln_rng.GetSecondToOpen(),
+                          remainder,
+                          direct));
+                } else {
+                    aln_rng.SetLength(len_1);
+                    pairwise_aln.insert(aln_rng);
+                }
             } else if (base_width_2 == 1) {
                 _ASSERT(base_width_1 == 3);
-                aln_rng.SetLength(len_2);
-//                 if (len_2 / base_width_1 < len_1) {
-//                     aln_rng.SetMissingNucBases();
-//                 }
+                aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
+                aln_rng.SetSecondFrom(rng_2.GetFrom());
+                if (len_2 / base_width_1 < len_1) {
+                    _ASSERT(len_2 / base_width_1 == len_1 - 1);
+                    TSeqPos remainder = len_2 % base_width_2;
+                    aln_rng.SetLength(len_2 - remainder);
+                    pairwise_aln.insert(aln_rng);
+                    pairwise_aln.insert
+                        (CPairwiseAln::TAlnRng
+                         (aln_rng.GetFirstToOpen(),
+                          aln_rng.GetSecondToOpen(),
+                          remainder,
+                          direct));
+                } else {
+                    aln_rng.SetLength(len_2);
+                    pairwise_aln.insert(aln_rng);
+                }
             } else {
                 _ASSERT(len_1 * base_width_1 == len_2 * base_width_2);
                 aln_rng.SetLength(len_1 * base_width_1);
+                pairwise_aln.insert(aln_rng);
             }
-            pairwise_aln.insert(aln_rng);
         }
     }
 }
@@ -546,6 +576,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2007/01/04 21:28:50  todorov
+* Allow for out-of-frame alignments by using a convention to split the
+* segment if the nuc sequence is shorter, resulting in a one partial
+* segment with length less than 3 (in pseudo-nuc coords).
+*
 * Revision 1.6  2006/12/13 23:33:16  todorov
 * CAlnRng -> CPairwiseAln::TAlnRng and comment out experimental code.
 *
