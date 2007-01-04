@@ -63,7 +63,7 @@ MakePluginManagerParamTree(const string& driver_name, const map<string, string>*
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-CPluginManager_DllResolver* 
+CPluginManager_DllResolver*
 CDllResolver_Getter<I_DriverContext>::operator()(void)
 {
     CPluginManager_DllResolver* resolver =
@@ -97,7 +97,7 @@ public:
     /// @param previous_paths
     ///  If non-NULL, store the prevously set search paths in this container
     void ResetDllSearchPath(vector<string>* previous_paths = NULL);
-    
+
     /// Specify which standard locations should be used for the DLL lookup
     /// (for all resolvers). If standard locations are not set explicitelly
     /// using this method CDllResolver::fDefaultDllPath will be used by default.
@@ -129,14 +129,13 @@ private:
             drv_func(func)
         {
         }
-        
+
         string               drv_name;
         FDBAPI_CreateContext drv_func;
     };
     vector<SDrivers> m_Drivers;
 
-    CFastMutex m_Mutex1;
-    CFastMutex m_Mutex2;
+    mutable CFastMutex m_Mutex;
 
 private:
     typedef CPluginManager<I_DriverContext> TContextManager;
@@ -158,21 +157,25 @@ C_xDriverMgr::C_xDriverMgr( unsigned int /*nof_drivers*/ )
 }
 
 
-C_xDriverMgr::~C_xDriverMgr(void) 
+C_xDriverMgr::~C_xDriverMgr(void)
 {
 }
-    
+
 
 void
 C_xDriverMgr::AddDllSearchPath(const string& path)
 {
+    CFastMutexGuard mg(m_Mutex);
+
     m_ContextManager->AddDllSearchPath( path );
 }
 
 
-void 
+void
 C_xDriverMgr::ResetDllSearchPath(vector<string>* previous_paths)
 {
+    CFastMutexGuard mg(m_Mutex);
+
     m_ContextManager->ResetDllSearchPath( previous_paths );
 }
 
@@ -180,13 +183,17 @@ C_xDriverMgr::ResetDllSearchPath(vector<string>* previous_paths)
 CDllResolver::TExtraDllPath
 C_xDriverMgr::SetDllStdSearchPath(CDllResolver::TExtraDllPath standard_paths)
 {
+    CFastMutexGuard mg(m_Mutex);
+
     return m_ContextManager->SetDllStdSearchPath( standard_paths );
 }
 
 
-CDllResolver::TExtraDllPath 
+CDllResolver::TExtraDllPath
 C_xDriverMgr::GetDllStdSearchPath(void) const
 {
+    CFastMutexGuard mg(m_Mutex);
+
     return m_ContextManager->GetDllStdSearchPath();
 }
 
@@ -199,6 +206,8 @@ C_xDriverMgr::GetDriverContext(
     I_DriverContext* drv = NULL;
 
     try {
+        CFastMutexGuard mg(m_Mutex);
+
         drv = m_ContextManager->CreateInstance(
             driver_name,
             NCBI_INTERFACE_VERSION(I_DriverContext),
@@ -238,21 +247,23 @@ C_xDriverMgr::GetDriverContext(
 void C_xDriverMgr::RegisterDriver(const string&        driver_name,
                                   FDBAPI_CreateContext driver_ctx_func)
 {
+    CFastMutexGuard mg(m_Mutex);
+
     NON_CONST_ITERATE(vector<SDrivers>, it, m_Drivers) {
         if (it->drv_name == driver_name) {
             it->drv_func = driver_ctx_func;
-            
+
             return;
         }
     }
-    
+
     m_Drivers.push_back(SDrivers(driver_name, driver_ctx_func));
 }
 
 FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
                                              string*       err_msg)
 {
-    CFastMutexGuard mg(m_Mutex1);
+    CFastMutexGuard mg(m_Mutex);
 
     ITERATE(vector<SDrivers>, it, m_Drivers) {
         if (it->drv_name == driver_name) {
@@ -284,14 +295,14 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
             drv_dll.Unload();
             return false;
         }
-        
+
         FDriverRegister reg = entry_point();
-        
+
         if(!reg) {
             DATABASE_DRIVER_ERROR( "driver reports an unrecoverable error "
                                "(e.g. conflict in libraries)", 300 );
         }
-        
+
         reg(*this);
         return true;
     }
@@ -339,7 +350,7 @@ C_DriverMgr::AddDllSearchPath(const string& path)
 }
 
 
-void 
+void
 C_DriverMgr::ResetDllSearchPath(vector<string>* previous_paths)
 {
     s_DrvMgr->ResetDllSearchPath( previous_paths );
@@ -353,7 +364,7 @@ C_DriverMgr::SetDllStdSearchPath(CDllResolver::TExtraDllPath standard_paths)
 }
 
 
-CDllResolver::TExtraDllPath 
+CDllResolver::TExtraDllPath
 C_DriverMgr::GetDllStdSearchPath(void) const
 {
     return s_DrvMgr->GetDllStdSearchPath();
@@ -392,12 +403,12 @@ Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
 
     try {
         auto_ptr<TPluginManagerParamTree> pt;
-        
+
         if ( attr != NULL ) {
              pt.reset( MakePluginManagerParamTree(driver_name, attr) );
-            
+
             _ASSERT( pt.get() );
-            
+
             nd = pt->FindNode( driver_name );
         }
         drv = ReaderManager->CreateInstance(
@@ -426,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2007/01/04 22:26:26  ssikorsk
+ * Made C_xDriverMgr more thread-safe.
+ *
  * Revision 1.33  2006/03/09 16:52:37  ssikorsk
  * Added methods ResetDllSearchPath,  SetDllStdSearchPath,
  * GetDllStdSearchPath to the C_DriverMgr class.
