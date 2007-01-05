@@ -4,3 +4,4 @@ stamp-h.in
 *Debug*
 *Release*
 Makefile
+config.log
