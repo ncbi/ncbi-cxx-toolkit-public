@@ -419,7 +419,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     catch (CExitThreadException& e) {
         e.EnterWrapper();
     }
-#if defined(NCBI_COMPILER_MSVC)  &&  !defined(_DEBUG)
+#if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
     // Microsoft promotes many common application errors to exceptions.
     // This includes occurrences such as dereference of a NULL pointer and
     // walking off of a dangling pointer.  The catch-all is lifted only in
@@ -434,7 +434,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     try {
         thread_obj->OnExit();
     }
-#if defined(NCBI_COMPILER_MSVC)  &&  !defined(_DEBUG)
+#if defined(NCBI_COMPILER_MSVC)  &&  defined(_DEBUG)
     // Microsoft promotes many common application errors to exceptions.
     // This includes occurrences such as dereference of a NULL pointer and
     // walking off of a dangling pointer.  The catch-all is lifted only in
@@ -766,6 +766,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2007/01/05 19:30:27  dicuccio
+ * Fix stupid type in logic about when to conditionally exclude the catch all in
+ * MSVC
+ *
  * Revision 1.38  2006/12/06 15:56:09  dicuccio
  * Added conditional compilation to remove catch-all from debug builds under MSVC,
  * as MSVC will promote a variety of application errors to exceptions and unwind
