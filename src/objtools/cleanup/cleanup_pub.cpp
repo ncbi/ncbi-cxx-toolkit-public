@@ -913,6 +913,7 @@ void CCleanup_imp::x_RemovePubMatch(const CSeq_entry& se, const CPubdesc& pd)
         for (CSeq_descr::Tdata::iterator it = remove_list.begin();
                  it != remove_list.end(); ++it) { 
             bh.RemoveSeqdesc(**it);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
         }
     } else if (se.Which() == CSeq_entry::e_Set) {
         CBioseq_set_EditHandle bh (m_Scope->GetBioseq_setHandle(se.GetSet()));
@@ -925,6 +926,7 @@ void CCleanup_imp::x_RemovePubMatch(const CSeq_entry& se, const CPubdesc& pd)
         for (CSeq_descr::Tdata::iterator it = remove_list.begin();
                  it != remove_list.end(); ++it) { 
             bh.RemoveSeqdesc(**it);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
         }
     }
 }
@@ -958,24 +960,28 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
             NON_CONST_ITERATE (CSeq_descr::Tdata, it, nbh.SetDescr().Set()) {
                 if ((*it)->Which() == CSeqdesc::e_Pub) {
                     bseh.AddSeqdesc(**it);
+                    ChangeMade (CCleanupChange::eAddDescriptor);
                     remove_list.push_back(*it);
                 }
             }
             for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                  it1 != remove_list.end(); ++it1) { 
                 nbh.RemoveSeqdesc(**it1);
+                ChangeMade (CCleanupChange::eRemoveDescriptor);
             }
         } else if (se.IsSet()) {
             CBioseq_set_EditHandle nbh(m_Scope->GetBioseq_setHandle(se.GetSet()));
             NON_CONST_ITERATE (CSeq_descr::Tdata, it, nbh.SetDescr().Set()) {
                 if ((*it)->Which() == CSeqdesc::e_Pub) {
                     bseh.AddSeqdesc(**it);
+                    ChangeMade (CCleanupChange::eAddDescriptor);
                     remove_list.push_back(*it);
                 }
             }
             for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                  it1 != remove_list.end(); ++it1) { 
                 nbh.RemoveSeqdesc(**it1);
+                ChangeMade (CCleanupChange::eRemoveDescriptor);
             }
         }
     } else if (bsh.GetClass() == CBioseq_set::eClass_segset) {
@@ -1006,8 +1012,10 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                                     ++remainder_it;
                                     while (remainder_it != parts.GetCompleteBioseq_set()->GetSeq_set().end()) {
                                         x_RemovePubMatch(**remainder_it, (*first_descr_it)->GetPub());
+                                        ++remainder_it;
                                     }
                                     parts.AddSeqdesc(**first_descr_it);
+                                    ChangeMade (CCleanupChange::eAddDescriptor);
                                     remove_list.push_back(*first_descr_it);
                                 }
                             }                            
@@ -1015,6 +1023,7 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                         for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                              it1 != remove_list.end(); ++it1) { 
                             first_eh.RemoveSeqdesc(**it1);
+                            ChangeMade (CCleanupChange::eRemoveDescriptor);
                         }                        
                     } else if (se_first.Which() == CSeq_entry::e_Set) {
                         CBioseq_set_EditHandle first_eh(m_Scope->GetBioseq_setHandle(se_first.GetSet()));
@@ -1034,6 +1043,7 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                                         x_RemovePubMatch(**remainder_it, (*first_descr_it)->GetPub());
                                     }
                                     parts.AddSeqdesc(**first_descr_it);
+                                    ChangeMade (CCleanupChange::eAddDescriptor);
                                     remove_list.push_back(*first_descr_it);
                                 }
                             }                            
@@ -1041,6 +1051,7 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                         for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                              it1 != remove_list.end(); ++it1) { 
                             first_eh.RemoveSeqdesc(**it1);
+                            ChangeMade (CCleanupChange::eRemoveDescriptor);
                         }                        
                     }
                     ++part_it;
@@ -1203,6 +1214,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2007/01/05 17:07:40  bollin
+ * Fixed bug that caused cleanup to hang, added flags for publication moving.
+ *
  * Revision 1.11  2006/12/11 17:14:43  bollin
  * Made changes to ExtendedCleanup per the meetings and new document describing
  * the expected behavior for BioSource features and descriptors.  The behavior
