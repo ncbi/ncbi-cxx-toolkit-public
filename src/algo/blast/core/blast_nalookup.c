@@ -31,6 +31,7 @@
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/core/lookup_util.h>
 #include <algo/blast/core/blast_encoding.h>
+#include <algo/blast/core/blast_util.h>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
@@ -186,10 +187,12 @@ BlastChooseNaLookupTable(const LookupTableOptions* lookup_options,
  * into their final form
  * @param thin_backbone structure containing indexed query offsets [in][out]
  * @param lookup the lookup table [in]
+ * @param query the query sequence [in][out]
  * @return zero if packing process succeeded
  */
 static Int4 s_BlastSmallNaLookupFinalize(Int4 **thin_backbone,
-                                         BlastSmallNaLookupTable * lookup)
+                                         BlastSmallNaLookupTable * lookup,
+                                         BLAST_SequenceBlk *query)
 {
     Int4 i;
     Int4 overflow_cells_needed = 0;
@@ -226,6 +229,11 @@ static Int4 s_BlastSmallNaLookupFinalize(Int4 **thin_backbone,
           sfree(thin_backbone[i]);
        return -1;
     }
+
+    /* compute a compressed representation of the query, used
+       for computing ungapped extensions */
+
+    BlastCompressBlastnaSequence(query);
 
     /* allocate the new lookup table */
     lookup->final_backbone = (Int2 *)malloc(
@@ -336,7 +344,7 @@ Int4 BlastSmallNaLookupTableNew(BLAST_SequenceBlk* query,
                                       BITS_PER_NUC,
                                       lookup->lut_word_length,
                                       query, locations);
-    status = s_BlastSmallNaLookupFinalize(thin_backbone, lookup);
+    status = s_BlastSmallNaLookupFinalize(thin_backbone, lookup, query);
     if (status != 0) {
         lookup = BlastSmallNaLookupTableDestruct(lookup);
     }
