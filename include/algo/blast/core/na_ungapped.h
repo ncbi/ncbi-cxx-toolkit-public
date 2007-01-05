@@ -47,34 +47,15 @@
 extern "C" {
 #endif
 
-/** Find all words for a given subject sequence and perform 
- * ungapped extensions, assuming megablast or discontiguous megablast.
- * @param subject The subject sequence [in]
- * @param query The query sequence (needed only for the discontiguous word 
- *        case) [in]
- * @param query_info concatenated query information [in]
- * @param lookup Pointer to the (wrapper) lookup table structure. Only
- *        traditional MegaBlast lookup table supported. [in]
- * @param matrix The scoring matrix [in]
- * @param word_params Parameters for the initial word extension [in]
- * @param ewp Structure needed for initial word information maintenance [in]
- * @param offset_pairs Array for storing query and subject offsets. [in]
- * @param max_hits size of offset arrays [in]
- * @param init_hitlist Structure to hold all hits information. Has to be 
- *        allocated up front [out]
- * @param ungapped_stats Various hit counts. Not filled if NULL [out]
- */
-Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
-                   BLAST_SequenceBlk* query, 
-                   BlastQueryInfo* query_info,
-                   LookupTableWrap* lookup,
-                   Int4** matrix, 
-                   const BlastInitialWordParameters* word_params,
-                   Blast_ExtendWord* ewp,
-                   BlastOffsetPair* offset_pairs,
-                   Int4 max_hits,
-                   BlastInitHitList* init_hitlist, 
-                   BlastUngappedStats* ungapped_stats);
+/** Signature of function used to compute ungapped alignments */
+typedef Int4 (*TNaExtendFunction)(const BlastOffsetPair* offset_pairs, 
+                    Int4 num_hits, 
+                    const BlastInitialWordParameters* word_params,
+                    LookupTableWrap* lookup_wrap,
+                    BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
+                    Int4** matrix, BlastQueryInfo* query_info,
+                    Blast_ExtendWord* ewp, 
+                    BlastInitHitList* init_hitlist);
 
 /** Find all words for a given subject sequence and perform 
  * ungapped extensions, assuming ordinary blastn.
@@ -105,84 +86,11 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
                        BlastInitHitList* init_hitlist, 
                        BlastUngappedStats* ungapped_stats);
 
-/** Perform ungapped extensions on the hits retrieved from
- * blastn/megablast lookup tables, skipping the mini-extension process
- * @param offset_pairs Array of query and subject offsets. [in]
- * @param num_hits Size of the above arrays [in]
- * @param word_params Parameters for word extension [in]
- * @param lookup_wrap Lookup table wrapper structure [in]
- * @param query Query sequence data [in]
- * @param subject Subject sequence data [in]
- * @param matrix Scoring matrix for ungapped extension [in]
- * @param query_info Structure containing query context ranges [in]
- * @param ewp Word extension structure containing information about the 
- *            extent of already processed hits on each diagonal [in]
- * @param init_hitlist Structure to keep the extended hits. 
- *                     Must be allocated outside of this function [in] [out]
- * @return Number of hits extended. 
- */
-Int4
-BlastNaExtendDirect(const BlastOffsetPair* offset_pairs, Int4 num_hits, 
-                    const BlastInitialWordParameters* word_params,
-                    LookupTableWrap* lookup_wrap,
-                    BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
-                    Int4** matrix, BlastQueryInfo* query_info,
-                    Blast_ExtendWord* ewp, 
-                    BlastInitHitList* init_hitlist);
 
-/** Perform exact match extensions on the hits retrieved from
- * blastn/megablast lookup tables, assuming the number of bases in a lookup
- * table word, and the start offset of each hit, is a multiple
- * of 4. Also update the diagonal structure.
- * @param offset_pairs Array of query and subject offsets. [in]
- * @param num_hits Size of the above arrays [in]
- * @param word_params Parameters for word extension [in]
- * @param lookup_wrap Lookup table wrapper structure [in]
- * @param query Query sequence data [in]
- * @param subject Subject sequence data [in]
- * @param matrix Scoring matrix for ungapped extension [in]
- * @param query_info Structure containing query context ranges [in]
- * @param ewp Word extension structure containing information about the 
- *            extent of already processed hits on each diagonal [in]
- * @param init_hitlist Structure to keep the extended hits. 
- *                     Must be allocated outside of this function [in] [out]
- * @return Number of hits extended. 
+/** Choose the best routine to use for creating ungapped alignments
+ * @param lookup_wrap Lookup table that influences routine choice [in][out]
  */
-Int4
-BlastNaExtendAligned(const BlastOffsetPair* offset_pairs, Int4 num_hits, 
-                     const BlastInitialWordParameters* word_params,
-                     LookupTableWrap* lookup_wrap,
-                     BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
-                     Int4** matrix, BlastQueryInfo* query_info,
-                     Blast_ExtendWord* ewp, 
-                     BlastInitHitList* init_hitlist);
-
-/** Perform exact match extensions on the hits retrieved from
- * blastn/megablast lookup tables, assuming an arbitrary number of bases 
- * in a lookup and arbitrary start offset of each hit. Also 
- * update the diagonal structure.
- * @param offset_pairs Array of query and subject offsets [in]
- * @param num_hits Size of the above arrays [in]
- * @param word_params Parameters for word extension [in]
- * @param lookup_wrap Lookup table wrapper structure [in]
- * @param query Query sequence data [in]
- * @param subject Subject sequence data [in]
- * @param matrix Scoring matrix for ungapped extension [in]
- * @param query_info Structure containing query context ranges [in]
- * @param ewp Word extension structure containing information about the 
- *            extent of already processed hits on each diagonal [in]
- * @param init_hitlist Structure to keep the extended hits. 
- *                     Must be allocated outside of this function [in] [out]
- * @return Number of hits extended. 
- */
-Int4 
-BlastNaExtend(const BlastOffsetPair* offset_pairs, Int4 num_hits, 
-              const BlastInitialWordParameters* word_params,
-              LookupTableWrap* lookup_wrap,
-              BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
-              Int4** matrix, BlastQueryInfo* query_info,
-              Blast_ExtendWord* ewp, 
-              BlastInitHitList* init_hitlist);
+void BlastChooseNaExtend(LookupTableWrap *lookup_wrap);
 
 #ifdef __cplusplus
 }
