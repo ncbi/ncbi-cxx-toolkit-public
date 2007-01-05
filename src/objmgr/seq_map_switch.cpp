@@ -354,13 +354,21 @@ CRef<CSeqMapSwitchPoint> x_GetSwitchPoint(const CBioseq_Handle& seq,
     CRef<CSeqMapSwitchPoint> sp_ref(new CSeqMapSwitchPoint);
     CSeqMapSwitchPoint& sp = *sp_ref;
     sp.m_Master = seq;
-    sp.m_LeftId = iter1.GetRefSeqid();
-    sp.m_RightId = iter2.GetRefSeqid();
     TSeqPos pos = iter2.GetPosition();
     _ASSERT(pos == iter1.GetEndPosition());
     sp.m_MasterPos = pos;
+
     SSeqPos pos1(iter1, SSeqPos::eEnd);
     SSeqPos pos2(iter2, SSeqPos::eStart);
+
+    sp.m_LeftId = iter1.GetRefSeqid();
+    sp.m_LeftMinusStrand = iter1.GetRefMinusStrand();
+    sp.m_LeftPos = pos1.pos;
+
+    sp.m_RightId = iter2.GetRefSeqid();
+    sp.m_RightMinusStrand = iter2.GetRefMinusStrand();
+    sp.m_RightPos = pos2.pos;
+
     pair<TSeqPos, TSeqPos> ext2 =
         info.x_FindAlignMatch(pos2, pos1, iter2.GetLength(),
                               sp.m_RightDifferences);
@@ -369,8 +377,10 @@ CRef<CSeqMapSwitchPoint> x_GetSwitchPoint(const CBioseq_Handle& seq,
     pair<TSeqPos, TSeqPos> ext1 =
         info.x_FindAlignMatch(pos1, pos2, iter1.GetLength(),
                               sp.m_LeftDifferences);
+
     sp.m_MasterRange.SetFrom(pos-ext1.first).SetTo(pos+ext2.first);
     sp.m_ExactMasterRange.SetFrom(pos-ext1.second).SetTo(pos+ext2.second);
+
     return sp_ref;
 }
 
@@ -473,13 +483,64 @@ void CSeqMapSwitchPoint::ChangeSwitchPoint(TSeqPos pos, TSeqPos add)
         NCBI_THROW(CSeqMapException, eOutOfRange,
                    "switch point is not in valid range");
     }
-    if ( add && add > GetInsert(pos) ) {
+    if ( add < 0 || add > 0 && add > GetInsert(pos) ) {
         NCBI_THROW(CSeqMapException, eOutOfRange,
                    "adding more bases than available");
     }
+    CSeqMap& seq_map = const_cast<CSeqMap&>(m_Master.GetSeqMap());
+    CSeqMap_CI right = seq_map.FindSegment(m_MasterPos, &m_Master.GetScope());
+    if ( right.GetPosition() != m_MasterPos ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "invalid CSeqMapSwitchPoint");
+    }
+    if ( right.GetType() != CSeqMap::eSeqRef ||
+         right.GetRefSeqid() != m_RightId ||
+         right.GetRefMinusStrand() != m_RightMinusStrand ||
+         SSeqPos(right, SSeqPos::eStart).pos != m_RightPos ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "invalid CSeqMapSwitchPoint");
+    }
+    CSeqMap_CI left = right; --left;
+    if ( left.GetType() != CSeqMap::eSeqRef ||
+         left.GetRefSeqid() != m_LeftId ||
+         left.GetRefMinusStrand() != m_LeftMinusStrand ||
+         SSeqPos(left, SSeqPos::eEnd).pos != m_LeftPos ) {
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "invalid CSeqMapSwitchPoint");
+    }
+    int left_add;
+    int right_add;
     if ( pos < m_MasterPos ) {
+        left_add = pos - m_MasterPos;
+        right_add = -left_add + GetLengthDifference(pos) + add;
+        _ASSERT(left_add < 0);
+        _ASSERT(right_add > 0);
     }
     else if ( pos > m_MasterPos ) {
+        right_add = m_MasterPos - pos;
+        left_add = -right_add + GetLengthDifference(pos) + add;
+        _ASSERT(right_add < 0);
+        _ASSERT(left_add > 0);
+    }
+    else {
+        left_add = 0;
+        right_add = 0;
+    }
+    if ( right_add ) { // change right segment first
+        TSeqPos len = right.GetLength() + right_add;
+        TSeqPos pos = right.GetRefPosition();
+        if ( !m_RightMinusStrand ) {
+            pos -= right_add;
+        }
+        seq_map.SetSegmentRef(right, len, m_RightId, pos, m_RightMinusStrand);
+    }
+    if ( left_add ) {
+        TSeqPos len = left.GetLength() + left_add;
+        TSeqPos pos = left.GetRefPosition();
+        if ( m_LeftMinusStrand ) {
+            pos -= left_add;
+        }
+        seq_map.SetSegmentRef(left, len, m_LeftId, pos, m_LeftMinusStrand);
     }
 }
 
@@ -574,6 +635,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2007/01/05 14:43:00  vasilche
+* Implemented seq-map switch editing.
+*
 * Revision 1.6  2006/10/18 17:24:32  vasilche
 * SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
 *

@@ -233,9 +233,13 @@ protected:
     friend class CTSE_Info;
     friend class CSeq_entry_Info;
     friend class CBioseq_set_Info;
+    friend class CSeqMap;
 
     TObjAnnot& x_SetObjAnnot(void);
     void x_ResetObjAnnot(void);
+    
+    void x_ResetSeqMap(void);
+    void x_SetChangedSeqMap(void);
 
 private:
     CBioseq_Info& operator=(const CBioseq_Info&);
@@ -279,8 +283,8 @@ private:
     TId                     m_Id;
 
     // SeqMap object
-    mutable CConstRef<CSeqMap>  m_SeqMap;
-    mutable CFastMutex          m_SeqMap_Mtx;
+    mutable CRef<CSeqMap>   m_SeqMap;
+    mutable CFastMutex      m_SeqMap_Mtx;
 
     TChunkIds               m_Seq_dataChunks;
     TChunkId                m_AssemblyChunk;
@@ -315,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.28  2007/01/05 14:42:59  vasilche
+ * Implemented seq-map switch editing.
+ *
  * Revision 1.27  2005/11/15 19:22:07  didenko
  * Added transactions and edit commands support
  *

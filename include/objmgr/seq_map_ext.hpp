@@ -57,7 +57,6 @@ public:
 protected:
     void x_Index(const TList& seq);
     void x_IndexAll(const TList& seq);
-    void x_IndexUnloadedSubMap(TSeqPos len);
     TList* x_Splice(size_t index, TList& seq);
 
     TList_I x_GetSegmentList_I(size_t index) const
@@ -233,6 +232,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2007/01/05 14:42:59  vasilche
+* Implemented seq-map switch editing.
+*
 * Revision 1.11  2005/06/29 16:10:10  vasilche
 * Removed declarations of obsolete methods.
 *

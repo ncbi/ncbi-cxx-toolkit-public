@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2007/01/05 14:43:01  vasilche
+* Implemented seq-map switch editing.
+*
 * Revision 1.3  2006/10/18 17:25:31  vasilche
 * SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
 *
@@ -118,33 +121,46 @@ int CTestSeqMapSwitch::Run()
         ERR_POST(Fatal << "no bioseq found");
     }
     
-    if ( args["pos"] ) {
+    
+    TSeqMapSwitchPoints pp = GetAllSwitchPoints(bh);
+    ITERATE ( TSeqMapSwitchPoints, it, pp ) {
+        const CSeqMapSwitchPoint& p = **it;
+        NcbiCout << "Switch @ " << p.m_MasterPos
+                 << " " << p.m_LeftId.AsString()
+                 << " -> " << p.m_RightId.AsString() << NcbiEndl;
+        NcbiCout << "    range: " << p.m_MasterRange.GetFrom()
+                 << ".." << p.m_MasterRange.GetTo() << NcbiEndl;
+        NcbiCout << "    exact: " << p.m_ExactMasterRange.GetFrom()
+                 << ".." << p.m_ExactMasterRange.GetTo() << NcbiEndl;
+        TSeqPos pos, add;
+        int diff;
+
+        pos = p.m_MasterRange.GetFrom();
+
+        add = p.GetInsert(pos);
+        diff = p.GetLengthDifference(pos, add);
+        NcbiCout << " if switched @ " << pos << " diff="<<diff << NcbiEndl;
+
+        pos = p.m_MasterRange.GetTo();
+
+        add = p.GetInsert(pos);
+        diff = p.GetLengthDifference(pos, add);
+        NcbiCout << " if switched @ " << pos << " diff="<<diff << NcbiEndl;
     }
-    else {
-        TSeqMapSwitchPoints pp = GetAllSwitchPoints(bh);
-        ITERATE ( TSeqMapSwitchPoints, it, pp ) {
-            const CSeqMapSwitchPoint& p = **it;
-            NcbiCout << "Switch @ " << p.m_MasterPos
-                     << " " << p.m_LeftId.AsString()
-                     << " -> " << p.m_RightId.AsString() << NcbiEndl;
-            NcbiCout << "    range: " << p.m_MasterRange.GetFrom()
-                     << ".." << p.m_MasterRange.GetTo() << NcbiEndl;
-            NcbiCout << "    exact: " << p.m_ExactMasterRange.GetFrom()
-                     << ".." << p.m_ExactMasterRange.GetTo() << NcbiEndl;
-            TSeqPos pos, add;
-            int diff;
-
-            pos = p.m_MasterRange.GetFrom();
-
-            add = p.GetInsert(pos);
-            diff = p.GetLengthDifference(pos, add);
-            NcbiCout << " if switched @ " << pos << " diff="<<diff << NcbiEndl;
-
-            pos = p.m_MasterRange.GetTo();
-
-            add = p.GetInsert(pos);
-            diff = p.GetLengthDifference(pos, add);
-            NcbiCout << " if switched @ " << pos << " diff="<<diff << NcbiEndl;
+    if ( args["pos"] ) {
+        TSeqPos pos = args["pos"].AsInteger();
+        NON_CONST_ITERATE ( TSeqMapSwitchPoints, it, pp ) {
+            CSeqMapSwitchPoint& p = **it;
+            if ( pos >= p.m_MasterRange.GetFrom() &&
+                 pos <= p.m_MasterRange.GetTo() ) {
+                NcbiCout << "Switching to " << pos << NcbiEndl;
+                NcbiCout << "Before: " <<
+                    MSerial_AsnText << *bh.GetCompleteObject() << NcbiEndl;
+                p.ChangeSwitchPoint(pos, 0);
+                NcbiCout << "After: " << 
+                    MSerial_AsnText << *bh.GetCompleteObject() << NcbiEndl;
+                break;
+            }
         }
     }
     return 0;

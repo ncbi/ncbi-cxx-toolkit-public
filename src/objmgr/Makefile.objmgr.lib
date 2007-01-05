@@ -14,7 +14,7 @@ SRC = seq_map_switch snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
       data_source priority \
       prefetch_manager prefetch_manager_impl prefetch_actions \
       scope heap_scope scope_impl scope_info tse_handle \
-      seq_map seq_map_ext seq_map_ci seq_entry_ci seq_annot_ci \
+      seq_map seq_map_ci seq_entry_ci seq_annot_ci \
       seq_entry_handle bioseq_set_handle bioseq_handle seq_annot_handle \
       align_ci data_loader handle_range objmgr_exception \
       handle_range_map object_manager seq_vector seq_vector_ci seqdesc_ci \

@@ -92,6 +92,7 @@ CBioseq_Info::CBioseq_Info(const CBioseq_Info& info, TObjectCopyMap* copy_map)
 
 CBioseq_Info::~CBioseq_Info(void)
 {
+    x_ResetSeqMap();
 }
 
 
@@ -106,6 +107,12 @@ CConstRef<CBioseq> CBioseq_Info::GetBioseqCore(void) const
 {
     x_UpdateCore();
     return m_Object;
+}
+
+
+void CBioseq_Info::x_SetChangedSeqMap(void)
+{
+    x_SetNeedUpdate(fNeedUpdate_seq_data);
 }
 
 
@@ -128,7 +135,12 @@ void CBioseq_Info::x_AddAssemblyChunkId(TChunkId chunk_id)
 void CBioseq_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if ( flags & fNeedUpdate_seq_data ) {
-        x_LoadChunks(m_Seq_dataChunks);
+        if ( !m_Seq_dataChunks.empty() ) {
+            x_LoadChunks(m_Seq_dataChunks);
+        }
+        if ( m_SeqMap ) {
+            m_SeqMap->x_UpdateSeq_inst(m_Object->SetInst());
+        }
     }
     if ( flags & fNeedUpdate_assembly ) {
         TChunkId chunk = m_AssemblyChunk;
@@ -238,6 +250,7 @@ void CBioseq_Info::x_SetObject(const CBioseq_Info& info,
     m_Id = info.m_Id;
     if ( info.m_SeqMap ) {
         m_SeqMap = info.m_SeqMap->CloneFor(*m_Object);
+        m_SeqMap->m_Bioseq = this;
     }
     if ( info.IsSetAnnot() ) {
         x_SetAnnot(info, copy_map);
@@ -457,13 +470,28 @@ void CBioseq_Info::SetInst(TInst& v)
 {
     m_Seq_dataChunks.clear();
     m_Object->SetInst(v);
+    x_ResetSeqMap();
 }
 
 void CBioseq_Info::ResetInst()
 {
-    if (IsSetInst())
+    if (IsSetInst()) {
+        m_Seq_dataChunks.clear();
         m_Object->ResetInst();
+        x_ResetSeqMap();
+    }
 }
+
+
+void CBioseq_Info::x_ResetSeqMap(void)
+{
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    if ( m_SeqMap ) {
+        m_SeqMap->m_Bioseq = 0;
+        m_SeqMap.Reset();
+    }
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // inst.repr
@@ -489,17 +517,15 @@ CBioseq_Info::TInst_Repr CBioseq_Info::GetInst_Repr(void) const
 
 void CBioseq_Info::SetInst_Repr(TInst_Repr v)
 {
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    x_ResetSeqMap();
     m_Object->SetInst().SetRepr(v);
-    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Repr()
 {
     if (IsSetInst_Repr()) {
-        CFastMutexGuard guard(m_SeqMap_Mtx);
+        x_ResetSeqMap();
         m_Object->SetInst().ResetRepr();
-        m_SeqMap.Reset();
     }
 }
 
@@ -527,17 +553,15 @@ CBioseq_Info::TInst_Mol CBioseq_Info::GetInst_Mol(void) const
 
 void CBioseq_Info::SetInst_Mol(TInst_Mol v)
 {
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    x_ResetSeqMap();
     m_Object->SetInst().SetMol(v);
-    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Mol()
 {
     if (IsSetInst_Mol()) {
-        CFastMutexGuard guard(m_SeqMap_Mtx);
+        x_ResetSeqMap();
         m_Object->SetInst().ResetMol();
-        m_SeqMap.Reset();
     }
 }
 
@@ -566,17 +590,15 @@ CBioseq_Info::TInst_Length CBioseq_Info::GetInst_Length(void) const
 
 void CBioseq_Info::SetInst_Length(TInst_Length v)
 {
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    x_ResetSeqMap();
     m_Object->SetInst().SetLength(v);
-    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Length()
 {
     if (IsSetInst_Length()) {
-        CFastMutexGuard guard(m_SeqMap_Mtx);
+        x_ResetSeqMap();
         m_Object->SetInst().ResetLength();
-        m_SeqMap.Reset();
     }
 }
 
@@ -715,18 +737,17 @@ const CBioseq_Info::TInst_Seq_data& CBioseq_Info::GetInst_Seq_data(void) const
 
 void CBioseq_Info::SetInst_Seq_data(TInst_Seq_data& v)
 {
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    x_ResetSeqMap();
     m_Seq_dataChunks.clear();
     m_Object->SetInst().SetSeq_data(v);
-    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Seq_data()
 {
     if (IsSetInst_Seq_data()) {
-        CFastMutexGuard guard(m_SeqMap_Mtx);
+        x_ResetSeqMap();
+        m_Seq_dataChunks.clear();
         m_Object->SetInst().ResetSeq_data();
-        m_SeqMap.Reset();
     }
 }
 
@@ -755,18 +776,17 @@ const CBioseq_Info::TInst_Ext& CBioseq_Info::GetInst_Ext(void) const
 
 void CBioseq_Info::SetInst_Ext(TInst_Ext& v)
 {
-    CFastMutexGuard guard(m_SeqMap_Mtx);
+    x_ResetSeqMap();
     m_Seq_dataChunks.clear();
     m_Object->SetInst().SetExt(v);
-    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Ext()
 {
     if (IsSetInst_Ext()) {
-        CFastMutexGuard guard(m_SeqMap_Mtx);
+        x_ResetSeqMap();
+        m_Seq_dataChunks.clear();
         m_Object->SetInst().ResetExt();
-        m_SeqMap.Reset();
     }
 }
 
@@ -1097,11 +1117,12 @@ string CBioseq_Info::IdString(void) const
 void CBioseq_Info::x_AttachMap(CSeqMap& seq_map)
 {
     CFastMutexGuard guard(m_SeqMap_Mtx);
-    if ( m_SeqMap ) {
+    if ( m_SeqMap || seq_map.m_Bioseq ) {
         NCBI_THROW(CObjMgrException, eAddDataError,
                      "CBioseq_Info::AttachMap: bioseq already has SeqMap");
     }
     m_SeqMap.Reset(&seq_map);
+    seq_map.m_Bioseq = this;
 }
 
 
@@ -1113,6 +1134,7 @@ const CSeqMap& CBioseq_Info::GetSeqMap(void) const
         ret = m_SeqMap.GetPointer();
         if ( !ret ) {
             m_SeqMap = CSeqMap::CreateSeqMapForBioseq(*m_Object);
+            m_SeqMap->m_Bioseq = const_cast<CBioseq_Info*>(this);
             ret = m_SeqMap.GetPointer();
             _ASSERT(ret);
         }
@@ -1127,6 +1149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2007/01/05 14:42:59  vasilche
+* Implemented seq-map switch editing.
+*
 * Revision 1.36  2006/06/30 15:04:47  vasilche
 * Fixed attaching of Seq-data to edited bioseq.
 *

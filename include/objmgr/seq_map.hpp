@@ -75,6 +75,7 @@ typedef TSeqPos TSeqLength;
 
 class CScope;
 class CBioseq_Handle;
+class CBioseq_Info;
 class CSeqMap_CI;
 class CSeqMap_CI_SegmentInfo;
 class CSeqMap_Delta_seqs;
@@ -165,18 +166,22 @@ public:
 
     // Methods used internally by other OM classes
 
-    static CConstRef<CSeqMap> CreateSeqMapForBioseq(const CBioseq& seq);
-    static CConstRef<CSeqMap> CreateSeqMapForSeq_loc(const CSeq_loc& loc,
-                                                     CScope* scope);
-    static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
-                                                    ENa_strand strand);
-    virtual CConstRef<CSeqMap> CloneFor(const CBioseq& seq) const;
+    static CRef<CSeqMap> CreateSeqMapForBioseq(const CBioseq& seq);
+    static CRef<CSeqMap> CreateSeqMapForSeq_loc(const CSeq_loc& loc,
+                                                CScope* scope);
+    virtual CRef<CSeqMap> CloneFor(const CBioseq& seq) const;
 
     // copy map for editing
     CSeqMap(const CSeqMap& sm);
 
     void SetRegionInChunk(CTSE_Chunk_Info& chunk, TSeqPos pos, TSeqPos length);
     void LoadSeq_data(TSeqPos pos, TSeqPos len, const CSeq_data& data);
+
+    void SetSegmentRef(const CSeqMap_CI& seg,
+                       TSeqPos length,
+                       const CSeq_id_Handle& ref_id,
+                       TSeqPos ref_pos,
+                       bool ref_minus_strand);
 
 protected:
 
@@ -186,6 +191,7 @@ protected:
     friend class CSegment;
     friend class SPosLessSegment;
     friend class CSeqMap_SeqPoss;
+    friend class CBioseq_Info;
 
     class CSegment
     {
@@ -235,30 +241,30 @@ protected:
     CSeqMap(void);
     CSeqMap(const CSeq_loc& ref);
     CSeqMap(TSeqPos len); // gap
+    CSeqMap(const CSeq_inst& inst);
 
     void x_AddEnd(void);
-    CSegment& x_AddSegment(ESegmentType type,
-                           TSeqPos      len,
-                           bool         unknown_len = false);
-    CSegment& x_AddSegment(ESegmentType type, TSeqPos len, const CObject* object);
-    CSegment& x_AddSegment(ESegmentType type, const CObject* object,
-                           TSeqPos refPos, TSeqPos len,
-                           ENa_strand strand = eNa_strand_plus);
-    CSegment& x_AddGap(TSeqPos len, bool unknown_len);
-    CSegment& x_Add(CSeqMap* submap);
-    CSegment& x_Add(const CSeq_data& data, TSeqPos len);
-    CSegment& x_Add(const CPacked_seqint& seq);
-    CSegment& x_Add(const CPacked_seqpnt& seq);
-    CSegment& x_Add(const CSeq_loc_mix& seq);
-    CSegment& x_Add(const CSeq_loc_equiv& seq);
-    CSegment& x_Add(const CSeq_literal& seq);
-    CSegment& x_Add(const CDelta_seq& seq);
-    CSegment& x_Add(const CSeq_loc& seq);
-    CSegment& x_Add(const CSeq_id& seq);
-    CSegment& x_Add(const CSeq_point& seq);
-    CSegment& x_Add(const CSeq_interval& seq);
-    CSegment& x_AddUnloadedSubMap(TSeqPos len);
-    CSegment& x_AddUnloadedSeq_data(TSeqPos len);
+    void x_AddSegment(ESegmentType type,
+                      TSeqPos      len,
+                      bool         unknown_len = false);
+    void x_AddSegment(ESegmentType type, TSeqPos len, const CObject* object);
+    void x_AddSegment(ESegmentType type, const CObject* object,
+                      TSeqPos refPos, TSeqPos len,
+                      ENa_strand strand = eNa_strand_plus);
+    void x_AddGap(TSeqPos len, bool unknown_len);
+    void x_Add(CSeqMap* submap);
+    void x_Add(const CSeq_data& data, TSeqPos len);
+    void x_Add(const CPacked_seqint& seq);
+    void x_Add(const CPacked_seqpnt& seq);
+    void x_Add(const CSeq_loc_mix& seq);
+    void x_Add(const CSeq_loc_equiv& seq);
+    void x_Add(const CSeq_literal& seq);
+    void x_Add(const CDelta_seq& seq);
+    void x_Add(const CSeq_loc& seq);
+    void x_Add(const CSeq_id& seq);
+    void x_Add(const CSeq_point& seq);
+    void x_Add(const CSeq_interval& seq);
+    void x_AddUnloadedSeq_data(TSeqPos len);
 
 private:
     void ResolveAll(void) const;
@@ -284,6 +290,12 @@ protected:
     TSeqPos x_GetSegmentEndPosition(size_t index, CScope* scope) const;
     TSeqPos x_ResolveSegmentLength(size_t index, CScope* scope) const;
     TSeqPos x_ResolveSegmentPosition(size_t index, CScope* scope) const;
+
+    bool x_IsChanged(void) const;
+    void x_SetChanged(size_t index);
+    bool x_UpdateSeq_inst(CSeq_inst& inst);
+    virtual bool x_DoUpdateSeq_inst(CSeq_inst& inst);
+
     CBioseq_Handle x_GetBioseqHandle(const CSegment& seg, CScope* scope) const;
 
     CConstRef<CSeqMap> x_GetSubSeqMap(const CSegment& seg, CScope* scope,
@@ -300,6 +312,19 @@ protected:
 
     virtual void x_SetSeq_data(size_t index, CSeq_data& data);
     virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
+
+    virtual void x_SetSegmentGap(size_t index,
+                                 TSeqPos length);
+    virtual void x_SetSegmentData(size_t index,
+                                  TSeqPos length,
+                                  CSeq_data& data);
+    virtual void x_SetSegmentRef(size_t index,
+                                 TSeqPos length,
+                                 const CSeq_id& ref_id,
+                                 TSeqPos ref_pos,
+                                 bool ref_minus_strand);
+
+    CBioseq_Info*    m_Bioseq;
 
     typedef vector<CSegment> TSegments;
     
@@ -318,6 +343,9 @@ protected:
     // segments' flags
     typedef Uint1 THasSegments;
     mutable THasSegments m_HasSegments;
+    // needs to update Seq-inst
+    typedef bool TChanged;
+    TChanged m_Changed;
 
     // Sequence length
     mutable TSeqPos m_SeqLength;
@@ -403,6 +431,24 @@ inline
 CSeqMap::TMol CSeqMap::GetMol(void) const
 {
     return m_Mol;
+}
+
+
+inline
+bool CSeqMap::x_IsChanged(void) const
+{
+    return m_Changed;
+}
+
+
+inline
+bool CSeqMap::x_UpdateSeq_inst(CSeq_inst& inst)
+{
+    if ( !x_IsChanged() ) {
+        return false;
+    }
+    m_Changed = false;
+    return x_DoUpdateSeq_inst(inst);
 }
 
 

@@ -83,12 +83,6 @@ void CSeqMap_Delta_seqs::x_IndexAll(const TList& seq)
 }
 
 
-void CSeqMap_Delta_seqs::x_IndexUnloadedSubMap(TSeqPos len)
-{
-    x_SetSegmentList_I(x_AddUnloadedSubMap(len), m_List->end());
-}
-
-
 CSeqMap_Delta_seqs::TList_I
 CSeqMap_Delta_seqs::x_FindInsertList_I(size_t index) const
 {
@@ -370,6 +364,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2007/01/05 14:42:59  vasilche
+* Implemented seq-map switch editing.
+*
 * Revision 1.17  2006/10/05 20:22:53  vasilche
 * Recognize Seq-data.gap.
 *
