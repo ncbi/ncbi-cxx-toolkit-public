@@ -118,6 +118,15 @@ Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk,
                             const Uint1* sequence,
                             Int4 seqlen);
 
+/** Adds a specialized representation of sequence data to a sequence
+ * block. In the specialized representation, the byte at offset i 
+ * packs together nucleotide bases i to i+3
+ * @param seq_blk structure containing sequence data. Data is assumed
+ *          to be in blastna format [in][out]
+ */
+NCBI_XBLAST_EXPORT
+Int2 BlastCompressBlastnaSequence(BLAST_SequenceBlk *seq_blk);
+
 /** Stores the compressed nucleotide sequence in the sequence block structure
  * for the subject sequence when BLASTing 2 sequences. This sequence should be
  * encoded in eBlastEncodingNcbi2na and NOT have sentinel bytes (as this 
@@ -141,7 +150,7 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
  * @param buffer Preallocated buffer for the translated sequence [in][out]
  * @param genetic_code Genetic code to use for translation, 
  *                     in ncbistdaa encoding [in]
- * @return Length of the traslated protein sequence.
+ * @return Length of the translated protein sequence.
 */
 NCBI_XBLAST_EXPORT
 Int4 BLAST_GetTranslation(const Uint1* query_seq, 
