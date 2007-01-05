@@ -37,6 +37,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Dense_diag.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -54,6 +55,7 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                              CSeq_align::TDim row_1,      ///< which pair of rows
                              CSeq_align::TDim row_2)
 {
+    _ASSERT(row_1 >=0  &&  row_2 >= 0);
     _ASSERT(sa.GetDim() > max(row_1, row_2));
 
     typedef CSeq_align::TSegs TSegs;
@@ -61,6 +63,8 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
 
     switch(segs.Which())    {
     case CSeq_align::TSegs::e_Dendiag:
+        ConvertDendiagToPairwiseAln(pairwise_aln, segs.GetDendiag(),
+                                    row_1, row_2);
         break;
     case CSeq_align::TSegs::e_Denseg: {
         ConvertDensegToPairwiseAln(pairwise_aln, segs.GetDenseg(),
@@ -98,8 +102,8 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
     _ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
     _ASSERT(row_2 >=0  &&  row_2 < ds.GetDim());
 
-    const CDense_seg::TNumseg numseg = ds.GetNumseg();
-    const CDense_seg::TDim dim = ds.GetDim();
+    const CDense_seg::TNumseg& numseg = ds.GetNumseg();
+    const CDense_seg::TDim& dim = ds.GetDim();
     const CDense_seg::TStarts& starts = ds.GetStarts();
     const CDense_seg::TLens& lens = ds.GetLens();
     const CDense_seg::TStrands* strands = 
@@ -147,12 +151,14 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
 
 
 void
-ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
-                           const CSeq_align::TSegs::TStd& std, ///< input Std
-                           CSeq_align::TDim row_1,             ///< which pair of rows 
+ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
+                           const CSeq_align::TSegs::TStd& stds, ///< input Stds
+                           CSeq_align::TDim row_1,              ///< which pair of rows 
                            CSeq_align::TDim row_2)
 {
-    ITERATE (CSeq_align::TSegs::TStd, std_it, std) {
+    _ASSERT(row_1 >=0  &&  row_2 >= 0);
+
+    ITERATE (CSeq_align::TSegs::TStd, std_it, stds) {
 
         const CStd_seg::TLoc& loc = (*std_it)->GetLoc();
         
@@ -232,6 +238,53 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
     }
 }
 
+
+
+void
+ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< output
+                            const CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
+                            CSeq_align::TDim row_1,                      ///< which pair of rows 
+                            CSeq_align::TDim row_2)
+{
+    _ASSERT(row_1 >=0  &&  row_2 >= 0);
+
+    ITERATE (CSeq_align::TSegs::TDendiag, dendiag_it, dendiags) {
+
+        const CDense_diag& dd = **dendiag_it;
+
+        _ASSERT(max(row_1, row_2) < dd.GetDim());
+
+        TSeqPos from_1 = dd.GetStarts()[row_1];
+        TSeqPos from_2 = dd.GetStarts()[row_2];
+        TSeqPos len = dd.GetLen();
+
+        /// determinte the strands
+        bool direct = true;
+        if (dd.IsSetStrands()) {
+            bool minus_1 = dd.GetStrands()[row_1] == eNa_strand_minus;
+            bool minus_2 = dd.GetStrands()[row_2] == eNa_strand_minus;
+            direct = minus_1 == minus_2;
+        }
+
+        /// base-width adjustments
+        const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
+        const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
+        if (base_width_1 > 1  ||  base_width_2 > 1) {
+            if (base_width_1 > 1) {
+                from_1 *= base_width_1;
+            }
+            if (base_width_2 > 1) {
+                from_2 *= base_width_2;
+            }
+            if (base_width_1 == base_width_2) {
+                len *= base_width_1;
+            }
+        }
+
+        /// insert the range
+        pairwise_aln.insert(CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+    }
+}
 
 
 
@@ -576,6 +629,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2007/01/05 18:32:07  todorov
+* Added support for Dense_diag.
+*
 * Revision 1.7  2007/01/04 21:28:50  todorov
 * Allow for out-of-frame alignments by using a convention to split the
 * segment if the nuc sequence is shorter, resulting in a one partial

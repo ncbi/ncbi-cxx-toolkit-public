@@ -64,10 +64,18 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
 
 NCBI_XALNMGR_EXPORT
 void
-ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,         ///< output
-                           const CSeq_align::TSegs::TStd& std, ///< input Std
-                           CSeq_align::TDim row_1,             ///< which pair of rows 
+ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
+                           const CSeq_align::TSegs::TStd& stds, ///< input Stds
+                           CSeq_align::TDim row_1,              ///< which pair of rows 
                            CSeq_align::TDim row_2);
+
+
+NCBI_XALNMGR_EXPORT
+void
+ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< output
+                            const CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
+                            CSeq_align::TDim row_1,                      ///< which pair of rows 
+                            CSeq_align::TDim row_2);
 
 
 /// Create an anchored alignment from Seq-align using hints
@@ -161,6 +169,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2007/01/05 18:32:23  todorov
+* Added support for Dense_diag.
+*
 * Revision 1.15  2007/01/04 21:10:45  todorov
 * + fAllowAbutting
 *
