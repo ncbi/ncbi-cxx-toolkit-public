@@ -147,6 +147,8 @@ BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk)
    BlastSequenceBlkClean(seq_blk);
    if (seq_blk->lcase_mask_allocated)
       BlastMaskLocFree(seq_blk->lcase_mask);
+   if (seq_blk->compressed_nuc_seq_start)
+      sfree(seq_blk->compressed_nuc_seq_start);
    sfree(seq_blk);
    return NULL;
 }
@@ -343,6 +345,51 @@ BLAST_GetTranslation(const Uint1* query_seq, const Uint1* query_seq_rev,
 	return index_prot - 1;
 }
 
+Int2
+BlastCompressBlastnaSequence(BLAST_SequenceBlk *seq_blk)
+{
+    Int4 i;
+    Int4 curr_letter;
+    Int4 max_start;
+    Int4 len = seq_blk->length;
+    Uint1* old_seq = seq_blk->sequence;
+    Uint1* new_seq;
+
+    seq_blk->compressed_nuc_seq_start = 
+                        (Uint1 *)malloc((len + 3) * sizeof(Uint1));
+    new_seq = seq_blk->compressed_nuc_seq = 
+                        seq_blk->compressed_nuc_seq_start + 3;
+
+    new_seq[-1] = new_seq[-2] = new_seq[-3] = 0;
+    new_seq[len-3] = new_seq[len-2] = new_seq[len-1] = 0;
+
+    /* the first 3 bytes behind new_seq contain right-justified
+       versions of the first 3 (or less) bases */
+    max_start = MIN(3, len);
+    curr_letter = 0;
+    for (i = 0; i < max_start; i++) {
+        curr_letter = curr_letter << 2 | (old_seq[i] & 3);
+        new_seq[i - max_start] = curr_letter;
+    }
+
+    /* offset i into new_seq points to bases i to i+3
+       packed together into one byte */
+
+    for (; i < len; i++) {
+        curr_letter = curr_letter << 2 | (old_seq[i] & 3);
+        new_seq[i - max_start] = curr_letter;
+    }
+
+    /* the last 3 bytes contain left-justified versions of 
+       the last 3 (or less) bases */
+    max_start = MIN(3, len);
+    for (i = 0; i < max_start; i++) {
+        curr_letter = curr_letter << 2;
+        new_seq[len - (max_start - i)] = curr_letter;
+    }
+
+    return 0;
+}
 
 /*
   Translate a compressed nucleotide sequence without ambiguity codes.
