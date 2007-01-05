@@ -339,9 +339,9 @@ void BlastNaChooseScanSubject(LookupTableWrap *lookup_wrap)
     ASSERT(lookup_wrap->lut_type == eNaLookupTable);
 
     if (lookup->lut_word_length == 8 && lookup->scan_step == 4)
-        lookup->scansub_callback = s_BlastNaScanSubject_8_4;
+        lookup->scansub_callback = (void *)s_BlastNaScanSubject_8_4;
     else
-        lookup->scansub_callback = s_BlastNaScanSubject_Any;
+        lookup->scansub_callback = (void *)s_BlastNaScanSubject_Any;
 }
 
 /** 
@@ -379,17 +379,7 @@ static NCBI_INLINE Int4 s_BlastSmallNaRetrieveHits(
 }
 
 /** access the small-query lookup table */
-#define SMALL_NA_ACCESS_HITS()                                  \
-    if (index != -1) {                                          \
-        if (total_hits > max_hits)                              \
-            break;                                              \
-        total_hits += s_BlastSmallNaRetrieveHits(offset_pairs,  \
-                                                 index, s_off,  \
-                                                 total_hits,    \
-                                                 overflow);     \
-    }
-
-#define SMALL_NA_ACCESS_HITS2(x)                                  \
+#define SMALL_NA_ACCESS_HITS(x)                                 \
     if (index != -1) {                                          \
         if (total_hits > max_hits) {                            \
             s_off += (x);                                       \
@@ -452,36 +442,36 @@ static Int4 s_BlastSmallNaScanSubject_8_4(const LookupTableWrap * lookup_wrap,
 
         init_index = init_index << 8 | s[1];
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS2(0);
+        SMALL_NA_ACCESS_HITS(0);
 byte_1:
         init_index = init_index << 8 | s[2];
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS2(4);
+        SMALL_NA_ACCESS_HITS(4);
 byte_2:
         init_index = init_index << 8 | s[3];
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS2(8);
+        SMALL_NA_ACCESS_HITS(8);
 byte_3:
         init_index = init_index << 8 | s[4];
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS2(12);
+        SMALL_NA_ACCESS_HITS(12);
 byte_4:
         init_index = init_index << 8 | s[5];
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS2(16);
+        SMALL_NA_ACCESS_HITS(16);
 byte_5:
         init_index = init_index << 8 | s[6];
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS2(20);
+        SMALL_NA_ACCESS_HITS(20);
 byte_6:
         init_index = init_index << 8 | s[7];
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS2(24);
+        SMALL_NA_ACCESS_HITS(24);
 byte_7:
         init_index = init_index << 8 | s[8];
         s += 8;
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS2(28);
+        SMALL_NA_ACCESS_HITS(28);
         s_off += 32;
     }
 
@@ -596,7 +586,7 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
 
                 index = s[0] << 16 | s[1] << 8 | s[2];
                 index = backbone[(index >> shift) & mask];
-                SMALL_NA_ACCESS_HITS();
+                SMALL_NA_ACCESS_HITS(0);
             }
 
             /* repeat the loop but only read two bytes at a time. For
@@ -612,7 +602,7 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
 
                 index = s[0] << 8 | s[1];
                 index = backbone[(index >> shift) & mask];
-                SMALL_NA_ACCESS_HITS();
+                SMALL_NA_ACCESS_HITS(0);
             }
             *end_offset = s_off;
         }
@@ -633,7 +623,7 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
 
             index = s[0] << 8 | s[1];
             index = backbone[(index >> shift) & mask];
-            SMALL_NA_ACCESS_HITS();
+            SMALL_NA_ACCESS_HITS(0);
         }
         *end_offset = s_off;
     }
@@ -693,7 +683,7 @@ static Int4 s_BlastSmallNaScanSubject_4_1(
 
         init_index = s[0];
         index = backbone[init_index];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_1:
@@ -702,7 +692,7 @@ base_1:
 
         init_index = init_index << 8 | s[1];
         index = backbone[(init_index >> 6) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_2:
@@ -710,7 +700,7 @@ base_2:
             break;
 
         index = backbone[(init_index >> 4) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_3:
@@ -719,7 +709,7 @@ base_3:
 
         s++;
         index = backbone[(init_index >> 2) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
     }
 
@@ -779,7 +769,7 @@ static Int4 s_BlastSmallNaScanSubject_5_1(
 
         init_index = s[0] << 8 | s[1];
         index = backbone[init_index >> 6];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_1:
@@ -787,7 +777,7 @@ base_1:
             break;
 
         index = backbone[(init_index >> 4) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_2:
@@ -795,7 +785,7 @@ base_2:
             break;
 
         index = backbone[(init_index >> 2) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_3:
@@ -804,7 +794,7 @@ base_3:
 
         s++;
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
     }
 
@@ -864,7 +854,7 @@ static Int4 s_BlastSmallNaScanSubject_6_1(
 
         init_index = s[0] << 8 | s[1];
         index = backbone[init_index >> 4];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_1:
@@ -872,7 +862,7 @@ base_1:
             break;
 
         index = backbone[(init_index >> 2) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_2:
@@ -880,7 +870,7 @@ base_2:
             break;
 
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_3:
@@ -890,7 +880,7 @@ base_3:
         init_index = init_index << 8 | s[2];
         s++;
         index = backbone[(init_index >> 6) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
     }
 
@@ -943,7 +933,7 @@ static Int4 s_BlastSmallNaScanSubject_6_2(
 
         init_index = s[0] << 8 | s[1];
         index = backbone[init_index >> 4];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += 2;
 
 base_2:
@@ -952,7 +942,7 @@ base_2:
 
         s++;
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += 2;
     }
 
@@ -1012,7 +1002,7 @@ static Int4 s_BlastSmallNaScanSubject_7_1(
 
         init_index = s[0] << 8 | s[1];
         index = backbone[init_index >> 2];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_1:
@@ -1020,7 +1010,7 @@ base_1:
             break;
 
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_2:
@@ -1029,7 +1019,7 @@ base_2:
 
         init_index = init_index << 8 | s[2];
         index = backbone[(init_index >> 6) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
 
 base_3:
@@ -1038,7 +1028,7 @@ base_3:
 
         s++;
         index = backbone[(init_index >> 4) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off++;
     }
 
@@ -1091,7 +1081,7 @@ static Int4 s_BlastSmallNaScanSubject_7_2(
 
         init_index = s[0] << 8 | s[1];
         index = backbone[init_index >> 2];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += 2;
 
 base_2:
@@ -1101,7 +1091,7 @@ base_2:
         init_index = init_index << 8 | s[2];
         s++;
         index = backbone[(init_index >> 6) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += 2;
     }
 
@@ -1163,7 +1153,7 @@ static Int4 s_BlastSmallNaScanSubject_7_3(
 
         init_index = s[0] << 8 | s[1];
         index = backbone[(init_index >> 2) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += 3;
 
 base_1:
@@ -1172,7 +1162,7 @@ base_1:
 
         init_index = init_index << 8 | s[2];
         index = backbone[(init_index >> 4) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += 3;
 
 base_2:
@@ -1181,7 +1171,7 @@ base_2:
 
         init_index = init_index << 8 | s[3];
         index = backbone[(init_index >> 6) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += 3;
 
 base_3:
@@ -1190,7 +1180,7 @@ base_3:
 
         s += 3;
         index = backbone[init_index & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += 3;
     }
 
@@ -1247,7 +1237,7 @@ static Int4 s_BlastSmallNaScanSubject_8_1Mod4(
         index = s[0] << 8 | s[1];
         s += scan_step_byte;
         index = backbone[index];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
 
 base_1:
@@ -1257,7 +1247,7 @@ base_1:
         index = s[0] << 16 | s[1] << 8 | s[2];
         s += scan_step_byte;
         index = backbone[(index >> 6) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
 
 base_2:
@@ -1267,7 +1257,7 @@ base_2:
         index = s[0] << 16 | s[1] << 8 | s[2];
         s += scan_step_byte;
         index = backbone[(index >> 4) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
 
 base_3:
@@ -1277,7 +1267,7 @@ base_3:
         index = s[0] << 16 | s[1] << 8 | s[2];
         s += scan_step_byte + 1;
         index = backbone[(index >> 2) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
     }
 
@@ -1331,7 +1321,7 @@ static Int4 s_BlastSmallNaScanSubject_8_2Mod4(
         index = s[0] << 8 | s[1];
         s += scan_step_byte;
         index = backbone[index];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
 
 base_2:
@@ -1341,7 +1331,7 @@ base_2:
         index = s[0] << 16 | s[1] << 8 | s[2];
         s += scan_step_byte + 1;
         index = backbone[(index >> 4) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
     }
 
@@ -1403,7 +1393,7 @@ static Int4 s_BlastSmallNaScanSubject_8_3Mod4(
         index = s[0] << 8 | s[1];
         s += scan_step_byte;
         index = backbone[index];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
 
 base_1:
@@ -1413,7 +1403,7 @@ base_1:
         index = s[0] << 16 | s[1] << 8 | s[2];
         s += scan_step_byte;
         index = backbone[(index >> 2) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
 
 base_2:
@@ -1423,7 +1413,7 @@ base_2:
         index = s[1] << 16 | s[2] << 8 | s[3];
         s += scan_step_byte;
         index = backbone[(index >> 4) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
 
 base_3:
@@ -1433,7 +1423,7 @@ base_3:
         index = s[2] << 16 | s[3] << 8 | s[4];
         s += scan_step_byte + 3;
         index = backbone[(index >> 6) & kLutWordMask];
-        SMALL_NA_ACCESS_HITS();
+        SMALL_NA_ACCESS_HITS(0);
         s_off += scan_step;
     }
 
@@ -1463,55 +1453,59 @@ void BlastSmallNaChooseScanSubject(LookupTableWrap *lookup_wrap)
     switch (lookup->lut_word_length) {
     case 4:
         if (scan_step == 1)
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_4_1;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_4_1;
         else
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_Any;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_Any;
         break;
 
     case 5:
         if (scan_step == 1)
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_5_1;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_5_1;
         else
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_Any;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_Any;
         break;
 
     case 6:
         if (scan_step == 1)
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_6_1;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_6_1;
         else if (scan_step == 2)
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_6_2;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_6_2;
         else
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_Any;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_Any;
         break;
 
     case 7:
         if (scan_step == 1)
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_7_1;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_7_1;
         else if (scan_step == 2)
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_7_2;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_7_2;
         else if (scan_step == 3)
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_7_3;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_7_3;
         else
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_Any;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_Any;
         break;
 
     case 8:
         if (scan_step == 4) {
-            lookup->scansub_callback = s_BlastSmallNaScanSubject_8_4;
+            lookup->scansub_callback = (void *)s_BlastSmallNaScanSubject_8_4;
         }
         else {
             switch (scan_step % COMPRESSION_RATIO) {
             case 0:
-                lookup->scansub_callback = s_BlastSmallNaScanSubject_Any;
+                lookup->scansub_callback = 
+                                (void *)s_BlastSmallNaScanSubject_Any;
                 break;
             case 1:
-                lookup->scansub_callback = s_BlastSmallNaScanSubject_8_1Mod4;
+                lookup->scansub_callback = 
+                                (void *)s_BlastSmallNaScanSubject_8_1Mod4;
                 break;
             case 2:
-                lookup->scansub_callback = s_BlastSmallNaScanSubject_8_2Mod4;
+                lookup->scansub_callback = 
+                                (void *)s_BlastSmallNaScanSubject_8_2Mod4;
                 break;
             case 3:
-                lookup->scansub_callback = s_BlastSmallNaScanSubject_8_3Mod4;
+                lookup->scansub_callback = 
+                                (void *)s_BlastSmallNaScanSubject_8_3Mod4;
                 break;
             }
         }
@@ -2335,7 +2329,7 @@ static Int4 s_MB_DiscWordScanSubject_Any(const LookupTableWrap* lookup_wrap,
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
    Uint4 template_length = mb_lt->template_length;
    Uint4 curr_base = COMPRESSION_RATIO - (start_offset % COMPRESSION_RATIO);
-   Uint4 last_base = *end_offset;
+   Uint4 last_base = subject->length;
 
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
 
@@ -2504,7 +2498,7 @@ static Int4 s_MB_DiscWordScanSubject_1(const LookupTableWrap* lookup_wrap,
    Uint8 accum = 0;
    EDiscTemplateType template_type = mb_lt->template_type;
    Uint4 template_length = mb_lt->template_length;
-   Uint4 last_offset = *end_offset - template_length;
+   Uint4 last_offset = subject->length - template_length;
 
    ASSERT(lookup_wrap->lut_type == eMBLookupTable);
    max_hits -= mb_lt->longest_chain;
@@ -2593,7 +2587,7 @@ static Int4 s_MB_DiscWordScanSubject_11_18_1(
    Uint4 s_off = start_offset;
    Int4 index;
    const Uint4 kTemplateLength = 18;
-   Uint4 last_offset = *end_offset - kTemplateLength;
+   Uint4 last_offset = subject->length - kTemplateLength;
    Uint4 lo = 0; 
    Uint4 hi = 0;
 
@@ -2710,7 +2704,7 @@ static Int4 s_MB_DiscWordScanSubject_11_21_1(
    Uint4 s_off = start_offset;
    Int4 index;
    const Uint4 kTemplateLength = 21;
-   Uint4 last_offset = *end_offset - kTemplateLength;
+   Uint4 last_offset = subject->length - kTemplateLength;
    Uint4 lo = 0; 
    Uint4 hi = 0;
 
@@ -2824,14 +2818,16 @@ void BlastMBChooseScanSubject(LookupTableWrap *lookup_wrap)
     if (mb_lt->discontiguous) {
         if (mb_lt->scan_step == 1 && !mb_lt->two_templates) {
             if (mb_lt->template_type == eDiscTemplate_11_18_Coding)
-                mb_lt->scansub_callback = s_MB_DiscWordScanSubject_11_18_1;
+                mb_lt->scansub_callback = 
+                                (void *)s_MB_DiscWordScanSubject_11_18_1;
             else if (mb_lt->template_type == eDiscTemplate_11_21_Coding)
-                mb_lt->scansub_callback = s_MB_DiscWordScanSubject_11_21_1;
+                mb_lt->scansub_callback = 
+                                (void *)s_MB_DiscWordScanSubject_11_21_1;
             else
-                mb_lt->scansub_callback = s_MB_DiscWordScanSubject_1;
+                mb_lt->scansub_callback = (void *)s_MB_DiscWordScanSubject_1;
         }
         else {
-            mb_lt->scansub_callback = s_MB_DiscWordScanSubject_Any;
+            mb_lt->scansub_callback = (void *)s_MB_DiscWordScanSubject_Any;
         }
     }
     else {
@@ -2840,37 +2836,37 @@ void BlastMBChooseScanSubject(LookupTableWrap *lookup_wrap)
         switch (mb_lt->lut_word_length) {
         case 9:
             if (scan_step == 1)
-                mb_lt->scansub_callback = s_MBScanSubject_9_1;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_9_1;
             if (scan_step == 2)
-                mb_lt->scansub_callback = s_MBScanSubject_9_2;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_9_2;
             else
-                mb_lt->scansub_callback = s_MBScanSubject_Any;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_Any;
             break;
 
         case 10:
             if (scan_step == 1)
-                mb_lt->scansub_callback = s_MBScanSubject_10_1;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_10_1;
             else if (scan_step == 2)
-                mb_lt->scansub_callback = s_MBScanSubject_10_2;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_10_2;
             else if (scan_step == 3)
-                mb_lt->scansub_callback = s_MBScanSubject_10_3;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_10_3;
             else
-                mb_lt->scansub_callback = s_MBScanSubject_Any;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_Any;
             break;
     
         case 11:
             switch (scan_step % COMPRESSION_RATIO) {
             case 0:
-                mb_lt->scansub_callback = s_MBScanSubject_Any;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_Any;
                 break;
             case 1:
-                mb_lt->scansub_callback = s_MBScanSubject_11_1Mod4;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_11_1Mod4;
                 break;
             case 2:
-                mb_lt->scansub_callback = s_MBScanSubject_11_2Mod4;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_11_2Mod4;
                 break;
             case 3:
-                mb_lt->scansub_callback = s_MBScanSubject_11_3Mod4;
+                mb_lt->scansub_callback = (void *)s_MBScanSubject_11_3Mod4;
                 break;
             }
             break;
@@ -2881,7 +2877,7 @@ void BlastMBChooseScanSubject(LookupTableWrap *lookup_wrap)
                cache misses dominates the runtime in that
                case. Thus the extra arithmetic in the generic
                routine isn't performance-critical */
-            mb_lt->scansub_callback = s_MBScanSubject_Any;
+            mb_lt->scansub_callback = (void *)s_MBScanSubject_Any;
             break;
         }
     }
