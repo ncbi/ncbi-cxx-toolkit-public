@@ -118,7 +118,8 @@ protected:
     virtual ~CPrelimSearchThread(void) {}
 
     virtual void* Main(void) {
-        return (void*) CPrelimSearchRunner(m_InternalData, m_OptsMemento)();
+        return (void*) 
+            ((intptr_t) CPrelimSearchRunner(m_InternalData, m_OptsMemento)());
     }
 
 private:
