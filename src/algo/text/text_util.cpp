@@ -116,37 +116,37 @@ void CTextUtil::AddWordFrequencies(TWordFreq& freq, const TWordFreq& wf,
 }
 
 
-static string s_ValToString(Int4 i)
+string s_ValToString(Int4 i)
 {
     return NStr::IntToString(i);
 }
 
-static string s_ValToString(Int8 i)
+string s_ValToString(Int8 i)
 {
     return NStr::Int8ToString(i);
 }
 
-static string s_ValToString(Uint4 i)
+string s_ValToString(Uint4 i)
 {
     return NStr::UIntToString(i);
 }
 
-static string s_ValToString(Uint8 i)
+string s_ValToString(Uint8 i)
 {
     return NStr::UInt8ToString(i);
 }
 
-static string s_ValToString(double i)
+string s_ValToString(double i)
 {
     return NStr::DoubleToString(i);
 }
 
-static string s_ValToString(float i)
+string s_ValToString(float i)
 {
     return NStr::DoubleToString(i);
 }
 
-static string s_ValToString(const string& i)
+string s_ValToString(const string& i)
 {
     return i;
 }
@@ -605,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2007/01/05 13:45:01  dicuccio
+ * Compilation fixes for Solaris
+ *
  * Revision 1.1  2006/12/17 14:13:20  dicuccio
  * Initial revision
  *

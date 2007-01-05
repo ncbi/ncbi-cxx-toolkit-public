@@ -268,7 +268,8 @@ void Deserialize<string, float>(CNcbiIstream& istr,
 
         float score = 0;
         zip_istr.read((char*)&score, sizeof(float));
-        vec.insert(vec.end(), make_pair(word, score));
+        vec.insert(vec.end(),
+                   CScoreVector<string, float>::value_type(word, score));
     }
 }
 
@@ -330,6 +331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2007/01/05 13:45:01  dicuccio
+ * Compilation fixes for Solaris
+ *
  * Revision 1.2  2006/12/17 17:20:02  dicuccio
  * Removed unnecessary typedefs
  *

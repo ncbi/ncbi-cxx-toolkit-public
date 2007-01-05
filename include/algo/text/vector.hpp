@@ -53,11 +53,11 @@ template <class Key, class Score>
 class CRawScoreVector : public CObject
 {
 public:
-    typedef Key               key_type;
-    typedef Score             score_type;
-    typedef pair<Key, Score>  TIdxScore;
-    typedef vector<TIdxScore> TVector;
-    typedef TIdxScore         value_type;
+    typedef Key                              key_type;
+    typedef Score                            score_type;
+    typedef pair<Key, Score>                 TIdxScore;
+    typedef vector<TIdxScore>                TVector;
+    typedef TIdxScore                        value_type;
     typedef typename TVector::iterator       iterator;
     typedef typename TVector::const_iterator const_iterator;
 
@@ -260,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2007/01/05 13:45:01  dicuccio
+ * Compilation fixes for Solaris
+ *
  * Revision 1.2  2006/12/17 17:20:02  dicuccio
  * Removed unnecessary typedefs
  *

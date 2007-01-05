@@ -33,7 +33,6 @@
 #include <algorithm>
 #include <math.h>
 #include <set>
-#include <ext/algorithm>
 
 
 #ifndef ALGO_TEXT___VECTOR__HPP
@@ -112,7 +111,7 @@ CRawScoreVector<Key, Score>::CRawScoreVector(const CScoreVector<Key, Score>& vec
     m_Data.reserve(vec.size());
     typedef CScoreVector<Key, Score> TOtherVector;
     ITERATE (typename TOtherVector, iter, vec) {
-        m_Data.push_back(*iter);
+        m_Data.push_back(value_type(iter->first, iter->second));
     }
 }
 
@@ -126,7 +125,7 @@ CRawScoreVector<Key, Score>& CRawScoreVector<Key, Score>::operator=(const CScore
 
     typedef CScoreVector<Key, Score> TOtherVector;
     ITERATE (typename TOtherVector, iter, vec) {
-        m_Data.push_back(*iter);
+        m_Data.push_back(iter->first, iter->second);
     }
 
     m_Uid = vec.GetId();
@@ -706,7 +705,7 @@ CScoreVector<Key, Score>& CScoreVector<Key, Score>::operator=(const CRawScoreVec
     m_Data.clear();
     typedef CRawScoreVector<Key, Score> TOtherVector;
     ITERATE (typename TOtherVector, iter, other) {
-        m_Data.insert(m_Data.end(), *iter);
+        m_Data.insert(m_Data.end(), value_type(iter->first, iter->second));
     }
     m_Uid = other.GetId();
     return *this;
@@ -1276,6 +1275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2007/01/05 13:45:01  dicuccio
+ * Compilation fixes for Solaris
+ *
  * Revision 1.3  2006/12/18 02:41:12  dicuccio
  * Added initializer for key values using template specialization
  *
