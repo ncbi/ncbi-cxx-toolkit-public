@@ -668,9 +668,6 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
 
    if (smith_waterman) {
       aux_struct->WordFinder = NULL;
-   } else if (mb_lookup) {
-      BlastMBChooseScanSubject(lookup_wrap);
-      aux_struct->WordFinder = MB_WordFinder;
    } else if (indexed_mb_lookup) {
       aux_struct->WordFinder = MB_IndexedWordFinder;
    } else if (phi_lookup) {
@@ -678,9 +675,12 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    } else if (blastp) {
       aux_struct->WordFinder = BlastAaWordFinder;
    } else {
+      BlastChooseNaExtend(lookup_wrap);
       aux_struct->WordFinder = BlastNaWordFinder;
       if (small_na)
          BlastSmallNaChooseScanSubject(lookup_wrap);
+      else if (mb_lookup)
+         BlastMBChooseScanSubject(lookup_wrap);
       else
          BlastNaChooseScanSubject(lookup_wrap);
    }
