@@ -194,6 +194,8 @@ typedef struct BLAST_SequenceBlk {
                              nucleotide sequence for out-of-frame alignment */
    Boolean oof_sequence_allocated; /**< TRUE if memory has been allocated 
                                         for oof_sequence */
+   Uint1* compressed_nuc_seq; /**< 4-to-1 compressed version of sequence */
+   Uint1* compressed_nuc_seq_start; /**< start of compressed_nuc_seq */
    BlastMaskLoc* lcase_mask; /**< Locations to be masked from operations on 
                                 this sequence: lookup table for query; 
                                 scanning for subject. */
