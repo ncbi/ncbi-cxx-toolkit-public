@@ -340,6 +340,7 @@ void CBDB_MergeBlobWalker<BF>::Fetch()
     case eBDB_Ok:
         m_Data     = m_Cursor->GetLastMultiFetchData();
         m_DataLen  = m_Cursor->GetLastMultiFetchDataLen();
+        _ASSERT(m_Data  &&  m_DataLen);
         {
         const CBDB_BufferManager* key_bm = m_BlobFile->GetKeyBuffer();
         const CBDB_Field& fld = key_bm->GetField(0);
@@ -692,6 +693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2007/01/05 13:25:49  dicuccio
+ * Add _ASSERT() as a safeguard in multifetch
+ *
  * Revision 1.8  2006/11/30 14:19:43  kuznets
  * Removed buf_size parameter (ReadRealloc()) size passed as vector property
  *
