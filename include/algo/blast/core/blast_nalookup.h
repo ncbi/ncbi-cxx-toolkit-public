@@ -73,6 +73,7 @@ typedef struct BlastSmallNaLookupTable {
                                 lookup table */
     Int4  overflow_size;   /**< Number of elements in the overflow array */
     void *scansub_callback;  /**< function for scanning subject sequences */
+    void *extend_callback;  /**< function for extending hits */
 } BlastSmallNaLookupTable;
 
 /** Create a new small nucleotide lookup table.
@@ -145,6 +146,7 @@ typedef struct BlastNaLookupTable {
                                 are set indicate that the corresponding thick
                                 backbone cell contains hits */
     void *scansub_callback;  /**< function for scanning subject sequences */
+    void *extend_callback;  /**< function for extending hits */
 } BlastNaLookupTable;
   
 /** Create a new nucleotide lookup table.
@@ -249,6 +251,7 @@ typedef struct BlastMBLookupTable {
    Int4 longest_chain; /**< Largest number of query positions for a given 
                           word */
    void *scansub_callback;  /**< function for scanning subject sequences */
+   void *extend_callback;  /**< function for extending hits */
 
    Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
    Int4 num_words_added; /**< Number of words added to the l.t. */
