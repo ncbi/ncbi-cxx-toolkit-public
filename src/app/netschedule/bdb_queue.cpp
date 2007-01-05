@@ -120,10 +120,6 @@ CQueueCollection::CQueueCollection(const CQueueDataBase& db) :
 
 CQueueCollection::~CQueueCollection()
 {
-    NON_CONST_ITERATE(TQueueMap, it, m_QMap) {
-        SLockedQueue* q = it->second;
-        delete q;
-    }
 }
 
 
@@ -135,10 +131,8 @@ void CQueueCollection::Close()
         if (q->lb_coordinator) {
             q->lb_coordinator->StopCollectorThread();
         }
-        delete q;
     }
     m_QMap.clear();
-
 }
 
 
@@ -1515,6 +1509,8 @@ CQueue::Submit(const char*   input,
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
+    bool was_empty = !q->status_tracker.AnyPending();
+
     unsigned int job_id = m_Db.GetNextId();
 
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
@@ -1550,6 +1546,8 @@ CQueue::Submit(const char*   input,
     trans.Commit();
     js_guard.Commit();
 
+    if (was_empty) NotifyListeners();
+
     return job_id;
 }
 
@@ -1562,6 +1560,8 @@ CQueue::SubmitBatch(vector<SNS_BatchSubmitRec>& batch,
                     const char*                 progress_msg)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
+
+    bool was_empty = !q->status_tracker.AnyPending();
 
     unsigned job_id = m_Db.GetNextIdBatch(batch.size());
 
@@ -1634,6 +1634,8 @@ CQueue::SubmitBatch(vector<SNS_BatchSubmitRec>& batch,
     trans.Commit();
 
     q->status_tracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
+
+    if (was_empty) NotifyListeners();
 
     return job_id;
 }
@@ -4144,6 +4146,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.104  2007/01/05 23:02:45  joukovv
+ * Circular deletion with engaged lock in weak ref code fixed. Attempt to
+ * enchance server reaction for new tasks.
+ *
  * Revision 1.103  2007/01/02 18:50:54  joukovv
  * Queue deletion implemented (does not delete actual database files - need a
  * method of enumerating them). Draft implementation of weak reference. Minor

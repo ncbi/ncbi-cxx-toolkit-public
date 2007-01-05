@@ -128,9 +128,20 @@ public:
     }
     void RemoveReference(void) const
     {
-        CMutexGuard guard(m_ProxyRef->GetLock());
-        if (--m_RefCounter <= 0) {
-            m_ProxyRef->Deleting();
+        bool delete_this = false;
+        {{
+            CMutexGuard guard(m_ProxyRef->GetLock());
+            if (--m_RefCounter <= 0) {
+                m_ProxyRef->Deleting();
+                delete_this = true;
+            }
+            // We have to release lock here before deleting the object itself,
+            // otherwise if no more weakrefs point to the object it will trigger
+            // deleting proxy with mutex locked and lead to exception in
+            // destructor. We can safely release lock here because weak proxy
+            // does not have pinter to us anymore.
+        }}
+        if (delete_this) {
             delete this;
         }
     }
