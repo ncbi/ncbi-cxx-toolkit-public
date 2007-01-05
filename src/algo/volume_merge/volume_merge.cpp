@@ -39,8 +39,12 @@ BEGIN_NCBI_SCOPE
 
 CMergeVolumes::CMergeVolumes()
 : m_Merger(0),
+  m_OwnMerger(eTakeOwnership),
+  m_OwnVolumeVect(eTakeOwnership),
   m_Store(0),
-  m_MergeKey(0)
+  m_OwnStore(eTakeOwnership),
+  m_MergeKey(0),
+  m_MinKey(0)
 {
 }
 
@@ -326,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2007/01/05 13:26:03  dicuccio
+ * Initialize all variables in ctor
+ *
  * Revision 1.4  2006/11/30 11:13:03  kuznets
  * code cleanup
  *
