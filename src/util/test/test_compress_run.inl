@@ -156,8 +156,7 @@
 
         TCompressionFile zf;
         // Set flag to allow transparent read on decompression
-        zf.SetFlags(CZipCompression::fAllowTransparentRead |
-                    CZipCompression::fCheckFileHeader);
+        zf.SetFlags(CZipCompression::fAllowTransparentRead);
 
         //
         // Test for usual compression/decompression
