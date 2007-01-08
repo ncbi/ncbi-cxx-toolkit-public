@@ -907,8 +907,10 @@ bool BlockModelPair::isValid()const
 //assume this.master is the same as guide.master
 //change this.master to guide.slave
 //
-void BlockModelPair::remaster(const BlockModelPair& guide)
+int BlockModelPair::remaster(const BlockModelPair& guide)
 {
+	if (!SeqIdsMatch(getMaster().getSeqId(),guide.getMaster().getSeqId()))
+		return 0;
 	//convert guide.slave to the intersection of this.master and guide.master
 	pair<DeltaBlockModel*, bool> deltaGuideToThis = m_master->intersect(guide.getMaster());
 	pair<BlockModel*, bool> intersectedGuideSlave = guide.getSlave() + *(deltaGuideToThis.first);
@@ -920,6 +922,7 @@ void BlockModelPair::remaster(const BlockModelPair& guide)
 	delete m_slave;
 	m_master = intersectedGuideSlave.first;
 	m_slave = intersectedThisSlave.first;
+	return m_master->getTotalBlockLength();
 }
 	//reverse the master vs slave
 void BlockModelPair::reverse()
@@ -936,6 +939,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2007/01/08 20:46:44  cliu
+ * return the number of aligned residues for the remaster()
+ *
  * Revision 1.5  2006/12/18 17:01:11  lanczyck
  * add a reset method for BlockModelPair
  *

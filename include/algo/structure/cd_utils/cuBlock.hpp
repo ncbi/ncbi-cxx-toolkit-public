@@ -150,7 +150,7 @@ public:
 	bool isValid()const;
 	//assume this.master is the same as guide.master
 	//change this.master to guide.slave
-	void remaster(const BlockModelPair& guide);
+	int remaster(const BlockModelPair& guide);
 	//reverse the master vs slave
 	void reverse();
     //  clear out m_master, m_slave.
