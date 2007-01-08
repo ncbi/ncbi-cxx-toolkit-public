@@ -532,6 +532,10 @@ static void s_PrematureStopCodon(const CSeq_id& id, const CSeqTestContext* ctx,
     case CCdregion::eFrame_three:
         start_translating = 2;
         break;
+    default:
+        // should never happen, but handle it to avoid compiler warning
+        start_translating = kInvalidSeqPos;
+        break;
     }
 
     bool premature_stop_found = false;
@@ -922,6 +926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2007/01/08 18:04:54  jcherry
+ * Attempt to eliminate compiler warning
+ *
  * Revision 1.25  2007/01/03 17:18:39  jcherry
  * Eliminated compiler warnings (or tried)
  *
