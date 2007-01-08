@@ -457,6 +457,10 @@
  *  @ingroup UTIL
  */
 
+/** @defgroup QParser Query Parser and Query Tree
+ *  @ingroup UTIL
+ */
+
 
 /* ========================================================================= */
 
