@@ -42,9 +42,9 @@ BEGIN_NCBI_SCOPE
 /// Helper functions for getting values from registry/environment
 ///
 
-SSystemFastMutex& CParamBase::s_GetLock(void)
+SSystemMutex& CParamBase::s_GetLock(void)
 {
-    DEFINE_STATIC_FAST_MUTEX(s_ParamValueLock);
+    DEFINE_STATIC_MUTEX(s_ParamValueLock);
     return s_ParamValueLock;
 }
 
@@ -347,6 +347,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2007/01/08 16:49:20  grichenk
+ * Use normal (non-fast) mutex in CParam.
+ *
  * Revision 1.5  2006/11/29 13:56:29  gouriano
  * Moved GetErrorCodeString method into cpp
  *

@@ -342,7 +342,7 @@ inline
 typename CParam<TDescription>::TValueType
 CParam<TDescription>::GetDefault(void)
 {
-    CFastMutexGuard guard(s_GetLock());
+    CMutexGuard guard(s_GetLock());
     return sx_GetDefault();
 }
 
@@ -351,7 +351,7 @@ template<class TDescription>
 inline
 void CParam<TDescription>::SetDefault(const TValueType& val)
 {
-    CFastMutexGuard guard(s_GetLock());
+    CMutexGuard guard(s_GetLock());
     sx_GetDefault() = val;
 }
 
@@ -360,7 +360,7 @@ template<class TDescription>
 inline
 void CParam<TDescription>::ResetDefault(void)
 {
-    CFastMutexGuard guard(s_GetLock());
+    CMutexGuard guard(s_GetLock());
     sx_GetDefault(true);
 }
 
@@ -370,7 +370,7 @@ inline
 typename CParam<TDescription>::TValueType
 CParam<TDescription>::GetThreadDefault(void)
 {
-    CFastMutexGuard guard(s_GetLock());
+    CMutexGuard guard(s_GetLock());
     if ( !sx_IsSetFlag(eParam_NoThread) ) {
         CRef<TTls>& tls = sx_GetTls();
         if ( tls.NotEmpty() ) {
@@ -392,7 +392,7 @@ void CParam<TDescription>::SetThreadDefault(const TValueType& val)
         NCBI_THROW(CParamException, eNoThreadValue,
             "The parameter does not allow thread-local values");
     }
-    CFastMutexGuard guard(s_GetLock());
+    CMutexGuard guard(s_GetLock());
     CRef<TTls>& tls = sx_GetTls();
     if ( !tls ) {
         tls.Reset(new TTls);
@@ -408,7 +408,7 @@ void CParam<TDescription>::ResetThreadDefault(void)
     if ( sx_IsSetFlag(eParam_NoThread) ) {
         return; // already using global default value
     }
-    CFastMutexGuard guard(s_GetLock());
+    CMutexGuard guard(s_GetLock());
     CRef<TTls>& tls = sx_GetTls();
     if ( tls ) {
         tls->Reset();
@@ -460,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2007/01/08 16:49:20  grichenk
+ * Use normal (non-fast) mutex in CParam.
+ *
  * Revision 1.12  2006/11/16 20:12:10  grichenk
  * Added CParam state (stage of initialization).
  *

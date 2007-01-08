@@ -330,7 +330,7 @@ public:
 class NCBI_XNCBI_EXPORT CParamBase
 {
 protected:
-    static SSystemFastMutex& s_GetLock(void);
+    static SSystemMutex& s_GetLock(void);
 };
 
 
@@ -457,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2007/01/08 16:49:19  grichenk
+ * Use normal (non-fast) mutex in CParam.
+ *
  * Revision 1.13  2006/11/29 13:55:39  gouriano
  * Moved GetErrorCodeString method into cpp
  *
