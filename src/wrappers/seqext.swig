@@ -205,7 +205,6 @@ objects/seq/seq_id_mapper.hpp
 objmgr/seq_loc_mapper.hpp
 objmgr/seq_map.hpp
 objmgr/seq_map_ci.hpp
-objmgr/seq_map_ext.hpp
 objmgr/seq_vector.hpp
 objmgr/seq_vector_ci.hpp
 objmgr/seqdesc_ci.hpp
@@ -338,6 +337,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2007/01/08 16:47:39  jcherry
+ * Deleted objmgr/seq_map_ext.hpp, which has been removed
+ *
  * Revision 1.18  2006/09/26 13:20:23  jcherry
  * Added vector<CObjectsSniffer::SObjectDescription>
  *
