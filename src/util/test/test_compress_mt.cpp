@@ -139,6 +139,7 @@ public:
 bool CTest::Thread_Init(int)
 {
     SetDiagPostLevel(eDiag_Warning);
+    GetDiagContext().SetOldPostFormat(false);
     return true;
 }
 
@@ -192,6 +193,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2007/01/08 16:16:01  ivanov
+ * Switch to new log format
+ *
  * Revision 1.4  2006/12/26 16:12:58  ivanov
  * Fixed PrintResult(). Reduced test buffer sizes for MT test.
  *
