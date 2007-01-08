@@ -528,6 +528,11 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         */
         virtual unsigned long Version() const { return 0; }
 
+        /** If possible reduce the index footpring by unmapping
+            the portion that does not contain sequence data.
+        */
+        virtual void Remap() {}
+
     protected:
 
         /** Version specific index loading function.

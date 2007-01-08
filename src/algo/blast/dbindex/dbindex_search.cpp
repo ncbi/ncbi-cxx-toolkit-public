@@ -909,6 +909,12 @@ class CSubjectMap_Base
         */
         const Uint1 * GetSeqStoreBase() const { return &seq_store_[0]; }
 
+        /** Return the size in bytes of the eaw sequence storage.
+
+            @return Size of the sequence data storage.
+        */
+        TWord GetSeqStoreSize() const { return total_; }
+
         /** Get the total number of sequence chunks in the map.
             @return number of chunks in the map
         */
@@ -2807,9 +2813,9 @@ class CDbIndex_Impl : public CDbIndex
         /** Object destructor. */
         ~CDbIndex_Impl() 
         { 
-            if( mapfile_ != 0 ) mapfile_->Unmap(); 
-            delete offset_data_;
             delete subject_map_;
+            delete offset_data_;
+            if( mapfile_ != 0 ) mapfile_->Unmap(); 
         }
 
         /** Get the hash key width of the index.
@@ -2943,6 +2949,11 @@ class CDbIndex_Impl : public CDbIndex
         */
         virtual unsigned long Version() const { return version_; }
 
+        /** If possible reduce the index footpring by unmapping
+            the portion that does not contain sequence data.
+        */
+        virtual void Remap();
+
     private:
 
         /** The search procedure for this specialized index implementation.
@@ -2982,6 +2993,7 @@ class CDbIndex_Impl : public CDbIndex
         TWord * map_;                   /**< Start of memory mapped file data. */
         TOffsetData * offset_data_;     /**< Offset lists. */
         TSubjectMap * subject_map_;     /**< Subject sequence information. */
+        size_t subject_map_offset_;     /**< Offset of the subject map in the index file. */
         unsigned long version_;         /**< Index format version. */
 };
 
@@ -3022,7 +3034,26 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::CDbIndex_Impl(
     if( mapfile_ != 0 ) {
         map_ = (TWord *)(((char *)(mapfile_->GetPtr())) + HEADER_SIZE);
         offset_data_ = new TOffsetData( &map_, header.hkey_width_ );
+        Uint1 * map_start = (Uint1 *)(mapfile_->GetPtr());
+        subject_map_offset_ = (Uint1 *)map_ - map_start;
         subject_map_ = new TSubjectMap( &map_, header.start_, header.stop_ );
+    }
+}
+
+//-------------------------------------------------------------------------
+template< 
+    typename word_t, 
+    unsigned long OFF_TYPE, 
+    unsigned long COMPRESSION,
+    unsigned long VER >
+void CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::Remap()
+{
+    if( mapfile_ != 0 ) {
+        delete subject_map_; subject_map_ = 0;
+        delete offset_data_; offset_data_ = 0;
+        mapfile_->Unmap();
+        map_ = (TWord *)(mapfile_->Map( subject_map_offset_ ));
+        subject_map_ = new TSubjectMap( &map_, start_, stop_ );
     }
 }
 

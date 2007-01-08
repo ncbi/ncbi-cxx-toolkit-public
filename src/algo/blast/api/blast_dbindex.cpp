@@ -403,6 +403,7 @@ class CPreSearchThread : public CThread
 void * CPreSearchThread::Main( void )
 {
     results_ = index_->Search( queries_, locs_, sopt_ );
+    index_->Remap();
     return 0;
 }
 
@@ -459,6 +460,7 @@ void CIndexedDb::PreSearch(
             CRef< CDbIndex > & index = indices_[0];
             CConstRef< CDbIndex::CSearchResults > & results = results_[v];
             results = index->Search( queries, locs, sopt );
+            index->Remap();
         }
     }
 }
@@ -770,8 +772,8 @@ static void s_MB_IdbGetResults(
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.6  2006/12/27 19:58:41  morgulis
- * Providing sequence data for BLAST extension directly from the index.
+ * Revision 1.7  2007/01/08 19:54:06  morgulis
+ * Umapping unused portions of index after search is complete.
  *
  * Revision 1.5  2006/12/07 20:58:32  morgulis
  * Fixed CheckOid().
