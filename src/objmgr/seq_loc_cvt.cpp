@@ -1406,7 +1406,9 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_pnt(const CSeq_loc& src,
             if ( !cvt.GoodSrcId(src_pack_pnts.GetId()) ) {
                 continue;
             }
-            TSeqPos dst_pos = cvt.ConvertPos(*i);
+            TSeqPos dst_pos = cvt.ConvertPoint(*i,
+                src_pack_pnts.IsSetStrand() ?
+                src_pack_pnts.GetStrand() : eNa_strand_unknown);
             if ( dst_pos != kInvalidSeqPos ) {
                 CRef<CSeq_loc> pnt(new CSeq_loc);
                 pnt->SetPnt(*cvt.GetDstPoint());
@@ -1649,6 +1651,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2007/01/08 22:25:56  grichenk
+* Fixed mapping of packed-pnt.
+*
 * Revision 1.59  2006/09/19 19:20:55  vasilche
 * Avoid feature mapping dependency on memory placement.
 *
