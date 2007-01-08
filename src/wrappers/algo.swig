@@ -92,8 +92,12 @@ algo/align/util/align_shadow.hpp
 algo/align/util/blast_tabular.hpp
 algo/align/util/hit_comparator.hpp
 algo/align/util/hit_filter.hpp
+
+algo/sequence/align_group.hpp
+algo/sequence/annot_compare.hpp
 algo/sequence/antigenic.hpp
 algo/sequence/coiled_coil.hpp
+algo/sequence/consensus_splice.hpp
 algo/sequence/cpg.hpp
 algo/sequence/find_pattern.hpp
 algo/sequence/gene_model.hpp
@@ -292,6 +296,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2007/01/08 22:25:44  jcherry
+ * Added three headers from algo/sequence
+ *
  * Revision 1.20  2006/10/30 16:32:50  jcherry
  * Added blast_results.hpp (new file)
  *
