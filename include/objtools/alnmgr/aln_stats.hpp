@@ -74,6 +74,7 @@ public:
             for (size_t row_i = 0;  row_i < m_AlnIdVec[aln_i].size();  ++row_i) {
                 
                 const TAlnSeqIdIRef& id = m_AlnIdVec[aln_i][row_i];
+                _ASSERT( !id.Empty() );
                 TIdMap::iterator it = m_IdMap.lower_bound(id);
                 if (it == m_IdMap.end()  ||  *id < *it->first) { // id encountered for a first time, insert it
                     it = m_IdMap.insert
@@ -146,8 +147,8 @@ public:
 
     /// Canonical Query-Anchored: all alignments have 2 or 3 rows and
     /// exactly 2 sequences (A and B), A is present on all alignments
-    /// on row 1, B on rows 2 and 3. B can be present on 2 rows only
-    /// if they represent different strands.
+    /// on row 1, B on rows 2 (and possibly 3). B can be present on 2
+    /// rows only if they represent different strands.
     bool IsCanonicalQueryAnchored() const {
         switch (m_IdVec.size()) {
         case 2:
@@ -237,6 +238,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2007/01/08 16:38:20  todorov
+* Added an assertion.
+* Fixed the comments.
+*
 * Revision 1.5  2007/01/04 21:12:02  todorov
 * + IsCanonicalMultiple()
 *
