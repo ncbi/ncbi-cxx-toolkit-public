@@ -49,6 +49,9 @@
 // generated classes
 
 BEGIN_NCBI_SCOPE
+
+class ILineReader;
+
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /** @addtogroup OBJECTS_Seqid
@@ -152,7 +155,8 @@ public:
         fAcc_nuc       = 0x80000000,
         fAcc_prot      = 0x40000000,
         fAcc_predicted = 0x20000000, // only for refseq
-        eAcc_flag_mask = 0xe0000000,
+        fAcc_specials  = 0x10000000, // has special cases; only used internally
+        eAcc_flag_mask = 0xf0000000,
 
         // Common divisions and categories (0 << 8 .. 127 << 8)
         eAcc_other         = 0 << 8, // no further classification
@@ -267,7 +271,13 @@ public:
         eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot, // CAD29848
 
         eAcc_ddbj_tpa_nuc  = e_Tpd | eAcc_other | fAcc_nuc,  // BR
-        eAcc_ddbj_tpa_prot = e_Tpd | eAcc_other | fAcc_prot  // FAA
+        eAcc_ddbj_tpa_prot = e_Tpd | eAcc_other | fAcc_prot, // FAA
+
+        // It's not yet clear whether nucleotide and protein gpipe IDs
+        // (XGP_*?) will be readily distinguishable.
+        eAcc_gpipe      = e_Gpipe | eAcc_other,
+        eAcc_gpipe_nuc  = e_Gpipe | eAcc_other | fAcc_nuc,
+        eAcc_gpipe_prot = e_Gpipe | eAcc_other | fAcc_prot
     };
 
     static E_Choice GetAccType(EAccessionInfo info)
@@ -277,6 +287,9 @@ public:
     /// may report false negatives on properties.
     static EAccessionInfo IdentifyAccession(const string& accession);
     EAccessionInfo IdentifyAccession(void) const;
+
+    static void LoadAccessionGuide(const string& filename);
+    static void LoadAccessionGuide(ILineReader& in);
 
     /// Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;
@@ -598,6 +611,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.58  2007/01/08 16:06:51  ucko
+ * Rework IdentifyAccession to use a separate accession guide, which can
+ * be either explicitly supplied (via LoadAccessionGuide), autoloaded from
+ * a common data directory, or initialized from an embedded fallback copy.
+ *
  * Revision 1.57  2007/01/04 20:07:58  ucko
  * IdentifyAccession: allow for nucleotide(!) PDB accessions.
  *

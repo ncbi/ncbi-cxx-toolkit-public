@@ -39,7 +39,10 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <util/line_reader.hpp>
 #include <util/static_map.hpp>
+#include <serial/serialimpl.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -56,8 +59,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
-
-#include <objects/general/Date.hpp>
 
 // generated classes
 
@@ -483,210 +484,584 @@ CSeq_id::E_Choice CSeq_id::WhichInverseSeqId(const char* SeqIdCode)
 }
 
 
-static CSeq_id::EAccessionInfo s_IdentifyNAcc(const string& acc)
-{
-    _ASSERT(acc[0] == 'N');
-    int n = NStr::StringToNumeric(acc.substr(1));
-    if (n >= 20000) {
-        return CSeq_id::eAcc_gb_est;
-    } else { // big mess; fortunately, these are all secondary
-        switch (n) {
-        case 1: case 2: case 11: case 57:
-            return CSeq_id::eAcc_gb_embl;
-
-        case 3: case 4: case 6: case 7: case 10: case 14: case 15:
-        case 16: case 17: case 21: case 23: case 24: case 26: case 29:
-        case 30: case 31: case 32: case 33: case 34: case 36: case 38:
-        case 39: case 40: case 42: case 43: case 44: case 45: case 47:
-        case 49: case 50: case 51: case 55: case 56: case 59:
-            return CSeq_id::eAcc_gb_ddbj;
-
-        case 5: case 9: case 12: case 20: case 22: case 25: case 58:
-            return CSeq_id::eAcc_gb_embl_ddbj;
-
-        case 8: case 13: case 18: case 19: case 27: case 41: case 46:
-        case 48: case 52: case 54: case 18624:
-            return CSeq_id::eAcc_gb_other_nuc;
-
-        case 28: case 35: case 37: case 53: case 61: case 62: case 63:
-        case 65: case 66: case 67: case 68: case 69: case 78: case 79:
-        case 83: case 88: case 90: case 91: case 92: case 93: case 94:
-            return CSeq_id::eAcc_ddbj_other_nuc;
-
-        case 60: case 64:
-            return CSeq_id::eAcc_embl_other_nuc;
-
-        case 70:
-            return CSeq_id::eAcc_embl_ddbj;
-
-        default: // unassigned or ambiguous
-            return CSeq_id::eAcc_unknown;
-        }
-    }
-}
-
-
-// CXXnnnnn accessions are theoretically all for EMBL's own protein
-// records, but third-party annotations are interspersed (albeit often
-// several in a row). :-/
-
-typedef pair<const char*, const char*> TTpeRange;
-#define SingleTPE(x) TTpeRange(x, x)
-static const TTpeRange sc_TpeRanges[] = {
-    // Listed as (last, first) because lower_bound() rounds up(!) on misses.
-    TTpeRange("CAD29879", "CAD29848"), // subsuming quite a few unassigned IDs
-    SingleTPE("CAD43606"),
-    SingleTPE("CAD44269"),
-    SingleTPE("CAD55807"),
-    SingleTPE("CAD56854"),
-    SingleTPE("CAD59554"),
-    TTpeRange("CAD59975", "CAD59973"),
-    SingleTPE("CAD62250"),
-    TTpeRange("CAD62385", "CAD62384"),
-    TTpeRange("CAD65875", "CAD65874"),
-    TTpeRange("CAD66057", "CAD66056"),
-    SingleTPE("CAD66176"),
-    TTpeRange("CAD66453", "CAD66451"),
-    SingleTPE("CAD66657"),
-    TTpeRange("CAD67553", "CAD67552"),
-    TTpeRange("CAD67579", "CAD67575"),
-    SingleTPE("CAD67582"),
-    TTpeRange("CAD67593", "CAD67592"),
-    SingleTPE("CAD67595"),
-    TTpeRange("CAD67964", "CAD67963"),
-    SingleTPE("CAD67985"),
-    TTpeRange("CAD68171", "CAD68170"),
-    SingleTPE("CAD71139"),
-    TTpeRange("CAD80157", "CAD80155"),
-    TTpeRange("CAD80169", "CAD80167"), // '68 unassigned
-    SingleTPE("CAD80243"),
-    TTpeRange("CAD88273", "CAD88272"),
-    TTpeRange("CAD89268", "CAD89265"),
-    SingleTPE("CAD89361"),
-    SingleTPE("CAD89763"),
-    TTpeRange("CAD89875", "CAD89874"),
-    SingleTPE("CAD91637"),
-    TTpeRange("CAD91911", "CAD91909"),
-    SingleTPE("CAD92036"),
-    SingleTPE("CAD98145"),
-    TTpeRange("CAE00414", "CAE00378"),
-    SingleTPE("CAE00502"),
-    TTpeRange("CAE12276", "CAE12270"),
-    SingleTPE("CAE18110"),
-    SingleTPE("CAE30337"),
-    SingleTPE("CAE30362"),
-    TTpeRange("CAE30476", "CAE30475"),
-    TTpeRange("CAE30502", "CAE30490"),
-    SingleTPE("CAE45343"),
-    SingleTPE("CAE47417"),
-    TTpeRange("CAE48363", "CAE48362"),
-    TTpeRange("CAE48393", "CAE48373"),
-    TTpeRange("CAE48396", "CAE48395"),
-    TTpeRange("CAE51417", "CAE51393"),
-    SingleTPE("CAE51851"),
-    TTpeRange("CAE51856", "CAE51855"),
-    TTpeRange("CAE51916", "CAE51895"),
-    TTpeRange("CAE52320", "CAE52317"),
-    TTpeRange("CAE54352", "CAE54311"),
-    SingleTPE("CAE54495"),
-    TTpeRange("CAE75631", "CAE75602"),
-    SingleTPE("CAE75743"),
-    TTpeRange("CAE82299", "CAE82298"),
-    TTpeRange("CAF06530", "CAF06526"),
-    SingleTPE("CAF18402"),
-    TTpeRange("CAF21739", "CAF21736"),
-    SingleTPE("CAF32458"),
-    SingleTPE("CAG23871"),
-    TTpeRange("CAG26664", "CAG26661"),
-    SingleTPE("CAG26750"),
-    TTpeRange("CAG29030", "CAG29023"),
-    SingleTPE("CAG29113"),
-    SingleTPE("CAG30664"),
-    SingleTPE("CAG33760"),
-    TTpeRange("CAG34296", "CAG34288"),
-    TTpeRange("CAH03727", "CAH03726"),
-    TTpeRange("CAH17841", "CAH17840"),
-    TTpeRange("CAH18926", "CAH18925"),
-    SingleTPE("CAH56764"),
-    TTpeRange("CAH59194", "CAH59193"),
-    TTpeRange("CAH69380", "CAH69244"),
-    SingleTPE("CAH74220"),
-    SingleTPE("CAH74225"),
-    TTpeRange("CAH89263", "CAH89261"),
-    TTpeRange("CAI56335", "CAI56319"),
-    TTpeRange("CAI61347", "CAI61342"),
-    TTpeRange("CAI77245", "CAI77244"),
-    SingleTPE("CAI77247"),
-    TTpeRange("CAI85013", "CAI84981"),
-    TTpeRange("CAI99163", "CAI99158"),
-    SingleTPE("CAI99872"),
-    TTpeRange("CAJ00252", "CAJ00225"),
-    TTpeRange("CAJ13825", "CAJ13823"),
-    TTpeRange("CAJ29302", "CAJ29301"),
-    SingleTPE("CAJ30479"),
-    TTpeRange("CAJ30484", "CAJ30481"),
-    SingleTPE("CAJ31324"),
-    SingleTPE("CAJ33891"),
-    SingleTPE("CAJ55345"),
-    TTpeRange("CAJ55733", "CAJ55730"),
-    TTpeRange("CAJ55747", "CAJ55745"),
-    TTpeRange("CAJ55784", "CAJ55783"),
-    TTpeRange("CAJ55825", "CAJ55824"),
-    TTpeRange("CAJ57446", "CAJ57445"),
-    TTpeRange("CAJ70649", "CAJ70647"),
-    TTpeRange("CAJ77886", "CAJ77880"),
-    SingleTPE("CAK26553"),
-    TTpeRange("CAK26786", "CAK26777"),
-    SingleTPE("CAK32514"),
-    SingleTPE("CAL10024")
-};
-typedef CStaticArrayMap<const char*, const char*, PNocase_CStr> TTpeRangeMap;
-static const TTpeRangeMap sc_TpeRangeMap(sc_TpeRanges, sizeof(sc_TpeRanges));
-
-static CSeq_id::EAccessionInfo s_IdentifyCxxAcc(const string& acc)
-{
-    if (acc > "CAL73973") {
-        // make no assumptions about as yet unassigned IDs
-        // (still not entirely safe due to fill-ins, though :-/ )
-        return CSeq_id::eAcc_unreserved_prot;
-    } else {
-        TTpeRangeMap::const_iterator it
-            = sc_TpeRangeMap.lower_bound(acc.c_str());
-        if (it != sc_TpeRangeMap.end()  &&  it->second <= acc) {
-            return CSeq_id::eAcc_embl_tpa_prot;
-        } else {
-            return CSeq_id::eAcc_embl_prot;
-        }
-    }
-}
-
-
-typedef pair<const char*, CSeq_id::EAccessionInfo> TRefSeqType;
+typedef pair<const char*, CSeq_id::EAccessionInfo> TAccInfoMapEntry;
 // used for binary searching; must be in order.
-static const TRefSeqType sc_RefSeqArray[] = {
-    TRefSeqType("AC_", CSeq_id::eAcc_refseq_chromosome),
-    TRefSeqType("AP_", CSeq_id::eAcc_refseq_prot),
-    TRefSeqType("NC_", CSeq_id::eAcc_refseq_chromosome),
-    TRefSeqType("NG_", CSeq_id::eAcc_refseq_genomic),
-    TRefSeqType("NM_", CSeq_id::eAcc_refseq_mrna),
-    TRefSeqType("NP_", CSeq_id::eAcc_refseq_prot),
-    TRefSeqType("NR_", CSeq_id::eAcc_refseq_ncrna),
-    TRefSeqType("NS_", CSeq_id::eAcc_refseq_genome), /* ? */
-    TRefSeqType("NT_", CSeq_id::eAcc_refseq_contig),
-    TRefSeqType("NW_", CSeq_id::eAcc_refseq_wgs_intermed),
-    // NZ_ accessions have four more letters before any digits.
-    // TRefSeqType("NZ_", CSeq_id::eAcc_refseq_wgs_nuc),
-    TRefSeqType("XM_", CSeq_id::eAcc_refseq_mrna_predicted),
-    TRefSeqType("XP_", CSeq_id::eAcc_refseq_prot_predicted),
-    TRefSeqType("XR_", CSeq_id::eAcc_refseq_ncrna_predicted),
-    TRefSeqType("YP_", CSeq_id::eAcc_refseq_prot_predicted),
-    TRefSeqType("ZP_", CSeq_id::eAcc_refseq_wgs_prot)
+static const TAccInfoMapEntry sc_AccInfoArray[] = {
+    TAccInfoMapEntry("ambiguous_nuc",           CSeq_id::eAcc_ambiguous_nuc),
+    TAccInfoMapEntry("ddbj_con",                CSeq_id::eAcc_ddbj_con),
+    TAccInfoMapEntry("ddbj_dirsub",             CSeq_id::eAcc_ddbj_dirsub),
+    TAccInfoMapEntry("ddbj_est",                CSeq_id::eAcc_ddbj_est),
+    TAccInfoMapEntry("ddbj_genome",             CSeq_id::eAcc_ddbj_genome),
+    TAccInfoMapEntry("ddbj_gss",                CSeq_id::eAcc_ddbj_gss),
+    TAccInfoMapEntry("ddbj_htgs",               CSeq_id::eAcc_ddbj_htgs),
+    TAccInfoMapEntry("ddbj_other_nuc",          CSeq_id::eAcc_ddbj_other_nuc),
+    TAccInfoMapEntry("ddbj_patent",             CSeq_id::eAcc_ddbj_patent),
+    TAccInfoMapEntry("ddbj_prot",               CSeq_id::eAcc_ddbj_prot),
+    TAccInfoMapEntry("ddbj_tpa_nuc",            CSeq_id::eAcc_ddbj_tpa_nuc),
+    TAccInfoMapEntry("ddbj_tpa_prot",           CSeq_id::eAcc_ddbj_tpa_prot),
+    TAccInfoMapEntry("ddbj_wgs_nuc",            CSeq_id::eAcc_ddbj_wgs_nuc),
+    TAccInfoMapEntry("ddbj_wgs_prot",           CSeq_id::eAcc_ddbj_wgs_prot),
+    TAccInfoMapEntry("embl_con",                CSeq_id::eAcc_embl_con),
+    TAccInfoMapEntry("embl_ddbj",               CSeq_id::eAcc_embl_ddbj),
+    TAccInfoMapEntry("embl_dirsub",             CSeq_id::eAcc_embl_dirsub),
+    TAccInfoMapEntry("embl_est",                CSeq_id::eAcc_embl_est),
+    TAccInfoMapEntry("embl_genome",             CSeq_id::eAcc_embl_genome),
+    TAccInfoMapEntry("embl_htgs",               CSeq_id::eAcc_embl_htgs),
+    TAccInfoMapEntry("embl_other_nuc",          CSeq_id::eAcc_embl_other_nuc),
+    TAccInfoMapEntry("embl_patent",             CSeq_id::eAcc_embl_patent),
+    TAccInfoMapEntry("embl_prot",               CSeq_id::eAcc_embl_prot),
+    TAccInfoMapEntry("embl_tpa_nuc",            CSeq_id::eAcc_embl_tpa_nuc),
+    TAccInfoMapEntry("embl_tpa_prot",           CSeq_id::eAcc_embl_tpa_prot),
+    TAccInfoMapEntry("embl_wgs_nuc",            CSeq_id::eAcc_embl_wgs_nuc),
+    TAccInfoMapEntry("embl_wgs_prot",           CSeq_id::eAcc_embl_wgs_prot),
+    TAccInfoMapEntry("gb_backbone",             CSeq_id::eAcc_gb_backbone),
+    TAccInfoMapEntry("gb_cdna",                 CSeq_id::eAcc_gb_cdna),
+    TAccInfoMapEntry("gb_con",                  CSeq_id::eAcc_gb_con),
+    TAccInfoMapEntry("gb_ddbj",                 CSeq_id::eAcc_gb_ddbj),
+    TAccInfoMapEntry("gb_dirsub",               CSeq_id::eAcc_gb_dirsub),
+    TAccInfoMapEntry("gb_embl",                 CSeq_id::eAcc_gb_embl),
+    TAccInfoMapEntry("gb_embl_ddbj",            CSeq_id::eAcc_gb_embl_ddbj),
+    TAccInfoMapEntry("gb_est",                  CSeq_id::eAcc_gb_est),
+    TAccInfoMapEntry("gb_genome",               CSeq_id::eAcc_gb_genome),
+    TAccInfoMapEntry("gb_gsdb",                 CSeq_id::eAcc_gb_gsdb),
+    TAccInfoMapEntry("gb_gss",                  CSeq_id::eAcc_gb_gss),
+    TAccInfoMapEntry("gb_htgs",                 CSeq_id::eAcc_gb_htgs),
+    TAccInfoMapEntry("gb_other_nuc",            CSeq_id::eAcc_gb_other_nuc),
+    TAccInfoMapEntry("gb_patent",               CSeq_id::eAcc_gb_patent),
+    TAccInfoMapEntry("gb_patent_prot",          CSeq_id::eAcc_gb_patent_prot),
+    TAccInfoMapEntry("gb_prot",                 CSeq_id::eAcc_gb_prot),
+    TAccInfoMapEntry("gb_segset",               CSeq_id::eAcc_gb_segset),
+    TAccInfoMapEntry("gb_sts",                  CSeq_id::eAcc_gb_sts),
+    TAccInfoMapEntry("gb_tpa_nuc",              CSeq_id::eAcc_gb_tpa_nuc),
+    TAccInfoMapEntry("gb_tpa_prot",             CSeq_id::eAcc_gb_tpa_prot),
+    TAccInfoMapEntry("gb_wgs_nuc",              CSeq_id::eAcc_gb_wgs_nuc),
+    TAccInfoMapEntry("gb_wgs_prot",             CSeq_id::eAcc_gb_wgs_prot),
+    TAccInfoMapEntry("general",                 CSeq_id::eAcc_general),
+    TAccInfoMapEntry("gi",                      CSeq_id::eAcc_gi),
+    TAccInfoMapEntry("gibbmt",                  CSeq_id::eAcc_gibbmt),
+    TAccInfoMapEntry("gibbsq",                  CSeq_id::eAcc_gibbsq),
+    TAccInfoMapEntry("giim",                    CSeq_id::eAcc_giim),
+    TAccInfoMapEntry("gpipe",                   CSeq_id::eAcc_gpipe),
+    TAccInfoMapEntry("gpipe_nuc",               CSeq_id::eAcc_gpipe_nuc),
+    TAccInfoMapEntry("gpipe_prot",              CSeq_id::eAcc_gpipe_prot),
+    TAccInfoMapEntry("gsdb_dirsub",             CSeq_id::eAcc_gsdb_dirsub),
+    TAccInfoMapEntry("local",                   CSeq_id::eAcc_local),
+    TAccInfoMapEntry("maybe_ddbj",              CSeq_id::eAcc_maybe_ddbj),
+    TAccInfoMapEntry("maybe_embl",              CSeq_id::eAcc_maybe_embl),
+    TAccInfoMapEntry("maybe_gb",                CSeq_id::eAcc_maybe_gb),
+    TAccInfoMapEntry("patent",                  CSeq_id::eAcc_patent),
+    TAccInfoMapEntry("pdb",                     CSeq_id::eAcc_pdb),
+    TAccInfoMapEntry("pir",                     CSeq_id::eAcc_pir),
+    TAccInfoMapEntry("prf",                     CSeq_id::eAcc_prf),
+    TAccInfoMapEntry("refseq_chromosome",       CSeq_id::eAcc_refseq_chromosome),
+    TAccInfoMapEntry("refseq_contig",           CSeq_id::eAcc_refseq_contig),
+    TAccInfoMapEntry("refseq_genome",           CSeq_id::eAcc_refseq_genome),
+    TAccInfoMapEntry("refseq_genomic",          CSeq_id::eAcc_refseq_genomic),
+    TAccInfoMapEntry("refseq_mrna",             CSeq_id::eAcc_refseq_mrna),
+    TAccInfoMapEntry("refseq_mrna_predicted",   CSeq_id::eAcc_refseq_mrna_predicted),
+    TAccInfoMapEntry("refseq_ncrna",            CSeq_id::eAcc_refseq_ncrna),
+    TAccInfoMapEntry("refseq_ncrna_predicted",  CSeq_id::eAcc_refseq_ncrna_predicted),
+    TAccInfoMapEntry("refseq_prot",             CSeq_id::eAcc_refseq_prot),
+    TAccInfoMapEntry("refseq_prot_predicted",   CSeq_id::eAcc_refseq_prot_predicted),
+    TAccInfoMapEntry("refseq_unreserved",       CSeq_id::eAcc_refseq_unreserved),
+    TAccInfoMapEntry("refseq_wgs_intermed",     CSeq_id::eAcc_refseq_wgs_intermed),
+    TAccInfoMapEntry("refseq_wgs_nuc",          CSeq_id::eAcc_refseq_wgs_nuc),
+    TAccInfoMapEntry("refseq_wgs_prot",         CSeq_id::eAcc_refseq_wgs_prot),
+    TAccInfoMapEntry("swissprot",               CSeq_id::eAcc_swissprot),
+    TAccInfoMapEntry("unknown",                 CSeq_id::eAcc_unknown),
+    TAccInfoMapEntry("unreserved_nuc",          CSeq_id::eAcc_unreserved_nuc),
+    TAccInfoMapEntry("unreserved_prot",         CSeq_id::eAcc_unreserved_prot)
 };
-typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo, PCase_CStr> TRefSeqMap;
-static const TRefSeqMap sc_RefSeqMap(sc_RefSeqArray, sizeof(sc_RefSeqArray));
-
+typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo, PNocase_CStr> TAccInfoMap;
+static const TAccInfoMap sc_AccInfoMap(sc_AccInfoArray, sizeof(sc_AccInfoArray));
 
 static const char kDigits[] = "0123456789";
+
+struct SAccGuide
+{
+    typedef CSeq_id::EAccessionInfo TAccInfo;
+    typedef map<string, TAccInfo>   TPrefixes;
+    typedef pair<string, TAccInfo>  TPair;
+    typedef vector<TPair>           TPairs;
+    typedef map<string, TPair>      TSpecialMap; // last -> first -> value
+    typedef unsigned int            TFormatCode;
+
+    struct SSubMap {
+        TPrefixes    prefixes;
+        TPairs       wildcards;
+        TSpecialMap  specials;
+    };
+    typedef map<TFormatCode, SSubMap> TMainMap;
+
+    SAccGuide(void) : count(0) { }
+    void AddRule(const CTempString& rule);
+    static TFormatCode s_Key(unsigned short letters, unsigned short digits)
+        { return TFormatCode(letters) << 16 | digits; }
+    
+    unsigned int count;
+    TMainMap     rules;
+};
+
+void SAccGuide::AddRule(const CTempString& rule)
+{
+    string         tmp1, tmp2;
+    vector<string> tokens;
+    SIZE_TYPE      pos, pos2;
+
+    ++count;
+    rule.Copy(tmp1, 0, rule.find("#")); // strip comment
+    NStr::Tokenize(tmp1, " \t", tokens, NStr::eMergeDelims);
+    if (tokens.empty()) {
+        return;
+    } else if (tokens.size() == 2
+               &&  NStr::EqualNocase(tokens[0], "version")) {
+        unsigned int version = NStr::StringToUInt(tokens[1],
+                                                  NStr::fConvErr_NoThrow);
+        if (version != 1) {
+            ERR_POST("SAccGuide::AddRule: " << count
+                     << ": Unsupported version " << tokens[1]);
+            return;
+        }
+    } else if ((pos = tokens[0].find('+')) != NPOS
+               &&  (tokens.size() == 3
+                    ||  (tokens.size() == 4  &&  tokens[3] == "*"))) {
+        // _VERIFY(NStr::SplitInTwo(tokens[0], "+", tmp1, tmp2));
+        tmp1.assign(tokens[0], 0, pos);
+        tmp2.assign(tokens[0], pos + 1, NPOS);
+        TFormatCode fmt
+            = s_Key(NStr::StringToUInt(tmp1, NStr::fConvErr_NoThrow),
+                    NStr::StringToUInt(tmp2, NStr::fConvErr_NoThrow));
+        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2].c_str());
+        if (it == sc_AccInfoMap.end()) {
+            ERR_POST("SAccGuide::AddRule: " << count
+                     << ": unrecognized accession type " << tokens[2]);
+        } else {
+            TAccInfo value = it->second;
+            if (tokens.size() == 4) {
+                value = TAccInfo(value | CSeq_id::fAcc_specials);
+            }
+            if (tokens[1].find_first_of("?*") == NPOS) {
+                rules[fmt].prefixes[tokens[1]] = value;
+            } else {
+                rules[fmt].wildcards.push_back(TPair(tokens[1], value));
+            }
+        }
+    } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "special")) {
+        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2].c_str());
+        if (it == sc_AccInfoMap.end()) {
+            ERR_POST("SAccGuide::AddRule: " << count
+                     << ": unrecognized accession type " << tokens[2]);
+        } else {
+            TAccInfo value = it->second;
+            pos  = tokens[1].find_first_of(kDigits);
+            pos2 = tokens[1].find('-', pos);
+            if (pos2 == NPOS) {
+                TFormatCode fmt = s_Key(pos, tokens[1].size() - pos);
+                rules[fmt].specials[tokens[1]] = TPair(tokens[1], value);
+            } else {
+                TFormatCode fmt = s_Key(pos, pos2 - pos);
+                // _VERIFY(NStr::SplitInTwo(tokens[1], "-", tmp1, tmp2));
+                tmp1.assign(tokens[1], 0, pos2);
+                tmp2.assign(tokens[1], pos2 + 1, NPOS);
+                rules[fmt].specials[tmp2] = TPair(tmp1, value);
+            }
+        }
+    } else {
+        ERR_POST(Warning << "SAccGuide::AddRule: " << count
+                 << ": ignoring invalid line: " << rule);
+    }
+}
+
+
+SAccGuide s_Guide;
+
+static const char* kBuiltInGuide[] = {
+    "# 8-character protein accessions",
+    "3+5  AAE  gb_patent_prot",
+    "3+5  A??  gb_prot",
+    "3+5  B??  ddbj_prot",
+    "3+5  C??  embl_prot *",
+    "3+5  D??  gb_tpa_prot",
+    "3+5  E??  gb_wgs_prot",
+    "3+5  F??  ddbj_tpa_prot",
+    "3+5  G??  ddbj_wgs_prot",
+    "3+5  ???  unreserved_prot",
+    "",
+    "# whole genome shotgun accessions",
+    "4+8   A???  gb_wgs_nuc",
+    "4+9   A???  gb_wgs_nuc",
+    "4+10  A???  gb_wgs_nuc",
+    "4+8   B???  ddbj_wgs_nuc",
+    "4+9   B???  ddbj_wgs_nuc",
+    "4+10  B???  ddbj_wgs_nuc",
+    "4+8   C???  embl_wgs_nuc",
+    "4+9   C???  embl_wgs_nuc",
+    "4+10  C???  embl_wgs_nuc",
+    "",
+    "# NCBI reference sequence accessions",
+    "3+6  AC_      refseq_chromosome",
+    "3+6  AP_      refseq_prot",
+    "3+6  NC_      refseq_chromosome",
+    "3+6  NG_      refseq_genomic",
+    "3+6  NM_      refseq_mrna",
+    "3+9  NM_      refseq_mrna",
+    "3+6  NP_      refseq_prot",
+    "3+9  NP_      refseq_prot",
+    "3+6  NR_      refseq_ncrna",
+    "3+6  NS_      refseq_genome",
+    "3+6  NT_      refseq_contig",
+    "3+6  NW_      refseq_wgs_intermed",
+    "7+8  NZ_????  refseq_wgs_nuc",
+    "3+6  XM_      refseq_mrna_predicted",
+    "3+6  XP_      refseq_prot_predicted",
+    "3+6  XR_      refseq_ncrna_predicted",
+    "3+6  YP_      refseq_prot_predicted",
+    "3+8  ZP_      refseq_wgs_prot",
+    "3+6  ??_      refseq_unreserved",
+    "3+7  ??_      refseq_unreserved",
+    "3+8  ??_      refseq_unreserved",
+    "3+9  ??_      refseq_unreserved",
+    "",
+    "# 6-character accessions (mixed, but generally nucleotide)",
+    "1+5  A  embl_patent",
+    "1+5  B  gb_gss",
+    "1+5  C  ddbj_est",
+    "1+5  D  ddbj_dirsub",
+    "1+5  E  ddbj_patent",
+    "1+5  F  embl_est",
+    "1+5  G  gb_sts",
+    "1+5  H  gb_est",
+    "1+5  I  gb_patent",
+    "1+5  J  gsdb_dirsub",
+    "1+5  K  gsdb_dirsub",
+    "1+5  L  gsdb_dirsub",
+    "1+5  M  gsdb_dirsub",
+    "1+5  N  unreserved_nuc *",
+    "1+5  O  swissprot",
+    "1+5  P  swissprot",
+    "1+5  Q  swissprot",
+    "1+5  R  gb_est",
+    "1+5  S  gb_backbone",
+    "1+5  T  gb_est",
+    "1+5  U  gb_dirsub",
+    "1+5  V  embl_dirsub",
+    "1+5  W  gb_est",
+    "1+5  X  embl_dirsub",
+    "1+5  Y  embl_dirsub",
+    "1+5  Z  embl_dirsub",
+    "1+5  ?  unreserved_nuc",
+    "",
+    "# 8-character nucleotide accessions",
+    "2+6  AA  gb_est",
+    "2+6  AB  ddbj_dirsub",
+    "2+6  AC  gb_htgs",
+    "2+6  AD  gb_gsdb",
+    "2+6  AE  gb_genome",
+    "2+6  AF  gb_dirsub",
+    "2+6  AG  ddbj_genome",
+    "2+6  AH  gb_con",
+    "2+6  AI  gb_est",
+    "2+6  AJ  embl_dirsub",
+    "2+6  AK  ddbj_htgs",
+    "2+6  AL  embl_genome",
+    "2+6  AM  embl_dirsub",
+    "2+6  AN  embl_con",
+    "2+6  AO  unreserved_nuc",
+    "2+6  AP  ddbj_genome",
+    "2+6  AQ  gb_gss",
+    "2+6  AR  gb_patent",
+    "2+6  AS  gb_other_nuc",
+    "2+6  AT  ddbj_est",
+    "2+6  AU  ddbj_est",
+    "2+6  AV  ddbj_est",
+    "2+6  AW  gb_est",
+    "2+6  AX  embl_patent",
+    "2+6  AY  gb_dirsub",
+    "2+6  AZ  gb_gss",
+    "2+6  BA  ddbj_con",
+    "2+6  BB  ddbj_est",
+    "2+6  BC  gb_cdna",
+    "2+6  BD  ddbj_patent",
+    "2+6  BE  gb_est",
+    "2+6  BF  gb_est",
+    "2+6  BG  gb_est",
+    "2+6  BH  gb_gss",
+    "2+6  BI  gb_est",
+    "2+6  BJ  ddbj_est",
+    "2+6  BK  gb_tpa_nuc",
+    "2+6  BL  gb_tpa_nuc",
+    "2+6  BM  gb_est",
+    "2+6  BN  embl_tpa_nuc",
+    "2+6  BO  unreserved_nuc",
+    "2+6  BP  ddbj_est",
+    "2+6  BQ  gb_est",
+    "2+6  BR  ddbj_tpa_nuc",
+    "2+6  BS  ddbj_genome # chimp genomes, specifically",
+    "2+6  BT  gb_cdna",
+    "2+6  BU  gb_est",
+    "2+6  BV  gb_sts",
+    "2+6  BW  ddbj_est",
+    "2+6  BX  embl_genome",
+    "2+6  BY  ddbj_est",
+    "2+6  BZ  gb_gss",
+    "2+6  CA  gb_est",
+    "2+6  CB  gb_est",
+    "2+6  CC  gb_gss",
+    "2+6  CD  gb_est",
+    "2+6  CE  gb_gss",
+    "2+6  CF  gb_est",
+    "2+6  CG  gb_gss",
+    "2+6  CH  gb_con",
+    "2+6  CI  ddbj_est",
+    "2+6  CJ  ddbj_est",
+    "2+6  CK  gb_est",
+    "2+6  CL  gb_gss",
+    "2+6  CM  gb_con",
+    "2+6  CN  gb_est",
+    "2+6  CO  gb_est",
+    "2+6  CP  gb_genome",
+    "2+6  CQ  embl_patent",
+    "2+6  CR  embl_genome",
+    "2+6  CS  embl_patent",
+    "2+6  CT  embl_genome",
+    "2+6  CU  embl_genome",
+    "2+6  CV  gb_est",
+    "2+6  CW  gb_gss",
+    "2+6  CX  gb_est",
+    "2+6  CY  gb_genome",
+    "2+6  CZ  gb_gss",
+    "2+6  DA  ddbj_est",
+    "2+6  DB  ddbj_est",
+    "2+6  DC  ddbj_est",
+    "2+6  DD  ddbj_patent",
+    "2+6  DE  ddbj_gss",
+    "2+6  DF  ddbj_con",
+    "2+6  DG  ddbj_con",
+    "2+6  DH  ddbj_gss",
+    "2+6  DI  ddbj_other_nuc",
+    "2+6  DJ  ddbj_other_nuc",
+    "2+6  DK  ddbj_other_nuc",
+    "2+6  DL  ddbj_other_nuc",
+    "2+6  DM  ddbj_other_nuc",
+    "2+6  DN  gb_est",
+    "2+6  DO  unreserved_nuc",
+    "2+6  DP  gb_htgs",
+    "2+6  DQ  gb_dirsub",
+    "2+6  DR  gb_est",
+    "2+6  DS  gb_con",
+    "2+6  DT  gb_est",
+    "2+6  DU  gb_gss",
+    "2+6  DV  gb_est",
+    "2+6  DW  gb_est",
+    "2+6  DX  gb_gss",
+    "2+6  DY  gb_est",
+    "2+6  DZ  gb_patent",
+    "2+6  EA  gb_patent",
+    "2+6  EB  gb_est",
+    "2+6  EC  gb_est",
+    "2+6  ED  gb_gss",
+    "2+6  EE  gb_est",
+    "2+6  EF  gb_dirsub",
+    "2+6  EG  gb_est",
+    "2+6  EH  gb_est",
+    "2+6  EI  gb_gss",
+    "2+6  EJ  gb_gss",
+    "2+6  EK  gb_gss",
+    "2+6  ??  unreserved_nuc",
+    "",
+    "# SPECIAL CASES",
+    "",
+    "# Early N accessions were assigned haphazardly, and sometimes ambiguously.",
+    "# (These are all secondary accessions nowadays, though.)",
+    "special  N00001-N00002  gb_embl",
+    "special  N00003-N00004  gb_ddbj",
+    "special  N00005         gb_embl_ddbj",
+    "special  N00006-N00007  gb_ddbj",
+    "special  N00008         gb_other_nuc",
+    "special  N00009         gb_embl_ddbj",
+    "special  N00010         gb_ddbj",
+    "special  N00011         gb_embl",
+    "special  N00012         gb_embl_ddbj",
+    "special  N00013         gb_other_nuc",
+    "special  N00014-N00017  gb_ddbj",
+    "special  N00018-N00019  gb_other_nuc",
+    "special  N00020         gb_embl_ddbj",
+    "special  N00021         gb_ddbj",
+    "special  N00022         gb_embl_ddbj",
+    "special  N00023-N00024  gb_ddbj",
+    "special  N00025         gb_embl_ddbj",
+    "special  N00026         gb_ddbj",
+    "special  N00027         gb_other_nuc",
+    "special  N00028         ddbj_other_nuc",
+    "special  N00029-N00034  gb_ddbj",
+    "special  N00035         ddbj_other_nuc",
+    "special  N00036         gb_ddbj",
+    "special  N00037         ddbj_other_nuc",
+    "special  N00038-N00040  gb_ddbj",
+    "special  N00041         gb_other_nuc",
+    "special  N00042-N00045  gb_ddbj",
+    "special  N00046         gb_other_nuc",
+    "special  N00047         gb_ddbj",
+    "special  N00048         gb_other_nuc",
+    "special  N00049-N00051  gb_ddbj",
+    "special  N00052         gb_other_nuc",
+    "special  N00053         ddbj_other_nuc",
+    "special  N00054         gb_other_nuc",
+    "special  N00055-N00056  gb_ddbj",
+    "special  N00057         gb_embl",
+    "special  N00058         gb_embl_ddbj",
+    "special  N00059         gb_ddbj",
+    "special  N00060         embl_other_nuc",
+    "special  N00061-N00063  ddbj_other_nuc",
+    "special  N00064         embl_other_nuc",
+    "special  N00065-N00069  ddbj_other_nuc",
+    "special  N00070         embl_ddbj",
+    "special  N00078-N00079  ddbj_other_nuc",
+    "special  N00083         ddbj_other_nuc",
+    "special  N00088         ddbj_other_nuc",
+    "special  N00090-N00094  ddbj_other_nuc",
+    "special  N18624         gb_other_nuc",
+    "special  N20000-N99999  gb_est",
+    "",
+    "# Some \"EMBL\" 8-character protein accessions are really third party",
+    "# annotations.",
+    "special  CAD29848-CAD29879  embl_tpa_prot # or unassigned, in some cases",
+    "special  CAD43606           embl_tpa_prot",
+    "special  CAD44269           embl_tpa_prot",
+    "special  CAD55807           embl_tpa_prot",
+    "special  CAD56854           embl_tpa_prot",
+    "special  CAD59554           embl_tpa_prot",
+    "special  CAD59973-CAD59975  embl_tpa_prot",
+    "special  CAD62250           embl_tpa_prot",
+    "special  CAD62384-CAD62385  embl_tpa_prot",
+    "special  CAD65874-CAD65875  embl_tpa_prot",
+    "special  CAD66056-CAD66057  embl_tpa_prot",
+    "special  CAD66176           embl_tpa_prot",
+    "special  CAD66451-CAD66453  embl_tpa_prot",
+    "special  CAD66657           embl_tpa_prot",
+    "special  CAD67552-CAD67553  embl_tpa_prot",
+    "special  CAD67575-CAD67579  embl_tpa_prot",
+    "special  CAD67582           embl_tpa_prot",
+    "special  CAD67592-CAD67593  embl_tpa_prot",
+    "special  CAD67595           embl_tpa_prot",
+    "special  CAD67963-CAD67964  embl_tpa_prot",
+    "special  CAD67985           embl_tpa_prot",
+    "special  CAD68170-CAD68171  embl_tpa_prot",
+    "special  CAD71139           embl_tpa_prot",
+    "special  CAD80155-CAD80157  embl_tpa_prot",
+    "special  CAD80167-CAD80169  embl_tpa_prot # '68 unassigned",
+    "special  CAD80243           embl_tpa_prot",
+    "special  CAD88272-CAD88273  embl_tpa_prot",
+    "special  CAD89265-CAD89268  embl_tpa_prot",
+    "special  CAD89361           embl_tpa_prot",
+    "special  CAD89763           embl_tpa_prot",
+    "special  CAD89874-CAD89875  embl_tpa_prot",
+    "special  CAD91637           embl_tpa_prot",
+    "special  CAD91909-CAD91911  embl_tpa_prot",
+    "special  CAD92036           embl_tpa_prot",
+    "special  CAD98145           embl_tpa_prot",
+    "special  CAE00378-CAE00414  embl_tpa_prot",
+    "special  CAE00502           embl_tpa_prot",
+    "special  CAE12270-CAE12276  embl_tpa_prot",
+    "special  CAE18110           embl_tpa_prot",
+    "special  CAE30337           embl_tpa_prot",
+    "special  CAE30362           embl_tpa_prot",
+    "special  CAE30475-CAE30476  embl_tpa_prot",
+    "special  CAE30490-CAE30502  embl_tpa_prot",
+    "special  CAE45343           embl_tpa_prot",
+    "special  CAE47417           embl_tpa_prot",
+    "special  CAE48362-CAE48363  embl_tpa_prot",
+    "special  CAE48373-CAE48393  embl_tpa_prot",
+    "special  CAE48395-CAE48396  embl_tpa_prot",
+    "special  CAE51393-CAE51417  embl_tpa_prot",
+    "special  CAE51851           embl_tpa_prot",
+    "special  CAE51855-CAE51856  embl_tpa_prot",
+    "special  CAE51895-CAE51916  embl_tpa_prot",
+    "special  CAE52317-CAE52320  embl_tpa_prot",
+    "special  CAE54311-CAE54352  embl_tpa_prot",
+    "special  CAE54495           embl_tpa_prot",
+    "special  CAE75602-CAE75631  embl_tpa_prot",
+    "special  CAE75743           embl_tpa_prot",
+    "special  CAE82298-CAE82299  embl_tpa_prot",
+    "special  CAF06526-CAF06530  embl_tpa_prot",
+    "special  CAF18402           embl_tpa_prot",
+    "special  CAF21736-CAF21739  embl_tpa_prot",
+    "special  CAF32458           embl_tpa_prot",
+    "special  CAG23871           embl_tpa_prot",
+    "special  CAG26661-CAG26664  embl_tpa_prot",
+    "special  CAG26750           embl_tpa_prot",
+    "special  CAG29023-CAG29030  embl_tpa_prot",
+    "special  CAG29113           embl_tpa_prot",
+    "special  CAG30664           embl_tpa_prot",
+    "special  CAG33760           embl_tpa_prot",
+    "special  CAG34288-CAG34296  embl_tpa_prot",
+    "special  CAH03726-CAH03727  embl_tpa_prot",
+    "special  CAH17840-CAH17841  embl_tpa_prot",
+    "special  CAH18925-CAH18926  embl_tpa_prot",
+    "special  CAH56764           embl_tpa_prot",
+    "special  CAH59193-CAH59194  embl_tpa_prot",
+    "special  CAH69244-CAH69380  embl_tpa_prot",
+    "special  CAH74220           embl_tpa_prot",
+    "special  CAH74225           embl_tpa_prot",
+    "special  CAH89261-CAH89263  embl_tpa_prot",
+    "special  CAI56319-CAI56335  embl_tpa_prot",
+    "special  CAI61342-CAI61347  embl_tpa_prot",
+    "special  CAI77244-CAI77245  embl_tpa_prot",
+    "special  CAI77247           embl_tpa_prot",
+    "special  CAI84981-CAI85013  embl_tpa_prot",
+    "special  CAI99158-CAI99163  embl_tpa_prot",
+    "special  CAI99872           embl_tpa_prot",
+    "special  CAJ00225-CAJ00252  embl_tpa_prot",
+    "special  CAJ13823-CAJ13825  embl_tpa_prot",
+    "special  CAJ29301-CAJ29302  embl_tpa_prot",
+    "special  CAJ30479           embl_tpa_prot",
+    "special  CAJ30481-CAJ30484  embl_tpa_prot",
+    "special  CAJ31324           embl_tpa_prot",
+    "special  CAJ33891           embl_tpa_prot",
+    "special  CAJ55345           embl_tpa_prot",
+    "special  CAJ55730-CAJ55733  embl_tpa_prot",
+    "special  CAJ55745-CAJ55747  embl_tpa_prot",
+    "special  CAJ55783-CAJ55784  embl_tpa_prot",
+    "special  CAJ55824-CAJ55825  embl_tpa_prot",
+    "special  CAJ57445-CAJ57446  embl_tpa_prot",
+    "special  CAJ70647-CAJ70649  embl_tpa_prot",
+    "special  CAJ77880-CAJ77886  embl_tpa_prot",
+    "special  CAK26553           embl_tpa_prot",
+    "special  CAK26777-CAK26786  embl_tpa_prot",
+    "special  CAK32514           embl_tpa_prot",
+    "special  CAL10024           embl_tpa_prot",
+    "# Err on the side of caution on as yet unassigned IDs.",
+    "special CAL73974-CZZ99999  unreserved_prot"
+};
+
+static void s_LoadGuide(void)
+{
+    DEFINE_STATIC_FAST_MUTEX(mutex);
+    CFastMutexGuard guard(mutex);
+    if (s_Guide.count) {
+        return;
+    }
+    if (CNcbiApplication* app = CNcbiApplication::Instance()) {
+        string file = CDirEntry::MakePath(app->GetConfig().Get("NCBI", "Data"),
+                                          "accguide.txt");
+        if (CFile(file).Exists()) {
+            try {
+                CSeq_id::LoadAccessionGuide(file);
+            } STD_CATCH_ALL("CSeq_id::LoadAccessionGuide")
+        }
+    }
+    if ( !s_Guide.count ) {
+        ERR_POST(Info << "CSeq_id::IdentifyAccession: " // minor lie
+                 "falling back on built-in rules.");
+        SAccGuide guide;
+        static const unsigned int kNumBuiltInRules
+            = sizeof(kBuiltInGuide) / sizeof(*kBuiltInGuide);
+        for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
+            guide.AddRule(kBuiltInGuide[i]);
+        }
+        swap(guide, s_Guide);
+    }
+}
 
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 {
@@ -725,181 +1100,47 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             }
         }
     }
-    switch (digit_pos) {
-    case 0:
+
+    if ( !s_Guide.count ) {
+        s_LoadGuide();
+    }
+
+    if (digit_pos == 0) {
         if (acc.find_first_not_of(kDigits) == NPOS) { // just digits
             return eAcc_gi;
         } else {
             return eAcc_unknown; // PDB already handled
         }
-
-    case 1:
-        if (main_size != 1 + 5) {
-            return eAcc_unknown;
-        }
-        switch (pfx[0]) {
-        case 'A':                                return eAcc_embl_patent;
-        case 'B':                                return eAcc_gb_gss;
-        case 'C':                                return eAcc_ddbj_est;
-        case 'D':                                return eAcc_ddbj_dirsub;
-        case 'E':                                return eAcc_ddbj_patent;
-        case 'F':                                return eAcc_embl_est;
-        case 'G':                                return eAcc_gb_sts;
-        case 'H': case 'R': case 'T': case 'W':  return eAcc_gb_est;
-        case 'I':                                return eAcc_gb_patent;
-        case 'J': case 'K': case 'L': case 'M':  return eAcc_gsdb_dirsub;
-        case 'N':
-            return s_IdentifyNAcc(acc.substr(0, main_size));
-        case 'O': case 'P': case 'Q':            return eAcc_swissprot;
-        case 'S':                                return eAcc_gb_backbone;
-        case 'U':                                return eAcc_gb_dirsub;
-        case 'V': case 'X': case 'Y': case 'Z':  return eAcc_embl_dirsub;
-        default:                                 return eAcc_unreserved_nuc;
-        }
-
-    case 2:
-        if (main_size != 2 + 6) {
-            return eAcc_unknown;
-        }
-        switch (pfx[0]) {
-        case 'A':
-            switch (pfx[1]) {
-            case 'A': case 'I': case 'W': return eAcc_gb_est;
-            case 'B':                     return eAcc_ddbj_dirsub;
-            case 'C':                     return eAcc_gb_htgs;
-            case 'D':                     return eAcc_gb_gsdb;
-            case 'E':                     return eAcc_gb_genome;
-            case 'F': case 'Y':           return eAcc_gb_dirsub;
-            case 'G': case 'P':           return eAcc_ddbj_genome;
-            case 'H':                     return eAcc_gb_con;
-            case 'J': case 'M':           return eAcc_embl_dirsub;
-            case 'K':                     return eAcc_ddbj_htgs;
-            case 'L':                     return eAcc_embl_genome;
-            case 'N':                     return eAcc_embl_con;
-            case 'Q': case 'Z':           return eAcc_gb_gss;
-            case 'R':                     return eAcc_gb_patent;
-            case 'S':                     return eAcc_gb_other_nuc;
-            case 'T': case 'U': case 'V': return eAcc_ddbj_est;
-            case 'X':                     return eAcc_embl_patent;
-            default:                      return eAcc_unreserved_nuc;
-            }
-
-        case 'B':
-            switch (pfx[1]) {
-            case 'A':                               return eAcc_ddbj_con;
-            case 'B': case 'J': case 'P': case 'W':
-            case 'Y':                               return eAcc_ddbj_est;
-            case 'C': case 'T':                     return eAcc_gb_cdna;
-            case 'D':                               return eAcc_ddbj_patent;
-            case 'E': case 'F': case 'G': case 'I':
-            case 'M': case 'Q': case 'U':           return eAcc_gb_est;
-            case 'H': case 'Z':                     return eAcc_gb_gss;
-            case 'K': case 'L':                     return eAcc_gb_tpa_nuc;
-            case 'N':                               return eAcc_embl_tpa_nuc;
-            case 'R':                               return eAcc_ddbj_tpa_nuc;
-            case 'S':                               return eAcc_ddbj_genome;
-                // BS is actually chimp genomes.
-            case 'V':                               return eAcc_gb_sts;
-            case 'X':                               return eAcc_embl_genome;
-            default:                                return eAcc_unreserved_nuc;
-            }
-
-        case 'C':
-            switch (pfx[1]) {
-            case 'A': case 'B': case 'D': case 'F':
-            case 'K': case 'N': case 'O': case 'V':
-            case 'X':                               return eAcc_gb_est;
-            case 'C': case 'E': case 'G': case 'L':
-            case 'W': case 'Z':                     return eAcc_gb_gss;
-            case 'H': case 'M':                     return eAcc_gb_con;
-            case 'I': case 'J':                     return eAcc_ddbj_est;
-            case 'P': case 'Y':                     return eAcc_gb_genome;
-            case 'Q': case 'S':                     return eAcc_embl_patent;
-            case 'R': case 'T': case 'U':           return eAcc_embl_genome;
-            default:                                return eAcc_unreserved_nuc;
-            }
-
-        case 'D':
-            switch (pfx[1]) {
-            case 'A': case 'B': case 'C':           return eAcc_ddbj_est;
-            case 'D':                               return eAcc_ddbj_patent;
-            case 'E': case 'H':                     return eAcc_ddbj_gss;
-            case 'F': case 'G':                     return eAcc_ddbj_con;
-                // no specific assignments for DI-DM yet
-            case 'I': case 'J': case 'K': case 'L':
-            case 'M':                               return eAcc_ddbj_other_nuc;
-            case 'N': case 'R': case 'T': case 'V':
-            case 'W': case 'Y':                     return eAcc_gb_est;
-            case 'P':                               return eAcc_gb_htgs;
-            case 'Q':                               return eAcc_gb_dirsub;
-            case 'S':                               return eAcc_gb_con;
-            case 'U': case 'X':                     return eAcc_gb_gss;
-            case 'Z':                               return eAcc_gb_patent;
-            default:                                return eAcc_unreserved_nuc;
-            }
-
-        case 'E':
-            switch (pfx[1]) {
-            case 'A':                               return eAcc_gb_patent;
-            case 'B': case 'C': case 'E': case 'G':
-            case 'H':                               return eAcc_gb_est;
-            case 'D': case 'I': case 'J': case 'K': return eAcc_gb_gss;
-            case 'F':                               return eAcc_gb_dirsub;
-            default:                                return eAcc_unreserved_nuc;
-            }
-
-        default: return eAcc_unreserved_nuc;
-        }
-
-    case 3:
-        if (pfx[2] == '_') { // refseq
-            if (main_size < 3 + 6  ||  main_size > 3 + 9) {
-                return eAcc_unknown;
-            }
-            TRefSeqMap::const_iterator it = sc_RefSeqMap.find(pfx.c_str());
-            if (it == sc_RefSeqMap.end()) {
-                return eAcc_refseq_unreserved;
-            } else {
-                return it->second;
-            }
-        } else { // protein
-            if (main_size != 3 + 5) {
-                return eAcc_unknown;
-            }
-            switch (pfx[0]) {
-            case 'A': return (pfx == "AAE") ? eAcc_gb_patent_prot
-                          : eAcc_gb_prot;
-            case 'B': return eAcc_ddbj_prot;
-                // not necessarily "true" EMBL (may be TPE) :-/
-            case 'C': return s_IdentifyCxxAcc(acc.substr(0, main_size));
-            case 'D': return eAcc_gb_tpa_prot;
-            case 'E': return eAcc_gb_wgs_prot;
-            case 'F': return eAcc_ddbj_tpa_prot;
-            case 'G': return eAcc_ddbj_wgs_prot;
-            default:  return eAcc_unreserved_prot;
-            }
-        }
-
-    case 4:
-        if (main_size < 4 + 8  ||  main_size > 4 + 10) {
-            return eAcc_unknown;
-        }
-        switch (pfx[0]) {
-        case 'A': return eAcc_gb_wgs_nuc;
-        case 'B': return eAcc_ddbj_wgs_nuc;
-        case 'C': return eAcc_embl_wgs_nuc;
-        default:  return eAcc_unknown;
-        }
-
-    case 7:
-        if (NStr::StartsWith(acc, "NZ_")  &&  main_size == 7 + 8) {
-            return eAcc_refseq_wgs_nuc;
-        } else {
-            return eAcc_unknown;
-        }
-
-    default:
+    }
+    SAccGuide::TMainMap::const_iterator it
+        = s_Guide.rules.find(SAccGuide::s_Key(digit_pos,
+                                              main_size - digit_pos));
+    if (it == s_Guide.rules.end()) {
         return eAcc_unknown;
+    }
+    const SAccGuide::SSubMap&            rules  = it->second;
+    EAccessionInfo                       result = eAcc_unknown;
+    SAccGuide::TPrefixes::const_iterator pit    = rules.prefixes.find(pfx);
+    if (pit != rules.prefixes.end()) {
+        result = pit->second;
+    } else {
+        ITERATE (SAccGuide::TPairs, wit, rules.wildcards) {
+            if (NStr::MatchesMask(pfx, wit->first)) {
+                result = wit->second;
+                break;
+            }
+        }
+    }
+    if (result & fAcc_specials) {
+        SAccGuide::TSpecialMap::const_iterator sit
+            = rules.specials.lower_bound(acc.substr(0, main_size));
+        if (sit != rules.specials.end()  &&  sit->second.first <= acc) {
+            return sit->second.second;
+        } else {
+            return EAccessionInfo(result & ~fAcc_specials);
+        }
+    } else /* if (result != eAcc_unknown) */ {
+        return result;
     }
 }
 
@@ -913,7 +1154,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
         
     case e_Genbank: case e_Embl: case e_Ddbj:
     case e_Tpg:     case e_Tpe:  case e_Tpd:
-    case e_Other:
+    case e_Other:   case e_Gpipe:
     {
         const CTextseq_id* tsid = GetTextseq_Id();
         if (tsid->IsSetAccession()) {
@@ -934,6 +1175,22 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
     default:
         return type;
     }
+}
+
+
+void CSeq_id::LoadAccessionGuide(const string& filename)
+{
+    auto_ptr<ILineReader> lr(ILineReader::New(filename));
+    LoadAccessionGuide(*lr);
+}
+
+void CSeq_id::LoadAccessionGuide(ILineReader& in)
+{
+    SAccGuide guide;
+    while ( !in.AtEOF() ) {
+        guide.AddRule(*++in);
+    }
+    swap(s_Guide, guide);
 }
 
 
@@ -1733,6 +1990,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.144  2007/01/08 16:06:58  ucko
+ * Rework IdentifyAccession to use a separate accession guide, which can
+ * be either explicitly supplied (via LoadAccessionGuide), autoloaded from
+ * a common data directory, or initialized from an embedded fallback copy.
+ *
  * Revision 6.143  2007/01/04 20:08:03  ucko
  * IdentifyAccession: allow for nucleotide(!) PDB accessions.
  *
