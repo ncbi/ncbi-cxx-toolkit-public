@@ -111,7 +111,7 @@ public:
                 size_t i = 0;
                 ITERATE(CDense_diag::TIds, id_it, ids) {
                     if (first) {
-                        id_vec[i].Reset(new TAlnSeqId(**id_it));
+                        id_vec[i++].Reset(new TAlnSeqId(**id_it));
                     } else if (*id_vec[i] != TAlnSeqId(**id_it)) {
                         NCBI_THROW(CSeqalignException, eInvalidSeqId,
                                    "Inconsistent Seq-ids.");
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2007/01/08 16:38:46  todorov
+* Fixed a small bug.
+*
 * Revision 1.4  2006/12/13 14:38:35  todorov
 * Adjusted min_len / max_len assertion.
 *
