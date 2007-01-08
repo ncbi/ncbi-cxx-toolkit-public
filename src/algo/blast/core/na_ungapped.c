@@ -1022,6 +1022,10 @@ s_BlastNaExtendAligned(const BlastOffsetPair * offset_pairs, Int4 num_hits,
     return hits_extended;
 }
 
+/** Entry i of this list gives the number of pairs of
+ * bits that are zero in the bit pattern of i, looking 
+ * from right to left
+ */
 static const Uint1 s_ExactMatchExtendLeft[256] = {
 4, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 
 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 
@@ -1041,6 +1045,10 @@ static const Uint1 s_ExactMatchExtendLeft[256] = {
 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 
 };
 
+/** Entry i of this list gives the number of pairs of
+ * bits that are zero in the bit pattern of i, looking 
+ * from left to right
+ */
 static const Uint1 s_ExactMatchExtendRight[256] = {
 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 
 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
