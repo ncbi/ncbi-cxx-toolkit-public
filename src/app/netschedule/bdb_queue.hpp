@@ -234,7 +234,7 @@ public:
     CNetScheduleMonitor* GetMonitor(void);
 
     /// UDP notification to all listeners
-    void NotifyListeners(void);
+    void NotifyListeners(bool unconditional=false);
 
     /// Check execution timeout.
     /// All jobs failed to execute, go back to pending
@@ -665,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2007/01/08 21:04:09  joukovv
+ * Fast notification of idle node cluster implemented.
+ *
  * Revision 1.65  2007/01/02 18:50:54  joukovv
  * Queue deletion implemented (does not delete actual database files - need a
  * method of enumerating them). Draft implementation of weak reference. Minor

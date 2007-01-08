@@ -1546,7 +1546,7 @@ CQueue::Submit(const char*   input,
     trans.Commit();
     js_guard.Commit();
 
-    if (was_empty) NotifyListeners();
+    if (was_empty) NotifyListeners(true);
 
     return job_id;
 }
@@ -1635,7 +1635,7 @@ CQueue::SubmitBatch(vector<SNS_BatchSubmitRec>& batch,
 
     q->status_tracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
 
-    if (was_empty) NotifyListeners();
+    if (was_empty) NotifyListeners(true);
 
     return job_id;
 }
@@ -3794,7 +3794,7 @@ CNetScheduleMonitor* CQueue::GetMonitor(void)
 }
 
 
-void CQueue::NotifyListeners()
+void CQueue::NotifyListeners(bool unconditional)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned short udp_port = m_Db.GetUdpPort();
@@ -3806,8 +3806,9 @@ void CQueue::NotifyListeners()
 
     time_t curr = time(0);
 
-    if (q->notif_timeout == 0 ||
-        !q->status_tracker.AnyPending()) {
+    if (!unconditional &&
+        (q->notif_timeout == 0 ||
+         !q->status_tracker.AnyPending())) {
         return;
     }
 
@@ -3816,7 +3817,7 @@ void CQueue::NotifyListeners()
         CWriteLockGuard guard(q->wn_lock);
         lst_size = wnodes.size();
         if ((lst_size == 0) ||
-            (q->last_notif + q->notif_timeout > curr)) {
+            (!unconditional && q->last_notif + q->notif_timeout > curr)) {
             return;
         } 
         q->last_notif = curr;
@@ -4146,6 +4147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2007/01/08 21:04:09  joukovv
+ * Fast notification of idle node cluster implemented.
+ *
  * Revision 1.104  2007/01/05 23:02:45  joukovv
  * Circular deletion with engaged lock in weak ref code fixed. Attempt to
  * enchance server reaction for new tasks.
