@@ -118,19 +118,6 @@ public:
     /// Reinitialize this object.
     void Reset();
 
-// Attributes
-public:
-    /// Set offset of the current character in the input stream to the
-    /// specified value.
-    /// @param offset
-    ///   The new value for the current character offset.
-    void SetOffset(off_t offset);
-
-    /// Return the offset of the current character in the input stream.
-    /// @return
-    ///   The current character offset.
-    off_t GetOffset() const;
-
 // Operations
 public:
     /// Start processing of the next chunk of data.
@@ -180,31 +167,18 @@ private:
 
     const char* m_Buffer, *m_ChunkPart;
     size_t m_BufferSize, m_ChunkPartSize;
-    off_t m_Offset;
     // Register for keeping intermediate values of chunk lengths.
     size_t m_LengthAcc;
     EStreamParsingState m_State;
 };
 
-inline CChunkStreamReader::CChunkStreamReader() :
-    m_Offset(0), m_State(eReadControlChars)
+inline CChunkStreamReader::CChunkStreamReader() : m_State(eReadControlChars)
 {
 }
 
 inline void CChunkStreamReader::Reset()
 {
-    m_Offset = 0;
     m_State = eReadControlChars;
-}
-
-inline void CChunkStreamReader::SetOffset(off_t offset)
-{
-    m_Offset = offset;
-}
-
-inline off_t CChunkStreamReader::GetOffset() const
-{
-    return m_Offset;
 }
 
 inline void CChunkStreamReader::SetNewBuffer(const char* buffer,

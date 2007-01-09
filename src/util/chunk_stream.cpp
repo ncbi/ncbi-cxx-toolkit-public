@@ -54,8 +54,6 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
 
     switch (m_State) {
     case eReadEscapedControlChar:
-        // This block will consume one character either way.
-        ++m_Offset;
         m_ChunkPart = m_Buffer;
         ++m_Buffer;
         --m_BufferSize;
@@ -63,9 +61,6 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
         return eControlSymbol;
 
     case eReadControlChars:
-        // This block will consume one character either way.
-        ++m_Offset;
-
         // Check if the current character is a digit - all non-digit characters
         // are considered control symbols.
         if ((digit = (unsigned) *m_Buffer - '0') > 9) {
@@ -75,7 +70,6 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
                     return eEndOfBuffer;
                 }
                 ++m_Buffer;
-                ++m_Offset;
             }
             m_ChunkPart = m_Buffer;
             ++m_Buffer;
@@ -95,7 +89,6 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
         while ((digit = (unsigned) *m_Buffer - '0') <= 9) {
             m_LengthAcc = m_LengthAcc * 10 + digit;
 
-            ++m_Offset;
             if (--m_BufferSize == 0)
                 return eEndOfBuffer;
             ++m_Buffer;
@@ -104,7 +97,6 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
         m_State = eReadChunk;
 
         if (*m_Buffer == CHUNK_LENGTH_DELIM) {
-            ++m_Offset;
             if (--m_BufferSize == 0)
                 return eEndOfBuffer;
             ++m_Buffer;
@@ -117,14 +109,12 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
             m_BufferSize -= m_LengthAcc;
             m_ChunkPartSize = m_LengthAcc;
             m_Buffer += m_LengthAcc;
-            m_Offset += m_LengthAcc;
             // The last part of the chunk has been read - get back to
             // reading control symbols.
             m_State = eReadControlChars;
             return eChunk;
         } else {
             m_ChunkPartSize = m_BufferSize;
-            m_Offset += m_BufferSize;
             m_LengthAcc -= m_BufferSize;
             m_BufferSize = 0;
             return eChunkPart;
