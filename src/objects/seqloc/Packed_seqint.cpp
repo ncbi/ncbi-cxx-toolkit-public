@@ -270,6 +270,15 @@ void CPacked_seqint::SetStrand(TStrand strand)
     }
 }
 
+
+void CPacked_seqint::ResetStrand()
+{
+    NON_CONST_ITERATE (Tdata, it, Set()) {
+        (*it)->ResetStrand();
+    }
+}
+
+
 void CPacked_seqint::FlipStrand(void)
 {
     NON_CONST_ITERATE (Tdata, it, Set()) {
@@ -286,6 +295,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.15  2007/01/09 12:40:18  dicuccio
+ * Added ResetStrand() to all relevant top-level Seq-loc objects
+ *
  * Revision 6.14  2006/03/16 18:58:30  grichenk
  * Indicate intervals truncated while mapping by fuzz lim tl/tr.
  *

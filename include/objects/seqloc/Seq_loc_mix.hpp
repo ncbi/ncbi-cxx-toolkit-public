@@ -101,6 +101,9 @@ public:
     /// Set the strand for all of the location's ranges.
     void SetStrand(ENa_strand strand);
 
+    /// Reset the strand to 'not set'
+    void ResetStrand(void);
+
     /// Flip the strand (e.g. plus to minus)
     void FlipStrand(void);
 
@@ -132,6 +135,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2007/01/09 12:40:18  dicuccio
+ * Added ResetStrand() to all relevant top-level Seq-loc objects
+ *
  * Revision 1.21  2006/03/16 18:58:30  grichenk
  * Indicate intervals truncated while mapping by fuzz lim tl/tr.
  *

@@ -264,6 +264,15 @@ void CSeq_loc_mix::SetStrand(ENa_strand strand)
     }
 }
 
+
+void CSeq_loc_mix::ResetStrand()
+{
+    NON_CONST_ITERATE (Tdata, it, Set()) {
+        (*it)->ResetStrand();
+    }
+}
+
+
 void CSeq_loc_mix::FlipStrand(void)
 {
     NON_CONST_ITERATE (Tdata, it, Set()) {
@@ -278,6 +287,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.22  2007/01/09 12:40:18  dicuccio
+ * Added ResetStrand() to all relevant top-level Seq-loc objects
+ *
  * Revision 6.21  2006/03/16 18:58:30  grichenk
  * Indicate intervals truncated while mapping by fuzz lim tl/tr.
  *

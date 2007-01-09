@@ -2600,6 +2600,31 @@ void CSeq_loc::SetStrand(ENa_strand strand)
 }
 
 
+void CSeq_loc::ResetStrand(void)
+{
+    switch ( Which() ) {
+    case e_Int:
+        SetInt().ResetStrand();
+        break;
+    case e_Pnt:
+        SetPnt().ResetStrand();
+        break;
+    case e_Packed_int:
+        SetPacked_int().ResetStrand();
+        break;
+    case e_Packed_pnt:
+        SetPacked_pnt().ResetStrand();
+        break;
+    case e_Mix:
+        SetMix().ResetStrand();
+        break;
+
+    default:
+        break;
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -2607,6 +2632,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.61  2007/01/09 12:40:18  dicuccio
+ * Added ResetStrand() to all relevant top-level Seq-loc objects
+ *
  * Revision 6.60  2006/06/12 20:04:21  grichenk
  * Preserve Seq-points in Merge().
  *
