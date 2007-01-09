@@ -50,26 +50,28 @@ BEGIN_NCBI_SCOPE
 /// notify the caller of parsing events.
 /// @sa CChunkStreamWriter
 /// @par Example:
+/// Function names starting with ToDo:: are to be implemented by the client
+/// class.
 /// @code
 /// void ProcessParsingEvents(CChunkStreamReader& reader)
 /// {
 ///     for (;;)
 ///         switch (reader.NextParsingEvent()) {
 ///         case CChunkStreamReader::eChunkPart:
-///             ProcessChunkPart(reader.GetChunkPart(),
+///             ToDo::ProcessChunkPart(reader.GetChunkPart(),
 ///                 reader.GetChunkPartSize());
 ///             break;
 ///
 ///         case CChunkStreamReader::eChunk:
-///             ProcessChunk(reader.GetChunkPart(),
+///             ToDo::ProcessChunk(reader.GetChunkPart(),
 ///                 reader.GetChunkPartSize());
 ///             break;
 ///
 ///         case CChunkStreamReader::eControlSymbol:
-///             ProcessControlSymbol(reader.GetControlSymbol());
+///             ToDo::ProcessControlSymbol(reader.GetControlSymbol());
 ///             break;
 ///
-///         default: /* case CChunkStreamReader::eEndOfBuffer: */
+///         default: // case CChunkStreamReader::eEndOfBuffer:
 ///             return;
 ///         }
 /// }
@@ -78,7 +80,7 @@ BEGIN_NCBI_SCOPE
 /// {
 ///     CChunkStreamReader reader;
 ///
-///     while (ReadBuffer(buffer, &buffer_size)) {
+///     while (ToDo::ReadBuffer(buffer, &buffer_size)) {
 ///         reader.SetNewBuffer(buffer, buffer_size);
 ///         ProcessParsingEvents(reader);
 ///     }
@@ -208,25 +210,28 @@ inline size_t CChunkStreamReader::GetChunkPartSize() const
 /// @note This class does not have a constructor. Instead, methods
 /// Reset(char*, size_t) and Reset(char*, size_t, size_t) are provided for
 /// initialization at any convenient time.
+/// @sa CChunkStreamReader
 /// @par Example:
+/// Function names starting with ToDo:: are to be implemented by the client
+/// class.
 /// @code
 /// CChunkStreamWriter writer;
 ///
 /// writer.Reset(buffer, sizeof(buffer));
 ///
-/// for (item = GetFirstItem(); item != NULL; item = GetNextItem(item))
+/// for (item = ToDo::GetFirstItem(); item != NULL;
+///     item = ToDo::GetNextItem(item))
 ///     if (!(item->IsControlSymbol() ?
 ///         writer.SendControlSymbol(item->GetControlSymbol()) :
 ///         writer.SendChunk(item->GetChunk(), item->GetChunkSize())))
 ///         do {
 ///             writer.GetOutputBuffer(&buffer_ptr, &buffer_size);
-///             SendBuffer(buffer_ptr, buffer_size);
+///             ToDo::SendBuffer(buffer_ptr, buffer_size);
 ///         } while (writer.NextOutputBuffer());
 ///
 /// writer.GetOutputBuffer(&buffer_ptr, &buffer_size);
-/// SendBuffer(buffer_ptr, buffer_size);
+/// ToDo::SendBuffer(buffer_ptr, buffer_size);
 /// @endcode
-/// @sa CChunkStreamReader
 class NCBI_XUTIL_EXPORT CChunkStreamWriter
 {
 // Construction
@@ -257,7 +262,7 @@ public:
     /// @param symbol
     ///   The byte to be sent.
     /// @return
-    ///   True if pushing "symbol" to the output buffer did not result in the
+    ///   True if adding "symbol" to the output buffer did not result in the
     ///   buffer overflow condition; false - when the output buffer is full and
     ///   must be flushed with a call to GetOutputBuffer() before
     ///   SendControlSymbol() or SendChunk() can be called again.
@@ -288,6 +293,7 @@ public:
     ///   the above buffer.
     void GetOutputBuffer(const char** output_buffer, size_t* output_buffer_size);
 
+    /// Proceed to the next output buffer.
     /// @return
     ///   True if more data must be flushed before a call to SendChunk() or
     ///   SendControlSymbol() can be made.
