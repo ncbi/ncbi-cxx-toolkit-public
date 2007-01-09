@@ -44,10 +44,6 @@ USING_NCBI_SCOPE;
 
 class CChunkStreamTestApp : public CNcbiApplication
 {
-// Construction
-public:
-    CChunkStreamTestApp();
-
 // Overridden
 public:
     virtual int Run();
@@ -80,6 +76,11 @@ private:
 const CChunkStreamTestApp::SChunkData
     CChunkStreamTestApp::sm_TestChunkSequence[] =
 {
+    {NULL, '0'},
+    {"", 0},
+    {"echo", 0},
+    {"123", 0},
+    {NULL, ';'},
     {"cd", 0},
     {NULL, ';'},
     {"ls", 0},
@@ -112,10 +113,14 @@ const CChunkStreamTestApp::SChunkData
     {"update", 0},
     {NULL, '\\'},
     {"db", 0},
-    {NULL, ';'}
+    {NULL, ';'},
+    {NULL, '1'},
+    {"1", 0}
 };
 
 const char CChunkStreamTestApp::sm_TestStream[] =
+    "\\00:"
+    "4echo3:123;"
     "2cd;"
     "2ls;"
     "5mkdir4test;"
@@ -126,11 +131,8 @@ const char CChunkStreamTestApp::sm_TestStream[] =
     "2cd2..;"
     "2rm3-fr4test;"
     "6update\\\\"
-    "2db;";
-
-inline CChunkStreamTestApp::CChunkStreamTestApp()
-{
-}
+    "2db;"
+    "\\11:1";
 
 #define IN_READER_TEST "CChunkStreamReader test: "
 
