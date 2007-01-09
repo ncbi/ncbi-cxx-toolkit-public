@@ -341,6 +341,10 @@ public:
 
     };
 
+    typedef pair<string, unsigned short> TService;
+    typedef map<TService, CNetSrvConnector*> TCont;
+    typedef vector<TService> TServices;
+
     CNetSrvConnectorPoll(const string& service, 
                          CNetSrvConnector::IEventListener* event_listener,
                          IRebalanceStrategy* rebalance_strategy);
@@ -393,9 +397,6 @@ private:
     CNetSrvConnectorPoll(const CNetSrvConnectorPoll&);
     CNetSrvConnectorPoll& operator=(const CNetSrvConnectorPoll&);
 
-    typedef pair<string, unsigned short> TService;
-    typedef map<TService, CNetSrvConnector*> TCont;
-    typedef vector<TService> TServices;
 
 
     CNetSrvConnector* x_FindOrCreateConnector(const TService& srv) const;
@@ -444,6 +445,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2007/01/09 18:58:16  ucko
+ * Make CNetSrvConnectorPoll's internal typedefs public.
+ *
  * Revision 1.2  2007/01/09 15:29:55  didenko
  * Added new API for NetSchedule service
  *
