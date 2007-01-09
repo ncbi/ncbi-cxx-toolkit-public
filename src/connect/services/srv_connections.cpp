@@ -61,7 +61,8 @@ void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name,
             // if (pos != string::npos) {
             //    host.erase(pos, host.size());
             // }
-            services.push_back(make_pair(host, (unsigned int)sinfo->port));
+            services.push_back
+                (CNetSrvConnectorPoll::TService(host, sinfo->port));
         } // while
         SERV_Close(srv_it);
     }
@@ -248,7 +249,7 @@ CNetSrvConnectorPoll::CNetSrvConnectorPoll(const string& service,
     string sport, host;
     if ( NStr::SplitInTwo(service, ":", host, sport) ) {
         unsigned int port = NStr::StringToInt(sport);
-        m_Services.push_back(make_pair(host, (unsigned short)port));
+        m_Services.push_back(TService(host, port));
         m_IsLoadBalanced = false;
     } else {
         DiscoverLBServices(service, m_Services, m_DiscoverLowPriorityServers);
@@ -306,6 +307,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2007/01/09 17:02:42  ucko
+ * Re-fix WorkShop compilation (taking care to use precisely correct pair<> types)
+ *
  * Revision 6.3  2007/01/09 15:29:55  didenko
  * Added new API for NetSchedule service
  *
