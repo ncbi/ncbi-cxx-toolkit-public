@@ -61,8 +61,7 @@ void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name,
             // if (pos != string::npos) {
             //    host.erase(pos, host.size());
             // }
-            services.push_back
-                (CNetSrvConnectorPoll::TService(host, sinfo->port));
+            services.push_back(pair<string,unsigned short>(host, sinfo->port));
         } // while
         SERV_Close(srv_it);
     }
@@ -307,6 +306,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2007/01/09 19:02:18  vasilche
+ * Use explicit pair<> type instead of private typedef.
+ *
  * Revision 6.4  2007/01/09 17:02:42  ucko
  * Re-fix WorkShop compilation (taking care to use precisely correct pair<> types)
  *
