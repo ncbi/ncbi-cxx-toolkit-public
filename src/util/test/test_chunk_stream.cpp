@@ -139,8 +139,8 @@ const char CChunkStreamTestApp::sm_TestStream[] =
 bool CChunkStreamTestApp::TestReaderChunkPart()
 {
     if (m_ReaderTestChunk->control_symbol) {
-        fprintf(stderr, IN_READER_TEST
-            "got a chunk part while expected a control symbol\n");
+        ERR_POST(IN_READER_TEST
+            "got a chunk part while expected a control symbol");
         return false;
     }
 
@@ -151,9 +151,9 @@ bool CChunkStreamTestApp::TestReaderChunkPart()
     size_t chunk_part_size = m_Reader.GetChunkPartSize();
 
     if (memcmp(m_ReaderTestChunkPart, chunk_part, chunk_part_size) != 0) {
-        fprintf(stderr, IN_READER_TEST
-            "chunk part mismatch: [%.*s] vs [%.*s]\n", chunk_part_size,
-            m_ReaderTestChunkPart, chunk_part_size, chunk_part);
+        ERR_POST(IN_READER_TEST "chunk part mismatch: [" <<
+            std::string(m_ReaderTestChunkPart, chunk_part_size) << "] vs [" <<
+            std::string(chunk_part, chunk_part_size) << "]");
         return false;
     }
 
@@ -179,10 +179,9 @@ bool CChunkStreamTestApp::TestReaderInput(
                 return false;
 
             if (*m_ReaderTestChunkPart != 0) {
-                fprintf(stderr, IN_READER_TEST
-                    "unexpected end of chunk ...%.*s\n",
-                    m_Reader.GetChunkPartSize(),
-                    m_Reader.GetChunkPart());
+                ERR_POST(IN_READER_TEST "unexpected end of chunk ..." <<
+                    std::string(m_Reader.GetChunkPart(),
+                        m_Reader.GetChunkPartSize()));
                 return false;
             }
 
@@ -192,17 +191,15 @@ bool CChunkStreamTestApp::TestReaderInput(
 
         case CChunkStreamReader::eControlSymbol:
             if (!m_ReaderTestChunk->control_symbol) {
-                fprintf(stderr, IN_READER_TEST
-                    "unexpected control symbol '%c'\n",
-                    m_Reader.GetControlSymbol());
+                ERR_POST(IN_READER_TEST "unexpected control symbol '" <<
+                    m_Reader.GetControlSymbol() << '\'');
                 return false;
             }
 
             if (m_ReaderTestChunk->control_symbol != *m_Reader.GetChunkPart()) {
-                fprintf(stderr, IN_READER_TEST
-                    "control symbol mismatch: '%c' vs '%c'\n",
-                    m_ReaderTestChunk->control_symbol,
-                    *m_Reader.GetChunkPart());
+                ERR_POST(IN_READER_TEST "control symbol mismatch: '" <<
+                    m_ReaderTestChunk->control_symbol << "' vs '" <<
+                    *m_Reader.GetChunkPart() << '\'');
                 return false;
             }
             ++m_ReaderTestChunk;
@@ -243,14 +240,15 @@ bool CChunkStreamTestApp::TestWriterOutput()
     size_t pos = m_WriterTestStream - sm_TestStream;
 
     if (pos + buffer_size > sizeof(sm_TestStream) - 1) {
-        fprintf(stderr, IN_WRITER_TEST "output buffer overflow: %u > %u.\n",
-            pos + buffer_size, sizeof(sm_TestStream) - 1);
+        ERR_POST(IN_WRITER_TEST "output buffer overflow: " <<
+            pos + buffer_size << " > " << sizeof(sm_TestStream) - 1);
         return false;
     }
 
     if (memcmp(buffer, m_WriterTestStream, buffer_size) != 0) {
-        fprintf(stderr, IN_WRITER_TEST "mismatch at pos %u: [%.*s] vs [%.*s]\n",
-            pos, buffer_size, m_WriterTestStream, buffer_size, buffer);
+        ERR_POST(IN_WRITER_TEST "mismatch at pos " << pos << ": [" <<
+            std::string(m_WriterTestStream, buffer_size) << "] vs [" <<
+            std::string(buffer, buffer_size) << "]");
         return false;
     }
 
