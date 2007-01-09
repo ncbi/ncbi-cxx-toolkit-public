@@ -36,7 +36,7 @@
  *
  */
 
-/// @file simple_cmd_serializer.hpp
+/// @file chunk_stream.hpp
 /// This file contains declarations of classes CChunkStreamReader and
 /// CChunkStreamWriter. The former serializes chunks of binary data to a byte
 /// stream and the latter deserializes these chunks back from the stream.
@@ -45,49 +45,45 @@
 
 BEGIN_NCBI_SCOPE
 
-/// Input stream format error exception for the CChunkStreamReader class.
-/// @sa CChunkStreamReader
-class NCBI_XUTIL_EXPORT CChunkStreamFormatException
-{
-// Construction
-public:
-    /// Initialize this exception object.
-    /// @param offset
-    ///   The offset at which a format error has occured.
-    CChunkStreamFormatException(off_t offset);
-
-// Attributes
-public:
-    /// Return error message associated with the exception.
-    /// @return
-    ///   A pointer to the buffer containing the error message.
-    virtual const char* what() const;
-
-    /// Return the offset in the input stream at which this error has
-    /// occured.
-    /// @return
-    ///   Offset of the character that caused this error.
-    off_t GetOffset() const;
-
-// Implementation
-private:
-    off_t m_Offset;
-};
-
-inline CChunkStreamFormatException::CChunkStreamFormatException(off_t offset) :
-    m_Offset(offset)
-{
-}
-
-inline off_t CChunkStreamFormatException::GetOffset() const
-{
-    return m_Offset;
-}
-
 /// Class for reading series of chunks sent by a CChunkStreamWriter instance as
 /// a stream of bytes.  Objects of this class parse the input byte stream and
 /// notify the caller of parsing events.
 /// @sa CChunkStreamWriter
+/// @par Example:
+/// @code
+/// void ProcessParsingEvents(CChunkStreamReader& reader)
+/// {
+///     for (;;)
+///         switch (reader.NextParsingEvent()) {
+///         case CChunkStreamReader::eChunkPart:
+///             ProcessChunkPart(reader.GetChunkPart(),
+///                 reader.GetChunkPartSize());
+///             break;
+///
+///         case CChunkStreamReader::eChunk:
+///             ProcessChunk(reader.GetChunkPart(),
+///                 reader.GetChunkPartSize());
+///             break;
+///
+///         case CChunkStreamReader::eControlSymbol:
+///             ProcessControlSymbol(reader.GetControlSymbol());
+///             break;
+///
+///         default: /* case CChunkStreamReader::eEndOfBuffer: */
+///             return;
+///         }
+/// }
+///
+/// void Main()
+/// {
+///     CChunkStreamReader reader;
+///
+///     while (ReadBuffer(buffer, &buffer_size)) {
+///         reader.SetNewBuffer(buffer, buffer_size);
+///         ProcessParsingEvents(reader);
+///     }
+/// }
+/// @endcode
 class NCBI_XUTIL_EXPORT CChunkStreamReader
 {
 // Types
@@ -149,12 +145,17 @@ public:
     /// @sa EStreamParsingEvent
     EStreamParsingEvent NextParsingEvent();
 
+    /// Return the control symbol that has been previously read.  The returned
+    /// value is only valid after a successful call to the NextParsingEvent()
+    /// method, that is, when it returned eControlSymbol.
+    char GetControlSymbol() const;
+
     /// Return a pointer to the buffer that contains a part of the chunk
     /// currently being read. Note that this buffer is not zero-terminated. Use
     /// the GetChunkPartSize() method to retrieve the length of this buffer.
     /// The returned value is only valid after a successful call to the
-    /// NextParsingEvent() method, that is, when this call returned either of
-    /// the following values: eChunkPart, eChunk, or eControlSymbol.
+    /// NextParsingEvent() method, that is, when this call returned either
+    /// eChunkPart or eChunk.
     ///
     /// @return
     ///   A pointer to the inside part of the buffer passed as an argument to
@@ -171,6 +172,7 @@ public:
 // Implementation
 private:
     enum EStreamParsingState {
+        eReadEscapedControlChar,
         eReadControlChars,
         eReadChunkLength,
         eReadChunk
@@ -182,7 +184,6 @@ private:
     // Register for keeping intermediate values of chunk lengths.
     size_t m_LengthAcc;
     EStreamParsingState m_State;
-    bool m_ChunkPartContinued;
 };
 
 inline CChunkStreamReader::CChunkStreamReader() :
@@ -213,6 +214,11 @@ inline void CChunkStreamReader::SetNewBuffer(const char* buffer,
     m_BufferSize = buffer_size;
 }
 
+inline char CChunkStreamReader::GetControlSymbol() const
+{
+    return *m_ChunkPart;
+}
+
 inline const char* CChunkStreamReader::GetChunkPart() const
 {
     return m_ChunkPart;
@@ -225,46 +231,46 @@ inline size_t CChunkStreamReader::GetChunkPartSize() const
 
 /// Class that serializes series of chunks of data for sending over binary
 /// streams.
+/// @note This class does not have a constructor. Instead, methods
+/// Reset(char*, size_t) and Reset(char*, size_t, size_t) are provided for
+/// initialization at any convenient time.
+/// @par Example:
+/// @code
+/// CChunkStreamWriter writer;
+///
+/// writer.Reset(buffer, sizeof(buffer));
+///
+/// for (item = GetFirstItem(); item != NULL; item = GetNextItem(item))
+///     if (!(item->IsControlSymbol() ?
+///         writer.SendControlSymbol(item->GetControlSymbol()) :
+///         writer.SendChunk(item->GetChunk(), item->GetChunkSize())))
+///         do {
+///             writer.GetOutputBuffer(&buffer_ptr, &buffer_size);
+///             SendBuffer(buffer_ptr, buffer_size);
+///         } while (writer.NextOutputBuffer());
+///
+/// writer.GetOutputBuffer(&buffer_ptr, &buffer_size);
+/// SendBuffer(buffer_ptr, buffer_size);
+/// @endcode
+/// @sa CChunkStreamReader
 class NCBI_XUTIL_EXPORT CChunkStreamWriter
 {
 // Construction
 public:
-    /// Initialize this object.
+    /// Initialize or reinitialize this object.
     /// @param buffer
     ///   A pointer to the output buffer.
     /// @param buffer_size
     ///   The size of the above buffer. This size cannot be less than
-    ///   2.5 * sizeof(size_t).
-    CChunkStreamWriter(char* buffer, size_t buffer_size);
-
-    /// Initialize this object.
-    /// @param buffer
-    ///   A pointer to the output buffer.
-    /// @param buffer_size
-    ///   The size of the above buffer. This size cannot be less than
-    ///   2.5 * sizeof(size_t).
-    /// @param max_buffer_size
-    ///   The maximum size of the buffer that a call to GetOutputBuffer() will
-    ///   ever return. If omitted, considered to be equal to buffer_size.
-    CChunkStreamWriter(char* buffer, size_t buffer_size,
-        size_t max_buffer_size);
-
-    /// Reinitialize this object with new parameters. This method allows this
-    /// object to be reused.
-    /// @param buffer
-    ///   A pointer to the new output buffer.
-    /// @param buffer_size
-    ///   The size of the above buffer. This size cannot be less than
-    ///   2.5 * sizeof(size_t).
+    ///   2.5 * sizeof(size_t) + 1.
     void Reset(char* buffer, size_t buffer_size);
 
-    /// Reinitialize this object with new parameters. This method allows this
-    /// object to be reused.
+    /// Initialize or reinitialize this object.
     /// @param buffer
-    ///   A pointer to the new output buffer.
+    ///   A pointer to the output buffer.
     /// @param buffer_size
     ///   The size of the above buffer. This size cannot be less than
-    ///   2.5 * sizeof(size_t).
+    ///   2.5 * sizeof(size_t) + 1.
     /// @param max_buffer_size
     ///   The maximum size of the buffer that a call to GetOutputBuffer() will
     ///   ever return. If omitted, considered to be equal to buffer_size.
@@ -272,12 +278,10 @@ public:
 
 // Operations
 public:
-    /// Send a control symbol over the output buffer. Control symbol can be any
-    /// byte character except digits. It is the caller's responsibility to
-    /// verify that the symbol argument passed to this method satisfies this
-    /// requirement. This method will assert if this requirement is violated.
+    /// Send a control symbol over the output buffer. Control symbol can be of
+    /// any byte character value.
     /// @param symbol
-    ///   The byte to be sent. Can be any character except digits (0...9).
+    ///   The byte to be sent.
     /// @return
     ///   True if pushing "symbol" to the output buffer did not result in the
     ///   buffer overflow condition; false - when the output buffer is full and
@@ -290,18 +294,13 @@ public:
     ///   A pointer to the memory area containing the chunk of data to be sent.
     /// @param chunk_length
     ///   The length of the chunk of data to be sent, in bytes.
-    /// @param to_be_continued
-    ///   Indicate that a chunk continuation mark must be inserted in the
-    ///   stream. The CChunkStreamReader class will fire a eChunkPart event
-    ///   after reading the entire chunk of data pointed to by the chunk
-    ///   parameter.
     /// @return
     ///   True if after the specified chunk has been fit in the output buffer
     ///   completely and there is still some space available in the buffer;
     ///   false - when the buffer has been filled and needs to be flushed by a
     ///   call to GetOutputBuffer() before the next chunk of data or control
     ///   symbol can be sent.
-    bool SendChunk(const char* chunk, size_t chunk_length, bool to_be_continued);
+    bool SendChunk(const char* chunk, size_t chunk_length);
 
     /// Return data to be sent over the output stream and extend internal
     /// pointers to the next buffer. This method can be called at any time,
@@ -346,17 +345,6 @@ private:
     // that follows the chunk size.
     char m_InternalBuffer[(sizeof(size_t) >> 1) * 5 + 1];
 };
-
-inline CChunkStreamWriter::CChunkStreamWriter(char* buffer, size_t buffer_size)
-{
-    Reset(buffer, buffer_size, buffer_size);
-}
-
-inline CChunkStreamWriter::CChunkStreamWriter(char* buffer, size_t buffer_size,
-    size_t max_buffer_size)
-{
-    Reset(buffer, buffer_size, max_buffer_size);
-}
 
 inline void CChunkStreamWriter::Reset(char* buffer, size_t buffer_size)
 {

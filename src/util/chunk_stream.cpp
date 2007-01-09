@@ -23,17 +23,14 @@
  *
  * ===========================================================================
  *
- * Author:
+ * Authors:
  *   Dmitry Kazimirov - Initial revision.
  *
  * File Description:
- *   Implementations of CChunkStreamReader and CChunkStreamWriter.
+ *   This file contains implementations of classes CChunkStreamReader and
+ *   CChunkStreamWriter. The former serializes chunks of binary data to a byte
+ *   stream and the latter deserializes these chunks back from the stream.
  */
-
-/// @file simple_cmd_serializer.hpp
-/// This file contains implementations of classes CChunkStreamReader and
-/// CChunkStreamWriter. The former serializes chunks of binary data to a byte
-/// stream and the latter deserializes these chunks back from the stream.
 
 #include <ncbi_pch.hpp>
 
@@ -45,14 +42,8 @@
 
 BEGIN_NCBI_SCOPE
 
-const char* CChunkStreamFormatException::what() const
-{
-    static char buffer[64];
-
-    sprintf(buffer, "Stream format error at offset %ld", (long) m_Offset);
-
-    return buffer;
-}
+#define CHUNK_LENGTH_DELIM ':'
+#define CONTROL_SYM_PREFIX '\\'
 
 CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
 {
@@ -62,17 +53,33 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
     unsigned digit;
 
     switch (m_State) {
+    case eReadEscapedControlChar:
+        // This block will consume one character either way.
+        ++m_Offset;
+        m_ChunkPart = m_Buffer;
+        ++m_Buffer;
+        --m_BufferSize;
+        m_State = eReadControlChars;
+        return eControlSymbol;
+
     case eReadControlChars:
         // This block will consume one character either way.
         ++m_Offset;
 
-        // Check if the current character is a digit.
+        // Check if the current character is a digit - all non-digit characters
+        // are considered control symbols.
         if ((digit = (unsigned) *m_Buffer - '0') > 9) {
-            // All non-digit characters are considered control symbols.
+            if (*m_Buffer == CONTROL_SYM_PREFIX) {
+                if (--m_BufferSize == 0) {
+                    m_State = eReadEscapedControlChar;
+                    return eEndOfBuffer;
+                }
+                ++m_Buffer;
+                ++m_Offset;
+            }
             m_ChunkPart = m_Buffer;
             ++m_Buffer;
             --m_BufferSize;
-            m_ChunkPartSize = 1;
             return eControlSymbol;
         }
 
@@ -94,24 +101,14 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
             ++m_Buffer;
         }
 
-        switch (*m_Buffer) {
-        case '+':
-            m_ChunkPartContinued = true;
-            break;
-
-        case ' ':
-            m_ChunkPartContinued = false;
-            break;
-
-        default:
-            throw CChunkStreamFormatException(m_Offset);
-        }
-
         m_State = eReadChunk;
-        ++m_Offset;
-        if (--m_BufferSize == 0)
-            return eEndOfBuffer;
-        ++m_Buffer;
+
+        if (*m_Buffer == CHUNK_LENGTH_DELIM) {
+            ++m_Offset;
+            if (--m_BufferSize == 0)
+                return eEndOfBuffer;
+            ++m_Buffer;
+        }
 
     default: /* case eReadChunk: */
         m_ChunkPart = m_Buffer;
@@ -124,7 +121,7 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
             // The last part of the chunk has been read - get back to
             // reading control symbols.
             m_State = eReadControlChars;
-            return m_ChunkPartContinued ? eChunkPart : eChunk;
+            return eChunk;
         } else {
             m_ChunkPartSize = m_BufferSize;
             m_Offset += m_BufferSize;
@@ -150,28 +147,35 @@ void CChunkStreamWriter::Reset(char* buffer,
 
 bool CChunkStreamWriter::SendControlSymbol(char symbol)
 {
-    assert(m_OutputBufferSize < m_BufferSize &&
-        "There must be space for at least one character in the buffer.");
-    assert(m_OutputBuffer == m_Buffer &&
+    assert(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
+        m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
         "Must be in the state of filling the output buffer.");
-    assert(symbol < '0' || symbol > '9' &&
-        "Ensure the control symbol is not a digit.");
+
+    if ((unsigned) symbol - '0' <= 9 || symbol == CONTROL_SYM_PREFIX) {
+        m_Buffer[m_OutputBufferSize] = CONTROL_SYM_PREFIX;
+        if (++m_OutputBufferSize == m_BufferSize) {
+            m_InternalBuffer[sizeof(m_InternalBuffer) - 1] = symbol;
+            m_InternalBufferSize = 1;
+            return false;
+        }
+    }
 
     m_Buffer[m_OutputBufferSize] = symbol;
     return ++m_OutputBufferSize < m_BufferSize;
 }
 
-bool CChunkStreamWriter::SendChunk(const char* chunk,
-    size_t chunk_length, bool to_be_continued)
+bool CChunkStreamWriter::SendChunk(const char* chunk, size_t chunk_length)
 {
-    assert(m_OutputBufferSize < m_BufferSize &&
-        "The output buffer must not be filled up to the end.");
-    assert(m_OutputBuffer == m_Buffer &&
+    assert(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
+        m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
         "Must be in the state of filling the output buffer.");
 
-    char* result = m_InternalBuffer + sizeof(m_InternalBuffer) - 1;
+    char* result = m_InternalBuffer + sizeof(m_InternalBuffer);
 
-    *result = to_be_continued ? '+' : ' ';
+    if (chunk_length == 0 || (unsigned) *chunk - '0' <= 9 ||
+        *chunk == CHUNK_LENGTH_DELIM)
+        *--result = CHUNK_LENGTH_DELIM;
+
     size_t number = chunk_length;
 
     do
@@ -214,7 +218,7 @@ bool CChunkStreamWriter::NextOutputBuffer()
             memcpy(m_Buffer + m_InternalBufferSize,
                 m_ChunkPart, m_ChunkPartSize);
             m_OutputBufferSize = m_InternalBufferSize + m_ChunkPartSize;
-            m_InternalBufferSize = 0;
+            m_InternalBufferSize = m_ChunkPartSize = 0;
             return false;
         }
         memcpy(m_Buffer + m_InternalBufferSize, m_ChunkPart, free_buf_size);

@@ -23,7 +23,8 @@
  *
  * ===========================================================================
  *
- * Author: Dmitry Kazimirov
+ * Authors:
+ *   Dmitry Kazimirov - Initial revision.
  *
  * File Description:
  *   Test program for testing 
@@ -55,8 +56,6 @@ public:
 private:
     struct SChunkData {
         char* chunk;
-        bool to_be_continued;
-        bool is_control_symbol;
         char control_symbol;
     };
 
@@ -70,8 +69,6 @@ private:
     bool TestWriterOutput();
     bool TestWriter(size_t buffer_size);
 
-    char m_Buffer[1024];
-
     CChunkStreamReader m_Reader;
     const SChunkData* m_ReaderTestChunk;
     const char* m_ReaderTestChunkPart;
@@ -83,56 +80,55 @@ private:
 const CChunkStreamTestApp::SChunkData
     CChunkStreamTestApp::sm_TestChunkSequence[] =
 {
-    {"cd", false, false, 0},
-    {NULL, false, true, '*'},
-    {"ls", false, false, 0},
-    {NULL, false, true, '*'},
-    {"mkdir", false, false, 0},
-    {"test", false, false, 0},
-    {NULL, false, true, '*'},
-    {"cd", false, false, 0},
-    {"test", false, false, 0},
-    {NULL, false, true, '*'},
-    {"cp", false, false, 0},
-    {"~/test.cpp", false, false, 0},
-    {".", false, false, 0},
-    {NULL, false, true, '*'},
-    {"g++", false, false, 0},
-    {"-Wall", false, false, 0},
-    {"-o", false, false, 0},
-    {"test", false, false, 0},
-    {"test.cpp", false, false, 0},
-    {NULL, false, true, '*'},
-    {"./test", false, false, 0},
-    {NULL, false, true, '*'},
-    {"cd", false, false, 0},
-    {"..", false, false, 0},
-    {NULL, false, true, '*'},
-    {"rm", false, false, 0},
-    {"-fr", false, false, 0},
-    {"test", false, false, 0},
-    {NULL, false, true, '*'},
-    {"update", true, false, 0},
-    {NULL, false, true, '?'},
-    {"db", false, false, 0},
-    {NULL, false, true, '*'}
+    {"cd", 0},
+    {NULL, ';'},
+    {"ls", 0},
+    {NULL, ';'},
+    {"mkdir", 0},
+    {"test", 0},
+    {NULL, ';'},
+    {"cd", 0},
+    {"test", 0},
+    {NULL, ';'},
+    {"cp", 0},
+    {"~/test.cpp", 0},
+    {".", 0},
+    {NULL, ';'},
+    {"g++", 0},
+    {"-Wall", 0},
+    {"-o", 0},
+    {"test", 0},
+    {"test.cpp", 0},
+    {NULL, ';'},
+    {"./test", 0},
+    {NULL, ';'},
+    {"cd", 0},
+    {"..", 0},
+    {NULL, ';'},
+    {"rm", 0},
+    {"-fr", 0},
+    {"test", 0},
+    {NULL, ';'},
+    {"update", 0},
+    {NULL, '\\'},
+    {"db", 0},
+    {NULL, ';'}
 };
 
 const char CChunkStreamTestApp::sm_TestStream[] =
-    "2 cd*"
-    "2 ls*"
-    "5 mkdir4 test*"
-    "2 cd4 test*"
-    "2 cp10 ~/test.cpp1 .*"
-    "3 g++5 -Wall2 -o4 test8 test.cpp*"
-    "6 ./test*"
-    "2 cd2 ..*"
-    "2 rm3 -fr4 test*"
-    "6+update?"
-    "2 db*";
+    "2cd;"
+    "2ls;"
+    "5mkdir4test;"
+    "2cd4test;"
+    "2cp10~/test.cpp1.;"
+    "3g++5-Wall2-o4test8test.cpp;"
+    "6./test;"
+    "2cd2..;"
+    "2rm3-fr4test;"
+    "6update\\\\"
+    "2db;";
 
-inline CChunkStreamTestApp::CChunkStreamTestApp() :
-    m_Writer(m_Buffer, (sizeof(size_t) >> 1) * 5)
+inline CChunkStreamTestApp::CChunkStreamTestApp()
 {
 }
 
@@ -140,7 +136,7 @@ inline CChunkStreamTestApp::CChunkStreamTestApp() :
 
 bool CChunkStreamTestApp::TestReaderChunkPart()
 {
-    if (m_ReaderTestChunk->is_control_symbol) {
+    if (m_ReaderTestChunk->control_symbol) {
         fprintf(stderr, IN_READER_TEST
             "got a chunk part while expected a control symbol\n");
         return false;
@@ -174,12 +170,6 @@ bool CChunkStreamTestApp::TestReaderInput(
         case CChunkStreamReader::eChunkPart:
             if (!TestReaderChunkPart())
                 return false;
-
-            if (*m_ReaderTestChunkPart == 0 &&
-                m_ReaderTestChunk->to_be_continued) {
-                ++m_ReaderTestChunk;
-                m_ReaderTestChunkPart = NULL;
-            }
             break;
 
         case CChunkStreamReader::eChunk:
@@ -199,10 +189,10 @@ bool CChunkStreamTestApp::TestReaderInput(
             break;
 
         case CChunkStreamReader::eControlSymbol:
-            if (!m_ReaderTestChunk->is_control_symbol) {
+            if (!m_ReaderTestChunk->control_symbol) {
                 fprintf(stderr, IN_READER_TEST
                     "unexpected control symbol '%c'\n",
-                    *m_Reader.GetChunkPart());
+                    m_Reader.GetControlSymbol());
                 return false;
             }
 
@@ -227,21 +217,16 @@ bool CChunkStreamTestApp::TestReader(size_t buffer_size)
     m_ReaderTestChunk = sm_TestChunkSequence;
     m_ReaderTestChunkPart = NULL;
 
-    try {
-        const char* buffer = sm_TestStream;
-        size_t stream_length = sizeof(sm_TestStream) - 1;
+    const char* buffer = sm_TestStream;
+    size_t stream_length = sizeof(sm_TestStream) - 1;
 
-        do {
-            if (!TestReaderInput(buffer, buffer_size))
-                return false;
-            buffer += buffer_size;
-        } while ((stream_length -= buffer_size) > buffer_size);
+    do {
+        if (!TestReaderInput(buffer, buffer_size))
+            return false;
+        buffer += buffer_size;
+    } while ((stream_length -= buffer_size) > buffer_size);
 
-        return TestReaderInput(buffer, stream_length);
-    } catch (CChunkStreamFormatException& e) {
-        fprintf(stderr, IN_READER_TEST "%s\n", e.what());
-        return false;
-    }
+    return TestReaderInput(buffer, stream_length);
 }
 
 #define IN_WRITER_TEST "CChunkStreamWriter test: "
@@ -255,9 +240,9 @@ bool CChunkStreamTestApp::TestWriterOutput()
 
     size_t pos = m_WriterTestStream - sm_TestStream;
 
-    if (pos + buffer_size > sizeof(sm_TestStream)) {
+    if (pos + buffer_size > sizeof(sm_TestStream) - 1) {
         fprintf(stderr, IN_WRITER_TEST "output buffer overflow: %u > %u.\n",
-            pos + buffer_size, sizeof(sm_TestStream));
+            pos + buffer_size, sizeof(sm_TestStream) - 1);
         return false;
     }
 
@@ -274,7 +259,9 @@ bool CChunkStreamTestApp::TestWriterOutput()
 
 bool CChunkStreamTestApp::TestWriter(size_t buffer_size)
 {
-    m_Writer.Reset(m_Buffer, buffer_size);
+    char buffer[sizeof(sm_TestStream) - 1];
+
+    m_Writer.Reset(buffer, buffer_size);
     m_WriterTestStream = sm_TestStream;
 
     int counter = sizeof(sm_TestChunkSequence) /
@@ -283,10 +270,9 @@ bool CChunkStreamTestApp::TestWriter(size_t buffer_size)
     const SChunkData* test_seq = sm_TestChunkSequence;
 
     do {
-        if (!(test_seq->is_control_symbol ?
+        if (!(test_seq->control_symbol ?
             m_Writer.SendControlSymbol(test_seq->control_symbol) :
-            m_Writer.SendChunk(test_seq->chunk, strlen(test_seq->chunk),
-                test_seq->to_be_continued)))
+            m_Writer.SendChunk(test_seq->chunk, strlen(test_seq->chunk))))
             do
                 if (!TestWriterOutput())
                     return false;
@@ -298,9 +284,21 @@ bool CChunkStreamTestApp::TestWriter(size_t buffer_size)
     return TestWriterOutput();
 }
 
-int CChunkStreamTestApp::Run(void)
+int CChunkStreamTestApp::Run()
 {
-    return TestReader(8) && TestWriter(16) ? 0 : 1;
+    size_t buffer_size = (sizeof(size_t) >> 1) * 5 + 1;
+
+    do
+        if (!TestWriter(buffer_size))
+            return 1;
+    while (++buffer_size < sizeof(sm_TestStream) - 1);
+
+    do
+        if (!TestReader(buffer_size))
+            return 1;
+    while (--buffer_size > 0);
+
+    return 0;
 }
 
 int main(int argc, const char* argv[])
