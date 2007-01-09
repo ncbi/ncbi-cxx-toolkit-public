@@ -144,6 +144,17 @@ bool CCdFromFasta::ImportAlignmentData(const string& fastaFile)
         return false;
     }
 
+    //  Testing....
+/*
+    unsigned int nr, nRead = m_fastaIO->GetNumRead();
+    cout << "Num read = " << nRead << endl;
+    for (nr = 0; nr < nRead; ++nr) {
+        cout << "nr = " << nr << " defline = " << m_fastaIO->GetActiveDefline(nr) << endl;
+        cout << "         sequence = " << m_fastaIO->GetActiveSequence(nr) << endl;
+    }
+*/
+
+
     //  Put the sequence data into the CD, after removing any gap characters.
     CRef < CSeq_entry > se(new CSeq_entry);
     se->Assign(*m_fastaIO->GetSeqEntry());
@@ -366,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2007/01/09 19:23:51  lanczyck
+ * comment out testing code
+ *
  * Revision 1.4  2006/10/12 15:08:48  lanczyck
  * deprecate use of old ReadFasta method in favor of CFastaReader class
  *
