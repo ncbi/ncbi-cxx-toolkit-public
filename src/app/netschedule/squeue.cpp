@@ -145,6 +145,13 @@ SLockedQueue::~SLockedQueue()
     delete lb_coordinator;
     if (delete_database) {
         // TODO: remove queue database files
+        db.Close();
+        aff_idx.Close();
+        affinity_dict.Close();
+        ITERATE(vector<string>, it, files) {
+            // NcbiCout << "Wipig out " << *it << NcbiEndl;
+            CFile(*it).Remove();
+        }
     }
     void *pData;
     m_StatThread->RequestStop();
@@ -196,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2007/01/09 17:10:22  joukovv
+ * Database files deleted upon queue deletion.
+ *
  * Revision 1.7  2007/01/02 18:50:54  joukovv
  * Queue deletion implemented (does not delete actual database files - need a
  * method of enumerating them). Draft implementation of weak reference. Minor

@@ -275,6 +275,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     CFastMutex                   qstat_lock;
 
     bool                         delete_database;
+    vector<string>               files;
 
     SLockedQueue(const string& queue_name, const string& qclass_name);
     ~SLockedQueue();
@@ -320,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2007/01/09 17:10:22  joukovv
+ * Database files deleted upon queue deletion.
+ *
  * Revision 1.5  2007/01/02 18:50:54  joukovv
  * Queue deletion implemented (does not delete actual database files - need a
  * method of enumerating them). Draft implementation of weak reference. Minor

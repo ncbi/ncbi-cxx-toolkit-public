@@ -546,10 +546,12 @@ void CQueueDataBase::MountQueue(const string& qname,
 
     q->db.RevSplitOff();
     q->db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+    q->files.push_back(m_Path + fname);
 
     fname = string("jsq_") + qname + string("_affid.idx");
     q->aff_idx.SetEnv(*m_Env);
     q->aff_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+    q->files.push_back(m_Path + fname);
 
     q->timeout = params.timeout;
     q->notif_timeout = params.notif_timeout;
@@ -557,6 +559,8 @@ void CQueueDataBase::MountQueue(const string& qname,
     q->last_notif = time(0);
 
     q->affinity_dict.Open(*m_Env, qname);
+    q->files.push_back(m_Path + "jsq_" + qname + string("_affdict.db"));
+    q->files.push_back(m_Path + "jsq_" + qname + string("_affdict_token.idx"));
 
     SLockedQueue& queue = m_QueueCollection.AddQueue(qname, q.release());
 
@@ -667,11 +671,16 @@ void CQueueDataBase::DeleteQueue(const string& qname)
         msg += "\" can not be deleted"; 
         NCBI_THROW(CNetScheduleException, eOperationAccessDenied, msg);
     }
+    // Signal queue to wipe out database files.
+    CRef<SLockedQueue> queue(m_QueueCollection.GetLockedQueue(qname));
+    queue->delete_database = true;
+    // Remove it from collection
     if (!m_QueueCollection.RemoveQueue(qname)) {
         string msg = "Job queue not found: ";
         msg += qname;
         NCBI_THROW(CNetScheduleException, eUnknownQueue, msg);
     }
+    // Remove it from DB
     m_QueueDescriptionDB.Delete(CBDB_File::eIgnoreError);
     trans.Commit();
 }
@@ -4147,6 +4156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.106  2007/01/09 17:10:22  joukovv
+ * Database files deleted upon queue deletion.
+ *
  * Revision 1.105  2007/01/08 21:04:09  joukovv
  * Fast notification of idle node cluster implemented.
  *
