@@ -38,45 +38,48 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 
 #include <objtools/alnmgr/pairwise_aln.hpp>
 
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+
+BEGIN_SCOPE(objects)
+    class CDense_seg;
+END_SCOPE(objects)
 
 
 NCBI_XALNMGR_EXPORT
 void
 ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
-                             const CSeq_align& sa,        ///< input Seq-align
-                             CSeq_align::TDim row_1,      ///< which pair of rows
-                             CSeq_align::TDim row_2);
+                             const objects::CSeq_align& sa,        ///< input Seq-align
+                             objects::CSeq_align::TDim row_1,      ///< which pair of rows
+                             objects::CSeq_align::TDim row_2);
 
 
 NCBI_XALNMGR_EXPORT
 void
 ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
-                           const CDense_seg& ds,        ///< input Dense-seg
-                           CDense_seg::TDim row_1,      ///< which pair of rows
-                           CDense_seg::TDim row_2);
+                           const objects::CDense_seg& ds,        ///< input Dense-seg
+                           objects::CDense_seg::TDim row_1,      ///< which pair of rows
+                           objects::CDense_seg::TDim row_2);
 
 
 NCBI_XALNMGR_EXPORT
 void
 ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
-                           const CSeq_align::TSegs::TStd& stds, ///< input Stds
-                           CSeq_align::TDim row_1,              ///< which pair of rows 
-                           CSeq_align::TDim row_2);
+                           const objects::CSeq_align::TSegs::TStd& stds, ///< input Stds
+                           objects::CSeq_align::TDim row_1,              ///< which pair of rows 
+                           objects::CSeq_align::TDim row_2);
 
 
 NCBI_XALNMGR_EXPORT
 void
 ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< output
-                            const CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
-                            CSeq_align::TDim row_1,                      ///< which pair of rows 
-                            CSeq_align::TDim row_2);
-
+                            const objects::CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
+                            objects::CSeq_align::TDim row_1,                      ///< which pair of rows 
+                            objects::CSeq_align::TDim row_2);
 
 /// Create an anchored alignment from Seq-align using hints
 template <class TAlnStats>
@@ -169,6 +172,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2007/01/09 19:53:31  yazhuk
+* Replaced USING_SCOPE() with explicit declarations, included Dense_seg.hpp
+*
 * Revision 1.16  2007/01/05 18:32:23  todorov
 * Added support for Dense_diag.
 *
