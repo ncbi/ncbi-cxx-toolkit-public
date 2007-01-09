@@ -4,7 +4,7 @@
 #################################
 
 SUB_PROJ = dustmask blast sequence align structure ms gnomon tree \
-           phy_tree seqqa winmask cobalt
+           phy_tree seqqa winmask cobalt text volume_merge
 
 REQUIRES = objects
 
