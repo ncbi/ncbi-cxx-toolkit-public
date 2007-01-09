@@ -742,7 +742,7 @@ bool BlockModel::overlap(const BlockModel& bm)const
 }
 
 //return -1 if pos is unaligned
-int BlockModel::getBlockNumber(int pos)
+int BlockModel::getBlockNumber(int pos) const
 {
 	int i = 0;
 	for (; i < m_blocks.size(); i++)
@@ -809,8 +809,28 @@ BlockModelPair::BlockModelPair(const CRef< CSeq_align> seqAlign)
 //deep copy
 BlockModelPair::BlockModelPair(const BlockModelPair& rhs)
 {
-	m_master = new BlockModel(*rhs.m_master);
-	m_slave = new BlockModel(*rhs.m_slave);
+    if (rhs.m_master) {
+        m_master = new BlockModel(*rhs.m_master);
+    }
+    if (rhs.m_slave) {
+        m_slave = new BlockModel(*rhs.m_slave);
+    }
+}
+
+BlockModelPair& BlockModelPair::operator=(const BlockModelPair& rhs)
+{
+    //  The copy can fail if rhs has null pointers.
+    delete m_master;
+    delete m_slave;
+    m_master = NULL;
+    m_slave = NULL;
+    if (rhs.m_master) {
+        m_master = new BlockModel(*rhs.m_master);
+    }
+    if (rhs.m_slave) {
+        m_slave = new BlockModel(*rhs.m_slave);
+    }
+	return *this;
 }
 
 BlockModelPair::~BlockModelPair()
@@ -891,7 +911,7 @@ CRef<CSeq_align> BlockModelPair::toSeqAlign() const
 }
 
 
-int BlockModelPair::mapToMaster(int slavePos)
+int BlockModelPair::mapToMaster(int slavePos) const
 {
 	int bn = m_slave->getBlockNumber(slavePos);
 	if (bn < 0)
@@ -939,6 +959,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2007/01/09 19:27:39  lanczyck
+ * add assignment operator to BlockModelPair; protect against null ptr in copy ctor; make mapTo... and getBlockNumber methods const
+ *
  * Revision 1.6  2007/01/08 20:46:44  cliu
  * return the number of aligned residues for the remaster()
  *
