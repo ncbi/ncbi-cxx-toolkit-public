@@ -89,7 +89,7 @@ CMergeMapWalker::~CMergeMapWalker()
 
 void CMergeMapWalker::AddVector(unsigned key, bm::bvector<>* bv)
 {
-    m_VolumeMap.insert( pair<unsigned, bm::bvector<>* >(key, bv) );
+    m_VolumeMap.insert( TMap::value_type(key, bv) );
 }
 
 bool CMergeMapWalker::IsEof() const
@@ -317,6 +317,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2007/01/09 22:12:04  vasilche
+ * Use exact pair<> type for WorkShop.
+ *
  * Revision 1.3  2006/11/30 11:07:17  kuznets
  * added BLOB read from the merge store (merge-update)
  *
