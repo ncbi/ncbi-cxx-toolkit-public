@@ -273,11 +273,15 @@ public:
         eAcc_ddbj_tpa_nuc  = e_Tpd | eAcc_other | fAcc_nuc,  // BR
         eAcc_ddbj_tpa_prot = e_Tpd | eAcc_other | fAcc_prot, // FAA
 
-        // It's not yet clear whether nucleotide and protein gpipe IDs
-        // (XGP_*?) will be readily distinguishable.
-        eAcc_gpipe      = e_Gpipe | eAcc_other,
-        eAcc_gpipe_nuc  = e_Gpipe | eAcc_other | fAcc_nuc,
-        eAcc_gpipe_prot = e_Gpipe | eAcc_other | fAcc_prot
+        // genome pipeline, modeled after RefSeq
+        eAcc_gpipe_other_nuc  = e_Gpipe | eAcc_other | fAcc_nuc,  // GPN_
+        eAcc_gpipe_prot       = e_Gpipe | eAcc_other | fAcc_prot, // GPP_
+        eAcc_gpipe_scaffold   = e_Gpipe | eAcc_con   | fAcc_nuc,  // GPS_
+        eAcc_gpipe_unreserved = e_Gpipe | 128 << 8,
+        eAcc_gpipe_mrna       = e_Gpipe | 129 << 8   | fAcc_nuc,  // GPM_
+        eAcc_gpipe_chromosome = e_Gpipe | 130 << 8   | fAcc_nuc,  // GPC_
+        eAcc_gpipe_genomic    = e_Gpipe | 131 << 8   | fAcc_nuc,  // GPG_
+        eAcc_gpipe_ncrna      = e_Gpipe | 132 << 8   | fAcc_nuc,  // GPR_
     };
 
     static E_Choice GetAccType(EAccessionInfo info)
@@ -611,6 +615,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.59  2007/01/09 16:17:36  ucko
+ * Revise eAcc_gpipe* classification, but hold off on adding anything to
+ * the accession guide until the new terms have propagated.
+ *
  * Revision 1.58  2007/01/08 16:06:51  ucko
  * Rework IdentifyAccession to use a separate accession guide, which can
  * be either explicitly supplied (via LoadAccessionGuide), autoloaded from

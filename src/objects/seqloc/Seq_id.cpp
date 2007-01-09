@@ -541,9 +541,14 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     TAccInfoMapEntry("gibbmt",                  CSeq_id::eAcc_gibbmt),
     TAccInfoMapEntry("gibbsq",                  CSeq_id::eAcc_gibbsq),
     TAccInfoMapEntry("giim",                    CSeq_id::eAcc_giim),
-    TAccInfoMapEntry("gpipe",                   CSeq_id::eAcc_gpipe),
-    TAccInfoMapEntry("gpipe_nuc",               CSeq_id::eAcc_gpipe_nuc),
+    TAccInfoMapEntry("gpipe_chromosome",        CSeq_id::eAcc_gpipe_chromosome),
+    TAccInfoMapEntry("gpipe_genomic",           CSeq_id::eAcc_gpipe_genomic),
+    TAccInfoMapEntry("gpipe_mrna",              CSeq_id::eAcc_gpipe_mrna),
+    TAccInfoMapEntry("gpipe_ncrna",             CSeq_id::eAcc_gpipe_ncrna),
+    TAccInfoMapEntry("gpipe_other_nuc",         CSeq_id::eAcc_gpipe_other_nuc),
     TAccInfoMapEntry("gpipe_prot",              CSeq_id::eAcc_gpipe_prot),
+    TAccInfoMapEntry("gpipe_scaffold",          CSeq_id::eAcc_gpipe_scaffold),
+    TAccInfoMapEntry("gpipe_unreserved",        CSeq_id::eAcc_gpipe_unreserved),
     TAccInfoMapEntry("gsdb_dirsub",             CSeq_id::eAcc_gsdb_dirsub),
     TAccInfoMapEntry("local",                   CSeq_id::eAcc_local),
     TAccInfoMapEntry("maybe_ddbj",              CSeq_id::eAcc_maybe_ddbj),
@@ -1990,6 +1995,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.145  2007/01/09 16:17:43  ucko
+ * Revise eAcc_gpipe* classification, but hold off on adding anything to
+ * the accession guide until the new terms have propagated.
+ *
  * Revision 6.144  2007/01/08 16:06:58  ucko
  * Rework IdentifyAccession to use a separate accession guide, which can
  * be either explicitly supplied (via LoadAccessionGuide), autoloaded from
