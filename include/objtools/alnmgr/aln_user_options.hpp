@@ -65,8 +65,7 @@ public:
     enum EShowUnalignedOption {
         eHideUnaligned,
         eShowFlankingN, // show N residues on each side
-        eShowAllUnaligned,
-
+        eShowAllUnaligned
     };
     typedef int TMergeFlags;
 
@@ -91,7 +90,7 @@ public:
         m_ClipAlignment(false),
         m_ClipStart(0), m_ClipEnd(1),
         m_ExtendAlignment(false),
-        m_Extension(0),
+        m_Extension(1),
         m_UnalignedOption(eHideUnaligned),
         m_ShowUnalignedN(10)
     {
@@ -143,6 +142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2007/01/09 19:56:57  yazhuk
+* Fixed a warning, changed the default value for m_Extension
+*
 * Revision 1.6  2006/12/11 20:43:42  yazhuk
 * Extended CAlnUserOptions.
 *
