@@ -672,7 +672,7 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
 bool remasterAlignannot(CCdCore& cd, unsigned int oldMasterRow)
 {
     //  Exit if invalid row number or the old master is same as current master.
-    if (oldMasterRow >= cd.GetNumRows() || oldMasterRow == 0) return false;
+    if ((int)oldMasterRow >= cd.GetNumRows() || oldMasterRow == 0) return false;
 
     bool ok = true;
     int From, To, NewFrom, NewTo;
@@ -915,6 +915,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.21  2007/01/09 19:30:25  lanczyck
+ * remove compiler warning
+ *
  * Revision 1.20  2006/11/16 20:19:46  cliu
  * remove comment and add a function to find highest scoring row by PSSM
  *
