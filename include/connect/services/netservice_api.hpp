@@ -34,7 +34,6 @@
  */
 
 #include <connect/services/srv_connections.hpp>
-#include <connect/services/netservice_client.hpp> // for CNetServiceException
 
 BEGIN_NCBI_SCOPE
 
@@ -112,7 +111,6 @@ private:
 };
 
 
-/* will be taken from netservice_client.hpp 
 /// Net Service exception
 ///
 class CNetServiceException : public CException
@@ -138,7 +136,6 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetServiceException, CException);
 };
 
-*/
 
 END_NCBI_SCOPE
 
@@ -146,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2007/01/09 16:05:02  didenko
+ * Moved CNetScheduleExceptions to the new NetSchedule API
+ *
  * Revision 1.1  2007/01/09 15:29:54  didenko
  * Added new API for NetSchedule service
  *

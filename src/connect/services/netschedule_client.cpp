@@ -159,6 +159,7 @@ void CNetSchedule_GenerateJobKey(string*        key,
     *key += tmp;
 }
 
+/* moved to netschedule_api.cpp
 CNetScheduleExceptionMap::CNetScheduleExceptionMap()
 {
     m_Map["eInternalError"] = CNetScheduleException::eInternalError;
@@ -182,6 +183,7 @@ CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
         return CException::eInvalid;
     return it->second;
 }
+*/
 
 CNetScheduleExceptionMap CNetScheduleClient::sm_ExceptionMap;
 
@@ -881,6 +883,7 @@ bool CNetScheduleClient::GetJob(string*        job_key,
     _ASSERT(job_key);
     _ASSERT(input);
 
+    //cerr << ">>GetJob" << endl;
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
     }
@@ -906,6 +909,7 @@ bool CNetScheduleClient::GetJob(string*        job_key,
     TrimPrefix(&m_Tmp);
 
     if (m_Tmp.empty()) {
+        //cerr << "<<GetJob--" << endl;
         return false;
     }
 
@@ -925,6 +929,7 @@ bool CNetScheduleClient::GetJob(string*        job_key,
     _ASSERT(!job_key->empty());
     //    _ASSERT(!input->empty());
 
+    //cerr << "<<GetJob++" << endl;
     return true;
 }
 
@@ -939,6 +944,7 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
 {
     _ASSERT(job_key);
     _ASSERT(input);
+    //cerr << ">>GetJobWaitNotify" << endl;
 
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
@@ -981,8 +987,11 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
         _ASSERT(!job_key->empty());
         //_ASSERT(!input->empty());
 
+        //cerr << ">>GetJobWaitNotify++" << endl;
         return true;
     }
+    //cerr << ">>GetJobWaitNotify--" << endl;
+
     return false;
 }
 
@@ -996,6 +1005,7 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
                                  string*        jerr,
                                  TJobMask*      job_mask)
 {
+    //cerr << ">>WaitJob" << endl;
     bool job_received = 
         GetJobWaitNotify(job_key, input, wait_time, udp_port, 
                          jout, jerr, job_mask);
@@ -1012,7 +1022,15 @@ bool CNetScheduleClient::WaitJob(string*    job_key,
     // using reliable comm.level and notify server that
     // we no longer on the UDP socket
 
-    return GetJob(job_key, input, udp_port, jout, jerr, job_mask);
+    bool ret = GetJob(job_key, input, udp_port, jout, jerr, job_mask);
+    /*
+    cerr << ">>WaitJob";
+    if (ret) 
+        cerr << "++" << endl;
+    else 
+        cerr << "--" << endl;
+    */
+    return ret;
 
 }
 
@@ -1054,14 +1072,17 @@ CNetScheduleClient::WaitNotification(const string&  queue_name,
 
     // minilal length is prefix "NCBI_JSQ_" + queue length
     size_t min_msg_len = queue_name.length() + 9;
+    //cerr << "WaitNotification : before for(;;)" <<  endl;
 
     for (;;) {
         curr_time = time(0);
         if (curr_time >= end_time) {
+            //cerr << "WaitNotification :  for(;;) break" <<  endl;
             break;
         }
         to.sec = end_time - curr_time;  // remaining
 
+        //cerr << "WaitNotification : " << start_time << " " << curr_time << " " << end_time << endl;
         status = udp_socket.Wait(&to);
         if (eIO_Success != status) {
             continue;
@@ -1084,7 +1105,7 @@ CNetScheduleClient::WaitNotification(const string&  queue_name,
             }
 
             const char* queue = chr_buf + 9;
-
+            //cerr << "WaitNotification : " << chr_buf << endl;
             if (strncmp(queue_name.c_str(), queue, queue_name.length()) == 0) {
                 // Message from our queue 
                 return true;
@@ -1941,6 +1962,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2007/01/09 16:05:02  didenko
+ * Moved CNetScheduleExceptions to the new NetSchedule API
+ *
  * Revision 1.69  2006/12/07 21:26:06  joukovv
  * Error processing fixed.
  *

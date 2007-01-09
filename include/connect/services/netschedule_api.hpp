@@ -39,8 +39,6 @@
 
 #include <connect/services/netservice_api.hpp>
 #include <corelib/plugin_manager.hpp>
-#include <connect/services/netschedule_client.hpp> // for CNetScheduleException
-
 
 
 BEGIN_NCBI_SCOPE
@@ -70,8 +68,7 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 
 const string kNetScheduleKeyPrefix = "JSID";
 
-/*
-will be taken from netschedule_client.hpp
+
 /// Map from exception names to codes
 /// @internal
 class CNetScheduleExceptionMap
@@ -83,8 +80,6 @@ private:
     typedef map<string, CException::TErrCode> TMap;
     TMap m_Map;
 };
-*/
-
 
 template<typename T> struct ToStr { static string Convert(T t); };
 
@@ -765,9 +760,6 @@ CNetScheduleExecuter::GetJobStatus(const string& job_key) const
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleAPI,  "xnetschedule_api", 1,0, 0);
 
-/*
-will be taken from netschedule_client.hpp
-
 /// NetSchedule internal exception
 ///
 class CNetScheduleException : public CNetServiceException
@@ -824,7 +816,7 @@ const unsigned int kNetScheduleMaxErrSize = 1024;
 /// @internal
 const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
 
-*/
+
 
 /// @internal
 extern NCBI_XCONNECT_EXPORT const char* kNetScheduleAPIDriverName;
@@ -849,6 +841,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2007/01/09 16:05:02  didenko
+ * Moved CNetScheduleExceptions to the new NetSchedule API
+ *
  * Revision 1.1  2007/01/09 15:29:54  didenko
  * Added new API for NetSchedule service
  *

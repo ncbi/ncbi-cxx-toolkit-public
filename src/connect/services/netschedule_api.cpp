@@ -117,7 +117,7 @@ CNetScheduleKey::operator string() const
     key += tmp;
     return key;
 }
-/*
+
 CNetScheduleExceptionMap::CNetScheduleExceptionMap()
 {
     m_Map["eInternalError"] = CNetScheduleException::eInternalError;
@@ -141,7 +141,7 @@ CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
         return CException::eInvalid;
     return it->second;
 }
-*/
+
 
 
 /**********************************************************************/
@@ -588,6 +588,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2007/01/09 16:05:02  didenko
+ * Moved CNetScheduleExceptions to the new NetSchedule API
+ *
  * Revision 6.1  2007/01/09 15:29:55  didenko
  * Added new API for NetSchedule service
  *

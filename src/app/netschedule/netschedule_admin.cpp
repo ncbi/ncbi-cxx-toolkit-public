@@ -67,7 +67,7 @@ public:
 ///
 /// @internal
 ///
-class CNetScheduleAdmin : public CNcbiApplication
+class CNetScheduleAdminApp : public CNcbiApplication
 {
 public:
     void Init(void);
@@ -77,7 +77,7 @@ public:
 
 
 
-void CNetScheduleAdmin::Init(void)
+void CNetScheduleAdminApp::Init(void)
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -121,7 +121,7 @@ void CNetScheduleAdmin::Init(void)
 }
 
 
-int CNetScheduleAdmin::Run(void)
+int CNetScheduleAdminApp::Run(void)
 {
     CArgs args = GetArgs();
 
@@ -182,7 +182,7 @@ int CNetScheduleAdmin::Run(void)
     return 0;
 }
 
-void CNetScheduleAdmin::Run(CNetScheduleClient_Control& nc_client)
+void CNetScheduleAdminApp::Run(CNetScheduleClient_Control& nc_client)
 {
     CArgs args = GetArgs();
 
@@ -230,13 +230,16 @@ void CNetScheduleAdmin::Run(CNetScheduleClient_Control& nc_client)
 
 int main(int argc, const char* argv[])
 {
-    return CNetScheduleAdmin().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CNetScheduleAdminApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2007/01/09 16:05:02  didenko
+ * Moved CNetScheduleExceptions to the new NetSchedule API
+ *
  * Revision 1.5  2005/05/16 16:21:26  kuznets
  * Added available queues listing
  *

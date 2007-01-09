@@ -42,6 +42,8 @@
 #include <connect/ncbi_socket.hpp>
 #include <util/resource_pool.hpp>
 
+#include <connect/services/netservice_api.hpp> // for CNetServiceException
+
 
 BEGIN_NCBI_SCOPE
 
@@ -203,6 +205,7 @@ private:
 };
 
 
+/*
 /// Net Service exception
 ///
 class CNetServiceException : public CException
@@ -227,7 +230,7 @@ public:
 
     NCBI_EXCEPTION_DEFAULT(CNetServiceException, CException);
 };
-
+*/
 
 /* @} */
 
@@ -238,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2007/01/09 16:05:02  didenko
+ * Moved CNetScheduleExceptions to the new NetSchedule API
+ *
  * Revision 1.20  2006/12/07 21:26:06  joukovv
  * Error processing fixed.
  *

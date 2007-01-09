@@ -39,6 +39,7 @@
 
 #include <connect/services/netservice_client.hpp>
 #include <corelib/plugin_manager.hpp>
+#include <connect/services/netschedule_api.hpp> // for CNetScheduleException
 
 
 BEGIN_NCBI_SCOPE
@@ -62,7 +63,7 @@ struct CNetSchedule_Key
     unsigned     port;      ///< TCP/IP port number
 };
 
-
+/* moved to netschedul_api.hpp
 /// Map from exception names to codes
 /// @internal
 class CNetScheduleExceptionMap
@@ -74,7 +75,7 @@ private:
     typedef map<string, CException::TErrCode> TMap;
     TMap m_Map;
 };
-
+*/
 
 /// Client API for NCBI NetSchedule server
 ///
@@ -935,7 +936,7 @@ private:
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleClient,  "xnetschedule", 1, 1, 0);
 
-
+/* moved to netschedule_api.hpp 
 /// NetSchedule internal exception
 ///
 class CNetScheduleException : public CNetServiceException
@@ -981,7 +982,17 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetScheduleException, CNetServiceException);
 };
 
+/// @internal
+const unsigned int kNetScheduleMaxDataSize = 512;
+/// @internal
+const unsigned int kNetScheduleMaxDBDataSize = kNetScheduleMaxDataSize * 4;
 
+/// @internal
+const unsigned int kNetScheduleMaxErrSize = 1024;
+/// @internal
+const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
+
+*/
 /// Parse job key string into a CNetSchedule_Key structure
 extern NCBI_XCONNECT_EXPORT
 void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str);
@@ -1009,16 +1020,6 @@ void CNetSchedule_GenerateJobKey(string*        key,
 
 
 /// @internal
-const unsigned int kNetScheduleMaxDataSize = 512;
-/// @internal
-const unsigned int kNetScheduleMaxDBDataSize = kNetScheduleMaxDataSize * 4;
-
-/// @internal
-const unsigned int kNetScheduleMaxErrSize = 1024;
-/// @internal
-const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
-
-/// @internal
 extern NCBI_XCONNECT_EXPORT const char* kNetScheduleDriverName;
 
 
@@ -1041,6 +1042,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2007/01/09 16:05:02  didenko
+ * Moved CNetScheduleExceptions to the new NetSchedule API
+ *
  * Revision 1.64  2006/12/07 21:26:06  joukovv
  * Error processing fixed.
  *
