@@ -96,7 +96,8 @@ public:
 	void findIntersectingBlocks(const Block& target, vector<int>& result)const ;
 	vector<Block>& getBlocks() {return m_blocks;}
 	Block& getBlock(int bn) {return m_blocks[bn];}
-	int getBlockNumber(int pos);
+//	int getBlockNumber(int pos);
+	int getBlockNumber(int pos) const;
 	const vector<Block>& getBlocks() const{return m_blocks;}
 	CRef< CSeq_id > getSeqId() const{ return m_seqId;}
 	void setSeqId(CRef< CSeq_id > seqId) {m_seqId = seqId;}
@@ -139,6 +140,8 @@ public:
 	BlockModelPair(const BlockModelPair& rhs);
 	~BlockModelPair();
 
+    BlockModelPair& operator=(const BlockModelPair& rhs);
+
 	BlockModel& getMaster();
 	const BlockModel& getMaster()const;
 	BlockModel& getSlave();
@@ -146,7 +149,8 @@ public:
 
 	void degap();
 	CRef<CSeq_align> toSeqAlign() const;
-	int mapToMaster(int slavePos);
+//	int mapToMaster(int slavePos);
+	int mapToMaster(int slavePos) const;
 	bool isValid()const;
 	//assume this.master is the same as guide.master
 	//change this.master to guide.slave
