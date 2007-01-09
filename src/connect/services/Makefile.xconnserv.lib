@@ -8,7 +8,8 @@ SRC     = netschedule_client netschedule_client_lb \
           grid_control_thread grid_worker_app_impl grid_globals  \
 			 ns_client_wrappers grid_rw_impl \
 			 remote_app remote_app_impl remote_app_mb remote_app_sb \
-			 ra_dispatcher_client srv_connections
+			 ra_dispatcher_client srv_connections netservice_api \
+			 netschedule_api netschedule_api_submitter netschedule_api_executer netschedule_api_admin
 
 LIB     = xconnserv
 LIBS    = $(NETWORK_LIBS)

@@ -37,13 +37,17 @@
 #include <corelib/ncbistr.hpp>
 
 #include <connect/connect_export.h>
+#include <connect/ncbi_socket.hpp>
 
 #include <vector>
 
 BEGIN_NCBI_SCOPE
 
-void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name, 
-                                             vector<pair<string,unsigned int> >& services);
+NCBI_XCONNECT_EXPORT 
+void DiscoverLBServices(const string& service_name, 
+                        vector<pair<string,unsigned short> >& services,
+                        bool all_services = true);
+
 
 struct undefined_t {};
 
@@ -110,12 +114,12 @@ private:
     {
         if (m_Discovered) return;
         string sport, host;
-        typedef vector<pair<string, unsigned int> > TSrvs;
+        typedef vector<pair<string, unsigned short> > TSrvs;
         TSrvs srvs;
         if ( NStr::SplitInTwo(m_Service, ":", host, sport) ) {
             try {
                 unsigned int port = NStr::StringToInt(sport);
-                srvs.push_back(make_pair(host, port));
+                srvs.push_back(make_pair(host, (unsigned short)port));
                 m_HostPort = true;
             } catch (...) {
             }
@@ -168,11 +172,281 @@ private:
 };
 
 
+/******************************************************************/
+
+class NCBI_XCONNECT_EXPORT CNetSrvConnector
+{
+public:
+    CNetSrvConnector(const string& host, unsigned short port);
+    ~CNetSrvConnector();
+
+    class IEventListener {
+    public:
+        virtual ~IEventListener() {}
+
+        virtual void OnConnected(CNetSrvConnector&) {};
+        virtual void OnDisconnected(CNetSrvConnector&) {};
+    };
+
+    const string GetHost() const { return m_Host; }
+    unsigned short GetPort() const { return m_Port; }
+
+    void SetEventListener(IEventListener* listener)  { m_EventListener = listener; }
+
+
+    bool ReadStr(string& str);
+    void WriteStr(const string& str);
+    void WriteBuf(const void* buf, size_t len);
+    void WaitForServer(unsigned int wait_sec = 20);
+
+    void Disconnect();
+private:
+
+    CNetSrvConnector(const CNetSrvConnector&);
+    CNetSrvConnector& operator=(const CNetSrvConnector&);
+
+    bool x_IsConnected();
+    void x_CheckConnect();
+
+    string             m_Host;
+    unsigned short     m_Port;
+    auto_ptr<CSocket>  m_Socket;
+    STimeout           m_Timeout;
+    IEventListener*    m_EventListener; 
+};
+
+class CNetSrvConnectorHolder
+{
+public:
+    CNetSrvConnectorHolder(CNetSrvConnector& conn, bool disconnect) 
+        : m_Conn(&conn), m_Disconnect(disconnect) {}
+    ~CNetSrvConnectorHolder() { if (m_Disconnect) m_Conn->Disconnect(); }
+ 
+    CNetSrvConnectorHolder(const CNetSrvConnectorHolder& other)
+    {
+        m_Conn = other.m_Conn;
+        m_Disconnect = other.m_Disconnect;
+        other.m_Disconnect = false;
+    }
+    CNetSrvConnectorHolder& operator=( const CNetSrvConnectorHolder& other)
+    {
+        if(this != &other) {
+            if (m_Disconnect) m_Conn->Disconnect();
+            m_Conn = other.m_Conn;
+            m_Disconnect = other.m_Disconnect;
+            other.m_Disconnect = false;            
+        }
+        return *this;
+    }
+
+    operator CNetSrvConnector& () const  { return *m_Conn; }
+    CNetSrvConnector* operator->() const { return m_Conn; }
+
+private:
+    CNetSrvConnector* m_Conn;
+    mutable bool m_Disconnect;
+
+};
+
+class IRebalanceStrategy 
+{
+public:
+    virtual ~IRebalanceStrategy() {}
+    virtual bool NeedRebalance() = 0;
+    virtual void OnResourceRequested( const CNetSrvConnector& ) = 0;
+    virtual void Reset() = 0;
+};
+
+class NCBI_XCONNECT_EXPORT CSimpleRebalanceStrategy : public IRebalanceStrategy 
+{
+public:
+    CSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time) 
+        : m_RebalanceRequests(rebalance_requests), m_RebalanceTime(rebalance_time),
+          m_RequestCounter(0), m_LastRebalanceTime(0) {}
+
+    virtual ~CSimpleRebalanceStrategy() {}
+
+    virtual bool NeedRebalance() {
+        time_t curr = time(0);
+        if ( !m_LastRebalanceTime || 
+             (m_RebalanceTime && int(curr - m_LastRebalanceTime) >= m_RebalanceTime) ||
+             (m_RebalanceRequests && (m_RequestCounter >= m_RebalanceRequests)) )  {
+            m_RequestCounter = 0;
+            m_LastRebalanceTime = curr;
+            return true;
+        }
+        return false;
+    }
+    virtual void OnResourceRequested( const CNetSrvConnector& ) {
+        ++m_RequestCounter;
+    }
+    virtual void Reset() {
+        m_RequestCounter = 0;
+        m_LastRebalanceTime = 0;
+        
+    }
+private:
+    int     m_RebalanceRequests;
+    int     m_RebalanceTime;
+    int     m_RequestCounter;
+    time_t  m_LastRebalanceTime;
+};
+
+
+
+class NCBI_XCONNECT_EXPORT CNetSrvConnectorPoll
+{    
+public:   
+    class iterator
+    {
+    public:
+        typedef CNetSrvConnector value_type;
+        typedef CNetSrvConnectorHolder pointer;
+        typedef CNetSrvConnectorHolder reference;
+
+        reference operator*() const 
+        { 
+            unsigned index = (m_CurIndex-1) % m_Poll->m_Services.size();
+            return CNetSrvConnectorHolder(*m_Poll->x_FindOrCreateConnector(m_Poll->m_Services[index]),
+                                          m_Poll->m_PermConn);
+        }
+        pointer operator->() const { return operator*(); }
+
+        iterator& operator++() 
+        { 
+            if(m_CurIndex) {
+                if(++m_CurIndex >= m_Pivot+m_Poll->m_Services.size())
+                    m_CurIndex = 0;
+            }
+            return *this; 
+        }
+        iterator operator++(int) { iterator temp(*this); operator++(); return temp; }
+        
+        bool operator == (const iterator& other) const 
+        { return other.m_Poll == m_Poll && other.m_CurIndex == m_CurIndex; }
+        bool operator != (const iterator& other) const
+        { return other.m_Poll != m_Poll || other.m_CurIndex != m_CurIndex; }
+        
+    private:
+        const CNetSrvConnectorPoll* m_Poll;
+        unsigned m_Pivot;
+        unsigned m_CurIndex;
+
+        friend class CNetSrvConnectorPoll;
+        explicit iterator(const CNetSrvConnectorPoll& poll, bool last = false, bool random = false)
+            : m_Poll(&poll), m_Pivot(random? (rand() %  m_Poll->m_Services.size())+1 : 1),
+              m_CurIndex(last? 0 : m_Pivot)
+        {}
+
+
+    };
+
+    CNetSrvConnectorPoll(const string& service, 
+                         CNetSrvConnector::IEventListener* event_listener,
+                         IRebalanceStrategy* rebalance_strategy);
+    ~CNetSrvConnectorPoll();
+
+    CNetSrvConnectorHolder GetBest(const string& hit = "");
+    CNetSrvConnectorHolder GetSpecific(const string& host, unsigned int port);
+
+    // invalidates priveosly taken iterators
+    iterator begin() { x_Rebalance(); return iterator(*this); }
+    // invalidates priveosly taken iterators
+    iterator random_begin() { x_Rebalance(); return iterator(*this,false,true); }
+    iterator end() { return iterator(*this, true); }
+
+    template<class Pred>
+    bool Find(Pred func) {
+        x_Rebalance();
+        // pick a random pivot element, so we do not always
+        // fetch jobs using the same lookup order and some servers do 
+        // not get equally "milked"
+        // also get random list lookup direction
+        unsigned serv_size = m_Services.size();
+        unsigned pivot = rand() % serv_size;
+
+        for (unsigned i = pivot; i < pivot + serv_size; ++i) {
+            unsigned j = i % serv_size;
+            const TService& srv = m_Services[j];
+            CNetSrvConnectorHolder holder(*x_FindOrCreateConnector(srv), 
+                                          m_PermConn);
+            CNetSrvConnector& conn = (CNetSrvConnector&)holder;
+            if (func(conn))
+                return true;
+        }
+        return false;
+    }
+    const string& GetServiceName() const { return m_ServiceName; }
+
+    bool IsLoadBalanced() const { return m_IsLoadBalanced; }
+
+    void UsePermanentConnection(bool of_on) { m_PermConn = of_on; }
+
+    void DiscoverLowPriorityServers(bool on_off) { 
+        m_DiscoverLowPriorityServers = on_off; 
+        if (m_RebalanceStrategy) m_RebalanceStrategy->Reset();
+    }
+
+private:
+    friend class iterator;
+
+    CNetSrvConnectorPoll(const CNetSrvConnectorPoll&);
+    CNetSrvConnectorPoll& operator=(const CNetSrvConnectorPoll&);
+
+    typedef pair<string, unsigned short> TService;
+    typedef map<TService, CNetSrvConnector*> TCont;
+    typedef vector<TService> TServices;
+
+
+    CNetSrvConnector* x_FindOrCreateConnector(const TService& srv) const;
+    void x_Rebalance();
+
+    string              m_ServiceName;
+    TServices           m_Services;
+    mutable TCont       m_Connections;
+    IRebalanceStrategy* m_RebalanceStrategy;
+    bool                m_IsLoadBalanced;
+    bool                m_DiscoverLowPriorityServers;
+    CNetSrvConnector::IEventListener* m_EventListener;
+    bool                m_PermConn;
+};
+
+
+
+/// Net Service exception
+///
+class CNetSrvConnException : public CException
+{
+public:
+    enum EErrCode {
+        eReadTimeout,
+        eResponseTimeout
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eReadTimeout:        return "eReadTimeout";
+        case eResponseTimeout:    return "eResponseTimeout";
+        default:                  return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CNetSrvConnException, CException);
+};
+
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2007/01/09 15:29:55  didenko
+ * Added new API for NetSchedule service
+ *
  * Revision 1.1  2006/12/06 15:00:00  didenko
  * Added service connections template classes
  *

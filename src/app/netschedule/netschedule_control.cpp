@@ -41,7 +41,7 @@
 
 #include "client_admin.hpp"
 
-#include <connect/services/srv_connections.hpp>
+#include <connect/services/netservice_api.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -374,8 +374,75 @@ void CNetScheduleControl::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
+class NSClient : public INetServiceAPI
+{
+public:
+    NSClient(const string& service_name, const string& client_name, const string& queue_name)
+        : INetServiceAPI(service_name, client_name), m_QueueName(queue_name)
+    {}
+
+
+
+    enum EStatisticsOptions 
+    {
+        eStatisticsAll,
+        eStaticticsBrief
+    };
+    void PrintStatistics(CNcbiOstream&      out, 
+                         EStatisticsOptions opt = eStaticticsBrief) const;
+
+    static string SendCmdWaitResponce(CNetSrvConnector& conn, const string& cmd, const string& job_key);
+
+private:
+
+    string m_QueueName;
+
+    virtual void x_SendAuthetication(CNetSrvConnector& conn) const
+    {
+        conn.WriteStr(GetClientName() + "\r\n");
+        conn.WriteStr(m_QueueName + "\r\n");
+    }
+    
+};
+
+/* static */
+string NSClient::SendCmdWaitResponce(CNetSrvConnector& conn, const string& cmd, const string& job_key)
+{
+    string tmp = cmd;
+    if (!job_key.empty())
+        tmp += ' ' + job_key;
+    tmp += "\r\n";
+    conn.WriteStr(tmp);
+    conn.WaitForServer();
+    if (!conn.ReadStr(tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    return tmp;
+}
+
+void NSClient::PrintStatistics(CNcbiOstream&   out,  EStatisticsOptions opt) const
+{
+    string cmd = "STAT";
+    if (opt == NSClient::eStatisticsAll) {
+        cmd += " ALL";
+    }
+    cmd += "\r\n";
+    CNetSrvConnectorPoll::iterator it = GetPoll().begin();
+    for( ; it != GetPoll().end(); ++it) {
+        out << GetServiceName() << "(" << it->GetHost() << ":" << it->GetPort() << ")" << endl;
+        it->WriteStr(cmd);
+        PrintServerOut(*it, out);
+    }
+}
+
 int CNetScheduleControl::Run(void)
 {
+
+    NSClient client("ns_test", "netschedule_admin", "sample");
+    client.PrintStatistics(cout);
+
+    return 0;
 
     const CArgs& args = GetArgs();
     CNcbiOstream& os = NcbiCout;
@@ -505,6 +572,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2007/01/09 15:29:55  didenko
+ * Added new API for NetSchedule service
+ *
  * Revision 1.23  2006/12/06 15:04:21  didenko
  * Added a new version of netschedule_control util, renamed the old one to netschedule_control_old
  *
