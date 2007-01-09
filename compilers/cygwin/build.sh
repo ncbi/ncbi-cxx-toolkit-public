@@ -1,11 +1,9 @@
-#! /bin/sh -x
+#! /bin/sh
 # $Id$
 # Author:  Vladimir Ivanov (ivanov@ncbi.nlm.nih.gov)
 #
 # Build C++ Toolkit using Cygwin
 
-date
-echo "--- Start"
 
 ########### Arguments
 
@@ -49,8 +47,6 @@ for cfg in $cfgs ; do
     cd $build_dir/../..  ||  error "Cannot change directory"
 
     # Configure
-date
-echo "--- Configure $cfg"
 
     start=`eval $timer`
     echo Start time: $start
@@ -65,10 +61,7 @@ echo "--- Configure $cfg"
     fi
     echo "Build time: $start - `eval $timer`"
 
-
     # Build
-date
-echo "--- Build $cfg"
 
     dir=`find . -maxdepth 1 -name "*-$cfg" | head -1 | sed 's|^.*/||g'`
     if [ -z "$dir"  -o  ! -d "$dir" ] ; then
