@@ -120,6 +120,10 @@ public:
 	
 	static CDFamily* findFamily(CCdCore* cd, vector<CDFamily>& families);
 	static bool isDup(CDFamily& one, vector<CDFamily>& all);
+
+	//CDs in cds will be extracted into families; caller assumes ownership of the CDFamily pointers.
+	static int createFamilies(vector<CCdCore*>& cds, vector<CDFamily*>& families);
+
 	//CDs in cds will be extracted into families
 	static int createFamilies(vector<CCdCore*>& cds, vector<CDFamily>& families);
 	static void extractFamily(CCdCore* parentCD, CDFamily& cdFamily, vector<CCdCore*>& cds);
@@ -141,6 +145,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2007/01/09 19:29:00  lanczyck
+ * add createFamilies
+ *
  * Revision 1.3  2006/12/18 17:02:10  lanczyck
  * add convergeTo and findCDByAccession to CDFamily
  *

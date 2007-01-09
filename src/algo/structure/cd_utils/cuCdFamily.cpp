@@ -436,6 +436,28 @@ int CDFamily::createFamilies(vector<CCdCore*>& cds, vector<CDFamily>& families)
 	return families.size(); //all cds should be added
 }
 
+//  In the vector, pass back pointers to vs copies of the families.
+//  Requires that the caller cleans up the families after!!
+int CDFamily::createFamilies(vector<CCdCore*>& cds, vector<CDFamily*>& families)
+{
+	vector<CCdCore*>::iterator cdIterator = cds.begin();
+	while(cdIterator != cds.end())
+	{
+		CCdCore* cd = *cdIterator;
+		if (!findParent(cd, cds))  //no parent, then use this cd as a root of family
+		{
+			CDFamily* cdFamily = new CDFamily(cd);
+			cds.erase(cdIterator);
+			extractFamily(cd, *cdFamily, cds);
+			families.push_back(cdFamily);
+			cdIterator = cds.begin();
+		}
+		else
+			++cdIterator;
+	}
+	return families.size(); //all cds should be added
+}
+
 void CDFamily::extractFamily(CCdCore* parentCD, CDFamily& cdFamily, vector<CCdCore*>& cds)
 {
 	set<int> children;
@@ -497,6 +519,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2007/01/09 19:29:21  lanczyck
+ * add createFamilies
+ *
  * Revision 1.3  2006/12/18 17:02:34  lanczyck
  * add convergeTo and findCDByAccession to CDFamily
  *
