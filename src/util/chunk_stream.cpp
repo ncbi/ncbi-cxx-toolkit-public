@@ -42,9 +42,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#define CHUNK_LENGTH_DELIM ':'
-#define CONTROL_SYM_PREFIX '\\'
-
 CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
 {
     if (m_BufferSize == 0)
@@ -53,24 +50,13 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
     unsigned digit;
 
     switch (m_State) {
-    case eReadEscapedControlChar:
-        m_ChunkPart = m_Buffer;
-        ++m_Buffer;
-        --m_BufferSize;
-        m_State = eReadControlChars;
-        return eControlSymbol;
-
     case eReadControlChars:
-        // Check if the current character is a digit - all non-digit characters
-        // are considered control symbols.
+        // This block will consume one character either way.
+        ++m_Offset;
+
+        // Check if the current character is a digit.
         if ((digit = (unsigned) *m_Buffer - '0') > 9) {
-            if (*m_Buffer == CONTROL_SYM_PREFIX) {
-                if (--m_BufferSize == 0) {
-                    m_State = eReadEscapedControlChar;
-                    return eEndOfBuffer;
-                }
-                ++m_Buffer;
-            }
+            // All non-digit characters are considered control symbols.
             m_ChunkPart = m_Buffer;
             ++m_Buffer;
             --m_BufferSize;
@@ -89,18 +75,33 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
         while ((digit = (unsigned) *m_Buffer - '0') <= 9) {
             m_LengthAcc = m_LengthAcc * 10 + digit;
 
+            ++m_Offset;
             if (--m_BufferSize == 0)
                 return eEndOfBuffer;
             ++m_Buffer;
+        }
+
+        switch (*m_Buffer) {
+        case '+':
+            m_ChunkContinued = true;
+            break;
+
+        case ' ':
+            m_ChunkContinued = false;
+            break;
+
+        default:
+            m_ChunkPart = m_Buffer;
+            m_ChunkPartSize = m_LengthAcc;
+            m_State = eReadControlChars;
+            return eFormatError;
         }
 
         m_State = eReadChunk;
-
-        if (*m_Buffer == CHUNK_LENGTH_DELIM) {
-            if (--m_BufferSize == 0)
-                return eEndOfBuffer;
-            ++m_Buffer;
-        }
+        ++m_Offset;
+        if (--m_BufferSize == 0)
+            return eEndOfBuffer;
+        ++m_Buffer;
 
     default: /* case eReadChunk: */
         m_ChunkPart = m_Buffer;
@@ -109,12 +110,14 @@ CChunkStreamReader::EStreamParsingEvent CChunkStreamReader::NextParsingEvent()
             m_BufferSize -= m_LengthAcc;
             m_ChunkPartSize = m_LengthAcc;
             m_Buffer += m_LengthAcc;
+            m_Offset += m_LengthAcc;
             // The last part of the chunk has been read - get back to
             // reading control symbols.
             m_State = eReadControlChars;
-            return eChunk;
+            return m_ChunkContinued ? eChunkPart : eChunk;
         } else {
             m_ChunkPartSize = m_BufferSize;
+            m_Offset += m_BufferSize;
             m_LengthAcc -= m_BufferSize;
             m_BufferSize = 0;
             return eChunkPart;
@@ -140,31 +143,23 @@ bool CChunkStreamWriter::SendControlSymbol(char symbol)
     assert(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
         m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
         "Must be in the state of filling the output buffer.");
-
-    if ((unsigned) symbol - '0' <= 9 || symbol == CONTROL_SYM_PREFIX) {
-        m_Buffer[m_OutputBufferSize] = CONTROL_SYM_PREFIX;
-        if (++m_OutputBufferSize == m_BufferSize) {
-            m_InternalBuffer[sizeof(m_InternalBuffer) - 1] = symbol;
-            m_InternalBufferSize = 1;
-            return false;
-        }
-    }
+    assert(symbol < '0' || symbol > '9' &&
+        "Ensure the control symbol is not a digit.");
 
     m_Buffer[m_OutputBufferSize] = symbol;
     return ++m_OutputBufferSize < m_BufferSize;
 }
 
-bool CChunkStreamWriter::SendChunk(const char* chunk, size_t chunk_length)
+bool CChunkStreamWriter::SendChunk(const char* chunk,
+    size_t chunk_length, bool to_be_continued)
 {
     assert(m_OutputBuffer == m_Buffer && m_OutputBufferSize < m_BufferSize &&
         m_InternalBufferSize == 0 && m_ChunkPartSize == 0 &&
         "Must be in the state of filling the output buffer.");
 
-    char* result = m_InternalBuffer + sizeof(m_InternalBuffer);
+    char* result = m_InternalBuffer + sizeof(m_InternalBuffer) - 1;
 
-    if (chunk_length == 0 || (unsigned) *chunk - '0' <= 9 ||
-        *chunk == CHUNK_LENGTH_DELIM)
-        *--result = CHUNK_LENGTH_DELIM;
+    *result = to_be_continued ? '+' : ' ';
 
     size_t number = chunk_length;
 

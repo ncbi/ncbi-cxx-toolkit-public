@@ -52,6 +52,7 @@ public:
 private:
     struct SChunkData {
         char* chunk;
+        bool to_be_continued;
         char control_symbol;
     };
 
@@ -76,63 +77,54 @@ private:
 const CChunkStreamTestApp::SChunkData
     CChunkStreamTestApp::sm_TestChunkSequence[] =
 {
-    {NULL, '0'},
-    {"", 0},
-    {"echo", 0},
-    {"123", 0},
-    {NULL, ';'},
-    {"cd", 0},
-    {NULL, ';'},
-    {"ls", 0},
-    {NULL, ';'},
-    {"mkdir", 0},
-    {"test", 0},
-    {NULL, ';'},
-    {"cd", 0},
-    {"test", 0},
-    {NULL, ';'},
-    {"cp", 0},
-    {"~/test.cpp", 0},
-    {".", 0},
-    {NULL, ';'},
-    {"g++", 0},
-    {"-Wall", 0},
-    {"-o", 0},
-    {"test", 0},
-    {"test.cpp", 0},
-    {NULL, ';'},
-    {"./test", 0},
-    {NULL, ';'},
-    {"cd", 0},
-    {"..", 0},
-    {NULL, ';'},
-    {"rm", 0},
-    {"-fr", 0},
-    {"test", 0},
-    {NULL, ';'},
-    {"update", 0},
-    {NULL, '\\'},
-    {"db", 0},
-    {NULL, ';'},
-    {NULL, '1'},
-    {"1", 0}
+    {"", false, 0},
+    {"cd", false, 0},
+    {NULL, false, ';'},
+    {"ls", false, 0},
+    {NULL, false, ';'},
+    {"mkdir", false, 0},
+    {"test", false, 0},
+    {NULL, false, ';'},
+    {"cd", false, 0},
+    {"test", false, 0},
+    {NULL, false, ';'},
+    {"cp", false, 0},
+    {"~/test.cpp", false, 0},
+    {".", false, 0},
+    {NULL, false, ';'},
+    {"g++", false, 0},
+    {"-Wall", false, 0},
+    {"-o", false, 0},
+    {"test", false, 0},
+    {"test.cpp", false, 0},
+    {NULL, false, ';'},
+    {"./test", false, 0},
+    {NULL, false, ';'},
+    {"cd", false, 0},
+    {"..", false, 0},
+    {NULL, false, ';'},
+    {"rm", false, 0},
+    {"-fr", false, 0},
+    {"test", false, 0},
+    {NULL, false, ';'},
+    {"update", true, 0},
+    {"db", false, 0},
+    {NULL, false, ';'}
 };
 
 const char CChunkStreamTestApp::sm_TestStream[] =
-    "\\00:"
-    "4echo3:123;"
-    "2cd;"
-    "2ls;"
-    "5mkdir4test;"
-    "2cd4test;"
-    "2cp10~/test.cpp1.;"
-    "3g++5-Wall2-o4test8test.cpp;"
-    "6./test;"
-    "2cd2..;"
-    "2rm3-fr4test;"
-    "6update\\\\"
-    "2db;"
-    "\\11:1";
+    "0 "
+    "2 cd;"
+    "2 ls;"
+    "5 mkdir4 test;"
+    "2 cd4 test;"
+    "2 cp10 ~/test.cpp1 .;"
+    "3 g++5 -Wall2 -o4 test8 test.cpp;"
+    "6 ./test;"
+    "2 cd2 ..;"
+    "2 rm3 -fr4 test;"
+    "6+update"
+    "2 db;";
 
 #define IN_READER_TEST "CChunkStreamReader test: "
 
@@ -172,6 +164,12 @@ bool CChunkStreamTestApp::TestReaderInput(
         case CChunkStreamReader::eChunkPart:
             if (!TestReaderChunkPart())
                 return false;
+
+            if (*m_ReaderTestChunkPart == 0 &&
+                m_ReaderTestChunk->to_be_continued) {
+                ++m_ReaderTestChunk;
+                m_ReaderTestChunkPart = NULL;
+            }
             break;
 
         case CChunkStreamReader::eChunk:
@@ -205,8 +203,13 @@ bool CChunkStreamTestApp::TestReaderInput(
             ++m_ReaderTestChunk;
             break;
 
-        default: /* case CChunkStreamReader::eEndOfBuffer: */
+        case CChunkStreamReader::eEndOfBuffer:
             return true;
+
+        default: /* case CChunkStreamReader::eFormatError: */
+            ERR_POST(IN_READER_TEST "stream format error at offset " <<
+                m_Reader.GetOffset());
+            return false;
         }
 }
 
@@ -272,7 +275,8 @@ bool CChunkStreamTestApp::TestWriter(size_t buffer_size)
     do {
         if (!(test_seq->control_symbol ?
             m_Writer.SendControlSymbol(test_seq->control_symbol) :
-            m_Writer.SendChunk(test_seq->chunk, strlen(test_seq->chunk))))
+            m_Writer.SendChunk(test_seq->chunk, strlen(test_seq->chunk),
+                test_seq->to_be_continued)))
             do
                 if (!TestWriterOutput())
                     return false;

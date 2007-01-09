@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 /// Function names starting with ToDo:: are to be implemented by the client
 /// class.
 /// @code
-/// void ProcessParsingEvents(CChunkStreamReader& reader)
+/// bool ProcessParsingEvents(CChunkStreamReader& reader)
 /// {
 ///     for (;;)
 ///         switch (reader.NextParsingEvent()) {
@@ -71,8 +71,11 @@ BEGIN_NCBI_SCOPE
 ///             ToDo::ProcessControlSymbol(reader.GetControlSymbol());
 ///             break;
 ///
-///         default: // case CChunkStreamReader::eEndOfBuffer:
-///             return;
+///         case CChunkStreamReader::eEndOfBuffer:
+///             return true;
+///
+///         default: // case CChunkStreamReader::eFormatError:
+///             return false;
 ///         }
 /// }
 ///
@@ -82,7 +85,8 @@ BEGIN_NCBI_SCOPE
 ///
 ///     while (ToDo::ReadBuffer(buffer, &buffer_size)) {
 ///         reader.SetNewBuffer(buffer, buffer_size);
-///         ProcessParsingEvents(reader);
+///         if (!ProcessParsingEvents(reader))
+///             break;
 ///     }
 /// }
 /// @endcode
@@ -109,7 +113,15 @@ public:
 
         /// Notify that the end of the input buffer has been reached. New
         /// buffer processing can be started now by calling SetNewBuffer().
-        eEndOfBuffer
+        eEndOfBuffer,
+
+        /// Indicate a format error in the input stream. It is advisable to
+        /// stop processing upon recieving this event. A subsequent call to
+        /// GetChunkPart() will return the position in the input buffer at
+        /// which the error has occured. A call to GetChunkPartSize() will
+        /// return the accumulated length of the expected chunk, if any.
+        /// Note that these two values are not related.
+        eFormatError
     };
 
 // Construction
@@ -119,6 +131,19 @@ public:
 
     /// Reinitialize this object.
     void Reset();
+
+// Attributes
+public:
+    /// Set offset of the current character in the input stream to the
+    /// specified value.
+    /// @param offset
+    ///   The new value for the current character offset.
+    void SetOffset(off_t offset);
+
+    /// Return the offset of the current character in the input stream.
+    /// @return
+    ///   The current character offset.
+    off_t GetOffset() const;
 
 // Operations
 public:
@@ -161,7 +186,6 @@ public:
 // Implementation
 private:
     enum EStreamParsingState {
-        eReadEscapedControlChar,
         eReadControlChars,
         eReadChunkLength,
         eReadChunk
@@ -169,18 +193,32 @@ private:
 
     const char* m_Buffer, *m_ChunkPart;
     size_t m_BufferSize, m_ChunkPartSize;
+    off_t m_Offset;
     // Register for keeping intermediate values of chunk lengths.
     size_t m_LengthAcc;
     EStreamParsingState m_State;
+    bool m_ChunkContinued;
 };
 
-inline CChunkStreamReader::CChunkStreamReader() : m_State(eReadControlChars)
+inline CChunkStreamReader::CChunkStreamReader() :
+    m_Offset(0), m_State(eReadControlChars)
 {
 }
 
 inline void CChunkStreamReader::Reset()
 {
+    m_Offset = 0;
     m_State = eReadControlChars;
+}
+
+inline void CChunkStreamReader::SetOffset(off_t offset)
+{
+    m_Offset = offset;
+}
+
+inline off_t CChunkStreamReader::GetOffset() const
+{
+    return m_Offset;
 }
 
 inline void CChunkStreamReader::SetNewBuffer(const char* buffer,
@@ -257,10 +295,12 @@ public:
 
 // Operations
 public:
-    /// Send a control symbol over the output buffer. Control symbol can be of
-    /// any byte character value.
+    /// Send a control symbol over the output buffer. Control symbol can be any
+    /// byte character except digits. It is the caller's responsibility to
+    /// verify that the symbol argument passed to this method satisfies this
+    /// requirement. This method will assert if this requirement is violated.
     /// @param symbol
-    ///   The byte to be sent.
+    ///   The byte to be sent. Can be any character except digits (0...9).
     /// @return
     ///   True if adding "symbol" to the output buffer did not result in the
     ///   buffer overflow condition; false - when the output buffer is full and
@@ -273,13 +313,19 @@ public:
     ///   A pointer to the memory area containing the chunk of data to be sent.
     /// @param chunk_length
     ///   The length of the chunk of data to be sent, in bytes.
+    /// @param to_be_continued
+    ///   Indicate that a chunk continuation mark must be inserted in the
+    ///   stream. The CChunkStreamReader class will fire a eChunkPart event
+    ///   after reading the entire chunk of data pointed to by the chunk
+    ///   parameter.
     /// @return
     ///   True if after the specified chunk has been fit in the output buffer
     ///   completely and there is still some space available in the buffer;
     ///   false - when the buffer has been filled and needs to be flushed by a
     ///   call to GetOutputBuffer() before the next chunk of data or control
     ///   symbol can be sent.
-    bool SendChunk(const char* chunk, size_t chunk_length);
+    bool SendChunk(const char* chunk, size_t chunk_length,
+        bool to_be_continued);
 
     /// Return data to be sent over the output stream and extend internal
     /// pointers to the next buffer. This method can be called at any time,
