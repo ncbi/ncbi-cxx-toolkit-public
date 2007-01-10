@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("query parser test" project)
+#################################
+
+
+APP_PROJ = test_qparse
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
