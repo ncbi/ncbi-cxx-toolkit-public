@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = util xregexp
-SUB_PROJ = regexp compress image tables creaders fileblobstorage test sequtil bitset demo
+SUB_PROJ = regexp compress image tables creaders fileblobstorage test sequtil bitset qparse demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
