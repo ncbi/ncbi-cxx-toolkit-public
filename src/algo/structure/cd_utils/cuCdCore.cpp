@@ -497,7 +497,11 @@ bool CCdCore::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str,
   CRef< CSeq_id > SeqID;
 
   GetSeqIDForRow(Pair, DenDiagRow, SeqID);
-  Str += Make_SeqID_String(SeqID, Pad, Len);
+  if (SeqID->IsGi() || SeqID->IsPdb()) {
+    Str += Make_SeqID_String(SeqID, Pad, Len);
+  } else {
+    Str += "<Non-gi/pdb Sequence Types Unsupported>";
+  }
 //  Make_GI_or_PDB_String(SeqID, Str, Pad, Len);
   return(true);
 }
@@ -2338,8 +2342,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.8  2007/01/10 15:35:06  lanczyck
- * use GetSeqIDStr; Make_GI_or_PDB_String was removed from cuUtils
+ * Revision 1.9  2007/01/10 16:14:53  lanczyck
+ * add type test when getting seq-id strings; restore use of old unsupported type message when not pass test
  *
  * Revision 1.7  2006/05/31 20:32:42  cliu
  * fix a bug in GetBlockStartsForRow

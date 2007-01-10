@@ -210,7 +210,12 @@ bool  AlignmentCollection::Get_GI_or_PDB_String_FromAlignment(int  row, std::str
 
 	GetSeqIDForRow(row, SeqID);
 //	Make_GI_or_PDB_String(SeqID, result, false, 0);
-	result += GetSeqIDStr(SeqID);
+    if (SeqID->IsGi() || SeqID->IsPdb()) {
+        result += GetSeqIDStr(SeqID);
+    } else {
+        result += "<Non-gi/pdb Sequence Types Unsupported>";
+    }
+
 	return(true);
 }
 
