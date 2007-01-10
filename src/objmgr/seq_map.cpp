@@ -415,6 +415,7 @@ void CSeqMap::x_SetObject(const CSegment& seg, const CObject& obj)
     // set object
     const_cast<CSegment&>(seg).m_ObjType = seg.m_SegType;
     const_cast<CSegment&>(seg).m_RefObject.Reset(&obj);
+    m_Changed = true;
 }
 
 
