@@ -367,8 +367,10 @@ void CServer::Run(void)
     }
 
     m_ConnectionPool->StopListening();
-    m_ConnectionPool->Erase();
+    // We need to kill all processing threads first, so that there
+    // is no request with already destroyed connection left.
     threadPool.KillAllThreads(true);
+    m_ConnectionPool->Erase();
 }
 
 
@@ -405,6 +407,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.7  2007/01/10 19:12:30  joukovv
+ * Race when server is shutting down with outstanding requests fixed.
+ *
  * Revision 6.6  2006/12/14 04:45:22  lavr
  * Derive from CConnIniter for auto-magical init (former CONNECT_InitInternal)
  *
