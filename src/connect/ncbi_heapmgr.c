@@ -28,7 +28,7 @@
  * Abstract:
  *
  * This is a simple heap manager with a primitive garbage collection.
- * The heap contains blocks of data, stored in the common contiguous pool,
+ * The heap contains blocks of data, stored in a common contiguous pool,
  * each block preceded with a SHEAP_Block structure.  Low word of 'flag'
  * is either non-zero (True), when the block is in use, or zero (False),
  * when the block is vacant.  'Size' shows the length of the block in bytes,
@@ -407,14 +407,14 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
         return 0;
     }
     assert(!heap->base == !heap->size);
-    if (size < 1)
-        return 0;
 
     if (!heap->chunk) {
         CORE_LOGF(eLOG_Error,
                   ("Heap Alloc%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return 0;
     }
+    if (size < 1)
+        return 0;
 
     size = (TNCBI_Size) HEAP_ALIGN(sizeof(SHEAP_Block) + size);
 
@@ -444,8 +444,8 @@ static SHEAP_Block* s_HEAP_Alloc(HEAP heap, TNCBI_Size size, int/*bool*/ fast)
     else if (!heap->resize)
         return 0;
     else {
-        TNCBI_Size hsize = (TNCBI_Size)
-            _HEAP_ALIGN((heap->size << _HEAP_ALIGNSHIFT) + size, heap->chunk);
+        TNCBI_Size hsize = ((size + (heap->size << _HEAP_ALIGNSHIFT)
+                             + heap->chunk - 1) / heap->chunk) * heap->chunk;
         SHEAP_HeapBlock* base = (SHEAP_HeapBlock*)
             heap->resize(heap->base, (size_t) hsize, heap->arg);
         if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
@@ -778,8 +778,9 @@ HEAP HEAP_Trim(HEAP heap)
 
     if (!heap)
         return 0;
-
-    if (!heap->chunk) {
+    assert(!heap->base == !heap->size);
+ 
+   if (!heap->chunk) {
         CORE_LOGF(eLOG_Error,
                   ("Heap Trim%s: Heap read-only", s_HEAP_Id(_id, heap)));
         return 0;
@@ -954,6 +955,9 @@ void HEAP_Options(ESwitch fast, ESwitch newalk)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2007/01/10 21:07:03  lavr
+ * Fix rounding to whole chunks at allocation
+ *
  * Revision 6.36  2006/12/13 21:15:37  lavr
  * Fix compilation warnings
  *
