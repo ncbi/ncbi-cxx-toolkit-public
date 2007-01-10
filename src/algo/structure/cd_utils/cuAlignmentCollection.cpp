@@ -209,7 +209,8 @@ bool  AlignmentCollection::Get_GI_or_PDB_String_FromAlignment(int  row, std::str
 	CRef< CSeq_id > SeqID;
 
 	GetSeqIDForRow(row, SeqID);
-	Make_GI_or_PDB_String(SeqID, result, false, 0);
+//	Make_GI_or_PDB_String(SeqID, result, false, 0);
+	result += GetSeqIDStr(SeqID);
 	return(true);
 }
 

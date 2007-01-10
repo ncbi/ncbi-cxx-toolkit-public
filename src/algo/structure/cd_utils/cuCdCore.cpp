@@ -497,7 +497,8 @@ bool CCdCore::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str,
   CRef< CSeq_id > SeqID;
 
   GetSeqIDForRow(Pair, DenDiagRow, SeqID);
-  Make_GI_or_PDB_String(SeqID, Str, Pad, Len);
+  Str += Make_SeqID_String(SeqID, Pad, Len);
+//  Make_GI_or_PDB_String(SeqID, Str, Pad, Len);
   return(true);
 }
 
@@ -2337,6 +2338,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2007/01/10 15:35:06  lanczyck
+ * use GetSeqIDStr; Make_GI_or_PDB_String was removed from cuUtils
+ *
  * Revision 1.7  2006/05/31 20:32:42  cliu
  * fix a bug in GetBlockStartsForRow
  *
