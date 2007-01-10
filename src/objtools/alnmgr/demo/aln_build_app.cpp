@@ -183,26 +183,25 @@ int CAlnBuildApp::Run(void)
 
     /// Types we use here:
     typedef CSeq_align::TDim TDim;
-    typedef vector<const CSeq_align*> TAlnVector;
-    typedef const CSeq_id* TSeqIdPtr;
-    typedef vector<TSeqIdPtr> TSeqIdVector;
     typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
-    typedef CAlnSeqIdVector<TAlnVector, TIdExtract> TAlnSeqIdVector;
-    typedef CAlnStats<TAlnSeqIdVector> TAlnStats;
-
-
-    /// Create a vector of alignments based on m_AlnContainer
-    TAlnVector aln_vector(m_AlnContainer.size());
-    aln_vector.assign(m_AlnContainer.begin(), m_AlnContainer.end());
+    typedef CAlnIdMap<vector<const CSeq_align*>, TIdExtract> TAlnIdMap;
+    typedef CAlnStats<TAlnIdMap> TAlnStats;
 
 
     /// Create a vector of seq-ids per seq-align
-    TAlnSeqIdVector aln_seq_id_vector(aln_vector, TIdExtract());
-    ReportTime("TAlnSeqIdVector");
+    TAlnIdMap aln_id_map(TIdExtract(), m_AlnContainer.size());
+    ITERATE(CAlnContainer, aln_it, m_AlnContainer) {
+        try {
+            aln_id_map.push_back(**aln_it);
+        } catch (CException e) {
+            cerr << "Skipping this alignment: " << e.what() << endl;;
+        }
+    }
+    ReportTime("TAlnIdMap");
 
 
     /// Crete align statistics object
-    TAlnStats aln_stats(aln_seq_id_vector);
+    TAlnStats aln_stats(aln_id_map);
     ReportTime("TAlnStats");
     {
         aln_stats.Dump(cout);
@@ -211,13 +210,13 @@ int CAlnBuildApp::Run(void)
 
 
     /// Construct a vector of anchored alignments
-    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVector;
-    TAnchoredAlnVector anchored_aln_vector;
-    CreateAnchoredAlnVector(aln_stats, anchored_aln_vector);
-    ReportTime("TAnchoredAlnVector");
+    typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
+    TAnchoredAlnVec anchored_aln_vec;
+    CreateAnchoredAlnVec(aln_stats, anchored_aln_vec);
+    ReportTime("TAnchoredAlnVec");
     {
-        ITERATE(TAnchoredAlnVector, aln_vector_it, anchored_aln_vector) {
-            (*aln_vector_it)->Dump(cout);
+        ITERATE(TAnchoredAlnVec, aln_vec_it, anchored_aln_vec) {
+            (*aln_vec_it)->Dump(cout);
         }
         m_StopWatch.Restart();
     }
@@ -230,19 +229,19 @@ int CAlnBuildApp::Run(void)
 
 
     /// Build a single anchored aln
-    CAnchoredAln built_anchored_aln;
-    BuildAln(anchored_aln_vector,
-             built_anchored_aln,
+    CAnchoredAln out_anchored_aln;
+    BuildAln(anchored_aln_vec,
+             out_anchored_aln,
              aln_user_options);
     ReportTime("BuildAln");
     {
-        built_anchored_aln.Dump(cout);
+        out_anchored_aln.Dump(cout);
         m_StopWatch.Restart();
     }
 
 
     /// Get sequence:
-    CSparseAln sparse_aln(built_anchored_aln, GetScope());
+    CSparseAln sparse_aln(out_anchored_aln, GetScope());
     ReportTime("CSparseAln");
     if (GetArgs()["print"].AsBoolean()) {
         for (TDim row = 0;  row < sparse_aln.GetDim();  ++row) {
@@ -272,6 +271,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2007/01/10 18:20:54  todorov
+* Alignments are now pushed back into CAlnIdMap which potentially throws
+* an exception (giving the user greater control and flexibility).
+*
 * Revision 1.15  2006/12/13 18:08:28  todorov
 * Added a print option.  Added a dump for the anchored_aln_vector.
 *
