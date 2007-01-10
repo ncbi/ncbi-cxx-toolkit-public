@@ -62,10 +62,10 @@ template <class TAlnSeqId>
 class CAlnSeqIdsExtract
 {
 public:
-    typedef vector<TAlnSeqIdIRef> TIdVector;
+    typedef vector<TAlnSeqIdIRef> TIdVec;
 
     void operator()(const CSeq_align& seq_align, //< Input aln
-                    TIdVector& id_vec) const     //< Output (ids for that aln)
+                    TIdVec& id_vec) const     //< Output (ids for that aln)
     {
         _ASSERT(id_vec.empty());
 
@@ -86,10 +86,10 @@ public:
                         this->operator()(**sa_it, id_vec);
                     } else {
                         /// Need to make sure ids are identical across all alignments
-                        TIdVector next_id_vec;
+                        TIdVec next_id_vec;
                         this->operator()(**sa_it, next_id_vec);
                         if (id_vec != next_id_vec) {
-                            NCBI_THROW(CSeqalignException, eInvalidSeqId,
+                            NCBI_THROW(CAlnException, eInvalidSeqId,
                                        "Inconsistent Seq-ids across the disc alignments.");
                         }
                     }
@@ -97,25 +97,30 @@ public:
             }
             break;
         case TSegs::e_Dendiag:
-            /// Need to make sure ids are identical across all alignments
-            ITERATE(TSegs::TDendiag, diag_it, segs.GetDendiag()) {
-                const CDense_diag::TIds& ids = (*diag_it)->GetIds();
+            {
+                bool first_diag = true;
+                ITERATE(TSegs::TDendiag, diag_it, segs.GetDendiag()) {
+                    const CDense_diag::TIds& ids = (*diag_it)->GetIds();
             
-                bool first = true;
-                if (first) {
-                    id_vec.resize(ids.size());
-                } else if (id_vec.size() != ids.size()) {
-                    NCBI_THROW(CSeqalignException, eInvalidSeqId,
-                               "Inconsistent Seq-ids.");
-                }
-                size_t i = 0;
-                ITERATE(CDense_diag::TIds, id_it, ids) {
-                    if (first) {
-                        id_vec[i++].Reset(new TAlnSeqId(**id_it));
-                    } else if (*id_vec[i] != TAlnSeqId(**id_it)) {
-                        NCBI_THROW(CSeqalignException, eInvalidSeqId,
+                    if (first_diag) {
+                        id_vec.resize(ids.size());
+                    } else if (id_vec.size() != ids.size()) {
+                        NCBI_THROW(CAlnException, eInvalidSeqId,
                                    "Inconsistent Seq-ids.");
                     }
+                    size_t row = 0;
+                    ITERATE(CDense_diag::TIds, id_it, ids) {
+                        if (first_diag) {
+                            id_vec[row].Reset(new TAlnSeqId(**id_it));
+                        } else if (*id_vec[row] != TAlnSeqId(**id_it)) {
+                            NCBI_THROW(CAlnException, eInvalidSeqId,
+                                       string("Inconsistent Seq-ids: ") +
+                                       id_vec[row]->AsString() + " != " +
+                                       TAlnSeqId(**id_it).AsString() + ".");
+                        }
+                        ++row;
+                    }
+                    first_diag = false;
                 }
             }
             break;
@@ -140,11 +145,11 @@ public:
                     if (first_seg) {
                         id_vec.resize(std_seg.GetDim());
                     } else if (id_vec.size() != (size_t) std_seg.GetDim()) {
-                        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                        NCBI_THROW(CAlnException, eInvalidAlignment,
                                    "The Std-seg dim's need to be consistent.");
                     }
                     if (std_seg.GetLoc().size() != id_vec.size()) {
-                        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                        NCBI_THROW(CAlnException, eInvalidAlignment,
                                    "Number of seq-locs inconsistent with dim.");
                     }
                     size_t i = 0;
@@ -169,7 +174,7 @@ public:
                                 string("Seq-loc of type ") + 
                                 (*loc_it)->SelectionName((*loc_it)->Which()) +
                                 "is not supported.";
-                            NCBI_THROW(CSeqalignException, eUnsupported, err_str);
+                            NCBI_THROW(CAlnException, eUnsupported, err_str);
                         }
 
                         // Store the lengths
@@ -182,7 +187,7 @@ public:
                             err += NStr::IntToString(i) + 
                                 ".  Excpected " + id_vec[i]->AsString() +
                                 ", encountered " + id->AsString() + ".";
-                            NCBI_THROW(CSeqalignException, eInvalidSeqId, err);
+                            NCBI_THROW(CAlnException, eInvalidSeqId, err);
                         }
                         ++i;
                     }
@@ -221,11 +226,28 @@ public:
                 }
             }
             break;
+        case TSegs::e_Sparse:
+            {
+//                 const CSparse_seg::TRows& rows = segs.GetSparse().GetRows();
+//                 for (size_t row = 0;  row < rows.size();  ++row) {
+//                     const CSparse_align& sa = rows[row];
+//                     if (row == 0) {
+//                         id_vec.resize(segs.GetSparce().GetRows().size() + 1);
+//                         id_vec[0].Reset(sa.GetFirst_id());
+//                     } else if (*id_vec[0] != sa.GetFirst_id()) {
+//                         string err("Inconsistent Seq-ids found in row ");
+//                         err += NStr::IntToString(row) + ".";
+//                         NCBI_THROW(CAlnException, eInvalidSeqId, err);
+//                     }
+//                     id_vec[row + 1].Reset(sa.GetSecond_id());
+//                 }
+            }
+            break;
         case TSegs::e_not_set:
-            NCBI_THROW(CSeqalignException, eInvalidAlignment,
+            NCBI_THROW(CAlnException, eInvalidAlignment,
                        "Seq-align.segs not set.");
         default:
-            NCBI_THROW(CSeqalignException, eUnsupported,
+            NCBI_THROW(CAlnException, eUnsupported,
                        "This type of alignment is not supported.");
         }
     
@@ -240,6 +262,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2007/01/10 18:14:41  todorov
+* Vector->Vec
+* CSeqalignException->CAlnException
+* Fixed a bug with diag ids verification.
+*
 * Revision 1.5  2007/01/08 16:38:46  todorov
 * Fixed a small bug.
 *
