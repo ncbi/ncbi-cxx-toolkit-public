@@ -669,15 +669,18 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	for(; it != seqAligns.end(); it++)
 	{
 		CRef< CSeq_align > seqAlignRef = *it;
+		//seqAlign from BLAST is in Denseg
+		CSeq_align::C_Segs::TDenseg& denseg = seqAlignRef->SetSegs().SetDenseg();
 		if (m_config.identityThreshold > 0)
 		{
 			double pidScore = 0.0;
 			seqAlignRef->GetNamedScore(CSeq_align::eScore_IdentityCount, pidScore);
+			int start = denseg.GetSeqStart(0);
+			int stop = denseg.GetSeqStop(0);
+			pidScore = 100*pidScore/(stop - start + 1);
 			if ((int)pidScore < m_config.identityThreshold)
 				break; //stop
 		}
-		//seqAlign from BLAST is in Denseg
-		CSeq_align::C_Segs::TDenseg& denseg = (*it)->SetSegs().SetDenseg();
 		//the second is slave
 		if (denseg.GetDim() > 1)
 			seqID = denseg.GetIds()[1];
