@@ -62,8 +62,8 @@ BEGIN_SCOPE(omssa)
 
 void COMSSASearch::CopyCMSSearch(CRef <COMSSASearch> OldSearch)
 {
-    CONNECTOR memory_connector = MEMORY_CreateConnector();
-    CConn_IOStream memory_stream(memory_connector);
+    // SerialAssign(*OldSearch);
+    CConn_MemoryStream memory_stream;
 
     CObjectOStreamAsnBinary omemorystream(memory_stream);
     omemorystream << *OldSearch;
