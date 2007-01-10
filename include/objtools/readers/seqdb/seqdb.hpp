@@ -670,15 +670,21 @@ public:
     
     /// Set upper limit on memory and mapping slice size.
     /// 
-    /// This sets an approximate upper limit on memory used by CSeqDB.
-    /// This will not be exactly enforced, and the library will prefer
-    /// to exceed the bound if necessary rather than return an error.
-    /// Setting this to a very low value may degrade performance.
-    /// Setting it to too high a value may cause stability issues (in
-    /// the form of address space exhaustion) The appropriate range of
-    /// values depends in part on the memory footprint of other parts
-    /// of your application.
-    void SetMemoryBound(Uint8 membound, Uint8 slice_size);
+    /// This sets a (not precisely enforced) upper limit on memory
+    /// used by CSeqDB to memory map disk files (and for some large
+    /// arrays).  Setting this to a low value may degrade performance.
+    /// Setting it to too high a value may cause address space
+    /// exhaustion.  Normally, SeqDB will start with a large bound and
+    /// reduces it if memory exhaustion is detected.  Applications
+    /// that use a lot of memory outside of SeqDB may want to call
+    /// this method to scale back SeqDB's demands.  Note that slice
+    /// size is no longer externally adjustable and may be removed in
+    /// the future.  Also note that if SeqDB detects a map failure, it
+    /// will reduce the memory bound.
+    /// 
+    /// @param membound Maximum memory for SeqDB.
+    /// @param slice_size No longer used.
+    void SetMemoryBound(Uint8 membound, Uint8 slice_size = 0);
     
     /// Translate a PIG to an OID.
     bool PigToOid(int pig, int & oid) const;
