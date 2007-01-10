@@ -48,6 +48,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
+#include <objtools/alnmgr/alnexception.hpp>
 #include <objtools/alnmgr/seqid_comp.hpp>
 #include <objtools/alnmgr/aln_seqid.hpp>
 
@@ -262,6 +263,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2007/01/10 19:32:32  ucko
+* #include <objtools/alnmgr/alnexception.hpp>
+*
 * Revision 1.6  2007/01/10 18:14:41  todorov
 * Vector->Vec
 * CSeqalignException->CAlnException
