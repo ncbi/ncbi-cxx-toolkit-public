@@ -632,7 +632,9 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
     {
         CBioseq_Handle bsh;
         try {
-            bsh = m_Scope->GetBioseqHandle(sl);
+            if (m_Scope.GetPointerOrNull() ) {
+                bsh = m_Scope->GetBioseqHandle(sl);
+            }
         } catch (...) { }
         if (bsh  &&  bsh.IsProtein()  && x_IsOneMinusStrand(sl) ) {
             sl.SetStrand(eNa_strand_unknown);
@@ -1577,6 +1579,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.59  2007/01/10 15:10:09  ludwigf
+ * CHANGED: In CCleanup_imp::BasicCleanup(CSeq_loq&), added pointer check to
+ *  avoid throwing in one of the try/catch blocks. Exceptions counted into the
+ *  thousands for some accessions, killing performance on Windows completely.
+ *
  * Revision 1.58  2007/01/04 13:13:38  bollin
  * Moved ExtendedCleanup function for exception text to BasicCleanup.
  *
