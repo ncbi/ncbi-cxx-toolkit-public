@@ -1439,7 +1439,7 @@ typedef struct tds_answer
     unsigned char lm_resp[24];
     unsigned char nt_resp[24];
 } TDSANSWER;
-void tds_answer_challenge(TDSCONNECTION *connection, const unsigned char *challenge, TDS_UINT *flags, const unsigned char *target_info, TDS_INT target_info_len, TDSANSWER* answer, unsigned char** ntlm_v2_response);
+void tds_answer_challenge(TDSSOCKET * tds, TDSCONNECTION *connection, const unsigned char *challenge, TDS_UINT *flags, const unsigned char *target_info, TDS_INT target_info_len, TDSANSWER* answer, unsigned char** ntlm_v2_response);
 
 #define IS_TDS42(x) (x->major_version==4 && x->minor_version==2)
 #define IS_TDS46(x) (x->major_version==4 && x->minor_version==6)
