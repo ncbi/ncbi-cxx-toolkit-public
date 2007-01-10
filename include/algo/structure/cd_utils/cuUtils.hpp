@@ -72,7 +72,7 @@ string GetSeqIDStr(const CSeq_id& SeqID);
 NCBI_CDUTILS_EXPORT 
 string GetSeqIDStr(const CRef< CSeq_id >& SeqID);
 NCBI_CDUTILS_EXPORT 
-void Make_GI_or_PDB_String(const CRef< CSeq_id > SeqID, std::string& Str, bool Pad, int Len);
+string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len);
 NCBI_CDUTILS_EXPORT 
 void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str);
 
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2007/01/10 15:19:00  lanczyck
+ * generalize Make_GI_or_PDB_String to Make_SeqID_String
+ *
  * Revision 1.4  2006/08/09 18:41:24  lanczyck
  * add export macros for ncbi_algo_structure.dll
  *
