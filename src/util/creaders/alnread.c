@@ -1311,37 +1311,6 @@ s_AddLengthList
 }
 
 
-/* This function examines the last SLengthListData structure in list to
- * see if it matches llp.  If so, the function increments the value of
- * num_appearances for the last SLengthListData structure in list and
- * frees llp, otherwise the function appends llp to the end of list.
- * The function returns a pointer to the list of SLengthListData structures.
- */
-static SLengthListPtr
-s_AddPatternRepeat
-(SLengthListPtr list,
- SLengthListPtr llp)
-{
-    SLengthListPtr prev_llp;
-
-    if (list == NULL) {
-        list = llp;
-    } else {
-        prev_llp = list;
-        while ( prev_llp->next != NULL ) {
-             prev_llp = prev_llp->next;
-        }
-        if (s_DoLengthPatternsMatch (prev_llp, llp)) {
-            prev_llp->num_appearances ++;
-            s_LengthListFree (llp);
-        } else {
-            prev_llp->next = llp;
-        }
-    }
-    return list;
-}
-
-
 /* This set of functions is used for storing and analyzing individual lines
  * or tokens from an alignment file.
  */
@@ -6061,6 +6030,10 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2007/01/10 18:20:14  ucko
+ * Drop s_AddPatternRepeat (obsolete as of R1.30, as s_ReadAlignFileRaw
+ * now contains an internal version reworked to be more efficient).
+ *
  * Revision 1.30  2006/12/27 13:38:46  bollin
  * Fixed bug in alignment reader and improved performance for large alignments.
  *
