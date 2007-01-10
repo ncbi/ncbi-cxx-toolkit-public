@@ -8,3 +8,4 @@ SRC = text_util vector_serial
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
+ASN_DEP = general
