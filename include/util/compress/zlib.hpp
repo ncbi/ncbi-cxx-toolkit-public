@@ -134,6 +134,9 @@ public:
     /// Destructor.
     virtual ~CZipCompression(void);
 
+    /// Return name and version of the compression library.
+    virtual CVersionInfo GetVersion(void) const;
+
     /// Returns default compression level for a compression algorithm.
     virtual ELevel GetDefaultLevel(void) const
         { return ELevel(kZlibDefaultCompression); };
@@ -552,6 +555,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2007/01/10 14:45:49  ivanov
+ * + GetVersion()
+ *
  * Revision 1.21  2007/01/04 13:46:56  ivanov
  * Minor doxygen comment fixes
  *

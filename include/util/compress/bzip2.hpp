@@ -109,6 +109,9 @@ public:
     /// Destructor.
     virtual ~CBZip2Compression(void);
 
+    /// Return name and version of the compression library.
+    virtual CVersionInfo GetVersion(void) const;
+
     // Get compression level.
     // NOTE: BZip2 algorithm do not support zero level compression.
     //       So the "eLevel_NoCompression" will be translated to
@@ -349,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2007/01/10 14:45:49  ivanov
+ * + GetVersion()
+ *
  * Revision 1.15  2007/01/04 20:19:48  ivanov
  * CBZip2StreamCompressor: added missed flag parameter to constructor
  *

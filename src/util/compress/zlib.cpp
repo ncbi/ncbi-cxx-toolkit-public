@@ -282,6 +282,12 @@ void s_CollectFileInfo(const string& filename,
 }
 
 
+CVersionInfo CZipCompression::GetVersion(void) const
+{
+    return CVersionInfo(ZLIB_VERSION, "zlib");
+}
+
+
 bool CZipCompression::CompressBuffer(
                       const void* src_buf, size_t  src_len,
                       void*       dst_buf, size_t  dst_size,
@@ -1186,6 +1192,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2007/01/10 14:46:01  ivanov
+ * + GetVersion()
+ *
  * Revision 1.35  2007/01/04 20:18:36  ivanov
  * (De)compressBuffer: initialize size of compressed data in
  * the destination buffer with zero.

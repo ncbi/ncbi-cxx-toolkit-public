@@ -74,6 +74,12 @@ CBZip2Compression::~CBZip2Compression(void)
 }
 
 
+CVersionInfo CBZip2Compression::GetVersion(void) const
+{
+    return CVersionInfo(BZ2_bzlibVersion(), "bzip2");
+}
+
+
 CCompression::ELevel CBZip2Compression::GetLevel(void) const
 {
     CCompression::ELevel level = CCompression::GetLevel();
@@ -415,7 +421,7 @@ bool CBZip2CompressionFile::Close(void)
 
 CBZip2Compressor::CBZip2Compressor(
                   ELevel level, int verbosity, int work_factor, TFlags flags)
-    : CBZip2Compression(level, verbosity, work_factor, 0)
+    : CBZip2Compression(level, verbosity, work_factor)
 {
     SetFlags(flags);
 }
@@ -696,6 +702,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2007/01/10 14:46:01  ivanov
+ * + GetVersion()
+ *
  * Revision 1.20  2007/01/04 13:45:32  ivanov
  * GetBZip2ErrorDescription: added error codes
  *

@@ -55,6 +55,11 @@ CCompression::~CCompression(void)
 }
 
 
+CVersionInfo CCompression::GetVersion(void) const
+{
+    return CVersionInfo(kEmptyStr);
+}
+
 CCompression::ELevel CCompression::GetLevel(void) const
 {
     if ( m_Level == eLevel_Default) {
@@ -164,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2007/01/10 14:46:01  ivanov
+ * + GetVersion()
+ *
  * Revision 1.13  2006/12/26 16:16:51  ivanov
  * Get rid of compilation warning
  *

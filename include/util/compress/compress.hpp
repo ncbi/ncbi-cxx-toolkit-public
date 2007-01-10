@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/version.hpp>
 
 
 /** @addtogroup Compression
@@ -83,6 +84,9 @@ public:
     // 'ctors
     CCompression(ELevel level = eLevel_Default);
     virtual ~CCompression(void);
+
+    /// Return name and version of the compression library.
+    virtual CVersionInfo GetVersion(void) const;
 
     // Get/set compression level.
     // NOTE 1:  Changing compression level after compression has begun will
@@ -468,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2007/01/10 14:45:49  ivanov
+ * + GetVersion()
+ *
  * Revision 1.19  2006/12/26 17:32:26  ivanov
  * Move fAllowTransparentRead flag definition from CCompression class
  * to each compresson algorithm definition.
