@@ -1,0 +1,455 @@
+Conflict in state 7 between rule 11 and token AND resolved as reduce.
+Conflict in state 7 between rule 11 and token NOT resolved as reduce.
+Conflict in state 7 between rule 11 and token OR resolved as shift.
+Conflict in state 7 between rule 11 and token SUB resolved as shift.
+Conflict in state 15 between rule 7 and token AND resolved as reduce.
+Conflict in state 15 between rule 7 and token NOT resolved as shift.
+Conflict in state 15 between rule 7 and token OR resolved as shift.
+Conflict in state 15 between rule 7 and token SUB resolved as shift.
+Conflict in state 16 between rule 10 and token AND resolved as reduce.
+Conflict in state 16 between rule 10 and token NOT resolved as reduce.
+Conflict in state 16 between rule 10 and token OR resolved as shift.
+Conflict in state 16 between rule 10 and token SUB resolved as shift.
+Conflict in state 16 between rule 11 and token OR resolved as shift.
+Conflict in state 16 between rule 11 and token SUB resolved as shift.
+Conflict in state 17 between rule 9 and token AND resolved as reduce.
+Conflict in state 17 between rule 9 and token NOT resolved as reduce.
+Conflict in state 17 between rule 9 and token OR resolved as reduce.
+Conflict in state 17 between rule 9 and token SUB resolved as shift.
+Conflict in state 18 between rule 8 and token AND resolved as reduce.
+Conflict in state 18 between rule 8 and token NOT resolved as reduce.
+Conflict in state 18 between rule 8 and token OR resolved as reduce.
+Conflict in state 18 between rule 8 and token SUB resolved as reduce.
+
+
+Terminals which are not used:
+
+   XOR
+   EQ
+   NOTEQ
+   GT
+   GE
+   LT
+   LE
+
+
+State 7 contains 4 shift/reduce conflicts.
+State 13 contains 8 shift/reduce conflicts.
+State 15 contains 4 shift/reduce conflicts.
+State 16 contains 4 shift/reduce conflicts and 8 reduce/reduce conflicts.
+State 17 contains 4 shift/reduce conflicts.
+State 18 contains 4 shift/reduce conflicts.
+
+
+Grammar
+
+  Number, Line, Rule
+    1  80 input -> exp
+    2  90 exp -> NUM_INT
+    3  98 exp -> STRING
+    4 104 exp -> IDENT
+    5 110 exp -> exp exp
+    6 117 exp -> '(' exp ')'
+    7 127 exp -> exp AND exp
+    8 134 exp -> exp SUB exp
+    9 141 exp -> exp OR exp
+   10 148 exp -> exp NOT exp
+   11 153 exp -> NOT exp
+
+
+Terminals, with rules where they appear
+
+$ (-1)
+'(' (40) 6
+')' (41) 6
+error (256)
+IDENT (257) 4
+STRING (258) 3
+NUM_INT (259) 2
+AND (260) 7
+NOT (261) 10 11
+OR (262) 9
+SUB (263) 8
+XOR (264)
+EQ (265)
+NOTEQ (266)
+GT (267)
+GE (268)
+LT (269)
+LE (270)
+
+
+Nonterminals, with rules where they appear
+
+input (19)
+    on left: 1
+exp (20)
+    on left: 2 3 4 5 6 7 8 9 10 11, on right: 1 5 6 7 8 9 10 11
+
+
+state 0
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    NOT 	shift, and go to state 4
+    '(' 	shift, and go to state 5
+
+    input	go to state 19
+    exp 	go to state 6
+
+
+
+state 1
+
+    exp  ->  IDENT .   (rule 4)
+
+    $default	reduce using rule 4 (exp)
+
+
+
+state 2
+
+    exp  ->  STRING .   (rule 3)
+
+    $default	reduce using rule 3 (exp)
+
+
+
+state 3
+
+    exp  ->  NUM_INT .   (rule 2)
+
+    $default	reduce using rule 2 (exp)
+
+
+
+state 4
+
+    exp  ->  NOT . exp   (rule 11)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    NOT 	shift, and go to state 4
+    '(' 	shift, and go to state 5
+
+    exp 	go to state 7
+
+
+
+state 5
+
+    exp  ->  '(' . exp ')'   (rule 6)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    NOT 	shift, and go to state 4
+    '(' 	shift, and go to state 5
+
+    exp 	go to state 8
+
+
+
+state 6
+
+    input  ->  exp .   (rule 1)
+    exp  ->  exp . exp   (rule 5)
+    exp  ->  exp . AND exp   (rule 7)
+    exp  ->  exp . SUB exp   (rule 8)
+    exp  ->  exp . OR exp   (rule 9)
+    exp  ->  exp . NOT exp   (rule 10)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    AND 	shift, and go to state 9
+    NOT 	shift, and go to state 10
+    OR  	shift, and go to state 11
+    SUB 	shift, and go to state 12
+    '(' 	shift, and go to state 5
+
+    $default	reduce using rule 1 (input)
+
+    exp 	go to state 13
+
+
+
+state 7
+
+    exp  ->  exp . exp   (rule 5)
+    exp  ->  exp . AND exp   (rule 7)
+    exp  ->  exp . SUB exp   (rule 8)
+    exp  ->  exp . OR exp   (rule 9)
+    exp  ->  exp . NOT exp   (rule 10)
+    exp  ->  NOT exp .   (rule 11)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    OR  	shift, and go to state 11
+    SUB 	shift, and go to state 12
+    '(' 	shift, and go to state 5
+
+    IDENT	[reduce using rule 11 (exp)]
+    STRING	[reduce using rule 11 (exp)]
+    NUM_INT	[reduce using rule 11 (exp)]
+    '(' 	[reduce using rule 11 (exp)]
+    $default	reduce using rule 11 (exp)
+
+    exp 	go to state 13
+
+
+
+state 8
+
+    exp  ->  exp . exp   (rule 5)
+    exp  ->  '(' exp . ')'   (rule 6)
+    exp  ->  exp . AND exp   (rule 7)
+    exp  ->  exp . SUB exp   (rule 8)
+    exp  ->  exp . OR exp   (rule 9)
+    exp  ->  exp . NOT exp   (rule 10)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    AND 	shift, and go to state 9
+    NOT 	shift, and go to state 10
+    OR  	shift, and go to state 11
+    SUB 	shift, and go to state 12
+    '(' 	shift, and go to state 5
+    ')' 	shift, and go to state 14
+
+    exp 	go to state 13
+
+
+
+state 9
+
+    exp  ->  exp AND . exp   (rule 7)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    NOT 	shift, and go to state 4
+    '(' 	shift, and go to state 5
+
+    exp 	go to state 15
+
+
+
+state 10
+
+    exp  ->  exp NOT . exp   (rule 10)
+    exp  ->  NOT . exp   (rule 11)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    NOT 	shift, and go to state 4
+    '(' 	shift, and go to state 5
+
+    exp 	go to state 16
+
+
+
+state 11
+
+    exp  ->  exp OR . exp   (rule 9)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    NOT 	shift, and go to state 4
+    '(' 	shift, and go to state 5
+
+    exp 	go to state 17
+
+
+
+state 12
+
+    exp  ->  exp SUB . exp   (rule 8)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    NOT 	shift, and go to state 4
+    '(' 	shift, and go to state 5
+
+    exp 	go to state 18
+
+
+
+state 13
+
+    exp  ->  exp . exp   (rule 5)
+    exp  ->  exp exp .   (rule 5)
+    exp  ->  exp . AND exp   (rule 7)
+    exp  ->  exp . SUB exp   (rule 8)
+    exp  ->  exp . OR exp   (rule 9)
+    exp  ->  exp . NOT exp   (rule 10)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    AND 	shift, and go to state 9
+    NOT 	shift, and go to state 10
+    OR  	shift, and go to state 11
+    SUB 	shift, and go to state 12
+    '(' 	shift, and go to state 5
+
+    IDENT	[reduce using rule 5 (exp)]
+    STRING	[reduce using rule 5 (exp)]
+    NUM_INT	[reduce using rule 5 (exp)]
+    AND 	[reduce using rule 5 (exp)]
+    NOT 	[reduce using rule 5 (exp)]
+    OR  	[reduce using rule 5 (exp)]
+    SUB 	[reduce using rule 5 (exp)]
+    '(' 	[reduce using rule 5 (exp)]
+    $default	reduce using rule 5 (exp)
+
+    exp 	go to state 13
+
+
+
+state 14
+
+    exp  ->  '(' exp ')' .   (rule 6)
+
+    $default	reduce using rule 6 (exp)
+
+
+
+state 15
+
+    exp  ->  exp . exp   (rule 5)
+    exp  ->  exp . AND exp   (rule 7)
+    exp  ->  exp AND exp .   (rule 7)
+    exp  ->  exp . SUB exp   (rule 8)
+    exp  ->  exp . OR exp   (rule 9)
+    exp  ->  exp . NOT exp   (rule 10)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    NOT 	shift, and go to state 10
+    OR  	shift, and go to state 11
+    SUB 	shift, and go to state 12
+    '(' 	shift, and go to state 5
+
+    IDENT	[reduce using rule 7 (exp)]
+    STRING	[reduce using rule 7 (exp)]
+    NUM_INT	[reduce using rule 7 (exp)]
+    '(' 	[reduce using rule 7 (exp)]
+    $default	reduce using rule 7 (exp)
+
+    exp 	go to state 13
+
+
+
+state 16
+
+    exp  ->  exp . exp   (rule 5)
+    exp  ->  exp . AND exp   (rule 7)
+    exp  ->  exp . SUB exp   (rule 8)
+    exp  ->  exp . OR exp   (rule 9)
+    exp  ->  exp . NOT exp   (rule 10)
+    exp  ->  exp NOT exp .   (rule 10)
+    exp  ->  NOT exp .   (rule 11)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    OR  	shift, and go to state 11
+    SUB 	shift, and go to state 12
+    '(' 	shift, and go to state 5
+
+    $   	reduce using rule 10 (exp)
+    $   	[reduce using rule 11 (exp)]
+    IDENT	[reduce using rule 10 (exp)]
+    IDENT	[reduce using rule 11 (exp)]
+    STRING	[reduce using rule 10 (exp)]
+    STRING	[reduce using rule 11 (exp)]
+    NUM_INT	[reduce using rule 10 (exp)]
+    NUM_INT	[reduce using rule 11 (exp)]
+    AND 	reduce using rule 10 (exp)
+    AND 	[reduce using rule 11 (exp)]
+    NOT 	reduce using rule 10 (exp)
+    NOT 	[reduce using rule 11 (exp)]
+    '(' 	[reduce using rule 10 (exp)]
+    '(' 	[reduce using rule 11 (exp)]
+    ')' 	reduce using rule 10 (exp)
+    ')' 	[reduce using rule 11 (exp)]
+    $default	reduce using rule 10 (exp)
+    exp 	go to state 13
+
+
+
+state 17
+
+    exp  ->  exp . exp   (rule 5)
+    exp  ->  exp . AND exp   (rule 7)
+    exp  ->  exp . SUB exp   (rule 8)
+    exp  ->  exp . OR exp   (rule 9)
+    exp  ->  exp OR exp .   (rule 9)
+    exp  ->  exp . NOT exp   (rule 10)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    SUB 	shift, and go to state 12
+    '(' 	shift, and go to state 5
+
+    IDENT	[reduce using rule 9 (exp)]
+    STRING	[reduce using rule 9 (exp)]
+    NUM_INT	[reduce using rule 9 (exp)]
+    '(' 	[reduce using rule 9 (exp)]
+    $default	reduce using rule 9 (exp)
+
+    exp 	go to state 13
+
+
+
+state 18
+
+    exp  ->  exp . exp   (rule 5)
+    exp  ->  exp . AND exp   (rule 7)
+    exp  ->  exp . SUB exp   (rule 8)
+    exp  ->  exp SUB exp .   (rule 8)
+    exp  ->  exp . OR exp   (rule 9)
+    exp  ->  exp . NOT exp   (rule 10)
+
+    IDENT	shift, and go to state 1
+    STRING	shift, and go to state 2
+    NUM_INT	shift, and go to state 3
+    '(' 	shift, and go to state 5
+
+    IDENT	[reduce using rule 8 (exp)]
+    STRING	[reduce using rule 8 (exp)]
+    NUM_INT	[reduce using rule 8 (exp)]
+    '(' 	[reduce using rule 8 (exp)]
+    $default	reduce using rule 8 (exp)
+
+    exp 	go to state 13
+
+
+
+state 19
+
+    $   	go to state 20
+
+
+
+state 20
+
+    $   	go to state 21
+
+
+
+state 21
+
+    $default	accept
+
+
