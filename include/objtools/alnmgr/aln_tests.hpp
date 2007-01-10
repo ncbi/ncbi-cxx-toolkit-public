@@ -67,9 +67,17 @@ public:
     }
 
 
-    /// Adding an alignment.  NB: An exception might be thrown here if
-    /// the alignment's seq-ids are invalid
+    /// Adding an alignment.  
+    /// NB #1: An exception might be thrown here if the alignment's
+    ///        seq-ids are invalid.
+    /// NB #2: Only seq-ids are validated in release mode.  The
+    ///        alignment is assumed to be otherwise valid.  For
+    ///        efficiency (to avoid multiple validation), it is up to
+    ///        the user, to assure the validity of the alignments.
     void push_back(const CSeq_align& aln) {
+#ifdef _DEBUG
+        aln->Validate(true);
+#endif
         TAlnMap::const_iterator it = m_AlnMap.find(&aln);
         if (it != m_AlnMap.end()) {
             NCBI_THROW(CAlnException, 
@@ -82,7 +90,7 @@ public:
                 m_AlnIdVec.resize(aln_idx + 1);
                 m_Extract(aln, m_AlnIdVec[aln_idx]);
                 _ASSERT( !m_AlnIdVec[aln_idx].empty() );
-            } catch (const CException& e) {
+            } catch (const CAlnException& e) {
                 m_AlnMap.erase(&aln);
                 m_AlnIdVec.pop_back();
                 NCBI_EXCEPTION_THROW(e);
@@ -136,6 +144,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2007/01/10 19:15:13  todorov
+* Improved comments.
+* CException -> CAlnException
+*
 * Revision 1.12  2007/01/10 18:11:34  todorov
 * Renamed CAlnSeqIdVector -> CAlnIdMap
 * CAlnIdMap is now a dual-access (vector-like indexed + seq-align
