@@ -351,7 +351,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row, string &buffer,
 {
     _ASSERT(row >= 0  &&  row < GetDim());
 
-    bool translated = true;
+    bool translated = IsTranslated();
 
     buffer.erase();
 
@@ -455,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2007/01/10 20:43:03  todorov
+ * Using IsTranslated().
+ *
  * Revision 1.4  2007/01/04 21:13:49  todorov
  * Added the ability to display translated alignments.
  *
