@@ -38,11 +38,13 @@
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
+#include <objects/seqalign/Sparse_seg.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <objtools/alnmgr/aln_converters.hpp>
+#include <objtools/alnmgr/alnexception.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -88,6 +90,8 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
     case CSeq_align::TSegs::e_Sparse:
         break;
     case CSeq_align::TSegs::e_not_set:
+        NCBI_THROW(CAlnException, eInvalidRequest,
+                   "Invalid CSeq_align::TSegs type.");
         break;
     }
 }
@@ -286,6 +290,35 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< ou
     }
 }
 
+
+void
+ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,    ///< output
+                           const CSparse_seg& sparse_seg, ///< input Sparse-seg
+                           CSeq_align::TDim row_1,        ///< which pair of rows 
+                           CSeq_align::TDim row_2)
+{
+    _ASSERT(row_1 == 0);
+    _ASSERT(row_2 > 0  &&  (size_t)row_2 < sparse_seg.GetRows().size() + 1);
+
+//     const CSparse_align& sa = sparse_seg.GetRows()[row_2 - 1];
+
+//     const CSparse_align::TFirst_starts& starts_1 = sa.GetFirst_starts();
+//     const CSparse_align::TSecond_starts& starts_2 = sa.GetSecond_starts();
+//     const CSparse_align::TLens& lens = sa.GetLens();
+//     const CSparse_align::TSecond_strands* strands =
+//         sa.IsSetSecond_strands() ? &sa.GetSecond_strands() : 0;
+
+//     CSparse_align::TNumseg seg;
+//     for (seg = 0;  seg < sa.GetNumseg();  seg++) {
+//         pairwise_aln.insert
+//             (CPairwiseAln::TAlnRng(starts_1[seg],
+//                                    starts_2[seg],
+//                                    lens[seg],
+//                                    strands ?
+//                                    (*strands)[seg] != eNa_strand_minus :
+//                                    true));
+//     }
+}
 
 
 // #include <objtools/alnmgr/pairwise_aln.hpp>
@@ -629,6 +662,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2007/01/10 18:22:06  todorov
+* + ConvertSparseToPairwiseAln.
+*
 * Revision 1.8  2007/01/05 18:32:07  todorov
 * Added support for Dense_diag.
 *
