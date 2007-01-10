@@ -100,7 +100,7 @@ bool CNetSrvConnector::ReadStr(string& str)
 
 void CNetSrvConnector::WriteStr(const string& str)
 {
-    WriteBuf(&str[0], str.size());
+    WriteBuf(str.data(), str.size());
     /*
     x_CheckConnect();
     const char* buf_ptr = &str[0];
@@ -306,6 +306,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2007/01/10 16:02:50  ucko
+ * Fix compilation with GCC 2.95's (not quite standard) string implementation.
+ *
  * Revision 6.5  2007/01/09 19:02:18  vasilche
  * Use explicit pair<> type instead of private typedef.
  *

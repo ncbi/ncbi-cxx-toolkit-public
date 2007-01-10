@@ -150,7 +150,7 @@ struct SWaitQueuePred {
             return false;
         }
         
-        const char* queue = &buf[9];
+        const char* queue = buf.data() + 9;
         if ( m_QueueName == string(queue)) {
             return true;
         }
@@ -378,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2007/01/10 16:02:50  ucko
+ * Fix compilation with GCC 2.95's (not quite standard) string implementation.
+ *
  * Revision 6.1  2007/01/09 15:29:55  didenko
  * Added new API for NetSchedule service
  *
