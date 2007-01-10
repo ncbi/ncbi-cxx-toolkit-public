@@ -514,7 +514,7 @@ tds7_send_auth(TDSSOCKET * tds,
     user_name = p + 1;
     user_name_len = strlen(user_name);
 
-    tds_answer_challenge(connection, challenge, &flags, names_blob, names_blob_len, &answer, &ntlm_v2_response);
+    tds_answer_challenge(tds, connection, challenge, &flags, names_blob, names_blob_len, &answer, &ntlm_v2_response);
     ntlm_response_len = (ntlm_v2_response ? 16 + names_blob_len : 24);
     send_lm_response = (ntlm_v2_response == NULL);
 
