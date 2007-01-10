@@ -115,7 +115,14 @@ public:
 
     /// Accessing the seq-ids of a particular seq-align
     const TIdVec& operator[](const CSeq_align& aln) const {
-        return m_AlnIdVec[m_AlnMap[&aln]];
+        // return m_AlnIdVec[m_AlnMap[&aln]];
+        TAlnMap::const_iterator it = m_AlnMap.find(&aln);
+        if (it == m_AlnMap.end()) {
+            NCBI_THROW(CAlnException, eInvalidRequest,
+                       "alignment not present in map");
+        } else {
+            return m_AlnIdVec[it->second];
+        }
     }
 
 
@@ -144,6 +151,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2007/01/10 19:40:02  ucko
+* Fix operator[](const CSeq_align&) to be truly const.
+*
 * Revision 1.14  2007/01/10 19:32:55  ucko
 * Fix syntax error (typo) affecting debug builds.
 *
