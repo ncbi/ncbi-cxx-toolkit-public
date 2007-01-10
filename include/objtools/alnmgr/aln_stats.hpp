@@ -44,14 +44,14 @@
 BEGIN_NCBI_SCOPE
 
 
-template <class _TAlnSeqIdVector>
+template <class _TAlnIdVec>
 class CAlnStats : public CObject
 {
 public:
     /// Typedefs
-    typedef _TAlnSeqIdVector TAlnSeqIdVector;
-    typedef typename _TAlnSeqIdVector::TAlnVector TAlnVector;
-    typedef typename _TAlnSeqIdVector::TIdVector TIdVector;
+    typedef _TAlnIdVec TAlnIdVec;
+    typedef typename _TAlnIdVec::TAlnVec TAlnVec;
+    typedef typename _TAlnIdVec::TIdVec TIdVec;
     typedef int TDim;
     typedef vector<TDim> TRowVec;
     typedef vector<TRowVec> TRowVecVec;
@@ -62,14 +62,13 @@ public:
 
 
     /// Constructor
-    CAlnStats(const TAlnSeqIdVector& aln_seq_id_vector) :
-        m_AlnIdVec(aln_seq_id_vector),
-        m_AlnVec(aln_seq_id_vector.GetAlnVector()),
+    CAlnStats(const TAlnIdVec& aln_id_vec) :
+        m_AlnIdVec(aln_id_vec),
+        m_AlnVec(aln_id_vec.GetAlnVec()),
         m_AlnCount(m_AlnVec.size())
     {
         _ASSERT(m_AlnVec.size() == m_AlnIdVec.size());
         
-        // Construct the m_IdAlnBitmap
         for (size_t aln_i = 0; aln_i < m_AlnCount; ++aln_i) {
             for (size_t row_i = 0;  row_i < m_AlnIdVec[aln_i].size();  ++row_i) {
                 
@@ -111,7 +110,7 @@ public:
 
 
     /// Access the underlying vector of alignments
-    const TAlnVector& GetAlnVector() const {
+    const TAlnVec& GetAlnVec() const {
         return m_AlnVec;
     }
 
@@ -124,7 +123,7 @@ public:
 
 
     /// Access a vector of seq-ids for an alignment
-    const TIdVector& GetSeqIdsForAln(size_t aln_idx) const {
+    const TIdVec& GetSeqIdsForAln(size_t aln_idx) const {
         _ASSERT(aln_idx < GetAlnCount());
         return m_AlnIdVec[aln_idx];
     }
@@ -140,7 +139,7 @@ public:
     }
         
 
-    const TIdVector& GetIdVector() const {
+    const TIdVec& GetIdVec() const {
         return m_IdVec;
     }
 
@@ -177,8 +176,8 @@ public:
         os << "IsCanonicalQueryAnchored:" << IsCanonicalQueryAnchored() << endl;
         os << "IsCanonicalMultiple:" << IsCanonicalMultiple() << endl;
         os << endl;
-        os << "IdVector (" << GetIdVector().size() << "):" << endl;
-        ITERATE(typename TIdVector, it, GetIdVector()) {
+        os << "IdVec (" << GetIdVec().size() << "):" << endl;
+        ITERATE(typename TIdVec, it, GetIdVec()) {
             os << (*it)->AsString() << " (base_width=" << (*it)->GetBaseWidth() << ")" << endl;
         }
         os << endl;
@@ -221,11 +220,11 @@ private:
     }
 
 
-    const TAlnSeqIdVector& m_AlnIdVec;
-    const TAlnVector& m_AlnVec;
+    const TAlnIdVec& m_AlnIdVec;
+    const TAlnVec& m_AlnVec;
     size_t m_AlnCount;
     TIdMap m_IdMap;
-    TIdVector m_IdVec;
+    TIdVec m_IdVec;
     TRowVecVec m_RowVecVec;
     TBitVecVec m_BitVecVec;
 };
@@ -238,6 +237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2007/01/10 18:12:49  todorov
+* TAlnSeqIdVector -> TAlnIdVec
+*
 * Revision 1.6  2007/01/08 16:38:20  todorov
 * Added an assertion.
 * Fixed the comments.
