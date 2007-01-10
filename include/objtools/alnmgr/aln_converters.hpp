@@ -96,8 +96,8 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
 
     CRef<CAnchoredAln> anchored_aln(new CAnchoredAln);
 
-    typedef typename TAlnStats::TIdVector TIdVector;
-    TIdVector ids = aln_stats.GetSeqIdsForAln(aln_idx);
+    typedef typename TAlnStats::TIdVec TIdVec;
+    TIdVec ids = aln_stats.GetSeqIdsForAln(aln_idx);
 
     anchored_aln->SetDim(dim);
 
@@ -128,7 +128,7 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
                               row == anchor_row ? anchor_flags : flags));
         ConvertSeqAlignToPairwiseAln
             (*pairwise_aln,
-             *aln_stats.GetAlnVector()[aln_idx],
+             *aln_stats.GetAlnVec()[aln_idx],
              anchor_row,
              row);
         anchored_aln->SetPairwiseAlns()[target_row].Reset(pairwise_aln);
@@ -140,8 +140,8 @@ CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,
 
 template <class TAlnStats>
 void 
-CreateAnchoredAlnVector(TAlnStats& aln_stats, ///< Input
-                        vector<CRef<CAnchoredAln> >& out_vec) ///< Output
+CreateAnchoredAlnVec(TAlnStats& aln_stats, ///< Input
+                     vector<CRef<CAnchoredAln> >& out_vec) ///< Output
 {
     _ASSERT(out_vec.empty());
     out_vec.resize(aln_stats.GetAlnCount());
@@ -172,6 +172,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2007/01/10 18:08:31  todorov
+* Vector->Vec
+*
 * Revision 1.17  2007/01/09 19:53:31  yazhuk
 * Replaced USING_SCOPE() with explicit declarations, included Dense_seg.hpp
 *
