@@ -35,6 +35,7 @@
 
 #include "netschedule_api_wait.hpp"
 
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -234,7 +235,7 @@ struct SWaitJobPred {
             return false;
         }
         
-        const char* job = &buf[5];
+        const char* job = buf.data() + 5;
         unsigned notif_job_id = (unsigned)::atoi(job);
         if (notif_job_id == m_JobId) {
             return true;
@@ -286,6 +287,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2007/01/10 16:01:56  ucko
+ * +<stdio.h> for sprintf(); tweak for GCC 2.95's string implementation,
+ * whose operator [] const returns a value rather than a reference.
+ *
  * Revision 6.1  2007/01/09 15:29:55  didenko
  * Added new API for NetSchedule service
  *
