@@ -48,10 +48,12 @@ public:
         eInvalidSeqId,
         eInvalidRow,
         eInvalidSegment,
+        eInvalidAlignment,
         eInvalidDenseg,
         eTranslateFailure,
         eMergeFailure,
-        eUnknownMergeFailure
+        eUnknownMergeFailure,
+        eUnsupported
     };
 
     virtual const char *GetErrCodeString(void) const
@@ -62,10 +64,12 @@ public:
         case eInvalidSeqId:         return "eInvalidSeqId";
         case eInvalidRow:           return "eInvalidRow";
         case eInvalidSegment:       return "eInvalidSegment";
+        case eInvalidAlignment:     return "eInvalidAlignment";
         case eInvalidDenseg:        return "eInvalidDenseg";
         case eTranslateFailure:     return "eTranslateFailure";
         case eMergeFailure:         return "eMergeFailure";
         case eUnknownMergeFailure:  return "eUnknownMergeFailure";
+        case eUnsupported:          return "eUnsupported";
         default:                    return CException::GetErrCodeString();
         }
     }
@@ -82,6 +86,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2007/01/10 18:13:28  todorov
+ * + eInvalidAlignment
+ *
  * Revision 1.9  2004/08/19 13:06:18  dicuccio
  * Dropped export specifiers on inlined exceptions
  *
