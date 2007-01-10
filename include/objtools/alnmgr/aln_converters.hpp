@@ -81,6 +81,14 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< ou
                             objects::CSeq_align::TDim row_1,                      ///< which pair of rows 
                             objects::CSeq_align::TDim row_2);
 
+NCBI_XALNMGR_EXPORT
+void
+ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,    ///< output
+                           const objects::CSparse_seg& sparse_seg, ///< input Sparse-seg
+                           objects::CSeq_align::TDim row_1,        ///< which pair of rows 
+                           objects::CSeq_align::TDim row_2);
+
+
 /// Create an anchored alignment from Seq-align using hints
 template <class TAlnStats>
 CRef<CAnchoredAln> 
@@ -172,6 +180,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2007/01/10 18:21:23  todorov
+* + ConvertSparseToPairwiseAln
+*
 * Revision 1.18  2007/01/10 18:08:31  todorov
 * Vector->Vec
 *
