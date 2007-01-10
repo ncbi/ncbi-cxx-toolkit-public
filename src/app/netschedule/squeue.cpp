@@ -133,6 +133,7 @@ SLockedQueue::SLockedQueue(const string& queue_name, const string& qclass_name)
     q_notif.append(queue_name);
     m_StatThread.Reset(new CStatisticsThread(*this));
     m_StatThread->Run();
+    m_LastId.Set(0);
 }
 
 SLockedQueue::~SLockedQueue()
@@ -156,6 +157,39 @@ SLockedQueue::~SLockedQueue()
     void *pData;
     m_StatThread->RequestStop();
     m_StatThread->Join(&pData);
+}
+
+
+unsigned int SLockedQueue::GetNextId()
+{
+    unsigned int id;
+
+    if (m_LastId.Get() >= kMax_I4) {
+        m_LastId.Set(0);
+    }
+    id = (unsigned) m_LastId.Add(1); 
+
+    /*
+    if ((id % 1000) == 0) {
+        m_Env->TransactionCheckpoint();
+    }
+    if ((id % 1000000) == 0) {
+        m_Env->CleanLog();
+    }
+    */
+
+    return id;
+}
+
+
+unsigned int SLockedQueue::GetNextIdBatch(unsigned count)
+{
+    if (m_LastId.Get() >= kMax_I4) {
+        m_LastId.Set(0);
+    }
+    unsigned int id = (unsigned) m_LastId.Add(count);
+    id = id - count + 1;
+    return id;
 }
 
 
@@ -203,6 +237,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2007/01/10 21:23:00  joukovv
+ * Job id is per queue, not per server. Deletion of expired jobs use the same
+ * db mechanism as drop queue - delayed background deletion.
+ *
  * Revision 1.8  2007/01/09 17:10:22  joukovv
  * Database files deleted upon queue deletion.
  *

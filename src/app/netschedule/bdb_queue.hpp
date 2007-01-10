@@ -194,12 +194,11 @@ public:
     /// @return
     ///    Number of deleted jobs
     unsigned CheckDeleteBatch(unsigned batch_size,
-                              CNetScheduleClient::EJobStatus status,
-                              unsigned &last_deleted);
-    /// Delete batch jobs
+                              CNetScheduleClient::EJobStatus status);
+    /// Actually delete batch jobs from jobs-to-delete vector
     /// @return
     ///    Number of deleted jobs
-    unsigned DeleteBatch(bm::bvector<>& batch);
+    unsigned DoDeleteBatch(unsigned batch_size);
 
     /// Delete all job ids already deleted (phisically) from the queue
     void ClearAffinityIdx(void);
@@ -635,15 +634,11 @@ private:
     SQueueDescriptionDB             m_QueueDescriptionDB;
     CQueueCollection                m_QueueCollection;
 
-    CAtomicCounter                  m_IdCounter;
-
     bm::bvector<>                   m_UsedIds; /// id access locker
     CRef<CJobQueueCleanerThread>    m_PurgeThread;
 
     bool                 m_StopPurge;         ///< Purge stop flag
     CFastMutex           m_PurgeLock;
-    unsigned int         m_PurgeLastId;       ///< max purged job id at last Purge
-    unsigned int         m_PurgeSkipCnt;      ///< Number of purge rounds skipped
     unsigned int         m_DeleteChkPointCnt; ///< trans. checkpnt counter
     unsigned int         m_FreeStatusMemCnt;  ///< Free memory counter
     time_t               m_LastFreeMem;       ///< time of the last memory opt
@@ -653,10 +648,6 @@ private:
     CRef<CJobNotificationThread>             m_NotifThread;
     CRef<CJobQueueExecutionWatcherThread>    m_ExeWatchThread;
 
-    /// vector of jobs to be deleted from db unconditionally
-    bm::bvector<> m_JobsToDelete;
-    /// it's lock
-    CFastMutex    m_JobsToDeleteLock;
 }; // CQueueDataBase
 
 
@@ -665,6 +656,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2007/01/10 21:23:00  joukovv
+ * Job id is per queue, not per server. Deletion of expired jobs use the same
+ * db mechanism as drop queue - delayed background deletion.
+ *
  * Revision 1.66  2007/01/08 21:04:09  joukovv
  * Fast notification of idle node cluster implemented.
  *

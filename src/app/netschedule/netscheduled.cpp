@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.7.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.8.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -432,22 +432,19 @@ public:
 
     virtual ~CNetScheduleServer();
 
-    virtual bool ShutdownRequested(void) 
+    virtual bool ShutdownRequested(void)
     {
-        if (m_Shutdown) {
-        //    LOG_POST(Info << "Shutdown flag set! Signal=" << m_SigNum); 
-        } 
-        return m_Shutdown; 
+        return m_Shutdown;
     }
-        
-    void SetShutdownFlag(int signum = 0) 
-    { 
+
+    void SetShutdownFlag(int signum = 0)
+    {
         if (!m_Shutdown) {
-            m_Shutdown = true; 
+            m_Shutdown = true;
             m_SigNum = signum;
         }
     }
-    
+
     void SetAdminHosts(const string& host_names);
 
     //////////////////////////////////////////////////////////////////
@@ -483,11 +480,11 @@ private:
     string             m_Host;
     unsigned           m_Port;
     unsigned           m_HostNetAddr;
-    bool               m_Shutdown; 
+    bool               m_Shutdown;
     int                m_SigNum;  ///< Shutdown signal number
     /// Time to wait for the client (seconds)
     unsigned           m_InactivityTimeout;
-    
+
     CQueueDataBase*    m_QueueDB;
 
     CTime              m_StartTime;
@@ -2350,15 +2347,18 @@ int CNetScheduleDApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-
      return 
         CNetScheduleDApp().AppMain(argc, argv, 0, 
-                           eDS_Default, "netscheduled.ini");
+                                   eDS_Default, "netscheduled.ini");
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.117  2007/01/10 21:23:00  joukovv
+ * Job id is per queue, not per server. Deletion of expired jobs use the same
+ * db mechanism as drop queue - delayed background deletion.
+ *
  * Revision 1.116  2007/01/02 18:50:54  joukovv
  * Queue deletion implemented (does not delete actual database files - need a
  * method of enumerating them). Draft implementation of weak reference. Minor

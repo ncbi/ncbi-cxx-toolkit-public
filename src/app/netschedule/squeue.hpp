@@ -274,11 +274,28 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     SQueueStatictics             qstat;
     CFastMutex                   qstat_lock;
 
+    /// should we delete db upon close?
     bool                         delete_database;
-    vector<string>               files;
+    vector<string>               files; ///< list of files (paths) for queue
 
+    /// last valid id for queue
+    CAtomicCounter               m_LastId;
+    // Moved here from CQueueDataBase
+    /// vector of jobs to be deleted from db unconditionally
+    bm::bvector<>                m_JobsToDelete;
+    /// its lock
+    CFastMutex                   m_JobsToDeleteLock;
+
+
+
+    // Constructor/destructor
     SLockedQueue(const string& queue_name, const string& qclass_name);
     ~SLockedQueue();
+
+    /// get next job id (counter increment)
+    unsigned int GetNextId();
+    /// Returns first id for the batch
+    unsigned int GetNextIdBatch(unsigned count);
 
     // Statistics gathering objects
     friend class CStatisticsThread;
@@ -321,6 +338,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2007/01/10 21:23:00  joukovv
+ * Job id is per queue, not per server. Deletion of expired jobs use the same
+ * db mechanism as drop queue - delayed background deletion.
+ *
  * Revision 1.6  2007/01/09 17:10:22  joukovv
  * Database files deleted upon queue deletion.
  *

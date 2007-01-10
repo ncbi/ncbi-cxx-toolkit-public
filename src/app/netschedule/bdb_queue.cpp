@@ -239,15 +239,12 @@ CQueueDataBase::CQueueDataBase()
 : m_Env(0),
   m_QueueCollection(*this),
   m_StopPurge(false),
-  m_PurgeLastId(0),
-  m_PurgeSkipCnt(0),
   m_DeleteChkPointCnt(0),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
   m_LastR2P(time(0)),
   m_UdpPort(0)
 {
-    m_IdCounter.Set(0);
 }
 
 
@@ -583,8 +580,8 @@ void CQueueDataBase::MountQueue(const string& qname,
         int status = queue.db.status;
 
 
-        if (job_id > (unsigned)m_IdCounter.Get()) {
-            m_IdCounter.Set(job_id);
+        if (job_id > (unsigned)queue.m_LastId.Get()) {
+            queue.m_LastId.Set(job_id);
         }
         queue.status_tracker.SetExactStatusNoLock(job_id, 
                       (CNetScheduleClient::EJobStatus) status, 
@@ -860,37 +857,6 @@ void CQueueDataBase::Close()
 }
 
 
-unsigned int CQueueDataBase::GetNextId()
-{
-    unsigned int id;
-
-    if (m_IdCounter.Get() >= kMax_I4) {
-        m_IdCounter.Set(0);
-    }
-    id = (unsigned) m_IdCounter.Add(1); 
-
-    if ((id % 1000) == 0) {
-        m_Env->TransactionCheckpoint();
-    }
-    if ((id % 1000000) == 0) {
-        m_Env->CleanLog();
-    }
-
-    return id;
-}
-
-
-unsigned int CQueueDataBase::GetNextIdBatch(unsigned count)
-{
-    if (m_IdCounter.Get() >= kMax_I4) {
-        m_IdCounter.Set(0);
-    }
-    unsigned int id = (unsigned) m_IdCounter.Add(count);
-    id = id - count + 1;
-    return id;
-}
-
-
 void CQueueDataBase::TransactionCheckPoint()
 {
     m_Env->TransactionCheckpoint();
@@ -930,6 +896,12 @@ void CQueueDataBase::Purge(void)
 
     // check not to rescan the database too often 
     // when we have low client activity of inserting new jobs.
+    /*
+    Need to be replaced with load-based logic.
+    The logic is flawed anyway - the case when last purged (that is,
+    long expired) job is closer than 3000 to new id is VERY rare if
+    server is being used at all. 3000 new jobs with lifetime of 10
+    days switch off this check for all these 10 days.
     if (m_PurgeLastId + 3000 > (unsigned) m_IdCounter.Get()) {
         ++m_PurgeSkipCnt;
 
@@ -944,6 +916,7 @@ void CQueueDataBase::Purge(void)
 
         m_PurgeSkipCnt = 0;        
     }
+    */
 
     // Delete obsolete job records, based on time stamps 
     // and expiration timeouts
@@ -957,21 +930,19 @@ void CQueueDataBase::Purge(void)
                               sizeof(CNetScheduleClient::EJobStatus);
 
     ITERATE(CQueueCollection, it, m_QueueCollection) {
-
         unsigned queue_del_rec = 0;
         const unsigned batch_size = 100;
         for (bool stop_flag = false; !stop_flag; ) {
             // stop if all statuses have less than batch_size jobs to delete
             stop_flag = true;
             for (int n = 0; n < kStatusesSize; ++n) {
-                unsigned del_rec = (*it).CheckDeleteBatch(batch_size, 
-                                              statuses_to_delete_from[n],
-                                              m_PurgeLastId);
-                stop_flag &= del_rec < batch_size;
+                CNetScheduleClient::EJobStatus s = statuses_to_delete_from[n];
+                unsigned del_rec = (*it).CheckDeleteBatch(batch_size, s);
+                stop_flag = stop_flag && (del_rec < batch_size);
                 queue_del_rec += del_rec;
             }
 
-            // do not delete more than certain number of 
+            // do not delete more than certain number of
             // records from the queue in one Purge
             if (queue_del_rec >= n_queue_limit) {
                 break;
@@ -982,7 +953,6 @@ void CQueueDataBase::Purge(void)
             if (x_CheckStopPurge()) return;
         }
         global_del_rec += queue_del_rec;
-
     } // ITERATE
 
     m_DeleteChkPointCnt += global_del_rec;
@@ -1002,25 +972,9 @@ void CQueueDataBase::Purge(void)
 
 unsigned CQueueDataBase::x_PurgeUnconditional(unsigned batch_size) {
     // Purge unconditional jobs
-    bm::bvector<> jobs_to_delete;
-    {{
-        CFastMutexGuard guard(m_JobsToDeleteLock);
-        unsigned job_id = 0;
-        for (unsigned n = 0; n < batch_size &&
-                        (job_id = m_JobsToDelete.extract_next(job_id));
-                        ++n) {
-            jobs_to_delete.set(job_id);
-        }
-    }}
-    if (jobs_to_delete.none()) return 0;
-
     unsigned del_rec = 0;
-    // We don't have info on job's queue, so we try all queues
-    // NB: it is suboptimal at best - better to extend state matrix with
-    // jobs to delete vector and do this per queue with jobs to be deleted
-    // definitely belonging to given queue.
     ITERATE(CQueueCollection, it, m_QueueCollection) {
-        del_rec += (*it).DeleteBatch(jobs_to_delete);
+        del_rec += (*it).DoDeleteBatch(batch_size);
     }
     return del_rec;
 }
@@ -1520,7 +1474,7 @@ CQueue::Submit(const char*   input,
 
     bool was_empty = !q->status_tracker.AnyPending();
 
-    unsigned int job_id = m_Db.GetNextId();
+    unsigned int job_id = q->GetNextId();
 
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    job_id,
@@ -1572,7 +1526,7 @@ CQueue::SubmitBatch(vector<SNS_BatchSubmitRec>& batch,
 
     bool was_empty = !q->status_tracker.AnyPending();
 
-    unsigned job_id = m_Db.GetNextIdBatch(batch.size());
+    unsigned job_id = q->GetNextIdBatch(batch.size());
 
     SQueueDB& db = q->db;
 
@@ -3419,77 +3373,47 @@ bool CQueue::CheckDelete(unsigned int job_id)
     int job_ttl;
 
     {{
-    CFastMutexGuard guard(q->lock);
-    db.SetTransaction(&trans);
+        CFastMutexGuard guard(q->lock);
+	    db.SetTransaction(0);
+        
+        db.id = job_id;
 
-    CBDB_FileCursor& cur = *x_GetCursor(trans);
-    CBDB_CursorGuard cg(cur);    
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << job_id;
-
-    if (cur.FetchFirst() != eBDB_Ok) {
-        return true; // already deleted
-    }
-
-    int status = db.status;
-/*
-    if (! (
-           (status == (int) CNetScheduleClient::eDone) ||
-           (status == (int) CNetScheduleClient::eCanceled) ||
-           (status == (int) CNetScheduleClient::eFailed) 
-           )
-        ) {
-        return true;
-    }
-*/
-    unsigned queue_ttl = q->timeout;
-    job_ttl = db.timeout;
-    if (job_ttl <= 0) {
-        job_ttl = queue_ttl;
-    }
-
-
-    time_submit = db.time_submit;
-    time_done = db.time_done;
-
-    // pending jobs expire just as done jobs
-    if (time_done == 0 && status == (int) CNetScheduleClient::ePending) {
-        time_done = time_submit;
-    }
-
-    if (time_done == 0) { 
-        if (time_submit + (job_ttl * 10) > (unsigned)curr) {
-            return false;
+        if (db.Fetch() != eBDB_Ok) {
+            return true; // ? already deleted
         }
-    } else {
-        if (time_done + job_ttl > (unsigned)curr) {
-            return false;
+
+        int status = db.status;
+
+        unsigned queue_ttl = q->timeout;
+        job_ttl = db.timeout;
+        if (job_ttl <= 0) {
+            job_ttl = queue_ttl;
         }
-    }
 
-    x_DeleteDBRec(db, cur);
 
+        time_submit = db.time_submit;
+        time_done = db.time_done;
+
+        // pending jobs expire just as done jobs
+        if (time_done == 0 && status == (int) CNetScheduleClient::ePending) {
+            time_done = time_submit;
+        }
+
+        if (time_done == 0) { 
+            if (time_submit + (job_ttl * 10) > (unsigned)curr) {
+                return false;
+            }
+        } else {
+            if (time_done + job_ttl > (unsigned)curr) {
+                return false;
+            }
+        }
+        CFastMutexGuard jtd_guard(q->m_JobsToDeleteLock);
+        q->m_JobsToDelete.set_bit(job_id);
+        // TODO: flush jobs-to-delete vector into db
     }}
-    trans.Commit();
 
     q->status_tracker.SetStatus(job_id, CNetScheduleClient::eJobNotFound);
-
-    if (q->monitor.IsMonitorActive()) {
-        CTime tm(CTime::eCurrent);
-        string msg = tm.AsString();
-        msg += " CQueue::CheckDelete: Job deleted id=";
-        msg += NStr::IntToString(job_id);
-        tm.SetTimeT(time_done);
-        tm.ToLocalTime();
-        msg += " time_done=";
-        msg += tm.AsString();
-        msg += " job_ttl(sec)=";
-        msg += NStr::IntToString(job_ttl);
-        msg += " job_ttl(minutes)=";
-        msg += NStr::IntToString(job_ttl/60);
-
-        q->monitor.SendString(msg);
-    }
 
     return true;
 }
@@ -3516,8 +3440,7 @@ void CQueue::x_DeleteDBRec(SQueueDB&  db, CBDB_FileCursor& cur)
 
 unsigned 
 CQueue::CheckDeleteBatch(unsigned batch_size,
-                         CNetScheduleClient::EJobStatus status,
-                         unsigned &last_deleted)
+                         CNetScheduleClient::EJobStatus status)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned dcnt;
@@ -3530,22 +3453,35 @@ CQueue::CheckDeleteBatch(unsigned batch_size,
         if (!deleted) {
             break;
         }
-        if (job_id > last_deleted) last_deleted = job_id;
     } // for
     return dcnt;
 }
 
 
 unsigned
-CQueue::DeleteBatch(bm::bvector<>& batch)
+CQueue::DoDeleteBatch(unsigned batch_size)
 {
-    unsigned del_rec = 0;
+
     CRef<SLockedQueue> q(x_GetLQueue());
     SQueueDB& db = q->db;
+
+    bm::bvector<> batch;
+    {{
+        CFastMutexGuard guard(q->m_JobsToDeleteLock);
+        unsigned job_id = 0;
+        for (unsigned n = 0; n < batch_size &&
+                        (job_id = q->m_JobsToDelete.extract_next(job_id));
+                        ++n) {
+            batch.set(job_id);
+        }
+    }}
+    if (batch.none()) return 0;
+
     CBDB_Transaction trans(*db.GetEnv(), 
                         CBDB_Transaction::eTransASync,
                         CBDB_Transaction::eNoAssociation);
 
+    unsigned del_rec = 0;
     {{
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(&trans);
@@ -3663,8 +3599,10 @@ void CQueue::ClearAffinityIdx()
 void CQueue::Truncate(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    CFastMutexGuard guard(m_Db.m_JobsToDeleteLock);
-    q->status_tracker.ClearAll(&m_Db.m_JobsToDelete);
+    CFastMutexGuard guard(q->m_JobsToDeleteLock);
+    CWriteLockGuard rtl_guard(q->rtl_lock);
+    q->status_tracker.ClearAll(&q->m_JobsToDelete);
+    q->run_time_line->ReInit(0);
 }
 
 
@@ -4156,6 +4094,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2007/01/10 21:23:00  joukovv
+ * Job id is per queue, not per server. Deletion of expired jobs use the same
+ * db mechanism as drop queue - delayed background deletion.
+ *
  * Revision 1.106  2007/01/09 17:10:22  joukovv
  * Database files deleted upon queue deletion.
  *
