@@ -50,7 +50,7 @@ const string kJSMenuDefaultURL_Kurdin
 
 // Sergey Kurdin's popup menu with configurations
 const string kJSMenuDefaultURL_KurdinConf
- = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_6loader.js";
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_7loader.js";
 
 // Sergey Kurdin's side menu
 const string kJSMenuDefaultURL_KurdinSide
@@ -130,15 +130,8 @@ void CHTMLPopupMenu::AddItem(const string& title,
                              const string& mouseover, const string& mouseout)
 {
     string x_action = action;
-    switch (m_Type) {
-        case eKurdinSide:
-            if ( x_action.empty() ) {
-                x_action = "none";
-            }
-        default:
-            if ( NStr::StartsWith(action, "http:", NStr::eNocase) ) {
-                x_action = "window.location='" + action + "'";
-            }
+    if (m_Type == eKurdinSide  &&   x_action.empty() ) {
+        x_action = "none";
     }
     SItem item(title, x_action, color, mouseover, mouseout);
     m_Items.push_back(item);
@@ -285,6 +278,8 @@ const SAttributeSupport ksAttributeSupportTable[] = {
     { eHTML_PM_HelpURL,                  { 0, 0, "Help",                      0 } },
     { eHTML_PM_HideTime,                 { 0, 0, "HideTime",                  0 } },
     { eHTML_PM_FreeText,                 { 0, 0, "FreeText",                  0 } },
+    { eHTML_PM_ToolTip,                  { 0, 0, "ToolTip",                   0 } },
+    { eHTML_PM_FrameTarget,              { 0, 0, "FrameTarget",               0 } },
 /*
     { eHTML_PM_DisableHide,              { 0, 0, "", 0 } },
     { eHTML_PM_MenuWidth,                { 0, 0, "", 0 } },
@@ -637,6 +632,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2007/01/10 16:44:47  ivanov
+ * Updated Sergey Kurdin's popup menu with configurations to v2.7
+ *
  * Revision 1.38  2006/11/20 17:45:00  ivanov
  * Fixed memory leak in storing global attributes in TLS
  *

@@ -108,6 +108,9 @@ enum EHTML_PM_Attribute {
     eHTML_PM_HelpURL,                  //     KC      URL or JS code
     eHTML_PM_HideTime,                 //     KC      Number of milliseconds
     eHTML_PM_FreeText,                 //     KC      Some text or html
+    eHTML_PM_ToolTip,                  //     KC      Some text or html
+    eHTML_PM_FrameTarget,              //     KC      Frame target name
+   
 /*
     eHTML_PM_DisableHide,              //             
     eHTML_PM_MenuWidth,                //             
@@ -356,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2007/01/10 16:44:17  ivanov
+ * Updated Sergey Kurdin's popup menu with configurations to v2.7
+ *
  * Revision 1.19  2004/05/05 13:55:40  ivanov
  * + DisableLocalConfig()
  *
