@@ -37,67 +37,96 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <objtools/alnmgr/alnexception.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
 /// Vector of Seq-ids per Seq-align
-template <class _TAlnVector,
+template <class _TAlnVec,
           class TAlnSeqIdExtract>
-class CAlnSeqIdVector : public CObject
+class CAlnIdMap : public CObject
 {
 public:
     /// Types:
-    typedef _TAlnVector TAlnVector;
-    typedef typename TAlnSeqIdExtract::TIdVector TIdVector;
-private:
-    typedef vector<TIdVector> TThisVector;
-public:
-    typedef typename TThisVector::value_type value_type;
+    typedef _TAlnVec TAlnVec;
+    typedef typename TAlnSeqIdExtract::TIdVec TIdVec;
+    typedef TIdVec value_type;
     typedef size_t size_type;
 
 
     /// Construction
-    CAlnSeqIdVector(const TAlnVector& aln_vector,
-                    const TAlnSeqIdExtract& extract) :
-        m_AlnVector(aln_vector),
-        m_Size(m_AlnVector.size()),
-        m_ThisVector(m_Size),
-        m_Extract(extract)
+    CAlnIdMap(const TAlnSeqIdExtract& extract,    //< AlnSeqId extract functor
+              size_t expected_number_of_alns = 0) //< Optimization, since most likely size is known in advance
+        : m_Extract(extract)
     {
+        m_AlnIdVec.reserve(expected_number_of_alns);
+        m_AlnVec.reserve(expected_number_of_alns);
+    }
+
+
+    /// Adding an alignment.  NB: An exception might be thrown here if
+    /// the alignment's seq-ids are invalid
+    void push_back(const CSeq_align& aln) {
+        TAlnMap::const_iterator it = m_AlnMap.find(&aln);
+        if (it != m_AlnMap.end()) {
+            NCBI_THROW(CAlnException, 
+                       eInvalidRequest, 
+                       "Seq-align was previously pushed_back.");
+        } else {
+            try {
+                size_t aln_idx = m_AlnIdVec.size();
+                m_AlnMap.insert(make_pair(&aln, aln_idx));
+                m_AlnIdVec.resize(aln_idx + 1);
+                m_Extract(aln, m_AlnIdVec[aln_idx]);
+                _ASSERT( !m_AlnIdVec[aln_idx].empty() );
+            } catch (const CException& e) {
+                m_AlnMap.erase(&aln);
+                m_AlnIdVec.pop_back();
+                NCBI_EXCEPTION_THROW(e);
+            }
+            m_AlnVec.push_back(&aln);
+        }
+    }
+
+
+    /// Accessing the vector of alignments
+    const TAlnVec& GetAlnVec() const {
+        return m_AlnVec;
     }
 
 
     /// Accessing the seq-ids of a particular seq-align
-    const TIdVector& operator[](size_t aln_idx) const
-    {
-        _ASSERT(aln_idx < m_Size);
-        if (m_ThisVector[aln_idx].empty()) {
-            m_Extract(*m_AlnVector[aln_idx],
-                      m_ThisVector[aln_idx]);
-            _ASSERT( !m_ThisVector[aln_idx].empty() );
-        }
-        return m_ThisVector[aln_idx];
+    const TIdVec& operator[](size_t aln_idx) const {
+        _ASSERT(aln_idx < m_AlnIdVec.size());
+        return m_AlnIdVec[aln_idx];
     }
 
 
-    /// Accessing the underlying TAlnVector
-    const TAlnVector& GetAlnVector() const {
-        return m_AlnVector;
+    /// Accessing the seq-ids of a particular seq-align
+    const TIdVec& operator[](const CSeq_align& aln) const {
+        return m_AlnIdVec[m_AlnMap[&aln]];
     }
 
 
     /// Size
     size_type size() const {
-        return m_Size;
+        return m_AlnIdVec.size();
     }
 
+
 private:
-    const TAlnVector& m_AlnVector;
-    const size_t m_Size;
-    mutable TThisVector m_ThisVector;
     const TAlnSeqIdExtract& m_Extract;
+
+    typedef map<const CSeq_align*, size_t> TAlnMap;
+    TAlnMap m_AlnMap;
+
+    typedef vector<TIdVec> TAlnIdVec;
+    TAlnIdVec m_AlnIdVec;
+
+    TAlnVec m_AlnVec;
 };
 
 
@@ -107,6 +136,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2007/01/10 18:11:34  todorov
+* Renamed CAlnSeqIdVector -> CAlnIdMap
+* CAlnIdMap is now a dual-access (vector-like indexed + seq-align
+* lookup) aln<->id mapping container.
+*
 * Revision 1.11  2006/12/12 20:50:53  todorov
 * Update CAlnSeqIdVector per the new seq-id abstraction.
 * Rm CSeqIdAlnBitmap since this analysis is now done directly in
