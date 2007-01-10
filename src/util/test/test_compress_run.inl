@@ -21,7 +21,7 @@
             info.GetName() != "zlib"  || 
             info.IsUpCompatible(CVersionInfo(1,2,0));
 
-    LOG_POST("Transparent read tests is " << 
+    LOG_POST("Transparent read tests are " << 
             (allow_transparent_read_test ? "" : "not ") << "allowed.\n");
 
     //------------------------------------------------------------------------
