@@ -9,6 +9,20 @@
     assert(dst_buf);
     assert(cmp_buf);
 
+    // Get name and version of compressed library
+    CVersionInfo info = TCompression().GetVersion();
+    assert(!info.GetName().empty());
+    assert(info.GetMajor() > 0);
+
+    // zlib v1.1.4 and earlier have a bug with decoding. In some cases
+    // decompressor can produce output data on invalid input compressed data.
+    // So, we do not run such tests if zlib version < 1.2.x.
+    bool allow_transparent_read_test = 
+            info.GetName() != "zlib"  || 
+            info.IsUpCompatible(CVersionInfo(1,2,0));
+
+    LOG_POST("Transparent read tests is " << 
+            (allow_transparent_read_test ? "" : "not ") << "allowed.\n");
 
     //------------------------------------------------------------------------
     // Compress/decomress buffer
@@ -57,6 +71,7 @@
     //------------------------------------------------------------------------
     // Decompress buffer: transparent read
     //------------------------------------------------------------------------
+    if (allow_transparent_read_test)
     {{
         LOG_POST("Decompress buffer (transparent read)...");
         INIT_BUFFERS;
@@ -150,6 +165,7 @@
     //------------------------------------------------------------------------
     // File decompression: transparent read test
     //------------------------------------------------------------------------
+    if (allow_transparent_read_test)
     {{
         LOG_POST("Decompress file - transparent read...");
         INIT_BUFFERS;
@@ -345,6 +361,7 @@
     //------------------------------------------------------------------------
     // Decompression input stream test: transparent read
     //------------------------------------------------------------------------
+    if (allow_transparent_read_test)
     {{
         LOG_POST("Testing decompression input stream (transparent read)...");
         INIT_BUFFERS;
