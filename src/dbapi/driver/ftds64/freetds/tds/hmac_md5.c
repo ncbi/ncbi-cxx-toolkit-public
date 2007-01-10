@@ -2,6 +2,7 @@
 
 #include "tds.h"
 #include "hmac_md5.h"
+#include <memory.h>
 
 /***********************************************************************
  the rfc 2104 version of hmac_md5 initialisation.
