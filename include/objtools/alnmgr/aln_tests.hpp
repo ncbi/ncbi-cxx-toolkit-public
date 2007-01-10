@@ -69,11 +69,11 @@ public:
 
     /// Adding an alignment.  
     /// NB #1: An exception might be thrown here if the alignment's
-    ///        seq-ids are invalid.
+    ///        seq-ids are inconsistent.
     /// NB #2: Only seq-ids are validated in release mode.  The
     ///        alignment is assumed to be otherwise valid.  For
     ///        efficiency (to avoid multiple validation), it is up to
-    ///        the user, to assure the validity of the alignments.
+    ///        the user to assure the validity of the alignments.
     void push_back(const CSeq_align& aln) {
 #ifdef _DEBUG
         aln.Validate(true);
@@ -115,7 +115,6 @@ public:
 
     /// Accessing the seq-ids of a particular seq-align
     const TIdVec& operator[](const CSeq_align& aln) const {
-        // return m_AlnIdVec[m_AlnMap[&aln]];
         TAlnMap::const_iterator it = m_AlnMap.find(&aln);
         if (it == m_AlnMap.end()) {
             NCBI_THROW(CAlnException, eInvalidRequest,
@@ -151,6 +150,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2007/01/10 20:31:57  todorov
+* Improved comments and removed a commented-out line.  Thanks for fixing
+* operator[](const CSeq_align&) Aaron!
+*
 * Revision 1.15  2007/01/10 19:40:02  ucko
 * Fix operator[](const CSeq_align&) to be truly const.
 *
