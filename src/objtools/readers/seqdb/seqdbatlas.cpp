@@ -183,10 +183,9 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb)
     : m_UseMmap           (use_mmap),
       m_CurAlloc          (0),
       m_LastFID           (0),
-      m_MemoryBound       (eDefaultBound),
-      m_SliceSize         (eDefaultSliceSize),
-      m_OpenRegionsTrigger(eOpenRegionsWindow),
-      m_FlushCB           (cb)
+      m_OpenRegionsTrigger(CSeqDBMapStrategy::eOpenRegionsWindow),
+      m_FlushCB           (cb),
+      m_Strategy          (*this)
 {
     for(int i = 0; i < eNumRecent; i++) {
         m_Recent[i] = 0;
@@ -256,7 +255,7 @@ const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLo
     // It should be mentioned that this will not (greatly) affect
     // users who are using the round-to-chunk-size allocator.
     
-    if (TIndx(length) > TIndx(eTriggerGC)) {
+    if (TIndx(length) > m_Strategy.GetGCTriggerSize()) {
         Lock(locked);
         x_GarbageCollect(0);
     }
@@ -293,7 +292,7 @@ void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease,
     // Also, for systems with (e.g.) 64 bit address spaces, this
     // could/should be relaxed, to require less mapping.
     
-    if (length > eTriggerGC) {
+    if (length > m_Strategy.GetGCTriggerSize()) {
         GarbageCollect(locked);
     }
     
@@ -502,7 +501,7 @@ void CRegionMap::x_Roundup(TIndx       & begin,
     // allow memory-usage tuning.
     
     const TIndx block_size  = 1024 * 512;
-    TIndx large_slice = (size_t)atlas->GetLargeSliceSize();
+    TIndx large_slice = (size_t)atlas->GetSliceSize();
     TIndx overhang    = (size_t)atlas->GetOverhang();
     TIndx small_slice = (size_t)large_slice / 16;
     
@@ -557,7 +556,8 @@ void CRegionMap::x_Roundup(TIndx       & begin,
         TIndx new_begin = (begin / align) * align;
         TIndx new_end = ((end + align - 1) / align) * align + overhang;
         
-        if ((new_end + align) > file_size) {
+        // If there is less than a third of a slice left, grab it all.
+        if ((new_end + (align/3)) > file_size) {
             new_end = file_size;
             penalty = 2;
         }
@@ -587,12 +587,16 @@ void CRegionMap::x_Roundup(TIndx       & begin,
         // the effectiveness of this technique on reducing internal
         // fragmentation has not been measured.]
         
-        // In theory, no memory management strategy can guarantee a
-        // reasonable lower bound on memory exhaustion from internal
-        // fragmentation.  (An exception would be systems with memory
-        // compaction, which is normally considered infeasible for C
-        // language.)  Also, These concerns probably have little
-        // significance on a 64 bit memory architecture.
+        // In theory, no memory management strategy that provides
+        // different sized blocks can guarantee a reasonable upper
+        // bound on memory exhaustion from internal fragmentation.
+        // (An exception would be systems with memory compaction,
+        // which is normally considered infeasible for languages like
+        // C.)  Also, These concerns probably have little significance
+        // on a 64 bit memory architecture, since the access patterns
+        // that cause internal fragmentation involve alternating maps
+        // and unmaps, and a 64 bit system will normally not need to
+        // unmap files.
         
         penalty = ((file_size > (large_slice+overhang))
                    ? 0
@@ -674,7 +678,7 @@ const char * CSeqDBAtlas::x_FindRegion(int           fid,
 
 // Assumes locked.
 
-void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
+void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed, bool returning)
 {
     Verify(true);
     
@@ -703,25 +707,50 @@ void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
         
         x_GarbageCollect(0);
         
-        m_OpenRegionsTrigger = int(m_Regions.size()) + eOpenRegionsWindow;
+        int window = CSeqDBMapStrategy::eOpenRegionsWindow;
+        int maxopen = CSeqDBMapStrategy::eMaxOpenRegions;
         
-        if (m_OpenRegionsTrigger > eMaxOpenRegions) {
-            m_OpenRegionsTrigger = eMaxOpenRegions;
-        }
+        m_OpenRegionsTrigger = min(int(m_Regions.size() + window), maxopen);
     } else {
-        // Use Int8 to avoid "unsigned rollover."
+        // Use Int8 to avoid "unsigned rollunder"
         
-        Int8 capacity_left = m_MemoryBound;
-        capacity_left -= m_CurAlloc;
+        Int8 bound = m_Strategy.GetMemoryBound(returning);
+        Int8 capacity_left = bound - m_CurAlloc;
         
         if (Int8(space_needed) > capacity_left) {
-            x_GarbageCollect(m_MemoryBound - space_needed);
+            x_GarbageCollect(bound - space_needed);
         }
     }
     
     Verify(true);
 }
 
+/// Simple idiom for RIIA with malloc + free.
+struct CSeqDBAutoFree {
+    /// Constructor.
+    CSeqDBAutoFree()
+        : m_Array(0)
+    {
+    }
+    
+    /// Specify a malloced area of memory.
+    void Set(const char * x)
+    {
+        m_Array = x;
+    }
+    
+    /// Destructor will free that memory.
+    ~CSeqDBAutoFree()
+    {
+        if (m_Array) {
+            free((void*) m_Array);
+        }
+    }
+    
+private:
+    /// Pointer to malloced memory.
+    const char * m_Array;
+};
 
 const char *
 CSeqDBAtlas::x_GetRegion(const string   & fname,
@@ -753,7 +782,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
     
     // Need to add the range, so GC first.
     
-    PossiblyGarbageCollect(end - begin);
+    PossiblyGarbageCollect(end - begin, false);
     
     CRegionMap * nregion = 0;
     
@@ -773,9 +802,60 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
             *rmap = nregion;
         
         if (m_UseMmap) {
-            if (newmap->MapMmap(this)) {
-                retval = newmap->Data(begin, end);
-                newmap->AddRef();
+            for(int fails = 0; fails < 2; fails++) {
+                CSeqDBAutoFree shim;
+                
+                bool worked = true;
+                
+                try {
+                    // On Linux, allocate 10 MB of (non-initialized!)
+                    // memory.  The goal is to cause memory shortages
+                    // to happen in SeqDB rather than in client code,
+                    // so that SeqDB can adjust its parameters to free
+                    // up memory.  This reduces errors and improves
+                    // performance on Linux, but not on other O/Ses;
+                    // See also comments in SeqDBMapStrategy.
+                    
+                    const char * a = 0;
+                    
+                    if (CSeqDBMapStrategy::e_ProbeMemory) {
+                        a = (const char*) malloc(10 << 20);
+                    }
+                    
+                    if (! a) {
+                        worked = false;
+                    }
+                    
+                    shim.Set(a);
+                }
+                catch(...) {
+                    // allocation failure; reduce
+                    worked = false;
+                }
+                
+                if (worked) {
+                    if (newmap->MapMmap(this)) {
+                        retval = newmap->Data(begin, end);
+                        newmap->AddRef();
+                    
+                        if (retval == 0) {
+                            worked = false;
+                        }
+                    } else {
+                        worked = false;
+                    }
+                }
+                
+                if (worked) {
+                    break;
+                }
+                
+                // If there was a map (or new[]) failure, tell the
+                // strategy module and wipe out half of the allocated
+                // memory bound.
+                
+                m_Strategy.MentionMapFailure(m_CurAlloc);
+                x_GarbageCollect(m_CurAlloc/2);
             }
         }
         
@@ -813,6 +893,10 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
         SeqDB_ThrowException(CSeqDBException::eMemErr,
                              "CSeqDBAtlas::x_GetRegion: allocation failed.");
     }
+    
+    // Collect down to 'retbound' amount.
+    PossiblyGarbageCollect(0, true);
+    
     Verify(true);
     
     return retval;
@@ -1118,7 +1202,7 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
             
             if ((m_Begin != 0) || (m_End != flength)) { 
                 x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas); 
-                atlas->PossiblyGarbageCollect(m_End - m_Begin);
+                atlas->PossiblyGarbageCollect(m_End - m_Begin, false);
             }
             
             m_Data = (const char*) m_MemFile->Map(m_Begin, m_End - m_Begin);
@@ -1215,8 +1299,8 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
               false,
               atlas);
     
-    atlas->PossiblyGarbageCollect(m_End - m_Begin);
-
+    atlas->PossiblyGarbageCollect(m_End - m_Begin, false);
+    
     istr.seekg(m_Begin);
     
     Uint8 rdsize8 = m_End - m_Begin;
@@ -1306,30 +1390,14 @@ int CSeqDBAtlas::x_LookupFile(const string  & fname,
     return (*i).second;
 }
 
-void CSeqDBAtlas::SetMemoryBound(Uint8 mb, Uint8 ss)
+void CSeqDBAtlas::SetMemoryBound(Uint8 mb)
 {
     CSeqDBLockHold locked(*this);
     Lock(locked);
     
     Verify(true);
     
-    SeqDB_CheckLength<Uint8,size_t>(mb);
-    SeqDB_CheckLength<Uint8,size_t>(ss);
-    
-    if (ss > (mb/4)) {
-        ss = mb / 4;
-    }
-    
-    if (ss < 4096*4) {
-        ss = 4096*4;
-        
-        if (ss > (mb/4)) {
-            mb = ss * 4;
-        }
-    }
-    
-    m_MemoryBound = mb;
-    m_SliceSize   = ss;
+    m_Strategy.SetMemoryBound(mb);
     
     Verify(true);
 }
@@ -1340,7 +1408,7 @@ void CSeqDBAtlas::RegisterExternal(CSeqDBMemReg   & memreg,
 {
     if (bytes > 0) {
         Lock(locked);
-        PossiblyGarbageCollect(bytes);
+        PossiblyGarbageCollect(bytes, false);
         
         _ASSERT(memreg.m_Bytes == 0);
         m_CurAlloc += memreg.m_Bytes = bytes;
@@ -1358,5 +1426,250 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
     }
 }
 
+const Int8 CSeqDBMapStrategy::e_MaxMemory64 = Int8(256) << 30;
+
+/// Constructor
+CSeqDBMapStrategy::CSeqDBMapStrategy(CSeqDBAtlas & atlas)
+    : m_Atlas     (atlas),
+      m_MaxBound  (0),
+      m_RetBound  (0),
+      m_SliceSize (0),
+      m_Overhang  (0),
+      m_Order     (0.95, .901),
+      m_InOrder   (true),
+      m_MapFailed (false),
+      m_LastOID   (0),
+      m_BlockSize (4096)
+{
+    m_BlockSize = GetVirtualMemoryPageSize();
+    
+    if (sizeof(int*) == 4) {
+        m_MaxBound = e_MaxMemory32;
+    } else {
+        m_MaxBound = e_MaxMemory64;
+    }
+}
+
+void CSeqDBMapStrategy::MentionOid(int oid, int num_oids)
+{
+    // Still working on the same oid, ignore.
+    if (m_LastOID == oid) {
+        return;
+    }
+    
+    // The OID is compared to the previous OID.  Sequential access is
+    // defined as having increasing OIDs about 90% of the time.
+    // However, if the OID is only slightly before the previous OID,
+    // it is ignored.  This is to allow sequential semantics for
+    // multithreaded apps that divide work into chunks of OIDs.
+    //
+    // "Slightly" before is defined as the greater of 10 OIDs or
+    // 10% of the database.  This 'window' of the database can
+    // only move backward when the ordering test fails, so walking
+    // backward through the entire database will not be considered
+    // sequential.
+    
+    // In the blast libraries, work is divided into 1% of the database
+    // or 1 OID.  So 10% allows 5 threads and the assumption that some
+    // chunks will take as much as twice as long to run as others.
+    
+    int pct = 10;
+    int window = max(num_oids/100*pct, pct);
+    int low_bound = max(m_LastOID - window, 0);
+    
+    if (oid > m_LastOID) {
+        // Register sequential access.
+        x_OidOrder(true);
+        m_LastOID = oid;
+    } else if (oid < low_bound) {
+        // Register non-sequential access.
+        x_OidOrder(false);
+        m_LastOID = oid;
+    }
+}
+    
+void CSeqDBMapStrategy::x_OidOrder(bool in_order)
+{
+    m_Order.AddData(in_order ? 1.0 : 0);
+    
+    // Moving average with thermostat-like hysteresis.
+    bool new_order = m_Order.GetAverage() > (m_InOrder ? .8 : .9);
+    
+    if (new_order != m_InOrder) {
+        // Rebuild the bounds with the new ordering constraint.
+        m_InOrder = new_order;
+        x_SetBounds(m_MaxBound);
+    }
+}
+
+void CSeqDBMapStrategy::MentionMapFailure(Uint8 current)
+{
+    // The first map failure only modifies the slice size; after that
+    // we reduce the amount of allocation permitted.
+    
+    if (m_MapFailed) {
+        m_MaxBound = (m_MaxBound * 4) / 5;
+        x_SetBounds(min((Int8) current, m_MaxBound));
+    } else {
+        m_MapFailed = true;
+        x_SetBounds(m_MaxBound);
+    }
+}
+
+Uint8 CSeqDBMapStrategy::x_Pick(Uint8 low, Uint8 high, Uint8 guess)
+{
+    // max and guess is usually computed; min is usually a
+    // constant, so if there is a conflict, use min.
+    
+    if (low > high) {
+        high = low;
+    }
+    
+    int bs = m_BlockSize;
+    
+    if (guess < low) {
+        guess = (low + bs - 1);
+    }
+    
+    if (guess > high) {
+        guess = high;
+    }
+    
+    guess -= (guess % bs);
+    
+    _ASSERT((guess % bs) == 0);
+    _ASSERT((guess >= low) && (guess <= high));
+    
+    return guess;
+}
+
+/// Set all parameters.
+void CSeqDBMapStrategy::x_SetBounds(Uint8 bound)
+{
+    Uint8 max_bound(0);
+    Uint8 max_slice(0);
+    
+    if (sizeof(int*) == 8) {
+        max_bound = e_MaxMemory64;
+        max_slice = e_MaxSlice64;
+    } else {
+        max_bound = e_MaxMemory32;
+        max_slice = e_MaxSlice32;
+    }
+    
+    int overhang_ratio = 32;
+    int slice_ratio = 8;
+    
+    // If a mapping request has never failed, use large slice for
+    // efficiency.  Otherwise, if the client follows a mostly linear
+    // access pattern, use middle sized slices, and if not, use small
+    // slices.
+    
+    const int no_limits   = 4;
+    const int linear_oids = 10;
+    const int random_oids = 80;
+    
+    if (! m_MapFailed) {
+        slice_ratio = no_limits;
+    } else if (m_InOrder) {
+        slice_ratio = linear_oids;
+    } else {
+        slice_ratio = random_oids;
+    }
+    
+    m_MaxBound = x_Pick(e_MinMemory,
+                        min(max_bound, bound),
+                        bound);
+    
+    m_SliceSize = x_Pick(e_MinSlice,
+                         max_slice,
+                         m_MaxBound / slice_ratio);
+    
+    m_RetBound = x_Pick(e_MinMemory,
+                        m_MaxBound-((m_SliceSize*3)/2),
+                        (m_MaxBound*8)/10);
+    
+    m_Overhang = x_Pick(e_MinOverhang,
+                        e_MaxOverhang,
+                        m_SliceSize / overhang_ratio);
+}
+
+/// Match the filename to the given pattern.
+/// 
+/// The pattern matches if it is found at the end of the filename.
+///
+/// @param pattern A possible suffix of filename.
+/// @param filename A filename.
+/// @return True iff pattern is a suffix of filename.
+static bool s_MatchExpr(string pattern, string filename)
+{
+    if (filename.size() < pattern.size())
+        return false;
+    
+    int offset = filename.size() - pattern.size();
+    
+    return 0 == memcmp(filename.data() + offset,
+                       pattern.data(),
+                       pattern.size());
+}
+
+void CSeqDBAtlas::RemoveMatches(const vector<string> & patterns,
+                                CSeqDBLockHold       & locked)
+{
+    Lock(locked);
+    
+    Verify(true);
+    
+    if (m_FlushCB) {
+        (*m_FlushCB)();
+    }
+    
+    x_ClearRecent();
+    
+    size_t i = 0;
+    
+    while(i < m_Regions.size()) {
+        CRegionMap * mr = m_Regions[i];
+        
+        if (mr->InUse()) {
+            i++;
+            continue;
+        }
+        
+        bool matches = false;
+        
+        for(size_t p = 0; p < patterns.size(); p++) {
+            if (s_MatchExpr(patterns[p], mr->Name())) {
+                matches = true;
+                break;
+            }
+        }
+        
+        if (! matches) {
+            i++;
+            continue;
+        }
+        
+        size_t last = m_Regions.size() - 1;
+        
+        if (i != last) {
+            m_Regions[i] = m_Regions[last];
+        }
+        
+        m_Regions.pop_back();
+        
+        m_CurAlloc -= mr->Length();
+        
+        m_NameOffsetLookup.erase(mr);
+        m_AddressLookup.erase(mr->Data());
+        
+        delete mr;
+    }
+    
+    Verify(true);
+}
+
+
 END_NCBI_SCOPE
+
 

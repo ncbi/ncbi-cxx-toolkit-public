@@ -47,6 +47,8 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_system.hpp>
+
 #include <vector>
 #include <map>
 #include <set>
@@ -924,9 +926,231 @@ private:
 };
 
 
+/// CSeqDBMovingAverage
+/// 
+/// This implements an exponentially smoothed moving average, which is
+/// a technique for smoothing a noisy scalar measurement.
+
+class CSeqDBMovingAverage {
+public:
+    /// Constructor.
+    ///
+    /// Specify a degree of smoothing between 0 and 1, along with a
+    /// starting value.  Zero would mean that no smoothing is done,
+    /// the result is always the last measurement.  Using 1.0 would
+    /// cause the average to never change.  Note that the moving
+    /// average inevitably lags behind input value changes.
+    ///
+    /// @param ratio Amount of smoothing to do.
+    CSeqDBMovingAverage(double ratio, double start)
+        : m_Ratio(ratio),
+          m_Average(start)
+    {
+    }
+    
+    /// Add a new measurement.
+    /// @param value The new measurement.
+    void AddData(double value)
+    {
+        // Each esma is a weighted average of the last esma and the
+        // new measurement.
+        
+        m_Average *= m_Ratio;
+        m_Average += (value * (1.0 - m_Ratio));
+    }
+    
+    /// Get the current moving average.
+    double GetAverage() const
+    {
+        return m_Average;
+    }
+    
+private:
+    /// Ratio of smoothness.
+    double m_Ratio;
+    
+    /// Current value.
+    double m_Average;
+};
+
+
+/// CSeqDBMapStrategy
+/// 
+/// Some SeqDB clients access OIDs in sequential order; others tend to
+/// follow a random access pattern.  This class attempts to implement
+/// a kind of self-tuning for SeqDB based on client access patterns.
+/// It also tries to detect and deal with memory shortage issues by
+/// reducing the overall SeqDB footprint.
+
+class CSeqDBMapStrategy {
+public:
+    /// The type used for file offsets.
+    typedef CNcbiStreamoff TIndx;
+    
+    /// Maximum memory: 256 GB for 64 bits.
+    static const Int8 e_MaxMemory64;
+    
+    enum {
+        // On Linux, malloc() uses mmap() for large requests, which
+        // means that the heap can shrink when free() is called.  In
+        // this environment, SeqDB tries to probe the address space by
+        // using a large memory bound and handling map failures in
+        // certain routines.  This can cause stack exhaustion on other
+        // platforms, so it is only currently enabled for Linux.
+        
+#if defined(NCBI_OS_LINUX)
+        /// Probe address space with special allocations.
+        e_ProbeMemory = true,
+        
+        /// Maximum memory: 2 GB for non-WinOS, 32 bit systems.
+        e_MaxMemory32 = 2000 << 20,
+#else
+        /// Probe address space with special allocations.
+        e_ProbeMemory = false,
+        
+        /// Maximum memory: 1 GB for WinOS, 2 GB for other 32 bit.
+        e_MaxMemory32 = 1024 << 20,
+#endif
+        
+        /// Minimum memory bound.
+        e_MinMemory = 64 << 20,
+        
+        /// Maximum slice to map on a 32 bit system.
+        e_MaxSlice32 = 256 << 20,
+        
+        /// Maximum slice to map on a 64 bit system.
+        e_MaxSlice64 = 1 << 30,
+        
+        /// Minimum slice size to use.
+        e_MinSlice = 4 << 20,
+        
+        /// Maximum overhang.
+        e_MaxOverhang = 8 << 20,
+        
+        /// Minimum overhang.
+        e_MinOverhang = 256 << 10,
+        
+        /// Maximum open (mapped) regions at once.
+        eMaxOpenRegions = 500,
+        
+        /// Maximum new open regions between collections.
+        eOpenRegionsWindow = 100
+    };
+    
+    /// Constructor
+    CSeqDBMapStrategy(CSeqDBAtlas & atlas);
+    
+    /// Get current overhang amount.
+    /// 
+    /// This returns the amount of memory to map past the end of the
+    /// (end-of-map) slice boundary.  This should prevent most cases
+    /// where a memory map 'straddles' the boundary between slices.
+    /// 
+    /// @return
+    ///   Atlas will map this much data past the slice-end boundary.
+    TIndx GetOverhang()
+    {
+        return m_Overhang;
+    }
+    
+    /// Return the slice size for mmap requests.
+    TIndx GetSliceSize()
+    {
+        return m_SliceSize;
+    }
+    
+    /// Return the total memory bound.
+    ///
+    /// This returns the active memory bound.  If SeqDB is done
+    /// mapping regions and is ready to return to the user, the value
+    /// used is smaller.  The design goal here is to cause memory
+    /// allocation failures to happen in CSeqDBAtlas rather than in
+    /// user code, so that SeqDB can detect these failures and reduce
+    /// its memory bound to fix the problem.  If user code allocates
+    /// very large arrays on a 32 bit system, they might still be the
+    /// one to get the allocation failures, in which case they might
+    /// consider reducing the bound via SetMemoryBound().
+    ///
+    /// @param returning Specify true if returning from SeqDB.
+    TIndx GetMemoryBound(bool returning)
+    {
+        return returning ? m_RetBound : m_MaxBound;
+    }
+    
+    /// An allocation this large will trigger a memory purge.
+    TIndx GetGCTriggerSize()
+    {
+        return m_SliceSize*3;
+    }
+    
+    /// Give this object an OID specified by the user.
+    /// @param oid The user tried to fetch data via this oid.
+    /// @param num_oids The total number of OIDs.
+    void MentionOid(int oid, int num_oids);
+    
+    /// Tell SeqDB that a memory mapping failed.
+    void MentionMapFailure(Uint8 current);
+    
+    /// Set the memory bound using a user specified value.
+    void SetMemoryBound(Uint8 max)
+    {
+        x_SetBounds(max);
+    }
+    
+private:
+    /// Mention an ordered or out-of-order access.
+    void x_OidOrder(bool in_order);
+    
+    /// Restrict a number to a range.
+    ///
+    /// This method returns a number as close as possible to 'guess',
+    /// but restricted to the range [low,high].  The number that is
+    /// returned is always at least low and no higher than high, and
+    /// is always a multiple of the system virtual memory blocksize.
+    ///
+    /// @param low Lowest value to return.
+    /// @param high Highest value to return.
+    /// @param guess The preferred value.
+    Uint8 x_Pick(Uint8 low, Uint8 high, Uint8 guess);
+    
+    /// Set all parameters.
+    void x_SetBounds(Uint8 bound);
+    
+    /// The atlas object.
+    CSeqDBAtlas & m_Atlas;
+    
+    /// Maximum memory bound SeqDB may map.
+    Int8 m_MaxBound;
+    
+    /// Maximum memory bound when returning from Atlas code.
+    Int8 m_RetBound;
+    
+    /// Atlas will try to map files in blocks this size.
+    Int8 m_SliceSize;
+    
+    /// Mapped areas of files should overlap this much.
+    Int8 m_Overhang;
+    
+    /// Track sequentiality of OID accesses.
+    CSeqDBMovingAverage m_Order;
+    
+    /// True if SeqDB thinks user is accessing OIDs sequentially.
+    bool m_InOrder;
+    
+    /// True if mmap has failed at least once.
+    bool m_MapFailed;
+    
+    /// Last OID seen.
+    int m_LastOID;
+    
+    /// Block size for mapping.
+    long m_BlockSize;
+};
+
+
 /// CSeqDBAtlas class
 /// 
-/// The object manages a collection of (memory) maps.  It mmaps or
+/// This object manages a collection of (memory) maps.  It mmaps or
 /// reads data from files on demand, to allow a set of files to be
 /// accessed efficiently by SeqDB.  The total size of the files used
 /// by a multivolume database may exceed the usable address space of
@@ -940,16 +1164,6 @@ private:
 /// Copyright © 2000 by Houghton Mifflin Company.]
 
 class CSeqDBAtlas {
-    /// Default slice sizes and limits used by the atlas.
-    enum {
-        eTriggerGC         = 1024 * 1024 * 128,
-        eDefaultBound      = 1024 * 1024 * 640,
-        eDefaultSliceSize  = 1024 * 1024 * 64,
-        eDefaultOverhang   = 1024 * 1024 * 4,
-        eMaxOpenRegions    = 500,
-        eOpenRegionsWindow = 100
-    };
-    
 public:
     /// The type used for file offsets.
     typedef CRegionMap::TIndx TIndx;
@@ -1305,47 +1519,50 @@ public:
     /// 
     /// @param mb
     ///   Total amount of address space the atlas can use.
-    /// @param ss
-    ///   Default size of slice of memory to get at once.
-    void SetMemoryBound(Uint8 mb, Uint8 ss);
+    void SetMemoryBound(Uint8 mb);
     
     /// Insure room for a new allocation.
     /// 
     /// This method is used to insure that the atlas code has room for
-    /// a new address space purchase.  When mapping new region, this
+    /// a new address space purchase.  When mapping new regions, this
     /// method is called.  If the memory bound would be exceeded by
     /// the addition of the new element, garbage collection will run.
-    /// Otherwise, this is a noop.  Even if garbage collection is run,
-    /// there is no guarantee that the new object will fit within the
-    /// memory bound.
+    /// Otherwise, this just returns.  This does not guarantee that
+    /// the new object will fit within the memory bound.  Because a
+    /// slice is never collected if the user has a reference to it, it
+    /// is possible for the user to exhaust memory simply by calling
+    /// CSeqDB::GetSequence() once for each slice of a large database
+    /// without calling CSeqDB::RetSequence().
     /// 
     /// @param space_needed
     ///   The size in bytes of the new region or allocation.
-    void PossiblyGarbageCollect(Uint8 space_needed);
+    /// @param returning
+    ///   Specify true if we are about to return to user code.
+    void PossiblyGarbageCollect(Uint8 space_needed, bool returning);
     
     /// Return the current overhang amount.
     /// 
     /// This returns the amount of memory to map past the end of the
-    /// (end-of-map) slice boundary.  This is intended to prevent.
+    /// (end-of-map) slice boundary.  This should prevent most cases
+    /// where a memory map 'straddles' the boundary between slices.
     /// 
     /// @return
-    ///   Atlas will map this much data past the slice-end-boundary.
+    ///   Atlas will map this much data past the slice-end boundary.
     Uint8 GetOverhang()
     {
-        return eDefaultOverhang;
+        return m_Strategy.GetOverhang();
     }
     
-    /// Return the current slice size.
+    /// Get the current slice size.
     /// 
     /// This returns the current slice size used for mmap() style
-    /// memory allocations.  One use of this would be to write code to
-    /// adjust the memory bound, but leave the slice size as is.
+    /// memory allocations.
     /// 
     /// @return
     ///   Atlas will try to map this much data at a time.
-    Uint8 GetLargeSliceSize()
+    Uint8 GetSliceSize()
     {
-        return m_SliceSize;
+        return m_Strategy.GetSliceSize();
     }
     
     /// Return the current number of bytes allocated.
@@ -1392,6 +1609,39 @@ public:
         }
 #endif
     }
+    
+    /// Report a user-specified OID for ordered-access detection.
+    ///
+    /// This class attempts to reduce thrashing by determining if the
+    /// user is accessing OIDs in a "mostly" sequential order.  If the
+    /// user accesses OIDs in order, there should be no possibility of
+    /// "thrashing".  If not, the severity of thrashing can be reduced
+    /// by selecting a smaller slice size.  An OID is considered to be
+    /// a "sequential" access if it is greater than the last OID minus
+    /// the greater 10 or 10% of the database.  (Multithreaded clients
+    /// of SeqDB typically assign "blocks" of OIDs, which results in a
+    /// "mostly" sequential access pattern.)
+    ///
+    /// @param oid Currently accessed OID.
+    /// @param num_oids Number of OIDs in the database.
+    /// @param locked Lock holder object for this thread.
+    void MentionOid(int oid, int num_oids, CSeqDBLockHold & locked)
+    {
+        Lock(locked);
+        m_Strategy.MentionOid(oid, num_oids);
+    }
+    
+    /// Remove mappings for filenames that match these patterns.
+    /// 
+    /// All file mappings are searched, and any mapped areas of files
+    /// whose names match one of these strings will be unmapped.  The
+    /// match is only successful if the string is an exact suffix of
+    /// the filename.
+    ///
+    /// @param patterns Patterns to match against.
+    /// @param locked Lock holder object for this thread.
+    void RemoveMatches(const vector<string> & patterns,
+                       CSeqDBLockHold       & locked);
     
 private:
     /// Private method to prevent copy construction.
@@ -1567,7 +1817,6 @@ private:
         m_Recent[0] = r;
     }
     
-
     // Data
     
     /// Protects most of the critical regions of the SeqDB library.
@@ -1582,7 +1831,7 @@ private:
     
     /// All of the SeqDB region maps.
     vector<CRegionMap*> m_Regions;
-
+    
     /// Maps from pointers to dynamically allocated blocks to the byte
     /// size of the allocation.
     map<const char *, size_t> m_Pool;
@@ -1640,14 +1889,6 @@ private:
     /// Table of recently used regions.
     CRegionMap * m_Recent[ eNumRecent ];
     
-    // Max memory permitted
-    
-    /// The maximum amount of memory used for regions, Alloc()ed data.
-    Uint8 m_MemoryBound;
-    
-    /// Atlas will try to map this amount of memory at once.
-    Uint8 m_SliceSize;
-    
     /// Atlas will try to garbage collect if more than this many
     /// regions are opened.
     int m_OpenRegionsTrigger;
@@ -1657,6 +1898,9 @@ private:
     
     /// Cache of file existence and length.
     map< string, pair<bool, TIndx> > m_FileSize;
+    
+    /// Flexible memory allocation manager.
+    CSeqDBMapStrategy m_Strategy;
 };
 
 // Assumes lock is held.

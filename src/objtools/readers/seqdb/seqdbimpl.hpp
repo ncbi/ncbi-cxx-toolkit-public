@@ -434,17 +434,20 @@ public:
     
     /// Set upper limit on memory and mapping slice size.
     /// 
-    /// This sets an approximate upper limit on memory used by CSeqDB.
-    /// This will not be exactly enforced, and the library will prefer
-    /// to exceed the bound if necessary rather than return an error.
-    /// Setting this to a very low value will probably cause bad
-    /// performance.
-    void SetMemoryBound(Uint8 membound, Uint8 slicesize)
+    /// This sets an approximate upper limit on memory used by CSeqDB
+    /// for file mappings and large arrays.  This will not be exactly
+    /// enforced; the library will prefer to exceed the bound rather
+    /// than return an error.  Setting this to a very low value will
+    /// cause bad performance.  If this is not set, SeqDB picks a
+    /// large value and lowers it if an allocation fails.
+    /// 
+    /// @param membound Maximum memory to use for file mappings.
+    void SetMemoryBound(Uint8 membound)
     {
         CHECK_MARKER();
-        m_Atlas.SetMemoryBound(membound, slicesize);
+        m_Atlas.SetMemoryBound(membound);
     }
-
+    
     /// Flush unnecessarily held memory
     ///
     /// This is used by the atlas garbage collection callback - when

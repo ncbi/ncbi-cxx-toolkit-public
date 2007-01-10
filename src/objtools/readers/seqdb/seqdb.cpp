@@ -590,7 +590,7 @@ bool CSeqDB::SeqidToOid(const CSeq_id & seqid, int & oid) const
 
 void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
 {
-    m_Impl->SetMemoryBound(membound, slice_size);
+    m_Impl->SetMemoryBound(membound);
 }
 
 int CSeqDB::GetOidAtOffset(int first_seq, Uint8 residue) const

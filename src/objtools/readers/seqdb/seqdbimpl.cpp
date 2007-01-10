@@ -120,6 +120,18 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     
     SetIterationRange(oid_begin, oid_end);
     
+    {
+        vector<string> patterns;
+        patterns.push_back(".nal");
+        patterns.push_back(".pal");
+        patterns.push_back(".gil");
+        patterns.push_back(".msk");
+        patterns.push_back("index.alx");
+        
+        CSeqDBLockHold locked(m_Atlas);
+        m_Atlas.RemoveMatches(patterns, locked);
+    }
+    
     CHECK_MARKER();
 }
 
@@ -344,6 +356,8 @@ int CSeqDBImpl::GetSeqLength(int oid) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    
     int vol_oid = 0;
     
     if ('p' == m_SeqType) {
@@ -365,6 +379,8 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    
     int vol_oid = 0;
     
     if ('p' == m_SeqType) {
@@ -388,6 +404,7 @@ void CSeqDBImpl::GetTaxIDs(int             oid,
 {
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
     if (! persist) {
         gi_to_taxid.clear();
@@ -422,7 +439,7 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
                            bool          persist) const
 {
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
     if (! persist) {
         taxids.clear();
@@ -446,7 +463,11 @@ CRef<CBioseq>
 CSeqDBImpl::GetBioseq(int oid, int target_gi, bool seqdata) const
 {
     CHECK_MARKER();
+    
     CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+    
     int vol_oid = 0;
     
     if (! m_OidListSetup) {
@@ -492,6 +513,7 @@ int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
     int vol_oid = 0;
     
     m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSequence(vol_oid, buffer, locked);
@@ -511,6 +533,7 @@ CRef<CSeq_data> CSeqDBImpl::GetSeqData(int     oid,
     int vol_oid = 0;
     
     m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqData(vol_oid, begin, end, locked);
@@ -531,6 +554,7 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
     CSeqDBLockHold locked(m_Atlas);
     
     m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
@@ -554,6 +578,7 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid) const
     
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
     if (! m_OidListSetup) {
         x_GetOidList(locked);
@@ -715,6 +740,7 @@ CSeqDBImpl::x_GetHdr(int oid, CSeqDBLockHold & locked) const
 {
     CHECK_MARKER();
     m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
     CRef<CBlast_def_line_set> & rvref = m_HeaderCache.Lookup(oid);
     
@@ -1146,6 +1172,7 @@ void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
     
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
     
     int vol_oid = 0;
     
