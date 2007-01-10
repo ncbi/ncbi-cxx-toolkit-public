@@ -10,3 +10,5 @@ CPPFLAGS = -DFTDS_IN_USE $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
 
 # CHECK_CMD = run_sybase_app.sh ctl_sp_databases_ftds64
 CHECK_CMD = run_sybase_app.sh ctl_sp_databases_ftds64 -S MS_DEV1
+
+REQUIRES = FreeTDS
