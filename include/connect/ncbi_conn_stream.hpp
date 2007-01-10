@@ -28,6 +28,7 @@
  *
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
+ * @file
  * File Description:
  *   CONN-based C++ streams
  *
@@ -96,7 +97,7 @@ const streamsize kConn_DefaultBufSize = 4096;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// Base class, derived from "std::iostream", does both input
+/// Base class, inherited from "std::iostream", does both input
 /// and output, using the specified CONNECTOR.  Input operations
 /// can be tied to the output ones by setting 'do_tie' to 'true'
 /// (default), which means that any input attempt first flushes
@@ -109,16 +110,40 @@ const streamsize kConn_DefaultBufSize = 4096;
 class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConnIniter,
                                             public CNcbiIostream
 {
-public:
+protected:
+    /// Create a stream based on a CONNECTOR -- for internal use only
+    /// in derived classes.
+    ///
+    /// @param connector
+    ///  A C object of type CONNECTOR (ncbi_connector.h) on top of which
+    ///  the stream is being constructed.  Used internally by individual
+    /// ctors of specialized streams in this header.  May not be NULL.
+    /// @param timeout
+    ///  Default I/O timeout
+    /// @param buf_size
+    ///  Default size of underlying stream buffer's I/O arena
+    /// @param do_tie
+    ///  Specifies whether to tie output to input -- a tied stream flushes
+    ///  all pending output prior to doing any input.
+    /// @sa
+    ///  CONNECTOR, ncbi_connector.h
     CConn_IOStream
     (CONNECTOR       connector,
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize,
      bool            do_tie   = true);
+
+public:
     virtual ~CConn_IOStream();
 
+    /// @return
+    ///   CONNection handle built from the CONNECTION
+    /// @sa
+    ///   CONN, ncbi_connection.h
     CONN GetCONN(void) const;
 
+    /// Close CONNection free all internal buffers and underlying structures,
+    /// render stream unusable for further I/O.
     void Close(void);
 
 protected:
@@ -142,10 +167,25 @@ private:
 /// number of connection attempts is given as 'max_try'.
 /// More details on that: <connect/ncbi_socket_connector.h>.
 ///
+///
 
 class NCBI_XCONNECT_EXPORT CConn_SocketStream : public CConn_IOStream
 {
 public:
+    /// Create a direct connection to host:port.
+    ///
+    /// @param host
+    ///  Host to connect to
+    /// @param port
+    ///  ... and port number
+    /// @param max_try
+    ///  Number of attempts
+    /// @param timeout
+    ///  Default I/O timeout
+    /// @param buf_size
+    ///  Default buffer size
+    /// @sa
+    ///  CConn_IOStream
     CConn_SocketStream
     (const string&   host,         /* host to connect to  */
      unsigned short  port,         /* ... and port number */
@@ -153,10 +193,15 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
-    // This variant uses existing socket "sock" to build the stream upon it.
-    // NOTE:  it revokes all ownership of the socket, and further assumes the
-    // socket being in exclusive use of this stream's underlying CONN.
-    // More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
+    /// This variant uses existing socket "sock" to build the stream upon it.
+    /// NOTE:  it revokes all ownership of the socket, and further assumes the
+    /// socket being in exclusive use of this stream's underlying CONN.
+    /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
+    ///
+    /// @param SOCK
+    ///  Socket to build the stream on
+    /// @sa
+    ///  SOCK, ncbi_socket.h
     CConn_SocketStream
     (SOCK            sock,         /* socket              */
      unsigned int    max_try  = 3, /* number of attempts  */
@@ -423,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.53  2007/01/10 21:04:05  lavr
+ * At attempt to doxygenize
+ *
  * Revision 6.52  2007/01/03 14:47:18  vasilche
  * Added ToVector().
  *
