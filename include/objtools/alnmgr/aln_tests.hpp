@@ -76,7 +76,7 @@ public:
     ///        the user, to assure the validity of the alignments.
     void push_back(const CSeq_align& aln) {
 #ifdef _DEBUG
-        aln->Validate(true);
+        aln.Validate(true);
 #endif
         TAlnMap::const_iterator it = m_AlnMap.find(&aln);
         if (it != m_AlnMap.end()) {
@@ -144,6 +144,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2007/01/10 19:32:55  ucko
+* Fix syntax error (typo) affecting debug builds.
+*
 * Revision 1.13  2007/01/10 19:15:13  todorov
 * Improved comments.
 * CException -> CAlnException
