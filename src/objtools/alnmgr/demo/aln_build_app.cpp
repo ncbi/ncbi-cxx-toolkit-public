@@ -193,7 +193,7 @@ int CAlnBuildApp::Run(void)
     ITERATE(CAlnContainer, aln_it, m_AlnContainer) {
         try {
             aln_id_map.push_back(**aln_it);
-        } catch (CException e) {
+        } catch (CAlnException e) {
             cerr << "Skipping this alignment: " << e.what() << endl;;
         }
     }
@@ -271,6 +271,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2007/01/10 19:15:51  todorov
+* CException -> CAlnException
+*
 * Revision 1.16  2007/01/10 18:20:54  todorov
 * Alignments are now pushed back into CAlnIdMap which potentially throws
 * an exception (giving the user greater control and flexibility).
