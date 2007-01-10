@@ -53,45 +53,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-void Make_GI_or_PDB_String(const CRef< CSeq_id > SeqID, std::string& Str, bool Pad, int Len) {
-//-------------------------------------------------------------------
-// make a string for a seq-id
-//-------------------------------------------------------------------
-  int   GI;
-  const CPDB_seq_id*  pPDB_ID;
-  char buf[1024];
-
-  if (SeqID.Empty()) {
-      Str += "<Empty Sequence>";
-      return;
-  } else if (!SeqID->IsGi() && !SeqID->IsPdb() && !SeqID->IsOther() ) {
-      Str += "<Non-gi/pdb Sequence Types Unsupported>";
-      return;
-  }
-
-  if (SeqID->IsGi()) {
-    GI = SeqID->GetGi();
-    sprintf(buf,"%d", GI);
-  }
-  if (SeqID->IsPdb()) {
-    pPDB_ID = &(SeqID->GetPdb());
-    sprintf(buf,"%s %c",pPDB_ID->GetMol().Get().c_str(),pPDB_ID->GetChain());
-  }
-  if (SeqID->IsOther()) {
-    sprintf(buf,"%s",SeqID->GetOther().GetAccession().c_str());
-  }
-
-  Str += string(buf);
-
-  // pad with spaces to length of Len
-  if (Pad) {
-    if (Str.size() < Len) {
-      Str.append(Len - Str.size(), ' ');
-    }
-  }
-}
-
-
 void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
 //-------------------------------------------------------------------
 // make a string for a seq-id
@@ -124,45 +85,69 @@ void Make_GI_or_PDB_String_CN3D(const CRef< CSeq_id > SeqID, std::string& Str) {
 
 }
 
+string Make_SeqID_String(const CRef< CSeq_id > SeqID, bool Pad, int Len) {
+//-------------------------------------------------------------------
+// make a string for a seq-id
+//-------------------------------------------------------------------
+  int   GI;
+  const CPDB_seq_id*  pPDB_ID;
+  char buf[1024];
+  string Str;
+
+  if (SeqID.Empty()) {
+      return "<Empty Sequence>";
+  } else if (!SeqID->IsGi() && !SeqID->IsPdb() && !SeqID->IsOther() && !SeqID->IsLocal()) {
+      return SeqID->GetSeqIdString();  
+  }
+
+  //  Custom string construction for Gi, PDB, Other, or Local types
+  if (SeqID->IsGi()) {
+      GI = SeqID->GetGi();
+      sprintf(buf,"%d", GI);
+  }
+  if (SeqID->IsPdb()) {
+      pPDB_ID = &(SeqID->GetPdb());
+      sprintf(buf,"%s %c",pPDB_ID->GetMol().Get().c_str(),pPDB_ID->GetChain());
+  }
+  if (SeqID->IsOther()) {
+      sprintf(buf,"%s",SeqID->GetOther().GetAccession().c_str());
+  }
+  if (SeqID->IsLocal()) {
+	  if (SeqID->GetLocal().IsId()) {
+		  sprintf(buf,"%d",SeqID->GetLocal().GetId());
+	  }
+	  if (SeqID->GetLocal().IsStr()) {
+		  string test = SeqID->GetLocal().GetStr();
+		  sprintf(buf,"%s",test.c_str());
+	  }
+  }
+
+  Str = string(buf);
+
+  // pad with spaces to length of Len
+  if (Pad) {
+      if ( (int)Str.size() < Len) {
+          Str.append(Len - Str.size(), ' ');
+      }
+  }
+  return Str;
+}
+
 
 
 string GetSeqIDStr(const CSeq_id& SeqID) 
 {
-    string Str;
     CRef< CSeq_id > cRefSeqID(new CSeq_id);
     cRefSeqID->Assign(SeqID);
-    Make_GI_or_PDB_String(cRefSeqID, Str, false, 0);
+    string Str = Make_SeqID_String(cRefSeqID, false, 0);
     return Str;
 }
 
-// was string seqIDStr(CSeq_id * SeqID)  from algMisc
 string GetSeqIDStr(const CRef< CSeq_id >& SeqID) 
 {
-    string Str;
-    Make_GI_or_PDB_String(SeqID, Str, false, 0);
+    string Str = Make_SeqID_String(SeqID, false, 0);
     return Str;
 }
-
-/*
-string seqIDStr(CSeq_id * SeqID) 
-{
-    int   GI;
-    const CPDB_seq_id*  pPDB_ID;
-    char buf[1024];
-
-    if (SeqID->IsGi()) {
-        GI = SeqID->GetGi();
-        sprintf(buf,"%d", GI);
-    }
-    else if (SeqID->IsPdb()) {
-        pPDB_ID = &(SeqID->GetPdb());
-        sprintf(buf,"%s%c",pPDB_ID->GetMol().Get().c_str(),pPDB_ID->GetChain());
-    }
-
-    return string(buf);
-}
-*/
-
 
 //  Return the first CCdd_id object in a CD.
 string CddIdString(const CCdd& cdd) {
@@ -224,7 +209,7 @@ bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* 
   try {
     // check allowed characters
     static const std::string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
-    int i;
+    unsigned int i;
     for (i=0; i<prosite.size(); i++) {
       if (allowed.find(toupper((unsigned char) prosite[i])) == std::string::npos) break;
     }
@@ -235,7 +220,7 @@ bool Prosite2Regex(const std::string& prosite, std::string* regex, std::string* 
     regex->erase();
     
     bool inGroup = false;
-    for (int i=0; i<prosite.size(); i++) {
+    for (i=0; i<prosite.size(); i++) {
       
       // handle grouping and termini
       bool characterHandled = true;
@@ -301,6 +286,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2007/01/10 15:20:54  lanczyck
+ * generalize Make_GI_or_PDB_String to Make_SeqID_String; remove old commented code; fix compiler warnings
+ *
  * Revision 1.3  2005/06/03 16:23:47  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
