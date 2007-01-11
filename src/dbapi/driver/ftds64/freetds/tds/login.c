@@ -491,6 +491,7 @@ tds7_send_auth(TDSSOCKET * tds,
     unsigned char* ntlm_v2_response = NULL;
     int ntlm_response_len = 0;
     int send_lm_response = 1;
+    int send_ntlm_response = 1;
 
     TDSCONNECTION *connection = tds->connection;
 
@@ -517,6 +518,8 @@ tds7_send_auth(TDSSOCKET * tds,
     tds_answer_challenge(tds, connection, challenge, &flags, names_blob, names_blob_len, &answer, &ntlm_v2_response);
     ntlm_response_len = (ntlm_v2_response ? 16 + names_blob_len : 24);
     send_lm_response = (ntlm_v2_response == NULL);
+    // send_lm_response = 1;
+    // send_ntlm_response = 0;
 
     tds->out_flag = 0x11;
     tds_put_n(tds, "NTLMSSP", 8);
@@ -539,9 +542,15 @@ tds7_send_auth(TDSSOCKET * tds,
     }
 
     /* NTLM/NTLMv2 Response */
-    tds_put_smallint(tds, ntlm_response_len);  /* nt resp length */
-    tds_put_smallint(tds, ntlm_response_len);  /* nt resp length */
-    tds_put_int(tds, current_pos);  /* nt resp offset */
+    if (send_ntlm_response) {
+        tds_put_smallint(tds, ntlm_response_len);  /* nt resp length */
+        tds_put_smallint(tds, ntlm_response_len);  /* nt resp length */
+        tds_put_int(tds, current_pos);  /* nt resp offset */
+    } else {
+        tds_put_smallint(tds, 0);  /* nt resp length */
+        tds_put_smallint(tds, 0);  /* nt resp length */
+        tds_put_int(tds, current_pos);  /* nt resp offset */
+    }
 
     current_pos = 64;
 
@@ -568,7 +577,7 @@ tds7_send_auth(TDSSOCKET * tds,
     /* Session Key (optional) */
     tds_put_smallint(tds, 0);
     tds_put_smallint(tds, 0);
-    tds_put_int(tds, current_pos + (24 + ntlm_response_len));
+    tds_put_int(tds, current_pos + (24 * send_lm_response + ntlm_response_len * send_ntlm_response));
 
     /* flags */
     /* "challenge" is 8 bytes long */
@@ -587,14 +596,16 @@ tds7_send_auth(TDSSOCKET * tds,
         tds_put_n(tds, answer.lm_resp, 24);
     }
 
-    if (ntlm_v2_response == NULL) {
-        /* NTLMv1 */
-        tds_put_n(tds, answer.nt_resp, ntlm_response_len);
-    } else {
-        /* NTLMv2 */
-        tds_put_n(tds, ntlm_v2_response, ntlm_response_len);
-        memset(ntlm_v2_response, 0, ntlm_response_len);
-        free(ntlm_v2_response);
+    if (send_ntlm_response) {
+        if (ntlm_v2_response == NULL) {
+            /* NTLMv1 */
+            tds_put_n(tds, answer.nt_resp, ntlm_response_len);
+        } else {
+            /* NTLMv2 */
+            tds_put_n(tds, ntlm_v2_response, ntlm_response_len);
+            memset(ntlm_v2_response, 0, ntlm_response_len);
+            free(ntlm_v2_response);
+        }
     }
 
     /* for security reason clear structure */
