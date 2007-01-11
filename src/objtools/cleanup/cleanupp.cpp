@@ -683,19 +683,19 @@ void CCleanup_imp::ExtendedCleanup(CSeq_entry_Handle seh)
 }
 
 
-void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
+void CCleanup_imp::ExtendedCleanup(const CSeq_submit& ss)
 {
     // TODO Cleanup Submit-block.
     
     switch (ss.GetData().Which()) {
         case CSeq_submit::TData::e_Entrys:
-            NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, ss.SetData().SetEntrys()) {
+            ITERATE(CSeq_submit::TData::TEntrys, it, ss.GetData().GetEntrys()) {
                 CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle((**it));
                 ExtendedCleanup(seh);
             }
             break;
         case CSeq_submit::TData::e_Annots:
-            NON_CONST_ITERATE(CSeq_submit::TData::TAnnots, it, ss.SetData().SetAnnots()) {
+            ITERATE(CSeq_submit::TData::TAnnots, it, ss.GetData().GetAnnots()) {
                 ExtendedCleanup(m_Scope->GetSeq_annotHandle(**it));
             }
             break;
@@ -709,9 +709,11 @@ void CCleanup_imp::ExtendedCleanup(CSeq_submit& ss)
 
 void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 {
+    // change any citation qualifiers into real citations
+    x_ChangeCitSub(bss);
+
     x_MoveGeneQuals (bss);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     // These two steps were EntryChangeImpFeat in the C Toolkit
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
@@ -721,8 +723,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
-    x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
-                                      &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
     LoopToAsn3(bss);                                  
                                       
     RemoveEmptyFeaturesDescriptorsAndAnnots(bss);
@@ -739,7 +739,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
         x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-        x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
@@ -747,6 +746,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
         x_RemoveMarkedGeneXrefs(bss);
         x_MergeAdjacentAnnots(bss);
+
+        // Cleanup Publications        
+        x_ExtendedCleanupPubs(bss);                
         
         // Clean up BioSource features and descriptors last
         x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bss);
@@ -757,7 +759,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
         x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-        x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
@@ -765,6 +766,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
         x_RemoveMarkedGeneXrefs(bsh);
         x_MergeAdjacentAnnots(bsh);
+
+        // Cleanup Publications        
+        x_ExtendedCleanupPubs(bsh);                
         
         // Clean up BioSource features and descriptors last
         x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh);
@@ -775,9 +779,11 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
 
 void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 {
+    // change any citation qualifiers into real citations
+    x_ChangeCitSub(bsh);
+    
     x_MoveGeneQuals (bsh);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-    x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToProt);
@@ -786,8 +792,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveMultipleTitles);
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_MergeMultipleDates);
 
-    x_RecurseDescriptorsForMerge(bsh, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
-                                      &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
     LoopToAsn3(bsh.GetSeq_entry_Handle());
                                           
     RemoveEmptyFeaturesDescriptorsAndAnnots(bsh);
@@ -797,7 +801,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
     x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
-    x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);    
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
     
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);        
@@ -805,6 +808,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
     x_RemoveMarkedGeneXrefs(bsh);
     x_MergeAdjacentAnnots(bsh);
+    
+    // Cleanup Publications
+    x_ExtendedCleanupPubs(bsh);
     
     // Clean up BioSource features and descriptors last
     x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh);
@@ -814,7 +820,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
 void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
 {
     x_MoveGeneQuals (sa);
-    x_ConvertFullLenPubFeatureToDescriptor(sa);    
     x_RemoveEmptyFeatures(sa);
 
     x_ChangeImpFeatToCDS(sa);
@@ -828,6 +833,7 @@ void CCleanup_imp::ExtendedCleanup(CSeq_annot_Handle sa)
     
     x_RemoveUnnecessaryGeneXrefs (sa);
     x_RemoveMarkedGeneXrefs(sa);
+    x_ExtendedCleanupPubs(sa);    
 }
 
 
@@ -851,22 +857,43 @@ void CCleanup_imp::x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot pmf
 {
     CBioseq_EditHandle bseh = bs.GetEditHandle();
     
+    vector<CSeq_annot_EditHandle> sah; // copy empty annot handles to not break iterator while moving    
     CSeq_annot_CI annot_it(bseh.GetSeq_entry_Handle(), CSeq_annot_CI::eSearch_entry);
     for(; annot_it; ++annot_it) {
         (this->*pmf)(*annot_it);
+        if (annot_it->IsFtable() && annot_it->GetCompleteSeq_annot()->GetData().GetFtable().empty()) {
+            // add annot_it to list of annotations to remove
+            sah.push_back((*annot_it).GetEditHandle());
+        }
     }   
+    ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
+        (*it).Remove();
+    }
+}
+
+
+void CCleanup_imp::x_ActOnSeqAnnots (CBioseq_set_Handle bss, RecurseSeqAnnot pmf)
+{
+    CBioseq_set_EditHandle bseh = bss.GetEditHandle();
+
+    vector<CSeq_annot_EditHandle> sah; // copy empty annot handles to not break iterator while moving    
+    CSeq_annot_CI annot_it(bseh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for(; annot_it; ++annot_it) {
+        (this->*pmf)(*annot_it);
+        if (annot_it->IsFtable() && annot_it->GetCompleteSeq_annot()->GetData().GetFtable().empty()) {
+            // add annot_it to list of annotations to remove
+            sah.push_back((*annot_it).GetEditHandle());
+        }
+    }
+    ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
+        (*it).Remove();
+    }
 }
 
 
 void CCleanup_imp::x_RecurseForSeqAnnots (CBioseq_set_Handle bss, RecurseSeqAnnot pmf)
 {
-    CBioseq_set_EditHandle bseh = bss.GetEditHandle();
-    
-    CSeq_annot_CI annot_it(bseh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
-    for(; annot_it; ++annot_it) {
-        (this->*pmf)(*annot_it);
-    }   
-
+    x_ActOnSeqAnnots(bss, pmf);
 
     // now operate on members of set
     if (bss.GetCompleteBioseq_set()->IsSetSeq_set()) {
@@ -1553,7 +1580,7 @@ void CCleanup_imp::CheckNucProtSet (CBioseq_set_Handle bss)
     if (bss.GetClass() == CBioseq_set::eClass_nuc_prot) {
         list< CRef< CSeq_entry > >::const_iterator se_it = set.begin();
         
-        CBioseq_set_EditHandle eh (bss);
+        CBioseq_set_EditHandle eh = bss.GetEditHandle();
 
         // look for old style nps title, remove if based on nucleotide title, also remove exact duplicate
         x_RemoveNucProtSetTitle(eh, **se_it);
@@ -1579,6 +1606,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.60  2007/01/11 19:09:14  bollin
+ * Bug fixes for ExtendedCleanup
+ *
  * Revision 1.59  2007/01/10 15:10:09  ludwigf
  * CHANGED: In CCleanup_imp::BasicCleanup(CSeq_loq&), added pointer check to
  *  avoid throwing in one of the try/catch blocks. Exceptions counted into the

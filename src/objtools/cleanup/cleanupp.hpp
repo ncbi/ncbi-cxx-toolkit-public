@@ -138,7 +138,7 @@ public:
     
     //Extended Cleanup
     void ExtendedCleanup(CSeq_entry_Handle seh);
-    void ExtendedCleanup(CSeq_submit& ss);
+    void ExtendedCleanup(const CSeq_submit& ss);
     void ExtendedCleanup(CBioseq_Handle bsh);
     void ExtendedCleanup(CBioseq_set_Handle bss);
     void ExtendedCleanup(CSeq_annot_Handle sa);
@@ -238,17 +238,20 @@ private:
     void x_RecurseForDescriptors (const CSeq_entry& se, RecurseDescriptor pmf);
     void x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor pmf);
     void x_RecurseForDescriptors (CBioseq_set_Handle bs, RecurseDescriptor pmf);
+    void CCleanup_imp::x_ActOnDescriptors (CBioseq_set_Handle bss, RecurseDescriptor pmf);
     
     typedef bool (CCleanup_imp::*IsMergeCandidate)(const CSeqdesc& sd);
     typedef bool (CCleanup_imp::*Merge)(CSeqdesc& sd1, CSeqdesc& sd2);
     void x_RecurseDescriptorsForMerge(CSeq_descr& sdr, IsMergeCandidate is_can, Merge do_merge, CSeq_descr::Tdata& remove_list);
     void x_RecurseDescriptorsForMerge (CBioseq_Handle bs, IsMergeCandidate is_can, Merge do_merge);
     void x_RecurseDescriptorsForMerge (CBioseq_set_Handle bs, IsMergeCandidate is_can, Merge do_merge);
+    void x_ActOnDescriptorsForMerge (CBioseq_set_Handle bh, IsMergeCandidate is_can, Merge do_merge);    
 
     typedef void (CCleanup_imp::*RecurseSeqAnnot)(CSeq_annot_Handle sah);
     void x_RecurseForSeqAnnots (const CSeq_entry& se, RecurseSeqAnnot pmf);
     void x_RecurseForSeqAnnots (CBioseq_Handle bs, RecurseSeqAnnot pmf);
     void x_RecurseForSeqAnnots (CBioseq_set_Handle bs, RecurseSeqAnnot pmf);
+    void x_ActOnSeqAnnots (CBioseq_set_Handle bss, RecurseSeqAnnot pmf);
     
     void x_RemoveEmptyGenbankDesc(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
 
@@ -281,7 +284,7 @@ private:
     void x_MoveDbxrefs( CSeq_feat& feat);
     void x_MoveDbxrefs (CSeq_annot_Handle sa);
     
-    bool x_CheckCodingRegionEnds (CSeq_feat& feat);
+    bool x_CheckCodingRegionEnds (CSeq_feat_Handle ofh);
     void x_CheckCodingRegionEnds (CSeq_annot_Handle sah);
     
     void x_ExtendSingleGeneOnmRNA (CBioseq_set_Handle bssh);
@@ -339,9 +342,6 @@ private:
     bool x_IsCitSubPub(const CSeqdesc& sd);
     bool x_CitSubsMatch(CSeqdesc& sd1, CSeqdesc& sd2);
 
-    void x_RemoveCitGenPubDescriptors (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
-    void x_RemoveCitGenPubFeatures (CSeq_annot_Handle sa);
-    
     CRef<CPub> x_MinimizePub (const CPub& pub);
     void x_ChangeCitationQualToCitationPub(CBioseq_Handle bs);
     bool x_ChangeCitSub (CPub& pub);
@@ -351,8 +351,17 @@ private:
     void x_RemovePubMatch(const CSeq_entry& se, const CPubdesc& pd);
     void x_MergeAndMovePubs(CBioseq_set_Handle bsh);    
     void x_RemoveDuplicatePubsFromBioseqsInSet(CBioseq_set_Handle bsh);
-    void x_MergeDuplicatePubsOnSet(CBioseq_set_Handle bsh);    
+    void x_MergeDuplicatePubs(CBioseq_set_Handle bsh);    
+    void x_MergeDuplicatePubs(CBioseq_Handle bsh);    
     void x_ConvertPubsToAsn4 (CSeq_entry_Handle seh);
+    
+    bool x_RemoveEmptyPubs (CPubdesc& pubdesc);
+    void x_RemoveEmptyPubs (CSeq_annot_Handle sa);
+    void x_RemoveEmptyPubs(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
+    void x_ExtendedCleanupPubs (CBioseq_set_Handle bss);
+    void x_ExtendedCleanupPubs (CBioseq_Handle bss);
+    void x_ExtendedCleanupPubs (CSeq_annot_Handle sa);
+
 
     // BioSource Cleanup functions
     bool x_Merge (COrgName& on1, const COrgName& on2);
@@ -481,6 +490,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.54  2007/01/11 19:09:14  bollin
+ * Bug fixes for ExtendedCleanup
+ *
  * Revision 1.53  2007/01/04 13:13:38  bollin
  * Moved ExtendedCleanup function for exception text to BasicCleanup.
  *

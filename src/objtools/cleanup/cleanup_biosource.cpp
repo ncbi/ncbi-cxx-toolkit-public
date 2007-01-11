@@ -1150,7 +1150,7 @@ void CCleanup_imp::x_SetSourceLineage(CBioseq_Handle bh, string lineage)
             && bh.GetInst_Repr() != CSeq_inst::eRepr_const)) {
         return;
     }
-    CBioseq_EditHandle eh(bh);
+    CBioseq_EditHandle eh = bh.GetEditHandle();
     if (eh.IsSetDescr()) {
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
             if ((*desc_it)->Which() == CSeqdesc::e_Source
@@ -1164,7 +1164,7 @@ void CCleanup_imp::x_SetSourceLineage(CBioseq_Handle bh, string lineage)
 
 void CCleanup_imp::x_SetSourceLineage(CBioseq_set_Handle bh, string lineage)
 {
-    CBioseq_set_EditHandle eh(bh);
+    CBioseq_set_EditHandle eh = bh.GetEditHandle();
     if (eh.IsSetDescr()) {
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
             if ((*desc_it)->Which() == CSeqdesc::e_Source
@@ -1182,7 +1182,7 @@ void CCleanup_imp::x_SetSourceLineage(CBioseq_set_Handle bh, string lineage)
 
 bool CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh)
 {
-    CBioseq_set_EditHandle eh(bh);
+    CBioseq_set_EditHandle eh = bh.GetEditHandle();
     bool added_source = false;
     if (eh.IsSetDescr()) {
         CSeq_descr::Tdata remove_list;
@@ -1208,7 +1208,7 @@ bool CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh)
 
 bool CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh)
 {
-    CBioseq_EditHandle eh(bh);
+    CBioseq_EditHandle eh = bh.GetEditHandle();
     bool added_source = false;
     if (eh.IsSetDescr()) {
         CSeq_descr::Tdata remove_list;
@@ -1352,7 +1352,7 @@ void CCleanup_imp::x_FixNucProtSources (CBioseq_set_Handle bh)
     // and protein sequences        
     ITERATE (list< CRef< CSeq_entry > >, it, set) {
         if ((*it)->Which() == CSeq_entry::e_Set) {
-            CBioseq_set_EditHandle eh (m_Scope->GetBioseq_setHandle((*it)->GetSet()));
+            CBioseq_set_EditHandle eh = (m_Scope->GetBioseq_setHandle((*it)->GetSet())).GetEditHandle();
             if (eh.GetDescr().Get().empty()) continue;
             
             CSeq_descr::Tdata remove_list;
@@ -1374,7 +1374,7 @@ void CCleanup_imp::x_FixNucProtSources (CBioseq_set_Handle bh)
                 eh.ResetDescr();
             }
         } else if ((*it)->Which() == CSeq_entry::e_Seq) {
-            CBioseq_EditHandle eh (m_Scope->GetBioseqHandle((*it)->GetSeq()));
+            CBioseq_EditHandle eh = (m_Scope->GetBioseqHandle((*it)->GetSeq())).GetEditHandle();
             if (eh.GetDescr().Get().empty()) continue;
 
             CSeq_descr::Tdata remove_list;
@@ -1822,8 +1822,8 @@ void CCleanup_imp::x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_Handle src,
 {
     if (!src.IsSetDescr()) return;
     
-    CBioseq_set_EditHandle bseh (dst);
-    CBioseq_EditHandle beh (src);
+    CBioseq_set_EditHandle bseh = dst.GetEditHandle();
+    CBioseq_EditHandle beh = src.GetEditHandle();
     
     CSeq_descr::Tdata remove_list;
     remove_list.clear();
@@ -1853,8 +1853,8 @@ void CCleanup_imp::x_MoveDescriptor (CBioseq_set_Handle dst, CBioseq_set_Handle 
 {
     if (!src.IsSetDescr()) return;
     
-    CBioseq_set_EditHandle bseh (dst);
-    CBioseq_set_EditHandle beh (src);
+    CBioseq_set_EditHandle bseh = dst.GetEditHandle();
+    CBioseq_set_EditHandle beh = src.GetEditHandle();
     
     CSeq_descr::Tdata remove_list;
     remove_list.clear();
@@ -1888,7 +1888,7 @@ bool CCleanup_imp::x_PromoteMergeableSource (CBioseq_set_Handle dst, const CBioS
     
     CRef<CBioSource> new_src(new CBioSource);
     if (dst.IsSetDescr()) {
-        CBioseq_set_EditHandle beh(dst);
+        CBioseq_set_EditHandle beh = dst.GetEditHandle();
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, beh.SetDescr().Set()) {
             if ((*desc_it)->IsSource()) {
                 found_any = true;
@@ -1906,7 +1906,7 @@ bool CCleanup_imp::x_PromoteMergeableSource (CBioseq_set_Handle dst, const CBioS
         new_src->Assign (biosrc);           
         CRef<CSeqdesc> new_desc(new CSeqdesc);
         new_desc->SetSource(*new_src);
-        CBioseq_set_EditHandle beh(dst);
+        CBioseq_set_EditHandle beh = dst.GetEditHandle();
         beh.AddSeqdesc (*new_desc);   
         ChangeMade (CCleanupChange::eAddDescriptor);     
     } 
@@ -2041,7 +2041,7 @@ void CCleanup_imp::x_FixSegSetSource
             || x_PromoteMergeableSource (segset, (*(src_list.begin()))->GetSource())) {            
             unsigned int index = 0;
             NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, src_list) {
-                CBioseq_EditHandle eh (bh_list[index]);
+                CBioseq_EditHandle eh = bh_list[index].GetEditHandle();
                 eh.RemoveSeqdesc(**desc_it);
                 ChangeMade (CCleanupChange::eRemoveDescriptor);
                 if (eh.SetDescr().Set().size() == 0) {
@@ -2051,7 +2051,7 @@ void CCleanup_imp::x_FixSegSetSource
             }
         }
     } else {
-        CBioseq_set_EditHandle set_eh(segset);
+        CBioseq_set_EditHandle set_eh = segset.GetEditHandle();
         bool found = false;
         CRef<CSeqdesc> found_src;
         if (set_eh.IsSetDescr()) {
@@ -2176,19 +2176,19 @@ void CCleanup_imp::x_FixSetSource (CBioseq_set_Handle bh)
             && ! s_ContainsDescriptor ((*it)->GetSeq(), CSeqdesc::e_Source)) {
             CRef<CSeqdesc> new_desc(new CSeqdesc);
             new_desc->Assign (*desc_ci);
-            CBioseq_EditHandle beh (m_Scope->GetBioseqHandle((**it).GetSeq()));
+            CBioseq_EditHandle beh = (m_Scope->GetBioseqHandle((**it).GetSeq())).GetEditHandle();
             beh.AddSeqdesc (*new_desc);
             ChangeMade (CCleanupChange::eAddDescriptor);
         } else if ((*it)->Which() == CSeq_entry::e_Set
             && ! s_ContainsDescriptor ((*it)->GetSet(), CSeqdesc::e_Source)) {
             CRef<CSeqdesc> new_desc(new CSeqdesc);
             new_desc->Assign (*desc_ci);
-            CBioseq_set_EditHandle beh (m_Scope->GetBioseq_setHandle((**it).GetSet()));
+            CBioseq_set_EditHandle beh = (m_Scope->GetBioseq_setHandle((**it).GetSet())).GetEditHandle();
             beh.AddSeqdesc (*new_desc);
             ChangeMade (CCleanupChange::eAddDescriptor);
         }
     }
-    CBioseq_set_EditHandle bseh (bh);
+    CBioseq_set_EditHandle bseh = bh.GetEditHandle();
     bseh.RemoveSeqdesc(*desc_ci);
     ChangeMade (CCleanupChange::eRemoveDescriptor);
 }
@@ -2346,6 +2346,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2007/01/11 19:09:14  bollin
+ * Bug fixes for ExtendedCleanup
+ *
  * Revision 1.25  2007/01/04 13:12:30  bollin
  * Fixed bug in BioSource cleanup
  *

@@ -107,6 +107,7 @@ public:
         // set when keyword is removed
         eRemoveKeyword,
         eAddDescriptor,
+        eMoveDescriptor,
         eConvertFeatureToDescriptor,
         eCollapseSet,
         eChangeFeatureLocation,
@@ -119,6 +120,7 @@ public:
         eChangeBioSourceOrigin,
         eChangeBioSourceOther,
         eChangeSeqId,
+        eRemoveEmptyPub,
         // set when any other change is made.
         eChangeOther,
         
@@ -154,6 +156,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2007/01/11 19:09:24  bollin
+ * Bug fixes for ExtendedCleanup
+ *
  * Revision 1.6  2006/12/11 17:11:32  bollin
  * Added new flag to CCleanupChange
  *

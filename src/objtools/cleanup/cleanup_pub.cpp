@@ -43,10 +43,14 @@
 #include <objects/biblio/Cit_pat.hpp>
 #include <objects/biblio/Cit_let.hpp>
 #include <objects/biblio/Cit_proc.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Id_pat.hpp>
+#include <objects/medline/Medline_entry.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Imprint.hpp>
+#include <objects/biblio/Title.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
@@ -55,8 +59,10 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seq_feat_handle.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanup_utils.hpp"
@@ -308,7 +314,7 @@ void CCleanup_imp::BasicCleanup(CCit_proc& cp, bool fix_initials)
 }
 
 
-static bool s_IsEmptyAffil(const CAuth_list::TAffil& affil)
+static bool s_IsEmpty(const CAuth_list::TAffil& affil)
 {
     if (affil.IsStr()) {
         return NStr::IsBlank(affil.GetStr());
@@ -323,7 +329,7 @@ static bool s_IsEmptyAffil(const CAuth_list::TAffil& affil)
 }
 
 
-static bool s_IsEmptyAuthor(const CAuthor& auth)
+static bool s_IsEmpty(const CAuthor& auth)
 {
     if (!auth.IsSetName()) {
         return true;
@@ -375,7 +381,7 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
 {
     if (al.IsSetAffil()) {
         BasicCleanup(al.SetAffil());
-        if (s_IsEmptyAffil(al.GetAffil())) {
+        if (s_IsEmpty(al.GetAffil())) {
             al.ResetAffil();
             ChangeMade(CCleanupChange::eChangePublication);
         }
@@ -392,7 +398,7 @@ void CCleanup_imp::BasicCleanup(CAuth_list& al, bool fix_initials)
                 TNames::TStd::iterator it = std.begin();
                 while (it != std.end()) {
                     BasicCleanup(**it, fix_initials);
-                    if (s_IsEmptyAuthor(**it)) {
+                    if (s_IsEmpty(**it)) {
                         it = std.erase(it);
                         ChangeMade(CCleanupChange::eChangePublication);
                     } else {
@@ -476,6 +482,9 @@ void CCleanup_imp::BasicCleanup(CAuthor& au, bool fix_initials)
 
 
 // ExtendedCleanup methods
+
+
+
 // remove additional equivalent CitSub descriptors
 // Was MergeEquivalentCitSubs in C Toolkit
 
@@ -511,130 +520,262 @@ bool CCleanup_imp::x_CitSubsMatch(CSeqdesc& sd1, CSeqdesc& sd2)
 }
 
 
-#if 0
-// Looks for publications that appear on each component of a /* move identical pubs in pop/phy/mut compone
-// Was MovPopPhyMutPubs in C Toolkit
-void CCleanup_imp::x_MoveComponentPubs(CBioseq_set& bss)
-{
-    unsigned int bsclass = bss.GetClass();
-
-    if (bsclass == CBioseq_set::eClass_mut_set
-        || bsclass == CBioseq_set::eClass_pop_set
-        || bsclass == CBioseq_set::eClass_pop_set
-        || bsclass == CBioseq_set::eClass_phy_set
-        || bsclass == CBioseq_set::eClass_eco_set
-        || bsclass == CBioseq_set::eClass_wgs_set) {
-        // look for identical pubs from each component
-                feat.GetData().GetPub().GetPub().GetLabel(&tlabel); 
-
-    }
-
-    // now recurse to lower level sets
-    if (bss.IsSetSeq_set()) {
-        NON_CONST_ITERATE (CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& se = **it;
-            if (se.Which() == CSeq_entry::e_Set) {
-                x_MoveComponentPubs (se.SetSet());
-            }
-        }
-    }
-
-static void MovePopPhyMutPubsProc (SeqEntryPtr sep, Pointer data, Int4 index, Int2 indent)
-
-{
-	BioseqSetPtr 	bssp;
-    ValNodePtr    	v, pub, vv, next;
-	PubdescPtr		pdp, pdpv;
-
-  if (sep == NULL) return;
-  if (! IS_Bioseq_set (sep)) return;
-  bssp = (BioseqSetPtr) sep->data.ptrvalue;
-  if (bssp == NULL) return;
-  if ((bssp->_class < BioseqseqSet_class_mut_set ||
-      bssp->_class > BioseqseqSet_class_eco_set) &&
-      bssp->_class != BioseqseqSet_class_wgs_set) return;
-  pub = CheckSegsForPopPhyMut (bssp->seq_set);
-  if (pub == NULL) return;
-/* check if pub is already on the set descr */
-	for(v=bssp->descr; v != NULL; v = v->next) {
-		if (v->choice != Seq_descr_pub)
-			continue;
-		for (vv = pub; vv; vv = next) {
-			next = vv->next;
-			pdp = vv->data.ptrvalue;
-			pdpv = v->data.ptrvalue;
-			if (PubLabelMatchEx (pdp->pub, pdpv->pub) == 0) {
-				PubdescFree(pdp);
-				pub = remove_node(pub, vv);
-			}
-		}
-	}
-	
-	bssp->descr = tie_next(bssp->descr, pub);
-}
-#endif
-
-
 void CCleanup_imp::x_ExtendedCleanStrings (CPubdesc& pd)
 {
     EXTENDED_CLEAN_STRING_MEMBER (pd, Comment);
 }
 
 
-static bool s_IsEmptyCitGenPub(const CPubdesc& pd)
+#define IS_NONEMPTY_STRING_MEMBER(o, x) \
+((o).IsSet##x() && !NStr::IsBlank((o).Get##x()))
+
+#define IS_NONZERO_INT_MEMBER(o, x) \
+((o).IsSet##x() && (o).Get##x() != 0)
+
+
+#define IS_NONEMPTY_MEMBER(o, x) \
+((o).IsSet##x() && ! s_IsEmpty (o.Get##x()))
+
+static bool s_IsEmpty (const CTitle& title)
 {
-    if (pd.IsSetPub() && pd.GetPub().Get().size() == 1 && pd.GetPub().Get().front()->Which() == CPub::e_Gen) {
-        const CCit_gen& gen = pd.GetPub().Get().front()->GetGen();
-        if (gen.CanGetCit()
-            || gen.CanGetAuthors()
-            || gen.CanGetMuid()
-            || gen.CanGetJournal()
-            || gen.CanGetVolume()
-            || gen.CanGetIssue()
-            || gen.CanGetPages()
-            || gen.CanGetDate()
-            || gen.CanGetSerial_number()
-            || gen.CanGetTitle()
-            || gen.CanGetPmid()) {
-          return false;
-        } else {
-          return true;
-        }
+    if (title.IsSet() && !NStr::IsBlank (title.GetTitle())) {
+        return false;
     } else {
+        return true;
+    }
+}
+
+
+static bool s_IsEmpty (const list< string >& str_list)
+{
+    if (str_list.size() == 0) return true;
+    ITERATE (list <string>, it, str_list) {
+        if (!NStr::IsBlank (*it)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+static bool s_IsEmpty (const CAuth_list& auth_list) 
+{
+    if (IS_NONEMPTY_MEMBER (auth_list, Affil)) {
         return false;
     }
+    if (auth_list.IsSetNames()) {
+        if (auth_list.GetNames().IsMl() && !s_IsEmpty(auth_list.GetNames().GetMl())) {
+            return false;
+        } else if (auth_list.GetNames().IsStr() && !s_IsEmpty (auth_list.GetNames().GetStr())) {
+            return false;
+        } else if (auth_list.GetNames().IsStd()) {
+            ITERATE (list < CRef< CAuthor > >, it, auth_list.GetNames().GetStd()) {
+                if (!s_IsEmpty (**it)) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true; 
 }
 
 
-// removes all empty CitGen pub descriptors
-// Was part of RemoveEmptyTitleAndPubGenAsOnlyPub in C Toolkit
-void CCleanup_imp::x_RemoveCitGenPubDescriptors (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
+static bool s_IsEmpty (const CCit_gen& gen)
 {
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-        if ((*it)->Which() == CSeqdesc::e_Pub) {
-            if (s_IsEmptyCitGenPub ((*it)->GetPub())) {
-                remove_list.push_back(*it);
-            }
-        }
+    if (IS_NONEMPTY_STRING_MEMBER(gen, Cit)
+        || IS_NONEMPTY_MEMBER (gen, Authors)
+        || IS_NONZERO_INT_MEMBER(gen, Muid)
+        || IS_NONEMPTY_MEMBER(gen, Journal)
+        || IS_NONEMPTY_STRING_MEMBER(gen, Volume)
+        || IS_NONEMPTY_STRING_MEMBER(gen, Issue)
+        || IS_NONEMPTY_STRING_MEMBER(gen, Pages)
+        || gen.IsSetDate()
+        || IS_NONZERO_INT_MEMBER(gen, Serial_number)
+        || IS_NONEMPTY_STRING_MEMBER(gen, Title)
+        || IS_NONZERO_INT_MEMBER(gen, Pmid)) {
+        return false;
+    } else {
+        return true;
     }
 }
 
 
-// removes all empty CitGen pub features
-// Was part of RemoveEmptyTitleAndPubGenAsOnlyPub in C Toolkit
-void CCleanup_imp::x_RemoveCitGenPubFeatures (CSeq_annot_Handle sa) 
+static bool s_IsEmpty (const CCit_sub& sub)
 {
-    if (sa.IsFtable()) {
-        CFeat_CI feat_ci(sa);
-        while (feat_ci) {
-            const CSeq_feat &cf = feat_ci->GetOriginalFeature();
-            if (cf.GetData().IsPub()
-                && s_IsEmptyCitGenPub (cf.GetData().GetPub())) {
-                CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
-                efh.Remove();
-            }
-            ++feat_ci;
-        }    
+    if (IS_NONEMPTY_MEMBER (sub, Authors)
+        || sub.IsSetDate()
+        || IS_NONEMPTY_STRING_MEMBER(sub, Descr)
+        || sub.IsSetImp()
+        || sub.IsSetMedium()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+static bool s_IsEmpty (const CCit_jour& jour)
+{
+    if (IS_NONEMPTY_MEMBER(jour, Title)
+        || jour.IsSetImp()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+static bool s_IsEmpty (const CCit_book& book)
+{
+    if (IS_NONEMPTY_MEMBER (book, Title)
+        || IS_NONEMPTY_MEMBER (book, Coll)
+        || IS_NONEMPTY_MEMBER (book, Authors)
+        || book.IsSetImp()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+static bool s_IsEmpty (const CCit_proc& proc)
+{
+    if ((proc.IsSetBook() && !s_IsEmpty (proc.GetBook()))
+        || proc.IsSetMeet()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+static bool s_IsEmpty (const CCit_art& art)
+{
+    if (IS_NONEMPTY_MEMBER(art, Title)
+        || IS_NONEMPTY_MEMBER (art, Authors)
+        || art.IsSetIds()) {
+        return false;
+    }
+    if (art.IsSetFrom()) {
+        if (art.GetFrom().IsBook() && !s_IsEmpty (art.GetFrom().GetBook())) {
+            return false;
+        } else if (art.GetFrom().IsJournal() && !s_IsEmpty (art.GetFrom().GetJournal())) {
+            return false;
+        } else if (art.GetFrom().IsProc() && !s_IsEmpty (art.GetFrom().GetProc())) {
+            return false;
+        }
+    }
+    return true;
+        
+}
+
+
+static bool s_IsEmpty (const CMedline_entry& ml)
+{
+    if (IS_NONZERO_INT_MEMBER (ml, Uid)
+        || ml.IsSetEm()
+        || IS_NONEMPTY_MEMBER (ml, Cit)
+        || IS_NONEMPTY_STRING_MEMBER (ml, Abstract)
+        || ml.IsSetMesh()
+        || ml.IsSetSubstance()
+        || ml.IsSetXref()
+        || IS_NONEMPTY_MEMBER (ml, Idnum)
+        || IS_NONEMPTY_MEMBER (ml, Gene)
+        || IS_NONZERO_INT_MEMBER (ml, Pmid)
+        || IS_NONEMPTY_MEMBER (ml, Pub_type)
+        || ml.IsSetMlfield()
+        || (ml.IsSetStatus() && ml.GetStatus() != CMedline_entry::eStatus_medline)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+static bool s_IsEmpty (const CCit_pat& pat)
+{
+    if (IS_NONEMPTY_STRING_MEMBER (pat, Title)
+        || IS_NONEMPTY_MEMBER (pat, Authors)
+        || IS_NONEMPTY_STRING_MEMBER (pat, Country)
+        || IS_NONEMPTY_STRING_MEMBER (pat, Doc_type)
+        || IS_NONEMPTY_STRING_MEMBER (pat, Number)
+        || pat.IsSetDate_issue()
+        || IS_NONEMPTY_MEMBER (pat, Class)
+        || IS_NONEMPTY_STRING_MEMBER (pat, App_number)
+        || pat.IsSetApp_date()
+        || IS_NONEMPTY_MEMBER (pat, Applicants)
+        || IS_NONEMPTY_MEMBER (pat, Assignees)
+        || pat.IsSetPriority()
+        || IS_NONEMPTY_STRING_MEMBER (pat, Abstract)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+static bool s_IsEmpty (const CId_pat& id_pat)
+{
+    if (IS_NONEMPTY_STRING_MEMBER (id_pat, Country)
+        || IS_NONEMPTY_STRING_MEMBER (id_pat, Doc_type)) {
+        return false;
+    } 
+    if (id_pat.IsSetId()) {
+        if (id_pat.GetId().IsNumber()
+            && !NStr::IsBlank (id_pat.GetId().GetNumber())) {
+            return false;
+        } else if (id_pat.GetId().IsApp_number()
+                   && !NStr::IsBlank (id_pat.GetId().GetApp_number())) {
+            return false;
+        }
+    }
+    return true;
+}
+    
+
+static bool s_IsEmpty (const CCit_let& let)
+{
+    if (IS_NONEMPTY_MEMBER (let, Cit)
+        || IS_NONEMPTY_STRING_MEMBER (let, Man_id)
+        || let.IsSetType()) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+static bool s_IsEmpty (const CPub& pub);
+
+static bool s_IsEmpty (const CPub_equiv& pub_equiv) 
+{
+    ITERATE (list < CRef < CPub > >, it, pub_equiv.Get()) {
+        if (!s_IsEmpty (**it)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+static bool s_IsEmpty (const CPub& pub) 
+{
+    if ((pub.IsArticle() && s_IsEmpty (pub.GetArticle()))
+        || (pub.IsBook() && s_IsEmpty (pub.GetBook()))
+        || (pub.IsEquiv() && s_IsEmpty (pub.GetEquiv()))
+        || (pub.IsGen() && s_IsEmpty (pub.GetGen()))
+        || (pub.IsJournal() && s_IsEmpty (pub.GetJournal()))
+        || (pub.IsMan() && s_IsEmpty (pub.GetMan()))
+        || (pub.IsMedline() && s_IsEmpty (pub.GetMedline()))
+        || (pub.IsMuid() && pub.GetMuid() == 0)
+        || (pub.IsPat_id() && s_IsEmpty (pub.GetPat_id()))
+        || (pub.IsPatent() && s_IsEmpty (pub.GetPatent()))
+        || (pub.IsPmid() && pub.GetPmid() == 0)
+        || (pub.IsProc() && s_IsEmpty (pub.GetProc()))
+        || (pub.IsSub() && s_IsEmpty (pub.GetSub()))) {
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -819,7 +960,7 @@ void CCleanup_imp::x_ChangeCitSub (CBioseq_Handle bh)
     }
     
     if (bh.CanGetDescr()) {
-        CBioseq_EditHandle eh (bh);
+        CBioseq_EditHandle eh = bh.GetEditHandle();
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
             if ((*desc_it)->IsPub()) {
                 NON_CONST_ITERATE (list <CRef <CPub> >, pub_it, (*desc_it)->SetPub().SetPub().Set()) {
@@ -834,7 +975,7 @@ void CCleanup_imp::x_ChangeCitSub (CBioseq_Handle bh)
 void CCleanup_imp::x_ChangeCitSub (CBioseq_set_Handle bh)
 {
     if (bh.CanGetDescr()) {
-        CBioseq_set_EditHandle eh (bh);
+        CBioseq_set_EditHandle eh = bh.GetEditHandle();
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
             if ((*desc_it)->IsPub()) {
                 NON_CONST_ITERATE (list <CRef <CPub> >, pub_it, (*desc_it)->SetPub().SetPub().Set()) {
@@ -903,7 +1044,7 @@ void CCleanup_imp::x_RemovePubMatch(const CSeq_entry& se, const CPubdesc& pd)
 {
     CSeq_descr::Tdata remove_list;
     if (se.Which() == CSeq_entry::e_Seq) {
-        CBioseq_EditHandle bh (m_Scope->GetBioseqHandle(se.GetSeq()));
+        CBioseq_EditHandle bh = (m_Scope->GetBioseqHandle(se.GetSeq())).GetEditHandle();
         NON_CONST_ITERATE (CSeq_descr::Tdata, it, bh.SetDescr().Set()) {
             if ((*it)->Which() == CSeqdesc::e_Pub
                 && s_PubdescMatch ((*it)->GetPub(), pd)) {
@@ -916,7 +1057,7 @@ void CCleanup_imp::x_RemovePubMatch(const CSeq_entry& se, const CPubdesc& pd)
             ChangeMade(CCleanupChange::eRemoveDescriptor);
         }
     } else if (se.Which() == CSeq_entry::e_Set) {
-        CBioseq_set_EditHandle bh (m_Scope->GetBioseq_setHandle(se.GetSet()));
+        CBioseq_set_EditHandle bh = (m_Scope->GetBioseq_setHandle(se.GetSet())).GetEditHandle();
         NON_CONST_ITERATE (CSeq_descr::Tdata, it, bh.SetDescr().Set()) {
             if ((*it)->Which() == CSeqdesc::e_Pub
                 && s_PubdescMatch ((*it)->GetPub(), pd)) {
@@ -937,59 +1078,52 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
     if (!bsh.GetCompleteBioseq_set()->IsSetSeq_set()) {
         return;
     }
-    
-    CConstRef<CBioseq_set> b = bsh.GetCompleteBioseq_set();
-    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-    ITERATE (list< CRef< CSeq_entry > >, it, set) {
-        if ((*it)->Which() == CSeq_entry::e_Set) {
-            x_MergeAndMovePubs(m_Scope->GetBioseq_setHandle((*it)->GetSet()));
-        }
-    }
-    
+        
     if (!bsh.CanGetClass() || !bsh.GetCompleteBioseq_set()->IsSetSeq_set()) {
         // no merging
     } else if (bsh.GetClass() == CBioseq_set::eClass_nuc_prot) {
         // move any publications that are on the nucleotide sequence or nucleotide segmented set
         // to the nuc-prot set
-        CBioseq_set_EditHandle bseh(bsh);
+        CBioseq_set_EditHandle bseh = bsh.GetEditHandle();
         const CSeq_entry& se = **(bsh.GetCompleteBioseq_set()->GetSeq_set().begin());
         CSeq_descr::Tdata remove_list;
+        bool moved_descriptor = false;
         if (se.IsSeq()) {
-            CBioseq_EditHandle nbh(m_Scope->GetBioseqHandle(se.GetSeq()));
+            CBioseq_EditHandle nbh = (m_Scope->GetBioseqHandle(se.GetSeq())).GetEditHandle();
             NON_CONST_ITERATE (CSeq_descr::Tdata, it, nbh.SetDescr().Set()) {
                 if ((*it)->Which() == CSeqdesc::e_Pub) {
                     bseh.AddSeqdesc(**it);
-                    ChangeMade (CCleanupChange::eAddDescriptor);
                     remove_list.push_back(*it);
+                    moved_descriptor = true;
                 }
             }
             for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                  it1 != remove_list.end(); ++it1) { 
                 nbh.RemoveSeqdesc(**it1);
-                ChangeMade (CCleanupChange::eRemoveDescriptor);
             }
         } else if (se.IsSet()) {
-            CBioseq_set_EditHandle nbh(m_Scope->GetBioseq_setHandle(se.GetSet()));
+            CBioseq_set_EditHandle nbh = (m_Scope->GetBioseq_setHandle(se.GetSet())).GetEditHandle();
             NON_CONST_ITERATE (CSeq_descr::Tdata, it, nbh.SetDescr().Set()) {
                 if ((*it)->Which() == CSeqdesc::e_Pub) {
                     bseh.AddSeqdesc(**it);
-                    ChangeMade (CCleanupChange::eAddDescriptor);
+                    moved_descriptor = true;
                     remove_list.push_back(*it);
                 }
             }
             for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                  it1 != remove_list.end(); ++it1) { 
                 nbh.RemoveSeqdesc(**it1);
-                ChangeMade (CCleanupChange::eRemoveDescriptor);
             }
         }
+        if (moved_descriptor) {
+            ChangeMade (CCleanupChange::eMoveDescriptor);
+        }        
     } else if (bsh.GetClass() == CBioseq_set::eClass_segset) {
         // if any publication is on all of the parts in the parts set, 
         // put the publication on the segset and remove it from the parts                   
         ITERATE (list< CRef< CSeq_entry > >, it, bsh.GetCompleteBioseq_set()->GetSeq_set()) {
             if ((*it)->Which() == CSeq_entry::e_Set) {
-                CBioseq_set_EditHandle parts (m_Scope->GetBioseq_setHandle((*it)->GetSet()));
+                CBioseq_set_EditHandle parts = (m_Scope->GetBioseq_setHandle((*it)->GetSet())).GetEditHandle();
                 if (parts.CanGetClass() 
                     && parts.GetClass() == CBioseq_set::eClass_parts
                     && parts.GetCompleteBioseq_set()->IsSetSeq_set()) {                    
@@ -997,7 +1131,7 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                     const CSeq_entry& se_first = **part_it;
                     CSeq_descr::Tdata remove_list;
                     if (se_first.Which() == CSeq_entry::e_Seq) {
-                        CBioseq_EditHandle first_eh(m_Scope->GetBioseqHandle(se_first.GetSeq()));
+                        CBioseq_EditHandle first_eh = (m_Scope->GetBioseqHandle(se_first.GetSeq())).GetEditHandle();
                         NON_CONST_ITERATE (CSeq_descr::Tdata, first_descr_it, first_eh.SetDescr().Set()) {
                             if ((*first_descr_it)->Which() == CSeqdesc::e_Pub) {
                                 bool all_present = true;
@@ -1015,7 +1149,7 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                                         ++remainder_it;
                                     }
                                     parts.AddSeqdesc(**first_descr_it);
-                                    ChangeMade (CCleanupChange::eAddDescriptor);
+                                    ChangeMade (CCleanupChange::eMoveDescriptor);
                                     remove_list.push_back(*first_descr_it);
                                 }
                             }                            
@@ -1026,7 +1160,7 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                             ChangeMade (CCleanupChange::eRemoveDescriptor);
                         }                        
                     } else if (se_first.Which() == CSeq_entry::e_Set) {
-                        CBioseq_set_EditHandle first_eh(m_Scope->GetBioseq_setHandle(se_first.GetSet()));
+                        CBioseq_set_EditHandle first_eh = (m_Scope->GetBioseq_setHandle(se_first.GetSet())).GetEditHandle();
                         NON_CONST_ITERATE (CSeq_descr::Tdata, first_descr_it, first_eh.SetDescr().Set()) {
                             if ((*first_descr_it)->Which() == CSeqdesc::e_Pub) {
                                 bool all_present = true;
@@ -1043,7 +1177,7 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                                         x_RemovePubMatch(**remainder_it, (*first_descr_it)->GetPub());
                                     }
                                     parts.AddSeqdesc(**first_descr_it);
-                                    ChangeMade (CCleanupChange::eAddDescriptor);
+                                    ChangeMade (CCleanupChange::eMoveDescriptor);
                                     remove_list.push_back(*first_descr_it);
                                 }
                             }                            
@@ -1064,15 +1198,6 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
 
 void CCleanup_imp::x_RemoveDuplicatePubsFromBioseqsInSet(CBioseq_set_Handle bsh)
 {
-    CConstRef<CBioseq_set> b = bsh.GetCompleteBioseq_set();
-    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-    ITERATE (list< CRef< CSeq_entry > >, it, set) {
-        if ((*it)->Which() == CSeq_entry::e_Set) {
-            x_RemoveDuplicatePubsFromBioseqsInSet(m_Scope->GetBioseq_setHandle((*it)->GetSet()));
-        }
-    }
-
     if (bsh.CanGetDescr()) {
         ITERATE (list< CRef< CSeqdesc > >, pubdesc, bsh.GetDescr().Get()) {
             if (!(*pubdesc)->IsPub()) continue;
@@ -1097,7 +1222,7 @@ void CCleanup_imp::x_RemoveDuplicatePubsFromBioseqsInSet(CBioseq_set_Handle bsh)
                     }
                 
                     if (remove_list.size() > 0) {
-                        CBioseq_EditHandle eh(*bs_ci);
+                        CBioseq_EditHandle eh = (*bs_ci).GetEditHandle();
                         for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
                             it1 != remove_list.end(); ++it1) { 
                             eh.RemoveSeqdesc(**it1);
@@ -1112,19 +1237,43 @@ void CCleanup_imp::x_RemoveDuplicatePubsFromBioseqsInSet(CBioseq_set_Handle bsh)
 }
 
 
-void CCleanup_imp::x_MergeDuplicatePubsOnSet(CBioseq_set_Handle bsh)
+void CCleanup_imp::x_MergeDuplicatePubs(CBioseq_set_Handle bsh)
 {
-    CConstRef<CBioseq_set> b = bsh.GetCompleteBioseq_set();
-    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-    ITERATE (list< CRef< CSeq_entry > >, it, set) {
-        if ((*it)->Which() == CSeq_entry::e_Set) {
-            x_MergeDuplicatePubsOnSet(m_Scope->GetBioseq_setHandle((*it)->GetSet()));
-        }
-    }
-
     if (bsh.CanGetDescr()) {
-        CBioseq_set_EditHandle eh (bsh);
+        CBioseq_set_EditHandle eh = bsh.GetEditHandle();
+        ITERATE (list< CRef< CSeqdesc > >, it1, bsh.GetDescr().Get()) {
+            if (!(*it1)->IsPub()) continue;
+            CSeq_descr::Tdata remove_list;
+            bool any_pubs_left = false;            
+            list< CRef< CSeqdesc > >::const_iterator it2 = it1;
+            ++it2;
+            while (it2 != bsh.GetDescr().Get().end()) {
+                if ((*it2)->IsPub()) {
+                    if (s_PubdescMatch((*it1)->GetPub(), (*it2)->GetPub())) {
+                        remove_list.push_back (*it2);
+                    } else {
+                        any_pubs_left = true;
+                    }
+                }
+                ++it2;
+            }
+            if (remove_list.size() > 0) {
+                for (CSeq_descr::Tdata::iterator it3 = remove_list.begin();
+                    it3 != remove_list.end(); ++it3) { 
+                    eh.RemoveSeqdesc(**it3);
+                }
+            }
+            if (!any_pubs_left) return;
+            ++it1;
+        }      
+    }
+}
+
+
+void CCleanup_imp::x_MergeDuplicatePubs(CBioseq_Handle bsh)
+{
+    if (bsh.CanGetDescr()) {
+        CBioseq_EditHandle eh = bsh.GetEditHandle();
         ITERATE (list< CRef< CSeqdesc > >, it1, bsh.GetDescr().Get()) {
             if (!(*it1)->IsPub()) continue;
             CSeq_descr::Tdata remove_list;
@@ -1186,25 +1335,144 @@ void CCleanup_imp::x_ConvertPubsToAsn4 (CSeq_entry_Handle seh)
 
     // remove all Site-ref imp feats
     x_RecurseForSeqAnnots(*(seh.GetCompleteSeq_entry()), &ncbi::objects::CCleanup_imp::x_RemoveSiteRefImpFeats);
+    
+}
 
-    if (seh.Which() == CSeq_entry::e_Set) {
-        CBioseq_set_Handle bsh(seh.GetSet());
-        if (!bsh.CanGetClass() || bsh.GetClass() != CBioseq_set::eClass_pub_set) {
-        
-            //MoveSegmPubs
-            //MoveNPPubs
-            x_MergeAndMovePubs(bsh);
-            
-            //unique pubs
-            x_MergeDuplicatePubsOnSet(bsh);
-            
-            // check pubs in Bioseqs, delete if they are already on the top
-            x_RemoveDuplicatePubsFromBioseqsInSet(bsh);
+
+bool CCleanup_imp::x_RemoveEmptyPubs (CPubdesc& pubdesc)
+{
+    bool changes_made = false;
+    
+    CPub_equiv::Tdata& data = pubdesc.SetPub().Set();
+    CPub_equiv::Tdata::iterator pub_it = data.begin();
+    while(pub_it != data.end()) {
+        if (s_IsEmpty (**pub_it)) {
+            pub_it = data.erase(pub_it);
+            ChangeMade(CCleanupChange::eChangePublication);
+            changes_made = true;
+        } else {
+            ++pub_it;
         }
     }
-    
-    x_ChangeCitSub(seh);
+           
+    return changes_made;
 }
+
+
+void CCleanup_imp::x_RemoveEmptyPubs (CSeq_annot_Handle sa)
+{
+    if (sa.IsFtable()) {
+        CFeat_CI feat_ci(sa);
+        while (feat_ci) {
+            if (feat_ci->GetData().IsPub()) {
+                CSeq_feat_EditHandle efh (feat_ci->GetSeq_feat_Handle());
+                CRef <CSeq_feat> new_feat(new CSeq_feat);
+                new_feat->Assign (feat_ci->GetOriginalFeature());  
+                if (x_RemoveEmptyPubs (new_feat->SetData().SetPub())) {
+                    if (new_feat->GetData().GetPub().GetPub().Get().empty()) {
+                        efh.Remove();
+                        ChangeMade (CCleanupChange::eRemoveFeat);
+                        ChangeMade (CCleanupChange::eRemoveEmptyPub);
+                    } else {
+                        efh.Replace (*new_feat);
+                    }
+                } else if (feat_ci->GetData().GetPub().GetPub().Get().empty()) {
+                    efh.Remove();
+                    ChangeMade (CCleanupChange::eRemoveFeat);
+                    ChangeMade (CCleanupChange::eRemoveEmptyPub);
+                }
+            }
+            ++feat_ci;                
+        }
+    }
+}
+
+void CCleanup_imp::x_RemoveEmptyPubs(CSeq_descr& sdr, CSeq_descr::Tdata& remove_list)
+{
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
+        if ((*it)->Which() == CSeqdesc::e_Pub) {     
+            CPubdesc& pubdesc = (*it)->SetPub();  
+            x_RemoveEmptyPubs (pubdesc);
+            if (pubdesc.GetPub().Get().empty()) {
+                remove_list.push_back(*it);
+                ChangeMade (CCleanupChange::eRemoveEmptyPub);
+            }
+        }
+    }
+}
+
+
+void CCleanup_imp::x_ExtendedCleanupPubs (CBioseq_set_Handle bss)
+{
+    // apply rules to members of set
+    if (bss.GetCompleteBioseq_set()->IsSetSeq_set()) {
+       CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
+       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
+       
+       ITERATE (list< CRef< CSeq_entry > >, it, set) {
+            switch ((**it).Which()) {
+                case CSeq_entry::e_Seq:
+                    x_ExtendedCleanupPubs(m_Scope->GetBioseqHandle((**it).GetSeq()));
+                    break;
+                case CSeq_entry::e_Set:
+                {
+                    CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle((**it).GetSet());
+                    x_ExtendedCleanupPubs(bssh);
+                }
+                    break;
+                case CSeq_entry::e_not_set:
+                default:
+                    break;
+            }
+        }
+    }
+
+    // Now apply rules to this set
+    
+    // remove empty pub descriptors   
+    x_ActOnDescriptors (bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyPubs);
+ 
+    // remove empty pub features
+    x_ActOnSeqAnnots (bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyPubs);   
+    
+    
+    // convert full-length publication features to descriptors
+    x_ActOnSeqAnnots (bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);   
+    
+    // merge equivalent cit-sub pub descriptors
+    x_ActOnDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
+                                      &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
+    //MoveSegmPubs
+    //MoveNPPubs
+    x_MergeAndMovePubs(bss);
+            
+    //unique pubs
+    x_MergeDuplicatePubs(bss);
+            
+    // check pubs in Bioseqs, delete if they are already on the top
+    x_RemoveDuplicatePubsFromBioseqsInSet(bss);
+                                  
+}
+
+
+void CCleanup_imp::x_ExtendedCleanupPubs (CBioseq_Handle bss)
+{
+    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyPubs);
+    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyPubs);  
+    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);          
+    x_RecurseDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
+                                      &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
+    //unique pubs
+    x_MergeDuplicatePubs(bss);
+}
+
+
+void CCleanup_imp::x_ExtendedCleanupPubs (CSeq_annot_Handle sa)
+{
+    x_RemoveEmptyPubs (sa);
+    x_ConvertFullLenPubFeatureToDescriptor(sa);   
+}
+
 
 
 END_SCOPE(objects)
@@ -1214,6 +1482,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2007/01/11 19:09:14  bollin
+ * Bug fixes for ExtendedCleanup
+ *
  * Revision 1.12  2007/01/05 17:07:40  bollin
  * Fixed bug that caused cleanup to hang, added flags for publication moving.
  *

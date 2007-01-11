@@ -35,6 +35,7 @@
 #include "cleanup_utils.hpp"
 
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
@@ -880,16 +881,48 @@ bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2)
 }
 
 
+CRef<CSeq_loc> MakeFullLengthLocation(const CSeq_loc& loc, CScope* scope)
+{
+    // Create a location that covers the entire sequence.
+
+    // if on segmented set, create location for each segment
+    CRef<CSeq_loc> new_loc(new CSeq_loc);
+    CSeq_loc_CI loc_it (loc);
+    bool first = true;
+    while (loc_it) {
+        CBioseq_Handle bh = scope->GetBioseqHandle(loc_it.GetSeq_id());
+        CRef <CSeq_loc> loc_part(new CSeq_loc);
+        
+        CConstRef <CSeq_id> id = sequence::GetId (bh, sequence::eGetId_Default).GetSeqId();
+        CRef <CSeq_id> new_id(new CSeq_id);
+        new_id->Assign(*id);
+        loc_part->SetInt().SetId(*new_id);
+        loc_part->SetInt().SetFrom(0);
+        loc_part->SetInt().SetTo(bh.GetInst_Length() - 1);
+        if (first) {
+            new_loc = loc_part;
+            first = false;
+        } else {
+            CRef<CSeq_loc> tmp_loc;
+            tmp_loc = sequence::Seq_loc_Add(*new_loc, *loc_part, 
+                                            CSeq_loc::fMerge_Abutting, scope);
+            new_loc = tmp_loc;
+        }
+        ++loc_it;
+    }
+    return new_loc;   
+}
+
+
 bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope)
 {
     // Create a location that covers the entire sequence and do
     // a comparison.  Can't just check for the location type 
     // of the feature to be "whole" because an interval could
     // start at 0 and end at the end of the Bioseq.
+    CRef<CSeq_loc> whole_loc = MakeFullLengthLocation (cf.GetLocation(), scope);
 
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    loc->SetWhole().Assign(*(cf.GetLocation().GetId()));
-    if (sequence::Compare(*loc, cf.GetLocation(), scope) == sequence::eSame) {
+    if (sequence::Compare(*whole_loc, cf.GetLocation(), scope) == sequence::eSame) {
         return true;
     } else {
         return false;
@@ -922,6 +955,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2007/01/11 19:09:14  bollin
+* Bug fixes for ExtendedCleanup
+*
 * Revision 1.14  2006/10/24 12:16:02  bollin
 * Added function for converting a string to a genome value.
 *

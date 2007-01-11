@@ -1029,22 +1029,20 @@ CSeq_feat_Handle GetSeq_feat_Handle(CScope& scope, const CSeq_feat& feat)
 // Attempts to adjust the length of a coding region so that it will translate to
 // the specified product
 // returns true if 
-bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat& orig_feat)
+bool CCleanup_imp::x_CheckCodingRegionEnds (CSeq_feat_Handle ofh)
 {
-    if (!orig_feat.IsSetData() 
-        || orig_feat.GetData().Which() != CSeqFeatData::e_Cdregion
-        || !orig_feat.CanGetProduct()) {
+    if (!ofh.IsSetData() 
+        || ofh.GetData().Which() != CSeqFeatData::e_Cdregion
+        || !ofh.IsSetProduct()) {
         return false;
     }
     
-    CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
-            
     if (ofh.GetSeq_feat().IsNull()) {
         return false;
     }
     
     CRef<CSeq_feat> feat(new CSeq_feat);
-    feat->Assign(orig_feat);
+    feat->Assign(*(ofh.GetSeq_feat()));
     
     const CCdregion& crp = feat->GetData().GetCdregion();    
 
@@ -1239,7 +1237,7 @@ void CCleanup_imp::x_CheckCodingRegionEnds (CSeq_annot_Handle sa)
     if (sa.IsFtable()) {
         CFeat_CI feat_ci(sa);
         while (feat_ci) {
-            x_CheckCodingRegionEnds(const_cast<CSeq_feat &> (feat_ci->GetOriginalFeature()));
+            x_CheckCodingRegionEnds(feat_ci->GetSeq_feat_Handle());
             ++feat_ci;                
         }
     }
@@ -1292,18 +1290,11 @@ void CCleanup_imp::x_ExtendSingleGeneOnmRNA (CBioseq_Handle bsh)
         if (gene_it->GetLocation().GetId()) {
             CBioseq_Handle gene_bsh = m_Scope->GetBioseqHandle(gene_it->GetLocation());
             if (gene_bsh == bsh && !IsFeatureFullLength(gene_it->GetOriginalFeature(), m_Scope)) {
-                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, gene_it->GetOriginalFeature());
+                CSeq_feat_Handle fh = gene_it->GetSeq_feat_Handle();
                 if (!fh.GetSeq_feat().IsNull()) {
                     CRef<CSeq_feat> new_gene(new CSeq_feat);
                     new_gene->Assign(gene_it->GetOriginalFeature());
-                    CRef<CSeq_loc> new_loc(new CSeq_loc);
-        
-                    CRef<CSeq_id> new_id(new CSeq_id);
-                    new_id->Assign(*(new_gene->GetLocation().GetId()));
-                    new_loc->SetInt().SetId(*new_id);
-                    new_loc->SetInt().SetFrom(0);
-                    new_loc->SetInt().SetTo(bsh.GetBioseqLength() - 1);
-                    new_loc->SetInt().SetStrand(new_gene->GetLocation().GetStrand());
+                    CRef<CSeq_loc> new_loc = MakeFullLengthLocation(gene_it->GetOriginalFeature().GetLocation(), m_Scope);
                     new_gene->SetLocation(*new_loc);
                     CSeq_feat_EditHandle efh(fh);
                     efh.Replace(*new_gene);
@@ -1330,7 +1321,7 @@ void CCleanup_imp::x_MoveFeaturesOnPartsSets (CSeq_annot_Handle sa)
         while (feat_ci) {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat_ci->GetLocation());
             if (bsh.CanGetId()) {
-                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
+                CSeq_feat_Handle fh = feat_ci->GetSeq_feat_Handle();
                 // put feature in annotation for appropriate part            
                 // remove from this annotation
 
@@ -1351,7 +1342,7 @@ void CCleanup_imp::x_RemovePseudoProducts (CSeq_annot_Handle sa)
             if (feat_ci->GetOriginalFeature().CanGetPseudo()
                 && feat_ci->GetPseudo() 
                 && feat_ci->IsSetProduct()) {
-                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
+                CSeq_feat_Handle fh = feat_ci->GetSeq_feat_Handle();
                 if (!fh.GetSeq_feat().IsNull()) {
                     CRef<CSeq_feat> new_cds(new CSeq_feat);            
                     new_cds->Assign(feat_ci->GetOriginalFeature());
@@ -1446,7 +1437,7 @@ void CCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_annot_Handle sa)
                                 redundant = true;
                             }
                             if (redundant) {
-                                CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat);
+                                CSeq_feat_Handle fh = feat_ci->GetSeq_feat_Handle();
                                 CRef<CSeq_feat> new_feat(new CSeq_feat);
                                 new_feat->Assign(feat);
                                 x_RemoveGeneXref(new_feat);
@@ -1645,7 +1636,7 @@ void CCleanup_imp::x_ChangeImpFeatToCDS(CSeq_annot_Handle sa)
         }
                         
         if (changed) {
-            CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+            CSeq_feat_Handle ofh = feat_ci->GetSeq_feat_Handle();
             CSeq_feat_EditHandle efh(ofh);
             efh.Replace(*feat);
         }
@@ -1704,7 +1695,7 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
                     product_loc->SetPartialStart (feat_ci->GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
                     product_loc->SetPartialStop (feat_ci->GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);
                                                                                
-                    CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+                    CSeq_feat_Handle fh = feat_ci->GetSeq_feat_Handle();
                 
                     CRef<CSeq_feat> feat(new CSeq_feat);
                     feat->Assign(orig_feat);
@@ -1787,7 +1778,7 @@ void CCleanup_imp::x_ChangeImpFeatToProt(CSeq_annot_Handle sa)
                         CSeq_annot_EditHandle annot_eh = (*annot_it).GetEditHandle();
                         annot_eh.TakeFeat(efh);
                     } else {
-                        CBioseq_EditHandle product_eh(product_h);
+                        CBioseq_EditHandle product_eh = product_h.GetEditHandle();
                         CRef<CSeq_annot> new_annot(new CSeq_annot);
                         new_annot->SetData().SetFtable();                        
                         product_eh.AttachAnnot(*new_annot);
@@ -2335,7 +2326,7 @@ void CCleanup_imp::x_RemoveSiteRefImpFeats(CSeq_annot_Handle sa)
     
     while (feat_ci) {
         if (NStr::Equal(feat_ci->GetData().GetImp().GetKey(), "Site-ref")) {
-            feat_list.push_back (CSeq_feat_EditHandle(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature())));
+            feat_list.push_back (CSeq_feat_EditHandle(feat_ci->GetSeq_feat_Handle()));
         }
         ++feat_ci;
     }
@@ -2383,8 +2374,8 @@ void CCleanup_imp::x_StripProtXrefs(CSeq_annot_Handle sa)
             if (feat_ci->IsSetProduct()
                 && feat_ci->IsSetXref()) {
                 try {
-                    CBioseq_EditHandle eh(m_Scope->GetBioseqHandle(feat_ci->GetProduct()));
-                    CSeq_feat_Handle fh = GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature());
+                    CBioseq_EditHandle eh = (m_Scope->GetBioseqHandle(feat_ci->GetProduct())).GetEditHandle();
+                    CSeq_feat_Handle fh = feat_ci->GetSeq_feat_Handle();
                     CRef<CSeq_feat> new_feat(new CSeq_feat);
                     new_feat->Assign(feat_ci->GetOriginalFeature());
                     bool change_made = false;                                
@@ -2442,7 +2433,7 @@ void CCleanup_imp::x_ConvertUserObjectToAnticodon(CSeq_annot_Handle sa)
             && feat_ci->GetExt().GetData().front()->GetData().IsInt()
             && feat_ci->GetExt().GetData().front()->GetData().GetInts().size() > 1) {
         
-            CSeq_feat_EditHandle efh(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+            CSeq_feat_EditHandle efh(feat_ci->GetSeq_feat_Handle());
             CRef<CSeq_feat> new_feat(new CSeq_feat);
             new_feat->Assign(feat_ci->GetOriginalFeature());
             CRef<CSeq_id> id (new CSeq_id);
@@ -2561,7 +2552,7 @@ bool CCleanup_imp::x_ConvertOrgAndImpFeatToSource(CSeq_annot_Handle sa)
             const CSeq_feat& orig_feat = feat_ci->GetOriginalFeature();
             feat->Assign(orig_feat);
             feat->SetData().SetBiosrc().SetOrg(feat->SetData().SetOrg());
-            CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+            CSeq_feat_Handle ofh = feat_ci->GetSeq_feat_Handle();
             CSeq_feat_EditHandle efh(ofh);
             efh.Replace(*feat);
             ChangeMade (CCleanupChange::eConvertFeature);
@@ -2597,7 +2588,7 @@ bool CCleanup_imp::x_ConvertOrgAndImpFeatToSource(CSeq_annot_Handle sa)
                         x_ConvertQualifiersToSubSources (*feat);
                         x_ConvertMiscQualifiersToBioSource(*feat);
                         
-                        CSeq_feat_Handle ofh = GetSeq_feat_Handle(*m_Scope, orig_feat);
+                        CSeq_feat_Handle ofh = feat_ci->GetSeq_feat_Handle();
                         CSeq_feat_EditHandle efh(ofh);
                         efh.Replace (*feat);
                         ChangeMade (CCleanupChange::eConvertFeature);
@@ -2751,7 +2742,7 @@ bool CCleanup_imp::x_FixPIDDbtag (CSeq_feat& feat)
     
     if (feat.IsSetProduct()) {
         CSeq_loc& product_loc = feat.SetProduct();
-        CBioseq_EditHandle product(m_Scope->GetBioseqHandle(product_loc));
+        CBioseq_EditHandle product = (m_Scope->GetBioseqHandle(product_loc)).GetEditHandle();
         feat_change_made = x_FixPIDDbtag(product_loc);
         if (feat_change_made) {
             feat.SetProduct(product_loc);
@@ -2782,7 +2773,7 @@ bool CCleanup_imp::x_FixPIDDbtag (CSeq_feat& feat)
             }
             CFeat_CI feat_ci(product);
             while (feat_ci) {
-                CSeq_feat_EditHandle feath(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+                CSeq_feat_EditHandle feath(feat_ci->GetSeq_feat_Handle());
                 CRef <CSeq_feat> new_feat(new CSeq_feat);
                 new_feat->Assign (feat_ci->GetOriginalFeature());
                 if (x_FixPIDDbtag(*new_feat)) {
@@ -2804,7 +2795,7 @@ void CCleanup_imp::x_FixProteinIDs (CSeq_annot_Handle sa)
     CFeat_CI feat_ci(sa, sel);
     while (feat_ci) {
         bool change_made = false;
-        CSeq_feat_EditHandle feath(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+        CSeq_feat_EditHandle feath(feat_ci->GetSeq_feat_Handle());
         CRef <CSeq_feat> new_feat(new CSeq_feat);
         new_feat->Assign (feat_ci->GetOriginalFeature());
         change_made = x_RemovePIDXrefs (*new_feat);
@@ -2859,7 +2850,7 @@ void CCleanup_imp::x_CheckConflictFlag(CSeq_annot_Handle sa)
 
     CFeat_CI feat_ci(sa, sel);
     while (feat_ci) {
-        CSeq_feat_EditHandle feath(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+        CSeq_feat_EditHandle feath(feat_ci->GetSeq_feat_Handle());
         CRef <CSeq_feat> new_feat(new CSeq_feat);
         new_feat->Assign (feat_ci->GetOriginalFeature());
         if (x_CheckConflictFlag (*new_feat)) {
@@ -2901,7 +2892,7 @@ void CCleanup_imp::x_RemoveAsn2ffGeneratedComments(CSeq_annot_Handle sa)
 
     CFeat_CI feat_ci(sa, sel);
     while (feat_ci) {
-        CSeq_feat_EditHandle feath(GetSeq_feat_Handle(*m_Scope, feat_ci->GetOriginalFeature()));
+        CSeq_feat_EditHandle feath(feat_ci->GetSeq_feat_Handle());
         CRef <CSeq_feat> new_feat(new CSeq_feat);
         new_feat->Assign (feat_ci->GetOriginalFeature());
         if (x_RemoveAsn2ffGeneratedComments (*new_feat)) {
@@ -2920,6 +2911,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2007/01/11 19:09:14  bollin
+ * Bug fixes for ExtendedCleanup
+ *
  * Revision 1.43  2007/01/04 13:13:38  bollin
  * Moved ExtendedCleanup function for exception text to BasicCleanup.
  *

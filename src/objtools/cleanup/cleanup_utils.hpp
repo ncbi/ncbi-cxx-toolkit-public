@@ -386,6 +386,7 @@ bool is_sorted(Iter first, Iter last)
     return true;
 }
 
+CRef<CSeq_loc> MakeFullLengthLocation(const CSeq_loc& loc, CScope* scope);
 
 bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope);
 
@@ -399,6 +400,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2007/01/11 19:09:14  bollin
+* Bug fixes for ExtendedCleanup
+*
 * Revision 1.17  2006/10/24 12:16:02  bollin
 * Added function for converting a string to a genome value.
 *

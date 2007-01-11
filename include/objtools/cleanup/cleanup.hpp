@@ -96,11 +96,11 @@ public:
     
     // Extended Cleanup
         /// Cleanup a Seq-entry. 
-    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry& se);
+    CConstRef<CCleanupChange> ExtendedCleanup(const CSeq_entry& se);
     /// Cleanup a Seq-submit. 
-    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_submit& ss);
+    CConstRef<CCleanupChange> ExtendedCleanup(const CSeq_submit& ss);
     /// Cleanup a Seq-Annot.
-    CConstRef<CCleanupChange> ExtendedCleanup(CSeq_annot& sa);
+    CConstRef<CCleanupChange> ExtendedCleanup(const CSeq_annot& sa);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -120,6 +120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2007/01/11 19:09:24  bollin
+* Bug fixes for ExtendedCleanup
+*
 * Revision 1.14  2006/07/26 19:35:13  rsmith
 * add BasicCleanup w/Handles
 *

@@ -97,7 +97,7 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor
 }
 
 
-void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescriptor pmf)
+void CCleanup_imp::x_ActOnDescriptors (CBioseq_set_Handle bss, RecurseDescriptor pmf)
 {
     if (bss.IsSetDescr()) {
         CSeq_descr::Tdata remove_list;
@@ -115,6 +115,12 @@ void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescr
             eh.ResetDescr();
         }             
     }
+}
+
+
+void CCleanup_imp::x_RecurseForDescriptors (CBioseq_set_Handle bss, RecurseDescriptor pmf)
+{
+    x_ActOnDescriptors (bss, pmf);
 
     if (bss.GetCompleteBioseq_set()->IsSetSeq_set()) {
        CBioseq_set_EditHandle eh = bss.GetEditHandle();
@@ -174,7 +180,7 @@ void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_Handle bh, IsMergeCandid
 }
 
 
-void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_set_Handle bh, IsMergeCandidate is_can, Merge do_merge)
+void CCleanup_imp::x_ActOnDescriptorsForMerge (CBioseq_set_Handle bh, IsMergeCandidate is_can, Merge do_merge)
 {
     if (bh.IsSetDescr()) {
         CSeq_descr::Tdata remove_list;    
@@ -191,6 +197,12 @@ void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_set_Handle bh, IsMergeCa
             ChangeMade(CCleanupChange::eRemoveDescriptor);
         }
     }
+}
+
+
+void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_set_Handle bh, IsMergeCandidate is_can, Merge do_merge)
+{
+    x_ActOnDescriptorsForMerge (bh, is_can, do_merge);
     
     if (bh.GetCompleteBioseq_set()->IsSetSeq_set()) {
        CConstRef<CBioseq_set> b = bh.GetCompleteBioseq_set();
@@ -678,7 +690,7 @@ bool CCleanup_imp::x_IsDescrSameForAllInPartsSet (CBioseq_set_Handle bss, CSeqde
 
     ITERATE (list< CRef< CSeq_entry > >, it, set) {
         if ((*it)->Which() == CSeq_entry::e_Seq) {
-            CBioseq_EditHandle eh(m_Scope->GetBioseqHandle((*it)->GetSeq()));
+            CBioseq_EditHandle eh = (m_Scope->GetBioseqHandle((*it)->GetSeq())).GetEditHandle();
             if (eh.IsSetDescr()) {
                 NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
                     if ((*desc_it)->Which() == desctype ) {
@@ -691,7 +703,7 @@ bool CCleanup_imp::x_IsDescrSameForAllInPartsSet (CBioseq_set_Handle bss, CSeqde
                 }
             }                        
         } else if ((*it)->Which() == CSeq_entry::e_Set) {
-            CBioseq_set_EditHandle eh(m_Scope->GetBioseq_setHandle((*it)->GetSet()));
+            CBioseq_set_EditHandle eh = (m_Scope->GetBioseq_setHandle((*it)->GetSet())).GetEditHandle();
             if (eh.IsSetDescr()) {
                 NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
                     if ((*desc_it)->Which() == desctype ) {
@@ -716,7 +728,7 @@ bool CCleanup_imp::x_IsDescrSameForAllInPartsSet (CBioseq_set_Handle bss, CSeqde
 
 void CCleanup_imp::x_RemoveDescrByType(CBioseq_Handle bh, CSeqdesc::E_Choice desctype)
 {
-    CBioseq_EditHandle eh(bh);
+    CBioseq_EditHandle eh = bh.GetEditHandle();
     if (eh.IsSetDescr()) {
         CSeq_descr::Tdata desc_list;
         desc_list.clear();
@@ -736,7 +748,7 @@ void CCleanup_imp::x_RemoveDescrByType(CBioseq_Handle bh, CSeqdesc::E_Choice des
 
 void CCleanup_imp::x_RemoveDescrByType(CBioseq_set_Handle bh, CSeqdesc::E_Choice desctype, bool recurse)
 {
-    CBioseq_set_EditHandle eh(bh);
+    CBioseq_set_EditHandle eh = bh.GetEditHandle();
     if (eh.IsSetDescr()) {
         CSeq_descr::Tdata desc_list;
         desc_list.clear();
@@ -788,12 +800,12 @@ void CCleanup_imp::x_MoveIdenticalPartDescriptorsToSegSet (CBioseq_set_Handle se
 	    bool remove_from_parts = false;
         if (!desc_it) {
             // segset does not already have a descriptor of this type
-            CBioseq_set_EditHandle eh(segset);
+            CBioseq_set_EditHandle eh = segset.GetEditHandle();
             eh.AddSeqdesc(**(desc_list.begin()));
             ChangeMade(CCleanupChange::eAddDescriptor);
             remove_from_parts = true;          
         } else if (desctype == CSeqdesc::e_Update_date) {
-            CBioseq_set_EditHandle eh(segset);
+            CBioseq_set_EditHandle eh = segset.GetEditHandle();
             eh.RemoveSeqdesc (*desc_it);
             eh.AddSeqdesc(**(desc_list.begin())); 
             ChangeMade(CCleanupChange::eAddDescriptor);
@@ -847,7 +859,7 @@ void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const
     
     CSeq_descr::Tdata desc_list;
     if (se.Which() == CSeq_entry::e_Seq) {
-        CBioseq_EditHandle eh(m_Scope->GetBioseqHandle(se.GetSeq()));
+        CBioseq_EditHandle eh = (m_Scope->GetBioseqHandle(se.GetSeq())).GetEditHandle();
         if (eh.IsSetDescr()) {
             NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
                 if ((*desc_it)->Which() == desctype) {
@@ -863,7 +875,7 @@ void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const
             }                        
         }
     } else if (se.Which() == CSeq_entry::e_Set) {
-        CBioseq_set_EditHandle eh(m_Scope->GetBioseq_setHandle(se.GetSet()));
+        CBioseq_set_EditHandle eh = (m_Scope->GetBioseq_setHandle(se.GetSet())).GetEditHandle();
         if (eh.IsSetDescr()) {
             NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
                 if ((*desc_it)->Which() == desctype) {
@@ -892,7 +904,7 @@ void CCleanup_imp::x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh, bool
     if (recurse) {
         x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveImpSourceFeatures);
     } else {
-        CBioseq_set_EditHandle eh (bh);
+        CBioseq_set_EditHandle eh = bh.GetEditHandle();
         for (CSeq_annot_CI annot_it(eh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
             annot_it; ++annot_it) {
             x_RemoveImpSourceFeatures (*annot_it);
@@ -918,7 +930,7 @@ void CCleanup_imp::x_AddMissingProteinMolInfo(CSeq_entry_Handle seh)
     CBioseq_CI bs_ci(seh, CSeq_inst::eMol_aa);
     
     while (bs_ci) {
-        CBioseq_EditHandle eh(*bs_ci);
+        CBioseq_EditHandle eh = (*bs_ci).GetEditHandle();
         bool found = false;
         if (eh.IsSetDescr()) {
             NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
@@ -1003,7 +1015,7 @@ void CCleanup_imp::x_FuseMolInfos (CBioseq_Handle bh)
         return;
     }
 
-    CBioseq_EditHandle eh(bh);
+    CBioseq_EditHandle eh = bh.GetEditHandle();
     CSeq_descr::Tdata desc_list;
     
     x_FuseMolInfos(eh.SetDescr(), desc_list);
@@ -1026,7 +1038,7 @@ void CCleanup_imp::x_FuseMolInfos (CBioseq_set_Handle bh)
         return;
     }
 
-    CBioseq_set_EditHandle eh(bh);
+    CBioseq_set_EditHandle eh = bh.GetEditHandle();
     CSeq_descr::Tdata desc_list;
     
     x_FuseMolInfos(eh.SetDescr(), desc_list);
@@ -1277,8 +1289,6 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
-    x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubDescriptors);
-    x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubFeatures);
         
     CheckSegSet(bh);
     CheckNucProtSet(bh);
@@ -1326,8 +1336,6 @@ void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
 {
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
-    x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubDescriptors);
-    x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_RemoveCitGenPubFeatures);
     CheckSegSet(bh);
     
     // This step was FixToAsn in the C Toolkit
@@ -1401,7 +1409,7 @@ void CCleanup_imp::x_GetGenBankTaxonomy(CBioseq_Handle bh, string &taxonomy)
             && bh.GetInst_Repr() != CSeq_inst::eRepr_const)) {
         return;
     }
-    CBioseq_EditHandle eh(bh);
+    CBioseq_EditHandle eh = bh.GetEditHandle();
     if (eh.IsSetDescr()) {
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
             if ((*desc_it)->Which() == CSeqdesc::e_Genbank
@@ -1416,7 +1424,7 @@ void CCleanup_imp::x_GetGenBankTaxonomy(CBioseq_Handle bh, string &taxonomy)
 
 void CCleanup_imp::x_GetGenBankTaxonomy(CBioseq_set_Handle bh, string &taxonomy)
 {
-    CBioseq_set_EditHandle eh(bh);
+    CBioseq_set_EditHandle eh = bh.GetEditHandle();
     if (eh.IsSetDescr()) {
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
             if ((*desc_it)->Which() == CSeqdesc::e_Genbank
@@ -1517,7 +1525,7 @@ void CCleanup_imp::x_NormalizeMolInfo(CBioseq_set_Handle bh)
             }
         }
         if (need_to_move) {
-            CBioseq_set_EditHandle eh(bh);
+            CBioseq_set_EditHandle eh = bh.GetEditHandle();
             CRef<CSeqdesc> desc(new CSeqdesc);
             desc->SetMolinfo(*mol);
             eh.AddSeqdesc(*desc);
@@ -1550,7 +1558,7 @@ void CCleanup_imp::x_SetMolInfoTechForConflictCDS (CBioseq_Handle bh)
     }
     
     if (need_tech) {
-        CBioseq_EditHandle eh(bh);
+        CBioseq_EditHandle eh = bh.GetEditHandle();
         bool need_new_desc = true;        
         if (eh.IsSetDescr()) {
             NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
@@ -1580,6 +1588,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2007/01/11 19:09:14  bollin
+ * Bug fixes for ExtendedCleanup
+ *
  * Revision 1.17  2007/01/04 13:12:54  bollin
  * Fixed bug in GenBank cleanup.
  *

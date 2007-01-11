@@ -186,7 +186,7 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 o
 
 
 // *********************** Extended Cleanup implementation ********************
-CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry& se)
+CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(const CSeq_entry& se)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(0));
     CCleanup_imp clean_i(changes, m_Scope, 0);
@@ -196,7 +196,7 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry& se)
 }
 
 
-CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_submit& ss)
+CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(const CSeq_submit& ss)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(0));
     CCleanup_imp clean_i(changes, m_Scope, 0);
@@ -205,7 +205,7 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_submit& ss)
 }
 
 
-CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_annot& sa)
+CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(const CSeq_annot& sa)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(0));
     CCleanup_imp clean_i(changes, m_Scope, 0);
@@ -330,6 +330,7 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Remove Descriptor",
     "Remove Keyword", //40
     "Add Descriptor",
+    "Move Descriptor",
     "Convert Feature to Descriptor", 
     "Collapse Set",
     "Change Feature Location",
@@ -337,11 +338,12 @@ const char* CCleanupChange::sm_ChangeDesc[] = {
     "Convert Feature",
     "Remove Comment",
     "Add BioSource OrgMod",
-    "Add BioSource SubSource",
-    "Change BioSource Genome", //50
+    "Add BioSource SubSource", //50
+    "Change BioSource Genome", 
     "Change BioSource Origin", 
     "Change BioSource Other",
     "Change SeqId", 
+    "Remove Empty Publication",
     // set when any other change is made.
     "Change Other", 
     "Invalid Change Code"
@@ -355,6 +357,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2007/01/11 19:09:14  bollin
+* Bug fixes for ExtendedCleanup
+*
 * Revision 1.19  2006/12/11 17:14:43  bollin
 * Made changes to ExtendedCleanup per the meetings and new document describing
 * the expected behavior for BioSource features and descriptors.  The behavior
