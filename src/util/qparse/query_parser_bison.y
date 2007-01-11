@@ -1,4 +1,4 @@
-/*  $Id: query_parser_bison.y,v 1.1 2007/01/10 16:14:01 kuznets Exp $
+/*  $Id: query_parser_bison.y,v 1.2 2007/01/11 14:49:52 kuznets Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -48,7 +48,7 @@ inline static
 void BisonSaveStageResult(YYSTYPE res, void* parm)
 {
     CQueryParserEnv* env = (CQueryParserEnv*) parm;
-    env->AttachQueryClause(res);
+    env->AttachQueryTree(res);
     env->AddNodeToPool(res);
 }
 
@@ -79,38 +79,39 @@ void BisonSaveStageResult(YYSTYPE res, void* parm)
 
 input :
     exp
-/*	
+/*    
     {
         CQueryParserEnv* env = (CQueryParserEnv*)parm;
         env->SetParseTree($1);
     }
-*/	
+*/    
 ;
 
 exp :
     /* integer constant */
-	NUM_INT
+    NUM_INT
     {
         $$ = $1;         
     }
-	
-	/* text */
+    
+    /* text */
     | STRING
     {
         $$ = $1;         
     }
-	
-	/* pure string identifier */
+    
+    /* pure string identifier */
     | IDENT
     {
         $$ = $1;         
     }
 
-    /* concatenated expressions are implicit ANDs */
+    /* concatenated expressions are implicit ANDs */    
     | exp exp
     {
         yyerrok;
         $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eAnd, $1, $2);
+        BisonSaveStageResult($$, parm);
     }
 
     /* parenthetical balanced expressions */
@@ -127,24 +128,61 @@ exp :
     | exp AND exp
     {
         $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eAnd, $1, $3);
-		BisonSaveStageResult($$, parm);
+        BisonSaveStageResult($$, parm);
     }
-	
+    
     /* MINUS */
     | exp SUB exp
     {
         $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eSub, $1, $3);
-		BisonSaveStageResult($$, parm);
+        BisonSaveStageResult($$, parm);
     }
 
     /* OR */
     | exp OR exp
     {
         $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eOr, $1, $3);
-		BisonSaveStageResult($$, parm);
+        BisonSaveStageResult($$, parm);
     }
+    /* == */
+    | exp EQ exp
+    {
+        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eEQ, $1, $3);
+        BisonSaveStageResult($$, parm);
+    }
+    /* != */
+    | exp NOTEQ exp
+    {
+        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eEQ, $1, $3);
+        BisonSaveStageResult($$, parm);
+        $$->GetValue().SetNot();
+    }
+    | exp GT exp
+    {
+        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eGT, $1, $3);
+        BisonSaveStageResult($$, parm);
+    }
+    | exp GE exp
+    {
+        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eGE, $1, $3);
+        BisonSaveStageResult($$, parm);
+    }
+    | exp LT exp
+    {
+        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eLT, $1, $3);
+        BisonSaveStageResult($$, parm);
+    }
+    | exp LE exp
+    {
+        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eLE, $1, $3);
+        BisonSaveStageResult($$, parm);
+    }
+    | '(' exp ')'
+    { 
+        $$ = $2;
+    } 
 
-    /* NOT */	
+    /* NOT */    
     | exp NOT exp
     {
         $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eNot2, $1, $3);
@@ -153,18 +191,18 @@ exp :
     | NOT exp
     {
         $$ = CQueryParseTree::CreateUnaryNode(CQueryParseNode::eNot, $2);
-		BisonSaveStageResult($$, parm);
+        BisonSaveStageResult($$, parm);
     }
 
     /*
      * error cases
      */
-/*	 
+/*     
     | error TEXT   { $$ = $2; }
     | exp error    { $$ = $1; }
 */
     /* unbalanced parenthesis at the end-of-input */
-/*	
+/*    
     | '(' exp error { yyerrok; $$ = $2; }
     | exp OR  error { yyerrok; $$ = $1 }
     | exp NOT error { yyerrok; $$ = $1 }

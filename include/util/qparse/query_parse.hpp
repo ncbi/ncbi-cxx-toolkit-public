@@ -39,6 +39,9 @@
 
 BEGIN_NCBI_SCOPE
 
+class CQueryParseTree;
+
+
 
 /** @addtogroup QParser
  *
@@ -62,7 +65,6 @@ public:
     enum EType {
         eNotSet,      ///< Produced by the (private) default constructor
         eIdentifier,  ///< Identifier like db.field (Org, Fld12, etc.)
-        eIdentificator = eIdentifier,
         eIntConst,    ///< Integer const
         eFloatConst,  ///< Floating point const
         eBoolConst,   ///< Boolean (TRUE or FALSE)
@@ -159,12 +161,16 @@ public:
     ///         a degree of freedom in execution
     bool IsExplicit() const { return m_Explicit; }  
     void SetExplicit(bool expl=true) { m_Explicit = expl; }
-
+    
+    /// Check if node is marked with NOT flag (like != )
+    bool IsNot() const { return m_Not; }
+    void SetNot(bool n=true) { m_Not = n; }
 private:
     // required for use with CTreeNode<>
     CQueryParseNode();
     friend class CTreeNode<CQueryParseNode>;
-
+    
+private:
     EType         m_Type;  
     union {
         EUnaryOp     m_UnaryOp;
@@ -173,10 +179,11 @@ private:
         bool         m_BoolConst;
         double       m_DoubleConst;
         int          m_IdentIdx;
-    };  
+    };    
     string        m_Value;
     string        m_OrigText; 
     bool          m_Explicit;
+    bool          m_Not;
     SSrcLoc       m_Location;
 };
 
@@ -191,7 +198,35 @@ public:
     /// Contruct the query. Takes the ownership of the clause.
     explicit CQueryParseTree(TNode *clause=0);
     virtual ~CQueryParseTree();
+
+
+    enum ECase {
+        eCaseSensitiveUpper, ///< Operators must come in upper case (AND)
+        eCaseInsensitive     ///< Case insensitive parsing (AnD)
+    };
+
+
+    /// Query parser front-end function
+    ///
+    /// @param query_str
+    ///    Query string subject of parsing
+    /// @param case_sense
+    ///    Case sensitivity (AND, AnD, etc.)
+    /// @param verbose
+    ///    Debug print switch
+    ///
+    void Parse(const char* query_str, 
+               ECase       case_sense = eCaseInsensitive,
+               bool        verbose    = false);
+
     
+    /// Replace current query tree with the new one.
+    /// CQueryParseTree takes ownership on the passed argument.
+    ///
+    void SetQueryTree(TNode* qtree);
+    const TNode* GetQueryTree() const { return m_Tree.get(); }
+    
+        
     /// @name Static node creation functions - 
     ///       class factories working as virtual constructors
     /// @{
@@ -265,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2007/01/11 14:49:20  kuznets
+ * Many cosmetic fixes and functional development
+ *
  * Revision 1.2  2007/01/11 01:04:13  ucko
  * Give CQueryParseNode a private default constructor, as a formality for
  * CTreeNode<CQueryParseNode> (granting the latter friend-level access).

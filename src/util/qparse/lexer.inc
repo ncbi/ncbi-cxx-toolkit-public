@@ -26,7 +26,7 @@
  * Author: Mike DiCuccio, Anatoliy Kuznetsov
  *
  * File Description:
- *	  Lexical analyser for query parser.
+ *      Lexical analyser for query parser.
  *
  */
 
@@ -45,17 +45,31 @@ CQueryParseTree::TNode* LexerMakeTokenNode(CQueryParserEnv* env,
 }
 */
 
-static bool s_Compare(const char* p, const char* p_end,
-                      const char* t)
+///
+/// @internal
+///
+static 
+bool s_Compare(const char* p, const char* p_end,
+               const char* t,
+               CQueryParseTree::ECase  case_sense)
 {
-    for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
-        if (*p != *t) {
-            return false;
+    if (case_sense == CQueryParseTree::eCaseInsensitive) {
+        for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
+            if (toupper(*p) != *t) {
+                return false;
+            }
         }
+        return !*t  &&  ( !*p  ||  isspace(*p));
+    } else {
+        for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
+            if (*p != *t) {
+                return false;
+            }
+        }
+        return !*t  &&  ( !*p  ||  isspace(*p));
     }
-
-    return !*t  &&  ( !*p  ||  isspace(*p));
 }
+
 
 /// Simple lexer to extract tokens from the query stream(string) 
 ///
@@ -73,7 +87,7 @@ static
 int yylex(CQueryParseTree::TNode** lvalp, void* param)
 {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(param);
-	bool verbose = env->IsVerbose();
+    bool verbose = env->IsVerbose();
     char c;
 
     /// skip leading white space
@@ -82,23 +96,51 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
 
     const char* ptr = env->GetBufPtr();
     const char* end = env->GetBufEnd();
+    const char* token_end = 0;
+    
+    CQueryParseTree::ECase  case_sense = env->GetCase();
+    switch (case_sense) {
+    case CQueryParseTree::eCaseSensitiveUpper:
+        // nothing to do
+        break;
+    case CQueryParseTree::eCaseInsensitive:
+        c = toupper(c);
+        break;
+    default:
+        _ASSERT(0);
+    }
 
     switch (c) {
-	// AND
+    // AND
     case 'A':
-        if ( !s_Compare(ptr, end, "ND") ) {
+        if ( !s_Compare(ptr, end, "ND", case_sense) ) {
             break;
         }
         ptr += 2;
+        // must be "AND somethig" not "ANDsomethig"
         if (ptr != end  &&  !isspace(*ptr) ) {
             break;
         }
         env->Skip(2);
-        if (verbose) _TRACE("token: AND");
+        if (verbose) { _TRACE("token: AND"); }
         return AND;
-	// SUB
+    // &&  as AND
+    case '&':
+        if ( *ptr != '&' ) {
+            break;
+        }
+        /*
+        ptr += 1;
+        if (ptr != end  &&  !isspace(*ptr) ) {
+            break;
+        }
+        */
+        env->Skip(1);
+        if (verbose) { _TRACE("token: &&"); }
+        return AND;    
+    // SUB
     case 'S':
-        if ( !s_Compare(ptr, end, "UB") ) {
+        if ( !s_Compare(ptr, end, "UB", case_sense) ) {
             break;
         }
         ptr += 2;
@@ -106,11 +148,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         env->Skip(2);
-        if (verbose) _TRACE("token: SUB");
+        if (verbose) { _TRACE("token: SUB"); }
         return SUB;
-	// XOR
+    // XOR
     case 'X':
-        if ( !s_Compare(ptr, end, "OR") ) {
+        if ( !s_Compare(ptr, end, "OR", case_sense) ) {
             break;
         }
         ptr += 2;
@@ -118,11 +160,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         env->Skip(2);
-        if (verbose) _TRACE("token: XOR");
+        if (verbose) { _TRACE("token: XOR"); }
         return XOR;
-	// MINUS		
+    // MINUS        
     case 'M':
-        if ( !s_Compare(ptr, end, "INUS") ) {
+        if ( !s_Compare(ptr, end, "INUS", case_sense) ) {
             break;
         }
         ptr += 4;
@@ -130,11 +172,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         env->Skip(4);
-        if (verbose) _TRACE("token: MINUS");
+        if (verbose) { _TRACE("token: MINUS"); }
         return SUB;
     // OR
     case 'O':
-        if ( !s_Compare(ptr, end, "R") ) {
+        if ( !s_Compare(ptr, end, "R", case_sense) ) {
             break;
         }
         ptr += 1;
@@ -142,11 +184,24 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         env->Skip(1);
-        if (verbose) _TRACE("token: OR");
+        if (verbose) { _TRACE("token: OR"); }
         return OR;
+    case '|':
+        if ( *ptr != '|' ) {
+            break;
+        }
+        /*
+        ptr += 1;
+        if (ptr != end  &&  !isspace(*ptr) ) {
+            break;
+        }
+        */
+        env->Skip(1);
+        if (verbose) { _TRACE("token: ||"); }
+        return OR;        
     // NOT
     case 'N':
-        if ( !s_Compare(ptr, end, "OT") ) {
+        if ( !s_Compare(ptr, end, "OT", case_sense) ) {
             break;
         }
         ptr += 2;
@@ -154,9 +209,81 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         env->Skip(2);
-        if (verbose) _TRACE("token: NOT");
+        if (verbose) { _TRACE("token: NOT"); }
         return NOT;
-
+    // <, <=, <>
+    case '<':
+        if ( *ptr == '=' ) {
+            if (verbose) { _TRACE("token: <="); }
+            env->Skip(1);
+            return LE;
+        } 
+        if ( *ptr == '>' ) {
+            if (verbose) { _TRACE("token: <>"); }
+            env->Skip(1);
+            return NOTEQ;
+        } 
+        /*
+        ptr += 1;
+        if (ptr != end  &&  !isspace(*ptr) ) {
+            break;
+        }
+        */
+        env->Skip(1);
+        if (verbose) { _TRACE("token: <"); }
+        return LT;
+    // > >= ><
+    case '>':
+        if ( *ptr == '=' ) {
+            if (verbose) { _TRACE("token: >="); }
+            env->Skip(1);
+            return GE;
+        }
+        if ( *ptr == '<' ) {
+            if (verbose) { _TRACE("token: ><"); }
+            env->Skip(1);
+            return NOTEQ;
+        }
+        /*
+        ptr += 1;
+        if (ptr != end  &&  !isspace(*ptr) ) {
+            break;
+        }
+        */
+        env->Skip(1);
+        if (verbose) { _TRACE("token: >"); }
+        return GT;
+    // !=
+    case '!':
+        if ( *ptr != '=' ) {
+            break;
+        }
+        /*
+        ptr += 1;
+        if (ptr != end  &&  !isspace(*ptr) ) {
+            break;
+        }
+        */
+        env->Skip(1);
+        if (verbose) { _TRACE("token: !="); }
+        return NOTEQ;
+    // = ==
+    case '=':
+        if ( *ptr != '=' ) {
+            env->Skip(1);
+            if (verbose) { _TRACE("token: ="); }
+            return EQ;
+        }
+        /*
+        ptr += 1;
+        if (ptr != end  &&  !isspace(*ptr) ) {
+            break;
+        }
+        */
+        env->Skip(1);
+        if (verbose) { _TRACE("token: =="); }
+        return EQ;
+    
     case '(':
         {{
              const char* p = ptr;
@@ -167,25 +294,28 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                  return EOF;
              }
          }}
-        if (verbose) _TRACE("token: open-paren");
+        if (verbose) { _TRACE("token: open-paren"); }
         return c;
 
     case ')':
-        if (verbose) _TRACE("token: close-paren");
+        if (verbose) { _TRACE("token: close-paren"); }
         return c;
 
     case 0:
     case EOF:
-        if (verbose) _TRACE("token: EOF");
+        if (verbose) { _TRACE("token: EOF"); }
         return EOF;
 
     default:
         break;
     }
 
-    ///
-    /// the query contains text
-    ///
+    // the query contains text
+    //
+    // query is searched up to the next operator (AND, OR, NOT, etc.)
+    // so [ Vitamin C AND carrot ] is equivalent of ["Vitamin C" AND carrot]
+    // (PubMed query compatibility)
+    //
 
     ptr           = env->GetBufPtr();
     const char* p = ptr;
@@ -196,8 +326,18 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             if ( isspace(*ptr) ) {
                 break;
             }
-            if (*ptr == '('  ||  *ptr == ')') {
-                if (verbose) _TRACE("found breaking paren: " << string(ptr, end));
+            if ((*ptr == '(') ||  
+                (*ptr == ')') ||
+                (*ptr == '|') ||
+                (*ptr == '&') ||
+                (*ptr == '=') ||
+                (*ptr == '<') ||
+                (*ptr == '>') ||
+                (*ptr == '!')
+                ) {
+                if (verbose) { 
+                    _TRACE("found breaking paren: " << string(ptr, end));
+                }
                 break;
 
                 /**
@@ -211,13 +351,15 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             }
         }
 
+        token_end = ptr; // not to add trailing spaces to the token
         /// skip intervening white space
         for ( ;  ptr != end;  ++ptr) {
             if ( !isspace(*ptr) ) {
                 break;
             }
             if (*ptr == '('  ||  *ptr == ')') {
-                if (verbose) _TRACE("found breaking paren: " << string(ptr, end));
+                if (verbose) 
+                    { _TRACE("found breaking paren: " << string(ptr, end)); }
                 break;
 
                 /**
@@ -231,11 +373,21 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         }
 
         //
-        // skip to the next A, N, or O
+        // skip to the next operator A, N, O, etc
         //
-        if (s_Compare(ptr, end, "AND")  ||
-            s_Compare(ptr, end, "OR")  ||
-            s_Compare(ptr, end, "NOT")) {
+        if (s_Compare(ptr, end, "AND",  case_sense) ||
+            s_Compare(ptr, end, "OR",   case_sense) ||
+            s_Compare(ptr, end, "NOT",  case_sense) ||
+            s_Compare(ptr, end, "SUB",  case_sense) ||
+            s_Compare(ptr, end, "XOR",  case_sense) ||
+            s_Compare(ptr, end, "MINUS",case_sense) ||
+            (*ptr == '|') ||
+            (*ptr == '&') ||
+            (*ptr == '=') ||
+            (*ptr == '<') ||
+            (*ptr == '>') ||
+            (*ptr == '!') 
+            ) {
             break;
         }
 
@@ -248,12 +400,15 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     /// create a node for the text
     string text;
     text += c;
-    text.append(p, ptr);
-    *lvalp = CQueryParseTree::CreateNode(text, text, false);
+    text.append(p, token_end ? token_end : ptr);
+    
+    CQueryParseTree::TNode* qnode;    
+    *lvalp = qnode = CQueryParseTree::CreateNode(text, text, false);
+    env->AddNodeToPool(qnode); // to avoid leak when Bison rollbacks the stack
 
     /// skip and return
-    if (verbose) env->Skip(ptr - p);
-    _TRACE("string: >>" << text << "<<");
+    env->Skip(ptr - p);
+    if (verbose) { _TRACE("string: >>" << text << "<<"); }
     return STRING;
 }
 
@@ -411,6 +566,9 @@ int yylex(YYSTYPE *lvalp, void* param)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2007/01/11 14:49:51  kuznets
+ * Many cosmetic fixes and functional development
+ *
  * Revision 1.1  2007/01/10 16:14:01  kuznets
  * initial revision
  *

@@ -37,7 +37,9 @@ BEGIN_NCBI_SCOPE
 
 
 CQueryParseNode::CQueryParseNode()
-: m_Type(eNotSet), m_Explicit(false)
+: m_Type(eNotSet), 
+  m_Explicit(false),
+  m_Not(false)  
 {
 }
 
@@ -46,7 +48,9 @@ CQueryParseNode::CQueryParseNode(const string& value,
                                  bool isIdent)
 : m_Type(isIdent ? eIdentifier : eString),
   m_Value(value),
-  m_OrigText(orig_text)
+  m_OrigText(orig_text),
+  m_Explicit(true),
+  m_Not(false)  
 {
 }
 
@@ -54,7 +58,8 @@ CQueryParseNode::CQueryParseNode(Int4   val, const string& orig_text)
 : m_Type(eIntConst),
   m_IntConst(val),
   m_OrigText(orig_text),
-  m_Explicit(true)
+  m_Explicit(true),
+  m_Not(false)  
 {
 }
 
@@ -62,7 +67,8 @@ CQueryParseNode::CQueryParseNode(bool   val, const string& orig_text)
 : m_Type(eBoolConst),
   m_BoolConst(val),
   m_OrigText(orig_text),
-  m_Explicit(true)
+  m_Explicit(true),
+  m_Not(false)  
 {
 }
 
@@ -70,21 +76,26 @@ CQueryParseNode::CQueryParseNode(double val, const string& orig_text)
 : m_Type(eFloatConst),
   m_DoubleConst(val),
   m_OrigText(orig_text),
-  m_Explicit(true)
+  m_Explicit(true),
+  m_Not(false)    
 {
 }
 
 CQueryParseNode::CQueryParseNode(EBinaryOp op, const string& orig_text)
 : m_Type(eBinaryOp),
+  m_BinaryOp(op),
   m_OrigText(orig_text),
-  m_Explicit(true)
+  m_Explicit(true),
+  m_Not(false)  
 {
 }
 
 CQueryParseNode::CQueryParseNode(EUnaryOp op, const string& orig_text)
 : m_Type(eUnaryOp),
+  m_UnaryOp(op),
   m_OrigText(orig_text),
-  m_Explicit(true)
+  m_Explicit(true),
+  m_Not(false)  
 {
 }
 
@@ -109,7 +120,7 @@ CQueryParseNode::EUnaryOp CQueryParseNode::GetUnaryOp() const
 
 const string& CQueryParseNode::GetStrValue() const
 {
-    if (m_Type != eIdentifier || m_Type != eString) {
+    if (m_Type != eIdentifier && m_Type != eString) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
                    "Incorrect query node type");
     }
@@ -182,40 +193,46 @@ CQueryParseTree::~CQueryParseTree()
 {
 }
 
+void CQueryParseTree::SetQueryTree(TNode* qtree)
+{
+    m_Tree.reset(qtree);
+}
+
+
 CQueryParseTree::TNode* 
 CQueryParseTree::CreateNode(const string&  value, 
-				            const string&  orig_text, 
-  	                        bool           isIdent)
+                            const string&  orig_text, 
+                            bool           isIdent)
 {
-	return new TNode(CQueryParseNode(value, orig_text, isIdent));
+    return new TNode(CQueryParseNode(value, orig_text, isIdent));
 }
 
 CQueryParseTree::TNode* 
 CQueryParseTree::CreateNode(Int4   value, const string&  orig_text)
 {
-	return new TNode(CQueryParseNode(value, orig_text));
+    return new TNode(CQueryParseNode(value, orig_text));
 }
 
 CQueryParseTree::TNode* 
 CQueryParseTree::CreateNode(bool   value, const string&  orig_text)
 {
-	return new TNode(CQueryParseNode(value, orig_text));
+    return new TNode(CQueryParseNode(value, orig_text));
 }
 
 
 CQueryParseTree::TNode* 
 CQueryParseTree::CreateNode(double   value, const string&  orig_text)
 {
-	return new TNode(CQueryParseNode(value, orig_text));
+    return new TNode(CQueryParseNode(value, orig_text));
 }
 
 CQueryParseTree::TNode* 
 CQueryParseTree::CreateBinaryNode(CQueryParseNode::EBinaryOp op,
                                   CQueryParseTree::TNode*    arg1, 
-		   					      CQueryParseTree::TNode*    arg2,
-								  const string&              orig_text)
+                                  CQueryParseTree::TNode*    arg2,
+                                  const string&              orig_text)
 {
-	_ASSERT(arg1 && arg2);
+    _ASSERT(arg1 && arg2);
    auto_ptr<TNode> node(new TNode(CQueryParseNode(op, orig_text)));
    if (arg1) {
         node->AddNode(arg1);
@@ -228,10 +245,10 @@ CQueryParseTree::CreateBinaryNode(CQueryParseNode::EBinaryOp op,
 
 CQueryParseTree::TNode* 
 CQueryParseTree::CreateUnaryNode(CQueryParseNode::EUnaryOp op, 
-	                             CQueryParseTree::TNode*   arg,
-					             const string&             orig_text)
+                                 CQueryParseTree::TNode*   arg,
+                                 const string&             orig_text)
 {
-	_ASSERT(arg);
+    _ASSERT(arg);
    auto_ptr<TNode> node(new TNode(CQueryParseNode(op, orig_text)));
    if (arg) {
         node->AddNode(arg);
@@ -247,6 +264,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2007/01/11 14:49:51  kuznets
+ * Many cosmetic fixes and functional development
+ *
  * Revision 1.2  2007/01/11 01:04:17  ucko
  * Give CQueryParseNode a private default constructor, as a formality for
  * CTreeNode<CQueryParseNode> (granting the latter friend-level access).

@@ -53,6 +53,7 @@ public:
 
 void CTestQParse::Init(void)
 {
+
     SetDiagPostLevel(eDiag_Warning);
 
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
@@ -65,6 +66,14 @@ void CTestQParse::Init(void)
 
 int CTestQParse::Run(void)
 {
+    {{
+    const char* q = "1!=2";
+    CQueryParseTree qtree;
+    qtree.Parse(q);
+    NcbiCout << "---------------------------------------------------" << endl;
+    qtree.Print(NcbiCout);
+    NcbiCout << "---------------------------------------------------" << endl;
+    }}
     return 0;
 }
 
@@ -78,9 +87,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2007/01/11 14:49:52  kuznets
+ * Many cosmetic fixes and functional development
+ *
  * Revision 1.1  2007/01/10 17:06:31  kuznets
  * initial revision
- *
  *
  * ===========================================================================
  */
