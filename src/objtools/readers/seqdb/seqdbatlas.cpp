@@ -1448,6 +1448,7 @@ CSeqDBMapStrategy::CSeqDBMapStrategy(CSeqDBAtlas & atlas)
     } else {
         m_MaxBound = e_MaxMemory64;
     }
+    x_SetBounds(m_MaxBound);
 }
 
 void CSeqDBMapStrategy::MentionOid(int oid, int num_oids)
