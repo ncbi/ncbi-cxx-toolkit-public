@@ -36,10 +36,15 @@
 BEGIN_NCBI_SCOPE
 
 
+CQueryParseNode::CQueryParseNode()
+: m_Type(eNotSet), m_Explicit(false)
+{
+}
+
 CQueryParseNode::CQueryParseNode(const string& value, 
                                  const string& orig_text, 
-								 bool isIdent)
-: m_Type(isIdent ? eIdentificator : eString),
+                                 bool isIdent)
+: m_Type(isIdent ? eIdentifier : eString),
   m_Value(value),
   m_OrigText(orig_text)
 {
@@ -88,8 +93,8 @@ CQueryParseNode::EBinaryOp CQueryParseNode::GetBinaryOp() const
 {
     if (m_Type != eBinaryOp) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
+                   "Incorrect query node type");
+    }
     return m_BinaryOp;
 }
 
@@ -97,72 +102,72 @@ CQueryParseNode::EUnaryOp CQueryParseNode::GetUnaryOp() const
 {
     if (m_Type != eUnaryOp) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
+                   "Incorrect query node type");
+    }
     return m_UnaryOp;
 }
 
 const string& CQueryParseNode::GetStrValue() const
 {
-    if (m_Type != eIdentificator || m_Type != eString) {
+    if (m_Type != eIdentifier || m_Type != eString) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
-	return m_Value;
+                   "Incorrect query node type");
+    }
+    return m_Value;
 }
 
 Int4 CQueryParseNode::GetInt() const
 {
     if (m_Type != eIntConst) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
-	return m_IntConst;
+                   "Incorrect query node type");
+    }
+    return m_IntConst;
 }
 
 bool CQueryParseNode::GetBool() const
 {
     if (m_Type != eBoolConst) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
-	return m_BoolConst;
+                   "Incorrect query node type");
+    }
+    return m_BoolConst;
 }
 
 double CQueryParseNode::GetDouble() const
 {
     if (m_Type != eFloatConst) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
-	return m_DoubleConst;
+                   "Incorrect query node type");
+    }
+    return m_DoubleConst;
 }
 
 const string& CQueryParseNode::GetIdent() const
 {
-    if (m_Type != eIdentificator) {
+    if (m_Type != eIdentifier) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
-	return m_Value;
+                   "Incorrect query node type");
+    }
+    return m_Value;
 }
 
 void CQueryParseNode::SetIdentIdx(int idx)
 {
-    if (m_Type != eIdentificator) {
+    if (m_Type != eIdentifier) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
-	m_IdentIdx = idx;
+                   "Incorrect query node type");
+    }
+    m_IdentIdx = idx;
 }
 
 int CQueryParseNode::GetIdentIdx() const
 {
-    if (m_Type != eIdentificator) {
+    if (m_Type != eIdentifier) {
         NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-		           "Incorrect query node type");
-	}
-	return m_IdentIdx;
+                   "Incorrect query node type");
+    }
+    return m_IdentIdx;
 }
 
 
@@ -242,6 +247,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2007/01/11 01:04:17  ucko
+ * Give CQueryParseNode a private default constructor, as a formality for
+ * CTreeNode<CQueryParseNode> (granting the latter friend-level access).
+ * Rename "identificator" to the proper word "identifier".
+ * Indent with spaces, not tabs.
+ *
  * Revision 1.1  2007/01/10 16:14:01  kuznets
  * initial revision
  *
