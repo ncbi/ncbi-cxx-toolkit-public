@@ -137,16 +137,19 @@ public:
     //  These access the first entry in m_chain1
     const CCdCore* GetMasterCD() const;
     string GetMasterCDAcc() const;
+    string GetMasterRowIdStr() const;
     unsigned int GetMasterCDRow() const;
 
     //  These access the first entry in m_chain2
     const CCdCore* GetSlaveCD() const;
     string GetSlaveCDAcc() const;
+    string GetSlaveRowIdStr() const;
     unsigned int GetSlaveCDRow() const;
 
     //  These access the last entry in m_chain1
     const CCdCore* GetCommonCD() const;
     string GetCommonCDAcc() const;
+    string GetCommonRowIdStr() const;
     unsigned int GetCommonCDRow() const;
 
     virtual string ToString() const;
@@ -315,6 +318,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2007/01/11 21:51:45  lanczyck
+ * last minute pre-Subversion conversion changes
+ *
  * Revision 1.2  2007/01/09 19:28:32  lanczyck
  * refactor guide alignment class; add some method to guide alignment factory
  *

@@ -35,6 +35,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/structure/cd_utils/cuCD.hpp>
+#include <algo/structure/cd_utils/cuUtils.hpp>
 #include <algo/structure/cd_utils/cuGuideAlignment.hpp>
 #include <algo/structure/cd_utils/cuAlignmentCollection.hpp>
 
@@ -211,6 +212,16 @@ string CGuideAlignment_Base::GetMasterCDAcc() const
     return (cd) ? cd->GetAccession() : "";
 }
 
+string CGuideAlignment_Base::GetMasterRowIdStr() const
+{
+    CRef< CSeq_id > seqId;
+    string idStr = kEmptyStr;
+    if (m_chain1.size() > 0 && m_chain1[0].cd->GetSeqIDFromAlignment(m_chain1[0].row, seqId)) {
+        idStr = GetSeqIDStr(seqId);
+    }
+    return idStr;
+}
+
 unsigned int CGuideAlignment_Base::GetMasterCDRow() const
 {
     return (m_chain1.size() > 0) ? m_chain1[0].row : kMax_UInt;
@@ -225,6 +236,17 @@ string CGuideAlignment_Base::GetSlaveCDAcc() const
     const CCdCore* cd = (m_chain2.size() > 0) ? m_chain2[0].cd : NULL;
     return (cd) ? cd->GetAccession() : "";
 }
+
+string CGuideAlignment_Base::GetSlaveRowIdStr() const
+{
+    CRef< CSeq_id > seqId;
+    string idStr = kEmptyStr;
+    if (m_chain2.size() > 0 && m_chain2[0].cd->GetSeqIDFromAlignment(m_chain2[0].row, seqId)) {
+        idStr = GetSeqIDStr(seqId);
+    }
+    return idStr;
+}
+
 unsigned int CGuideAlignment_Base::GetSlaveCDRow() const
 {
     return (m_chain2.size() > 0) ? m_chain2[0].row : kMax_UInt;
@@ -241,6 +263,17 @@ string CGuideAlignment_Base::GetCommonCDAcc() const
     const CCdCore* cd = (n > 0) ? m_chain1[n-1].cd : NULL;
     return (cd) ? cd->GetAccession() : "";
 }
+string CGuideAlignment_Base::GetCommonRowIdStr() const
+{
+    CRef< CSeq_id > seqId;
+    unsigned int n = m_chain1.size();
+    string idStr = kEmptyStr;
+    if (n > 0 && m_chain1[n-1].cd->GetSeqIDFromAlignment(m_chain1[n-1].row, seqId)) {
+        idStr = GetSeqIDStr(seqId);
+    }
+    return idStr;
+}
+
 unsigned int CGuideAlignment_Base::GetCommonCDRow() const
 {
     unsigned int n = m_chain1.size();
@@ -250,9 +283,9 @@ unsigned int CGuideAlignment_Base::GetCommonCDRow() const
 string CGuideAlignment_Base::ToString() const
 {
     string s;
-    string masterInfo = "Master CD " + GetMasterCDAcc() + "; row " + NStr::UIntToString(GetMasterCDRow());
-    string slaveInfo  = "Slave  CD " + GetSlaveCDAcc() + "; row " + NStr::UIntToString(GetSlaveCDRow());
-    string commonInfo = "Common CD " + GetCommonCDAcc() + "; row " + NStr::UIntToString(GetCommonCDRow());
+    string masterInfo = "Master CD " + GetMasterCDAcc() + "; row " + NStr::UIntToString(GetMasterCDRow()) + " (" + GetMasterRowIdStr() + ")";
+    string slaveInfo  = "Slave  CD " + GetSlaveCDAcc() + "; row " + NStr::UIntToString(GetSlaveCDRow()) + " (" + GetSlaveRowIdStr() + ")";
+    string commonInfo = "Common CD " + GetCommonCDAcc() + "; row " + NStr::UIntToString(GetCommonCDRow()) + " (" + GetCommonRowIdStr() + ")";
 
     s = masterInfo + "\n" + slaveInfo + "\n" + commonInfo + "\n";
     if (m_isOK) {
@@ -337,15 +370,15 @@ bool CMasterGuideAlignment::MakeGuideToRoot(const CCdCore* cd, CDFamily* family,
             ma = new MultipleAlignment();
             if (ma) {
                 CDFamilyIterator rootIt = family->begin();
-                LOG_POST("about to call ma->setAlignment\n");
+//                LOG_POST("about to call ma->setAlignment\n");
                 ma->setAlignment(*family, rootIt);  //  first iterator is to the root
-                LOG_POST("returned from ma->setAlignment\n");
+//                LOG_POST("returned from ma->setAlignment\n");
                 m_alignmentCache[family] = ma;
             }
         }
 
         Reset();
-        LOG_POST("about to call Make(root, cd, ma)\n");
+//        LOG_POST("about to call Make(root, cd, ma)\n");
         result = Make(root, cd, ma);
         if (result) {
             MakeChains(root, cd, root, family);
@@ -359,13 +392,17 @@ bool CMasterGuideAlignment::MakeGuideToRoot(const CCdCore* cd, CDFamily* family,
 bool CMasterGuideAlignment::Make(const CCdCore* cd1, const CCdCore* cd2, MultipleAlignment* ma)
 {
     int master1, master2;
+    string master1Str, master2Str;
 
     m_isOK = (cd1 && cd2 && ma);
     if (m_isOK) {
         master1 = ma->GetRowSourceTable().convertFromCDRow(const_cast<CCdCore*>(cd1), 0);
         master2 = ma->GetRowSourceTable().convertFromCDRow(const_cast<CCdCore*>(cd2), 0);
+        cd1->Get_GI_or_PDB_String_FromAlignment(0, master1Str, false, 0);
+        cd2->Get_GI_or_PDB_String_FromAlignment(0, master2Str, false, 0);
 
-        LOG_POST("cd1 " << cd1->GetAccession() << " master " << master1 << "\ncd2 " << cd2->GetAccession() << " master " << master2);
+        LOG_POST("cd1 " << cd1->GetAccession() << " master " << master1 << "; " << master1Str);
+        LOG_POST("cd2 " << cd2->GetAccession() << " master " << master2 << "; " << master2Str);
 
         if (master1 >= 0 && master2 >= 0) {
             m_guideBlockModelPair.getMaster() = ma->getBlockModel(master1);
@@ -590,9 +627,9 @@ bool CGuideAlignmentFactory::RemapGuideToConsensus(CGuideAlignment_Base& gaToMap
 
     LOG_POST("RemapGuideToConsensus:  before:\n" << gaToMap.ToString());
     LOG_POST("\nOriginal master:  consensus:\n" << bmpMaster.getMaster().toString());
-    LOG_POST("\nOriginal master:  row 1    :\n" << bmpMaster.getSlave().toString());
-    LOG_POST("\nOriginal slave:  consensus:\n" << bmpSlave.getMaster().toString());
-    LOG_POST("\nOriginal slave:  row 1    :\n" << bmpSlave.getSlave().toString());
+    LOG_POST("\nOriginal master:      row 1:\n" << bmpMaster.getSlave().toString());
+    LOG_POST("\nOriginal slave:   consensus:\n" << bmpSlave.getMaster().toString());
+    LOG_POST("\nOriginal slave:       row 1:\n" << bmpSlave.getSlave().toString());
 
 
     if (isMasterCons || isSlaveCons) {
