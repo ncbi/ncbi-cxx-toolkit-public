@@ -143,10 +143,23 @@ public:
                                       TUtils::ESearchDirection dir = TUtils::eNone,
                                       bool try_reverse_dir = true) const;
 
-    /// Sequence
-    string& GetSeqString(TNumrow row, string &buffer, TSeqPos seq_from, TSeqPos seq_to) const;
-    string& GetSeqString(TNumrow row, string &buffer, const TUtils::TRange &seq_rng) const;
-    string& GetAlnSeqString(TNumrow row, string &buffer, const TSignedRange &aln_rng) const;
+
+    /// Fetch sequence
+    string& GetSeqString   (TNumrow row,                           //< which row
+                            string &buffer,                        //< provide an empty buffer for the output
+                            TSeqPos seq_from, TSeqPos seq_to,      //< what range
+                            bool force_translation = false) const; //< optional na2aa translation (na only!)
+
+    string& GetSeqString   (TNumrow row,                           //< which row
+                            string &buffer,                        //< provide an empty buffer for the output
+                            const TUtils::TRange &seq_rng,         //< what range
+                            bool force_translation = false) const; //< optional na2aa translation (na only!)
+
+    string& GetAlnSeqString(TNumrow row,                           //< which row
+                            string &buffer,                        //< an empty buffer for the output
+                            const TSignedRange &aln_rng,           //< what range (in aln coords)
+                            bool force_translation = false) const; //< optional na2aa translation (na only!)
+
 
     /// Bioseq handle accessor
     const objects::CBioseq_Handle&  GetBioseqHandle(TNumrow row) const;
@@ -197,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2007/01/11 21:43:29  todorov
+ * Added force_translation flag.
+ *
  * Revision 1.6  2007/01/04 21:13:24  todorov
  * Added the ability to display translated alignments.
  *

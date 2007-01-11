@@ -314,8 +314,10 @@ void CSparseAln::TranslateNAToAA(const string& na,
 }
 
 
-string& CSparseAln::GetSeqString(TNumrow row, string &buffer,
-                                 TSeqPos seq_from, TSeqPos seq_to) const
+string& CSparseAln::GetSeqString(TNumrow row,
+                                 string &buffer,
+                                 TSeqPos seq_from, TSeqPos seq_to,
+                                 bool force_translation) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
 
@@ -337,21 +339,28 @@ string& CSparseAln::GetSeqString(TNumrow row, string &buffer,
 }
 
 
-string& CSparseAln::GetSeqString(TNumrow row, string &buffer,
-                                 const TUtils::TRange &seq_range) const
+string& CSparseAln::GetSeqString(TNumrow row,
+                                 string &buffer,
+                                 const TUtils::TRange &seq_range,
+                                 bool force_translation) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
 
-    return GetSeqString(row, buffer, seq_range.GetFrom(), seq_range.GetTo());
+    return GetSeqString(row,
+                        buffer,
+                        seq_range.GetFrom(), seq_range.GetTo(),
+                        force_translation);
 }
 
 
-string& CSparseAln::GetAlnSeqString(TNumrow row, string &buffer,
-                                    const TSignedRange &aln_range) const
+string& CSparseAln::GetAlnSeqString(TNumrow row,
+                                    string &buffer,
+                                    const TSignedRange &aln_range,
+                                    bool force_translation) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
 
-    bool translated = IsTranslated();
+    bool translate = force_translation  ||  IsTranslated();
 
     buffer.erase();
 
@@ -388,11 +397,11 @@ string& CSparseAln::GetAlnSeqString(TNumrow row, string &buffer,
                     seq_vector.GetSeqData(vec_size - r.GetToOpen(),
                                           vec_size - r.GetFrom(), s);
                 }
-                if (translated) {
+                if (translate) {
                     TranslateNAToAA(s, s);
                 }
                 off = aln_r.GetFrom() - aln_range.GetFrom();
-                if (translated) {
+                if (translate) {
                     off /= 3;
                 }
                 off = max(prev_to_open, off);
@@ -455,6 +464,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2007/01/11 21:43:46  todorov
+ * Added force_translation flag.
+ *
  * Revision 1.5  2007/01/10 20:43:03  todorov
  * Using IsTranslated().
  *
