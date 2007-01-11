@@ -206,10 +206,13 @@ public:
                         }
                     }
                     if (min_len < max_len) {
-                        _ASSERT(min_len == max_len / 3  ||
-                                min_len - 1 == max_len / 3);
+                        bool nuc_prot_diag = (min_len == max_len / 3  ||
+                                              min_len - 1 == max_len / 3 ?
+                                              false : true);
                         for (size_t i=0;  i< seg_lens.size();  ++i) {
-                            id_vec[i]->SetBaseWidth(seg_lens[i] == min_len ? 3 : 1);
+                            id_vec[i]->SetBaseWidth(nuc_prot_diag ? 
+                                                    (seg_lens[i] == min_len ? 3 : 1) :
+                                                    -1);
                         }                                
                     }
 
@@ -263,6 +266,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2007/01/11 21:42:59  todorov
+* Handle non-diagonal std-segs gracefully.
+*
 * Revision 1.7  2007/01/10 19:32:32  ucko
 * #include <objtools/alnmgr/alnexception.hpp>
 *
