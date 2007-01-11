@@ -99,7 +99,7 @@ static string s_HTMLEncode(const string& str, const string& set,
             }
             if ( is_entity ) {
                 if (flags & CHTMLHelper::fCheckPreencoded) {
-                    ERR_POST_ONCE(Warning << "string \"" <<  str <<
+                    ERR_POST_ONCE(Info << "string \"" <<  str <<
                                  "\" contains HTML encoded entities");
                 }
             } else {
@@ -594,6 +594,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2007/01/11 15:56:01  ivanov
+ * Changed ERR_POSTlevel from Warning to Info for check on preencoded entity
+ *
  * Revision 1.32  2006/09/11 12:42:20  gouriano
  * Modified HTMLDecode to also return result of decoding
  *
