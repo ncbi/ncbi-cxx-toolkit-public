@@ -283,6 +283,33 @@ SAnnotSelector& SAnnotSelector::ResetAnnotsNames(void)
     return *this;
 }
 
+namespace {
+    void vector_erase(vector<CAnnotName>& v, const CAnnotName& name)
+    {
+        v.erase(remove(v.begin(), v.end(), name), v.end());
+    }
+}
+
+
+SAnnotSelector& SAnnotSelector::ResetNamedAnnots(const CAnnotName& name)
+{
+    vector_erase(m_IncludeAnnotsNames, name);
+    vector_erase(m_ExcludeAnnotsNames, name);
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::ResetNamedAnnots(const char* name)
+{
+    return ResetNamedAnnots(CAnnotName(name));
+}
+
+
+SAnnotSelector& SAnnotSelector::ResetUnnamedAnnots(void)
+{
+    return ResetNamedAnnots(CAnnotName());
+}
+
 
 SAnnotSelector& SAnnotSelector::AddNamedAnnots(const CAnnotName& name)
 {
@@ -618,7 +645,7 @@ END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
-* $Log$
+* $Log: annot_selector.cpp,v $
 * Revision 1.31  2006/06/19 20:22:34  grichenk
 * Added comments. Removed SegmentSelect flag.
 *

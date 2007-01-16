@@ -460,6 +460,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     typedef vector<CAnnotName> TAnnotsNames;
     /// Select annotations from all Seq-annots
     SAnnotSelector& ResetAnnotsNames(void);
+    /// Reset special processing of unnamed annots (added or excluded)
+    SAnnotSelector& ResetUnnamedAnnots(void);
+    /// Reset special processing of named annots (added or excluded)
+    SAnnotSelector& ResetNamedAnnots(const CAnnotName& name);
+    SAnnotSelector& ResetNamedAnnots(const char* name);
     /// Add unnamed annots to set of annots names to look for
     SAnnotSelector& AddUnnamedAnnots(void);
     /// Add named annot to set of annots names to look for
@@ -575,7 +580,7 @@ END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
-* $Log$
+* $Log: annot_selector.hpp,v $
 * Revision 1.52  2006/06/21 20:09:45  vasilche
 * Reset included annot subtypes only if annot type is changed.
 *
