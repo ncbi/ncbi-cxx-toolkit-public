@@ -238,7 +238,7 @@ private:
     void x_RecurseForDescriptors (const CSeq_entry& se, RecurseDescriptor pmf);
     void x_RecurseForDescriptors (CBioseq_Handle bs, RecurseDescriptor pmf);
     void x_RecurseForDescriptors (CBioseq_set_Handle bs, RecurseDescriptor pmf);
-    void CCleanup_imp::x_ActOnDescriptors (CBioseq_set_Handle bss, RecurseDescriptor pmf);
+    void x_ActOnDescriptors (CBioseq_set_Handle bss, RecurseDescriptor pmf);
     
     typedef bool (CCleanup_imp::*IsMergeCandidate)(const CSeqdesc& sd);
     typedef bool (CCleanup_imp::*Merge)(CSeqdesc& sd1, CSeqdesc& sd2);
