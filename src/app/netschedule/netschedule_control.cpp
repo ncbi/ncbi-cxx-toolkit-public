@@ -439,10 +439,10 @@ void NSClient::PrintStatistics(CNcbiOstream&   out,  EStatisticsOptions opt) con
 int CNetScheduleControl::Run(void)
 {
 
-    NSClient client("ns_test", "netschedule_admin", "sample");
-    client.PrintStatistics(cout);
+    //    NSClient client("ns_test", "netschedule_admin", "sample");
+    //    client.PrintStatistics(cout);
 
-    return 0;
+    //    return 0;
 
     const CArgs& args = GetArgs();
     CNcbiOstream& os = NcbiCout;
