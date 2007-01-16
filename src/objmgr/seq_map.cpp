@@ -1083,8 +1083,9 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
 bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
 {
     inst.SetLength(GetLength(0));
+    bool single_segment = x_GetSegmentsCount() == 2;
     if ( HasSegmentOfType(eSeqData) ) {
-        if ( x_GetSegmentsCount() == 1 ) {
+        if ( single_segment && !inst.IsSetExt() ) {
             // seq-data
             CSegment& seg = x_SetSegment(x_GetFirstEndSegmentIndex() + 1);
             _ASSERT(seg.m_SegType == eSeqData);
@@ -1094,7 +1095,7 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
         }
     }
     else if ( HasSegmentOfType(eSeqGap) ) {
-        if ( x_GetSegmentsCount() == 1 ) {
+        if ( single_segment && !inst.IsSetExt() ) {
             inst.SetRepr(CSeq_inst::eRepr_virtual);
             inst.ResetSeq_data();
             inst.ResetExt();
@@ -1102,37 +1103,39 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
         }
     }
     else {
-        // ref only -> CSeg_ext
-        CSeg_ext::Tdata& data = inst.SetExt().SetSeg().Set();
-        CSeg_ext::Tdata::iterator iter = data.begin();
-        for ( size_t index = x_GetFirstEndSegmentIndex() + 1;
-              index < x_GetLastEndSegmentIndex(); ++index ) {
-            CSegment& seg = x_SetSegment(index);
-            _ASSERT(seg.m_SegType == eSeqRef);
-            if ( iter == data.end() ) {
-                iter = data.insert(iter, CSeg_ext::Tdata::value_type());
+        if ( !inst.IsSetExt() || inst.GetExt().IsSeg() ) {
+            // ref only -> CSeg_ext
+            CSeg_ext::Tdata& data = inst.SetExt().SetSeg().Set();
+            CSeg_ext::Tdata::iterator iter = data.begin();
+            for ( size_t index = x_GetFirstEndSegmentIndex() + 1;
+                  index < x_GetLastEndSegmentIndex(); ++index ) {
+                CSegment& seg = x_SetSegment(index);
+                _ASSERT(seg.m_SegType == eSeqRef);
+                if ( iter == data.end() ) {
+                    iter = data.insert(iter, CSeg_ext::Tdata::value_type());
+                }
+                if ( !*iter ) {
+                    iter->Reset(new CSeq_loc);
+                }
+                CSeq_loc& loc = **iter;
+                ++iter;
+                CSeq_interval& interval = loc.SetInt();
+                interval.SetId(const_cast<CSeq_id&>(x_GetRefSeqid(seg)));
+                TSeqPos pos = seg.m_RefPosition;
+                interval.SetFrom(pos);
+                interval.SetTo(pos+x_GetSegmentLength(index, 0)-1);
+                if ( seg.m_RefMinusStrand ) {
+                    interval.SetStrand(eNa_strand_minus);
+                }
+                else {
+                    interval.ResetStrand();
+                }
+                interval.ResetFuzz_from();
+                interval.ResetFuzz_to();
             }
-            if ( !*iter ) {
-                iter->Reset(new CSeq_loc);
-            }
-            CSeq_loc& loc = **iter;
-            ++iter;
-            CSeq_interval& interval = loc.SetInt();
-            interval.SetId(const_cast<CSeq_id&>(x_GetRefSeqid(seg)));
-            TSeqPos pos = seg.m_RefPosition;
-            interval.SetFrom(pos);
-            interval.SetTo(pos+x_GetSegmentLength(index, 0)-1);
-            if ( seg.m_RefMinusStrand ) {
-                interval.SetStrand(eNa_strand_minus);
-            }
-            else {
-                interval.ResetStrand();
-            }
-            interval.ResetFuzz_from();
-            interval.ResetFuzz_to();
+            data.erase(iter, data.end());
+            return true;
         }
-        data.erase(iter, data.end());
-        return true;
     }
 
     // delta
