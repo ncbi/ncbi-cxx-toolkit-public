@@ -462,11 +462,12 @@ CDataSource::FindBioseq_Lock(const CBioseq& bioseq,
 
 
 void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                                    TLoadedTypes types,
                                     TLoadedBlob_ids& blob_ids) const
 {
     typedef set<TBlobId> TLoadedBlob_ids_Set;
     TLoadedBlob_ids_Set ids;
-    {{
+    if ( types & fLoaded_bioseqs ) {
         TMainLock::TReadLockGuard guard(m_DSMainLock);
         TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
         if (tse_set != m_TSE_seq.end()) {
@@ -474,22 +475,28 @@ void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                 ids.insert((*tse)->GetBlobId());
             }
         }
-    }}
-    {{
+    }
+    if ( types & fLoaded_annots ) {
         TMainLock::TReadLockGuard guard(m_DSAnnotLock);
-        TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq_annot.find(idh);
-        if (tse_set != m_TSE_seq_annot.end()) {
-            ITERATE(TTSE_Set, tse, tse_set->second) {
-                ids.insert((*tse)->GetBlobId());
+        if ( types & fLoaded_bioseq_annots ) {
+            TSeq_id2TSE_Set::const_iterator tse_set =
+                m_TSE_seq_annot.find(idh);
+            if (tse_set != m_TSE_seq_annot.end()) {
+                ITERATE(TTSE_Set, tse, tse_set->second) {
+                    ids.insert((*tse)->GetBlobId());
+                }
             }
         }
-        tse_set = m_TSE_orphan_annot.find(idh);
-        if (tse_set != m_TSE_orphan_annot.end()) {
-            ITERATE(TTSE_Set, tse, tse_set->second) {
-                ids.insert((*tse)->GetBlobId());
+        if ( types & fLoaded_orphan_annots ) {
+            TSeq_id2TSE_Set::const_iterator tse_set =
+                m_TSE_orphan_annot.find(idh);
+            if (tse_set != m_TSE_orphan_annot.end()) {
+                ITERATE(TTSE_Set, tse, tse_set->second) {
+                    ids.insert((*tse)->GetBlobId());
+                }
             }
         }
-    }}
+    }
     ITERATE(TLoadedBlob_ids_Set, it, ids) {
         blob_ids.push_back(*it);
     }

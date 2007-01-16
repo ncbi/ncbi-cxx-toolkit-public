@@ -1249,7 +1249,9 @@ void CGBReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                                TLoadedBlob_ids& blob_ids) const
 {
     CDataSource::TLoadedBlob_ids blob_ids2;
-    m_Loader->GetDataSource()->GetLoadedBlob_ids(idh, blob_ids2);
+    m_Loader->GetDataSource()->GetLoadedBlob_ids(idh,
+                                                 CDataSource::fLoaded_bioseqs,
+                                                 blob_ids2);
     ITERATE(CDataSource::TLoadedBlob_ids, id, blob_ids2) {
         blob_ids.push_back(m_Loader->GetRealBlobId(*id));
     }

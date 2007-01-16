@@ -256,7 +256,16 @@ public:
                                  const TTSE_LockSet& history) const;
 
     typedef vector<TBlobId> TLoadedBlob_ids;
+    enum {
+        fLoaded_bioseqs       = 1<<0,
+        fLoaded_bioseq_annots = 1<<1,
+        fLoaded_orphan_annots = 1<<2,
+        fLoaded_annots        = fLoaded_bioseq_annots | fLoaded_orphan_annots,
+        fLoaded_all           = fLoaded_bioseqs | fLoaded_annots
+    };
+    typedef int TLoadedTypes;
     void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
+                           TLoadedTypes types,
                            TLoadedBlob_ids& blob_ids) const;
 
     virtual void Prefetch(CPrefetchTokenOld_Impl& token);
