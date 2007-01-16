@@ -16,8 +16,8 @@
 
 echo "[`date`]"
 
-cvs_location=`echo '$Source$' | sed "s%\\$[S]ource: *\\([^$][^$]*\\) \\$.*%\\1%"`
-cvs_revision=`echo '$Revision$' | sed "s%\\$[R]evision: *\\([^$][^$]*\\) \\$.*%\\1%"`
+svn_location=`echo '$URL$' | sed "s%\\$[U]RL: *\\([^$][^$]*\\) \\$.*%\\1%"`
+svn_revision=`echo '$Revision$' | sed "s%\\$[R]evision: *\\([^$][^$]*\\) \\$.*%\\1%"`
 
 script_name=`basename $0`
 script_dir=`dirname $0`
@@ -37,7 +37,7 @@ Usage()
   cat <<EOF 1>&2
 Usage:
    $script_name <install_dir>
-              [--without-src] [--without-doc] [--with-purge] [--with-cvs]
+              [--without-src] [--without-doc] [--with-purge] [--with-svn]
 
 Synopsis:
    Install NCBI C++ source tree (shared sources, headers, scripts, docs).
@@ -48,10 +48,10 @@ Arguments:
    --without-src  - do not install source files (*.cpp, *.c from "src/" dir)
    --without-doc  - do not install HTML documentation (from "doc/" dir)
    --with-purge   - delete all(!) build dirs under the <install_dir>
-   --with-cvs     - install CVS sub-dirs
+   --with-svn     - install .svn sub-dirs
 
-Script:  CVS location/revision, run directory, and run command:
-   $cvs_location | R$cvs_revision
+Script:  Subversion location/revision, run directory, and run command:
+   $svn_location | r$svn_revision
    $run_dir
    $run_cmd
 
@@ -78,7 +78,8 @@ for x_arg in "$@" ; do
     --without-src )  with_src="no"    ;;
     --without-doc )  with_doc="no"    ;;
     --with-purge  )  with_purge="yes" ;;
-    --with-cvs    )  with_cvs="yes"   ;;
+    --with-svn    )  with_svn="yes"   ;;
+    --with-cvs    )  with_svn="yes"   ;; # accept for now
     "" )                              ;; # Work around a bug in OSF/1's shell.
     * )  Usage "Unknown argument \"$x_arg\"" ;;
   esac
@@ -149,9 +150,9 @@ for d in $install_dirs ; do
      ( cd $install_dir  &&  tar xfb - $bs )
    test $? -eq 0  ||  Usage "Failed to copy to $install_dir/$d"
 
-   # Get rid of the CVS sub-dirs
-   if test "$with_cvs" != "yes" ; then
-      find $install_dir/$d -type d -name CVS -prune -exec rm -r {} \;
+   # Get rid of the .svn sub-dirs
+   if test "$with_svn" != "yes" ; then
+      find $install_dir/$d -type d -name .svn -prune -exec rm -r {} \;
    fi
 done
 
