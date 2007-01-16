@@ -78,10 +78,6 @@ public:
     /// Use CTempString(const char* str, size_type len) instead
     NCBI_DEPRECATED_CTOR(CTempString(const char* str, size_type pos, size_type len));
 
-    /// Templatized initialization from a string literal.  This version is
-    /// optimized to deal specifically with constant-sized built-in arrays.
-    template<size_t Size> CTempString(const char (&str)[Size]);
-
     CTempString(const string& str);
     /// Use CTempString(const char* str, size_type pos, size_type len) instead
     NCBI_DEPRECATED_CTOR(CTempString(const string& str, size_type length));
@@ -327,11 +323,13 @@ CTempString::CTempString(const char* str)
 }
 
 
+/// Templatized initialization from a string literal.  This version is
+/// optimized to deal specifically with constant-sized built-in arrays.
 template<size_t Size>
 inline
-CTempString::CTempString(const char (&str)[Size])
-    : m_String(str), m_Length(Size-1)
+CTempString literal(const char (&str)[Size])
 {
+    return CTempString(str, Size-1);
 }
 
 
