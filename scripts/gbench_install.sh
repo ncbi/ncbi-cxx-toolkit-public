@@ -325,7 +325,7 @@ chmod 755 ${target_dir}/bin/move-gbench.sh
 
 COMMON_ExecRB ${target_dir}/bin/move-gbench.sh ${target_dir}
 
-find ${source_dir}/../res -type f | grep -v '/CVS/' |
+find ${source_dir}/../res -type f | grep -v '/.svn/' |
 while read file
 do
     new_file=`echo $file | sed "s,^${source_dir}/../res/,,"`
