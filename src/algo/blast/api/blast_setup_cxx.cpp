@@ -743,8 +743,8 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
 
 /// Tests if a number represents a valid residue
 /// @param res Value to test [in]
-/// @return TRUE if value is a valid residue ( < 26)
-static inline bool s_IsValidResidue(Uint1 res) { return res < 26; }
+/// @return TRUE if value is a valid residue
+static inline bool s_IsValidResidue(Uint1 res) { return res < BLASTAA_SIZE; }
 
 /// Protein sequences are always encoded in eBlastEncodingProtein and always 
 /// have sentinel bytes around sequence data
@@ -1567,7 +1567,7 @@ void CBlastQueryFilteredFrames::AddSeqLoc(const objects::CSeq_interval & intv,
 
 BlastSeqLoc ** CBlastQueryFilteredFrames::operator[](int frame)
 {
-    // Asking for a frame verifies that it is a valid vaue for the
+    // Asking for a frame verifies that it is a valid value for the
     // type of search you are running.
     
     x_VerifyFrame(frame);
