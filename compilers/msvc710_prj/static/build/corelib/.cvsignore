@@ -1,9 +1,0 @@
-*.ncb
-*.suo
-*.log
-Debug*
-Release*
-test
-test_mt.lib.vcproj
-
-

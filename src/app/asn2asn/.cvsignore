@@ -1,6 +1,0 @@
-.cvsignore
-[A-Z]*.cpp
-*__.cpp
-res
-data
-.*.er
