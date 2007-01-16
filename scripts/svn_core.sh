@@ -10,7 +10,7 @@
 #  NCBI C++ libraries and applications for all platforms, or just for the
 #  specified one.
 
-REPOS='https://svn.ncbi.nlm.nih.gov/repos/toolkit_test/trunk/c++'
+REPOS='https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++'
 
 ##  Cmd.-line args
 script_name=`basename $0`

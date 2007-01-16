@@ -9,7 +9,7 @@ use File::Find;
 use Cwd;
 use Fcntl qw(F_SETFD);
 
-my $DefaultRepos = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit_test/trunk/c++';
+my $DefaultRepos = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++';
 
 my @UnsafeVars = qw(PATH IFS CDPATH ENV BASH_ENV TERM);
 my %OldEnv;
