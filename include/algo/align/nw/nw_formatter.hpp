@@ -1,5 +1,5 @@
-#ifndef ALGO___NW_FORMAT__HPP
-#define ALGO___NW_FORMAT__HPP
+#ifndef ALGO_ALIGN__NW_FORMAT__HPP
+#define ALGO_ALIGN__NW_FORMAT__HPP
 
 /* $Id$
 * ===========================================================================
@@ -41,10 +41,12 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <algo/align/nw/nw_spliced_aligner.hpp>
+
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
-class CNWAligner;
 
 BEGIN_SCOPE(objects)
     class CSeq_align;
@@ -56,10 +58,6 @@ class NCBI_XALGOALIGN_EXPORT CNWFormatter: public CObject
 public:
 
     CNWFormatter(const CNWAligner& aligner);
-
-    // setters
-    void SetSeqIds(CConstRef<objects::CSeq_id> id1, 
-                   CConstRef<objects::CSeq_id> id2);
     
     // supported text formats
     enum ETextFormatType {
@@ -71,19 +69,63 @@ public:
         eFormatExonTableEx //
     };
 
-    void AsText(string* output, ETextFormatType type,
-                size_t line_width = 100) const;
-
+    // seq-align format flags
     enum ESeqAlignFormatFlags {
         eSAFF_None = 0,
         eSAFF_DynProgScore = 1,
         eSAFF_Identity = 2
     };
 
+    // setters
+
+    void SetSeqIds(CConstRef<objects::CSeq_id> id1, 
+                   CConstRef<objects::CSeq_id> id2);
+
+    // formatters
+
+    void AsText(string* output, ETextFormatType type,
+                size_t line_width = 100) const;
+
     CRef<objects::CSeq_align> AsSeqAlign (
         TSeqPos query_start, objects::ENa_strand query_strand,
         TSeqPos subj_start,  objects::ENa_strand subj_strand,
         ESeqAlignFormatFlags flags = eSAFF_None) const;
+
+
+    // SSegment is a structural unit of a spliced alignment. It represents
+    // either an exon or an unaligned segment.
+    struct NCBI_XALGOALIGN_EXPORT SSegment {
+        
+    public:
+        
+        bool   m_exon;    // true == exon; false == unaligned
+        double m_idty;    // ranges from 0.0 to 1.0
+        size_t m_len;     // lenths of the alignment, not of an interval
+        size_t m_box [4]; // query([0],[1]) and subj([2],[3]) coordinates
+        string m_annot;   // text description like AG<exon>GT
+        string m_details; // transcript for exons, '-' for gaps
+
+        CNWAligner::TScore m_score; // dynprog score
+        
+        void ImproveFromLeft(const char* seq1, const char* seq2,
+                             CConstRef<CSplicedAligner> aligner);
+        void ImproveFromRight(const char* seq1, const char* seq2,
+                              CConstRef<CSplicedAligner> aligner);
+        
+        void Update(const CNWAligner* aligner); // recompute members
+        const char* GetDonor(void) const;       // raw pointers to parts of annot
+        const char* GetAcceptor(void) const;    // or zero if less than 2 chars
+
+        static bool s_IsConsensusSplice(const char* donor, const char* acceptor);
+        
+        // NetCache-related serialization
+        typedef vector<char> TNetCacheBuffer;
+        void ToBuffer   (TNetCacheBuffer* buf) const;
+        void FromBuffer (const TNetCacheBuffer& buf);
+    };
+
+    // partition a spliced alignment into SSegment's
+    void MakeSegments(deque<SSegment>* psegments) const;
 
 private:
 
@@ -91,8 +133,7 @@ private:
     CConstRef<objects::CSeq_id>       m_Seq1Id, m_Seq2Id;
 
     size_t x_ApplyTranscript(vector<char>* seq1_transformed,
-                             vector<char>* seq2_transformed) const;
-    
+                             vector<char>* seq2_transformed) const;    
 };
 
 
@@ -102,12 +143,13 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: nw_formatter.hpp,v $
  * Revision 1.7  2005/04/04 16:30:55  kapustin
  * Specify which score to include when formatting as seq-align
  *
  * Revision 1.6  2005/02/23 16:58:45  kapustin
- * Use CSeq_id's instead of strings. Modify AsSeqAlign to allow specification of alignment's starts and strands.
+ * Use CSeq_id's instead of strings. Modify AsSeqAlign to allow specification 
+ * of alignment's starts and strands.
  *
  * Revision 1.5  2004/05/17 14:50:46  kapustin
  * Add/remove/rearrange some includes and object declarations
@@ -127,4 +169,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* ALGO___NW_FORMATTER__HPP */
+#endif  /* ALGO_ALIGN__NW_FORMAT__HPP */
