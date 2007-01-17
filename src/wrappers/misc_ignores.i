@@ -248,6 +248,9 @@
 // sm_ParamDescription contains const members
 %ignore *::SNcbiParamDesc_READ_FASTA_USE_NEW_IMPLEMENTATION::sm_ParamDescription;
 
+// Has protected enum as an argument
+%ignore ncbi::CNetScheduleAPI::ProcessServerError;
+
 
 /*
  * ===========================================================================
