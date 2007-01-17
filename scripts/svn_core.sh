@@ -196,39 +196,20 @@ case "$platform" in
     Checkout ${srctree}include/dbapi
     Checkout ${srctree}src/connect/daemons
     Checkout ${srctree}include/connect/daemons
-    Checkout ${srctree}compilers/WorkShop.sh
-    Checkout ${srctree}compilers/WorkShop5.sh
-    Checkout ${srctree}compilers/WorkShop51.sh
-    Checkout ${srctree}compilers/WorkShop52.sh
-    Checkout ${srctree}compilers/WorkShop53.sh
-    Checkout ${srctree}compilers/WorkShop54.sh
-    Checkout ${srctree}compilers/cxx_filter.WorkShop5.sh
-    Checkout ${srctree}compilers/cxx_filter.WorkShop51.sh
-    Checkout ${srctree}compilers/cxx_filter.WorkShop52.sh
-    Checkout ${srctree}compilers/cxx_filter.WorkShop53.sh
-    Checkout ${srctree}compilers/cxx_filter.WorkShop53.awk
-    Checkout ${srctree}compilers/cxx_filter.WorkShop54.sh
-    Checkout ${srctree}compilers/cxx_filter.WorkShop54.awk
-    Checkout ${srctree}compilers/MIPSpro73.sh
-    Checkout ${srctree}compilers/cxx_filter.MIPSpro73.sh
-    Checkout ${srctree}compilers/KCC.sh
-    Checkout ${srctree}compilers/cxx_filter.KCC.sh
-    Checkout ${srctree}compilers/wrapper.KCC.sh
-    Checkout ${srctree}compilers/ICC.sh
-    Checkout ${srctree}compilers/cxx_filter.ICC.sh
-    Checkout ${srctree}compilers/Compaq.sh
-    Checkout ${srctree}compilers/GCC.sh
+    Checkout -N ${srctree}compilers
     Checkout -N ${srctree}src/check/ignore.lst
     ;;
   msvc )
     Checkout ${srctree}src/dbapi
     Checkout ${srctree}include/dbapi
+    Checkout -N ${srctree}compilers
     Checkout ${srctree}compilers/msvc710_prj
     Checkout ${srctree}compilers/msvc800_prj
     ;;
   cygwin)
     Checkout ${srctree}src/dbapi
     Checkout ${srctree}include/dbapi
+    Checkout -N ${srctree}compilers
     Checkout ${srctree}compilers/cygwin
     Checkout -N ${srctree}src/check/ignore.lst
     ;;
