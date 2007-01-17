@@ -79,9 +79,11 @@ GC-Assembly ::= SEQUENCE
     desc Seqdesc OPTIONAL,
 
     -- flag: is this assembly partial?
+    -- **NOTE: not set = not known!!
     partial BOOLEAN OPTIONAL,
 
     -- level of coverage for this assembly
+    -- **NOTE: not set = not known!!
     coverage INTEGER OPTIONAL,
 
     -- collections of molecules for this assembly
@@ -117,10 +119,14 @@ GC-Molecule ::= SEQUENCE
         ordered-set Delta-ext
     },
     
-    -- components used to produce this molecule
-    components GC-SequenceBag OPTIONAL,
+    -- sequence used to produce this molecule
+    -- these are not necessarily GenBank components; they are component
+    -- parts of this molecule
+    components SET OF GC-SequenceBag OPTIONAL,
 
     -- unlinked components in this molecule
+    -- these are unordered bits that belong to this molecule but whose
+    -- final relationship within the molecule is unknown
     unlinked SET OF GC-SequenceBag OPTIONAL
 }
 
