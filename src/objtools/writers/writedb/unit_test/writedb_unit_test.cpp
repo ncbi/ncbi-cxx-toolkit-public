@@ -50,6 +50,9 @@
 #endif
 #include <boost/current_function.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using boost::unit_test::test_suite;
