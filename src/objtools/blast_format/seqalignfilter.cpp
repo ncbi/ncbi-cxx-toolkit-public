@@ -286,9 +286,9 @@ void CSeqAlignFilter::x_GenerateNewGis(
     if (find(vec_out_gis.begin(), vec_out_gis.end(), main_old_gi) != vec_out_gis.end())
         main_new_gi = main_old_gi;
     else
-        main_new_gi = vec_out_gis[i_out_gi++];
+        main_new_gi = vec_out_gis[0];  //main_new_gi = vec_out_gis[i_out_gi++];
 
-    int num_gis_left = vec_out_gis.size() - 1;
+    int num_gis_left = vec_out_gis.size();  //int num_gis_left = vec_out_gis.size() - 1;
     if (num_gis_left > 0)
     {
         // set the extra gi's (copy & filter the old ones, then add the new ones)
@@ -309,8 +309,10 @@ void CSeqAlignFilter::x_GenerateNewGis(
             int out_gi = vec_out_gis[i_out_gi];
             if (find(vec_old_extra_gis.begin(), vec_old_extra_gis.end(), out_gi)
                 == vec_old_extra_gis.end())    // not one of the old gis (already copied)
-                if (out_gi != main_new_gi)    // not the main gi (already set)
+            {
+                // if (out_gi != main_new_gi)    // not the main gi (already set)
                      vec_new_extra_gis[i_new_gi++] = out_gi;
+            }
         }
     }
     else
@@ -532,7 +534,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: seqalignfilter.cpp,v $
  * Revision 1.3  2006/09/28 15:58:01  avagyanv
  * Fixed whitespace issues
  *
