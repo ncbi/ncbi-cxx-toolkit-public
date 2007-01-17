@@ -312,7 +312,7 @@ TSeqPos CSeqMap::x_ResolveSegmentLength(size_t index, CScope* scope) const
 
 TSeqPos CSeqMap::x_ResolveSegmentPosition(size_t index, CScope* scope) const
 {
-    if ( index > x_GetSegmentsCount() ) {
+    if ( index > x_GetLastEndSegmentIndex() ) {
         x_GetSegmentException(index);
     }
     size_t resolved = m_Resolved;
@@ -343,7 +343,7 @@ size_t CSeqMap::x_FindSegment(TSeqPos pos, CScope* scope) const
     TSeqPos resolved_pos = x_GetSegment(resolved).m_Position;
     if ( resolved_pos <= pos ) {
         do {
-            if ( resolved >= x_GetSegmentsCount() ) {
+            if ( resolved >= x_GetLastEndSegmentIndex() ) {
                 // end of segments
                 m_Resolved = resolved;
                 return size_t(-1);
@@ -1045,7 +1045,7 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
     CFastMutexGuard guard(m_SeqMap_Mtx);
     while ( length ) {
         // get segment
-        if ( index > x_GetSegmentsCount() ) {
+        if ( index > x_GetLastEndSegmentIndex() ) {
             x_GetSegmentException(index);
         }
         const CSegment& seg = x_GetSegment(index);
@@ -1083,7 +1083,7 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
 bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
 {
     inst.SetLength(GetLength(0));
-    bool single_segment = x_GetSegmentsCount() == 2;
+    bool single_segment = x_GetRealSegmentsCount() == 1;
     if ( HasSegmentOfType(eSeqData) ) {
         if ( single_segment && !inst.IsSetExt() ) {
             // seq-data

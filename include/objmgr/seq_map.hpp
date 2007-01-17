@@ -275,7 +275,7 @@ private:
     
 protected:    
     // interface for iterators
-    size_t x_GetSegmentsCount(void) const;
+    size_t x_GetRealSegmentsCount(void) const;
     size_t x_GetLastEndSegmentIndex(void) const;
     size_t x_GetFirstEndSegmentIndex(void) const;
 
@@ -362,9 +362,9 @@ protected:
 //  CSeqMap: inline methods
 
 inline
-size_t CSeqMap::x_GetSegmentsCount(void) const
+size_t CSeqMap::x_GetRealSegmentsCount(void) const
 {
-    return m_Segments.size() - 1;
+    return m_Segments.size() - 2;
 }
 
 
@@ -421,7 +421,7 @@ inline
 TSeqPos CSeqMap::GetLength(CScope* scope) const
 {
     if (m_SeqLength == kInvalidSeqPos) {
-        m_SeqLength = x_GetSegmentPosition(x_GetSegmentsCount(), scope);
+        m_SeqLength = x_GetSegmentPosition(x_GetLastEndSegmentIndex(), scope);
     }
     return m_SeqLength;
 }
