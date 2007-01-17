@@ -314,10 +314,10 @@ void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
         
         // update the first two annotation symbols
         if(m_annot.size() > 2 && m_annot[2] == '<') {
-            int  j1 = m_box[2] - 2;
+            int  j1 = int(m_box[2]) - 2;
             char c1 = j1 >= 0? seq2[j1]: ' ';
             m_annot[0] = c1;
-            int  j2 = m_box[2] - 2;
+            int  j2 = int(m_box[2]) - 1;
             char c2 = j2 >= 0? seq2[j2]: ' ';
             m_annot[1] = c2;
         }
