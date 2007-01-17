@@ -152,7 +152,7 @@ for d in $install_dirs ; do
 
    # Get rid of the .svn sub-dirs
    if test "$with_svn" != "yes" ; then
-      find $install_dir/$d -type d -name .svn -prune -exec rm -r {} \;
+      find $install_dir/$d -type d -name .svn -prune -exec rm -rf {} \;
    fi
 done
 
