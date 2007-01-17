@@ -141,6 +141,9 @@ SLockedQueue::SLockedQueue(const string& queue_name,
 {
     _ASSERT(!queue_name.empty());
     q_notif.append(queue_name);
+    for (TStatEvent n = 0; n < eStatNumEvents; ++n) {
+        m_EventCounter[n].Set(0);
+    }
     m_StatThread.Reset(new CStatisticsThread(*this));
     m_StatThread->Run();
     m_LastId.Set(0);
