@@ -105,10 +105,10 @@ svn_cmd="`which svn-1.4.0 2> /dev/null || echo svn`"
 test -n "$svn_cmd" || svn_cmd='svn'
 
 if test "$export" = "yes" ; then
-  checkout_cmd="svn export -r $revision $REPOS/"
+  checkout_cmd="$svn_cmd export -r $revision $REPOS/"
   Usage "'--export' is not implemented"
 else
-  checkout_cmd="svn update -r $revision "
+  checkout_cmd="$svn_cmd update -r $revision "
 fi
 
 
@@ -128,7 +128,7 @@ fi
 echo 'Retrieving source files from Subversion:'
 
 ## Initial checkout
-svn checkout -N -r $revision $REPOS $target_dir || \
+$svn_cmd checkout -N -r $revision $REPOS $target_dir || \
 	Usage "Cannot checkout $REPOS"
 need_cleanup="yes"
 cd "$target_dir"  ||  Usage "Cannot cd to $target_dir"
