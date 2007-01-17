@@ -43,7 +43,7 @@ class NCBI_XNCBI_EXPORT CPluginManagerGetterImpl
 public:
     typedef string TKey;
     typedef CPluginManagerBase TObject;
-    
+
     static SSystemFastMutex& GetMutex(void);
 
     static TObject* GetBase(const TKey& key);
@@ -62,12 +62,12 @@ public:
     typedef CPluginManagerGetterImpl::TObject TPluginManagerBase;
     typedef Interface                         TInterface;
     typedef CPluginManager<TInterface>        TPluginManager;
-    
+
     static TPluginManager* Get(void)
         {
             return Get(CInterfaceVersion<TInterface>::GetName());
         }
-    
+
     static TPluginManager* Get(const string& key)
         {
             TPluginManagerBase* pm_base;
@@ -77,8 +77,8 @@ public:
                 if ( !pm_base ) {
                     pm_base = new TPluginManager;
                     CPluginManagerGetterImpl::PutBase(key, pm_base);
-                    LOG_POST(Info << "CPluginManagerGetter<>::Get(): "
-                             "created new instance: "<< key);
+                    _TRACE("CPluginManagerGetter<>::Get(): "
+                           "created new instance: "<< key);
                 }
                 _ASSERT(pm_base);
             }}
@@ -105,7 +105,7 @@ class CPluginManagerStore
 public:
 
     /// Utility class to get plugin manager from the store
-    /// If it is not there, class will create and add new instance 
+    /// If it is not there, class will create and add new instance
     /// to the store.
     ///
     /// @note
@@ -121,7 +121,7 @@ public:
         {
             return CPluginManagerGetter<TInterface>::Get();
         }
-        
+
         /// @param pm_name
         ///    Storage name for plugin manager
         static
