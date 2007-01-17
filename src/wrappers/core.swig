@@ -276,8 +276,10 @@ connect/services/grid_worker_app.hpp
 connect/services/grid_worker_app_impl.hpp
 connect/services/netcache_client.hpp
 connect/services/neticache_client.hpp
+connect/services/netschedule_api.hpp
 connect/services/netschedule_client.hpp
 connect/services/netschedule_storage.hpp
+connect/services/netservice_api.hpp
 connect/services/netservice_client.hpp
 connect/services/ns_client_factory.hpp
 connect/threaded_server.hpp
