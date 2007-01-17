@@ -46,12 +46,6 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_filter.h>
 
 
-/** Declared in blast_def.h as extern const. */
-const int kDustLevel = 20;
-const int kDustWindow = 64;
-const int kDustLinker = 1;
-
-
 /* local, file scope, structures and variables */
 
 /** endpoints

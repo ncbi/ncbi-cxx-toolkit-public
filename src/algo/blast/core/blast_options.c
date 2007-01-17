@@ -45,6 +45,11 @@ const int kUngappedHSPNumMax = 400;  /**< Suggested max. number of HSPs for an u
 
 const double kPSSM_NoImpalaScaling = 1.0;
 
+/** Declared in blast_def.h as extern const. */
+const int kDustLevel = 20;
+const int kDustWindow = 64;
+const int kDustLinker = 1;
+
 SDustOptions* SDustOptionsFree(SDustOptions* dust_options)
 {
     if (dust_options)
@@ -1464,7 +1469,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
 /*
  * ===========================================================================
  *
- * $Log$
+ * $Log: blast_options.c,v $
  * Revision 1.191  2006/12/13 14:13:37  madden
  * Doxygen fixes
  *
