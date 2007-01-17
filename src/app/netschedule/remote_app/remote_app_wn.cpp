@@ -104,21 +104,28 @@ public:
         
           
         int ret = -1;
-        bool finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
-                                         args, 
-                                         request->GetStdIn(), 
-                                         result->GetStdOut(), 
-                                         result->GetStdErr(),
-                                         ret,
-                                         context,
-                                         m_Params.GetMaxAppRunningTime(),
-                                         request->GetAppRunTimeout(),
-                                         m_Params.GetKeepAlivePeriod(),
-                                         tmp_path,
-                                         NULL,
-                                         m_Params.GetMonitorAppPath(),
-                                         m_Params.GetMaxMonitorRunningTime(),
-                                         m_Params.GetMonitorPeriod());
+        bool finished_ok = false;
+        try {
+            finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
+                                        args, 
+                                        request->GetStdIn(), 
+                                        result->GetStdOut(), 
+                                        result->GetStdErr(),
+                                        ret,
+                                        context,
+                                        m_Params.GetMaxAppRunningTime(),
+                                        request->GetAppRunTimeout(),
+                                        m_Params.GetKeepAlivePeriod(),
+                                        tmp_path,
+                                        NULL,
+                                        m_Params.GetMonitorAppPath(),
+                                        m_Params.GetMaxMonitorRunningTime(),
+                                        m_Params.GetMonitorPeriod());
+        } catch (...) {
+            request->Reset();
+            result->Reset();
+            throw;
+        }
 
         result->SetRetCode(ret); 
         result->Send(context.GetOStream());

@@ -209,10 +209,17 @@ public:
         CPipeProcessWatcher_Base callback(m_MaxAppRunningTime, 0);
         CNcbiStrstream in;
         int exit_value;
-        CPipe::EFinish ret = CPipe::ExecWait(m_App, args, in, 
-                                             out, err, exit_value, 
-                                             kEmptyStr, NULL,
-                                             &callback);
+        CPipe::EFinish ret = CPipe::eCanceled;
+        try {
+            ret = CPipe::ExecWait(m_App, args, in, 
+                                  out, err, exit_value, 
+                                  kEmptyStr, NULL,
+                                  &callback);
+        } catch( exception& ex ) {
+            err << ex.what();
+        } catch( ... ) {
+            err << "Unknown error";
+        }
         if(ret != CPipe::eDone || exit_value > 2)
             return 3;
         return exit_value;
@@ -275,8 +282,10 @@ public:
             CNcbiStrstream out;
             CNcbiStrstream err;
             vector<string> args;
-            args.push_back( "-pid " + NStr::UInt8ToString((Uint8)pid) );
-            args.push_back( "-jid " + m_Context.GetJobKey() );
+            args.push_back( "-pid");
+            args.push_back( NStr::UInt8ToString((Uint8)pid) );
+            args.push_back( "-jid");
+            args.push_back( m_Context.GetJobKey() );
 
             int ret = m_Monitor->Run(args, out, err);
             switch(ret) {
@@ -293,14 +302,14 @@ public:
                 return CPipe::IProcessWatcher::eStop;
             case 2: 
                 {
-                x_Log("job failed", err);
-                string errmsg;
-                if( out.pcount() > 0 ) {
-                    out << '\0';
-                    errmsg = out.str();
-                } else 
-                    errmsg = "Monitor requested the job termination.";
-                throw runtime_error(errmsg);
+                    x_Log("job failed", err);
+                    string errmsg;
+                    if( out.pcount() > 0 ) {
+                        out << '\0';
+                        errmsg = out.str();
+                    } else 
+                        errmsg = "Monitor requested the job termination.";
+                    throw runtime_error(errmsg);
                 }
                 break;
             default:
