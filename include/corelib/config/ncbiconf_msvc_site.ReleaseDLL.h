@@ -1,3 +1,4 @@
+
 /* $Id$
 * ===========================================================================
 *
@@ -23,10 +24,35 @@
 *
 * ===========================================================================
 *
-* Author:  Andrei Gourianov
+* Author:  .......
 *
 * File Description:
-*   This originally empty file will be replaced by project_tree_builder.exe
-*   when configuring the toolkit
+*   .......
 *
+* ATTENTION:
+*   Do not edit or commit this file into CVS as this file will
+*   be overwritten (by PROJECT_TREE_BUILDER) without warning!
 */
+
+
+#define HAVE_BDB 1
+#define HAVE_BDB_CACHE 1
+#define HAVE_BERKELEY_DB 1
+#define HAVE_BOOST_TEST 1
+#define HAVE_CPPUNIT 1
+#define HAVE_FLTK 1
+#define HAVE_ICU 1
+#define HAVE_LIBCONNEXT 1
+#define HAVE_LIBGIF 1
+#define HAVE_LIBJPEG 1
+#define HAVE_LIBOPENSSL 1
+#define HAVE_LIBPNG 1
+#define HAVE_LIBTIFF 1
+#define HAVE_ODBC 1
+#define HAVE_ODBCSS_H 1
+#define HAVE_OPENGL 1
+#define HAVE_PYTHON 1
+/* #undef HAVE_SWIG */
+#define HAVE_XALAN 1
+#define HAVE_XERCES 1
+
