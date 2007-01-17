@@ -55,6 +55,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 /// BDB table to store queue
 ///
 /// @internal
@@ -95,22 +96,20 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldString       err_msg;         ///< Error message (exception::what())
     CBDB_FieldString       progress_msg;    ///< Progress report message
 
-
-    CBDB_FieldString       cout;            ///< Reserved
-    CBDB_FieldString       cerr;            ///< Reserved
+    CBDB_FieldString       tags;            ///< Tags for the job
 
     SQueueDB()
     {
         DisableNull(); 
 
-        BindKey("id",      &id);
+        BindKey("id", &id);
 
-        BindData("status", &status);
-        BindData("time_submit", &time_submit);
-        BindData("time_run",    &time_run);
-        BindData("time_done",   &time_done);
-        BindData("timeout",     &timeout);
-        BindData("run_timeout", &run_timeout);
+        BindData("status",       &status);
+        BindData("time_submit",  &time_submit);
+        BindData("time_run",     &time_run);
+        BindData("time_done",    &time_done);
+        BindData("timeout",      &timeout);
+        BindData("run_timeout",  &run_timeout);
 
         BindData("subm_addr",    &subm_addr);
         BindData("subm_port",    &subm_port);
@@ -134,10 +133,10 @@ struct SQueueDB : public CBDB_File
         BindData("err_msg", &err_msg, kNetScheduleMaxDBErrSize);
         BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);
 
-        BindData("cout",  &cout, kNetScheduleMaxDBDataSize);
-        BindData("cerr",  &cerr, kNetScheduleMaxDBDataSize);
+        BindData("tags",  &tags);
     }
 };
+
 
 /// Index of queue database (affinity to jobs)
 ///
@@ -145,16 +144,17 @@ struct SQueueDB : public CBDB_File
 ///
 struct SQueueAffinityIdx : public CBDB_BvStore< bm::bvector<> >
 {
-    CBDB_FieldUint4     aff_id;
+    CBDB_FieldUint4 aff_id;
 
-    typedef CBDB_BvStore< bm::bvector<> >  TParent;
+    typedef CBDB_BvStore< bm::bvector<> > TParent;
 
     SQueueAffinityIdx()
     {
         DisableNull(); 
-        BindKey("aff_id",   &aff_id);
+        BindKey("aff_id", &aff_id);
     }
 };
+
 
 /// BDB table to store affinity
 ///
@@ -162,14 +162,14 @@ struct SQueueAffinityIdx : public CBDB_BvStore< bm::bvector<> >
 ///
 struct SAffinityDictDB : public CBDB_File
 {
-    CBDB_FieldUint4        aff_id;        ///< Affinity token id
-    CBDB_FieldString       token;         ///< Affinity token
+    CBDB_FieldUint4  aff_id;        ///< Affinity token id
+    CBDB_FieldString token;         ///< Affinity token
 
     SAffinityDictDB()
     {
         DisableNull(); 
-        BindKey("aff_id",  &aff_id);
-        BindData("token",  &token,  kNetScheduleMaxDBDataSize);
+        BindKey("aff_id", &aff_id);
+        BindData("token", &token, kNetScheduleMaxDBDataSize);
     }
 };
 
@@ -185,10 +185,31 @@ struct SAffinityDictTokenIdx : public CBDB_File
     SAffinityDictTokenIdx()
     {
         DisableNull(); 
-        BindKey("token",  &token,  kNetScheduleMaxDBDataSize);
-        BindData("aff_id",  &aff_id);
+        BindKey("token", &token, kNetScheduleMaxDBDataSize);
+        BindData("aff_id", &aff_id);
     }
 };
+
+
+/// BDB tag storage
+///
+/// @internal
+///
+struct STagDB : public CBDB_BvStore< bm::bvector<> >
+{
+    CBDB_FieldString tag_key;
+    CBDB_FieldString tag_val;
+
+    typedef CBDB_BvStore< bm::bvector<> > TParent;
+
+    STagDB()
+    {
+        DisableNull(); 
+        BindKey("tag_key", &tag_key);
+        BindKey("tag_val", &tag_val);
+    }
+};
+
 
 /// BDB table for storing queue descriptions
 ///
@@ -209,6 +230,7 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("comment", &comment);
     }
 };
+
 
 END_NCBI_SCOPE
 
@@ -247,4 +269,3 @@ END_NCBI_SCOPE
  */
 
 #endif /* NETSCHEDULE_DB__HPP */
-

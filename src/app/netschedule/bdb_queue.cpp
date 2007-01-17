@@ -447,12 +447,11 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
                            CBDB_Transaction::eNoAssociation);
     m_QueueDescriptionDB.SetTransaction(&trans);
 
-    string qclass;
-    string tmp;
     list<string> sections;
     reg.EnumerateSections(&sections);
 
     ITERATE(list<string>, it, sections) {
+        string qclass, tmp;
         const string& sname = *it;
         NStr::SplitInTwo(sname, "_", tmp, qclass);
         if (NStr::CompareNocase(tmp, "queue") != 0 &&
@@ -487,7 +486,7 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
         string qclass = reg.GetString("queues", qname, "");
         if (!qclass.empty()) {
             m_QueueDescriptionDB.queue = qname;
-            m_QueueDescriptionDB.kind = 0;
+            m_QueueDescriptionDB.kind = SLockedQueue::eKindStatic;
             m_QueueDescriptionDB.qclass = qclass;
             m_QueueDescriptionDB.UpdateInsert();
         }
@@ -498,10 +497,10 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
     CBDB_FileCursor cur(m_QueueDescriptionDB);
     cur.SetCondition(CBDB_FileCursor::eFirst);
 
-    string qname;
     while (cur.Fetch() == eBDB_Ok) {
-        qname = m_QueueDescriptionDB.queue;
-        qclass = m_QueueDescriptionDB.qclass;
+        string qname(m_QueueDescriptionDB.queue);
+        string qclass(m_QueueDescriptionDB.qclass);
+        int kind = m_QueueDescriptionDB.kind;
         TQueueParamMap::iterator it = m_QueueParamMap.find(qclass);
         if (it == m_QueueParamMap.end()) {
             LOG_POST(Error << "Can not find class " << qclass << " for queue " << qname);
@@ -519,7 +518,7 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
                 << "   Programs:              " << params.program_name          << "\n"
                 << "   Delete when done:      " << params.delete_when_done      << "\n"
             );
-            MountQueue(qname, qclass, params);
+            MountQueue(qname, qclass, kind, params);
         } else {
             // update non-critical queue parameters
             UpdateQueueParameters(qname, params);
@@ -533,11 +532,12 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
 
 void CQueueDataBase::MountQueue(const string& qname,
                                 const string& qclass,
+                                TQueueKind    kind,
                                 const SQueueParameters& params)
 {
     _ASSERT(m_Env);
 
-    auto_ptr<SLockedQueue> q(new SLockedQueue(qname, qclass));
+    auto_ptr<SLockedQueue> q(new SLockedQueue(qname, qclass, kind));
     string fname = string("jsq_") + qname + string(".db");
     q->db.SetEnv(*m_Env);
 
@@ -609,6 +609,7 @@ void CQueueDataBase::MountQueue(const string& qname,
 
     queue.subm_hosts.SetHosts(params.subm_hosts);
     queue.failed_retries = params.failed_retries;
+    queue.empty_lifetime = params.empty_lifetime;
     queue.wnode_hosts.SetHosts(params.wnode_hosts);
     queue.rec_dump_flag = params.dump_db;
 
@@ -636,14 +637,14 @@ void CQueueDataBase::CreateQueue(const string& qname, const string& qclass,
                            CBDB_Transaction::eNoAssociation);
     m_QueueDescriptionDB.SetTransaction(&trans);
     m_QueueDescriptionDB.queue = qname;
-    m_QueueDescriptionDB.kind = 1;
+    m_QueueDescriptionDB.kind = SLockedQueue::eKindDynamic;
     m_QueueDescriptionDB.qclass = qclass;
     m_QueueDescriptionDB.comment = comment;
     m_QueueDescriptionDB.UpdateInsert();
     trans.Commit();
     m_QueueDescriptionDB.Sync();
     const SQueueParameters& params = *(it->second);
-    MountQueue(qname, qclass, params);
+    MountQueue(qname, qclass, SLockedQueue::eKindDynamic, params);
     UpdateQueueLBParameters(qname, params);
 }
 
@@ -929,9 +930,13 @@ void CQueueDataBase::Purge(void)
     const int kStatusesSize = sizeof(statuses_to_delete_from) /
                               sizeof(CNetScheduleClient::EJobStatus);
 
+    vector<string> queues_to_delete;
     ITERATE(CQueueCollection, it, m_QueueCollection) {
         unsigned queue_del_rec = 0;
         const unsigned batch_size = 100;
+        if ((*it).IsExpired()) {
+            queues_to_delete.push_back(it.GetName());
+        }
         for (bool stop_flag = false; !stop_flag; ) {
             // stop if all statuses have less than batch_size jobs to delete
             stop_flag = true;
@@ -964,6 +969,14 @@ void CQueueDataBase::Purge(void)
 
     m_FreeStatusMemCnt += global_del_rec;
     x_OptimizeStatusMatrix();
+
+    ITERATE(vector<string>, it, queues_to_delete) {
+        try {
+            DeleteQueue((*it));
+        } catch (...) { // TODO: use more specific exception
+            LOG_POST(Warning << "Queue " << (*it) << " already gone.");
+        }
+    }
 
     if (global_del_rec > n_jobs_to_delete + n_queue_limit * m_QueueCollection.GetSize()) {
         SleepMilliSec(1000);
@@ -1162,6 +1175,27 @@ unsigned CQueue::CountRecs()
     return q->db.CountRecs();
 }
 
+bool CQueue::IsExpired(void)
+{
+    CRef<SLockedQueue> q(x_GetLQueue());
+    CFastMutexGuard guard(q->lock);
+    if (q->kind && q->empty_lifetime != -1) {
+        unsigned cnt = q->status_tracker.Count();
+        if (cnt) {
+            q->became_empty = -1;
+        } else {
+            if (q->became_empty != -1 &&
+                q->became_empty + q->empty_lifetime < time(0))
+            {
+                return true;
+            }
+            if (q->became_empty == -1)
+                q->became_empty = time(0);
+        }
+    }
+    return false;
+}
+
 
 #define NS_PRINT_TIME(msg, t) \
     do \
@@ -1239,8 +1273,6 @@ void CQueue::x_PrintJobDbStat(SQueueDB&      db,
     out << NS_PFNAME("output: ")       << "'" <<(string) db.output       << "'" << fsp;
     out << NS_PFNAME("err_msg: ")      << "'" <<(string) db.err_msg      << "'" << fsp;
     out << NS_PFNAME("progress_msg: ") << "'" <<(string) db.progress_msg << "'" << fsp;
-    out << NS_PFNAME("cout: ")         << "'" <<(string) db.cout         << "'" << fsp;
-    out << NS_PFNAME("cerr: ")         << "'" <<(string) db.cerr         << "'" << fsp;
     out << "\n";
 }
 
@@ -1460,15 +1492,11 @@ void CQueue::PrintWNodeHosts(CNcbiOstream& out) const
 
 
 unsigned int 
-CQueue::Submit(const char*   input,
+CQueue::Submit(SNS_SubmitRecord* rec,
                unsigned      host_addr,
                unsigned      port,
                unsigned      wait_timeout,
-               const char*   progress_msg,
-               const char*   affinity_token,
-               const char*   jout,
-               const char*   jerr,
-               unsigned      mask)
+               const char*   progress_msg)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
@@ -1479,30 +1507,31 @@ CQueue::Submit(const char*   input,
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    job_id,
                                    CNetScheduleClient::ePending);
+    rec->job_id = job_id;
     SQueueDB& db = q->db;
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
 
-    unsigned aff_id = 0;
-    if (affinity_token && *affinity_token) {
-        aff_id = q->affinity_dict.CheckToken(affinity_token, trans);
+    rec->affinity_id = 0;
+    if (*rec->affinity_token) { // not empty
+        rec->affinity_id =
+            q->affinity_dict.CheckToken(rec->affinity_token, trans);
     }
 
     {{
         CFastMutexGuard guard(q->lock);
 	    db.SetTransaction(&trans);
 
-        x_AssignSubmitRec(
-            job_id, input, host_addr, port, wait_timeout, 
-            progress_msg, aff_id, jout, jerr, mask);
+        x_AssignSubmitRec(db,
+            rec, host_addr, port, wait_timeout, progress_msg);
 
         db.Insert();
 
         // update affinity index
-        if (aff_id) {
+        if (rec->affinity_id) {
             q->aff_idx.SetTransaction(&trans);
-            x_AddToAffIdx_NoLock(aff_id, job_id);
+            x_AddToAffIdx_NoLock(rec->affinity_id, job_id);
         }
     }}
 
@@ -1516,11 +1545,11 @@ CQueue::Submit(const char*   input,
 
 
 unsigned int 
-CQueue::SubmitBatch(vector<SNS_BatchSubmitRec>& batch,
-                    unsigned                    host_addr,
-                    unsigned                    port,
-                    unsigned                    wait_timeout,
-                    const char*                 progress_msg)
+CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
+                    unsigned                  host_addr,
+                    unsigned                  port,
+                    unsigned                  wait_timeout,
+                    const char*               progress_msg)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
@@ -1539,7 +1568,7 @@ CQueue::SubmitBatch(vector<SNS_BatchSubmitRec>& batch,
                             CBDB_Transaction::eTransASync,
                             CBDB_Transaction::eNoAssociation);
         for (unsigned i = 0; i < batch.size(); ++i) {
-            SNS_BatchSubmitRec& subm = batch[i];
+            SNS_SubmitRecord& subm = batch[i];
             if (subm.affinity_id == (unsigned)kMax_I4) { // take prev. token
                 _ASSERT(i > 0);
                 subm.affinity_id = batch[i-1].affinity_id;
@@ -1568,16 +1597,10 @@ CQueue::SubmitBatch(vector<SNS_BatchSubmitRec>& batch,
 	    db.SetTransaction(&trans);
 
         unsigned job_id_cnt = job_id;
-        NON_CONST_ITERATE(vector<SNS_BatchSubmitRec>, it, batch) {
+        NON_CONST_ITERATE(vector<SNS_SubmitRecord>, it, batch) {
             it->job_id = job_id_cnt;
-            x_AssignSubmitRec(
-                job_id_cnt, 
-                it->input, host_addr, port, wait_timeout, 0/*progress_msg*/, 
-                it->affinity_id,
-                0, // cout
-                0, // cerr
-                0  // mask
-                );
+            x_AssignSubmitRec(db,
+                &(*it), host_addr, port, wait_timeout, progress_msg);
             ++job_id_cnt;
             db.Insert();
         } // ITERATE
@@ -1605,22 +1628,14 @@ CQueue::SubmitBatch(vector<SNS_BatchSubmitRec>& batch,
 
 
 void 
-CQueue::x_AssignSubmitRec(unsigned      job_id,
-                          const char*   input,
+CQueue::x_AssignSubmitRec(SQueueDB&     db,
+                          const SNS_SubmitRecord* rec,
                           unsigned      host_addr,
                           unsigned      port,
                           unsigned      wait_timeout,
-                          const char*   progress_msg,
-                          unsigned      aff_id,
-                          const char*   jout,
-                          const char*   jerr, 
-                          unsigned      mask)
+                          const char*   progress_msg)
 {
-    CRef<SLockedQueue> q(x_GetLQueue());
-
-    SQueueDB& db = q->db;
-
-    db.id = job_id;
+    db.id = rec->job_id;
     db.status = (int) CNetScheduleClient::ePending;
 
     db.time_submit = time(0);
@@ -1642,18 +1657,14 @@ CQueue::x_AssignSubmitRec(unsigned      job_id,
     db.run_counter = 0;
     db.ret_code = 0;
     db.time_lb_first_eval = 0;
-    db.aff_id = aff_id;
-    db.mask = mask;
+    db.aff_id = rec->affinity_id;
+    db.mask = rec->mask;
 
-    if (input) {
-        db.input = input;
-    }
+    if (*rec->input)
+        db.input = rec->input;
     db.output = "";
 
     db.err_msg = "";
-
-    db.cout = jout? jout : "";
-    db.cerr = jerr? jerr : "";
 
     if (progress_msg) {
         db.progress_msg = progress_msg;
@@ -2011,8 +2022,8 @@ CQueue::PutResultGetJob(unsigned int   done_job_id,
                         unsigned int   worker_node,
                         unsigned int*  job_id,
                         char*          input,
-                        char*          jout,
-                        char*          jerr,
+//                        char*          jout,
+//                        char*          jerr,
                         const string&  client_name,
                         unsigned*      job_mask)
 {
@@ -2096,7 +2107,6 @@ repeat_transaction:
                 upd_status =
                     x_UpdateDB_GetJobNoLock(*pqdb, curr, cur, trans,
                                          worker_node, pending_job_id, input,
-                                         jout, jerr,
                                          &job_aff_id,
                                          job_mask);
                 switch (upd_status) {
@@ -2576,8 +2586,6 @@ void CQueue::ReturnJob(unsigned int job_id)
 void CQueue::x_GetJobLB(unsigned int   worker_node,
                         unsigned int*  job_id, 
                         char*          input,
-                        char*          jout,
-                        char*          jerr,
                         unsigned*      job_mask)
 {
     _ASSERT(worker_node && input);
@@ -2706,14 +2714,6 @@ fetch_db:
 
         const char* fld_str = db.input;
         ::strcpy(input, fld_str);
-        if (jout) {
-            fld_str = db.cout;
-            ::strcpy(jout, fld_str);
-        }
-        if (jerr) {
-            fld_str = db.cerr;
-            ::strcpy(jerr, fld_str);
-        }
 
         unsigned run_counter = db.run_counter;
 
@@ -2979,17 +2979,16 @@ CQueue::x_FindPendingJob(const string&  client_name,
 
 
 void CQueue::GetJob(unsigned int   worker_node,
+                    // ??? user SNS_SubmitRecord here
                     unsigned int*  job_id, 
                     char*          input,
-                    char*          jout,
-                    char*          jerr,
                     const string&  client_name,
                     unsigned*      job_mask)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
     if (q->lb_flag) {
-        x_GetJobLB(worker_node, job_id, input, jout, jerr, job_mask);
+        x_GetJobLB(worker_node, job_id, input, job_mask);
         return;
     }
 
@@ -3030,18 +3029,18 @@ get_job_id:
         db.SetTransaction(&trans);
 
         CBDB_FileCursor& cur = *x_GetCursor(trans);
-        CBDB_CursorGuard cg(cur); 
+        CBDB_CursorGuard cg(cur);
 
-        upd_status = 
-            x_UpdateDB_GetJobNoLock(db, curr, cur, trans, 
-                                    worker_node, *job_id, input, jout, jerr, 
+        upd_status =
+            x_UpdateDB_GetJobNoLock(db, curr, cur, trans,
+                                    worker_node, *job_id, input, /*jout, jerr,*/
                                     &job_aff_id, job_mask);
         }}
         trans.Commit();
 
         switch (upd_status) {
         case eGetJobUpdate_JobFailed:
-            q->status_tracker.ChangeStatus(*job_id, 
+            q->status_tracker.ChangeStatus(*job_id,
                                            CNetScheduleClient::eFailed);
             *job_id = 0;
             break;
@@ -3100,9 +3099,8 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
                                 CBDB_Transaction&    trans,
                                 unsigned int         worker_node,
                                 unsigned             job_id,
+                                // ??? use SNS_SubmitRecord here
                                 char*                input,
-                                char*                jout,
-                                char*                jerr,
                                 unsigned*            aff_id,
                                 unsigned*            job_mask)
 {
@@ -3144,12 +3142,6 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
 
         const char* fld_str = db.input;
         ::strcpy(input, fld_str);
-        if (jout) {
-            strcpy(jout, (const char*) db.cout);
-        }
-        if (jerr) {
-            strcpy(jerr, (const char*) db.cerr);
-        }
 
         unsigned run_counter = db.run_counter;
         *job_mask = db.mask;
@@ -3250,8 +3242,6 @@ CQueue::GetJobDescr(unsigned int job_id,
                     char*        output,
                     char*        err_msg,
                     char*        progress_msg,
-                    char*        jout,
-                    char*        jerr,
                     CNetScheduleClient::EJobStatus expected_status)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
@@ -3291,12 +3281,6 @@ CQueue::GetJobDescr(unsigned int job_id,
             }
             if (progress_msg) {
                 ::strcpy(progress_msg, (const char* )db.progress_msg);
-            }
-            if (jout) {
-                ::strcpy(jout, (const char*) db.cout);
-            }
-            if (jerr) {
-                ::strcpy(jerr, (const char*) db.cerr);
             }
 
             return true;
@@ -3603,6 +3587,8 @@ void CQueue::Truncate(void)
     CWriteLockGuard rtl_guard(q->rtl_lock);
     q->status_tracker.ClearAll(&q->m_JobsToDelete);
     q->run_time_line->ReInit(0);
+    // To update 'became_empty' timestamp
+    IsExpired();
 }
 
 
@@ -3969,7 +3955,7 @@ void CQueue::x_AddToAffIdx_NoLock(unsigned aff_id,
     q->aff_idx.WriteVector(bv, SQueueAffinityIdx::eNoCompact);
 }
 
-void CQueue::x_AddToAffIdx_NoLock(const vector<SNS_BatchSubmitRec>& batch)
+void CQueue::x_AddToAffIdx_NoLock(const vector<SNS_SubmitRecord>& batch)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
@@ -3981,7 +3967,7 @@ void CQueue::x_AddToAffIdx_NoLock(const vector<SNS_BatchSubmitRec>& batch)
 
         unsigned bsize = batch.size();
         for (unsigned i = 0; i < bsize; ++i) {
-            const SNS_BatchSubmitRec& bsub = batch[i];
+            const SNS_SubmitRecord& bsub = batch[i];
             unsigned aff_id = bsub.affinity_id;
             unsigned job_id_start = bsub.job_id;
 
@@ -4093,7 +4079,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: bdb_queue.cpp,v $
  * Revision 1.107  2007/01/10 21:23:00  joukovv
  * Job id is per queue, not per server. Deletion of expired jobs use the same
  * db mechanism as drop queue - delayed background deletion.

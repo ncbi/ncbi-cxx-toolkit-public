@@ -67,6 +67,7 @@ struct SQueueParameters
     string program_name;
     bool delete_when_done;
     int failed_retries;
+    time_t empty_lifetime;
     string subm_hosts;
     string wnode_hosts;
     bool dump_db;
@@ -206,7 +207,13 @@ class CNSLB_Coordinator;
 ///
 struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
 {
+    enum EQueueKind {
+        eKindStatic = 0,
+        eKindDynamic = 1
+    };
+    typedef int TQueueKind;
     string                       qclass;           ///< Parameter class
+    TQueueKind                   kind;             ///< 0 - static, 1 - dynamic
     SQueueDB                     db;               ///< Main queue database
     SQueueAffinityIdx            aff_idx;          ///< Q affinity index
     auto_ptr<CBDB_FileCursor>    cur;              ///< DB cursor
@@ -225,6 +232,10 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     bool                         delete_done;    ///< Delete done jobs
     /// How many attemts to make on different nodes before failure
     unsigned                     failed_retries;
+    int                          empty_lifetime; ///< How long to live after empty
+
+    ///< When it became empty, guarded by 'lock'
+    time_t                       became_empty;
 
     // List of active worker node listeners waiting for pending jobs
 
@@ -286,10 +297,15 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     /// its lock
     CFastMutex                   m_JobsToDeleteLock;
 
+    // key -> value -> bitvector of job ids
+    typedef map<string, map<string, bm::bvector<> > > TTagMap;
+    TTagMap                      m_TagMap;
+
 
 
     // Constructor/destructor
-    SLockedQueue(const string& queue_name, const string& qclass_name);
+    SLockedQueue(const string& queue_name,
+        const string& qclass_name, TQueueKind queue_kind);
     ~SLockedQueue();
 
     /// get next job id (counter increment)
@@ -337,7 +353,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: squeue.hpp,v $
  * Revision 1.7  2007/01/10 21:23:00  joukovv
  * Job id is per queue, not per server. Deletion of expired jobs use the same
  * db mechanism as drop queue - delayed background deletion.

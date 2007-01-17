@@ -37,6 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 CJobStatusTracker::CJobStatusTracker()
  : m_BorrowedIds(bm::BM_GAP),
    m_LastPending(0),
@@ -60,6 +61,7 @@ CJobStatusTracker::CJobStatusTracker()
     }
 }
 
+
 CJobStatusTracker::~CJobStatusTracker()
 {
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
@@ -68,12 +70,14 @@ CJobStatusTracker::~CJobStatusTracker()
     }
 }
 
+
 CNetScheduleClient::EJobStatus 
 CJobStatusTracker::GetStatus(unsigned int job_id) const
 {
     CReadLockGuard guard(m_Lock);
     return GetStatusNoLock(job_id);
 }
+
 
 CNetScheduleClient::EJobStatus 
 CJobStatusTracker::GetStatusNoLock(unsigned int job_id) const
@@ -91,6 +95,7 @@ CJobStatusTracker::GetStatusNoLock(unsigned int job_id) const
     return CNetScheduleClient::eJobNotFound;
 }
 
+
 unsigned 
 CJobStatusTracker::CountStatus(CNetScheduleClient::EJobStatus status) const
 {
@@ -104,6 +109,7 @@ CJobStatusTracker::CountStatus(CNetScheduleClient::EJobStatus status) const
     }
     return cnt;
 }
+
 
 void CJobStatusTracker::CountStatus(TStatusSummaryMap*   status_map,
                                     const bm::bvector<>* candidate_set)
@@ -125,6 +131,20 @@ void CJobStatusTracker::CountStatus(TStatusSummaryMap*   status_map,
     } // for
 }
 
+
+unsigned CJobStatusTracker::Count(void)
+{
+    CReadLockGuard guard(m_Lock);
+
+    unsigned cnt = 0;
+    for (size_t i = 0; i < m_StatusStor.size(); ++i) {
+        const TBVector& bv = *m_StatusStor[i];
+        cnt += bv.count();
+    }
+    return cnt;
+}
+
+
 void 
 CJobStatusTracker::StatusStatistics(CNetScheduleClient::EJobStatus status,
                                     TBVector::statistics*          st) const
@@ -136,6 +156,7 @@ CJobStatusTracker::StatusStatistics(CNetScheduleClient::EJobStatus status,
     bv.calc_stat(st);
 
 }
+
 
 void CJobStatusTracker::StatusSnapshot(CNetScheduleClient::EJobStatus status,
                                        TBVector*                      bv) const
@@ -153,6 +174,7 @@ void CJobStatusTracker::Returned2Pending()
     CWriteLockGuard guard(m_Lock);
     Returned2PendingNoLock();
 }
+
 
 void CJobStatusTracker::Returned2PendingNoLock()
 {
@@ -195,6 +217,7 @@ CJobStatusTracker::SetStatus(unsigned int  job_id,
     }
 }
 
+
 void CJobStatusTracker::ClearAll(TBVector* bv)
 {
     CWriteLockGuard guard(m_Lock);
@@ -212,6 +235,7 @@ void CJobStatusTracker::ClearAll(TBVector* bv)
     m_BorrowedIds.clear(true);
 }
 
+
 void CJobStatusTracker::FreeUnusedMem()
 {
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
@@ -227,6 +251,7 @@ void CJobStatusTracker::FreeUnusedMem()
     }}
 }
 
+
 /*
 void CJobStatusTracker::FreeUnusedMemNoLock()
 {
@@ -237,6 +262,7 @@ void CJobStatusTracker::FreeUnusedMemNoLock()
     m_BorrowedIds.optimize(0, TBVector::opt_free_0);
 }
 */
+
 
 void
 CJobStatusTracker::SetExactStatusNoLock(unsigned int job_id, 
@@ -491,6 +517,7 @@ CJobStatusTracker::GetPendingJobFromSet(bm::bvector<>* candidate_set,
     }}
 }
 
+
 bool 
 CJobStatusTracker::GetPendingJob(const bm::bvector<>& unwanted_jobs,
                                  unsigned*            job_id)
@@ -584,6 +611,7 @@ unsigned int CJobStatusTracker::BorrowPendingJob()
     return job_id;
 }
 
+
 void CJobStatusTracker::ReturnBorrowedJob(unsigned int  job_id, 
                                           CNetScheduleClient::EJobStatus status)
 {
@@ -606,10 +634,12 @@ bool CJobStatusTracker::AnyPending() const
     return bv.any();
 }
 
+
 unsigned int CJobStatusTracker::GetFirstDone() const
 {
     return GetFirst(CNetScheduleClient::eDone);
 }
+
 
 unsigned int 
 CJobStatusTracker::GetFirst(CNetScheduleClient::EJobStatus status) const
@@ -630,6 +660,7 @@ CJobStatusTracker::x_SetClearStatusNoLock(unsigned int job_id,
     SetExactStatusNoLock(job_id, status, true);
     SetExactStatusNoLock(job_id, old_status, false);
 }
+
 
 void 
 CJobStatusTracker::ReportInvalidStatus(unsigned int job_id, 
@@ -733,6 +764,7 @@ CJobStatusTracker::PrintStatusMatrix(CNcbiOstream& out) const
     
 }
 
+
 void CJobStatusTracker::IncDoneJobs()
 {
     ++m_DoneCnt;
@@ -748,6 +780,7 @@ void CJobStatusTracker::IncDoneJobs()
         }}
     }
 }
+
 
 END_NCBI_SCOPE
 

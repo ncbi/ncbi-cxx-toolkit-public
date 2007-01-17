@@ -58,17 +58,19 @@ BEGIN_NCBI_SCOPE
 ///
 /// @internal
 ///
-struct SNS_BatchSubmitRec
+struct SNS_SubmitRecord
 {
+    unsigned  job_id;
     char      input[kNetScheduleMaxDBDataSize];
     char      affinity_token[kNetScheduleMaxDBDataSize];
     unsigned  affinity_id;
-    unsigned  job_id;
+    string    tags;
+    unsigned  mask;
 
-    SNS_BatchSubmitRec()
+    SNS_SubmitRecord()
     {
         input[0] = affinity_token[0] = 0;
-        affinity_id = job_id = 0;
+        affinity_id = job_id = mask = 0;
     }
 };
 
@@ -86,20 +88,19 @@ public:
            const string&   queue_name,
            unsigned        client_host_addr);
 
-    unsigned int Submit(const char*   input,
+    /// Is queue is empty long enough?
+    bool IsExpired(void);
+
+    unsigned int Submit(SNS_SubmitRecord* rec,
                         unsigned      host_addr = 0,
                         unsigned      port = 0,
                         unsigned      wait_timeout = 0,
-                        const char*   progress_msg = 0,
-                        const char*   affinity_token = 0,
-                        const char*   jout = 0,
-                        const char*   jerr = 0,
-                        unsigned      mask = 0);
+                        const char*   progress_msg = 0);
 
     /// Submit job batch
     /// @return 
     ///    ID of the first job, second is first_id+1 etc.
-    unsigned int SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
+    unsigned int SubmitBatch(vector<SNS_SubmitRecord>& batch,
                              unsigned      host_addr = 0,
                              unsigned      port = 0,
                              unsigned      wait_timeout = 0,
@@ -120,8 +121,6 @@ public:
                          unsigned int   worker_node,
                          unsigned int*  job_id, 
                          char*          input,
-                         char*          jout,
-                         char*          jerr,
                          const string&  client_name,
                          unsigned*      job_mask);
 
@@ -143,8 +142,6 @@ public:
     void GetJob(unsigned int   worker_node,
                 unsigned int*  job_id, 
                 char*          input,
-                char*          jout,
-                char*          jerr,
                 const string&  client_name,
                 unsigned*      job_mask);
 
@@ -160,8 +157,6 @@ public:
                      char*        output,
                      char*        err_msg,
                      char*        progress_msg,
-                     char*        jout,
-                     char*        jerr,
                      CNetScheduleClient::EJobStatus expected_status 
                                         = CNetScheduleClient::eJobNotFound);
 
@@ -327,8 +322,6 @@ private:
     void x_GetJobLB(unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input,
-                    char*          jout,
-                    char*          jerr,
                     unsigned*      job_mask);
 
     CBDB_FileCursor* x_GetCursor(CBDB_Transaction& trans);
@@ -355,16 +348,12 @@ private:
     void x_DeleteDBRec(SQueueDB& db, 
                        CBDB_FileCursor& cur);
 
-    void x_AssignSubmitRec(unsigned      job_id,
-                           const char*   input,
+    void x_AssignSubmitRec(SQueueDB&     db,
+                           const SNS_SubmitRecord* rec,
                            unsigned      host_addr,
                            unsigned      port,
                            unsigned      wait_timeout,
-                           const char*   progress_msg,
-                           unsigned      aff_id,
-                           const char*   jout,
-                           const char*   jerr,
-                           unsigned      mask);
+                           const char*   progress_msg);
 
     /// Info on how to notify job submitter
     struct SSubmitNotifInfo
@@ -401,8 +390,6 @@ private:
                                 unsigned int         worker_node,
                                 unsigned             job_id,
                                 char*                input,
-                                char*                jout,
-                                char*                jerr,
                                 unsigned*            aff_id,
                                 unsigned*            job_mask);
 
@@ -414,7 +401,7 @@ private:
                               unsigned job_id_from,
                               unsigned job_id_to = 0);
 
-    void x_AddToAffIdx_NoLock(const vector<SNS_BatchSubmitRec>& batch);
+    void x_AddToAffIdx_NoLock(const vector<SNS_SubmitRecord>& batch);
 
     /// Read queue affinity index, retrieve all jobs, with
     /// given set of affinity ids
@@ -567,8 +554,10 @@ public:
 
     void Configure(const IRegistry& reg, unsigned* min_run_timeout);
 
+    typedef SLockedQueue::TQueueKind TQueueKind;
     void MountQueue(const string& qname,
                     const string& qclass,
+                    TQueueKind    kind,
                     const SQueueParameters& params);
 
     void CreateQueue(const string& qname, const string& qclass,
@@ -655,7 +644,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: bdb_queue.hpp,v $
  * Revision 1.67  2007/01/10 21:23:00  joukovv
  * Job id is per queue, not per server. Deletion of expired jobs use the same
  * db mechanism as drop queue - delayed background deletion.
@@ -872,4 +861,3 @@ END_NCBI_SCOPE
  */
 
 #endif /* NETSCHEDULE_BDB_QUEUE__HPP */
-

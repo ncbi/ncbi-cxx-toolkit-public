@@ -161,10 +161,13 @@ public:
     /// Return number of jobs in specified status
     unsigned CountStatus(CNetScheduleClient::EJobStatus status) const;
 
-    /// Count all status vectors using candidate_set(optioal) as a mask 
+    /// Count all status vectors using candidate_set(optional) as a mask 
     /// (AND_COUNT)
     void CountStatus(TStatusSummaryMap*   status_map, 
                      const bm::bvector<>* candidate_set);
+
+    /// Count all jobs in any status
+    unsigned Count(void);
 
     void StatusStatistics(CNetScheduleClient::EJobStatus status,
                           TBVector::statistics*          st) const;

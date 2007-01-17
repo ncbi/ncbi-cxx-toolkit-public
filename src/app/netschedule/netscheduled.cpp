@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.8.0  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -86,8 +86,6 @@ enum ENSRequestField {
     eNSRF_Input = 0,
     eNSRF_Output,
     eNSRF_ProgressMsg,
-    eNSRF_COut,
-    eNSRF_CErr,
     eNSRF_AffinityToken,
     eNSRF_JobKey,
     eNSRF_JobReturnCode,
@@ -99,15 +97,14 @@ enum ENSRequestField {
     eNSRF_Status,
     eNSRF_QueueName,
     eNSRF_QueueClass,
-    eNSRF_QueueComment
+    eNSRF_QueueComment,
+    eNSRF_Tags
 };
 struct SJS_Request
 {
     char               input[kNetScheduleMaxDBDataSize];
     char               output[kNetScheduleMaxDBDataSize];
     char               progress_msg[kNetScheduleMaxDBDataSize];
-    char               cout[kNetScheduleMaxDBDataSize];
-    char               cerr[kNetScheduleMaxDBDataSize];
     char               affinity_token[kNetScheduleMaxDBDataSize];
     string             job_key;
     unsigned int       job_return_code;
@@ -118,13 +115,13 @@ struct SJS_Request
     string             param1;
     string             param2;
     string             param3;
+    string             tags;
 
     void Init()
     {
-        input[0] = output[0] = progress_msg[0] = affinity_token[0] 
-                                               = cout[0] = cerr[0] = 0;
+        input[0] = output[0] = progress_msg[0] = affinity_token[0] = 0;
         job_key.erase(); err_msg.erase();
-        param1.erase(); param2.erase();
+        param1.erase(); param2.erase(); param3.erase();
         job_return_code = port = timeout = job_mask = 0;
     }
     void SetField(ENSRequestField fld,
@@ -149,21 +146,12 @@ struct SJS_Request
             strncpy(progress_msg, val, eff_size);
             progress_msg[eff_size] = 0;
             break;
-        case eNSRF_COut:
-            strncpy(cout, val, eff_size);
-            cout[eff_size] = 0;
-            break;
-        case eNSRF_CErr:
-            strncpy(cerr, val, eff_size);
-            cerr[eff_size] = 0;
-            break;
         case eNSRF_AffinityToken:
             strncpy(affinity_token, val, eff_size);
             affinity_token[eff_size] = 0;
             break;
         case eNSRF_JobKey:
-            job_key.erase();
-            job_key.append(val, eff_size);
+            job_key.erase(); job_key.append(val, eff_size);
             break;
         case eNSRF_JobReturnCode:
             job_return_code = atoi(val);
@@ -178,22 +166,21 @@ struct SJS_Request
             job_mask = atoi(val);
             break;
         case eNSRF_ErrMsg:
-            err_msg.erase();
-            err_msg.append(val, eff_size);
+            err_msg.erase(); err_msg.append(val, eff_size);
             break;
         case eNSRF_Option:
         case eNSRF_Status:
         case eNSRF_QueueName:
-            param1.erase();
-            param1.append(val, eff_size);
+            param1.erase(); param1.append(val, eff_size);
             break;
         case eNSRF_QueueClass:
-            param2.erase();
-            param2.append(val, eff_size);
+            param2.erase(); param2.append(val, eff_size);
             break;
         case eNSRF_QueueComment:
-            param3.erase();
-            param3.append(val, eff_size);
+            param3.erase(); param3.append(val, eff_size);
+            break;
+        case eNSRF_Tags:
+            tags.erase(); tags.append(val, size);
             break;
         default:
             break;
@@ -292,7 +279,7 @@ public:
         eNSCR_Admin      = eNSAC_Admin,
         eNSCR_QueueAdmin = eNSAC_Admin + eNSAC_Queue 
     };
-    typedef int TNSClientRole;
+    typedef unsigned TNSClientRole;
     typedef void (CNetScheduleHandler::*FProcessor)(void);
     struct SArgument {
         ENSArgType      atype;
@@ -367,10 +354,7 @@ private:
     void x_WriteErrorToMonitor(string msg);
     // Moved from CNetScheduleServer
     void x_MakeLogMessage(BUF buffer, string& lmsg);
-    void x_MakeGetAnswer(const char* key_buf, 
-                         const char*  jout,
-                         const char*  jerr,
-                         unsigned     job_mask);
+    void x_MakeGetAnswer(const char* key_buf, unsigned     job_mask);
 
     // Data
     char m_Request[kMaxMessageSize];
@@ -385,15 +369,17 @@ private:
     auto_ptr<CQueue>            m_Queue;
     CNetScheduleMonitor*        m_Monitor;
     SJS_Request                 m_JobReq;
+    // Uncapabilities - that is combination of ENSAccess
+    // rights, which can NOT be performed by this connection
+    unsigned                    m_Uncaps;
     bool                        m_VersionControl;
-    bool                        m_AdminAccess;
     void (CNetScheduleHandler::*m_ProcessMessage)(BUF buffer);
 
     // Batch submit data
     unsigned                    m_BatchSize;
     unsigned                    m_BatchPos;
     CStopWatch                  m_BatchStopWatch;
-    vector<SNS_BatchSubmitRec>  m_BatchSubmitVector;
+    vector<SNS_SubmitRecord>    m_BatchSubmitVector;
 
     /// Quick local timer
     CFastLocalTime              m_LocalTimer;
@@ -517,7 +503,7 @@ static void s_ReadBufToString(BUF buffer, string& str)
 
 CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
     : m_Server(server), m_Monitor(NULL),
-      m_VersionControl(false), m_AdminAccess(false)
+      m_Uncaps(~0L), m_VersionControl(false)
 {
 }
 
@@ -657,7 +643,7 @@ void CNetScheduleHandler::ProcessMsgAuth(BUF buffer)
         (m_AuthString == "netschedule_control" ||
          m_AuthString == "netschedule_admin"))
     {
-        m_AdminAccess = true;
+        m_Uncaps &= ~eNSAC_Admin;
     }
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgQueue;
 }
@@ -670,6 +656,11 @@ void CNetScheduleHandler::ProcessMsgQueue(BUF buffer)
     if (m_QueueName != "noname" && !m_QueueName.empty()) {
         m_Queue.reset(new CQueue(*(m_Server->GetQueueDB()),
                                  m_QueueName, m_PeerAddr));
+        m_Uncaps &= ~eNSAC_Queue;
+        if (m_Queue->IsWorkerAllowed())
+            m_Uncaps &= ~eNSAC_Worker;
+        if (m_Queue->IsSubmitAllowed())
+            m_Uncaps &= ~eNSAC_Submitter;
         m_Monitor = m_Queue->GetMonitor();
         if (m_Queue->IsVersionControl())
             m_VersionControl = true;
@@ -710,7 +701,7 @@ void CNetScheduleHandler::ProcessMsgRequest(BUF buffer)
         // we want status request to be fast, skip version control 
         (requestProcessor != &CNetScheduleHandler::ProcessStatus) &&
         // bypass for admin tools
-        !m_AdminAccess) {
+        (m_Uncaps & eNSAC_Admin)) {
         if (!x_CheckVersion()) {
             WriteMsg("ERR:", "eInvalidClientOrVersion:");
             CSocket& socket = GetSocket();
@@ -757,22 +748,18 @@ bool CNetScheduleHandler::x_CheckVersion()
 
 void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
 {
-    if (((role & eNSAC_Queue)     && m_Queue.get() == 0) ||
-        ((role & eNSAC_Worker)    && !m_Queue->IsWorkerAllowed()) ||
-        ((role & eNSAC_Submitter) && !m_Queue->IsSubmitAllowed()) ||
-        ((role & eNSAC_Admin)     && !m_AdminAccess))
-    {
-        string msg = "Access denied:";
-        if ((role & eNSAC_Queue)     && m_Queue.get() == 0)
-            msg.append(" queue required");
-        if ((role & eNSAC_Worker)    && !m_Queue->IsWorkerAllowed())
-            msg.append(" worker node privileges required");
-        if ((role & eNSAC_Submitter) && !m_Queue->IsSubmitAllowed())
-            msg.append(" submitter privileges required");
-        if ((role & eNSAC_Admin)     && !m_AdminAccess)
-            msg.append(" admin privileges required");
-        NCBI_THROW(CNetScheduleException, eOperationAccessDenied, msg);
-    }
+    unsigned deficiencies = role & m_Uncaps;
+    if (!deficiencies) return;
+    string msg = "Access denied:";
+    if (deficiencies & eNSAC_Queue)
+        msg.append(" queue required");
+    if (deficiencies  & eNSAC_Worker)
+        msg.append(" worker node privileges required");
+    if (deficiencies  & eNSAC_Submitter)
+        msg.append(" submitter privileges required");
+    if (deficiencies  & eNSAC_Admin)
+        msg.append(" admin privileges required");
+    NCBI_THROW(CNetScheduleException, eOperationAccessDenied, msg);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -780,15 +767,15 @@ void CNetScheduleHandler::x_CheckAccess(TNSClientRole role)
 
 void CNetScheduleHandler::ProcessSubmit()
 {
+    SNS_SubmitRecord rec;
+    strcpy(rec.input, m_JobReq.input);
+    strcpy(rec.affinity_token, m_JobReq.affinity_token);
+    rec.mask = m_JobReq.job_mask;
     unsigned job_id =
-        m_Queue->Submit(m_JobReq.input, 
+        m_Queue->Submit(&rec, 
                         m_PeerAddr, 
                         m_JobReq.port, m_JobReq.timeout, 
-                        m_JobReq.progress_msg,
-                        m_JobReq.affinity_token,
-                        m_JobReq.cout,
-                        m_JobReq.cerr,
-                        m_JobReq.job_mask);
+                        m_JobReq.progress_msg);
 
     char buf[1024];
     sprintf(buf, NETSCHEDULE_JOBMASK, 
@@ -854,11 +841,12 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
 
 void CNetScheduleHandler::ProcessMsgBatchItem(BUF buffer)
 {
-    // Expecting "input" [affp|aff="affinity_token"]
+    // Expecting:
+    // "input" [affp|aff="affinity_token"] [tags="key1=val1;key2;key3=val3"]
     char data[kNetScheduleMaxDBDataSize * 6 + 1];
     size_t msg_size = BUF_Read(buffer, data, sizeof(data)-1);
     data[msg_size] = '\0';
-    SNS_BatchSubmitRec& rec = m_BatchSubmitVector[m_BatchPos];
+    SNS_SubmitRecord& rec = m_BatchSubmitVector[m_BatchPos];
     const char* s = data;
     const char* token;
     int tsize;
@@ -916,9 +904,7 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
 
     CStopWatch sw(CStopWatch::eStart);
     unsigned job_id =
-        m_Queue->SubmitBatch(m_BatchSubmitVector, 
-                             m_PeerAddr,
-                             0, 0, 0);
+        m_Queue->SubmitBatch(m_BatchSubmitVector);
     double db_elapsed = sw.Elapsed();
 
     if (m_Monitor && m_Monitor->IsMonitorActive()) {
@@ -1031,7 +1017,6 @@ void CNetScheduleHandler::ProcessStatus()
                                      m_JobReq.input,
                                      m_JobReq.output,
                                      0, 0,
-                                     0, 0, 
                                      status)) {
                 sprintf(szBuf, 
                         "%i %i \"%s\" \"\" \"%s\"", 
@@ -1054,7 +1039,6 @@ void CNetScheduleHandler::ProcessStatus()
                                           m_JobReq.input,
                                           0,
                                           0, 0,
-                                          0, 0, 
                                           status);
 
             if (b) {
@@ -1080,7 +1064,6 @@ void CNetScheduleHandler::ProcessStatus()
                                           m_JobReq.output,
                                           err,
                                           0,
-                                          0, 0, 
                                           status);
 
             if (b) {
@@ -1113,7 +1096,7 @@ void CNetScheduleHandler::ProcessGetMessage()
     unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
     int ret_code;
     bool b = m_Queue->GetJobDescr(job_id, &ret_code, 
-                                  0, 0, 0, m_JobReq.progress_msg, 0, 0);
+                                  0, 0, 0, m_JobReq.progress_msg);
 
     if (b) {
         WriteMsg("OK:", m_JobReq.progress_msg);
@@ -1137,7 +1120,7 @@ void CNetScheduleHandler::ProcessGet()
     unsigned job_id;
     char key_buf[1024];
     m_Queue->GetJob(m_PeerAddr, &job_id,
-                    m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
+                    m_JobReq.input,
                     m_AuthString, 
                     &m_JobReq.job_mask);
 
@@ -1145,8 +1128,7 @@ void CNetScheduleHandler::ProcessGet()
         m_Server->GetHost(), m_Server->GetPort());
 
     if (job_id) {
-        x_MakeGetAnswer(key_buf, m_JobReq.cout, m_JobReq.cerr,
-                        m_JobReq.job_mask);
+        x_MakeGetAnswer(key_buf, m_JobReq.job_mask);
         WriteMsg("OK:", m_Answer.c_str());
     } else {
         WriteMsg("OK:", "");
@@ -1187,7 +1169,7 @@ CNetScheduleHandler::ProcessJobExchange()
     m_Queue->PutResultGetJob(done_job_id, m_JobReq.job_return_code,
                              m_JobReq.output,
                              m_PeerAddr, &job_id,
-                             m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
+                             m_JobReq.input,
                              m_AuthString,
                              &m_JobReq.job_mask);
 
@@ -1195,8 +1177,7 @@ CNetScheduleHandler::ProcessJobExchange()
         m_Server->GetHost(), m_Server->GetPort());
 
     if (job_id) {
-        x_MakeGetAnswer(key_buf, m_JobReq.cout, m_JobReq.cerr,
-                        m_JobReq.job_mask);
+        x_MakeGetAnswer(key_buf, m_JobReq.job_mask);
         WriteMsg("OK:", m_Answer.c_str());
     } else {
         WriteMsg("OK:", "");
@@ -1222,15 +1203,14 @@ void CNetScheduleHandler::ProcessWaitGet()
 {
     unsigned job_id;
     m_Queue->GetJob(m_PeerAddr, &job_id, 
-                    m_JobReq.input, m_JobReq.cout, m_JobReq.cerr,
+                    m_JobReq.input,
                     m_AuthString, &m_JobReq.job_mask);
 
     if (job_id) {
         char key_buf[1024];
         m_Queue->GetJobKey(key_buf, job_id,
             m_Server->GetHost(), m_Server->GetPort());
-        x_MakeGetAnswer(key_buf, m_JobReq.cout, m_JobReq.cerr,
-                        m_JobReq.job_mask);
+        x_MakeGetAnswer(key_buf, m_JobReq.job_mask);
         WriteMsg("OK:", m_Answer.c_str());
         return;
     }
@@ -1625,17 +1605,16 @@ CNetScheduleHandler::SArgument CNetScheduleHandler::sm_End = { eNSA_None };
 #define NO_ARGS {sm_End}
 CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // SUBMIT input : str [ progress_msg : str ] [ port : uint [ timeout : uint ]]
-    //        [ affinity_token : keystr(aff) ] [ cout : keystr(out) ] 
-    //        [ cerr : keystr(err) ] [ job_mask : keyint(msk) ]
+    //        [ affinity_token : keystr(aff) ] [ job_mask : keyint(msk) ]
+    //        [ tags : keystr(tags) ]
     { "SUBMIT",   &CNetScheduleHandler::ProcessSubmit, eNSCR_Submitter,
         { { eNSA_Required, eNST_Str,     eNSRF_Input },
           { eNSA_Optional, eNST_Str,     eNSRF_ProgressMsg },
           { eNSA_Optional, eNST_Int,     eNSRF_Port },
           { eNSA_Optional, eNST_Int,     eNSRF_Timeout },
           { eNSA_Optional, eNST_KeyStr,  eNSRF_AffinityToken, "", "aff" },
-          { eNSA_Optional, eNST_KeyStr,  eNSRF_COut, "", "out" },
-          { eNSA_Optional, eNST_KeyStr,  eNSRF_CErr, "", "err" },
-          { eNSA_Optional, eNST_KeyInt,  eNSRF_JobMask, "0", "msk" }, sm_End } },
+          { eNSA_Optional, eNST_KeyInt,  eNSRF_JobMask, "0", "msk" },
+          { eNSA_Optional, eNST_KeyStr,  eNSRF_Tags, "", "tags" }, sm_End } },
     // CANCEL job_key : id
     { "CANCEL",   &CNetScheduleHandler::ProcessCancel, eNSCR_Submitter, 
         { { eNSA_Required, eNST_Id, eNSRF_JobKey }, sm_End } },
@@ -2009,26 +1988,15 @@ void CNetScheduleHandler::x_MakeLogMessage(BUF buffer, string& lmsg)
 
 
 void CNetScheduleHandler::x_MakeGetAnswer(const char*   key_buf,
-                                          const char*   jout,
-                                          const char*   jerr,
                                           unsigned      job_mask)
 {
-    _ASSERT(jout);
-    _ASSERT(jerr);
-
     string& answer = m_Answer;
     answer = key_buf;
     answer.append(" \"");
     answer.append(m_JobReq.input);
     answer.append("\"");
 
-    answer.append(" \"");
-    answer.append(jout);
-    answer.append("\"");
-
-    answer.append(" \"");
-    answer.append(jerr);
-    answer.append("\"");
+    answer.append(" \"\" \"\""); // to keep compat. with jout & jerr
 
     answer.append(" ");
     answer.append(NStr::UIntToString(job_mask));
@@ -2354,7 +2322,7 @@ int main(int argc, const char* argv[])
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: netscheduled.cpp,v $
  * Revision 1.117  2007/01/10 21:23:00  joukovv
  * Job id is per queue, not per server. Deletion of expired jobs use the same
  * db mechanism as drop queue - delayed background deletion.

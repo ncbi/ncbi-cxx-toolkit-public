@@ -58,6 +58,11 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     failed_retries = 
         reg.GetInt(sname, "failed_retries", 
                                     0, 0, IRegistry::eReturn);
+
+    empty_lifetime =
+        reg.GetInt(sname, "empty_lifetime", 
+                                    -1, 0, IRegistry::eReturn);
+
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
     dump_db = reg.GetBool(sname, "dump_db", false, 0, IRegistry::eReturn);
@@ -110,13 +115,18 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 }
 
 
-SLockedQueue::SLockedQueue(const string& queue_name, const string& qclass_name)
+SLockedQueue::SLockedQueue(const string& queue_name,
+                           const string& qclass_name,
+                           TQueueKind queue_kind)
   :
     qclass(qclass_name),
+    kind(queue_kind),
     timeout(3600), 
     notif_timeout(7), 
     delete_done(false),
     failed_retries(0),
+    empty_lifetime(-1),
+    became_empty(-1),
     last_notif(0), 
     q_notif("NCBI_JSQ_"),
     run_time_line(0),
@@ -236,7 +246,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: squeue.cpp,v $
  * Revision 1.9  2007/01/10 21:23:00  joukovv
  * Job id is per queue, not per server. Deletion of expired jobs use the same
  * db mechanism as drop queue - delayed background deletion.
@@ -272,4 +282,3 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
-
