@@ -101,6 +101,8 @@ for cmd_arg in "$@" ; do
   esac
 done 
 
+svn_cmd="`which svn-1.4.0 2> /dev/null || echo svn`"
+test -n "$svn_cmd" || svn_cmd='svn'
 
 if test "$export" = "yes" ; then
   checkout_cmd="svn export -r $revision $REPOS/"
