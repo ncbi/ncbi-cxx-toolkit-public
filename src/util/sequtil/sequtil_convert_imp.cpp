@@ -1090,7 +1090,7 @@ SIZE_TYPE CSeqConvert_imp::Pack(const char* src, TSeqPos length,
     }    
 }
 
-SIZE_TYPE CSeqConvert_imp::x_Pack(const char* src, size_t length,
+SIZE_TYPE CSeqConvert_imp::x_Pack(const char* src, TSeqPos length,
                                   TCoding src_coding, const bool* not_ambig,
                                   IPackTarget& dst)
 {
