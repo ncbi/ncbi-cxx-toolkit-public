@@ -37,25 +37,30 @@
 
 // standard includes
 #include <ncbi_pch.hpp>
-#include <vector>
+#include <corelib/ncbiutil.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/typeinfo.hpp>
-#include <corelib/ncbiutil.hpp>
 
 // generated includes
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-#include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/Delta_ext.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqloc/Seq_point.hpp>
+
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/IUPACna.hpp>
+#include <objects/seq/NCBI4na.hpp>
+#include <objects/seq/NCBI8na.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_inst.hpp>
+
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 
 // generated classes
 
@@ -227,6 +232,42 @@ bool CBioseq::IsNa(void) const
 bool CBioseq::IsAa(void) const
 {
     return GetInst ().IsAa ();
+}
+
+void CBioseq::PackAsDeltaSeq(void)
+{
+    CSeq_inst& inst = SetInst();
+    if (inst.IsAa()  ||  !inst.IsSetSeq_data()  ||  inst.IsSetExt()) {
+        return;
+    }
+    const CSeq_data& data = inst.GetSeq_data();
+    CTempString      src;
+    switch (data.Which()) {
+    case CSeq_data::e_Ncbi2na:
+        return; // optimal as is
+    case CSeq_data::e_Iupacna:
+        src = data.GetIupacna().Get();
+        break;
+    case CSeq_data::e_Ncbi4na:
+        src.assign(&data.GetNcbi4na().Get()[0], data.GetNcbi4na().Get().size());
+        break;
+    case CSeq_data::e_Ncbi8na:
+        src.assign(&data.GetNcbi8na().Get()[0], data.GetNcbi8na().Get().size());
+        break;
+    default:
+        ERR_POST(Warning << "PackAsDeltaSeq: unsupported encoding "
+                 << CSeq_data::SelectionName(data.Which()));
+        return;
+    }
+
+    CDelta_ext& ext = inst.SetExt().SetDelta();
+    ext.AddAndSplit(src, data.Which(), inst.GetLength());
+    if (ext.Get().size() > 1) { // finalize
+        inst.SetRepr(CSeq_inst::eRepr_delta);
+        inst.ResetSeq_data();
+    } else { // roll back
+        inst.ResetExt();
+    }
 }
 
 

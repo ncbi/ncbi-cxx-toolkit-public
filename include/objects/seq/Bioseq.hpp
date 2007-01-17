@@ -96,6 +96,11 @@ public:
     bool IsNa(void) const;
     bool IsAa(void) const;
 
+    /// Convert a raw nucleotide sequence with occasional ambiguities
+    /// or gaps into a tighter (but somewhat more complex) delta-seq
+    /// representation.
+    void PackAsDeltaSeq(void);
+
 protected:
     // From CSerialUserOp
     virtual void UserOp_Assign(const CSerialUserOp& source);

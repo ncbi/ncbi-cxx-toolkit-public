@@ -566,14 +566,24 @@ void CFastaReader::AssembleSeq(void)
         m_SegmentBase += GetCurrentPos(ePosWithGaps);
     }
     AssignMolType();
+    CSeq_data::E_Choice format
+        = inst.IsAa() ? CSeq_data::e_Iupacaa : CSeq_data::e_Iupacna;
     if (m_Gaps.empty()) {
         _ASSERT(m_TotalGapLength == 0);
         if (m_SeqData.empty()) {
             inst.SetRepr(CSeq_inst::eRepr_virtual);
         } else {
-            inst.SetRepr(CSeq_inst::eRepr_raw);
             inst.SetLength(GetCurrentPos(eRawPos));
-            SaveSeqData(inst.SetSeq_data(), m_SeqData);
+            CDelta_ext& delta_ext = inst.SetExt().SetDelta();
+            delta_ext.AddAndSplit(m_SeqData, format, inst.GetLength());
+            if (delta_ext.Get().size() > 1) {
+                inst.SetRepr(CSeq_inst::eRepr_delta);
+            } else { // simplify -- just one piece
+                inst.SetRepr(CSeq_inst::eRepr_raw);
+                inst.SetSeq_data(delta_ext.Set().front()
+                                 ->SetLiteral().SetSeq_data());
+                inst.ResetExt();
+            }
         }
     } else {
         CDelta_ext& delta_ext = inst.SetExt().SetDelta();
@@ -582,34 +592,24 @@ void CFastaReader::AssembleSeq(void)
         SIZE_TYPE n = m_Gaps.size();
         for (SIZE_TYPE i = 0;  i < n;  ++i) {
             if (i == 0  &&  m_Gaps[i].pos > 0) {
-                CRef<CDelta_seq> seq0_ds(new CDelta_seq);
-                CSeq_literal&    seq0_lit = seq0_ds->SetLiteral();
-                seq0_lit.SetLength(m_Gaps[i].pos);
-                SaveSeqData(seq0_lit.SetSeq_data(),
-                            TStr(m_SeqData, 0, m_Gaps[i].pos));
-                delta_ext.Set().push_back(seq0_ds);
+                delta_ext.AddAndSplit(TStr(m_SeqData, 0, m_Gaps[i].pos),
+                                      format, m_Gaps[i].pos);
             }
 
-            CRef<CDelta_seq> gap_ds(new CDelta_seq);
             if (m_Gaps[i].len == 0) { // unknown length
+                CRef<CDelta_seq> gap_ds(new CDelta_seq);
                 gap_ds->SetLoc().SetNull();
+                delta_ext.Set().push_back(gap_ds);
             } else {
-                gap_ds->SetLiteral().SetLength(m_Gaps[i].len);
+                delta_ext.AddLiteral(m_Gaps[i].len);
             }
-            delta_ext.Set().push_back(gap_ds);
 
             TSeqPos next_start = (i == n-1) ? m_CurrentPos : m_Gaps[i+1].pos;
-            if (next_start == m_Gaps[i].pos) {
-                continue;
+            if (next_start != m_Gaps[i].pos) {
+                TSeqPos seq_len = next_start - m_Gaps[i].pos;
+                delta_ext.AddAndSplit(TStr(m_SeqData, m_Gaps[i].pos, seq_len),
+                                      format, seq_len);
             }
-
-            CRef<CDelta_seq> seq_ds(new CDelta_seq);
-            CSeq_literal&    seq_lit = seq_ds->SetLiteral();
-            TSeqPos          seq_len = next_start - m_Gaps[i].pos;
-            seq_lit.SetLength(seq_len);
-            SaveSeqData(seq_lit.SetSeq_data(),
-                        TStr(m_SeqData, m_Gaps[i].pos, seq_len));
-            delta_ext.Set().push_back(seq_ds);
         }
     }
 }

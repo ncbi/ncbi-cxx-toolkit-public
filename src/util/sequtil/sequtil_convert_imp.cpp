@@ -32,11 +32,13 @@
 #include <corelib/ncbistd.hpp>
 
 #include <util/sequtil/sequtil_expt.hpp>
+#include <util/range.hpp>
 
 #include "sequtil_convert_imp.hpp"
 #include "sequtil_shared.hpp"
 #include "sequtil_tables.hpp"
 
+#include <stdlib.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -1056,6 +1058,113 @@ SIZE_TYPE CSeqConvert_imp::Pack
     return Convert(src, src_coding, 0, length, dst, dst_coding);
 }
 
+SIZE_TYPE CSeqConvert_imp::Pack(const char* src, TSeqPos length,
+                                TCoding src_coding, IPackTarget& dst)
+{
+    if (length == 0) {
+        return 0;
+    }
+    switch (src_coding) {
+    case CSeqUtil::e_Iupacna:
+        return x_Pack(src, length, src_coding, CIupacnaAmbig::GetTable(), dst);
+
+    case CSeqUtil::e_Ncbi4na:
+        return x_Pack(src, length, src_coding, CNcbi4naAmbig::GetTable(), dst);
+
+    case CSeqUtil::e_Ncbi4na_expand:
+    case CSeqUtil::e_Ncbi8na:
+        return x_Pack(src, length, src_coding, CNcbi8naAmbig::GetTable(), dst);
+
+    case CSeqUtil::e_Ncbi2na_expand:
+        return Convert(src, src_coding, 0, length,
+                       dst.NewSegment(CSeqUtil::e_Ncbi2na, length),
+                       CSeqUtil::e_Ncbi2na);
+
+    case CSeqUtil::e_Ncbi2na:
+        memcpy(dst.NewSegment(src_coding, length), src, (length + 3) / 4);
+        return length;
+
+    default:
+        memcpy(dst.NewSegment(src_coding, length), src, length);
+        return length;
+    }    
+}
+
+SIZE_TYPE CSeqConvert_imp::x_Pack(const char* src, size_t length,
+                                  TCoding src_coding, const bool* not_ambig,
+                                  IPackTarget& dst)
+{
+    typedef CRange<TSeqPos> TRange;
+    typedef list<TRange>    TRanges;
+
+    const SIZE_TYPE      overhead = dst.GetOverhead();
+    const size_t         bpb      = GetBasesPerByte(src_coding);
+    static const TSeqPos kMask    = ~(TSeqPos)3;
+    const char*          src_end  = src + (length + bpb - 1) / bpb;
+    const char*          p1;
+    const char*          p2       = src;
+    TRanges              ranges;
+
+    while (p2 < src_end) {
+        for (p1 = p2;  p1 < src_end  &&  not_ambig[*p1];  ++p1)
+            ;
+        if (p1 == src_end) {
+            break; // no further ambiguities
+        }
+        if (p1 == src_end - 1  &&  bpb > 1  &&  length % bpb) {
+            _ASSERT(src_coding == CSeqUtil::e_Ncbi4na  &&  bpb == 2);
+            if (not_ambig[(*p1 | 1) & 0xF1]) {
+                break;
+            }
+        }
+        for (p2 = p1 + 1;  p2 < src_end  &&  !not_ambig[*p2];  ++p2)
+            ;
+        // incorporate small tails
+        // o + k/2 + x/2 > 2o + k/2 + x/4 => x > 4o
+        if ((p1 - src) * bpb < 4 * overhead) {
+            p1 = src;
+        }
+        if ((src_end - p2) * bpb < 4 * overhead) {
+            p2 = src_end;
+        }
+
+        // force block sizes to multiples of four to avoid wastage
+        TSeqPos start = (p1 - src) & kMask,
+                end   = min(TSeqPos(p2 - src - 1) | 3, length - 1);
+
+        // o + k/2 + x/2 + l/2 > 3o + k/2 + x/4 + l/2 => x > 8o
+        if (ranges.empty()  ||  start > ranges.back().GetTo() + 8 * overhead) {
+            ranges.push_back(TRange(start, end));
+        } else {
+            ranges.back().SetTo(end); // coalesce
+        }
+    }
+
+    SIZE_TYPE result   = 0;
+    TSeqPos   last_pos = 0;
+    ITERATE (TRanges, it, ranges) {
+        if (it->GetFrom() > 0) {
+            TSeqPos len = it->GetFrom() - last_pos;
+            result += CSeqConvert::Convert
+                (src, src_coding, last_pos, len,
+                 dst.NewSegment(CSeqUtil::e_Ncbi2na, len), CSeqUtil::e_Ncbi2na);
+        }
+        result += CSeqConvert::Convert
+            (src, src_coding, it->GetFrom(), it->GetLength(),
+             dst.NewSegment(CSeqUtil::e_Ncbi4na, it->GetLength()),
+             CSeqUtil::e_Ncbi4na);
+        last_pos = it->GetTo() + 1;
+    }
+    if (last_pos < length) {
+        TSeqPos len = length - last_pos;
+        result += CSeqConvert::Convert(src, src_coding, last_pos, len,
+                                       dst.NewSegment(CSeqUtil::e_Ncbi2na, len),
+                                       CSeqUtil::e_Ncbi2na);
+    }
+
+    return result;
+}
+
 
 bool CSeqConvert_imp::x_HasAmbig
 (const char* src,
@@ -1116,7 +1225,7 @@ bool CSeqConvert_imp::x_HasAmbigNcbi4na(const char* src, size_t length)
     }
     
     if ( (iter == end)  &&  (length % 2) != 0 ) {
-        return not_ambig[static_cast<Uint1>(*iter) & 0xF1];
+        return not_ambig[static_cast<Uint1>(*iter | 1) & 0xF1];
     }
     return iter != end;
 }

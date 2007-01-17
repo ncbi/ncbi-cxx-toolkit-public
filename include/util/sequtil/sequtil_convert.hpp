@@ -31,12 +31,8 @@
  * File Description:
  *      Sequence conversion utility.
  */   
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_limits.hpp>
-#include <vector>
 
 #include <util/sequtil/sequtil.hpp>
 
@@ -133,6 +129,28 @@ public:
         TSeqPos length = ncbi::numeric_limits<TSeqPos>::max());
     static SIZE_TYPE Pack(const char* src, TSeqPos length, TCoding src_coding,
                           char* dst, TCoding& dst_coding);
+
+    // For packing piecemeal into a Delta-ext or the like, with ambiguities
+    // isolated when doing so is worth the overhead of having more segments
+    class IPackTarget
+    {
+    public:
+        // Return the approximate overhead per segment, in bytes
+        virtual SIZE_TYPE GetOverhead(void) const = 0;
+
+        // Return a pointer to a character array suitable for storing
+        // the given number of residues in the given format.
+        virtual char* NewSegment(TCoding coding, TSeqPos length) = 0;
+    };
+
+    static SIZE_TYPE Pack(const string& src, TCoding src_coding,
+                          IPackTarget& dst,
+                          TSeqPos length = numeric_limits<TSeqPos>::max());
+    static SIZE_TYPE Pack(const vector<char>& src, TCoding src_coding,
+                          IPackTarget& dst,
+                          TSeqPos length = numeric_limits<TSeqPos>::max());
+    static SIZE_TYPE Pack(const char* src, TSeqPos length, TCoding src_coding,
+                          IPackTarget& dst);
 };
 
 

@@ -207,6 +207,25 @@ SIZE_TYPE CSeqConvert::Pack
 }
 
 
+SIZE_TYPE CSeqConvert::Pack(const string& src, TCoding src_coding,
+                            IPackTarget& dst, TSeqPos length)
+{
+    return CSeqConvert_imp::Pack(src, src_coding, dst, length);
+}
+
+SIZE_TYPE CSeqConvert::Pack(const vector<char>& src, TCoding src_coding,
+                            IPackTarget& dst, TSeqPos length)
+{
+    return CSeqConvert_imp::Pack(src, src_coding, dst, length);
+}
+
+SIZE_TYPE CSeqConvert::Pack(const char* src, TSeqPos length, TCoding src_coding,
+                            IPackTarget& dst)
+{
+    return CSeqConvert_imp::Pack(src, length, src_coding, dst);
+}
+
+
 END_NCBI_SCOPE
 
  /*

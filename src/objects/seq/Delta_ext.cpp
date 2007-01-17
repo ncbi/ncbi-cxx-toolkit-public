@@ -39,11 +39,17 @@
 
 // generated includes
 #include <objects/seq/Delta_ext.hpp>
+
+#include <util/sequtil/sequtil_convert.hpp>
+#include <util/sequtil/sequtil_expt.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/IUPACna.hpp>
+#include <objects/seq/NCBI2na.hpp>
+#include <objects/seq/NCBI4na.hpp>
+#include <objects/seq/NCBI8na.hpp>
 #include <objects/seq/seqport_util.hpp>
 
 // generated classes
@@ -71,7 +77,7 @@ CDelta_seq& CDelta_ext::AddLiteral(TSeqPos len)
 
 
 /// add a literal segment at the end
-/// this variant adds a gap literal
+/// this variant adds a non-gap literal
 CDelta_seq& CDelta_ext::AddLiteral(const string& iupac_seq,
                                    CSeq_inst::EMol mol)
 {
@@ -100,6 +106,82 @@ CDelta_seq& CDelta_ext::AddLiteral(const string& iupac_seq,
     return *seg;
 }
 
+
+class CDelta_ext_PackTarget : public CSeqConvert::IPackTarget
+{
+public:
+    CDelta_ext_PackTarget(CDelta_ext& obj) : m_Obj(obj)
+        { }
+
+    // ballpark estimate; gives a threshold of 512 unambiguous bases
+    // at the ends and 1024 in the middle
+    SIZE_TYPE GetOverhead(void) const { return 128; }
+    
+    char* NewSegment(CSeqUtil::TCoding coding, TSeqPos length);
+
+private:
+    CDelta_ext& m_Obj;
+};
+
+
+char* CDelta_ext_PackTarget::NewSegment(CSeqUtil::TCoding coding,
+                                        TSeqPos length)
+{
+    CRef<CDelta_seq> ds(new CDelta_seq);
+    CSeq_literal&    lit = ds->SetLiteral();
+    lit.SetLength(length);
+    m_Obj.Set().push_back(ds);
+
+    switch (coding) {
+    case CSeqUtil::e_Ncbi2na:
+    {
+        CNCBI2na& dest = lit.SetSeq_data().SetNcbi2na();
+        dest.Set().resize((length + 3) / 4);
+        return &dest.Set()[0];
+    }
+    case CSeqUtil::e_Ncbi4na:
+    {
+        CNCBI4na& dest = lit.SetSeq_data().SetNcbi4na();
+        dest.Set().resize((length + 1) / 2);
+        return &dest.Set()[0];
+    }
+    default:
+        NCBI_THROW(CSeqUtilException, eInvalidCoding,
+                   "CDelta_ext_PackTarget: unexpected coding");
+    }        
+}
+
+
+void CDelta_ext::AddAndSplit(const CTempString& src, CSeq_data::E_Choice format,
+                             TSeqPos length /* in residues */)
+{
+    CSeqUtil::TCoding coding;
+    switch (format) {
+    case CSeq_data::e_Iupacna:
+        coding = CSeqUtil::e_Iupacna;
+        break;
+    case CSeq_data::e_Ncbi4na:
+        coding = CSeqUtil::e_Ncbi4na;
+        break;
+    case CSeq_data::e_Ncbi8na:
+        coding = CSeqUtil::e_Ncbi8na;
+        break;
+    default:
+    {
+        // add as a single piece
+        CRef<CSeq_data>  data (new CSeq_data(src, format));
+        CRef<CDelta_seq> ds   (new CDelta_seq);
+        CSeq_literal&    lit = ds->SetLiteral();
+        lit.SetLength(length);
+        lit.SetSeq_data(*data);
+        Set().push_back(ds);
+        return;
+    }
+    }
+
+    CDelta_ext_PackTarget dst(*this);
+    CSeqConvert::Pack(src.data(), length, coding, dst);
+}
 
 /// add a segment that refers to another segment
 CDelta_seq& CDelta_ext::AddSeqRange(const CSeq_id& id,

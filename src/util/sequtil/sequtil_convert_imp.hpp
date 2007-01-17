@@ -32,9 +32,8 @@
  *   
  */   
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiexpt.hpp>
 
-#include <util/sequtil/sequtil.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 #include "sequtil_shared.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -44,6 +43,7 @@ class CSeqConvert_imp
 {
 public:
     typedef CSeqUtil::TCoding TCoding;
+    typedef CSeqConvert::IPackTarget IPackTarget;
 
     // Conversion
 
@@ -134,6 +134,24 @@ public:
     static SIZE_TYPE Pack(const char* src, TSeqPos length, TCoding src_coding,
                           char* dst, TCoding& dst_coding);
 
+    template <typename SrcCont>
+    static SIZE_TYPE Pack
+    (const SrcCont& src,
+     TCoding src_coding,
+     IPackTarget& dst,
+     TSeqPos length)
+    {
+        if ( src.empty()  ||  (length == 0) ) {
+            return 0;
+        }
+        
+        AdjustLength(src, src_coding, 0, length);
+        return Pack(&*src.begin(), length, src_coding, dst);
+    }
+
+    static SIZE_TYPE Pack(const char* src, TSeqPos length, TCoding src_coding,
+                          IPackTarget& dst);
+
 private:
 
     // Conversion methods:
@@ -213,7 +231,9 @@ private:
         TSeqPos length, char* dst);
 
 
-    
+    // Advanced packing
+    static SIZE_TYPE x_Pack(const char* src, TSeqPos length, TCoding src_coding,
+                            const bool* not_ambig, IPackTarget& dst);    
 
     // Test for amibiguous bases (not A,C,G or T) starting at position 0.
     static bool x_HasAmbig(const char* src, TCoding src_coding, size_t length);
