@@ -1,6 +1,6 @@
---$Id: blastxml.asn,v 6.8 2006/09/18 15:17:51 bealer Exp $
+--$Id$
 --
---$Revision: 6.8 $
+--$Revision$
 --**********************************************************************
 --
 --  ASN.1 for simplified BLAST output in XML

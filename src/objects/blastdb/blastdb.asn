@@ -1,4 +1,4 @@
---$Id: blastdb.asn,v 6.4 2001/11/02 21:44:54 camacho Exp $
+--$Id$
 --
 -- Notes:
 --
@@ -21,7 +21,7 @@
 -- indicate a link that could be established based upon the gi of the 
 -- database sequence.
 --
--- $Revision: 6.4 $
+-- $Revision$
 --
 -- $Log: blastdb.asn,v $
 -- Revision 6.4  2001/11/02 21:44:54  camacho
