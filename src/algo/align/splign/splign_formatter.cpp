@@ -103,7 +103,7 @@ string CSplignFormatter::AsExonTable(
         
         for(size_t i = 0, seg_dim = ii->m_segments.size(); i < seg_dim; ++i) {
             
-            const CSplign::SSegment& seg = ii->m_segments[i];
+            const CSplign::TSegment& seg = ii->m_segments[i];
             
             oss << (ii->m_QueryStrand? '+': '-')
                 << ii->m_id << '\t' 
@@ -210,7 +210,7 @@ string CSplignFormatter::AsAlignmentText(
         size_t exon_count = 0;
         ITERATE(CSplign::TSegments, jj, ii->m_segments) {
             
-            const CSplign::SSegment& s = *jj;
+            const CSplign::TSegment& s = *jj;
             if(s.m_exon) {
 
                 size_t qbeg = s.m_box[0];
@@ -412,7 +412,7 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(const CSplign::TResults*
 
         for(size_t i = 0, seg_dim = ii->m_segments.size(); i < seg_dim; ++i) {
 
-            const CSplign::SSegment& seg = ii->m_segments[i];
+            const CSplign::TSegment& seg = ii->m_segments[i];
 
             if(seg.m_exon) {
                 
@@ -533,7 +533,7 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *
- * $Log$
+ * $Log: splign_formatter.cpp,v $
  * Revision 1.23  2006/04/24 18:29:34  kapustin
  * Skip err-flagged compartments in AsSeqAlignSet()
  *

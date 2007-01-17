@@ -53,7 +53,6 @@
 
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <deque>
 #include <math.h>
 #include <algorithm>
 
@@ -480,7 +479,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                 size_t q1 = pattern0[i] + R1 - delta;
                 size_t s1 = pattern0[i+2] + R2 - delta;
                 
-                if(q0 > q1 || s0 > s1) { // longest seg was probably too short
+                if(q0 > q1 || s0 > s1) { // the longest segment too short
                     q0 = pattern0[i] + L1;
                     s0 = pattern0[i+2] + L2;
                     q1 = pattern0[i] + R1;
@@ -862,8 +861,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
         // try to extend the last segment into the PolyA area  
         if(m_polya_start < kMax_UInt && seg_dim && m_segments[seg_dim-1].m_exon) {
-            CSplign::SSegment& s = 
-                const_cast<CSplign::SSegment&>(m_segments[seg_dim-1]);
+
+            TSegment& s (const_cast<TSegment&>(m_segments[seg_dim-1]));
             const char* p0 = &m_mrna.front() + s.m_box[1] + 1;
             const char* q = &m_genomic.front() + s.m_box[3] + 1;
             const char* p = p0;
@@ -901,7 +900,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         int j = seg_dim - 1, j0 = j;
         for(; j >= 0; --j) {
         
-            const CSplign::SSegment& s = m_segments[j];
+            const TSegment& s = m_segments[j];
 
             const char* p0 = &m_mrna[qmin] + s.m_box[0];
             const char* p1 = &m_mrna[qmin] + s.m_box[1] + 1;
@@ -913,7 +912,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             double min_a_content = 0.799;
             // also check splices
             if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
-                bool consensus = CSplign::SSegment
+                bool consensus = TSegment
                    ::s_IsConsensusSplice(m_segments[j-1].GetDonor(), s.GetAcceptor());
                 if(!consensus) {
                     min_a_content = 0.599;
@@ -1005,12 +1004,11 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
 
 static const char s_kGap [] = "<GAP>";
 
-// at this level and below, plus strand is assumed
-// for both sequences
+// at this level and below, plus strand is assumed for both sequences
 void CSplign::x_Run(const char* Seq1, const char* Seq2)
 {
-    typedef deque<SSegment> TSegments;
-    TSegments segments;
+    typedef deque<TSegment> TSegmentDeque;
+    TSegmentDeque segments;
 
 //#define DBG_DUMP_PATTERN
 #ifdef  DBG_DUMP_PATTERN
@@ -1022,100 +1020,76 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         const SAlnMapElem& zone = m_alnmap[i];
 
         // setup sequences
-        const size_t len1 = zone.m_box[1] - zone.m_box[0] + 1;
-        const size_t len2 = zone.m_box[3] - zone.m_box[2] + 1;
+        const size_t len1 (zone.m_box[1] - zone.m_box[0] + 1);
+        const size_t len2 (zone.m_box[3] - zone.m_box[2] + 1);
         m_aligner->SetSequences(
             Seq1 + zone.m_box[0], len1,
             Seq2 + zone.m_box[2], len2,
-            true);
+            false);
 
         // prepare the pattern
         vector<size_t> pattern;
-        if(zone.m_pattern_start >= 0) {
-
-            copy(m_pattern.begin() + zone.m_pattern_start,
-            m_pattern.begin() + zone.m_pattern_end + 1,
-            back_inserter(pattern));
-            for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
+        if(zone.m_pattern_start < 0) {
+            NCBI_THROW(CAlgoAlignException, eInternal,
+                       "CSplign::x_Run(): Invalid alignment pattern");
+        }
+        
+        copy(m_pattern.begin() + zone.m_pattern_start,
+             m_pattern.begin() + zone.m_pattern_end + 1,
+             back_inserter(pattern));
+        for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
 
 #ifdef  DBG_DUMP_PATTERN
-	      cerr << pattern[j] << '\t' << pattern[j+1] << '\t'
-                   << "(len = " << (pattern[j+1] - pattern[j] + 1) << ")\t"
-		   << pattern[j+2] << '\t' << pattern[j+3] 
-                   << "(len = " << (pattern[j+3] - pattern[j+2] + 1) << ")\t"
-                   << endl;
+            cerr << pattern[j] << '\t' << pattern[j+1] << '\t'
+                 << "(len = " << (pattern[j+1] - pattern[j] + 1) << ")\t"
+                 << pattern[j+2] << '\t' << pattern[j+3] 
+                 << "(len = " << (pattern[j+3] - pattern[j+2] + 1) << ")\t"
+                 << endl;
 #endif
-                pattern[j]   -= zone.m_box[0];
-                pattern[j+1] -= zone.m_box[0];
-                pattern[j+2] -= zone.m_box[2];
-                pattern[j+3] -= zone.m_box[2];
-            }
-            if(pattern.size()) {
-                m_aligner->SetPattern(pattern);
-            }
+            pattern[j]   -= zone.m_box[0];
+            pattern[j+1] -= zone.m_box[0];
+            pattern[j+2] -= zone.m_box[2];
+            pattern[j+3] -= zone.m_box[2];
+        }
+        if(pattern.size()) {
+            m_aligner->SetPattern(pattern);
+        }
 
-            // setup esf
-            m_aligner->SetEndSpaceFree(true, true, true, true);
+        // setup esf
+        m_aligner->SetEndSpaceFree(true, true, true, true);
+        
+        m_aligner->SetCDS(m_cds_start, m_cds_stop);
+        
+        // align
+        m_aligner->Run();
 
-            m_aligner->SetCDS(m_cds_start, m_cds_stop);
-            
-            // align
-            m_aligner->Run();
-
-//#define DBG_DUMP_TYPE2
+        //#define DBG_DUMP_TYPE2
 #ifdef  DBG_DUMP_TYPE2
-            {{
+        {{
             CNWFormatter fmt (*m_aligner);
             string txt;
             fmt.AsText(&txt, CNWFormatter::eFormatType2);
             cerr << txt;
-            }}  
+        }}  
 #endif
 
-            // create list of segments
-            // FIXME: Move segmentation to CSplicedAligner.
-            // Use it both here and in the formatter.
-            CNWFormatter formatter (*m_aligner);
-            string exons;
-            formatter.AsText(&exons, CNWFormatter::eFormatExonTableEx);      
+        CNWFormatter formatter (*m_aligner);
+        formatter.MakeSegments(&segments);
 
-            CNcbiIstrstream iss_exons (exons.c_str());
-            while(iss_exons) {
-                string id1, id2, txt, repr;
-                size_t q0, q1, s0, s1, size;
-                double idty;
-                iss_exons >> id1 >> id2 >> idty >> size
-			  >> q0 >> q1 >> s0 >> s1 >> txt >> repr;
-                if(!iss_exons) break;
-                q0 += zone.m_box[0];
-                q1 += zone.m_box[0];
-                s0 += zone.m_box[2];
-                s1 += zone.m_box[2];
-                SSegment e;
-                e.m_exon = true;
-                e.m_box[0] = q0; e.m_box[1] = q1;
-                e.m_box[2] = s0; e.m_box[3] = s1;
-                e.m_annot = txt;
-                e.m_details = repr;
-                e.Update(m_aligner);
-                segments.push_back(e);
-            }
-
-            // append a gap
-            if(i + 1 < map_dim) {
-                SSegment g;
-                g.m_exon = false;
-                g.m_box[0] = zone.m_box[1] + 1;
-                g.m_box[1] = m_alnmap[i+1].m_box[0] - 1;
-                g.m_box[2] = zone.m_box[3] + 1;
-                g.m_box[3] = m_alnmap[i+1].m_box[2] - 1;
-                g.m_idty = 0;
-                g.m_len = g.m_box[1] - g.m_box[0] + 1;
-                g.m_annot = s_kGap;
-                g.m_details.resize(0);
-                g.m_score = 0; // no score for <Gap>s
-                segments.push_back(g);
-            }
+        // append a gap
+        if(i + 1 < map_dim) {
+            segments.push_back(TSegment());
+            TSegment& g (segments.back());
+            g.m_exon = false;
+            g.m_box[0] = zone.m_box[1] + 1;
+            g.m_box[1] = m_alnmap[i+1].m_box[0] - 1;
+            g.m_box[2] = zone.m_box[3] + 1;
+            g.m_box[3] = m_alnmap[i+1].m_box[2] - 1;
+            g.m_idty = 0;
+            g.m_len = g.m_box[1] - g.m_box[0] + 1;
+            g.m_annot = s_kGap;
+            g.m_details.resize(0);
+            g.m_score = 0; // no score for <Gap>s
         }
     } // zone iterations end
 
@@ -1123,7 +1097,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 //#define DUMP_ORIG_SEGS
 #ifdef DUMP_ORIG_SEGS
     cerr << "Orig segments:" << endl;
-    ITERATE(TSegments, ii, segments) {
+    ITERATE(TSegmentDeque, ii, segments) {
         cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
              << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
@@ -1147,7 +1121,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         size_t exon_count0 = 0;
-        ITERATE(TSegments, ii, segments) {
+        ITERATE(TSegmentDeque, ii, segments) {
             if(ii->m_exon) ++exon_count0;
         }
 
@@ -1156,7 +1130,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         size_t k0 = 0;
         while(k0 < seg_dim) {
 
-            SSegment& s = segments[k0];
+            TSegment& s = segments[k0];
             if(s.m_exon) {
 
                 const size_t len = 1 + s.m_box[1] - s.m_box[0];
@@ -1176,8 +1150,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         // fill the left-hand gap, if any
         if(segments[0].m_exon && segments[0].m_box[0] > 0) {
-            segments.push_front(SSegment());
-            SSegment& g = segments.front();
+            segments.push_front(TSegment());
+            TSegment& g = segments.front();
             g.m_exon = false;
             g.m_box[0] = 0;
             g.m_box[1] = segments[0].m_box[0] - 1;
@@ -1194,7 +1168,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         int k1 = int(seg_dim - 1);
         while(k1 >= int(k0)) {
-            SSegment& s = segments[k1];
+            TSegment& s = segments[k1];
             if(s.m_exon) {
 
                 const size_t len = 1 + s.m_box[1] - s.m_box[0];
@@ -1212,13 +1186,13 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         const size_t SeqLen2 = m_genomic.size();
         const size_t SeqLen1 = m_polya_start == kMax_UInt? m_mrna.size():
-            m_polya_start;
+                                                           m_polya_start;
 
         // fill the right-hand gap, if any
         if( segments[seg_dim - 1].m_exon && 
             segments[seg_dim - 1].m_box[1] < SeqLen1 - 1) {
 
-            SSegment g;
+            TSegment g;
             g.m_exon = false;
             g.m_box[0] = segments[seg_dim - 1].m_box[1] + 1;
             g.m_box[1] = SeqLen1 - 1;
@@ -1235,7 +1209,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         // turn to gaps exons with low identity
         for(size_t k = 0; k < seg_dim; ++k) {
-            SSegment& s = segments[k];
+            TSegment& s = segments[k];
             if(s.m_exon && s.m_idty < m_MinExonIdty) {
                 s.m_exon = false;
                 s.m_idty = 0;
@@ -1250,9 +1224,9 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         {{
             // find the two leftmost exons
             size_t exon_count = 0;
-            SSegment* term_segs[] = {0, 0};
+            TSegment* term_segs[] = {0, 0};
             for(size_t i = 0; i < seg_dim; ++i) {
-                SSegment& s = segments[i];
+                TSegment& s = segments[i];
                 if(s.m_exon) {
                     term_segs[exon_count] = &s;
                     if(++exon_count == 2) {
@@ -1269,9 +1243,9 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         {{
             // find the two rightmost exons
             size_t exon_count = 0;
-            SSegment* term_segs[] = {0, 0};
+            TSegment* term_segs[] = {0, 0};
             for(int i = seg_dim - 1; i >= 0; --i) {
-                SSegment& s = segments[i];
+                TSegment& s = segments[i];
                 if(s.m_exon) {
                     term_segs[exon_count] = &s;
                     if(++exon_count == 2) {
@@ -1288,7 +1262,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         // turn to gaps extra-short exons preceeded/followed by gaps
         bool gap_prev = false;
         for(size_t k = 0; k < seg_dim; ++k) {
-            SSegment& s = segments[k];
+            TSegment& s = segments[k];
             if(s.m_exon == false) {
                 gap_prev = true;
             }
@@ -1316,7 +1290,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             gap_start_idx = 0;
         }
         for(size_t k = 0; k < seg_dim; ++k) {
-            SSegment& s = segments[k];
+            TSegment& s = segments[k];
             if(!s.m_exon) {
                 if(gap_start_idx == -1) {
                     gap_start_idx = int(k);
@@ -1328,7 +1302,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
             else {
                 if(gap_start_idx >= 0) {
-                    SSegment& g = segments[gap_start_idx];
+                    TSegment& g = segments[gap_start_idx];
                     g.m_box[1] = s.m_box[0] - 1;
                     g.m_box[3] = s.m_box[2] - 1;
                     g.m_len = g.m_box[1] - g.m_box[0] + 1;
@@ -1340,7 +1314,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             } 
         }
         if(gap_start_idx >= 0) {
-            SSegment& g = segments[gap_start_idx];
+            TSegment& g = segments[gap_start_idx];
             g.m_box[1] = segments[seg_dim-1].m_box[1];
             g.m_box[3] = segments[seg_dim-1].m_box[3];
             g.m_len = g.m_box[1] - g.m_box[0] + 1;
@@ -1349,7 +1323,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         size_t exon_count1 = 0;
-        ITERATE(CSplign::TSegments, ii, m_segments) {
+        ITERATE(TSegments, ii, m_segments) {
             if(ii->m_exon) ++exon_count1;
         }
 
@@ -1359,267 +1333,13 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 //#define DUMP_PROCESSED_SEGS
 #ifdef DUMP_PROCESSED_SEGS
     cerr << "Processed segments:" << endl;
-    ITERATE(CSplign::TSegments, ii, m_segments) {
+    ITERATE(TSegments, ii, m_segments) {
         cerr << ii->m_exon << '\t' << ii->m_idty << '\t' << ii->m_len << '\t'
              << ii->m_box[0] << '\t' << ii->m_box[1] << '\t'
              << ii->m_box[2] << '\t' << ii->m_box[3] << '\t'
              << ii->m_annot << '\t' << ii->m_score << endl;
     }
 #endif
-
-}
-
-
-// try improving the segment by cutting it from the left
-void CSplign::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
-                                        CConstRef<CSplicedAligner> aligner)
-{
-    const size_t min_query_size = 4;
-    
-    int i0 = int(m_box[1] - m_box[0] + 1), i0_max = i0;
-    if(i0 < int(min_query_size)) {
-        return;
-    }
-    
-    // find the top score suffix
-    int i1 = int(m_box[3] - m_box[2] + 1), i1_max = i1;
-    
-    CNWAligner::TScore score_max = 0, s = 0;
-    
-    const CNWAligner::TScore wm =  1;
-    const CNWAligner::TScore wms = -1;
-    const CNWAligner::TScore wg =  0;
-    const CNWAligner::TScore ws =  -1;
-  
-    string::reverse_iterator irs0 = m_details.rbegin(),
-        irs1 = m_details.rend(), irs = irs0, irs_max = irs0;
-    
-    for( ; irs != irs1; ++irs) {
-        
-        switch(*irs) {
-            
-        case 'M': {
-            s += wm;
-            --i0;
-            --i1;
-        }
-        break;
-            
-        case 'R': {
-            s += wms;
-            --i0;
-            --i1;
-        }
-        break;
-            
-        case 'I': {
-            s += ws;
-            if(irs > irs0 && *(irs-1)!='I') s += wg;
-            --i1;
-        }
-        break;
-
-        case 'D': {
-            s += ws;
-            if(irs > irs0 && *(irs-1)!='D') s += wg;
-            --i0;
-        }
-        }
-
-        if(s >= score_max) {
-            score_max = s;
-            i0_max = i0;
-            i1_max = i1;
-            irs_max = irs;
-        }
-    }
-
-    // work around a weird case of equally optimal
-    // but detrimental for our purposes alignment
-    // -check the actual sequence chars
-    size_t head = 0;
-    while(i0_max > 0 && i1_max > 0) {
-        if(seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1]) {
-            --i0_max; --i1_max;
-            ++head;
-        }
-        else {
-            break;
-        }
-    }
-    
-    // if the resulting segment is still long enough
-    if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size
-       && i0_max > 0) {
-        
-        // resize
-        m_box[0] += i0_max;
-        m_box[2] += i1_max;
-        const size_t L = m_details.size() - (irs_max - irs0 + 1);
-        m_details.erase(0, L);
-        m_details.insert(m_details.begin(), head, 'M');
-        Update(aligner);
-        
-        // update the first two annotation symbols
-        if(m_annot.size() > 2 && m_annot[2] == '<') {
-            int  j1 = m_box[2] - 2;
-            char c1 = j1 >= 0? seq2[j1]: ' ';
-            m_annot[0] = c1;
-            int  j2 = m_box[2] - 2;
-            char c2 = j2 >= 0? seq2[j2]: ' ';
-            m_annot[1] = c2;
-        }
-    }
-}
-
-
-// try improving the segment by cutting it from the right
-void CSplign::SSegment::ImproveFromRight(const char* seq1, const char* seq2,
-                                         CConstRef<CSplicedAligner> aligner)
-{
-    const size_t min_query_size = 4;
-    
-    if(m_box[1] - m_box[0] + 1 < min_query_size) {
-        return;
-    }
-    
-    // find the top score prefix
-    int i0 = -1, i0_max = i0;
-    int i1 = -1, i1_max = i1;
-
-    CNWAligner::TScore score_max = 0, s = 0;
-    
-    const CNWAligner::TScore wm =  1;
-    const CNWAligner::TScore wms = -1;
-    const CNWAligner::TScore wg =  0;
-    const CNWAligner::TScore ws =  -1;
-    
-    string::iterator irs0 = m_details.begin(),
-        irs1 = m_details.end(), irs = irs0, irs_max = irs0;
-    
-    for( ; irs != irs1; ++irs) {
-        
-        switch(*irs) {
-            
-        case 'M': {
-            s += wm;
-            ++i0;
-            ++i1;
-        }
-        break;
-            
-        case 'R': {
-            s += wms;
-            ++i0;
-            ++i1;
-        }
-        break;
-      
-        case 'I': {
-            s += ws;
-            if(irs > irs0 && *(irs-1) != 'I') s += wg;
-            ++i1;
-        }
-        break;
-
-        case 'D': {
-            s += ws;
-            if(irs > irs0 && *(irs-1) != 'D') s += wg;
-            ++i0;
-        }
-    }
-        
-        if(s >= score_max) {
-            score_max = s;
-            i0_max = i0;
-            i1_max = i1;
-            irs_max = irs;
-        }
-    }
-    
-    int dimq = int(m_box[1] - m_box[0] + 1);
-    int dims = int(m_box[3] - m_box[2] + 1);
-    
-    // work around a weird case of equally optimal
-    // but detrimental for our purposes alignment
-    // -check the actual sequences
-    size_t tail = 0;
-    while(i0_max < dimq - 1  && i1_max < dims - 1) {
-        if(seq1[m_box[0]+i0_max+1] == seq2[m_box[2]+i1_max+1]) {
-            ++i0_max; ++i1_max;
-            ++tail;
-        }
-        else {
-            break;
-        }
-    }
-    
-    dimq += tail;
-    dims += tail;
-    
-    // if the resulting segment is still long enough
-    if(i0_max >= int(min_query_size) && i0_max < dimq - 1) {
-        
-        m_box[1] = m_box[0] + i0_max;
-        m_box[3] = m_box[2] + i1_max;
-        
-        m_details.resize(irs_max - irs0 + 1);
-        m_details.insert(m_details.end(), tail, 'M');
-        Update(aligner);
-        
-        // update the last two annotation chars
-        const size_t adim = m_annot.size();
-        if(adim > 2 && m_annot[adim - 3] == '>') {
-            m_annot[adim-2] = seq2[m_box[3] + 1];
-            m_annot[adim-1] = seq2[m_box[3] + 2];
-        }
-    }
-}
-
-
-void CSplign::SSegment::Update(CConstRef<CSplicedAligner> aligner)
-{
-    // restore length and identity
-    m_len = m_details.size();
-
-    string::const_iterator ib = m_details.begin(), ie = m_details.end();
-    size_t count = 0; // std::count() not supported on some platforms
-    for(string::const_iterator ii = ib; ii != ie; ++ii) {
-        if(*ii == 'M') ++count;
-    }
-    m_idty = double(count) / m_len;
-    
-    CNWAligner::TTranscript transcript (m_details.size());
-    size_t i = 0;
-    ITERATE(string, ii, m_details) {
-        transcript[i++] = CNWAligner::ETranscriptSymbol(*ii); // 2b fixed
-    }
-    m_score = aligner->CNWAligner::ScoreFromTranscript(transcript);
-}
-
-
-const char* CSplign::SSegment::GetDonor() const 
-{
-    const size_t adim = m_annot.size();
-    return
-      (adim > 2 && m_annot[adim - 3] == '>')? (m_annot.c_str() + adim - 2): 0;
-}
-
-
-const char* CSplign::SSegment::GetAcceptor() const 
-{
-    const size_t adim = m_annot.size();
-    return (adim > 3 && m_annot[2] == '<')? m_annot.c_str(): 0;
-}
-
-
-bool CSplign::SSegment::s_IsConsensusSplice(const char* donor,
-                                            const char* acceptor)
-{
-  return donor && acceptor &&
-    (donor[0] == 'G' && (donor[1] == 'C' || donor[1] == 'T'))
-    &&
-    (acceptor[0] == 'A' && acceptor[1] == 'G');
 }
 
 
@@ -1627,7 +1347,7 @@ double CSplign::SAlignedCompartment::GetIdentity() const
 {
     string trans;
     for(size_t i = 0, dim = m_segments.size(); i < dim; ++i) {
-        const SSegment& s = m_segments[i];
+        const TSegment& s = m_segments[i];
         if(s.m_exon) {
             trans.append(s.m_details);
         }
@@ -1651,7 +1371,7 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
     box[0] = box[2] = kMax_UInt;
     box[1] = box[3] = 0;
     ITERATE(TSegments, ii, m_segments) {
-        const SSegment& s = *ii;
+        const TSegment& s = *ii;
         if(s.m_exon) {
             
             Uint4 a, b;
@@ -1689,7 +1409,7 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
 }
 
 
-void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
+void CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
 {            
     const size_t exon_size = 1 + term_segs[0]->m_box[1] -
         term_segs[0]->m_box[0];
@@ -1722,7 +1442,7 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
 
             const size_t intron_len = b - a;
 
-            const bool consensus = CSplign::SSegment::s_IsConsensusSplice(dnr, acc);
+            const bool consensus = TSegment::s_IsConsensusSplice(dnr, acc);
 
             const size_t max_ext = (idty < .96 || !consensus || exon_size < 16)? 
                 m_max_genomic_ext: (5000 *  kMinTermExonSize);
@@ -1736,7 +1456,7 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
         if(turn2gap) {
 
             // turn the segment into a gap
-            SSegment& s = *(term_segs[0]);
+            TSegment& s = *(term_segs[0]);
             s.m_exon = false;
             s.m_idty = 0;
             s.m_len = exon_size;
@@ -1797,6 +1517,59 @@ namespace splign_local {
         s = p;
         p += s.size() + 1;
     }
+}
+
+
+void CNWFormatter::SSegment::ToBuffer(TNetCacheBuffer* target) const
+{
+    using namespace splign_local;
+
+    if(target == 0) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_NullPointerPassed );
+    }
+    
+    const size_t total_size = sizeof m_exon + sizeof m_idty + 
+        sizeof m_len + sizeof m_box + m_annot.size() + 1 +
+        m_details.size() + 1 + sizeof m_score;
+
+    target->resize(total_size);
+    
+    char* p = &target->front();
+    ElemToBuffer(m_exon, p);
+    ElemToBuffer(m_idty, p);
+    ElemToBuffer(m_len, p);
+    for(size_t i = 0; i < 4; ++i) {
+        ElemToBuffer(m_box[i], p);
+    }
+    ElemToBuffer(m_annot, p);
+    ElemToBuffer(m_details, p);
+    ElemToBuffer(m_score, p);
+}
+
+
+void CNWFormatter::SSegment::FromBuffer(const TNetCacheBuffer& source)
+{
+    using namespace splign_local;
+
+    const size_t min_size = sizeof m_exon + sizeof m_idty + sizeof m_len + 
+        + sizeof m_box + 1 + 1 + sizeof m_score;
+
+    if(source.size() < min_size) {
+        NCBI_THROW(CAlgoAlignException, eInternal, g_msg_NetCacheBufferIncomplete);
+    }
+    
+    const char* p = &source.front();
+    ElemFromBuffer(m_exon, p);
+    ElemFromBuffer(m_idty, p);
+    ElemFromBuffer(m_len, p);
+
+    for(size_t i = 0; i < 4; ++i) {
+        ElemFromBuffer(m_box[i], p);
+    }
+    
+    ElemFromBuffer(m_annot, p);
+    ElemFromBuffer(m_details, p);
+    ElemFromBuffer(m_score, p);
 }
 
 
@@ -1868,73 +1641,22 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
     while(p <= pe) {
         size_t seg_buf_size = 0;
         ElemFromBuffer(seg_buf_size, p);
-        m_segments.push_back(SSegment());
-        SSegment& seg = m_segments.back();
+        m_segments.push_back(TSegment());
+        TSegment& seg = m_segments.back();
         seg.FromBuffer(TNetCacheBuffer(p, p + seg_buf_size));
         p += seg_buf_size;
     }
 }
 
 
-void CSplign::SSegment::ToBuffer(TNetCacheBuffer* target) const
-{
-    using namespace splign_local;
-
-    if(target == 0) {
-        NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_NullPointerPassed );
-    }
-    
-    const size_t total_size = sizeof m_exon + sizeof m_idty + 
-        sizeof m_len + sizeof m_box + m_annot.size() + 1 +
-        m_details.size() + 1 + sizeof m_score;
-
-    target->resize(total_size);
-    
-    char* p = &target->front();
-    ElemToBuffer(m_exon, p);
-    ElemToBuffer(m_idty, p);
-    ElemToBuffer(m_len, p);
-    for(size_t i = 0; i < 4; ++i) {
-        ElemToBuffer(m_box[i], p);
-    }
-    ElemToBuffer(m_annot, p);
-    ElemToBuffer(m_details, p);
-    ElemToBuffer(m_score, p);
-}
-
-
-void CSplign::SSegment::FromBuffer(const TNetCacheBuffer& source)
-{
-    using namespace splign_local;
-
-    const size_t min_size = sizeof m_exon + sizeof m_idty + sizeof m_len + 
-        + sizeof m_box + 1 + 1 + sizeof m_score;
-
-    if(source.size() < min_size) {
-        NCBI_THROW(CAlgoAlignException, eInternal, g_msg_NetCacheBufferIncomplete);
-    }
-    
-    const char* p = &source.front();
-    ElemFromBuffer(m_exon, p);
-    ElemFromBuffer(m_idty, p);
-    ElemFromBuffer(m_len, p);
-
-    for(size_t i = 0; i < 4; ++i) {
-        ElemFromBuffer(m_box[i], p);
-    }
-    
-    ElemFromBuffer(m_annot, p);
-    ElemFromBuffer(m_details, p);
-    ElemFromBuffer(m_score, p);
-}
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: splign.cpp,v $
  * Revision 1.61  2006/09/26 15:29:16  kapustin
- * Complete alignment information can now be passed to x_RunOnCompartment() for additional filtering of compartment hits
+ * Complete alignment information can now be passed to x_RunOnCompartment() 
+ * for additional filtering of compartment hits
  *
  * Revision 1.60  2006/08/29 20:21:23  kapustin
  * Iterate seg-level core post-processing until no new exons created
@@ -1943,7 +1665,8 @@ END_NCBI_SCOPE
  * Suppress a warning
  *
  * Revision 1.58  2006/07/18 19:36:58  kapustin
- * Retrieve longest ORF information when in sense direction. Use band-limited NW for best diag extraction.
+ * Retrieve longest ORF information when in sense direction. 
+ * Use band-limited NW for best diag extraction.
  *
  * Revision 1.57  2006/06/05 12:52:23  kapustin
  * Screen off final alignments with overall identity below the threshold
