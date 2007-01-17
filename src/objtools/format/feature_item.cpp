@@ -2443,9 +2443,9 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(heterogen);
 
     if ( !cfg.GoQualsToNote() ) {
-        DO_QUAL(go_component);
-        DO_QUAL(go_function);
-        DO_QUAL(go_process);
+        x_FormatQual(eFQ_go_component, "GO_component", qvec);
+        x_FormatQual(eFQ_go_function, "GO_function", qvec);
+        x_FormatQual(eFQ_go_process, "GO_process", qvec);
     }
 
     x_FormatNoteQuals(ff);
@@ -3063,11 +3063,11 @@ void CFeatureItem::x_AddFTableExtQuals(const CSeq_feat::TExt& ext) const
                     const string& label = field.GetLabel().GetStr();
                     string name;
                     if ( label == "Process" ) {
-                        name = "go_process";
+                        name = "GO_process";
                     } else if ( label == "Component" ) {               
-                        name = "go_component";
+                        name = "GO_component";
                     } else if ( label == "Function" ) {
-                        name = "go_function";
+                        name = "GO_function";
                     }
                     if ( name.empty() ) {
                         continue;
