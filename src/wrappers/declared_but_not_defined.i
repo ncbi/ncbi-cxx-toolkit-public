@@ -30,7 +30,15 @@
  *
  */
 
-%ignore ncbi::objects::CFlatFileConfig::SetCodonRecognizedToNote;
+
+%ignore ncbi::CNetScheduleAdmin::Logging;
+%ignore ncbi::CNetScheduleSubmitter::GetJobDetails;
+%ignore ncbi::CNetScheduleExecuter::GetJobDetails;
+%ignore ncbi::CNetScheduleAdmin::StatusSnapshot;
+
+%ignore ncbi::objects::CLDS_Manager::DeleteDB;
+
+%ignore ncbi::objects::SAnnotObjectsIndex::ClearIndex();
 
 %ignore ncbi::objects::CPrefetchToken::GetPriority;
 %ignore ncbi::objects::CPrefetchToken::SetPriority;
