@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objmgr/scope.hpp>
-#include <algo/align/nw/nw_spliced_aligner.hpp>
+#include <algo/align/nw/nw_formatter.hpp>
 #include <algo/align/util/blast_tabular.hpp>
 
 
@@ -104,40 +104,9 @@ public:
 
     void SetMaxCompsPerQuery(size_t m);
     size_t GetMaxCompsPerQuery(void) const;
-
-  
-    // a segment can represent an exon or an unaligning piece of mRna (a gap)
-    struct NCBI_XALGOALIGN_EXPORT SSegment {
-        
-    public:
-        
-        bool   m_exon; // false if gap
-        double m_idty;
-        size_t m_len;
-        size_t m_box [4];
-        string m_annot;   // short description like AG<exon>GT
-        string m_details; // transcript for exons, '-' for gaps
-        CNWAligner::TScore m_score;
-        
-        void ImproveFromLeft( const char* seq1, const char* seq2,
-                              CConstRef<CSplicedAligner> aligner);
-        void ImproveFromRight( const char* seq1, const char* seq2,
-                               CConstRef<CSplicedAligner> aligner);
-        
-        void Update(CConstRef<CSplicedAligner> aligner); // recompute members
-        const char* GetDonor(void) const;    // raw pointers to parts of annot
-        const char* GetAcceptor(void) const; // or zero if less than 2 chars
-
-        static bool s_IsConsensusSplice(const char* donor,
-                                        const char* acceptor);
-        
-        // NetCache-related serialization
-        typedef vector<char> TNetCacheBuffer;
-        void ToBuffer   (TNetCacheBuffer* buf) const;
-        void FromBuffer (const TNetCacheBuffer& buf);
-    };
     
-    typedef vector<SSegment> TSegments;
+    typedef CNWFormatter::SSegment   TSegment;
+    typedef vector<TSegment>         TSegments;
 
     // aligned compartment representation 
     struct NCBI_XALGOALIGN_EXPORT SAlignedCompartment {
@@ -260,7 +229,7 @@ protected:
     void   x_Run(const char* seq1, const char* seq2);
     size_t x_TestPolyA(void);
     void   x_SetPattern(THitRefs* hitrefs);
-    void   x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const;
+    void   x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const;
     Uint4  x_GetGenomicExtent(const Uint4 query_extent, Uint4 max_ext = 0) const;
 
     void   x_LoadSequence(vector<char>* seq, 
@@ -280,7 +249,7 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *
- * $Log$
+ * $Log: splign.hpp,v $
  * Revision 1.39  2006/09/26 15:28:43  kapustin
  * Complete alignment information can now be passed to x_RunOnCompartment() for additional filtering of compartment hits
  *
