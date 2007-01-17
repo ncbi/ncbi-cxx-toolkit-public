@@ -63,6 +63,9 @@ public:
     // point in master sequence - coordinate of the first base to the right
     TSeqPos         m_MasterPos;
 
+    // first encountered alignment used to calculate this switch point
+    CConstRef<CSeq_align> m_FirstAlign;
+
     // point on the segment to the left of current switch point
     CSeq_id_Handle  m_LeftId;
     TSeqPos         m_LeftPos;
@@ -139,7 +142,7 @@ END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
-* $Log$
+* $Log: seq_map_switch.hpp,v $
 * Revision 1.5  2006/10/18 17:24:32  vasilche
 * SSeqMapSwitchPoint -> CSeqMapSwitchPoint.
 *
