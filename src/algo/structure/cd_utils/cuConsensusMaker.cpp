@@ -120,7 +120,12 @@ CRef< CSeq_entry > ConsensusMaker::getConsensusSeqEntry()
 	return result;
 }
 
-const BlockModelPair& ConsensusMaker::getGuideAlignment()
+const BlockModelPair& ConsensusMaker::getGuideAlignment()const
+{
+	return m_rp.getGuideAlignment();
+}
+
+BlockModelPair& ConsensusMaker::getGuideAlignment()
 {
 	return m_rp.getGuideAlignment();
 }

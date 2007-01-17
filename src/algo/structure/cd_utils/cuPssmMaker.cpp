@@ -384,6 +384,7 @@ CRef<CPssmWithParameters> PssmMaker::make()
 		modifyQuery(query); 
 		pssmRef->SetPssm().SetQuery(*query);
 	}
+	m_pssmMade = pssmRef;
 	return pssmRef;
 }
 
@@ -506,7 +507,10 @@ void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 
 const BlockModelPair& PssmMaker::getGuideAlignment()
 {
-	return m_conMaker->getGuideAlignment();
+	BlockModelPair& bmp = m_conMaker->getGuideAlignment();
+	CRef< CSeq_id > seqId = *(m_pssmMade->SetPssm().SetQuery().SetSeq().SetId().begin());
+	bmp.getSlave().setSeqId(seqId);
+	return bmp;
 }
 
 const string& PssmMaker::getConsensus()

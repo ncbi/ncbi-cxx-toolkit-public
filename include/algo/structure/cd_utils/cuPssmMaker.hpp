@@ -150,6 +150,7 @@ private:
 	CdPssmInput* m_pssmInput;
 	void modifyQuery(CRef< CSeq_entry > query);
 	CRef<CPssmWithParameters> makeDefaultPssm();
+	CRef<CPssmWithParameters> m_pssmMade;
 };
 
 END_SCOPE(cd_utils)

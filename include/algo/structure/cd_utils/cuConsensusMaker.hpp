@@ -56,7 +56,8 @@ public:
 	ResidueProfiles& getResidueProfiles() {return m_rp;}
 	const string& getConsensus();
 	CRef< CSeq_entry > getConsensusSeqEntry();
-	const BlockModelPair& getGuideAlignment();
+	const BlockModelPair& getGuideAlignment()const;
+	BlockModelPair& getGuideAlignment();
 	CRef< CSeq_align > getGuideSeqAlign();
 	CRef<CSeq_align_set> remasterWithConsensus()const;
 	void remasterWithConsensus(bool extended);
