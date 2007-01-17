@@ -436,10 +436,11 @@ CTempString::size_type CTempString::find_first_not_of(const CTempString& match,
         const_iterator it = begin() + pos;
         const_iterator end_it = end();
 
-        const_iterator match_end = match.end();
+        const_iterator match_begin = match.begin();
+        const_iterator match_end   = match.end();
         for ( ;  it != end_it;  ++it) {
             bool found = false;
-            for (const_iterator match_it = match.begin();
+            for (const_iterator match_it = match_begin;
                  match_it != match_end;  ++match_it) {
                 if (*it == *match_it) {
                     found = true;
