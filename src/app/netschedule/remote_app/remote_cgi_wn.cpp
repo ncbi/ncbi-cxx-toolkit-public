@@ -37,7 +37,6 @@
 #include <corelib/ncbiexec.hpp>
 
 #include <connect/services/grid_worker_app.hpp>
-#include <connect/services/remote_job.hpp>
 
 #include <cgi/ncbicgi.hpp>
 
@@ -97,20 +96,20 @@ public:
         
         int ret = -1;
         bool finished_ok = ExecRemoteApp(m_Params.GetAppPath(), 
-                                         args, 
-                                         *in, 
-                                         context.GetOStream(), 
-                                         err,
-                                         ret,
-                                         context,
-                                         m_Params.GetMaxAppRunningTime(),
-                                         0,
-                                         m_Params.GetKeepAlivePeriod(),
-                                         tmp_path,
-                                         &senv[0],
-                                         m_Params.GetMonitorAppPath(),
-                                         m_Params.GetMaxMonitorRunningTime(),
-                                         m_Params.GetMonitorPeriod());
+                                        args, 
+                                        *in, 
+                                        context.GetOStream(), 
+                                        err,
+                                        ret,
+                                        context,
+                                        m_Params.GetMaxAppRunningTime(),
+                                        0,
+                                        m_Params.GetKeepAlivePeriod(),
+                                        tmp_path,
+                                        &senv[0],
+                                        m_Params.GetMonitorAppPath(),
+                                        m_Params.GetMaxMonitorRunningTime(),
+                                        m_Params.GetMonitorPeriod());
 
         string stat;
         if( !finished_ok ) {
@@ -143,15 +142,10 @@ public:
         return ret;
     }
 private:
-
-    CBlobStorageFactory m_Factory;
-    CRemoteAppRequest_Executer m_Request;
-    CRemoteAppResult_Executer  m_Result;
     CRemoteAppParams m_Params;
 };
 
 CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext& context)
-    : m_Factory(context.GetConfig()), m_Request(m_Factory), m_Result(m_Factory)
 {
     const IRegistry& reg = context.GetConfig();
     m_Params.Load("remote_cgi", reg);
