@@ -1725,7 +1725,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     CPipe pipe;
     EIO_Status st = pipe.Open(cmd, args, fStdErr_Open, current_dir, env);
     if (st != eIO_Success) {
-        NCBI_THROW(CException, eInvalid, "Cannot execute \"" + cmd + "\"");
+        NCBI_THROW(CPipeException, eOpen, "Cannot execute \"" + cmd + "\"");
     }
  
     EFinish finish = eDone;
