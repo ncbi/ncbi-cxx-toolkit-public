@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 #include "messages.hpp"
 #include <algo/align/nw/nw_formatter.hpp>
-#include <algo/align/nw/nw_aligner.hpp>
 #include <algo/align/nw/align_exception.hpp>
 
 #include <objects/seqalign/Score.hpp>
@@ -223,13 +222,387 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
 
 
 
-void CNWFormatter::AsText(string* output, ETextFormatType type,
-                          size_t line_width) const
+// try improving the segment by cutting it from the left
+void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
+                                        CConstRef<CSplicedAligner> aligner)
+{
+    const size_t min_query_size = 4;
+    
+    int i0 = int(m_box[1] - m_box[0] + 1), i0_max = i0;
+    if(i0 < int(min_query_size)) {
+        return;
+    }
+    
+    // find the top score suffix
+    int i1 = int(m_box[3] - m_box[2] + 1), i1_max = i1;
+    
+    CNWAligner::TScore score_max = 0, s = 0;
+    
+    const CNWAligner::TScore wm =  1;
+    const CNWAligner::TScore wms = -1;
+    const CNWAligner::TScore wg =  0;
+    const CNWAligner::TScore ws =  -1;
+  
+    string::reverse_iterator irs0 = m_details.rbegin(),
+        irs1 = m_details.rend(), irs = irs0, irs_max = irs0;
+    
+    for( ; irs != irs1; ++irs) {
+        
+        switch(*irs) {
+            
+        case 'M': {
+            s += wm;
+            --i0;
+            --i1;
+        }
+        break;
+            
+        case 'R': {
+            s += wms;
+            --i0;
+            --i1;
+        }
+        break;
+            
+        case 'I': {
+            s += ws;
+            if(irs > irs0 && *(irs-1)!='I') s += wg;
+            --i1;
+        }
+        break;
+
+        case 'D': {
+            s += ws;
+            if(irs > irs0 && *(irs-1)!='D') s += wg;
+            --i0;
+        }
+        }
+
+        if(s >= score_max) {
+            score_max = s;
+            i0_max = i0;
+            i1_max = i1;
+            irs_max = irs;
+        }
+    }
+
+    // work around a weird case of equally optimal
+    // but detrimental for our purposes alignment
+    // -check the actual sequence chars
+    size_t head = 0;
+    while(i0_max > 0 && i1_max > 0) {
+        if(seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1]) {
+            --i0_max; --i1_max;
+            ++head;
+        }
+        else {
+            break;
+        }
+    }
+    
+    // if the resulting segment is still long enough
+    if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size
+       && i0_max > 0) {
+        
+        // resize
+        m_box[0] += i0_max;
+        m_box[2] += i1_max;
+        const size_t L = m_details.size() - (irs_max - irs0 + 1);
+        m_details.erase(0, L);
+        m_details.insert(m_details.begin(), head, 'M');
+        Update(aligner.GetNonNullPointer());
+        
+        // update the first two annotation symbols
+        if(m_annot.size() > 2 && m_annot[2] == '<') {
+            int  j1 = m_box[2] - 2;
+            char c1 = j1 >= 0? seq2[j1]: ' ';
+            m_annot[0] = c1;
+            int  j2 = m_box[2] - 2;
+            char c2 = j2 >= 0? seq2[j2]: ' ';
+            m_annot[1] = c2;
+        }
+    }
+}
+
+
+// try improving the segment by cutting it from the right
+void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2,
+                                         CConstRef<CSplicedAligner> aligner)
+{
+    const size_t min_query_size = 4;
+    
+    if(m_box[1] - m_box[0] + 1 < min_query_size) {
+        return;
+    }
+    
+    // find the top score prefix
+    int i0 = -1, i0_max = i0;
+    int i1 = -1, i1_max = i1;
+
+    CNWAligner::TScore score_max = 0, s = 0;
+    
+    const CNWAligner::TScore wm =  1;
+    const CNWAligner::TScore wms = -1;
+    const CNWAligner::TScore wg =  0;
+    const CNWAligner::TScore ws =  -1;
+    
+    string::iterator irs0 = m_details.begin(),
+        irs1 = m_details.end(), irs = irs0, irs_max = irs0;
+    
+    for( ; irs != irs1; ++irs) {
+        
+        switch(*irs) {
+            
+        case 'M': {
+            s += wm;
+            ++i0;
+            ++i1;
+        }
+        break;
+            
+        case 'R': {
+            s += wms;
+            ++i0;
+            ++i1;
+        }
+        break;
+      
+        case 'I': {
+            s += ws;
+            if(irs > irs0 && *(irs-1) != 'I') s += wg;
+            ++i1;
+        }
+        break;
+
+        case 'D': {
+            s += ws;
+            if(irs > irs0 && *(irs-1) != 'D') s += wg;
+            ++i0;
+        }
+    }
+        
+        if(s >= score_max) {
+            score_max = s;
+            i0_max = i0;
+            i1_max = i1;
+            irs_max = irs;
+        }
+    }
+    
+    int dimq = int(m_box[1] - m_box[0] + 1);
+    int dims = int(m_box[3] - m_box[2] + 1);
+    
+    // work around a weird case of equally optimal
+    // but detrimental for our purposes alignment
+    // -check the actual sequences
+    size_t tail = 0;
+    while(i0_max < dimq - 1  && i1_max < dims - 1) {
+        if(seq1[m_box[0]+i0_max+1] == seq2[m_box[2]+i1_max+1]) {
+            ++i0_max; ++i1_max;
+            ++tail;
+        }
+        else {
+            break;
+        }
+    }
+    
+    dimq += tail;
+    dims += tail;
+    
+    // if the resulting segment is still long enough
+    if(i0_max >= int(min_query_size) && i0_max < dimq - 1) {
+        
+        m_box[1] = m_box[0] + i0_max;
+        m_box[3] = m_box[2] + i1_max;
+        
+        m_details.resize(irs_max - irs0 + 1);
+        m_details.insert(m_details.end(), tail, 'M');
+        Update(aligner.GetNonNullPointer());
+        
+        // update the last two annotation chars
+        const size_t adim = m_annot.size();
+        if(adim > 2 && m_annot[adim - 3] == '>') {
+            m_annot[adim-2] = seq2[m_box[3] + 1];
+            m_annot[adim-1] = seq2[m_box[3] + 2];
+        }
+    }
+}
+
+
+void CNWFormatter::SSegment::Update(const CNWAligner* paligner)
+{
+    // restore length and identity
+    m_len = m_details.size();
+
+    string::const_iterator ib = m_details.begin(), ie = m_details.end();
+    size_t count = 0; // std::count() not supported on some platforms
+    for(string::const_iterator ii = ib; ii != ie; ++ii) {
+        if(*ii == 'M') ++count;
+    }
+    m_idty = double(count) / m_len;
+    
+    CNWAligner::TTranscript transcript (m_details.size());
+    size_t i = 0;
+    ITERATE(string, ii, m_details) {
+        transcript[i++] = CNWAligner::ETranscriptSymbol(*ii); // 2b fixed
+    }
+    m_score = paligner->CNWAligner::ScoreFromTranscript(transcript);
+}
+
+
+const char* CNWFormatter::SSegment::GetDonor() const 
+{
+    const size_t adim = m_annot.size();
+    return
+      (adim > 2 && m_annot[adim - 3] == '>')? (m_annot.c_str() + adim - 2): 0;
+}
+
+
+const char* CNWFormatter::SSegment::GetAcceptor() const 
+{
+    const size_t adim = m_annot.size();
+    return (adim > 3 && m_annot[2] == '<')? m_annot.c_str(): 0;
+}
+
+
+bool CNWFormatter::SSegment::s_IsConsensusSplice(const char* donor,
+                                                 const char* acceptor)
+{
+  return donor && acceptor &&
+    (donor[0] == 'G' && (donor[1] == 'C' || donor[1] == 'T'))
+    &&
+    (acceptor[0] == 'A' && acceptor[1] == 'G');
+}
+
+
+
+void CNWFormatter::MakeSegments(deque<SSegment>* psegments) const
+{
+    const CNWAligner::TTranscript transcript (m_aligner->GetTranscript());
+    if(transcript.size() == 0) {
+        NCBI_THROW(CAlgoAlignException, eNoData, g_msg_NoAlignment);
+    }
+
+    deque<SSegment>& segments (*psegments);
+    segments.resize(0);
+
+    bool esfL1, esfR1, esfL2, esfR2;
+    m_aligner->GetEndSpaceFree(&esfL1, &esfR1, &esfL2, &esfR2);
+    const size_t len2  (m_aligner->GetSeqLen2());
+    const char* start1 (m_aligner->GetSeq1());
+    const char* start2 (m_aligner->GetSeq2());
+    const char* p1     (start1);
+    const char* p2     (start2);
+    int tr_idx_hi0 (transcript.size() - 1), tr_idx_hi (tr_idx_hi0);
+    int tr_idx_lo0 (0), tr_idx_lo (tr_idx_lo0);
+
+    if(esfL1 && transcript[tr_idx_hi0] == CNWAligner::eTS_Insert) {
+        while(esfL1 && transcript[tr_idx_hi] == CNWAligner::eTS_Insert) {
+            --tr_idx_hi;
+            ++p2;
+        }
+    }
+
+    if(esfL2 && transcript[tr_idx_hi0] == CNWAligner::eTS_Delete) {
+        while(esfL2 && transcript[tr_idx_hi] == CNWAligner::eTS_Delete) {
+            --tr_idx_hi;
+            ++p1;
+        }
+    }
+
+    if(esfR1 && transcript[tr_idx_lo0] == CNWAligner::eTS_Insert) {
+        while(esfR1 && transcript[tr_idx_lo] == CNWAligner::eTS_Insert) {
+            ++tr_idx_lo;
+        }
+    }
+
+    if(esfR2 && transcript[tr_idx_lo0] == CNWAligner::eTS_Delete) {
+        while(esfR2 && transcript[tr_idx_lo] == CNWAligner::eTS_Delete) {
+            ++tr_idx_lo;
+        }
+    }
+
+    vector<char> trans_ex (tr_idx_hi - tr_idx_lo + 1);
+
+    for(int tr_idx = tr_idx_hi; tr_idx >= tr_idx_lo; ) {
+
+        const char* p1_beg = p1;
+        const char* p2_beg = p2;
+        size_t matches = 0, exon_aln_size = 0;
+
+        vector<char>::iterator ii_ex = trans_ex.begin();
+        while(tr_idx >= tr_idx_lo && 
+              transcript[tr_idx] < CNWAligner::eTS_Intron) {
+                
+            bool noins = transcript[tr_idx] != CNWAligner::eTS_Insert;
+            bool nodel = transcript[tr_idx] != CNWAligner::eTS_Delete;
+            if(noins && nodel) {
+                if(*p1++ == *p2++) {
+                    ++matches;
+                    *ii_ex++ = 'M';
+                }
+                else {
+                    *ii_ex++ = 'R';
+                }
+            } else if(noins) {
+                ++p1;
+                *ii_ex++ = 'D';
+            } else {
+                ++p2;
+                *ii_ex++ = 'I';
+            }
+            --tr_idx;
+            ++exon_aln_size;
+        }
+
+        if(exon_aln_size > 0) {
+
+            segments.push_back(SSegment());
+            SSegment& s = segments.back();
+
+            s.m_exon = true;
+            s.m_idty = float(matches) / exon_aln_size;
+            s.m_len = exon_aln_size;
+
+            size_t beg1  = p1_beg - start1, end1 = p1 - start1 - 1;
+            size_t beg2  = p2_beg - start2, end2 = p2 - start2 - 1;
+
+            s.m_box[0] = beg1;
+            s.m_box[1] = end1;
+            s.m_box[2] = beg2;
+            s.m_box[3] = end2;
+
+            char c1 = (p2_beg >= start2 + 2)? *(p2_beg - 2): ' ';
+            char c2 = (p2_beg >= start2 + 1)? *(p2_beg - 1): ' ';
+            char c3 = (p2 < start2 + len2)? *(p2): ' ';
+            char c4 = (p2 < start2 + len2 - 1)? *(p2+1): ' ';
+            s.m_annot.resize(10);
+            s.m_annot[0] = c1;
+            s.m_annot[1] = c2;
+            const string s_exontag ("<exon>");
+            copy(s_exontag.begin(), s_exontag.end(), s.m_annot.begin() + 2);
+            s.m_annot[8] = c3;
+            s.m_annot[9] = c4;
+            s.m_details.resize(ii_ex - trans_ex.begin());
+            copy(trans_ex.begin(), ii_ex, s.m_details.begin());
+            s.Update(m_aligner);
+        }
+
+        // find next exon
+        while(tr_idx >= tr_idx_lo && (transcript[tr_idx] == CNWAligner::eTS_Intron)) {
+            --tr_idx;
+            ++p2;
+        }
+    }
+}
+
+
+void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_width)
+  const
 {
     CNcbiOstrstream ss;
 
     const CNWAligner::TTranscript transcript = m_aligner->GetTranscript();
-
     if(transcript.size() == 0) {
         NCBI_THROW(CAlgoAlignException,
                    eNoData,
@@ -349,7 +722,97 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
     break;
     
     case eFormatExonTable:
-    case eFormatExonTableEx: {
+    case eFormatExonTableEx:  {
+
+        ss.precision(3);
+
+        typedef deque<SSegment> TSegments;
+        TSegments segments;
+        MakeSegments(&segments);
+        ITERATE(TSegments, ii, segments) {
+
+            ss << strid_query << '\t' << strid_subj << '\t';
+            ss << ii->m_idty << '\t' << ii->m_len << '\t';
+            copy(ii->m_box, ii->m_box + sizeof(ii->m_box), 
+                 ostream_iterator<size_t>(ss,"\t"));
+            ss << '\t' << ii->m_annot;
+            if(type == eFormatExonTableEx) {
+                ss << '\t' << ii->m_details;
+            }
+            ss << endl;
+        }
+    }
+    break;
+
+    default: {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "Incorrect format specified");
+    }
+
+    }
+
+    *output = CNcbiOstrstreamToString(ss);
+}
+
+
+
+// Transform source sequences according to the transcript.
+// Write the results to v1 and v2 leaving source sequences intact.
+// Return alignment size.
+size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
+    const
+{
+    const CNWAligner::TTranscript transcript = m_aligner->GetTranscript();
+
+    vector<char>& v1 = *pv1;
+    vector<char>& v2 = *pv2;
+
+    vector<CNWAligner::ETranscriptSymbol>::const_reverse_iterator
+        ib = transcript.rbegin(),
+        ie = transcript.rend(),
+        ii;
+
+    const char* iv1 = m_aligner->GetSeq1();
+    const char* iv2 = m_aligner->GetSeq2();
+    v1.clear();
+    v2.clear();
+
+    for (ii = ib;  ii != ie;  ii++) {
+        CNWAligner::ETranscriptSymbol ts = *ii;
+        char c1, c2;
+        switch ( ts ) {
+        case CNWAligner::eTS_Insert:
+            c1 = '-';
+            c2 = *iv2++;
+            break;
+        case CNWAligner::eTS_Delete:
+            c2 = '-';
+            c1 = *iv1++;
+            break;
+        case CNWAligner::eTS_Match:
+        case CNWAligner::eTS_Replace:
+            c1 = *iv1++;
+            c2 = *iv2++;
+            break;
+        case CNWAligner::eTS_Intron:
+            c1 = '+';
+            c2 = *iv2++;
+            break;
+        default:
+            c1 = c2 = '?';
+            break;
+        }
+        v1.push_back(c1);
+        v2.push_back(c2);
+    }
+
+    return v1.size();
+}
+
+
+/*
+
+ {
         ss.precision(3);
         bool esfL1, esfR1, esfL2, esfR2;
         m_aligner->GetEndSpaceFree(&esfL1, &esfR1, &esfL2, &esfR2);
@@ -457,80 +920,17 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
             }
         }
     }
-    break;
-
-    default: {
-        NCBI_THROW(CAlgoAlignException, eBadParameter,
-                   "Incorrect format specified");
-    }
-
-    }
-
-    *output = CNcbiOstrstreamToString(ss);
-}
 
 
 
-// Transform source sequences according to the transcript.
-// Write the results to v1 and v2 leaving source sequences intact.
-// Return alignment size.
-size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
-    const
-{
-    const CNWAligner::TTranscript transcript = m_aligner->GetTranscript();
-
-    vector<char>& v1 = *pv1;
-    vector<char>& v2 = *pv2;
-
-    vector<CNWAligner::ETranscriptSymbol>::const_reverse_iterator
-        ib = transcript.rbegin(),
-        ie = transcript.rend(),
-        ii;
-
-    const char* iv1 = m_aligner->GetSeq1();
-    const char* iv2 = m_aligner->GetSeq2();
-    v1.clear();
-    v2.clear();
-
-    for (ii = ib;  ii != ie;  ii++) {
-        CNWAligner::ETranscriptSymbol ts = *ii;
-        char c1, c2;
-        switch ( ts ) {
-        case CNWAligner::eTS_Insert:
-            c1 = '-';
-            c2 = *iv2++;
-            break;
-        case CNWAligner::eTS_Delete:
-            c2 = '-';
-            c1 = *iv1++;
-            break;
-        case CNWAligner::eTS_Match:
-        case CNWAligner::eTS_Replace:
-            c1 = *iv1++;
-            c2 = *iv2++;
-            break;
-        case CNWAligner::eTS_Intron:
-            c1 = '+';
-            c2 = *iv2++;
-            break;
-        default:
-            c1 = c2 = '?';
-            break;
-        }
-        v1.push_back(c1);
-        v2.push_back(c2);
-    }
-
-    return v1.size();
-}
-
+*/
 
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: nw_formatter.cpp,v $
  * Revision 1.18  2005/05/16 20:18:08  jcherry
  * Fixed loss of characters and line ends in fasta format
  *
@@ -544,13 +944,17 @@ END_NCBI_SCOPE
  * Add default non-zero seqid
  *
  * Revision 1.14  2005/02/23 16:59:38  kapustin
- * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
+ * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. 
+ * Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts 
+ * and strands.
  *
  * Revision 1.13  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *
  * Revision 1.12  2004/11/29 14:37:15  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. 
+ * x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters 
+ * to specify starting coordinates.
  *
  * Revision 1.11  2004/11/04 17:32:32  kapustin
  * Use CDense_seg::FromTranscript() to init dense-segs
