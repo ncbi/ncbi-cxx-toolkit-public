@@ -680,7 +680,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                     reinterpret_cast<VOID*>(m_ColFmt[m_CurrItem].DecimalDigits), 0);
 
             // outlen = xGetData(SQL_ARD_TYPE, &v, sizeof(SQL_NUMERIC_STRUCT));
-            outlen = xGetData(m_ColFmt[m_CurrItem].DataType, &v, sizeof(SQL_NUMERIC_STRUCT));
+            outlen = xGetData(SQL_C_NUMERIC, &v, sizeof(SQL_NUMERIC_STRUCT));
             if (outlen <= 0) item_buf->AssignNULL();
             else xConvert2CDB_Numeric((CDB_Numeric*)item_buf, v);
             break;
