@@ -33,6 +33,7 @@
 NCBI-PCAssay DEFINITIONS ::= BEGIN
 
 IMPORTS Pub                              FROM NCBI-Pub
+        BioSource                        FROM NCBI-BioSource 
         Date, Object-id                  FROM NCBI-General
         PC-ID, PC-Source, PC-XRefData    FROM NCBI-PCSubstance;
 
@@ -129,6 +130,7 @@ PC-AssayDescription ::= SEQUENCE {
     protocol          SEQUENCE OF VisibleString    OPTIONAL, -- Procedure used to generate results
     comment           SEQUENCE OF VisibleString    OPTIONAL, -- Comments or additional information
     xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
+    target            SEQUENCE OF PC-AssayTargetInfo   OPTIONAL, -- Target information
 
     -- Allowed Assay Result Types
 
@@ -139,6 +141,20 @@ PC-AssayDescription ::= SEQUENCE {
     revision          INTEGER                      OPTIONAL  -- Revision identifier for textual description
 }
 
+
+-- Molecular target information provides by organization describes the functionality of the target, 
+-- facilitates the linking between PubChem bioassays, and the linking between target molecule to other NCBI resources
+PC-AssayTargetInfo ::= SEQUENCE {
+   name                    VisibleString,                     -- Molecular name of target
+   mol-id                  INTEGER,                           -- NCBI database identifier of the target molecule
+   molecule-type           INTEGER {   protein (1),                -- Molecule type of target
+                                       dna (2),
+                                       rna (3),
+                                       other-biopolymer (4)} DEFAULT protein ,
+   organism                BioSource               OPTIONAL,  -- Organism of the target
+   descr                   VisibleString           OPTIONAL,  -- Description of target, such as its cellular functionality and location 
+   comment                 VisibleString           OPTIONAL  -- Comments or additional information
+}
 
 -- Annotated Cross-Reference (XRef) Information to allow the XRef to be qualified, as to its meaning or context
 PC-AnnotatedXRef ::= SEQUENCE {
