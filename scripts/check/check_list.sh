@@ -8,16 +8,15 @@
 # Obtaining a check list for NCBI C++ Toolkit tree
 #
 # Usage:
-#    check_list.sh <target_dir> <tmp_dir> <date_time> <cvs_tree>
+#    check_list.sh <target_dir> <tmp_dir> <date_time> <svn_tree>
 #
 #    target_dir   - directory to copy list of tests -- absolute path
 #                   (default is current).
-#    tmp_dir      - base name of the temporary directory for cvs checkout
+#    tmp_dir      - base name of the temporary directory for svn checkout
 #                   (default is current).
 #    date_time    - get check list on specified date/time
 #                   (default is current).
-#                   Note that some tests can be already deleted in the CVS. 
-#    cvs_tree     - --development or --production or --local.
+#    svn_tree     - --development or --production or --local.
 #                   --local means that C++ tree is already here in
 #                     the directory with name './cxx'.
 #
@@ -30,22 +29,22 @@
 target_dir=${1:-`pwd`}
 tmp_dir=${2:-`pwd`}
 date_time=${3:+"--date=$3"}
-cvs_tree=${4:-'--development'}
+svn_tree=${4:-'--development'}
 
-cvs_core=${NCBI:-/netopt/ncbi_tools}/c++.metastable/scripts/cvs_core.sh
+svn_core='/am/ncbiapdata/svn/scripts/svn_core.sh'
 src_dir="$tmp_dir/c++.checklist"
 conf_name="TEST_CONF"
 
-# Get C++ tree from CVS for Unix platform
+# Get C++ tree from SVN for Unix platform
 rm -rf "$src_dir" > /dev/null
-if [ "$cvs_tree" == "--local" ]; then
+if [ "$svn_tree" == "--local" ]; then
   cp -r ./cxx "$src_dir" ||  exit 1
 else
-  flags="--without-gui --without-cvs --unix"
+  flags="--without-gui --unix"
   if [ -n "$date_time" ]; then
-    $cvs_core "$src_dir" $flags "$date_time" $cvs_tree ||  exit 1
+    $svn_core "$src_dir" $flags "$date_time" $svn_tree ||  exit 1
   else
-    $cvs_core "$src_dir" $flags $cvs_tree ||  exit 1
+    $svn_core "$src_dir" $flags $svn_tree ||  exit 1
   fi
 fi
 
