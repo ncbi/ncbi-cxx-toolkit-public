@@ -624,7 +624,9 @@ void CFastaReader::AssignMolType(void)
         case fAssumeProt:  inst.SetMol(CSeq_inst::eMol_aa);  return;
         default:           _ASSERT(!TestFlag(fForceType));
         }
-    } else if (inst.IsSetMol()) {
+    }
+
+    if (inst.IsSetMol()) {
         return; // previously found an informative ID
     } else if (m_SeqData.empty()) {
         // Nothing else to go on, but that's OK (no sequence to worry
