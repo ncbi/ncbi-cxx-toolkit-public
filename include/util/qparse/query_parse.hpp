@@ -215,6 +215,12 @@ public:
         eCaseInsensitive     ///< Case insensitive parsing (AnD)
     };
 
+    /// Level of tolerance to syntax errors
+    ///
+    enum ESyntaxCheck {
+        eSyntaxCheck,      ///< Best possible check for errors
+        eSyntaxRelax       ///< Relaxed parsing rules
+    };
 
     /// Query parser front-end function
     ///
@@ -222,12 +228,15 @@ public:
     ///    Query string subject of parsing
     /// @param case_sense
     ///    Case sensitivity (AND, AnD, etc.)
+    /// @param syntax_check
+    ///    Sensitivity to syntax errors
     /// @param verbose
     ///    Debug print switch
     ///
-    void Parse(const char* query_str, 
-               ECase       case_sense = eCaseInsensitive,
-               bool        verbose    = false);
+    void Parse(const char*   query_str, 
+               ECase         case_sense   = eCaseInsensitive,
+               ESyntaxCheck  syntax_check = eSyntaxCheck,
+               bool          verbose      = false);
 
     
     /// Replace current query tree with the new one.
