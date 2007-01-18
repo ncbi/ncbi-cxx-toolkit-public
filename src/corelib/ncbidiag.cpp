@@ -61,6 +61,7 @@
 #endif
 
 #if defined(NCBI_OS_UNIX)
+#  include <unistd.h>
 #  include <sys/utsname.h>
 #endif
 
