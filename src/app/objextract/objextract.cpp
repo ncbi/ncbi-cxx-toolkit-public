@@ -36,7 +36,6 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <serial/iterator.hpp>
-#include <serial/object.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/objhook.hpp>
 #include <serial/objistr.hpp>
