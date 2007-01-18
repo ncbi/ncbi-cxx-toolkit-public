@@ -20,7 +20,7 @@ target_dir=$1
 
 checkout_info="checkout_info"
 need_cleanup="no"
-revision='HEAD'
+revision="{`date --iso-8601=minutes`}"
 
 
 ##  Printout USAGE info, cleanup and exit
@@ -159,6 +159,7 @@ if test "$with_internal" != "no" ; then
     Checkout ${srctree}src/internal/align_model 
     Checkout -N ${srctree}src/internal/ID
     Checkout -N ${srctree}src/internal/ID/utils
+    Checkout ${srctree}src/internal/log
 fi
 
 Checkout -N ${srctree}include
@@ -181,6 +182,7 @@ if test "$with_internal" != "no" ; then
     Checkout ${srctree}include/internal/align_model 
     Checkout -N ${srctree}include/internal/ID
     Checkout -N ${srctree}include/internal/ID/utils
+    Checkout ${srctree}include/internal/log
 fi
 
 case "$platform" in
@@ -190,6 +192,7 @@ case "$platform" in
     Checkout ${srctree}src/connect/daemons
     Checkout ${srctree}include/connect/daemons
     Checkout ${srctree}compilers
+    Checkout ${srctree}src/check
     ;;
   unix )
     Checkout ${srctree}src/dbapi
@@ -197,7 +200,7 @@ case "$platform" in
     Checkout ${srctree}src/connect/daemons
     Checkout ${srctree}include/connect/daemons
     Checkout -N ${srctree}compilers
-    Checkout -N ${srctree}src/check/ignore.lst
+    Checkout ${srctree}src/check
     ;;
   msvc )
     Checkout ${srctree}src/dbapi
@@ -205,13 +208,14 @@ case "$platform" in
     Checkout -N ${srctree}compilers
     Checkout ${srctree}compilers/msvc710_prj
     Checkout ${srctree}compilers/msvc800_prj
+    Checkout ${srctree}src/check
     ;;
   cygwin)
     Checkout ${srctree}src/dbapi
     Checkout ${srctree}include/dbapi
     Checkout -N ${srctree}compilers
     Checkout ${srctree}compilers/cygwin
-    Checkout -N ${srctree}src/check/ignore.lst
+    Checkout ${srctree}src/check
     ;;
   mac )
     Checkout -N ${srctree}src/dbapi
@@ -220,6 +224,7 @@ case "$platform" in
     Checkout -N ${srctree}include/dbapi/driver
     Checkout -N ${srctree}include/dbapi/driver/util
     Checkout ${srctree}src/connect/mitsock
+    Checkout -N ${srctree}compilers
     Checkout ${srctree}compilers/mac_prj
     Checkout ${srctree}compilers/xCode
     ;;
@@ -228,19 +233,12 @@ esac
 case "$platform" in
   all | unix | cygwin | mac )
     Checkout -N ${srctree}
-    Checkout -N ${srctree}src
     Checkout ${srctree}scripts
     ;;
   msvc )
     Checkout -N ${srctree}scripts
     Checkout ${srctree}scripts/check
     Checkout ${srctree}scripts/projects
-    Checkout ${srctree}src/Makefile.in
-    Checkout ${srctree}src/Makefile.mk.in
-    Checkout ${srctree}src/Makefile.mk.in.msvc
-    if test "$with_objects" = "yes" ; then
-        Checkout ${srctree}src/Makefile.module
-    fi
     ;;
 esac
 
@@ -308,12 +306,12 @@ case "$platform" in
     fi
     ;;
 esac
-
-#case "$platform" in
-#  msvc | cygwin )
-#    rm -rf include/dbapi/driver/ftds src/dbapi/driver/ftds
-#    ;;
-#esac
+ case "$platform" in
+  msvc | cygwin | mac )
+    rm -f Makefile.* config* .psrc aclocal.m4 install-sh
+    rm -f compilers/*.sh compilers/*.awk
+    ;;
+esac
 
 
 ## DONE
