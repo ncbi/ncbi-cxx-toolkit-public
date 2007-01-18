@@ -179,21 +179,50 @@ void CTestQParse::Init(void)
     SetupArgDescriptions(d.release());
 }
 
-void TestExpression(const char* q)
+/// @internal
+static
+void TestExpression(const char* q, bool cs = false,
+                                   bool relax = false)
 {
     CQueryParseTree qtree;
     NcbiCout << "---------------------------------------------------" << endl;
     NcbiCout << "Query:" << "'" << q << "'" << endl << endl;    
-    qtree.Parse(q);
+    qtree.Parse(q, 
+                cs ? CQueryParseTree::eCaseSensitiveUpper :
+                     CQueryParseTree::eCaseInsensitive,
+                relax ? CQueryParseTree::eSyntaxRelax : 
+                     CQueryParseTree::eSyntaxCheck
+                );
     qtree.Print(NcbiCout);
     NcbiCout << "---------------------------------------------------" << endl;
 }
 
+/// @internal
+static
+void ParseFile(const string& file_name)
+{
+    ifstream ifs(file_name.c_str());
+    if (ifs.fail()) {
+        cerr << "Cannot open: " << file_name << endl;
+        return;
+    }
+    string line;
+    while (getline(ifs, line,'\n'))
+    {
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            continue;
+        }
+       
+        TestExpression(line.c_str(), true);
+    }
+}
 
 
 
 int CTestQParse::Run(void)
 {
+    {{
     const char* queries[] = {    
         "\n\r\n(asdf != 2)",
         "    asdf != 2",
@@ -222,11 +251,37 @@ int CTestQParse::Run(void)
         "\"J Sci Food Agric\"[Journal:__jrid5260] 1974",
         "vitamin 1993:1995 [dp]",
          "\"2005/04/17 12.23\"[MHDA]:\"2005/05/10 10.56\"[MHDA]"
-    };
+    };    
     int l = sizeof (queries) / sizeof(queries[0]);
     for (int i = 0; i < l; ++i) {
         TestExpression(queries[i]);
     } // for
+    
+    }}
+    
+    NcbiCout << endl << endl;
+    NcbiCout << "Misspelled queries.";
+    NcbiCout << endl << endl;
+   
+   
+    {{
+    const char* queries[] = {    
+        "vitamin c[MeSH",
+        "vitamin \"c",
+    };    
+    int l = sizeof (queries) / sizeof(queries[0]);
+    for (int i = 0; i < l; ++i) {
+        TestExpression(queries[i], true, true);
+    } // for
+    
+    }}
+   
+   
+   
+   
+   
+    //ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.20000");
+    
     return 0;
 }
 

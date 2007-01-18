@@ -82,7 +82,7 @@ static
 int yylex(CQueryParseTree::TNode** lvalp, void* param)
 {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(param);
-    bool verbose = true; // env->IsVerbose();
+    bool verbose = env->IsVerbose();
     char c, c_orig;
     const char* ptr = env->GetBufPtr();
     const char* end = env->GetBufEnd();
@@ -94,11 +94,17 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     for (c = env->GetChar(); ptr < end; ++ptr) {
         if (!s_IsSpaceTerm(ptr)) {
             break;
-        }
+        }        
+        if (*ptr == 0) {
+            return EOF;
+        }        
         c = env->GetChar();
     }
-    ptr = env->GetBufPtr();
-    
+    ptr = env->GetBufPtr();    
+    if (ptr > end) {
+        return EOF;
+    }
+
     // save position of token start in the text
     unsigned line     = env->GetLine();
     unsigned line_pos = env->GetLinePos() - 1;
@@ -219,7 +225,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         if (verbose) { _TRACE("token: OR"); }
         *lvalp = qnode = 
             env->QTree().CreateBinaryNode(CQueryParseNode::eOr, 0, 0,
-                                          string(ptr-1, 2));
+                                          string(ptr-2, 2));
         env->AttachToPool(qnode);                        
         qnode->GetValue().SetLoc(line, line_pos);
         return OR;
@@ -432,8 +438,10 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         
         
         if (c == 0) {  // syntax error EOF
-            NCBI_THROW(CQueryParseException, eParserError, 
-                       "Syntax error. String quote mismatch.");
+            if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+                NCBI_THROW(CQueryParseException, eParserError, 
+                           "Syntax error. String quote mismatch.");
+            }
         }
         *lvalp = qnode = 
             env->QTree().CreateNode(token, orig_token, false /*not identifier*/);
@@ -458,9 +466,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         } // for
         
         
-        if (c == 0) {  // syntax error EOF
-            NCBI_THROW(CQueryParseException, eParserError, 
-                       "Syntax error. Identifier brackets mismatch.");
+        if (c == 0) {  // syntax error: EOF
+            if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+                NCBI_THROW(CQueryParseException, eParserError, 
+                           "Syntax error. Identifier brackets mismatch.");
+            }
         }
         *lvalp = qnode = 
             env->QTree().CreateNode(token, orig_token, true /*identifier*/);
@@ -487,7 +497,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             if ( s_IsSpaceTerm(ptr) ) {
                 break;
             }
-            if ((*ptr == '[') ||
+            if ((*ptr == '"') ||
+                (*ptr == '[') ||
                 (*ptr == '(') ||  
                 (*ptr == ')') ||
                 (*ptr == '|') ||
@@ -510,7 +521,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             if ( !s_IsSpaceTerm(ptr) ) {
                 break;
             }
-            if ((*ptr == '[') ||
+            if ((*ptr == '"') ||
+                (*ptr == '[') ||
                 (*ptr == '(') ||  
                 (*ptr == ')') ||
                 (*ptr == '|') ||
@@ -536,6 +548,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             s_Compare(ptr, end, "SUB",  case_sense) ||
             s_Compare(ptr, end, "XOR",  case_sense) ||
             s_Compare(ptr, end, "MINUS",case_sense) ||
+            (*ptr == '"') ||
             (*ptr == '[') ||
             (*ptr == '(') ||
             (*ptr == ')') ||

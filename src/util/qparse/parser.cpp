@@ -221,6 +221,15 @@ public:
     unsigned GetLine() const { return m_Line; }    
     /// Get position in line
     unsigned GetLinePos() const { return m_LinePos; }
+    
+    void SetParserTolerance(CQueryParseTree::ESyntaxCheck  syntax_check)
+    {
+        m_ParseTolerance = syntax_check;
+    }
+    CQueryParseTree::ESyntaxCheck GetParserTolerance() const 
+    {
+        return m_ParseTolerance;
+    }    
 
 private:
     CQueryParseTree& m_QTree;   ///< Base query tree reference
@@ -242,6 +251,8 @@ private:
     
     unsigned   m_Line;
     unsigned   m_LinePos;
+    
+    CQueryParseTree::ESyntaxCheck  m_ParseTolerance;
 };
 
 
@@ -265,9 +276,10 @@ int yyerror (const char *s)
 BEGIN_NCBI_SCOPE
 
 
-void CQueryParseTree::Parse(const char* query_str, 
-                            ECase       case_sense,
-                            bool        verbose)
+void CQueryParseTree::Parse(const char*   query_str, 
+                            ECase         case_sense,
+                            ESyntaxCheck  syntax_check,
+                            bool          verbose)
 {
     CQueryParserEnv env(query_str, *this);
 
