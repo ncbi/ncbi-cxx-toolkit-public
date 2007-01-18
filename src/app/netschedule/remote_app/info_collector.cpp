@@ -361,28 +361,3 @@ void CNSInfoCollector::DropQueue()
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/06/15 15:27:08  didenko
- * Added drop_jobs command
- *
- * Revision 1.5  2006/05/23 19:31:51  didenko
- * Cosmetics
- *
- * Revision 1.4  2006/05/23 14:05:36  didenko
- * Added wnlist, shutdown_nodes and kill_nodes commands
- *
- * Revision 1.3  2006/05/22 18:13:35  didenko
- * + Jobs err_msg report
- *
- * Revision 1.2  2006/05/19 14:07:20  didenko
- * Removed x_CreateStorage method redeclaration
- *
- * Revision 1.1  2006/05/19 13:40:40  didenko
- * Added ns_remote_job_control utility
- *
- * ===========================================================================
- */
-

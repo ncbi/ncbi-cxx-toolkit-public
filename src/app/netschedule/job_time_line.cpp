@@ -178,22 +178,3 @@ void CJobTimeLine::HeadTruncate(unsigned slot)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/05/11 14:31:51  kuznets
- * Fixed bug in job prolongation
- *
- * Revision 1.3  2005/08/25 18:08:27  kuznets
- * Minor performance optimization
- *
- * Revision 1.2  2005/03/10 14:18:46  kuznets
- * +MoveObject()
- *
- * Revision 1.1  2005/03/09 17:37:16  kuznets
- * Added node notification thread and execution control timeline
- *
- *
- * ===========================================================================
- */

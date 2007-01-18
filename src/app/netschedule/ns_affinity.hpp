@@ -169,30 +169,5 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/10/31 19:35:26  joukovv
- * Queue creation and reading of its parameters decoupled. Code reorganized to
- * reduce coupling in general. Preparing for queue-on-demand.
- *
- * Revision 1.4  2006/09/21 21:28:59  joukovv
- * Consistency of memory state and database strengthened, ability to retry failed
- * jobs on different nodes (and corresponding queue parameter, failed_retries)
- * added, overall code regularization performed.
- *
- * Revision 1.3  2006/06/19 16:15:49  kuznets
- * fixed crash when working with affinity
- *
- * Revision 1.2  2006/02/09 17:07:42  kuznets
- * Various improvements in job scheduling with respect to affinity
- *
- * Revision 1.1  2006/02/06 14:10:29  kuznets
- * Added job affinity
- *
- *
- * ===========================================================================
- */
-
 #endif /* NETSCHEDULE_BDB_AFF__HPP */
 

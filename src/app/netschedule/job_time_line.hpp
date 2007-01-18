@@ -110,17 +110,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/03/10 14:18:46  kuznets
- * +MoveObject()
- *
- * Revision 1.1  2005/03/09 17:37:17  kuznets
- * Added node notification thread and execution control timeline
- *
- *
- * ===========================================================================
- */
-
 #endif

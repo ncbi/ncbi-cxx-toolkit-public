@@ -232,30 +232,3 @@ int main(int argc, const char* argv[])
 {
     return CNetScheduleAdminApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2007/01/09 16:05:02  didenko
- * Moved CNetScheduleExceptions to the new NetSchedule API
- *
- * Revision 1.5  2005/05/16 16:21:26  kuznets
- * Added available queues listing
- *
- * Revision 1.4  2005/05/11 15:09:29  kuznets
- * Fixed bug in host:port connection
- *
- * Revision 1.3  2005/05/11 13:15:52  kuznets
- * Added -l (listing) command
- *
- * Revision 1.2  2005/05/11 13:01:52  kuznets
- * Implemented variety of logging commands
- *
- * Revision 1.1  2005/05/10 19:24:48  kuznets
- * Initial revision
- *
- *
- *
- * ===========================================================================
- */

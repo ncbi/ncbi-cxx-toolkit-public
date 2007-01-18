@@ -314,28 +314,4 @@ public:
 
 };
 
-
-
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.5  2005/10/31 19:28:51  kuznets
-* Implemented WEB interface to netcache statistics
-*
-* Revision 1.4  2005/08/15 19:06:04  didenko
-* Added test command
-*
-* Revision 1.3  2005/07/19 20:20:12  ucko
-* Predeclare CHTMLPage for the sake of G++ 4.
-*
-* Revision 1.2  2005/07/07 19:06:44  didenko
-* Added errors handling
-*
-* Revision 1.1  2005/06/27 12:52:40  didenko
-* Added grid manager cgi
-*
-* ===========================================================================
-*/
-
-
 #endif /* NCBI_GRID_MGR_CMD__HPP */

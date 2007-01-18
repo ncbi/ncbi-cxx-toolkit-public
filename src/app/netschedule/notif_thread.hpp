@@ -64,21 +64,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/10/03 14:56:57  joukovv
- * Delayed job deletion implemented, code restructured preparing to move to
- * thread-per-request model.
- *
- * Revision 1.2  2005/03/30 16:04:41  kuznets
- * Added destructor with diagnostic message
- *
- * Revision 1.1  2005/03/09 17:37:17  kuznets
- * Added node notification thread and execution control timeline
- *
- *
- * ===========================================================================
- */
-
 #endif

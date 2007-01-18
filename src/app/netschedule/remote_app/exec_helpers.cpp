@@ -381,37 +381,3 @@ bool ExecRemoteApp(const string& cmd,
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/09/06 16:57:32  didenko
- * Renamed CPipe::ICallBack to CPipe::IProcessWatcher
- *
- * Revision 1.8  2006/09/06 12:20:44  ivanov
- * Perform::Perform() -- fixed errors on MSVC64
- *
- * Revision 1.7  2006/09/05 16:56:05  didenko
- * Fix compile time error on Windows and Sun
- *
- * Revision 1.6  2006/09/05 16:24:22  didenko
- * Added handling for max_monitor_running_time parameter
- *
- * Revision 1.5  2006/09/05 15:34:19  didenko
- * fixed monitor_app_path parameter handling
- *
- * Revision 1.4  2006/09/05 15:09:50  didenko
- * Set default values for max_monitor_running_time and monitor_period paramters
- *
- * Revision 1.3  2006/09/05 14:35:22  didenko
- * Added option to run a job monitor appliction
- *
- * Revision 1.2  2006/06/22 19:33:14  didenko
- * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
- *
- * Revision 1.1  2006/05/30 16:43:36  didenko
- * Moved the commonly used code to separate files.
- *
- * ===========================================================================
- */

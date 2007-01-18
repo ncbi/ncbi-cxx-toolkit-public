@@ -141,17 +141,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/05/12 18:37:33  kuznets
- * Implemented config reload
- *
- * Revision 1.1  2005/04/05 20:51:34  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif /* NETSCHEDULE_BDB_QUEUE__HPP */

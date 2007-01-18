@@ -362,26 +362,4 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2005/07/25 16:14:31  kuznets
- * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
- *
- * Revision 1.4  2005/07/21 15:41:02  kuznets
- * Added monitoring for LB info
- *
- * Revision 1.3  2005/07/21 12:39:27  kuznets
- * Improved load balancing module
- *
- * Revision 1.2  2005/07/14 13:40:07  kuznets
- * compilation bug fixes
- *
- * Revision 1.1  2005/07/14 13:12:56  kuznets
- * Added load balancer
- *
- *
- * ===========================================================================
- */
-
 #endif

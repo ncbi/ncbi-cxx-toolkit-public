@@ -210,29 +210,3 @@ int main(int argc, const char* argv[])
 {
     return CGridClientTestApp().AppMain(argc, argv, 0, eDS_Default, "test_gridclient_stress.ini");
 } 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/06/19 20:09:15  ucko
- * Fix spelling of "submitter"
- *
- * Revision 1.5  2005/04/18 13:37:45  didenko
- * Changed program version
- *
- * Revision 1.4  2005/04/07 18:51:54  didenko
- * Change a program version number
- *
- * Revision 1.3  2005/04/07 18:11:07  ucko
- * Supply GetProgramVersion, which is now required.
- *
- * Revision 1.2  2005/03/31 21:15:35  didenko
- * Chenged parameters default values
- *
- * Revision 1.1  2005/03/31 16:19:30  didenko
- * Initial version
- *
- * ===========================================================================
- */
- 

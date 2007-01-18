@@ -351,38 +351,4 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log: squeue.hpp,v $
- * Revision 1.7  2007/01/10 21:23:00  joukovv
- * Job id is per queue, not per server. Deletion of expired jobs use the same
- * db mechanism as drop queue - delayed background deletion.
- *
- * Revision 1.6  2007/01/09 17:10:22  joukovv
- * Database files deleted upon queue deletion.
- *
- * Revision 1.5  2007/01/02 18:50:54  joukovv
- * Queue deletion implemented (does not delete actual database files - need a
- * method of enumerating them). Draft implementation of weak reference. Minor
- * corrections.
- *
- * Revision 1.4  2006/12/04 21:58:32  joukovv
- * netschedule_control commands for dynamic queue creation, access control
- * centralized
- *
- * Revision 1.3  2006/12/01 00:10:58  joukovv
- * Dynamic queue creation implemented.
- *
- * Revision 1.2  2006/11/27 16:46:21  joukovv
- * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
- * un-nested CQueue from CQueueDataBase; instrumented code to count job
- * throughput average.
- *
- * Revision 1.1  2006/10/31 19:35:26  joukovv
- * Queue creation and reading of its parameters decoupled. Code reorganized to
- * reduce coupling in general. Preparing for queue-on-demand.
- *
- * ===========================================================================
- */
-
 #endif /* NETSCHEDULE_SQUEUE__HPP */

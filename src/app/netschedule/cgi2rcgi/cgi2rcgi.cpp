@@ -398,29 +398,3 @@ int main(int argc, const char* argv[])
     _TRACE("back to normal diags");
     return result;
 }
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/06/19 19:41:05  didenko
- * Spelling fix
- *
- * Revision 1.5  2006/01/18 17:51:03  didenko
- * When job is done just all its output to the response output stream
- *
- * Revision 1.4  2005/06/08 16:20:52  didenko
- * Got rid of a compiler warning
- *
- * Revision 1.3  2005/06/07 20:16:09  didenko
- * Changed some paramters names
- *
- * Revision 1.2  2005/06/06 15:34:57  didenko
- * Changed <@VIEW@> meta-tag to <@STAT_VIEW@>
- *
- * Revision 1.1  2005/06/01 15:20:29  didenko
- * Added cgi2rcgi application
- *
- * ===========================================================================
- */

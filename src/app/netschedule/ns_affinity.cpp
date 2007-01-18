@@ -339,27 +339,3 @@ void CWorkerNodeAffinity::GetAllAssignedAffinity(bm::bvector<>* aff_ids)
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/09/21 21:28:59  joukovv
- * Consistency of memory state and database strengthened, ability to retry failed
- * jobs on different nodes (and corresponding queue parameter, failed_retries)
- * added, overall code regularization performed.
- *
- * Revision 1.4  2006/06/19 16:15:49  kuznets
- * fixed crash when working with affinity
- *
- * Revision 1.3  2006/02/21 14:44:57  kuznets
- * Bug fixes, improvements in statistics
- *
- * Revision 1.2  2006/02/09 17:07:42  kuznets
- * Various improvements in job scheduling with respect to affinity
- *
- * Revision 1.1  2006/02/06 14:10:29  kuznets
- * Added job affinity
- *
- *
- * ===========================================================================
- */

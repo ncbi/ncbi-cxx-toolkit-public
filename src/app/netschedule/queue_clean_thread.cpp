@@ -109,26 +109,3 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/04/18 15:35:34  kuznets
- * Removed unused variable
- *
- * Revision 1.4  2006/04/14 12:43:28  kuznets
- * Fixed crash when deleting affinity records
- *
- * Revision 1.3  2006/03/30 19:09:59  kuznets
- * Ignore resource allocation error
- *
- * Revision 1.2  2005/03/09 17:37:17  kuznets
- * Added node notification thread and execution control timeline
- *
- * Revision 1.1  2005/02/23 19:15:30  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-

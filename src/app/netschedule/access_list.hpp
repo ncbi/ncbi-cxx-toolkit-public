@@ -82,25 +82,5 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/10/31 19:35:26  joukovv
- * Queue creation and reading of its parameters decoupled. Code reorganized to
- * reduce coupling in general. Preparing for queue-on-demand.
- *
- * Revision 1.3  2005/08/30 14:18:57  kuznets
- * Improved localhost processing
- *
- * Revision 1.2  2005/06/27 15:53:03  kuznets
- * Print host name not the address
- *
- * Revision 1.1  2005/06/20 13:31:08  kuznets
- * Added access control for job submitters and worker nodes
- *
- *
- * ===========================================================================
- */
-
 #endif 
 

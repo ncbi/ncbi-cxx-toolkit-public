@@ -254,14 +254,3 @@ int main(int argc, const char* argv[])
 {
     return CRemoteAppDispatcher().AppMain(argc, argv);
 } 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/07/13 14:36:08  didenko
- * Added remote_app_dispatcher utility
- *
- * ===========================================================================
- */
- 

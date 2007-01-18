@@ -234,38 +234,4 @@ struct SQueueDescriptionDB : public CBDB_File
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/12/07 22:58:10  joukovv
- * comment and kind added to queue database
- *
- * Revision 1.7  2006/12/01 00:10:58  joukovv
- * Dynamic queue creation implemented.
- *
- * Revision 1.6  2006/10/31 19:35:26  joukovv
- * Queue creation and reading of its parameters decoupled. Code reorganized to
- * reduce coupling in general. Preparing for queue-on-demand.
- *
- * Revision 1.5  2006/09/21 21:28:59  joukovv
- * Consistency of memory state and database strengthened, ability to retry failed
- * jobs on different nodes (and corresponding queue parameter, failed_retries)
- * added, overall code regularization performed.
- *
- * Revision 1.4  2006/07/19 15:53:34  kuznets
- * Extended database size to accomodate escaped strings
- *
- * Revision 1.3  2006/06/27 15:39:42  kuznets
- * Added int mask to jobs to carry flags(like exclusive)
- *
- * Revision 1.2  2006/04/17 15:46:54  kuznets
- * Added option to remove job when it is done (similar to LSF)
- *
- * Revision 1.1  2006/02/06 14:10:29  kuznets
- * Added job affinity
- *
- *
- * ===========================================================================
- */
-
 #endif /* NETSCHEDULE_DB__HPP */

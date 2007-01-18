@@ -93,13 +93,3 @@ void CNetSchedule_AccessList::PrintHosts(CNcbiOstream & out) const
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/10/31 19:35:26  joukovv
- * Queue creation and reading of its parameters decoupled. Code reorganized to
- * reduce coupling in general. Preparing for queue-on-demand.
- *
- * ===========================================================================
- */

@@ -59,26 +59,3 @@ CJobNotificationThread::~CJobNotificationThread()
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/12/01 00:10:58  joukovv
- * Dynamic queue creation implemented.
- *
- * Revision 1.3  2005/04/11 13:52:21  kuznets
- * Removed confusing log message
- *
- * Revision 1.2  2005/03/30 16:04:41  kuznets
- * Added destructor with diagnostic message
- *
- * Revision 1.1  2005/03/09 17:37:16  kuznets
- * Added node notification thread and execution control timeline
- *
- * Revision 1.1  2005/02/23 19:15:30  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-

@@ -189,27 +189,3 @@ private:
 NCBI_WORKERNODE_MAIN_EX(CRemoteCgiJob, CRemoteAppIdleTask, 1.5.0);
 
 //NCBI_WORKERNODE_MAIN(CRemoteAppJob, 1.0.1);
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/09/06 16:58:03  didenko
- * Changed the version number
- *
- * Revision 1.4  2006/09/05 14:35:22  didenko
- * Added option to run a job monitor appliction
- *
- * Revision 1.3  2006/06/22 19:33:14  didenko
- * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
- *
- * Revision 1.2  2006/06/01 18:55:53  didenko
- * added config file for remote_cgi utility
- *
- * Revision 1.1  2006/05/30 16:45:08  didenko
- * Added remote CGI runner utility
- *
- * ===========================================================================
- */
-

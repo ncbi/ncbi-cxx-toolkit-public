@@ -3765,16 +3765,14 @@ void CQueue::NotifyListeners(bool unconditional)
     {
         unsigned host;
         unsigned short port;
-        SQueueListener* ql;
         {{
             CReadLockGuard guard(q->wn_lock);
-            ql = wnodes[i];
-            if (ql->last_connect + ql->timeout < curr) {
+            SQueueListener* ql = wnodes[i];
+            if (ql->last_connect + ql->timeout < curr)
                 continue;
-            }
+            host = ql->host;
+            port = ql->udp_port;
         }}
-        host = ql->host;
-        port = ql->udp_port;
 
         if (port) {
             CFastMutexGuard guard(q->us_lock);
@@ -3783,11 +3781,8 @@ void CQueue::NotifyListeners(bool unconditional)
                                    CSocketAPI::ntoa(host), port);
         }
         // periodically check if we have no more jobs left
-        if ((i % 10 == 0) &&
-            !q->status_tracker.AnyPending()) {
+        if ((i % 10 == 0) && !q->status_tracker.AnyPending())
             break;
-        }
-
     }
 }
 
@@ -3820,7 +3815,7 @@ void CQueue::CheckExecutionTimeout()
         unsigned job_id = *en;
         unsigned exp_time = CheckExecutionTimeout(job_id, curr);
 
-        // job may need to moved in the timeline to some future slot
+        // job may need to be moved in the timeline to some future slot
         
         if (exp_time) {
             CWriteLockGuard guard(q->rtl_lock);
@@ -3855,35 +3850,34 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
     unsigned time_run, run_timeout;
     time_t   exp_time;
     {{
-    CFastMutexGuard guard(q->lock);
-    db.SetTransaction(&trans);
+        CFastMutexGuard guard(q->lock);
+        db.SetTransaction(&trans);
 
-    CBDB_FileCursor& cur = *x_GetCursor(trans);
-    CBDB_CursorGuard cg(cur);
+        CBDB_FileCursor& cur = *x_GetCursor(trans);
+        CBDB_CursorGuard cg(cur);
 
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << job_id;
-    if (cur.Fetch() != eBDB_Ok) {
-        return 0;
-    }
-    int status = db.status;
-    if (status != (int)CNetScheduleClient::eRunning) {
-        return 0;
-    }
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << job_id;
+        if (cur.Fetch() != eBDB_Ok) {
+            return 0;
+        }
+        int status = db.status;
+        if (status != (int)CNetScheduleClient::eRunning) {
+            return 0;
+        }
 
-    time_run = db.time_run;
-    _ASSERT(time_run);
-    run_timeout = db.run_timeout;
+        time_run = db.time_run;
+        _ASSERT(time_run);
+        run_timeout = db.run_timeout;
 
-    exp_time = x_ComputeExpirationTime(time_run, run_timeout);
-    if (curr_time < exp_time) { 
-        return exp_time;
-    }
-    db.status = (int) CNetScheduleClient::ePending;
-    db.time_done = 0;
+        exp_time = x_ComputeExpirationTime(time_run, run_timeout);
+        if (curr_time < exp_time) { 
+            return exp_time;
+        }
+        db.status = (int) CNetScheduleClient::ePending;
+        db.time_done = 0;
 
-    cur.Update();
-
+        cur.Update();
     }}
 
     trans.Commit();
@@ -3964,7 +3958,6 @@ void CQueue::x_AddToAffIdx_NoLock(const vector<SNS_SubmitRecord>& batch)
     
     TBVMap  bv_map;
     try {
-
         unsigned bsize = batch.size();
         for (unsigned i = 0; i < bsize; ++i) {
             const SNS_SubmitRecord& bsub = batch[i];
@@ -4076,293 +4069,3 @@ const CRef<SLockedQueue> CQueue::x_GetLQueue(void) const
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log: bdb_queue.cpp,v $
- * Revision 1.107  2007/01/10 21:23:00  joukovv
- * Job id is per queue, not per server. Deletion of expired jobs use the same
- * db mechanism as drop queue - delayed background deletion.
- *
- * Revision 1.106  2007/01/09 17:10:22  joukovv
- * Database files deleted upon queue deletion.
- *
- * Revision 1.105  2007/01/08 21:04:09  joukovv
- * Fast notification of idle node cluster implemented.
- *
- * Revision 1.104  2007/01/05 23:02:45  joukovv
- * Circular deletion with engaged lock in weak ref code fixed. Attempt to
- * enchance server reaction for new tasks.
- *
- * Revision 1.103  2007/01/02 18:50:54  joukovv
- * Queue deletion implemented (does not delete actual database files - need a
- * method of enumerating them). Draft implementation of weak reference. Minor
- * corrections.
- *
- * Revision 1.102  2006/12/13 17:18:10  didenko
- * reduced run frequency for the job notification thread
- *
- * Revision 1.101  2006/12/07 22:58:10  joukovv
- * comment and kind added to queue database
- *
- * Revision 1.100  2006/12/07 19:28:48  joukovv
- * Build errors fixed, queue info command introduced.
- *
- * Revision 1.99  2006/12/07 16:22:10  joukovv
- * Transparent server-to-client exception report implemented. Version control
- * bug fixed.
- *
- * Revision 1.98  2006/12/04 23:31:30  joukovv
- * Access control/version control checks corrected.
- *
- * Revision 1.97  2006/12/01 00:10:58  joukovv
- * Dynamic queue creation implemented.
- *
- * Revision 1.96  2006/11/28 18:03:49  joukovv
- * MSVC8 build fix, grid_worker_sample idle task commented out.
- *
- * Revision 1.95  2006/11/27 16:46:21  joukovv
- * Iterator to CQueueCollection introduced to decouple it with CQueueDataBase;
- * un-nested CQueue from CQueueDataBase; instrumented code to count job
- * throughput average.
- *
- * Revision 1.94  2006/11/13 22:49:15  joukovv
- * Background job deletion code corrected.
- *
- * Revision 1.93  2006/11/13 19:15:35  joukovv
- * Protocol parser re-implemented. Remnants of ThreadData removed.
- *
- * Revision 1.92  2006/10/31 19:35:26  joukovv
- * Queue creation and reading of its parameters decoupled. Code reorganized to
- * reduce coupling in general. Preparing for queue-on-demand.
- *
- * Revision 1.91  2006/10/19 20:38:20  joukovv
- * Works in thread-per-request mode. Errors in BDB layer fixed.
- *
- * Revision 1.90  2006/10/03 14:56:56  joukovv
- * Delayed job deletion implemented, code restructured preparing to move to
- * thread-per-request model.
- *
- * Revision 1.89  2006/09/21 21:28:59  joukovv
- * Consistency of memory state and database strengthened, ability to retry failed
- * jobs on different nodes (and corresponding queue parameter, failed_retries)
- * added, overall code regularization performed.
- *
- * Revision 1.88  2006/08/28 19:14:45  didenko
- * Fixed a bug in GetJobDescr logic
- *
- * Revision 1.87  2006/06/29 21:09:33  kuznets
- * Added queue dump by status(pending, running, etc)
- *
- * Revision 1.86  2006/06/27 15:39:42  kuznets
- * Added int mask to jobs to carry flags(like exclusive)
- *
- * Revision 1.85  2006/06/26 13:51:21  kuznets
- * minor cleaning
- *
- * Revision 1.84  2006/06/26 13:46:01  kuznets
- * Fixed job expiration and restart mechanism
- *
- * Revision 1.83  2006/06/19 16:15:49  kuznets
- * fixed crash when working with affinity
- *
- * Revision 1.82  2006/06/07 13:00:01  kuznets
- * Implemented command to get status summary based on affinity token
- *
- * Revision 1.81  2006/05/22 16:51:04  kuznets
- * Fixed bug in reporting worker nodes
- *
- * Revision 1.80  2006/05/22 15:19:40  kuznets
- * Added return code to failure reporting
- *
- * Revision 1.79  2006/05/22 12:36:33  kuznets
- * Added output argument to PutFailure
- *
- * Revision 1.78  2006/05/11 14:31:51  kuznets
- * Fixed bug in job prolongation
- *
- * Revision 1.77  2006/05/10 15:59:06  kuznets
- * Implemented NS call to delay job expiration
- *
- * Revision 1.76  2006/05/08 11:24:52  kuznets
- * Implemented file redirection cout/cerr for worker nodes
- *
- * Revision 1.75  2006/05/04 15:36:03  kuznets
- * Fixed bug in deleting done jobs
- *
- * Revision 1.74  2006/05/03 15:18:32  kuznets
- * Fixed deletion of done jobs
- *
- * Revision 1.73  2006/04/17 15:46:54  kuznets
- * Added option to remove job when it is done (similar to LSF)
- *
- * Revision 1.72  2006/04/14 12:43:28  kuznets
- * Fixed crash when deleting affinity records
- *
- * Revision 1.71  2006/03/30 20:54:23  kuznets
- * Improved handling of BDB resource conflicts
- *
- * Revision 1.70  2006/03/30 17:38:55  kuznets
- * Set max. transactions according to number of active threads
- *
- * Revision 1.69  2006/03/30 16:12:40  didenko
- * Increased the max_dead_locks number
- *
- * Revision 1.68  2006/03/29 17:39:42  kuznets
- * Turn off reverse splitting for main queue file to reduce collisions
- *
- * Revision 1.67  2006/03/28 21:41:17  kuznets
- * Use default page size.Hope smaller p-size reduce collisions
- *
- * Revision 1.66  2006/03/28 21:21:22  kuznets
- * cleaned up comments
- *
- * Revision 1.65  2006/03/28 20:37:56  kuznets
- * Trying to work around deadlock by repeating transaction
- *
- * Revision 1.64  2006/03/28 19:35:17  kuznets
- * Commented out use of local database to fix dead lock
- *
- * Revision 1.63  2006/03/17 14:40:25  kuznets
- * fixed warning
- *
- * Revision 1.62  2006/03/17 14:25:29  kuznets
- * Force reschedule (to re-try failed jobs)
- *
- * Revision 1.61  2006/03/16 19:37:28  kuznets
- * Fixed possible race condition between client and worker
- *
- * Revision 1.60  2006/03/13 16:01:36  kuznets
- * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
- *
- * Revision 1.59  2006/02/23 20:05:10  kuznets
- * Added grid client registration-unregistration
- *
- * Revision 1.58  2006/02/23 15:45:04  kuznets
- * Added more frequent and non-intrusive memory optimization of status matrix
- *
- * Revision 1.57  2006/02/21 14:44:57  kuznets
- * Bug fixes, improvements in statistics
- *
- * Revision 1.56  2006/02/09 17:07:42  kuznets
- * Various improvements in job scheduling with respect to affinity
- *
- * Revision 1.55  2006/02/08 15:17:33  kuznets
- * Tuning and bug fixing of job affinity
- *
- * Revision 1.54  2006/02/06 14:10:29  kuznets
- * Added job affinity
- *
- * Revision 1.53  2005/11/01 15:16:14  kuznets
- * Cleaned unused variables
- *
- * Revision 1.52  2005/09/20 14:05:25  kuznets
- * Minor bug fix
- *
- * Revision 1.51  2005/08/30 14:19:33  kuznets
- * Added thread-local database for better scalability
- *
- * Revision 1.50  2005/08/29 12:10:18  kuznets
- * Removed dead code
- *
- * Revision 1.49  2005/08/26 12:36:10  kuznets
- * Performance optimization
- *
- * Revision 1.48  2005/08/25 16:35:01  kuznets
- * Fixed bug (uncommited transaction)
- *
- * Revision 1.47  2005/08/24 18:17:26  kuznets
- * Reduced priority of notifiction thread, increased Tas spins
- *
- * Revision 1.46  2005/08/22 14:01:58  kuznets
- * Added JobExchange command
- *
- * Revision 1.45  2005/08/15 13:29:46  kuznets
- * Implemented batch job submission
- *
- * Revision 1.44  2005/07/25 16:14:31  kuznets
- * Revisited LB parameters, added options to compute job stall delay as fraction of AVG runtime
- *
- * Revision 1.43  2005/07/21 15:41:02  kuznets
- * Added monitoring for LB info
- *
- * Revision 1.42  2005/07/21 12:39:27  kuznets
- * Improved load balancing module
- *
- * Revision 1.41  2005/07/14 13:40:07  kuznets
- * compilation bug fixes
- *
- * Revision 1.40  2005/07/14 13:12:56  kuznets
- * Added load balancer
- *
- * Revision 1.39  2005/06/22 15:36:09  kuznets
- * Minor tweaks in record print formatting
- *
- * Revision 1.38  2005/06/21 16:00:22  kuznets
- * Added archival dump of all deleted records
- *
- * Revision 1.37  2005/06/20 15:49:43  kuznets
- * Node statistics: do not show obsolete connections
- *
- * Revision 1.36  2005/06/20 13:31:08  kuznets
- * Added access control for job submitters and worker nodes
- *
- * Revision 1.35  2005/05/12 18:37:33  kuznets
- * Implemented config reload
- *
- * Revision 1.34  2005/05/06 13:07:32  kuznets
- * Fixed bug in cleaning database
- *
- * Revision 1.33  2005/05/05 16:52:41  kuznets
- * Added error messages when job expires
- *
- * Revision 1.32  2005/05/05 16:07:15  kuznets
- * Added individual job dumping
- *
- * Revision 1.31  2005/05/04 19:09:43  kuznets
- * Added queue dumping
- *
- * Revision 1.30  2005/05/02 14:44:40  kuznets
- * Implemented remote monitoring
- *
- * Revision 1.29  2005/04/28 17:40:26  kuznets
- * Added functions to rack down forgotten nodes
- *
- * Revision 1.28  2005/04/25 14:42:53  kuznets
- * Fixed bug in GetJob()
- *
- * Revision 1.27  2005/04/21 13:37:35  kuznets
- * Fixed race condition between Submit job and Get job
- *
- * Revision 1.26  2005/04/20 15:59:33  kuznets
- * Progress message to Submit
- *
- * Revision 1.25  2005/04/19 19:34:05  kuznets
- * Adde progress report messages
- *
- * Revision 1.24  2005/04/11 13:53:25  kuznets
- * Code cleanup
- *
- * Revision 1.23  2005/04/06 12:39:55  kuznets
- * + client version control
- *
- * Revision 1.22  2005/03/29 16:48:28  kuznets
- * Use atomic counter for job id assignment
- *
- * Revision 1.21  2005/03/22 19:02:54  kuznets
- * Reflecting chnages in connect layout
- *
- * Revision 1.20  2005/03/22 16:14:49  kuznets
- * +PrintStat()
- *
- * Revision 1.19  2005/03/21 13:07:28  kuznets
- * Added some statistical functions
- *
- * Revision 1.18  2005/03/17 20:37:07  kuznets
- * Implemented FPUT
- *
- * Revision 1.17  2005/03/17 16:04:38  kuznets
- * Get job algorithm improved to re-get if job expired
- *
- * ===========================================================================
- */

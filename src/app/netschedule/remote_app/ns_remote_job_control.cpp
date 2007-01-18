@@ -344,23 +344,3 @@ int main(int argc, const char* argv[])
 {
     return CNSRemoveJobControlApp().AppMain(argc, argv);
 } 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/07/27 15:30:44  didenko
- * Simplified the output file creation.
- *
- * Revision 1.3  2006/06/15 15:27:08  didenko
- * Added drop_jobs command
- *
- * Revision 1.2  2006/05/23 14:05:36  didenko
- * Added wnlist, shutdown_nodes and kill_nodes commands
- *
- * Revision 1.1  2006/05/19 13:40:40  didenko
- * Added ns_remote_job_control utility
- *
- * ===========================================================================
- */
- 

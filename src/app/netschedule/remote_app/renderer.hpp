@@ -173,27 +173,5 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/06/15 15:27:08  didenko
- * Added drop_jobs command
- *
- * Revision 1.4  2006/05/24 01:01:34  ucko
- * Introduce an additional ITagWriter::TAttribute typedef for the sake of
- * WorkShop, whose STL doesn't support pair<> interconversion.
- *
- * Revision 1.3  2006/05/23 14:05:36  didenko
- * Added wnlist, shutdown_nodes and kill_nodes commands
- *
- * Revision 1.2  2006/05/22 18:13:35  didenko
- * + Jobs err_msg report
- *
- * Revision 1.1  2006/05/19 13:40:40  didenko
- * Added ns_remote_job_control utility
- *
- * ===========================================================================
- */
-
 #endif 
 

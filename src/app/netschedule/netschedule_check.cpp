@@ -200,17 +200,3 @@ int main(int argc, const char* argv[])
 {
     return CNetScheduleCheck().AppMain(argc, argv, 0, eDS_Default, 0);
 }
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/03/28 16:12:51  didenko
- * Extended NetSchedule check
- *
- * Revision 1.1  2005/06/06 13:07:21  kuznets
- * +netschedule_check
- *
- *
- * ===========================================================================
- */

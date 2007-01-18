@@ -69,31 +69,5 @@ public:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/03/13 16:01:36  kuznets
- * Fixed queue truncation (transaction log overflow). Added commands to print queue selectively
- *
- * Revision 1.5  2005/08/17 14:39:10  kuznets
- * Reflected change in CheckConnect proto
- *
- * Revision 1.4  2005/05/16 16:21:26  kuznets
- * Added available queues listing
- *
- * Revision 1.3  2005/05/12 18:37:33  kuznets
- * Implemented config reload
- *
- * Revision 1.2  2005/05/10 22:42:35  ucko
- * Explicitly wrap CheckConnect, as some versions of WorkShop apparently
- * won't otherwise actually change its visibility.
- *
- * Revision 1.1  2005/05/10 19:23:34  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
 #endif 
 

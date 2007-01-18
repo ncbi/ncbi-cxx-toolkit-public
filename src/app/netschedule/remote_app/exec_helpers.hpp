@@ -99,20 +99,5 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/09/05 14:35:22  didenko
- * Added option to run a job monitor appliction
- *
- * Revision 1.2  2006/06/22 19:33:14  didenko
- * Parameter fail_on_non_zero_exit is replaced with non_zero_exit_action
- *
- * Revision 1.1  2006/05/30 16:43:36  didenko
- * Moved the commonly used code to separate files.
- *
- * ===========================================================================
- */
-
 #endif 
 
