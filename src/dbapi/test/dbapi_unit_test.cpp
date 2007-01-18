@@ -219,15 +219,19 @@ CDBAPIUnitTest::TestInit(void)
 
 #endif
 
-        m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
+        m_DS = m_DM.CreateDs(m_args.GetDriverName(), &m_args.GetDBParameters());
 
         I_DriverContext* drv_context = m_DS->GetDriverContext();
 
         if ( m_args.GetDriverName() == "odbc" ||
             m_args.GetDriverName() == "odbcw" ||
             m_args.GetDriverName() == "ftds64_odbc" ) {
-            drv_context->PushCntxMsgHandler(new CODBCErrHandler, eTakeOwnership);
-            drv_context->PushDefConnMsgHandler(new CODBCErrHandler, eTakeOwnership);
+            drv_context->PushCntxMsgHandler(new CODBCErrHandler,
+                                            eTakeOwnership
+                                            );
+            drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
+                                               eTakeOwnership
+                                               );
         } else {
             drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
             drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
@@ -396,7 +400,8 @@ void CDBAPIUnitTest::Test_Unicode(void)
     string sql;
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     string str_rus("坚坚 假结 俞家");
-    string str_ger("Au遝rdem k鰊nen Sie einzelne Eintr鋑e aus Ihrem Suchprotokoll entfernen");
+    string str_ger("Au遝rdem k鰊nen Sie einzelne Eintr鋑e aus Ihrem "
+                   "Suchprotokoll entfernen");
 
 //     string str_utf8("\320\237\321\203\320\277\320\272\320\270\320\275");
     string str_utf8("\xD0\x9F\xD1\x83\xD0\xBF\xD0\xBA\xD0\xB8\xD0\xBD");
@@ -419,7 +424,8 @@ void CDBAPIUnitTest::Test_Unicode(void)
 
         // Insert data ...
         {
-            sql = "INSERT INTO #test_unicode_table(nvc255_field) VALUES(@nvc_val)";
+            sql = "INSERT INTO #test_unicode_table(nvc255_field) "
+                  "VALUES(@nvc_val)";
 
             //
             BOOST_CHECK( utf8_str_utf8.size() > 0 );
@@ -473,7 +479,8 @@ void CDBAPIUnitTest::Test_Unicode(void)
             BOOST_CHECK_EQUAL( utf8_str_1252_rus.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( utf8_str_1252_rus, nvc255_value );
             CStringUTF8 utf8_rus(nvc255_value, eEncoding_UTF8);
-            string value_rus = utf8_rus.AsSingleByteString(eEncoding_Windows_1252);
+            string value_rus =
+                utf8_rus.AsSingleByteString(eEncoding_Windows_1252);
             BOOST_CHECK_EQUAL( str_rus, value_rus );
 
             // Read utf8_str_1252_ger ...
@@ -483,7 +490,8 @@ void CDBAPIUnitTest::Test_Unicode(void)
             BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( utf8_str_1252_ger, nvc255_value );
             CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
-            string value_ger = utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
+            string value_ger =
+                utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
             BOOST_CHECK_EQUAL( str_ger, value_ger );
 
             DumpResults(auto_stmt.get());
@@ -491,11 +499,13 @@ void CDBAPIUnitTest::Test_Unicode(void)
 
         // Use permanent table ...
         if (false) {
-            auto_stmt->ExecuteUpdate( "DELETE FROM DBAPI_Sample..test_nstring_table" );
+            auto_stmt->ExecuteUpdate( "DELETE FROM DBAPI_Sample.."
+                                      "test_nstring_table" );
 
             // Insert data ...
             {
-                sql = "INSERT INTO DBAPI_Sample..test_nstring_table(first_field) VALUES(@val)";
+                sql = "INSERT INTO DBAPI_Sample..test_nstring_table"
+                    "(first_field) VALUES(@val)";
 
                 //
                 auto_stmt->SetParam( CVariant::VarChar(utf8_str_1252_rus.c_str(),
@@ -533,19 +543,25 @@ void CDBAPIUnitTest::Test_Unicode(void)
                 // Read utf8_str_1252_rus ...
                 BOOST_CHECK( rs->Next() );
                 nvc255_value = rs->GetVariant(1).GetString();
-                BOOST_CHECK_EQUAL( utf8_str_1252_rus.size(), nvc255_value.size() );
-                BOOST_CHECK_EQUAL( utf8_str_1252_rus, nvc255_value );
+                BOOST_CHECK_EQUAL(utf8_str_1252_rus.size(),
+                                  nvc255_value.size()
+                                  );
+                BOOST_CHECK_EQUAL(utf8_str_1252_rus, nvc255_value);
                 CStringUTF8 utf8_rus(nvc255_value, eEncoding_UTF8);
-                string value_rus = utf8_rus.AsSingleByteString(eEncoding_Windows_1252);
+                string value_rus =
+                    utf8_rus.AsSingleByteString(eEncoding_Windows_1252);
                 BOOST_CHECK_EQUAL( str_rus, value_rus );
 
                 // Read utf8_str_1252_ger ...
                 BOOST_CHECK( rs->Next() );
                 nvc255_value = rs->GetVariant(1).GetString();
-                BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(), nvc255_value.size() );
+                BOOST_CHECK_EQUAL( utf8_str_1252_ger.size(),
+                                   nvc255_value.size()
+                                   );
                 BOOST_CHECK_EQUAL( utf8_str_1252_ger, nvc255_value );
                 CStringUTF8 utf8_ger(nvc255_value, eEncoding_UTF8);
-                string value_ger = utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
+                string value_ger =
+                    utf8_ger.AsSingleByteString(eEncoding_Windows_1252);
                 BOOST_CHECK_EQUAL( str_ger, value_ger );
 
                 // Read utf8_str_utf8 ...
@@ -622,7 +638,9 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
 
     // Destroy a statement before a connection get destroyed ...
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
@@ -632,7 +650,9 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
 
     // Do not destroy statement, let it be destroyed ...
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         IStatement* stmt(local_conn->CreateStatement());
@@ -646,7 +666,9 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
 
     // Destroy a statement before a connection get destroyed ...
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
@@ -656,7 +678,9 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
 
     // Do not destroy statement, let it be destroyed ...
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         IStatement* stmt(local_conn->GetStatement());
@@ -673,7 +697,9 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
     // Destroy a statement before a connection get destroyed ...
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
@@ -691,7 +717,9 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
     }
 
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->CreateStatement());
@@ -710,7 +738,9 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
     // Do not destroy a statement, let it be destroyed ...
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         IStatement* stmt(local_conn->CreateStatement());
@@ -728,7 +758,9 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
     }
 
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         IStatement* stmt(local_conn->CreateStatement());
@@ -751,7 +783,9 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
     // Destroy a statement before a connection get destroyed ...
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
@@ -769,7 +803,9 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
     }
 
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         auto_ptr<IStatement> stmt(local_conn->GetStatement());
@@ -788,7 +824,9 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
 
     // Do not destroy a statement, let it be destroyed ...
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         IStatement* stmt(local_conn->GetStatement());
@@ -806,7 +844,9 @@ void CDBAPIUnitTest::Test_Multiple_Close(void)
     }
 
     {
-        auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        auto_ptr<IConnection> local_conn(
+            m_DS->CreateConnection( CONN_OWNERSHIP )
+            );
         Connect(local_conn);
 
         IStatement* stmt(local_conn->GetStatement());
@@ -901,21 +941,30 @@ CDBAPIUnitTest::Test_Insert(void)
             );
 
         // Using parameters ...
-        string sql = "INSERT INTO " + GetTableName() + "(int_field, vc1000_field) "
-                     "VALUES(@id, @vc_val)";
+        string sql = "INSERT INTO " + GetTableName() +
+                     "(int_field, vc1000_field) VALUES(@id, @vc_val)";
 
         auto_stmt->SetParam( CVariant( Int4(2) ), "@id" );
-        auto_stmt->SetParam( CVariant::LongChar(test_msg.c_str(), test_msg.size()), "@vc_val" );
+        auto_stmt->SetParam( CVariant::LongChar(test_msg.c_str(),
+                                                test_msg.size()),
+                             "@vc_val"
+                             );
         auto_stmt->ExecuteUpdate( sql );
 
         auto_stmt->SetParam( CVariant( Int4(3) ), "@id" );
-        auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(), small_msg.size()), "@vc_val" );
+        auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(),
+                                                small_msg.size()),
+                             "@vc_val"
+                             );
         auto_stmt->ExecuteUpdate( sql );
 
         CVariant var_value(CVariant::LongChar(NULL, 1024));
         var_value = CVariant::LongChar(small_msg.c_str(), small_msg.size());
         auto_stmt->SetParam( CVariant( Int4(4) ), "@id" );
-        auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(), small_msg.size()), "@vc_val" );
+        auto_stmt->SetParam( CVariant::LongChar(small_msg.c_str(),
+                                                small_msg.size()),
+                             "@vc_val"
+                             );
         auto_stmt->ExecuteUpdate( sql );
     }
 
@@ -978,7 +1027,8 @@ CDBAPIUnitTest::Test_DateTime(void)
         {
             // Initialization ...
             {
-                sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, GETDATE() )";
+                sql = "INSERT INTO #test_datetime(id, dt_field) "
+                      "VALUES(1, GETDATE() )";
 
                 auto_stmt->ExecuteUpdate( sql );
             }
@@ -1009,7 +1059,8 @@ CDBAPIUnitTest::Test_DateTime(void)
 
                 auto_stmt->SetParam( value, "@dt_val" );
 
-                sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val)";
+                sql = "INSERT INTO #test_datetime(id, dt_field) "
+                      "VALUES(1, @dt_val)";
 
                 auto_stmt->ExecuteUpdate( sql );
             }
@@ -1046,7 +1097,8 @@ CDBAPIUnitTest::Test_DateTime(void)
 
                 auto_stmt->SetParam( null_date, "@dt_val" );
 
-                sql = "INSERT INTO #test_datetime(id, dt_field) VALUES(1, @dt_val)";
+                sql = "INSERT INTO #test_datetime(id, dt_field) "
+                      "VALUES(1, @dt_val)";
 
                 auto_stmt->ExecuteUpdate( sql );
             }
@@ -1112,7 +1164,9 @@ CDBAPIUnitTest::Test_DateTime(void)
             {
                 auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
 
-                auto_ptr<ICallableStatement> call_auto_stmt( m_Conn->GetCallableStatement("sp_test_datetime", 1) );
+                auto_ptr<ICallableStatement> call_auto_stmt(
+                    m_Conn->GetCallableStatement("sp_test_datetime", 1)
+                    );
 
                 call_auto_stmt->SetParam( value, "@dt_val" );
                 call_auto_stmt->Execute();
@@ -1156,7 +1210,9 @@ CDBAPIUnitTest::Test_DateTime(void)
             {
                 auto_stmt->ExecuteUpdate( "DELETE FROM #test_datetime" );
 
-                auto_ptr<ICallableStatement> call_auto_stmt( m_Conn->GetCallableStatement("sp_test_datetime", 1) );
+                auto_ptr<ICallableStatement> call_auto_stmt(
+                    m_Conn->GetCallableStatement("sp_test_datetime", 1)
+                    );
 
                 call_auto_stmt->SetParam( null_date, "@dt_val" );
                 call_auto_stmt->Execute();
@@ -1220,7 +1276,9 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
 
             auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
 
-            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_bcp_datetime", 2) );
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->GetBulkInsert("#test_bcp_datetime", 2)
+                );
 
             bi->Bind(1, &col1);
             bi->Bind(2, &col2);
@@ -1272,7 +1330,9 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
 
             auto_stmt->ExecuteUpdate( "DELETE FROM #test_bcp_datetime" );
 
-            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_bcp_datetime", 2) );
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->GetBulkInsert("#test_bcp_datetime", 2)
+                );
 
             bi->Bind(1, &col1);
             bi->Bind(2, &col2);
@@ -1406,7 +1466,9 @@ CDBAPIUnitTest::Test_LOB(void)
         // blobRs should be destroyed before auto_cursor ...
         auto_ptr<IResultSet> blobRs(auto_cursor->Open());
         while(blobRs->Next()) {
-            ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob_value) - 1, eDisableLog);
+            ostream& out = auto_cursor->GetBlobOStream(1,
+                                                       sizeof(clob_value) - 1,
+                                                       eDisableLog);
             out.write(clob_value, sizeof(clob_value) - 1);
             out.flush();
         }
@@ -1488,7 +1550,11 @@ CDBAPIUnitTest::Test_LOB2(void)
             // blobRs should be destroyed before auto_cursor ...
             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
             while(blobRs->Next()) {
-                ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob_value) - 1, eDisableLog);
+                ostream& out =
+                    auto_cursor->GetBlobOStream(1,
+                                                sizeof(clob_value) - 1,
+                                                eDisableLog
+                                                );
                 out.write(clob_value, sizeof(clob_value) - 1);
                 out.flush();
             }
@@ -1597,7 +1663,9 @@ CDBAPIUnitTest::Test_BlobStream(void)
         // blobRs should be destroyed before auto_cursor ...
         auto_ptr<IResultSet> blobRs(auto_cursor->Open());
         while(blobRs->Next()) {
-            ostream& ostrm = auto_cursor->GetBlobOStream(1, data_len, eDisableLog);
+            ostream& ostrm = auto_cursor->GetBlobOStream(1,
+                                                         data_len,
+                                                         eDisableLog);
 
             ostrm.write(out.str(), data_len);
             out.freeze(false);
@@ -1611,7 +1679,8 @@ CDBAPIUnitTest::Test_BlobStream(void)
             // BOOST_CHECK_EQUAL(int(ostrm.tellp()), int(out.pcount()));
         }
 
-        auto_stmt->SendSql( "SELECT datalength(text_field) FROM " + GetTableName() );
+        auto_stmt->SendSql( "SELECT datalength(text_field) FROM " +
+                            GetTableName() );
 
         while (auto_stmt->HasMoreResults()) {
             if (auto_stmt->HasRows()) {
@@ -1652,7 +1721,8 @@ CDBAPIUnitTest::Test_BlobStream(void)
                             BOOST_CHECK_EQUAL(j, i);
                         }
                         long read_data_len = strm.tellg();
-                        BOOST_CHECK_EQUAL(data_len, read_data_len + 1); // Calculate a trailing space.
+                        // Calculate a trailing space.
+                        BOOST_CHECK_EQUAL(data_len, read_data_len + 1);
                     }
                 }
                 catch( const CDB_Exception& ) {
@@ -1785,7 +1855,9 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
     // Insert data ...
     {
         bool exception_catched = false;
-        auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_bulk_overflow", 1) );
+        auto_ptr<IBulkInsert> bi(
+            m_Conn->GetBulkInsert("#test_bulk_overflow", 1)
+            );
 
         CVariant col1(eDB_VarChar, data_size);
 
@@ -1859,7 +1931,9 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
         // Insert data ...
         {
-            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bin_bulk_insert_table", 2) );
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->GetBulkInsert("#bin_bulk_insert_table", 2)
+                );
 
             CVariant col1(eDB_Int);
             CVariant col2(eDB_LongBinary, m_max_varchar_size);
@@ -1872,7 +1946,10 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 string str_val(int_value , char_val);
 
                 col1 = int_value;
-                col2 = CVariant::LongBinary(m_max_varchar_size, str_val.c_str(), str_val.size());
+                col2 = CVariant::LongBinary(m_max_varchar_size,
+                                            str_val.c_str(),
+                                            str_val.size()
+                                            );
                 bi->AddRow();
             }
             bi->Complete();
@@ -1900,7 +1977,9 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 string vb8000_value = rs->GetVariant(2).GetString();
 
                 BOOST_CHECK_EQUAL( int_value, id );
-                BOOST_CHECK_EQUAL( string::size_type(int_value), vb8000_value.size() );
+                BOOST_CHECK_EQUAL(string::size_type(int_value),
+                                  vb8000_value.size()
+                                  );
             }
 
             // Dump results ...
@@ -1920,7 +1999,9 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 3) );
+                auto_ptr<IBulkInsert> bi(
+                    m_Conn->GetBulkInsert("#bulk_insert_table", 3)
+                    );
 
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
@@ -1972,7 +2053,9 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 4) );
+                auto_ptr<IBulkInsert> bi(
+                    m_Conn->GetBulkInsert("#bulk_insert_table", 4)
+                    );
 
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_BigInt);
@@ -2022,13 +2105,16 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
         {
             stmt->ExecuteUpdate(
                 // "create table #__blki_test ( name char(32) not null, value bigint null )" );
-                "create table #__blki_test ( name char(32), value bigint null )" );
+                "create table #__blki_test ( name char(32), value bigint null )"
+                );
             stmt->Close();
         }
 
         // First test ...
         {
-            auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
+            auto_ptr<IBulkInsert> blki(
+                m_Conn->CreateBulkInsert("#__blki_test", 2)
+                );
 
             CVariant col1(eDB_Char,32);
             CVariant col2(eDB_BigInt);
@@ -2091,7 +2177,9 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
         // Insert data ...
         {
-            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 2) );
+            auto_ptr<IBulkInsert> bi(
+                m_Conn->GetBulkInsert("#bulk_insert_table", 2)
+                );
 
             CVariant col1(eDB_Int);
 
@@ -2144,25 +2232,40 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
 
                         switch (i) {
                         case 0:
-                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(255));
+                            BOOST_CHECK_EQUAL(col1.size(),
+                                              string::size_type(255)
+                                              );
                             break;
                         case 1:
-                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(m_max_varchar_size));
+                            BOOST_CHECK_EQUAL(
+                                col1.size(),
+                                string::size_type(m_max_varchar_size)
+                                );
                             break;
                         case 2:
-                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(1024));
+                            BOOST_CHECK_EQUAL(col1.size(),
+                                              string::size_type(1024)
+                                              );
                             break;
                         case 3:
-                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(4112));
+                            BOOST_CHECK_EQUAL(col1.size(),
+                                              string::size_type(4112)
+                                              );
                             break;
                         case 4:
-                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(4113));
+                            BOOST_CHECK_EQUAL(col1.size(),
+                                              string::size_type(4113)
+                                              );
                             break;
                         case 5:
-                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(4138));
+                            BOOST_CHECK_EQUAL(col1.size(),
+                                              string::size_type(4138)
+                                              );
                             break;
                         case 6:
-                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(4139));
+                            BOOST_CHECK_EQUAL(col1.size(),
+                                              string::size_type(4139)
+                                              );
                             break;
                         };
                     }
@@ -2498,7 +2601,8 @@ CDBAPIUnitTest::Test_Cursor(void)
         auto_stmt->ExecuteUpdate(sql);
 
         // Insert new LOB records ...
-        sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field) VALUES(@id, '') \n";
+        sql  = " INSERT INTO " + GetTableName() +
+            "(int_field, text_field) VALUES(@id, '') \n";
 
         // CVariant variant(eDB_Text);
         // variant.Append(" ", 1);
@@ -2590,7 +2694,8 @@ CDBAPIUnitTest::Test_Cursor2(void)
         auto_stmt->ExecuteUpdate(sql);
 
         // Insert new LOB records ...
-        sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field) VALUES(@id, '') \n";
+        sql  = " INSERT INTO " + GetTableName() +
+            "(int_field, text_field) VALUES(@id, '') \n";
 
         // CVariant variant(eDB_Text);
         // variant.Append(" ", 1);
@@ -2718,7 +2823,9 @@ CDBAPIUnitTest::Test_SelectStmt(void)
     {
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-        auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version as oops" ) );
+        auto_ptr<IResultSet> rs(
+            auto_stmt->ExecuteQuery( "select @@version as oops" )
+            );
         BOOST_CHECK( rs.get() != NULL );
         BOOST_CHECK( rs->Next() );
         auto_ptr<const IResultSetMetaData> col_metadata(rs->GetMetaData());
@@ -2918,7 +3025,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         {
             auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
-            local_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
+            local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
             try {
                 Test_ES_01(*local_conn);
@@ -3172,7 +3279,9 @@ CDBAPIUnitTest::Test_Procedure(void)
     // No parameters at this time.
     {
         // Execute it first time ...
-        auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("sp_databases") );
+        auto_ptr<ICallableStatement> auto_stmt(
+            m_Conn->GetCallableStatement("sp_databases")
+            );
         auto_stmt->Execute();
         while(auto_stmt->HasMoreResults()) {
             if( auto_stmt->HasRows() ) {
@@ -3245,7 +3354,9 @@ CDBAPIUnitTest::Test_Procedure(void)
             ""
             );
 
-        auto_ptr<ICallableStatement> auto_stmt( conn->GetCallableStatement("id_seqid4gi") );
+        auto_ptr<ICallableStatement> auto_stmt(
+            conn->GetCallableStatement("id_seqid4gi")
+            );
         auto_stmt->SetParam( CVariant(1), "@gi" );
         auto_stmt->Execute();
         while(auto_stmt->HasMoreResults()) {
@@ -3280,7 +3391,9 @@ CDBAPIUnitTest::Test_Procedure(void)
         {
             int num = 0;
             // Execute it first time ...
-            auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("sp_databases", 3) );
+            auto_ptr<ICallableStatement> auto_stmt(
+                m_Conn->GetCallableStatement("sp_databases", 3)
+                );
 
             auto_stmt->Execute();
 
@@ -3303,7 +3416,9 @@ CDBAPIUnitTest::Test_Procedure(void)
 
         {
             int num = 0;
-            auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("sp_server_info", 3) );
+            auto_ptr<ICallableStatement> auto_stmt(
+                m_Conn->GetCallableStatement("sp_server_info", 3)
+                );
 
             auto_stmt->Execute();
 
@@ -3329,7 +3444,9 @@ CDBAPIUnitTest::Test_Procedure(void)
     if (false) {
         CVariant param(eDB_Int);
 
-        auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("DBAPI_Sample..TestProc4", 1) );
+        auto_ptr<ICallableStatement> auto_stmt(
+            m_Conn->GetCallableStatement("DBAPI_Sample..TestProc4", 1)
+            );
 //         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
         auto_stmt->SetParam( param, "@test_out" );
 
@@ -3515,10 +3632,12 @@ CDBAPIUnitTest::Test_NULL(void)
             for (long ind = 0; ind < rec_num; ++ind) {
                 if (ind % 2 == 0) {
                     auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
-                    auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
+                    auto_stmt->SetParam(CVariant(eDB_VarChar), "@vc1000_field");
                 } else {
                     auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
-                    auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@vc1000_field" );
+                    auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
+                                         "@vc1000_field"
+                                         );
                 }
 
                 // Execute a statement with parameters ...
@@ -3530,7 +3649,9 @@ CDBAPIUnitTest::Test_NULL(void)
             }
 
             // Check record number ...
-            BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+            BOOST_CHECK_EQUAL(int(rec_num),
+                              GetNumOfRecords(auto_stmt, GetTableName())
+                              );
         }
 
         {
@@ -3544,9 +3665,11 @@ CDBAPIUnitTest::Test_NULL(void)
             // Insert data ...
             for (long ind = 0; ind < rec_num; ++ind) {
                 if (ind % 2 == 0) {
-                    auto_stmt->SetParam( CVariant(eDB_VarChar), "@nvc255_field" );
+                    auto_stmt->SetParam(CVariant(eDB_VarChar), "@nvc255_field");
                 } else {
-                    auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@nvc255_field" );
+                    auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
+                                         "@nvc255_field"
+                                         );
                 }
 
                 // Execute a statement with parameters ...
@@ -3558,7 +3681,8 @@ CDBAPIUnitTest::Test_NULL(void)
             }
 
             // Check record number ...
-            BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+            BOOST_CHECK_EQUAL(int(rec_num),
+                              GetNumOfRecords(auto_stmt, GetTableName()));
         }
     }
 
@@ -3583,7 +3707,9 @@ CDBAPIUnitTest::Test_NULL(void)
                 auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
             } else {
                 auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
-                auto_stmt->SetParam( CVariant(NStr::IntToString(ind)), "@vc1000_field" );
+                auto_stmt->SetParam( CVariant(NStr::IntToString(ind)),
+                                     "@vc1000_field"
+                                     );
             }
 
             // Execute a statement with parameters ...
@@ -3595,7 +3721,9 @@ CDBAPIUnitTest::Test_NULL(void)
         }
 
         // Check record number ...
-        BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+        BOOST_CHECK_EQUAL(int(rec_num),
+                          GetNumOfRecords(auto_stmt, GetTableName())
+                          );
     }
 
     // Check ...
@@ -3603,7 +3731,8 @@ CDBAPIUnitTest::Test_NULL(void)
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
         {
-            sql = "SELECT int_field, vc1000_field FROM " + GetTableName() + " ORDER BY id";
+            sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
+                " ORDER BY id";
 
             auto_stmt->SendSql( sql );
             BOOST_CHECK(auto_stmt->HasMoreResults());
@@ -3626,7 +3755,8 @@ CDBAPIUnitTest::Test_NULL(void)
                     BOOST_CHECK( int_field.IsNull() );
 
                     BOOST_CHECK( !vc1000_field.IsNull() );
-                    BOOST_CHECK_EQUAL( vc1000_field.GetString(), NStr::IntToString(ind) );
+                    BOOST_CHECK_EQUAL( vc1000_field.GetString(),
+                                       NStr::IntToString(ind) );
                 }
             }
 
@@ -3651,7 +3781,8 @@ CDBAPIUnitTest::Test_NULL(void)
                     BOOST_CHECK( nvc255_field.IsNull() );
                 } else {
                     BOOST_CHECK( !nvc255_field.IsNull() );
-                    BOOST_CHECK_EQUAL( nvc255_field.GetString(), NStr::IntToString(ind) );
+                    BOOST_CHECK_EQUAL( nvc255_field.GetString(),
+                                       NStr::IntToString(ind) );
                 }
             }
 
@@ -3662,7 +3793,9 @@ CDBAPIUnitTest::Test_NULL(void)
     // Check NULL with stored procedures ...
     {
         {
-            auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("sp_server_info", 1) );
+            auto_ptr<ICallableStatement> auto_stmt(
+                m_Conn->GetCallableStatement("sp_server_info", 1)
+                );
 
             // Set parameter to NULL ...
             auto_stmt->SetParam( CVariant(eDB_Int), "@attribute_id" );
@@ -3711,7 +3844,7 @@ CDBAPIUnitTest::Test_NULL(void)
             for (long ind = 0; ind < rec_num; ++ind) {
                 if (ind % 2 == 0) {
                     auto_stmt->SetParam( CVariant( Int4(ind) ), "@int_field" );
-                    auto_stmt->SetParam( CVariant(eDB_VarChar), "@vc1000_field" );
+                    auto_stmt->SetParam(CVariant(eDB_VarChar), "@vc1000_field");
                 } else {
                     auto_stmt->SetParam( CVariant(eDB_Int), "@int_field" );
                     auto_stmt->SetParam( CVariant(string()), "@vc1000_field" );
@@ -3726,12 +3859,14 @@ CDBAPIUnitTest::Test_NULL(void)
             }
 
             // Check record number ...
-            BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt, GetTableName()));
+            BOOST_CHECK_EQUAL(int(rec_num), GetNumOfRecords(auto_stmt,
+                                                            GetTableName()));
         }
 
         // Check ...
         {
-            sql = "SELECT int_field, vc1000_field FROM " + GetTableName() + " ORDER BY id";
+            sql = "SELECT int_field, vc1000_field FROM " + GetTableName() +
+                " ORDER BY id";
 
             auto_stmt->SendSql( sql );
             BOOST_CHECK(auto_stmt->HasMoreResults());
@@ -3993,7 +4128,8 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT int_field FROM " + GetTableName() + " ORDER BY int_field";
+        sql  = " SELECT int_field FROM " + GetTableName() +
+            " ORDER BY int_field";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -4035,7 +4171,8 @@ CDBAPIUnitTest::CheckGetRowCount2(
             curr_stmt = stmt;
         }
 
-        sql  = " SELECT int_field FROM " + GetTableName() + " WHERE int_field = 0";
+        sql  = " SELECT int_field FROM " + GetTableName() +
+            " WHERE int_field = 0";
         curr_stmt->ExecuteUpdate(sql);
 
         int nRows = curr_stmt->GetRowCount();
@@ -4967,8 +5104,12 @@ CDBAPIUnitTest::Test_Variant(void)
         BOOST_CHECK( CVariant( double(1) ) == CVariant( double(1) ) );
         BOOST_CHECK( CVariant( string("abcd") ) == CVariant( string("abcd") ) );
         BOOST_CHECK( CVariant( "abcd" ) == CVariant( "abcd" ) );
-        BOOST_CHECK( CVariant( value_CTime, eShort ) == CVariant( value_CTime, eShort ) );
-        BOOST_CHECK( CVariant( value_CTime, eLong ) == CVariant( value_CTime, eLong ) );
+        BOOST_CHECK( CVariant( value_CTime, eShort ) ==
+                     CVariant( value_CTime, eShort )
+                     );
+        BOOST_CHECK( CVariant( value_CTime, eLong ) ==
+                     CVariant( value_CTime, eLong )
+                     );
     }
 
     // Check operator<
@@ -4983,12 +5124,16 @@ CDBAPIUnitTest::Test_Variant(void)
             BOOST_CHECK( CVariant( Int8(-1) ) < CVariant( Int8(1) ) );
             BOOST_CHECK( CVariant( float(-1) ) < CVariant( float(1) ) );
             BOOST_CHECK( CVariant( double(-1) ) < CVariant( double(1) ) );
-            BOOST_CHECK( CVariant( string("abcd") ) < CVariant( string("bcde") ) );
+            BOOST_CHECK( CVariant(string("abcd")) < CVariant( string("bcde")));
             BOOST_CHECK( CVariant( "abcd" ) < CVariant( "bcde" ) );
             CTime new_time = value_CTime;
             new_time += 1;
-            BOOST_CHECK( CVariant( value_CTime, eShort ) < CVariant( new_time, eShort ) );
-            BOOST_CHECK( CVariant( value_CTime, eLong ) < CVariant( new_time, eLong ) );
+            BOOST_CHECK( CVariant( value_CTime, eShort ) <
+                         CVariant( new_time, eShort )
+                         );
+            BOOST_CHECK( CVariant( value_CTime, eLong ) <
+                         CVariant( new_time, eLong )
+                         );
         }
 
         // Check comparasion wit Uint1(0) ...
@@ -5070,7 +5215,8 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
             I_DriverContext* drv_context = m_DS->GetDriverContext();
 
         	if( drv_context == NULL ) {
-                BOOST_FAIL("FATAL: Unable to load context for dbdriver " + sDbDriver);
+                BOOST_FAIL("FATAL: Unable to load context for dbdriver " +
+                           sDbDriver);
         	}
         	drv_context->SetMaxTextImageSize( 0x7fffffff );
         	drv_context->SetLoginTimeout( s_tTimeOut );
@@ -5262,7 +5408,8 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
             		    while( pRes->Fetch() ) {
                 			pRes->GetItem( &status );
                 			if( status.Value() < 0 ) {
-                			    sError = "Bad status value " + NStr::IntToString(status.Value())
+                			    sError = "Bad status value " +
+                                    NStr::IntToString(status.Value())
                 				+ " from RPC 'FindAccount'";
                 			    bFetchErr = true;
                 			    break;
@@ -5343,7 +5490,9 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 
     //
     {
-        auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("FindAccount", 20) );
+        auto_ptr<ICallableStatement> auto_stmt(
+            auto_conn->GetCallableStatement("FindAccount", 20)
+            );
 
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
@@ -5377,7 +5526,9 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
 
     //
     {
-        auto_ptr<ICallableStatement> auto_stmt( auto_conn->GetCallableStatement("FindAccountMatchAll", 20) );
+        auto_ptr<ICallableStatement> auto_stmt(
+            auto_conn->GetCallableStatement("FindAccountMatchAll", 20)
+            );
 
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@login" );
         auto_stmt->SetParam( CVariant(eDB_VarChar), "@title" );
@@ -5452,7 +5603,7 @@ CDBAPIUnitTest::Test_Authentication(void)
 
         auto_ptr<IStatement> auto_stmt( auto_conn->GetStatement() );
 
-        auto_ptr<IResultSet> rs( auto_stmt->ExecuteQuery( "select @@version" ) );
+        auto_ptr<IResultSet> rs(auto_stmt->ExecuteQuery("select @@version"));
         BOOST_CHECK( rs.get() != NULL );
         BOOST_CHECK( rs->Next() );
     }
@@ -5495,7 +5646,7 @@ void*
 CContextThread::Main(void)
 {
     try {
-        m_DS = m_DM.CreateDs( m_Args.GetDriverName(), &m_Args.GetDBParameters() );
+        m_DS = m_DM.CreateDs(m_Args.GetDriverName(), &m_Args.GetDBParameters());
         return m_DS;
     } catch (const CDB_ClientEx&) {
         // Ignore it ...
@@ -5741,7 +5892,8 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
 
             // 2
             try {
-                auto_stmt->SendSql("SELECT name FROM sysobjects WHERE name = 'oops'");
+                sql = "SELECT name FROM sysobjects WHERE name = 'oops'";
+                auto_stmt->SendSql(sql);
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
@@ -5803,6 +5955,49 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
             }
         }
     }
+}
+
+
+void CDBAPIUnitTest::Test_Timeout(void)
+{
+    bool timeout_was_reported = false;
+    auto_ptr<IConnection> auto_conn;
+    I_DriverContext* dc = m_DS->GetDriverContext();
+    unsigned int timeout = dc->GetTimeout();
+
+    dc->SetTimeout(1);
+
+    auto_conn.reset(m_DS->CreateConnection());
+    BOOST_CHECK(auto_conn.get() != NULL);
+    auto_conn->Connect(
+        m_args.GetUserName(),
+        m_args.GetUserPassword(),
+        m_args.GetServerName()
+        );
+
+    auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+
+    try {
+        auto_stmt->SendSql("waitfor delay '0:00:03'");
+        BOOST_CHECK(auto_stmt->HasMoreResults());
+    // } catch(const CDB_TimeoutEx&) {
+    } catch(const CDB_Exception&) {
+        timeout_was_reported = true;
+        auto_stmt->Cancel();
+    }
+
+    // Check if connection is alive ...
+    if (false) {
+        auto_stmt->SendSql("SELECT name FROM sysobjects");
+        BOOST_CHECK( auto_stmt->HasMoreResults() );
+        BOOST_CHECK( auto_stmt->HasRows() );
+        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+        BOOST_CHECK( rs.get() != NULL );
+    }
+
+    dc->SetTimeout(timeout);
+
+    BOOST_CHECK(timeout_was_reported);
 }
 
 
@@ -5873,7 +6068,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         // args.GetDriverName() == "dblib" ||
         args.GetDriverName() == "msdblib"
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_One,
+                                   DBAPIInstance);
         add(tc);
     }
 
@@ -5884,7 +6080,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         args.GetDriverName() == "odbc" ||
 //         args.GetDriverName() == "ftds64_odbc"
 //         ) {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many, DBAPIInstance);
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
+//                                    DBAPIInstance);
 //         add(tc);
 //     }
 
@@ -5894,10 +6091,27 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
 
+    if (args.GetDriverName() == "ftds"
+        || args.GetDriverName() == "dblib"
+        || args.GetDriverName() == "msdblib"
+//         || args.GetDriverName() == "ctlib"
+//         || args.GetDriverName() == "ftds64_ctlib"
+//         || args.GetDriverName() == "ftds64_odbc"
+//         || args.GetDriverName() == "odbc"
+//         || args.GetDriverName() == "odbcw"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+
     if (args.GetDriverName() != "ftds" &&
         args.GetDriverName() != "ftds64_ctlib"
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -5907,19 +6121,22 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         (args.GetDriverName() == "ftds64_odbc"
          || args.GetDriverName() == "ftds64_ctlib")
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Authentication,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
 
     //
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
-    add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception, DBAPIInstance));
+    add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_CDB_Exception,
+                              DBAPIInstance));
 
     if (!(args.GetDriverName() == "ftds64_ctlib"
           && args.GetServerType() == CTestArguments::eSybase) // Something
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Create_Destroy,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -5928,7 +6145,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (!(args.GetDriverName() == "ftds64_ctlib"
           && args.GetServerType() == CTestArguments::eSybase) // Something
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Multiple_Close, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Multiple_Close,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -5940,7 +6158,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc_parameters->depends_on(tc_init);
     add(tc_parameters);
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetRowCount, DBAPIInstance);
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetRowCount,
+                               DBAPIInstance);
     tc->depends_on(tc_init);
     tc->depends_on(tc_parameters);
     add(tc);
@@ -5968,28 +6187,33 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             args.GetDriverName() == "ftds64_dblib" ) {
             //
             boost::unit_test::test_case* tc_cursor =
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor,
+                                       DBAPIInstance);
             tc->depends_on(tc_init);
             tc->depends_on(tc_parameters);
             add(tc);
 
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2, DBAPIInstance);
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor2,
+                                       DBAPIInstance);
             tc->depends_on(tc_init);
             tc->depends_on(tc_parameters);
             add(tc);
 
             // Does not work with all databases and drivers currently ...
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, DBAPIInstance);
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB,
+                                       DBAPIInstance);
             tc->depends_on(tc_init);
             tc->depends_on(tc_cursor);
             add(tc);
 
-//             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2, DBAPIInstance);
+//             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB2,
+//             DBAPIInstance);
 //             tc->depends_on(tc_init);
 //             tc->depends_on(tc_cursor);
 //             add(tc);
 
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream, DBAPIInstance);
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream,
+                                       DBAPIInstance);
             tc->depends_on(tc_init);
             tc->depends_on(tc_cursor);
             add(tc);
@@ -6002,20 +6226,24 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         && args.GetDriverName() != "odbcw" // No BCP at the moment ...
         && args.GetDriverName() != "ctlib" // Doesn't work for some reason ...
         && args.GetDriverName() != "msdblib" // Doesn't work for some reason ...
-        && !(args.GetDriverName() == "ftds" && args.GetServerType() == CTestArguments::eSybase)
+        && !(args.GetDriverName() == "ftds" &&
+             args.GetServerType() == CTestArguments::eSybase)
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BulkInsertBlob,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
 
     {
         boost::unit_test::test_case* except_safety_tc =
-            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
+            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety,
+                                  DBAPIInstance);
         except_safety_tc->depends_on(tc_init);
         add(except_safety_tc);
 
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         tc->depends_on(except_safety_tc);
         add(tc);
@@ -6023,13 +6251,17 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     {
         boost::unit_test::test_case* select_stmt_tc =
-            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt, DBAPIInstance);
+            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt,
+                                  DBAPIInstance);
         select_stmt_tc->depends_on(tc_init);
         add(select_stmt_tc);
 
         if ( args.GetServerType() == CTestArguments::eMsSql &&
-             (args.GetDriverName() != "msdblib" && args.GetDriverName() != "dblib")) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML, DBAPIInstance);
+             (args.GetDriverName() != "msdblib" &&
+              args.GetDriverName() != "dblib")
+             ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML,
+                                       DBAPIInstance);
             tc->depends_on(tc_init);
             tc->depends_on(select_stmt_tc);
             add(tc);
@@ -6047,7 +6279,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
              args.GetServerType() == CTestArguments::eMsSql)
              // args.GetDriverName() == "ctlib" ||
             ) {
-            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert, DBAPIInstance);
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert,
+                                       DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
         }
@@ -6056,7 +6289,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // FTDS driver doesn't work with GCC_401-DebugMT, GCC_340-ReleaseMT on
     // linux for some reason.
     if (args.GetDriverName() != "ftds") {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -6065,7 +6299,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetTotalColumns, DBAPIInstance);
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetTotalColumns,
+                               DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 
@@ -6084,7 +6319,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // There is a preblem when this test is executed after Test_Bulk_Overflow ...
     if ( args.GetDriverName() != "ftds64_odbc"  // Strange ....
          ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -6093,7 +6329,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
          && args.GetDriverName() != "ftds64_ctlib"  // Something is broken in ftds64_ctlib ...
          && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
          ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTimeBCP, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTimeBCP,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -6106,7 +6343,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
          || args.GetDriverName() == "ftds64_ctlib"
          // || args.GetDriverName() == "ftds64_odbc" // No BCP at the moment ...
          ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -6116,17 +6354,20 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         args.GetDriverName() == "ftds64_odbc" ||
 //         || args.GetDriverName() == "ftds64_ctlib"
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Unicode,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         tc->depends_on(tc_parameters);
         add(tc);
     }
 
-    // The only problem with this test is that the LINK_OS server is not available from time to time.
+    // The only problem with this test is that the LINK_OS server is not
+    // available from time to time.
     if (args.GetServerType() == CTestArguments::eSybase &&
         args.GetDriverName() != "ftds"
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Iskhakov,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -6135,7 +6376,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (args.GetDriverName() != "ftds" &&
         args.GetDriverName() != "dblib"
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -6153,7 +6395,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // development ....
     if (false) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults,
+                                   DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }

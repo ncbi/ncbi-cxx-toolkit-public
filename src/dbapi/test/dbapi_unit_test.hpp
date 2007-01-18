@@ -199,6 +199,7 @@ public:
     void Test_DriverContext_Many(void);
     void Test_Decimal(void);
     void Test_Query_Cancelation(void);
+    void Test_Timeout(void);
 
 public:
     void Test_Exception_Safety(void);
