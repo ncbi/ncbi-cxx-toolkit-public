@@ -20,7 +20,7 @@ target_dir=$1
 
 checkout_info="checkout_info"
 need_cleanup="no"
-revision="{`date --iso-8601=minutes`}"
+timestamp=`date --iso-8601=minutes`
 
 
 ##  Printout USAGE info, cleanup and exit
@@ -95,27 +95,30 @@ for cmd_arg in "$@" ; do
 
     --production      )  srctree="production" ;;
     --development     )  srctree="development" ;;
-    --date=*          )  revision="{`echo $cmd_arg | sed -e 's/--date=//'`}" ;;
+    --date=*          )  timestamp="`echo $cmd_arg | sed -e 's/--date=//'`" ;;
 
     * )  Usage "Invalid command line argument:  $cmd_arg" ;;
   esac
 done 
 
+revision="{$timestamp}"
 svn_cmd="`which svn-1.4.0 2> /dev/null || echo svn`"
 test -n "$svn_cmd" || svn_cmd='svn'
 
+# Checkout <path> [-N]
 if test "$export" = "yes" ; then
-  checkout_cmd="$svn_cmd export -r \"$revision\" $REPOS/"
-  Usage "'--export' is not implemented"
+    checkout_cmd="$svn_cmd export -r \"$revision\" $REPOS/\$1 \$1 \$2"
 else
-  checkout_cmd="$svn_cmd update -r \"$revision\" "
+    checkout_cmd="$svn_cmd update -r \"$revision\" \$*"
 fi
 
 
+# This function calls with 2 arguments: <path> [-N]
+# If you change number of arguments please update checkout_cmd above
 Checkout()
 {
-    echo " $*..." | sed 's%.* \([^ ][^ ]*\)\.\.\.%  \1%'
-    eval $checkout_cmd$*  ||  Usage "$checkout_cmd$*"
+    echo " $*..."
+    eval $checkout_cmd    ||  Usage "$checkout_cmd"
 }
 
 
@@ -131,6 +134,7 @@ echo 'Retrieving source files from Subversion:'
 $svn_cmd checkout -N -r "$revision" $REPOS $target_dir || \
 	Usage "Cannot checkout $REPOS"
 need_cleanup="yes"
+
 cd "$target_dir"  ||  Usage "Cannot cd to $target_dir"
 target_dir=`pwd`
 
@@ -139,8 +143,8 @@ if test "$srctree" = "development" ; then
   Checkout ${srctree}doc
 fi
 
-Checkout -N ${srctree}src
-Checkout -N ${srctree}src/connect
+Checkout ${srctree}src -N
+Checkout ${srctree}src/connect -N
 Checkout ${srctree}src/connect/ext
 Checkout ${srctree}src/connect/services
 Checkout ${srctree}src/connect/test
@@ -155,15 +159,15 @@ Checkout ${srctree}src/algo
 Checkout ${srctree}src/bdb
 Checkout ${srctree}src/sqlite
 if test "$with_internal" != "no" ; then
-    Checkout -N ${srctree}src/internal
+    Checkout ${srctree}src/internal -N
     Checkout ${srctree}src/internal/align_model 
-    Checkout -N ${srctree}src/internal/ID
-    Checkout -N ${srctree}src/internal/ID/utils
+    Checkout ${srctree}src/internal/ID -N
+    Checkout ${srctree}src/internal/ID/utils -N
     Checkout ${srctree}src/internal/log
 fi
 
-Checkout -N ${srctree}include
-Checkout -N ${srctree}include/connect
+Checkout ${srctree}include -N
+Checkout ${srctree}include/connect -N
 Checkout ${srctree}include/connect/ext
 Checkout ${srctree}include/connect/services
 Checkout ${srctree}include/corelib
@@ -178,10 +182,10 @@ Checkout ${srctree}include/algo
 Checkout ${srctree}include/bdb
 Checkout ${srctree}include/sqlite
 if test "$with_internal" != "no" ; then
-    Checkout -N ${srctree}include/internal
+    Checkout ${srctree}include/internal -N
     Checkout ${srctree}include/internal/align_model 
-    Checkout -N ${srctree}include/internal/ID
-    Checkout -N ${srctree}include/internal/ID/utils
+    Checkout ${srctree}include/internal/ID -N
+    Checkout ${srctree}include/internal/ID/utils -N
     Checkout ${srctree}include/internal/log
 fi
 
@@ -199,13 +203,13 @@ case "$platform" in
     Checkout ${srctree}include/dbapi
     Checkout ${srctree}src/connect/daemons
     Checkout ${srctree}include/connect/daemons
-    Checkout -N ${srctree}compilers
+    Checkout ${srctree}compilers -N
     Checkout ${srctree}src/check
     ;;
   msvc )
     Checkout ${srctree}src/dbapi
     Checkout ${srctree}include/dbapi
-    Checkout -N ${srctree}compilers
+    Checkout ${srctree}compilers -N
     Checkout ${srctree}compilers/msvc710_prj
     Checkout ${srctree}compilers/msvc800_prj
     Checkout ${srctree}src/check
@@ -213,18 +217,18 @@ case "$platform" in
   cygwin)
     Checkout ${srctree}src/dbapi
     Checkout ${srctree}include/dbapi
-    Checkout -N ${srctree}compilers
+    Checkout ${srctree}compilers -N
     Checkout ${srctree}compilers/cygwin
     Checkout ${srctree}src/check
     ;;
   mac )
-    Checkout -N ${srctree}src/dbapi
-    Checkout -N ${srctree}src/dbapi/driver
-    Checkout -N ${srctree}include/dbapi
-    Checkout -N ${srctree}include/dbapi/driver
-    Checkout -N ${srctree}include/dbapi/driver/util
+    Checkout ${srctree}src/dbapi -N
+    Checkout ${srctree}src/dbapi/driver -N
+    Checkout ${srctree}include/dbapi -N
+    Checkout ${srctree}include/dbapi/driver -N
+    Checkout ${srctree}include/dbapi/driver/util -N
     Checkout ${srctree}src/connect/mitsock
-    Checkout -N ${srctree}compilers
+    Checkout ${srctree}compilers -N
     Checkout ${srctree}compilers/mac_prj
     Checkout ${srctree}compilers/xCode
     ;;
@@ -232,11 +236,11 @@ esac
 
 case "$platform" in
   all | unix | cygwin | mac )
-    Checkout -N ${srctree}
+    Checkout ${srctree} -N
     Checkout ${srctree}scripts
     ;;
   msvc )
-    Checkout -N ${srctree}scripts
+    Checkout ${srctree}scripts -N
     Checkout ${srctree}scripts/check
     Checkout ${srctree}scripts/projects
     ;;
@@ -314,12 +318,18 @@ esac
 esac
 
 
+## Strip root .svn for --export
+if test "$export" = "yes" ; then
+    rm -rf .svn
+fi
+
+
 ## DONE
 
 # Generate checkout info file
 cat <<EOF >$checkout_info
 For platform   : ${platform}
-Sources date   : ${revision}
+Sources date   : ${timestamp}
 Checkout date  : `date`
 Is exported    : ${export}
 ASN generation : ${with_objects}
