@@ -216,7 +216,7 @@ property gui_dlg_registry : {name:"gui_dlg_registry", path:"gui:dialogs:registry
 --property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", inc:{"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp", "seq_feat_remove_dlg.cpp", "feature_editor.cpp", "edit_resource_file.cpp", "edit_table_model.cpp", ""}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
 property gui_dlg_featedit : {name:"gui_dlg_featedit", path:"gui:dialogs:edit:feature", exc:{"EditFormGroup.cpp", "EditFormGroup_.cpp", "EditFormInput.cpp", "EditFormInput_.cpp", "EditFormValue.cpp", "EditFormValue_.cpp", "NCBI_GUI_EditForm_module.cpp", "edit_form_builder.cpp", "edit_form_bin.cpp"}, asn1:true, asn1Name:"gui_dlg_seq_feat_edit"}
 property gui_dlg_edit : {name:"gui_dlg_edit", path:"gui:dialogs:edit"}
-property gui_dlg_feat_search : {name:"gui_dlg_feat_search", path:"gui:dialogs:feat_search"}
+--property gui_dlg_feat_search : {name:"gui_dlg_feat_search", path:"gui:dialogs:feat_search"}
 property gui_dlg_seq_goto : {name:"gui_dlg_seq_goto", path:"gui:dialogs:seq_goto"}
 
 (* Widgets *)
@@ -227,7 +227,7 @@ property w_gl : {name:"w_gl", path:"gui:widgets:gl"}
 property w_seq : {name:"w_seq", path:"gui:widgets:seq"}
 property w_data : {name:"w_data", path:"gui:widgets:data"}
 property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data", exc:{"Sparse_align.cpp", "NCBI_Seqalign_ext_module.cpp", "Sparse_align_.cpp", "Sparse_score.cpp", "Sparse_score_.cpp", "Sparse_seg.cpp", "Sparse_seg_.cpp", "Sparse_seg_ext.cpp", "Sparse_seg_ext_.cpp"}}
-property seqalign_ext : {name:"seqalign_ext", path:"gui:widgets:aln_data", inc:{"seqalign_ext__.cpp", "seqalign_ext___.cpp"}, asn1:true, asn1Name:"seqalign_ext"}
+--property seqalign_ext : {name:"seqalign_ext", path:"gui:widgets:aln_data", inc:{"seqalign_ext__.cpp", "seqalign_ext___.cpp"}, asn1:true, asn1Name:"seqalign_ext"}
 property w_seq_graphic : {name:"w_seq_graphic", path:"gui:widgets:seq_graphic"}
 property w_seq_text : {name:"w_seq_text", path:"gui:widgets:seq_text"}
 property w_hit_matrix : {name:"w_hit_matrix", path:"gui:widgets:hit_matrix", exc:{"hit_clustering.cpp"}}
@@ -310,11 +310,11 @@ property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_open
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", fworks:"OpenGL", req:true}
 property gui_widgets : {name:"gui_widgets", libs:{w_aln_data, w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_data, w_html, w_serial_browse, w_object_list}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
-property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_pub ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
+property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_pub ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project, data_handle, gbench_svc, gbench_svc_cli}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table, w_seq_text}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
-property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general ncbi_algo gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
+property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general ncbi_algo gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
 property gui_services : {name:"gui_services", libs:{gui__services}, dep:"gui_core gui_config gui_utils gui_widgets gui_widgets_seq ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext" & FLTK_LIBS, req:true}
 
 -- PLUG-INS
