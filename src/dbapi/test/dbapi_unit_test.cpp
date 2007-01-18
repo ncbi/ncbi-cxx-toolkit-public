@@ -6091,20 +6091,20 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
 
-    if (args.GetDriverName() == "ftds"
-        || args.GetDriverName() == "dblib"
-        || args.GetDriverName() == "msdblib"
-//         || args.GetDriverName() == "ctlib"
-//         || args.GetDriverName() == "ftds64_ctlib"
-//         || args.GetDriverName() == "ftds64_odbc"
-//         || args.GetDriverName() == "odbc"
-//         || args.GetDriverName() == "odbcw"
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
+//     if (args.GetDriverName() == "ftds"
+//         || args.GetDriverName() == "dblib"
+//         || args.GetDriverName() == "msdblib"
+// //         || args.GetDriverName() == "ctlib"
+// //         || args.GetDriverName() == "ftds64_ctlib"
+// //         || args.GetDriverName() == "ftds64_odbc"
+// //         || args.GetDriverName() == "odbc"
+// //         || args.GetDriverName() == "odbcw"
+//         ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
+//                                    DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
 
 
     if (args.GetDriverName() != "ftds" &&
