@@ -130,7 +130,6 @@ PC-AssayDescription ::= SEQUENCE {
     protocol          SEQUENCE OF VisibleString    OPTIONAL, -- Procedure used to generate results
     comment           SEQUENCE OF VisibleString    OPTIONAL, -- Comments or additional information
     xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
-    target            SEQUENCE OF PC-AssayTargetInfo   OPTIONAL, -- Target information
 
     -- Allowed Assay Result Types
 
@@ -138,7 +137,8 @@ PC-AssayDescription ::= SEQUENCE {
 
     -- Additional Information
     pub               SEQUENCE OF Pub              OPTIONAL, -- Depositor provided publications for this assay
-    revision          INTEGER                      OPTIONAL  -- Revision identifier for textual description
+    revision          INTEGER                      OPTIONAL,  -- Revision identifier for textual description
+    target            SEQUENCE OF PC-AssayTargetInfo   OPTIONAL -- Target information
 }
 
 
