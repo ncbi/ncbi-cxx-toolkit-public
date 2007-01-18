@@ -190,7 +190,7 @@ public:
     void Test_Insert(void);
     void Test_HasMoreResults(void);
     void Test_Create_Destroy(void);
-    void Multiple_Close(void);
+    void Test_Multiple_Close(void);
     void Test_Unicode(void);
     void Test_Iskhakov(void);
     void Test_NCBI_LS(void);
@@ -198,6 +198,7 @@ public:
     void Test_DriverContext_One(void);
     void Test_DriverContext_Many(void);
     void Test_Decimal(void);
+    void Test_Query_Cancelation(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -216,7 +217,6 @@ public:
     void Single_Value_Reading(void);
     void Bulk_Reading(void);
     void Multiple_Resultset(void);
-    void Query_Cancelation(void);
     void Error_Conditions(void);
     void Transactional_Behavior(void);
 

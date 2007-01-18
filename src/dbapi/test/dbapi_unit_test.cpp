@@ -665,7 +665,7 @@ CDBAPIUnitTest::Test_Create_Destroy(void)
     }
 }
 
-void CDBAPIUnitTest::Multiple_Close(void)
+void CDBAPIUnitTest::Test_Multiple_Close(void)
 {
     ///////////////////////
     // CreateStatement
@@ -5587,6 +5587,225 @@ void CDBAPIUnitTest::Test_Decimal(void)
 }
 
 
+void
+CDBAPIUnitTest::Test_Query_Cancelation(void)
+{
+    string sql;
+
+    // Cancel without a previously thrown exception.
+    {
+        // IStatement
+        {
+            auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+
+            // 1
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+
+            // 2
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK( rs.get() != NULL );
+            }
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+
+            // 3
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            BOOST_CHECK( auto_stmt->HasMoreResults() );
+            BOOST_CHECK( auto_stmt->HasRows() );
+            {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+            }
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+
+            // 4
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            {
+                int i = 0;
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+                while (rs->Next()) {
+                    ++i;
+                }
+                BOOST_CHECK(i > 0);
+            }
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+        }
+
+        // IColableStatement
+        {
+            auto_ptr<ICallableStatement> auto_stmt;
+
+            // 1
+            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+            auto_stmt->Execute();
+            DumpResults(auto_stmt.get());
+            auto_stmt->Execute();
+            DumpResults(auto_stmt.get());
+
+            // 2
+            auto_stmt->Execute();
+            auto_stmt->Cancel();
+            auto_stmt->Execute();
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+
+            // 3
+            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+            auto_stmt->Execute();
+            auto_stmt->Cancel();
+            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+            auto_stmt->Execute();
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+
+            // 4
+            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+            auto_stmt->Execute();
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK(rs.get() != NULL);
+            }
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+
+            // 5
+            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+            auto_stmt->Execute();
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+                BOOST_CHECK(rs.get() != NULL);
+                BOOST_CHECK(rs->Next());
+            }
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+
+            // 6
+            auto_stmt.reset(m_Conn->GetCallableStatement("sp_databases"));
+            auto_stmt->Execute();
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            BOOST_CHECK(auto_stmt->HasRows());
+            {
+                int i = 0;
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+                while (rs->Next()) {
+                    ++i;
+                }
+                BOOST_CHECK(i > 0);
+            }
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+            auto_stmt->Cancel();
+        }
+
+        // BCP
+        {
+        }
+    }
+
+    // Cancel with a previously thrown exception.
+    {
+        // IStatement
+        {
+            auto_ptr<IStatement> auto_stmt(m_Conn->GetStatement());
+
+            // 1
+            try {
+                auto_stmt->SendSql("SELECT oops FROM sysobjects");
+            } catch(const CDB_Exception&)
+            {
+                auto_stmt->Cancel();
+            }
+            auto_stmt->Cancel();
+
+            // Check that everything is fine ...
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            DumpResults(auto_stmt.get());
+
+            // 2
+            try {
+                auto_stmt->SendSql("SELECT name FROM sysobjects WHERE name = 'oops'");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+                rs->Next();
+            } catch(const CDB_Exception&)
+            {
+                auto_stmt->Cancel();
+            }
+            auto_stmt->Cancel();
+
+            // Check that everything is fine ...
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            DumpResults(auto_stmt.get());
+
+            // 3
+            try {
+                int i = 0;
+                auto_stmt->SendSql("SELECT name FROM sysobjects");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+                BOOST_CHECK( auto_stmt->HasRows() );
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                BOOST_CHECK(rs.get() != NULL);
+                while (rs->Next()) {
+                    ++i;
+                }
+                BOOST_CHECK(i > 0);
+                rs->Next();
+            } catch(const CDB_Exception&)
+            {
+                auto_stmt->Cancel();
+            }
+            auto_stmt->Cancel();
+
+            // Check that everything is fine ...
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            DumpResults(auto_stmt.get());
+        }
+
+
+        // IColableStatement
+        {
+            auto_ptr<ICallableStatement> auto_stmt;
+
+            // 1
+            try {
+                auto_stmt.reset(m_Conn->GetCallableStatement("sp_wrong"));
+                auto_stmt->Execute();
+            } catch(const CDB_Exception&)
+            {
+                auto_stmt->Cancel();
+            }
+
+            try {
+                auto_stmt->Execute();
+            } catch(const CDB_Exception&)
+            {
+                auto_stmt->Cancel();
+            }
+        }
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
@@ -5625,11 +5844,6 @@ CDBAPIUnitTest::Bulk_Reading(void)
 
 void
 CDBAPIUnitTest::Multiple_Resultset(void)
-{
-}
-
-void
-CDBAPIUnitTest::Query_Cancelation(void)
 {
 }
 
@@ -5680,6 +5894,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
 
+    if (args.GetDriverName() != "ftds" &&
+        args.GetDriverName() != "ftds64_ctlib"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+
     if (args.GetServerType() == CTestArguments::eMsSql &&
         (args.GetDriverName() == "ftds64_odbc"
          || args.GetDriverName() == "ftds64_ctlib")
@@ -5705,7 +5928,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if (!(args.GetDriverName() == "ftds64_ctlib"
           && args.GetServerType() == CTestArguments::eSybase) // Something
         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Multiple_Close, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Multiple_Close, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -5910,7 +6133,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     if (args.GetDriverName() != "ftds" &&
-        args.GetDriverName() != "dblib") {
+        args.GetDriverName() != "dblib"
+        ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
