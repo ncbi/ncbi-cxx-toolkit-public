@@ -5569,6 +5569,24 @@ CDBAPIUnitTest::Test_DriverContext_Many(void)
 }
 
 
+void CDBAPIUnitTest::Test_Decimal(void)
+{
+    string sql;
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+    sql = "declare @num decimal(6,2) set @num = 1.5 select @num as NumCol";
+    auto_stmt->SendSql(sql);
+
+    BOOST_CHECK( auto_stmt->HasMoreResults() );
+    BOOST_CHECK( auto_stmt->HasRows() );
+    auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+    BOOST_CHECK( rs.get() != NULL );
+    BOOST_CHECK( rs->Next() );
+
+    DumpResults(auto_stmt.get());
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
@@ -5889,6 +5907,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+
+
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
 //         && args.GetDriverName() != "odbc" // Doesn't work ...

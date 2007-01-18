@@ -197,6 +197,7 @@ public:
     void Test_Authentication(void);
     void Test_DriverContext_One(void);
     void Test_DriverContext_Many(void);
+    void Test_Decimal(void);
 
 public:
     void Test_Exception_Safety(void);
