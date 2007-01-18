@@ -119,7 +119,7 @@ for cfg in $cfgs ; do
        echo "INFO: Building \"$dir\\$cfg\\$alias\""
        $build_dir/build_exec.bat "$dir\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
        status=$?
-###       cat $out
+       cat $out
        echo "Build time: $start - `eval $timer`"
        if [ $status -ne 0 ] ; then
          # Check on errors (skip expendable projects)
