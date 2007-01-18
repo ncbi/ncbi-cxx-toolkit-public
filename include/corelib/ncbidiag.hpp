@@ -1019,7 +1019,6 @@ private:
     };
     void x_SetFormat(EFormatFlag fmt) const { m_Format = fmt; }
     bool x_IsSetOldFormat(void) const;
-    friend class CDoubleDiagHandler;
     friend class CDiagContext;
 
     // Initialize data with the current values
@@ -1304,12 +1303,12 @@ public:
     CStreamDiagHandler_Base(void);
 
     virtual string GetLogName(void);
+    virtual CNcbiOstream* GetStream(void) { return 0; }
+
+    // Reopen file to enable log rotation.
+    virtual void Reopen(bool truncate = false);
+
 protected:
-    /// Checks for eDPF_AtomicWrite and uses temporary stream
-    /// to buffer the whole message if necessary.
-    void WriteMessage(CNcbiOstream& os,
-                      const SDiagMessage& mess,
-                      bool quick_flush);
     void SetLogName(const string& log_name) { m_LogName = log_name; }
 
 private:
@@ -1340,16 +1339,49 @@ public:
 
     /// Post message to the handler.
     virtual void Post(const SDiagMessage& mess);
-
-    NCBI_XNCBI_EXPORT friend bool IsDiagStream(const CNcbiOstream* os);
-    NCBI_XNCBI_EXPORT friend CNcbiOstream* GetDiagStream(void);
-    friend class CDoubleDiagHandler;
+    virtual CNcbiOstream* GetStream(void) { return m_Stream; }
 
 protected:
     CNcbiOstream* m_Stream;         ///< Diagnostic stream
 
 private:
     bool          m_QuickFlush;     ///< Quick flush of stream flag
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CFileHandleDiagHandler --
+///
+/// Specialization of "CDiagHandler" for the file-handle based diagnostics.
+/// Writes messages using system write rather than stream to make the
+/// operation really atomic. Re-opens file periodically to make rotation
+/// possible.
+
+class NCBI_XNCBI_EXPORT CFileHandleDiagHandler : public CStreamDiagHandler_Base
+{
+public:
+    /// Constructor.
+    ///
+    /// Open file handle.
+    /// themselves if appropriate. 
+    /// @param fname
+    ///   Output file name.
+    CFileHandleDiagHandler(const string& fname);
+    /// Close file handle
+    ~CFileHandleDiagHandler(void);
+
+    /// Post message to the handler.
+    virtual void Post(const SDiagMessage& mess);
+
+    bool Valid(void) { return m_Handle != -1; }
+
+    // Reopen file to enable log rotation.
+    virtual void Reopen(bool truncate = false);
+
+private:
+    int    m_Handle;      ///< File handle
+    CTime* m_LastReopen;  ///< Last reopen time
 };
 
 
@@ -1406,58 +1438,24 @@ public:
     /// returns empty string.
     string GetLogFile(EDiagFileType file_type) const;
 
-    /// Get current log stream. If file_type is eDiagFile_All, returns NULL.
+    /// Get current log stream. Return NULL if the selected destination
+    /// is not a stream.
     CNcbiOstream* GetLogStream(EDiagFileType file_type);
 
+    // Reopen all files to enable log rotation.
+    virtual void Reopen(bool truncate = false);
+
 private:
-    bool x_ReopenFiles(void);
-
-    struct SLogFileInfo
-    {
-        SLogFileInfo(string file_name)
-            : m_FileName(file_name),
-              m_OwnStream(false),
-              m_Stream(0),
-              m_QuickFlush(true),
-              m_Mode(ios::app)
-        {}
-
-        ~SLogFileInfo(void)
-        {
-            SetStream(0, false, false);
-        }
-
-        void SetStream(CNcbiOstream* stream, bool own, bool quick_flush)
-        {
-            if (m_Stream  &&  m_OwnStream) {
-                delete m_Stream;
-            }
-            m_Stream = stream;
-            m_OwnStream = own;
-            m_QuickFlush = quick_flush;
-        }
-
-        string        m_FileName;
-        bool          m_OwnStream;
-        CNcbiOstream* m_Stream;
-        bool          m_QuickFlush;
-        ios::openmode m_Mode;
-    private:
-        SLogFileInfo(const SLogFileInfo&);
-        SLogFileInfo& operator=(const SLogFileInfo&);
-    };
-
-    bool x_ReopenLog(SLogFileInfo& info);
-
-    SLogFileInfo  m_Err;
-    SLogFileInfo  m_Log;
-    SLogFileInfo  m_Trace;
-    CTime*        m_LastReopen;
+    auto_ptr<CStreamDiagHandler_Base> m_Err;
+    auto_ptr<CStreamDiagHandler_Base> m_Log;
+    auto_ptr<CStreamDiagHandler_Base> m_Trace;
+    CTime*                            m_LastReopen;
 };
 
 
 /// Output diagnostics using both old and new style handlers.
-NCBI_XNCBI_EXPORT extern void SetDoubleDiagHandler(void);
+NCBI_DEPRECATED
+NCBI_XNCBI_EXPORT extern void SetDoubleDiagHandler(void); ///< @deprecated
 
 
 /// Set diagnostic stream.
@@ -1720,7 +1718,7 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  *
- * $Log$
+ * $Log: ncbidiag.hpp,v $
  * Revision 1.122  2006/11/16 21:41:48  grichenk
  * Added SetLogTruncate().
  * Fixed empty path bug in s_CanOpenLogFile().

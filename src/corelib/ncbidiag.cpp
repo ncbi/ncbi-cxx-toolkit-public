@@ -50,6 +50,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stack>
+#include <fcntl.h>
+
+#if defined(NCBI_OS_MSWIN)
+#  include <io.h>
+#endif
 
 #if defined(NCBI_OS_MAC)
 #  include <corelib/ncbi_os_mac.hpp>
@@ -2335,25 +2340,6 @@ string CDiagHandler::GetLogName(void)
 }
 
 
-void CStreamDiagHandler_Base::WriteMessage(CNcbiOstream& os,
-                                           const SDiagMessage& mess,
-                                           bool quick_flush)
-{
-    if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
-        CNcbiOstrstream str_os;
-        str_os << mess;
-        os.write(str_os.str(), str_os.pcount());
-        str_os.rdbuf()->freeze(false);
-    }
-    else {
-        os << mess;
-    }
-    if (quick_flush) {
-        os << NcbiFlush;
-    }
-}
-
-
 CStreamDiagHandler_Base::CStreamDiagHandler_Base(void)
     : m_LogName(kLogName_Stream)
 {
@@ -2363,6 +2349,12 @@ CStreamDiagHandler_Base::CStreamDiagHandler_Base(void)
 string CStreamDiagHandler_Base::GetLogName(void)
 {
     return m_LogName;
+}
+
+
+void CStreamDiagHandler_Base::Reopen(bool /* truncate */)
+{
+    return;
 }
 
 
@@ -2380,13 +2372,95 @@ CStreamDiagHandler::CStreamDiagHandler(CNcbiOstream* os,
 
 void CStreamDiagHandler::Post(const SDiagMessage& mess)
 {
-    if (m_Stream) {
-        WriteMessage(*m_Stream, mess, m_QuickFlush);
+    if ( !m_Stream ) {
+        return;
+    }
+    if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
+        CNcbiOstrstream str_os;
+        str_os << mess;
+        m_Stream->write(str_os.str(), str_os.pcount());
+        str_os.rdbuf()->freeze(false);
+    }
+    else {
+        *m_Stream << mess;
+    }
+    if (m_QuickFlush) {
+        *m_Stream << NcbiFlush;
     }
 }
 
 
-/// CFileDiagHandler
+// CFileDiagHandler
+
+CFileHandleDiagHandler::CFileHandleDiagHandler(const string& fname)
+    : m_Handle(-1),
+      m_LastReopen(new CTime)
+{
+    SetLogName(fname);
+    Reopen(CDiagContext::GetLogTruncate());
+}
+
+
+CFileHandleDiagHandler::~CFileHandleDiagHandler(void)
+{
+    delete m_LastReopen;
+    if (m_Handle >= 0) {
+        close(m_Handle);
+    }
+}
+
+
+void CFileHandleDiagHandler::Reopen(bool truncate)
+{
+    if (m_Handle >= 0) {
+        close(m_Handle);
+    }
+    int mode = O_WRONLY | O_APPEND | O_CREAT;
+    if ( truncate ) {
+        mode |= O_TRUNC;
+    }
+    m_Handle = open(CFile::ConvertToOSPath(GetLogName()).c_str(), mode);
+    if (m_Handle == -1) {
+        string msg;
+        switch ( errno ) {
+        case EACCES:
+            msg = "access denied";
+            break;
+        case EEXIST:
+            msg = "file already exists";
+            break;
+        case EINVAL:
+            msg = "invalid open mode";
+            break;
+        case EMFILE:
+            msg = "too many open files";
+            break;
+        case ENOENT:
+            msg = "invalid file or directoty name";
+            break;
+        }
+        ERR_POST("Failed to open " << GetLogName() << " - " << msg);
+        return;
+    }
+    m_LastReopen->SetCurrent();
+}
+
+
+const int kLogReopenDelay = 60; // Reopen log every 60 seconds
+
+void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
+{
+    if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay) {
+        Reopen();
+    }
+    CNcbiOstrstream str_os;
+    str_os << mess;
+    write(m_Handle, str_os.str(), str_os.pcount());
+    str_os.rdbuf()->freeze(false);
+}
+
+
+// CFileDiagHandler
 
 static bool s_SplitLogFile = false;
 
@@ -2418,9 +2492,9 @@ bool s_IsSpecialLogName(const string& name)
 
 
 CFileDiagHandler::CFileDiagHandler(void)
-    : m_Err("-"),
-      m_Log("-"),
-      m_Trace("-"),
+    : m_Err(0),
+      m_Log(0),
+      m_Trace(0),
       m_LastReopen(new CTime)
 {
     SetLogFile("-", eDiagFile_All, true);
@@ -2446,6 +2520,23 @@ bool s_CanOpenLogFile(const string& file_name)
     }
     CDirEntry::TMode mode = 0;
     return entry.GetMode(&mode)  &&  (mode & CDirEntry::fWrite) != 0;
+}
+
+
+CStreamDiagHandler_Base* s_CreateHandler(const string& fname)
+{
+    if ( fname.empty()  ||  fname == "/dev/null") {
+        return 0;
+    }
+    if (fname == "-") {
+        return new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
+    }
+    CFileHandleDiagHandler* fh = new CFileHandleDiagHandler(fname);
+    if ( !fh->Valid() ) {
+        ERR_POST(Info << "Failed to open log file: " << fname);
+        return new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
+    }
+    return fh;
 }
 
 
@@ -2477,40 +2568,29 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                 return false;
             }
 
-            m_Err.m_FileName = err_name;
-            m_Err.m_Mode = s_GetLogOpenMode();
-            m_Err.m_QuickFlush = quick_flush;
-            m_Log.m_FileName = log_name;
-            m_Log.m_Mode = s_GetLogOpenMode();
-            m_Log.m_QuickFlush = quick_flush;
-            m_Trace.m_FileName = trace_name;
-            m_Trace.m_Mode = s_GetLogOpenMode();
-            m_Trace.m_QuickFlush = quick_flush;
+            m_Err.reset(s_CreateHandler(err_name));
+            m_Log.reset(s_CreateHandler(log_name));
+            m_Trace.reset(s_CreateHandler(trace_name));
+            m_LastReopen->SetCurrent();
             break;
         }
     case eDiagFile_Err:
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Err.m_FileName = file_name;
-        m_Err.m_Mode = s_GetLogOpenMode();
-        m_Err.m_QuickFlush = quick_flush;
+        m_Err.reset(s_CreateHandler(file_name));
         break;
     case eDiagFile_Log:
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Log.m_FileName = file_name;
-        m_Log.m_Mode = s_GetLogOpenMode();
-        m_Log.m_QuickFlush = quick_flush;
+        m_Log.reset(s_CreateHandler(file_name));
         break;
     case eDiagFile_Trace:
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Trace.m_FileName = file_name;
-        m_Trace.m_Mode = s_GetLogOpenMode();
-        m_Trace.m_QuickFlush = quick_flush;
+        m_Trace.reset(s_CreateHandler(file_name));
         break;
     }
     if (file_name == "") {
@@ -2522,7 +2602,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
     else {
         SetLogName(file_name);
     }
-    return x_ReopenFiles();
+    return true;
 }
 
 
@@ -2530,11 +2610,11 @@ string CFileDiagHandler::GetLogFile(EDiagFileType file_type) const
 {
     switch ( file_type ) {
     case eDiagFile_Err:
-        return m_Err.m_FileName;
+        return m_Err->GetLogName();
     case eDiagFile_Log:
-        return m_Log.m_FileName;
+        return m_Log->GetLogName();
     case eDiagFile_Trace:
-        return m_Trace.m_FileName;
+        return m_Trace->GetLogName();
     case eDiagFile_All:
         break;  // kEmptyStr
     }
@@ -2544,110 +2624,63 @@ string CFileDiagHandler::GetLogFile(EDiagFileType file_type) const
 
 CNcbiOstream* CFileDiagHandler::GetLogStream(EDiagFileType file_type)
 {
+    CStreamDiagHandler_Base* handler = 0;
     switch ( file_type ) {
     case eDiagFile_Err:
-        return m_Err.m_Stream;
+        handler = m_Err.get();
     case eDiagFile_Log:
-        return m_Log.m_Stream;
+        handler = m_Log.get();
     case eDiagFile_Trace:
-        return m_Trace.m_Stream;
+        handler = m_Trace.get();
     case eDiagFile_All:
-        break;  // NULL
+        return 0;
     }
-    return 0;
+    return handler ? handler->GetStream() : 0;
 }
 
 
-bool CFileDiagHandler::x_ReopenLog(SLogFileInfo& info)
+void CFileDiagHandler::Reopen(bool truncate)
 {
-    // Remember and reset stream mode
-    ios::openmode mode = info.m_Mode;
-    info.m_Mode = ios::app;
-    if ( info.m_FileName.empty() ) {
-        info.SetStream(0, false, info.m_QuickFlush);
-        return true;
+    if ( m_Err.get() ) {
+        m_Err->Reopen(truncate);
     }
-    if (info.m_FileName == "-") {
-        info.SetStream(&NcbiCerr, false, info.m_QuickFlush);
-        return true;
+    if ( m_Log.get() ) {
+        m_Log->Reopen(truncate);
     }
-    CNcbiOfstream* str = new CNcbiOfstream(info.m_FileName.c_str(), mode);
-    if ( !str->is_open() ) {
-        info.SetStream(&NcbiCerr, false, info.m_QuickFlush);
-        ERR_POST(Info << "Failed to open log file: " << info.m_FileName);
-        info.m_FileName = "-";
-        return false;
+    if ( m_Trace.get() ) {
+        m_Trace->Reopen(truncate);
     }
-    info.SetStream(str, true, info.m_QuickFlush);
-    return true;
-}
-
-
-bool CFileDiagHandler::x_ReopenFiles(void)
-{
-    bool res = x_ReopenLog(m_Err);
-    res = x_ReopenLog(m_Log)  &&  res;
-    res = x_ReopenLog(m_Trace)  &&  res;
     m_LastReopen->SetCurrent();
-    return res;
 }
 
-
-const int kLogReopenDelay = 60; // Reopen log every 60 seconds
 
 void CFileDiagHandler::Post(const SDiagMessage& mess)
 {
     // Check time and re-open the streams
     if (mess.GetTime().DiffSecond(*m_LastReopen) >= kLogReopenDelay) {
-        x_ReopenFiles();
+        Reopen();
     }
 
     // Output the message
-    SLogFileInfo* info = 0;
+    CStreamDiagHandler_Base* handler = 0;
     if ( IsSetDiagPostFlag(eDPF_AppLog, mess.m_Flags) ) {
-        info = &m_Log;
+        handler = m_Log.get();
     }
     else {
         switch ( mess.m_Severity ) {
         case eDiag_Info:
         case eDiag_Trace:
-            info = &m_Trace;
+            handler = m_Trace.get();
             break;
         default:
-            info = &m_Err;
+            handler = m_Err.get();
         }
     }
-    if ( !info->m_Stream ) {
+    if ( !handler ) {
         return;
     }
-    WriteMessage(*info->m_Stream, mess, info->m_QuickFlush);
+    handler->Post(mess);
 }
-
-
-// Special handler producing both old and new style output.
-
-class CDoubleDiagHandler : public CDiagHandler
-{
-public:
-    CDoubleDiagHandler(void);
-    ~CDoubleDiagHandler(void);
-    virtual void Post(const SDiagMessage& mess);
-
-    void SetDiagStream(CNcbiOstream* os,
-                       bool          quick_flush,
-                       FDiagCleanup  cleanup,
-                       void*         cleanup_data);
-    bool SetLogFile(const string& file_name,
-                    EDiagFileType file_type,
-                    bool          quick_flush);
-    string GetLogFile(EDiagFileType file_type) const;
-    bool IsDiagStream(const CNcbiOstream* os) const;
-    CNcbiOstream* GetDiagStream(void) const;
-
-private:
-    auto_ptr<CDiagHandler> m_StreamHandler;
-    auto_ptr<CDiagHandler> m_FileHandler;
-};
 
 
 extern bool SetLogFile(const string& file_name,
@@ -2662,12 +2695,6 @@ extern bool SetLogFile(const string& file_name,
         }
     }
 
-    CDoubleDiagHandler* double_handler =
-        dynamic_cast<CDoubleDiagHandler*>(GetDiagHandler());
-    if ( double_handler ) {
-        return double_handler->SetLogFile(
-            file_name, file_type, quick_flush);
-    }
     bool no_split = !s_SplitLogFile;
     if ( no_split ) {
         if (file_type != eDiagFile_All) {
@@ -2735,14 +2762,9 @@ extern string GetLogFile(EDiagFileType file_type)
 
 extern bool IsDiagStream(const CNcbiOstream* os)
 {
-    CDoubleDiagHandler* ddh
-        = dynamic_cast<CDoubleDiagHandler*>(CDiagBuffer::sm_Handler);
-    if ( ddh ) {
-        return ddh->IsDiagStream(os);
-    }
-    CStreamDiagHandler* sdh
-        = dynamic_cast<CStreamDiagHandler*>(CDiagBuffer::sm_Handler);
-    return (sdh  &&  sdh->m_Stream == os);
+    CStreamDiagHandler_Base* sdh
+        = dynamic_cast<CStreamDiagHandler_Base*>(CDiagBuffer::sm_Handler);
+    return (sdh  &&  sdh->GetStream() == os);
 }
 
 
@@ -3156,13 +3178,6 @@ extern void SetDiagStream(CNcbiOstream* os,
                           void*         cleanup_data,
                           const string& stream_name)
 {
-    // Temp. code to enable CDoubleDiagHandler
-    CDoubleDiagHandler* h =
-        dynamic_cast<CDoubleDiagHandler*>(GetDiagHandler());
-    if ( h ) {
-        h->SetDiagStream(os, quick_flush, cleanup, cleanup_data);
-        return;
-    }
     SetDiagHandler(new CCompatStreamDiagHandler(os, quick_flush,
                                                 cleanup, cleanup_data,
                                                 stream_name));
@@ -3175,15 +3190,11 @@ extern CNcbiOstream* GetDiagStream(void)
     if ( !diagh ) {
         return 0;
     }
-    CDoubleDiagHandler* dh =
-        dynamic_cast<CDoubleDiagHandler*>(diagh);
-    if ( dh ) {
-        return dh->GetDiagStream();
-    }
-    const CStreamDiagHandler* sh =
-        dynamic_cast<CStreamDiagHandler*>(diagh);
-    if ( sh ) {
-        return sh->m_Stream;
+    CStreamDiagHandler_Base* sh =
+        dynamic_cast<CStreamDiagHandler_Base*>(diagh);
+    // This can also be CFileDiagHandler, check it later
+    if ( sh  &&  sh->GetStream() ) {
+        return sh->GetStream();
     }
     CFileDiagHandler* fh =
         dynamic_cast<CFileDiagHandler*>(diagh);
@@ -3194,123 +3205,9 @@ extern CNcbiOstream* GetDiagStream(void)
 }
 
 
-// implementation of CDoubleDiagHandler
-
-CDoubleDiagHandler::CDoubleDiagHandler(void)
-{
-    m_StreamHandler.reset(new CStreamDiagHandler(&NcbiCerr,
-        true, kLogName_Stderr));
-    m_FileHandler.reset(new CFileDiagHandler());
-}
-
-
-CDoubleDiagHandler::~CDoubleDiagHandler(void)
-{
-}
-
-
-void CDoubleDiagHandler::Post(const SDiagMessage& mess)
-{
-    if ((mess.m_Flags & eDPF_AppLog) == 0) {
-        mess.x_SetFormat(SDiagMessage::eFormat_Old);
-        m_StreamHandler->Post(mess);
-    }
-    mess.x_SetFormat(SDiagMessage::eFormat_New);
-    m_FileHandler->Post(mess);
-}
-
-
-void CDoubleDiagHandler::SetDiagStream(CNcbiOstream* os,
-                                       bool          quick_flush,
-                                       FDiagCleanup  cleanup,
-                                       void*         cleanup_data)
-{
-    m_StreamHandler.reset(
-        new CCompatStreamDiagHandler(os, quick_flush, cleanup, cleanup_data));
-}
-
-
-bool CDoubleDiagHandler::IsDiagStream(const CNcbiOstream* os) const
-{
-    const CStreamDiagHandler* sdh =
-        dynamic_cast<CStreamDiagHandler*>(m_StreamHandler.get());
-    return sdh  &&  sdh->m_Stream == os;
-}
-
-
-CNcbiOstream* CDoubleDiagHandler::GetDiagStream(void) const
-{
-    const CStreamDiagHandler* sdh =
-        dynamic_cast<CStreamDiagHandler*>(m_StreamHandler.get());
-    return sdh ? sdh->m_Stream : 0;
-}
-
-
-bool CDoubleDiagHandler::SetLogFile(const string& file_name,
-                                    EDiagFileType file_type,
-                                    bool          quick_flush)
-{
-    bool no_split = !s_SplitLogFile;
-    if ( no_split ) {
-        if (file_type != eDiagFile_All) {
-            ERR_POST(Info <<
-                "Failed to set log file for the selected event type: "
-                "split log is disabled");
-            return false;
-        }
-        // Check special filenames
-        if ( file_name.empty() ) {
-            // no output
-            m_FileHandler.reset(new CStreamDiagHandler(0,
-                quick_flush, kLogName_None));
-        }
-        else if (file_name == "-") {
-            // output to stderr
-            m_FileHandler.reset(new CStreamDiagHandler(&NcbiCerr,
-                quick_flush, kLogName_Stderr));
-        }
-        else {
-            // output to file
-            CNcbiOfstream* str = new CNcbiOfstream(file_name.c_str(),
-                s_GetLogOpenMode());
-            if ( !str->is_open() ) {
-                m_FileHandler.reset(
-                    new CStreamDiagHandler(&NcbiCerr, quick_flush));
-                ERR_POST(Info << "Failed to initialize log: " << file_name);
-                return false;
-            }
-            else {
-                m_FileHandler.reset(new CCompatStreamDiagHandler(
-                    str, quick_flush, LogFileCleanup, str));
-            }
-        }
-    }
-    else {
-        CFileDiagHandler* handler =
-            dynamic_cast<CFileDiagHandler*>(m_FileHandler.get());
-        if ( !handler ) {
-            // Install new handler
-            handler = new CFileDiagHandler();
-            m_FileHandler.reset(handler);
-        }
-        // Update the existing handler
-        return handler->SetLogFile(file_name, file_type, quick_flush);
-    }
-    return true;
-}
-
-
-string CDoubleDiagHandler::GetLogFile(EDiagFileType file_type) const
-{
-    CFileDiagHandler* handler =
-        dynamic_cast<CFileDiagHandler*>(m_FileHandler.get());
-    return handler ? handler->GetLogFile(file_type) : kEmptyStr;
-}
-
-
 extern void SetDoubleDiagHandler(void)
 {
-    SetDiagHandler(new CDoubleDiagHandler(), true);
+    ERR_POST(Error << "SetDoubleDiagHandler() is not implemented");
 }
 
 
@@ -3536,7 +3433,7 @@ END_NCBI_SCOPE
 
 /*
  * ==========================================================================
- * $Log$
+ * $Log: ncbidiag.cpp,v $
  * Revision 1.141  2006/12/12 16:42:43  grichenk
  * Always print bytes in/out in request-stop message.
  *
