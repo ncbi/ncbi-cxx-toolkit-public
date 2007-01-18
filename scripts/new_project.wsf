@@ -270,7 +270,7 @@
             FillTreeStructure(oShell, oTree);
         }
 
-        // Copy project template from CVS
+        // Copy project template from CVS/SVN
         function CopyProjectTemplate(oShell, oTree, oTask)
         {
             var src = "/src/" + oTask.ProjectTemplate + "/*.*";

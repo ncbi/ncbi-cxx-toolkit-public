@@ -13,19 +13,21 @@ function Usage()
     var usage_str;
     //usage_str  = "Usage:\n";
     //usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
-    usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> [builddir] [-dll [-b] [-r] [-v]\n";
+    usage_str  = "USAGE: cscript import_project.wsf <tree_path> [builddir] [-dll [-b] [-r] [-v]\n";
     usage_str += "SYNOPSIS:\n";
     usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
-    usage_str += "    CVS tree at:\n";
-    usage_str += "      " + GetCvsTreeRoot()+"/src/<cvs_tree_path>\n";
-    usage_str += "      " + GetCvsTreeRoot()+"/include/<cvs_tree_path>\n";
+    if ( GetUseSvn() ) {
+	    usage_str += "    SVN tree at:\n";
+    } else {
+	    usage_str += "    CVS tree at:\n";
+    }
+    usage_str += "      " + GetCvsTreeRoot()+"/src/<tree_path>\n";
+    usage_str += "      " + GetCvsTreeRoot()+"/include/<tree_path>\n";
     usage_str += "    Create local build tree structure. Fill-in local tree.\n";
-//    usage_str += "    Adjust Makefile.in in src/<cvs_tree_path> to require NCBI C++ toolkit.\n";
-//    usage_str += "    Add to project_tree_builder.ini entries for pre-built NCBI C++ toolkit.\n";
     usage_str += "    Run project tree builder on local build tree.\n";
     usage_str += "    Open created solution in MSVC7.1 IDE.\n";
     usage_str += "ARGUMENTS:\n";
-    usage_str += "    <cvs_tree_path>  -- starting path for import\n";
+    usage_str += "    <tree_path>      -- starting path for import\n";
     usage_str += "    [builddir]       -- path to the pre-built NCBI C++ toolkit\n";
     usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
     usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
@@ -276,7 +278,7 @@ function AdjustMakefilein(oFso, dir_here)
     var all_subdir = new Array;
     for( ; !dir_subdir.atEnd(); dir_subdir.moveNext()) {
         var name = oFso.GetFileName(dir_subdir.item());
-        if (name != "CVS") {
+        if (name != "CVS" && name != ".svn") {
             all_subdir.push(name);
         }
     }

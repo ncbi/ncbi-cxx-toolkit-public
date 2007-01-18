@@ -3,6 +3,7 @@
 
 // global settings
 var g_verbose = false;
+var g_usesvn = true;
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
@@ -162,22 +163,28 @@ function FillTreeStructure(oShell, oTree)
     GetFileFromTree(oShell, oTree, oTask, "/include/corelib/config/ncbiconf_msvc_site.*",    oTree.IncludeConfig);
 }
 
-// check-out a subdir from CVS - oTree is supposed to have TreeRoot property
+// check-out a subdir from CVS/SVN - oTree is supposed to have TreeRoot property
 function CheckoutSubDir(oShell, oTree, sub_dir)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
     var dir_local_path  = oTree.TreeRoot + "\\" + sub_dir;
-    var repository_path = "" + GetCvsTreeRoot()+"/" + sub_dir;
+    var repository_path = "" + GetCvsTreeRoot() + "/" + sub_dir;
     var dir_local_path_parent = oFso.GetParentFolderName(dir_local_path);
     var base_name = oFso.GetBaseName(dir_local_path);
 
     oFso.DeleteFolder(dir_local_path, true);
-    execute(oShell, "cd " + BackSlashes(dir_local_path_parent) + " && " + "cvs checkout -d " + base_name + " " + ForwardSlashes(repository_path));
+    if ( GetUseSvn() ) {
+        var cmd_checkout = "svn checkout " + ForwardSlashes(repository_path) + " " + base_name;
+        execute(oShell, "cd " + BackSlashes(dir_local_path_parent) + " && " + cmd_checkout);
+    } else {
+        var cmd_checkout = "cvs checkout -d " + base_name + " " + ForwardSlashes(repository_path);
+        execute(oShell, "cd " + BackSlashes(dir_local_path_parent) + " && " + cmd_checkout);
+    }
     execute(oShell, "cd " + oTree.TreeRoot);
 }
 
-// remove temporary dir ( used for get something for CVS ) 
+// remove temporary dir ( used for get something for CVS/SVN ) 
 function RemoveFolder(oShell, oFso, folder)
 {
     if ( oFso.FolderExists(folder) ) {
@@ -437,6 +444,11 @@ function GetVerbose()
     return g_verbose;
 }
 
+function GetUseSvn()
+{
+    return g_usesvn;
+}
+
 function VerboseEcho(message)
 {
     if (GetVerbose()) {
@@ -522,19 +534,27 @@ function CopyRes(oShell, oTree, oTask)
         var oFso = new ActiveXObject("Scripting.FileSystemObject");
         var res_target_dir = oTree.SrcRootBranch + "\\gui\\res"
             CreateFolderIfAbsent(oFso, res_target_dir);
-        execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot()+"/src/gui/res");
+        if ( GetUseSvn() ) {
+            execute(oShell, "svn checkout " + GetCvsTreeRoot() + "/src/gui/res temp");
+        } else {
+            execute(oShell, "cvs checkout -d temp " + GetCvsTreeRoot() + "/src/gui/res");
+        }
         execute(oShell, "copy /Y temp\\*.* \"" + res_target_dir + "\"");
         RemoveFolder(oShell, oFso, "temp");
     } else {
         VerboseEcho("CopyRes:  skipped (not requested)");
     }
 }
-// CVS tree root
+// CVS/SVN tree root
 function GetCvsTreeRoot()
 {
-    return "internal/c++";
+    if ( GetUseSvn() ) {
+		return "https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++";
+    } else {
+	    return "internal/c++";
+    }
 }
-// Get file from CVS tree
+// Get file from CVS/SVN tree
 function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
@@ -557,9 +577,17 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     var cvs_dir = oFso.GetParentFolderName(cvs_path);
     var cvs_file = oFso.GetFileName(cvs_path);
     if (cvs_file.search(/\*/) != -1 || cvs_file.search(/\?/) != -1) {
-        execute(oShell, "cvs checkout -l -d temp " + cvs_dir);
+        if ( GetUseSvn() ) {
+            execute(oShell, "svn checkout -N " + cvs_dir + " temp");
+        } else {
+            execute(oShell, "cvs checkout -l -d temp " + cvs_dir);
+        }
     } else {
-        execute(oShell, "cvs checkout -d temp " + cvs_path);
+        if ( GetUseSvn() ) {
+            execute(oShell, "svn checkout -N " + cvs_dir + " temp");
+        } else {
+            execute(oShell, "cvs checkout -d temp " + cvs_path);
+        }
     }
     execute(oShell, "copy /Y \"temp\\" + cvs_file + "\" \""+ target_abs_dir + "\"");
     RemoveFolder(oShell, oFso, "temp");
