@@ -211,36 +211,4 @@ public:
 END_NCBI_SCOPE
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/07/12 16:29:31  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.7  2006/05/15 19:48:30  ssikorsk
- * Added class CDbapiSampleErrHandler.
- *
- * Revision 1.6  2006/01/23 13:45:02  ssikorsk
- * Added default argument of type IConnValidator* to
- * CDbapiSampleApp::CreateConnection;
- *
- * Revision 1.5  2006/01/12 16:50:12  ssikorsk
- * 	   Use auto_ptr to hold I_DriverContext.
- *
- * Revision 1.4  2006/01/05 20:23:05  ssikorsk
- * Added program option 'lb' (Use load balancer for service mapping)
- *
- * Revision 1.3  2006/01/03 19:48:37  ssikorsk
- * Added protection for multiple include
- *
- * Revision 1.2  2005/10/26 11:28:09  ssikorsk
- * Added CDbapiSampleApp::m_TDSVersion
- *
- * Revision 1.1  2004/12/20 16:46:52  ssikorsk
- * Refactoring of dbapi/driver/samples
- *
- * ===========================================================================
- */
-
 #endif // DBAPI_SAMPLE_BASE_HPP

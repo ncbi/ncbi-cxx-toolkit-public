@@ -111,44 +111,4 @@ int main(int argc, const char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.11  2006/12/05 20:25:19  ssikorsk
- * Roll back previous change.
- *
- * Revision 1.10  2006/12/05 19:39:46  ssikorsk
- * Replaced MS_DEV1 with mssql51.nac.ncbi.nlm.nih.gov because of FreeBDS 4.10.
- *
- * Revision 1.9  2006/08/31 18:46:11  ssikorsk
- * Get rid of unused variables.
- *
- * Revision 1.8  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.7  2006/01/26 12:15:37  ssikorsk
- * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
- * Removed protection of DBLB_INSTALL_DEFAULT;
- *
- * Revision 1.6  2006/01/24 14:05:27  ssikorsk
- * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
- *
- * Revision 1.5  2006/01/24 12:53:25  ssikorsk
- * Revamp demo applications to use CNcbiApplication;
- * Use load balancer and configuration in an ini-file to connect to a
- * secondary server in case of problems with a primary server;
- *
- * Revision 1.4  2004/05/17 21:16:12  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/08/05 19:23:47  vakatov
- * MSSQL2 --> MS_DEV1
- *
- * Revision 1.2  2003/05/08 21:25:08  soussov
- * adopting to unix based odbc
- *
- * Revision 1.1  2002/06/20 20:08:35  ivanov
- * Initial revision -- built on base "dbl_sp_who" sample
- *
- * ===========================================================================
- */
+

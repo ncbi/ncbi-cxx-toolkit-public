@@ -63,15 +63,4 @@ END_SCOPE(impl)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/07/12 18:55:53  ssikorsk
- * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
- *
- * Revision 1.1  2006/07/12 16:29:30  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * ===========================================================================
- */
 

@@ -288,30 +288,3 @@ END_NCBI_SCOPE
 #endif
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/09/13 19:30:35  ssikorsk
- * Removed methods SetLoginTimeout, SetTimeout, and SetMaxTextImageSize from CSL3Context.
- *
- * Revision 1.6  2006/07/19 14:09:55  ssikorsk
- * Refactoring of CursorCmd.
- *
- * Revision 1.5  2006/07/18 16:01:40  ssikorsk
- * Deleted CSL3_BCPInCmd::Bind.
- *
- * Revision 1.4  2006/07/18 15:41:17  ssikorsk
- * Implemented BCPInCmd.
- *
- * Revision 1.3  2006/07/12 16:28:49  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.2  2006/06/13 14:22:33  ucko
- * Add a proper file-scope forward declaration of CSL3_RowResult.
- *
- * Revision 1.1  2006/06/12 20:28:45  ssikorsk
- * Initial version
- *
- * ===========================================================================
- */

@@ -62,7 +62,7 @@ CMemStore::SMemBlock* CMemStore::x_AddBlock(void)
 
     m_Last = n_blk;
 
-    return n_blk;   
+    return n_blk;
 }
 
 
@@ -322,7 +322,7 @@ size_t CMemStore::Truncate(size_t size)
             delete [] m_Last->body;
             delete m_Last;
         }
-        m_First = m_Last = m_Current = 0;        
+        m_First = m_Last = m_Current = 0;
         m_BlockPos = m_Pos = m_Size = 0;
         return 0;
     }
@@ -405,7 +405,7 @@ size_t CMemStore::Insert(const void* buff, size_t size)
         memcpy(t_block->body, &m_Current->body[m_BlockPos], k);
         t_block->free_space = m_BlockSize - k;
         m_Current->free_space += k;
-    
+
         k = (nof_bytes <= m_Current->free_space)
             ? nof_bytes : m_Current->free_space;
         memcpy(&m_Current->body[m_BlockPos], b + n, k);
@@ -475,14 +475,14 @@ size_t CMemStore::Delete(size_t size)
         m_Size                -= m_BlockPos;
         m_BlockPos = 0;
     }
-    
+
     while (nof_bytes > 0) {
         SMemBlock* t_block = m_Current->prev;
         if ( !t_block ) {
             m_First = m_Current;
             break;
         }
-    
+
         TSize n = m_BlockSize - t_block->free_space; // # of bytes in this block
         if (nof_bytes < n) {
             // all we have to delete is inside the block
@@ -518,7 +518,7 @@ CMemStore::CMemStore(C_SA_Storage& storage, size_t block_size)
     char* buff = new char[m_BlockSize];
     TSize n;
 
-    while ((n = static_cast<TSize>(storage.Read(buff, 
+    while ((n = static_cast<TSize>(storage.Read(buff,
                                    (size_t) m_BlockSize))) > 0) {
         Append(buff, n);
         if (n < m_BlockSize)
@@ -545,55 +545,3 @@ CMemStore::~CMemStore()
 END_NCBI_SCOPE
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.14  2006/06/02 19:26:38  ssikorsk
- * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
- *
- * Revision 1.13  2006/04/21 14:48:00  ssikorsk
- * Removed TABs
- *
- * Revision 1.12  2006/04/20 22:17:22  ssikorsk
- * Added explicit type cast for x64 sake.
- *
- * Revision 1.11  2005/12/06 19:24:57  ssikorsk
- * Fixed deleting of character buffers
- *
- * Revision 1.10  2005/11/02 14:32:39  ssikorsk
- * Use NCBI_CATCH_ALL macro instead of catch(...)
- *
- * Revision 1.9  2005/09/15 11:00:01  ssikorsk
- * Destructors do not throw exceptions any more.
- *
- * Revision 1.8  2004/05/17 21:11:38  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.7  2003/10/28 19:37:08  soussov
- * fixes memory leak in CMemStore::Truncate
- *
- * Revision 1.6  2002/09/13 18:43:18  soussov
- * fixes compiler warnings
- *
- * Revision 1.5  2002/09/13 18:27:02  soussov
- * fixed bug with long overflow
- *
- * Revision 1.4  2002/03/20 22:23:12  soussov
- * fixes bug in Truncate method
- *
- * Revision 1.3  2002/01/24 16:14:28  soussov
- * makes purify happy
- *
- * Revision 1.2  2001/11/06 17:59:53  lavr
- * Formatted uniformly as the rest of the library
- *
- * Revision 1.1  2001/09/21 23:39:59  vakatov
- * -----  Initial (draft) revision.  -----
- * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
- * of the DBAPI "driver" libs originally written by Vladimir Soussov.
- * The revamp involved massive code shuffling and grooming, numerous local
- * API redesigns, adding comments and incorporating DBAPI to the C++ Toolkit.
- *
- * ===========================================================================
- */

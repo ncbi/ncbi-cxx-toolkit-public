@@ -627,32 +627,4 @@ int main(int argc, char* argv[])
     return CDbapiTestSpeedApp().AppMain(argc, argv);
 }
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.20  2006/02/24 19:36:14  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.19  2005/08/24 14:36:59  ssikorsk
- * Use temporary table to store test data
- *
- * Revision 1.18  2005/01/14 20:15:52  ssikorsk
- * Fixed a couple of "unused variable" warnings
- *
- * Revision 1.17  2004/12/29 19:58:03  ssikorsk
- * Fixed memory ABW bug in dbapi/driver/samples/dbapi_testspeed
- *
- * Revision 1.16  2004/12/21 23:17:43  ssikorsk
- * Fixes warnings in dbapi_testspeed.cpp
- *
- * Revision 1.15  2004/12/20 16:20:29  ssikorsk
- * Refactoring of dbapi/driver/samples
- *
- * ===========================================================================
- */
-
-
-
-
-
 

@@ -206,21 +206,4 @@ END_SCOPE(impl)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/07/19 14:11:02  ssikorsk
- * Refactoring of CursorCmd.
- *
- * Revision 1.3  2006/07/18 15:47:58  ssikorsk
- * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
- *
- * Revision 1.2  2006/07/12 18:55:53  ssikorsk
- * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
- *
- * Revision 1.1  2006/07/12 16:29:30  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * ===========================================================================
- */
 

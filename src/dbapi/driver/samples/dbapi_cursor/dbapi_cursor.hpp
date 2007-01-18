@@ -26,19 +26,6 @@
 * File Name:  $Id$
 *
 * File Description: Implementation of dbapi cursor
-* $Log$
-* Revision 1.3  2004/12/20 16:20:29  ssikorsk
-* Refactoring of dbapi/driver/samples
-*
-* Revision 1.2  2002/12/09 16:25:21  starchen
-* remove the text files from samples
-*
-* Revision 1.1  2002/07/18 15:47:42  starchen
-* first entry
-*
-* Revision 1.1  2002/07/18 15:18:02  starchen
-* first entry
-*
 *
 *============================================================================
 */

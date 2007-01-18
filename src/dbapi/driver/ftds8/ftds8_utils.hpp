@@ -72,14 +72,4 @@ END_NCBI_SCOPE
 
 #endif // DBAPI_DRIVER_FTDS8___DBAPI_DRIVER_FTDS8_UTILS__HPP
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/07/12 16:29:31  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.1  2006/05/11 18:04:00  ssikorsk
- * Added GetFTDS8ExceptionStorage function
- *
- * ===========================================================================
- */
+

@@ -56,7 +56,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDBDefaultServiceMapper : public IDBServiceMapper
 public:
     CDBDefaultServiceMapper(void);
     virtual ~CDBDefaultServiceMapper(void);
-    
+
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
@@ -64,10 +64,10 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100);
-    
+
 private:
     typedef set<string> TSrvSet;
-    
+
     CFastMutex  m_Mtx;
     TSrvSet     m_SrvSet;
 };
@@ -84,7 +84,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDBServiceMapperCoR : public IDBServiceMapper
 public:
     CDBServiceMapperCoR(void);
     virtual ~CDBServiceMapperCoR(void);
-    
+
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
@@ -92,17 +92,17 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100);
-    
+
     void Push(const CRef<IDBServiceMapper>& mapper);
     void Pop(void);
     CRef<IDBServiceMapper> Top(void) const;
     bool Empty(void) const;
-    
+
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
-    
+
     typedef vector<CRef<IDBServiceMapper> > TDelegates;
-    
+
     mutable CFastMutex m_Mtx;
     TDelegates         m_Delegates;
 };
@@ -118,7 +118,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDBUDRandomMapper : public IDBServiceMapper
 public:
     CDBUDRandomMapper(const IRegistry* registry = NULL);
     virtual ~CDBUDRandomMapper(void);
-    
+
 public:
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
@@ -127,15 +127,15 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100);
-    
+
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
     void ScalePreference(const string& service, double coeff);
     void SetPreference(const string& service, double coeff);
-    void SetServerPreference(const string& service, 
-                             double preference, 
+    void SetServerPreference(const string& service,
+                             double preference,
                              const TSvrRef& server);
-    
+
 private:
     typedef map<string, bool>                       TLBNameMap;
     typedef map<TSvrRef, double, SDereferenceLess>  TSvrMap;
@@ -158,7 +158,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDBUDPriorityMapper : public IDBServiceMapper
 public:
     CDBUDPriorityMapper(const IRegistry* registry = NULL);
     virtual ~CDBUDPriorityMapper(void);
-    
+
 public:
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
@@ -167,17 +167,17 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100);
-    
+
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
-    
+
 private:
     typedef map<string, bool>                       TLBNameMap;
     typedef map<TSvrRef, double, SDereferenceLess>  TSvrMap;
     typedef map<string, TSvrMap>                    TServiceMap;
     typedef multimap<double, TSvrRef>               TServerUsageMap;
     typedef map<string, TServerUsageMap>            TServiceUsageMap;
-    
+
     CFastMutex          m_Mtx;
     TLBNameMap          m_LBNameMap;
     TServiceMap         m_ServerMap;
@@ -189,17 +189,17 @@ class NCBI_DBAPIDRIVER_EXPORT CDBUniversalMapper : public CDBServiceMapperCoR
 public:
     typedef IDBServiceMapper* (*TMapperFactory)(const IRegistry* registry);
     typedef pair<string, TMapperFactory> TMapperConf;
-    
-    CDBUniversalMapper(const TMapperConf& ext_mapper 
-                       = TMapperConf(kEmptyStr, NULL), 
+
+    CDBUniversalMapper(const TMapperConf& ext_mapper
+                       = TMapperConf(kEmptyStr, NULL),
                        const IRegistry* registry = NULL);
     virtual ~CDBUniversalMapper(void);
-    
+
     virtual void Configure(const IRegistry* registry = NULL);
-    
+
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
-    
+
 private:
     TMapperConf m_ExtMapperConf;
 };
@@ -266,27 +266,5 @@ public:
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/04/06 22:25:46  ssikorsk
- * - #include <string>
- *
- * Revision 1.3  2006/04/06 21:26:50  ssikorsk
- * + #include <string>
- * + #include <vector>
- * + #include <map>
- *
- * Revision 1.2  2006/01/26 12:04:10  ssikorsk
- * Added classes CDBUDRandomMapper, CDBUDPriorityMapper, CDBUniversalMapper
- *   and macro DBLB_INSTALL_DEFAULT;
- *
- * Revision 1.1  2006/01/03 19:36:14  ssikorsk
- * Added CDBDefaultServiceMapper and CDBServiceMapperCoR which
- * implement the IDBServiceMapper interface.
- *
- * ===========================================================================
- */
 
 #endif // DBAPI_SVC_MAPPER_HPP

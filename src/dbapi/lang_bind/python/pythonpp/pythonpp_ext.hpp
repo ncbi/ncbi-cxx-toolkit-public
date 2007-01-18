@@ -834,35 +834,3 @@ END_NCBI_SCOPE
 
 #endif                                  // PYTHONPP_EXT_H
 
-/* ===========================================================================
-*
-* $Log$
-* Revision 1.8  2005/02/10 17:43:56  ssikorsk
-* Changed: more 'precise' exception types
-*
-* Revision 1.7  2005/02/08 19:19:34  ssikorsk
-* A lot of improvements
-*
-* Revision 1.6  2005/01/27 18:50:03  ssikorsk
-* Fixed: a bug with transactions
-* Added: python 'transaction' object
-*
-* Revision 1.5  2005/01/21 15:50:18  ssikorsk
-* Fixed: build errors with GCC 2.95.
-*
-* Revision 1.4  2005/01/19 16:26:13  ssikorsk
-* Fixed: declared template static members
-*
-* Revision 1.3  2005/01/18 22:26:18  ssikorsk
-* Fixed: ucko's fix was rolled back because of a logical error.
-* Explanation: we must have a separate m_MethodList member for each
-* CExtObject instantiation, not one for all CExtObject's instantiations.
-*
-* Revision 1.2  2005/01/18 21:31:05  ucko
-* Tweak to fix build errors with GCC 2.95.
-*
-* Revision 1.1  2005/01/18 19:26:07  ssikorsk
-* Initial version of a Python DBAPI module
-*
-* ===========================================================================
-*/

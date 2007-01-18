@@ -885,22 +885,3 @@ END_NCBI_SCOPE
 
 #endif                                  // PYTHONPP_SEQ_H
 
-/* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/02/10 17:43:56  ssikorsk
-* Changed: more 'precise' exception types
-*
-* Revision 1.3  2005/01/27 18:50:03  ssikorsk
-* Fixed: a bug with transactions
-* Added: python 'transaction' object
-*
-* Revision 1.2  2005/01/18 21:31:38  ucko
-* Don't inherit from std::iterator<>, which GCC 2.95 lacks.
-*
-* Revision 1.1  2005/01/18 19:26:08  ssikorsk
-* Initial version of a Python DBAPI module
-*
-*
-* ===========================================================================
-*/

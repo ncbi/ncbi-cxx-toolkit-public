@@ -197,26 +197,4 @@ int main(int argc, const char* argv[])
     return CDbapiCursorApp().AppMain(argc, argv);
 }
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/07/12 16:29:31  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.9  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.8  2005/10/27 12:59:37  ssikorsk
- * Disabled DeleteLostTables because we use temporary tables only now
- *
- * Revision 1.7  2005/08/24 12:43:15  ssikorsk
- * Use temporary table to store test data
- *
- * Revision 1.6  2004/12/29 19:58:02  ssikorsk
- * Fixed memory ABW bug in dbapi/driver/samples/dbapi_testspeed
- *
- * Revision 1.5  2004/12/20 16:20:29  ssikorsk
- * Refactoring of dbapi/driver/samples
- *
- * ===========================================================================
- */
+

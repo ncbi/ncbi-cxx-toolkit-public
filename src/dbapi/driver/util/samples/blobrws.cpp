@@ -220,28 +220,3 @@ int main(int argc, char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2005/04/04 13:03:57  ssikorsk
- * Revamp of DBAPI exception class CDB_Exception
- *
- * Revision 1.1  2004/10/19 17:59:53  ivanovsk
- *
- * Add samples for the modified blobstore util.
- *
- * Revision 1.4  2004/05/25 19:47:28  soussov
- * moves blobstore.hpp header to include
- *
- * Revision 1.3  2004/05/24 19:41:46  soussov
- * adjusts to new blobstore API
- *
- * Revision 1.2  2004/05/17 21:18:21  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.1  2004/05/03 16:47:10  soussov
- * initial commit
- *
- *
- * ===========================================================================
- */

@@ -55,34 +55,3 @@ END_NCBI_SCOPE
 #endif  /* DBAPI_DRIVER_UTIL___NUMERIC_CONVERT__HPP */
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2004/03/15 20:43:26  gorelenk
- * Added "extern" qualifier for functions declarations.
- *
- * Revision 1.6  2003/02/13 15:40:50  ivanov
- * Added export specifier NCBI_DBAPIDRIVER_EXPORT
- *
- * Revision 1.5  2002/06/20 18:37:49  soussov
- * odbc related changes
- *
- * Revision 1.4  2001/12/28 21:22:39  sapojnik
- * Made compatible with MS compiler: long long to Int8, static const within class def to enum
- *
- * Revision 1.3  2001/11/06 17:58:07  lavr
- * Formatted uniformly as the rest of the library
- *
- * Revision 1.2  2001/10/11 16:32:26  soussov
- * exclude ctlib dependencies from numeric conversions calls
- *
- * Revision 1.1  2001/09/21 23:39:54  vakatov
- * -----  Initial (draft) revision.  -----
- * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
- * of the DBAPI "driver" libs originally written by Vladimir Soussov.
- * The revamp involved massive code shuffling and grooming, numerous local
- * API redesigns, adding comments and incorporating DBAPI to the C++ Toolkit.
- *
- * ===========================================================================
- */

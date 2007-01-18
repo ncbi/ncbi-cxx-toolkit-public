@@ -26,18 +26,11 @@
 * File Name:  $Id$
 *
 * File Description: Implementation of dbapi BCP
-* $Log$
-* Revision 1.1  2002/07/18 15:48:21  starchen
-* first entry
-*
-* Revision 1.1  2002/07/18 15:16:44  starchen
-* first entry
-*
 *
 *============================================================================
 */
 
-#include <map> 
+#include <map>
 
 map<string, string> dblib_version;
 

@@ -371,26 +371,3 @@ bool CSL3_LangCmd::AssignCmdParam(CDB_Object&   param,
 END_NCBI_SCOPE
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2007/01/04 23:13:47  ssikorsk
- * Handle SQLITE_ROW and SQLITE_DONE in CSL3_LangCmd::HasFailed.
- *
- * Revision 1.5  2006/11/28 20:08:07  ssikorsk
- * Replaced NCBI_CATCH_ALL(kEmptyStr) with NCBI_CATCH_ALL(NCBI_CURRENT_FUNCTION)
- *
- * Revision 1.4  2006/11/20 18:15:59  ssikorsk
- * Revamp code to use GetQuery() and GetParams() methods.
- *
- * Revision 1.3  2006/07/18 15:47:59  ssikorsk
- * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
- *
- * Revision 1.2  2006/07/12 16:29:31  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.1  2006/06/12 20:30:51  ssikorsk
- * Initial version
- *
-* ===========================================================================
- */

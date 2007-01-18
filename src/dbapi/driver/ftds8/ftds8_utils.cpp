@@ -41,19 +41,12 @@ BEGIN_NCBI_SCOPE
 CDBExceptionStorage& GetFTDS8ExceptionStorage(void)
 {
     static CSafeStaticPtr<CDBExceptionStorage> instance;
-    
-    return instance.Get(); 
+
+    return instance.Get();
 }
 
 
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/05/11 18:04:00  ssikorsk
- * Added GetFTDS8ExceptionStorage function
- *
- * ===========================================================================
- */
+

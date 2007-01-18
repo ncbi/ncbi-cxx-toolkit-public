@@ -54,12 +54,12 @@ CDemoeApp::Run(void)
 {
     try {
         DBLB_INSTALL_DEFAULT();
-                
+
         CTDSContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV2", 
-                                                        "anyone", 
-                                                        "allowed", 
+        auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV2",
+                                                        "anyone",
+                                                        "allowed",
                                                         0));
 
         auto_ptr<CDB_LangCmd> lcmd
@@ -91,7 +91,7 @@ CDemoeApp::Run(void)
         }
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
-        
+
         myExHandler.HandleIt(&e);
         return 1;
     } catch (const CException&) {
@@ -107,29 +107,3 @@ int main(int argc, const char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/08/31 18:46:11  ssikorsk
- * Get rid of unused variables.
- *
- * Revision 1.5  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.4  2006/01/26 12:15:36  ssikorsk
- * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
- * Removed protection of DBLB_INSTALL_DEFAULT;
- *
- * Revision 1.3  2006/01/24 14:05:27  ssikorsk
- * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
- *
- * Revision 1.2  2006/01/24 12:53:25  ssikorsk
- * Revamp demo applications to use CNcbiApplication;
- * Use load balancer and configuration in an ini-file to connect to a
- * secondary server in case of problems with a primary server;
- *
- * Revision 1.1  2005/07/20 12:30:27  ssikorsk
- * Added ftds63/samples to check static linking with the ftds63 driver
- *
- * ===========================================================================
- */

@@ -727,37 +727,3 @@ CDBServiceMapperTraits<CDBUniversalMapper>::GetName(void)
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/10/16 18:56:11  ssikorsk
- * Handle case with CNcbiApplication::Instance() == NULL in ConfigureFromRegistry.
- *
- * Revision 1.8  2006/04/21 15:57:45  ssikorsk
- * Removed TABs
- *
- * Revision 1.7  2006/04/20 22:15:35  ssikorsk
- * Added explicit type cast for x64 sake.
- *
- * Revision 1.6  2006/04/11 18:38:45  ssikorsk
- * Fixed erasing of an element from a multimap in CDBUDPriorityMapper::Exclude
- *
- * Revision 1.5  2006/02/22 16:05:35  ssikorsk
- * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
- *
- * Revision 1.4  2006/01/26 12:10:32  ssikorsk
- * Added implementation of CDBUDRandomMapper, CDBUDPriorityMapper and
- * CDBUniversalMapper.
- *
- * Revision 1.3  2006/01/04 15:01:13  ucko
- * ConfigureFromRegistry: switch to NON_CONST_ITERATE because SGI's STL
- * implementation deals poorly with functions whose return type is void.
- *
- * Revision 1.2  2006/01/04 12:29:54  ssikorsk
- * include <algorithm> explicitly.
- *
- * Revision 1.1  2006/01/03 19:44:08  ssikorsk
- * Initial implementation
- *
- * ===========================================================================
- */

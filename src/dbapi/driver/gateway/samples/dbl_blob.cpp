@@ -72,28 +72,3 @@ int main()
 }
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.3  2004/05/17 21:14:41  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2002/03/14 22:53:22  sapojnik
- * Inheriting from I_ interfaces instead of CDB_ classes from driver/public.hpp
- *
- * Revision 1.1  2002/03/14 20:00:42  sapojnik
- * A driver that communicates with a dbapi driver on another machine via CompactProtocol(aka ssssrv)
- *
- * Revision 1.1  2002/02/13 20:59:08  sapojnik
- * rdblib: remote dblib driver = MS SQL + sss comprot
- *
- * Revision 1.1  2002/01/14 20:28:13  sapojnik
- * new SampleDBAPI_Blob
- *
- *
- * ===========================================================================
- */

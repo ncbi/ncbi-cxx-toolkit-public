@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 /// CDBConnectionFactory
 ///
 
-enum EDefaultMapping 
+enum EDefaultMapping
 {
     eUseDefaultMapper,
     eNoMapping
@@ -57,85 +57,85 @@ class NCBI_DBAPIDRIVER_EXPORT CDBConnectionFactory : public IDBConnectionFactory
 public:
     /// CDBConnectionFactory will take ownership of svr_name_policy.
     /// CDBConnectionFactory won't take ownership of registry.
-    CDBConnectionFactory(IDBServiceMapper* svc_mapper, 
+    CDBConnectionFactory(IDBServiceMapper* svc_mapper,
                          const IRegistry* registry = NULL,
                          EDefaultMapping def_mapping = eUseDefaultMapper);
     virtual ~CDBConnectionFactory(void);
 
     //
     virtual void Configure(const IRegistry* registry = NULL);
-    
+
     IDBServiceMapper& GetServiceMapper(void);
     const IDBServiceMapper& GetServiceMapper(void) const;
-    
+
     //
     unsigned int GetMaxNumOfConnAttempts(void) const;
     void SetMaxNumOfConnAttempts(unsigned int max_num);
-    
+
     unsigned int GetMaxNumOfServerAlternatives(void) const;
     void SetMaxNumOfServerAlternatives(unsigned int max_num);
-    
+
     unsigned int GetMaxNumOfDispatches(void) const;
     void SetMaxNumOfDispatches(unsigned int max_num);
-    
+
     unsigned int GetConnectionTimeout(void) const;
     void SetConnectionTimeout(unsigned int timeout);
-    
+
     unsigned int GetLoginTimeout(void) const;
     void SetLoginTimeout(unsigned int timeout);
-    
+
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
     virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
         const I_DriverContext::SConnAttr& conn_attr,
         IConnValidator* validator = NULL);
-    
+
     //
     TSvrRef GetDispatchedServer(const string& service_name);
-    void SetDispatchedServer(const string&  service_name, 
+    void SetDispatchedServer(const string&  service_name,
                              const TSvrRef& server);
-    
+
     //
     unsigned int GetNumOfDispatches(const string& service_name);
-    
+
 private:
     // Methods
     CDB_Connection* DispatchServerName(
         I_DriverContext& ctx,
         const I_DriverContext::SConnAttr& conn_attr,
         IConnValidator* validator);
-    
+
     CDB_Connection* MakeValidConnection(
         I_DriverContext& ctx,
         const I_DriverContext::SConnAttr& conn_attr,
         IConnValidator* validator) const;
-    
+
     unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;
     unsigned int CalculateLoginTimeout(const I_DriverContext& ctx) const;
-    
+
     // Data types
     typedef map<string, TSvrRef>      TDispatchedSet;
     typedef map<string, unsigned int> TDispatchNumMap;
-    
+
     // Data
     TDispatchedSet  m_DispatchedSet;
     TDispatchNumMap m_DispatchNumMap;
-    
+
     mutable CFastMutex m_Mtx;
 
     auto_ptr<IDBServiceMapper> m_DBServiceMapper;
     // 0 means *none* (even do not try to connect)
-    unsigned int m_MaxNumOfConnAttempts; 
+    unsigned int m_MaxNumOfConnAttempts;
     // 0 means *none* (even do not try to connect)
     // 1 means *try only one server* (give up strategy)
     unsigned int m_MaxNumOfServerAlternatives;
     // 0 means *unlimited*
-    unsigned int m_MaxNumOfDispatches; 
+    unsigned int m_MaxNumOfDispatches;
     unsigned int m_ConnectionTimeout;
     unsigned int m_LoginTimeout;
 };
-    
+
 ///////////////////////////////////////////////////////////////////////////////
 /// CDBGiveUpFactory
 ///
@@ -145,7 +145,7 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDBGiveUpFactory : public CDBConnectionFactory
 {
 public:
-    CDBGiveUpFactory(IDBServiceMapper* svc_mapper, 
+    CDBGiveUpFactory(IDBServiceMapper* svc_mapper,
                      const IRegistry* registry = NULL,
                      EDefaultMapping def_mapping = eUseDefaultMapper);
     virtual ~CDBGiveUpFactory(void);
@@ -160,7 +160,7 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDBRedispatchFactory : public CDBConnectionFactory
 {
 public:
-    CDBRedispatchFactory(IDBServiceMapper* svc_mapper, 
+    CDBRedispatchFactory(IDBServiceMapper* svc_mapper,
                          const IRegistry* registry = NULL,
                          EDefaultMapping def_mapping = eUseDefaultMapper);
     virtual ~CDBRedispatchFactory(void);
@@ -179,17 +179,17 @@ class NCBI_DBAPIDRIVER_EXPORT CConnValidatorCoR : public IConnValidator
 public:
     CConnValidatorCoR(void);
     virtual ~CConnValidatorCoR(void);
-    
+
     virtual EConnStatus Validate(CDB_Connection& conn);
-    
+
     void Push(const CRef<IConnValidator>& validator);
     void Pop(void);
     CRef<IConnValidator> Top(void) const;
     bool Empty(void) const;
-    
+
 protected:
     typedef vector<CRef<IConnValidator> > TValidators;
-    
+
     mutable CFastMutex m_Mtx;
     TValidators        m_Validators;
 };
@@ -204,18 +204,18 @@ public:
         eCheckSysobjects = 2
     };
     enum {eDefaultValidateAttr = eRestoreDefaultDB | eCheckSysobjects};
-    
-    CTrivialConnValidator(const string& db_name, 
+
+    CTrivialConnValidator(const string& db_name,
                           int attr = eDefaultValidateAttr);
     virtual ~CTrivialConnValidator(void);
-    
+
     virtual EConnStatus Validate(CDB_Connection& conn);
-    
+
     const string& GetDBName(void) const
     {
         return m_DBName;
     }
-    
+
 private:
     const string m_DBName;
     const int    m_Attr;
@@ -225,91 +225,54 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 inline
-IDBServiceMapper& 
+IDBServiceMapper&
 CDBConnectionFactory::GetServiceMapper(void)
 {
     return *m_DBServiceMapper;
 }
 
 inline
-const IDBServiceMapper& 
+const IDBServiceMapper&
 CDBConnectionFactory::GetServiceMapper(void) const
 {
     return *m_DBServiceMapper;
 }
 
 inline
-unsigned int 
+unsigned int
 CDBConnectionFactory::GetMaxNumOfConnAttempts(void) const
 {
     return m_MaxNumOfConnAttempts;
 }
 
 inline
-unsigned int 
+unsigned int
 CDBConnectionFactory::GetMaxNumOfServerAlternatives(void) const
 {
     return m_MaxNumOfServerAlternatives;
 }
 
 inline
-unsigned int 
+unsigned int
 CDBConnectionFactory::GetMaxNumOfDispatches(void) const
 {
     return m_MaxNumOfDispatches;
 }
 
 inline
-unsigned int 
+unsigned int
 CDBConnectionFactory::GetConnectionTimeout(void) const
 {
     return m_ConnectionTimeout;
 }
 
 inline
-unsigned int 
+unsigned int
 CDBConnectionFactory::GetLoginTimeout(void) const
 {
     return m_LoginTimeout;
 }
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/09/13 19:45:55  ucko
- * +<corelib/ncbimtx.hpp> for CFastMutex
- *
- * Revision 1.7  2006/05/18 18:45:41  ssikorsk
- * Added const to parameters of CalculateConnectionTimeout and CalculateLoginTimeout.
- *
- * Revision 1.6  2006/05/18 17:01:08  ssikorsk
- * Added methods CalculateConnectionTimeout and CalculateLoginTimeout
- * to the CDBConnectionFactory class.
- *
- * Revision 1.5  2006/04/06 22:25:27  ssikorsk
- * - #include <string>
- *
- * Revision 1.4  2006/04/06 21:26:11  ssikorsk
- * + #include <string>
- * + #include <map>
- * + #include <vector>
- * + #include <memory>
- *
- * Revision 1.3  2006/01/26 12:01:40  ssikorsk
- * Improved class CTrivialConnValidator.
- *
- * Revision 1.2  2006/01/23 13:26:28  ssikorsk
- * Added method GetServiceMapper to CDBConnectionFactory;
- * Added classes CConnValidatorCoR and CTrivialConnValidator
- *     as an implementation of the IConnValidator interface.
- *
- * Revision 1.1  2006/01/03 19:32:22  ssikorsk
- * Added CDBConnectionFactory, CDBRedispatchFactory and CDBGiveUpFactory
- * as implementations of the IDBConnectionFactory interface.
- *
- * ===========================================================================
- */
 
 #endif // DBAPI_CONN_FACTORY_HPP

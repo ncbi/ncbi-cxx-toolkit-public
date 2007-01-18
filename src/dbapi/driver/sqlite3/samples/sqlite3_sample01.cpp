@@ -251,17 +251,3 @@ int main(int argc, const char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/08/31 18:46:11  ssikorsk
- * Get rid of unused variables.
- *
- * Revision 1.2  2006/07/11 14:23:13  ssikorsk
- * 3.4 -> float(3.4) for VC sake.
- *
- * Revision 1.1  2006/06/12 20:31:34  ssikorsk
- * Initial version
- *
- * ===========================================================================
- */

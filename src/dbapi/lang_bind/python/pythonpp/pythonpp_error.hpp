@@ -833,22 +833,3 @@ END_NCBI_SCOPE
 
 #endif                                  // PYTHONPP_ERROR_H
 
-/* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2005/02/08 19:19:34  ssikorsk
-* A lot of improvements
-*
-* Revision 1.3  2005/01/27 19:17:10  ssikorsk
-* Fixed: compilation errors on Unix
-*
-* Revision 1.2  2005/01/27 18:50:03  ssikorsk
-* Fixed: a bug with transactions
-* Added: python 'transaction' object
-*
-* Revision 1.1  2005/01/18 19:26:07  ssikorsk
-* Initial version of a Python DBAPI module
-*
-*
-* ===========================================================================
-*/

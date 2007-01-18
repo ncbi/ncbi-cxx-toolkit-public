@@ -61,14 +61,4 @@ END_NCBI_SCOPE
 
 #endif // DBAPI_DRIVER_SQLITE3___DBAPI_DRIVER_SQLITE3_UTILS__HPP
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/07/12 16:29:31  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.1  2006/06/12 20:30:51  ssikorsk
- * Initial version
- *
- * ===========================================================================
- */
+

@@ -55,7 +55,7 @@ int main()
             cout
                 << r->ItemName(0) << " \t\t\t"
                 << r->ItemName(1) << endl
-                << "-----------------------------------------------------" 
+                << "-----------------------------------------------------"
                 << endl;
 
             while (r->Fetch()) {
@@ -67,7 +67,7 @@ int main()
 
                 cout
                     << dbname.Value() << ' '
-                    << crdate.Value().AsString("M/D/Y h:m") 
+                    << crdate.Value().AsString("M/D/Y h:m")
                     << endl;
             }
             delete r;
@@ -84,42 +84,3 @@ int main()
 }
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/02/24 19:36:12  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.9  2004/05/17 21:13:00  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.8  2003/08/05 19:23:42  vakatov
- * MSSQL2 --> MS_DEV1
- *
- * Revision 1.7  2002/07/02 16:20:55  lavr
- * MS-DBLib patched samples
- *
- * Revision 1.6  2002/04/25 20:36:42  soussov
- * makes it plain
- *
- * Revision 1.5  2002/01/03 17:01:57  sapojnik
- * fixing CR/LF mixup
- *
- * Revision 1.4  2001/11/06 17:59:59  lavr
- * Formatted uniformly as the rest of the library
- *
- * Revision 1.3  2001/10/25 00:18:04  vakatov
- * SampleDBAPI_XXX() to accept yet another arg -- server name
- *
- * Revision 1.2  2001/10/24 16:37:26  lavr
- * Finish log with horizontal rule
- *
- * Revision 1.1  2001/10/23 20:52:14  lavr
- * Initial revision (derived from former sample programs)
- *
- * Revision 1.1  2001/10/22 15:23:04  lavr
- * Initial revision derived from corresponding CTLib version
- *
- * ===========================================================================
- */

@@ -146,17 +146,3 @@ int main(int argc, const char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2007/01/03 19:54:22  ssikorsk
- * Clean up comments.
- *
- * Revision 1.2  2007/01/03 19:53:38  ssikorsk
- * Removed setting of a TDS version. Use default version instead.
- *
- * Revision 1.1  2007/01/03 19:44:04  ssikorsk
- * Added new tests for DriverManager and statically linked drivers.
- *
- * ===========================================================================
- */

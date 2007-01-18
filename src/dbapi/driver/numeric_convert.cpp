@@ -129,22 +129,3 @@ void swap_numeric_endian(unsigned int precision, unsigned char* num)
 
 END_NCBI_SCOPE
 
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2004/05/17 21:11:38  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.9  2004/03/15 20:44:52  gorelenk
- * Added NCBI_DBAPIDRIVER_EXPORT prefix for functions definitions.
- *
- * Revision 1.8  2003/03/20 20:08:06  soussov
- * fixed typo in longlong_to_numeric
- *
- * Revision 1.7  2003/03/20 19:54:09  vakatov
- * Indented. Added CVS Log.
- *
- * ===========================================================================
- */

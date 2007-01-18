@@ -364,44 +364,4 @@ private:
 END_NCBI_SCOPE
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/08/21 18:10:20  ssikorsk
- * Replaced class CMY_ITDescriptor with CDB_ITDescriptor.
- *
- * Revision 1.9  2006/02/15 19:56:54  lavr
- * IReader/IWriter moved to corelib
- *
- * Revision 1.8  2004/11/24 19:11:07  ivanovsk
- * Set TEXTSIZE on server in CBlobStore classes.
- *
- * Revision 1.7  2004/10/25 14:32:08  ivanovsk
- * Replace #define of default image size by enum.
- *
- * Revision 1.6  2004/10/22 11:40:17  ivanov
- * Replaced static const member CBlobStoreBase::g_16MB with
- * #define IMAGE_LIMIT_16MB.
- *
- * Revision 1.5  2004/10/21 18:33:18  ivanovsk
- * Add methods to take blob key column name and
- * num column name.
- *
- * Revision 1.4  2004/10/20 18:21:28  ivanov
- * Added export specifier to all class declaratons
- *
- * Revision 1.3  2004/10/18 23:17:28  ivanovsk
- *
- * Rename class CBlobStore to CBlobStoreBase and make it abstract. Add two descendants CBlobStoreStatic and CBlobStoreDynamic for different types of DB connection usage.
- *
- * Revision 1.2  2004/05/24 19:40:47  soussov
- * adds CBlobStore implementation
- *
- * Revision 1.1  2004/05/03 16:47:10  soussov
- * initial commit
- *
- * ===========================================================================
- */
-
 #endif  /* DBAPI_UTILS___BLOBSTORE__HPP */

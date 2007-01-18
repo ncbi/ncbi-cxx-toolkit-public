@@ -289,7 +289,7 @@ namespace NWinHook
         (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "ExitProcess"));
 
     ///////////////////////////////////////////////////////////////////////////////
-    const char* 
+    const char*
     CWinHookException::GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
@@ -360,7 +360,7 @@ namespace NWinHook
 
         hModToolHelp = g_LoadLibraryA( "KERNEL32.DLL" );
         if (hModToolHelp != NULL) {
-            pfnCreateToolhelp32Snapshot = 
+            pfnCreateToolhelp32Snapshot =
             g_GetProcAddress(hModToolHelp,
                              "CreateToolhelp32Snapshot"
                              );
@@ -453,12 +453,12 @@ namespace NWinHook
         m_pInternalList.clear();
     }
 
-    char* CModuleInstance::GetName(void) const 
+    char* CModuleInstance::GetName(void) const
     {
         return (m_pszName);
     }
 
-    char* CModuleInstance::GetBaseName(void) const 
+    char* CModuleInstance::GetBaseName(void) const
     {
         char *pdest;
         int  ch = '\\';
@@ -487,7 +487,7 @@ namespace NWinHook
 
     }
 
-    HMODULE CModuleInstance::GetModule() const 
+    HMODULE CModuleInstance::GetModule() const
     {
         return (m_hModule);
     }
@@ -569,15 +569,15 @@ namespace NWinHook
         }
 
         if (m_hModPSAPI != NULL) {
-            m_pfnEnumProcesses = 
+            m_pfnEnumProcesses =
             (FEnumProcesses)
             g_GetProcAddress(m_hModPSAPI,"EnumProcesses");
 
-            m_pfnEnumProcessModules = 
+            m_pfnEnumProcessModules =
             (FEnumProcessModules)
             g_GetProcAddress(m_hModPSAPI, "EnumProcessModules");
 
-            m_pfnGetModuleFileNameExA = 
+            m_pfnGetModuleFileNameExA =
             (FGetModuleFileNameExA)
             g_GetProcAddress(m_hModPSAPI, "GetModuleFileNameExA");
 
@@ -620,7 +620,7 @@ namespace NWinHook
                     DWORD   pid = pidArray[i];
                     DWORD   nModules;
                     // Let's open the process
-                    hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | 
+                    hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION |
                                                 PROCESS_VM_READ,
                                              FALSE, pid);
 
@@ -635,9 +635,9 @@ namespace NWinHook
 
                     // EnumProcessModules function retrieves a handle for
                     // each module in the specified process.
-                    if (!m_pfnEnumProcessModules(hProcess, 
+                    if (!m_pfnEnumProcessModules(hProcess,
                                                  hModuleArray,
-                                                 sizeof(hModuleArray), 
+                                                 sizeof(hModuleArray),
                                                  &cbNeeded)) {
                         ::CloseHandle(hProcess);
                         continue;
@@ -660,7 +660,7 @@ namespace NWinHook
                             // Do nothing.
                         }
                         else {    // Not the first module.  It's a DLL
-                            pDllModuleInstance = 
+                            pDllModuleInstance =
                                 new CModuleInstance(szModuleName,
                                                     hModule
                                                     );
@@ -682,7 +682,7 @@ namespace NWinHook
     }
 
 
-    BOOL CPsapiHandler::PopulateProcess(DWORD dwProcessId, 
+    BOOL CPsapiHandler::PopulateProcess(DWORD dwProcessId,
                                         BOOL bPopulateModules)
     {
         BOOL   bResult = TRUE;
@@ -693,7 +693,7 @@ namespace NWinHook
             HANDLE  hProcess;
             DWORD   nModules;
             DWORD   cbNeeded;
-            hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION | 
+            hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION |
                                         PROCESS_VM_READ,
                                      FALSE,
                                      dwProcessId
@@ -765,7 +765,7 @@ namespace NWinHook
             // We must link to these functions of Kernel32.DLL explicitly. Otherwise
             // a module using this code would fail to load under Windows NT, which does not
             // have the Toolhelp32 functions in the Kernel32.
-            m_pfnCreateToolhelp32Snapshot = 
+            m_pfnCreateToolhelp32Snapshot =
                 (FCreateToolHelp32Snapshot)
                     g_GetProcAddress(hInstLib, "CreateToolhelp32Snapshot");
             m_pfnProcess32First = (FProcess32First)
@@ -854,14 +854,14 @@ namespace NWinHook
 
             PROCESSENTRY32 pe32 = { sizeof(pe32)};
 
-            for (BOOL bOk = ProcessFirst(hSnapshot, &pe32); 
-                bOk; 
+            for (BOOL bOk = ProcessFirst(hSnapshot, &pe32);
+                bOk;
                 bOk = ProcessNext(hSnapshot, &pe32)) {
                 if ((dwProcessId != NULL) && (dwProcessId != pe32.th32ProcessID)) {
                     continue;
                 }
 
-                pProcessInfo = 
+                pProcessInfo =
                 new CExeModuleInstance(this,
                                        pe32.szExeFile,
                                        NULL,
@@ -905,7 +905,7 @@ namespace NWinHook
         delete m_pLibHandler;
     }
 
-    BOOL CTaskManager::PopulateProcess(DWORD dwProcessId, 
+    BOOL CTaskManager::PopulateProcess(DWORD dwProcessId,
                                        BOOL bPopulateModules) const
     {
         _ASSERT(m_pLibHandler);
@@ -955,7 +955,7 @@ namespace NWinHook
     m_bHooked(FALSE),
     m_CalleeMod(NULL),
     m_pfnOrig(pfnOrig),
-    m_pfnHook(pfnHook) 
+    m_pfnHook(pfnHook)
     {
         strcpy(m_szCalleeModName, pszCalleeModName);
         strcpy(m_szFuncName, pszFuncName);
@@ -1051,7 +1051,7 @@ namespace NWinHook
                 // Enumerates all modules loaded by (pProcess) process
                 for (size_t i = 0; i < pProcess->GetModuleCount(); ++i) {
                     pModule = pProcess->GetModuleByIndex(i);
-                    bReplace = (pModule->GetModule() != 
+                    bReplace = (pModule->GetModule() !=
                         ModuleFromAddress(CApiHookMgr::GetProcAddressWindows));
 
                     // We don't hook functions in our own modules
@@ -1088,7 +1088,7 @@ namespace NWinHook
             // Get the address of the module's import section
             PIMAGE_IMPORT_DESCRIPTOR pImportDesc =
                 static_cast<PIMAGE_IMPORT_DESCRIPTOR>
-                    (CPEi386::GetInstance().GetIAT(hmodCaller, 
+                    (CPEi386::GetInstance().GetIAT(hmodCaller,
                                                    IMAGE_DIRECTORY_ENTRY_IMPORT));
 
             // Does this module has import section ?
@@ -1141,7 +1141,7 @@ namespace NWinHook
                     if (::VirtualProtect(mbi.BaseAddress,
                                          mbi.RegionSize,
                                          // Use copy-on-write protection
-                                         // PAGE_WRITECOPY, 
+                                         // PAGE_WRITECOPY,
                                          PAGE_READWRITE,
                                          &mbi.Protect) == FALSE
                        ) {
@@ -1245,7 +1245,7 @@ namespace NWinHook
             // Get the address of the module's export section
             PIMAGE_EXPORT_DIRECTORY pExportDir =
                 static_cast<PIMAGE_EXPORT_DIRECTORY>
-                    (CPEi386::GetInstance().GetIAT(hmodOriginal, 
+                    (CPEi386::GetInstance().GetIAT(hmodOriginal,
                                                    IMAGE_DIRECTORY_ENTRY_EXPORT));
 
             // Does this module has export section ?
@@ -1254,8 +1254,8 @@ namespace NWinHook
             }
 
             // Get the name of the DLL
-            PSTR pszDllName = reinterpret_cast<PSTR>( 
-                static_cast<uintptr_t>(pExportDir->Name) + 
+            PSTR pszDllName = reinterpret_cast<PSTR>(
+                static_cast<uintptr_t>(pExportDir->Name) +
                 reinterpret_cast<uintptr_t>(hmodOriginal));
             // Get the starting ordinal value. By default is 1, but
             // is not required to be so
@@ -1263,17 +1263,17 @@ namespace NWinHook
             // The number of entries in the EAT
             size_t dwNumberOfExported = pExportDir->NumberOfFunctions;
             // Get the address of the ENT
-            PDWORD pdwFunctions = 
+            PDWORD pdwFunctions =
                 reinterpret_cast<PDWORD>(
                     static_cast<uintptr_t>(pExportDir->AddressOfFunctions) +
                     reinterpret_cast<uintptr_t>(hmodOriginal));
             //  Get the export ordinal table
-            PWORD pwOrdinals = 
+            PWORD pwOrdinals =
                 reinterpret_cast<PWORD>(
                     static_cast<uintptr_t>(pExportDir->AddressOfNameOrdinals) +
                     reinterpret_cast<uintptr_t>(hmodOriginal));
             // Get the address of the array with all names
-            PDWORD pszFuncNames = 
+            PDWORD pszFuncNames =
                 reinterpret_cast<PDWORD>(
                     static_cast<uintptr_t>(pExportDir->AddressOfNames) +
                     reinterpret_cast<uintptr_t>(hmodOriginal));
@@ -1288,15 +1288,15 @@ namespace NWinHook
                     // Skip over gaps in exported function
                     // ordinals (the entrypoint is 0 for
                     // these functions).
-                    continue;               
+                    continue;
                 }
-                                            
+
                 // See if this function has an associated name exported for it.
                 for (unsigned j = 0; j < pExportDir->NumberOfNames; ++j) {
                     // Note that pwOrdinals[x] return values starting form 0.. (not from 1)
                     if (pwOrdinals[j] == i) {
                         pszExpFunName = reinterpret_cast<PSTR>(
-                            static_cast<uintptr_t>(pszFuncNames[j]) + 
+                            static_cast<uintptr_t>(pszFuncNames[j]) +
                             reinterpret_cast<uintptr_t>(hmodOriginal));
                         // Is this the same ordinal value ?
                         // Notice that we need to add 1 to pwOrdinals[j] to get actual
@@ -1339,7 +1339,7 @@ namespace NWinHook
     }
 
 
-    CHookedFunction* 
+    CHookedFunction*
     CHookedFunctions::GetHookedFunction(PCSTR pszCalleeModName,
                                         PCSTR pszFuncName)
     {
@@ -1354,19 +1354,19 @@ namespace NWinHook
             strcpy(szFuncName, pszFuncName);
         }
         else {
-			// It is safe to cast a pointer to DWORD here because it is not a 
+			// It is safe to cast a pointer to DWORD here because it is not a
 			// pointer, it is an ordinal number of a function.
-            GetFunctionNameByOrdinal(pszCalleeModName, 
+            GetFunctionNameByOrdinal(pszCalleeModName,
                                      static_cast<DWORD>(
-										reinterpret_cast<uintptr_t>(pszFuncName)), 
+										reinterpret_cast<uintptr_t>(pszFuncName)),
                                      szFuncName);
         }
 
-        // Search in the map only if we have found the name of the requested 
+        // Search in the map only if we have found the name of the requested
         // function
         if (strlen(szFuncName) > 0) {
             // Get a module by name ...
-            TModuleNameList::const_iterator mn_it = 
+            TModuleNameList::const_iterator mn_it =
                 m_ModuleNameList.find(pszCalleeModName);
 
             if (mn_it != m_ModuleNameList.end()) {
@@ -1384,7 +1384,7 @@ namespace NWinHook
     }
 
 
-    CHookedFunction* 
+    CHookedFunction*
     CHookedFunctions::GetHookedFunction(HMODULE hmodOriginal,
                                         PCSTR pszFuncName)
     {
@@ -1399,19 +1399,19 @@ namespace NWinHook
             strcpy(szFuncName, pszFuncName);
         }
         else {
-			// It is safe to cast a pointer to DWORD here because it is not a 
+			// It is safe to cast a pointer to DWORD here because it is not a
 			// pointer, it is an ordinal number of a function.
-            GetFunctionNameByOrdinal(hmodOriginal, 
+            GetFunctionNameByOrdinal(hmodOriginal,
                                      static_cast<DWORD>(
-										reinterpret_cast<uintptr_t>(pszFuncName)), 
+										reinterpret_cast<uintptr_t>(pszFuncName)),
                                      szFuncName);
         }
 
-        // Search in the map only if we have found the name of the requested 
+        // Search in the map only if we have found the name of the requested
         // function
         if (strlen(szFuncName) > 0) {
             // Get a module by name ...
-            TModuleList::const_iterator mod_it = 
+            TModuleList::const_iterator mod_it =
                 m_ModuleList.find(hmodOriginal);
 
             if (mod_it != m_ModuleList.end()) {
@@ -1433,9 +1433,9 @@ namespace NWinHook
     {
         BOOL bResult = FALSE;
         if (pHook != NULL) {
-            m_ModuleNameList[pHook->GetCalleeModName()][pHook->GetFuncName()] = 
+            m_ModuleNameList[pHook->GetCalleeModName()][pHook->GetFuncName()] =
                 pHook;
-            m_ModuleList[pHook->GetCalleeMod()][pHook->GetFuncName()] = 
+            m_ModuleList[pHook->GetCalleeMod()][pHook->GetFuncName()] =
                 pHook;
 
             bResult = TRUE;
@@ -1449,12 +1449,12 @@ namespace NWinHook
         try {
             if (pHook != NULL) {
                 // Remove from m_ModuleNameList ...
-                TModuleNameList::iterator mn_it = 
+                TModuleNameList::iterator mn_it =
                     m_ModuleNameList.find(pHook->GetCalleeModName());
 
                 if (mn_it != m_ModuleNameList.end()) {
                     TFunctionList& fn_list = mn_it->second;
-                    TFunctionList::iterator fn_it = 
+                    TFunctionList::iterator fn_it =
                         fn_list.find(pHook->GetFuncName());
 
                     if (fn_it != fn_list.end()) {
@@ -1464,12 +1464,12 @@ namespace NWinHook
                 }
 
                 // Remove from m_ModuleList ...
-                TModuleList::iterator mod_it = 
+                TModuleList::iterator mod_it =
                     m_ModuleList.find(pHook->GetCalleeMod());
 
                 if (mod_it != m_ModuleList.end()) {
                     TFunctionList& fn_list = mod_it->second;
-                    TFunctionList::iterator fn_it = 
+                    TFunctionList::iterator fn_it =
                         fn_list.find(pHook->GetFuncName());
 
                     if (fn_it != fn_list.end()) {
@@ -1503,16 +1503,16 @@ namespace NWinHook
 
             if (!registry.GetBool("WIN_HOOK", "ENABLED", true)) {
                 enabled_from_registry = false;
-                NCBI_THROW(CWinHookException, 
-                        eDisabled, 
+                NCBI_THROW(CWinHookException,
+                        eDisabled,
                         "Windows API hooking is disabled from registry.");
-            } 
+            }
             else {
                 enabled_from_registry = true;
             }
         } else if (!enabled_from_registry) {
-            NCBI_THROW(CWinHookException, 
-                    eDisabled, 
+            NCBI_THROW(CWinHookException,
+                    eDisabled,
                     "Windows API hooking is disabled from registry.");
         }
 
@@ -1711,14 +1711,14 @@ namespace NWinHook
             CFastMutexGuard guard(m_Mutex);
 
             CHookedFunction* pHook;
-            ITERATE(CHookedFunctions::TModuleNameList, 
-                    mn_it, 
+            ITERATE(CHookedFunctions::TModuleNameList,
+                    mn_it,
                     m_pHookedFunctions.m_ModuleNameList) {
 
                 const CHookedFunctions::TFunctionList& fn_list = mn_it->second;
 
-                ITERATE(CHookedFunctions::TFunctionList, 
-                        it, 
+                ITERATE(CHookedFunctions::TFunctionList,
+                        it,
                         fn_list) {
 
                     pHook = it->second;
@@ -1768,8 +1768,8 @@ namespace NWinHook
         HMODULE hmod = NULL;
 
         try {
-            hmod = g_LoadLibraryExA(pszModuleName, 
-                                    hFile, 
+            hmod = g_LoadLibraryExA(pszModuleName,
+                                    hFile,
                                     dwFlags);
             GetInstance().HackModuleOnLoad(hmod, 0);
         } catch (...) {
@@ -1786,8 +1786,8 @@ namespace NWinHook
         HMODULE hmod = NULL;
 
         try {
-            hmod = g_LoadLibraryExW(pszModuleName, 
-                                    hFile, 
+            hmod = g_LoadLibraryExW(pszModuleName,
+                                    hFile,
                                     dwFlags);
             GetInstance().HackModuleOnLoad(hmod, 0);
         } catch (...) {
@@ -1797,7 +1797,7 @@ namespace NWinHook
         return hmod;
     }
 
-    FARPROC WINAPI CApiHookMgr::MyGetProcAddress(HMODULE hmod, 
+    FARPROC WINAPI CApiHookMgr::MyGetProcAddress(HMODULE hmod,
                                                  PCSTR pszProcName)
     {
         FARPROC pfn = NULL;
@@ -1824,7 +1824,7 @@ namespace NWinHook
         return pfn;
     }
 
-    FARPROC WINAPI CApiHookMgr::GetProcAddressWindows(HMODULE hmod, 
+    FARPROC WINAPI CApiHookMgr::GetProcAddressWindows(HMODULE hmod,
                                                       PCSTR pszProcName)
     {
         return (g_GetProcAddress(hmod, pszProcName));
@@ -1838,20 +1838,20 @@ namespace NWinHook
         m_ModDbghelp = g_LoadLibraryA( "DBGHELP.DLL" );
 
         if (m_ModDbghelp != NULL) {
-            m_ImageDirectoryEntryToData = 
+            m_ImageDirectoryEntryToData =
                 reinterpret_cast<FImageDirectoryEntryToData>(
                     g_GetProcAddress(m_ModDbghelp,
                                     "ImageDirectoryEntryToData"
                                     ));
             if (!m_ImageDirectoryEntryToData ) {
-                NCBI_THROW(CWinHookException, 
-                           eDbghelp, 
+                NCBI_THROW(CWinHookException,
+                           eDbghelp,
                            "Dbghelp.dll does not have "
                            "ImageDirectoryEntryToData symbol");
             }
         } else {
-            NCBI_THROW(CWinHookException, 
-                       eDbghelp, 
+            NCBI_THROW(CWinHookException,
+                       eDbghelp,
                        "Dbghelp.dll not found");
         }
     }
@@ -1868,7 +1868,7 @@ namespace NWinHook
 
     CPEi386& CPEi386::GetInstance(void)
     {
-        static CSafeStaticPtr<CPEi386> instance(NULL, 
+        static CSafeStaticPtr<CPEi386> instance(NULL,
             CSafeStaticLifeSpan::eLifeSpan_Longest);
 
         return (instance.Get());
@@ -1888,8 +1888,8 @@ namespace NWinHook
     /////////////////////////////////////////////////////////////////////////////
     COnExitProcess::COnExitProcess(void)
     {
-        CApiHookMgr::GetInstance().HookImport("Kernel32.DLL", 
-                                              "ExitProcess", 
+        CApiHookMgr::GetInstance().HookImport("Kernel32.DLL",
+                                              "ExitProcess",
                                               (PROC)COnExitProcess::ExitProcess);
     }
 
@@ -1897,7 +1897,7 @@ namespace NWinHook
     {
         ClearAll();
 
-        CApiHookMgr::GetInstance().UnHookImport("Kernel32.DLL", 
+        CApiHookMgr::GetInstance().UnHookImport("Kernel32.DLL",
                                                 "ExitProcess");
     }
 
@@ -1909,30 +1909,30 @@ namespace NWinHook
         return (instance.Get());
     }
 
-    void 
+    void
     COnExitProcess::Add(TFunct funct)
     {
         CFastMutexGuard mg(m_Mutex);
 
-        vector<TFunct>::iterator it = find(m_Registry.begin(), 
-                                           m_Registry.end(), 
+        vector<TFunct>::iterator it = find(m_Registry.begin(),
+                                           m_Registry.end(),
                                            funct);
         if (it == m_Registry.end()) {
             m_Registry.push_back(funct);
         }
     }
 
-    void 
+    void
     COnExitProcess::Remove(TFunct funct)
     {
         CFastMutexGuard mg(m_Mutex);
 
-        m_Registry.erase(find(m_Registry.begin(), 
-                              m_Registry.end(), 
+        m_Registry.erase(find(m_Registry.begin(),
+                              m_Registry.end(),
                               funct));
     }
 
-    void 
+    void
     COnExitProcess::ClearAll(void)
     {
         if (!m_Registry.empty()) {
@@ -1960,42 +1960,4 @@ END_NCBI_SCOPE
 
 #endif
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.11  2006/07/20 14:39:48  ssikorsk
- * Enable winhook by default.
- *
- * Revision 1.10  2006/06/02 19:26:38  ssikorsk
- * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
- *
- * Revision 1.9  2006/04/24 21:40:22  ssikorsk
- * Restored previously changed types of pointers
- *
- * Revision 1.8  2006/04/24 21:07:11  ssikorsk
- * Fixed Export Address calculation.
- *
- * Revision 1.7  2006/04/21 15:57:10  ssikorsk
- * Replaced LONGLONG type with uintptr_t.
- *
- * Revision 1.6  2006/04/20 22:20:32  ssikorsk
- * Fixed conversion of types on Windows x64.
- *
- * Revision 1.5  2006/04/17 13:04:23  ivanov
- * Added missed bool type specifier
- *
- * Revision 1.4  2006/04/13 14:50:45  ssikorsk
- * Allow to disable Windows API hooking from application's registry.
- *
- * Revision 1.3  2006/04/12 21:57:37  ssikorsk
- * Changed implementation of CHookedFunctions
- *
- * Revision 1.2  2006/04/10 22:28:59  ssikorsk
- * Replaced raw calls to the Windows API with calls to previously stored
- * pointers to functions.
- *
- * Revision 1.1  2006/04/05 14:05:48  ssikorsk
- * Initial version
- *
- * ===========================================================================
- */
+

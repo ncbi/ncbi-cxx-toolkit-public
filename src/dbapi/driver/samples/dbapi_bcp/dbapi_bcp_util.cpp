@@ -26,30 +26,6 @@
 * File Name:  $Id$
 *
 * File Description: Implementation of dbapi bcp
-* $Log$
-* Revision 1.7  2004/12/20 16:20:29  ssikorsk
-* Refactoring of dbapi/driver/samples
-*
-* Revision 1.6  2004/05/17 21:17:02  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.5  2003/05/08 16:16:32  starchen
-* fixed bug in the query
-*
-* Revision 1.4  2003/02/27 20:21:34  starchen
-* correct a lang call
-*
-* Revision 1.3  2002/12/09 16:25:20  starchen
-* remove the text files from samples
-*
-* Revision 1.2  2002/07/18 19:51:03  starchen
-* fixed some error
-*
-* Revision 1.1  2002/07/18 15:48:21  starchen
-* first entry
-*
-* Revision 1.1  2002/07/18 15:16:44  starchen
-* first entry
 *
 *
 *============================================================================

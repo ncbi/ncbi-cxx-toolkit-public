@@ -971,25 +971,3 @@ END_NCBI_SCOPE
 
 #endif                                  // PYTHONPP_PDT_H
 
-/* ===========================================================================
-*
-* $Log$
-* Revision 1.5  2005/09/13 14:41:10  ssikorsk
-* Add new constructor to pythonpp::CString
-*
-* Revision 1.4  2005/02/10 17:43:56  ssikorsk
-* Changed: more 'precise' exception types
-*
-* Revision 1.3  2005/01/27 18:50:03  ssikorsk
-* Fixed: a bug with transactions
-* Added: python 'transaction' object
-*
-* Revision 1.2  2005/01/18 21:56:21  ssikorsk
-* Fixed: warning with gcc295
-*
-* Revision 1.1  2005/01/18 19:26:08  ssikorsk
-* Initial version of a Python DBAPI module
-*
-*
-* ===========================================================================
-*/

@@ -107,18 +107,4 @@ END_NCBI_SCOPE
 
 #endif // DBAPI_DRIVER_IMPL___DBAPI_DRIVER_UTILS__HPP
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/12/27 21:05:07  ssikorsk
- * Added method Handle(CDBHandlerStack& handler, const string& msg)
- * to CDBExceptionStorage.
- *
- * Revision 1.2  2006/07/12 16:28:48  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.1  2006/05/11 17:53:25  ssikorsk
- * Added CDBExceptionStorage class
- *
- * ===========================================================================
- */
+

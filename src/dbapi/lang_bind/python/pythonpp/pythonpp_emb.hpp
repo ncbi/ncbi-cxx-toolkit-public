@@ -123,19 +123,4 @@ END_NCBI_SCOPE
 
 #endif                                  // PYTHONPP_EMB_H
 
-/* ===========================================================================
- *
- * $Log$
- * Revision 1.3  2005/05/17 16:55:06  ssikorsk
- * Get rid of warnings on GCC
- *
- * Revision 1.2  2005/05/17 16:41:17  ssikorsk
- * Throw a string in case of an error in the CEngine
- *
- * Revision 1.1  2005/01/27 18:50:03  ssikorsk
- * Fixed: a bug with transactions
- * Added: python 'transaction' object
- *
- *
- * ===========================================================================
- */
+

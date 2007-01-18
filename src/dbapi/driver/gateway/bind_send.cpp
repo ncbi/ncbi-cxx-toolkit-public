@@ -298,33 +298,3 @@ END_NCBI_SCOPE
 
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/07/18 15:47:58  ssikorsk
- * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
- *
- * Revision 1.2  2004/05/17 21:14:35  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.1  2003/05/19 21:51:51  sapojnik
- * Client portion of gateway driver back in C++ tree - now assembles as dll, and runs on Sparc Solaris
- *
- * Revision 1.5  2003/05/05 21:51:56  sapojnik
- * CGW_CursorCmd::Open()
- *
- * Revision 1.4  2003/05/05 14:27:16  sapojnik
- * CGW_Base::xBind(),xSend() and boundObjects member in classes with Send/Bind()
- *
- * Revision 1.3  2003/04/22 17:02:17  sapojnik
- * bugfix: GWLib:Object:delete separate from GWLib:Base:delete
- *
- * Revision 1.2  2003/03/03 22:02:16  sapojnik
- * CGW_BCPInCmd finally debugged
- *
- * Revision 1.1  2003/02/21 20:10:25  sapojnik
- * many changes, mostly implementing and debugging BCP Bind/SendRow() (not completely debugged yet)
- *
- *
- * ===========================================================================
- */

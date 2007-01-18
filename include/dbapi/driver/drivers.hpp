@@ -64,34 +64,4 @@ END_NCBI_SCOPE
 /* @} */
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/06/12 21:23:54  ssikorsk
- * Added DBAPI_RegisterDriver_SQLITE3
- *
- * Revision 1.7  2005/03/01 15:21:52  ssikorsk
- * Database driver manager revamp to use "core" CPluginManager
- *
- * Revision 1.6  2004/03/17 19:24:20  gorelenk
- * Added "export" for DBAPI_RegisterDriver_* function declaration.
- *
- * Revision 1.5  2003/04/11 17:46:03  siyan
- * Added doxygen support
- *
- * Revision 1.4  2003/02/19 03:38:42  vakatov
- * + DBAPI_RegisterDriver_MYSQL
- *
- * Revision 1.3  2002/07/09 17:00:21  soussov
- * separates the msdblib
- *
- * Revision 1.2  2002/07/02 20:52:31  soussov
- * adds RegisterDriver for ODBC
- *
- * Revision 1.1  2002/01/17 22:05:56  soussov
- * adds driver manager
- *
- * ===========================================================================
- */
-
 #endif  /* DBAPI_DRIVER___DRIVERS__HPP */

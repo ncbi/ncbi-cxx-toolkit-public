@@ -99,20 +99,4 @@ CODBCString::~CODBCString(void)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/09/18 15:33:53  ssikorsk
- * Added new constructors to CODBCString.
- *
- * Revision 1.3  2006/09/14 13:47:51  ucko
- * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
- *
- * Revision 1.2  2006/09/13 20:11:01  ssikorsk
- * Implemented class CODBCString.
- *
- * Revision 1.1  2006/07/25 13:52:01  ssikorsk
- * Initial version.
- *
- * ===========================================================================
- */
+

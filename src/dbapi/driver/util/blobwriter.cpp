@@ -1,25 +1,25 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
@@ -37,7 +37,7 @@ USING_NCBI_SCOPE;
 static char* getParam(char tag, int argc, char* argv[], bool* flag= 0)
 {
     for(int i= 1; i < argc; i++) {
-        if(((*argv[i] == '-') || (*argv[i] == '/')) && 
+        if(((*argv[i] == '-') || (*argv[i] == '/')) &&
            (*(argv[i]+1) == tag)) { // tag found
             if(flag)
                 *flag= true;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
         p= getenv("SQL_SERVER");
     }
     server_name= p? p : "MS_DEV1";
-    
+
     p= getParam('d', argc, argv);
     if (p) {
         driver_name= p;
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
     table_name= p? p : "MyDataTable";
 
     string *blob_column;
-    
+
     try {
         C_DriverMgr drv_mgr;
         string err_msg;
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
         I_DriverContext* my_context= drv_mgr.GetDriverContext(driver_name,
                                                               &err_msg, &packet);
         if(!my_context) {
-            cerr << "Cannot load a driver " << driver_name << " [" 
+            cerr << "Cannot load a driver " << driver_name << " ["
                  << err_msg << "] " << endl;
             return 1;
         }
@@ -167,21 +167,21 @@ int main(int argc, char* argv[])
             CDB_Result* r = lcmd->Result();
             if (!r)
                 continue;
-            
+
             if (r->ResultType() == eDB_RowResult) {
                 n= r->NofItems();
                 if(n < 2) {
                     delete r;
                     continue;
                 }
-                
+
                 blob_column= new string[n];
 
                 for(unsigned int j= 0; j < n; j++) {
                     switch (r->ItemDataType(j)) {
                     case eDB_VarChar:
                     case eDB_Char:
-                    case eDB_LongChar: 
+                    case eDB_LongChar:
                         key_col_name= r->ItemName(j);
                         break;
 
@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
         bload.Load(cin, cm, imagesize);
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
-        
+
         myExHandler.HandleIt(&e);
         return 1;
     }
@@ -223,27 +223,3 @@ int main(int argc, char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2005/07/12 14:29:07  ssikorsk
- * Get rid of warnings in switch statements
- *
- * Revision 1.5  2005/04/04 13:03:57  ssikorsk
- * Revamp of DBAPI exception class CDB_Exception
- *
- * Revision 1.4  2004/05/25 19:47:28  soussov
- * moves blobstore.hpp header to include
- *
- * Revision 1.3  2004/05/24 19:41:46  soussov
- * adjusts to new blobstore API
- *
- * Revision 1.2  2004/05/17 21:18:21  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.1  2004/05/03 16:47:10  soussov
- * initial commit
- *
- *
- * ===========================================================================
- */

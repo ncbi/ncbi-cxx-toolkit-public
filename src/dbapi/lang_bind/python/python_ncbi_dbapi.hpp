@@ -787,36 +787,4 @@ CDMLConnPool::GetConnection(void)
 
 END_NCBI_SCOPE
 
-/* ===========================================================================
-*
-* $Log$
-* Revision 1.9  2005/10/19 15:37:27  ssikorsk
-* Added estTransaction value to the EStatementType enum
-*
-* Revision 1.8  2005/05/31 14:56:27  ssikorsk
-* Added get_proc_return_status to the cursor class in the Python DBAPI
-*
-* Revision 1.7  2005/05/18 18:41:07  ssikorsk
-* Small refactoring
-*
-* Revision 1.6  2005/05/17 16:42:10  ssikorsk
-* Added CCursor::get_proc_return_status
-*
-* Revision 1.5  2005/02/17 18:39:23  ssikorsk
-* Improved the "callproc" function
-*
-* Revision 1.4  2005/02/17 15:06:30  ssikorsk
-* Setup TDS version with different database and driver types
-*
-* Revision 1.3  2005/02/08 19:18:19  ssikorsk
-* Added a "simple mode" database interface
-*
-* Revision 1.2  2005/01/27 18:50:03  ssikorsk
-* Fixed: a bug with transactions
-* Added: python 'transaction' object
-*
-* Revision 1.1  2005/01/18 19:26:07  ssikorsk
-* Initial version of a Python DBAPI module
-*
-* ===========================================================================
-*/
+

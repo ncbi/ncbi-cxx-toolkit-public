@@ -73,32 +73,3 @@ int main()
 
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.3  2004/05/17 21:14:41  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2002/03/15 22:01:46  sapojnik
- * more methods and classes
- *
- * Revision 1.1  2002/03/14 20:00:42  sapojnik
- * A driver that communicates with a dbapi driver on another machine via CompactProtocol(aka ssssrv)
- *
- * Revision 1.1  2002/02/13 20:59:08  sapojnik
- * rdblib: remote dblib driver = MS SQL + sss comprot
- *
- * Revision 1.2  2001/10/24 16:37:26  lavr
- * Finish log with horizontal rule
- *
- * Revision 1.1  2001/10/23 20:52:14  lavr
- * Initial revision (derived from former sample programs)
- *
- * Revision 1.1  2001/10/22 15:23:04  lavr
- * Initial revision derived from corresponding CTLib version
- *
- * ===========================================================================
- */

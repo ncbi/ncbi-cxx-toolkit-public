@@ -63,12 +63,4 @@ int CheckSQLite3(sqlite3* h_native, CDBHandlerStack& h_stack, int rc)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/06/12 20:30:51  ssikorsk
- * Initial version
- *
- * ===========================================================================
- */
 

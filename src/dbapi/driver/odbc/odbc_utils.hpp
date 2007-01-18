@@ -196,23 +196,4 @@ END_NCBI_SCOPE
 
 #endif // DBAPI_DRIVER_DBLIB___DBAPI_DRIVER_ODBC_UTILS__HPP
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/10/19 16:44:07  ssikorsk
- * + util::strcmp
- *
- * Revision 1.4  2006/09/18 15:33:34  ssikorsk
- * Added new constructors to CODBCString.
- *
- * Revision 1.3  2006/09/14 13:47:51  ucko
- * Don't assume HAVE_WSTRING; erase() strings rather than clear()ing them.
- *
- * Revision 1.2  2006/09/13 20:10:35  ssikorsk
- * Added class CODBCString.
- *
- * Revision 1.1  2006/07/25 13:52:01  ssikorsk
- * Initial version.
- *
- * ===========================================================================
- */
+

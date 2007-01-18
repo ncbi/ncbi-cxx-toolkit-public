@@ -147,27 +147,5 @@ IDBConnectionFactory::CtxMakeConnection
 END_NCBI_SCOPE
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/07/12 16:28:48  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.2  2006/01/23 13:21:45  ssikorsk
- * Added interface IConnValidator;
- * Renamed IDBCannectionFactory::MakeConnection to MakeDBConnection;
- * Added IConnValidator as a default argument to IDBCannectionFactory::MakeDBConnection;
- * Changed return types of IDBCannectionFactory::MakeDBConnection and
- *     IDBCannectionFactory::CtxMakeConnection to CDB_Connection*;
- *
- * Revision 1.1  2006/01/03 19:25:12  ssikorsk
- * Declaration of the IDBConnectionFactory interface.
- * CDbapiConnMgr singleton to manage life time of
- * IDBConnectionFactory implementations.
- *
- * ===========================================================================
- */
-
 #endif  /* DBAPI_DRIVER_CONN_MGR_HPP */
 

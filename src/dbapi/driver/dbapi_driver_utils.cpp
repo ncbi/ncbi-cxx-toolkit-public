@@ -108,20 +108,4 @@ void CDBExceptionStorage::Handle(CDBHandlerStack& handler, const string& msg)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/12/27 21:05:54  ssikorsk
- * Implemented method CDBExceptionStorage::Handle().
- *
- * Revision 1.3  2006/07/12 16:29:30  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.2  2006/06/02 19:26:38  ssikorsk
- * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
- *
- * Revision 1.1  2006/05/11 17:57:20  ssikorsk
- * Implemented CDBExceptionStorage class
- *
- * ===========================================================================
- */
+

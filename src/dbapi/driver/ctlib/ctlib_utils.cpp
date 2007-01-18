@@ -41,19 +41,11 @@ BEGIN_NCBI_SCOPE
 CDBExceptionStorage& GetCTLExceptionStorage(void)
 {
     static CSafeStaticPtr<CDBExceptionStorage> instance;
-    
-    return instance.Get(); 
+
+    return instance.Get();
 }
 
 
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.1  2006/05/11 18:02:57  ssikorsk
- * Added GetCTLExceptionStorage function
- *
- * ===========================================================================
- */

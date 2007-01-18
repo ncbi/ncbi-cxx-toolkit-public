@@ -145,27 +145,4 @@ private:
 END_NCBI_SCOPE
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2002/09/13 18:43:18  soussov
- * fixes compiler warnings
- *
- * Revision 1.3  2002/09/13 18:27:02  soussov
- * fixed bug with long overflow
- *
- * Revision 1.2  2001/11/06 17:59:53  lavr
- * Formatted uniformly as the rest of the library
- *
- * Revision 1.1  2001/09/21 23:40:00  vakatov
- * -----  Initial (draft) revision.  -----
- * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
- * of the DBAPI "driver" libs originally written by Vladimir Soussov.
- * The revamp involved massive code shuffling and grooming, numerous local
- * API redesigns, adding comments and incorporating DBAPI to the C++ Toolkit.
- *
- * ===========================================================================
- */
-
 #endif  /* DBAPI_DRIVER___MEMORY_STORE__HPP */

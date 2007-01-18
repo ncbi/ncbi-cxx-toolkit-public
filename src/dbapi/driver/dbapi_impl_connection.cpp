@@ -239,33 +239,4 @@ END_SCOPE(impl)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/12/27 21:10:50  ssikorsk
- * Implemented method CConnection::SetExtraMsg().
- *
- * Revision 1.7  2006/10/26 18:14:50  ssikorsk
- * + CConnection::GetClientEncoding()
- *
- * Revision 1.6  2006/10/23 22:01:36  ssikorsk
- * + IsMultibyteClientEncoding()
- *
- * Revision 1.5  2006/09/13 19:48:56  ssikorsk
- * Implemented SetTimeout, SetTextImageSize for CConnection.
- *
- * Revision 1.4  2006/07/18 15:47:58  ssikorsk
- * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
- *
- * Revision 1.3  2006/07/12 20:35:22  ucko
- * #include <algorithm> for find()
- *
- * Revision 1.2  2006/07/12 18:55:53  ssikorsk
- * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
- *
- * Revision 1.1  2006/07/12 16:29:30  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * ===========================================================================
- */
 

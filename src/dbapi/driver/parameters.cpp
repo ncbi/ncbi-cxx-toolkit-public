@@ -1,30 +1,30 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
  * Author:  Vladimir Soussov
- *   
+ *
  * File Description:  Param container implementation
  *
  */
@@ -58,7 +58,7 @@ bool CDB_Params::BindParam(unsigned int param_no, const string& param_name,
         if ( !param_name.empty() ) {
             // try to find this name
             for (param_no = 0;  param_no < m_NofParams;  param_no++) {
-                if (m_Params[param_no].status != 0  && 
+                if (m_Params[param_no].status != 0  &&
                     param_name.compare(m_Params[param_no].name) == 0)
                     break;
             }
@@ -120,7 +120,7 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
         if ( !param_name.empty() ) {
             // try to find this name
             for (param_no = 0;  param_no < m_NofParams;  param_no++) {
-                if (m_Params[param_no].status != 0  && 
+                if (m_Params[param_no].status != 0  &&
                     m_Params[param_no].name.compare(param_name) == 0)
                     break;
             }
@@ -145,15 +145,15 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
         for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
         m_NofParams= param_no + 1;
     }
-    
+
     if (param_no < m_NofParams) {
         // we do have a param number
-        if ((m_Params[param_no].status & fSet) != 0) { 
+        if ((m_Params[param_no].status & fSet) != 0) {
             if (m_Params[param_no].param->GetType() == param->GetType()) {
                 // types are the same
                 m_Params[param_no].param->AssignValue(*param);
             }
-            else 
+            else
                 { // we need to delete the old one
                     delete m_Params[param_no].param;
                     m_Params[param_no].param = param->Clone();
@@ -226,68 +226,3 @@ void g_SubstituteParam(string& query, const string& name, const string& val)
 END_NCBI_SCOPE
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.18  2006/06/02 19:26:38  ssikorsk
- * + NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
- *
- * Revision 1.17  2005/11/02 14:32:39  ssikorsk
- * Use NCBI_CATCH_ALL macro instead of catch(...)
- *
- * Revision 1.16  2005/09/15 11:00:01  ssikorsk
- * Destructors do not throw exceptions any more.
- *
- * Revision 1.15  2005/06/13 18:24:10  lavr
- * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
- *
- * Revision 1.14  2005/06/03 16:43:55  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.13  2004/05/17 21:11:38  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.12  2003/06/04 18:18:46  soussov
- * Sets m_Params to 0 if no params in constructor
- *
- * Revision 1.11  2002/12/02 17:00:07  soussov
- * replacing delete m_Params with delete [] m_Params
- *
- * Revision 1.10  2002/11/27 19:26:10  soussov
- * fixes bug with erasing the empty strings
- *
- * Revision 1.9  2002/11/26 17:49:03  soussov
- * reallocation if more than declared parameters added
- *
- * Revision 1.8  2002/05/16 21:33:00  soussov
- * Replaces the temp fix in SetParam with the permanent one
- *
- * Revision 1.7  2002/05/15 22:29:40  soussov
- * temporary fix for SetParam
- *
- * Revision 1.6  2001/11/06 17:59:53  lavr
- * Formatted uniformly as the rest of the library
- *
- * Revision 1.5  2001/10/25 00:22:10  vakatov
- * string::compare() with 4 args does not work with GCC ver. < 3, so
- * use NStr::Compare() instead.
- *
- * Revision 1.4  2001/10/24 19:05:29  lavr
- * g_SubstituteParam() fixed to correctly replace names with values
- *
- * Revision 1.3  2001/10/22 15:21:45  lavr
- * +g_SubstituteParam
- *
- * Revision 1.2  2001/10/04 18:41:24  soussov
- * fixes bug in CDB_Params::SetParam
- *
- * Revision 1.1  2001/09/21 23:40:00  vakatov
- * -----  Initial (draft) revision.  -----
- * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
- * of the DBAPI "driver" libs originally written by Vladimir Soussov.
- * The revamp involved massive code shuffling and grooming, numerous local
- * API redesigns, adding comments and incorporating DBAPI to the C++ Toolkit.
- *
- * ===========================================================================
- */

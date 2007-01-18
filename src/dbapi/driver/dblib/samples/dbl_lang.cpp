@@ -54,12 +54,12 @@ CDemoeApp::Run(void)
 {
     try {
         DBLB_INSTALL_DEFAULT();
-                
+
         CDBLibContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("SCHUMANN", 
-                                                        "anyone", 
-                                                        "allowed", 
+        auto_ptr<CDB_Connection> con(my_context.Connect("SCHUMANN",
+                                                        "anyone",
+                                                        "allowed",
                                                         0));
 
         auto_ptr<CDB_LangCmd> lcmd
@@ -74,7 +74,7 @@ CDemoeApp::Run(void)
             cout
                 << r->ItemName(0) << " \t\t\t"
                 << r->ItemName(1) << endl
-                << "-----------------------------------------------------" 
+                << "-----------------------------------------------------"
                 << endl;
 
             while (r->Fetch()) {
@@ -86,13 +86,13 @@ CDemoeApp::Run(void)
 
                 cout
                     << dbname.Value() << ' '
-                    << crdate.Value().AsString("M/D/Y h:m") 
+                    << crdate.Value().AsString("M/D/Y h:m")
                     << endl;
             }
         }
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
-        
+
         myExHandler.HandleIt(&e);
         return 1;
     } catch (const CException&) {
@@ -108,63 +108,3 @@ int main(int argc, const char* argv[])
 }
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.16  2006/08/31 18:46:11  ssikorsk
- * Get rid of unused variables.
- *
- * Revision 1.15  2006/02/24 19:36:12  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.14  2006/01/26 12:15:36  ssikorsk
- * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
- * Removed protection of DBLB_INSTALL_DEFAULT;
- *
- * Revision 1.13  2006/01/24 14:05:27  ssikorsk
- * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
- *
- * Revision 1.12  2006/01/24 12:53:24  ssikorsk
- * Revamp demo applications to use CNcbiApplication;
- * Use load balancer and configuration in an ini-file to connect to a
- * secondary server in case of problems with a primary server;
- *
- * Revision 1.11  2005/11/28 13:13:20  ssikorsk
- * Do not test dblib with MS SQL Server. It is not supposed to work.
- *
- * Revision 1.10  2005/08/16 11:13:27  ssikorsk
- * Use SCHUMANN instead of BARTOK as a Sybase server.
- *
- * Revision 1.9  2004/09/01 21:31:29  vakatov
- * Use BARTOK instead of MOZART as the test Sybase-11.0.3 SQL server
- *
- * Revision 1.8  2004/05/17 21:13:08  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.7  2003/08/05 19:23:43  vakatov
- * MSSQL2 --> MS_DEV1
- *
- * Revision 1.6  2002/04/25 20:36:42  soussov
- * makes it plain
- *
- * Revision 1.5  2002/01/03 17:01:57  sapojnik
- * fixing CR/LF mixup
- *
- * Revision 1.4  2001/11/06 17:59:59  lavr
- * Formatted uniformly as the rest of the library
- *
- * Revision 1.3  2001/10/25 00:18:04  vakatov
- * SampleDBAPI_XXX() to accept yet another arg -- server name
- *
- * Revision 1.2  2001/10/24 16:37:26  lavr
- * Finish log with horizontal rule
- *
- * Revision 1.1  2001/10/23 20:52:14  lavr
- * Initial revision (derived from former sample programs)
- *
- * Revision 1.1  2001/10/22 15:23:04  lavr
- * Initial revision derived from corresponding CTLib version
- *
- * ===========================================================================
- */

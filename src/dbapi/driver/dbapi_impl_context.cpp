@@ -486,30 +486,4 @@ END_SCOPE(impl)
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.6  2006/12/27 21:08:03  ssikorsk
- * Implemented method CDriverContext::SetExtraMsg().
- *
- * Revision 1.5  2006/12/15 16:41:37  ssikorsk
- * Replaced CFastMutex with CMutex. Improved thread-safety.
- *
- * Revision 1.4  2006/09/15 19:20:35  ssikorsk
- * Translate exceptions into return code in CDriverContext::SetTimeout.
- *
- * Revision 1.3  2006/09/13 19:51:58  ssikorsk
- * Implemented SetTimeout, SetMaxTextImageSize with CDriverContext;
- * Implemented SetClientCharset, UpdateConnTimeout, UpdateConnMaxTextImageSize
- * with CDriverContext;
- * Implemented class CWinSock;
- *
- * Revision 1.2  2006/07/12 20:35:22  ucko
- * #include <algorithm> for find()
- *
- * Revision 1.1  2006/07/12 16:29:30  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * ===========================================================================
- */
 

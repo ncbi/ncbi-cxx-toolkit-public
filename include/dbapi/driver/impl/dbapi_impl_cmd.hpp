@@ -283,34 +283,4 @@ END_SCOPE(impl)
 END_NCBI_SCOPE
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/11/20 17:37:12  ssikorsk
- * Added GetQuery() and GetParams() to CBaseCmd;
- * Added GetQuery() to CCursorCmd;
- *
- * Revision 1.6  2006/07/19 14:09:55  ssikorsk
- * Refactoring of CursorCmd.
- *
- * Revision 1.5  2006/07/18 15:46:00  ssikorsk
- * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
- *
- * Revision 1.4  2006/07/12 19:15:17  ucko
- * Disambiguate friend declarations, and add corresponding top-level
- * predeclarations, for the sake of GCC 4.x.
- *
- * Revision 1.3  2006/07/12 18:55:28  ssikorsk
- * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
- *
- * Revision 1.2  2006/07/12 17:09:53  ssikorsk
- * Added NCBI_DBAPIDRIVER_EXPORT to CCommand.
- *
- * Revision 1.1  2006/07/12 16:28:48  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * ===========================================================================
- */
-
-
 #endif  /* DBAPI_DRIVER_IMPL___DBAPI_IMPL_CMD__HPP */

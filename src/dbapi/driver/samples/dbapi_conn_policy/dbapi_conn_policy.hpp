@@ -54,17 +54,5 @@ protected:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.2  2006/01/05 21:35:43  ssikorsk
- * Removed GetCurrentDatabase method.
- *
- * Revision 1.1  2006/01/04 13:11:42  ssikorsk
- * An initial version of a sample application.
- *
- * ===========================================================================
- */
-
 #endif // DBAPI_CONN_POLICY_HPP
 

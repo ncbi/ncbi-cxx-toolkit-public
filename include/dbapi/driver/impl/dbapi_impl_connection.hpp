@@ -268,45 +268,5 @@ END_SCOPE(impl)
 END_NCBI_SCOPE
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.11  2006/12/27 21:10:01  ssikorsk
- * Added method CConnection::SetExtraMsg().
- *
- * Revision 1.10  2006/10/26 18:13:53  ssikorsk
- * + CConnection::GetClientEncoding()
- *
- * Revision 1.9  2006/10/23 22:01:50  ssikorsk
- * Added IsMultibyteClientEncoding()
- *
- * Revision 1.8  2006/10/02 19:57:33  ssikorsk
- * Changed visibility of GetCDriverContext to public.
- *
- * Revision 1.7  2006/09/13 19:22:21  ssikorsk
- * Added methods SetTimeout and SetTextImageSize.
- *
- * Revision 1.6  2006/07/18 15:46:00  ssikorsk
- * LangCmd, RPCCmd, and BCPInCmd have common base class impl::CBaseCmd now.
- *
- * Revision 1.5  2006/07/12 19:42:54  ssikorsk
- * - #include <dbapi/driver/public.hpp> Forward declaration of CDB_Connection is enough.
- *
- * Revision 1.4  2006/07/12 19:15:17  ucko
- * Disambiguate friend declarations, and add corresponding top-level
- * predeclarations, for the sake of GCC 4.x.
- *
- * Revision 1.3  2006/07/12 19:10:43  ssikorsk
- * + #include <dbapi/driver/public.hpp> (Necessary for MIPS).
- *
- * Revision 1.2  2006/07/12 18:55:28  ssikorsk
- * Moved implementations of DetachInterface and AttachTo into cpp for MIPS sake.
- *
- * Revision 1.1  2006/07/12 16:28:48  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * ===========================================================================
- */
-
 
 #endif  /* DBAPI_DRIVER_IMPL___DBAPI_IMPL_CONNECTION__HPP */

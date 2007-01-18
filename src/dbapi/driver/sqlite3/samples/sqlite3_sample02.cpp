@@ -191,20 +191,3 @@ int main(int argc, const char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/12/27 22:54:01  ssikorsk
- * Fixed typo.
- *
- * Revision 1.3  2006/08/31 18:46:11  ssikorsk
- * Get rid of unused variables.
- *
- * Revision 1.2  2006/07/18 16:03:44  ssikorsk
- * BCPIn::Bind has starting index 0.
- *
- * Revision 1.1  2006/07/18 15:47:42  ssikorsk
- * Initial version of a BCPIn demo-application for sqlite3.
- *
- * ===========================================================================
- */

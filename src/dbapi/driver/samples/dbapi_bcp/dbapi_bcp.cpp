@@ -163,41 +163,4 @@ int main(int argc, const char* argv[])
     return CDbapiBcpApp().AppMain(argc, argv);
 }
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.10  2006/12/05 01:27:22  ucko
- * Include <dbapi/driver/interfaces.hpp> rather than <dbapi/dbapi.hpp>, which
- * is overkill and can introduce spurious references to CVariantException.
- *
- * Revision 1.9  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.8  2005/08/24 12:43:15  ssikorsk
- * Use temporary table to store test data
- *
- * Revision 1.7  2004/12/20 16:20:29  ssikorsk
- * Refactoring of dbapi/driver/samples
- *
- * Revision 1.6  2004/05/17 21:17:02  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.5  2003/08/05 19:23:52  vakatov
- * MSSQL2 --> MS_DEV1
- *
- * Revision 1.4  2003/01/30 16:08:11  soussov
- * Adopt the new default DateTime constructor
- *
- * Revision 1.3  2002/12/09 16:25:19  starchen
- * remove the text files from samples
- *
- * Revision 1.2  2002/09/04 22:20:39  vakatov
- * Get rid of comp.warnings
- *
- * Revision 1.1  2002/07/18 15:48:21  starchen
- * first entry
- *
- * Revision 1.2  2002/07/18 15:16:44  starchen
- * first entry
- * ===========================================================================
- */
+

@@ -56,18 +56,18 @@ CConnectPolicyApp::RunSample(void)
 {
     try {
         DBLB_INSTALL_DEFAULT();
-                
+
         // CConnValidatorCoR is developed to combine other validators into a chain.
         CConnValidatorCoR conn_validator;
-        
+
         // Combine validators.
         conn_validator.Push(CRef<IConnValidator>(new CTrivialConnValidator("tempdb")));
         conn_validator.Push(CRef<IConnValidator>(new CTrivialConnValidator("DBAPI_Sample")));
-        
+
         for (int i = 0; i < 20; ++i) {
             auto_ptr<CDB_Connection> conn(CreateConnection(&conn_validator));
         }
-        
+
     }
     catch ( CDB_Exception& e ) {
         CDB_UserHandler::GetDefault().HandleIt(&e);
@@ -83,35 +83,4 @@ int main(int argc, const char* argv[])
     return CConnectPolicyApp().AppMain(argc, argv);
 }
 
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.7  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.6  2006/01/26 12:15:37  ssikorsk
- * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
- * Removed protection of DBLB_INSTALL_DEFAULT;
- *
- * Revision 1.5  2006/01/24 13:47:19  ssikorsk
- * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
- *
- * Revision 1.4  2006/01/23 13:47:34  ssikorsk
- * Added code to demonstrate IconnValidator usage;
- *
- * Revision 1.3  2006/01/10 17:23:37  ucko
- * Conditionalize use of ncbi_dblb_svcmapper.hpp and DBLB_INSTALL_DEFAULT
- * on HAVE_CONNEXT.
- *
- * Revision 1.2  2006/01/05 21:35:43  ssikorsk
- * Removed GetCurrentDatabase method.
- *
- * Revision 1.1  2006/01/04 13:11:42  ssikorsk
- * An initial version of a sample application.
- *
- * ===========================================================================
- */
 

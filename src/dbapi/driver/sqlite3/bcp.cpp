@@ -134,18 +134,3 @@ string CSL3_BCPInCmd::MakePlaceholders(size_t num)
 END_NCBI_SCOPE
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/07/18 16:58:56  ssikorsk
- * Improved method CSL3_BCPInCmd::ExecuteSQL.
- *
- * Revision 1.2  2006/07/18 16:01:52  ssikorsk
- * Deleted CSL3_BCPInCmd::Bind.
- *
- * Revision 1.1  2006/07/18 15:42:11  ssikorsk
- * Implemented BCPInCmd.
- *
- *
- * ===========================================================================
- */

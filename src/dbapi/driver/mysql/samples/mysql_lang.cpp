@@ -68,12 +68,12 @@ CDemoeApp::Init()
 
     arg_desc->AddDefaultKey("U", "username",
                             "User name",
-                            CArgDescriptions::eString, 
+                            CArgDescriptions::eString,
                             "anyone");
 
     arg_desc->AddDefaultKey("P", "password",
                             "Password",
-                            CArgDescriptions::eString, 
+                            CArgDescriptions::eString,
                             "allowed");
 
     arg_desc->AddKey("D", "database",
@@ -98,7 +98,7 @@ CDemoeApp::Run(void)
 
     try {
         DBLB_INSTALL_DEFAULT();
-                
+
         CMySQLContext my_context;
         auto_ptr<CDB_Connection> con(my_context.Connect(ServerName, UserName, Password, 0));
 
@@ -127,13 +127,13 @@ CDemoeApp::Run(void)
 
         int nBlobSize = 0xffff;
         auto_ptr<char> buff( new char[nBlobSize]);
-    
+
         // inserting data
         {
             char* p = buff.get();
             for( int i = 0; i < nBlobSize; i++)
                 *(p++) = i;
-            
+
             auto_ptr<CDB_LangCmd>
                 lcmd(con->LangCmd("insert into tmp_t1 values"
                                   "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415, '"
@@ -168,14 +168,14 @@ CDemoeApp::Run(void)
                     auto_ptr<char> buff2( new char[blob.Size()]);
                     blob.Read( buff2.get(), blob.Size());
                     int correct = memcmp( buff2.get(), buff.get(), nBlobSize);
-                    
+
                     cout
                         << "a=" << a.Value() << endl
                         << "b=" << b.Value().AsString() << endl
                         << "c=" << c.Value() << endl
                         << "d=" << d.Value() << endl
                         << "e=" << e.Value() << endl
-                        << "blob size is " << nBlobSize << " blob data is " 
+                        << "blob size is " << nBlobSize << " blob data is "
                         << (!correct ? "correct" : "not correct") << endl;
                 }
             }
@@ -206,7 +206,7 @@ CDemoeApp::Run(void)
         }
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
-        
+
         myExHandler.HandleIt(&e);
         return 1;
     } catch (const CException&) {
@@ -222,51 +222,3 @@ int main(int argc, const char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.13  2006/08/31 18:46:11  ssikorsk
- * Get rid of unused variables.
- *
- * Revision 1.12  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.11  2006/01/26 12:15:37  ssikorsk
- * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
- * Removed protection of DBLB_INSTALL_DEFAULT;
- *
- * Revision 1.10  2006/01/24 14:05:27  ssikorsk
- * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
- *
- * Revision 1.9  2006/01/24 12:53:25  ssikorsk
- * Revamp demo applications to use CNcbiApplication;
- * Use load balancer and configuration in an ini-file to connect to a
- * secondary server in case of problems with a primary server;
- *
- * Revision 1.8  2004/05/17 21:15:48  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.7  2004/03/24 19:45:16  vysokolo
- * Added blob support
- *
- * Revision 1.6  2003/05/29 21:25:47  butanaev
- * Added function to return last insert id, fixed RowCount, Send,
- * added call to RowCount in sample app.
- *
- * Revision 1.5  2003/02/19 16:16:13  ucko
- * +<memory> for auto_ptr<>
- *
- * Revision 1.4  2002/08/29 15:41:44  butanaev
- * Command line interface improved.
- *
- * Revision 1.3  2002/08/28 17:18:20  butanaev
- * Improved error handling, demo app.
- *
- * Revision 1.2  2002/08/13 20:30:24  butanaev
- * Username/password changed.
- *
- * Revision 1.1  2002/08/13 20:23:14  butanaev
- * The beginning.
- *
- * ===========================================================================
- */

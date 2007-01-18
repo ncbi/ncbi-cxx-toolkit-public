@@ -94,7 +94,7 @@ namespace NWinHook
 
         void UnHookAllFuncs(void);
 
-        bool HaveHookedFunctions(void) const 
+        bool HaveHookedFunctions(void) const
         {
 //             return(m_FunctionList.size() > 0);
             size_t num = 0;
@@ -204,7 +204,7 @@ namespace NWinHook
                                                HANDLE hFile,
                                                DWORD  dwFlags
                                                );
-        /// Returns address of replacement function if hooked function is 
+        /// Returns address of replacement function if hooked function is
         /// requested
         static FARPROC WINAPI MyGetProcAddress(HMODULE hmod,
                                                PCSTR   pszProcName
@@ -238,20 +238,20 @@ namespace NWinHook
         typedef void (*TFunct) (void);
 
         static COnExitProcess& Instance(void);
-        
+
         void Add(TFunct funct);
         void Remove(TFunct funct);
         void ClearAll(void);
-        
+
     private:
         COnExitProcess(void);
         ~COnExitProcess(void);
         // Hook function prototype
         static void WINAPI ExitProcess(UINT uExitCode);
-        
+
         mutable CFastMutex  m_Mutex;
         vector<TFunct>      m_Registry;
-        
+
         friend class CSafeStaticPtr<COnExitProcess>;
     };
 }
@@ -261,24 +261,5 @@ END_NCBI_SCOPE
 #endif // NCBI_OS_MSWIN
 
 /* @} */
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/04/13 14:49:21  ssikorsk
- * Added eDisabled error code to CWinHookException.
- *
- * Revision 1.3  2006/04/12 21:57:37  ssikorsk
- * Changed implementation of CHookedFunctions
- *
- * Revision 1.2  2006/04/10 22:26:25  ssikorsk
- * Moved some class declarations into cpp.
- *
- * Revision 1.1  2006/04/05 14:05:48  ssikorsk
- * Initial version
- *
- * ===========================================================================
- */
 
 #endif  // NCBI_WIN_HOOK__HPP

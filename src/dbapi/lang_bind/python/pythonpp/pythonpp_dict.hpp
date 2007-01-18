@@ -425,22 +425,3 @@ END_NCBI_SCOPE
 
 #endif                                  // PYTHONPP_DICT_H
 
-/* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2006/05/03 14:03:27  ucko
-* Tweak CDictHelper<>::clear() for compatibility with GCC 4.1.
-*
-* Revision 1.3  2005/02/10 17:43:56  ssikorsk
-* Changed: more 'precise' exception types
-*
-* Revision 1.2  2005/01/27 18:50:03  ssikorsk
-* Fixed: a bug with transactions
-* Added: python 'transaction' object
-*
-* Revision 1.1  2005/01/18 19:26:07  ssikorsk
-* Initial version of a Python DBAPI module
-*
-*
-* ===========================================================================
-*/

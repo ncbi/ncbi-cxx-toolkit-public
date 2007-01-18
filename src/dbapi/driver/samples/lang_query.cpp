@@ -119,23 +119,3 @@ int main(int argc, char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/02/24 19:36:13  ssikorsk
- * Added #include <test/test_assert.h> for test-suite sake
- *
- * Revision 1.4  2004/12/20 16:20:29  ssikorsk
- * Refactoring of dbapi/driver/samples
- *
- * Revision 1.3  2004/05/17 21:16:37  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.2  2002/06/13 21:29:22  soussov
- * numeric added; double and float separated
- *
- * Revision 1.1  2002/06/13 19:43:07  vakatov
- * Initial revision
- *
- * ===========================================================================
- */

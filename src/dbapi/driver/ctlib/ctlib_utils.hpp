@@ -70,17 +70,3 @@ END_NCBI_SCOPE
 
 #endif // DBAPI_DRIVER_CTLIB___DBAPI_DRIVER_CTLIB_UTILS__HPP
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.3  2006/08/02 15:13:14  ssikorsk
- * + NCBI_EntryPoint_xdbapi_ftds64_ctlib
- *
- * Revision 1.2  2006/07/12 16:29:30  ssikorsk
- * Separated interface and implementation of CDB classes.
- *
- * Revision 1.1  2006/05/11 18:02:57  ssikorsk
- * Added GetCTLExceptionStorage function
- *
- * ===========================================================================
- */

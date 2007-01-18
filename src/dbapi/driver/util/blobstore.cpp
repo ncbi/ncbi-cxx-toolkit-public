@@ -822,3 +822,4 @@ CBlobStoreDynamic::ReleaseConn(CDB_Connection* pConn)
         delete pConn;
     return true;
 }
+
