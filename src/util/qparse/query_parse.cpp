@@ -204,13 +204,19 @@ CQueryParseTree::CreateNode(const string&  value,
                             const string&  orig_text, 
                             bool           isIdent)
 {
-    return new TNode(CQueryParseNode(value, orig_text, isIdent));
+    CQueryParseTree::TNode* tn = 
+        new TNode(CQueryParseNode(value, orig_text, isIdent));
+//cerr << "CreateNode(string): " << tn << " " << value << endl;
+    return tn;
 }
 
 CQueryParseTree::TNode* 
 CQueryParseTree::CreateNode(Int4   value, const string&  orig_text)
 {
-    return new TNode(CQueryParseNode(value, orig_text));
+    CQueryParseTree::TNode* tn = 
+        new TNode(CQueryParseNode(value, orig_text));
+//cerr << "CreateNode(int): " << tn << " " << value<< endl;
+    return tn;
 }
 
 CQueryParseTree::TNode* 
@@ -232,7 +238,6 @@ CQueryParseTree::CreateBinaryNode(CQueryParseNode::EBinaryOp op,
                                   CQueryParseTree::TNode*    arg2,
                                   const string&              orig_text)
 {
-    _ASSERT(arg1 && arg2);
    auto_ptr<TNode> node(new TNode(CQueryParseNode(op, orig_text)));
    if (arg1) {
         node->AddNode(arg1);
@@ -240,6 +245,7 @@ CQueryParseTree::CreateBinaryNode(CQueryParseNode::EBinaryOp op,
    if (arg2) {
        node->AddNode(arg2);
    }
+//cerr << "CreateNode(Bin-op): " << node.get() << endl;
    return node.release();
 }
 
@@ -248,11 +254,11 @@ CQueryParseTree::CreateUnaryNode(CQueryParseNode::EUnaryOp op,
                                  CQueryParseTree::TNode*   arg,
                                  const string&             orig_text)
 {
-    _ASSERT(arg);
    auto_ptr<TNode> node(new TNode(CQueryParseNode(op, orig_text)));
    if (arg) {
         node->AddNode(arg);
    }
+//cerr << "CreateNode(Un-op): " << node.get() << endl;
    return node.release();
 }
 
@@ -263,7 +269,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: query_parse.cpp,v $
  * Revision 1.3  2007/01/11 14:49:51  kuznets
  * Many cosmetic fixes and functional development
  *

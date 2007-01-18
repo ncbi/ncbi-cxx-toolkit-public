@@ -32,18 +32,6 @@
 
 USING_NCBI_SCOPE;
 
-/*
-/// @internal
-static
-CQueryParseTree::TNode* LexerMakeTokenNode(CQueryParserEnv* env,
-                                           const string& token)
-{
-    CQueryParseTree::TNode* qnode = 
-             new CQueryParseTree::TNode(CQueryParseNode(token));
-    env->AddNodeToPool(qnode);
-    return qnode;
-}
-*/
 
 ///
 /// @internal
@@ -70,6 +58,13 @@ bool s_Compare(const char* p, const char* p_end,
     }
 }
 
+/// @internal
+///
+static inline 
+bool s_IsSpaceTerm(const char *c)
+{
+    return isspace(*c) || (*c == '\n') || (*c == '\r' && *(c+1) == '\n');
+}
 
 /// Simple lexer to extract tokens from the query stream(string) 
 ///
@@ -87,17 +82,29 @@ static
 int yylex(CQueryParseTree::TNode** lvalp, void* param)
 {
     CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(param);
-    bool verbose = env->IsVerbose();
-    char c;
-
-    /// skip leading white space
-    while ( isspace(c = env->GetChar()) ) {
-    }
-
+    bool verbose = true; // env->IsVerbose();
+    char c, c_orig;
     const char* ptr = env->GetBufPtr();
     const char* end = env->GetBufEnd();
     const char* token_end = 0;
+    CQueryParseTree::TNode* qnode = 0;    
+
+    // skip leading white space
+    //
+    for (c = env->GetChar(); ptr < end; ++ptr) {
+        if (!s_IsSpaceTerm(ptr)) {
+            break;
+        }
+        c = env->GetChar();
+    }
+    ptr = env->GetBufPtr();
     
+    // save position of token start in the text
+    unsigned line     = env->GetLine();
+    unsigned line_pos = env->GetLinePos() - 1;
+
+    
+    c_orig = c;
     CQueryParseTree::ECase  case_sense = env->GetCase();
     switch (case_sense) {
     case CQueryParseTree::eCaseSensitiveUpper:
@@ -118,11 +125,16 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         }
         ptr += 2;
         // must be "AND somethig" not "ANDsomethig"
-        if (ptr != end  &&  !isspace(*ptr) ) {
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
             break;
         }
         env->Skip(2);
         if (verbose) { _TRACE("token: AND"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eAnd, 0, 0,
+                                          string(ptr-3, 3));
+        env->AttachToPool(qnode); 
+        qnode->GetValue().SetLoc(line, line_pos);
         return AND;
     // &&  as AND
     case '&':
@@ -137,6 +149,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         */
         env->Skip(1);
         if (verbose) { _TRACE("token: &&"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eAnd, 0, 0,
+                                          string(ptr-1, 2));
+        env->AttachToPool(qnode);                
+        qnode->GetValue().SetLoc(line, line_pos);
         return AND;    
     // SUB
     case 'S':
@@ -144,11 +161,16 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         ptr += 2;
-        if (ptr != end  &&  !isspace(*ptr) ) {
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
             break;
         }
         env->Skip(2);
         if (verbose) { _TRACE("token: SUB"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eSub, 0, 0,
+                                          string(ptr-3, 3));
+        env->AttachToPool(qnode);                
+        qnode->GetValue().SetLoc(line, line_pos);
         return SUB;
     // XOR
     case 'X':
@@ -156,11 +178,16 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         ptr += 2;
-        if (ptr != end  &&  !isspace(*ptr) ) {
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
             break;
         }
         env->Skip(2);
         if (verbose) { _TRACE("token: XOR"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eXor, 0, 0,
+                                          string(ptr-3, 3));
+        env->AttachToPool(qnode);                
+        qnode->GetValue().SetLoc(line, line_pos);
         return XOR;
     // MINUS        
     case 'M':
@@ -168,11 +195,16 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         ptr += 4;
-        if (ptr != end  &&  !isspace(*ptr) ) {
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
             break;
         }
         env->Skip(4);
         if (verbose) { _TRACE("token: MINUS"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eSub, 0, 0,
+                                          string(ptr-5, 5));
+        env->AttachToPool(qnode);                        
+        qnode->GetValue().SetLoc(line, line_pos);
         return SUB;
     // OR
     case 'O':
@@ -180,11 +212,16 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         ptr += 1;
-        if (ptr != end  &&  !isspace(*ptr) ) {
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
             break;
         }
         env->Skip(1);
         if (verbose) { _TRACE("token: OR"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eOr, 0, 0,
+                                          string(ptr-1, 2));
+        env->AttachToPool(qnode);                        
+        qnode->GetValue().SetLoc(line, line_pos);
         return OR;
     case '|':
         if ( *ptr != '|' ) {
@@ -198,6 +235,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         */
         env->Skip(1);
         if (verbose) { _TRACE("token: ||"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eOr, 0, 0,
+                                          string(ptr-1, 2));
+        env->AttachToPool(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);
         return OR;        
     // NOT
     case 'N':
@@ -205,22 +247,37 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         ptr += 2;
-        if (ptr != end  &&  !isspace(*ptr) ) {
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
             break;
         }
         env->Skip(2);
         if (verbose) { _TRACE("token: NOT"); }
+        *lvalp = qnode = 
+            env->QTree().CreateUnaryNode(CQueryParseNode::eNot, 0,
+                                         string(ptr-3, 3));
+        env->AttachToPool(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);
         return NOT;
     // <, <=, <>
     case '<':
         if ( *ptr == '=' ) {
             if (verbose) { _TRACE("token: <="); }
             env->Skip(1);
+            *lvalp = qnode = 
+                env->QTree().CreateBinaryNode(CQueryParseNode::eLE, 0, 0,
+                                              string(ptr-1, 2));
+            env->AttachToPool(qnode);            
             return LE;
         } 
         if ( *ptr == '>' ) {
             if (verbose) { _TRACE("token: <>"); }
             env->Skip(1);
+            *lvalp = qnode = 
+                env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0,
+                                              string(ptr-1, 1));
+            qnode->GetValue().SetNot();
+            env->AttachToPool(qnode);            
+            qnode->GetValue().SetLoc(line, line_pos);
             return NOTEQ;
         } 
         /*
@@ -231,17 +288,33 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         */
         env->Skip(1);
         if (verbose) { _TRACE("token: <"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eLT, 0, 0,
+                                          string(ptr-1, 1));
+        env->AttachToPool(qnode);                    
+        qnode->GetValue().SetLoc(line, line_pos);
         return LT;
     // > >= ><
     case '>':
         if ( *ptr == '=' ) {
             if (verbose) { _TRACE("token: >="); }
             env->Skip(1);
+            *lvalp = qnode = 
+                env->QTree().CreateBinaryNode(CQueryParseNode::eGE, 0, 0,
+                                              string(ptr-1, 2));
+            qnode->GetValue().SetLoc(line, line_pos);                                              
+            env->AttachToPool(qnode);            
             return GE;
         }
         if ( *ptr == '<' ) {
             if (verbose) { _TRACE("token: ><"); }
             env->Skip(1);
+            *lvalp = qnode = 
+                env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0,
+                                              string(ptr-1, 2));
+            qnode->GetValue().SetNot();
+            env->AttachToPool(qnode);            
+            qnode->GetValue().SetLoc(line, line_pos);
             return NOTEQ;
         }
         /*
@@ -252,6 +325,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         */
         env->Skip(1);
         if (verbose) { _TRACE("token: >"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eGT, 0, 0,
+                                          string(ptr-1, 1));
+        env->AttachToPool(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);        
         return GT;
     // !=
     case '!':
@@ -266,12 +344,22 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         */
         env->Skip(1);
         if (verbose) { _TRACE("token: !="); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0, 
+                                          string(ptr-1, 2));
+        qnode->GetValue().SetNot();
+        env->AttachToPool(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);        
         return NOTEQ;
     // = ==
     case '=':
         if ( *ptr != '=' ) {
-            env->Skip(1);
+            //env->Skip(1);
             if (verbose) { _TRACE("token: ="); }
+            *lvalp = qnode = 
+                env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0,
+                                              string(ptr-1, 1));
+            env->AttachToPool(qnode);
             return EQ;
         }
         /*
@@ -282,12 +370,23 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         */
         env->Skip(1);
         if (verbose) { _TRACE("token: =="); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0,
+                                          string(ptr-1, 2));
+        env->AttachToPool(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);
         return EQ;
-    
+    case ':':
+        if (verbose) { _TRACE("token: :"); }
+        *lvalp = qnode = 
+            env->QTree().CreateBinaryNode(CQueryParseNode::eRange, 0, 0,
+                                          string(ptr-1, 1));
+        env->AttachToPool(qnode);
+        return RANGE;
     case '(':
         {{
              const char* p = ptr;
-             for ( ;  ptr != end  &&  isspace(*ptr);  ++ptr) {
+             for ( ;  ptr != end  &&  s_IsSpaceTerm(ptr);  ++ptr) {
              }
              if (ptr == end) {
                  env->Skip(ptr - p);
@@ -309,6 +408,68 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     default:
         break;
     }
+    
+    // Quoted string
+    //
+    // this implementation takes strings in "  "
+    // escaping follows the SQL syntax of double quote: (" 123""4 ")
+    if (c == '"') {
+        string token, orig_token;
+        orig_token += c;
+        
+        for (c=env->GetChar(); c != 0; c=env->GetChar()) {
+            orig_token += c;
+            if (c == '"') {  // end quote?
+                ptr = env->GetBufPtr(); // next to c
+                if (*ptr == '"') { // escape symbol?
+                    c = env->GetChar();
+                } else {
+                    break;
+                }
+            }
+            token += c;
+        } // for
+        
+        
+        if (c == 0) {  // syntax error EOF
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error. String quote mismatch.");
+        }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(token, orig_token, false /*not identifier*/);
+        env->AddNodeToPool(qnode); 
+        qnode->GetValue().SetLoc(line, line_pos);
+        return STRING;
+    }
+
+
+    // Field search metadata [MESH]
+    //
+    if (c == '[') {
+        string token, orig_token;
+        orig_token += c;
+        
+        for (c=env->GetChar(); c != 0; c=env->GetChar()) {
+            orig_token += c;
+            if (c == ']') {  // end?
+                break;
+            }
+            token += c;
+        } // for
+        
+        
+        if (c == 0) {  // syntax error EOF
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error. Identifier brackets mismatch.");
+        }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(token, orig_token, true /*identifier*/);
+        env->AddNodeToPool(qnode); 
+        qnode->GetValue().SetLoc(line, line_pos);
+        return IDENT;
+    }
+
+
 
     // the query contains text
     //
@@ -323,10 +484,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     while (ptr != end) {
         /// skip to the next word boundary
         for ( ;  ptr != end;  ++ptr) {
-            if ( isspace(*ptr) ) {
+            if ( s_IsSpaceTerm(ptr) ) {
                 break;
             }
-            if ((*ptr == '(') ||  
+            if ((*ptr == '[') ||
+                (*ptr == '(') ||  
                 (*ptr == ')') ||
                 (*ptr == '|') ||
                 (*ptr == '&') ||
@@ -339,37 +501,30 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                     _TRACE("found breaking paren: " << string(ptr, end));
                 }
                 break;
-
-                /**
-                if (ptr == env->begin()  ||
-                    isspace(*(ptr - 1))  ||
-                    ptr + 1 == end       ||  isspace(*(ptr + 1))) {
-                    _TRACE("found breaking paren: " << string(ptr, end));
-                    break;
-                }
-                **/
             }
         }
 
         token_end = ptr; // not to add trailing spaces to the token
         /// skip intervening white space
         for ( ;  ptr != end;  ++ptr) {
-            if ( !isspace(*ptr) ) {
+            if ( !s_IsSpaceTerm(ptr) ) {
                 break;
             }
-            if (*ptr == '('  ||  *ptr == ')') {
-                if (verbose) 
-                    { _TRACE("found breaking paren: " << string(ptr, end)); }
-                break;
-
-                /**
-                if (ptr == env->begin()  ||  isspace(*(ptr - 1))  ||
-                    ptr + 1 == end       ||  isspace(*(ptr + 1))) {
+            if ((*ptr == '[') ||
+                (*ptr == '(') ||  
+                (*ptr == ')') ||
+                (*ptr == '|') ||
+                (*ptr == '&') ||
+                (*ptr == '=') ||
+                (*ptr == '<') ||
+                (*ptr == '>') ||
+                (*ptr == '!')
+                ) {
+                if (verbose) { 
                     _TRACE("found breaking paren: " << string(ptr, end));
-                    break;
                 }
-                **/
-            }
+                break;
+            }            
         }
 
         //
@@ -381,6 +536,9 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             s_Compare(ptr, end, "SUB",  case_sense) ||
             s_Compare(ptr, end, "XOR",  case_sense) ||
             s_Compare(ptr, end, "MINUS",case_sense) ||
+            (*ptr == '[') ||
+            (*ptr == '(') ||
+            (*ptr == ')') ||
             (*ptr == '|') ||
             (*ptr == '&') ||
             (*ptr == '=') ||
@@ -390,182 +548,45 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             ) {
             break;
         }
-
-        if (*ptr == '('  ||  *ptr == ')') {
-            break;
-        }
-
-    }
+    } // while
 
     /// create a node for the text
-    string text;
-    text += c;
-    text.append(p, token_end ? token_end : ptr);
+    //
     
-    CQueryParseTree::TNode* qnode;    
-    *lvalp = qnode = CQueryParseTree::CreateNode(text, text, false);
-    env->AddNodeToPool(qnode); // to avoid leak when Bison rollbacks the stack
+    string token;
+    token += c_orig;
+    token.append(p, token_end ? token_end : ptr);
+    
+    // detailed type analysis (INT, FLOAT, BOOL ?)
+    //
+    // check if token is all digits
+    //
+    string::size_type pos = 
+        token.find_first_not_of("0123456789");
+    if (pos == string::npos) {  // all digits
+        
+        Int4 i4 = NStr::StringToInt(token);
+        *lvalp = qnode = env->QTree().CreateNode(i4, token);
+        env->AddNodeToPool(qnode);
 
+    } else {
+    
+        *lvalp = qnode = 
+            env->QTree().CreateNode(token, token, false /*not identifier*/);
+        env->AddNodeToPool(qnode); // to avoid leak when Bison rollbacks the stack
+    }
+    
     /// skip and return
     env->Skip(ptr - p);
-    if (verbose) { _TRACE("string: >>" << text << "<<"); }
+    if (verbose) { _TRACE("string: >>" << token << "<<"); }
+    qnode->GetValue().SetLoc(line, line_pos);
     return STRING;
 }
 
 
-
-
-#if 0
-
-/// Simple lexer to extract tokens from the query stream(string) 
-///
-/// This variant of lexical analyser works with the reentrant parser
-/// so it receives YYSTYPE lvalp variable which is a pointer on the 
-/// current member somewhere in the BISON stack.
-///
-/// Additional void* param is an additional environment variable
-/// (carries both the query string to parse and the resulting syntax tree)
-/// Lexer uses environment a state storage for the lexer's finit automata.
-static 
-int yylex(YYSTYPE *lvalp, void* param)
-{
-    static int char_tokens[]      = { '&', '|', '='  };
-    static int char_token_codes[] = { AND, OR,  EQ  };
-
-    char c;
-    unsigned int  i;
-    string token;
-
-    CQueryParserEnv* env = (CQueryParserEnv*) param;
-
-    // Skip white space 
-    while (isspace((unsigned char)(c = env->GetChar())));
-
-    // Process single char tokens
-    for (i = 0; i < sizeof(char_tokens) / sizeof(char_tokens[0]); ++i) {
-        if (c == char_tokens[i]) {
-            return char_token_codes[i];
-        }
-    }
-
-    const char* tok_start = env->GetBufPtr() - 1;
-
-    // Process string tokens in apostrophes
-    if (c == '\'') {
-        do {
-            c = env->GetChar();
-            if (c == 0) {
-                string err_msg = "Invalid string ";
-                err_msg.append(tok_start);
-                BDB_THROW(eQuerySyntaxError, err_msg);
-            }
-        } while (c != '\'');
-
-        const char* tok_end = env->GetBufPtr();
-        token.append(tok_start, tok_end - tok_start);
-
-        *lvalp = LexerMakeTokenNode(env, token);
-
-        return STRING;
-    }
-
-    // Process operators tokens
-    if (c == '<') {
-        if (tok_start[1] == '>') { // <>
-            env->Skip(2);
-            return NOTEQ;
-        }
-        if (tok_start[1] == '=') { // <=
-            env->Skip(2);
-            return LE;
-        }
-        return LT; // <
-    }
-    if (c == '!') {
-        if (tok_start[1] == '=') {
-            env->Skip(2);
-            return NOTEQ;
-        }
-    }
-    if (c == '>') {
-        if (tok_start[1] == '<') { // ><
-            env->Skip(2);
-            return NOTEQ;
-        }
-        if (tok_start[1] == '=') { // >=
-            env->Skip(2);
-            return GE;
-        }
-        return GT;
-    }
-
-    // Process AND token
-    if (toupper((unsigned char) c) == 'A') {
-        // look ahead if it is AND
-        if (toupper((unsigned char) tok_start[1]) == 'N' &&
-            toupper((unsigned char) tok_start[2]) == 'D' &&
-            isspace((unsigned char) tok_start[3])
-           ) {
-            env->Skip(3);
-            return AND;
-        }
-    }
-
-    // Process OR token
-    if (toupper((unsigned char) c) == 'O') {
-        // look ahead if it is OR
-        if (toupper((unsigned char) tok_start[1]) == 'R' &&
-            isspace((unsigned char) tok_start[2])
-           ) {
-            env->Skip(2);
-            return OR;
-        }
-    }
-
-    // Process NOT token
-    if (toupper((unsigned char) c) == 'N') {
-        // look ahead if it is NOT
-        if (toupper((unsigned char) tok_start[1]) == 'O' &&
-            toupper((unsigned char) tok_start[2]) == 'T' &&
-            isspace((unsigned char) tok_start[3])
-           ) {
-            env->Skip(3);
-            return NOT;
-        }
-    }
-
-    // Process name-like tokens
-    if (isalnum((unsigned char) c)) {
-        do {
-            c = env->GetChar();            
-        } while (isalnum((unsigned char) c) || c == '_');
-
-        env->UnGetChar();
-        const char* tok_end = env->GetBufPtr();
-        token.append(tok_start, tok_end - tok_start);
-
-        *lvalp = LexerMakeTokenNode(env, token);
-
-        // check if token is all digits
-        string::size_type pos = 
-            token.find_first_not_of("0123456789", 0, token.length());
-        return (pos == string::npos) ? NUM : NAME;
-
-    }
-
-
-    /* return end-of-file  */
-    if (c == EOF || c == 0)
-        return 0;
-    /* return single chars */
-    return c;
-}
-
-#endif
-
 /*
  * ===========================================================================
- * $Log$
+ * $Log: lexer.inc,v $
  * Revision 1.2  2007/01/11 14:49:51  kuznets
  * Many cosmetic fixes and functional development
  *

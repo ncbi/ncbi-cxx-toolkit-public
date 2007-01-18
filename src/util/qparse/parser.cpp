@@ -91,14 +91,16 @@ public:
     typedef CResourcePool<CQueryParseTree::TNode, CFastMutex> TNodePool;
 
 public:
-    CQueryParserEnv(const char* query_str)
-    : m_Query(query_str),
+    CQueryParserEnv(const char* query_str, CQueryParseTree& qtree)
+    : m_QTree(qtree),
+      m_Query(query_str),
       m_Ptr(query_str),
       m_QueryTree(0),
       m_Verbose(false),
       m_Case(CQueryParseTree::eCaseInsensitive)
     {
         m_QueryLen = ::strlen(m_Query);
+        m_Line = m_LinePos = 0;
     }
 
     ~CQueryParserEnv()
@@ -134,20 +136,39 @@ public:
     int GetChar()
     {
         int r = *m_Ptr++;
+        if (r == '\n') {
+            ++m_Line; m_LinePos = 0;
+            return r;
+        }
+        ++m_LinePos;
         return r;
     }
 
     /// Skip number of characters
     void Skip(int num)
     {
-        m_Ptr += num;
+        for (int i = 0; i < num; ++i) {
+            GetChar();
+        }
+        //m_Ptr += num;
+    }
+/*
+    void UnGetChar() 
+    { 
+        --m_Ptr; 
+    }
+*/    
+    void AttachToPool(CQueryParseTree::TNode* qt)
+    {
+//cerr << "AttachToPool was:" <<  m_QueryTree << " new: " << qt << endl;
+//        m_QueryTree = qt;
+        m_NodePool.Put(qt);
     }
 
-    void UnGetChar() { --m_Ptr; }
-
-    void AttachQueryTree(CQueryParseTree::TNode* qc)
+    void AttachQueryTree(CQueryParseTree::TNode* qt)
     {
-        m_QueryTree = qc;
+//cerr << "AttachQueryTree was:" <<  m_QueryTree << " new: " << qt << endl;
+        m_QueryTree = qt;
     }
 
     CQueryParseTree::TNode* GetQueryTree() { return m_QueryTree; }
@@ -181,16 +202,31 @@ public:
         return m_NodePool;
     }
     
+    void ForgetPoolNodes(CQueryParseTree::TNode* qnode1, 
+                         CQueryParseTree::TNode* qnode2)
+    {
+        if (qnode1) m_NodePool.Forget(qnode1);
+        if (qnode2) m_NodePool.Forget(qnode2);
+    }
+    
     bool IsVerbose() const { return m_Verbose; }
     void SetVerbose(bool verbose=true) { m_Verbose = verbose; }
 
     CQueryParseTree::ECase GetCase() const { return m_Case; }
     void SetCase(CQueryParseTree::ECase case_sense) { m_Case = case_sense; }
+    
+    CQueryParseTree& QTree() { return m_QTree; }
+    
+    /// Src line number
+    unsigned GetLine() const { return m_Line; }    
+    /// Get position in line
+    unsigned GetLinePos() const { return m_LinePos; }
 
 private:
-    const char*    m_Query;   ///< Request buffer. (Source for the scanner)
-    unsigned       m_QueryLen;///< Query length
-    const char*    m_Ptr;     ///< Current position in the request buffer
+    CQueryParseTree& m_QTree;   ///< Base query tree reference
+    const char*      m_Query;   ///< Request buffer. (Source for the scanner)
+    unsigned         m_QueryLen;///< Query length
+    const char*      m_Ptr;     ///< Current position in the request buffer
 
     /// Query clause tree. This is the result of the statement parsing.
     CQueryParseTree::TNode*                 m_QueryTree;
@@ -203,6 +239,9 @@ private:
     bool      m_Verbose;
     /// Case sensitivity switch
     CQueryParseTree::ECase  m_Case;
+    
+    unsigned   m_Line;
+    unsigned   m_LinePos;
 };
 
 
@@ -219,7 +258,6 @@ int yyerror (const char *s)
 {
     _TRACE("Parsing error!!!");
     NCBI_THROW(CQueryParseException, eParserError, "Syntax error!");
-//    BDB_THROW(eQuerySyntaxError, s);
     return 1;
 }
 
@@ -231,12 +269,13 @@ void CQueryParseTree::Parse(const char* query_str,
                             ECase       case_sense,
                             bool        verbose)
 {
-    CQueryParserEnv env(query_str);
+    CQueryParserEnv env(query_str, *this);
 
 #ifdef _DEBUG
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app  &&  app->GetEnvironment().Get("DIAG_TRACE") == "1") {
         yydebug = 1;
+        env.SetVerbose(1);
     }
 #endif
     env.SetCase(case_sense);
@@ -271,7 +310,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: parser.cpp,v $
  * Revision 1.2  2007/01/11 14:49:51  kuznets
  * Many cosmetic fixes and functional development
  *

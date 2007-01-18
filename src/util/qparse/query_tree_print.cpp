@@ -47,12 +47,35 @@ public:
     : m_OStream(os),
       m_Level(0)
     {}
-
-    void PrintLevelMargin()
+    
+    void PrintElement(const string& s, const CQueryParseNode& qnode)
     {
-        for (int i = 0; i < m_Level; ++i) {
+        int i;
+        for (i = 0; i < m_Level; ++i) {
             m_OStream << "  ";
         }
+        m_OStream << s;
+        i += s.length();
+        for( ;i < 40; i++) {
+            m_OStream << " ";
+        }
+        if (qnode.IsNot()) {
+            m_OStream << " !";
+            ++i;
+        }
+        m_OStream << " [" << qnode.GetOrig() << "]";
+        i += 2 + qnode.GetOrig().length();
+        if (!qnode.IsExplicit()) {
+            string s = " implicit";
+            m_OStream << s;
+            i += s.length();
+        }
+        for( ;i < 55; i++) {
+            m_OStream << " ";
+        }
+        const CQueryParseNode::SSrcLoc& sl = qnode.GetLoc();
+        m_OStream << " Line:" << sl.line << " pos=" << sl.pos;
+        
     }
     
     void PrintUnary(const CQueryParseNode& qnode)
@@ -60,7 +83,7 @@ public:
         CQueryParseNode::EUnaryOp op = qnode.GetUnaryOp();
         switch (op) {
         case CQueryParseNode::eNot:
-            m_OStream << "NOT";
+            PrintElement("NOT", qnode);
             break;
         default:
             m_OStream << "UNK";
@@ -70,35 +93,45 @@ public:
     {
         CQueryParseNode::EBinaryOp op = qnode.GetBinaryOp();
         switch (op) {
+        case CQueryParseNode::eFieldSearch:
+            PrintElement("SEARCH", qnode);        
+            break;
         case CQueryParseNode::eAnd:
-            m_OStream << "AND";
+            PrintElement("AND", qnode);        
             break;
         case CQueryParseNode::eOr:
-            m_OStream << "OR";
+            PrintElement("OR", qnode);
             break;
         case CQueryParseNode::eSub:
-            m_OStream << "MINUS";
+            PrintElement("MINUS", qnode);
             break;
         case CQueryParseNode::eNot2:
-            m_OStream << "NOT";
+            PrintElement("NOT", qnode);
             break;
         case CQueryParseNode::eXor:
-            m_OStream << "XOR";
+            PrintElement("XOR", qnode);
+            break;
+        case CQueryParseNode::eRange:
+            PrintElement("RANGE", qnode);
             break;
         case CQueryParseNode::eEQ:
-            m_OStream << "==";
+            if (qnode.IsNot()) {
+                PrintElement("!=", qnode);
+            } else {
+                PrintElement("==", qnode);
+            }
             break;
         case CQueryParseNode::eGT:
-            m_OStream << ">";
+            PrintElement(">", qnode);
             break;
         case CQueryParseNode::eGE:
-            m_OStream << ">=";
+            PrintElement(">=", qnode);
             break;
         case CQueryParseNode::eLT:
-            m_OStream << "<";
+            PrintElement("<", qnode);
             break;
         case CQueryParseNode::eLE:
-            m_OStream << "<=";
+            PrintElement("<=", qnode);
             break;
         default:
             m_OStream << "UNK";
@@ -116,27 +149,22 @@ public:
         if (delta < 0)
             return eTreeTraverse;
 
-        PrintLevelMargin();
-        
-        if (qnode.IsNot()) {
-            m_OStream << "NOT ";        
-        }
 
         switch (qnode.GetType()) {
         case CQueryParseNode::eIdentifier:
-            m_OStream << qnode.GetStrValue();
+            PrintElement(qnode.GetStrValue(), qnode);
             break;
         case CQueryParseNode::eString:
-            m_OStream << '"' << qnode.GetStrValue() << '"';
+            PrintElement('"' + qnode.GetStrValue() + '"', qnode);
             break;
         case CQueryParseNode::eIntConst:
-            m_OStream << qnode.GetInt() << "L";
+            PrintElement(NStr::IntToString(qnode.GetInt()) + "L", qnode);
             break;
         case CQueryParseNode::eFloatConst:
-            m_OStream << qnode.GetDouble() << "F";
+            PrintElement(NStr::DoubleToString(qnode.GetDouble()) + "F", qnode);
             break;
         case CQueryParseNode::eBoolConst:
-            m_OStream << qnode.GetBool();
+            PrintElement(NStr::BoolToString(qnode.GetBool()), qnode);
             break;
         case CQueryParseNode::eUnaryOp:
             PrintUnary(qnode);
@@ -182,7 +210,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: query_tree_print.cpp,v $
  * Revision 1.1  2007/01/11 14:50:23  kuznets
  * initial revision
  *

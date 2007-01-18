@@ -40,17 +40,26 @@
 #define YYDEBUG         1
 #define YYERROR_VERBOSE 1
 
-/* 
-    Utility function to save current yyparse result in the
-    parsing environment object (context).
-*/
-inline static 
-void BisonSaveStageResult(YYSTYPE res, void* parm)
+
+/// Add child node(s) to the parent
+/// @internal
+///
+inline static
+void QTreeAddNode(void*                   parm,
+                  CQueryParseTree::TNode* rnode,
+                  CQueryParseTree::TNode* node1,
+                  CQueryParseTree::TNode* node2)
 {
-    CQueryParserEnv* env = (CQueryParserEnv*) parm;
-    env->AttachQueryTree(res);
-    env->AddNodeToPool(res);
+    if (node1)
+        rnode->AddNode(node1);
+    if (node2)
+        rnode->AddNode(node2);
+        
+    CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+    env->AttachQueryTree(rnode);    
+    env->ForgetPoolNodes(node1, node2);
 }
+
 
 
 %}
@@ -67,6 +76,7 @@ void BisonSaveStageResult(YYSTYPE res, void* parm)
 %left OR
 %left SUB
 %left XOR
+%left RANGE
 %left EQ
 %left NOTEQ
 %left GT
@@ -105,13 +115,24 @@ exp :
     {
         $$ = $1;         
     }
-
+    /* Field search */
+    | STRING IDENT
+    {
+    
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        $$ = env->QTree().CreateBinaryNode(CQueryParseNode::eFieldSearch, $1, $2);
+        env->AttachQueryTree($$);
+        env->ForgetPoolNodes($1, $2);
+    }
     /* concatenated expressions are implicit ANDs */    
     | exp exp
     {
         yyerrok;
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eAnd, $1, $2);
-        BisonSaveStageResult($$, parm);
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        $$ = env->QTree().CreateBinaryNode(CQueryParseNode::eAnd, $1, $2);
+        $$->GetValue().SetExplicit(false);
+        env->AttachQueryTree($$);
+        env->ForgetPoolNodes($1, $2);
     }
 
     /* parenthetical balanced expressions */
@@ -127,71 +148,67 @@ exp :
     /* AND */
     | exp AND exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eAnd, $1, $3);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
-    
     /* MINUS */
     | exp SUB exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eSub, $1, $3);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
-
     /* OR */
     | exp OR exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eOr, $1, $3);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
+    }
+    /* XOR */
+    | exp XOR exp
+    {
+        QTreeAddNode(parm, $$ = $2, $1, $3);
+    }
+    /* RANGE */
+    | exp RANGE exp
+    {
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     /* == */
     | exp EQ exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eEQ, $1, $3);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     /* != */
     | exp NOTEQ exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eEQ, $1, $3);
-        BisonSaveStageResult($$, parm);
-        $$->GetValue().SetNot();
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     | exp GT exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eGT, $1, $3);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     | exp GE exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eGE, $1, $3);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     | exp LT exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eLT, $1, $3);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     | exp LE exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eLE, $1, $3);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     | '(' exp ')'
     { 
         $$ = $2;
     } 
-
     /* NOT */    
     | exp NOT exp
     {
-        $$ = CQueryParseTree::CreateBinaryNode(CQueryParseNode::eNot2, $1, $3);
+        QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     /* unary NOT */
     | NOT exp
     {
-        $$ = CQueryParseTree::CreateUnaryNode(CQueryParseNode::eNot, $2);
-        BisonSaveStageResult($$, parm);
+        QTreeAddNode(parm, $$ = $1, $2, 0);
     }
 
     /*
