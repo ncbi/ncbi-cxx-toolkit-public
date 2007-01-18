@@ -5909,9 +5909,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    if (args.GetDriverName() != "ftds" &&
+        args.GetDriverName() != "dblib") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
