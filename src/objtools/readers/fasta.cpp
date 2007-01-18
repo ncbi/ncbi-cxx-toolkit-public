@@ -624,10 +624,12 @@ void CFastaReader::AssignMolType(void)
         case fAssumeProt:  inst.SetMol(CSeq_inst::eMol_aa);  return;
         default:           _ASSERT(!TestFlag(fForceType));
         }
-    }
-
-    if (m_SeqData.empty()) {
-        // nothing else to go on, but that's OK
+    } else if (inst.IsSetMol()) {
+        return; // previously found an informative ID
+    } else if (m_SeqData.empty()) {
+        // Nothing else to go on, but that's OK (no sequence to worry
+        // about encoding); however, Seq-inst.mol is still mandatory.
+        inst.SetMol(CSeq_inst::eMol_not_set);
         return;
     }
 
@@ -643,6 +645,7 @@ void CFastaReader::AssignMolType(void)
     }
 }
 
+// XXX - no longer called
 void CFastaReader::SaveSeqData(CSeq_data& seq_data, const TStr& raw_string)
 {
     SIZE_TYPE len = raw_string.length();
