@@ -82,11 +82,13 @@ public:
     /// Binary operator
     ///
     enum EBinaryOp {
+        eFieldSearch,
         eAnd,
         eOr,
         eSub,
         eNot2,
         eXor,
+        eRange,
         eEQ,
         eGT,
         eGE,
@@ -127,6 +129,11 @@ public:
     
     /// Set node location in the query text (for error diagnostics)
     void SetLoc(const SSrcLoc& loc) { m_Location = loc; }
+    void SetLoc(unsigned line, unsigned pos) 
+    { 
+        m_Location.line = line;
+        m_Location.pos = pos;
+    }
     const SSrcLoc& GetLoc() const   { return m_Location; }
     
     /// @}
@@ -148,11 +155,12 @@ public:
     /// For eIdentifier nodes we can assign identifier's index 
     /// (For database fields this could be a field index)
     ///
-    void SetIdentIdx(int idx);  
-        
+    void SetIdentIdx(int idx);          
     /// Get index of eIdentifier
     ///
     int GetIdentIdx() const;
+    
+    const string& GetOrig() const { return m_OrigText; }
     
     /// @}
     
@@ -200,6 +208,8 @@ public:
     virtual ~CQueryParseTree();
 
 
+    /// Case sensitive parsing
+    ///
     enum ECase {
         eCaseSensitiveUpper, ///< Operators must come in upper case (AND)
         eCaseInsensitive     ///< Case insensitive parsing (AnD)
@@ -232,20 +242,19 @@ public:
     /// @{
 
     /// Create Identifier node or string node
-    static 
+    virtual 
     TNode* CreateNode(const string&  value, 
                       const string&  orig_text, 
                       bool           isIdent);
-    static TNode* CreateNode(Int4   value, const string&  orig_text);
-    static TNode* CreateNode(bool   value, const string&  orig_text);
-    static TNode* CreateNode(double value, const string&  orig_text);
-                      
-    static 
+    virtual TNode* CreateNode(Int4   value, const string&  orig_text);
+    virtual TNode* CreateNode(bool   value, const string&  orig_text);
+    virtual TNode* CreateNode(double value, const string&  orig_text);
+    virtual 
     TNode* CreateBinaryNode(CQueryParseNode::EBinaryOp op,
                             TNode*                     arg1, 
                             TNode*                     arg2,
                             const string&              orig_text="");
-    static 
+    virtual 
     TNode* CreateUnaryNode(CQueryParseNode::EUnaryOp op, 
                            TNode*                    arg,
                            const string&             orig_text="");
@@ -299,7 +308,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: query_parse.hpp,v $
  * Revision 1.3  2007/01/11 14:49:20  kuznets
  * Many cosmetic fixes and functional development
  *
