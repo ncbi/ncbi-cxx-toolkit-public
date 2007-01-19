@@ -6313,15 +6313,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    // There is a preblem when this test is executed after Test_Bulk_Overflow ...
-    if ( args.GetDriverName() != "ftds64_odbc"  // Strange ....
-         ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
-
     if ( args.IsBCPAvailable()
          && args.GetDriverName() != "ftds64_ctlib"  // Something is broken in ftds64_ctlib ...
          && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
@@ -6370,9 +6361,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
 
-    if (args.GetDriverName() != "ftds" &&
-        args.GetDriverName() != "dblib"
-        ) {
+    if ( args.GetDriverName() != "ftds64_odbc"  // Strange ....
+         ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime,
+                                   DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+
+    // Valid for all drivers ...
+    {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Decimal,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
