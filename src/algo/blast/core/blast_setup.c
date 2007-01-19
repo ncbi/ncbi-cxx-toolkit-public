@@ -96,7 +96,7 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
     }
 
     /* Set gapped Blast_KarlinBlk* alias */
-    sbp->kbp_gap = (program == eBlastTypePsiBlast) ? 
+    sbp->kbp_gap = Blast_QueryIsPssm(program) ? 
         sbp->kbp_gap_psi : sbp->kbp_gap_std;
 
     return 0;
@@ -596,9 +596,8 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
       return 0;
    }
 
-   if (program_number == eBlastTypeTblastn || 
-       program_number == eBlastTypeTblastx)
-      db_length = db_length/3;	
+   if (Blast_SubjectIsTranslated(program_number))
+      db_length = db_length/3;  
 
    if (eff_len_options->dbseq_num > 0)
       db_num_seqs = eff_len_options->dbseq_num;
