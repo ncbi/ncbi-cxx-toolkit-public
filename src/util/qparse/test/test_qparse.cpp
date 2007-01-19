@@ -201,6 +201,9 @@ void TestExpression(const char* q, bool cs = false,
 static
 void ParseFile(const string& file_name)
 {
+    unsigned q_total = 0;
+    unsigned q_failed = 0;
+    
     ifstream ifs(file_name.c_str());
     if (ifs.fail()) {
         cerr << "Cannot open: " << file_name << endl;
@@ -213,9 +216,19 @@ void ParseFile(const string& file_name)
         if (line.empty()) {
             continue;
         }
-       
-        TestExpression(line.c_str(), true);
-    }
+        
+        try {
+            ++q_total;
+            TestExpression(line.c_str(), true, true);
+        } catch (CQueryParseException & ex) {
+            cerr << ex.GetMsg() << endl;
+            ++q_failed;
+            continue;
+        }
+        
+    } // while
+    
+    cout << endl << "Total=" << q_total << " Failed=" << q_failed << endl;
 }
 
 
@@ -268,6 +281,13 @@ int CTestQParse::Run(void)
     const char* queries[] = {    
         "vitamin c[MeSH",
         "vitamin \"c",
+        "( asdf qwerty",
+        "(12",
+        "a==10 || ( asdf",
+        "AND asdf",
+        "(a1 AND a2) OR (aaa",
+        "(a1 AND a2) OR OR aaa",
+        "(a1 AND a2) value <= OR AND XOR 23"
     };    
     int l = sizeof (queries) / sizeof(queries[0]);
     for (int i = 0; i < l; ++i) {
@@ -279,8 +299,7 @@ int CTestQParse::Run(void)
    
    
    
-   
-    //ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.20000");
+    ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.20000");
     
     return 0;
 }

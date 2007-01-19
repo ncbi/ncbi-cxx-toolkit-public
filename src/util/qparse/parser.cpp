@@ -97,7 +97,8 @@ public:
       m_Ptr(query_str),
       m_QueryTree(0),
       m_Verbose(false),
-      m_Case(CQueryParseTree::eCaseInsensitive)
+      m_Case(CQueryParseTree::eCaseInsensitive),
+      m_ParseTolerance(CQueryParseTree::eSyntaxCheck)
     {
         m_QueryLen = ::strlen(m_Query);
         m_Line = m_LinePos = 0;
@@ -268,7 +269,7 @@ static
 int yyerror (const char *s) 
 {
     _TRACE("Parsing error!!!");
-    NCBI_THROW(CQueryParseException, eParserError, "Syntax error!");
+//    NCBI_THROW(CQueryParseException, eParserError, "Syntax error!");
     return 1;
 }
 
@@ -292,8 +293,13 @@ void CQueryParseTree::Parse(const char*   query_str,
 #endif
     env.SetCase(case_sense);
     env.SetVerbose(verbose);
+    env.SetParserTolerance(syntax_check);
 
-    /*int res = */ yyparse((void*) &env);
+    int res = yyparse((void*) &env);
+    if (res != 0) {
+        NCBI_THROW(CQueryParseException, eParserError, "Parsing error.");
+    }
+    
     CQueryParseTree::TNode* qt = env.GetQueryTree();
 
     if (qt) {

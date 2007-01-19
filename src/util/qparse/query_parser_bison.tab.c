@@ -62,7 +62,7 @@ void QTreeAddNode(void*                   parm,
 
 
 
-#define	YYFINAL		38
+#define	YYFINAL		49
 #define	YYFLAG		-32768
 #define	YYNTBASE	20
 
@@ -107,7 +107,8 @@ static const short yyprhs[] =
 {
        0,     0,     2,     4,     6,     8,    11,    14,    18,    22,
       26,    30,    34,    38,    42,    46,    50,    54,    58,    62,
-      66,    70
+      66,    70,    73,    76,    79,    82,    85,    89,    93,    97,
+     101,   105
 };
 static const short yyrhs[] =
 {
@@ -118,7 +119,10 @@ static const short yyrhs[] =
       21,     0,    21,    13,    21,     0,    21,    14,    21,     0,
       21,    15,    21,     0,    21,    16,    21,     0,    21,    17,
       21,     0,    18,    21,    19,     0,    21,     7,    21,     0,
-       7,    21,     0
+       7,    21,     0,     1,     4,     0,     1,     3,     0,     1,
+       5,     0,    21,     1,     0,    18,    21,     1,     0,    21,
+       8,     1,     0,    21,    10,     1,     0,    21,     7,     1,
+       0,    21,     6,     1,     0,    21,     9,     1,     0
 };
 
 #endif
@@ -129,7 +133,8 @@ static const short yyrline[] =
 {
        0,    90,   100,   108,   114,   119,   128,   139,   149,   154,
      159,   164,   169,   174,   179,   183,   187,   191,   195,   199,
-     204,   209
+     204,   209,   218,   227,   236,   245,   257,   267,   277,   287,
+     297,   307
 };
 #endif
 
@@ -150,6 +155,7 @@ static const short yyr1[] =
 {
        0,    20,    21,    21,    21,    21,    21,    21,    21,    21,
       21,    21,    21,    21,    21,    21,    21,    21,    21,    21,
+      21,    21,    21,    21,    21,    21,    21,    21,    21,    21,
       21,    21
 };
 
@@ -158,7 +164,8 @@ static const short yyr2[] =
 {
        0,     1,     1,     1,     1,     2,     2,     3,     3,     3,
        3,     3,     3,     3,     3,     3,     3,     3,     3,     3,
-       3,     2
+       3,     2,     2,     2,     2,     2,     3,     3,     3,     3,
+       3,     3
 };
 
 /* YYDEFACT[S] -- default rule to reduce with in state S when YYTABLE
@@ -166,23 +173,25 @@ static const short yyr2[] =
    error. */
 static const short yydefact[] =
 {
-       0,     4,     3,     2,     0,     0,     1,     5,    21,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     6,     7,     8,    20,    10,     9,    11,    12,
-      13,    14,    15,    16,    17,    18,     0,     0,     0
+       0,     0,     4,     3,     2,     0,     0,     0,    23,    22,
+      24,     5,     0,     0,    25,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,    25,     7,
+      30,     0,    29,     0,    27,     0,    31,     0,    28,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0
 };
 
 static const short yydefgoto[] =
 {
-      36,    22
+      47,    27
 };
 
 static const short yypact[] =
 {
-     177,-32768,    -2,-32768,   177,   177,    36,-32768,    68,    19,
-     177,   177,   177,   177,   177,   177,   177,   177,   177,   177,
-     177,   177,    36,-32768,    52,    68,    84,   100,   116,   132,
-     138,   154,   158,   161,   121,   104,     2,     3,-32768
+     344,    -2,-32768,     7,-32768,   344,   344,   307,-32768,-32768,
+  -32768,-32768,    27,   325,    -2,   349,   354,   370,   375,   380,
+     344,   344,   344,   344,   344,   344,   344,    47,     4,-32768,
+      -2,    67,    -2,    87,    -2,   107,    -2,   127,    -2,   147,
+     167,   187,   207,   227,   247,   267,   287,    11,    12,-32768
 };
 
 static const short yypgoto[] =
@@ -191,55 +200,95 @@ static const short yypgoto[] =
 };
 
 
-#define	YYLAST		195
+#define	YYLAST		398
 
 
 static const short yytable[] =
 {
-       6,     7,    37,    38,     8,     9,     0,     0,     0,     0,
-      24,    25,    26,    27,    28,    29,    30,    31,    32,    33,
-      34,    35,     1,     2,     3,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    21,     5,    23,     1,
-       2,     3,    10,    11,    12,    13,    14,    15,    16,    17,
-      18,    19,    20,    21,     5,     1,     2,     3,     0,    11,
-      12,    13,    14,    15,    16,    17,    18,    19,    20,    21,
-       5,     1,     2,     3,     0,     0,    12,    13,    14,    15,
-      16,    17,    18,    19,    20,    21,     5,     1,     2,     3,
-       0,     0,     0,    13,    14,    15,    16,    17,    18,    19,
-      20,    21,     5,     1,     2,     3,     0,     1,     2,     3,
-      14,    15,    16,    17,    18,    19,    20,    21,     5,     1,
-       2,     3,     5,     0,     1,     2,     3,    15,    16,    17,
-      18,    19,    20,    21,     5,     1,     2,     3,    21,     5,
-       0,     1,     2,     3,    16,    17,    18,    19,    20,    21,
-       5,    17,    18,    19,    20,    21,     5,     1,     2,     3,
-       0,     1,     2,     3,     1,     2,     3,     0,    18,    19,
-      20,    21,     5,    19,    20,    21,     5,    20,    21,     5,
-       1,     2,     3,     0,     4,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     5
+       7,     8,     9,    10,   -26,    12,    13,     8,     9,    10,
+      11,    48,    49,     0,     0,    31,    33,    35,    37,    39,
+      40,    41,    42,    43,    44,    45,    46,   -21,    14,     0,
+       2,     3,     4,   -21,   -21,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,    26,     6,   -21,    -6,    14,     0,
+       2,     3,     4,    15,    16,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,    26,     6,    -6,    -8,    14,     0,
+       2,     3,     4,    -8,    16,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,    26,     6,    -8,   -20,    14,     0,
+       2,     3,     4,   -20,   -20,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,    26,     6,   -20,   -10,    14,     0,
+       2,     3,     4,   -10,   -10,   -10,    18,    19,    20,    21,
+      22,    23,    24,    25,    26,     6,   -10,    -9,    14,     0,
+       2,     3,     4,    -9,    -9,    -9,    -9,    19,    20,    21,
+      22,    23,    24,    25,    26,     6,    -9,   -11,    14,     0,
+       2,     3,     4,   -11,   -11,   -11,   -11,   -11,    20,    21,
+      22,    23,    24,    25,    26,     6,   -11,   -12,    14,     0,
+       2,     3,     4,   -12,   -12,   -12,   -12,   -12,   -12,    21,
+      22,    23,    24,    25,    26,     6,   -12,   -13,    14,     0,
+       2,     3,     4,   -13,   -13,   -13,   -13,   -13,   -13,   -13,
+      22,    23,    24,    25,    26,     6,   -13,   -14,    14,     0,
+       2,     3,     4,   -14,   -14,   -14,   -14,   -14,   -14,   -14,
+     -14,    23,    24,    25,    26,     6,   -14,   -15,    14,     0,
+       2,     3,     4,   -15,   -15,   -15,   -15,   -15,   -15,   -15,
+     -15,   -15,    24,    25,    26,     6,   -15,   -16,    14,     0,
+       2,     3,     4,   -16,   -16,   -16,   -16,   -16,   -16,   -16,
+     -16,   -16,   -16,    25,    26,     6,   -16,   -17,    14,     0,
+       2,     3,     4,   -17,   -17,   -17,   -17,   -17,   -17,   -17,
+     -17,   -17,   -17,   -17,    26,     6,   -17,   -18,    14,     0,
+       2,     3,     4,   -18,   -18,   -18,   -18,   -18,   -18,   -18,
+     -18,   -18,   -18,   -18,   -18,     6,   -18,    -1,    14,     0,
+       2,     3,     4,    15,    16,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,    26,     6,    28,     0,     2,     3,
+       4,    15,    16,    17,    18,    19,    20,    21,    22,    23,
+      24,    25,    26,     6,    29,     1,     0,     2,     3,     4,
+      30,     5,     2,     3,     4,    32,     5,     2,     3,     4,
+       0,     5,     6,     0,     0,     0,     0,     6,     0,     0,
+       0,    34,     6,     2,     3,     4,    36,     5,     2,     3,
+       4,    38,     5,     2,     3,     4,     0,     5,     6,     0,
+       0,     0,     0,     6,     0,     0,     0,     0,     6
 };
 
 static const short yycheck[] =
 {
-       0,     3,     0,     0,     4,     5,    -1,    -1,    -1,    -1,
-      10,    11,    12,    13,    14,    15,    16,    17,    18,    19,
-      20,    21,     3,     4,     5,     6,     7,     8,     9,    10,
-      11,    12,    13,    14,    15,    16,    17,    18,    19,     3,
-       4,     5,     6,     7,     8,     9,    10,    11,    12,    13,
-      14,    15,    16,    17,    18,     3,     4,     5,    -1,     7,
-       8,     9,    10,    11,    12,    13,    14,    15,    16,    17,
-      18,     3,     4,     5,    -1,    -1,     8,     9,    10,    11,
-      12,    13,    14,    15,    16,    17,    18,     3,     4,     5,
-      -1,    -1,    -1,     9,    10,    11,    12,    13,    14,    15,
-      16,    17,    18,     3,     4,     5,    -1,     3,     4,     5,
-      10,    11,    12,    13,    14,    15,    16,    17,    18,     3,
-       4,     5,    18,    -1,     3,     4,     5,    11,    12,    13,
-      14,    15,    16,    17,    18,     3,     4,     5,    17,    18,
-      -1,     3,     4,     5,    12,    13,    14,    15,    16,    17,
-      18,    13,    14,    15,    16,    17,    18,     3,     4,     5,
-      -1,     3,     4,     5,     3,     4,     5,    -1,    14,    15,
-      16,    17,    18,    15,    16,    17,    18,    16,    17,    18,
-       3,     4,     5,    -1,     7,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    18
+       0,     3,     4,     5,     0,     5,     6,     3,     4,     5,
+       3,     0,     0,    -1,    -1,    15,    16,    17,    18,    19,
+      20,    21,    22,    23,    24,    25,    26,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,     0,     1,    -1,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    14,    15,    16,    17,    18,     1,    -1,     3,     4,
+       5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
+      15,    16,    17,    18,    19,     1,    -1,     3,     4,     5,
+       1,     7,     3,     4,     5,     1,     7,     3,     4,     5,
+      -1,     7,    18,    -1,    -1,    -1,    -1,    18,    -1,    -1,
+      -1,     1,    18,     3,     4,     5,     1,     7,     3,     4,
+       5,     1,     7,     3,     4,     5,    -1,     7,    18,    -1,
+      -1,    -1,    -1,    18,    -1,    -1,    -1,    -1,    18
 };
 #define YYPURE 1
 
@@ -1079,6 +1128,122 @@ case 21:
         QTreeAddNode(parm, yyval = yyvsp[-1], yyvsp[0], 0);
     ;
     break;}
+case 22:
+#line 219 "query_parser_bison.y"
+{
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, yyval = yyvsp[0], 0, 0);
+    ;
+    break;}
+case 23:
+#line 228 "query_parser_bison.y"
+{ 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, yyval = yyvsp[0], 0, 0);
+    ;
+    break;}
+case 24:
+#line 237 "query_parser_bison.y"
+{ 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, yyval = yyvsp[0], 0, 0);
+    ;
+    break;}
+case 25:
+#line 246 "query_parser_bison.y"
+{ 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, yyval = yyvsp[-1], 0, 0);
+    ;
+    break;}
+case 26:
+#line 258 "query_parser_bison.y"
+{ 
+        yyerrok;
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error. Unbalanced parenthesis");        
+        }
+        QTreeAddNode(parm, yyval = yyvsp[-1], 0, 0);
+    ;
+    break;}
+case 27:
+#line 268 "query_parser_bison.y"
+{ 
+        yyerrok; 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, yyval = yyvsp[-2], 0, 0);
+    ;
+    break;}
+case 28:
+#line 278 "query_parser_bison.y"
+{ 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        yyerrok; 
+        QTreeAddNode(parm, yyval = yyvsp[-2], 0, 0);
+    ;
+    break;}
+case 29:
+#line 288 "query_parser_bison.y"
+{ 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        yyerrok; 
+        QTreeAddNode(parm, yyval = yyvsp[-2], 0, 0);
+    ;
+    break;}
+case 30:
+#line 298 "query_parser_bison.y"
+{ 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        yyerrok; 
+        QTreeAddNode(parm, yyval = yyvsp[-2], 0, 0);
+    ;
+    break;}
+case 31:
+#line 308 "query_parser_bison.y"
+{ 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        yyerrok; 
+        QTreeAddNode(parm, yyval = yyvsp[-2], 0, 0);
+    ;
+    break;}
 }
 
 #line 705 "/usr/share/bison/bison.simple"
@@ -1312,6 +1477,6 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 240 "query_parser_bison.y"
+#line 330 "query_parser_bison.y"
 
 

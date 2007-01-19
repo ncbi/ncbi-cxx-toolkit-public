@@ -214,17 +214,107 @@ exp :
     /*
      * error cases
      */
-/*     
-    | error TEXT   { $$ = $2; }
-    | exp error    { $$ = $1; }
-*/
+     
+    | error STRING   
+    {
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, $$ = $2, 0, 0);
+    }
+    | error IDENT   
+    { 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, $$ = $2, 0, 0);
+    }
+    | error NUM_INT   
+    { 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, $$ = $2, 0, 0);
+    }    
+    | exp error    
+    { 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, $$ = $1, 0, 0);
+    }
+
     /* unbalanced parenthesis at the end-of-input */
-/*    
-    | '(' exp error { yyerrok; $$ = $2; }
-    | exp OR  error { yyerrok; $$ = $1 }
-    | exp NOT error { yyerrok; $$ = $1 }
-    | exp AND error { yyerrok; $$ = $1 }
-*/
+    
+    | '(' exp error 
+    { 
+        yyerrok;
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error. Unbalanced parenthesis");        
+        }
+        QTreeAddNode(parm, $$ = $2, 0, 0);
+    }
+    | exp OR error 
+    { 
+        yyerrok; 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        QTreeAddNode(parm, $$ = $1, 0, 0);
+    }
+    | exp XOR error 
+    { 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        yyerrok; 
+        QTreeAddNode(parm, $$ = $1, 0, 0);
+    }
+    | exp NOT error 
+    { 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        yyerrok; 
+        QTreeAddNode(parm, $$ = $1, 0, 0);
+    }
+    | exp AND error 
+    { 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        yyerrok; 
+        QTreeAddNode(parm, $$ = $1, 0, 0);
+    }
+    | exp SUB error 
+    { 
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error.");        
+        }
+        yyerrok; 
+        QTreeAddNode(parm, $$ = $1, 0, 0);
+    }
+
 /**
     | AND exp error
     {
