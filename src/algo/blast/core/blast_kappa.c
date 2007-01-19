@@ -1886,6 +1886,12 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
        p-value is desired; value needs to be passed in eventually*/
     int compositionTestIndex = extendParams->options->unifiedP;
 
+    ASSERT(program_number == eBlastTypeBlastp ||
+	   program_number == eBlastTypeTblastn ||
+	   program_number == eBlastTypePsiTblastn ||
+	   program_number == eBlastTypePhiBlastp ||
+	   program_number == eBlastTypePsiBlast);
+
     if (positionBased) {
         matrix = sbp->psi_matrix->pssm->data;
     } else {
