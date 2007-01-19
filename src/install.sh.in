@@ -17,8 +17,8 @@
 
 echo "[`date`]"
 
-cvs_location=`echo '$Source$' | sed "s%\\$[S]ource: *\\([^$][^$]*\\) \\$.*%\\1%"`
-cvs_revision=`echo '$Revision$' | sed "s%\\$[R]evision: *\\([^$][^$]*\\) \\$.*%\\1%"`
+svn_location=`echo '$HeadURL$' | sed "s%\\$[H]eadURL: *\\([^$][^$]*\\) \\$.*%\\1%"`
+svn_revision=`echo '$Revision$' | sed "s%\\$[R]evision: *\\([^$][^$]*\\) \\$.*%\\1%"`
 
 script_name=`basename $0`
 script_dir=`dirname $0`
@@ -61,8 +61,8 @@ Arguments:
                           directory names of the form "c++*" (e.g. "c++.new")
                           with "c++" to allow for more graceful switch-overs.
 
-Script's:  CVS location/revision, run directory, and run command:
-   $cvs_location | R$cvs_revision
+Script's:  Subversion location/revision, run directory, and run command:
+   $svn_location | r$svn_revision
    $run_dir
    $run_cmd
 
