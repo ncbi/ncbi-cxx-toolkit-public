@@ -728,12 +728,9 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
          frame = 1;
       else
          frame = -1;
-   } else if (prog_number == eBlastTypeBlastp   ||
-              prog_number == eBlastTypeRpsBlast ||
-              prog_number == eBlastTypeTblastn  ||
-              Blast_ProgramIsPsiBlast(prog_number) ||
-              Blast_ProgramIsPhiBlast(prog_number)) {
-      /* Query and subject are protein, no frame. */
+   } else if (Blast_QueryIsProtein(prog_number) ||
+	      prog_number == eBlastTypePhiBlastn) {
+      /* Query is an untranslated protein, a pattern, or a PSSM, no frame. */
       frame = 0;
    } else if (prog_number == eBlastTypeBlastx  ||
               prog_number == eBlastTypeTblastx ||
@@ -1213,32 +1210,17 @@ char* BLAST_StrToUpper(const char* string)
 unsigned int
 BLAST_GetNumberOfContexts(EBlastProgramType p)
 {
-    unsigned int retval = 0;
-
-    switch (p) {
-    case eBlastTypeBlastn:
-    case eBlastTypePhiBlastn:
-        retval = NUM_STRANDS;
-        break;
-    case eBlastTypeBlastp:
-    case eBlastTypeRpsBlast:
-    case eBlastTypeTblastn: 
-    case eBlastTypePsiBlast:
-    case eBlastTypePsiTblastn:
-    case eBlastTypePhiBlastp:
-        retval = 1;
-        break;
-    case eBlastTypeBlastx:
-    case eBlastTypeTblastx:
-    case eBlastTypeRpsTblastn: 
-        retval = NUM_FRAMES;
-        break;
-    default:
-        break;
+    if (Blast_QueryIsTranslated(p)) {
+        return NUM_FRAMES;
+    } else if (Blast_QueryIsNucleotide(p)) {
+        return NUM_STRANDS;
+    } else if (Blast_ProgramIsValid(p)){
+        return 1;
+    } else {
+	return 0;
     }
-
-    return retval;
 }
+
 
 SBlastProgress* SBlastProgressNew(void* user_data)
 {
