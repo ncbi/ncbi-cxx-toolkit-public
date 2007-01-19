@@ -783,31 +783,15 @@ s_PHITracebackFromHSPList(EBlastProgramType program_number,
 
 EBlastEncoding Blast_TracebackGetEncoding(EBlastProgramType program_number) 
 {
-   EBlastEncoding retval = eBlastEncodingError;
-
-   switch (program_number) {
-   case eBlastTypeBlastn:
-   case eBlastTypePhiBlastn:
-      retval = eBlastEncodingNucleotide;
-      break;
-   case eBlastTypeBlastp:
-   case eBlastTypeRpsBlast:
-   case eBlastTypeBlastx:
-   case eBlastTypeRpsTblastn:
-   case eBlastTypePsiBlast:
-   case eBlastTypePhiBlastp:
-      retval = eBlastEncodingProtein;
-      break;
-   case eBlastTypeTblastn:
-   case eBlastTypeTblastx:
-      retval = eBlastEncodingNcbi4na;
-      break;
-   default:
-      retval = eBlastEncodingError;
-      break;
-   }
-   return retval;
+    if (Blast_SubjectIsProtein(program_number)) {
+        return eBlastEncodingProtein;
+    } else if (Blast_SubjectIsTranslated(program_number)) {
+        return eBlastEncodingNcbi4na;
+    } else {
+        return eBlastEncodingNucleotide;
+    }
 }
+
 
 /** Delete extra subject sequences hits, if after-traceback hit list size is
  * smaller than preliminary hit list size.
@@ -1152,12 +1136,8 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                  query_info, gap_align, score_params,
                                  ext_params, hit_params, rps_info, results,
                                  interrupt_search, progress_info);
-   } else if ((program_number == eBlastTypeBlastp ||
-               program_number == eBlastTypeTblastn ||
-               program_number == eBlastTypePhiBlastp ||
-               program_number == eBlastTypePsiBlast) &&
-              (ext_params->options->compositionBasedStats > 0 ||
-               ext_params->options->eTbackExt == eSmithWatermanTbck)) {
+   } else if (ext_params->options->compositionBasedStats > 0 ||
+              ext_params->options->eTbackExt == eSmithWatermanTbck) {
       status =
           Blast_RedoAlignmentCore(program_number, query, query_info, sbp,
                                   hsp_stream, seq_src, gen_code_string,
