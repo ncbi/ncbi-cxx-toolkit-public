@@ -44,28 +44,13 @@ static char const rcsid[] =
 Int4 
 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program)
 {
-   Int4 index = -1;     /* -1 is used to indicate error */
-   switch (program) {
-   case eBlastTypeBlastn:
-      index = context/NUM_STRANDS; 
-      break;
-   case eBlastTypeBlastp: 
-   case eBlastTypeTblastn: 
-   case eBlastTypeRpsBlast: 
-   case eBlastTypePsiBlast:
-   case eBlastTypeRpsTblastn:
-   case eBlastTypePhiBlastn:
-   case eBlastTypePhiBlastp:
-      index = context; 
-      break;
-   case eBlastTypeBlastx: 
-   case eBlastTypeTblastx:
-      index = context/NUM_FRAMES; 
-      break;
-   default:
-      break;
+   if (program == eBlastTypePsiTblastn || Blast_QueryIsProtein(program)) {
+           return context;
+   } else if (Blast_QueryIsTranslated(program)) {
+           return context / NUM_FRAMES;
+   } else {
+           return context / NUM_STRANDS;
    }
-   return index;
 }
 
 BlastQueryInfo* BlastQueryInfoNew(EBlastProgramType program, int num_queries)
