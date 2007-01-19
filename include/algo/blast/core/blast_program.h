@@ -148,6 +148,8 @@ Boolean Blast_ProgramIsPhiBlast(EBlastProgramType p);
  */
 Boolean Blast_ProgramIsRpsBlast(EBlastProgramType p);
 
+Boolean Blast_ProgramIsValid(EBlastProgramType p);
+
 #ifdef __cplusplus
 }
 #endif
