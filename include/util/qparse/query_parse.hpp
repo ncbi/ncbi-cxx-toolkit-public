@@ -215,7 +215,7 @@ public:
         eCaseInsensitive     ///< Case insensitive parsing (AnD)
     };
 
-    /// Level of tolerance to syntax errors
+    /// Level of tolerance to syntax errors and problems
     ///
     enum ESyntaxCheck {
         eSyntaxCheck,      ///< Best possible check for errors
