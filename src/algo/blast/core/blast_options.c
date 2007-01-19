@@ -546,7 +546,7 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
 
     /** @todo how to determine this for PSI-BLAST bootstrap run (i.e. when
      * program is blastp? */
-    if (program == eBlastTypePsiBlast) {
+    if (Blast_QueryIsPssm(program)) {
         (*options)->compositionBasedStats = TRUE;
     }
 
@@ -585,7 +585,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
       }
    }
 
-   if (program == eBlastTypePsiBlast) {
+   if (Blast_QueryIsPssm(program)) {
        options->compositionBasedStats = TRUE;
    }
 
@@ -1192,10 +1192,11 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
    /* By default, sum statistics is used for all translated searches 
     * (except RPS BLAST), and for all ungapped searches.
     */
-   if (!gapped_calculation ||  
-      (program_number == eBlastTypeBlastx) ||
-      (program_number == eBlastTypeTblastn) ||
-      (program_number == eBlastTypeTblastx)) {
+   if (program_number == eBlastTypeRpsTblastn) {
+	   (*options)->do_sum_stats = FALSE;
+   } else if (!gapped_calculation ||
+	   Blast_QueryIsTranslated(program_number) ||
+	   Blast_SubjectIsTranslated(program_number)) {
        (*options)->do_sum_stats = TRUE;
    } else {
        (*options)->do_sum_stats = FALSE;
