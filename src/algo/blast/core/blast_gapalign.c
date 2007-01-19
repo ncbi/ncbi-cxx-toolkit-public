@@ -3061,8 +3061,12 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       frames concatenated together. Finally, add 1 to the maximum, 
       to account for HSPs that include the end of a sequence */
 
-   if (program_number == eBlastTypeTblastn &&
-       score_params->options->is_ooframe) {
+   if (Blast_SubjectIsTranslated(program_number) &&
+       score_params->options->is_ooframe) { 
+      /* OOF search only supported for tblastn and blastx. (blastx
+	 does not have a translated subject, so can't get here.) */
+      ASSERT(program_number == eBlastTypeTblastn);
+
       tree = Blast_IntervalTreeInit(0, query->length+1,
                                     0, 2*(subject->length + CODON_LENGTH)+1);
    }
@@ -3370,6 +3374,8 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
       return -1;
    
    if (score_options->is_ooframe) {
+      ASSERT(program == eBlastTypeTblastn || program == eBlastTypeBlastx);
+
       q_length = init_hsp->offsets.qs_offsets.q_off;
       /* For negative subject frames, make subject offset relative to the part
          of the mixed-frame sequence corresponding to the reverse strand. */
