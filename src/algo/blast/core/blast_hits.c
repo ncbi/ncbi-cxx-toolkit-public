@@ -818,8 +818,8 @@ Blast_HSPGetAdjustedOffsets(EBlastProgramType program, BlastHSP* hsp,
       return;
    }
 
-   if (program != eBlastTypeTblastn && program != eBlastTypeBlastx &&
-       program != eBlastTypeTblastx && program != eBlastTypeRpsTblastn) {
+   if (!Blast_QueryIsTranslated(program) &&
+       !Blast_SubjectIsTranslated(program)) {
       if (hsp->query.frame != hsp->subject.frame) {
          /* Blastn: if different strands, flip offsets in query; leave 
             offsets in subject as they are, but change order for correct
