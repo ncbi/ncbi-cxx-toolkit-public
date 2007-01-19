@@ -393,11 +393,16 @@ bool CDBL_BCPInCmd::Send(void)
 {
     char param_buff[2048]; // maximal row size, assured of buffer overruns
 
-    m_HasFailed = !x_AssignParams(param_buff);
-    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign params", 223004 );
+    if (!x_AssignParams(param_buff)) {
+        m_HasFailed = true;
+        DATABASE_DRIVER_ERROR( "cannot assign params", 223004 );
+    }
 
-    m_HasFailed = (Check(bcp_sendrow(GetCmd())) != SUCCEED);
-    CHECK_DRIVER_ERROR( m_HasFailed, "bcp_sendrow failed", 223005 );
+    if (Check(bcp_sendrow(GetCmd())) != SUCCEED) {
+        Check(bcp_done(GetCmd()));
+        m_HasFailed = true;
+        DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 223005 );
+    }
 
     m_WasSent = true;
 

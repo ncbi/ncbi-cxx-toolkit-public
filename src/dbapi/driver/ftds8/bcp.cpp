@@ -371,9 +371,11 @@ bool CTDS_BCPInCmd::Send(void)
     }
 
     if (Check(bcp_sendrow(GetCmd())) != SUCCEED) {
+        Check(bcp_done(GetCmd()));
         m_HasFailed = true;
         DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 223005 );
     }
+
     m_WasSent = true;
 
     if (m_HasTextImage) { // send text/image data
