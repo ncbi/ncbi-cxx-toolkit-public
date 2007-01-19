@@ -2491,7 +2491,7 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
      status = 1;  /* Not a single context was valid. */
 
    /* Set ungapped Blast_KarlinBlk* alias */
-   sbp->kbp = (program == eBlastTypePsiBlast) ? sbp->kbp_psi : sbp->kbp_std;
+   sbp->kbp = Blast_QueryIsPssm(program) ? sbp->kbp_psi : sbp->kbp_std;
 
    return status;
 }
@@ -4410,7 +4410,7 @@ BLAST_ComputeLengthAdjustment(double K,
 /*
  * ===========================================================================
  *
- * $Log$
+ * $Log: blast_stat.c,v $
  * Revision 1.152  2006/11/21 17:08:28  papadopo
  * rearrange headers
  *
