@@ -209,6 +209,20 @@ int CAlnBuildApp::Run(void)
     }
 
 
+    /// Show which seq-ids are aligned to the first one
+    {
+        const TAlnStats::TIdVec& aligned_ids = aln_stats.GetAlignedIds(aln_stats.GetIdVec()[0]);
+        ReportTime("GetAlignedIds");
+        cerr << aln_stats.GetIdVec()[0]->AsString()
+             << " is aligned to:" << endl;
+        ITERATE(TAlnStats::TIdVec, id_it, aligned_ids) {
+            cerr << (*id_it)->AsString() << endl;
+        }
+        cerr << endl;
+        m_StopWatch.Restart();
+    }
+        
+
     /// Construct a vector of anchored alignments
     typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
     TAnchoredAlnVec anchored_aln_vec;
