@@ -928,8 +928,9 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             return status;
       }
 
-      /* Calculate cutoff scores for linking HSPs. Do this only for ungapped
-         protein searches. */
+      /* Calculate cutoff scores for linking HSPs. Do this only for
+         ungapped protein searches and ungapped translated
+         searches. */
       if (hit_params->link_hsp_params && !kNucleotide &&
           !gapped_calculation) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
@@ -950,8 +951,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          if (!gapped_calculation || prelim_traceback) {
             /* The following must be performed for any ungapped search with a 
                nucleotide database. */
-            if (kNucleotide || program_number == eBlastTypeTblastn ||
-                program_number == eBlastTypeTblastx) {
+	     if (Blast_SubjectIsNucleotide(program_number)) {
                status = 
                   Blast_HSPListReevaluateWithAmbiguities(program_number, 
                      hsp_list, query, seq_arg.seq, word_params, hit_params, 
