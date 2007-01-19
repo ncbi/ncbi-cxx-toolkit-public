@@ -1,6 +1,6 @@
 ! -*- asm -*-
 
-! $Id: ncbicntr_workshop.il,v 1.3 2003/06/27 17:28:08 ucko Exp $
+! $Id$
 	
 !! for SPARC v9s
 ! in:  intended new value (%o0), address (%o1), required old value (%o2)

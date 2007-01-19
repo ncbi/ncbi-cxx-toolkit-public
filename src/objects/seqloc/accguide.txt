@@ -1,4 +1,4 @@
-# $Id: accguide.txt,v 1.1 2007/01/08 16:03:58 ucko Exp $
+# $Id$
 version  1 # of file format
 
 # 8-character protein accessions

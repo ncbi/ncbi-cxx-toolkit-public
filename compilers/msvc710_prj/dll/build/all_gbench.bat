@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gbench.bat,v 1.5 2005/06/15 17:01:49 ivanov Exp $
+REM $Id$
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE

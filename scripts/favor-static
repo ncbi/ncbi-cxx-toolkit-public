@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: favor-static,v 1.6 2004/10/28 14:41:20 ucko Exp $
+# $Id$
 # Author: Aaron Ucko, NCBI
 
 linker=$1

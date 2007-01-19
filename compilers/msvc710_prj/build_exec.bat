@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: build_exec.bat,v 1.2 2004/08/12 18:33:33 ivanov Exp $
+REM $Id$
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE

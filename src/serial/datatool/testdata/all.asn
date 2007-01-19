@@ -1,4 +1,4 @@
---$Revision: 6.2 $
+--$Revision$
 --**********************************************************************
 --
 --  NCBI General Data elements
@@ -150,7 +150,7 @@ User-field ::= SEQUENCE {
 
 END
 
---$Revision: 6.1 $
+--$Revision$
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -399,7 +399,7 @@ Meeting ::= SEQUENCE {
 END
 
 
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  MEDLINE data definitions
@@ -489,7 +489,7 @@ DocRef ::= SEQUENCE {           -- reference to a document
 
 END
 
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  MEDLARS data definitions
@@ -517,7 +517,7 @@ Medlars-record ::= SEQUENCE {
 }
 
 END
---$Revision: 6.0 $
+--$Revision$
 --********************************************************************
 --
 --  Publication common set
@@ -565,7 +565,7 @@ Pub-set ::= CHOICE {
 
 END
 
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  PUBMED data definitions
@@ -603,7 +603,7 @@ Pubmed-url ::= SEQUENCE {
 }
 
 END
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  NCBI Sequence location and identifier elements
@@ -723,7 +723,7 @@ Seq-loc-equiv ::= SET OF Seq-loc      -- for a set of equivalent locations
 END
     
 
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  NCBI Sequence Alignment elements
@@ -822,7 +822,7 @@ Score-set ::= SET OF Score
 
 END 
 
---$Revision: 6.0 $
+--$Revision$
 --*********************************************************************
 --
 -- 1990 - J.Ostell
@@ -1054,7 +1054,7 @@ PDB-replace ::= SEQUENCE {
 
 END
 
---$Revision: 6.4 $
+--$Revision$
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -1655,7 +1655,7 @@ Tx-evidence ::= SEQUENCE {
     
 END
 
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  NCBI Sequence Analysis Results (other than alignments)
@@ -1710,7 +1710,7 @@ Byte-graph ::= SEQUENCE {              -- integer from 0-255
 
 END
 
---$Revision: 6.1 $
+--$Revision$
 --**********************************************************************
 --
 --  NCBI Sequence Collections
@@ -1767,7 +1767,7 @@ Seq-entry ::= CHOICE {
 
 END
 
---$Revision: 6.2 $
+--$Revision$
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -2173,7 +2173,7 @@ Seq-annot ::= SEQUENCE {
 END
 
 
---$Revision: 6.1 $
+--$Revision$
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -2236,7 +2236,7 @@ Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
 
 END
 
---$Revision: 6.3 $
+--$Revision$
 --****************************************************************
 --
 --  NCBI Project Definition Module
@@ -2301,7 +2301,7 @@ Project-id ::= VisibleString
 END
 
 
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -2754,7 +2754,7 @@ Atom-pntr ::= SEQUENCE {
 Atom-pntr-set ::= SEQUENCE OF Atom-pntr
 
 END
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -3089,7 +3089,7 @@ Density-coordinates ::= SEQUENCE {
 
 
 END
---$Revision: 6.3 $
+--$Revision$
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -3502,7 +3502,7 @@ Biostruc-script-step ::= SEQUENCE {
 Step-id ::= INTEGER
 
 END
---$Revision: 1.2 $
+--$Revision$
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -3650,7 +3650,7 @@ Cdd ::= SEQUENCE {
 Cdd-set ::= SET OF Cdd
 
 END
---$Revision: 6.4 $
+--$Revision$
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -3723,7 +3723,7 @@ Entrez-general ::= SEQUENCE {
 	style Entrez-style ,
 	location VisibleString OPTIONAL }
 END
---$Revision: 6.0 $
+--$Revision$
 --*********************************************************************
 --
 --  access.asn
@@ -3747,7 +3747,7 @@ Link-set ::= SEQUENCE {
 
 
 END
---$Revision: 6.0 $
+--$Revision$
 --**********************************************************************
 --
 --  NCBI Sequence Feature Definition Module
@@ -3791,7 +3791,7 @@ FeatDefGroupSet ::= SEQUENCE {
 END
 
     
---$Revision: 6.0 $
+--$Revision$
 --********************************************************************
 --
 --  Print Templates
@@ -3850,7 +3850,7 @@ PrintFormText ::= SEQUENCE {
     
 END
 
---$Revision: 6.0 $
+--$Revision$
 --  *********************************************************************
 --
 --  These are code and conversion tables for NCBI sequence codes

@@ -175,7 +175,7 @@ one_symbol = `a'
 
 /tmp/foo> cat foo.cpp
 
-/*  $Id: new_project.create.session,v 1.8 2002/05/22 14:28:27 lanczyck Exp $
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

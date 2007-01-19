@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: makesqlite,v 1.2 2003/11/20 18:01:48 rsmith Exp $
+# $Id$
 
 sqlitedir=${1:-sqlite}
 sqlitebuilddir=${2:-${sqlitedir}-build}

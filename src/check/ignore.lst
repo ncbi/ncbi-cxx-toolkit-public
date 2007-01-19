@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.21 2006/09/15 16:45:24 vakatov Exp $
+# $Id$
 #
 # List of pairs "test/signature" that will not be checked
 #

@@ -1,4 +1,4 @@
-#  $Id: demo1.bds,v 1.1 2004/06/23 19:00:07 kuznets Exp $
+#  $Id$
 # BDB structure file for demo1 application (use with bdb_dump)
 
 person_id		int4 PK

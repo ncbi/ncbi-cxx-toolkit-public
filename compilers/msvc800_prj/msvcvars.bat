@@ -1,6 +1,6 @@
 @echo off
 REM
-REM $Id: msvcvars.bat,v 1.3 2006/02/22 15:14:41 gouriano Exp $
+REM $Id$
 REM
 
 @if not "%VSINSTALLDIR%"=="" goto devenv

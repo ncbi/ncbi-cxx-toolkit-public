@@ -16,7 +16,7 @@ Contact Chris Lanczycki (lanczyck@ncbi.nlm.nih.gov) or Saikat Chakrabarti
 (chakraba@ncbi.nlm.nih.gov) for comments or reports of problems with this
 program. 
 
-Last modified:  $Date: 2006/12/14 17:04:48 $
+Last modified:  $Date$
 
 **  12/12/2006:  
     v1.0.0 -> v1.1.0  Added -selection_order and -lno options in 'bma_refiner' to allow speedup of runs, particularly for larger models.

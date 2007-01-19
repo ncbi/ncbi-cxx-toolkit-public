@@ -1,5 +1,5 @@
 @echo off
-REM $Id: lock_ptb_config.bat,v 1.2 2006/06/09 17:02:44 gouriano Exp $
+REM $Id$
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE

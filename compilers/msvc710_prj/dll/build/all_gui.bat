@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gui.bat,v 1.7 2005/03/17 12:51:33 ivanov Exp $
+REM $Id$
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE

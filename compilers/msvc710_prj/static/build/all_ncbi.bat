@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_ncbi.bat,v 1.8 2005/03/17 12:49:28 ivanov Exp $
+REM $Id$
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
