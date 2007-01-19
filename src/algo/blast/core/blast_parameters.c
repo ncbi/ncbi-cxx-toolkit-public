@@ -143,6 +143,7 @@ s_GetCutoffEvalue(EBlastProgramType program)
    case eBlastTypeBlastx: 
       return CUTOFF_E_BLASTX;
    case eBlastTypeTblastn:
+   case eBlastTypePsiTblastn:
    case eBlastTypeRpsTblastn:
       return CUTOFF_E_TBLASTN;
    case eBlastTypeTblastx:
@@ -675,8 +676,9 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
       BlastLinkHSPParametersNew(program_number, gapped_calculation,
                                 &params->link_hsp_params);
 
-      if(program_number == eBlastTypeBlastx  ||
-         program_number == eBlastTypeTblastn) {
+      if((Blast_QueryIsTranslated(program_number) ||
+	  Blast_SubjectIsTranslated(program_number)) &&
+	 program_number != eBlastTypeTblastx) {
           /* The program may use Blast_UnevenGapLinkHSPs find significant
              collections of distinct alignments */
           Int4 max_protein_gap; /* the largest gap permitted in the
@@ -938,7 +940,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
 /*
  * ===========================================================================
  *
- * $Log$
+ * $Log: blast_parameters.c,v $
  * Revision 1.32  2006/12/13 19:12:56  papadopo
  * remove dynamic choice of seed extension method (no practical difference between the various methods now)
  *
