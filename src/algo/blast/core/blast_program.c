@@ -76,3 +76,25 @@ Boolean Blast_ProgramIsPhiBlast(EBlastProgramType p)
 
 Boolean Blast_ProgramIsRpsBlast(EBlastProgramType p)
 { return SAFE_CAST_INT_TO_BOOLEAN(p & PSSM_SUBJECT_MASK); }
+
+Boolean Blast_ProgramIsValid(EBlastProgramType p)
+{
+    switch (p) {
+    case eBlastTypeBlastp:
+    case eBlastTypeBlastn:
+    case eBlastTypeBlastx:
+    case eBlastTypeTblastn:
+    case eBlastTypeTblastx:
+    case eBlastTypePsiBlast:
+    case eBlastTypePsiTblastn:
+    case eBlastTypeRpsBlast:
+    case eBlastTypeRpsTblastn:
+    case eBlastTypePhiBlastp:
+    case eBlastTypePhiBlastn:
+        return TRUE;
+        break;
+    default:
+        return FALSE;
+        break;
+    }
+}
