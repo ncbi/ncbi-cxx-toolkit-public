@@ -122,13 +122,55 @@ public:
     }
 
 
-    /// Access a vector of seq-ids for an alignment
+    /// Access the vector of seq-ids of a particular alignment
     const TIdVec& GetSeqIdsForAln(size_t aln_idx) const {
         _ASSERT(aln_idx < GetAlnCount());
         return m_AlnIdVec[aln_idx];
     }
 
     
+    /// Access the vector of seq-ids of a particular alignment
+    const TIdVec& GetSeqIdsForAln(const CSeq_align& aln) const {
+        return m_AlnIdVec[aln];
+    }
+
+
+    /// Get a set of ids that are aligned to a particular id
+    const TIdVec& GetAlignedIds(const TAlnSeqIdIRef& id) const {
+        typename TAlignedIdsMap::const_iterator it = m_AlignedIdsMap.find(id);
+        if (it != m_AlignedIdsMap.end()) {
+            return it->second;
+        } else {
+            TIdMap::const_iterator it = m_IdMap.find(id);
+            if (it == m_IdMap.end()) {
+                NCBI_THROW(CAlnException, eInvalidRequest,
+                           "Seq-id not present in map");
+            } else {
+                TIdVec& aligned_ids_vec = m_AlignedIdsMap[id];
+
+                // Create a temp set to eliminate dups
+                typedef set<TAlnSeqIdIRef> TAlignedIdsSet;
+                TAlignedIdsSet aligned_ids_set;
+
+                const size_t& id_idx = it->second[0];
+                for (size_t aln_i = 0; aln_i < m_AlnCount; ++aln_i) {
+                    if (m_BitVecVec[id_idx][aln_i]) {
+                        ITERATE(typename TIdVec, id_i, m_AlnIdVec[aln_i]) {
+                            TAlignedIdsSet::iterator it;
+                            if (**id_i != *id  &&
+                                (aligned_ids_set.find(*id_i) == aligned_ids_set.end())) {
+                                aligned_ids_set.insert(*id_i);
+                                aligned_ids_vec.push_back(*id_i);
+                            }
+                        }
+                    }
+                }
+                return aligned_ids_vec;
+            }
+        }
+    }
+
+
     const TRowVecVec& GetRowVecVec() const {
         return m_RowVecVec;
     }
@@ -220,6 +262,8 @@ private:
     }
 
 
+    typedef map<TAlnSeqIdIRef, TIdVec> TAlignedIdsMap;
+
     const TAlnIdVec& m_AlnIdVec;
     const TAlnVec& m_AlnVec;
     size_t m_AlnCount;
@@ -227,6 +271,7 @@ private:
     TIdVec m_IdVec;
     TRowVecVec m_RowVecVec;
     TBitVecVec m_BitVecVec;
+    mutable TAlignedIdsMap m_AlignedIdsMap;
 };
 
 
