@@ -5880,6 +5880,7 @@ CDBAPIUnitTest::Test_Query_Cancelation(void)
             // 1
             try {
                 auto_stmt->SendSql("SELECT oops FROM sysobjects");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
             } catch(const CDB_Exception&)
             {
                 auto_stmt->Cancel();
@@ -6107,14 +6108,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //     }
 
 
-    if (args.GetDriverName() != "ftds" &&
-        args.GetDriverName() != "ftds64_ctlib"
-        ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
-                                   DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
+                               DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
 
     if (args.GetServerType() == CTestArguments::eMsSql &&
