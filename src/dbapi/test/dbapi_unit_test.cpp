@@ -6494,17 +6494,17 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 CTestArguments::EServerType
 CTestArguments::GetServerType(void) const
 {
-    if ( GetServerName().compare("STRAUSS") == 0
-         || GetServerName().compare("MOZART") == 0
-         || GetServerName().compare("OBERON") == 0
-         || GetServerName().compare("SCHUMANN") == 0
-         || GetServerName().compare("BARTOK") == 0
+    if ( NStr::CompareNocase(GetServerName(), "STRAUSS") == 0
+         || NStr::CompareNocase(GetServerName(), "MOZART") == 0
+         || NStr::CompareNocase(GetServerName(), "OBERON") == 0
+         || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
+         || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
          ) {
         return eSybase;
-    } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0
-                || GetServerName().compare(0, 5, "MSSQL") == 0
-                || GetServerName().compare(0, 7, "OAMSDEV") == 0
-                || GetServerName().compare(0, 6, "QMSSQL") == 0
+    } else if ( NStr::CompareNocase(GetServerName(), 0, 6, "MS_DEV") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 5, "MSSQL") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 7, "OAMSDEV") == 0
+                || NStr::CompareNocase(GetServerName(), 0, 6, "QMSSQL") == 0
                 ) {
         return eMsSql;
     }
