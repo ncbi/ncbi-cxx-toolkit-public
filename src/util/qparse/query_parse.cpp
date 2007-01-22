@@ -36,6 +36,10 @@
 BEGIN_NCBI_SCOPE
 
 
+
+//////////////////////////////////////////////////////////////////////////////
+
+
 CQueryParseNode::CQueryParseNode()
 : m_Type(eNotSet), 
   m_Explicit(false),
@@ -81,41 +85,12 @@ CQueryParseNode::CQueryParseNode(double val, const string& orig_text)
 {
 }
 
-CQueryParseNode::CQueryParseNode(EBinaryOp op, const string& orig_text)
-: m_Type(eBinaryOp),
-  m_BinaryOp(op),
+CQueryParseNode::CQueryParseNode(EType op, const string& orig_text)
+: m_Type(op),
   m_OrigText(orig_text),
   m_Explicit(true),
   m_Not(false)  
 {
-}
-
-CQueryParseNode::CQueryParseNode(EUnaryOp op, const string& orig_text)
-: m_Type(eUnaryOp),
-  m_UnaryOp(op),
-  m_OrigText(orig_text),
-  m_Explicit(true),
-  m_Not(false)  
-{
-}
-
-
-CQueryParseNode::EBinaryOp CQueryParseNode::GetBinaryOp() const
-{
-    if (m_Type != eBinaryOp) {
-        NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-                   "Incorrect query node type");
-    }
-    return m_BinaryOp;
-}
-
-CQueryParseNode::EUnaryOp CQueryParseNode::GetUnaryOp() const
-{
-    if (m_Type != eUnaryOp) {
-        NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-                   "Incorrect query node type");
-    }
-    return m_UnaryOp;
 }
 
 const string& CQueryParseNode::GetStrValue() const
@@ -163,22 +138,18 @@ const string& CQueryParseNode::GetIdent() const
     return m_Value;
 }
 
-void CQueryParseNode::SetIdentIdx(int idx)
+
+void CQueryParseNode::AttachUserObject(IQueryParseUserObject* obj)
 {
-    if (m_Type != eIdentifier) {
-        NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-                   "Incorrect query node type");
-    }
-    m_IdentIdx = idx;
+    m_UsrObj.Reset(obj);
 }
 
-int CQueryParseNode::GetIdentIdx() const
+void CQueryParseNode::ResetUserObject()
 {
-    if (m_Type != eIdentifier) {
-        NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-                   "Incorrect query node type");
+    IQueryParseUserObject* p = m_UsrObj.GetPointer();
+    if (p) {
+        p->Reset();
     }
-    return m_IdentIdx;
 }
 
 
@@ -233,10 +204,10 @@ CQueryParseTree::CreateNode(double   value, const string&  orig_text)
 }
 
 CQueryParseTree::TNode* 
-CQueryParseTree::CreateBinaryNode(CQueryParseNode::EBinaryOp op,
-                                  CQueryParseTree::TNode*    arg1, 
-                                  CQueryParseTree::TNode*    arg2,
-                                  const string&              orig_text)
+CQueryParseTree::CreateNode(CQueryParseNode::EType     op,
+                            CQueryParseTree::TNode*    arg1, 
+                            CQueryParseTree::TNode*    arg2,
+                            const string&              orig_text)
 {
    auto_ptr<TNode> node(new TNode(CQueryParseNode(op, orig_text)));
    if (arg1) {
@@ -249,18 +220,40 @@ CQueryParseTree::CreateBinaryNode(CQueryParseNode::EBinaryOp op,
    return node.release();
 }
 
-CQueryParseTree::TNode* 
-CQueryParseTree::CreateUnaryNode(CQueryParseNode::EUnaryOp op, 
-                                 CQueryParseTree::TNode*   arg,
-                                 const string&             orig_text)
+
+
+/// Reset query node
+///
+/// @internal
+///
+class CQueryTreeResetFunc
 {
-   auto_ptr<TNode> node(new TNode(CQueryParseNode(op, orig_text)));
-   if (arg) {
-        node->AddNode(arg);
-   }
-//cerr << "CreateNode(Un-op): " << node.get() << endl;
-   return node.release();
+public:
+    ETreeTraverseCode 
+    operator()(CTreeNode<CQueryParseNode>& tr, int delta) 
+    {
+        CQueryParseNode& qnode = tr.GetValue();
+        if (delta < 0)
+            return eTreeTraverse;
+        qnode.ResetUserObject();
+
+        return eTreeTraverse;
+    }
+};
+
+
+
+void CQueryParseTree::ResetUserObjects()
+{
+    CQueryParseTree::TNode* qtree = this->GetQueryTree();
+    if (!qtree) {
+        return;
+    }
+    TNode& qtree_nc = const_cast<TNode&>(*qtree);
+    CQueryTreeResetFunc func;
+    TreeDepthFirstTraverse(qtree_nc, func);
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 

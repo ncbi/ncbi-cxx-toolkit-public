@@ -75,70 +75,8 @@ public:
         }
         const CQueryParseNode::SSrcLoc& sl = qnode.GetLoc();
         m_OStream << " Line:" << sl.line << " pos=" << sl.pos;
-        
     }
-    
-    void PrintUnary(const CQueryParseNode& qnode)
-    {
-        CQueryParseNode::EUnaryOp op = qnode.GetUnaryOp();
-        switch (op) {
-        case CQueryParseNode::eNot:
-            PrintElement("NOT", qnode);
-            break;
-        default:
-            m_OStream << "UNK";
-        }
-    }
-    void PrintBinary(const CQueryParseNode& qnode)
-    {
-        CQueryParseNode::EBinaryOp op = qnode.GetBinaryOp();
-        switch (op) {
-        case CQueryParseNode::eFieldSearch:
-            PrintElement("SEARCH", qnode);        
-            break;
-        case CQueryParseNode::eAnd:
-            PrintElement("AND", qnode);        
-            break;
-        case CQueryParseNode::eOr:
-            PrintElement("OR", qnode);
-            break;
-        case CQueryParseNode::eSub:
-            PrintElement("MINUS", qnode);
-            break;
-        case CQueryParseNode::eNot2:
-            PrintElement("NOT", qnode);
-            break;
-        case CQueryParseNode::eXor:
-            PrintElement("XOR", qnode);
-            break;
-        case CQueryParseNode::eRange:
-            PrintElement("RANGE", qnode);
-            break;
-        case CQueryParseNode::eEQ:
-            if (qnode.IsNot()) {
-                PrintElement("!=", qnode);
-            } else {
-                PrintElement("==", qnode);
-            }
-            break;
-        case CQueryParseNode::eGT:
-            PrintElement(">", qnode);
-            break;
-        case CQueryParseNode::eGE:
-            PrintElement(">=", qnode);
-            break;
-        case CQueryParseNode::eLT:
-            PrintElement("<", qnode);
-            break;
-        case CQueryParseNode::eLE:
-            PrintElement("<=", qnode);
-            break;
-        default:
-            m_OStream << "UNK";
-            break;
-        }
-    }
-  
+      
     ETreeTraverseCode 
     operator()(const CTreeNode<CQueryParseNode>& tr, int delta) 
     {
@@ -165,13 +103,48 @@ public:
             break;
         case CQueryParseNode::eBoolConst:
             PrintElement(NStr::BoolToString(qnode.GetBool()), qnode);
+            break;            
+        case CQueryParseNode::eNot:
+            PrintElement("NOT", qnode);
             break;
-        case CQueryParseNode::eUnaryOp:
-            PrintUnary(qnode);
+        case CQueryParseNode::eFieldSearch:
+            PrintElement("SEARCH", qnode);        
             break;
-        case CQueryParseNode::eBinaryOp:
-            PrintBinary(qnode);
+        case CQueryParseNode::eAnd:
+            PrintElement("AND", qnode);        
             break;
+        case CQueryParseNode::eOr:
+            PrintElement("OR", qnode);
+            break;
+        case CQueryParseNode::eSub:
+            PrintElement("MINUS", qnode);
+            break;
+        case CQueryParseNode::eXor:
+            PrintElement("XOR", qnode);
+            break;
+        case CQueryParseNode::eRange:
+            PrintElement("RANGE", qnode);
+            break;
+        case CQueryParseNode::eEQ:
+            if (qnode.IsNot()) {
+                PrintElement("!=", qnode);
+            } else {
+                PrintElement("==", qnode);
+            }
+            break;
+        case CQueryParseNode::eGT:
+            PrintElement(">", qnode);
+            break;
+        case CQueryParseNode::eGE:
+            PrintElement(">=", qnode);
+            break;
+        case CQueryParseNode::eLT:
+            PrintElement("<", qnode);
+            break;
+        case CQueryParseNode::eLE:
+            PrintElement("<=", qnode);
+            break;
+            
         default:
             m_OStream << "UNK";
             break;
