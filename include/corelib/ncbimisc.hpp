@@ -818,6 +818,7 @@ BEGIN_NCBI_SCOPE
 
 //  ITERATE
 //  NON_CONST_ITERATE
+//  ERASE_ITERATE
 //
 // Useful macro to write 'for' statements with the STL container iterator as
 // a variable.
@@ -830,6 +831,13 @@ BEGIN_NCBI_SCOPE
 /// Non constant version of ITERATE macro.
 #define NON_CONST_ITERATE(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
+
+/// Non constant version with ability to erase current element, if container permits
+#define ERASE_ITERATE(Type, Var, Cont) \
+    for ( Type::iterator NCBI_NAME2(Var,_next) = (Cont).begin(), Var = NCBI_NAME2(Var,_next)++; \
+          NCBI_NAME2(Var,_next) != (Cont).end(); \
+          Var = NCBI_NAME2(Var,_next), ++NCBI_NAME2(Var,_next))
+
 
 /// ITERATE macro to reverse sequence through container elements.
 #define REVERSE_ITERATE(Type, Var, Cont) \
