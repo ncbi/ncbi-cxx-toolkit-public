@@ -41,11 +41,31 @@
 USING_NCBI_SCOPE;
 
 
-/// Integer calculator for static query evaluation
+/// User object for the query tree. Carries simple int value
 ///
 /// @internal
 ///
-/*
+class CTestQueryEvalValue : public IQueryParseUserObject
+{
+public:
+    CTestQueryEvalValue() : m_Value(0) {}
+    virtual void Reset() { m_Value = 0; }
+    virtual string GetVisibleValue() const { return NStr::IntToString(m_Value); };
+    
+    int GetValue() const { return m_Value; }
+    void SetValue(int v) { m_Value = v; }
+    
+    
+private:
+    int m_Value;
+};
+
+
+/// Integer calculator for static query evaluation
+/// Demonstrates how to create an execution machine on parsing tree
+///
+/// @internal
+///
 class CTestQueryEvalFunc
 {
 public: 
@@ -53,105 +73,154 @@ public:
     {}
 
     
-    void PrintUnary(const CQueryParseNode& qnode)
-    {
-        CQueryParseNode::EUnaryOp op = qnode.GetUnaryOp();
-        switch (op) {
-        case CQueryParseNode::eNot:
-            m_OStream << "NOT";
-            break;
-        default:
-            m_OStream << "UNK";
-        }
-    }
-    void PrintBinary(const CQueryParseNode& qnode)
-    {
-        CQueryParseNode::EBinaryOp op = qnode.GetBinaryOp();
-        switch (op) {
-        case CQueryParseNode::eAnd:
-            m_OStream << "AND";
-            break;
-        case CQueryParseNode::eOr:
-            m_OStream << "OR";
-            break;
-        case CQueryParseNode::eSub:
-            m_OStream << "MINUS";
-            break;
-        case CQueryParseNode::eNot2:
-            m_OStream << "NOT";
-            break;
-        case CQueryParseNode::eXor:
-            m_OStream << "XOR";
-            break;
-        case CQueryParseNode::eEQ:
-            m_OStream << "==";
-            break;
-        case CQueryParseNode::eGT:
-            m_OStream << ">";
-            break;
-        case CQueryParseNode::eGE:
-            m_OStream << ">=";
-            break;
-        case CQueryParseNode::eLT:
-            m_OStream << "<";
-            break;
-        case CQueryParseNode::eLE:
-            m_OStream << "<=";
-            break;
-        default:
-            m_OStream << "UNK";
-            break;
-        }
-    }
-  
     ETreeTraverseCode 
-    operator()(const CTreeNode<CQueryParseNode>& tr, int delta) 
+    operator()(CTreeNode<CQueryParseNode>& tr, int delta) 
     {
-        const CQueryParseNode& qnode = tr.GetValue();
-
-        if (delta < 0)
-            return eTreeTraverse;
-
-        
-        if (qnode.IsNot()) {
-            m_OStream << "NOT ";        
+        CQueryParseNode& qnode = tr.GetValue();
+        if (delta == 0 || delta == 1) {
+            // If node has children, we skip it and process on the way back
+            if (!tr.IsLeaf()) {
+                return eTreeTraverse;
+            }
         }
-
+        
+        // establish a user object as a carrier of 
+        // execution info (intermidiate and final results)
+        
+        CTestQueryEvalValue*   eval_res = 0;
+        IQueryParseUserObject* uo = qnode.GetUserObject();
+        if (uo) {
+            eval_res = dynamic_cast<CTestQueryEvalValue*>(uo);
+            _ASSERT(eval_res);
+        }
+        if (eval_res == 0) {
+            eval_res = new CTestQueryEvalValue();
+            qnode.SetUserObject(eval_res);
+        }
+        
+        int i0, i1, res; 
+        
+        
         switch (qnode.GetType()) {
+        
+        // value evaluation
+        //
         case CQueryParseNode::eIdentifier:
-            m_OStream << qnode.GetStrValue();
-            break;
         case CQueryParseNode::eString:
-            m_OStream << '"' << qnode.GetStrValue() << '"';
+            {
+            const string& v = qnode.GetStrValue();
+            res = NStr::StringToInt(v);
+            }
             break;
         case CQueryParseNode::eIntConst:
-            m_OStream << qnode.GetInt() << "L";
+            res = qnode.GetInt();            
             break;
         case CQueryParseNode::eFloatConst:
-            m_OStream << qnode.GetDouble() << "F";
+            res = (int)qnode.GetDouble();
             break;
         case CQueryParseNode::eBoolConst:
-            m_OStream << qnode.GetBool();
+            res = qnode.GetBool();
             break;
-        case CQueryParseNode::eUnaryOp:
-            PrintUnary(qnode);
+            
+        // operation interpretor
+        //
+        case CQueryParseNode::eNot:
+            ERR_POST("NOT not implemented");
+            eval_res->SetValue(0);
             break;
-        case CQueryParseNode::eBinaryOp:
-            PrintBinary(qnode);
+        case CQueryParseNode::eFieldSearch:
             break;
+        case CQueryParseNode::eAnd:
+            GetArg2(tr, i0, i1);
+            res = (i0 && i1);
+            break;
+        case CQueryParseNode::eOr:
+            GetArg2(tr, i0, i1);
+            res = (i0 || i1);
+            break;
+        case CQueryParseNode::eSub:
+            GetArg2(tr, i0, i1);
+            res = ((i0 != 0 ? 1 : 0) - (i1 != 0 ? 1 : 0));
+            break;
+        case CQueryParseNode::eXor:
+            GetArg2(tr, i0, i1);
+            res = ((i0 != 0 ? 1 : 0) ^ (i1 != 0 ? 1 : 0));
+            break;
+        case CQueryParseNode::eRange:
+            ERR_POST("Range not implemented");
+            break;
+        case CQueryParseNode::eEQ:
+            GetArg2(tr, i0, i1);
+            res = (i0 == i1);
+            break;
+        case CQueryParseNode::eGT:
+            GetArg2(tr, i0, i1);
+            res = (i0 > i1);
+            break;
+        case CQueryParseNode::eGE:
+            GetArg2(tr, i0, i1);
+            res = (i0 >= i1);
+            break;
+        case CQueryParseNode::eLT:
+            GetArg2(tr, i0, i1);
+            res = (i0 < i1);
+            break;
+        case CQueryParseNode::eLE:
+            GetArg2(tr, i0, i1);
+            res = (i0 <= i1);
+            break;
+            
         default:
-            m_OStream << "UNK";
-            break;
+            ERR_POST("Unknown node type");
+            eval_res->SetValue(0);
+            break;        
         } // switch
-
-
+        
+        if (qnode.IsNot()) {
+            res = !res;
+        }
+        eval_res->SetValue(res);
+    
         return eTreeTraverse;
     }
 
+private:
+
+    /// get two arguments for a binary operation
+    ///
+    void GetArg2(CTreeNode<CQueryParseNode>& tr,
+                 int&                        arg1,
+                 int&                        arg2)
+    {
+        arg1 = arg2 = 0;
+        CTreeNode<CQueryParseNode>::TNodeList_CI it =
+            tr.SubNodeBegin();
+        CTreeNode<CQueryParseNode>::TNodeList_CI it_end =
+            tr.SubNodeEnd();
+        if (it == it_end) {
+            ERR_POST("No arguments!");
+        }
+        int i = 0;       
+        for (; it != it_end; ++it, ++i) {
+            const CTreeNode<CQueryParseNode>* arg_tree = *it;
+            const CQueryParseNode& arg_qnode = arg_tree->GetValue();
+
+            const CTestQueryEvalValue*   eval_res;
+            const IQueryParseUserObject* uo = arg_qnode.GetUserObject();
+            if (uo) {
+                eval_res = dynamic_cast<const CTestQueryEvalValue*>(uo);
+            } else {
+                break;
+            }
+            if (i == 0) {
+                arg1 = eval_res->GetValue();
+            } else {
+                arg2 = eval_res->GetValue();
+                break; // take only two args
+            }
+        } // for
+    }
 };
-*/
-
-
 
 
 
@@ -231,6 +300,44 @@ void ParseFile(const string& file_name)
     cout << endl << "Total=" << q_total << " Failed=" << q_failed << endl;
 }
 
+/// Parse and evaluate
+///
+/// @internal
+///
+void StaticEvaluate(const char* q, int res)
+{
+    CQueryParseTree qtree;
+    qtree.Parse(q);
+    
+    CQueryParseTree::TNode* top_node = qtree.GetQueryTree();
+    if (top_node == 0) {
+        NcbiCerr << "No tree for query: " << q << endl;
+        assert(0);
+        return;
+    }
+    
+    NcbiCout << "---------------------------------------------------" << endl;
+    NcbiCout << "Query:" << "'" << q << "'" << endl << endl;    
+
+    // query tree evaluation
+    //    
+    CTestQueryEvalFunc visitor;
+    TreeDepthFirstTraverse(*top_node, visitor);
+    
+    qtree.Print(NcbiCout);
+    
+    
+    IQueryParseUserObject* uo = top_node->GetValue().GetUserObject();
+    assert(uo);
+    CTestQueryEvalValue*   eval_res = dynamic_cast<CTestQueryEvalValue*>(uo);    
+    assert(eval_res);
+    if (res != eval_res->GetValue()) {
+        NcbiCout << "Unexpected result:" << eval_res->GetValue()
+                 << " should be:" << res << endl;
+        assert(0);
+    }
+    
+}
 
 
 int CTestQParse::Run(void)
@@ -296,11 +403,19 @@ int CTestQParse::Run(void)
     
     }}
    
+    NcbiCout << endl << endl;
+    NcbiCout << "Expression evaluation.";
+    NcbiCout << endl << endl;
+   
+    StaticEvaluate("1==1", 1);
+    StaticEvaluate("1!=1", 0);
+    StaticEvaluate("1 <= 1", 1);
+    StaticEvaluate("10 >= 1", 1);
+    StaticEvaluate("1 <= 2 && 1 == 1", 1);
+    StaticEvaluate("1 > 2 || 1 != 1", 0);
    
    
-   
-   
-ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.50000");
+    //ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.50000");
     
     return 0;
 }
