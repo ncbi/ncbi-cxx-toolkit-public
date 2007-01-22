@@ -75,6 +75,14 @@ public:
         }
         const CQueryParseNode::SSrcLoc& sl = qnode.GetLoc();
         m_OStream << " Line:" << sl.line << " pos=" << sl.pos;
+     
+        const IQueryParseUserObject* uo = qnode.GetUserObject();
+        if (uo) {
+            string v = uo->GetVisibleValue();
+            if (!v.empty()) {
+                m_OStream << "  UValue=" << uo->GetVisibleValue();
+            }
+        }
     }
       
     ETreeTraverseCode 
