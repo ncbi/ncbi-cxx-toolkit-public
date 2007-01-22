@@ -62,6 +62,9 @@ public:
     
     /// Reset user object (for reuse without reallocation)
     virtual void Reset() = 0;
+    
+    /// String value for debuging
+    virtual string GetVisibleValue() const { return ""; };
 };
 
 
