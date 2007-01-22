@@ -40,6 +40,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <util/resource_pool.hpp>
 
 #include <connect/services/netservice_api.hpp> // for CNetServiceException
@@ -51,7 +52,7 @@ BEGIN_NCBI_SCOPE
 /// Client API for NCBI NetService server
 ///
 /// 
-class NCBI_XCONNECT_EXPORT CNetServiceClient
+class NCBI_XCONNECT_EXPORT CNetServiceClient : virtual protected CConnIniter
 {
 public:
     /// Construct the client without connecting to any particular
