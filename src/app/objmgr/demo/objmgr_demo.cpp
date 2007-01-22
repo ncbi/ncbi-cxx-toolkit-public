@@ -186,6 +186,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("whole_sequence", "load whole sequence");
     arg_desc->AddFlag("whole_tse", "perform some checks on whole TSE");
     arg_desc->AddFlag("print_tse", "print TSE with sequence");
+    arg_desc->AddFlag("print_seq", "print sequence");
     arg_desc->AddOptionalKey("desc_type", "DescType",
                              "look only descriptors of specified type",
                              CArgDescriptions::eString);
@@ -348,6 +349,7 @@ int CDemoApp::Run(void)
     bool count_types = args["count_types"];
     bool count_subtypes = args["count_subtypes"];
     bool print_tse = args["print_tse"];
+    bool print_seq = args["print_seq"];
     bool print_descr = args["print_descr"];
     CSeqdesc::E_Choice desc_type =
         GetVariant<CSeqdesc>(args["desc_type"]);
@@ -564,6 +566,11 @@ int CDemoApp::Run(void)
         //    handle.GetEditHandle().GetCompleteObject();
         NcbiCout << "-------------------- TSE --------------------\n";
         NcbiCout << MSerial_AsnText << *entry << '\n';
+        NcbiCout << "-------------------- END --------------------\n";
+    }
+    if ( print_seq ) {
+        NcbiCout << "-------------------- SEQ --------------------\n";
+        NcbiCout << MSerial_AsnText << *handle.GetCompleteObject() << '\n';
         NcbiCout << "-------------------- END --------------------\n";
     }
 
