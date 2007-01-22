@@ -367,7 +367,7 @@ inline
 void CSeq_annot_SNP_Info::x_GetQuality(SSNP_Info::TQualityIndex index,
                                        TOctetString& os) const
 {
-    return m_QualityOs.GetString(index, os);
+    m_QualityOs.GetString(index, os);
 }
 
 
