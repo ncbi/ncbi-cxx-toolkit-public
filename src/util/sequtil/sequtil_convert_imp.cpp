@@ -1015,7 +1015,7 @@ SIZE_TYPE CSeqConvert_imp::Subseq
                 const char* end  = iter + length;
                 
                 for ( ; iter != end; ++iter, ++dst ) {
-                    *dst++ = toupper((unsigned char)(*iter));
+                    *dst = toupper((unsigned char)(*iter));
                 }
                 converted = length;
             }}
