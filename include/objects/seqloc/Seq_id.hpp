@@ -281,7 +281,7 @@ public:
         eAcc_gpipe_mrna       = e_Gpipe | 129 << 8   | fAcc_nuc,  // GPM_
         eAcc_gpipe_chromosome = e_Gpipe | 130 << 8   | fAcc_nuc,  // GPC_
         eAcc_gpipe_genomic    = e_Gpipe | 131 << 8   | fAcc_nuc,  // GPG_
-        eAcc_gpipe_ncrna      = e_Gpipe | 132 << 8   | fAcc_nuc,  // GPR_
+        eAcc_gpipe_ncrna      = e_Gpipe | 132 << 8   | fAcc_nuc   // GPR_
     };
 
     static E_Choice GetAccType(EAccessionInfo info)
