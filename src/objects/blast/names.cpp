@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/blast/names.hpp>
+#include <objects/blast/blast__.hpp>
+#include <objects/scoremat/scoremat__.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,7 +54,90 @@ CBlast4Field::CBlast4Field(std::string nm, CBlast4_value::E_Choice ty)
     m_Fields[nm] = *this;
 }
 
-map<string, CBlast4Field> CBlast4Field::m_Fields;
+const string & CBlast4Field::GetName() const
+{
+    return m_Name;
+}
+
+CBlast4_value::E_Choice CBlast4Field::GetType() const
+{
+    return m_Type;
+}
+
+bool CBlast4Field::Match(CBlast4_parameter & p) const
+{
+    return (p.CanGetName()        &&
+            p.GetName() == m_Name &&
+            p.CanGetValue()       &&
+            p.GetValue().Which() == m_Type);
+}
+
+string CBlast4Field::GetString(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return p.GetValue().GetString();
+}
+
+bool CBlast4Field::GetBoolean(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return p.GetValue().GetBoolean();
+}
+
+Int8 CBlast4Field::GetBig_integer(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return p.GetValue().GetBig_integer();
+}
+
+CRef<CBlast4_cutoff> CBlast4Field::GetCutoff(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return CRef<CBlast4_cutoff>(& p.SetValue().SetCutoff());
+}
+
+int CBlast4Field::GetInteger(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return p.GetValue().GetInteger();
+}
+
+list<int> CBlast4Field::GetIntegerList (CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return p.GetValue().GetInteger_list();
+}
+
+CRef<CPssmWithParameters> CBlast4Field::GetMatrix(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return CRef<CPssmWithParameters>(& p.SetValue().SetMatrix());
+}
+
+CRef<CBlast4_mask> CBlast4Field::GetQueryMask(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return CRef<CBlast4_mask>(& p.SetValue().SetQuery_mask());
+}
+
+double CBlast4Field::GetReal(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return p.GetValue().GetReal();
+}
+
+EBlast4_strand_type CBlast4Field::GetStrandType(CBlast4_parameter & p) const
+{
+    _ASSERT(Match(p));
+    return p.GetValue().GetStrand_type();
+}
+
+bool CBlast4Field::KnownField(string name)
+{
+    return m_Fields.find(name) != m_Fields.end();
+}
+
+CBlast4Field::TFieldMap CBlast4Field::m_Fields;
 
 typedef CBlast4Field TField;
 
@@ -61,6 +146,7 @@ TField B4Param_Culling               ("Culling",               CBlast4_value::e_
 TField B4Param_CutoffScore           ("CutoffScore",           CBlast4_value::e_Cutoff);
 TField B4Param_DbGeneticCode         ("DbGeneticCode",         CBlast4_value::e_Integer);
 TField B4Param_DbLength              ("DbLength",              CBlast4_value::e_Big_integer);
+TField B4Param_DustFiltering         ("DustFiltering",         CBlast4_value::e_Boolean);
 TField B4Param_EffectiveSearchSpace  ("EffectiveSearchSpace",  CBlast4_value::e_Big_integer);
 TField B4Param_EntrezQuery           ("EntrezQuery",           CBlast4_value::e_String);
 TField B4Param_EvalueThreshold       ("EvalueThreshold",       CBlast4_value::e_Cutoff);
@@ -74,6 +160,7 @@ TField B4Param_HitlistSize           ("HitlistSize",           CBlast4_value::e_
 TField B4Param_HspRangeMax           ("HspRangeMax",           CBlast4_value::e_Integer);
 TField B4Param_InclusionThreshold    ("InclusionThreshold",    CBlast4_value::e_Real);
 TField B4Param_LCaseMask             ("LCaseMask",             CBlast4_value::e_Query_mask);
+TField B4Param_MaskAtHash            ("MaskAtHash",            CBlast4_value::e_Boolean);
 TField B4Param_MatchReward           ("MatchReward",           CBlast4_value::e_Integer);
 TField B4Param_MatrixName            ("MatrixName",            CBlast4_value::e_String);
 TField B4Param_MatrixTable           ("MatrixTable",           CBlast4_value::e_Matrix);
@@ -85,8 +172,11 @@ TField B4Param_PercentIdentity       ("PercentIdentity",       CBlast4_value::e_
 TField B4Param_PHIPattern            ("PHIPattern",            CBlast4_value::e_String);
 TField B4Param_PseudoCountWeight     ("PseudoCountWeight",     CBlast4_value::e_Integer);
 TField B4Param_QueryGeneticCode      ("QueryGeneticCode",      CBlast4_value::e_Integer);
+TField B4Param_RepeatFiltering       ("RepeatFiltering",       CBlast4_value::e_Boolean);
+TField B4Param_RepeatFilteringDB     ("RepeatFilteringDB",     CBlast4_value::e_String);
 TField B4Param_RequiredEnd           ("RequiredEnd",           CBlast4_value::e_Integer);
 TField B4Param_RequiredStart         ("RequiredStart",         CBlast4_value::e_Integer);
+TField B4Param_SegFiltering          ("SegFiltering",          CBlast4_value::e_Boolean);
 TField B4Param_StrandOption          ("StrandOption",          CBlast4_value::e_Strand_type);
 TField B4Param_UngappedMode          ("UngappedMode",          CBlast4_value::e_Boolean);
 TField B4Param_UseRealDbSize         ("UseRealDbSize",         CBlast4_value::e_Boolean);
