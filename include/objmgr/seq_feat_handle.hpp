@@ -155,6 +155,11 @@ public:
     bool IsSetSNPComment(void) const;
     const string& GetSNPComment(void) const;
 
+    bool IsSetSNPQualityCode(void) const;
+    CUser_field::TData::E_Choice GetSNPQualityCodeWhich(void) const;
+    const string& GetSNPQualityCodeStr(void) const;
+    vector<char> GetSNPQualityCodeOs(void) const;
+
     /// Return true if this feature was removed already
     bool IsRemoved(void) const;
     /// Remove the feature from Seq-annot
@@ -308,6 +313,13 @@ inline
 CSeq_feat_Handle::TWeight CSeq_feat_Handle::GetSNPWeight(void) const
 {
     return x_GetSNP_Info().m_Weight;
+}
+
+
+inline
+bool CSeq_feat_Handle::IsSetSNPQualityCode(void) const
+{
+    return (x_GetSNP_Info().m_Flags & SSNP_Info::fQualityCodeMask) != 0;
 }
 
 
@@ -777,7 +789,7 @@ END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
-* $Log$
+* $Log: seq_feat_handle.hpp,v $
 * Revision 1.22  2006/11/14 19:21:59  vasilche
 * Added feature ids index and retrieval.
 *

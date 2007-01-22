@@ -41,6 +41,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <memory>
 
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -66,15 +67,12 @@ class CSeq_interval;
 class NCBI_XOBJMGR_EXPORT CIndexedStrings
 {
 public:
-    void ClearIndices(void)
-        {
-            m_Indices.clear();
-        }
-    void Clear(void)
-        {
-            ClearIndices();
-            m_Strings.clear();
-        }
+    CIndexedStrings(void);
+    CIndexedStrings(const CIndexedStrings& ss);
+
+    void ClearIndices(void);
+    void Clear(void);
+
     bool IsEmpty(void) const
         {
             return m_Strings.empty();
@@ -91,10 +89,7 @@ public:
             return m_Strings[index];
         }
 
-    void Resize(size_t new_size)
-        {
-            m_Strings.resize(new_size);
-        }
+    void Resize(size_t new_size);
     string& SetString(size_t index)
         {
             return m_Strings[index];
@@ -105,7 +100,58 @@ private:
     typedef map<string, size_t> TIndices;
 
     TStrings m_Strings;
-    TIndices m_Indices;
+    auto_ptr<TIndices> m_Indices;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CIndexedOctetStrings
+{
+public:
+    typedef vector<char> TOctetString;
+
+    CIndexedOctetStrings(const CIndexedOctetStrings& ss);
+    CIndexedOctetStrings(void);
+
+    void ClearIndices(void);
+    void Clear(void);
+
+    bool IsEmpty(void) const
+        {
+            return m_Strings.empty();
+        }
+    size_t GetElementSize(void) const
+        {
+            return m_ElementSize;
+        }
+    size_t GetTotalSize(void) const
+        {
+            return m_Strings.size();
+        }
+    size_t GetSize(void) const
+        {
+            size_t size = GetTotalSize();
+            if ( size ) {
+                size /= GetElementSize();
+            }
+            return size;
+        }
+    const TOctetString& GetTotalString(void) const
+        {
+            return m_Strings;
+        }
+    void SetTotalString(size_t element_size, TOctetString& s);
+
+    size_t GetIndex(const TOctetString& s, size_t max_index);
+
+    void GetString(size_t index, TOctetString&) const;
+
+private:
+    typedef vector<char> TStrings;
+    typedef map<CTempString, size_t> TIndices;
+
+    size_t m_ElementSize;
+    TStrings m_Strings;
+    auto_ptr<TIndices> m_Indices;
 };
 
 
@@ -162,8 +208,11 @@ protected:
     const string& x_GetComment(SSNP_Info::TCommentIndex index) const;
     SSNP_Info::TAlleleIndex x_GetAlleleIndex(const string& allele);
     const string& x_GetAllele(SSNP_Info::TAlleleIndex index) const;
-    SSNP_Info::TQualityIndex x_GetQualityIndex(const string& comment);
+    SSNP_Info::TQualityIndex x_GetQualityIndex(const string& str);
+    typedef vector<char> TOctetString;
+    SSNP_Info::TQualityIndex x_GetQualityIndex(const TOctetString& os);
     const string& x_GetQuality(SSNP_Info::TQualityIndex index) const;
+    void x_GetQuality(SSNP_Info::TQualityIndex index, TOctetString& os) const;
 
     bool x_CheckGi(int gi);
     void x_SetGi(int gi);
@@ -183,7 +232,8 @@ private:
     TSNP_Set                    m_SNP_Set;
     CIndexedStrings             m_Comments;
     CIndexedStrings             m_Alleles;
-    CIndexedStrings             m_Quality;
+    CIndexedStrings             m_QualityStr;
+    CIndexedOctetStrings        m_QualityOs;
     CRef<CSeq_annot>            m_Seq_annot;
 };
 
@@ -269,9 +319,7 @@ inline
 SSNP_Info::TCommentIndex
 CSeq_annot_SNP_Info::x_GetCommentIndex(const string& comment)
 {
-    return comment.size() > SSNP_Info::kMax_CommentLength?
-        SSNP_Info::kNo_CommentIndex:
-        m_Comments.GetIndex(comment, SSNP_Info::kMax_CommentIndex);
+    return m_Comments.GetIndex(comment, SSNP_Info::kMax_CommentIndex);
 }
 
 
@@ -279,7 +327,15 @@ inline
 SSNP_Info::TQualityIndex
 CSeq_annot_SNP_Info::x_GetQualityIndex(const string& str)
 {
-    return m_Quality.GetIndex(str, SSNP_Info::kMax_QualityIndex);
+    return m_QualityStr.GetIndex(str, SSNP_Info::kMax_QualityIndex);
+}
+
+
+inline
+SSNP_Info::TQualityIndex
+CSeq_annot_SNP_Info::x_GetQualityIndex(const TOctetString& os)
+{
+    return m_QualityOs.GetIndex(os, SSNP_Info::kMax_QualityIndex);
 }
 
 
@@ -303,7 +359,15 @@ inline
 const string&
 CSeq_annot_SNP_Info::x_GetQuality(SSNP_Info::TQualityIndex index) const
 {
-    return m_Quality.GetString(index);
+    return m_QualityStr.GetString(index);
+}
+
+
+inline
+void CSeq_annot_SNP_Info::x_GetQuality(SSNP_Info::TQualityIndex index,
+                                       TOctetString& os) const
+{
+    return m_QualityOs.GetString(index, os);
 }
 
 
@@ -342,7 +406,7 @@ END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
-* $Log$
+* $Log: snp_annot_info.hpp,v $
 * Revision 1.22  2006/07/12 16:17:31  vasilche
 * Added CSeq_annot_ftable_CI.
 *

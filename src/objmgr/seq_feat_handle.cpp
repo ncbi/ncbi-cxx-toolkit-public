@@ -182,23 +182,22 @@ const string& CSeq_feat_Handle::GetSNPComment(void) const
 
 size_t CSeq_feat_Handle::GetSNPAllelesCount(void) const
 {
-    const SSNP_Info& snp = x_GetSNP_Info();
-    size_t count = 0;
-    for (; count < SSNP_Info::kMax_AllelesCount; ++count) {
-        if (snp.m_AllelesIndices[count] == SSNP_Info::kNo_AlleleIndex) {
-            break;
-        }
-    }
-    return count;
+    return x_GetSNP_Info().GetAllelesCount();
 }
 
 
 const string& CSeq_feat_Handle::GetSNPAllele(size_t index) const
 {
-    _ASSERT(index < SSNP_Info::kMax_AllelesCount);
     const SSNP_Info& snp = x_GetSNP_Info();
-    _ASSERT(snp.m_AllelesIndices[index] != SSNP_Info::kNo_AlleleIndex);
+    _ASSERT(index < snp.GetAllelesCount());
     return x_GetSNP_annot_Info().x_GetAllele(snp.m_AllelesIndices[index]);
+}
+
+
+CUser_field::TData::E_Choice
+CSeq_feat_Handle::GetSNPQualityCodeWhich(void) const
+{
+    return x_GetSNP_Info().GetQualityCodeWhich();
 }
 
 
@@ -509,7 +508,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: seq_feat_handle.cpp,v $
  * Revision 1.18  2006/11/14 19:21:58  vasilche
  * Added feature ids index and retrieval.
  *

@@ -70,8 +70,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#undef EXACT_ALLELE_COUNT
-
 
 /////////////////////////////////////////////////////////////////////////////
 // SSNP_Info
@@ -81,20 +79,22 @@ const char* const SSNP_Info::s_SNP_Type_Label[eSNP_Type_last] = {
     "simple",
     "bad - wrong member set",
     "bad - wrong text id",
-    "complex - has comment",
+    "complex - comment too big",
+    "complex - comment index overflow",
     "complex - location is not point",
     "complex - location is not gi",
     "complex - location gi is bad",
     "complex - location strand is bad",
     "complex - id count is too large",
     "complex - id count is not one",
-    "complex - allele length is bad",
+    "complex - allele length is too big",
+    "complex - allele index overflow",
     "complex - allele count is too large",
-    "complex - allele count is non standard",
     "complex - weight has bad value",
     "complex - weight count is not one",
-    "complex - no place to store dbSnpQAdata",
-    "complex - bad format of dbSnpQAdata"
+    "complex - bad format of dbSnpQAdata",
+    "complex - no place for dbSnpQAdata",
+    "complex - dbSnpQAdata index overflow"
 };
 
 
@@ -107,6 +107,35 @@ static const string kId_weight           ("weight");
 static const string kId_QualityCodes     ("QualityCodes");
 static const string kVal_1               ("1");
 static const string kId_dbSNP            ("dbSNP");
+
+static const size_t kMax_CommentLength = 65530;
+static const size_t kMax_AlleleLength  = 5;
+
+size_t SSNP_Info::GetAllelesCount(void) const
+{
+    size_t count = 0;
+    for (; count < kMax_AllelesCount; ++count) {
+        if ( m_AllelesIndices[count] == kNo_AlleleIndex ) {
+            break;
+        }
+    }
+    if ( m_Flags & fQualityCodeMask ) {
+        --count;
+    }
+    return count;
+}
+
+
+CUser_field::TData::E_Choice SSNP_Info::GetQualityCodeWhich(void) const
+{
+    if ( m_Flags & fQualityCodeStr ) {
+        return CUser_field::TData::e_Str;
+    }
+    if ( m_Flags & fQualityCodeOs ) {
+        return CUser_field::TData::e_Os;
+    }
+    return CUser_field::TData::e_not_set;
+}
 
 
 SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
@@ -169,10 +198,12 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         else {
             return eSNP_Bad_WrongTextId;
         }
-        TAlleleIndex allele_index =
-            annot_info.x_GetAlleleIndex(qual_val);
+        if ( qual_val.size() > kMax_AlleleLength ) {
+            return eSNP_Complex_AlleleTooBig;
+        }
+        TAlleleIndex allele_index = annot_info.x_GetAlleleIndex(qual_val);
         if ( allele_index == kNo_AlleleIndex ) {
-            return eSNP_Complex_AlleleLengthBad;
+            return eSNP_Complex_AlleleIndexOverflow;
         }
         m_AllelesIndices[alleles_count++] = allele_index;
     }
@@ -182,15 +213,9 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     if ( qual_replace ) {
         m_Flags |= fQualReplace;
     }
-#ifdef EXACT_ALLELE_COUNT
-    if ( alleles_count != kMax_AllelesCount ) {
-        return eSNP_Complex_AlleleCountIsNonStandard;
-    }
-#else
     for ( size_t i = alleles_count; i < kMax_AllelesCount; ++i ) {
         m_AllelesIndices[i] = kNo_AlleleIndex;
     }
-#endif
 
     bool have_snp_id = false;
     ITERATE ( CSeq_feat::TDbxref, it, dbxref ) {
@@ -277,7 +302,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         }
         else if ( ext_id_str == kId_dbSnpQAdata ) {
             if ( alleles_count == kMax_AllelesCount ||
-                 (m_Flags & fQualityCode) ) {
+                 (m_Flags & fQualityCodeMask) ) {
                 return eSNP_Complex_NoPlaceForQAdata;
             }
             
@@ -295,20 +320,24 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                 }
             }}
             const CUser_field::TData& user_data = field.GetData();
-            if ( user_data.Which() != CUser_field::TData::e_Str ) {
+            TFlags qaflag;
+            TQualityIndex qaindex;
+            switch ( user_data.Which() ) {
+            case CUser_field::TData::e_Str:
+                qaflag = fQualityCodeStr;
+                qaindex = annot_info.x_GetQualityIndex(user_data.GetStr());
+                break;
+            case CUser_field::TData::e_Os:
+                qaflag = fQualityCodeOs;
+                qaindex = annot_info.x_GetQualityIndex(user_data.GetOs());
+                break;
+            default:
                 return eSNP_Complex_BadQAdata;
             }
-            const string& qadata = user_data.GetStr();
-            TQualityIndex qaindex = annot_info.x_GetQualityIndex(qadata);
-            if ( qaindex == kNo_CommentIndex ) {
-                return eSNP_Complex_NoPlaceForQAdata;
+            if ( qaindex == kNo_QualityIndex || ++it != data.end() ) {
+                return eSNP_Complex_QAdataIndexOverflow;
             }
-            
-            if ( ++it != data.end() ) {
-                return eSNP_Complex_NoPlaceForQAdata;
-            }
-            
-            m_Flags |= fQualityCode;
+            m_Flags |= qaflag;
             m_AllelesIndices[alleles_count++] = qaindex;
         }
         else {
@@ -321,8 +350,15 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     case CSeq_loc::e_Pnt:
     {
         const CSeq_point& point = loc.GetPnt();
-        if ( point.IsSetFuzz() || !point.IsSetStrand() ) {
+        if ( !point.IsSetStrand() ) {
             return eSNP_Bad_WrongMemberSet;
+        }
+        if ( point.IsSetFuzz() ) {
+            const CInt_fuzz& fuzz = point.GetFuzz();
+            if ( !fuzz.IsLim() || fuzz.GetLim() != CInt_fuzz::eLim_tr ) {
+                return eSNP_Bad_WrongMemberSet;
+            }
+            m_Flags |= fFuzzLimTr;
         }
         id = &point.GetId();
         strand = point.GetStrand();
@@ -362,9 +398,13 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     }
 
     if ( feat.IsSetComment() ) {
+        const string& comment = feat.GetComment();
+        if ( comment.size() > kMax_CommentLength ) {
+            return eSNP_Complex_CommentTooBig;
+        }
         m_CommentIndex = annot_info.x_GetCommentIndex(feat.GetComment());
         if ( m_CommentIndex == kNo_CommentIndex ) {
-            return eSNP_Complex_HasComment;
+            return eSNP_Complex_CommentIndexOverflow;
         }
     }
     else {
@@ -433,7 +473,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         ++alleles_count;
     }
     
-    if ( m_Flags & fQualityCode ) {
+    if ( m_Flags & fQualityCodeMask ) {
         _ASSERT(alleles_count > 0);
         --alleles_count;
     }
@@ -491,7 +531,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
                             kId_weight);
         user_field.SetData().SetInt(m_Weight);
     }
-    else if ( m_Flags & fQualityCode ) {
+    else if ( m_Flags & fQualityCodeStr ) {
         // qadata in ext
         CSeq_feat::TExt& ext = feat.SetExt();
         CPackString::Assign(ext.SetType().SetStr(), kId_dbSnpQAdata);
@@ -499,11 +539,22 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         data.resize(1);
         data[0].Reset(new CUser_field);
         CUser_field& user_field = *data[0];
-        CPackString::Assign(user_field.SetLabel().SetStr(),
-                            kId_QualityCodes);
+        CPackString::Assign(user_field.SetLabel().SetStr(), kId_QualityCodes);
         TQualityIndex qadata_index = m_AllelesIndices[alleles_count];
         CPackString::Assign(user_field.SetData().SetStr(),
                             annot_info.x_GetQuality(qadata_index));
+    }
+    else if ( m_Flags & fQualityCodeOs ) {
+        // qadata in ext
+        CSeq_feat::TExt& ext = feat.SetExt();
+        CPackString::Assign(ext.SetType().SetStr(), kId_dbSnpQAdata);
+        CSeq_feat::TExt::TData& data = ext.SetData();
+        data.resize(1);
+        data[0].Reset(new CUser_field);
+        CUser_field& user_field = *data[0];
+        CPackString::Assign(user_field.SetLabel().SetStr(), kId_QualityCodes);
+        TQualityIndex qadata_index = m_AllelesIndices[alleles_count];
+        annot_info.x_GetQuality(qadata_index, user_field.SetData().SetOs());
     }
     else {
         feat.ResetExt();
@@ -540,6 +591,12 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             point.SetPoint(to_position);
             point.SetStrand(strand);
             point.SetId().SetGi(gi);
+            if ( m_Flags & fFuzzLimTr ) {
+                point.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
+            }
+            else {
+                point.ResetFuzz();
+            }
         }
         else {
             // interval
@@ -573,6 +630,12 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             point.SetPoint(to_position);
             point.SetStrand(strand);
             point.SetId().SetGi(gi);
+            if ( m_Flags & fFuzzLimTr ) {
+                point.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
+            }
+            else {
+                point.ResetFuzz();
+            }
         }
         else {
             // interval
@@ -639,6 +702,8 @@ CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info)
       m_SNP_Set(info.m_SNP_Set),
       m_Comments(info.m_Comments),
       m_Alleles(info.m_Alleles),
+      m_QualityStr(info.m_QualityStr),
+      m_QualityOs(info.m_QualityOs),
       m_Seq_annot(info.m_Seq_annot)
 {
 }
@@ -711,30 +776,145 @@ void CSeq_annot_SNP_Info::x_DoUpdate(TNeedUpdateFlags flags)
 }
 
 
+CIndexedStrings::CIndexedStrings(void)
+{
+}
+
+
+CIndexedStrings::CIndexedStrings(const CIndexedStrings& ss)
+    : m_Strings(ss.m_Strings)
+{
+}
+
+
+void CIndexedStrings::ClearIndices(void)
+{
+    m_Indices.reset();
+}
+
+
+void CIndexedStrings::Clear(void)
+{
+    ClearIndices();
+    m_Strings.clear();
+}
+
+
+void CIndexedStrings::Resize(size_t new_size)
+{
+    m_Indices.reset();
+    m_Strings.resize(new_size);
+}
+
+
 size_t CIndexedStrings::GetIndex(const string& s, size_t max_index)
 {
-    TIndices::iterator it = m_Indices.lower_bound(s);
-    if ( it != m_Indices.end() && it->first == s ) {
+    if ( !m_Indices.get() ) {
+        m_Indices.reset(new TIndices);
+        for ( size_t i = 0; i < m_Strings.size(); ++i ) {
+            m_Indices->insert(TIndices::value_type(m_Strings[i], i));
+        }
+    }
+    TIndices::iterator it = m_Indices->lower_bound(s);
+    if ( it != m_Indices->end() && it->first == s ) {
         return it->second;
     }
     size_t index = m_Strings.size();
     if ( index <= max_index ) {
-        //NcbiCout << "string["<<index<<"] = \"" << s << "\"\n";
         m_Strings.push_back(s);
-        m_Indices.insert(it, TIndices::value_type(s, index));
-    }
-    else {
-        _ASSERT(index == max_index + 1);
+        m_Indices->insert(it, TIndices::value_type(m_Strings.back(), index));
     }
     return index;
+}
+
+
+CIndexedOctetStrings::CIndexedOctetStrings(const CIndexedOctetStrings& ss)
+    : m_ElementSize(ss.m_ElementSize), m_Strings(ss.m_Strings)
+{
+}
+
+
+CIndexedOctetStrings::CIndexedOctetStrings(void)
+    : m_ElementSize(0)
+{
+}
+
+
+void CIndexedOctetStrings::ClearIndices(void)
+{
+    m_Indices.reset();
+    if ( m_Strings.capacity() > m_Strings.size() + 32 ) {
+        TOctetString s(m_Strings);
+        s.swap(m_Strings);
+    }
+}
+
+
+void CIndexedOctetStrings::Clear(void)
+{
+    m_Indices.reset();
+    m_Strings.clear();
+}
+
+
+size_t CIndexedOctetStrings::GetIndex(const TOctetString& os, size_t max_index)
+{
+    size_t size = os.size();
+    if ( size == 0 ) {
+        return max_index+1;
+    }
+    if ( size != m_ElementSize ) {
+        if ( m_ElementSize != 0 ) {
+            return max_index+1;
+        }
+        m_ElementSize = size;
+    }
+    if ( !m_Indices.get() ) {
+        _ASSERT(m_Strings.size() % size == 0);
+        m_Indices.reset(new TIndices);
+        m_Strings.reserve(size*(max_index+1));
+        for ( size_t i = 0; i*size < m_Strings.size(); ++i ) {
+            m_Indices->insert(TIndices::value_type
+                              (CTempString(&m_Strings[i*size], size), i));
+        }
+    }
+    CTempString s(&os[0], size);
+    TIndices::iterator it = m_Indices->lower_bound(s);
+    if ( it != m_Indices->end() && it->first == s ) {
+        return it->second;
+    }
+    size_t pos = m_Strings.size();
+    if ( pos > max_index*size ) {
+        return max_index+1;
+    }
+    size_t index = pos/size;
+    m_Strings.insert(m_Strings.end(), os.begin(), os.end());
+    m_Indices->insert(TIndices::value_type
+                      (CTempString(&m_Strings[pos], size), index));
+    return index;
+}
+
+
+void CIndexedOctetStrings::GetString(size_t index, TOctetString& s) const
+{
+    size_t size = m_ElementSize;
+    size_t pos = index*size;
+    s.assign(m_Strings.begin()+pos, m_Strings.begin()+(pos+size));
+}
+
+
+void CIndexedOctetStrings::SetTotalString(size_t element_size,
+                                          TOctetString& s)
+{
+    m_Indices.reset();
+    m_ElementSize = element_size;
+    m_Strings.swap(s);
 }
 
 
 SSNP_Info::TAlleleIndex
 CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
 {
-    if ( allele.size() > SSNP_Info::kMax_AlleleLength )
-        return SSNP_Info::kNo_AlleleIndex;
     if ( m_Alleles.IsEmpty() ) {
         // prefill by small alleles
         for ( const char* c = "-NACGT"; *c; ++c ) {
@@ -766,6 +946,8 @@ void CSeq_annot_SNP_Info::x_FinishParsing(void)
     // we don't need index maps anymore
     m_Comments.ClearIndices();
     m_Alleles.ClearIndices();
+    m_QualityStr.ClearIndices();
+    m_QualityOs.ClearIndices();
     
     sort(m_SNP_Set.begin(), m_SNP_Set.end());
     
@@ -779,6 +961,8 @@ void CSeq_annot_SNP_Info::Reset(void)
     m_Seq_id.Reset();
     m_Comments.Clear();
     m_Alleles.Clear();
+    m_QualityStr.Clear();
+    m_QualityOs.Clear();
     m_SNP_Set.clear();
     m_Seq_annot.Reset();
 }
@@ -788,7 +972,7 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
- * $Log$
+ * $Log: snp_annot_info.cpp,v $
  * Revision 1.19  2006/03/16 20:32:39  vasilche
  * Updated SNP table parser to accept quality code.
  *

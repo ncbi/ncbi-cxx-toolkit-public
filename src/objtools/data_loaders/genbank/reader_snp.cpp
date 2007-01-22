@@ -378,6 +378,46 @@ void LoadIndexedStringsFrom(CNcbiIstream& stream,
 }
 
 
+void StoreIndexedOctetStringsTo(CNcbiOstream& stream,
+                                const CIndexedOctetStrings& strings)
+{
+    size_t element_size = strings.GetElementSize();
+    write_size(stream, element_size);
+    if ( element_size ) {
+        size_t total_size = strings.GetTotalSize();
+        write_size(stream, total_size);
+        stream.write(&strings.GetTotalString()[0], total_size);
+    }
+}
+
+
+void LoadIndexedOctetStringsFrom(CNcbiIstream& stream,
+                                 CIndexedOctetStrings& strings,
+                                 size_t max_index,
+                                 size_t max_length)
+{
+    strings.Clear();
+    size_t element_size = read_size(stream);
+    if ( element_size ) {
+        size_t total_size = read_size(stream);
+        if ( !stream || element_size == 0 || total_size%element_size != 0 ||
+             element_size*(max_index+1) > total_size ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Bad format of SNP table");
+        }
+        CIndexedOctetStrings::TOctetString s;
+        s.resize(total_size);
+        stream.read(&s[0], total_size);
+        if ( !stream ) {
+            strings.Clear();
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Bad format of SNP table");
+        }
+        strings.SetTotalString(element_size, s);
+    }
+}
+
+
 namespace {
 
 class CSeq_annot_WriteHook : public CWriteObjectHook
@@ -416,9 +456,7 @@ public:
 }
 
 
-static const unsigned MAGIC = 0x12340004;
-static const unsigned MAGIC_NOQUALITY = 0x12340003;
-
+static const unsigned MAGIC = 0x12340005;
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CConstObjectInfo& object,
@@ -457,7 +495,7 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Bad format of SNP table");
     }
-    if ( magic != MAGIC && magic != MAGIC_NOQUALITY ) {
+    if ( magic != MAGIC ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
@@ -532,7 +570,8 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
     // strings
     StoreIndexedStringsTo(stream, snp_info.m_Comments);
     StoreIndexedStringsTo(stream, snp_info.m_Alleles);
-    StoreIndexedStringsTo(stream, snp_info.m_Quality);
+    StoreIndexedStringsTo(stream, snp_info.m_QualityStr);
+    StoreIndexedOctetStringsTo(stream, snp_info.m_QualityOs);
 
     // simple Set_Info
     unsigned count = snp_info.m_SNP_Set.size();
@@ -541,6 +580,10 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
                  count*sizeof(SSNP_Info));
 }
 
+
+static const size_t kMax_CommentLength = 65536;
+static const size_t kMax_AlleleLength = 256;
+static const size_t kMax_QualityLength = 32;
 
 void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                                         CSeq_annot_SNP_Info& snp_info)
@@ -553,7 +596,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Bad format of SNP table");
     }
-    if ( magic != MAGIC && magic != MAGIC_NOQUALITY ) {
+    if ( magic != MAGIC ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
@@ -563,17 +606,19 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
     LoadIndexedStringsFrom(stream,
                            snp_info.m_Comments,
                            SSNP_Info::kMax_CommentIndex,
-                           SSNP_Info::kMax_CommentLength);
+                           kMax_CommentLength);
     LoadIndexedStringsFrom(stream,
                            snp_info.m_Alleles,
                            SSNP_Info::kMax_AlleleIndex,
-                           SSNP_Info::kMax_AlleleLength);
-    if ( magic != MAGIC_NOQUALITY ) {
-        LoadIndexedStringsFrom(stream,
-                               snp_info.m_Quality,
-                               SSNP_Info::kMax_QualityIndex,
-                               SSNP_Info::kMax_QualityLength);
-    }
+                           kMax_AlleleLength);
+    LoadIndexedStringsFrom(stream,
+                           snp_info.m_QualityStr,
+                           SSNP_Info::kMax_QualityIndex,
+                           kMax_QualityLength);
+    LoadIndexedOctetStringsFrom(stream,
+                                snp_info.m_QualityOs,
+                                SSNP_Info::kMax_QualityIndex,
+                                kMax_QualityLength);
 
     // simple Set_Info
     unsigned count = read_size(stream);
@@ -584,7 +629,8 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
     }
     size_t comments_size = snp_info.m_Comments.GetSize();
     size_t alleles_size = snp_info.m_Alleles.GetSize();
-    size_t quality_size = snp_info.m_Quality.GetSize();
+    size_t quality_str_size = snp_info.m_QualityStr.GetSize();
+    size_t quality_os_size = snp_info.m_QualityOs.GetSize();
     ITERATE ( CSeq_annot_SNP_Info::TSNP_Set, it, snp_info.m_SNP_Set ) {
         size_t index = it->m_CommentIndex;
         if ( index != SSNP_Info::kNo_CommentIndex &&
@@ -593,17 +639,24 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Bad format of SNP table");
         }
-        int quality = it->m_Flags & SSNP_Info::fQualityCode;
+        int quality = it->m_Flags & SSNP_Info::fQualityCodeMask;
         for ( int i = SSNP_Info::kMax_AllelesCount-1; i >= 0; --i ) {
             index = it->m_AllelesIndices[i];
             if ( index != SSNP_Info::kNo_AlleleIndex ) {
                 if ( quality ) {
-                    quality = 0;
-                    if ( index >= quality_size ) {
+                    size_t size;
+                    if ( quality & SSNP_Info::fQualityCodeStr ) {
+                        size = quality_str_size;
+                    }
+                    else {
+                        size = quality_os_size;
+                    }
+                    if ( index >= size ) {
                         snp_info.Reset();
                         NCBI_THROW(CLoaderException, eLoaderFailed,
                                    "Bad format of SNP table");
                     }
+                    quality = 0;
                 }
                 else {
                     if ( index >= alleles_size ) {
@@ -622,7 +675,7 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
- * $Log$
+ * $Log: reader_snp.cpp,v $
  * Revision 1.29  2006/03/16 20:33:03  vasilche
  * Updated SNP table parser to accept quality code.
  *

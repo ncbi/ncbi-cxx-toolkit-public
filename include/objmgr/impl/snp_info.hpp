@@ -35,6 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <objects/general/User_field.hpp>
 
 #include <util/range.hpp>
 
@@ -71,20 +72,22 @@ public:
         eSNP_Simple,
         eSNP_Bad_WrongMemberSet,
         eSNP_Bad_WrongTextId,
-        eSNP_Complex_HasComment,
+        eSNP_Complex_CommentTooBig,
+        eSNP_Complex_CommentIndexOverflow,
         eSNP_Complex_LocationIsNotPoint,
         eSNP_Complex_LocationIsNotGi,
         eSNP_Complex_LocationGiIsBad,
         eSNP_Complex_LocationStrandIsBad,
         eSNP_Complex_IdCountTooLarge,
         eSNP_Complex_IdCountIsNotOne,
-        eSNP_Complex_AlleleLengthBad,
+        eSNP_Complex_AlleleTooBig,
+        eSNP_Complex_AlleleIndexOverflow,
         eSNP_Complex_AlleleCountTooLarge,
-        eSNP_Complex_AlleleCountIsNonStandard,
         eSNP_Complex_WeightBadValue,
         eSNP_Complex_WeightCountIsNotOne,
-        eSNP_Complex_NoPlaceForQAdata,
         eSNP_Complex_BadQAdata,
+        eSNP_Complex_NoPlaceForQAdata,
+        eSNP_Complex_QAdataIndexOverflow,
         eSNP_Type_last
     };
     // names of types for logging
@@ -115,6 +118,9 @@ public:
                           CRef<CSeq_interval>& seq_interval,
                           const CSeq_annot_SNP_Info& annot_info) const;
 
+    size_t GetAllelesCount(void) const;
+    CUser_field::TData::E_Choice GetQualityCodeWhich(void) const;
+
     typedef int TSNPId;
     typedef Int1 TPositionDelta;
     enum {
@@ -123,20 +129,17 @@ public:
     typedef Uint1 TCommentIndex;
     enum {
         kNo_CommentIndex   = kMax_UI1,
-        kMax_CommentIndex  = kNo_CommentIndex - 1,
-        kMax_CommentLength = 65530
+        kMax_CommentIndex  = kNo_CommentIndex - 1
     };
     typedef Uint1 TAlleleIndex;
     enum {
         kNo_AlleleIndex    = kMax_UI1,
-        kMax_AlleleIndex   = kNo_AlleleIndex - 1,
-        kMax_AlleleLength  = 5
+        kMax_AlleleIndex   = kNo_AlleleIndex - 1
     };
     typedef Uint1 TQualityIndex;
     enum {
         kNo_QualityIndex    = kMax_UI1,
-        kMax_QualityIndex   = kNo_QualityIndex - 1,
-        kMax_QualityLength  = 255
+        kMax_QualityIndex   = kNo_QualityIndex - 1
     };
     enum {
         kMax_AllelesCount  = 4
@@ -147,12 +150,15 @@ public:
     };
     typedef Uint1 TFlags;
     enum FFlags {
-        fMinusStrand = 1 << 0,
-        fQualReplace = 1 << 1,
-        fWeightQual  = 1 << 2,
-        fRemoved     = 1 << 3,
-        fWeightExt   = 1 << 4,
-        fQualityCode = 1 << 5
+        fMinusStrand    = 1 << 0,
+        fQualReplace    = 1 << 1,
+        fWeightQual     = 1 << 2,
+        fRemoved        = 1 << 3,
+        fWeightExt      = 1 << 4,
+        fQualityCodeStr = 1 << 5,
+        fQualityCodeOs  = 1 << 6,
+        fQualityCodeMask= fQualityCodeStr | fQualityCodeOs,
+        fFuzzLimTr      = 1 << 7
     };
 
     TSeqPos         m_ToPosition;
