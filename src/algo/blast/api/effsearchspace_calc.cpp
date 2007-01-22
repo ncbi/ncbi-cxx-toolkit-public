@@ -86,16 +86,10 @@ CEffectiveSearchSpaceCalculator::CEffectiveSearchSpaceCalculator
         m_QueryFactory->MakeLocalQueryData(&options);
     m_QueryInfo = local_data->GetQueryInfo();
 
-    CBlastScoringOptions scoring_opts;
-    BlastScoringOptionsNew(m_Program, &scoring_opts);
-
-    CBlastEffectiveLengthsOptions efflen_opts;
-    BlastEffectiveLengthsOptionsNew(&efflen_opts);
-
     CBlastScoreBlk score_blk;
+    auto_ptr<CBlastOptionsMemento> opts_memento
+        (const_cast<CBlastOptionsMemento*>(options.CreateSnapshot()));
     {{
-        auto_ptr<CBlastOptionsMemento> opts_memento
-            (const_cast<CBlastOptionsMemento*>(options.CreateSnapshot()));
         TSearchMessages messages;
 
         CFilteringMemento
@@ -111,11 +105,12 @@ CEffectiveSearchSpaceCalculator::CEffectiveSearchSpaceCalculator
 
     /* Initialize the effective length parameters with real values of
        database length and number of sequences */
-    BlastEffectiveLengthsParametersNew(efflen_opts, db_num_bases, db_num_seqs, 
+    BlastEffectiveLengthsParametersNew(opts_memento->m_EffLenOpts, 
+                                       db_num_bases, db_num_seqs, 
                                        &eff_len_params);
 
     Int2 status = 
-        BLAST_CalcEffLengths(m_Program, scoring_opts,
+        BLAST_CalcEffLengths(m_Program, opts_memento->m_ScoringOpts,
                              eff_len_params, score_blk, m_QueryInfo, NULL);
     if (status) {
         NCBI_THROW(CBlastException, eCoreBlastError, 

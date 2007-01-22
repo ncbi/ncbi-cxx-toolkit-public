@@ -54,6 +54,7 @@ class CBlastPrelimSearch;
 class CBlastTracebackSearch;
 class CPsiBl2Seq;
 class CFilteringMemento;
+class CEffectiveSearchSpaceCalculator;
 
 /// Class that allows the transfer of data structures from the
 /// CBlastOptionsLocal class to either the BLAST preliminary or 
@@ -93,6 +94,7 @@ private:
     friend class CBlastPrelimSearch;
     friend class CBlastTracebackSearch;
     friend class CFilteringMemento;
+    friend class CEffectiveSearchSpaceCalculator;
 
     // The data that is being shared (not that this object doesn't own these)
     EBlastProgramType m_ProgramType;
