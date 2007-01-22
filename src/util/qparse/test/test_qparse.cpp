@@ -299,7 +299,8 @@ int CTestQParse::Run(void)
    
    
    
-    ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.20000");
+   
+ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.50000");
     
     return 0;
 }

@@ -120,7 +120,7 @@ exp :
     {
     
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
-        $$ = env->QTree().CreateBinaryNode(CQueryParseNode::eFieldSearch, $1, $2);
+        $$ = env->QTree().CreateNode(CQueryParseNode::eFieldSearch, $1, $2);
         env->AttachQueryTree($$);
         env->ForgetPoolNodes($1, $2);
     }
@@ -129,7 +129,7 @@ exp :
     {
         yyerrok;
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
-        $$ = env->QTree().CreateBinaryNode(CQueryParseNode::eAnd, $1, $2);
+        $$ = env->QTree().CreateNode(CQueryParseNode::eAnd, $1, $2);
         $$->GetValue().SetExplicit(false);
         env->AttachQueryTree($$);
         env->ForgetPoolNodes($1, $2);
