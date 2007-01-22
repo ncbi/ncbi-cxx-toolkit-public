@@ -6110,7 +6110,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // There is a problem with ftds driver
     // on GCC_340-ReleaseMT--i686-pc-linux2.4.23
-    if (args.GetDriverName() != "ftds") {
+    if (args.GetDriverName() != "ftds" &&
+        args.GetDriverName() != "msdblib") {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
