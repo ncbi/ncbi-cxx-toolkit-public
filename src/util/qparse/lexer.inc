@@ -137,8 +137,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(2);
         if (verbose) { _TRACE("token: AND"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eAnd, 0, 0,
-                                          string(ptr-3, 3));
+            env->QTree().CreateNode(CQueryParseNode::eAnd, 0, 0,
+                                    string(ptr-3, 3));
         env->AttachToPool(qnode); 
         qnode->GetValue().SetLoc(line, line_pos);
         return AND;
@@ -156,8 +156,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(1);
         if (verbose) { _TRACE("token: &&"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eAnd, 0, 0,
-                                          string(ptr-1, 2));
+            env->QTree().CreateNode(CQueryParseNode::eAnd, 0, 0,
+                                    string(ptr-1, 2));
         env->AttachToPool(qnode);                
         qnode->GetValue().SetLoc(line, line_pos);
         return AND;    
@@ -173,8 +173,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(2);
         if (verbose) { _TRACE("token: SUB"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eSub, 0, 0,
-                                          string(ptr-3, 3));
+            env->QTree().CreateNode(CQueryParseNode::eSub, 0, 0,
+                                    string(ptr-3, 3));
         env->AttachToPool(qnode);                
         qnode->GetValue().SetLoc(line, line_pos);
         return SUB;
@@ -190,8 +190,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(2);
         if (verbose) { _TRACE("token: XOR"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eXor, 0, 0,
-                                          string(ptr-3, 3));
+            env->QTree().CreateNode(CQueryParseNode::eXor, 0, 0,
+                                    string(ptr-3, 3));
         env->AttachToPool(qnode);                
         qnode->GetValue().SetLoc(line, line_pos);
         return XOR;
@@ -207,8 +207,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(4);
         if (verbose) { _TRACE("token: MINUS"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eSub, 0, 0,
-                                          string(ptr-5, 5));
+            env->QTree().CreateNode(CQueryParseNode::eSub, 0, 0,
+                                    string(ptr-5, 5));
         env->AttachToPool(qnode);                        
         qnode->GetValue().SetLoc(line, line_pos);
         return SUB;
@@ -224,8 +224,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(1);
         if (verbose) { _TRACE("token: OR"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eOr, 0, 0,
-                                          string(ptr-2, 2));
+            env->QTree().CreateNode(CQueryParseNode::eOr, 0, 0,
+                                    string(ptr-2, 2));
         env->AttachToPool(qnode);                        
         qnode->GetValue().SetLoc(line, line_pos);
         return OR;
@@ -242,8 +242,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(1);
         if (verbose) { _TRACE("token: ||"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eOr, 0, 0,
-                                          string(ptr-1, 2));
+            env->QTree().CreateNode(CQueryParseNode::eOr, 0, 0,
+                                    string(ptr-1, 2));
         env->AttachToPool(qnode);
         qnode->GetValue().SetLoc(line, line_pos);
         return OR;        
@@ -259,8 +259,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(2);
         if (verbose) { _TRACE("token: NOT"); }
         *lvalp = qnode = 
-            env->QTree().CreateUnaryNode(CQueryParseNode::eNot, 0,
-                                         string(ptr-3, 3));
+            env->QTree().CreateNode(CQueryParseNode::eNot, 0, 0,
+                                    string(ptr-3, 3));
         env->AttachToPool(qnode);
         qnode->GetValue().SetLoc(line, line_pos);
         return NOT;
@@ -270,8 +270,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             if (verbose) { _TRACE("token: <="); }
             env->Skip(1);
             *lvalp = qnode = 
-                env->QTree().CreateBinaryNode(CQueryParseNode::eLE, 0, 0,
-                                              string(ptr-1, 2));
+                env->QTree().CreateNode(CQueryParseNode::eLE, 0, 0,
+                                        string(ptr-1, 2));
             env->AttachToPool(qnode);            
             return LE;
         } 
@@ -279,8 +279,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             if (verbose) { _TRACE("token: <>"); }
             env->Skip(1);
             *lvalp = qnode = 
-                env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0,
-                                              string(ptr-1, 1));
+                env->QTree().CreateNode(CQueryParseNode::eEQ, 0, 0,
+                                        string(ptr-1, 1));
             qnode->GetValue().SetNot();
             env->AttachToPool(qnode);            
             qnode->GetValue().SetLoc(line, line_pos);
@@ -295,8 +295,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(1);
         if (verbose) { _TRACE("token: <"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eLT, 0, 0,
-                                          string(ptr-1, 1));
+            env->QTree().CreateNode(CQueryParseNode::eLT, 0, 0,
+                                    string(ptr-1, 1));
         env->AttachToPool(qnode);                    
         qnode->GetValue().SetLoc(line, line_pos);
         return LT;
@@ -306,8 +306,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             if (verbose) { _TRACE("token: >="); }
             env->Skip(1);
             *lvalp = qnode = 
-                env->QTree().CreateBinaryNode(CQueryParseNode::eGE, 0, 0,
-                                              string(ptr-1, 2));
+                env->QTree().CreateNode(CQueryParseNode::eGE, 0, 0,
+                                        string(ptr-1, 2));
             qnode->GetValue().SetLoc(line, line_pos);                                              
             env->AttachToPool(qnode);            
             return GE;
@@ -316,8 +316,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             if (verbose) { _TRACE("token: ><"); }
             env->Skip(1);
             *lvalp = qnode = 
-                env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0,
-                                              string(ptr-1, 2));
+                env->QTree().CreateNode(CQueryParseNode::eEQ, 0, 0,
+                                        string(ptr-1, 2));
             qnode->GetValue().SetNot();
             env->AttachToPool(qnode);            
             qnode->GetValue().SetLoc(line, line_pos);
@@ -332,8 +332,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(1);
         if (verbose) { _TRACE("token: >"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eGT, 0, 0,
-                                          string(ptr-1, 1));
+            env->QTree().CreateNode(CQueryParseNode::eGT, 0, 0,
+                                    string(ptr-1, 1));
         env->AttachToPool(qnode);
         qnode->GetValue().SetLoc(line, line_pos);        
         return GT;
@@ -351,8 +351,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(1);
         if (verbose) { _TRACE("token: !="); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0, 
-                                          string(ptr-1, 2));
+            env->QTree().CreateNode(CQueryParseNode::eEQ, 0, 0, 
+                                    string(ptr-1, 2));
         qnode->GetValue().SetNot();
         env->AttachToPool(qnode);
         qnode->GetValue().SetLoc(line, line_pos);        
@@ -363,8 +363,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             //env->Skip(1);
             if (verbose) { _TRACE("token: ="); }
             *lvalp = qnode = 
-                env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0,
-                                              string(ptr-1, 1));
+                env->QTree().CreateNode(CQueryParseNode::eEQ, 0, 0,
+                                        string(ptr-1, 1));
             env->AttachToPool(qnode);
             return EQ;
         }
@@ -377,16 +377,16 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->Skip(1);
         if (verbose) { _TRACE("token: =="); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eEQ, 0, 0,
-                                          string(ptr-1, 2));
+            env->QTree().CreateNode(CQueryParseNode::eEQ, 0, 0,
+                                    string(ptr-1, 2));
         env->AttachToPool(qnode);
         qnode->GetValue().SetLoc(line, line_pos);
         return EQ;
     case ':':
         if (verbose) { _TRACE("token: :"); }
         *lvalp = qnode = 
-            env->QTree().CreateBinaryNode(CQueryParseNode::eRange, 0, 0,
-                                          string(ptr-1, 1));
+            env->QTree().CreateNode(CQueryParseNode::eRange, 0, 0,
+                                    string(ptr-1, 1));
         env->AttachToPool(qnode);
         return RANGE;
     case '(':
