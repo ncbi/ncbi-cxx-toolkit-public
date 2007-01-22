@@ -160,12 +160,15 @@ void CNetServiceClient::RestoreHostPort()
 {
     unsigned int host;
     m_Sock->GetPeerAddress(&host, 0, eNH_NetworkByteOrder);
+    m_Host = CSocketAPI::ntoa(host);
+    /*
     m_Host = CSocketAPI::gethostbyaddr(host);
     string::size_type pos = m_Host.find_first_of(".");
     if (pos != string::npos) {
         m_Host.erase(pos, m_Host.length());
     }
-	m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
+    */
+    m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
     //cerr << m_Host << " ";
 }
 
