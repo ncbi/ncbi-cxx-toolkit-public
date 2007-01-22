@@ -648,7 +648,7 @@ script ProjBuilder
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench_project.icns " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources/gbench_project.icns" & ret
 		
 		----set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
-		
+		set theScript to theScript & "rm -r" & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/etc/*" & ret
 		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/res/etc/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
 		--set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/gbench/patterns/ " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc/patterns" & ret
 		--set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/news.ini " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
