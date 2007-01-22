@@ -25,14 +25,15 @@ clean_sources:
 	-rm $(FILES)
 
 purge_sources:
-	-rm $(FILES) *_.cpp $(INCLUDEDIR)/*_.hpp
+	-rm $(FILES) *_.cpp $(INCLUDEDIR)/*_.hpp $(MODULE).dump
 	-rm `grep -l '^[^"]*\$$Id\$$[^"]*$$' *.cpp $(INCLUDEDIR)/*.hpp`
 
 purge_all_sources:
-	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp
+	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp $(MODULE).dump
 
 purge_all_files:
-	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp Makefile.$(MODULE).lib
+	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp Makefile.$(MODULE).lib \
+	    $(MODULE).dump
 
 .NO_PARALLEL:
 $(FILES): $(SPEC) $(DATATOOL) $(MODULE).def $(IMPDEPS)
