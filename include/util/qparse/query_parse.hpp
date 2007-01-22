@@ -36,6 +36,7 @@
 /// Query string parsing components
 
 #include <corelib/ncbi_tree.hpp>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -47,6 +48,21 @@ class CQueryParseTree;
  *
  * @{
  */
+
+/// Base class for query node user defined object
+///
+/// User object used to carry field dependent data, metainformation,
+/// execution time data, etc. It can be a bridge between parser and a query
+/// execution engine.
+///
+
+class NCBI_XUTIL_EXPORT IQueryParseUserObject : public CObject
+{
+public:
+    
+    /// Reset user object (for reuse without reallocation)
+    virtual void Reset() = 0;
+};
 
 
 /// Query node class
@@ -69,24 +85,13 @@ public:
         eFloatConst,  ///< Floating point const
         eBoolConst,   ///< Boolean (TRUE or FALSE)
         eString,      ///< String ("free text")
-        eUnaryOp,     ///< Unary operator (NOT)
-        eBinaryOp     ///< Binary operator
-    };
 
-    /// Unary operator 
-    ///
-    enum EUnaryOp {
-        eNot
-    };
-    
-    /// Binary operator
-    ///
-    enum EBinaryOp {
+        // Operation codes:
+        eNot,
         eFieldSearch,
         eAnd,
         eOr,
         eSub,
-        eNot2,
         eXor,
         eRange,
         eEQ,
@@ -121,8 +126,7 @@ public:
     explicit CQueryParseNode(Int4   val, const string& orig_text);
     explicit CQueryParseNode(bool   val, const string& orig_text);
     explicit CQueryParseNode(double val, const string& orig_text);
-    explicit CQueryParseNode(EBinaryOp op, const string& orig_text);
-    explicit CQueryParseNode(EUnaryOp  op, const string& orig_text);
+    explicit CQueryParseNode(EType op_type, const string& orig_text);
     
     /// @name Source reference accessors
     /// @{  
@@ -143,8 +147,6 @@ public:
     /// @{  
     
     EType     GetType() const { return m_Type; }
-    EBinaryOp GetBinaryOp() const;
-    EUnaryOp  GetUnaryOp() const;
     const string& GetStrValue() const;
     const string& GetIdent() const;
     const string& GetOriginalText() const { return m_OrigText; }
@@ -152,14 +154,7 @@ public:
     bool GetBool() const;
     double GetDouble() const;
     
-    /// For eIdentifier nodes we can assign identifier's index 
-    /// (For database fields this could be a field index)
-    ///
-    void SetIdentIdx(int idx);          
-    /// Get index of eIdentifier
-    ///
-    int GetIdentIdx() const;
-    
+    int GetIdentIdx() const;    
     const string& GetOrig() const { return m_OrigText; }
     
     /// @}
@@ -173,6 +168,34 @@ public:
     /// Check if node is marked with NOT flag (like != )
     bool IsNot() const { return m_Not; }
     void SetNot(bool n=true) { m_Not = n; }
+    
+    /// @name User object operations
+    ///
+    /// Methods to associate application specific data with
+    /// parsing tree node.
+    /// Data should be encapsulated into a user object derived
+    /// from CQueryParseBaseUserObject.
+    ///
+    /// @{
+    
+    /// Get user object
+    const IQueryParseUserObject* GetUserObject() const
+                                    { return m_UsrObj.GetPointer(); }  
+    IQueryParseUserObject* GetUserObject()
+                                    { return m_UsrObj.GetPointer(); }  
+    
+    /// Set user object. Query node takes ownership.    
+    void AttachUserObject(IQueryParseUserObject* obj);
+    void SetUserObject(IQueryParseUserObject* obj)
+                                    { AttachUserObject(obj); }
+
+    /// Reset the associated user object 
+    ///   (see IQueryParseUserObject::Reset())
+    ///                                  
+    void ResetUserObject();
+    
+    /// @}
+    
 private:
     // required for use with CTreeNode<>
     CQueryParseNode();
@@ -181,18 +204,17 @@ private:
 private:
     EType         m_Type;  
     union {
-        EUnaryOp     m_UnaryOp;
-        EBinaryOp    m_BinaryOp;
         Int4         m_IntConst;
         bool         m_BoolConst;
         double       m_DoubleConst;
-        int          m_IdentIdx;
     };    
     string        m_Value;
     string        m_OrigText; 
     bool          m_Explicit;
     bool          m_Not;
     SSrcLoc       m_Location;
+    
+    CRef<IQueryParseUserObject>  m_UsrObj;
 };
 
 
@@ -244,6 +266,10 @@ public:
     ///
     void SetQueryTree(TNode* qtree);
     const TNode* GetQueryTree() const { return m_Tree.get(); }
+    TNode* GetQueryTree() { return m_Tree.get(); }
+    
+    /// Reset all user objects attached to the parsing tree
+    void ResetUserObjects();
     
         
     /// @name Static node creation functions - 
@@ -259,14 +285,10 @@ public:
     virtual TNode* CreateNode(bool   value, const string&  orig_text);
     virtual TNode* CreateNode(double value, const string&  orig_text);
     virtual 
-    TNode* CreateBinaryNode(CQueryParseNode::EBinaryOp op,
-                            TNode*                     arg1, 
-                            TNode*                     arg2,
-                            const string&              orig_text="");
-    virtual 
-    TNode* CreateUnaryNode(CQueryParseNode::EUnaryOp op, 
-                           TNode*                    arg,
-                           const string&             orig_text="");
+    TNode* CreateNode(CQueryParseNode::EType op,
+                      TNode*                 arg1, 
+                      TNode*                 arg2,
+                      const string&          orig_text="");
 
     /// @}
     
