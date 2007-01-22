@@ -234,6 +234,17 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromRefSeqAcc)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_AABC030000051")));
 }
 
+BOOST_AUTO_UNIT_TEST(s_TestInitFromGpipeAcc)
+{
+    CRef<CSeq_id> id;
+
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_12345")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("GPC_123456.1")));
+    CHECK(id->IsGpipe());
+    CHECK_NO_THROW(id.Reset(new CSeq_id("GPC_123456789")));
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("GPC_1234567890")));
+}
+
 BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaLocal)
 {
     CRef<CSeq_id> id;
@@ -473,8 +484,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaTpa)
 BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaGpipe)
 {
     CRef<CSeq_id> id;
-    // speculative accession format, but we need a placeholder...
-    CHECK_NO_THROW(id.Reset(new CSeq_id("gpp|GP123456")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("gpp|GPC_123456")));
     CHECK(id->IsGpipe());
 }
 
@@ -602,7 +612,7 @@ static const char* kTestFastaStrings[] = {
     "tpg|BK003456|",
     "tpe|BN000123|",
     "tpd|FAA00017|",
-    "gpp|GP123456|",
+    "gpp|GPC_123456|",
     /* Must be last due to special-cased greedy parsing */
     "gnl|dbSNP|rs31251_allelePos=201totallen=401|taxid=9606"
     "|snpClass=1|alleles=?|mol=?|build=?"
