@@ -2420,7 +2420,9 @@ void CFileHandleDiagHandler::Reopen(bool truncate)
     if ( truncate ) {
         mode |= O_TRUNC;
     }
-    m_Handle = open(CFile::ConvertToOSPath(GetLogName()).c_str(), mode);
+    m_Handle = open(CFile::ConvertToOSPath(GetLogName()).c_str(),
+                    mode,
+                    S_IREAD | S_IWRITE);
     if (m_Handle == -1) {
         string msg;
         switch ( errno ) {
@@ -2563,9 +2565,10 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
             string log_name = special ? adj_name : adj_name + ".log";
             string trace_name = special ? adj_name : adj_name + ".trace";
 
-            if (!s_CanOpenLogFile(err_name)  ||
+            if (!special  &&
+                (!s_CanOpenLogFile(err_name)  ||
                 !s_CanOpenLogFile(log_name)  ||
-                !s_CanOpenLogFile(trace_name)) {
+                !s_CanOpenLogFile(trace_name))) {
                 return false;
             }
 
