@@ -124,6 +124,24 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     }
 
     switch (c) {
+    // BETWEEN
+    case 'B':
+        if ( !s_Compare(ptr, end, "ETWEEN", case_sense) ) {
+            break;
+        }
+        ptr += 6;
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
+            break;
+        }
+        env->Skip(6);
+        if (verbose) { _TRACE("token: BETWEEN"); }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(CQueryParseNode::eBetween, 0, 0,
+                                    string(ptr-7, 7));
+        env->AttachToPool(qnode); 
+        qnode->GetValue().SetLoc(line, line_pos);
+        return BETWEEN;
+        
     // AND
     case 'A':
         if ( !s_Compare(ptr, end, "ND", case_sense) ) {
@@ -548,6 +566,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             s_Compare(ptr, end, "SUB",  case_sense) ||
             s_Compare(ptr, end, "XOR",  case_sense) ||
             s_Compare(ptr, end, "MINUS",case_sense) ||
+            s_Compare(ptr, end, "BETWEEN",case_sense) ||
             (*ptr == '"') ||
             (*ptr == '[') ||
             (*ptr == '(') ||

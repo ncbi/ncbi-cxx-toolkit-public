@@ -118,6 +118,9 @@ public:
         case CQueryParseNode::eFieldSearch:
             PrintElement("SEARCH", qnode);        
             break;
+        case CQueryParseNode::eBetween:
+            PrintElement("BETWEEN", qnode);
+            break;
         case CQueryParseNode::eAnd:
             PrintElement("AND", qnode);        
             break;

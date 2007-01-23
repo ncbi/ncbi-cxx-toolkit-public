@@ -370,7 +370,9 @@ int CTestQParse::Run(void)
         "\"Pseudarthrosis\"[MeSH] OR \"Pseudarthrosis\"[MeSH] AND systematic neurons[Text word]",
         "\"J Sci Food Agric\"[Journal:__jrid5260] 1974",
         "vitamin 1993:1995 [dp]",
-         "\"2005/04/17 12.23\"[MHDA]:\"2005/05/10 10.56\"[MHDA]"
+         "\"2005/04/17 12.23\"[MHDA]:\"2005/05/10 10.56\"[MHDA]",
+         "a between 1 and 10",
+         "a between 1 and 10 or a between 15 and 20",
     };    
     int l = sizeof (queries) / sizeof(queries[0]);
     for (int i = 0; i < l; ++i) {
@@ -378,7 +380,7 @@ int CTestQParse::Run(void)
     } // for
     
     }}
-    
+
     NcbiCout << endl << endl;
     NcbiCout << "Misspelled queries.";
     NcbiCout << endl << endl;

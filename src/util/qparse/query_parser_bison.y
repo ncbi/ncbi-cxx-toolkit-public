@@ -83,6 +83,7 @@ void QTreeAddNode(void*                   parm,
 %left GE
 %left LT
 %left LE
+%left BETWEEN
 
 
 %%
@@ -97,24 +98,28 @@ input :
 */    
 ;
 
-exp :
+scalar_value :
     /* integer constant */
     NUM_INT
     {
         $$ = $1;         
-    }
-    
+    }    
     /* text */
     | STRING
     {
         $$ = $1;         
-    }
-    
+    }    
     /* pure string identifier */
     | IDENT
     {
         $$ = $1;         
     }
+;
+
+exp :
+    scalar_value
+    {
+    }    
     /* Field search */
     | STRING IDENT
     {
@@ -144,7 +149,7 @@ exp :
     /*
      * LOGICAL OPS
      */
-
+    
     /* AND */
     | exp AND exp
     {
@@ -165,6 +170,20 @@ exp :
     {
         QTreeAddNode(parm, $$ = $2, $1, $3);
     }
+    /* BETWEEN */
+    | scalar_value BETWEEN scalar_value AND scalar_value
+    {
+        $$ = $2;
+        $$->AddNode($1);
+        $$->AddNode($3);
+        $$->AddNode($5);
+
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        env->AttachQueryTree($$);    
+        env->ForgetPoolNodes($1, $3);
+        env->ForgetPoolNodes($1, $5);
+    }
+    
     /* RANGE */
     | exp RANGE exp
     {
