@@ -20,7 +20,7 @@ target_dir=$1
 
 checkout_info="checkout_info"
 need_cleanup="no"
-timestamp=`date --iso-8601=minutes`
+timestamp=`date -u +'%Y-%m-%d %H:%M:%S +0000'` # %z isn't portable :-/
 
 
 ##  Printout USAGE info, cleanup and exit
