@@ -310,8 +310,8 @@ case "$platform" in
     fi
     ;;
 esac
- case "$platform" in
-  msvc | cygwin | mac )
+case "$platform" in
+  msvc | mac )
     rm -f Makefile.* config* .psrc aclocal.m4 install-sh
     rm -f compilers/*.sh compilers/*.awk
     ;;
