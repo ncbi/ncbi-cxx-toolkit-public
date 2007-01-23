@@ -123,10 +123,10 @@ typedef enum {
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create
  *             it, and then fix (hard-code) some fields, if really necessary.
- * NOTE:       "scheme", "user" and "pass" are reserved (unused) fields.
+ * NOTE:       "scheme", "user", and "pass" are reserved (unused) fields.
  */
 typedef struct {
-    char           client_host[256]; /* effective client hostname            */
+    char           client_host[256]; /* effective client hostname ('\0'=def) */
     EURLScheme     scheme;           /* only pre-defined types (limited)     */
     char           user[128];        /* username (if specified)              */
     char           pass[128];        /* password (if any, clear text!!!)     */
@@ -208,7 +208,7 @@ typedef struct {
 
 /* Environment/registry keys that are not kept in SConnNetInfo */
 #define REG_CONN_SERVICE_NAME     "SERVICE_NAME"
-#define REG_CONN_LOCAL_DISABLE    "LOCAL_DISABLE"
+#define REG_CONN_LOCAL_ENABLE     "LOCAL_ENABLE"
 #define REG_CONN_LBSMD_DISABLE    "LBSMD_DISABLE"
 #define REG_CONN_DISPD_DISABLE    "DISPD_DISABLE"
 

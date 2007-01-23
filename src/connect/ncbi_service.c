@@ -42,6 +42,18 @@
 #define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME
 
 
+static ESwitch s_Fast = eOff;
+
+
+ESwitch SERV_DoFastOpens(ESwitch on)
+{
+    ESwitch retval = s_Fast;
+    if (on != eDefault)
+        s_Fast = on;
+    return retval;
+}
+
+
 static char* s_ServiceName(const char* service, size_t depth)
 {
     char*  s;
@@ -111,9 +123,14 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER   iter,
 }
 
 
-static int/*bool*/ s_IsMapperDisabled(const char* service, const char* key)
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int/*bool*/ s_IsMapperConfigured(const char* service, const char* key)
 {
     char str[80];
+    if (s_Fast)
+        return 0;
     ConnNetInfo_GetValue(service, key, str, sizeof(str), 0);
     return *str  &&  (strcmp(str, "1") == 0  ||
                       strcasecmp(str, "true") == 0  ||
@@ -139,14 +156,14 @@ static SERV_ITER s_Open(const char*          service,
 {
     const TSERV_Type special_flags =
         fSERV_Promiscuous | fSERV_ReverseDns | fSERV_Stateless;
-    int/*bool*/ no_lbsmd, no_dispd;
+    int/*bool*/ do_lbsmd = -1/*unassigned*/, do_dispd = -1/*unassigned*/;
     const SSERV_VTable* op;
     SERV_ITER iter;
     const char* s;
     
     if (!service || !*service)
         return 0;
-    if (!(s = ismask ? strdup(service) : s_ServiceName(service, 0)))
+    if (!(s = ismask || s_Fast ? strdup(service) : s_ServiceName(service, 0)))
         return 0;
     if (!*s || !(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
         free((void*) s);
@@ -156,7 +173,8 @@ static SERV_ITER s_Open(const char*          service,
     iter->name            = s;
     iter->type            = types & ~special_flags;
     iter->host            = (preferred_host == SERV_LOCALHOST
-                             ? SOCK_gethostbyname(0) : preferred_host);
+                             ? SOCK_GetLocalHostAddress(eDefault)
+                             : preferred_host);
     iter->port            = preferred_port;
     iter->pref            = (preference < 0.0
                              ? -1.0
@@ -204,29 +222,30 @@ static SERV_ITER s_Open(const char*          service,
     assert(n_skip == iter->n_skip);
 
     if (net_info) {
-        no_dispd = s_IsMapperDisabled(service, REG_CONN_DISPD_DISABLE);
         if (net_info->firewall)
             iter->type |= fSERV_Firewall;
         if (net_info->stateless)
             iter->stateless = 1;
         if (net_info->lb_disable)
-            no_lbsmd = 1/*true*/;
-        else
-            no_lbsmd = s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE);
-    } else {
-        no_dispd = 1/*true*/;
-        no_lbsmd = s_IsMapperDisabled(service, REG_CONN_LBSMD_DISABLE);
-    }
-
-    if ((s_IsMapperDisabled(service, REG_CONN_LOCAL_DISABLE)
-         ||  !(op = SERV_LOCAL_Open(iter, info, host_info)))             &&
-        (no_lbsmd
-         ||  !(op = SERV_LBSMD_Open(iter, info, host_info, !no_dispd)))  &&
-        (no_dispd
-         ||  !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
-        if (no_lbsmd  &&  no_dispd) {
+            do_lbsmd = 0/*false*/;
+    } else
+        do_dispd = 0/*false*/;
+    /* Ugly optimization not to access the registry more than needed */
+    if ((!s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)  ||
+         !(op = SERV_LOCAL_Open(iter, info, host_info)))  &&
+        (!do_lbsmd  ||
+         !(do_lbsmd= !s_IsMapperConfigured(service, REG_CONN_LBSMD_DISABLE)) ||
+         !(op = SERV_LBSMD_Open(iter, info, host_info,
+                                !do_dispd  ||
+                                !(do_dispd = !s_IsMapperConfigured
+                                  (service, REG_CONN_DISPD_DISABLE)))))  &&
+        (!do_dispd  ||
+         !(do_dispd= !s_IsMapperConfigured(service, REG_CONN_DISPD_DISABLE)) ||
+         !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
+        if (!do_lbsmd  &&  !do_dispd) {
             CORE_LOGF(eLOG_Warning,
-                      ("[SERV]  No service mappers found for `%s'", service));
+                      ("[SERV]  No service mappers available for `%s'",
+                       service));
         }
         SERV_Close(iter);
         return 0;
@@ -566,6 +585,12 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
         const char* host = net_info->client_host;
         const char* name = iter->name;
 
+        if (!*net_info->client_host  &&
+            !SOCK_gethostbyaddr(0, net_info->client_host,
+                                sizeof(net_info->client_host))) {
+            SOCK_gethostname(net_info->client_host,
+                             sizeof(net_info->client_host));
+        }
         if (!(referer = malloc(3 + 1 + 9 + 1 + 2*strlen(strlwr(str)) +
                                strlen(host) + strlen(name)))) {
             return;

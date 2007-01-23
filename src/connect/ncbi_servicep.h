@@ -83,6 +83,12 @@ struct SSERV_IterTag {
 };
 
 
+/* Control whether to skip using registry/environment when opening iterators,
+ * and doing fast track lookups.  Default is eOff.
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SERV_DoFastOpens(ESwitch on);
+
+
 /* Modified "fast track" routine for obtaining of a server info in one-shot.
  * Please see <connect/ncbi_service.h> for explanations [SERV_GetInfoEx()].
  *
