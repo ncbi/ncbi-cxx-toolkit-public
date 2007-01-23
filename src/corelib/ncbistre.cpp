@@ -204,7 +204,7 @@ CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
 
 bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 {
-    if (!(os << is.rdbuf()))
+    if (!is  ||  !(os << is.rdbuf()))
         return false;
     os.flush();
     if (!os.good())
