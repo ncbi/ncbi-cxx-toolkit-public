@@ -22,10 +22,6 @@ checkout_info="checkout_info"
 need_cleanup="no"
 timestamp=`date -u +'%Y-%m-%d %H:%M:%S +0000'` # %z isn't portable :-/
 
-# Account name
-account="$LOGNAME"
-test "$account" = "" -a -n "$USER"  &&  account="$USER"
-
 
 ##  Printout USAGE info, cleanup and exit
 Usage() {
@@ -108,7 +104,7 @@ done
 revision="{$timestamp}"
 svn_cmd="`which svn-1.4.0 2> /dev/null || echo svn`"
 test -n "$svn_cmd" || svn_cmd='svn'
-test "$account" = "coremake"  &&  svn_cmd="$svn_cmd --username svnread --non-interactive"
+svn_cmd="$svn_cmd $SVN_FLAGS"
 
 # Checkout <path> [-N]
 if test "$export" = "yes" ; then
