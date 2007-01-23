@@ -127,12 +127,10 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
         if (iter->external  &&  info->locl)
             continue;  /* external mapping for local server not allowed */
         if (!info->host  ||  (info->locl & 0xF0)) {
-            static unsigned int s_LocalHost = 0;
-            if (!s_LocalHost)
-                s_LocalHost = SOCK_gethostbyname(0);
+            unsigned int localhost = SOCK_GetLocalHostAddress(eDefault);
             if (!info->host)
-                info->host = s_LocalHost;
-            if ((info->locl & 0xF0)  &&  info->host != s_LocalHost)
+                info->host = localhost;
+            if ((info->locl & 0xF0)  &&  info->host != localhost)
                 continue;  /* private server */
         }
         if (!iter->reverse_dns  &&  info->type != fSERV_Dns) {

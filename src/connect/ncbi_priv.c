@@ -56,7 +56,7 @@ extern int g_NCBI_ConnectSrandAddend(void)
 #elif defined(NCBI_OS_MSWIN)
     return (int) GetCurrentProcessId();
 #else
-    return SOCK_gethostbyname(0);
+    return SOCK_GetLocalHostAddress(eDefault);
 #endif /*NCBI_OS_...*/ 
 }
 
