@@ -1,2 +1,0 @@
-AddType text/html         .shtml .htm .html
-AddHandler server-parsed  .shtml .htm .html
