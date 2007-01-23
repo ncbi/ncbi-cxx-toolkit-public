@@ -1,6 +1,6 @@
 # $Id$
 
-SRC_C = aa_ungapped blast_diagnostics blast_dust blast_engine blast_extend \
+SRC_C = aa_ungapped blast_diagnostics blast_engine blast_extend \
         blast_filter blast_gapalign blast_hits blast_hspstream blast_itree \
         blast_kappa blast_lookup blast_aalookup blast_aascan blast_nalookup \
         blast_nascan blast_message blast_options blast_psi na_ungapped \
