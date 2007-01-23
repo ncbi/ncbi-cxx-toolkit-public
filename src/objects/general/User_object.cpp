@@ -487,14 +487,15 @@ static string s_GetUserObjectContent(const CUser_object& obj)
 
         case CUser_object::eExperiment_Unknown:
         default:
-            return "[experiment]";
+            break;
         }
-        break;
+        return "[experiment]";
 
     case CUser_object::eCategory_Unknown:
     default:
-        return "[User]";
+        break;
     }
+    return "[User]";
 }
 
 
