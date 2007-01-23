@@ -31,6 +31,7 @@
 
 #include <corelib/rwstream.hpp>
 
+#include <objtools/data_loaders/genbank/writer.hpp>
 #include <objtools/data_loaders/genbank/processor.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
