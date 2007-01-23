@@ -534,11 +534,10 @@ static EIO_Status s_VT_Write
     EIO_Status status;
     const char* c;
 
-    xxx->w_status = eIO_Success;
-    if (!size)
-        return eIO_Success;
     if (!xxx->cntl)
         return eIO_Closed;
+    if (!size)
+        return eIO_Success;
 
     if ((c = (const char*) memchr((const char*) buf, '\n', size)) != 0  &&
         c < (const char*) buf + size - 1) {
@@ -563,7 +562,6 @@ static EIO_Status s_VT_Read
 {
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
     EIO_Status status = eIO_Closed;
-    xxx->r_status = eIO_Success;
     if (xxx->cntl  &&  xxx->data) {
         status = SOCK_SetTimeout(xxx->data, eIO_Read, timeout);
         if (status == eIO_Success) {
