@@ -121,6 +121,14 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                           TSearchMessages& messages,
                           const TSeqLocInfoVector* query_masks = NULL);
 
+/// Auxiliary function to convert a Seq-loc to a TMaskedQueryRegions object
+/// @param sloc_in Seq-loc to use as source (must be Packed-int or Seq-int) [in]
+/// @param prog BLAST program type [in]
+/// @throws CBlastException if Seq-loc type cannot be converted to Packed-int
+TMaskedQueryRegions
+PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in,
+                                 EBlastProgramType prog);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

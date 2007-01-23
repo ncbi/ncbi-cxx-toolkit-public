@@ -189,6 +189,106 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
                             query_masks);
 }
 
+TMaskedQueryRegions
+PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in,
+                                 EBlastProgramType            prog)
+{
+    if (sloc_in.Empty() || 
+        sloc_in->Which() == CSeq_loc::e_not_set ||
+        sloc_in->IsEmpty() || 
+        sloc_in->IsNull()) {
+        return TMaskedQueryRegions();
+    }
+    
+    CConstRef<CSeq_loc> sloc = sloc_in;
+    
+    if (sloc_in->IsInt()) {
+        CRef<CSeq_interval>
+            iv( const_cast<CSeq_interval *>(& sloc_in->GetInt()) );
+        
+        CRef<CSeq_loc> nsloc(new CSeq_loc);
+        nsloc->SetPacked_int().Set().push_back(iv);
+        
+        sloc.Reset(&*nsloc);
+    }
+    
+    if (! sloc->IsPacked_int()) {
+        NCBI_THROW(CBlastException, eNotSupported, 
+                   "Unsupported Seq-loc type used for mask");
+    }
+    
+    const objects::CPacked_seqint & psi = sloc->GetPacked_int();
+    
+    TMaskedQueryRegions mqr;
+    
+    ITERATE(list< CRef< objects::CSeq_interval > >, iter, psi.Get()) {
+        objects::CSeq_interval * iv =
+            const_cast<objects::CSeq_interval*>(& (**iter));
+        
+        if (Blast_QueryIsProtein(prog)) {
+            int fr = (int) CSeqLocInfo::eFrameNotSet;
+            mqr.push_back(CRef<CSeqLocInfo>(new CSeqLocInfo(iv, fr)));
+        } else {
+            bool do_pos = false;
+            bool do_neg = false;
+        
+            if (iv->CanGetStrand()) {
+                switch(iv->GetStrand()) {
+                case objects::eNa_strand_plus:
+                    do_pos = true;
+                    break;
+                
+                case objects::eNa_strand_minus:
+                    do_neg = true;
+                    break;
+                
+                case objects::eNa_strand_both:
+                    do_pos = true;
+                    do_neg = true;
+                    break;
+                
+                default:
+                    NCBI_THROW(CBlastException, eNotSupported, 
+                               "Unsupported strand type used for query");
+                }
+            } else {
+                // intervals with no strand assignment will use both.
+                do_pos = true;
+                do_neg = true;
+            }
+            
+            if (do_pos) {
+                int fr = (int) CSeqLocInfo::eFramePlus1;
+                mqr.push_back(CRef<CSeqLocInfo>(new CSeqLocInfo(iv, fr)));
+            }
+            
+            // No reversal is done here.  Tt seems that the code (in core)
+            // that applies the mask reverses it.  Whether this is an
+            // accidental or designed is not clear to me, but for now this
+            // will remain as is.
+            
+            if (do_neg) {
+                int fr = (int) CSeqLocInfo::eFrameMinus1;
+                mqr.push_back(CRef<CSeqLocInfo>(new CSeqLocInfo(iv, fr)));
+            }
+        }
+    }
+    
+    return mqr;
+}
+
+CRef<objects::CSeq_loc>
+MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & /*sloc*/ )
+{
+    // This function could produce this error only in cases where a
+    // clean (non-information-losing) conversion failed.
+    
+    NCBI_THROW(CBlastException, eNotSupported, 
+               "Attempt to convert mask information in lossy direction.");
+    
+    return CRef<objects::CSeq_loc>();
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
