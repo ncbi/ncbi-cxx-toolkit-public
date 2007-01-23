@@ -443,7 +443,7 @@ public:
     (const string&   host,
      const string&   file     = kEmptyStr,
      const string&   user     = "ftp",
-     const string&   pass     = "-none",  // "-" often helps make login quiter
+     const string&   pass     = "-none",  // "-" often helps make login quieter
      const string&   path     = kEmptyStr,
      unsigned short  port     = 0,
      TFCDC_Flags     flag     = 0,
