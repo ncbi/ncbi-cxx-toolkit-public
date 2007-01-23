@@ -300,8 +300,8 @@ typedef unsigned   EBSockType;
 #endif
 
 
-#define SET_LISTENING(s) ((s)->r_on_w  =   (unsigned) eDefault + 1)
-#define IS_LISTENING(s)  ((s)->r_on_w  ==  (unsigned) eDefault + 1)
+#define SET_LISTENING(s) ((s)->r_on_w =  (unsigned) eDefault + 1)
+#define IS_LISTENING(s)  ((s)->r_on_w == (unsigned) eDefault + 1)
 
 
 /* Listening socket
@@ -422,6 +422,9 @@ static int/*bool*/ s_Initialized = 0/*false*/;
 
 /* SOCK counter */
 static unsigned int s_ID_Counter = 0;
+
+/* Cached IP address of local host */
+static unsigned int s_LocalHostAddress = 0;
 
 /* Read-while-writing switch */
 static ESwitch s_ReadOnWrite = eOff;        /* no read-on-write by default   */
@@ -4531,9 +4534,17 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 }
 
 
-unsigned int SOCK_GetLoopbackAddress(void)
+extern unsigned int SOCK_GetLoopbackAddress(void)
 {
     return htonl(INADDR_LOOPBACK);
+}
+
+
+extern unsigned int SOCK_GetLocalHostAddress(ESwitch reget)
+{
+    if (reget == eOn  ||  (!s_LocalHostAddress  &&  reget != eOff))
+        s_LocalHostAddress = SOCK_gethostbyname(0);
+    return s_LocalHostAddress;
 }
 
 

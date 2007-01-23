@@ -1455,6 +1455,19 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
 
 
+/** Get (and cache for faster follow-up retrievals) the address of local host
+ * @param reget
+ *  eOn      to forcibly recache and return the address;
+ *  eDefault to recache only if unknown, return the cached value;
+ *  eOff     not to recache even if unknown, return whatever is available.
+ * @return
+ *  Local address (in network byte order).
+ */
+extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
+(ESwitch reget
+ );
+
+
 /** Read (skipping leading blanks) "[host][:port]" from a string.
  * @param str
  *  must not be NULL

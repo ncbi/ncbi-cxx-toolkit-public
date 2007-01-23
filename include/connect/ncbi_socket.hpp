@@ -643,6 +643,9 @@ public:
 
     /// Loopback address gets returned in network byte order
     static unsigned int   GetLoopbackAddress(void);
+
+    /// Local host address in network byte order (cached for faster retrieval)
+    static unsigned int   GetLocalHostAddress(ESwitch reget = eDefault);
 };
 
 
@@ -915,6 +918,12 @@ inline unsigned short CSocketAPI::NetToHostShort(unsigned short value)
 inline unsigned int CSocketAPI::GetLoopbackAddress(void)
 {
     return SOCK_GetLoopbackAddress();
+}
+
+
+inline unsigned int CSocketAPI::GetLocalHostAddress(ESwitch reget)
+{
+    return SOCK_GetLocalHostAddress(reget);
 }
 
 
