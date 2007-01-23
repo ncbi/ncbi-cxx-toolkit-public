@@ -55,7 +55,6 @@
 #include "win_mask_writer.hpp"
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_util.hpp"
-#include "win_mask_dust_masker.hpp"
 #include "win_mask_sdust_masker.hpp"
 
 #include <algo/winmask/seq_masker.hpp>
@@ -192,9 +191,6 @@ void CWinMaskApplication::Init(void)
 #endif
     arg_desc->AddDefaultKey( "dust", "use_dust",
                              "combine window masking with dusting",
-                             CArgDescriptions::eBoolean, "F" );
-    arg_desc->AddDefaultKey( "sdust", "use_sdust",
-                             "combine window masking with symmetric dusting",
                              CArgDescriptions::eBoolean, "F" );
     arg_desc->AddDefaultKey( "dust_level", "dust_level",
                              "dust minimum level",
@@ -341,19 +337,14 @@ int CWinMaskApplication::Run (void)
                           aConfig.UseBA() );
     CRef< CSeq_entry > aSeqEntry( 0 );
     Uint4 total = 0, total_masked = 0;
-    CDustMasker * duster( 0 );
-    CSDustMasker * sduster( 0 );
+    CSDustMasker * duster( 0 );
     const CWinMaskConfig::CIdSet * ids( aConfig.Ids() );
     const CWinMaskConfig::CIdSet * exclude_ids( aConfig.ExcludeIds() );
 
     if( aConfig.UseDust() )
-        duster = new CDustMasker( aConfig.DustWindow(),
-                                  aConfig.DustLevel(),
-                                  aConfig.DustLinker() );
-    else if( aConfig.UseSDust() )
-        sduster = new CSDustMasker( aConfig.DustWindow(),
-                                    aConfig.DustLevel(),
-                                    aConfig.DustLinker() );
+        duster = new CSDustMasker( aConfig.DustWindow(),
+                                   aConfig.DustLevel(),
+                                   aConfig.DustLinker() );
 
     while( (aSeqEntry = theReader.GetNextSequence()).NotEmpty() )
     {
@@ -381,12 +372,6 @@ int CWinMaskApplication::Run (void)
                 {
                     auto_ptr< CSeqMasker::TMaskList > dust_info( 
                         (*duster)( data, *mask_info.get() ) );
-                    CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
-                }
-                else if( sduster != 0 )
-                {
-                    auto_ptr< CSeqMasker::TMaskList > dust_info( 
-                        (*sduster)( data, *mask_info.get() ) );
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
 

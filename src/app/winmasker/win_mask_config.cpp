@@ -90,7 +90,6 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       // th( args["th"].AsString() ),
       th( "90,99,99.5,99.8" ),
       use_dust( args["dust"].AsBoolean() ),
-      use_sdust( args["sdust"].AsBoolean() ),
       // dust_window( args["dust_window"].AsInteger() ),
       // dust_linker( args["dust_linker"].AsInteger() ),
       dust_window( 64 ),
@@ -144,9 +143,6 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
         NCBI_THROW( CWinMaskConfigException, eInconsistentOptions,
                     "only one of -ids or -exclude_ids can be specified" );
     }
-
-    if( use_dust && use_sdust )
-        use_dust = false;
 
     if( !ids_file_name.empty() ) {
         if( text_match ) {
