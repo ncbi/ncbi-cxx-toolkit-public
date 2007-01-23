@@ -137,16 +137,16 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
 };
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
-    TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
-    TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
-    TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
     TDbxrefPair("CCDS", CDbtag::eDbtagType_CCDS),
     TDbxrefPair("CloneID", CDbtag::eDbtagType_CloneID),
+    TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
     TDbxrefPair("ECOCYC", CDbtag::eDbtagType_ECOCYC),
-    TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE),
+    TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
+    TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
     TDbxrefPair("HPRD", CDbtag::eDbtagType_HPRD),
-    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase),
     TDbxrefPair("PBR", CDbtag::eDbtagType_PBR),
+    TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE),
+    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase)
 };
 
 // case sensetive
@@ -288,11 +288,9 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_ToxoDB, "http://www.toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_BoLD, "http://www.barcodinglife.com"), 
-    TDbtUrl(CDbtag::eDbtagType_CCDS, "http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA="),
     TDbtUrl(CDbtag::eDbtagType_CDD, "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid="),
     TDbtUrl(CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid="),
     TDbtUrl(CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog="),
-    TDbtUrl(CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object="),
     TDbtUrl(CDbtag::eDbtagType_ERIC, "http://www.ericbrc.org/genbank/dbxref/"),
     TDbtUrl(CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid="),
     TDbtUrl(CDbtag::eDbtagType_FLYBASE, "http://flybase.bio.indiana.edu/.bin/fbidq.html?"),
@@ -304,7 +302,6 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=retrieve&dopt=full_report&list_uids="),
     TDbtUrl(CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp"),
     TDbtUrl(CDbtag::eDbtagType_HGNC, "http://www.gene.ucl.ac.uk/nomenclature/data/get_data.php?hgnc_id="),
-    TDbtUrl(CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/"),
     TDbtUrl(CDbtag::eDbtagType_HSSP, "http://www.sander.ebi.ac.uk/hssp"),
     TDbtUrl(CDbtag::eDbtagType_IFO, "http://www.nbrc.nite.go.jp/e/index.html"),
     TDbtUrl(CDbtag::eDbtagType_IMGT_GENEDB, "http://imgt.cines.fr/cgi-bin/GENElect.jv?species=Homo+sapiens&query=2+"),
@@ -320,12 +317,10 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/entrez/dispomim.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/"),
     TDbtUrl(CDbtag::eDbtagType_NextDB, "http://nematode.lab.nig.ac.jp/cgi-bin/db/ShowGeneInfo.sh?celk="),
-    TDbtUrl(CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/gene_detail.asp?gene_id="),
     TDbtUrl(CDbtag::eDbtagType_PDB, "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId="),
     TDbtUrl(CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier="),
     TDbtUrl(CDbtag::eDbtagType_PID, "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?"),
     TDbtUrl(CDbtag::eDbtagType_RATMAP, "http://ratmap.gen.gu.se/ShowSingleLocus.htm?accno="),
-    TDbtUrl(CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/"),
     TDbtUrl(CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/query/query.cgi?id="),
     TDbtUrl(CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object="),
     TDbtUrl(CDbtag::eDbtagType_SGD, "http://db.yeastgenome.org/cgi-bin/SGD/locus.pl?locus="),
@@ -346,9 +341,16 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_dbSNP, "http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?type=rs&rs="),
     TDbtUrl(CDbtag::eDbtagType_dbSTS, "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?"),
     TDbtUrl(CDbtag::eDbtagType_dictyBase, "http://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid="),
-    TDbtUrl(CDbtag::eDbtagType_miRBase, "http://microrna.sanger.ac.uk/cgi-bin/sequences/mirna_entry.pl?acc="),
     TDbtUrl(CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1="),
-    TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?")
+    TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
+    // RefSeq-only types last, and not quite in order, per the enum's
+    // definition.
+    TDbtUrl(CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/"),
+    TDbtUrl(CDbtag::eDbtagType_CCDS, "http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA="),
+    TDbtUrl(CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object="),
+    TDbtUrl(CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/"),
+    TDbtUrl(CDbtag::eDbtagType_miRBase, "http://microrna.sanger.ac.uk/cgi-bin/sequences/mirna_entry.pl?acc="),
+    TDbtUrl(CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/gene_detail.asp?gene_id=")
 };
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
 static const TUrlPrefixMap sc_UrlMap(sc_url_prefix, sizeof(sc_url_prefix));
