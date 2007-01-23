@@ -124,9 +124,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     if (!info)
         return 0/*failure*/;
 
-    /* client host */
-    if (!SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host)))
-        SOCK_gethostname(info->client_host, sizeof(info->client_host));
+    /* client host: default */
+    info->client_host[0] = '\0';
 
     /* Future extensions, clear up for now */
     info->scheme  = eURL_Unspec;
@@ -716,14 +715,17 @@ static int/*bool*/ s_IsSufficientAddress(const char* addr)
 }
 
 
-static const char* s_ClientAddress(const char* client_host)
+static const char* s_ClientAddress(const char* client_host, int/*bool*/ local)
 {
     unsigned int ip;
     char addr[64];
     char* s;
 
-    if (!client_host  ||  s_IsSufficientAddress(client_host)        ||
-        !(ip = SOCK_gethostbyname(*client_host ? client_host : 0))  ||
+    assert(client_host);
+    if (s_IsSufficientAddress(client_host)                          ||
+        !(ip = *client_host  &&  !local
+          ? SOCK_gethostbyname(client_host)
+          : SOCK_GetLocalHostAddress(eDefault))                     ||
         SOCK_ntoa(ip, addr, sizeof(addr)) != 0                      ||
         !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
         return client_host;
@@ -738,6 +740,7 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info)
     static const char service[]  = "service";
     static const char address[]  = "address";
     static const char platform[] = "platform";
+    int/*bool*/ local;
     const char* arch;
     const char* addr;
 
@@ -747,12 +750,17 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info)
         assert(0);
         return 0/*failed*/;
     }
-    /* Dispatcher CGI arguments (sacrifice some if they all do not fit) */
+    /* Dispatcher CGI args (may sacrifice some if they don't fit altogether) */
     if (!(arch = CORE_GetPlatform())  ||  !*arch)
         ConnNetInfo_DeleteArg(info, platform);
     else
         ConnNetInfo_PreOverrideArg(info, platform, arch);
-    if (!(addr = s_ClientAddress(info->client_host))  ||  !*addr)
+    local = !info->client_host[0];
+    if (local  &&
+        !SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host))) {
+        SOCK_gethostname(info->client_host, sizeof(info->client_host));
+    }
+    if (!(addr = s_ClientAddress(info->client_host, local))  ||  !*addr)
         ConnNetInfo_DeleteArg(info, address);
     else
         ConnNetInfo_PreOverrideArg(info, address, addr);
@@ -832,7 +840,9 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG lg)
     strcpy(s, "ConnNetInfo_Log\n"
            "#################### [BEGIN] SConnNetInfo:\n");
     s_SaveString    (s, "service",         info->service);
-    s_SaveString    (s, "client_host",     info->client_host);
+    s_SaveString    (s, "client_host",     (*info->client_host
+                                            ? info->client_host
+                                            : "<default>"));
     s_SaveString    (s, "host",            info->host);
     s_SaveULong     (s, "port",            info->port);
     s_SaveString    (s, "path",            info->path);
