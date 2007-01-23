@@ -40,17 +40,17 @@
 #include "test_assert.h"
 
 
-#define TEST_HOST            "ftp.ncbi.nlm.nih.gov"
-#define TEST_PORT            0
-#define TEST_USER            "ftp"
-#define TEST_PASS            "none"
-#define TEST_PATH            ((char*) 0)
+#define TEST_HOST "ftp.ncbi.nlm.nih.gov"
+#define TEST_PORT 0
+#define TEST_USER "ftp"
+#define TEST_PASS "none"
+#define TEST_PATH ((char*) 0)
 
 
 int main(int argc, char* argv[])
 {
-    static const char k_chdir[] = "CWD /toolbox/ncbi_tools\n";
-    static const char k_file[] = "RETR CURRENT/ncbi.tar.gz";
+    static const char kChdir[] = "CWD /toolbox/ncbi_tools\n";
+    static const char kFile[] = "RETR CURRENT/ncbi.tar.gz";
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
     int/*bool*/ aborting = 0, first;
     TFCDC_Flags flags = 0;
@@ -156,15 +156,15 @@ int main(int argc, char* argv[])
         printf("<EOF>\n");
     }
 
-    if (CONN_Write(conn, k_chdir, sizeof(k_chdir) - 1, &n, eIO_WritePlain)
+    if (CONN_Write(conn, kChdir, sizeof(kChdir) - 1, &n, eIO_WritePlain)
         != eIO_Success) {
         CORE_LOGF(eLOG_Fatal, ("Cannot execute %.*s",
-                               (int)sizeof(k_chdir) - 2, k_chdir));
+                               (int) sizeof(kChdir) - 2, kChdir));
     }
 
-    if (CONN_Write(conn, k_file, sizeof(k_file) - 1, &n, eIO_WritePersist)
+    if (CONN_Write(conn, kFile, sizeof(kFile) - 1, &n, eIO_WritePersist)
         != eIO_Success) {
-        CORE_LOGF(eLOG_Fatal, ("Cannot write %s", k_file));
+        CORE_LOGF(eLOG_Fatal, ("Cannot write %s", kFile));
     }
 
     size = 0;
