@@ -69,15 +69,16 @@ void CAgpContextValidator::EndOfObject(bool afterLastLine)
   );
   if(componentsInLastScaffold==1) m_SingleCompScaffolds++;
   if(componentsInLastObject  ==1) m_SingleCompObjects++;
+
+  if( prev_line_is_gap ) {
+    // The previous line was a gap at the end of a scaffold & object
+    agpErr.Msg( CAgpErr::W_GapObjEnd, string(" ")+prev_object,
+      AT_PrevLine);
+    if(componentsInLastScaffold==0) m_ScaffoldCount--;
+  }
+
   componentsInLastScaffold=0;
   componentsInLastObject=0;
-
-  if( prev_line_is_gap ) agpErr.Msg(
-    // The previous line was a gap at the end of a scaffold & object
-    CAgpErr::W_GapObjEnd, string(" ")+prev_object,
-    AT_PrevLine
-    //afterLastLine ? AT_PrevLine : (AT_ThisLine|AT_PrevLine)
-  );
 }
 
 void CAgpContextValidator::InvalidLine()
@@ -113,12 +114,12 @@ void CAgpContextValidator::ValidateLine(
     if(cl.obj_begin != 1) {
       agpErr.Msg(CAgpErr::E_ObjMustBegin1,
         NcbiEmptyString,
-        AT_ThisLine|AT_PrevLine
+        AT_ThisLine|AT_PrevLine|AT_SkipAfterBad
       );
     }
     if(cl.part_num != 1) {
       agpErr.Msg( CAgpErr::E_PartNumberNot1,
-        NcbiEmptyString, AT_ThisLine|AT_PrevLine );
+        NcbiEmptyString, AT_ThisLine|AT_PrevLine|AT_SkipAfterBad );
     }
   }
   else {
@@ -126,12 +127,12 @@ void CAgpContextValidator::ValidateLine(
     if(cl.obj_begin != prev_end+1) {
       agpErr.Msg(CAgpErr::E_ObjBegNePrevEndPlus1,
         NcbiEmptyString,
-        AT_ThisLine|AT_PrevLine
+        AT_ThisLine|AT_PrevLine|AT_SkipAfterBad
       );
     }
     if(cl.part_num != prev_part_num+1) {
       agpErr.Msg( CAgpErr::E_PartNumberNotPlus1,
-        NcbiEmptyString, AT_ThisLine|AT_PrevLine );
+        NcbiEmptyString, AT_ThisLine|AT_PrevLine|AT_SkipAfterBad );
     }
   }
 
@@ -168,7 +169,7 @@ void CAgpContextValidator::x_OnGapLine(
   }
   else if( prev_line_is_gap ) {
     agpErr.Msg( CAgpErr::W_ConseqGaps, NcbiEmptyString,
-      AT_ThisLine|AT_PrevLine );
+      AT_ThisLine|AT_PrevLine|AT_SkipAfterBad );
   }
   else if( gap.endsScaffold() ) {
     // A breaking gap after a component.

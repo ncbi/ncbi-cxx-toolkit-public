@@ -254,7 +254,7 @@ void CAgpErr::Msg(TCode code, const string& details,
 {
   // Ignore possibly spurious errors generated after
   // an unacceptable line with wrong # of columns
-  if(m_invalid_prev && (appliesTo&AT_SkipAfterBad) && (appliesTo&AT_PrevLine) ) return;
+  if(m_invalid_prev && (appliesTo&AT_SkipAfterBad) ) return;
 
   // Suppress some messages while still counting them
   m_MsgCount[code]++;

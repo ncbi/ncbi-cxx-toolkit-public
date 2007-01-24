@@ -84,7 +84,7 @@ private:
   int m_EolComments;
 };
 
-// Povide a nicer usage message
+// Print a nicer usage message
 class CArgDesc_agp_validate : public CArgDescriptions
 {
 public:
@@ -265,9 +265,9 @@ int CAgpValidateApplication::Run(void)
       cout << "End of line #comments  : " << m_EolComments << "\n";
     }
   }
-  else if(m_ValidationType & VT_Taxid) {
+  else if(m_ValidationType & VT_Acc) {
     cout << "\n";
-    m_AltValidator->CheckTaxids();
+    if(m_ValidationType & VT_Taxid) m_AltValidator->CheckTaxids();
     m_AltValidator->PrintTotals();
   }
 
