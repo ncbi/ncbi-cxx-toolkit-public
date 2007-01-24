@@ -211,7 +211,12 @@ sub ReadProjectListingFile
         }
         else
         {
-            push @Paths, "include/$_", "src/$_"
+            if (m{(?:corelib|dbapi/driver|objects/objmgr|objmgr|serial)/$}o)
+            {
+                push @Paths, 'include/' . $_ . 'impl'
+            }
+
+            push @Paths, 'include/' . $_, 'src/' . $_
         }
     }
 
