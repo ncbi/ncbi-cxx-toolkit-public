@@ -820,13 +820,13 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
                     
                     if (CSeqDBMapStrategy::e_ProbeMemory) {
                         a = (const char*) malloc(10 << 20);
+                        
+                        if (! a) {
+                            worked = false;
+                        }
+                        
+                        shim.Set(a);
                     }
-                    
-                    if (! a) {
-                        worked = false;
-                    }
-                    
-                    shim.Set(a);
                 }
                 catch(...) {
                     // allocation failure; reduce
@@ -837,7 +837,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
                     if (newmap->MapMmap(this)) {
                         retval = newmap->Data(begin, end);
                         newmap->AddRef();
-                    
+                        
                         if (retval == 0) {
                             worked = false;
                         }
