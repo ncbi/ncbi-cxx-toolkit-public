@@ -127,7 +127,8 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
     /* adjust info before yet another connection attempt */
     if (*redirect) {
         int status;
-        *uuu->net_info->path = '\0'; /*path is not inherited*/
+        if (**redirect == '?')
+            *uuu->net_info->path = '\0'; /*path is not inherited*/
         *uuu->net_info->args = '\0'; /*arguments are not inherited*/
         status = ConnNetInfo_ParseURL(uuu->net_info, *redirect);
         free(*redirect);
