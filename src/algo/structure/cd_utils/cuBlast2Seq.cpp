@@ -393,10 +393,21 @@ void CdBlaster::processBlastHits(int queryRow, CRef<CSearchResults> hits)
 	for (list< CRef< CSeq_align > >::const_iterator cit = seqAlignList.begin(); cit != seqAlignList.end(); cit++)
 	{
 		CRef< CSeq_align > sa = extractOneSeqAlign(*cit);
+		CSeq_align::C_Segs::TDenseg& denseg = sa->SetSegs().SetDenseg();
 		double score = 0.0;
 		if (!sa.Empty()) 
 		{
-			sa->GetNamedScore(m_scoreType, score);
+			if (m_scoreType == CSeq_align::eScore_PercentIdentity)
+			{
+				double idScore = 0.0;
+				sa->GetNamedScore(CSeq_align::eScore_IdentityCount, idScore);
+				int start = denseg.GetSeqStart(0);
+				int stop = denseg.GetSeqStop(0);
+				score = 100*idScore/(stop - start + 1);
+			}
+			else
+				sa->GetNamedScore(m_scoreType, score);
+
 		}
 		m_scores.push_back(score);
 	}

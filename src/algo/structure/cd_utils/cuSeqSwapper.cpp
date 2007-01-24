@@ -141,6 +141,7 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 		return;
 	// seperate normal from pending
 	vector<int> normal, pending;
+	bool hasNormal = false;
 	set<int> pending3D;
 	for (int i = 0; i < cluster.size(); i++)
 	{
@@ -162,15 +163,24 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 			m_ac.GetSeqIDForRow(cluster[i], seqId);
 			if (seqId->IsLocal())
 				normal.push_back(cluster[i]);
+			hasNormal = true;
 		}
 	}
+	if (!hasNormal) //if the pending 3D does not cluster with any normal, we don't want it.
+		pending3D.clear();
 	if ((normal.size() == 0) || (pending.size() == 0))
+	{
+		if (pending3D.size() > 0)
+		{
+			structs.insert(pending3D.begin(), pending3D.end());
+		}
 		return;
+	}
 	//blast normal against pending
 	CdBlaster blaster(m_ac);
 	blaster.setQueryRows(&normal);
 	blaster.setSubjectRows(&pending);
-	blaster.setScoreType(CSeq_align::eScore_IdentityCount);
+	blaster.setScoreType(CSeq_align::eScore_PercentIdentity);
 	blaster.blast();
 	//for each normal, find the hightest-scoring (in identity), unused and above the threshold pending
 	set<int> usedPendingIndice;

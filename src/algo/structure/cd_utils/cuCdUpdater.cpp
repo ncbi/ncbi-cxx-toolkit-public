@@ -440,6 +440,7 @@ bool CDUpdater::blast(bool wait, int row)
 		rblast = new blast::CRemoteBlast(psiopt);
 		blastopt = psiopt;
 	}
+	//rblast-> SetVerbose();
 	blastopt->SetSegFiltering(false);
 	if (m_config.numHits > 0)
 		blastopt->SetHitlistSize(m_config.numHits);
