@@ -45,6 +45,7 @@ static char const rcsid[] =
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/blast/Blast4_cutoff.hpp>
+#include <objects/blast/names.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -197,101 +198,91 @@ private:
     
     bool m_DefaultsMode;
     
-//     void x_SetProgram(const char * program)
-//     {
-//         m_Req->SetProgram(program);
-//     }
-    
-//     void x_SetService(const char * service)
-//     {
-//         m_Req->SetService(service);
-//     }
-    
     template<class T>
-    void x_SetParam(const char * name, T & value)
+    void x_SetParam(CBlast4Field & name, T & value)
     {
         x_SetOneParam(name, & value);
     }
     
-    void x_SetOneParam(const char * name, const int * x)
+    void x_SetOneParam(CBlast4Field & field, const int * x)
     {
         CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
         v->SetInteger(*x);
         
         CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
-        p->SetName(name);
+        p->SetName(field.GetName());
         p->SetValue(*v);
         
         m_ReqOpts->Set().push_back(p);
     }
     
-    void x_SetOneParam(const char * name, const char ** x)
+    void x_SetOneParam(CBlast4Field & field, const char ** x)
     {
         CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
         v->SetString().assign((x && (*x)) ? (*x) : "");
         
         CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
-        p->SetName(name);
+        p->SetName(field.GetName());
         p->SetValue(*v);
         
         m_ReqOpts->Set().push_back(p);
     }
     
-    void x_SetOneParam(const char * name, const bool * x)
+    void x_SetOneParam(CBlast4Field & field, const bool * x)
     {
         CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
         v->SetBoolean(*x);
         
         CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
-        p->SetName(name);
+        p->SetName(field.GetName());
         p->SetValue(*v);
         
         m_ReqOpts->Set().push_back(p);
     }
     
-    void x_SetOneParam(const char * name, CRef<objects::CBlast4_cutoff> * x)
+    void x_SetOneParam(CBlast4Field & field, CRef<objects::CBlast4_cutoff> * x)
     {
         CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
         v->SetCutoff(**x);
         
         CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
-        p->SetName(name);
+        p->SetName(field.GetName());
         p->SetValue(*v);
         
         m_ReqOpts->Set().push_back(p);
     }
     
-    void x_SetOneParam(const char * name, const double * x)
+    void x_SetOneParam(CBlast4Field & field, const double * x)
     {
         CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
         v->SetReal(*x);
         
         CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
-        p->SetName(name);
+        p->SetName(field.GetName());
         p->SetValue(*v);
         
         m_ReqOpts->Set().push_back(p);
     }
     
-    void x_SetOneParam(const char * name, const Int8 * x)
+    void x_SetOneParam(CBlast4Field & field, const Int8 * x)
     {
         CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
         v->SetBig_integer(*x);
         
         CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
-        p->SetName(name);
+        p->SetName(field.GetName());
         p->SetValue(*v);
         
         m_ReqOpts->Set().push_back(p);
     }
     
-    void x_SetOneParam(const char * name, objects::EBlast4_strand_type * x)
+    void x_SetOneParam(CBlast4Field & field, objects::EBlast4_strand_type * x)
     {
         CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
         v->SetStrand_type(*x);
         
         CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
-        p->SetName(name);
+        p->SetName(field.GetName());
         p->SetValue(*v);
         
         m_ReqOpts->Set().push_back(p);
@@ -375,7 +366,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
     
     switch(opt) {
     case eBlastOpt_WordSize:
-        x_SetParam("WordSize", v);
+        x_SetParam(B4Param_WordSize, v);
         return;
         
     case eBlastOpt_StrandOption:
@@ -402,25 +393,25 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
             }
             
             if (set_strand) {
-                x_SetParam("StrandOption", strand);
+                x_SetParam(B4Param_StrandOption, strand);
                 return;
             }
         }
         
     case eBlastOpt_WindowSize:
-        x_SetParam("WindowSize", v);
+        x_SetParam(B4Param_WindowSize, v);
         return;
         
     case eBlastOpt_GapOpeningCost:
-        x_SetParam("GapOpeningCost", v);
+        x_SetParam(B4Param_GapOpeningCost, v);
         return;
         
     case eBlastOpt_GapExtensionCost:
-        x_SetParam("GapExtensionCost", v);
+        x_SetParam(B4Param_GapExtensionCost, v);
         return;
         
     case eBlastOpt_HitlistSize:
-        x_SetParam("HitlistSize", v);
+        x_SetParam(B4Param_HitlistSize, v);
         return;
         
     case eBlastOpt_CutoffScore:
@@ -429,29 +420,29 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
             CRef<TCutoff> cutoff(new TCutoff);
             cutoff->SetRaw_score(v);
             
-            x_SetParam("CutoffScore", cutoff);
+            x_SetParam(B4Param_CutoffScore, cutoff);
         }
         return;
         
     case eBlastOpt_MatchReward:
-        x_SetParam("MatchReward", v);
+        x_SetParam(B4Param_MatchReward, v);
         return;
         
     case eBlastOpt_MismatchPenalty:
-        x_SetParam("MismatchPenalty", v);
+        x_SetParam(B4Param_MismatchPenalty, v);
         return;
 
     case eBlastOpt_WordThreshold:
-        x_SetParam("WordThreshold", v);
+        x_SetParam(B4Param_WordThreshold, v);
         return;
         
     case eBlastOpt_PseudoCount:
-        x_SetParam("PseudoCountWeight", v);
+        x_SetParam(B4Param_PseudoCountWeight, v);
         return;
         
     case eBlastOpt_CompositionBasedStats:
         if (v < eNumCompoAdjustModes) {
-            x_SetParam("CompositionBasedStats", v);
+            x_SetParam(B4Param_CompositionBasedStats, v);
             return;
         }
         
@@ -480,20 +471,20 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
             CRef<TCutoff> cutoff(new TCutoff);
             cutoff->SetE_value(v);
             
-            x_SetParam("EvalueThreshold", cutoff);
+            x_SetParam(B4Param_EvalueThreshold, cutoff);
         }
         return;
         
     case eBlastOpt_PercentIdentity:
-        x_SetParam("PercentIdentity", v);
+        x_SetParam(B4Param_PercentIdentity, v);
         return;
 
     case eBlastOpt_InclusionThreshold:
-        x_SetParam("InclusionThreshold", v);
+        x_SetParam(B4Param_InclusionThreshold, v);
         return;
         
     case eBlastOpt_XDropoff:
-        x_SetParam("XDropoff", v);
+        //x_SetParam(B4Param_XDropoff, v);
         return;
         
     default:
@@ -516,15 +507,15 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
     
     switch(opt) {
     case eBlastOpt_FilterString:
-        x_SetParam("FilterString", v);
+        x_SetParam(B4Param_FilterString, v);
         return;
         
     case eBlastOpt_RepeatFilteringDB:
-        x_SetParam("RepeatFilteringDB", v);
+        //x_SetParam(B4Param_RepeatFilteringDB, v);
         return;
         
     case eBlastOpt_MatrixName:
-        x_SetParam("MatrixName", v);
+        x_SetParam(B4Param_MatrixName, v);
         return;
         
     default:
@@ -577,28 +568,28 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
     case eBlastOpt_GappedMode:
         {
             bool ungapped = ! v;
-            x_SetParam("UngappedMode", ungapped); // inverted
+            x_SetParam(B4Param_UngappedMode, ungapped); // inverted
             return;
         }
         
     case eBlastOpt_OutOfFrameMode:
-        x_SetParam("OutOfFrameMode", v);
+        x_SetParam(B4Param_OutOfFrameMode, v);
         return;
 
     case eBlastOpt_SegFiltering:
-        x_SetParam("SegFiltering", v);
+        x_SetParam(B4Param_SegFiltering, v);
         return;
 
     case eBlastOpt_DustFiltering:
-        x_SetParam("DustFiltering", v);
+        x_SetParam(B4Param_DustFiltering, v);
         return;
 
     case eBlastOpt_RepeatFiltering:
-        x_SetParam("RepeatFiltering", v);
+        x_SetParam(B4Param_RepeatFiltering, v);
         return;
 
     case eBlastOpt_MaskAtHash:
-        x_SetParam("MaskAtHash", v);
+        x_SetParam(B4Param_MaskAtHash, v);
         return;
         
     default:
@@ -621,11 +612,11 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
     
     switch(opt) {
     case eBlastOpt_EffectiveSearchSpace:
-        x_SetParam("EffectiveSearchSpace", v);
+        x_SetParam(B4Param_EffectiveSearchSpace, v);
         return;
 
     case eBlastOpt_DbLength:
-        x_SetParam("DbLength", v);
+        x_SetParam(B4Param_DbLength, v);
         return;
         
     default:
