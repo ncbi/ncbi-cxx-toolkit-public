@@ -3,7 +3,7 @@
 
 /* $Id$ */
 
-/* Redefine function's names in order to avoid conflicts with libmd5.so on Solaris. */
+/* Redefine function's names in order to avoid conflicts with libmd5.so in Solaris. */
 #define MD5Init      FTDS64_MD5Init
 #define MD5Update    FTDS64_MD5Update
 #define MD5Transform FTDS64_MD5Transform
