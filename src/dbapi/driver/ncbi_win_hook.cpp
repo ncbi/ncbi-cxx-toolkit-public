@@ -34,15 +34,20 @@
 
 #if defined(NCBI_OS_MSWIN)
 
-    #include "ncbi_win_hook.hpp"
-    #include <algorithm>
+#include "ncbi_win_hook.hpp"
+#include <algorithm>
+
+#include <WinVer.h>
+#include <dbghelp.h>
+
+#pragma comment(lib, "DbgHelp.lib")
 
 BEGIN_NCBI_SCOPE
 
 namespace NWinHook
 {
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     ///
 
     class CModuleInstance {
@@ -73,7 +78,7 @@ namespace NWinHook
         TInternalList m_pInternalList;
     };
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     ///
     class CExeModuleInstance;
 
@@ -92,7 +97,7 @@ namespace NWinHook
         auto_ptr<CExeModuleInstance> m_pProcess;
     };
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     typedef BOOL (WINAPI * FEnumProcesses)(DWORD * lpidProcess,
                                            DWORD   cb,
                                            DWORD * cbNeeded
@@ -112,7 +117,7 @@ namespace NWinHook
 
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     /// class CPsapiHandler
     ///
     class CPsapiHandler : public CLibHandler {
@@ -133,7 +138,7 @@ namespace NWinHook
     };
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     //                   typedefs for ToolHelp32 functions
     //
     typedef HANDLE (WINAPI * FCreateToolHelp32Snapshot) (DWORD dwFlags,
@@ -158,7 +163,7 @@ namespace NWinHook
 
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     /// class CToolhelpHandler
     ///
     class CToolhelpHandler : public CLibHandler {
@@ -185,7 +190,7 @@ namespace NWinHook
     };
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     /// The taskManager dynamically decides whether to use ToolHelp
     /// library or PSAPI
     /// This is a proxy class to redirect calls to a handler ...
@@ -203,7 +208,7 @@ namespace NWinHook
     };
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     /// class CHookedFunction
     ///
     class CHookedFunction {
@@ -258,7 +263,7 @@ namespace NWinHook
     };
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     typedef HMODULE (WINAPI *FLoadLibraryA)(LPCSTR lpLibFileName);
     typedef HMODULE (WINAPI *FLoadLibraryW)(LPCWSTR lpLibFileName);
     typedef HMODULE (WINAPI *FLoadLibraryExA)(LPCSTR lpLibFileName,
@@ -274,21 +279,183 @@ namespace NWinHook
                                               );
     typedef VOID (WINAPI *FExitProcess)(UINT uExitCode);
 
-    ///////////////////////////////////////////////////////////////////////////////
-    FGetProcAddress g_GetProcAddress = reinterpret_cast<FGetProcAddress>
+    ////////////////////////////////////////////////////////////////////////////
+    static FGetProcAddress g_FGetProcAddress = reinterpret_cast<FGetProcAddress>
         (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "GetProcAddress"));
-    FLoadLibraryA g_LoadLibraryA = reinterpret_cast<FLoadLibraryA>
+    static FLoadLibraryA g_LoadLibraryA = reinterpret_cast<FLoadLibraryA>
         (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryA"));
-    FLoadLibraryW g_LoadLibraryW = reinterpret_cast<FLoadLibraryW>
-        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryW"));
-    FLoadLibraryExA g_LoadLibraryExA = reinterpret_cast<FLoadLibraryExA>
-        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryExA"));
-    FLoadLibraryExW g_LoadLibraryExW = reinterpret_cast<FLoadLibraryExW>
-        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "LoadLibraryExW"));
-    FExitProcess g_ExitProcess = reinterpret_cast<FExitProcess>
-        (::GetProcAddress(::GetModuleHandle("kernel32.dll"), "ExitProcess"));
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    class CKernell32
+    {
+    public:
+        CKernell32();
+        ~CKernell32();
+
+    public:
+        static HMODULE WINAPI LoadLibraryA(LPCSTR lpLibFileName);
+        static HMODULE WINAPI LoadLibraryW(LPCWSTR lpLibFileName);
+        static HMODULE WINAPI LoadLibraryExA(LPCSTR lpLibFileName,
+                                             HANDLE hFile,
+                                             DWORD dwFlags
+                                             );
+        static HMODULE WINAPI LoadLibraryExW(LPCWSTR lpLibFileName,
+                                             HANDLE hFile,
+                                             DWORD dwFlags
+                                             );
+        static FARPROC WINAPI GetProcAddress(HMODULE hModule,
+                                             LPCSTR lpProcName
+                                             );
+        static VOID WINAPI ExitProcess(UINT uExitCode);
+
+    private:
+        bool IsPatched(const void* addr);
+        DWORD GetRVAFromExportSection(
+            HMODULE hmodOriginal,
+            PSTR    pszFuncName
+            );
+
+    private:
+        HMODULE                 m_ModuleKenell32;
+        PIMAGE_NT_HEADERS       m_nt_header;
+        DWORD                   m_ImageStart;
+        DWORD                   m_ImageEnd;
+        static FLoadLibraryA    sm_FLoadLibraryA;
+        static FLoadLibraryW    sm_FLoadLibraryW;
+        static FLoadLibraryExA  sm_FLoadLibraryExA;
+        static FLoadLibraryExW  sm_FLoadLibraryExW;
+        static FGetProcAddress  sm_FGetProcAddress;
+        static FExitProcess     sm_FExitProcess;
+    };
+
+    FLoadLibraryA   CKernell32::sm_FLoadLibraryA = NULL;
+    FLoadLibraryW   CKernell32::sm_FLoadLibraryW = NULL;
+    FLoadLibraryExA CKernell32::sm_FLoadLibraryExA = NULL;
+    FLoadLibraryExW CKernell32::sm_FLoadLibraryExW = NULL;
+    FGetProcAddress CKernell32::sm_FGetProcAddress = NULL;
+    FExitProcess    CKernell32::sm_FExitProcess = NULL;
+
+    CKernell32::CKernell32()
+    {
+        m_ModuleKenell32 = ::GetModuleHandle("kernel32.dll");
+
+        sm_FGetProcAddress = reinterpret_cast<FGetProcAddress>
+            (::GetProcAddress(m_ModuleKenell32, "GetProcAddress"));
+        sm_FLoadLibraryA = reinterpret_cast<FLoadLibraryA>
+            (::GetProcAddress(m_ModuleKenell32, "LoadLibraryA"));
+        sm_FLoadLibraryW = reinterpret_cast<FLoadLibraryW>
+            (::GetProcAddress(m_ModuleKenell32, "LoadLibraryW"));
+        sm_FLoadLibraryExA = reinterpret_cast<FLoadLibraryExA>
+            (::GetProcAddress(m_ModuleKenell32, "LoadLibraryExA"));
+        sm_FLoadLibraryExW = reinterpret_cast<FLoadLibraryExW>
+            (::GetProcAddress(m_ModuleKenell32, "LoadLibraryExW"));
+        sm_FExitProcess = reinterpret_cast<FExitProcess>
+            (::GetProcAddress(m_ModuleKenell32, "ExitProcess"));
+
+        m_nt_header = ::ImageNtHeader(m_ModuleKenell32);
+
+        if (!m_nt_header) {
+            return;
+        }
+
+        m_ImageStart = m_nt_header->OptionalHeader.ImageBase;
+        m_ImageEnd = m_ImageStart + m_nt_header->OptionalHeader.SizeOfImage;
+
+        DWORD mod_addr = (DWORD)m_ModuleKenell32;
+
+        sm_FGetProcAddress = IsPatched(sm_FGetProcAddress) ?
+            reinterpret_cast<FGetProcAddress>(
+                GetRVAFromExportSection(m_ModuleKenell32, "GetProcAddress") +
+                mod_addr
+                ) :
+            sm_FGetProcAddress;
+        sm_FLoadLibraryA = IsPatched(sm_FLoadLibraryA) ?
+            reinterpret_cast<FLoadLibraryA>(
+                GetRVAFromExportSection(m_ModuleKenell32, "LoadLibraryA") +
+                mod_addr
+                ) :
+            sm_FLoadLibraryA;
+        sm_FLoadLibraryW = IsPatched(sm_FLoadLibraryW) ?
+            reinterpret_cast<FLoadLibraryW>(
+                GetRVAFromExportSection(m_ModuleKenell32, "LoadLibraryW") +
+                mod_addr
+                ) :
+            sm_FLoadLibraryW;
+        sm_FLoadLibraryExA = IsPatched(sm_FLoadLibraryExA) ?
+            reinterpret_cast<FLoadLibraryExA>(
+                GetRVAFromExportSection(m_ModuleKenell32, "LoadLibraryExA") +
+                mod_addr
+                ) :
+            sm_FLoadLibraryExA;
+        sm_FLoadLibraryExW = IsPatched(sm_FLoadLibraryExW) ?
+            reinterpret_cast<FLoadLibraryExW>(
+                GetRVAFromExportSection(m_ModuleKenell32, "LoadLibraryExW") +
+                mod_addr
+                ) :
+            sm_FLoadLibraryExW;
+//         sm_FExitProcess = IsPatched(sm_FExitProcess) ?
+//             reinterpret_cast<FExitProcess>(
+//                 GetRVAFromExportSection(m_ModuleKenell32, "ExitProcess") +
+//                 mod_addr
+//                 ) :
+//             sm_FExitProcess;
+    }
+
+    CKernell32::~CKernell32()
+    {
+    }
+
+    bool CKernell32::IsPatched(const void* addr)
+    {
+        if ((DWORD)addr >= m_ImageStart && (DWORD)addr < m_ImageEnd) {
+            return false;
+        }
+
+        return true;
+    }
+
+    HMODULE WINAPI CKernell32::LoadLibraryA(LPCSTR lpLibFileName)
+    {
+        return sm_FLoadLibraryA(lpLibFileName);
+    }
+
+    HMODULE WINAPI CKernell32::LoadLibraryW(LPCWSTR lpLibFileName)
+    {
+        return sm_FLoadLibraryW(lpLibFileName);
+    }
+
+    HMODULE WINAPI CKernell32::LoadLibraryExA(LPCSTR lpLibFileName,
+                                              HANDLE hFile,
+                                              DWORD dwFlags
+                                              )
+    {
+        return sm_FLoadLibraryExA(lpLibFileName, hFile, dwFlags);
+    }
+
+    HMODULE WINAPI CKernell32::LoadLibraryExW(LPCWSTR lpLibFileName,
+                                              HANDLE hFile,
+                                              DWORD dwFlags
+                                              )
+    {
+        return sm_FLoadLibraryExW(lpLibFileName, hFile, dwFlags);
+    }
+
+    FARPROC WINAPI CKernell32::GetProcAddress(HMODULE hModule,
+                                              LPCSTR lpProcName
+                                              )
+    {
+        return sm_FGetProcAddress(hModule, lpProcName);
+    }
+
+    VOID WINAPI CKernell32::ExitProcess(UINT uExitCode)
+    {
+        sm_FExitProcess(uExitCode);
+    }
+
+
+    CKernell32 g_Kernell32;
+
+    ////////////////////////////////////////////////////////////////////////////
     const char*
     CWinHookException::GetErrCodeString(void) const
     {
@@ -299,7 +466,7 @@ namespace NWinHook
         }
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     /// class CPEi386
     ///
     class CPEi386 {
@@ -326,7 +493,7 @@ namespace NWinHook
         friend class CSafeStaticPtr<CPEi386>;
     };
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     /// class CExeModuleInstance
     ///
     /// Represents exactly one loaded EXE module
@@ -351,17 +518,16 @@ namespace NWinHook
         CLibHandler* m_pLibHandler;
     };
 
-    /////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     static BOOL IsToolHelpSupported(void)
     {
         BOOL    bResult(FALSE);
         HMODULE hModToolHelp;
         PROC    pfnCreateToolhelp32Snapshot;
 
-        hModToolHelp = g_LoadLibraryA( "KERNEL32.DLL" );
+        hModToolHelp = g_LoadLibraryA("KERNEL32.DLL");
         if (hModToolHelp != NULL) {
-            pfnCreateToolhelp32Snapshot =
-            g_GetProcAddress(hModToolHelp,
+            pfnCreateToolhelp32Snapshot = ::GetProcAddress(hModToolHelp,
                              "CreateToolhelp32Snapshot"
                              );
             bResult = (pfnCreateToolhelp32Snapshot != NULL);
@@ -377,7 +543,7 @@ namespace NWinHook
         BOOL bResult = FALSE;
         HMODULE hModPSAPI = NULL;
 
-        hModPSAPI = g_LoadLibraryA( "PSAPI.DLL" );
+        hModPSAPI = g_LoadLibraryA("PSAPI.DLL");
         bResult = (hModPSAPI != NULL);
         if (bResult) {
             ::FreeLibrary(hModPSAPI);
@@ -395,7 +561,96 @@ namespace NWinHook
     }
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    DWORD CKernell32::GetRVAFromExportSection(
+        HMODULE hmodOriginal,
+        PSTR    pszFuncName
+        )
+    {
+        DWORD rva = 0;
+
+        __try
+        {
+            // Get the address of the module's export section
+            PIMAGE_EXPORT_DIRECTORY pExportDir =
+                static_cast<PIMAGE_EXPORT_DIRECTORY>
+                    (CPEi386::GetInstance().GetIAT(hmodOriginal,
+                                                   IMAGE_DIRECTORY_ENTRY_EXPORT));
+
+            // Does this module has export section ?
+            if (pExportDir == NULL) {
+                __leave;
+            }
+
+            // Get the name of the DLL
+            PSTR pszDllName = reinterpret_cast<PSTR>(
+                static_cast<uintptr_t>(pExportDir->Name) +
+                reinterpret_cast<uintptr_t>(hmodOriginal)
+                );
+            // Get the starting ordinal value. By default is 1, but
+            // is not required to be so
+            DWORD dwFuncNumber = pExportDir->Base;
+            // The number of entries in the EAT
+            size_t dwNumberOfExported = pExportDir->NumberOfFunctions;
+            // Get the address of the ENT
+            PDWORD pdwFunctions =
+                reinterpret_cast<PDWORD>(
+                    static_cast<uintptr_t>(pExportDir->AddressOfFunctions) +
+                    reinterpret_cast<uintptr_t>(hmodOriginal));
+            //  Get the export ordinal table
+            PWORD pwOrdinals =
+                reinterpret_cast<PWORD>(
+                    static_cast<uintptr_t>(pExportDir->AddressOfNameOrdinals) +
+                    reinterpret_cast<uintptr_t>(hmodOriginal));
+            // Get the address of the array with all names
+            PDWORD pszFuncNames =
+                reinterpret_cast<PDWORD>(
+                    static_cast<uintptr_t>(pExportDir->AddressOfNames) +
+                    reinterpret_cast<uintptr_t>(hmodOriginal));
+
+            PSTR pszExpFunName;
+
+            // Walk through all of the entries and try to locate the
+            // one we are looking for
+            for (size_t i = 0; i < dwNumberOfExported; ++i, ++pdwFunctions) {
+                DWORD entryPointRVA = *pdwFunctions;
+                if (entryPointRVA == 0) {
+                    // Skip over gaps in exported function
+                    // ordinals (the entrypoint is 0 for
+                    // these functions).
+                    continue;
+                }
+
+                // See if this function has an associated name exported for it.
+                for (unsigned j = 0; j < pExportDir->NumberOfNames; ++j) {
+                    // Note that pwOrdinals[x] return values starting form 0.. (not from 1)
+                    if (pwOrdinals[j] == i) {
+                        pszExpFunName = reinterpret_cast<PSTR>(
+                            static_cast<uintptr_t>(pszFuncNames[j]) +
+                            reinterpret_cast<uintptr_t>(hmodOriginal));
+                        // Is this the same ordinal value ?
+                        // Notice that we need to add 1 to pwOrdinals[j] to get actual
+                        // number
+                        if ((pszExpFunName != NULL) &&
+                            (strcmp(pszExpFunName, pszFuncName) == 0)
+                            ) {
+                            rva = entryPointRVA;
+                            __leave;
+                        }
+                    }
+                }
+            }
+        }
+        __finally
+        {
+            // do nothing
+        }
+        // This function is not in the caller's import section
+        return rva;
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
     typedef struct {
         char szCalleeModName[MAX_PATH];
         char szFuncName[MAX_PATH];
@@ -414,7 +669,7 @@ namespace NWinHook
 #define NUMBER_OF_MANDATORY_API_FUNCS (sizeof(MANDATORY_API_FUNCS) / \
     sizeof(MANDATORY_API_FUNCS[0]))
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CLibHandler::CLibHandler(void)
     {
     }
@@ -423,7 +678,7 @@ namespace NWinHook
     {
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CModuleInstance::CModuleInstance(char *pszName, HMODULE hModule):
     m_pszName(NULL),
     m_hModule(NULL)
@@ -498,7 +753,7 @@ namespace NWinHook
     }
 
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CExeModuleInstance::CExeModuleInstance(CLibHandler* pLibHandler,
                                            char*        pszName,
                                            HMODULE      hModule,
@@ -542,7 +797,7 @@ namespace NWinHook
         return (m_pInternalList[dwIndex]);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CPsapiHandler::CPsapiHandler(void):
     m_hModPSAPI(NULL),
     m_pfnEnumProcesses(NULL),
@@ -571,15 +826,15 @@ namespace NWinHook
         if (m_hModPSAPI != NULL) {
             m_pfnEnumProcesses =
             (FEnumProcesses)
-            g_GetProcAddress(m_hModPSAPI,"EnumProcesses");
+            ::GetProcAddress(m_hModPSAPI,"EnumProcesses");
 
             m_pfnEnumProcessModules =
             (FEnumProcessModules)
-            g_GetProcAddress(m_hModPSAPI, "EnumProcessModules");
+            ::GetProcAddress(m_hModPSAPI, "EnumProcessModules");
 
             m_pfnGetModuleFileNameExA =
             (FGetModuleFileNameExA)
-            g_GetProcAddress(m_hModPSAPI, "GetModuleFileNameExA");
+            ::GetProcAddress(m_hModPSAPI, "GetModuleFileNameExA");
 
         }
 
@@ -745,7 +1000,7 @@ namespace NWinHook
         return (bResult);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CToolhelpHandler::CToolhelpHandler(void)
     {
     }
@@ -767,15 +1022,15 @@ namespace NWinHook
             // have the Toolhelp32 functions in the Kernel32.
             m_pfnCreateToolhelp32Snapshot =
                 (FCreateToolHelp32Snapshot)
-                    g_GetProcAddress(hInstLib, "CreateToolhelp32Snapshot");
+                    ::GetProcAddress(hInstLib, "CreateToolhelp32Snapshot");
             m_pfnProcess32First = (FProcess32First)
-                                  g_GetProcAddress(hInstLib, "Process32First");
+                                  ::GetProcAddress(hInstLib, "Process32First");
             m_pfnProcess32Next = (FProcess32Next)
-                                 g_GetProcAddress(hInstLib, "Process32Next");
+                                 ::GetProcAddress(hInstLib, "Process32Next");
             m_pfnModule32First = (FModule32First)
-                                 g_GetProcAddress(hInstLib, "Module32First");
+                                 ::GetProcAddress(hInstLib, "Module32First");
             m_pfnModule32Next = (FModule32Next)
-                                g_GetProcAddress(hInstLib, "Module32Next");
+                                ::GetProcAddress(hInstLib, "Module32Next");
 
             ::FreeLibrary( hInstLib );
 
@@ -887,7 +1142,7 @@ namespace NWinHook
         return (bResult);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CTaskManager::CTaskManager():
     m_pLibHandler(NULL)
     {
@@ -1201,7 +1456,7 @@ namespace NWinHook
         return (bResult);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CHookedFunctions::CHookedFunctions(void)
     {
     }
@@ -1210,7 +1465,7 @@ namespace NWinHook
     {
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     static BOOL ExtractModuleFileName(char* pszFullFileName)
     {
         BOOL  bResult = FALSE;
@@ -1230,7 +1485,7 @@ namespace NWinHook
         return (bResult);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     BOOL CHookedFunctions::GetFunctionNameFromExportSection(
         HMODULE hmodOriginal,
         DWORD   dwFuncOrdinalNum,
@@ -1256,7 +1511,8 @@ namespace NWinHook
             // Get the name of the DLL
             PSTR pszDllName = reinterpret_cast<PSTR>(
                 static_cast<uintptr_t>(pExportDir->Name) +
-                reinterpret_cast<uintptr_t>(hmodOriginal));
+                reinterpret_cast<uintptr_t>(hmodOriginal)
+                );
             // Get the starting ordinal value. By default is 1, but
             // is not required to be so
             DWORD dwFuncNumber = pExportDir->Base;
@@ -1487,7 +1743,7 @@ namespace NWinHook
         return (bResult);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CApiHookMgr::CApiHookMgr() :
         m_bSystemFuncsHooked(FALSE)
     {
@@ -1613,7 +1869,7 @@ namespace NWinHook
 
             // It's possible that the requested module is not loaded yet
             // so lets try to load it.
-            if (pfnOrig != NULL) {
+            if (pfnOrig == NULL) {
                 HMODULE hmod = g_LoadLibraryA(pszCalleeModName);
                 if (NULL != hmod) {
                     pfnOrig = GetProcAddressWindows(
@@ -1738,7 +1994,7 @@ namespace NWinHook
         HMODULE hmod = NULL;
 
         try {
-            hmod = g_LoadLibraryA(pszModuleName);
+            hmod = CKernell32::LoadLibraryA(pszModuleName);
             GetInstance().HackModuleOnLoad(hmod, 0);
         } catch (...) {
             return NULL;
@@ -1752,7 +2008,7 @@ namespace NWinHook
         HMODULE hmod = NULL;
 
         try {
-            hmod = g_LoadLibraryW(pszModuleName);
+            hmod = CKernell32::LoadLibraryW(pszModuleName);
             GetInstance().HackModuleOnLoad(hmod, 0);
         } catch (...) {
             return NULL;
@@ -1768,9 +2024,9 @@ namespace NWinHook
         HMODULE hmod = NULL;
 
         try {
-            hmod = g_LoadLibraryExA(pszModuleName,
-                                    hFile,
-                                    dwFlags);
+            hmod = CKernell32::LoadLibraryExA(pszModuleName,
+                                              hFile,
+                                              dwFlags);
             GetInstance().HackModuleOnLoad(hmod, 0);
         } catch (...) {
             return NULL;
@@ -1786,9 +2042,9 @@ namespace NWinHook
         HMODULE hmod = NULL;
 
         try {
-            hmod = g_LoadLibraryExW(pszModuleName,
-                                    hFile,
-                                    dwFlags);
+            hmod = CKernell32::LoadLibraryExW(pszModuleName,
+                                              hFile,
+                                              dwFlags);
             GetInstance().HackModuleOnLoad(hmod, 0);
         } catch (...) {
             return NULL;
@@ -1827,20 +2083,20 @@ namespace NWinHook
     FARPROC WINAPI CApiHookMgr::GetProcAddressWindows(HMODULE hmod,
                                                       PCSTR pszProcName)
     {
-        return (g_GetProcAddress(hmod, pszProcName));
+        return (g_FGetProcAddress(hmod, pszProcName));
     }
 
-    /////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     CPEi386::CPEi386(void) :
         m_ModDbghelp(NULL),
         m_ImageDirectoryEntryToData(NULL)
     {
-        m_ModDbghelp = g_LoadLibraryA( "DBGHELP.DLL" );
+        m_ModDbghelp = g_LoadLibraryA("DBGHELP.DLL");
 
         if (m_ModDbghelp != NULL) {
             m_ImageDirectoryEntryToData =
                 reinterpret_cast<FImageDirectoryEntryToData>(
-                    g_GetProcAddress(m_ModDbghelp,
+                    ::GetProcAddress(m_ModDbghelp,
                                     "ImageDirectoryEntryToData"
                                     ));
             if (!m_ImageDirectoryEntryToData ) {
@@ -1885,7 +2141,7 @@ namespace NWinHook
                                            );
     }
 
-    /////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     COnExitProcess::COnExitProcess(void)
     {
         CApiHookMgr::GetInstance().HookImport("Kernel32.DLL",
@@ -1951,7 +2207,7 @@ namespace NWinHook
     {
         COnExitProcess::Instance().ClearAll();
 
-        g_ExitProcess(uExitCode);
+        CKernell32::ExitProcess(uExitCode);
     }
 
 }
@@ -1959,5 +2215,4 @@ namespace NWinHook
 END_NCBI_SCOPE
 
 #endif
-
 

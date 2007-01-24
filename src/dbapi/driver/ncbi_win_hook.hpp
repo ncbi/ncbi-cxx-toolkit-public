@@ -40,11 +40,10 @@
 
 #if defined(NCBI_OS_MSWIN)
 
-    #include <corelib/ncbi_safe_static.hpp>
-    #include <ImageHlp.h>
-    #include <process.h>
-    #include <Tlhelp32.h>
-    #include <vector>
+#include <corelib/ncbi_safe_static.hpp>
+#include <process.h>
+#include <Tlhelp32.h>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
