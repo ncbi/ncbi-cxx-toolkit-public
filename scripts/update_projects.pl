@@ -227,7 +227,7 @@ sub FindProjectListing
 {
     my ($Project, $Context) = @_;
 
-    return $Project if $Project =~ '[\\/]' && -f $Project;
+    return $Project if -f $Project;
 
     # Search through the registered directories with
     # project listings.
@@ -256,9 +256,11 @@ if ($BuildDir)
     mkdir $BuildDir;
 
     my $ProjectListFile = "$BuildDir/projects";
-    if (eval {symlink("",""); 1})
+    if (eval {symlink('', ''); 1})
     {
-        symlink $MainProject, $ProjectListFile or die $!;
+        symlink(File::Spec->file_name_is_absolute($MainProject) ?
+            $MainProject : File::Spec->rel2abs($MainProject), $ProjectListFile)
+            or die $!;
     }
     else
     {
