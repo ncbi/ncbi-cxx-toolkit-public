@@ -4587,6 +4587,7 @@ fi
 if test "$with_libxml" = "no"; then
    LIBXML_PATH="No_LIBXML"
    LIBXML_INCLUDE=
+   LIBXML_LIBPATH_=
    LIBXML_LIBS=
 else
    NCBI_PACKAGE(LIBXML)
