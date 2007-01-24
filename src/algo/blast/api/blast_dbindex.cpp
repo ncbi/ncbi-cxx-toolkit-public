@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <sstream>
+#include <list>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
 #include <algo/blast/core/blast_hits.h>
@@ -154,12 +155,17 @@ class CIndexedDb : public CObject
         vector< string > index_names_;  /**< List of index volume names. */
         bool seq_from_index_;   /**< Indicates if it is OK to serve sequence data
                                      directly from the index. */
+        bool index_preloaded_;  /**< True if indices are preloaded in constructor. */
         TIndexSet indices_;     /**< Currently loaded indices. */
 
 
     public:
 
         typedef SThreadLocal TThreadLocal; /**< Type for thread local data. */
+
+        typedef std::list< TThreadLocal * > TThreadDataSet; /** Type of a set of allocated TThreadLocal objects. */
+
+        static TThreadDataSet Thread_Data_Set; /* Set of allocated TThreadLocal objects. */
 
         /** Object constructor.
             
@@ -260,6 +266,9 @@ class CIndexedDb : public CObject
 };
 
 //------------------------------------------------------------------------------
+CIndexedDb::TThreadDataSet CIndexedDb::Thread_Data_Set; 
+
+//------------------------------------------------------------------------------
 /** Callback that is called for index based seed search.
     @sa For the meaning of parameters see DbIndexPreSearchFnType.
 */
@@ -274,6 +283,19 @@ static void IndexedDbPreSearch(
     CIndexedDb::TThreadLocal * idb_tl = 
         static_cast< CIndexedDb::TThreadLocal * >(
                 _BlastSeqSrcImpl_GetDataStructure( seq_src ) );
+    bool found = false;
+
+    for( CIndexedDb::TThreadDataSet::iterator i = 
+            CIndexedDb::Thread_Data_Set.begin();
+         i != CIndexedDb::Thread_Data_Set.end(); ++i ) {
+        if( *i == idb_tl ) {
+            found = true;
+            break;
+        }
+    }
+
+    if( !found ) return;
+
     CIndexedDb * idb = idb_tl->idb_.GetPointerOrNull();
     lt_wrap->lut = (void *)idb;
     lt_wrap->read_indexed_db = (void *)(&s_MB_IdbGetResults);
@@ -286,7 +308,8 @@ static void IndexedDbPreSearch(
 
 //------------------------------------------------------------------------------
 CIndexedDb::CIndexedDb( const string & indexname, BlastSeqSrc * db )
-    : db_( db ), threads_( 1 ), seq_from_index_( false )
+    : db_( db ), threads_( 1 ), 
+      seq_from_index_( false ), index_preloaded_( false )
 {
     // Parse the indexname as a comma separated list
     string::size_type start = 0, end = 0;
@@ -362,6 +385,24 @@ CIndexedDb::CIndexedDb( const string & indexname, BlastSeqSrc * db )
     
     if( threads_ >= index_names_.size() ) {
         seq_from_index_ = true;
+        index_preloaded_ = true;
+
+        for( vector< string >::size_type ind = 0; 
+                ind < index_names_.size(); ++ind ) {
+            CRef< CDbIndex > index = CDbIndex::Load( index_names_[ind] );
+
+            if( index == 0 ) {
+                throw std::runtime_error(
+                        (string( "CIndexedDb: could not load index" ) 
+                        + index_names_[ind]).c_str() );
+            }
+
+            if( index->Version() != 5 ) seq_from_index_ = false;
+            indices_.push_back( index );
+            results_.push_back( CConstRef< CDbIndex::CSearchResults >( null ) );
+            CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();
+            seqmap_.push_back( s + (index->StopSeq() - index->StartSeq()) );
+        }
     }
 }
 
@@ -420,23 +461,25 @@ void CIndexedDb::PreSearch(
 
     for( vector< string >::size_type v = 0; 
             v < index_names_.size(); v += threads_ ) {
-        indices_.clear();
+        if( !index_preloaded_ ) {
+            indices_.clear();
 
-        for( vector< string >::size_type ind = 0; 
+            for( vector< string >::size_type ind = 0; 
                 ind < threads_ && v + ind < index_names_.size(); ++ind ) {
-            CRef< CDbIndex > index = CDbIndex::Load( index_names_[v+ind] );
+                CRef< CDbIndex > index = CDbIndex::Load( index_names_[v+ind] );
 
-            if( index == 0 ) {
-                throw std::runtime_error(
-                        (string( "CIndexedDb: could not load index" ) 
-                        + index_names_[v+ind]).c_str() );
+                if( index == 0 ) {
+                    throw std::runtime_error(
+                            (string( "CIndexedDb: could not load index" ) 
+                            + index_names_[v+ind]).c_str() );
+                }
+
+                if( index->Version() != 5 ) seq_from_index_ = false;
+                indices_.push_back( index );
+                results_.push_back( CConstRef< CDbIndex::CSearchResults >( null ) );
+                CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();
+                seqmap_.push_back( s + (index->StopSeq() - index->StartSeq()) );
             }
-
-            if( index->Version() != 5 ) seq_from_index_ = false;
-            indices_.push_back( index );
-            results_.push_back( CConstRef< CDbIndex::CSearchResults >( null ) );
-            CDbIndex::TSeqNum s = seqmap_.empty() ? 0 : *seqmap_.rbegin();
-            seqmap_.push_back( s + (index->StopSeq() - index->StartSeq()) );
         }
 
         if( indices_.size() > 1 ) {
@@ -642,6 +685,15 @@ static void s_IDbReleaseSequence( void * handle, void * x )
 }
 
 //------------------------------------------------------------------------------
+/** Forwards the call to CIndexedDb::db_. */
+static void s_IDbResetChunkIterator( void * handle )
+{
+    BlastSeqSrc * fw_seqsrc = s_GetForwardSeqSrc( handle );
+    void * fw_handle = s_GetForwardSeqDb( handle );
+    _BlastSeqSrcImpl_GetResetChunkIterator( fw_seqsrc )( fw_handle );
+}
+
+//------------------------------------------------------------------------------
 /** Destroy the sequence source.
 
     Destroys and frees CIndexedDb instance and the wrapped BLAST database.
@@ -655,6 +707,16 @@ static BlastSeqSrc * s_IDbSrcFree( BlastSeqSrc * seq_src )
         CIndexedDb::TThreadLocal * idb = 
             static_cast< CIndexedDb::TThreadLocal * >( 
                     _BlastSeqSrcImpl_GetDataStructure( seq_src ) );
+
+        for( CIndexedDb::TThreadDataSet::iterator i = 
+                CIndexedDb::Thread_Data_Set.begin();
+             i != CIndexedDb::Thread_Data_Set.end(); ++i ) {
+            if( *i == idb ) {
+                CIndexedDb::Thread_Data_Set.erase( i );
+                break;
+            }
+        }
+
         delete idb;
         sfree( seq_src );
     }
@@ -679,6 +741,7 @@ static BlastSeqSrc * s_IDbSrcCopy( BlastSeqSrc * seq_src )
         try {
             CIndexedDb::TThreadLocal * idb_copy = 
                 new CIndexedDb::TThreadLocal( *idb );
+            CIndexedDb::Thread_Data_Set.push_back( idb_copy );
             _BlastSeqSrcImpl_SetDataStructure( seq_src, (void *)idb_copy );
             return seq_src;
         }catch( ... ) {
@@ -707,6 +770,7 @@ static void s_IDbSrcInit( BlastSeqSrc * retval, CIndexedDb::TThreadLocal * idb )
     _BlastSeqSrcImpl_SetGetSeqLen     (retval, & s_IDbGetSeqLen);
     _BlastSeqSrcImpl_SetIterNext      (retval, & s_IDbIteratorNext);
     _BlastSeqSrcImpl_SetReleaseSequence   (retval, & s_IDbReleaseSequence);
+    _BlastSeqSrcImpl_SetResetChunkIterator (retval, & s_IDbResetChunkIterator);
 }
 
 //------------------------------------------------------------------------------
@@ -733,6 +797,7 @@ static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args )
     }
 
     if( success ) {
+        CIndexedDb::Thread_Data_Set.push_back( idb );
         s_IDbSrcInit( retval, idb );
     }else {
         ERR_POST( "Index load operation failed." );
@@ -771,7 +836,7 @@ static void s_MB_IdbGetResults(
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: blast_dbindex.cpp,v $
  * Revision 1.7  2007/01/08 19:54:06  morgulis
  * Umapping unused portions of index after search is complete.
  *
