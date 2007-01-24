@@ -23,151 +23,151 @@ my @ProjectDirs = ("$ScriptDir/projects", "$ScriptDir/internal/projects");
 # Print usage in case if a wrong number of arguments is passed.
 if (@ARGV < 1 || @ARGV > 2 || $ARGV[0] eq '--help')
 {
-	print STDERR $ScriptName . ' $Revision$' . <<EOF;
+    print STDERR $ScriptName . ' $Revision$' . <<EOF;
 
 This script checks out files required for building the specified project
 and optionally (re-)configures and builds it.
 
 Usage:
-	$ScriptName Project [BuildDir]
+    $ScriptName Project [BuildDir]
 
 Where:
-	Project - The name of the project you want to build or a pathname
-		of the project listing file.
+    Project - The name of the project you want to build or a pathname
+        of the project listing file.
 
-		If this argument looks like a project name (that is, it
-		doesn't contain path information), then the '.lst' extension
-		is added to it and the resulting file name is searched for
-		in the following system directories:
+        If this argument looks like a project name (that is, it
+        doesn't contain path information), then the '.lst' extension
+        is added to it and the resulting file name is searched for
+        in the following system directories:
 
 EOF
 
-	print STDERR "\t\t$_\n" for @ProjectDirs;
+    print STDERR "\t\t$_\n" for @ProjectDirs;
 
-	print STDERR "\n\t\tAvailable project names are:\n\n";
+    print STDERR "\n\t\tAvailable project names are:\n\n";
 
-	my @ProjectNames;
-	find(sub {s/\.lst$// && push @ProjectNames, $_}, @ProjectDirs);
+    my @ProjectNames;
+    find(sub {s/\.lst$// && push @ProjectNames, $_}, @ProjectDirs);
 
-	my $Indent = "\t\t";
-	my $MaxWidth = 80 - 2 * 8 - 6;
+    my $Indent = "\t\t";
+    my $MaxWidth = 80 - 2 * 8 - 6;
 
-	my $Column = 0;
+    my $Column = 0;
 
-	for (@ProjectNames)
-	{
-		unless ($Column > 0)
-		{
-			while (length($_) > $MaxWidth)
-			{
-				m/^(.{$MaxWidth})(.+)$/;
-				print STDERR "$Indent$1\n";
-				$_ = $2
-			}
+    for (@ProjectNames)
+    {
+        unless ($Column > 0)
+        {
+            while (length($_) > $MaxWidth)
+            {
+                m/^(.{$MaxWidth})(.+)$/;
+                print STDERR "$Indent$1\n";
+                $_ = $2
+            }
 
-			print STDERR $Indent
-		}
-		elsif (++$Column + length($_) <= $MaxWidth)
-		{
-			print STDERR ' '
-		}
-		else
-		{
-			if (length($_) > $MaxWidth)
-			{
-				if (($Column = $MaxWidth - $Column) > 0)
-				{
-					m/^(.{$Column})(.+)$/;
-					print STDERR " $1";
-					$_ = $2
-				}
+            print STDERR $Indent
+        }
+        elsif (++$Column + length($_) <= $MaxWidth)
+        {
+            print STDERR ' '
+        }
+        else
+        {
+            if (length($_) > $MaxWidth)
+            {
+                if (($Column = $MaxWidth - $Column) > 0)
+                {
+                    m/^(.{$Column})(.+)$/;
+                    print STDERR " $1";
+                    $_ = $2
+                }
 
-				while (length($_) > $MaxWidth)
-				{
-					m/^(.{$MaxWidth})(.+)$/;
-					print STDERR "\n$Indent$1";
-					$_ = $2
-				}
-			}
+                while (length($_) > $MaxWidth)
+                {
+                    m/^(.{$MaxWidth})(.+)$/;
+                    print STDERR "\n$Indent$1";
+                    $_ = $2
+                }
+            }
 
-			print STDERR "\n$Indent";
-			$Column = 0
-		}
+            print STDERR "\n$Indent";
+            $Column = 0
+        }
 
-		print STDERR $_;
+        print STDERR $_;
 
-		if (($Column += length($_)) == $MaxWidth)
-		{
-			print STDERR "\n";
-			$Column = 0
-		}
-	}
+        if (($Column += length($_)) == $MaxWidth)
+        {
+            print STDERR "\n";
+            $Column = 0
+        }
+    }
 
-	print STDERR "\n" if $Column > 0;
+    print STDERR "\n" if $Column > 0;
 
-	die <<EOF
+    die <<EOF
 
-	BuildDir - Path to the target directory. The presence (or absence)
-		of this argument designates the mode of operation - see
-		the Description section below.
+    BuildDir - Path to the target directory. The presence (or absence)
+        of this argument designates the mode of operation - see
+        the Description section below.
 
 Description:
-	This script supports two modes of operation:
+    This script supports two modes of operation:
 
-	1. If you specify the BuildDir argument, the script will create the
-		directory if necessary and check the specified portion of
-		the C++ Toolkit tree out into it, along with any additional
-		infrastructure needed for the build system to work.
-		If the directory already exists, it must be empty.
-		The script will then optionally configure and build
-		the new tree.
+    1. If you specify the BuildDir argument, the script will create the
+        directory if necessary and check the specified portion of
+        the C++ Toolkit tree out into it, along with any additional
+        infrastructure needed for the build system to work.
+        If the directory already exists, it must be empty.
+        The script will then optionally configure and build
+        the new tree.
 
-	2. If you run this script from the top level of an existing working
-		copy of the C++ source tree without sepcifying the BuildDir
-		argument, it will update the sources and headers for the
-		specified projects. The script will then optionally
-		reconfigure and rebuild the tree.
+    2. If you run this script from the top level of an existing working
+        copy of the C++ source tree without sepcifying the BuildDir
+        argument, it will update the sources and headers for the
+        specified projects. The script will then optionally
+        reconfigure and rebuild the tree.
 
 Examples:
-	1. Perform initial checkout of project "connect" and its
-		dependencies, then optionally configure and build them:
+    1. Perform initial checkout of project "connect" and its
+        dependencies, then optionally configure and build them:
 
-		\$ $ScriptName connect ./connect_build
+        \$ $ScriptName connect ./connect_build
 
-	2. Update sources of the "connect" project and all of its
-		dependencies to the latest versions from the repository
-		and then optionally reconfigure and build them:
+    2. Update sources of the "connect" project and all of its
+        dependencies to the latest versions from the repository
+        and then optionally reconfigure and build them:
 
-		\$ cd connect_build
-		\$ $ScriptName connect
+        \$ cd connect_build
+        \$ $ScriptName connect
 
 EOF
 }
 
 sub FindSubversion
 {
-	my $Path = $OldEnv{PATH};
-	my ($Delim, $RE, $Program);
+    my $Path = $OldEnv{PATH};
+    my ($Delim, $RE, $Program);
 
-	if ($Path !~ m/;/)
-	{
-		$Delim = ':';
-		$RE = qr/^([-\w.\/]+)$/o;
-		$Program = '/svn'
-	}
-	else
-	{
-		$Delim = ';';
-		$RE = qr/^((?:\w:)?[-\w .\\]+)$/o;
-		$Program = '\\svn.exe'
-	}
+    if ($Path !~ m/;/)
+    {
+        $Delim = ':';
+        $RE = qr/^([-\w.\/]+)$/o;
+        $Program = '/svn'
+    }
+    else
+    {
+        $Delim = ';';
+        $RE = qr/^((?:\w:)?[-\w .\\]+)$/o;
+        $Program = '\\svn.exe'
+    }
 
-	for $Path (split($Delim, $Path))
-	{
-		return $Path if $Path =~ $RE && -x ($Path = $1 . $Program)
-	}
+    for $Path (split($Delim, $Path))
+    {
+        return $Path if $Path =~ $RE && -x ($Path = $1 . $Program)
+    }
 
-	return undef
+    return undef
 }
 
 my @Paths;
@@ -181,59 +181,59 @@ my @ProjectQueue;
 # the previously read project listing files using the #include directive.
 sub ReadProjectListingFile
 {
-	my ($FileName, $Context) = @_;
+    my ($FileName, $Context) = @_;
 
-	open FILE, '<', $FileName or die "$Context:$FileName: $!\n";
+    open FILE, '<', $FileName or die "$Context:$FileName: $!\n";
 
-	while (<FILE>)
-	{
-		s/\s*$//so;
-		s/\$$/\//so;
+    while (<FILE>)
+    {
+        s/\s*$//so;
+        s/\$$/\//so;
 
-		$Context = "$FileName:$.";
+        $Context = "$FileName:$.";
 
-		if (m/^\s*\&\s*(.*?)/)
-		{
-			push @ProjectQueue, $1, $Context
-		}
-		elsif (m/^\s*#\s*include\s+"(.*?)"/)
-		{
-			push @ProjectQueue, File::Spec->rel2abs($1,
-				dirname($FileName)), $Context
-		}
-		elsif (m/!repo?s?\s+(.*)/)
-		{
-			$RepositoryURL = $1
-		}
-		elsif (m/^\.\/(.*)/)
-		{
-			push @Paths, $1
-		}
-		else
-		{
-			push @Paths, "include/$_", "src/$_"
-		}
-	}
+        if (m/^\s*\&\s*(.*?)/)
+        {
+            push @ProjectQueue, $1, $Context
+        }
+        elsif (m/^\s*#\s*include\s+"(.*?)"/)
+        {
+            push @ProjectQueue, File::Spec->rel2abs($1,
+                dirname($FileName)), $Context
+        }
+        elsif (m/!repo?s?\s+(.*)/)
+        {
+            $RepositoryURL = $1
+        }
+        elsif (m/^\.\/(.*)/)
+        {
+            push @Paths, $1
+        }
+        else
+        {
+            push @Paths, "include/$_", "src/$_"
+        }
+    }
 
-	close FILE
+    close FILE
 }
 
 sub FindProjectListing
 {
-	my ($Project, $Context) = @_;
+    my ($Project, $Context) = @_;
 
-	return $Project if $Project =~ '[\\/]' && -f $Project;
+    return $Project if $Project =~ '[\\/]' && -f $Project;
 
-	# Search through the registered directories with
-	# project listings.
-	for my $ProjectDir (@ProjectDirs)
-	{
-		my $FileName = "$ProjectDir/$Project.lst";
+    # Search through the registered directories with
+    # project listings.
+    for my $ProjectDir (@ProjectDirs)
+    {
+        my $FileName = "$ProjectDir/$Project.lst";
 
-		return $FileName if -f $FileName
-	}
+        return $FileName if -f $FileName
+    }
 
-	die "$Context: unable to find project '$Project'\n"
+    die "$Context: unable to find project '$Project'\n"
 }
 
 my ($MainProject, $BuildDir) = @ARGV;
@@ -246,44 +246,44 @@ my $NewCheckout;
 
 if ($BuildDir)
 {
-	die "Error: $BuildDir is not empty.\n" if -d "$BuildDir/.svn";
+    die "Error: $BuildDir is not empty.\n" if -d "$BuildDir/.svn";
 
-	mkdir $BuildDir;
+    mkdir $BuildDir;
 
-	my $ProjectListFile = "$BuildDir/projects";
-	if (eval {symlink("",""); 1})
-	{
-		symlink $MainProject, $ProjectListFile or die $!;
-	}
-	else
-	{
-		open IN, '<', $MainProject or die "$MainProject: $!\n";
-		open OUT, '>', $ProjectListFile or die "$ProjectListFile: $!\n";
-		print OUT while <IN>;
-		close OUT;
-		close IN
-	}
+    my $ProjectListFile = "$BuildDir/projects";
+    if (eval {symlink("",""); 1})
+    {
+        symlink $MainProject, $ProjectListFile or die $!;
+    }
+    else
+    {
+        open IN, '<', $MainProject or die "$MainProject: $!\n";
+        open OUT, '>', $ProjectListFile or die "$ProjectListFile: $!\n";
+        print OUT while <IN>;
+        close OUT;
+        close IN
+    }
 
-	push @Paths, qw(./scripts ./include/test);
+    push @Paths, qw(./scripts ./include/test);
 
-	$RepositoryURL = $DefaultRepos;
-	$NewCheckout = 1
+    $RepositoryURL = $DefaultRepos;
+    $NewCheckout = 1
 }
 else
 {
-	die "No directory specified and no existing checkout detected.\n"
-		unless -d '.svn' && -e 'projects';
+    die "No directory specified and no existing checkout detected.\n"
+        unless -d '.svn' && -e 'projects';
 
-	$BuildDir = '.'
+    $BuildDir = '.'
 }
 
 # For each project included by an ampersand reference.
 while (@ProjectQueue)
 {
-	my $Project = shift @ProjectQueue;
-	my $Context = shift @ProjectQueue;
+    my $Project = shift @ProjectQueue;
+    my $Context = shift @ProjectQueue;
 
-	ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
+    ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
 }
 
 my %NewTree;
@@ -291,27 +291,27 @@ my %NewTree;
 Path:
 for my $Path (@Paths)
 {
-	my $Branch = \%NewTree;
+    my $Branch = \%NewTree;
 
-	while ($Path =~ m/(.*?)\/(.*)/)
-	{
-		$Path = $2;
+    while ($Path =~ m/(.*?)\/(.*)/)
+    {
+        $Path = $2;
 
-		next unless $1;
+        next unless $1;
 
-		my $Dir = $1;
+        my $Dir = $1;
 
-		if (exists($Branch->{$Dir}))
-		{
-			next Path unless ref($Branch = $Branch->{$Dir})
-		}
-		else
-		{
-			$Branch = $Branch->{$Dir} = {}
-		}
-	}
+        if (exists($Branch->{$Dir}))
+        {
+            next Path unless ref($Branch = $Branch->{$Dir})
+        }
+        else
+        {
+            $Branch = $Branch->{$Dir} = {}
+        }
+    }
 
-	$Branch->{$Path} = undef if $Path
+    $Branch->{$Path} = undef if $Path
 }
 
 my @NonRecursiveUpdates;
@@ -319,22 +319,22 @@ my @RecursiveUpdates;
 
 sub NewTreeTraversal
 {
-	my ($Branch, $Path) = @_;
+    my ($Branch, $Path) = @_;
 
-	while (my ($Dir, $Contents) = each %$Branch)
-	{
-		$Dir = "$Path/$Dir";
+    while (my ($Dir, $Contents) = each %$Branch)
+    {
+        $Dir = "$Path/$Dir";
 
-		if (ref $Contents)
-		{
-			push @NonRecursiveUpdates, $Dir;
-			NewTreeTraversal($Contents, $Dir)
-		}
-		else
-		{
-			push @RecursiveUpdates, $Dir
-		}
-	}
+        if (ref $Contents)
+        {
+            push @NonRecursiveUpdates, $Dir;
+            NewTreeTraversal($Contents, $Dir)
+        }
+        else
+        {
+            push @RecursiveUpdates, $Dir
+        }
+    }
 }
 
 NewTreeTraversal(\%NewTree, $BuildDir);
@@ -343,42 +343,42 @@ my $SVN = FindSubversion() || die 'Unable to find "svn" in PATH';
 
 unless ($RepositoryURL)
 {
-	unshift @NonRecursiveUpdates, $BuildDir
+    unshift @NonRecursiveUpdates, $BuildDir
 }
 else
 {
-	system($SVN, ($NewCheckout ? 'co' : 'switch'), '-N',
-		$RepositoryURL, $BuildDir)
+    system($SVN, ($NewCheckout ? 'co' : 'switch'), '-N',
+        $RepositoryURL, $BuildDir)
 }
 
 if (@NonRecursiveUpdates)
 {
-	print "Performing non-recursive updates:\n";
+    print "Performing non-recursive updates:\n";
 
-	system($SVN, 'update', '-N', @NonRecursiveUpdates)
+    system($SVN, 'update', '-N', @NonRecursiveUpdates)
 }
 
 if (@RecursiveUpdates)
 {
-	print "Performing recursive updates:\n";
+    print "Performing recursive updates:\n";
 
-	system($SVN, 'update', @RecursiveUpdates)
+    system($SVN, 'update', @RecursiveUpdates)
 }
 
 my @ConfigOptions;
 
 if (my $SrcDirBranch = $NewTree{src})
 {
-	for my $SubProject (qw(dbapi serial objects app internal))
-	{
-		push @ConfigOptions, (exists $SrcDirBranch->{$SubProject} ?
-			'--with-' : '--without-') . $SubProject
-	}
+    for my $SubProject (qw(dbapi serial objects app internal))
+    {
+        push @ConfigOptions, (exists $SrcDirBranch->{$SubProject} ?
+            '--with-' : '--without-') . $SubProject
+    }
 }
 
 while (my ($Var, $Val) = each %OldEnv)
 {
-	$ENV{$Var} = $Val if defined $Val
+    $ENV{$Var} = $Val if defined $Val
 }
 
 exit 0 if $^O eq 'MSWin32';
@@ -393,9 +393,9 @@ my $PID = fork();
 
 if ($PID)
 {
-	# parent
-	close $Child;
-	print $Parent <<'SHELL';
+    # parent
+    close $Child;
+    print $Parent <<'SHELL';
 #!/bin/sh
 
 # Author: Aaron Ucko, NCBI
@@ -436,10 +436,10 @@ tty -s || exit 0
 n=0
 for d in */build; do
     if test "x$d" = "x*/build"; then
-	break # No real matches
+    break # No real matches
     else
-	n=`expr $n + 1`
-	eval "dir$n=$d"
+    n=`expr $n + 1`
+    eval "dir$n=$d"
     fi
 done
 if [ $n -eq 0 ]; then
@@ -554,17 +554,17 @@ echo ; echo "Would you like to run tests on this build? (y/n)"
 ConfirmYes
 $run make check_p
 SHELL
-	close $Parent;
-	wait()
+    close $Parent;
+    wait()
 }
 elsif (defined $PID)
 {
-	# child
-	close $Parent;
-	fcntl $Child, F_SETFD, 0;
-	exec '/bin/sh', '/dev/fd/' . fileno($Child), @ConfigOptions or die $!
+    # child
+    close $Parent;
+    fcntl $Child, F_SETFD, 0;
+    exec '/bin/sh', '/dev/fd/' . fileno($Child), @ConfigOptions or die $!
 }
 else
 {
-	die "fork() failed: $!"
+    die "fork() failed: $!"
 }
