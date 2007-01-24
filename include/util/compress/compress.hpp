@@ -114,9 +114,9 @@ public:
 
     /// Decompression mode (see fAllowTransparentRead flag).
     enum EDecompressMode {
+        eMode_Unknown,         ///< Not known yet (decompress/transparent read)
         eMode_Decompress,      ///< Generic decompression
-        eMode_TransparentRead, ///< Transparent read, the data is uncompressed
-        eMode_Unknown          ///< Not known yet (decompress/transparent read)
+        eMode_TransparentRead  ///< Transparent read, the data is uncompressed
     };
 
 
@@ -440,17 +440,13 @@ void CCompressionProcessor::SetBusy(bool busy)
 inline
 void CCompressionProcessor::IncreaseProcessedSize(unsigned long n_bytes)
 {
-    if (n_bytes > 0) {
-        m_ProcessedSize += n_bytes;
-    }
+    m_ProcessedSize += n_bytes;
 }
 
 inline
 void CCompressionProcessor::IncreaseOutputSize(unsigned long n_bytes)
 {
-    if (n_bytes > 0) {
-        m_OutputSize += n_bytes;
-    }
+    m_OutputSize += n_bytes;
 }
 
 inline
@@ -471,7 +467,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: compress.hpp,v $
  * Revision 1.20  2007/01/10 14:45:49  ivanov
  * + GetVersion()
  *
