@@ -2442,7 +2442,7 @@ void CFileHandleDiagHandler::Reopen(bool truncate)
             msg = "invalid file or directoty name";
             break;
         }
-        ERR_POST("Failed to open " << GetLogName() << " - " << msg);
+        ERR_POST(Info << "Failed to open " << GetLogName() << " - " << msg);
         return;
     }
     m_LastReopen->SetCurrent();
@@ -2526,7 +2526,7 @@ bool s_CanOpenLogFile(const string& file_name)
 }
 
 
-CStreamDiagHandler_Base* s_CreateHandler(const string& fname)
+CStreamDiagHandler_Base* s_CreateHandler(const string& fname, bool& failed)
 {
     if ( fname.empty()  ||  fname == "/dev/null") {
         return 0;
@@ -2536,6 +2536,7 @@ CStreamDiagHandler_Base* s_CreateHandler(const string& fname)
     }
     CFileHandleDiagHandler* fh = new CFileHandleDiagHandler(fname);
     if ( !fh->Valid() ) {
+        failed = true;
         ERR_POST(Info << "Failed to open log file: " << fname);
         return new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
     }
@@ -2548,6 +2549,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                                   bool          quick_flush)
 {
     bool special = s_IsSpecialLogName(file_name);
+    bool failed = false;
     switch ( file_type ) {
     case eDiagFile_All:
         {
@@ -2572,9 +2574,9 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
                 return false;
             }
 
-            m_Err.reset(s_CreateHandler(err_name));
-            m_Log.reset(s_CreateHandler(log_name));
-            m_Trace.reset(s_CreateHandler(trace_name));
+            m_Err.reset(s_CreateHandler(err_name, failed));
+            m_Log.reset(s_CreateHandler(log_name, failed));
+            m_Trace.reset(s_CreateHandler(trace_name, failed));
             m_LastReopen->SetCurrent();
             break;
         }
@@ -2582,19 +2584,19 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Err.reset(s_CreateHandler(file_name));
+        m_Err.reset(s_CreateHandler(file_name, failed));
         break;
     case eDiagFile_Log:
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Log.reset(s_CreateHandler(file_name));
+        m_Log.reset(s_CreateHandler(file_name, failed));
         break;
     case eDiagFile_Trace:
         if ( !special  &&  !s_CanOpenLogFile(file_name) ) {
             return false;
         }
-        m_Trace.reset(s_CreateHandler(file_name));
+        m_Trace.reset(s_CreateHandler(file_name, failed));
         break;
     }
     if (file_name == "") {
@@ -2606,7 +2608,7 @@ bool CFileDiagHandler::SetLogFile(const string& file_name,
     else {
         SetLogName(file_name);
     }
-    return true;
+    return !failed;
 }
 
 
