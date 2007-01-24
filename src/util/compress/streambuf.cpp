@@ -220,6 +220,7 @@ int CCompressionStreambuf::Flush(CCompressionStream::EDirection dir)
         out_size = sp->m_OutBuf + sp->m_OutBufSize - buf;
 
         // Get data from processor
+        out_avail = 0;
         if ( sp->m_State == CCompressionStreamProcessor::eFinalize ) {
             // State is eFinalize
             sp->m_LastStatus = 
@@ -529,7 +530,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: streambuf.cpp,v $
  * Revision 1.29  2007/01/04 01:45:58  ucko
  * CCompressionStreambuf::~CCompressionStreambuf: mark processors as eDone.
  *
