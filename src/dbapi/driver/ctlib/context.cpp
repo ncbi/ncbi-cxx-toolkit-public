@@ -1270,7 +1270,6 @@ extern "C" {
 ///////////////////////////////////////////////////////////////////////////////
 #ifdef FTDS_IN_USE
 
-NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
 NCBI_EntryPoint_xdbapi_ftds(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
