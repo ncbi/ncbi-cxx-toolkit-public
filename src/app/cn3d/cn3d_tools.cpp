@@ -293,7 +293,7 @@ CRef < CBioseq > FetchSequenceViaHTTP(const string& id)
 {
     CSeq_entry seqEntry;
     string err;
-    static const string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.cgi");
+    static const string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.fcgi");
     string args = string("view=0&maxplex=1&save=idf&val=") + id;
     INFOMSG("Trying to load sequence from URL " << host << path << '?' << args);
 
@@ -307,7 +307,7 @@ CRef < CBioseq > FetchSequenceViaHTTP(const string& id)
             ERRORMSG("FetchSequenceViaHTTP() - confused by SeqEntry format");
     }
     if (bioseq.Empty())
-        ERRORMSG("FetchSequenceViaHTTP() - HTTP Bioseq retrieval failed");
+        ERRORMSG("FetchSequenceViaHTTP() - HTTP Bioseq retrieval failed, err: " << err);
 
     return bioseq;
 }
