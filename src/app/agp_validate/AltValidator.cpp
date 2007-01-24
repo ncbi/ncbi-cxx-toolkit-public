@@ -65,8 +65,6 @@
 using namespace ncbi;
 using namespace objects;
 
-#define AGP_POST(msg) cerr << msg << "\n"
-
 BEGIN_NCBI_SCOPE
 
 static CRef<CObjectManager> m_ObjectManager;
@@ -391,26 +389,36 @@ void CAltValidator::CheckTaxids()
   int agp_taxid = 0;
   float agp_taxid_percent = 0;
 
-  // determine the taxid for the agp
+  float max_percent = 0;
+  bool taxid_found=false;
+
+  // Find the most common the taxid
   ITERATE(TTaxidMap, it, m_TaxidMap) {
-      agp_taxid_percent =
-        float(it->second.size())/float(m_TaxidComponentTotal);
-      if (agp_taxid_percent >= .8) {
-          agp_taxid = it->first;
-          break;
+    agp_taxid_percent = float(it->second.size())/float(m_TaxidComponentTotal);
+    if(agp_taxid_percent > max_percent) {
+      max_percent = agp_taxid_percent;
+      agp_taxid = it->first;
+      if(agp_taxid_percent>=.8) {
+        taxid_found=true;
+        break;
       }
+    }
   }
 
-  if (!agp_taxid) {
-      AGP_POST("Unable to determine a Taxid for the AGP");
-      // todo: print most popular taxids
-      return;
+  if(!taxid_found) {
+    cerr << "\nUnable to determine a Taxid for the AGP";
+    if(agp_taxid) {
+      cerr << ":\nless than 80% of components have one common taxid="<<agp_taxid<<"";
+    }
+    // else: not taxid was found
+    cerr << ".\n";
+    return;
   }
 
-  AGP_POST("The AGP taxid is: " << agp_taxid);
+  cerr << "The AGP taxid is: " << agp_taxid << "\n";
   if (m_TaxidMap.size() == 1) return;
 
-  AGP_POST( "Components with incorrect taxids:");
+  cerr << "Components with incorrect taxids:\n";
 
   // report components that have an incorrect taxid
   ITERATE(TTaxidMap, map_it, m_TaxidMap) {

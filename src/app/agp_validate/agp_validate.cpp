@@ -41,8 +41,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
-#define AGP_POST(msg) cerr << msg << "\n"
-
 USING_NCBI_SCOPE;
 
 BEGIN_NCBI_SCOPE

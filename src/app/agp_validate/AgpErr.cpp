@@ -161,6 +161,10 @@ void CAgpErr::PrintAllMessages(CNcbiOstream& out)
     out << GetPrintableCode(i) << "\t" << GetMsg((TCode)i);
     out << "\n";
   }
+  out <<
+    "#\tErrors reported once at the end of validation:\n"
+    "#\tunable to determine a Taxid for the AGP (less than 80% of components have one common taxid)\n"
+    "#\tcomponents with incorrect taxids\n";
 }
 
 string CAgpErr::GetPrintableCode(int code)
