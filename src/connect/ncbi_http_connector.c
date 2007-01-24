@@ -127,14 +127,19 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
     /* adjust info before yet another connection attempt */
     if (*redirect) {
         int status;
-        if (**redirect == '?')
-            *uuu->net_info->path = '\0'; /*path is not inherited*/
-        *uuu->net_info->args = '\0'; /*arguments are not inherited*/
-        status = ConnNetInfo_ParseURL(uuu->net_info, *redirect);
+        assert(**redirect);
+        if (**redirect != '?') {
+            *uuu->net_info->args = '\0'; /*arguments are not inherited*/
+            status = ConnNetInfo_ParseURL(uuu->net_info, *redirect);
+        } else
+            status = 0/*failed*/;
+        if (!status) {
+            CORE_LOGF(eLOG_Error,
+                      ("[HTTP]  Unable to redirect to \"%s\"", *redirect));
+        }
         free(*redirect);
         *redirect = 0;
         if (!status) {
-            CORE_LOG(eLOG_Error, "[HTTP]  Unable to parse redirect");
             uuu->can_connect = eCC_None;
             return 0/*failure*/;
         }
