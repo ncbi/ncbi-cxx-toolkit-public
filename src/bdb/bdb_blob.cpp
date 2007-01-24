@@ -58,7 +58,8 @@ EBDB_ErrCode CBDB_BLobFile::Fetch()
 
 EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf, 
                                   size_t       buf_size, 
-                                  EReallocMode allow_realloc) {
+                                  EReallocMode allow_realloc) 
+{
     m_DBT_Data->data = buf ? *buf : 0;
     m_DBT_Data->ulen = (unsigned)buf_size;
     m_DBT_Data->size = 0;
@@ -125,11 +126,14 @@ CBDB_BLobFile::ReadRealloc(TBuffer& buffer)
 }
 
 
-EBDB_ErrCode CBDB_BLobFile::GetData(void* buf, size_t size) {
-    return Fetch(&buf, size, eReallocForbidden); }
+EBDB_ErrCode CBDB_BLobFile::GetData(void* buf, size_t size) 
+{
+    return Fetch(&buf, size, eReallocForbidden); 
+}
 
 
-EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size) {
+EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size) 
+{
     m_DBT_Data->data = const_cast<void*> (data);
     m_DBT_Data->size = m_DBT_Data->ulen = (unsigned)size;
 
@@ -163,7 +167,8 @@ size_t CBDB_BLobFile::LobSize() const
 }
 
 
-CBDB_BLobStream* CBDB_BLobFile::CreateStream() {
+CBDB_BLobStream* CBDB_BLobFile::CreateStream() 
+{
     EBDB_ErrCode ret = Fetch();
 
     DBT* dbt = CloneDBT_Key();
@@ -206,7 +211,8 @@ CBDB_BLobStream::CBDB_BLobStream(DB* db,
   m_BlobSize(blob_size)
 {
     m_DBT_Data = new DBT;
-    ::memset(m_DBT_Data, 0, sizeof(DBT)); }
+    ::memset(m_DBT_Data, 0, sizeof(DBT)); 
+}
 
 
 CBDB_BLobStream::~CBDB_BLobStream()
@@ -216,7 +222,8 @@ CBDB_BLobStream::~CBDB_BLobStream()
 }
 
 
-void CBDB_BLobStream::SetTransaction(CBDB_Transaction* trans) {
+void CBDB_BLobStream::SetTransaction(CBDB_Transaction* trans) 
+{
     if (trans) {
         m_Txn = trans->GetTxn();
     } else {
@@ -224,7 +231,8 @@ void CBDB_BLobStream::SetTransaction(CBDB_Transaction* trans) {
     }
 }
 
-void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read) {
+void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read) 
+{
     m_DBT_Data->flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
 
     m_DBT_Data->data = buf;
@@ -244,7 +252,8 @@ void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read) {
     *bytes_read = m_DBT_Data->size;
 }
 
-void CBDB_BLobStream::Write(const void* buf, size_t buf_size) {
+void CBDB_BLobStream::Write(const void* buf, size_t buf_size) 
+{
 /*    if (m_Pos == 0)
         m_DBT_Data->flags = 0;
     else*/
@@ -340,7 +349,8 @@ EBDB_ErrCode CBDB_LobFile::InsertUpdate(unsigned int lob_id,
 EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
                                  void**       buf,
                                  size_t       buf_size,
-                                 EReallocMode allow_realloc) {
+                                 EReallocMode allow_realloc) 
+{
     _ASSERT(lob_id);
     _ASSERT(m_DB);
 
@@ -411,7 +421,8 @@ EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
 
 
 
-EBDB_ErrCode CBDB_LobFile::GetData(void* buf, size_t size) {
+EBDB_ErrCode CBDB_LobFile::GetData(void* buf, size_t size) 
+{
     _ASSERT(m_LobKey);
     _ASSERT(m_DB);
     _ASSERT(size >= m_DBT_Data->size);
