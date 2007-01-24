@@ -932,9 +932,10 @@ DBT* CBDB_File::CloneDBT_Key()
     ::memset(dbt,  0, sizeof(DBT));
 
     // Clone the "data" area (needs to be properly deleted!)
-    if (m_DBT_Key->size) {
+    if (m_DBT_Key->ulen) {
         dbt->size = m_DBT_Key->size;
-        unsigned char* p = (unsigned char*)malloc(dbt->size);
+        dbt->ulen = m_DBT_Key->ulen;
+        unsigned char* p = (unsigned char*)malloc(dbt->ulen);
         ::memcpy(p, m_DBT_Key->data, m_DBT_Key->size);
         dbt->data = p;
         dbt->flags = DB_DBT_USERMEM;
