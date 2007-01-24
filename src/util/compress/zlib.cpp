@@ -787,9 +787,14 @@ void CZipCompressor::SetFileInfo(const SFileInfo& info)
 
 CCompressionProcessor::EStatus CZipCompressor::Init(void)
 {
+    if ( IsBusy() ) {
+        // Abnormal previous session termination
+        End();
+    }
     // Initialize members
     Reset();
     SetBusy();
+
     m_CRC32 = 0;
     m_NeedWriteHeader = true;
     m_Cache.erase();
@@ -1152,8 +1157,8 @@ CCompressionProcessor::EStatus CZipDecompressor::Flush(
                       size_t  out_size,
                       size_t* out_avail)
 {
-    if ( m_DecompressMode != eMode_Decompress ) {
-        return eStatus_Success;
+    if ( m_DecompressMode == eMode_Unknown ) {
+        return eStatus_Error;
     }
     size_t in_avail;
     return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
@@ -1165,8 +1170,8 @@ CCompressionProcessor::EStatus CZipDecompressor::Finish(
                       size_t  out_size,
                       size_t* out_avail)
 {
-    if ( m_DecompressMode != eMode_Decompress ) {
-        return eStatus_Success;
+    if ( m_DecompressMode == eMode_Unknown ) {
+        return eStatus_Error;
     }
     size_t in_avail;
     return Process(0, 0, out_buf, out_size, &in_avail, out_avail);
@@ -1177,7 +1182,7 @@ CCompressionProcessor::EStatus CZipDecompressor::End(void)
 {
     int errcode = inflateEnd(STREAM);
     SetBusy(false);
-    if ( m_DecompressMode != eMode_Decompress   ||
+    if ( m_DecompressMode == eMode_TransparentRead   ||
          errcode == Z_OK ) {
         return eStatus_Success;
     }
@@ -1191,7 +1196,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: zlib.cpp,v $
  * Revision 1.36  2007/01/10 14:46:01  ivanov
  * + GetVersion()
  *

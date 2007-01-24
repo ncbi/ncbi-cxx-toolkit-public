@@ -438,6 +438,10 @@ CBZip2Compressor::~CBZip2Compressor()
 
 CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
 {
+    if ( IsBusy() ) {
+        // Abnormal previous session termination
+        End();
+    }
     // Initialize members
     Reset();
     SetBusy();
@@ -489,6 +493,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
                       char* out_buf, size_t  out_size,
                       /* out */      size_t* out_avail)
 {
+    *out_avail = 0;
     if ( !out_size ) {
         return eStatus_Overflow;
     }
@@ -519,6 +524,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
                       char* out_buf, size_t  out_size,
                       /* out */      size_t* out_avail)
 {
+    *out_avail = 0;
     if ( !out_size ) {
         return eStatus_Overflow;
     }
@@ -605,6 +611,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
                       /* out */            size_t* in_avail,
                       /* out */            size_t* out_avail)
 {
+    *out_avail = 0;
     if ( !out_size ) {
         return eStatus_Overflow;
     }
@@ -672,6 +679,9 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
 CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
                       char*, size_t, size_t*)
 {
+    if ( m_DecompressMode == eMode_Unknown ) {
+        return eStatus_Error;
+    }
     return eStatus_Success;
 }
 
@@ -679,6 +689,9 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
 CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
                       char*, size_t, size_t*)
 {
+    if ( m_DecompressMode == eMode_Unknown ) {
+        return eStatus_Error;
+    }
     return eStatus_Success;
 }
 
@@ -687,7 +700,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::End(void)
 {
     int errcode = BZ2_bzDecompressEnd(STREAM);
     SetBusy(false);
-    if ( m_DecompressMode != eMode_Decompress   ||
+    if ( m_DecompressMode == eMode_TransparentRead   ||
          errcode == BZ_OK ) {
         return eStatus_Success;
     }
@@ -701,7 +714,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: bzip2.cpp,v $
  * Revision 1.21  2007/01/10 14:46:01  ivanov
  * + GetVersion()
  *
