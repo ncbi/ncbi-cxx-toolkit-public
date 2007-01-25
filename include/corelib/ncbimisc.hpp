@@ -832,9 +832,12 @@ BEGIN_NCBI_SCOPE
 #define NON_CONST_ITERATE(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
-/// Non constant version with ability to erase current element, if container permits
+/// Non constant version with ability to erase current element, if container permits.
+/// Use only on containers, for which erase do not ruin other iterators into the container
+/// e.g., map, list, but NOT vector.
 #define ERASE_ITERATE(Type, Var, Cont) \
-    for ( Type::iterator NCBI_NAME2(Var,_next) = (Cont).begin(), Var = NCBI_NAME2(Var,_next)++; \
+    for ( Type::iterator NCBI_NAME2(Var,_next) = (Cont).begin(), \
+          Var = NCBI_NAME2(Var,_next) != (Cont).end() ? NCBI_NAME2(Var,_next)++ : (Cont).end(); \
           NCBI_NAME2(Var,_next) != (Cont).end(); \
           Var = NCBI_NAME2(Var,_next), ++NCBI_NAME2(Var,_next))
 
