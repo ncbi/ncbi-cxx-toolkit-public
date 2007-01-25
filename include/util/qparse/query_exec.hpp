@@ -52,6 +52,13 @@ class CQueryExec;
 
 /// Base class for evaluation functions
 ///
+/// Implementation guidelines for derived classes:
+///    1. Make it stateless. 
+///       All evaluation results should go to query node user object.
+///    2. Make it reentrant
+///    3. Make it thread safe and thread sync. (some functions may run in parallel)
+///       (stateless class satisfies both thread safety and reenterability)
+///
 class NCBI_XUTIL_EXPORT CQueryFunctionBase
 {
 public:
@@ -126,6 +133,16 @@ public:
     ///
     void AddFunc(CQueryParseNode::EType func_type, CQueryFunctionBase* func);
     
+    /// This is a callback for implicit search nodes
+    /// Our syntax allows queries like  (a=1) AND "search_term"
+    /// Execution recognises "search_term" connected with logical operation 
+    /// represents a special case. 
+    /// This method defines a reactor (function implementation).
+    ///
+    void AddImplicitSearchFunc(CQueryFunctionBase* func);
+    CQueryFunctionBase* GetImplicitSearchFunc() 
+                    { return m_ImplicitSearchFunc.get(); }
+    
     /// Return query function pointer (if registered).
     /// 
     CQueryFunctionBase* GetFunc(CQueryParseNode::EType func_type)
@@ -143,7 +160,8 @@ private:
 protected:
     typedef vector<CQueryFunctionBase*> TFuncReg;
 protected:
-    TFuncReg  m_FuncReg;
+    TFuncReg                       m_FuncReg;
+    auto_ptr<CQueryFunctionBase>   m_ImplicitSearchFunc;
 };
 
 

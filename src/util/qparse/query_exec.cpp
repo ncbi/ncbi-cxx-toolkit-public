@@ -93,6 +93,12 @@ void CQueryExec::AddFunc(CQueryParseNode::EType func_type,
     func->SetExec(*this);
 }
 
+void CQueryExec::AddImplicitSearchFunc(CQueryFunctionBase* func)
+{
+    m_ImplicitSearchFunc.reset(func);
+}
+
+
 
 
 
@@ -119,7 +125,24 @@ public:
             }
         }
         CQueryParseNode::EType func_type = qnode.GetType();
-        CQueryFunctionBase* func = m_Exec.GetFunc(func_type);        
+        CQueryFunctionBase* func = 0;
+        
+        // check if execution env has implicit search configured 
+        // and value node is derives from a logical node (AND, OR).
+        // in this case we fire implicit search
+        //
+        if (m_Exec.GetImplicitSearchFunc()) {
+            if (qnode.IsValue()) {
+                CTreeNode<CQueryParseNode>* parent = tr.GetParent();
+                if (parent && parent->GetValue().IsLogic()) {
+                    func = m_Exec.GetImplicitSearchFunc();
+                }
+            }
+        }
+        
+        if (!func) {
+            func = m_Exec.GetFunc(func_type);        
+        }
         if (func == 0) { // function not registered
             // values (string, int, etc) do not require evaluation
             if (qnode.IsValue()) {
@@ -134,7 +157,7 @@ public:
             func->Evaluate(tr);
         }}
         double e = sw.Elapsed();
-        qnode.SetElapsed(e);        
+        qnode.SetElapsed(e);
         
         return eTreeTraverse;        
     }
