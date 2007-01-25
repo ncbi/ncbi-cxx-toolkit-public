@@ -9,9 +9,13 @@ new_module = $(builddir)/new_module.sh
 
 all all_files sources makefiles directories purge_sources purge_all_sources purge_all_files:
 	for i in $(MODULES); do \
-		MAKE=$(MAKE); export MAKE; \
-		( cd $$i && $(new_module) $$i $@; ) \
-		|| case "$(MFLAGS)" in *k*) ;; *) exit 2 ;; esac; \
+	  if test -f "$$i/$$i.asn"; then \
+	    MAKE=$(MAKE); export MAKE; \
+	    ( cd $$i && $(new_module) $$i $@; ) \
+	    || case "$(MFLAGS)" in *k*) ;; *) exit 2 ;; esac; \
+	  else \
+	    echo "Warning: $$i/$$i.asn not found (skipping)"; \
+	  fi; \
 	done
 
 all: clean_sources
