@@ -175,6 +175,22 @@ public:
     bool IsNot() const { return m_Not; }
     void SetNot(bool n=true) { m_Not = n; }
     
+    /// Returns TRUE if node describes logical operation (AND, OR, etc.)
+    bool IsLogic() const 
+    { 
+        return m_Type == eNot || m_Type == eAnd || m_Type == eOr ||
+               m_Type == eSub || m_Type == eXor; 
+    }
+
+    /// Returns TRUE if node is value (INT, String, etc.)
+    bool IsValue() const 
+    { 
+        return m_Type == eIdentifier || m_Type == eIntConst   || 
+               m_Type == eString     || m_Type == eFloatConst || 
+               m_Type == eBoolConst; 
+    }
+    
+    
     /// @name User object operations
     ///
     /// Methods to associate application specific data with
