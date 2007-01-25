@@ -450,18 +450,16 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 
 bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
-    if (impl::CDriverContext::SetTimeout(nof_secs)) {
-        CMutexGuard mg(m_CtxMtx);
-
-        CS_INT t_out = (CS_INT) GetTimeout();
-        t_out = (t_out == 0 ? CS_NO_LIMIT : t_out);
-
-        return Check(ct_config(CTLIB_GetContext(),
-                               CS_SET,
-                               CS_TIMEOUT,
-                               &t_out,
-                               CS_UNUSED,
-                               NULL)) == CS_SUCCEED;
+    CMutexGuard mg(m_CtxMtx);
+    nof_secs = (nof_secs == 0 ? CS_NO_LIMIT : nof_secs);
+    if (Check(ct_config(CTLIB_GetContext(),
+                        CS_SET,
+                        CS_TIMEOUT,
+                        &nof_secs,
+                        CS_UNUSED,
+                        NULL)) == CS_SUCCEED
+        ) {
+        return impl::CDriverContext::SetTimeout(nof_secs);
     }
 
     return false;
