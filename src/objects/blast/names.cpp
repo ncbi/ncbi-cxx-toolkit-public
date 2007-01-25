@@ -44,7 +44,7 @@ CBlast4Field::CBlast4Field()
 {
 }
 
-CBlast4Field::CBlast4Field(std::string nm, CBlast4_value::E_Choice ty)
+CBlast4Field::CBlast4Field(const std::string& nm, CBlast4_value::E_Choice ty)
     : m_Name(nm), m_Type(ty)
 {
     // Should this allow multiple types per key?  A simple method
@@ -67,9 +67,9 @@ CBlast4_value::E_Choice CBlast4Field::GetType() const
 bool CBlast4Field::Match(CBlast4_parameter & p) const
 {
     return (p.CanGetName()        &&
-            p.GetName() == m_Name &&
             p.CanGetValue()       &&
-            p.GetValue().Which() == m_Type);
+            p.GetValue().Which() == m_Type  &&
+            p.GetName() == m_Name);
 }
 
 string CBlast4Field::GetString(CBlast4_parameter & p) const
@@ -132,7 +132,7 @@ EBlast4_strand_type CBlast4Field::GetStrandType(CBlast4_parameter & p) const
     return p.GetValue().GetStrand_type();
 }
 
-bool CBlast4Field::KnownField(string name)
+bool CBlast4Field::KnownField(const string& name)
 {
     return m_Fields.find(name) != m_Fields.end();
 }
