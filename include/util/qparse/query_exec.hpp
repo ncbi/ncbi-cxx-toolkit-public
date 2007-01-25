@@ -32,8 +32,8 @@
  *
  */
 
-/// @file query_parse.hpp
-/// Query string parsing components
+/// @file query_exec.hpp
+/// Query parser execution implementations
 
 
 #include <util/qparse/query_parse.hpp>
