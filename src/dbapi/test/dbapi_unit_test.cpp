@@ -6058,6 +6058,12 @@ CDBAPIUnitTest::Transactional_Behavior(void)
 CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
+    bool SolarisWorkshop550 = false;
+
+#if defined(NCBI_OS_SOLARIS) && defined(NCBI_COMPILER_VERSION) && NCBI_COMPILER_VERSION == 550
+    SolarisWorkshop550 = true;
+#endif
+
     // add member function test cases to a test suite
     boost::shared_ptr<CDBAPIUnitTest> DBAPIInstance(new CDBAPIUnitTest(args));
     boost::unit_test::test_case* tc = NULL;
@@ -6093,7 +6099,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
-    if (args.GetDriverName() == "ftds"
+    if ((args.GetDriverName() == "ftds" && !SolarisWorkshop550)
         || args.GetDriverName() == "dblib"
         || args.GetDriverName() == "msdblib"
 //         || args.GetDriverName() == "ctlib"
