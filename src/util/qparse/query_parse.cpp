@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 CQueryParseNode::CQueryParseNode()
 : m_Type(eNotSet), 
   m_Explicit(false),
-  m_Not(false)  
+  m_Not(false),
+  m_Elapsed(0.0)  
 {
 }
 
@@ -54,7 +55,8 @@ CQueryParseNode::CQueryParseNode(const string& value,
   m_Value(value),
   m_OrigText(orig_text),
   m_Explicit(true),
-  m_Not(false)  
+  m_Not(false),  
+  m_Elapsed(0.0)  
 {
 }
 
@@ -63,7 +65,8 @@ CQueryParseNode::CQueryParseNode(Int4   val, const string& orig_text)
   m_IntConst(val),
   m_OrigText(orig_text),
   m_Explicit(true),
-  m_Not(false)  
+  m_Not(false),  
+  m_Elapsed(0.0)  
 {
 }
 
@@ -72,7 +75,8 @@ CQueryParseNode::CQueryParseNode(bool   val, const string& orig_text)
   m_BoolConst(val),
   m_OrigText(orig_text),
   m_Explicit(true),
-  m_Not(false)  
+  m_Not(false),
+  m_Elapsed(0.0)    
 {
 }
 
@@ -89,7 +93,8 @@ CQueryParseNode::CQueryParseNode(EType op, const string& orig_text)
 : m_Type(op),
   m_OrigText(orig_text),
   m_Explicit(true),
-  m_Not(false)  
+  m_Not(false),
+  m_Elapsed(0.0)    
 {
 }
 

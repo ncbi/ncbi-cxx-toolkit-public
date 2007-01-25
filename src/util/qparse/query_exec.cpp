@@ -32,6 +32,7 @@
 
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbitime.hpp>
 #include <util/qparse/query_exec.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -120,13 +121,21 @@ public:
         CQueryParseNode::EType func_type = qnode.GetType();
         CQueryFunctionBase* func = m_Exec.GetFunc(func_type);        
         if (func == 0) { // function not registered
+            // values (string, int, etc) do not require evaluation
             if (qnode.IsValue()) {
                 return eTreeTraverse;
             }
             NCBI_THROW(CQueryParseException, eUnknownFunction, 
                "Query execution failed. Unknown function:" + qnode.GetOrig());
         }
-        func->Evaluate(tr);
+        
+        CStopWatch sw(CStopWatch::eStart);
+        {{
+            func->Evaluate(tr);
+        }}
+        double e = sw.Elapsed();
+        qnode.SetElapsed(e);        
+        
         return eTreeTraverse;        
     }
 private:

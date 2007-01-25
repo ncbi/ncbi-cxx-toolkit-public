@@ -190,6 +190,14 @@ public:
                m_Type == eBoolConst; 
     }
     
+    /// Elapsed time in seconds
+    double Elapsed() const { return m_Elapsed; }
+    /// Elapsed time in seconds
+    double GetElapsed() const { return Elapsed(); }
+    
+    /// Set node timing
+    void SetElapsed(double e) { m_Elapsed = e; }
+    
     
     /// @name User object operations
     ///
@@ -234,7 +242,8 @@ private:
     string        m_OrigText; 
     bool          m_Explicit;
     bool          m_Not;
-    SSrcLoc       m_Location;
+    SSrcLoc       m_Location;   ///< Reference to original location in query
+    double        m_Elapsed;    ///< Execution timing
     
     CRef<IQueryParseUserObject>  m_UsrObj;
 };
