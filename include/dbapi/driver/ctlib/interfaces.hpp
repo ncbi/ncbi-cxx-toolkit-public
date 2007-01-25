@@ -154,7 +154,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext :
     public impl::CDriverContext,
     public impl::CWinSock
 {
-    friend class CDB_Connection;
+    friend class ncbi::CDB_Connection;
 
 public:
     CTLibContext(bool   reuse_context = true,
@@ -257,7 +257,7 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
 {
     friend class CTLibContext;
-    friend class CDB_Connection;
+    friend class ncbi::CDB_Connection;
     friend class CTL_Cmd;
 
 protected:
