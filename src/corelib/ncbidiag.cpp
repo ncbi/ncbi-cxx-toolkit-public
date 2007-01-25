@@ -2420,9 +2420,14 @@ void CFileHandleDiagHandler::Reopen(bool truncate)
     if ( truncate ) {
         mode |= O_TRUNC;
     }
+
+    mode_t perm = CDirEntry::MakeModeT(
+        CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fRead | CDirEntry::fWrite,
+        CDirEntry::fRead | CDirEntry::fWrite,
+        0);
     m_Handle = open(CFile::ConvertToOSPath(GetLogName()).c_str(),
-                    mode,
-                    S_IREAD | S_IWRITE);
+                    mode, perm);
     if (m_Handle == -1) {
         string msg;
         switch ( errno ) {
