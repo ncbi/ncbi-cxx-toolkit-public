@@ -227,7 +227,9 @@ sub FindProjectListing
 {
     my ($Project, $Context) = @_;
 
-    return $Project if -f $Project;
+    my ($Volume, $Dir, undef) = File::Spec->splitpath($Project);
+
+    return $Project if (($Volume || $Dir) && -f $Project);
 
     # Search through the registered directories with
     # project listings.
