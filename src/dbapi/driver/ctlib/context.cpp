@@ -55,6 +55,9 @@
 
 BEGIN_NCBI_SCOPE
 
+#ifdef FTDS_IN_USE
+BEGIN_SCOPE(ftds64_ctlib)
+#endif
 
 static const CDiagCompileInfo kBlankCompileInfo;
 
@@ -1220,13 +1223,22 @@ public:
 #endif
 
 
+#ifdef FTDS_IN_USE
+END_SCOPE(ftds64_ctlib)
+#endif
+
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 NCBI_EntryPoint_xdbapi_ctlib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
+#ifdef FTDS_IN_USE
+    CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_Sybase>::NCBI_EntryPointImpl( info_list, method );
+#else
     CHostEntryPointImpl<CDbapiCtlibCF_Sybase>::NCBI_EntryPointImpl( info_list, method );
+#endif
 }
 
 void
@@ -1234,7 +1246,11 @@ NCBI_EntryPoint_xdbapi_ftds64_ctlib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
+#ifdef FTDS_IN_USE
+    CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_ftds64_ctlib>::NCBI_EntryPointImpl( info_list, method );
+#else
     CHostEntryPointImpl<CDbapiCtlibCF_ftds64_ctlib>::NCBI_EntryPointImpl( info_list, method );
+#endif
 }
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
@@ -1249,20 +1265,26 @@ DBAPI_RegisterDriver_CTLIB(void)
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
 {
+#ifdef FTDS_IN_USE
+    mgr.RegisterDriver("ctlib", ftds64_ctlib::CTLIB_CreateContext);
+#else
     mgr.RegisterDriver("ctlib", CTLIB_CreateContext);
+#endif
     DBAPI_RegisterDriver_CTLIB();
 }
+
 
 void DBAPI_RegisterDriver_CTLIB_old(I_DriverMgr& mgr)
 {
     DBAPI_RegisterDriver_CTLIB( mgr );
 }
 
+
 extern "C" {
     NCBI_DBAPIDRIVER_CTLIB_EXPORT
     void* DBAPI_E_ctlib()
     {
-    return (void*)DBAPI_RegisterDriver_CTLIB_old;
+        return (void*)DBAPI_RegisterDriver_CTLIB_old;
     }
 }
 
@@ -1275,7 +1297,11 @@ NCBI_EntryPoint_xdbapi_ftds(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
+#ifdef FTDS_IN_USE
+    CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_ftds>::NCBI_EntryPointImpl( info_list, method );
+#else
     CHostEntryPointImpl<CDbapiCtlibCF_ftds>::NCBI_EntryPointImpl( info_list, method );
+#endif
 }
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
@@ -1290,12 +1316,15 @@ NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
 DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
 {
+#ifdef FTDS_IN_USE
+    mgr.RegisterDriver("ftds", ftds64_ctlib::CTLIB_CreateContext);
+#else
     mgr.RegisterDriver("ftds", CTLIB_CreateContext);
+#endif
     DBAPI_RegisterDriver_FTDS();
 }
 
 #endif
-
 
 END_NCBI_SCOPE
 

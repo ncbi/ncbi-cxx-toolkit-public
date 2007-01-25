@@ -37,6 +37,7 @@
 #endif
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
+using namespace ncbi::ftds64_ctlib;
 
 #endif  /* DBAPI_DRIVER_FTDS64___INTERFACES__HPP */
 

@@ -6092,6 +6092,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc_init);
 
 
+    // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
     if (args.GetDriverName() == "ftds"
         || args.GetDriverName() == "dblib"
         || args.GetDriverName() == "msdblib"
@@ -6110,6 +6111,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // There is a problem with ftds driver
     // on GCC_340-ReleaseMT--i686-pc-linux2.4.23
+    // There is a problem with ftds64_ctlib driver
+    // on orkShop55_550-ReleaseMT
     if (args.GetDriverName() != "ftds" &&
         args.GetDriverName() != "msdblib") {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,

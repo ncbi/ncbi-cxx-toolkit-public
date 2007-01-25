@@ -38,6 +38,10 @@
 
 BEGIN_NCBI_SCOPE
 
+#ifdef FTDS_IN_USE
+BEGIN_SCOPE(ftds64_ctlib)
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -569,6 +573,10 @@ CTL_BCPInCmd::Close(void)
     }
 }
 
+
+#ifdef FTDS_IN_USE
+END_SCOPE(ftds64_ctlib)
+#endif
 
 END_NCBI_SCOPE
 

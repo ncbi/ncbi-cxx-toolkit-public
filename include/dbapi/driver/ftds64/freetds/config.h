@@ -19,7 +19,9 @@
 #ifndef NCBI_FTDS_RENAME_SYBDB
 #  define NCBI_FTDS_RENAME_SYBDB
 #endif
+
 #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+#include <dbapi/driver/ftds64/freetds/rename_freetds64.h>
 
 #ifdef _DEBUG
 #define DEBUG 1

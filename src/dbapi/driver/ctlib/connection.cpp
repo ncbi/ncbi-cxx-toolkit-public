@@ -52,6 +52,10 @@ inline int close(int fd)
 
 BEGIN_NCBI_SCOPE
 
+#ifdef FTDS_IN_USE
+BEGIN_SCOPE(ftds64_ctlib)
+#endif
+
 ////////////////////////////////////////////////////////////////////////////
 CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                const I_DriverContext::SConnAttr& conn_attr) :
@@ -827,6 +831,10 @@ CTL_SendDataCmd::Close(void)
         SetSybaseCmd(NULL);
     }
 }
+
+#ifdef FTDS_IN_USE
+END_SCOPE(ftds64_ctlib)
+#endif
 
 END_NCBI_SCOPE
 

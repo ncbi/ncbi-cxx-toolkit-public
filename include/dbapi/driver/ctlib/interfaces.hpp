@@ -74,6 +74,10 @@ BEGIN_NCBI_SCOPE
 
 class CDB_ITDescriptor;
 
+#ifdef FTDS_IN_USE
+BEGIN_SCOPE(ftds64_ctlib)
+#endif
+
 class CTLibContext;
 class CTL_Connection;
 class CTL_Cmd;
@@ -91,7 +95,6 @@ class CTLibContextRegistry;
 
 
 CS_INT NCBI_DBAPIDRIVER_CTLIB_EXPORT GetCtlibTdsVersion(int version = 0);
-
 
 /////////////////////////////////////////////////////////////////////////////
 BEGIN_SCOPE(ctlib)
@@ -878,6 +881,10 @@ protected:
     CS_IODESC m_Desc;
 };
 
+
+#ifdef FTDS_IN_USE
+END_SCOPE(ftds64_ctlib)
+#endif
 
 END_NCBI_SCOPE
 
