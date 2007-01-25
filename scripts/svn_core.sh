@@ -104,7 +104,7 @@ done
 revision="{$timestamp}"
 svn_cmd="`which svn-1.4.0 2> /dev/null || echo svn`"
 test -n "$svn_cmd" || svn_cmd='svn'
-svn_cmd="$svn_cmd $SVN_FLAGS"
+svn_cmd="$svn_cmd --non-interactive"
 
 # Checkout <path> [-N]
 if test "$export" = "yes" ; then
