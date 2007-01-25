@@ -1061,8 +1061,8 @@ enum EAppDiagStream {
     eDS_User,        ///< Leave as was previously set (or not set) by user
     eDS_AppSpecific, ///< Call the application's SetupDiag_AppSpecific()
                      ///< @deprecated
-    eDS_Default,     ///< Try standard log file (app.name + ".log") in the
-                     ///< current directory, use stderr on failure.
+    eDS_Default,     ///< Try standard log file (app.name + ".log") in /log/,
+                     ///< use stderr on failure.
     eDS_ToSyslog     ///< To system log daemon
 };
 
