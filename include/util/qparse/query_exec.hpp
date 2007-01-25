@@ -52,12 +52,16 @@ class CQueryExec;
 
 /// Base class for evaluation functions
 ///
+/// <pre>
 /// Implementation guidelines for derived classes:
 ///    1. Make it stateless. 
 ///       All evaluation results should go to query node user object.
 ///    2. Make it reentrant
 ///    3. Make it thread safe and thread sync. (some functions may run in parallel)
 ///       (stateless class satisfies both thread safety and reenterability)
+/// </pre>
+///
+/// @sa IQueryParseUserObject
 ///
 class NCBI_XUTIL_EXPORT CQueryFunctionBase
 {
@@ -68,6 +72,10 @@ public:
 
 public:
     virtual ~CQueryFunctionBase();
+    
+    /// Query node evaluation function 
+    /// (performs actual programmed by the node action)
+    ///
     virtual void Evaluate(CQueryParseTree::TNode& qnode) = 0;
 
 protected:    
