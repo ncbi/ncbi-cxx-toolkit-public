@@ -200,6 +200,7 @@ public:
     void Test_Decimal(void);
     void Test_Query_Cancelation(void);
     void Test_Timeout(void);
+    void Test_SetLogStream(void);
 
 public:
     void Test_Exception_Safety(void);

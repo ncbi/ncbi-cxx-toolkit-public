@@ -6003,6 +6003,15 @@ void CDBAPIUnitTest::Test_Timeout(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+void CDBAPIUnitTest::Test_SetLogStream(void)
+{
+    CNcbiOfstream logfile("dbapi_unit_test.log");
+
+    m_DS->SetLogStream(&logfile);
+    m_DS->SetLogStream(&logfile);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void
 CDBAPIUnitTest::Test_Bind(void)
 {
