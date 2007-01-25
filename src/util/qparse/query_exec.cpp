@@ -118,23 +118,13 @@ public:
             }
         }
         CQueryParseNode::EType func_type = qnode.GetType();
-        CQueryFunctionBase* func = m_Exec.GetFunc(func_type);
+        CQueryFunctionBase* func = m_Exec.GetFunc(func_type);        
         if (func == 0) { // function not registered
-            // there are few exeptions, when this is legal
-            switch (func_type) {
-            case CQueryParseNode::eIdentifier:
-            case CQueryParseNode::eIntConst:
-            case CQueryParseNode::eFloatConst:
-            case CQueryParseNode::eBoolConst:
-            case CQueryParseNode::eString:
-                break;
-            case CQueryParseNode::eNotSet:
-            case CQueryParseNode::eMaxType:
-                _ASSERT(0);
-            default:
-                NCBI_THROW(CQueryParseException, eUnknownFunction, 
-                   "Query execution failed. Unknown function:" + qnode.GetOrig());
+            if (qnode.IsValue()) {
+                return eTreeTraverse;
             }
+            NCBI_THROW(CQueryParseException, eUnknownFunction, 
+               "Query execution failed. Unknown function:" + qnode.GetOrig());
         }
         func->Evaluate(tr);
         return eTreeTraverse;        
