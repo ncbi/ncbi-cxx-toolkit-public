@@ -82,12 +82,12 @@ public:
    /// Query node type
    ///
     enum EType {
-        eNotSet,      ///< Produced by the (private) default constructor
-        eIdentifier,  ///< Identifier like db.field (Org, Fld12, etc.)
-        eIntConst,    ///< Integer const
-        eFloatConst,  ///< Floating point const
-        eBoolConst,   ///< Boolean (TRUE or FALSE)
-        eString,      ///< String ("free text")
+        eNotSet     = 0,   ///< Produced by the (private) default constructor
+        eIdentifier,       ///< Identifier like db.field (Org, Fld12, etc.)
+        eIntConst,         ///< Integer const
+        eFloatConst,       ///< Floating point const
+        eBoolConst,        ///< Boolean (TRUE or FALSE)
+        eString,           ///< String ("free text")
 
         // Operation codes:
         eNot,
@@ -102,7 +102,9 @@ public:
         eGT,
         eGE,
         eLT,
-        eLE
+        eLE,
+        
+        eMaxType
     };
     
     /// Source location (points to the position in the original src)
@@ -314,7 +316,8 @@ public:
     enum EErrCode {
         eIncorrectNodeType,
         eParserError,
-        eCompileError
+        eCompileError,
+        eUnknownFunction,
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -324,6 +327,7 @@ public:
         case eIncorrectNodeType:       return "eIncorrectNodeType";
         case eParserError:             return "eParserError";
         case eCompileError:            return "eCompileError";
+        case eUnknownFunction:         return "eUnknownFunction";
             
         default: return CException::GetErrCodeString();
         }
@@ -341,20 +345,3 @@ END_NCBI_SCOPE
 #endif  // UTIL__QUERY_PARSER_HPP__
 
 
-/*
- * ===========================================================================
- * $Log: query_parse.hpp,v $
- * Revision 1.3  2007/01/11 14:49:20  kuznets
- * Many cosmetic fixes and functional development
- *
- * Revision 1.2  2007/01/11 01:04:13  ucko
- * Give CQueryParseNode a private default constructor, as a formality for
- * CTreeNode<CQueryParseNode> (granting the latter friend-level access).
- * Rename "identificator" to the proper word "identifier".
- * Indent with spaces, not tabs.
- *
- * Revision 1.1  2007/01/10 16:11:38  kuznets
- * Initial revision
- *
- * ===========================================================================
- */

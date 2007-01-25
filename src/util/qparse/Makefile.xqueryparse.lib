@@ -1,6 +1,6 @@
 LIB = xqueryparse
 
-SRC = query_parse parser query_tree_print
+SRC = query_parse parser query_tree_print query_exec
 
 query_parser_bison.tab.c : query_parser_bison.y
 	bison -v -o query_parser_bison.tab.c query_parser_bison.y
