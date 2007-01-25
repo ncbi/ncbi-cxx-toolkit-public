@@ -44,7 +44,6 @@
 #  include <direct.h>
 #  include <sys/utime.h>
 #  include <fcntl.h> // for _O_* flags
-typedef unsigned int mode_t;
 
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -125,53 +124,53 @@ static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
 
 // Construct real entry mode from parts.
 // Parameters must not have "fDefault" value.
-static mode_t s_ConstructMode(CDirEntry::TMode            usr_mode,
-                              CDirEntry::TMode            grp_mode,
-                              CDirEntry::TMode            oth_mode,
-                              CDirEntry::TSpecialModeBits special)
+mode_t CDirEntry::MakeModeT(TMode            usr_mode,
+                            TMode            grp_mode,
+                            TMode            oth_mode,
+                            TSpecialModeBits special)
 {
     mode_t mode = (
 #ifdef S_ISUID
-                   (special & CDirEntry::fSetUID   ? S_ISUID    : 0) |
+                   (special & fSetUID   ? S_ISUID    : 0) |
 #endif
 #ifdef S_ISGID
-                   (special & CDirEntry::fSetGID   ? S_ISGID    : 0) |
+                   (special & fSetGID   ? S_ISGID    : 0) |
 #endif
 #ifdef S_ISVTX
-                   (special & CDirEntry::fSticky   ? S_ISVTX    : 0) |
+                   (special & fSticky   ? S_ISVTX    : 0) |
 #endif
 #if   defined(S_IRUSR)
-                   (usr_mode & CDirEntry::fRead    ? S_IRUSR    : 0) |
+                   (usr_mode & fRead    ? S_IRUSR    : 0) |
 #elif defined(S_IREAD)
-                   (usr_mode & CDirEntry::fRead    ? S_IREAD    : 0) |
+                   (usr_mode & fRead    ? S_IREAD    : 0) |
 #endif
 #if   defined(S_IWUSR)
-                   (usr_mode & CDirEntry::fWrite   ? S_IWUSR    : 0) |
+                   (usr_mode & fWrite   ? S_IWUSR    : 0) |
 #elif defined(S_IWRITE)
-                   (usr_mode & CDirEntry::fWrite   ? S_IWRITE   : 0) |
+                   (usr_mode & fWrite   ? S_IWRITE   : 0) |
 #endif
 #if   defined(S_IXUSR)
-                   (usr_mode & CDirEntry::fExecute ? S_IXUSR    : 0) |
+                   (usr_mode & fExecute ? S_IXUSR    : 0) |
 #elif defined(S_IEXEC)
-                   (usr_mode & CDirEntry::fExecute ? S_IEXEC    : 0) |
+                   (usr_mode & fExecute ? S_IEXEC    : 0) |
 #endif
 #ifdef S_IRGRP
-                   (grp_mode & CDirEntry::fRead    ? S_IRGRP    : 0) |
+                   (grp_mode & fRead    ? S_IRGRP    : 0) |
 #endif
 #ifdef S_IWGRP
-                   (grp_mode & CDirEntry::fWrite   ? S_IWGRP    : 0) |
+                   (grp_mode & fWrite   ? S_IWGRP    : 0) |
 #endif
 #ifdef S_IXGRP
-                   (grp_mode & CDirEntry::fExecute ? S_IXGRP    : 0) |
+                   (grp_mode & fExecute ? S_IXGRP    : 0) |
 #endif
 #ifdef S_IROTH
-                   (oth_mode & CDirEntry::fRead    ? S_IROTH    : 0) |
+                   (oth_mode & fRead    ? S_IROTH    : 0) |
 #endif
 #ifdef S_IWOTH
-                   (oth_mode & CDirEntry::fWrite   ? S_IWOTH    : 0) |
+                   (oth_mode & fWrite   ? S_IWOTH    : 0) |
 #endif
 #ifdef S_IXOTH
-                   (oth_mode & CDirEntry::fExecute ? S_IXOTH    : 0) |
+                   (oth_mode & fExecute ? S_IXOTH    : 0) |
 #endif
                    0);
     return mode;
@@ -918,7 +917,7 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode,
     if (other_mode == fDefault) {
         other_mode = m_DefaultMode[eOther];
     }
-    mode_t mode = s_ConstructMode(user_mode, group_mode, other_mode, special);
+    mode_t mode = MakeModeT(user_mode, group_mode, other_mode, special);
 
     return chmod(GetPath().c_str(), mode) == 0;
 }
@@ -2752,7 +2751,7 @@ bool CDir::Create(void) const
 {
     TMode user_mode, group_mode, other_mode;
     GetDefaultMode(&user_mode, &group_mode, &other_mode);
-    mode_t mode = s_ConstructMode(user_mode, group_mode, other_mode, 0);
+    mode_t mode = MakeModeT(user_mode, group_mode, other_mode, 0);
 
 #if defined(NCBI_OS_MSWIN)
     errno = 0;

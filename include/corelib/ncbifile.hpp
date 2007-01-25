@@ -89,6 +89,7 @@ public:
 // File exception with system errno-based message
 
 #if defined(NCBI_OS_MSWIN)
+    typedef unsigned int mode_t;
     typedef CErrnoTemplException_Win<CFileException> CFileErrnoException_Base;
 #else
     typedef CErrnoTemplException<CFileException> CFileErrnoException_Base;
@@ -880,6 +881,12 @@ public:
                  TMode            group_mode   = fDefault,
                  TMode            other_mode   = fDefault,
                  TSpecialModeBits special_bits = 0) const;
+
+    /// Construct mode_t value
+    static mode_t MakeModeT(TMode            usr_mode,
+                            TMode            grp_mode,
+                            TMode            oth_mode,
+                            TSpecialModeBits special);
 
     /// Set default permission modes globally for all CDirEntry objects.
     ///
