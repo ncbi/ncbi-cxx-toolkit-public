@@ -361,7 +361,7 @@ public:
     virtual ~CDB_UserHandler_Wrapper();
 
 private:
-    CDB_UserHandler* m_Handler;
+    CRef<CDB_UserHandler> m_Handler;
 };
 
 
@@ -377,19 +377,18 @@ CDB_UserHandler* CDB_UserHandler_Wrapper::Set(CDB_UserHandler* h)
                             "to set handle wrapper as a handler");
     }
 
-    CDB_UserHandler* prev_h = m_Handler;
-    m_Handler = h;
+    if (h == m_Handler) {
+        return NULL;
+    }
+
+    CDB_UserHandler* prev_h = m_Handler.Release();
+    m_Handler = h;;
     return prev_h;
 }
 
 
 CDB_UserHandler_Wrapper::~CDB_UserHandler_Wrapper()
 {
-    try {
-        delete m_Handler;
-        m_Handler = 0;
-    }
-    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 

@@ -6009,6 +6009,156 @@ void CDBAPIUnitTest::Test_SetLogStream(void)
 
     m_DS->SetLogStream(&logfile);
     m_DS->SetLogStream(&logfile);
+
+    // Test block ...
+    {
+        // No errors ...
+        {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            Connect(auto_conn);
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            DumpResults(auto_stmt.get());
+        }
+
+        m_DS->SetLogStream(&logfile);
+
+        // Force errors ...
+        {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            Connect(auto_conn);
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            try {
+                auto_stmt->SendSql("SELECT oops FROM sysobjects");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+            } catch(const CDB_Exception&) {
+                auto_stmt->Cancel();
+            }
+        }
+
+        m_DS->SetLogStream(&logfile);
+    }
+
+    // Install user-defined error handler (eTakeOwnership)
+    {
+        I_DriverContext* drv_context = m_DS->GetDriverContext();
+
+        if (m_args.GetDriverName() == "odbc" ||
+            m_args.GetDriverName() == "odbcw" ||
+            m_args.GetDriverName() == "ftds64_odbc"
+            ) {
+            drv_context->PushCntxMsgHandler(new CODBCErrHandler,
+                                            eTakeOwnership
+                                            );
+            drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
+                                               eTakeOwnership
+                                               );
+        } else {
+            CRef<CDB_UserHandler> hx(new CErrHandler);
+            CDB_UserHandler::SetDefault(hx);
+            drv_context->PushCntxMsgHandler(new CErrHandler, eTakeOwnership);
+            drv_context->PushDefConnMsgHandler(new CErrHandler, eTakeOwnership);
+        }
+    }
+
+    // Test block ...
+    {
+        // No errors ...
+        {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            Connect(auto_conn);
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            DumpResults(auto_stmt.get());
+        }
+
+        m_DS->SetLogStream(&logfile);
+
+        // Force errors ...
+        {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            Connect(auto_conn);
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            try {
+                auto_stmt->SendSql("SELECT oops FROM sysobjects");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+            } catch(const CDB_Exception&) {
+                auto_stmt->Cancel();
+            }
+        }
+
+        m_DS->SetLogStream(&logfile);
+    }
+
+    // Install user-defined error handler (eNoOwnership)
+    {
+        I_DriverContext* drv_context = m_DS->GetDriverContext();
+
+        if (m_args.GetDriverName() == "odbc" ||
+            m_args.GetDriverName() == "odbcw" ||
+            m_args.GetDriverName() == "ftds64_odbc"
+            ) {
+            drv_context->PushCntxMsgHandler(new CODBCErrHandler,
+                                            eNoOwnership
+                                            );
+            drv_context->PushDefConnMsgHandler(new CODBCErrHandler,
+                                               eNoOwnership
+                                               );
+        } else {
+            drv_context->PushCntxMsgHandler(new CErrHandler, eNoOwnership);
+            drv_context->PushDefConnMsgHandler(new CErrHandler, eNoOwnership);
+        }
+    }
+
+    // Test block ...
+    {
+        // No errors ...
+        {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            Connect(auto_conn);
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            auto_stmt->SendSql("SELECT name FROM sysobjects");
+            BOOST_CHECK(auto_stmt->HasMoreResults());
+            DumpResults(auto_stmt.get());
+        }
+
+        m_DS->SetLogStream(&logfile);
+
+        // Force errors ...
+        {
+            auto_ptr<IConnection> auto_conn(m_DS->CreateConnection());
+            BOOST_CHECK(auto_conn.get() != NULL);
+
+            Connect(auto_conn);
+
+            auto_ptr<IStatement> auto_stmt(auto_conn->GetStatement());
+            try {
+                auto_stmt->SendSql("SELECT oops FROM sysobjects");
+                BOOST_CHECK( auto_stmt->HasMoreResults() );
+            } catch(const CDB_Exception&) {
+                auto_stmt->Cancel();
+            }
+        }
+
+        m_DS->SetLogStream(&logfile);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -6400,6 +6550,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SetLogStream,
+                               DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
 //     if (args.GetServerType() == CTestArguments::eMsSql
 //         && args.GetDriverName() != "odbc" // Doesn't work ...
