@@ -1,7 +1,7 @@
 #ifndef UTIL__QUERY_EXEC_HPP__
 #define UTIL__QUERY_EXEC_HPP__
 
-/*  $Id$
+/*  $Id:$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
