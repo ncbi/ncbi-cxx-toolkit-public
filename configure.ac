@@ -2276,7 +2276,7 @@ fi
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(atoll basename lchown fseeko getpagesize getpwuid \
+AC_CHECK_FUNCS(euidaccess atoll basename lchown fseeko getpagesize getpwuid \
                getrusage gettimeofday getuid readpassphrase nanosleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \

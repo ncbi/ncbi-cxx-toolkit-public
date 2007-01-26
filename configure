@@ -10275,7 +10275,8 @@ done
 
 
 
-for ac_func in atoll basename lchown fseeko getpagesize getpwuid \
+
+for ac_func in euidaccess atoll basename lchown fseeko getpagesize getpwuid \
                getrusage gettimeofday getuid readpassphrase nanosleep \
                asprintf vasprintf vsnprintf select statfs statvfs \
                strcasecmp strlcat strlcpy strdup strndup strtok_r \
