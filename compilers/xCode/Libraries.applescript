@@ -105,7 +105,7 @@ property fastme : {name:"fastme", path:"algo:phy_tree:fastme"}
 property access : {name:"access", path:"objects:access", inc:{"access__.cpp", "access___.cpp"}, asn1:true}
 property biblio : {name:"biblio", path:"objects:biblio", inc:{"biblio__.cpp", "biblio___.cpp", "label_util.cpp"}, asn1:true}
 property biotree : {name:"biotree", path:"objects:biotree", inc:{"biotree__.cpp", "biotree___.cpp"}, asn1:true}
-property xnetblast : {name:"xnetblast", path:"objects:blast", inc:{"blast__.cpp", "blast___.cpp"}, asn1:true}
+property xnetblast : {name:"xnetblast", path:"objects:blast", inc:{"blast__.cpp", "blast___.cpp", "names.cpp"}, asn1:true}
 property xnetblastcli : {name:"xnetblastcli", path:"objects:blast", inc:{"blastclient.cpp", "blastclient_.cpp"}, asn1:true}
 property blastdb : {name:"blastdb", path:"objects:blastdb", inc:{"blastdb__.cpp", "blastdb___.cpp"}, asn1:true}
 property blastxml : {name:"blastxml", path:"objects:blastxml", inc:{"blastxml__.cpp", "blastxml___.cpp"}, asn1:true}
@@ -306,7 +306,7 @@ property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, 
 property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:true}
 
 -- GUI
-property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_image ncbi_general ncbi_misc ncbi_validator" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
+property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_pub ncbi_seqext ncbi_image ncbi_general ncbi_misc ncbi_validator" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", fworks:"OpenGL", req:true}
 property gui_widgets : {name:"gui_widgets", libs:{w_aln_data, w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_data, w_html, w_serial_browse, w_object_list}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
