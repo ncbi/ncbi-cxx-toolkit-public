@@ -6266,7 +6266,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if ((args.GetDriverName() == "ftds" && !SolarisWorkshop && !Irix)
         || args.GetDriverName() == "dblib"
         || args.GetDriverName() == "msdblib"
-        || args.GetDriverName() == "ctlib"
+        || (args.GetDriverName() == "ctlib" && !SolarisWorkshop)
 //         || args.GetDriverName() == "ftds64_ctlib"
 //         || args.GetDriverName() == "ftds64_odbc"
 //         || args.GetDriverName() == "odbc"
