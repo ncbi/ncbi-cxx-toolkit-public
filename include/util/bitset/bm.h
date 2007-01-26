@@ -1428,6 +1428,9 @@ public:
         return blockman_.get_block(nb); 
     }
     
+    void combine_operation(const bm::bvector<Alloc, MS>& bvect, 
+                            bm::operation                opcode);
+    
 private:
 
     bm::id_t check_or_next(bm::id_t prev) const;
@@ -1447,9 +1450,6 @@ private:
     */
     bool and_bit_no_check(bm::id_t n, bool val);
 
-
-    void combine_operation(const bm::bvector<Alloc, MS>& bvect, 
-                            bm::operation                opcode);
 
     void combine_operation_with_block(unsigned nb,
                                       unsigned gap,
