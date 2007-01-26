@@ -6218,10 +6218,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
     bool SolarisWorkshop = false;
+    bool SolarisGCC = false;
     bool Irix = false;
 
 #if defined(NCBI_OS_SOLARIS) && defined(NCBI_COMPILER_WORKSHOP)
     SolarisWorkshop = true;
+#endif
+
+#if defined(NCBI_OS_SOLARIS) && defined(NCBI_COMPILER_GCC)
+    SolarisGCC = true;
 #endif
 
 #if defined(NCBI_OS_IRIX)
@@ -6284,7 +6289,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // There is a problem with ftds64_ctlib driver
     // on orkShop55_550-ReleaseMT
     if (args.GetDriverName() != "ftds" &&
-        args.GetDriverName() != "msdblib") {
+        args.GetDriverName() != "msdblib" &&
+        !(args.GetDriverName() == "ftds64_ctlib" && SolarisGCC)
+        ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
