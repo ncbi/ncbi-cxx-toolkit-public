@@ -142,6 +142,7 @@ void
 CBlastNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
+    SetUngappedExtension();
 }
 
 void
@@ -248,7 +249,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: blast_nucl_options.cpp,v $
  * Revision 1.30  2006/11/21 17:15:53  papadopo
  * use enum for lookup table types
  *

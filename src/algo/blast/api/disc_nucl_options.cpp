@@ -66,7 +66,7 @@ CDiscNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_DISC);
-    SetUngappedExtension();
+    SetUngappedExtension(false);
 }
 
 void
@@ -101,7 +101,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: disc_nucl_options.cpp,v $
  * Revision 1.14  2006/10/13 16:04:58  camacho
  * Full byte scan defaults to false in discontig. megablast
  *
