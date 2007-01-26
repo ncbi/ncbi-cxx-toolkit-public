@@ -6218,9 +6218,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
     bool SolarisWorkshop = false;
+    bool Irix = false;
 
 #if defined(NCBI_OS_SOLARIS) && defined(NCBI_COMPILER_WORKSHOP)
     SolarisWorkshop = true;
+#endif
+
+#if defined(NCBI_OS_IRIX)
+    Irix = true;
 #endif
 
     // add member function test cases to a test suite
@@ -6258,7 +6263,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
-    if ((args.GetDriverName() == "ftds" && !SolarisWorkshop)
+    if ((args.GetDriverName() == "ftds" && !SolarisWorkshop && !Irix)
         || args.GetDriverName() == "dblib"
         || args.GetDriverName() == "msdblib"
         || args.GetDriverName() == "ctlib"
