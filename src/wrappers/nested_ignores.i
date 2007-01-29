@@ -29,6 +29,10 @@
  *
  */
 
+%ignore *::CBioTree_CBioNode;
+
+%ignore *::CSeqConvert_IPackTarget::NewSegment;
+
 %ignore *::CTSE_Info_SFeatIdIndex::m_Chunks;
 %ignore *::CTSE_Info_SFeatIdInfo::CTSE_Info_SFeatIdInfo;
 
