@@ -128,7 +128,7 @@ bool CNetICacheClient::CheckConnect()
 				return CheckConnect();
 			}
 		} 
-		catch (exception& exc) {
+		catch (exception& ) {
 			delete m_Sock; m_Sock = 0;
 			return CheckConnect();
 		}
