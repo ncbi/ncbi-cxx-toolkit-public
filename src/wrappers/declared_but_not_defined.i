@@ -31,6 +31,9 @@
  */
 
 
+%ignore ncbi::objects::CSeq_feat_Handle::GetSNPQualityCodeStr;
+%ignore ncbi::objects::CSeq_feat_Handle::GetSNPQualityCodeOs;
+
 %ignore ncbi::CNetScheduleAdmin::Logging;
 %ignore ncbi::CNetScheduleSubmitter::GetJobDetails;
 %ignore ncbi::CNetScheduleExecuter::GetJobDetails;
