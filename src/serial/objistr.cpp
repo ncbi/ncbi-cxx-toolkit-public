@@ -864,7 +864,7 @@ void CObjectIStream::ReadExternalObject(TObjectPtr objectPtr,
 CObjectInfo CObjectIStream::ReadObject(void)
 {
     TTypeInfo typeInfo = MapType(ReadFileHeader());
-    TObjectPtr objectPtr;
+    TObjectPtr objectPtr = 0;
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
 
     CRef<CObject> ref;
@@ -923,8 +923,8 @@ string CObjectIStream::PeekNextTypeName(void)
 pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
-    TObjectPtr objectPtr;
-    TTypeInfo objectType;
+    TObjectPtr objectPtr = 0;
+    TTypeInfo objectType = 0;
     switch ( ReadPointerType() ) {
     case eNullPointer:
         _TRACE("CObjectIStream::ReadPointer: null");
