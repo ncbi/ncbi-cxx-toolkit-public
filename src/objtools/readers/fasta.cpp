@@ -184,6 +184,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         } else if (need_defline) {
             if (TestFlag(fDLOptional)) {
                 ParseDefLine(">");
+                need_defline = false;
             } else {
                 NCBI_THROW2(CObjReaderParseException, eNoDefline,
                             "CFastaReader: Input doesn't start with"
