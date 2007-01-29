@@ -62,28 +62,28 @@ makedir "$target" -p
 makedir "$docdir" -p
 cp -pr "$builddir"/doc/* "$docdir"
 cd "$docdir"
-find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
+find . -type d -name ".svn" -exec rm -rf {} \; >/dev/null 2>&1
 
 
 # Scripts
 makedir "$scriptdir" -p
 cp -pr "$builddir"/scripts/* "$scriptdir"
 cd "$scriptdir"
-find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
+find . -type d -name ".svn" -exec rm -rf {} \; >/dev/null 2>&1
 
 
 # Include dir
 makedir "$incdir" -p
 cp -pr "$builddir"/include/* "$incdir"
 cd "$incdir"
-find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
+find . -type d -name ".svn" -exec rm -rf {} \; >/dev/null 2>&1
 
 
 # Source dir
 makedir "$srcdir" -p
 cp -pr "$builddir"/src/* "$srcdir"
 cd "$srcdir"
-find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
+find . -type d -name ".svn" -exec rm -rf {} \; >/dev/null 2>&1
 
 
 # Libraries
@@ -147,8 +147,8 @@ cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
 cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
 
 
-# CVS checkout info file
-cp -p "$builddir"/cvs_info "$target"
+# Copy checkout info file
+cp -p "$builddir"/checkout_info "$target"
 
 
 exit 0
