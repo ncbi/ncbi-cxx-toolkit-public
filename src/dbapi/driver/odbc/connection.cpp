@@ -59,7 +59,8 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
                                    const I_DriverContext::SConnAttr& conn_attr) :
     impl::CConnection(cntx, false, conn_attr.reusable, conn_attr.pool_name),
     m_Link(NULL),
-    m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter())
+    m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter()),
+    m_query_timeout(cntx.GetTimeout())
 {
     SQLRETURN rc;
 
@@ -106,7 +107,8 @@ void CODBC_Connection::x_Connect(
 
     if(!cntx.GetUseDSN()) {
         string connect_str;
-        const string conn_str_suffix(conn_attr.srv_name +
+        const string conn_str_suffix(";SERVER=" +
+                                     conn_attr.srv_name +
                                      ";UID=" +
                                      conn_attr.user_name +
                                      ";PWD=" +
@@ -122,14 +124,14 @@ void CODBC_Connection::x_Connect(
         if (app) {
             const string driver_name = x_GetDriverName(app->GetConfig());
 
-            connect_str = "DRIVER={" + driver_name + "};SERVER=";
+            connect_str = "DRIVER={" + driver_name + "}";
         } else {
-            connect_str = "DRIVER={SQL Server};SERVER=";
+            connect_str = "DRIVER={SQL Server}";
         }
 
         connect_str += conn_str_suffix;
 #else
-        connect_str = "DRIVER={FreeTDS};SERVER=";
+        connect_str = "DRIVER={FreeTDS}";
         connect_str += conn_str_suffix;
 
         connect_str += ";" + x_MakeFreeTDSVersion(cntx.GetTDSVersion());
@@ -176,7 +178,7 @@ CODBC_Connection::x_SetConnAttributesBefore(
     if(GetCDriverContext().GetTimeout()) {
         SQLSetConnectAttr(m_Link,
                           SQL_ATTR_CONNECTION_TIMEOUT,
-                          (SQLPOINTER)SQLULEN(GetCDriverContext().GetTimeout()),
+                          (SQLPOINTER)SQLULEN(GetCDriverContext().GetLoginTimeout()),
                           0);
     }
 
@@ -500,6 +502,11 @@ bool CODBC_Connection::Close(void)
     return false;
 }
 
+void CODBC_Connection::SetTimeout(size_t nof_secs)
+{
+    m_query_timeout = nof_secs;
+}
+
 static
 bool
 ODBC_xCheckSIE(int rc, CStatementBase& stmt)
@@ -738,6 +745,21 @@ CStatementBase::CStatementBase(CODBC_Connection& conn) :
         conn.ReportErrors();
     }
     m_Reporter.SetHandle(m_Cmd);
+
+    SQLUINTEGER query_timeout = conn.GetTimeout();
+    switch(SQLSetStmtAttr(GetHandle(),
+                       SQL_ATTR_QUERY_TIMEOUT,
+                       (SQLPOINTER)query_timeout,
+                       0))
+    {
+    case SQL_SUCCESS_WITH_INFO:
+    case SQL_ERROR:
+    case SQL_INVALID_HANDLE:
+        ReportErrors();
+        break;
+    default: // SQL_SUCCESS
+        break;
+    };
 }
 
 CStatementBase::~CStatementBase(void)

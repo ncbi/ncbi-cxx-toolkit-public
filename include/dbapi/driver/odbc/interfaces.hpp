@@ -283,6 +283,12 @@ protected:
     ///          false - if not
     virtual bool Close(void);
 
+    virtual void SetTimeout(size_t nof_secs);
+    size_t GetTimeout() const
+    {
+        return m_query_timeout;
+    }
+
 protected:
     string GetDiagnosticInfo(void) const
     {
@@ -309,6 +315,7 @@ private:
     const SQLHDBC   m_Link;
 
     CODBC_Reporter  m_Reporter;
+    size_t          m_query_timeout;
 };
 
 

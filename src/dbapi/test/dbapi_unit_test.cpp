@@ -6273,9 +6273,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         || args.GetDriverName() == "msdblib"
         || (args.GetDriverName() == "ctlib" && !SolarisWorkshop)
         || args.GetDriverName() == "ftds64_ctlib"
-//         || args.GetDriverName() == "ftds64_odbc"
-//         || args.GetDriverName() == "odbc"
-//         || args.GetDriverName() == "odbcw"
+        || args.GetDriverName() == "ftds64_odbc"
+        || args.GetDriverName() == "odbc"
+        || args.GetDriverName() == "odbcw"
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Timeout,
                                    DBAPIInstance);

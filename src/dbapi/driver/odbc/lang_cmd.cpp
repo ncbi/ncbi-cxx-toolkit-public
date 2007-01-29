@@ -61,6 +61,7 @@ CODBC_LangCmd::CODBC_LangCmd(
 */
     // string extra_msg = "SQL Command: \"" + lang_query + "\"";
     // m_Reporter.SetExtraMsg( extra_msg );
+
 }
 
 
