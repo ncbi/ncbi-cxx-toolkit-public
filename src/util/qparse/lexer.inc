@@ -84,6 +84,23 @@ bool s_IsBreakingChar(char c)
            (c == '!');
 }
 
+/// @internal
+///
+static inline
+bool s_IsOperatorChar(char c)
+{
+    return (c == '"') ||
+           (c == '~') ||
+           (c == '[') ||
+           (c == '(') ||  
+           (c == ')') ||
+           (c == '=') ||
+           (c == '<') ||
+           (c == '>') ||
+           (c == '!');
+}
+
+
 
 /// Extract string 
 ///
@@ -577,13 +594,20 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     if (verbose) _TRACE("parsing text fragment: " << string(ptr, end));
     while (ptr != end) {
         // skip to the next word boundary
-        for ( ;  ptr != end;  ++ptr) {
+        for ( ;ptr != end;  ++ptr) {
             if ( s_IsSpaceTerm(ptr) ) {
                 break;
-            }
-            if (s_IsBreakingChar(*ptr)) {
+            } else
+            if (s_IsOperatorChar(*ptr)) {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << string(ptr, end));
+                }
+                break;
+            } else 
+            if ((ptr[0] == '|' && ptr[1] == '|') || 
+                (ptr[0] == '&' && ptr[1] == '&')) {
+                if (verbose) { 
+                    _TRACE("found breaking paren: " << ptr[0] << ptr[1]);
                 }
                 break;
             }
@@ -594,13 +618,20 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         for ( ;  ptr != end;  ++ptr) {
             if ( !s_IsSpaceTerm(ptr) ) {
                 break;
-            }
-            if (s_IsBreakingChar(*ptr)) {
+            } else 
+            if (s_IsOperatorChar(*ptr)) {
                 if (verbose) { 
-                    _TRACE("found breaking paren: " << string(ptr, end));
+                    _TRACE("found breaking paren: " << ptr[0] << ptr[1]);
                 }
                 break;
-            }            
+            } else           
+            if ((ptr[0] == '|' && ptr[1] == '|') || 
+                (ptr[0] == '&' && ptr[1] == '&')) {
+                if (verbose) { 
+                    _TRACE("found breaking paren: " << ptr[0] << ptr[1]);
+                }
+                break;
+            }
         } // for
 
         // skip to the next operator A, N, O, etc
@@ -612,6 +643,10 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             s_Compare(ptr, end, "XOR",    case_sense) ||
             s_Compare(ptr, end, "MINUS",  case_sense) 
             ) {
+            break;
+        }
+        if ((ptr[0] == '|' && ptr[1] == '|') || 
+            (ptr[0] == '&' && ptr[1] == '&')) {
             break;
         }
         // BETWEEN, LIKE require parser to step back one word
@@ -630,7 +665,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         
-        if (s_IsBreakingChar(*ptr)) {
+        if (s_IsOperatorChar(*ptr)) {
             break;
         }
         // bookmark 
@@ -638,7 +673,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         
     } // while
 
-    /// create a node for the text
+    // create a node for the text
     //
     
     string token;
