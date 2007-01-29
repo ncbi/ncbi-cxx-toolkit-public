@@ -172,7 +172,7 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 	{
 		if (pending3D.size() > 0)
 		{
-			structs.insert(pending3D.begin(), pending3D.end());
+			structs.insert(*pending3D.begin());
 		}
 		return;
 	}
@@ -213,7 +213,7 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 	}
 	if (pending3D.size() > 0)
 	{
-		structs.insert(pending3D.begin(), pending3D.end());
+		structs.insert(*pending3D.begin());
 	}
 }
 
