@@ -553,6 +553,23 @@ ct_con_props(CS_CONNECTION * con, CS_INT action, CS_INT property, CS_VOID * buff
 	return CS_SUCCEED;
 }
 
+static int
+ctlib_query_timeout(void *param, unsigned int total_timeout)
+{
+	CS_CONNECTION* con = (CS_CONNECTION*) param;
+
+	if (!con)
+		return TDS_INT_CONTINUE;
+
+    /* tds_set_state(con->tds_socket, TDS_PENDING); */
+    tds_set_state(con->tds_socket, TDS_QUERYING);
+
+    /* tds_process_cancel(con->tds_socket); */
+    ct_cancel(con, NULL, CS_CANCEL_ATTN);
+
+    return TDS_INT_CANCEL;
+}
+
 CS_RETCODE
 ct_connect(CS_CONNECTION * con, CS_CHAR * servername, CS_INT snamelen)
 {
@@ -615,10 +632,22 @@ ct_connect(CS_CONNECTION * con, CS_CHAR * servername, CS_INT snamelen)
         connection->minor_version = 0;
     };
 
+    /* Timeouts ... */
+	con->tds_socket->query_timeout_param = con;
+	con->tds_socket->query_timeout_func = ctlib_query_timeout;
+
+    if (ctx->login_timeout > 0) {
+        connection->connect_timeout = ctx->login_timeout;
+    }
+
+    if (ctx->query_timeout > 0) {
+        connection->query_timeout = ctx->query_timeout;
+    }
+
     if (con->locale && con->locale->charset) {
         tds_dstr_copy(&connection->client_charset, con->locale->charset);
     }
-//     tds_dstr_copy(&connection->server_charset, "UCS-2LE");
+    /*     tds_dstr_copy(&connection->server_charset, "UCS-2LE"); */
 
 	if (tds_connect(con->tds_socket, connection) == TDS_FAIL) {
 		tds_free_socket(con->tds_socket);
@@ -2484,6 +2513,22 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 				break;
 			}
 		}
+		break;
+	case CS_TIMEOUT:
+		switch (action) {
+        case CS_SET:
+            ctx->query_timeout = *((unsigned int*)buf);
+            break;
+        case CS_GET:
+            *((unsigned int*)buf) = ctx->query_timeout;
+            break;
+        case CS_CLEAR:
+            ctx->query_timeout = -1;
+            break;
+        default:
+            ret = CS_FAIL;
+            break;
+        }
 		break;
 	default:
 		ret = CS_SUCCEED;

@@ -211,6 +211,9 @@ TDSCONTEXT *tds_ctx;
 		tds_ctx->locale->date_fmt = strdup("%b %e %Y %I:%M%p");
 	}
 
+	(*ctx)->login_timeout = -1;
+	(*ctx)->query_timeout = -1;
+
     g_tds_version = version;
 
 	return CS_SUCCEED;
