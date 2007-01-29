@@ -6217,16 +6217,21 @@ CDBAPIUnitTest::Transactional_Behavior(void)
 CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
 {
-    bool SolarisWorkshop = false;
-    bool SolarisGCC = false;
+    bool Solaris = false;
+    bool CompilerWorkShop = false;
+    bool CompilerGCC = false;
     bool Irix = false;
 
-#if defined(NCBI_OS_SOLARIS) && defined(NCBI_COMPILER_WORKSHOP)
-    SolarisWorkshop = true;
+#if defined(NCBI_OS_SOLARIS)
+    Solaris = true;
 #endif
 
-#if defined(NCBI_OS_SOLARIS) && defined(NCBI_COMPILER_GCC)
-    SolarisGCC = true;
+#if defined(NCBI_COMPILER_WORKSHOP)
+    CompilerWorkShop = true;
+#endif
+
+#if defined(NCBI_COMPILER_GCC)
+    CompilerGCC = true;
 #endif
 
 #if defined(NCBI_OS_IRIX)
@@ -6268,10 +6273,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
 
     // It looks like ftds on WorkShop55_550-DebugMT64 doesn't work ...
-    if ((args.GetDriverName() == "ftds" && !SolarisWorkshop && !Irix)
+    if ((args.GetDriverName() == "ftds" &&
+         !(Solaris && CompilerWorkShop) &&
+         !Irix
+         )
         || args.GetDriverName() == "dblib"
         || args.GetDriverName() == "msdblib"
-        || (args.GetDriverName() == "ctlib" && !SolarisWorkshop)
+        || (args.GetDriverName() == "ctlib" && !(Solaris && CompilerWorkShop))
         || args.GetDriverName() == "ftds64_ctlib"
         || args.GetDriverName() == "ftds64_odbc"
         || args.GetDriverName() == "odbc"
@@ -6290,7 +6298,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // on orkShop55_550-ReleaseMT
     if (args.GetDriverName() != "ftds" &&
         args.GetDriverName() != "msdblib" &&
-        !(args.GetDriverName() == "ftds64_ctlib" && SolarisGCC)
+        !(args.GetDriverName() == "ftds64_ctlib" && Solaris)
         ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Query_Cancelation,
                                    DBAPIInstance);
