@@ -62,28 +62,28 @@ makedir "$target" -p
 makedir "$docdir" -p
 cp -pr "$builddir"/doc/* "$docdir"
 cd "$docdir"
-find . -type d -name ".svn" -exec rm -r {} \; >/dev/null 2>&1
+find . -type d -name ".svn" -exec rm -rf {} \; >/dev/null 2>&1
 
 
 # Scripts
 makedir "$scriptdir" -p
 cp -pr "$builddir"/scripts/* "$scriptdir"
 cd "$scriptdir"
-find . -type d -name ".svn" -exec rm -r -f {} \; >/dev/null 2>&1
+find . -type d -name ".svn" -exec rm -rf -f {} \; >/dev/null 2>&1
 
 
 # Include dir
 makedir "$incdir" -p
 cp -pr "$builddir"/include/* "$incdir"
 cd "$incdir"
-find . -type d -name ".svn" -exec rm -r -f {} \; >/dev/null 2>&1
+find . -type d -name ".svn" -exec rm -rf -f {} \; >/dev/null 2>&1
 
 
 # Source dir
 makedir "$srcdir" -p
 cp -pr "$builddir"/src/* "$srcdir"
 cd "$srcdir"
-find . -type d -name ".svn" -exec rm -r -f {} \; >/dev/null 2>&1
+find . -type d -name ".svn" -exec rm -rf -f {} \; >/dev/null 2>&1
 
 
 # Libraries
