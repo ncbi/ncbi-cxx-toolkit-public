@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-SUB_PROJ = test
+SUB_PROJ = 
 
 LIB_PROJ = xalgotext
 
