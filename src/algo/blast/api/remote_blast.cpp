@@ -38,6 +38,7 @@
 
 #include <objects/blast/blastclient.hpp>
 #include <objects/blast/blast__.hpp>
+#include <objects/blast/names.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -744,51 +745,55 @@ void CRemoteBlast::x_SetAlgoOpts(void)
 }
 
 // the "int" version is not actually used (no program options need it.)
-void CRemoteBlast::x_SetOneParam(const char * name, const int * x)
+void CRemoteBlast::x_SetOneParam(CBlast4Field & field, const int * x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetInteger(*x);
-        
+    
     CRef<CBlast4_parameter> p(new CBlast4_parameter);
-    p->SetName(name);
+    p->SetName(field.GetName());
     p->SetValue(*v);
-        
+    _ASSERT(field.Match(*p));
+    
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(CRef<objects::CBlast4_mask> mask)
+void CRemoteBlast::x_SetOneParam(CBlast4Field & field, CRef<objects::CBlast4_mask> mask)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetQuery_mask(*mask);
         
     CRef<CBlast4_parameter> p(new CBlast4_parameter);
     // as dictated by internal/blast/interfaces/blast4/params.hpp
-    p->SetName("LCaseMask");    
+    p->SetName(field.GetName());
     p->SetValue(*v);
-
+    _ASSERT(field.Match(*p));
+    
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(const char * name, const list<int> * x)
+void CRemoteBlast::x_SetOneParam(CBlast4Field & field, const list<int> * x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetInteger_list() = *x;
         
     CRef<CBlast4_parameter> p(new CBlast4_parameter);
-    p->SetName(name);
+    p->SetName(field.GetName());
     p->SetValue(*v);
-        
+    _ASSERT(field.Match(*p));
+    
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(const char * name, const char ** x)
+void CRemoteBlast::x_SetOneParam(CBlast4Field & field, const char ** x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetString().assign((x && (*x)) ? (*x) : "");
         
     CRef<CBlast4_parameter> p(new CBlast4_parameter);
-    p->SetName(name);
+    p->SetName(field.GetName());
     p->SetValue(*v);
+    _ASSERT(field.Match(*p));
         
     m_QSR->SetProgram_options().Set().push_back(p);
 }
@@ -925,7 +930,7 @@ CRemoteBlast::x_QueryMaskingLocationsToNetwork()
 
         CRef<CBlast4_mask> network_mask = 
             s_CreateBlastMask(*packed_int, program);
-        x_SetOneParam(network_mask);
+        x_SetOneParam(B4Param_LCaseMask, network_mask);
     }
 
 }
@@ -1098,7 +1103,7 @@ void CRemoteBlast::SetGIList(list<Int4> & gi_list)
         NCBI_THROW(CBlastException, eInvalidArgument,
                    "Empty gi_list specified.");
     }
-    x_SetOneParam("GiList", & gi_list);
+    x_SetOneParam(B4Param_GiList, & gi_list);
     
     m_GiList = gi_list;
 }
@@ -1139,7 +1144,7 @@ void CRemoteBlast::SetEntrezQuery(const char * x)
     }
     
     if (*x) { // Ignore empty strings.
-        x_SetOneParam("EntrezQuery", &x);
+        x_SetOneParam(B4Param_EntrezQuery, &x);
         m_EntrezQuery.assign(x);
     }
 }
@@ -1599,9 +1604,10 @@ CBlastOptionsBuilder::x_ComputeProgram(const string & program,
 }
 
 void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
-                                              const string        & nm,
-                                              const CBlast4_value & v)
+                                              CBlast4_parameter   & p)
 {
+    const CBlast4_value & v = p.GetValue();
+    
     // Note that this code does not attempt to detect or repair
     // inconsistencies; since this request has already been processed
     // by SplitD, the results are assumed to be correct, for now.
@@ -1609,11 +1615,13 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
     // available, in which case it could be used by this code.  This
     // could be considered as a potential "to-do" item.
     
-    if (nm.empty()) {
+    if (! p.CanGetName() || p.GetName().empty()) {
         NCBI_THROW(CBlastException,
                    eInvalidArgument,
                    "Option has no name.");
     }
+    
+    string nm = p.GetName();
     
     bool found = true;
     
@@ -1625,12 +1633,12 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
     
     switch(nm[0]) {
     case 'C':
-        if (nm == "CompositionBasedStats") {
+        if (B4Param_CompositionBasedStats.Match(p)) {
             ECompoAdjustModes adjmode = (ECompoAdjustModes) v.GetInteger();
             bo.SetCompositionBasedStats(adjmode);
-        } else if (nm == "Culling") {
+        } else if (B4Param_Culling.Match(p)) {
             m_PerformCulling = v.GetBoolean();
-        } else if (nm == "CutoffScore") {
+        } else if (B4Param_CutoffScore.Match(p)) {
             opts.SetCutoffScore(v.GetInteger());
         } else {
             found = false;
@@ -1638,9 +1646,9 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'D':
-        if (nm == "DbGeneticCode") {
+        if (B4Param_DbGeneticCode.Match(p)) {
             bo.SetDbGeneticCode(v.GetInteger());
-        } else if (nm == "DbLength") {
+        } else if (B4Param_DbLength.Match(p)) {
             opts.SetDbLength(v.GetInteger());
         } else {
             found = false;
@@ -1648,11 +1656,11 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'E':
-        if (nm == "EffectiveSearchSpace") {
+        if (B4Param_EffectiveSearchSpace.Match(p)) {
             opts.SetEffectiveSearchSpace(v.GetBig_integer());
-        } else if (nm == "EntrezQuery") {
+        } else if (B4Param_EntrezQuery.Match(p)) {
             m_EntrezQuery = v.GetString();
-        } else if (nm == "EvalueThreshold") {
+        } else if (B4Param_EvalueThreshold.Match(p)) {
             if (v.IsReal()) {
                 opts.SetEvalueThreshold(v.GetReal());
             } else if (v.IsCutoff() && v.GetCutoff().IsE_value()) {
@@ -1667,11 +1675,11 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'F':
-        if (nm == "FilterString") {
+        if (B4Param_FilterString.Match(p)) {
             opts.SetFilterString(v.GetString().c_str());
-        } else if (nm == "FinalDbSeq") {
+        } else if (B4Param_FinalDbSeq.Match(p)) {
             m_FinalDbSeq = v.GetInteger();
-        } else if (nm == "FirstDbSeq") {
+        } else if (B4Param_FirstDbSeq.Match(p)) {
             m_FirstDbSeq = v.GetInteger();
         } else {
             found = false;
@@ -1679,11 +1687,11 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'G':
-        if (nm == "GapExtensionCost") {
+        if (B4Param_GapExtensionCost.Match(p)) {
             bo.SetGapExtensionCost(v.GetInteger());
-        } else if (nm == "GapOpeningCost") {
+        } else if (B4Param_GapOpeningCost.Match(p)) {
             bo.SetGapOpeningCost(v.GetInteger());
-        } else if (nm == "GiList") {
+        } else if (B4Param_GiList.Match(p)) {
             m_GiList = v.GetInteger_list();
         } else {
             found = false;
@@ -1691,9 +1699,9 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'H':
-        if (nm == "HitlistSize") {
+        if (B4Param_HitlistSize.Match(p)) {
             opts.SetHitlistSize(v.GetInteger());
-        } else if (nm == "HspRangeMax") {
+        } else if (B4Param_HspRangeMax.Match(p)) {
             m_HspRangeMax = v.GetInteger();
         } else {
             found = false;
@@ -1701,7 +1709,7 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'L':
-        if (nm == "LCaseMask") {
+        if (B4Param_LCaseMask.Match(p)) {
             // This field was removed from the options class and will
             // probably be removed from blast4.  The server provides
             // the filter string as well, so this boolean is redundant
@@ -1712,17 +1720,17 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'M':
-        if (nm == "MBTemplateLength") {
+        if (B4Param_MBTemplateLength.Match(p)) {
             bo.SetMBTemplateLength(v.GetInteger());
-        } else if (nm == "MBTemplateType") {
+        } else if (B4Param_MBTemplateType.Match(p)) {
             bo.SetMBTemplateType(v.GetInteger());
-        } else if (nm == "MatchReward") {
+        } else if (B4Param_MatchReward.Match(p)) {
             bo.SetMatchReward(v.GetInteger());
-        } else if (nm == "MatrixName") {
+        } else if (B4Param_MatrixName.Match(p)) {
             bo.SetMatrixName(v.GetString().c_str());
-        } else if (nm == "MatrixTable") {
+        } else if (B4Param_MatrixTable.Match(p)) {
             // This is no longer used.
-        } else if (nm == "MismatchPenalty") {
+        } else if (B4Param_MismatchPenalty.Match(p)) {
             bo.SetMismatchPenalty(v.GetInteger());
         } else {
             found = false;
@@ -1730,7 +1738,7 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'O':
-        if (nm == "OutOfFrameMode") {
+        if (B4Param_OutOfFrameMode.Match(p)) {
             bo.SetOutOfFrameMode(v.GetBoolean());
         } else {
             found = false;
@@ -1738,14 +1746,14 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'P':
-        if (nm == "PHIPattern") {
+        if (B4Param_PHIPattern.Match(p)) {
             if (v.GetString() != "") {
                 bool is_na = Blast_QueryIsNucleotide(bo.GetProgramType());
                 bo.SetPHIPattern(v.GetString().c_str(), is_na);
             }
-        } else if (nm == "PercentIdentity") {
+        } else if (B4Param_PercentIdentity.Match(p)) {
             opts.SetPercentIdentity(v.GetInteger());
-        } else if (nm == "PseudoCountWeight") {
+        } else if (B4Param_PseudoCountWeight.Match(p)) {
             bo.SetPseudoCount(v.GetInteger());
         } else {
             found = false;
@@ -1753,7 +1761,7 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'Q':
-        if (nm == "QueryGeneticCode") {
+        if (B4Param_QueryGeneticCode.Match(p)) {
             bo.SetQueryGeneticCode(v.GetInteger());
         } else {
             found = false;
@@ -1763,7 +1771,7 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         // No 'R': required start/end have been removed.
         
     case 'S':
-        if (nm == "StrandOption") {
+        if (B4Param_StrandOption.Match(p)) {
             // These encodings use the same values.
             ENa_strand strand = (ENa_strand) v.GetStrand_type();
             bo.SetStrandOption(strand);
@@ -1773,7 +1781,7 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'U':
-        if (nm == "UngappedMode") {
+        if (B4Param_UngappedMode.Match(p)) {
             // Notes: (1) this is the inverse of the corresponding
             // blast4 concept (2) blast4 always returns this option
             // regardless of whether the value matches the default.
@@ -1785,20 +1793,12 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
         break;
         
     case 'W':
-        if (nm == "WindowSize") {
+        if (B4Param_WindowSize.Match(p)) {
             opts.SetWindowSize(v.GetInteger());
-        } else if (nm == "WordSize") {
+        } else if (B4Param_WordSize.Match(p)) {
             bo.SetWordSize(v.GetInteger());
-        } else if (nm == "WordThreshold") {
+        } else if (B4Param_WordThreshold.Match(p)) {
             bo.SetWordThreshold(v.GetInteger());
-        } else {
-            found = false;
-        }
-        break;
-        
-    case 'X':
-        if (nm == "XDropoff") {
-            bo.SetXDropoff(v.GetReal());
         } else {
             found = false;
         }
@@ -1826,10 +1826,8 @@ CBlastOptionsBuilder::x_ProcessOptions(CBlastOptionsHandle & opts,
                                        const TValueList    & L)
 {
     ITERATE(TValueList, iter, L) {
-        string name = (**iter).GetName();
-        const CBlast4_value & v = (**iter).GetValue();
-        
-        x_ProcessOneOption(opts, name, v);
+        CBlast4_parameter & p = *const_cast<CBlast4_parameter*>(& **iter);
+        x_ProcessOneOption(opts, p);
     }
 }
 
@@ -1850,14 +1848,14 @@ CBlastOptionsBuilder::x_AdjustProgram(const TValueList & L,
     string name;
     
     ITERATE(TValueList, iter, L) {
-        name = (**iter).GetName();
-        const CBlast4_value & v = (**iter).GetValue();
+        CBlast4_parameter & p = const_cast<CBlast4_parameter&>(**iter);
+        const CBlast4_value & v = p.GetValue();
         
-        if (name == "MBTemplateLength") {
+        if (B4Param_MBTemplateLength.Match(p)) {
             if (v.GetInteger() != 0) {
                 return eDiscMegablast;
             }
-        } else if (name == "PHIPattern") {
+        } else if (B4Param_PHIPattern.Match(p)) {
             switch(program) {
             case ePHIBlastn:
             case eBlastn:
@@ -1874,6 +1872,8 @@ CBlastOptionsBuilder::x_AdjustProgram(const TValueList & L,
         }
         
         if (problem) {
+            name = (**iter).GetName();
+            
             string msg = "Incorrect combination of option (";
             msg += name;
             msg += ") and program (";

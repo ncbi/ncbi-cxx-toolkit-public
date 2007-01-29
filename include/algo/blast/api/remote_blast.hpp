@@ -37,6 +37,7 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <objects/blast/blast__.hpp>
+#include <objects/blast/names.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -448,21 +449,21 @@ private:
     /// Set an integer parameter (not used yet).
     /// @param name Name of option.
     /// @param value Pointer to integer value to use.
-    void x_SetOneParam(const char * name, const int * value);
+    void x_SetOneParam(objects::CBlast4Field & field, const int * value);
     
     /// Set a list of integers.
     /// @param name Name of option.
     /// @param value Pointer to list of integers to use.
-    void x_SetOneParam(const char * name, const list<int> * value);
+    void x_SetOneParam(objects::CBlast4Field & field, const list<int> * value);
     
     /// Set a string parameter.
     /// @param name Name of option.
     /// @param value Pointer to pointer to null delimited string.
-    void x_SetOneParam(const char * name, const char ** value);
+    void x_SetOneParam(objects::CBlast4Field & field, const char ** value);
 
     /// Set a masking location for query
     /// @param value masking location [in]
-    void x_SetOneParam(CRef<objects::CBlast4_mask> mask);
+    void x_SetOneParam(objects::CBlast4Field & field, CRef<objects::CBlast4_mask> mask);
     
     /// Determine what state the search is in.
     EState x_GetState(void);
@@ -742,9 +743,8 @@ private:
     
     void x_ApplyInteractions(CBlastOptionsHandle & boh);
     
-    void x_ProcessOneOption(CBlastOptionsHandle          & opts,
-                            const string                 & nm,
-                            const objects::CBlast4_value & v);
+    void x_ProcessOneOption(CBlastOptionsHandle        & opts,
+                            objects::CBlast4_parameter & p);
     
     void x_ProcessOptions(CBlastOptionsHandle & opts,
                         const TValueList    & L);
