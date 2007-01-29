@@ -136,6 +136,11 @@ CNodeRef CNCBINode::RemoveChild(CNCBINode* child)
                 ++it;
             }
         }
+#  if !NCBI_LIGHTWEIGHT_LIST
+        if ( !children.size() ) {
+            m_Children.release();
+        }
+#  endif        
         if ( children.size() != prev_size ) {
             return ref;
         }
