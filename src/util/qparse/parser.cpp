@@ -89,7 +89,7 @@ class CQueryParserEnv
 {
 public:
     typedef CResourcePool<CQueryParseTree::TNode, CFastMutex> TNodePool;
-
+    
 public:
     CQueryParserEnv(const char* query_str, CQueryParseTree& qtree)
     : m_QTree(qtree),
@@ -151,14 +151,13 @@ public:
         for (int i = 0; i < num; ++i) {
             GetChar();
         }
-        //m_Ptr += num;
     }
 /*
     void UnGetChar() 
     { 
         --m_Ptr; 
     }
-*/    
+*/
     void AttachToPool(CQueryParseTree::TNode* qt)
     {
 //cerr << "AttachToPool was:" <<  m_QueryTree << " new: " << qt << endl;

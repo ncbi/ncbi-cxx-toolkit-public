@@ -66,6 +66,57 @@ bool s_IsSpaceTerm(const char *c)
     return isspace(*c) || (*c == '\n') || (*c == '\r' && *(c+1) == '\n');
 }
 
+/// @internal
+///
+static inline
+bool s_IsBreakingChar(char c)
+{
+    return (c == '"') ||
+           (c == '~') ||
+           (c == '[') ||
+           (c == '(') ||  
+           (c == ')') ||
+           (c == '|') ||
+           (c == '&') ||
+           (c == '=') ||
+           (c == '<') ||
+           (c == '>') ||
+           (c == '!');
+}
+
+
+/// Extract string 
+///
+/// @internal
+///
+static
+void s_yylex_extract_string(CQueryParserEnv*  env,
+                            string&           token,
+                            string&           orig_token)
+{
+    char c;
+    for (c=env->GetChar(); c != 0; c=env->GetChar()) {
+        orig_token += c;
+        if (c == '"') {  // end quote?
+            const char* ptr = env->GetBufPtr(); // next to c
+            if (*ptr == '"') { // escape symbol?
+                c = env->GetChar();
+            } else {
+                break;
+            }
+        }
+        token += c;
+    } // for
+
+
+    if (c == 0) {  // syntax error EOF
+        if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
+            NCBI_THROW(CQueryParseException, eParserError, 
+                       "Syntax error. String quote mismatch.");
+        }
+    }
+}
+
 /// Simple lexer to extract tokens from the query stream(string) 
 ///
 /// This variant of lexical analyser works with the reentrant parser
@@ -466,27 +517,9 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     if (c == '"') {
         string token, orig_token;
         orig_token += c;
+                
+        s_yylex_extract_string(env, token, orig_token);
         
-        for (c=env->GetChar(); c != 0; c=env->GetChar()) {
-            orig_token += c;
-            if (c == '"') {  // end quote?
-                ptr = env->GetBufPtr(); // next to c
-                if (*ptr == '"') { // escape symbol?
-                    c = env->GetChar();
-                } else {
-                    break;
-                }
-            }
-            token += c;
-        } // for
-        
-        
-        if (c == 0) {  // syntax error EOF
-            if (env->GetParserTolerance() == CQueryParseTree::eSyntaxCheck) {
-                NCBI_THROW(CQueryParseException, eParserError, 
-                           "Syntax error. String quote mismatch.");
-            }
-        }
         *lvalp = qnode = 
             env->QTree().CreateNode(token, orig_token, false /*not identifier*/);
         env->AddNodeToPool(qnode); 
@@ -532,59 +565,43 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     // (PubMed query compatibility)
     //
 
-    ptr           = env->GetBufPtr();
-    const char* p = ptr;
+    // string_start marks the beginning of the text fragment
+    // ptr is a moving pointer
+    const char* const string_start = ptr = env->GetBufPtr();
+    
+    // last word pointer (bookmark)
+    const char* last_word_ptr = 0;
+    const char* last_token_end_ptr = 0;
+    
     if (verbose) _TRACE("parsing text fragment: " << string(ptr, end));
     while (ptr != end) {
-        /// skip to the next word boundary
+        // skip to the next word boundary
         for ( ;  ptr != end;  ++ptr) {
             if ( s_IsSpaceTerm(ptr) ) {
                 break;
             }
-            if ((*ptr == '"') ||
-                (*ptr == '[') ||
-                (*ptr == '(') ||  
-                (*ptr == ')') ||
-                (*ptr == '|') ||
-                (*ptr == '&') ||
-                (*ptr == '=') ||
-                (*ptr == '<') ||
-                (*ptr == '>') ||
-                (*ptr == '!')
-                ) {
+            if (s_IsBreakingChar(*ptr)) {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << string(ptr, end));
                 }
                 break;
             }
-        }
+        } // for
 
         token_end = ptr; // not to add trailing spaces to the token
-        /// skip intervening white space
+        // skip intervening white space
         for ( ;  ptr != end;  ++ptr) {
             if ( !s_IsSpaceTerm(ptr) ) {
                 break;
             }
-            if ((*ptr == '"') ||
-                (*ptr == '~') ||
-                (*ptr == '[') ||
-                (*ptr == '(') ||  
-                (*ptr == ')') ||
-                (*ptr == '|') ||
-                (*ptr == '&') ||
-                (*ptr == '=') ||
-                (*ptr == '<') ||
-                (*ptr == '>') ||
-                (*ptr == '!')
-                ) {
+            if (s_IsBreakingChar(*ptr)) {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << string(ptr, end));
                 }
                 break;
             }            
-        }
+        } // for
 
-        //
         // skip to the next operator A, N, O, etc
         //
         if (s_Compare(ptr, end, "AND",    case_sense) ||
@@ -592,23 +609,32 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             s_Compare(ptr, end, "NOT",    case_sense) ||
             s_Compare(ptr, end, "SUB",    case_sense) ||
             s_Compare(ptr, end, "XOR",    case_sense) ||
-            s_Compare(ptr, end, "MINUS",  case_sense) ||
-            s_Compare(ptr, end, "BETWEEN",case_sense) ||
-            s_Compare(ptr, end, "LIKE",   case_sense) ||
-            (*ptr == '~') ||
-            (*ptr == '"') ||
-            (*ptr == '[') ||
-            (*ptr == '(') ||
-            (*ptr == ')') ||
-            (*ptr == '|') ||
-            (*ptr == '&') ||
-            (*ptr == '=') ||
-            (*ptr == '<') ||
-            (*ptr == '>') ||
-            (*ptr == '!') 
+            s_Compare(ptr, end, "MINUS",  case_sense) 
             ) {
             break;
         }
+        // BETWEEN, LIKE require parser to step back one word
+        // example:
+        // "vitamin C journal LIKE medicine"        reads as
+        // "vitamin C" AND journal LIKE medicine    but not as
+        // "vitamin C journal" LIKE medicine 
+        
+        if (s_Compare(ptr, end, "BETWEEN",case_sense) ||
+            s_Compare(ptr, end, "LIKE",   case_sense) ||
+            (*ptr == '~')
+           ) {
+            if (last_word_ptr) {
+                ptr = last_word_ptr; token_end = last_token_end_ptr;
+            }
+            break;
+        }
+        
+        if (s_IsBreakingChar(*ptr)) {
+            break;
+        }
+        // bookmark 
+        last_word_ptr = ptr; last_token_end_ptr = token_end;
+        
     } // while
 
     /// create a node for the text
@@ -616,7 +642,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     
     string token;
     token += c_orig;
-    token.append(p, token_end ? token_end : ptr);
+    token.append(string_start, token_end ? token_end : ptr);
     
     // detailed type analysis (INT, FLOAT, BOOL ?)
     //
@@ -638,23 +664,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     }
     
     /// skip and return
-    env->Skip(ptr - p);
+    env->Skip(ptr - string_start);
     if (verbose) { _TRACE("string: >>" << token << "<<"); }
     qnode->GetValue().SetLoc(line, line_pos);
     return STRING;
 }
 
 
-/*
- * ===========================================================================
- * $Log: lexer.inc,v $
- * Revision 1.2  2007/01/11 14:49:51  kuznets
- * Many cosmetic fixes and functional development
- *
- * Revision 1.1  2007/01/10 16:14:01  kuznets
- * initial revision
- *
- *
- * ==========================================================================
- */
 

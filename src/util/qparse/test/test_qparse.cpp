@@ -34,6 +34,8 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <util/qparse/query_parse.hpp>
+#include <util/qparse/query_exec.hpp>
+#include <util/qparse/query_exec_bv.hpp>
 #include <stdio.h>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -50,7 +52,7 @@ class CTestQueryEvalValue : public IQueryParseUserObject
 public:
     CTestQueryEvalValue() : m_Value(0) {}
     virtual void Reset() { m_Value = 0; }
-    virtual string GetVisibleValue() const { return NStr::IntToString(m_Value); };
+    virtual string GetVisibleValue() const { return NStr::IntToString(m_Value); }
     
     int GetValue() const { return m_Value; }
     void SetValue(int v) { m_Value = v; }
@@ -343,7 +345,8 @@ void StaticEvaluate(const char* q, int res)
 int CTestQParse::Run(void)
 {
     {{
-    const char* queries[] = {    
+    const char* queries[] = {   
+     
         "\n\r\n(asdf != 2)",
         "    asdf != 2",
         " 1 AND 0 ",
@@ -371,8 +374,12 @@ int CTestQParse::Run(void)
         "\"J Sci Food Agric\"[Journal:__jrid5260] 1974",
         "vitamin 1993:1995 [dp]",
          "\"2005/04/17 12.23\"[MHDA]:\"2005/05/10 10.56\"[MHDA]",
-         "a between 1 and 10",
-         "a between 1 and 10 or a between 15 and 20",
+         " a between 1 and 10",
+         " a between 1 and 10 or a between 15 and 20",
+         " a like \"asdf\"",
+         " a like 1 AND search OR a LIKE query",         
+         "vitamin C journal \n~ medicine",
+         "vitamin C \nissue between 1 and 10"
     };    
     int l = sizeof (queries) / sizeof(queries[0]);
     for (int i = 0; i < l; ++i) {
@@ -380,7 +387,6 @@ int CTestQParse::Run(void)
     } // for
     
     }}
-
     NcbiCout << endl << endl;
     NcbiCout << "Misspelled queries.";
     NcbiCout << endl << endl;
@@ -417,6 +423,19 @@ int CTestQParse::Run(void)
     StaticEvaluate("1 > 2 || 1 != 1", 0);
    
    
+    
+    
+    CQueryExec qexec;
+    qexec.AddFunc(CQueryParseNode::eAnd,
+            new CQueryFunction_BV_Logic<bm::bvector<> >(bm::set_AND));
+    qexec.AddFunc(CQueryParseNode::eOr,
+            new CQueryFunction_BV_Logic<bm::bvector<> >(bm::set_OR));
+    qexec.AddFunc(CQueryParseNode::eSub,
+            new CQueryFunction_BV_Logic<bm::bvector<> >(bm::set_SUB));
+    qexec.AddFunc(CQueryParseNode::eXor,
+            new CQueryFunction_BV_Logic<bm::bvector<> >(bm::set_XOR));
+   
+   
     //ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.50000");
     
     return 0;
@@ -429,14 +448,3 @@ int main(int argc, const char* argv[])
     return app.AppMain(argc, argv);
 }
 
-/*
- * ===========================================================================
- * $Log: test_qparse.cpp,v $
- * Revision 1.2  2007/01/11 14:49:52  kuznets
- * Many cosmetic fixes and functional development
- *
- * Revision 1.1  2007/01/10 17:06:31  kuznets
- * initial revision
- *
- * ===========================================================================
- */
