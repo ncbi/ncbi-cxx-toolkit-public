@@ -386,8 +386,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         if (ptr != end  &&  !isspace(*ptr) ) {
             break;
         }
-        */
         env->Skip(1);
+        */
         if (verbose) { _TRACE("token: <"); }
         *lvalp = qnode = 
             env->QTree().CreateNode(CQueryParseNode::eLT, 0, 0,
@@ -423,8 +423,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         if (ptr != end  &&  !isspace(*ptr) ) {
             break;
         }
-        */
         env->Skip(1);
+        */
         if (verbose) { _TRACE("token: >"); }
         *lvalp = qnode = 
             env->QTree().CreateNode(CQueryParseNode::eGT, 0, 0,
@@ -470,6 +470,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         }
         */
         env->Skip(1);
+        
         if (verbose) { _TRACE("token: =="); }
         *lvalp = qnode = 
             env->QTree().CreateNode(CQueryParseNode::eEQ, 0, 0,
@@ -663,7 +664,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->AddNodeToPool(qnode); // to avoid leak when Bison rollbacks the stack
     }
     
-    /// skip and return
+    // skip and return
     env->Skip(ptr - string_start);
     if (verbose) { _TRACE("string: >>" << token << "<<"); }
     qnode->GetValue().SetLoc(line, line_pos);
