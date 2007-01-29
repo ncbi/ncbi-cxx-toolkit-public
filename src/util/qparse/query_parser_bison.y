@@ -84,6 +84,7 @@ void QTreeAddNode(void*                   parm,
 %left LT
 %left LE
 %left BETWEEN
+%left LIKE
 
 
 %%
@@ -186,6 +187,11 @@ exp :
     
     /* RANGE */
     | exp RANGE exp
+    {
+        QTreeAddNode(parm, $$ = $2, $1, $3);
+    }
+    /* LIKE */
+    | scalar_value LIKE scalar_value
     {
         QTreeAddNode(parm, $$ = $2, $1, $3);
     }

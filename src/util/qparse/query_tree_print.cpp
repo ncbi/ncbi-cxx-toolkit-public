@@ -120,6 +120,8 @@ public:
             break;
         case CQueryParseNode::eBetween:
             PrintElement("BETWEEN", qnode);
+        case CQueryParseNode::eLike:
+            PrintElement("LIKE", qnode);
             break;
         case CQueryParseNode::eAnd:
             PrintElement("AND", qnode);        

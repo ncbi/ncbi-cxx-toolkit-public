@@ -92,6 +92,7 @@ public:
         // Operation codes:
         eNot,
         eFieldSearch,
+        eLike,
         eBetween,
         eAnd,
         eOr,

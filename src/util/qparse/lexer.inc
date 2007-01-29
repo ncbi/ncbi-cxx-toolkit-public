@@ -141,6 +141,23 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->AttachToPool(qnode); 
         qnode->GetValue().SetLoc(line, line_pos);
         return BETWEEN;
+    // LIKE
+    case 'L':
+        if ( !s_Compare(ptr, end, "IKE", case_sense) ) {
+            break;
+        }
+        ptr += 3;
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
+            break;
+        }
+        env->Skip(3);
+        if (verbose) { _TRACE("token: LIKE"); }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(CQueryParseNode::eLike, 0, 0,
+                                    string(ptr-4, 4));
+        env->AttachToPool(qnode); 
+        qnode->GetValue().SetLoc(line, line_pos);
+        return LIKE;
         
     // AND
     case 'A':
@@ -265,6 +282,15 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->AttachToPool(qnode);
         qnode->GetValue().SetLoc(line, line_pos);
         return OR;        
+    case '~':
+        env->Skip(1);
+        if (verbose) { _TRACE("token: ~"); }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(CQueryParseNode::eLike, 0, 0,
+                                    string(ptr-1, 1));
+        env->AttachToPool(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);
+        return LIKE;
     // NOT
     case 'N':
         if ( !s_Compare(ptr, end, "OT", case_sense) ) {
@@ -540,6 +566,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                 break;
             }
             if ((*ptr == '"') ||
+                (*ptr == '~') ||
                 (*ptr == '[') ||
                 (*ptr == '(') ||  
                 (*ptr == ')') ||
@@ -560,13 +587,15 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         //
         // skip to the next operator A, N, O, etc
         //
-        if (s_Compare(ptr, end, "AND",  case_sense) ||
-            s_Compare(ptr, end, "OR",   case_sense) ||
-            s_Compare(ptr, end, "NOT",  case_sense) ||
-            s_Compare(ptr, end, "SUB",  case_sense) ||
-            s_Compare(ptr, end, "XOR",  case_sense) ||
-            s_Compare(ptr, end, "MINUS",case_sense) ||
+        if (s_Compare(ptr, end, "AND",    case_sense) ||
+            s_Compare(ptr, end, "OR",     case_sense) ||
+            s_Compare(ptr, end, "NOT",    case_sense) ||
+            s_Compare(ptr, end, "SUB",    case_sense) ||
+            s_Compare(ptr, end, "XOR",    case_sense) ||
+            s_Compare(ptr, end, "MINUS",  case_sense) ||
             s_Compare(ptr, end, "BETWEEN",case_sense) ||
+            s_Compare(ptr, end, "LIKE",   case_sense) ||
+            (*ptr == '~') ||
             (*ptr == '"') ||
             (*ptr == '[') ||
             (*ptr == '(') ||
