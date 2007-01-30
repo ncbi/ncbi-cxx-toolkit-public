@@ -73,10 +73,11 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_
     if( !job.tags.empty() ) {
         string tags;
         ITERATE(CNetScheduleAPI::TJobTags, tag, job.tags) {
+            if( tag != job.tags.begin() )
+                tags.append("\t");
             tags.append(tag->first);
             tags.append("\t");
             tags.append(tag->second);
-            tags.append("\t");
         }
         cmd.append(" tags=\"");
         cmd.append(NStr::PrintableString(tags));
