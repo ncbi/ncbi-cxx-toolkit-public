@@ -344,7 +344,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
                                  int/*bool*/ internal)
 {
     SSERV_Info* info = 0;
-    assert(iter && iter->op);
+    assert(iter  &&  iter->op);
     if (iter->op->GetNextInfo) {
         if (!internal) {
             iter->time = (TNCBI_Time) time(0);
@@ -364,7 +364,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
                 free(info);
                 info = 0;
             }
-            if (go || !info)
+            if (go  ||  !info)
                 break;
         }
     }
@@ -393,8 +393,8 @@ static SSERV_Info* s_GetInfo(const char*          service,
                             net_info, skip, n_skip,
                             external, arg, val,
                             &info, host_info);
-    if (iter && iter->op && !info) {
-        /* All DISPD searches end up here, but none LBSMD ones */
+    if (iter  &&  iter->op  &&  !info) {
+        /* All LOCAL/DISPD searches end up here, but none LBSMD ones */
         info = s_GetNextInfo(iter, host_info, 1/*internal*/);
     }
     SERV_Close(iter);
@@ -455,19 +455,19 @@ SSERV_Info* SERV_GetInfoP(const char*          service,
 const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER  iter,
                                      HOST_INFO* host_info)
 {
-    return iter && iter->op ? s_GetNextInfo(iter, host_info, 0) : 0;
+    return iter  &&  iter->op ? s_GetNextInfo(iter, host_info, 0) : 0;
 }
 
 
 const SSERV_Info* SERV_GetNextInfo(SERV_ITER iter)
 {
-    return iter && iter->op ? s_GetNextInfo(iter, 0, 0) : 0;
+    return iter  &&  iter->op ? s_GetNextInfo(iter, 0, 0) : 0;
 }
 
 
 const char* SERV_MapperName(SERV_ITER iter)
 {
-    return iter && iter->op ? iter->op->name : 0;
+    return iter  &&  iter->op ? iter->op->name : 0;
 }
 
 
@@ -480,7 +480,7 @@ const char* SERV_CurrentName(SERV_ITER iter)
 
 int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 {
-    if (!iter || !iter->op || !iter->op->Penalize || !iter->last)
+    if (!iter  ||  !iter->op  ||  !iter->op->Penalize  ||  !iter->last)
         return 0/*false*/;
     return (*iter->op->Penalize)(iter, fine);
 }

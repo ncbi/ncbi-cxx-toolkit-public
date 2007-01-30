@@ -111,7 +111,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SERV_DoFastOpens(ESwitch on);
  *       only -- servers, which are down, don't get returned).
  */
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
-(const char*          service,       /* service name (may not be a mask)     */
+(const char*          service,       /* service name (may not be a mask here)*/
  TSERV_Type           types,         /* mask of type(s) of servers requested */
  unsigned int         preferred_host,/* preferred host to use service on, nbo*/
  unsigned short       preferred_port,/* preferred port to use service on, hbo*/
@@ -130,7 +130,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
  * service is that they _must_ be created having a name (perhaps, empty "")
  * attached, like if done by SERV_ReadInfoEx() or SERV_CopyInfoEx() */
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
-(const char*          service,       /* service name (can be a mask)         */
+(const char*          service,       /* service name (here: can be a mask!)  */
  TSERV_Type           types,
  unsigned int         preferred_host,
  unsigned short       preferred_port,
