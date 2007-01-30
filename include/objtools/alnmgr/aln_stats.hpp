@@ -84,18 +84,20 @@ public:
                     TIdxVec& idx_vec = it->second;
                     TIdxVec::iterator idx_it = idx_vec.begin();
                     while (idx_it != idx_vec.end()) {
-                        if (m_RowVecVec[*idx_it][aln_i] == -1) {
+                        if ( !m_BitVecVec[*idx_it][aln_i] ) {
+                            // create a mapping b/n the id and the alignment
+                            m_BitVecVec[*idx_it][aln_i] = true;
+                            _ASSERT(m_RowVecVec[*idx_it][aln_i] == -1);
+                            m_RowVecVec[*idx_it][aln_i] = row_i;
                             break;
                         }
                         ++idx_it;
                     }
                     if (idx_it == idx_vec.end()) {
-                        // we have already encountered this id in the
-                        // current alignment, this means the sequence
-                        // is aligned to itself
+                        // create an extra identical id for this
+                        // alignment.  (the sequence is aligned to
+                        // itself)
                         idx_vec.push_back(x_AddId(id, aln_i, row_i));
-                    } else {
-                        m_RowVecVec[*idx_it][aln_i] = row_i;
                     }
                 }
             }
