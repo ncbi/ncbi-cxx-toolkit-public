@@ -79,17 +79,17 @@ namespace NWinHook
 
     public:
         /// Return the address of an CHookedFunction object
-        CHookedFunction* GetHookedFunction(PCSTR pszCalleeModName,
+        CRef<CHookedFunction> GetHookedFunction(PCSTR pszCalleeModName,
                                            PCSTR pszFuncName
                                            );
         /// Return the address of an CHookedFunction object
-        CHookedFunction* GetHookedFunction(HMODULE hmod,
+        CRef<CHookedFunction> GetHookedFunction(HMODULE hmod,
                                            PCSTR   pszFuncName
                                            );
         /// Add a new object to the container
-        BOOL AddHook(CHookedFunction* pHook);
+        BOOL AddHook(const CRef<CHookedFunction> pHook);
         /// Remove exising object pointer from the container
-        BOOL RemoveHook(CHookedFunction* pHook);
+        BOOL RemoveHook(const CRef<CHookedFunction> pHook);
 
         void UnHookAllFuncs(void);
 
@@ -127,7 +127,7 @@ namespace NWinHook
                 return( stricmp(x.c_str(), y.c_str()) < 0 );
             }
         };
-        typedef map<string, CHookedFunction*, SNocaseCmp> TFunctionList;
+        typedef map<string, CRef<CHookedFunction>, SNocaseCmp> TFunctionList;
         typedef map<void*, TFunctionList> TModuleList;
         typedef map<string, TFunctionList, SNocaseCmp> TModuleNameList;
 
@@ -174,7 +174,7 @@ namespace NWinHook
 
         /// Return the address of an CHookedFunction object
         /// Protected version.
-        CHookedFunction* GetHookedFunction(HMODULE hmod,
+        CRef<CHookedFunction> GetHookedFunction(HMODULE hmod,
                                            PCSTR   pszFuncName
                                            );
 
