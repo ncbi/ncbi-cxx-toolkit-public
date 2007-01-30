@@ -61,6 +61,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
     TDbxrefPair("ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host),
     TDbxrefPair("AceView/WormGenes", CDbtag::eDbtagType_AceView_WormGenes),
+    TDbxrefPair("ApiDB", CDbtag::eDbtagType_ApiDB),
     TDbxrefPair("BDGP_EST", CDbtag::eDbtagType_BDGP_EST),
     TDbxrefPair("BDGP_INS", CDbtag::eDbtagType_BDGP_INS),
     TDbxrefPair("BoLD", CDbtag::eDbtagType_BoLD),
@@ -284,6 +285,7 @@ typedef pair<CDbtag::EDbtagType, string>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID="),
     TDbtUrl(CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q="), 
+    TDbtUrl(CDbtag::eDbtagType_ApiDB, "http://www.apidb.org/apidb/showRecord.do?name=GeneRecordClasses.ApiDBGeneRecordClass&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_ToxoDB, "http://www.toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
