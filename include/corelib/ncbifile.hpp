@@ -56,6 +56,11 @@
 BEGIN_NCBI_SCOPE
 
 
+// Define missing types
+#if defined(NCBI_OS_MSWIN)
+    typedef unsigned int mode_t;
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -84,12 +89,9 @@ public:
 };
 
 
-
-
 // File exception with system errno-based message
 
 #if defined(NCBI_OS_MSWIN)
-    typedef unsigned int mode_t;
     typedef CErrnoTemplException_Win<CFileException> CFileErrnoException_Base;
 #else
     typedef CErrnoTemplException<CFileException> CFileErrnoException_Base;
@@ -882,7 +884,7 @@ public:
                  TMode            other_mode   = fDefault,
                  TSpecialModeBits special_bits = 0) const;
 
-    /// Construct mode_t value
+    /// Construct mode_t value.
     static mode_t MakeModeT(TMode            usr_mode,
                             TMode            grp_mode,
                             TMode            oth_mode,
@@ -912,7 +914,7 @@ public:
                                      TMode group_mode = fDefault,
                                      TMode other_mode = fDefault);
 
-    /// Set default mode(s) for this directory entry only.
+    /// Set default mode(s) for this entry only.
     ///
     /// When "fDefault" is passed as a value of the parameters,
     /// the corresponding mode will be taken and set from the global mode
@@ -921,6 +923,29 @@ public:
                                 TMode user_mode,  // e.g. fDefault
                                 TMode group_mode = fDefault,
                                 TMode other_mode = fDefault);
+                                
+    /// Check access rights.
+    ///
+    /// Use effective user ID (or process owner) to check the entry
+    /// for accessibility accordingly to specified mask.
+    /// NOTE: 
+    ///   - If an entry is a symbolic link, that the access rights
+    ///     will be checked for entry to which the link points.
+    ///   - Execute bit means 'search' for directories.
+    ///   - Success checking fExecute mode do not guarantee that
+    ///     the file will executable at all. This function just check
+    ///     permissions and not the file format.
+    ///   - On some platforms, if the file is currently open for execution,
+    ///     the function reports that it is not writable, regardless
+    ///     of the setting of its mode.
+    /// @access_mode
+    ///   Checked access mode (any combination of fRead/fWrite/fExecute).
+    /// @return
+    ///   TRUE if specified permissions granted, FALSE otherwise
+    ///   (also returns FALSE if the file doesn't exists or an error occurs).
+    /// @sa
+    ///   GetMode
+    bool CheckAccess(TMode access_mode);
 
 protected:
     /// Get the default global mode.

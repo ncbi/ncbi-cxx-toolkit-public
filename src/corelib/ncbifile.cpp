@@ -117,65 +117,6 @@ const size_t kDefaultBufferSize = 32*1024;
 static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Static functions
-//
-
-// Construct real entry mode from parts.
-// Parameters must not have "fDefault" value.
-mode_t CDirEntry::MakeModeT(TMode            usr_mode,
-                            TMode            grp_mode,
-                            TMode            oth_mode,
-                            TSpecialModeBits special)
-{
-    mode_t mode = (
-#ifdef S_ISUID
-                   (special & fSetUID   ? S_ISUID    : 0) |
-#endif
-#ifdef S_ISGID
-                   (special & fSetGID   ? S_ISGID    : 0) |
-#endif
-#ifdef S_ISVTX
-                   (special & fSticky   ? S_ISVTX    : 0) |
-#endif
-#if   defined(S_IRUSR)
-                   (usr_mode & fRead    ? S_IRUSR    : 0) |
-#elif defined(S_IREAD)
-                   (usr_mode & fRead    ? S_IREAD    : 0) |
-#endif
-#if   defined(S_IWUSR)
-                   (usr_mode & fWrite   ? S_IWUSR    : 0) |
-#elif defined(S_IWRITE)
-                   (usr_mode & fWrite   ? S_IWRITE   : 0) |
-#endif
-#if   defined(S_IXUSR)
-                   (usr_mode & fExecute ? S_IXUSR    : 0) |
-#elif defined(S_IEXEC)
-                   (usr_mode & fExecute ? S_IEXEC    : 0) |
-#endif
-#ifdef S_IRGRP
-                   (grp_mode & fRead    ? S_IRGRP    : 0) |
-#endif
-#ifdef S_IWGRP
-                   (grp_mode & fWrite   ? S_IWGRP    : 0) |
-#endif
-#ifdef S_IXGRP
-                   (grp_mode & fExecute ? S_IXGRP    : 0) |
-#endif
-#ifdef S_IROTH
-                   (oth_mode & fRead    ? S_IROTH    : 0) |
-#endif
-#ifdef S_IWOTH
-                   (oth_mode & fWrite   ? S_IWOTH    : 0) |
-#endif
-#ifdef S_IXOTH
-                   (oth_mode & fExecute ? S_IXOTH    : 0) |
-#endif
-                   0);
-    return mode;
-}
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -835,19 +776,6 @@ bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
                      (st.st_mode & S_IEXEC  ? fExecute           : 0) |
 #endif
                      0);
-
-#ifdef NCBI_OS_MSWIN
-        // Try to get effective access rights on this file object for
-        // the current process owner.
-        ACCESS_MASK mask = 0;
-        if ( CWinSecurity::GetFilePermissions(GetPath(), &mask) ) {
-            TMode mode = ( (mask & FILE_READ_DATA  ? fRead    : 0) |
-                           (mask & FILE_WRITE_DATA ? fWrite   : 0) |
-                           (mask & FILE_EXECUTE    ? fExecute : 0) );
-            // Drop user permissions disabled in the access mask
-            *usr_mode &= mode;
-        }
-#endif
     }
 
 #ifdef NCBI_OS_MSWIN
@@ -1001,6 +929,187 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
     if ( other_mode ) {
         *other_mode = m_DefaultMode[eOther];
     }
+}
+
+
+// Construct real entry mode from parts.
+// Parameters must not have "fDefault" value.
+mode_t CDirEntry::MakeModeT(TMode            usr_mode,
+                            TMode            grp_mode,
+                            TMode            oth_mode,
+                            TSpecialModeBits special)
+{
+    mode_t mode = (
+#ifdef S_ISUID
+                   (special & fSetUID   ? S_ISUID    : 0) |
+#endif
+#ifdef S_ISGID
+                   (special & fSetGID   ? S_ISGID    : 0) |
+#endif
+#ifdef S_ISVTX
+                   (special & fSticky   ? S_ISVTX    : 0) |
+#endif
+#if   defined(S_IRUSR)
+                   (usr_mode & fRead    ? S_IRUSR    : 0) |
+#elif defined(S_IREAD)
+                   (usr_mode & fRead    ? S_IREAD    : 0) |
+#endif
+#if   defined(S_IWUSR)
+                   (usr_mode & fWrite   ? S_IWUSR    : 0) |
+#elif defined(S_IWRITE)
+                   (usr_mode & fWrite   ? S_IWRITE   : 0) |
+#endif
+#if   defined(S_IXUSR)
+                   (usr_mode & fExecute ? S_IXUSR    : 0) |
+#elif defined(S_IEXEC)
+                   (usr_mode & fExecute ? S_IEXEC    : 0) |
+#endif
+#ifdef S_IRGRP
+                   (grp_mode & fRead    ? S_IRGRP    : 0) |
+#endif
+#ifdef S_IWGRP
+                   (grp_mode & fWrite   ? S_IWGRP    : 0) |
+#endif
+#ifdef S_IXGRP
+                   (grp_mode & fExecute ? S_IXGRP    : 0) |
+#endif
+#ifdef S_IROTH
+                   (oth_mode & fRead    ? S_IROTH    : 0) |
+#endif
+#ifdef S_IWOTH
+                   (oth_mode & fWrite   ? S_IWOTH    : 0) |
+#endif
+#ifdef S_IXOTH
+                   (oth_mode & fExecute ? S_IXOTH    : 0) |
+#endif
+                   0);
+    return mode;
+}
+
+
+#if defined(NCBI_OS_UNIX)
+
+static bool s_CheckAccessStat(const struct stat& st, int amode)
+{
+    uid_t uid = geteuid();
+
+    // Check user permissions
+    if (uid == st.st_uid) {
+        if ( (!(amode & R_OK)  ||  (st.st_mode & S_IRUSR))  &&
+             (!(amode & W_OK)  ||  (st.st_mode & S_IWUSR))  &&
+             (!(amode & X_OK)  ||  (st.st_mode & S_IXUSR)) )
+            return true;
+    }
+
+    // Initialize list of group IDs for effective user
+    int ngroups = 0;
+    gid_t gids[NGROUPS_MAX + 1];
+    gids[0] = getegid();
+    ngroups = getgroups(sizeof(gids)/sizeof(gids[0])-1, gids+1);
+    if (ngroups < 0) {
+        ngroups = 1;
+    } else {
+        ngroups++;
+    }
+    for (int i = 1; i < ngroups; i++) {
+        if (gids[i] == uid) {
+            if (i < --ngroups) {
+                memmove(&gids[i], &gids[i+1], sizeof(gids[0])*(ngroups-i));
+            }
+            break;
+        }
+    }
+
+    // Check group permissions
+    for (int i = 0; i < ngroups; i++) {
+        if (gids[i] == st.st_gid) {
+            if ( (!(amode & R_OK)  ||  (st.st_mode & S_IRGRP))  &&
+                 (!(amode & W_OK)  ||  (st.st_mode & S_IWGRP))  &&
+                 (!(amode & X_OK)  ||  (st.st_mode & S_IXGRP)) )
+                return true;
+        }
+    }
+
+    // Check other permissions
+    if ( (!(amode & R_OK)  ||  (st.st_mode & S_IROTH))  &&
+         (!(amode & W_OK)  ||  (st.st_mode & S_IWOTH))  &&
+         (!(amode & X_OK)  ||  (st.st_mode & S_IXOTH)) )
+        return true;
+
+    // Permissions not granted
+    return false;
+}
+
+
+static bool s_CheckAccessPath(const char* path, int amode)
+{
+    if (!path) {
+        errno = 0;
+        return false;
+    }
+    if (!*path) {
+        errno = ENOENT;
+        return false;
+    }
+    struct stat st;
+    if (stat(path, &st) != 0)
+        return false;
+
+    if (!s_CheckAccessStat(st, amode)) {
+        errno = EACCES;
+        return false;
+    }
+    // Permissions granted
+    return true;
+}
+
+#endif // defined(NCBI_OS_UNIX)
+
+
+bool CDirEntry::CheckAccess(TMode access_mode)
+{
+#if defined(NCBI_OS_MSWIN)
+    // Try to get effective access rights on this file object for
+    // the current process owner.
+    ACCESS_MASK mask = 0;
+    if ( CWinSecurity::GetFilePermissions(GetPath(), &mask) ) {
+        TMode perm = ( (mask & FILE_READ_DATA  ? fRead    : 0) |
+                       (mask & FILE_WRITE_DATA ? fWrite   : 0) |
+                       (mask & FILE_EXECUTE    ? fExecute : 0) );
+        return (access_mode & perm) > 0;
+     }
+     return false;
+
+#elif defined(NCBI_OS_UNIX)
+    int amode = F_OK;
+    if ( access_mode & fRead)    amode |= R_OK;
+    if ( access_mode & fWrite)   amode |= W_OK;
+    if ( access_mode & fExecute) amode |= X_OK;
+    
+    // Use euidaccess() where possible
+#  if defined(HAVE_EUIDACCESS)
+    return euidaccess(GetPath().c_str(), amode) == 0;
+
+#  elif defined(EFF_ONLY_OK)
+    // Some Unix have special flag for access() to use effective user ID.
+    amode |= EFF_ONLY_OK;
+    return access(GetPath().c_str(), amode) == 0;
+
+#  else
+    // We can use access() only if an effective and real user/group IDs are equal.
+    // access() operate with real IDs only, but we should check access
+    // for effective IDs.
+    if (getuid() == geteuid()  &&  getgid() == getegid()) {
+        return access(GetPath().c_str(), amode) == 0;
+    }
+    // Otherwise, try to check permissions self.
+    // Note, that this function is not perfect, it doesn't work with ACL,
+    // which implementation can differ for each platform.
+    // But in most cases it works.
+    return s_CheckAccessPath(GetPath().c_str(), amode);
+
+#  endif
+#endif
 }
 
 
