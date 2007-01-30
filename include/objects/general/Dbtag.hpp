@@ -63,6 +63,7 @@ public:
         eDbtagType_ATCC_dna,
         eDbtagType_ATCC_in_host,
         eDbtagType_AceView_WormGenes,
+        eDbtagType_ApiDB,
         eDbtagType_ApiDB_CryptoDB,
         eDbtagType_ApiDB_PlasmoDB,
         eDbtagType_ApiDB_ToxoDB,
