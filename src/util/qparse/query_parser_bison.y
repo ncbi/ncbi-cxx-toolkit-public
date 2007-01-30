@@ -61,6 +61,22 @@ void QTreeAddNode(void*                   parm,
 }
 
 
+/// Add node to a list if parser environment is in the list parsing context
+/// @internal
+///
+inline static
+void AddFunc_Arg(void*                   parm,
+               CQueryParseTree::TNode* node)
+{
+    CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+    CQueryParseTree::TNode* in_node = env->GetIN_Context();
+    if (in_node) {
+        in_node->AddNode(node);
+        env->ForgetPoolNodes(node, 0);
+    }
+}
+
+
 
 %}
 
@@ -85,6 +101,7 @@ void QTreeAddNode(void*                   parm,
 %left LE
 %left BETWEEN
 %left LIKE
+%left IN
 
 
 %%
@@ -117,6 +134,17 @@ scalar_value :
     }
 ;
 
+scalar_list:
+    scalar_value
+    {
+        $$ = $1;
+    }    
+    | scalar_list ',' scalar_value
+    {
+        $$ = $1;    
+        AddFunc_Arg(parm, $3);
+    }    
+;
 exp :
     scalar_value
     {
@@ -194,6 +222,17 @@ exp :
     | scalar_value LIKE scalar_value
     {
         QTreeAddNode(parm, $$ = $2, $1, $3);
+    }
+    /* IN */
+    | scalar_value IN '(' scalar_list ')'
+    {
+        $$ = $2;
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        env->AttachQueryTree($$);    
+        env->ForgetPoolNodes($1, $4);
+        $$->InsertNode($$->SubNodeBegin(), $4);
+        $$->InsertNode($$->SubNodeBegin(), $1);
+        env->SetIN_Context(0);
     }
     /* == */
     | exp EQ exp

@@ -32,6 +32,15 @@
 
 USING_NCBI_SCOPE;
 
+/// @internal
+///
+static inline 
+bool s_IsSpaceTerm(const char *c)
+{
+    return isspace(*c) || (*c == '\n') || (*c == '\r' && *(c+1) == '\n');
+}
+
+
 
 ///
 /// @internal
@@ -47,23 +56,51 @@ bool s_Compare(const char* p, const char* p_end,
                 return false;
             }
         }
-        return !*t  &&  ( !*p  ||  isspace(*p));
+//        return !*t  &&  ( !*p  ||  isspace(*p));
     } else {
         for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
             if (*p != *t) {
                 return false;
             }
         }
-        return !*t  &&  ( !*p  ||  isspace(*p));
     }
+    return !*t  &&  ( !*p  ||  isspace(*p));
 }
 
+/// Check if next substring is a function-like expression
+/// "IN (..." or "Function(..."
+///
 /// @internal
 ///
-static inline 
-bool s_IsSpaceTerm(const char *c)
+static 
+bool s_IfFuncStart(const char* p, const char* p_end,
+                   const char* t,
+                   CQueryParseTree::ECase  case_sense)
 {
-    return isspace(*c) || (*c == '\n') || (*c == '\r' && *(c+1) == '\n');
+    if (case_sense == CQueryParseTree::eCaseInsensitive) {
+        for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
+            if (toupper(*p) != *t) {
+                return false;
+            }
+        }
+    } else {
+        for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
+            if (*p != *t) {
+                return false;
+            }
+        }
+    }
+    if (!*p) return false;
+    
+    // skip spaces
+    for ( ;  p != p_end;  ++p) {
+        if ( !s_IsSpaceTerm(p) ) {
+            break;
+        }    
+    }
+    if (!*p)       return false;
+    if (*p != '(') return false;
+    return true;
 }
 
 /// @internal
@@ -156,6 +193,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     const char* end = env->GetBufEnd();
     const char* token_end = 0;
     CQueryParseTree::TNode* qnode = 0;    
+    CQueryParseTree::TNode* in_node = env->GetIN_Context();
 
     // skip leading white space
     //
@@ -209,6 +247,22 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->AttachToPool(qnode); 
         qnode->GetValue().SetLoc(line, line_pos);
         return BETWEEN;
+    // IN
+    case 'I':
+        if ( !s_IfFuncStart(ptr, end, "N", case_sense) ) {
+            break;
+        }
+        ptr += 1;
+        env->Skip(1);
+        if (verbose) { _TRACE("token: IN"); }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(CQueryParseNode::eIn, 0, 0,
+                                    string(ptr-2, 2));
+        env->AttachToPool(qnode); 
+        env->SetIN_Context(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);
+        return IN;
+
     // LIKE
     case 'L':
         if ( !s_Compare(ptr, end, "IKE", case_sense) ) {
@@ -518,7 +572,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     case ')':
         if (verbose) { _TRACE("token: close-paren"); }
         return c;
-
+    case ',':
+        if (in_node) {
+            return c;
+        }
+        break;
     case 0:
     case EOF:
         if (verbose) { _TRACE("token: EOF"); }
@@ -575,7 +633,6 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     }
 
 
-
     // the query contains text
     //
     // query is searched up to the next operator (AND, OR, NOT, etc.)
@@ -597,17 +654,23 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         for ( ;ptr != end;  ++ptr) {
             if ( s_IsSpaceTerm(ptr) ) {
                 break;
-            } else
+            } 
             if (s_IsOperatorChar(*ptr)) {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << string(ptr, end));
                 }
                 break;
-            } else 
+            } 
             if ((ptr[0] == '|' && ptr[1] == '|') || 
                 (ptr[0] == '&' && ptr[1] == '&')) {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << ptr[0] << ptr[1]);
+                }
+                break;
+            }
+            if (in_node && *ptr == ',') {
+                if (verbose) { 
+                    _TRACE("found breaking paren: " << string(ptr, end));
                 }
                 break;
             }
@@ -618,13 +681,13 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         for ( ;  ptr != end;  ++ptr) {
             if ( !s_IsSpaceTerm(ptr) ) {
                 break;
-            } else 
+            } 
             if (s_IsOperatorChar(*ptr)) {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << ptr[0] << ptr[1]);
                 }
                 break;
-            } else           
+            }          
             if ((ptr[0] == '|' && ptr[1] == '|') || 
                 (ptr[0] == '&' && ptr[1] == '&')) {
                 if (verbose) { 
@@ -632,6 +695,12 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                 }
                 break;
             }
+            if (in_node && *ptr == ',') {
+                if (verbose) { 
+                    _TRACE("found breaking paren: " << string(ptr, end));
+                }
+                break;
+            }            
         } // for
 
         // skip to the next operator A, N, O, etc
@@ -641,7 +710,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             s_Compare(ptr, end, "NOT",    case_sense) ||
             s_Compare(ptr, end, "SUB",    case_sense) ||
             s_Compare(ptr, end, "XOR",    case_sense) ||
-            s_Compare(ptr, end, "MINUS",  case_sense) 
+            s_Compare(ptr, end, "MINUS",  case_sense) ||
+            s_IfFuncStart(ptr, end, "IN", case_sense)
             ) {
             break;
         }
@@ -649,6 +719,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             (ptr[0] == '&' && ptr[1] == '&')) {
             break;
         }
+        
+        
         // BETWEEN, LIKE require parser to step back one word
         // example:
         // "vitamin C journal LIKE medicine"        reads as
@@ -668,6 +740,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         if (s_IsOperatorChar(*ptr)) {
             break;
         }
+        
+        if (in_node && *ptr == ',') {
+            break;
+        }
+        
         // bookmark 
         last_word_ptr = ptr; last_token_end_ptr = token_end;
         

@@ -94,6 +94,7 @@ public:
         eFieldSearch,
         eLike,
         eBetween,
+        eIn,
         eAnd,
         eOr,
         eSub,

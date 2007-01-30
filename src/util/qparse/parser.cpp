@@ -98,7 +98,8 @@ public:
       m_QueryTree(0),
       m_Verbose(false),
       m_Case(CQueryParseTree::eCaseInsensitive),
-      m_ParseTolerance(CQueryParseTree::eSyntaxCheck)
+      m_ParseTolerance(CQueryParseTree::eSyntaxCheck),
+      m_InNode(0)
     {
         m_QueryLen = ::strlen(m_Query);
         m_Line = m_LinePos = 0;
@@ -229,7 +230,13 @@ public:
     CQueryParseTree::ESyntaxCheck GetParserTolerance() const 
     {
         return m_ParseTolerance;
-    }    
+    }   
+    void SetIN_Context(CQueryParseTree::TNode* in_node)
+    {
+        if(m_InNode != 0) _ASSERT(in_node == 0);
+        m_InNode = in_node;
+    }
+    CQueryParseTree::TNode* GetIN_Context() { return m_InNode; }
 
 private:
     CQueryParseTree& m_QTree;   ///< Base query tree reference
@@ -253,6 +260,10 @@ private:
     unsigned   m_LinePos;
     
     CQueryParseTree::ESyntaxCheck  m_ParseTolerance;
+    
+    /// operator "IN" context pointer
+    CQueryParseTree::TNode*             m_InNode;
+
 };
 
 
@@ -287,7 +298,7 @@ void CQueryParseTree::Parse(const char*   query_str,
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app  &&  app->GetEnvironment().Get("DIAG_TRACE") == "1") {
         yydebug = 1;
-        env.SetVerbose(1);
+        verbose = true;
     }
 #endif
     env.SetCase(case_sense);

@@ -115,6 +115,9 @@ public:
         case CQueryParseNode::eNot:
             PrintElement("NOT", qnode);
             break;
+        case CQueryParseNode::eIn:
+            PrintElement("IN", qnode);
+            break;
         case CQueryParseNode::eFieldSearch:
             PrintElement("SEARCH", qnode);        
             break;
