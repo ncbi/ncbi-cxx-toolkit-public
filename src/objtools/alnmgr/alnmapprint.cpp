@@ -91,16 +91,20 @@ CAlnMapPrinter::PrintSeqPos(TSeqPos pos) const
 
 void CAlnMapPrinter::CsvTable(char delim)
 {
+    // first row is the row numbers:
     *m_Out << delim;
-    for (int seg = 0; seg < m_AlnMap.GetNumSegs(); seg++) {
-        *m_Out << delim << m_AlnMap.GetLen(seg) << delim;
+    for (int row = 0; row < m_NumRows; row++) {
+        *m_Out << delim << row << delim;
     }
     *m_Out << endl;
-    for (int row = 0; row < m_NumRows; row++) {
-        *m_Out << row << delim;
-        for (int seg = 0; seg < m_AlnMap.GetNumSegs(); seg++) {
+
+    // each next row is a segment
+    for (int seg = 0; seg < m_AlnMap.GetNumSegs(); seg++) {
+        // first, print the length
+        *m_Out << m_AlnMap.GetLen(seg) << delim;
+        for (int row = 0; row < m_NumRows; row++) {
             *m_Out << m_AlnMap.GetStart(row, seg) << delim 
-                 << m_AlnMap.GetStop(row, seg) << delim;
+                   << m_AlnMap.GetStop(row, seg) << delim;
         }
         *m_Out << endl;
     }
