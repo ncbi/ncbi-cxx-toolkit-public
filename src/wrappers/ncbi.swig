@@ -196,6 +196,8 @@ namespace ncbi {
     template<class T> class CConstRef
     {
     public:
+        CConstRef();
+        CConstRef(const T*);
         const T* operator->();
         const T& operator*();
     };
