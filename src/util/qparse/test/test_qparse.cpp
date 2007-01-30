@@ -345,8 +345,7 @@ void StaticEvaluate(const char* q, int res)
 int CTestQParse::Run(void)
 {
     {{
-    const char* queries[] = {   
-     
+    const char* queries[] = {       
         "\n\r\n(asdf != 2)",
         "    asdf != 2",
         " 1 AND 0 ",
@@ -379,7 +378,12 @@ int CTestQParse::Run(void)
          " a like \"asdf\"",
          " a like 1 AND search OR a LIKE query",         
          "vitamin C journal \n~ medicine",
-         "vitamin C \nissue between 1 and 10"
+         "vitamin C \nissue between 1 and 10",         
+         "lcl|XGP_000001 ||asdf",        
+         "IN vitro AND in vivo OR in vino, veritas",         
+         "id IN(1)",
+         "feature IN    \n(\"cds\", gene , snp, \"bio nonsense\")"
+         
     };    
     int l = sizeof (queries) / sizeof(queries[0]);
     for (int i = 0; i < l; ++i) {
@@ -390,7 +394,6 @@ int CTestQParse::Run(void)
     NcbiCout << endl << endl;
     NcbiCout << "Misspelled queries.";
     NcbiCout << endl << endl;
-   
    
     {{
     const char* queries[] = {    
