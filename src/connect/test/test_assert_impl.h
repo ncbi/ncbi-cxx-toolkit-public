@@ -139,6 +139,10 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #  undef _ASSERT
 #endif
 #define  _ASSERT assert
+#ifdef _DEBUG_ARG
+#  undef _DEBUG_ARG
+#endif
+#define _DEBUG_ARG(arg) arg
 
 
 /*
