@@ -36,6 +36,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistr.hpp>
 
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/connect_export.h>
 #include <connect/ncbi_socket.hpp>
 
@@ -294,7 +295,7 @@ private:
 
 
 
-class NCBI_XCONNECT_EXPORT CNetSrvConnectorPoll
+class NCBI_XCONNECT_EXPORT CNetSrvConnectorPoll : virtual protected CConnIniter
 {    
 public:   
     class iterator
@@ -308,7 +309,7 @@ public:
         { 
             unsigned index = (m_CurIndex-1) % m_Poll->m_Services.size();
             return CNetSrvConnectorHolder(*m_Poll->x_FindOrCreateConnector(m_Poll->m_Services[index]),
-                                          m_Poll->m_PermConn);
+                                          !m_Poll->m_PermConn);
         }
         pointer operator->() const { return operator*(); }
 
@@ -373,7 +374,7 @@ public:
             unsigned j = i % serv_size;
             const TService& srv = m_Services[j];
             CNetSrvConnectorHolder holder(*x_FindOrCreateConnector(srv), 
-                                          m_PermConn);
+                                          !m_PermConn);
             CNetSrvConnector& conn = (CNetSrvConnector&)holder;
             if (func(conn))
                 return true;
