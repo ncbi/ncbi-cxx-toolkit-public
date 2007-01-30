@@ -1005,7 +1005,7 @@ static bool s_CheckAccessStat(const struct stat& st, int amode)
     int ngroups = 0;
     gid_t gids[NGROUPS_MAX + 1];
     gids[0] = getegid();
-    ngroups = getgroups(sizeof(gids)/sizeof(gids[0])-1, gids+1);
+    ngroups = getgroups((int)(sizeof(gids)/sizeof(gids[0])-1), gids+1);
     if (ngroups < 0) {
         ngroups = 1;
     } else {
