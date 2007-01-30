@@ -186,11 +186,10 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
             lock->Unlock();
             break;
         default:
-            NCBI_THROW(CCoreException, eCore,
-                       "Used with op " + (unsigned int) how);
+            NCBI_THROW(CCoreException, eCore, "Lock used with unknown op #" +
+                       NStr::UIntToString((unsigned int) how));
         }
         return 1/*true*/;
-
     }
     NCBI_CATCH_ALL("s_LOCK_Handler() failed");
     return 0/*false*/;
