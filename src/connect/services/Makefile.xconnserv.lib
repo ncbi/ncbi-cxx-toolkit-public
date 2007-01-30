@@ -6,10 +6,10 @@ SRC     = netschedule_client netschedule_client_lb \
           grid_worker ns_client_factory  grid_worker_app \
           grid_client grid_client_app grid_thread_context grid_debug_context \
           grid_control_thread grid_worker_app_impl grid_globals  \
-			 ns_client_wrappers grid_rw_impl \
-			 remote_app remote_app_impl remote_app_mb remote_app_sb \
-			 ra_dispatcher_client srv_connections netservice_api \
-			 netschedule_api netschedule_api_submitter netschedule_api_executer netschedule_api_admin
+          ns_client_wrappers grid_rw_impl \
+          remote_app remote_app_impl remote_app_mb remote_app_sb \
+          ra_dispatcher_client srv_connections netservice_api \
+          netschedule_api netschedule_api_submitter netschedule_api_executer netschedule_api_admin
 
 LIB     = xconnserv
 LIBS    = $(NETWORK_LIBS)

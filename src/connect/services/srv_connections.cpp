@@ -282,12 +282,12 @@ CNetSrvConnectorHolder CNetSrvConnectorPoll::GetBest(const string& hit)
 {
     x_Rebalance();
     const TService& srv = m_Services[0];
-    return CNetSrvConnectorHolder(*x_FindOrCreateConnector(srv), m_PermConn);
+    return CNetSrvConnectorHolder(*x_FindOrCreateConnector(srv), !m_PermConn);
 }
 
 CNetSrvConnectorHolder CNetSrvConnectorPoll::GetSpecific(const string& host, unsigned int port)
 {
-    return CNetSrvConnectorHolder(*x_FindOrCreateConnector(TService(host,port)), m_PermConn);
+    return CNetSrvConnectorHolder(*x_FindOrCreateConnector(TService(host,port)), !m_PermConn);
 }
 
 void CNetSrvConnectorPoll::x_Rebalance()

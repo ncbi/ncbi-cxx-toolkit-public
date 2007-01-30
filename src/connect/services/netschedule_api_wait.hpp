@@ -71,10 +71,10 @@ static bool s_WaitNotification(unsigned       wait_time,
 
     for (;;) {
         curr_time = time(0);
-        to.sec = end_time - curr_time;  // remaining
-        if (to.sec <= 0) {
+        if (curr_time >= end_time)
             break;
-        }
+        to.sec = end_time - curr_time;
+
         status = udp_socket.Wait(&to);
         if (eIO_Success != status) {
             continue;

@@ -42,7 +42,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
 CNetScheduleKey::CNetScheduleKey(const string& key_str)
 {
 
@@ -220,30 +219,29 @@ CNetScheduleAPI::StringToStatus(const string& status_str)
     return eJobNotFound;
 }
 
+void CNetScheduleAPI::x_SendAuthetication(CNetSrvConnector& conn) const
+{
+    string auth = GetClientName();
+    if (!m_ProgramVersion.empty()) {
+        auth += " prog='" + m_ProgramVersion + '\'';
+    }       
+    conn.WriteStr(auth + "\r\n");
+    conn.WriteStr(m_Queue + "\r\n");
+}
 
 
 CNetScheduleAPI::EJobStatus 
-CNetScheduleAPI::GetJobDetails(const string& job_key,
-                               string*    input,
-                               string*    progress_msg,
-                               string*    affinity,
-                               TJobMask*  job_mask,
-                               TJobTags*  tags,
-                               int*       ret_code,
-                               string*    output,
-                               string*    err_msg) const
+CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job) const
 {
-    _ASSERT(ret_code);
-    _ASSERT(output);
     
     /// These attributes are not supported yet
-    if (progress_msg) *progress_msg = "";
-    if (affinity) *affinity = "";
-    if (job_mask) *job_mask = 0;
-    if (tags) tags->clear();
+    job.progress_msg.erase();
+    job.affinity.erase();
+    job.mask = 0;
+    job.tags.clear();
     ///
 
-    string resp = x_SendJobCmdWaitResponse("STATUS" , job_key); 
+    string resp = x_SendJobCmdWaitResponse("STATUS" , job.job_id); 
 
     const char* str = resp.c_str();
 
@@ -255,27 +253,23 @@ CNetScheduleAPI::GetJobDetails(const string& job_key,
         || status == eCanceled || status == eReturned
         || status == eFailed) {
         //cerr << str <<endl;
-        for ( ;*str && isdigit((unsigned char)(*str)); ++str) {
-        }
+        for ( ;*str && isdigit((unsigned char)(*str)); ++str) {}
 
-        for ( ; *str && isspace((unsigned char)(*str)); ++str) {
-        }
+        for ( ; *str && isspace((unsigned char)(*str)); ++str) {}
 
-        *ret_code = atoi(str);
+        job.ret_code = atoi(str);
 
-        for ( ;*str && isdigit((unsigned char)(*str)); ++str) {
-        }
+        for ( ;*str && isdigit((unsigned char)(*str)); ++str) {}
 
-        output->erase();
+        job.output.erase();
 
-        for ( ; *str && isspace((unsigned char)(*str)); ++str) {
-        }
+        for ( ; *str && isspace((unsigned char)(*str)); ++str) {}
 
         if (*str && *str == '"') {
             ++str;
             for( ;*str && *str; ++str) {
                 if (*str == '"' && *(str-1) != '\\') break;
-                output->push_back(*str);
+                job.output.push_back(*str);
             }
             /*
             for( ;*str && *str != '"'; ++str) {
@@ -283,51 +277,44 @@ CNetScheduleAPI::GetJobDetails(const string& job_key,
             }
             */
         }
-        *output = NStr::ParseEscapes(*output);
-        if (err_msg || input) {
-            if (err_msg) err_msg->erase();
-            if (!*str)
-                return status;
-
-            for (++str; *str && isspace((unsigned char)(*str)); ++str) {
-            }
+        job.output = NStr::ParseEscapes(job.output);
+        
+        job.input.erase();
+        job.error_msg.erase();
+        if (!*str)
+            return status;
+        
+        for (++str; *str && isspace((unsigned char)(*str)); ++str) {}
             
-            if (!*str)
-                return status;
-
-            if (*str && *str == '"') {
-                ++str;
-                for( ;*str && *str; ++str) {
-                    if (*str == '"' && *(str-1) != '\\') break;
-                    if (err_msg)
-                        err_msg->push_back(*str);
-                }
+        if (!*str)
+            return status;
+        
+        if (*str && *str == '"') {
+            ++str;
+            for( ;*str && *str; ++str) {
+                if (*str == '"' && *(str-1) != '\\') break;
+                job.error_msg.push_back(*str);
             }
-
-            if (err_msg) *err_msg = NStr::ParseEscapes(*err_msg);
         }
+        job.error_msg = NStr::ParseEscapes(job.error_msg);
 
-        if (input) {
-            input->erase();
-            if (!*str)
-                return status;
+        if (!*str)
+            return status;
+        
+        for (++str; *str && isspace((unsigned char)(*str)); ++str) {}
+        
+        if (!*str)
+            return status;
 
-            for (++str; *str && isspace((unsigned char)(*str)); ++str) {
+        if (*str && *str == '"') {
+            ++str;
+            for( ;*str && *str; ++str) {
+                if (*str == '"' && *(str-1) != '\\') break;
+                job.input.push_back(*str);
             }
-            
-            if (!*str)
-                return status;
-
-            if (*str && *str == '"') {
-                ++str;
-                for( ;*str && *str; ++str) {
-                    if (*str == '"' && *(str-1) != '\\') break;
-                    input->push_back(*str);
-                }
-            }
-            *input = NStr::ParseEscapes(*input);
         }
-
+        job.input = NStr::ParseEscapes(job.input);
+        
     } // if status done or failed
 
     return status;
@@ -340,6 +327,12 @@ CNetScheduleAPI::GetJobStatus(const string& job_key) const
     const char* str = resp.c_str();
     int st = atoi(str);
     return (EJobStatus) st;
+}
+
+void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job) const
+{
+    string resp = x_SendJobCmdWaitResponse("MGET", job.job_id);
+    job.progress_msg = NStr::ParseEscapes(resp);
 }
 
 void CNetScheduleAPI::ProcessServerError(string& response, ETrimErr trim_err) const
@@ -356,100 +349,6 @@ void CNetScheduleAPI::ProcessServerError(string& response, ETrimErr trim_err) co
         }
     }
     INetServiceAPI::ProcessServerError(response, eNoTrimErr);
-}
-
-///////////////////????????????????????????/////////////////////////
-void CNetScheduleAPI::GetServerVersion(CNetScheduleAPI::ISink& sink) const
-{ 
-    string cmd = "VERSION";
-    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
-        os << SendCmdWaitResponse(*it, cmd);
-    }        
-}
-
-
-
-void CNetScheduleAPI::DumpQueue(CNetScheduleAPI::ISink& sink) const
-{
-    string cmd = "DUMP";        
-    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
-        it->WriteStr(cmd);
-        PrintServerOut(*it, os);
-    }
-}
-
-
-void CNetScheduleAPI::PrintQueue(CNetScheduleAPI::ISink& sink, EJobStatus status) const
-{
-    string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status);;        
-    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
-        it->WriteStr(cmd);
-        PrintServerOut(*it, os);
-    }
-}
-
-
-
-void CNetScheduleAPI::GetServerStatistics(CNetScheduleAPI::ISink& sink, 
-                                          EStatisticsOptions opt) const
-{
-    string cmd = "STAT";
-    if (opt == eStatisticsAll) {
-        cmd += " ALL";
-    }
-    for(CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
-        it->WriteStr(cmd);
-        PrintServerOut(*it, os);
-    }
-}
-
-
-void CNetScheduleAPI::Monitor(CNcbiOstream & out) const
-{
-    /*
-    CheckConnect(kEmptyStr);
-    CSockGuard sg(*m_Sock);
-
-    MakeCommandPacket(&m_Tmp, "MONI ");
-    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
-    m_Tmp = "QUIT";
-    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
-
-    STimeout rto;
-    rto.sec = 1;
-    rto.usec = 0;
-    m_Sock->SetTimeout(eIO_Read, &rto);
-
-    string line;
-    while (1) {
-
-        EIO_Status st = m_Sock->ReadLine(line);       
-        if (st == eIO_Success) {
-            if (m_Tmp == "END")
-                break;
-            out << line << "\n" << flush;
-        } else {
-            EIO_Status st = m_Sock->GetStatus(eIO_Open);
-            if (st != eIO_Success) {
-                break;
-            }
-        }
-    }
-    */
-}
-
-
-void CNetScheduleAPI::GetQueueList(CNetScheduleAPI::ISink& sink) const
-{
-    string cmd = "QLIST";
-    for(CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
-        os << SendCmdWaitResponse(*it, cmd);
-    }
 }
 
 
@@ -511,7 +410,7 @@ public:
                                "service", CConfig::eErr_NoThrow, "");
             NStr::TruncateSpacesInPlace(service);
 
-            if (service.empty()) {
+            if (!service.empty()) {
                 /*
                 unsigned int rebalance_time = conf.GetInt(m_DriverName, 
                                                           "rebalance_time",
@@ -523,6 +422,15 @@ public:
                 drv.reset(new CNetScheduleAPI(service,
                                               client_name, 
                                               queue_name) );
+
+                bool permanent_conntction =
+                    conf.GetBool(m_DriverName, "use_permanent_connection",  
+                                 CConfig::eErr_NoThrow, true);
+
+                if( permanent_conntction )
+                    drv->SetConnMode(INetServiceAPI::eKeepConnection);
+
+
                 //                                                rebalance_time, 
                 //                              rebalance_requests);
                 /*
@@ -587,7 +495,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: netschedule_api.cpp,v $
  * Revision 6.2  2007/01/09 16:05:02  didenko
  * Moved CNetScheduleExceptions to the new NetSchedule API
  *

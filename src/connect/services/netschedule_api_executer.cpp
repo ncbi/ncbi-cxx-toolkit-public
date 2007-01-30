@@ -53,14 +53,9 @@ void CNetScheduleExecuter::JobDelayExpiration(const string& job_key,
 
 
 
-bool CNetScheduleExecuter::GetJob(string*        job_key, 
-                                  string*        input,
-                                  CNetScheduleAPI::TJobMask*      job_mask,
+bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, 
                                   unsigned short udp_port) const
 {
-    _ASSERT(job_key);
-    _ASSERT(input);
-
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().random_begin(); 
          it != m_API->GetPoll().end(); ++it) {
         string cmd = "GET";
@@ -70,11 +65,9 @@ bool CNetScheduleExecuter::GetJob(string*        job_key,
         string resp = m_API->SendCmdWaitResponse(*it, cmd);
         
         if (!resp.empty()) {
-            CNetScheduleAPI::TJobMask j_mask = CNetScheduleAPI::eEmptyMask;
+            job.mask = CNetScheduleAPI::eEmptyMask;
             string tmp;
-            x_ParseGetJobResponse(job_key, input, &tmp, &tmp, &j_mask, resp);
-            if (job_mask) *job_mask = j_mask;
-
+            x_ParseGetJobResponse(&job.job_id, &job.input, &tmp, &tmp, &job.mask, resp);
             return true;
         }
     }
@@ -82,14 +75,10 @@ bool CNetScheduleExecuter::GetJob(string*        job_key,
 }
 
 
-bool CNetScheduleExecuter::GetJobWaitNotify(string*    job_key, 
-                                            string*    input, 
+bool CNetScheduleExecuter::GetJobWaitNotify(CNetScheduleJob& job,
                                             unsigned   wait_time,
-                                            unsigned short udp_port,
-                                            CNetScheduleAPI::TJobMask*  job_mask) const
+                                            unsigned short udp_port) const
 {
-    _ASSERT(job_key);
-    _ASSERT(input);
 
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().random_begin(); 
          it != m_API->GetPoll().end(); ++it) {
@@ -98,11 +87,10 @@ bool CNetScheduleExecuter::GetJobWaitNotify(string*    job_key,
 
         string resp = m_API->SendCmdWaitResponse(*it, cmd);
         
-        CNetScheduleAPI::TJobMask j_mask = CNetScheduleAPI::eEmptyMask;
         if (!resp.empty()) {
+            job.mask = CNetScheduleAPI::eEmptyMask;
             string tmp;
-            x_ParseGetJobResponse(job_key, input, &tmp, &tmp, &j_mask, resp);
-            if (job_mask)  *job_mask = j_mask;
+            x_ParseGetJobResponse(&job.job_id, &job.input, &tmp, &tmp, &job.mask, resp);
             return true;
         }
     }
@@ -110,16 +98,14 @@ bool CNetScheduleExecuter::GetJobWaitNotify(string*    job_key,
 }
 
 
-bool CNetScheduleExecuter::WaitJob(string*    job_key, 
-                                   string*    input, 
+bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
                                    unsigned   wait_time,
                                    unsigned short udp_port,
-                                   EWaitMode      wait_mode,
-                                   CNetScheduleAPI::TJobMask*      job_mask) const
+                                   EWaitMode      wait_mode) const
 {
     //cerr << ">>WaitJob" << endl;
     bool job_received = 
-        GetJobWaitNotify(job_key, input, wait_time, udp_port, job_mask);
+        GetJobWaitNotify(job, wait_time, udp_port);
     if (job_received) {
         return job_received;
     }
@@ -133,7 +119,7 @@ bool CNetScheduleExecuter::WaitJob(string*    job_key,
     // using reliable comm.level and notify server that
     // we no longer on the UDP socket
 
-    bool ret = GetJob(job_key, input, job_mask, udp_port);
+    bool ret = GetJob(job, udp_port);
     return ret;
 
 }
@@ -266,80 +252,65 @@ void CNetScheduleExecuter::x_ParseGetJobResponse(string*        job_key,
 }
 
 
-void CNetScheduleExecuter::PutResult(const string& job_key, 
-                                     int           ret_code, 
-                                     const string& output) const
+void CNetScheduleExecuter::PutResult(const CNetScheduleJob& job) const
 {
-    if (output.length() > kNetScheduleMaxDataSize) {
+    if (job.output.length() > kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
             "Output data too long.");
     }
 
-    m_API->x_SendJobCmdWaitResponse("PUT" , job_key, ret_code, output); 
+    m_API->x_SendJobCmdWaitResponse("PUT" , job.job_id, job.ret_code, job.output); 
 
 }
 
 
-bool CNetScheduleExecuter::PutResultGetJob(const string& done_job_key, 
-                                           int           done_ret_code, 
-                                           const string& done_output,
-                                           string*       new_job_key, 
-                                           string*       new_input,
-                                           CNetScheduleAPI::TJobMask*     job_mask) const
+bool CNetScheduleExecuter::PutResultGetJob(const CNetScheduleJob& done_job,
+                                           CNetScheduleJob& new_job) const
 {
-    if (done_job_key.empty()) 
-        return GetJob(new_job_key, new_input, job_mask, 0);
+    if (done_job.job_id.empty()) 
+        return GetJob(new_job, 0);
 
-    _ASSERT(new_job_key);
-    _ASSERT(new_input);
-
-    if (done_output.length() > kNetScheduleMaxDataSize) {
+    if (done_job.output.length() > kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
             "Output data too long.");
     }
 
-    string resp = m_API->x_SendJobCmdWaitResponse("JXCG" , done_job_key, done_ret_code, done_output); 
+    string resp = m_API->x_SendJobCmdWaitResponse("JXCG" , done_job.job_id, done_job.ret_code, done_job.output); 
 
     if (!resp.empty()) {
-
-        CNetScheduleAPI::TJobMask j_mask = CNetScheduleAPI::eEmptyMask;
+        new_job.mask = CNetScheduleAPI::eEmptyMask;
         string tmp;
-        x_ParseGetJobResponse(new_job_key, new_input, &tmp, &tmp, &j_mask, resp);
-        if (job_mask) *job_mask = j_mask;       
-        _ASSERT(!new_job_key->empty());
+        x_ParseGetJobResponse(&new_job.job_id, &new_job.input, &tmp, &tmp, &new_job.mask, resp);
+        _ASSERT(!new_job.job_id.empty());
         return true;
     }
     return false;
 }
 
 
-void CNetScheduleExecuter::PutProgressMsg(const string& job_key, 
-                                          const string& progress_msg) const
+void CNetScheduleExecuter::PutProgressMsg(const CNetScheduleJob& job) const
 {
-    if (progress_msg.length() >= kNetScheduleMaxDataSize) {
+    if (job.progress_msg.length() >= kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
                    "Progress message too long");
     }
-    m_API->x_SendJobCmdWaitResponse("MPUT" , job_key, progress_msg); 
+    m_API->x_SendJobCmdWaitResponse("MPUT" , job.job_id, job.progress_msg); 
 }
 
 
-void CNetScheduleExecuter::PutFailure(const string& job_key, 
-                                      const string& err_msg,
-                                      const string& output,
-                                      int           ret_code) const
+void CNetScheduleExecuter::PutFailure(const CNetScheduleJob& job) const
 {
-    if (output.length() > kNetScheduleMaxDataSize) {
+    if (job.output.length() > kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
             "Output data too long.");
     }
 
-    if (err_msg.length() >= kNetScheduleMaxErrSize) {
+    if (job.error_msg.length() >= kNetScheduleMaxErrSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
                    "Error message too long");
     }
 
-    m_API->x_SendJobCmdWaitResponse("FPUT" , job_key, err_msg, output, ret_code); 
+    m_API->x_SendJobCmdWaitResponse("FPUT" , job.job_id, job.error_msg, job.output, job.ret_code); 
 }
 
 
@@ -377,7 +348,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: netschedule_api_executer.cpp,v $
  * Revision 6.2  2007/01/10 16:02:50  ucko
  * Fix compilation with GCC 2.95's (not quite standard) string implementation.
  *

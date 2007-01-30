@@ -74,17 +74,6 @@ void CNetScheduleAdmin::ReloadServerConfig() const
 
 }
 
-/*
-void CNetScheduleAPI::GetServerVersion(CNetScheduleAPI::ISink& sink) const
-{ 
-    string cmd = "VERSION";
-    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
-        os << SendCmdWaitResponse(*it, cmd);
-    }        
-}
-*/
-
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
                                     const string& comment) const
 {
@@ -111,19 +100,6 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname) const
     }
 }
 
-/*
-void CNetScheduleAPI::DumpQueue(CNetScheduleAPI::ISink& sink) const
-{
-    string cmd = "DUMP";        
-    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
-        it->WriteStr(cmd);
-        PrintServerOut(*it, os);
-    }
-}
-
-*/
-
 void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
 {
     string cmd = "DUMP " + job_key;
@@ -142,37 +118,63 @@ void CNetScheduleAdmin::DropQueue() const
 }
 
 
-/*
-void CNetScheduleAPI::PrintQueue(CNetScheduleAPI::ISink& sink, EJobStatus status) const
+///////////////////????????????????????????/////////////////////////
+void CNetScheduleAdmin::GetServerVersion(ISink& sink) const
+{ 
+    string cmd = "VERSION";
+    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+         it != m_API->GetPoll().end(); ++it) {
+        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
+        os << m_API->SendCmdWaitResponse(*it, cmd);
+    }        
+}
+
+
+
+void CNetScheduleAdmin::DumpQueue(ISink& sink) const
 {
-    string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status);;        
-    for (CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
+    string cmd = "DUMP";        
+    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+         it != m_API->GetPoll().end(); ++it) {
+        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
         it->WriteStr(cmd);
-        PrintServerOut(*it, os);
+        m_API->PrintServerOut(*it, os);
     }
 }
-*/
 
-/*
-void CNetScheduleAPI::GetServerStatistics(CNetScheduleAPI::ISink& sink, 
-                                          EStatisticsOptions opt) const
+
+void CNetScheduleAdmin::PrintQueue(ISink& sink, CNetScheduleAPI::EJobStatus status) const
+{
+    string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status);;        
+    for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+         it != m_API->GetPoll().end(); ++it) {
+        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
+        it->WriteStr(cmd);
+        m_API->PrintServerOut(*it, os);
+    }
+}
+
+
+
+void CNetScheduleAdmin::GetServerStatistics(ISink& sink, 
+                                            EStatisticsOptions opt) const
 {
     string cmd = "STAT";
     if (opt == eStatisticsAll) {
         cmd += " ALL";
     }
-    for(CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
+    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+        it != m_API->GetPoll().end(); ++it) {
+        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
         it->WriteStr(cmd);
-        PrintServerOut(*it, os);
+        m_API->PrintServerOut(*it, os);
     }
 }
-*/
-    /*
 
-void CNetScheduleAPI::Monitor(CNcbiOstream & out) const
+
+void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
 {
+    /*
     CheckConnect(kEmptyStr);
     CSockGuard sg(*m_Sock);
 
@@ -201,19 +203,19 @@ void CNetScheduleAPI::Monitor(CNcbiOstream & out) const
             }
         }
     }
-}
     */
+}
 
-     /*
-void CNetScheduleAPI::GetQueueList(CNetScheduleAPI::ISink& sink) const
+
+void CNetScheduleAdmin::GetQueueList(ISink& sink) const
 {
     string cmd = "QLIST";
-    for(CNetSrvConnectorPoll::iterator it = GetPoll().begin(); it != GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(GetConnectionInfo(*it));
-        os << SendCmdWaitResponse(*it, cmd);
+    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+        it != m_API->GetPoll().end(); ++it) {
+        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
+        os << m_API->SendCmdWaitResponse(*it, cmd);
     }
 }
-     */
 
 
 END_NCBI_SCOPE
@@ -221,7 +223,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: netschedule_api_admin.cpp,v $
  * Revision 6.1  2007/01/09 15:29:55  didenko
  * Added new API for NetSchedule service
  *

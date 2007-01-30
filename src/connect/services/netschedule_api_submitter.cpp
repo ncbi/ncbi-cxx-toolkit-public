@@ -42,62 +42,77 @@ BEGIN_NCBI_SCOPE
 
 
 //////////////////////////////////////////////////////////////////////////////
-
-string CNetScheduleSubmitter::SubmitJob(const string& input, 
-                                        const string& progress_msg,
-                                        const string& affinity_token,
-                                        CNetScheduleAPI::TJobMask  job_mask,
-                                        CNetScheduleAPI::TJobTags* tags) const
+static void s_SerializeJob(string& cmd, const CNetScheduleJob& job, string& aff_prev)
 {
-    if (input.length() > kNetScheduleMaxDataSize) {
+    cmd.append("\"");
+    cmd.append(NStr::PrintableString(job.input));
+    cmd.append("\"");
+
+    if (!job.progress_msg.empty()) {
+        cmd.append(" \"");
+        cmd.append(job.progress_msg);
+        cmd.append("\"");
+    }
+
+    if (!job.affinity.empty()) {
+        if (job.affinity == aff_prev) { // exactly same affinity(sorted jobs)
+            cmd.append(" affp");
+        } else{
+            cmd.append(" aff=\"");
+            cmd.append(job.affinity);
+            cmd.append("\"");
+            aff_prev = job.affinity;  
+        }
+    }
+
+    if (job.mask != CNetScheduleAPI::eEmptyMask) {
+        cmd.append(" msk=");
+        cmd.append(NStr::UIntToString(job.mask));
+    }
+    
+    if( !job.tags.empty() ) {
+        string tags;
+        ITERATE(CNetScheduleAPI::TJobTags, tag, job.tags) {
+            tags.append(tag->first);
+            tags.append("\t");
+            tags.append(tag->second);
+            tags.append("\t");
+        }
+        cmd.append(" tags=\"");
+        cmd.append(NStr::PrintableString(tags));
+        cmd.append("\"");
+    }
+    
+}
+
+string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job) const
+{
+    if (job.input.length() > kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
             "Input data too long.");
     }
 
 
     //cerr << "Input: " << input << endl;
-    string cmd = "SUBMIT \"";
-    cmd.append(NStr::PrintableString(input));
-    cmd.append("\"");
+    string cmd = "SUBMIT ";
 
-    if (!progress_msg.empty()) {
-        cmd.append(" \"");
-        cmd.append(progress_msg);
-        cmd.append("\"");
-    }
+    string aff_prev;
+    s_SerializeJob(cmd, job, aff_prev);
 
-    if (!affinity_token.empty()) {
-        cmd.append(" aff=\"");
-        cmd.append(affinity_token);
-        cmd.append("\"");
-    }
+    job.job_id = m_API->SendCmdWaitResponse(m_API->x_GetConnector(), cmd);
 
-    if (job_mask != CNetScheduleAPI::eEmptyMask) {
-        cmd.append(" msk=");
-        cmd.append(NStr::UIntToString(job_mask));
-    } else {
-        cmd.append(" msk=0");
-    }
-
-    /*
-    if( tags != NULL )
-       // TODO 
-    */
-
-    string job_key = m_API->SendCmdWaitResponse(m_API->x_GetConnector(), cmd);
-
-    if (job_key.empty()) {
+    if (job.job_id.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Invalid server response. Empty key.");
     }
 
-    return job_key;
+    return job.job_id;
 }
 
-void CNetScheduleSubmitter::SubmitJobBatch(vector<SJobParams>& jobs) const
+void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs) const
 {
     // veryfy the input data
-    ITERATE(vector<SJobParams>, it, jobs) {
+    ITERATE(vector<CNetScheduleJob>, it, jobs) {
         const string& input = it->input;
 
         if (input.length() > kNetScheduleMaxDataSize) {
@@ -116,8 +131,10 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<SJobParams>& jobs) const
 
     //m_Sock->DisableOSSendDelay(false);
 
+    string cmd;
+    cmd.reserve(kNetScheduleMaxDataSize * 6);
     string host;
-    unsigned short port;
+    unsigned short port = 0;
     for (unsigned i = 0; i < jobs.size(); ) {
 
         // Batch size should be reasonable not to trigger network timeout
@@ -128,14 +145,19 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<SJobParams>& jobs) const
             batch_size = kMax_Batch;
         }
 
-        char buf[kNetScheduleMaxDataSize * 6];
-        sprintf(buf, "BTCH %u", batch_size);
+        cmd.erase();
+        cmd = "BTCH ";
+        cmd.append(NStr::UIntToString(batch_size));
 
-        conn.WriteBuf(buf, strlen(buf)+1);
+        conn.WriteStr(cmd +"\r\n");
+
 
         unsigned batch_start = i;
         string aff_prev;
         for (unsigned j = 0; j < batch_size; ++j,++i) {
+            cmd.erase();
+            s_SerializeJob(cmd, jobs[i], aff_prev);
+            /*
             string input = NStr::PrintableString(jobs[i].input);
             const string& aff = jobs[i].affinity;
             if (aff[0]) {
@@ -155,6 +177,8 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<SJobParams>& jobs) const
                 sprintf(buf, "\"%s\"", input.c_str());
             }
             conn.WriteBuf(buf, strlen(buf)+1);
+            */
+            conn.WriteStr(cmd + "\r\n");
         }
 
         string resp = m_API->SendCmdWaitResponse(conn, "ENDB");
@@ -209,7 +233,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<SJobParams>& jobs) const
         //
         for (unsigned j = 0; j < batch_size; ++j) {            
             CNetScheduleKey key(first_job_id, host, port);
-            jobs[batch_start].id = string(key);
+            jobs[batch_start].job_id = string(key);
             ++first_job_id;
             ++batch_start;
         }
@@ -247,37 +271,28 @@ struct SWaitJobPred {
 
 
 CNetScheduleAPI::EJobStatus 
-CNetScheduleSubmitter::SubmitJobAndWait(const string&  input,
-                                        string*        job_key,
+CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
                                         unsigned       wait_time,
-                                        unsigned short udp_port,
-                                        const string&  progress_msg,
-                                        const string&  affinity_token,
-                                        CNetScheduleAPI::TJobMask  job_mask,
-                                        CNetScheduleAPI::TJobTags* job_tags) const
+                                        unsigned short udp_port) const
 {
-    _ASSERT(job_key);
     _ASSERT(wait_time);
     _ASSERT(udp_port);
 
-    *job_key = SubmitJob(input, progress_msg, affinity_token, job_mask, job_tags);
+    SubmitJob(job);
 
-    CNetScheduleKey key(*job_key);
+    CNetScheduleKey key(job.job_id);
 
     s_WaitNotification(wait_time, udp_port, SWaitJobPred(key.id));
 
-    return GetJobStatus(*job_key);
+    CNetScheduleAPI::EJobStatus status = GetJobStatus(job.job_id);
+    if ( status == CNetScheduleAPI::eDone || status == CNetScheduleAPI::eFailed)
+        m_API->GetJobDetails(job);
+    return status;
 }
 
 void CNetScheduleSubmitter::CancelJob(const string& job_key) const
 {
     m_API->x_SendJobCmdWaitResponse("CANCEL", job_key);
-}
-
-string CNetScheduleSubmitter::GetProgressMsg(const string& job_key) const
-{
-    string resp = m_API->x_SendJobCmdWaitResponse("MGET", job_key);
-    return NStr::ParseEscapes(resp);
 }
 
 
@@ -286,7 +301,7 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log$
+ * $Log: netschedule_api_submitter.cpp,v $
  * Revision 6.2  2007/01/10 16:01:56  ucko
  * +<stdio.h> for sprintf(); tweak for GCC 2.95's string implementation,
  * whose operator [] const returns a value rather than a reference.
