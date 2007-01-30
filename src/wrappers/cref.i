@@ -108,6 +108,22 @@ namespace ncbi {
 #endif
             }
         }
+
+        %typecheck(SWIG_TYPECHECK_POINTER) CRef<T> {
+            // accept either a CRef<T> or a T
+            CRef<T> *pcref;
+            T* pobj;
+            if (SWIG_ConvertPtr($input,(void **) &pcref, 
+                                $&1_descriptor,0) != -1) {
+                $1 = 1;
+            } else if (SWIG_ConvertPtr($input, (void **) &pobj, 
+                                $descriptor(T *), 0) != -1) {
+                $1 = 1;
+            } else {
+                $1 = 0;
+            }
+        }
+
     public:
         T* operator->(void);
     };
