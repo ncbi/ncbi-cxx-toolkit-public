@@ -46,6 +46,9 @@ USING_NCBI_SCOPE;
 
 class CTest : public CNcbiApplication
 {
+public:
+    CTest();
+
 protected:
     enum EAction {
         fNone               =  0,
@@ -65,10 +68,15 @@ protected:
 };
 
 
+CTest::CTest()
+{
+    DisableArgDescriptions(fDisableStdArgs);
+    HideStdArgs(-1/*everything*/);
+}
+
+
 void CTest::Init(void)
 {
-    HideStdArgs(fHideHelp | fHideLogfile | fHideConffile | fHideVersion);
-
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
     if (args->Exist("h")) {
         args->Delete("h");
@@ -85,10 +93,13 @@ void CTest::Init(void)
     args->AddOptionalKey("C", "directory",
                          "Set base directory", CArgDescriptions::eString);
     args->AddDefaultKey("b", "blocking_factor",
-                        "", CArgDescriptions::eInteger, "20");
-    args->SetConstraint("b", new CArgAllow_Integers(1, (1<<22) - 1));
+                        "Archive block size in 512-byte units"
+                        " (default corresponds to 10K blocks to use)",
+                        CArgDescriptions::eInteger, "20");
+    args->SetConstraint("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
-    args->AddExtra(0, 1<<20, "File list to process",CArgDescriptions::eString);
+    args->AddExtra(0, 1<<20, "List of files to process",
+                   CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "Tar test suite: VERY simplified tar utility");
     SetupArgDescriptions(args.release());
