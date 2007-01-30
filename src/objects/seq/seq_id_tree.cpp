@@ -786,28 +786,46 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
             id_list.insert(FindOrCreate(*tmp));
         }
         if ( N ) {
-            // N only
-            tid.Reset();
-            tid.SetName(orig_tid.GetName());
-            id_list.insert(FindOrCreate(*tmp));
-            if ( v  ||  r ) {
-                if ( r ) {
-                    // N.r
-                    tid.SetRelease(orig_tid.GetRelease());
-                    id_list.insert(FindOrCreate(*tmp));
-                    tid.ResetRelease();
+            // Collect all alternative names
+            set<string> alt_names;
+            TSeq_id_MatchList name_matches;
+            FindMatch(id, name_matches);
+            ITERATE(TSeq_id_MatchList, mit, name_matches) {
+                CConstRef<CSeq_id> mid = mit->GetSeqId();
+                const CTextseq_id& tmid = x_Get(*mid);
+                if ( tmid.IsSetName() ) {
+                    alt_names.insert(tmid.GetName());
                 }
-                // A + N
-                tid.SetAccession(orig_tid.GetAccession());
+            }
+
+            ITERATE(set<string>, name_it, alt_names) {
+                // N only
+                tid.Reset();
+                tid.SetName(*name_it);
                 id_list.insert(FindOrCreate(*tmp));
-                if ( v  &&  r ) {
-                    // A.v + N
-                    tid.SetVersion(orig_tid.GetVersion());
+                if ( v  ||  r ) {
+                    if ( r ) {
+                        // N.r
+                        tid.SetRelease(orig_tid.GetRelease());
+                        id_list.insert(FindOrCreate(*tmp));
+                        tid.ResetRelease();
+                    }
+                    // A + N
+                    tid.SetAccession(orig_tid.GetAccession());
                     id_list.insert(FindOrCreate(*tmp));
-                    // A + N.r
-                    tid.ResetVersion();
-                    tid.SetRelease(orig_tid.GetRelease());
-                    id_list.insert(FindOrCreate(*tmp));
+                    if ( v  &&  r ) {
+                        // A.v + N
+                        tid.SetVersion(orig_tid.GetVersion());
+                        id_list.insert(FindOrCreate(*tmp));
+                        // A + N.r
+                        tid.ResetVersion();
+                        tid.SetRelease(orig_tid.GetRelease());
+                        id_list.insert(FindOrCreate(*tmp));
+                    }
+                    else if ( v  &&  *name_it != orig_tid.GetName() ) {
+                        tid.SetVersion(orig_tid.GetVersion());
+                        id_list.insert(FindOrCreate(*tmp));
+                    }
                 }
             }
         }
