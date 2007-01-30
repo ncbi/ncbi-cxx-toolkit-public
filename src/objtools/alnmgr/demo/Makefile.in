@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = alnvwr alnmrg
+APP_PROJ = alnvwr alnmrg aln_build
 SUB_PROJ =
 
 srcdir = @srcdir@
