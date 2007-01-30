@@ -53,8 +53,8 @@ MergeAlnRngColl(CPairwiseAln& existing,
                 const CAlnUserOptions::TMergeFlags& flags)
 {
     CPairwiseAln difference(existing.GetFirstId(), existing.GetSecondId());
-    SubtractAlnRngCollections(addition,
-                              existing,
+    SubtractAlnRngCollections(addition, // minuend
+                              existing, // subtrahend
                               difference);
 #define _TRACE_MergeAlnRngColl
 #ifdef _TRACE_MergeAlnRngColl
@@ -153,8 +153,20 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
 
                     CRef<CPairwiseAln>& pairwise = id_aln_map[aln.GetId(row)];
                     if (pairwise.Empty()) {
+                        // first time we are dealing with this id.
                         pairwise.Reset
                             (new CPairwiseAln(*aln.GetPairwiseAlns()[row]));
+
+                        if (row == aln.GetAnchorRow()) {
+                            // if anchor
+                            if (aln_it == in_alns.begin()) {
+                                anchor_pairwise.Reset(pairwise);
+                            }
+                        } else {
+                            // else add to the out vectors
+                            out_aln.SetPairwiseAlns().push_back(pairwise);
+                        }
+
                     } else {
                         MergeAlnRngColl(*pairwise,
                                         *aln.GetPairwiseAlns()[row],
@@ -162,17 +174,6 @@ BuildAln(TAnchoredAlns& in_alns,         ///< Input Alignments
                                         CAlnUserOptions::fTruncateOverlaps :
                                         options.m_MergeFlags);
                     }
-
-                    if (row == aln.GetAnchorRow()) {
-                        // if anchor
-                        if (aln_it == in_alns.begin()) {
-                            anchor_pairwise.Reset(pairwise);
-                        }
-                    } else {
-                        // else add to the out vectors
-                        out_aln.SetPairwiseAlns().push_back(pairwise);
-                    }
-                    
                 }
             }
 
