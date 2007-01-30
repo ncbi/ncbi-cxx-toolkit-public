@@ -329,16 +329,16 @@ int NStr::StringToNumeric(const string& str)
         } else {                                                            \
             CTempString str_tmp(str);                                       \
             CTempString msg_tmp(msg);                                       \
-            string s;                                                       \
-            s.reserve(str_tmp.length() + msg_tmp.length() + 50);            \
-            s += "Cannot convert string '";                                 \
-            s += str;                                                       \
-            s += "' to " #to_type;                                          \
+            string smsg;                                                    \
+            smsg.reserve(str_tmp.length() + msg_tmp.length() + 50);         \
+            smsg += "Cannot convert string '";                              \
+            smsg += str;                                                    \
+            smsg += "' to " #to_type;                                       \
             if ( !msg_tmp.empty() ) {                                       \
-                s += ", ";                                                  \
-                s += msg;                                                   \
+                smsg += ", ";                                               \
+                smsg += msg;                                                \
             }                                                               \
-            NCBI_THROW2(CStringException, eConvert, s, delta);              \
+            NCBI_THROW2(CStringException, eConvert, smsg, delta);           \
         }                                                                   \
 
 #define S2N_CONVERT_ERROR_INVAL(to_type)                                    \
@@ -683,7 +683,6 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
             break;
         default:
             S2N_CONVERT_ERROR_INVAL(double);
-            break;
         }
     }
     // For consistency make additional check on incorrect leading symbols.
@@ -1306,8 +1305,8 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
 
 
 template <class TStr>
-static TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
-                             const TStr& empty_str)
+TStr s_TruncateSpaces(const TStr& str, NStr::ETrunc where,
+                      const TStr& empty_str)
 {
     SIZE_TYPE length = str.length();
     if (length == 0) {

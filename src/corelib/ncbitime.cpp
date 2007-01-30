@@ -1547,7 +1547,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     if ( shift_time ) {
         // Cancel temporary time shift
         tn.x_AddHour(-kShift * sign, eAdjustDaylight, false);
-        tn.m_Data.adjTimeDiff = diff;
+        tn.m_Data.adjTimeDiff = (Int4)diff;
     }
     *this = tn;
     return *this;

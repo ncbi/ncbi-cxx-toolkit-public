@@ -1263,7 +1263,6 @@ SDiagMessage::SDiagMessage(const string& message)
       m_Format(eFormat_Auto)
 {
     size_t pos = 0;
-    string tmp;
     m_Data = new SDiagMessageData;
 
     try {
@@ -2551,7 +2550,7 @@ CStreamDiagHandler_Base* s_CreateHandler(const string& fname, bool& failed)
 
 bool CFileDiagHandler::SetLogFile(const string& file_name,
                                   EDiagFileType file_type,
-                                  bool          quick_flush)
+                                  bool          /*quick_flush*/)
 {
     bool special = s_IsSpecialLogName(file_name);
     bool failed = false;

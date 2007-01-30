@@ -169,7 +169,7 @@ const CArgs& CNcbiApplication::GetArgs(void) const
 }
 
 
-SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
+SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool /*close_diag*/)
 {
     if ( os ) {
         SetDiagStream(os, true, 0, 0, "STREAM");
