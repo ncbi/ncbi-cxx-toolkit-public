@@ -207,22 +207,26 @@ PC-Count ::= SEQUENCE {
 }
 
 
--- List of atom identifiers which are in a common relative stereochemistry group.
--- All atoms in this group possess either the descriptor defined in their stereo
--- center attributes, or are simultaneously inverted. If an atom is not a
--- member of a stereo group and has a stereo descriptor, its stereochemistry is
--- absolute. An atom can only be member of a single stereo group, and all atoms
--- in a stereo group must have a stereo descriptor. Atoms of unknown
--- stereochemistry, whose stereochemistry is not linked to that of other
--- centers, are marked as such in the stereo center descriptor and not put into
--- a single-atom group.
+-- List of atom identifiers which are in a common stereochemistry group.
+-- All atoms in this group possess the characteristic of the type specified.
+-- The convention adopted is intended to be compatible with MDL's Enhanced
+-- Stereochemical Representation white paper.
+-- An atom can only be member of a single stereo group, and all atoms
+-- in a stereo group must have a stereo descriptor.
 -- Stereogroups only apply to stereocenters that can have parity.
--- Stereogroups are used for relative stereochemistry
-PC-StereoGroup ::= SEQUENCE OF INTEGER                  -- Atom Identifiers of atoms in this group
+PC-StereoGroup ::= SEQUENCE {
+    type           INTEGER {
+                       absolute         (1),            -- Absolute configuration is known
+                       or               (2),            -- Relative configuration is known (absolute configuration is unknown)
+                       and              (3),            -- Mixture of stereoisomers
+                       unknown        (255)             -- Unknown configuration type
+                   },
+     aid           SEQUENCE OF INTEGER                  -- Atom Identifiers of atoms in this group
                                                         --   Note: Atom ID's must be greater than "0"
+}
 
 
--- Substance Description/Descriptor Data
+-- Compound Description/Descriptor Data
 PC-InfoData ::= SEQUENCE {
     urn            PC-Urn,                              -- Universal Resource Name  [for Value Qualification]
     value          CHOICE {                             -- Data Value
