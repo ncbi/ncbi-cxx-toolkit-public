@@ -114,7 +114,7 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
     InitData(&alignments, display);
     if (sequenceWindow)
         sequenceWindow->UpdateDisplay(display);
-    else
+    else if (IsWindowedMode())
         CreateSequenceWindow(false);
 }
 
@@ -167,7 +167,7 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
     InitData(NULL, display);
     if (sequenceWindow)
         sequenceWindow->UpdateDisplay(display);
-    else
+    else if (IsWindowedMode())
         CreateSequenceWindow(false);
 }
 

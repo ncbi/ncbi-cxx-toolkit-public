@@ -64,7 +64,6 @@ private:
     // for now, there is only one structure window
     StructureWindow *structureWindow;
 
-    void InitRegistry(void);
 #ifdef __WXMAC__
     void MacOpenFile(const wxString& fileName);
 #endif

@@ -1032,20 +1032,18 @@ CNcbi_mime_asn1 * CreateMimeFromBiostruc(const string& filename, EModel_type mod
 CNcbi_mime_asn1 * CreateMimeFromBiostruc(CRef < CBiostruc >& biostruc, EModel_type model)
 {
     // remove all but desired model coordinates
-    CRef < CBiostruc_model > desiredModel;
+    list < CRef < CBiostruc_model > > desiredModels;
     CBiostruc::TModel::const_iterator m, me = biostruc->GetModel().end();
     for (m=biostruc->GetModel().begin(); m!=me; ++m) {
-        if ((*m)->GetType() == model) {
-            desiredModel = *m;
-            break;
-        }
+        if ((*m)->GetType() == model)
+            desiredModels.push_back(*m);
     }
-    if (desiredModel.Empty()) {
+    if (desiredModels.size() == 0) {
         ERRORMSG("Ack! There's no appropriate model in this Biostruc");
         return NULL;
     }
     biostruc->ResetModel();
-    biostruc->SetModel().push_back(desiredModel);
+    biostruc->SetModel() = desiredModels;
 
     // package Biostruc inside a mime object
     CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1());

@@ -97,6 +97,12 @@ extern const std::string& GetDataDir(void);     // 'data' directory with externa
 extern const std::string& GetWorkingFilename(void); // name of current working file
 extern const std::string& GetPrefsDir(void);    // application preferences directory
 
+// initial directory setup
+void SetUpWorkingDirectories(const char* argv0);
+
+// program mode
+bool IsWindowedMode(void);
+
 // get working document title; bring the log window forward
 extern const std::string& GetWorkingTitle(void);
 extern void RaiseLogWindow(void);

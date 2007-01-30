@@ -1399,27 +1399,10 @@ static EModel_type GetModelTypeFromUser(wxWindow *parent)
     return models[dialog.GetSelection()];
 }
 
-bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmentWindow, CNcbi_mime_asn1 *mimeData)
+// do data loading only, nothing involving windows (shared by both modes)
+bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *filename, 
+    CNcbi_mime_asn1 *mimeData, const string& favoriteStyle, EModel_type model, StructureWindow *window)
 {
-    SetCursor(*wxHOURGLASS_CURSOR);
-    glCanvas->SetCurrent();
-
-    if (force) {
-        fileMenu->Enable(MID_OPEN, false);
-        fileMenu->Enable(MID_SAVE_AS, false);
-    }
-
-    // clear old data
-    if (glCanvas->structureSet) {
-        DestroyNonModalDialogs();
-        GlobalMessenger()->RemoveAllHighlights(false);
-        GlobalMessenger()->CacheHighlights();   // copy empty highlights list, e.g. clear cache
-        delete glCanvas->structureSet;
-        glCanvas->structureSet = NULL;
-        glCanvas->renderer->AttachStructureSet(NULL);
-        glCanvas->Refresh(false);
-    }
-
     // set up various paths relative to given filename
     if (filename) {
         if (wxIsAbsolutePath(filename))
@@ -1447,7 +1430,6 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         CNcbiIstream *inStream = new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary);
         if (!(*inStream)) {
             ERRORMSG("Cannot open file '" << filename << "' for reading");
-            SetCursor(wxNullCursor);
             delete inStream;
             return false;
         }
@@ -1487,10 +1469,10 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
             readOK = ReadASNFromFile(filename, mime, currentFileIsBinary, &err);
             SetDiagPostLevel(eDiag_Info);
             if (readOK) {
-                glCanvas->structureSet = new StructureSet(mime, structureLimit, glCanvas->renderer);
+                *sset = new StructureSet(mime, structureLimit, renderer);
                 // if CDD is contained in a mime, then show CDD splash screen
-                if (glCanvas->structureSet->IsCDD())
-                    ShowCDDOverview();
+                if (window && (*sset)->IsCDD())
+                    window->ShowCDDOverview();
             } else {
                 TRACEMSG("error: " << err);
                 delete mime;
@@ -1504,7 +1486,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
             readOK = ReadASNFromFile(filename, cdd, currentFileIsBinary, &err);
             SetDiagPostLevel(eDiag_Info);
             if (readOK) {
-                glCanvas->structureSet = new StructureSet(cdd, structureLimit, glCanvas->renderer);
+                *sset = new StructureSet(cdd, structureLimit, renderer);
             } else {
                 TRACEMSG("error: " << err);
                 delete cdd;
@@ -1518,42 +1500,35 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
             readOK = ReadASNFromFile(filename, biostruc.GetPointer(), currentFileIsBinary, &err);
             SetDiagPostLevel(eDiag_Info);
             if (readOK) {
-                mimeData = CreateMimeFromBiostruc(biostruc, GetModelTypeFromUser(this));
+                mimeData = CreateMimeFromBiostruc(biostruc, (window ? GetModelTypeFromUser(window) : model));
             } else {
                 TRACEMSG("error: " << err);
             }
         }
         if (!readOK) {
             ERRORMSG("File not found, not readable, or is not a recognized data type");
-            SetCursor(wxNullCursor);
             return false;
         }
     }
 
     // use passed-in or constructed data if present
     if (mimeData) {
-        glCanvas->structureSet = new StructureSet(mimeData, structureLimit, glCanvas->renderer);
+        *sset = new StructureSet(mimeData, structureLimit, renderer);
         currentFile = ""; // don't remember file name since we have rearranged the data; make user choose a new one
     }
 
-    if (!glCanvas->structureSet->MonitorAlignments()) {
-        ERRORMSG("StructureWindow::LoadData() - MonitorAlignments() returned error");
-        return false;
-    }
-
-    SetWorkingTitle(glCanvas->structureSet);
-    GlobalMessenger()->SetAllWindowTitles();
-
     // if a preferred favorite has been specified (e.g. on the command line)
     bool foundPreferred = false;
-    if (preferredFavoriteStyle.size() > 0) {
+    if (favoriteStyle.size() > 0) {
         CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
         for (f=favoriteStyles.Get().begin(); f!=fe; ++f) {
-            if ((*f)->GetName() == preferredFavoriteStyle) {
+            if ((*f)->GetName() == favoriteStyle) {
                 INFOMSG("using favorite: " << (*f)->GetName());
-                glCanvas->structureSet->styleManager->SetGlobalStyle(**f);
-                SetRenderingMenuFlag(0);
-                SetColoringMenuFlag(0);
+                (*sset)->styleManager->SetGlobalStyle(**f);
+                if (window) {
+                  window->SetRenderingMenuFlag(0);
+                  window->SetColoringMenuFlag(0);
+                }
                 foundPreferred = true;
                 break;
             }
@@ -1563,36 +1538,76 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
     if (!foundPreferred) {
 
         // use style stored in asn data (already set up during StructureSet construction)
-        if (glCanvas->structureSet->hasUserStyle) {
-            SetRenderingMenuFlag(0);
-            SetColoringMenuFlag(0);
+        if (window && (*sset)->hasUserStyle) {
+            window->SetRenderingMenuFlag(0);
+            window->SetColoringMenuFlag(0);
         }
 
         // set default rendering style and view, and turn on corresponding style menu flags
         else {
-            if (glCanvas->structureSet->alignmentSet) {
-                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-                SetRenderingMenuFlag(MID_TUBE);
-                if (glCanvas->structureSet->IsCDD()) {
-                    glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
-                    SetColoringMenuFlag(MID_INFO);
+            if ((*sset)->alignmentSet) {
+                (*sset)->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+                if (window) window->SetRenderingMenuFlag(StructureWindow::MID_TUBE);
+                if ((*sset)->IsCDD()) {
+                    (*sset)->styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
+                    if (window) window->SetColoringMenuFlag(StructureWindow::MID_INFO);
                 } else {
-                    glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eIdentityShortcut);
-                    SetColoringMenuFlag(MID_IDENTITY);
+                    (*sset)->styleManager->SetGlobalColorScheme(StyleSettings::eIdentityShortcut);
+                    if (window) window->SetColoringMenuFlag(StructureWindow::MID_IDENTITY);
                 }
             } else {
-                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
-                SetRenderingMenuFlag(MID_WORM);
-                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
-                SetColoringMenuFlag(MID_SECSTRUC);
+                (*sset)->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
+                if (window) window->SetRenderingMenuFlag(StructureWindow::MID_WORM);
+                (*sset)->styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
+                if (window) window->SetColoringMenuFlag(StructureWindow::MID_SECSTRUC);
             }
         }
     }
+    
+    renderer->AttachStructureSet(*sset);
+    if (!renderer->HasASNViewSettings())
+        (*sset)->CenterViewOnAlignedResidues();
 
+    return true;
+}
+
+bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmentWindow, CNcbi_mime_asn1 *mimeData)
+{
+    SetCursor(*wxHOURGLASS_CURSOR);
+    glCanvas->SetCurrent();
+
+    if (force) {
+        fileMenu->Enable(MID_OPEN, false);
+        fileMenu->Enable(MID_SAVE_AS, false);
+    }
+
+    // clear old data
+    if (glCanvas->structureSet) {
+        DestroyNonModalDialogs();
+        GlobalMessenger()->RemoveAllHighlights(false);
+        GlobalMessenger()->CacheHighlights();   // copy empty highlights list, e.g. clear cache
+        delete glCanvas->structureSet;
+        glCanvas->structureSet = NULL;
+        glCanvas->renderer->AttachStructureSet(NULL);
+        glCanvas->Refresh(false);
+    }
+
+    if (!LoadDataOnly(&(glCanvas->structureSet), glCanvas->renderer, 
+            filename, mimeData, preferredFavoriteStyle, eModel_type_ncbi_all_atom, this)) 
+    {
+        SetCursor(wxNullCursor);
+        return false;
+    }
+
+    if (!glCanvas->structureSet->MonitorAlignments()) {
+        SetCursor(wxNullCursor);
+        ERRORMSG("StructureWindow::LoadData() - MonitorAlignments() returned error");
+        return false;
+    }
+
+    SetWorkingTitle(glCanvas->structureSet);
+    GlobalMessenger()->SetAllWindowTitles();
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
-    glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
-    if (!glCanvas->renderer->HasASNViewSettings())
-        glCanvas->structureSet->CenterViewOnAlignedResidues();
     glCanvas->Refresh(false);
     if (!noAlignmentWindow)
         glCanvas->structureSet->alignmentManager->ShowSequenceViewer(true);

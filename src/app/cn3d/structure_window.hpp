@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+#include <objects/mmdb2/Model_type.hpp>
 
 #include <string>
 
@@ -61,6 +62,8 @@ class CDDRefDialog;
 class CDDBookRefDialog;
 class CDDSplashDialog;
 class CommandProcessor;
+class OpenGLRenderer;
+class StructureSet;
 
 class StructureWindow: public wxFrame, public MultiTextDialogOwner, public ncbi::MessageResponder
 {
@@ -200,6 +203,9 @@ public:
     void ShowCDDReferences(void);
     void ShowCDDBookReferences(void);
 
+    void SetRenderingMenuFlag(int which);
+    void SetColoringMenuFlag(int which);
+
 private:
 
     // non-modal dialogs owned by this object
@@ -213,9 +219,6 @@ private:
     void OnExit(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);
     void OnShowWindow(wxCommandEvent& event);
-
-    void SetRenderingMenuFlag(int which);
-    void SetColoringMenuFlag(int which);
 
     // menu-associated methods
     void OnOpen(wxCommandEvent& event);
@@ -261,6 +264,10 @@ private:
 
     DECLARE_EVENT_TABLE()
 };
+
+bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *filename,  
+    ncbi::objects::CNcbi_mime_asn1 *mimeData = NULL, const std::string& favoriteStyle = kEmptyStr, 
+    ncbi::objects::EModel_type model = ncbi::objects::eModel_type_ncbi_all_atom, StructureWindow *window = NULL);
 
 END_SCOPE(Cn3D)
 

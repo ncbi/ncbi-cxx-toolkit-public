@@ -1784,9 +1784,10 @@ void OpenGLRenderer::DrawLabel(const string& text, const Vector& center, const V
 {
     int width, height, textCenterX = 0, textCenterY = 0;
 
-    if (text.empty()) return;
+    if (text.empty() || !glCanvas) return;
+    
     if (!glCanvas->MeasureText(text, &width, &height, &textCenterX, &textCenterY))
-        WARNINGMSG("MeasureText() failed");
+        WARNINGMSG("MeasureText() failed, text may not be properly centered");
 
     SetColor(eSetColorIfDifferent, GL_AMBIENT, color[0], color[1], color[2]);
     glListBase(FONT_BASE);
@@ -1885,7 +1886,7 @@ void OpenGLRenderer::RestoreSavedView(void)
 
 void OpenGLRenderer::GetViewport(int *viewport)
 {
-    glCanvas->SetCurrent();
+    if (glCanvas) glCanvas->SetCurrent();
     GLint viewportGL[4];    // just in case GLint != int
     glGetIntegerv(GL_VIEWPORT, viewportGL);
     for (int i=0; i<4; ++i) viewport[i] = (int) viewportGL[i];
@@ -1893,6 +1894,11 @@ void OpenGLRenderer::GetViewport(int *viewport)
 
 const wxFont& OpenGLRenderer::GetGLFont(void) const
 {
+    static const wxFont emptyFont;
+    if (!glCanvas) {
+        ERRORMSG("Can't call GetGLFont w/ NULL glCanvas");
+        return emptyFont;
+    }
     return glCanvas->GetGLFont();
 }
 
