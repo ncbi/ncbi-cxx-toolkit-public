@@ -346,6 +346,7 @@ int CTestQParse::Run(void)
 {
     {{
     const char* queries[] = {       
+    
         "\n\r\n(asdf != 2)",
         "    asdf != 2",
         " 1 AND 0 ",
@@ -381,8 +382,11 @@ int CTestQParse::Run(void)
          "vitamin C \nissue between 1 and 10",         
          "lcl|XGP_000001 ||asdf",        
          "IN vitro AND in vivo OR in vino, veritas",         
-         "id IN(1)",
-         "feature IN    \n(\"cds\", gene , snp, \"bio nonsense\")"
+         "binding id IN(1)",
+         "feature IN    \n(\"cds\", gene , snp, \"bio nonsense\")",         
+         "binding id NOT     IN   (1, 20)",
+         "vitamin C issue not between 1 and 10",
+         "drug NOT LIKE aspirin"
          
     };    
     int l = sizeof (queries) / sizeof(queries[0]);
@@ -391,6 +395,7 @@ int CTestQParse::Run(void)
     } // for
     
     }}
+    
     NcbiCout << endl << endl;
     NcbiCout << "Misspelled queries.";
     NcbiCout << endl << endl;

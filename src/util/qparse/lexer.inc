@@ -56,7 +56,6 @@ bool s_Compare(const char* p, const char* p_end,
                 return false;
             }
         }
-//        return !*t  &&  ( !*p  ||  isspace(*p));
     } else {
         for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
             if (*p != *t) {
@@ -73,9 +72,49 @@ bool s_Compare(const char* p, const char* p_end,
 /// @internal
 ///
 static 
-bool s_IfFuncStart(const char* p, const char* p_end,
-                   const char* t,
-                   CQueryParseTree::ECase  case_sense)
+bool s_LookAheadCmp(const char* p, const char* p_end,
+                    const char* t,
+                    CQueryParseTree::ECase  case_sense,
+                    bool is_func)
+{
+    if (case_sense == CQueryParseTree::eCaseInsensitive) {
+        for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
+            if (toupper(*p) != *t) {
+                return false;
+            }
+        }
+    } else {
+        for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
+            if (*p != *t) {
+                return false;
+            }
+        }
+    }
+    if (!*p) return false;
+    
+    if (is_func) {  // look for opening parenthesis?
+        // skip spaces
+        for ( ;  p != p_end;  ++p) {
+            if ( !s_IsSpaceTerm(p) ) {
+                break;
+            }    
+        }
+        if (!*p)       return false;
+        if (*p != '(') return false;
+    }
+    return true;
+}
+
+/// Check if next substring is a function-like expression
+/// "NOT IN (..." or "Function(..."
+///
+/// @internal
+///
+static 
+bool s_LookAheadCmp2(const char* p, const char* p_end,
+                     const char* t, const char* t2,
+                     CQueryParseTree::ECase  case_sense,
+                     bool is_func)
 {
     if (case_sense == CQueryParseTree::eCaseInsensitive) {
         for ( ;  p != p_end  &&  t  &&  *t;  ++p, ++t) {
@@ -98,10 +137,12 @@ bool s_IfFuncStart(const char* p, const char* p_end,
             break;
         }    
     }
-    if (!*p)       return false;
-    if (*p != '(') return false;
-    return true;
+    if (!*p)  return false;
+    
+    return s_LookAheadCmp(p, p_end, t2, case_sense, is_func);    
 }
+
+
 
 /// @internal
 ///
@@ -249,7 +290,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         return BETWEEN;
     // IN
     case 'I':
-        if ( !s_IfFuncStart(ptr, end, "N", case_sense) ) {
+        if ( !s_LookAheadCmp(ptr, end, "N", case_sense, true) ) {
             break;
         }
         ptr += 1;
@@ -415,6 +456,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         return LIKE;
     // NOT
     case 'N':
+        {
+        const char* const not_start = ptr-1;
         if ( !s_Compare(ptr, end, "OT", case_sense) ) {
             break;
         }
@@ -423,13 +466,69 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         env->Skip(2);
+        
+        // check "NOT IN", "NOT BETWEEN", "NOT LIKE" hypothesis
+        {{
+            const char* const string_start = ptr;
+            ptr = env->GetBufPtr();
+            // skip spaces
+           for ( ;  ptr != end;  ++ptr) {
+               if ( !s_IsSpaceTerm(ptr) ) {
+                   break;
+               } 
+            } // for
+            
+            if (*ptr) {
+                if ( s_LookAheadCmp(ptr, end, "IN", case_sense, true) ) {
+                    if (verbose) { _TRACE("token: NOT IN"); }            
+                    *lvalp = qnode = 
+                        env->QTree().CreateNode(CQueryParseNode::eIn, 0, 0,
+                                           string(not_start, ptr-not_start+2));
+                    env->AttachToPool(qnode);
+                    qnode->GetValue().SetLoc(line, line_pos);
+                    qnode->GetValue().SetNot();
+                    
+                    env->Skip(ptr-string_start+2);
+                    return NOT_IN;
+                }
+                if ( s_Compare(ptr, end, "BETWEEN", case_sense) ) {
+                    if (verbose) { _TRACE("token: NOT BETWEEN"); }            
+                    *lvalp = qnode = 
+                        env->QTree().CreateNode(CQueryParseNode::eBetween, 0, 0,
+                                           string(not_start, ptr-not_start+7));
+                    env->AttachToPool(qnode);
+                    qnode->GetValue().SetLoc(line, line_pos);
+                    qnode->GetValue().SetNot();
+                    
+                    env->Skip(ptr-string_start+7);
+                    return NOT_BETWEEN;
+                }
+                if ( s_Compare(ptr, end, "LIKE", case_sense) ) {
+                    if (verbose) { _TRACE("token: NOT LIKE"); }            
+                    *lvalp = qnode = 
+                        env->QTree().CreateNode(CQueryParseNode::eLike, 0, 0,
+                                           string(not_start, ptr-not_start+4));
+                    env->AttachToPool(qnode);
+                    qnode->GetValue().SetLoc(line, line_pos);
+                    qnode->GetValue().SetNot();
+                    
+                    env->Skip(ptr-string_start+4);
+                    return NOT_LIKE;
+                }
+                
+            }
+        }}
+        
+        
         if (verbose) { _TRACE("token: NOT"); }
+        
         *lvalp = qnode = 
             env->QTree().CreateNode(CQueryParseNode::eNot, 0, 0,
                                     string(ptr-3, 3));
         env->AttachToPool(qnode);
         qnode->GetValue().SetLoc(line, line_pos);
         return NOT;
+        }
     // <, <=, <>
     case '<':
         if ( *ptr == '=' ) {
@@ -682,6 +781,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             if ( !s_IsSpaceTerm(ptr) ) {
                 break;
             } 
+            // TODO: we dont need this...? (not space showld break first?
+            /*
             if (s_IsOperatorChar(*ptr)) {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << ptr[0] << ptr[1]);
@@ -700,18 +801,17 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                     _TRACE("found breaking paren: " << string(ptr, end));
                 }
                 break;
-            }            
+            }
+            */            
         } // for
 
         // skip to the next operator A, N, O, etc
         //
         if (s_Compare(ptr, end, "AND",    case_sense) ||
             s_Compare(ptr, end, "OR",     case_sense) ||
-            s_Compare(ptr, end, "NOT",    case_sense) ||
             s_Compare(ptr, end, "SUB",    case_sense) ||
             s_Compare(ptr, end, "XOR",    case_sense) ||
-            s_Compare(ptr, end, "MINUS",  case_sense) ||
-            s_IfFuncStart(ptr, end, "IN", case_sense)
+            s_Compare(ptr, end, "MINUS",  case_sense) 
             ) {
             break;
         }
@@ -721,7 +821,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         }
         
         
-        // BETWEEN, LIKE require parser to step back one word
+        // BETWEEN, LIKE, etc. require parser to step back one word
         // example:
         // "vitamin C journal LIKE medicine"        reads as
         // "vitamin C" AND journal LIKE medicine    but not as
@@ -729,6 +829,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         
         if (s_Compare(ptr, end, "BETWEEN",case_sense) ||
             s_Compare(ptr, end, "LIKE",   case_sense) ||
+            s_LookAheadCmp (ptr, end, "IN", case_sense, true) ||
+            s_LookAheadCmp2(ptr, end, "NOT", "IN", case_sense, true) ||
+            s_LookAheadCmp2(ptr, end, "NOT", "BETWEEN", case_sense, false) ||
+            s_LookAheadCmp2(ptr, end, "NOT", "LIKE", case_sense, false) ||
+            s_LookAheadCmp2(ptr, end, "NOT", "~", case_sense, false) ||
             (*ptr == '~')
            ) {
             if (last_word_ptr) {
@@ -736,6 +841,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             }
             break;
         }
+        if (s_Compare(ptr, end, "NOT",    case_sense)) {
+            break;
+        }
+        
+        
         
         if (s_IsOperatorChar(*ptr)) {
             break;

@@ -100,9 +100,11 @@ void AddFunc_Arg(void*                   parm,
 %left LT
 %left LE
 %left BETWEEN
+%left NOT_BETWEEN
 %left LIKE
+%left NOT_LIKE
 %left IN
-
+%left NOT_IN
 
 %%
 
@@ -212,6 +214,19 @@ exp :
         env->ForgetPoolNodes($1, $3);
         env->ForgetPoolNodes($1, $5);
     }
+    /* NOT BETWEEN */
+    | scalar_value NOT_BETWEEN scalar_value AND scalar_value
+    {
+        $$ = $2;
+        $$->AddNode($1);
+        $$->AddNode($3);
+        $$->AddNode($5);
+
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        env->AttachQueryTree($$);    
+        env->ForgetPoolNodes($1, $3);
+        env->ForgetPoolNodes($1, $5);        
+    }
     
     /* RANGE */
     | exp RANGE exp
@@ -223,8 +238,24 @@ exp :
     {
         QTreeAddNode(parm, $$ = $2, $1, $3);
     }
+    /* NOT LIKE */
+    | scalar_value NOT_LIKE scalar_value
+    {
+        QTreeAddNode(parm, $$ = $2, $1, $3);
+    }
     /* IN */
     | scalar_value IN '(' scalar_list ')'
+    {
+        $$ = $2;
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        env->AttachQueryTree($$);    
+        env->ForgetPoolNodes($1, $4);
+        $$->InsertNode($$->SubNodeBegin(), $4);
+        $$->InsertNode($$->SubNodeBegin(), $1);
+        env->SetIN_Context(0);
+    }
+    /* NOT IN */
+    | scalar_value NOT_IN '(' scalar_list ')'
     {
         $$ = $2;
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
