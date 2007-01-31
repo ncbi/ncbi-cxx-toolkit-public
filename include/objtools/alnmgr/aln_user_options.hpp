@@ -49,11 +49,19 @@ class CAlnUserOptions : public CObject
 public:
     typedef CPairwiseAln::TPos TPos;
 
+    enum EDirection {
+        eBothDirections   = 0, ///< No filtering: use both direct and reverse sequences.
+        eDirect           = 1, ///< Use only sequences whose strand is the same as that of the anchor
+        eReverse          = 2,  ///< Use only sequences whose strand is opposite to that of the anchor
+        eDefaultDirection = eBothDirections
+    };
+    EDirection m_Direction;
+
     enum EMergeAlgo {
         eMergeAllSeqs      = 0, ///< Merge all sequences
         eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, 
         ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence) (coresponds to separate alignments)
-        eDefault           = eMergeAllSeqs
+        eDefaultMergeAlgo  = eMergeAllSeqs
     };
     EMergeAlgo m_MergeAlgo;
 
