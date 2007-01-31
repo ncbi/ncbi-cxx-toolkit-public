@@ -91,7 +91,7 @@ public:
 	EBDB_ErrCode ReadVector(TBitVector*       bv, 
 	                        bm::set_operation op,
 							unsigned*         count = 0);
-
+/*
     /// Fetch a given vector and perform a logical AND 
     /// with the supplied vector
 	/// 
@@ -105,7 +105,7 @@ public:
 	/// deprecated (use operation ReadVector)
 	NCBI_DEPRECATED
     EBDB_ErrCode ReadVectorOr(TBitVector* bv);
-
+*/
     /// Compression options for vector storage
     enum ECompact {
         eNoCompact,
@@ -207,7 +207,7 @@ struct SBDB_BvStore_Id : public CBDB_BvStore< TBV >
 };
 
 
-
+/*
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Id based BV store (uses multiple volumes to store vectors)
@@ -409,7 +409,7 @@ protected:
     CBDB_RawFile::EOpenMode m_OpenMode;
 };
 
-
+*/
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -570,7 +570,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadVector(TBitVector*       bv,
 	return err;
 }
 
-
+/*
 template<class TBV>
 EBDB_ErrCode CBDB_BvStore<TBV>::ReadVectorAnd(TBitVector* bv)
 {
@@ -590,6 +590,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadVectorOr(TBitVector* bv)
     // deserilize using OR property of BM deserialization algorithm
     return ReadRealloc(bv, false); 
 }
+*/
 
 template<class TBV>
 bm::word_t* CBDB_BvStore<TBV>::GetSerializationTempBlock()
@@ -719,6 +720,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::FetchToBuffer(CBDB_FileCursor& cur)
     return err;
 }
 
+/*
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1272,7 +1274,7 @@ void CBDB_IdSplitBvStore<TBV>::LoadStore(SBDB_BvStore_Id<TBV>& in_store,
 
     SaveVolumeDict();
 }
-
+*/
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1500,63 +1502,5 @@ void CBDB_MatrixBvStore<TBV, TM>::LoadMatrixDescriptions(
 
 END_NCBI_SCOPE
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.15  2006/12/11 15:34:54  kuznets
- * Integration with new bvector serialization
- *
- * Revision 1.14  2006/12/04 12:49:49  dicuccio
- * Added low-level ReadRealloc()
- *
- * Revision 1.13  2006/11/30 12:42:08  dicuccio
- * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
- * vector<unsigned char>
- *
- * Revision 1.12  2006/03/29 15:24:08  ucko
- * Tweak WriteVector for compatibility with GCC 2.95.
- *
- * Revision 1.11  2006/03/28 16:48:13  kuznets
- * code cleanup
- *
- * Revision 1.10  2006/03/09 19:13:11  ucko
- * Tweak to work around weird build failures with WorkShop 5.3 on Solaris/x86.
- *
- * Revision 1.9  2006/03/08 16:15:48  kuznets
- * Fixed GCC compilation
- *
- * Revision 1.8  2006/03/08 14:51:17  kuznets
- * +ReadIds(), +BlobSize()
- *
- * Revision 1.7  2006/03/06 15:47:04  vasilche
- * Fixed references to parent template class members.
- *
- * Revision 1.6  2006/03/06 14:07:55  kuznets
- * +SBDB_BvStore_Id, CBDB_IdSplitBvStore
- *
- * Revision 1.5  2005/11/09 14:03:57  kuznets
- * Check for insufficient memory in deserialization buffer
- *
- * Revision 1.4  2005/11/08 17:11:30  kuznets
- * Eliminated temporary in WriteVector (optimization)
- *
- * Revision 1.3  2005/11/08 14:43:35  dicuccio
- * Fix issue with throw in Read()
- *
- * Revision 1.2  2005/11/08 01:48:23  dicuccio
- * Compilation fixes: use correct include path; remove erroneous ';'.
- * WriteVector(): bm::serialize() expects non-const bit-vector, so copy prior to
- * writing
- *
- * Revision 1.1  2005/11/07 19:37:55  kuznets
- * Initial revision of templetized BV storage
- *
- *
- * Revision 1.1  2005/11/04 01:55:13  dicuccio
- * Copy over from text mining libraries
- *
- * ===========================================================================
- */
 
 #endif  // BDB___BV_STORE_BASE__HPP
