@@ -111,15 +111,27 @@ void CAlnBuildApp::Init(void)
          "Print the sequence strings",
          CArgDescriptions::eBoolean, "f");
 
+
+    // Conversion option
+    arg_desc->AddDefaultKey
+        ("dir", "filter_direction",
+         "eBothDirections = 0, ///< No filtering: use both direct and reverse sequences.\n"
+         "eDirect         = 1, ///< Use only sequences whose strand is the same as that of the anchor\n"
+         "eReverse        = 2  ///< Use only sequences whose strand is opposite to that of the anchor\n",
+         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("dir", new CArgAllow_Integers(0,2));
+
+
     // Merge option
     arg_desc->AddDefaultKey
         ("algo", "merge_algo",
          "eMergeAllSeqs      = 0, ///< Merge all sequences\n"
          "eQuerySeqMergeOnly = 1, ///< Only put the query seq on same row, \n"
          "ePreserveRows      = 2, ///< Preserve all rows as they were in the input (e.g. self-align a sequence)\n"
-         "eDefault           = eMergeAllSeqs",
+         "eDefaultMergeAlgo  = eMergeAllSeqs",
          CArgDescriptions::eInteger, "0");
     arg_desc->SetConstraint("algo", new CArgAllow_Integers(0,2));
+
 
     // Program description
     string prog_description = "Alignment build application.\n";
@@ -223,10 +235,19 @@ int CAlnBuildApp::Run(void)
     }
         
 
+    /// Create user options
+    CAlnUserOptions aln_user_options;
+
+
+    /// Optionally, choose to filter a direction
+    aln_user_options.m_Direction = 
+        (CAlnUserOptions::EDirection) GetArgs()["dir"].AsInteger();
+
+
     /// Construct a vector of anchored alignments
     typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
     TAnchoredAlnVec anchored_aln_vec;
-    CreateAnchoredAlnVec(aln_stats, anchored_aln_vec);
+    CreateAnchoredAlnVec(aln_stats, anchored_aln_vec, aln_user_options);
     ReportTime("TAnchoredAlnVec");
     {
         ITERATE(TAnchoredAlnVec, aln_vec_it, anchored_aln_vec) {
@@ -236,8 +257,7 @@ int CAlnBuildApp::Run(void)
     }
 
 
-    /// Choose user options
-    CAlnUserOptions aln_user_options;
+    /// Choose merging algorithm
     aln_user_options.m_MergeAlgo = 
         (CAlnUserOptions::EMergeAlgo) GetArgs()["algo"].AsInteger();
 

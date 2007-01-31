@@ -55,7 +55,8 @@ void
 ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                              const CSeq_align& sa,        ///< input Seq-align
                              CSeq_align::TDim row_1,      ///< which pair of rows
-                             CSeq_align::TDim row_2)
+                             CSeq_align::TDim row_2,
+                             CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 >=0  &&  row_2 >= 0);
     _ASSERT(sa.GetDim() > max(row_1, row_2));
@@ -66,23 +67,23 @@ ConvertSeqAlignToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
     switch(segs.Which())    {
     case CSeq_align::TSegs::e_Dendiag:
         ConvertDendiagToPairwiseAln(pairwise_aln, segs.GetDendiag(),
-                                    row_1, row_2);
+                                    row_1, row_2, direction);
         break;
     case CSeq_align::TSegs::e_Denseg: {
         ConvertDensegToPairwiseAln(pairwise_aln, segs.GetDenseg(),
-                                   row_1, row_2);
+                                   row_1, row_2, direction);
         break;
     }
     case CSeq_align::TSegs::e_Std:
         ConvertStdsegToPairwiseAln(pairwise_aln, segs.GetStd(),
-                                   row_1, row_2);
+                                   row_1, row_2, direction);
         break;
     case CSeq_align::TSegs::e_Packed:
         break;
     case CSeq_align::TSegs::e_Disc:
         ITERATE(CSeq_align_set::Tdata, sa_it, segs.GetDisc().Get()) {
             ConvertSeqAlignToPairwiseAln(pairwise_aln, **sa_it,
-                                         row_1, row_2);
+                                         row_1, row_2, direction);
         }
         break;
     case CSeq_align::TSegs::e_Spliced:
@@ -101,7 +102,8 @@ void
 ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                            const CDense_seg& ds,        ///< input Dense-seg
                            CDense_seg::TDim row_1,      ///< which pair of rows
-                           CDense_seg::TDim row_2)
+                           CDense_seg::TDim row_2,
+                           CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 >=0  &&  row_1 < ds.GetDim());
     _ASSERT(row_2 >=0  &&  row_2 < ds.GetDim());
@@ -124,7 +126,8 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
 
         /// if not a gap, insert it to the collection
         if (from_1 >= 0  &&  from_2 >= 0)  {
-            /// determinte the strands
+
+            /// determinte the direction
             bool direct = true;
             if (strands) {
                 bool minus_1 = (*strands)[pos_1] == eNa_strand_minus;
@@ -132,23 +135,30 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,  ///< output
                 direct = minus_1 == minus_2;
             }
 
-            /// base-width adjustments
-            const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
-            const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
-            if (base_width_1 > 1  ||  base_width_2 > 1) {
-                if (base_width_1 > 1) {
-                    from_1 *= base_width_1;
-                }
-                if (base_width_2 > 1) {
-                    from_2 *= base_width_2;
-                }
-                if (base_width_1 == base_width_2) {
-                    len *= base_width_1;
-                }
-            }
+            if (direction == CAlnUserOptions::eBothDirections  ||
+                (direct ?
+                 direction == CAlnUserOptions::eDirect :
+                 direction == CAlnUserOptions::eReverse)) {
 
-            /// insert the range
-            pairwise_aln.insert(CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+                /// base-width adjustments
+                const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
+                const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
+                if (base_width_1 > 1  ||  base_width_2 > 1) {
+                    if (base_width_1 > 1) {
+                        from_1 *= base_width_1;
+                    }
+                    if (base_width_2 > 1) {
+                        from_2 *= base_width_2;
+                    }
+                    if (base_width_1 == base_width_2) {
+                        len *= base_width_1;
+                    }
+                }
+                
+                /// insert the range
+                pairwise_aln.insert(CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+
+            }
         }
     }
 }
@@ -158,7 +168,8 @@ void
 ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
                            const CSeq_align::TSegs::TStd& stds, ///< input Stds
                            CSeq_align::TDim row_1,              ///< which pair of rows 
-                           CSeq_align::TDim row_2)
+                           CDense_seg::TDim row_2,
+                           CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 >=0  &&  row_2 >= 0);
 
@@ -179,64 +190,70 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,          ///< output
             bool direct = 
                 loc[row_1]->IsReverseStrand() == loc[row_2]->IsReverseStrand();
 
-            const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
-            const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
+            if (direction == CAlnUserOptions::eBothDirections  ||
+                (direct ?
+                 direction == CAlnUserOptions::eDirect :
+                 direction == CAlnUserOptions::eReverse)) {
 
-            CPairwiseAln::TAlnRng aln_rng;
-            aln_rng.SetDirect(direct);
-            if (base_width_1 == base_width_2) {
-                _ASSERT(len_1 == len_2);
-                if (base_width_1 == 1) {
+                const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
+                const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
+
+                CPairwiseAln::TAlnRng aln_rng;
+                aln_rng.SetDirect(direct);
+                if (base_width_1 == base_width_2) {
+                    _ASSERT(len_1 == len_2);
+                    if (base_width_1 == 1) {
+                        aln_rng.SetFirstFrom(rng_1.GetFrom());
+                        aln_rng.SetSecondFrom(rng_2.GetFrom());
+                    } else {
+                        aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
+                        aln_rng.SetSecondFrom(rng_2.GetFrom() * base_width_2);
+                    }
+                    aln_rng.SetLength(len_1 * base_width_1);
+                    pairwise_aln.insert(aln_rng);
+                } else if (base_width_1 == 1) {
+                    _ASSERT(base_width_2 == 3);
                     aln_rng.SetFirstFrom(rng_1.GetFrom());
-                    aln_rng.SetSecondFrom(rng_2.GetFrom());
-                } else {
-                    aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
                     aln_rng.SetSecondFrom(rng_2.GetFrom() * base_width_2);
-                }
-                aln_rng.SetLength(len_1 * base_width_1);
-                pairwise_aln.insert(aln_rng);
-            } else if (base_width_1 == 1) {
-                _ASSERT(base_width_2 == 3);
-                aln_rng.SetFirstFrom(rng_1.GetFrom());
-                aln_rng.SetSecondFrom(rng_2.GetFrom() * base_width_2);
-                if (len_1 / base_width_2 < len_2) {
-                    _ASSERT(len_1 / base_width_2 == len_2 - 1);
-                    TSeqPos remainder = len_1 % base_width_2;
-                    aln_rng.SetLength(len_1 - remainder);
-                    pairwise_aln.insert(aln_rng);
-                    pairwise_aln.insert
-                        (CPairwiseAln::TAlnRng
-                         (aln_rng.GetFirstToOpen(),
-                          aln_rng.GetSecondToOpen(),
-                          remainder,
-                          direct));
+                    if (len_1 / base_width_2 < len_2) {
+                        _ASSERT(len_1 / base_width_2 == len_2 - 1);
+                        TSeqPos remainder = len_1 % base_width_2;
+                        aln_rng.SetLength(len_1 - remainder);
+                        pairwise_aln.insert(aln_rng);
+                        pairwise_aln.insert
+                            (CPairwiseAln::TAlnRng
+                             (aln_rng.GetFirstToOpen(),
+                              aln_rng.GetSecondToOpen(),
+                              remainder,
+                              direct));
+                    } else {
+                        aln_rng.SetLength(len_1);
+                        pairwise_aln.insert(aln_rng);
+                    }
+                } else if (base_width_2 == 1) {
+                    _ASSERT(base_width_1 == 3);
+                    aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
+                    aln_rng.SetSecondFrom(rng_2.GetFrom());
+                    if (len_2 / base_width_1 < len_1) {
+                        _ASSERT(len_2 / base_width_1 == len_1 - 1);
+                        TSeqPos remainder = len_2 % base_width_2;
+                        aln_rng.SetLength(len_2 - remainder);
+                        pairwise_aln.insert(aln_rng);
+                        pairwise_aln.insert
+                            (CPairwiseAln::TAlnRng
+                             (aln_rng.GetFirstToOpen(),
+                              aln_rng.GetSecondToOpen(),
+                              remainder,
+                              direct));
+                    } else {
+                        aln_rng.SetLength(len_2);
+                        pairwise_aln.insert(aln_rng);
+                    }
                 } else {
-                    aln_rng.SetLength(len_1);
+                    _ASSERT(len_1 * base_width_1 == len_2 * base_width_2);
+                    aln_rng.SetLength(len_1 * base_width_1);
                     pairwise_aln.insert(aln_rng);
                 }
-            } else if (base_width_2 == 1) {
-                _ASSERT(base_width_1 == 3);
-                aln_rng.SetFirstFrom(rng_1.GetFrom() * base_width_1);
-                aln_rng.SetSecondFrom(rng_2.GetFrom());
-                if (len_2 / base_width_1 < len_1) {
-                    _ASSERT(len_2 / base_width_1 == len_1 - 1);
-                    TSeqPos remainder = len_2 % base_width_2;
-                    aln_rng.SetLength(len_2 - remainder);
-                    pairwise_aln.insert(aln_rng);
-                    pairwise_aln.insert
-                        (CPairwiseAln::TAlnRng
-                         (aln_rng.GetFirstToOpen(),
-                          aln_rng.GetSecondToOpen(),
-                          remainder,
-                          direct));
-                } else {
-                    aln_rng.SetLength(len_2);
-                    pairwise_aln.insert(aln_rng);
-                }
-            } else {
-                _ASSERT(len_1 * base_width_1 == len_2 * base_width_2);
-                aln_rng.SetLength(len_1 * base_width_1);
-                pairwise_aln.insert(aln_rng);
             }
         }
     }
@@ -248,7 +265,8 @@ void
 ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< output
                             const CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
                             CSeq_align::TDim row_1,                      ///< which pair of rows 
-                            CSeq_align::TDim row_2)
+                            CDense_seg::TDim row_2,
+                            CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 >=0  &&  row_2 >= 0);
 
@@ -270,23 +288,30 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                  ///< ou
             direct = minus_1 == minus_2;
         }
 
-        /// base-width adjustments
-        const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
-        const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
-        if (base_width_1 > 1  ||  base_width_2 > 1) {
-            if (base_width_1 > 1) {
-                from_1 *= base_width_1;
-            }
-            if (base_width_2 > 1) {
-                from_2 *= base_width_2;
-            }
-            if (base_width_1 == base_width_2) {
-                len *= base_width_1;
-            }
-        }
+        if (direction == CAlnUserOptions::eBothDirections  ||
+            (direct ?
+             direction == CAlnUserOptions::eDirect :
+             direction == CAlnUserOptions::eReverse)) {
 
-        /// insert the range
-        pairwise_aln.insert(CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+            /// base-width adjustments
+            const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
+            const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
+            if (base_width_1 > 1  ||  base_width_2 > 1) {
+                if (base_width_1 > 1) {
+                    from_1 *= base_width_1;
+                }
+                if (base_width_2 > 1) {
+                    from_2 *= base_width_2;
+                }
+                if (base_width_1 == base_width_2) {
+                    len *= base_width_1;
+                }
+            }
+
+            /// insert the range
+            pairwise_aln.insert(CPairwiseAln::TAlnRng(from_1, from_2, len, direct));
+
+        }
     }
 }
 
@@ -295,7 +320,8 @@ void
 ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,    ///< output
                            const CSparse_seg& sparse_seg, ///< input Sparse-seg
                            CSeq_align::TDim row_1,        ///< which pair of rows 
-                           CSeq_align::TDim row_2)
+                           CDense_seg::TDim row_2,
+                           CAlnUserOptions::EDirection direction) ///< which direction
 {
     _ASSERT(row_1 == 0);
     _ASSERT(row_2 > 0  &&  (size_t)row_2 < sparse_seg.GetRows().size() + 1);
