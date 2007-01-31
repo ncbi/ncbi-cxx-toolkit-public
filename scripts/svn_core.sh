@@ -102,9 +102,7 @@ for cmd_arg in "$@" ; do
 done 
 
 revision="{$timestamp}"
-svn_cmd='svn'
-test -n "$svn_cmd" || svn_cmd='svn'
-svn_cmd="$svn_cmd --non-interactive"
+svn_cmd='svn --non-interactive'
 
 # Checkout <path> [-N]
 if test "$export" = "yes" ; then
