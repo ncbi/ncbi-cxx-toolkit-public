@@ -150,6 +150,9 @@ void calcDiversityRanking(CCdCore* pCD, list<int>& rankList);
 NCBI_CDUTILS_EXPORT 
 int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields = true);
 
+NCBI_CDUTILS_EXPORT
+bool RemasterWithStructure(CCdCore* cd, string* msg = NULL);
+
 NCBI_CDUTILS_EXPORT 
 bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = true);
 

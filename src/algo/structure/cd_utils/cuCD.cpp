@@ -623,6 +623,35 @@ void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 	}
 }
 
+bool RemasterWithStructure(CCdCore* cd, string* msg)
+{
+    static const string msgHeader = "Remastering CD to ";
+
+	CRef< CSeq_id > seqId;
+	cd->GetSeqIDForRow(0,0,seqId);
+	if (seqId->IsPdb())
+		return false;
+	AlignmentCollection ac(cd,CCdCore::USE_NORMAL_ALIGNMENT);
+	int nrows = ac.GetNumRows();
+	int i = 1;
+	for (; i < nrows; i++)
+	{
+		ac.GetSeqIDForRow(i,seqId);
+		if (seqId->IsPdb())
+			break;
+	}
+	if ( i < nrows)
+	{
+		ReMasterCdWithoutUnifiedBlocks(cd, i, true);
+        if (msg) {
+            *msg = msgHeader + seqId->AsFastaString();
+        }
+		return true;
+	}
+	else
+		return false;
+}
+
 bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
 {
 	if (Row == 0)
