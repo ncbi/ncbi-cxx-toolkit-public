@@ -189,10 +189,10 @@ int CAlnBuildApp::Run(void)
 {
     // Setup application registry, error log, and MT-lock for CONNECT library
     CONNECT_Init(&GetConfig());
-
+    
     LoadInputAlns();
     ReportTime("LoadInputAlns");
-
+    
     /// Types we use here:
     typedef CSeq_align::TDim TDim;
     typedef CAlnSeqIdsExtract<CAlnSeqId> TIdExtract;
@@ -201,7 +201,9 @@ int CAlnBuildApp::Run(void)
 
 
     /// Create a vector of seq-ids per seq-align
-    TAlnIdMap aln_id_map(TIdExtract(), m_AlnContainer.size());
+       
+    TIdExtract id_extract;
+    TAlnIdMap aln_id_map(id_extract, m_AlnContainer.size());
     ITERATE(CAlnContainer, aln_it, m_AlnContainer) {
         try {
             aln_id_map.push_back(**aln_it);
