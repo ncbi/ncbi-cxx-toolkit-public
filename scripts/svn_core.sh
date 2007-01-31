@@ -102,7 +102,7 @@ for cmd_arg in "$@" ; do
 done 
 
 revision="{$timestamp}"
-svn_cmd="`which svn-1.4.0 2> /dev/null || echo svn`"
+svn_cmd='svn'
 test -n "$svn_cmd" || svn_cmd='svn'
 svn_cmd="$svn_cmd --non-interactive"
 
