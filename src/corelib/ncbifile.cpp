@@ -987,16 +987,16 @@ mode_t CDirEntry::MakeModeT(TMode            usr_mode,
 }
 
 
-#if defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX) && !defined(HAVE_EUIDACCESS) && !defined(EFF_ONLY_OK)
 
-#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
 // Work around a weird GCC 2.95 glitch which can result in confusing
 // calls to stat() with invocations of a (nonexistent) constructor.
-#define CAS_ARG1 void
-#define CAS_CAST static_cast<const struct stat*>
-#else
-#define CAS_ARG1 struct stat
-#define CAS_CAST
+# if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
+#    define CAS_ARG1 void
+#    define CAS_CAST static_cast<const struct stat*>
+#  else
+#    define CAS_ARG1 struct stat
+#    define CAS_CAST
 #endif
 
 static bool s_CheckAccessStat(const CAS_ARG1* p, int amode)
@@ -1074,7 +1074,7 @@ static bool s_CheckAccessPath(const char* path, int amode)
     return true;
 }
 
-#endif // defined(NCBI_OS_UNIX)
+#endif  // defined(NCBI_OS_UNIX)
 
 
 bool CDirEntry::CheckAccess(TMode access_mode)
