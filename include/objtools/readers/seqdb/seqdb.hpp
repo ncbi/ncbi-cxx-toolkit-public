@@ -865,6 +865,18 @@ public:
                                TSeqPos begin,
                                TSeqPos end) const;
     
+    /// Set global default memory bound for SeqDB.
+    ///
+    /// The memory bound for individual SeqDB objects can be adjusted
+    /// with SetMemoryBound(), but this cannot be called until after
+    /// the object is constructed.  Until that time, the value used is
+    /// set from a global default.  This method allows that global
+    /// default value to be changed.  Any SeqDB object constructed
+    /// after this method is called will use this value as the initial
+    /// memory bound.  If zero is specified, an appropriate default
+    /// will be selected based on system information.
+    static void SetDefaultMemoryBound(Uint8 bytes);
+    
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
