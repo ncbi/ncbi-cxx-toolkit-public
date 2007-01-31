@@ -1097,6 +1097,13 @@ public:
         x_SetBounds(max);
     }
     
+    /// Set global default memory bound.
+    ///
+    /// This sets the default, global memory bound used for all SeqDB
+    /// objects.  If zero is specified, an appropriate default will be
+    /// selected based on system information.
+    static void SetDefaultMemoryBound(Uint8 bytes);
+    
 private:
     /// Mention an ordered or out-of-order access.
     void x_OidOrder(bool in_order);
@@ -1145,6 +1152,9 @@ private:
     
     /// Block size for mapping.
     long m_BlockSize;
+    
+    /// Global maximum memory bound.
+    static Int8 m_GlobalMaxBound;
 };
 
 
@@ -1642,6 +1652,13 @@ public:
     /// @param locked Lock holder object for this thread.
     void RemoveMatches(const vector<string> & patterns,
                        CSeqDBLockHold       & locked);
+    
+    /// Set global default memory bound.
+    ///
+    /// This sets the default, global memory bound used for all SeqDB
+    /// objects.  If zero is specified, an appropriate default will be
+    /// selected based on system information.
+    static void SetDefaultMemoryBound(Uint8 bytes);
     
 private:
     /// Private method to prevent copy construction.

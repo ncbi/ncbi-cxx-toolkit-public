@@ -2299,6 +2299,17 @@ BOOST_AUTO_UNIT_TEST(ResolveDbPath)
     }
 }
 
+BOOST_AUTO_UNIT_TEST(GlobalMemoryBound)
+{
+    START;
+    
+    // No real way to test what this does, so I just check that I can
+    // call the method and build a SeqDB object.
+    
+    CSeqDB::SetDefaultMemoryBound(512 << 20);
+    CSeqDB db("wgs", CSeqDB::eNucleotide);
+}
+
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)
 class CDummyDLF : public CDataLoaderFactory {

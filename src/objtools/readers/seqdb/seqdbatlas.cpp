@@ -1428,6 +1428,8 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
 
 const Int8 CSeqDBMapStrategy::e_MaxMemory64 = Int8(256) << 30;
 
+Int8 CSeqDBMapStrategy::m_GlobalMaxBound = 0;
+
 /// Constructor
 CSeqDBMapStrategy::CSeqDBMapStrategy(CSeqDBAtlas & atlas)
     : m_Atlas     (atlas),
@@ -1443,11 +1445,11 @@ CSeqDBMapStrategy::CSeqDBMapStrategy(CSeqDBAtlas & atlas)
 {
     m_BlockSize = GetVirtualMemoryPageSize();
     
-    if (sizeof(int*) == 4) {
-        m_MaxBound = e_MaxMemory32;
-    } else {
-        m_MaxBound = e_MaxMemory64;
+    if (m_GlobalMaxBound == 0) {
+        SetDefaultMemoryBound(0);
+        _ASSERT(m_GlobalMaxBound != 0);
     }
+    m_MaxBound = m_GlobalMaxBound;
     x_SetBounds(m_MaxBound);
 }
 
@@ -1670,7 +1672,22 @@ void CSeqDBAtlas::RemoveMatches(const vector<string> & patterns,
     Verify(true);
 }
 
+void CSeqDBAtlas::SetDefaultMemoryBound(Uint8 bytes)
+{
+    CSeqDBMapStrategy::SetDefaultMemoryBound(bytes);
+}
+
+void CSeqDBMapStrategy::SetDefaultMemoryBound(Uint8 bytes)
+{
+    if (bytes == 0) {
+        if (sizeof(int*) == 4) {
+            bytes = e_MaxMemory32;
+        } else {
+            bytes = e_MaxMemory64;
+        }
+    }
+    m_GlobalMaxBound = bytes;
+}
 
 END_NCBI_SCOPE
-
 

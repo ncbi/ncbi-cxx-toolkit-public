@@ -1350,5 +1350,10 @@ void CSeqDBImpl::SetOffsetRanges(int                oid,
     }
 }
 
+void CSeqDBImpl::SetDefaultMemoryBound(Uint8 bytes)
+{
+    CSeqDBAtlas::SetDefaultMemoryBound(bytes);
+}
+
 END_NCBI_SCOPE
 

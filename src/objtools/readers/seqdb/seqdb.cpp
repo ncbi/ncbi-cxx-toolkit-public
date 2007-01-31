@@ -801,5 +801,10 @@ const CSeqDBGiList * CSeqDB::GetGiList() const
     return m_Impl->GetGiList();
 }
 
+void CSeqDB::SetDefaultMemoryBound(Uint8 bytes)
+{
+    CSeqDBImpl::SetDefaultMemoryBound(bytes);
+}
+
 END_NCBI_SCOPE
 
