@@ -1660,7 +1660,7 @@ void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
             opts.SetEffectiveSearchSpace(v.GetBig_integer());
         } else if (B4Param_EntrezQuery.Match(p)) {
             m_EntrezQuery = v.GetString();
-        } else if (B4Param_EvalueThreshold.Match(p)) {
+        } else if (B4Param_EvalueThreshold.Match(p) || p->GetName() == "EvalueThreshold") {
             if (v.IsReal()) {
                 opts.SetEvalueThreshold(v.GetReal());
             } else if (v.IsCutoff() && v.GetCutoff().IsE_value()) {
