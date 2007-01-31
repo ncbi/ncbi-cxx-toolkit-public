@@ -132,7 +132,6 @@ bool CdBlaster::blast(NotifierFunction notifier)
 	int nrows = 0;
 	int numBlastsDone = 0;
 	int totalBlasts = 0;
-	vector< CRef< CBioseq > > truncatedBioseqs;
 	CRef< CBioseq > bioseqRef;
 	if (m_queryRows && m_subjectRows)
 	{
@@ -143,20 +142,20 @@ bool CdBlaster::blast(NotifierFunction notifier)
 			if (m_useWhole)
 			{
 				m_ac->GetBioseqForRow((*m_queryRows)[q], bioseqRef);
-				truncatedBioseqs.push_back(bioseqRef);
+				m_truncatedBioseqs.push_back(bioseqRef);
 			}
 			else
-				truncatedBioseqs.push_back(truncateBioseq((*m_queryRows)[q]));
+				m_truncatedBioseqs.push_back(truncateBioseq((*m_queryRows)[q]));
 		}
 		for (int s = 0; s < m_subjectRows->size(); s++)
 		{
 			if (m_useWhole)
 			{
 				m_ac->GetBioseqForRow((*m_subjectRows)[s], bioseqRef);
-				truncatedBioseqs.push_back(bioseqRef);
+				m_truncatedBioseqs.push_back(bioseqRef);
 			}
 			else
-				truncatedBioseqs.push_back(truncateBioseq((*m_subjectRows)[s]));
+				m_truncatedBioseqs.push_back(truncateBioseq((*m_subjectRows)[s]));
 		}
 	}
 	else
@@ -167,9 +166,9 @@ bool CdBlaster::blast(NotifierFunction notifier)
 			if (m_useWhole)
 			{
 				m_ac->GetBioseqForRow(i, bioseqRef);
-				truncatedBioseqs.push_back(bioseqRef);
+				m_truncatedBioseqs.push_back(bioseqRef);
 			}
-			truncatedBioseqs.push_back(truncateBioseq(i));
+			m_truncatedBioseqs.push_back(truncateBioseq(i));
 		}
 		totalBlasts = (int)((double)nrows * (((double)nrows-1)/2));
 	}
@@ -197,7 +196,7 @@ bool CdBlaster::blast(NotifierFunction notifier)
 		numQueries = nrows-1;
 	for (int qr = 0; qr < numQueries; qr++)
 	{
-		CRef< CBioseq > queryBioseq = truncatedBioseqs[qr];
+		CRef< CBioseq > queryBioseq = m_truncatedBioseqs[qr];
 		CRef<IQueryFactory> query(new CObjMgrFree_QueryFactory(queryBioseq));
 		//loop for subject rows
 		CRef< CBioseq_set > bioseqset(new CBioseq_set);
@@ -212,7 +211,7 @@ bool CdBlaster::blast(NotifierFunction notifier)
 		for (int sr = subStart; sr < nrows; sr++)
 		{
 			CRef< CSeq_entry > seqEntry(new CSeq_entry);
-			seqEntry->SetSeq(*truncatedBioseqs[sr]);
+			seqEntry->SetSeq(*m_truncatedBioseqs[sr]);
 			seqEntryList.push_back(seqEntry);
 			comIndex++;
 		}
@@ -389,6 +388,7 @@ CRef< CBioseq > CdBlaster::truncateBioseq(int row)
 void CdBlaster::processBlastHits(int queryRow, CRef<CSearchResults> hits)
 {
 	const list< CRef< CSeq_align > >& seqAlignList = hits->GetSeqAlign()->Get();
+	int seqLen = m_truncatedBioseqs[queryRow]->GetInst().GetLength();
 	assert (seqAlignList.size() == m_batchSizes[queryRow]);
 	for (list< CRef< CSeq_align > >::const_iterator cit = seqAlignList.begin(); cit != seqAlignList.end(); cit++)
 	{
@@ -401,9 +401,7 @@ void CdBlaster::processBlastHits(int queryRow, CRef<CSearchResults> hits)
 			{
 				double idScore = 0.0;
 				sa->GetNamedScore(CSeq_align::eScore_IdentityCount, idScore);
-				int start = denseg.GetSeqStart(0);
-				int stop = denseg.GetSeqStop(0);
-				score = 100*idScore/(stop - start + 1);
+				score = 100*idScore/seqLen;
 			}
 			else
 				sa->GetNamedScore(m_scoreType, score);

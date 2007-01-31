@@ -114,6 +114,7 @@ private:
 	vector<int> m_batchSizes;
 	CCdCore* m_psiTargetCd;
 	CRef<CPssmWithParameters> m_psiTargetPssm;
+	vector< CRef< CBioseq > > m_truncatedBioseqs;
 
 	CRef< CBioseq > truncateBioseq(int row);
 	void processBlastHits(int queryRow, CRef<ncbi::blast::CSearchResults>);

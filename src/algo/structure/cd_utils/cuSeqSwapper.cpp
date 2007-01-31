@@ -140,8 +140,8 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 	if (cluster.size() == 0)
 		return;
 	// seperate normal from pending
-	vector<int> normal, pending;
-	bool hasNormal = false;
+	vector<int> normalLocal, normalNonLocal, pending;
+	bool hasNormalPDB = false;
 	set<int> pending3D;
 	for (int i = 0; i < cluster.size(); i++)
 	{
@@ -155,25 +155,54 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 		}
 		else
 		{
-			//only care about local seq_id for now
 			CRef< CSeq_id > seqId;
-			/*int row = cluster[i];
-			if (row == 1)
-				int gotit =1;*/
 			m_ac.GetSeqIDForRow(cluster[i], seqId);
 			if (seqId->IsLocal())
-				normal.push_back(cluster[i]);
-			hasNormal = true;
+				normalLocal.push_back(cluster[i]);
+			else
+			{
+				normalNonLocal.push_back(cluster[i]);
+				if (seqId->IsPdb())
+					hasNormalPDB = true;
+			}
 		}
 	}
-	if (!hasNormal) //if the pending 3D does not cluster with any normal, we don't want it.
-		pending3D.clear();
+	//find replacement for local sequences
+	if ((normalLocal.size() != 0) && (pending.size() != 0))
+	{
+		vector< pair<int,int> > pairs;
+		findBestPairings(normalLocal, pending, pairs);
+		for (int i = 0; i < pairs.size(); i++)
+		{
+			replacementPairs.push_back(pairs[i]);
+			set<int>::iterator sit = pending3D.find(pairs[i].second);
+			if (sit != pending3D.end())
+			{
+				pending3D.erase(sit); //this 3D has been used.
+			}
+		}
+	}
+	//try to add extra PDBs
+	if (!hasNormalPDB && //there is no normal PDB in the cluster
+		!pending3D.empty() && //there is pending 3D left
+		!normalNonLocal.empty()) //at least one normal in the cluster
+	{
+		vector< pair<int,int> > pairsWith3D;
+		vector<int> pending3DVec;
+		for (set<int>::iterator sit = pending3D.begin(); sit != pending3D.end(); sit++)
+			pending3DVec.push_back(*sit);
+		findBestPairings(normalNonLocal, pending3DVec, pairsWith3D);
+		if (pairsWith3D.size() > 0) //just need one
+		{
+			structs.insert(pairsWith3D[0].second);
+		}
+	}
+}
+
+void SeqSwapper::findBestPairings(const vector<int>& normal, const vector<int>& pending, vector< pair<int, int> >& pairs)
+{
 	if ((normal.size() == 0) || (pending.size() == 0))
 	{
-		if (pending3D.size() > 0)
-		{
-			structs.insert(*pending3D.begin());
-		}
 		return;
 	}
 	//blast normal against pending
@@ -203,17 +232,8 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 		if ( maxIdIndex >= 0)
 		{
 			usedPendingIndice.insert(maxIdIndex);
-			replacementPairs.push_back(pair<int, int>(normal[n], pending[maxIdIndex]));
-			set<int>::iterator sit = pending3D.find(pending[maxIdIndex]);
-			if (sit != pending3D.end())
-			{
-				pending3D.erase(sit); //this 3D has been used.
-			}
+			pairs.push_back(pair<int, int>(normal[n], pending[maxIdIndex]));
 		}
-	}
-	if (pending3D.size() > 0)
-	{
-		structs.insert(*pending3D.begin());
 	}
 }
 

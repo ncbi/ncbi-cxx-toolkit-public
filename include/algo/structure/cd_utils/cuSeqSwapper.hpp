@@ -60,6 +60,7 @@ private:
 	void findReplacements(vector<int>& cluster, vector< pair<int,int> >& replacementPairs, set<int>& structs);
 	void findStructuralPendings(set<int>& rows);
 	void promotePendingRows(set<int>& rows, int* newMaster=0);
+	void findBestPairings(const vector<int>& normal, const vector<int>& pending, vector< pair<int, int> >& pairs);
 };
 
 END_SCOPE(cd_utils)
