@@ -44,6 +44,8 @@
  * @{
  */
 
+class CBlastFilterTest;
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
@@ -215,6 +217,8 @@ private:
     void x_ResetQueryDs();
     /// Resets subject data structures
     void x_ResetSubjectDs();
+
+    friend class ::CBlastFilterTest;
 };
 
 inline void
