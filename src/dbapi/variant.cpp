@@ -289,6 +289,10 @@ CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
     default:
         NCBI_THROW(CVariantException, eVariant, "CVariant::ctor(): unsupported datetime type");
     }
+
+    if (v.IsEmpty()) {
+        SetNull();
+    }
 }
 
 
