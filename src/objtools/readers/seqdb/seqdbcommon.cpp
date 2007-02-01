@@ -882,6 +882,41 @@ void SeqDB_SplitQuoted(const string             & dbname,
     }
 }
 
+CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gis)
+{
+    _ASSERT(this != & gilist);
+    
+    gilist.InsureOrder(CSeqDBGiList::eGi);
+    sort(gis.begin(), gis.end());
+    
+    int list_i = 0;
+    int list_n = gilist.Size();
+    int gis_i = 0;
+    int gis_n = gis.size();
+    
+    while(list_i < list_n && gis_i < gis_n) {
+        int L = gilist[list_i].gi;
+        int G = gis[gis_i];
+        
+        if (L < G) {
+            list_i ++;
+            continue;
+        }
+        
+        if (L > G) {
+            gis_i ++;
+            continue;
+        }
+        
+        m_GisOids.push_back(gilist[list_i]);
+        
+        list_i++;
+        gis_i++;
+    }
+    
+    m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
+}
+
 
 END_NCBI_SCOPE
 

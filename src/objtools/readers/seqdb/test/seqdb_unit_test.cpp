@@ -2310,6 +2310,57 @@ BOOST_AUTO_UNIT_TEST(GlobalMemoryBound)
     CSeqDB db("wgs", CSeqDB::eNucleotide);
 }
 
+class CSimpleGiList : public CSeqDBGiList {
+public:
+    CSimpleGiList(const vector<int> & gis)
+    {
+        for(size_t i = 0; i < gis.size(); i++) {
+            m_GisOids.push_back(gis[i]);
+        }
+    }
+};
+
+BOOST_AUTO_UNIT_TEST(IntersectionGiList)
+{
+    START;
+    
+    vector<int> a3; // multiples of 3 from 0..500
+    vector<int> a5; // multiples of 5 from 0..500
+    
+    // The number 41 is added to the front of one set and the end of
+    // the other to verify that the code computing the intersection
+    // correctly sorts its inputs.
+    
+    int special = 41;
+    
+    // Add to start of a3
+    a3.push_back(special);
+    
+    for(int i = 0; (i*3) < 500; i++) {
+        a3.push_back(i*3);
+        
+        if (i*5 < 500) {
+            a5.push_back(i*5);
+        }
+    }
+    
+    // Add to end of a5
+    a5.push_back(special);
+    
+    CSimpleGiList gi3(a3);
+    
+    // Intersection == multiples of 15.
+    CIntersectionGiList both(gi3, a5);
+    
+    for(int i = 0; i < 500; i++) {
+        if (((i % 15) == 0) || (i == special)) {
+            CHECK(true == both.FindGi(i));
+        } else {
+            CHECK(false == both.FindGi(i));
+        }
+    }
+}
+
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)
 class CDummyDLF : public CDataLoaderFactory {
