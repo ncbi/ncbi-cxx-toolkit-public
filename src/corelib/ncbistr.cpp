@@ -1244,7 +1244,7 @@ string NStr::FormatVarargs(const char* format, va_list args)
 
 #elif defined(HAVE_VSNPRINTF)
     // deal with implementation quirks
-    const SIZE_TYPE size = 1024;
+    SIZE_TYPE size = 1024;
     AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
     buf.get()[size-1] = buf.get()[size-2] = 0;
     SIZE_TYPE n = vsnprintf(buf.get(), size, format, args);
@@ -1809,7 +1809,7 @@ static string s_PrintableString(const string&      str,
         j = i + 1;
     }
     if (j  &&  i > j) {
-        assert(out.get());
+        _ASSERT(out.get());
         out->write(str.data() + j, i - j);
     }
     if (out.get()) {
