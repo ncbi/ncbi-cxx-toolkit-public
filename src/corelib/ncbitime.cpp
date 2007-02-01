@@ -148,6 +148,9 @@ static const string kMsgInvalidTime = "CTime:  invalid";
 // Get number of days in "date"
 static unsigned s_Date2Number(const CTime& date)
 {
+    if ( date.IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     unsigned d = date.Day();
     unsigned m = date.Month();
     unsigned y = date.Year();
@@ -233,7 +236,6 @@ static void s_Offset(long *value, Int8 offset, long bound, int *major)
 #define CHECK_RANGE_MIN(value)   CHECK_RANGE(value, "minute", 0, 59)
 #define CHECK_RANGE_SEC(value)   CHECK_RANGE(value, "second", 0, 61)
 #define CHECK_RANGE_NSEC(value)  CHECK_RANGE(value, "nanosecond", 0, kNanoSecondsPerSecond - 1)
-
 
 
 //============================================================================
@@ -659,6 +661,9 @@ void CTime::SetNanoSecond(long nanosecond)
 
 int CTime::YearDayNumber(void) const
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     unsigned first = s_Date2Number(CTime(Year(), 1, 1));
     unsigned self  = s_Date2Number(*this);
     _ASSERT(first <= self  &&  self < first + (IsLeap() ? 366 : 365));
@@ -668,6 +673,9 @@ int CTime::YearDayNumber(void) const
 
 int CTime::YearWeekNumber(EDayOfWeek first_day_of_week) const
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     if (first_day_of_week > eSaturday) {
         NCBI_THROW(CTimeException, eArgument,
                    "CTime:  first day of week parameter is incorrect");
@@ -706,6 +714,9 @@ int CTime::MonthWeekNumber(EDayOfWeek first_day_of_week) const
 
 int CTime::DayOfWeek(void) const
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     int y = Year();
     int m = Month();
 
@@ -716,6 +727,9 @@ int CTime::DayOfWeek(void) const
 
 int CTime::DaysInMonth(void) const
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     int n_days = s_DaysInMonth[Month()-1];
     if (n_days == 0) {
         n_days = IsLeap() ? 29 : 28;
@@ -786,6 +800,7 @@ static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
     str += s_value;
 }
 
+
 void CTime::x_VerifyFormat(const string& fmt)
 {
     // Check for duplicated format symbols...
@@ -801,6 +816,7 @@ void CTime::x_VerifyFormat(const string& fmt)
         }
     }
 }
+
 
 void CTime::SetFormat(const string& fmt)
 {
@@ -910,6 +926,9 @@ string CTime::AsString(const string& fmt, TSeconds out_tz) const
 // Mac OS 9 does not correctly support daylight savings flag.
 time_t CTime::GetTimeT(void) const
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     struct tm t;
     t.tm_sec   = Second() + (int)(IsGmtTime() ? +TimeZone() : 0);
     t.tm_min   = Minute();
@@ -923,6 +942,9 @@ time_t CTime::GetTimeT(void) const
 #else
 time_t CTime::GetTimeT(void) const
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     // MT-Safe protect
     CFastMutexGuard LOCK(s_TimeMutex);
 
@@ -1120,6 +1142,9 @@ CTime& CTime::x_SetTime(const time_t* value)
 
 CTime& CTime::AddMonth(int months, EDaylight adl)
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     if ( !months ) {
         return *this;
     }
@@ -1148,6 +1173,9 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
 
 CTime& CTime::AddDay(int days, EDaylight adl)
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     if ( !days ) {
         return *this;
     }
@@ -1177,6 +1205,9 @@ CTime& CTime::AddDay(int days, EDaylight adl)
 // adjust hours.
 CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     if ( !hours ) {
         return *this;
     }
@@ -1204,6 +1235,9 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
 
 CTime& CTime::AddMinute(int minutes, EDaylight adl)
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     if ( !minutes ) {
         return *this;
     }
@@ -1231,6 +1265,9 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
 
 CTime& CTime::AddSecond(TSeconds seconds, EDaylight adl)
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     if ( !seconds ) {
         return *this;
     }
@@ -1244,6 +1281,9 @@ CTime& CTime::AddSecond(TSeconds seconds, EDaylight adl)
 
 CTime& CTime::AddNanoSecond(long ns)
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     if ( !ns ) {
         return *this;
     }
@@ -1296,8 +1336,37 @@ bool CTime::IsValid(void) const
 }
 
 
+CTime CTime::GetLocalTime(void) const
+{
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
+    if ( IsLocalTime() ) {
+        return *this;
+    }
+    CTime t(*this);
+    return t.ToLocalTime();
+}
+
+
+CTime CTime::GetGmtTime(void) const
+{
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
+    if ( IsGmtTime() ) {
+        return *this;
+    }
+    CTime t(*this);
+    return t.ToGmtTime();
+}
+
+
 CTime& CTime::ToTime(ETimeZone tz)
 {
+    if ( IsEmptyDate() ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  the date is empty");
+    }
     if (GetTimeZoneFormat() != tz) {
         struct tm* t;
         time_t timer;
@@ -1438,10 +1507,10 @@ CTime& CTime::Truncate(void)
 
 CTime& CTime::Clear()
 {
+    Truncate();
     m_Data.year  = 0;
     m_Data.month = 0;
     m_Data.day   = 0;
-    Truncate();
     return *this;
 }
 
