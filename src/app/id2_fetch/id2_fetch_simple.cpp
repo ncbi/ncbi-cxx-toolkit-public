@@ -328,6 +328,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data,
         break;
     default:
         ERR_POST(Fatal << "Unknown data format in ID2_Reply_Data");
+        return;
     }
 
     vector<char> buf;
@@ -355,6 +356,7 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data,
     }
     default:
         ERR_POST(Fatal << "Unknown data compression in ID2_Reply_Data");
+        return;
     }
     _ASSERT( obj_stream.get() );
     auto_ptr<CObjectOStream> out_stream(
