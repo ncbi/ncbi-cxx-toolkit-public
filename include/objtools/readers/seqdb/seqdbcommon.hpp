@@ -292,6 +292,23 @@ public:
 };
 
 
+/// GI list containing the intersection of two other lists of GIs.
+///
+/// This class takes a CSeqDBGiList and an integer vector and computes
+/// the intersection of the two.  Note that both input arguments are
+/// sorted to GI order in-place.
+
+class CIntersectionGiList : public CSeqDBGiList {
+public:
+    /// Construct an intersection of two lists of GIs.
+    ///
+    /// The two lists of GIs are sorted and this class is computed as
+    /// an intersection of them.  Note that both arguments to this
+    /// function are potentially modified (sorted in place).
+    CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gis);
+};
+
+
 // The "instance" concept in the following types refers to the fact
 // that each alias file has a seperately instantiated node for each
 // point where it appears in the alias file hierarchy.
