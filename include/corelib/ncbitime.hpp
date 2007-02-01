@@ -789,8 +789,11 @@ public:
     // Checks
     //
 
-    /// Is time empty?
+    /// Is time object empty (date and time)?
     bool IsEmpty     (void) const;
+
+    /// Is date empty?
+    bool IsEmptyDate (void) const;
 
     /// Is time in a leap year?
     bool IsLeap      (void) const;
@@ -1635,8 +1638,9 @@ CTime& CTime::operator= (const string& str)
 inline
 CTime& CTime::operator= (const CTime& t)
 {
-    if ( &t == this )
+    if ( &t == this ) {
         return *this;
+    }
     m_Data = t.m_Data;
     return *this;
 }
@@ -1671,6 +1675,14 @@ bool CTime::IsEmpty() const
     return
         !Day()   &&  !Month()   &&  !Year()  &&
         !Hour()  &&  !Minute()  &&  !Second()  &&  !NanoSecond();
+}
+
+inline
+bool CTime::IsEmptyDate() const
+{
+    // We check year value only, because all time object date fields
+    // can be zeros only at one time.
+    return !Year();
 }
 
 inline
@@ -1737,26 +1749,6 @@ TSeconds CTime::TimeZoneDiff(void) const
 {
     TSeconds seconds = GetLocalTime().DiffSecond(GetGmtTime());
     return seconds;
-}
-
-inline
-CTime CTime::GetLocalTime(void) const
-{
-    if ( IsLocalTime() ) {
-        return *this;
-    }
-    CTime t(*this);
-    return t.ToLocalTime();
-}
-
-inline
-CTime CTime::GetGmtTime(void) const
-{
-    if ( IsGmtTime() ) {
-        return *this;
-    }
-    CTime t(*this);
-    return t.ToGmtTime();
 }
 
 inline
@@ -1875,7 +1867,10 @@ double CTimeSpan::GetAsDouble(void) const
 }
 
 inline
-bool CTimeSpan::IsEmpty(void) { return m_Sec == 0  &&  m_NanoSec == 0; }
+bool CTimeSpan::IsEmpty(void)
+{ 
+    return m_Sec == 0  &&  m_NanoSec == 0;
+}
 
 inline
 CTimeSpan& CTimeSpan::operator= (const CTimeSpan& t)
