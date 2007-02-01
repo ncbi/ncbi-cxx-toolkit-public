@@ -1422,7 +1422,7 @@ public:
                            const string& replace,
                            string&       dst,
                            SIZE_TYPE     start_pos = 0,
-                           SIZE_TYPE     replace = 0);
+                           SIZE_TYPE     max_replace = 0);
 
     /// Replace occurrences of a substring within a string and returns the
     /// result as a new string.
