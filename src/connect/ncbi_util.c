@@ -149,12 +149,13 @@ extern char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,
  TLOG_FormatFlags    format_flags)
 {
-    static const char s_RawData_Begin[] =
+    static const char kRawData_Begin[] =
         "\n#################### [BEGIN] Raw Data (%lu byte%s):\n";
-    static const char s_RawData_End[] =
+    static const char kRawData_End[] =
         "\n#################### [END] Raw Data\n";
 
-    char* str, datetime[32];
+    char *str, *s, datetime[32];
+    const char* level = 0;
 
     /* Calculated length of ... */
     size_t datetime_len  = 0;
@@ -210,10 +211,11 @@ extern char* LOG_ComposeMessage
         datetime_len = strftime(datetime, sizeof(datetime), timefmt, tm);
 #endif/*NCBI_OS_MSWIN*/
     }
-    if ((format_flags & fLOG_Level) != 0  &&
-        (call_data->level != eLOG_Note ||
-         !(format_flags & fLOG_OmitNoteLevel))) {
-        level_len = strlen(LOG_LevelStr(call_data->level)) + 2;
+    if ((format_flags & fLOG_Level) != 0
+        &&  (call_data->level != eLOG_Note
+             ||  !(format_flags & fLOG_OmitNoteLevel))) {
+        level = LOG_LevelStr(call_data->level);
+        level_len = strlen(level) + 2;
     }
     if ((format_flags & fLOG_Module) != 0  &&
         call_data->module  &&  *call_data->module) {
@@ -229,84 +231,112 @@ extern char* LOG_ComposeMessage
 
     if ( call_data->raw_size ) {
         const unsigned char* d = (const unsigned char*) call_data->raw_data;
-        size_t      i = call_data->raw_size;
+        size_t i = call_data->raw_size;
         for (data_len = 0;  i;  i--, d++) {
-            if (*d == '\\'  ||  *d == '\r'  ||  *d == '\t') {
+            if (*d == '\t'  ||  *d == '\v'  ||  *d == '\b'  ||
+                *d == '\r'  ||  *d == '\f'  ||  *d == '\a'  ||
+                *d == '\n'  ||  *d == '\\'  ||  *d == '\''  ||
+                *d == '"') {
                 data_len++;
-            } else if (!isprint(*d)  &&  *d != '\n') {
-                data_len += 2;
+            } else if (!isprint(*d)) {
+                data_len += 3;
             }
         }
-        data_len += sizeof(s_RawData_Begin) + 20 + call_data->raw_size +
-            sizeof(s_RawData_End);
+        data_len += (sizeof(kRawData_Begin) + 20 + call_data->raw_size +
+                     sizeof(kRawData_End));
     }
 
     /* Allocate memory for the resulting message */
-    total_len = datetime_len + file_line_len + module_len + level_len +
-        message_len + data_len;
-    str = (char*) malloc(total_len + 1);
-    if ( !str ) {
+    total_len = (datetime_len + file_line_len + module_len
+                 + level_len + message_len + data_len);
+    if (!(str = (char*) malloc(total_len + 1))) {
         assert(0);
         return 0;
     }
 
+    s = str;
     /* Compose the message */
-    str[0] = '\0';
     if ( datetime_len ) {
-        strcpy(str, datetime);
+        memcpy(s, datetime, datetime_len);
+        s += datetime_len;
     }
     if ( file_line_len ) {
-        sprintf(str + strlen(str), "\"%s\", line %d: ",
-                call_data->file, (int) call_data->line);
+        s += sprintf(s, "\"%s\", line %d: ",
+                     call_data->file, (int) call_data->line);
     }
     if ( module_len ) {
-        strcat(str, "[");
-        strcat(str, call_data->module);
-        strcat(str, "] ");
+        *s++ = '[';
+        memcpy(s, call_data->module, module_len -= 3);
+        s += module_len;
+        *s++ = ']';
+        *s++ = ' ';
     }
     if ( level_len ) {
-        strcat(str, LOG_LevelStr(call_data->level));
-        strcat(str, ": ");
+        memcpy(s, level, level_len -= 2);
+        s += level_len;
+        *s++ = ':';
+        *s++ = ' ';
     }
     if ( message_len ) {
-        strcat(str, call_data->message);
+        memcpy(s, call_data->message, message_len);
+        s += message_len;
     }
     if ( data_len ) {
-        size_t i;
-        char* s;
         const unsigned char* d;
+        size_t i;
 
-        s = str + strlen(str);
-        sprintf(s, s_RawData_Begin, (unsigned long) call_data->raw_size,
-                call_data->raw_size == 1 ? "" : "s");
-        s += strlen(s);
+        s += sprintf(s, kRawData_Begin, (unsigned long) call_data->raw_size,
+                     &"s"[call_data->raw_size == 1]);
 
         d = (const unsigned char*) call_data->raw_data;
         for (i = call_data->raw_size;  i;  i--, d++) {
-            if (*d == '\\') {
-                *s++ = '\\';
-                *s++ = '\\';
-            } else if (*d == '\r') {
-                *s++ = '\\';
-                *s++ = 'r';
-            } else if (*d == '\t') {
+            switch (*d) {
+            case '\t':
                 *s++ = '\\';
                 *s++ = 't';
-            } else if (!isprint(*d)  &&  *d != '\n') {
-                static const char s_Hex[16] = {
-                    '0', '1', '2', '3', '4', '5', '6', '7',
-                    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-                };
+                continue;
+            case '\v':
                 *s++ = '\\';
-                *s++ = s_Hex[*d / 16];
-                *s++ = s_Hex[*d % 16];
-            } else {
-                *s++ = (char) *d;
+                *s++ = 'v';
+                continue;
+            case '\b':
+                *s++ = '\\';
+                *s++ = 'b';
+                continue;
+            case '\r':
+                *s++ = '\\';
+                *s++ = 'r';
+                continue;
+            case '\f':
+                *s++ = '\\';
+                *s++ = 'f';
+                continue;
+            case '\a':
+                *s++ = '\\';
+                *s++ = 'a';
+                continue;
+            case '\n':
+            case '\\':
+            case '\'':
+            case '"':
+                *s++ = '\\';
+                break;
+            default:
+                if (!isprint(*d)) {
+                    *s++ = '\\';
+                    *s++ = '0' +  (*d >> 6);
+                    *s++ = '0' + ((*d >> 3) & 7);
+                    *s++ = '0' +  (*d & 7);
+                    continue;
+                }
+                break;
             }
+            *s++ = (char) *d;
         }
 
-        strcpy(s, s_RawData_End);
-    }
+        memcpy(s, kRawData_End, sizeof(kRawData_End));
+    } else
+        *s = '\0';
 
     assert(strlen(str) <= total_len);
     return str;
@@ -450,9 +480,8 @@ extern char* MessagePlusErrno
 
         /* print error code */
         for ( ;  mod;  mod /= 10) {
-            static const char s_Num[] = "0123456789";
             assert(x_errno / mod < 10);
-            *beg++ = s_Num[x_errno / mod];
+            *beg++ = '0' + x_errno / mod;
             x_errno %= mod;
         }
         /* "," before "<descr>" */
