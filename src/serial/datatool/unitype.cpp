@@ -30,8 +30,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/stltypes.hpp>
-#include <serial/autoptrinfo.hpp>
+#include <serial/impl/stltypes.hpp>
+#include <serial/impl/autoptrinfo.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/unitype.hpp>
 #include <serial/datatool/blocktype.hpp>

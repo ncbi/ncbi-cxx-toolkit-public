@@ -34,11 +34,11 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/exception.hpp>
 #include <serial/impl/memberlist.hpp>
-#include <serial/memberid.hpp>
-#include <serial/member.hpp>
-#include <serial/classinfob.hpp>
-#include <serial/continfo.hpp>
-#include <serial/ptrinfo.hpp>
+#include <serial/impl/memberid.hpp>
+#include <serial/impl/member.hpp>
+#include <serial/impl/classinfob.hpp>
+#include <serial/impl/continfo.hpp>
+#include <serial/impl/ptrinfo.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbithr.hpp>
 

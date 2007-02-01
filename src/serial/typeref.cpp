@@ -78,7 +78,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/typeref.hpp>
+#include <serial/impl/typeref.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/exception.hpp>
 #include <corelib/ncbithr.hpp>

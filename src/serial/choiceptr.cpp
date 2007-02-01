@@ -31,14 +31,14 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/choiceptr.hpp>
-#include <serial/typeref.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/impl/choiceptr.hpp>
+#include <serial/impl/typeref.hpp>
+#include <serial/impl/classinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/impl/typemap.hpp>
-#include <serial/ptrinfo.hpp>
+#include <serial/impl/ptrinfo.hpp>
 #include <serial/impl/typeinfoimpl.hpp>
 
 BEGIN_NCBI_SCOPE

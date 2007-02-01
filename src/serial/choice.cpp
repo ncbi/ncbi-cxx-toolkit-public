@@ -204,11 +204,10 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/choice.hpp>
+#include <serial/impl/choice.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
-#include <serial/variant.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/serialbase.hpp>
 

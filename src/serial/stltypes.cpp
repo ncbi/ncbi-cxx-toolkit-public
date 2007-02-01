@@ -31,10 +31,10 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/stltypesimpl.hpp>
+#include <serial/impl/stltypesimpl.hpp>
 #include <serial/serialimpl.hpp>
 #include <serial/exception.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/impl/classinfo.hpp>
 #include <serial/impl/classinfohelper.hpp>
 #include <serial/impl/typemap.hpp>
 #include <corelib/ncbi_safe_static.hpp>

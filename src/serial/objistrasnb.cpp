@@ -35,14 +35,14 @@
 #include <corelib/ncbi_limits.hpp>
 
 #include <serial/objistrasnb.hpp>
-#include <serial/member.hpp>
-#include <serial/memberid.hpp>
+#include <serial/impl/member.hpp>
+#include <serial/impl/memberid.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/impl/memberlist.hpp>
 #include <serial/objhook.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
-#include <serial/continfo.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/choice.hpp>
+#include <serial/impl/continfo.hpp>
 #include <serial/impl/objistrimpl.hpp>
 #include <serial/pack_string.hpp>
 

@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/datatool/type.hpp>
-#include <serial/autoptrinfo.hpp>
+#include <serial/impl/autoptrinfo.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/module.hpp>

@@ -31,7 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/autoptrinfo.hpp>
+#include <serial/impl/autoptrinfo.hpp>
 #include <serial/impl/typemap.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>

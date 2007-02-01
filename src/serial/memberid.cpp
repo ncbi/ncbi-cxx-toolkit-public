@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <serial/memberid.hpp>
+#include <serial/impl/memberid.hpp>
 #include <serial/impl/memberlist.hpp>
 
 BEGIN_NCBI_SCOPE

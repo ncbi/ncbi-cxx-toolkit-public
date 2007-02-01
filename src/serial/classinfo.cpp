@@ -329,13 +329,12 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#include <serial/classinfo.hpp>
-#include <serial/member.hpp>
+#include <serial/impl/classinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
-#include <serial/stdtypes.hpp>
+#include <serial/impl/stdtypes.hpp>
 #include <serial/serialbase.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -44,13 +44,13 @@
 #include <util/bytesrc.hpp>
 
 #include <serial/objistr.hpp>
-#include <serial/typeref.hpp>
-#include <serial/member.hpp>
-#include <serial/variant.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
-#include <serial/aliasinfo.hpp>
-#include <serial/continfo.hpp>
+#include <serial/impl/typeref.hpp>
+#include <serial/impl/member.hpp>
+#include <serial/impl/variant.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/choice.hpp>
+#include <serial/impl/aliasinfo.hpp>
+#include <serial/impl/continfo.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/impl/memberlist.hpp>
 #include <serial/delaybuf.hpp>
@@ -58,7 +58,7 @@
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/impl/objlist.hpp>
-#include <serial/choiceptr.hpp>
+#include <serial/impl/choiceptr.hpp>
 #include <serial/serialimpl.hpp>
 #include <serial/pack_string.hpp>
 

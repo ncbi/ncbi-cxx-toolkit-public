@@ -41,12 +41,7 @@
 #include <serial/iterator.hpp>
 #include <serial/objhook.hpp>
 #include "cppwebenv.hpp"
-
-#include <serial/stdtypes.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
-#include <serial/ptrinfo.hpp>
-#include <serial/continfo.hpp>
+#include <serial/serialimpl.hpp>
 
 #if HAVE_NCBI_C
 # include <asn.h>

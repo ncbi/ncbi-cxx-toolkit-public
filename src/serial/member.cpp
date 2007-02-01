@@ -36,7 +36,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#include <serial/member.hpp>
+#include <serial/impl/member.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/objistr.hpp>

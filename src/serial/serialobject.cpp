@@ -42,7 +42,7 @@
 #include <serial/objostrxml.hpp>
 #include <serial/objistrxml.hpp>
 
-#include <serial/classinfob.hpp>
+#include <serial/impl/classinfob.hpp>
 
 
 BEGIN_NCBI_SCOPE

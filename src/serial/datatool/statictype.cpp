@@ -37,9 +37,9 @@
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/srcutil.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/stltypes.hpp>
-#include <serial/autoptrinfo.hpp>
+#include <serial/impl/stdtypes.hpp>
+#include <serial/impl/stltypes.hpp>
+#include <serial/impl/autoptrinfo.hpp>
 #include <typeinfo>
 #include <vector>
 

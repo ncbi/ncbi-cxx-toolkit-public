@@ -139,7 +139,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
-#include <serial/classinfob.hpp>
+#include <serial/impl/classinfob.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objhook.hpp>
 #include <serial/serialimpl.hpp>

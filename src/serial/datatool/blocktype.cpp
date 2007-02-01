@@ -35,13 +35,12 @@
 #include <serial/datatool/unitype.hpp>
 #include <serial/datatool/reftype.hpp>
 #include <serial/datatool/statictype.hpp>
-#include <serial/autoptrinfo.hpp>
+#include <serial/impl/autoptrinfo.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/classstr.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/srcutil.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/member.hpp>
+#include <serial/impl/classinfo.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE

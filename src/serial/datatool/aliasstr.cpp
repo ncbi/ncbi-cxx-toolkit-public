@@ -233,7 +233,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
 
     // define typeinfo method
     {
-        code.CPPIncludes().insert("serial/aliasinfo");
+//        code.CPPIncludes().insert("serial/aliasinfo");
         CNcbiOstream& methods = code.Methods();
         methods << "BEGIN_ALIAS_INFO(\""
             << GetExternalName() << "\", "

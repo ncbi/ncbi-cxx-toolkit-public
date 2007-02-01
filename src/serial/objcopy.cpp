@@ -38,9 +38,9 @@
 #include <serial/objcopy.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/objectinfo.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/continfo.hpp>
-#include <serial/choice.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/continfo.hpp>
+#include <serial/impl/choice.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/impl/objistrimpl.hpp>

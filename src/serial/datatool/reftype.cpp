@@ -40,7 +40,6 @@
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/enumtype.hpp>
 #include <serial/datatool/srcutil.hpp>
-#include <serial/classinfo.hpp>
 #include <serial/serialimpl.hpp>
 
 BEGIN_NCBI_SCOPE

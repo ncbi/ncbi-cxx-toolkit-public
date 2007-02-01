@@ -35,7 +35,7 @@
 #include <serial/exception.hpp>
 #include <serial/impl/objlist.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/member.hpp>
+#include <serial/impl/member.hpp>
 #include <serial/impl/typeinfoimpl.hpp>
 
 #undef _TRACE

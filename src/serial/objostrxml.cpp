@@ -37,15 +37,15 @@
 #include <serial/objostrxml.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
-#include <serial/memberid.hpp>
+#include <serial/impl/memberid.hpp>
 #include <serial/impl/memberlist.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/objhook.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
-#include <serial/continfo.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/choice.hpp>
+#include <serial/impl/continfo.hpp>
 #include <serial/delaybuf.hpp>
-#include <serial/ptrinfo.hpp>
+#include <serial/impl/ptrinfo.hpp>
 
 #include <stdio.h>
 #include <math.h>

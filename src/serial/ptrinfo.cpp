@@ -184,7 +184,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/ptrinfo.hpp>
+#include <serial/impl/ptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>

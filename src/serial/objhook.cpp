@@ -86,8 +86,8 @@
 #include <serial/objectiter.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
-#include <serial/member.hpp>
-#include <serial/memberid.hpp>
+#include <serial/impl/member.hpp>
+#include <serial/impl/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
 

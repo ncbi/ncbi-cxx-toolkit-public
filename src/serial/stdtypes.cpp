@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/stdtypesimpl.hpp>
+#include <serial/impl/stdtypesimpl.hpp>
 #include <serial/impl/typeinfoimpl.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>

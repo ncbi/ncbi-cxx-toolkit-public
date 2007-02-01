@@ -76,8 +76,8 @@
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <util/bytesrc.hpp>
-#include <serial/item.hpp>
-#include <serial/stdtypes.hpp>
+#include <serial/impl/item.hpp>
+#include <serial/impl/stdtypes.hpp>
 
 BEGIN_NCBI_SCOPE
 

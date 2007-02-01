@@ -35,15 +35,15 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#include <serial/variant.hpp>
+#include <serial/impl/variant.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
-#include <serial/choiceptr.hpp>
-#include <serial/ptrinfo.hpp>
+#include <serial/impl/choiceptr.hpp>
+#include <serial/impl/ptrinfo.hpp>
 #include <serial/serialimpl.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -48,7 +48,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <serial/item.hpp>
+#include <serial/impl/item.hpp>
 
 BEGIN_NCBI_SCOPE
 

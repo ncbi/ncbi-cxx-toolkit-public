@@ -33,13 +33,13 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/objistrasn.hpp>
-#include <serial/member.hpp>
+#include <serial/impl/member.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/impl/memberlist.hpp>
 #include <serial/objhook.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
-#include <serial/continfo.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/choice.hpp>
+#include <serial/impl/continfo.hpp>
 #include <serial/impl/objistrimpl.hpp>
 #include <math.h>
 #if !defined(DBL_MAX_10_EXP) || !defined(FLT_MAX)

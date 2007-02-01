@@ -36,9 +36,9 @@
 #include <serial/serial.hpp>
 #include <serial/serialimpl.hpp>
 #include <serial/serialbase.hpp>
-#include <serial/ptrinfo.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
+#include <serial/impl/ptrinfo.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/choice.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/impl/memberlist.hpp>

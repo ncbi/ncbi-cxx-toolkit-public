@@ -65,7 +65,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/aliasinfo.hpp>
+#include <serial/impl/aliasinfo.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/objistr.hpp>

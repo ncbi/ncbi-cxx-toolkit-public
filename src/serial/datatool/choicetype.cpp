@@ -32,13 +32,13 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/datatool/choicetype.hpp>
-#include <serial/autoptrinfo.hpp>
-#include <serial/choice.hpp>
+#include <serial/impl/autoptrinfo.hpp>
+#include <serial/impl/choice.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/choicestr.hpp>
 #include <serial/datatool/choiceptrstr.hpp>
 #include <serial/datatool/srcutil.hpp>
-#include <serial/member.hpp>
+#include <serial/impl/member.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE

@@ -32,8 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <serial/pathhook.hpp>
 #include <serial/impl/objstack.hpp>
-#include <serial/item.hpp>
-#include <serial/classinfob.hpp>
+#include <serial/impl/item.hpp>
+#include <serial/impl/classinfob.hpp>
 
 BEGIN_NCBI_SCOPE
 
