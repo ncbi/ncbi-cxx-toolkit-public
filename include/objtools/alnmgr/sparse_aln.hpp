@@ -64,14 +64,6 @@ public:
     typedef CPairwiseAln::TAlnRngColl TAlnRngColl;
     typedef CAnchoredAln::TDim TDim; ///< Synonym of TNumrow
 
-    enum ESearchDirection {
-        eNone,
-        eBackwards,
-        eForward,
-        eLeft,
-        eRight
-    };
-
     /// Constructor
     CSparseAln(const CAnchoredAln& anchored_aln,
                objects::CScope& scope);
