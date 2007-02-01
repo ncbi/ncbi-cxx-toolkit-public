@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 ///     master is always specified in CSparse-seg and has a Seq-id
 ///     we display it always anchored
 ///     chaning anchor is not supported
-class NCBI_XALNMGR_EXPORT CSparseAln : public CObject, IAlnExplorer
+class NCBI_XALNMGR_EXPORT CSparseAln : public CObject, public IAlnExplorer
 {
 public:
     /// Types
