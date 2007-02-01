@@ -26,7 +26,12 @@
  * Authors:  Anton Butanayev, Denis Vakatov, Vladimir Ivanov
  *
  * File Description:
- *   Test for CTime - the standard Date/Time class
+ *   Test for CTime - the standard Date/Time class.
+ *
+ * NOTE: 
+ *   The time change dates for Daylight Saving Time in the U.S. and 
+ *   Europe are different. Because this test have hardcoded dates, it works
+ *   only on the machines with the same DST standards as in the U.S. 
  *
  */
 
@@ -137,9 +142,9 @@ static void s_TestMisc(void)
                 CTime t("02/15/2000 01:12:33");
                 LOG_POST(STR(t));
                 assert(t.AsString() == "02/15/2000 01:12:33");
-                t = "3/16/2001 02:13:34";
+                t = "6/16/2001 02:13:34";
                 LOG_POST(STR(t));
-                assert(t.AsString() == "03/16/2001 02:13:34");
+                assert(t.AsString() == "06/16/2001 02:13:34");
             } catch (CException& e) {
                 NCBI_REPORT_EXCEPTION("",e);
             }
@@ -689,7 +694,7 @@ static void s_TestGMT(void)
         LOG_POST("\nTest AdjustTime");
 
         CTime::SetFormat("M/D/Y h:m:s");
-        CTime t("04/01/2001 01:01:00");
+        CTime t("03/11/2007 01:01:00");
         CTime tn;
         t.SetTimeZonePrecision(CTime::eTZPrecisionDefault);
         LOG_POST("init  " + STR(t));
@@ -698,18 +703,18 @@ static void s_TestGMT(void)
         LOG_POST("GMT");
         tn = t + 5;  
         LOG_POST("+5d   " + STR(tn));
-        assert(tn.AsString() == "04/06/2001 01:01:00");
+        assert(tn.AsString() == "03/16/2007 01:01:00");
         tn = t + 40; 
         LOG_POST("+40d  " + STR(tn));
-        assert(tn.AsString() == "05/11/2001 01:01:00");
+        assert(tn.AsString() == "04/20/2007 01:01:00");
 
         t.SetTimeZoneFormat(CTime::eLocal);
         LOG_POST("Local eNone");
         t.SetTimeZonePrecision(CTime::eNone);
         tn=t+5;  LOG_POST("+5d   " + STR(tn));
-        assert(tn.AsString() == "04/06/2001 01:01:00");
+        assert(tn.AsString() == "03/16/2007 01:01:00");
         tn=t+40; LOG_POST("+40d  " + STR(tn));
-        assert(tn.AsString() == "05/11/2001 01:01:00");
+        assert(tn.AsString() == "04/20/2007 01:01:00");
 
         t.SetTimeZonePrecision(CTime::eMonth);
         LOG_POST("Local eMonth");
@@ -718,23 +723,23 @@ static void s_TestGMT(void)
         tn = t; 
         tn.AddMonth(-1);
         LOG_POST("-1m   " + STR(tn));
-        assert(tn.AsString() == "03/01/2001 01:01:00");
+        assert(tn.AsString() == "02/11/2007 01:01:00");
         tn = t; 
         tn.AddMonth(+1);
         LOG_POST("+1m   " + STR(tn));
-        assert(tn.AsString() == "05/01/2001 02:01:00");
+        assert(tn.AsString() == "04/11/2007 02:01:00");
 
         t.SetTimeZonePrecision(CTime::eDay);
         LOG_POST("Local eDay");
         tn = t - 1; 
         LOG_POST("-1d   " + STR(tn));
-        assert(tn.AsString() == "03/31/2001 01:01:00");
+        assert(tn.AsString() == "03/10/2007 01:01:00");
         tn++;   
         LOG_POST("+0d   " + STR(tn));
-        assert(tn.AsString() == "04/01/2001 01:01:00");
+        assert(tn.AsString() == "03/11/2007 01:01:00");
         tn = t + 1; 
         LOG_POST("+1d   " + STR(tn));
-        assert(tn.AsString() == "04/02/2001 02:01:00");
+        assert(tn.AsString() == "03/12/2007 02:01:00");
 
         LOG_POST("Local eHour");
         t.SetTimeZonePrecision(CTime::eHour);
@@ -743,13 +748,13 @@ static void s_TestGMT(void)
         CTime te = t; 
         te.AddHour(3);
         LOG_POST("-3h   " + STR(tn));
-        assert(tn.AsString() == "03/31/2001 22:01:00");
+        assert(tn.AsString() == "03/10/2007 22:01:00");
         LOG_POST("+3h   " + STR(te));
-        assert(te.AsString() == "04/01/2001 05:01:00");
+        assert(te.AsString() == "03/11/2007 05:01:00");
         CTime th = tn; 
         th.AddHour(49);
         LOG_POST("+49h  " + STR(th) + "\n");
-        assert(th.AsString() == "04/03/2001 00:01:00");
+        assert(th.AsString() == "03/13/2007 00:01:00");
 
         for (int i = 0;  i < 8;  i++,  tn.AddHour()) {
             LOG_POST(string(((tn.TimeZoneDiff()/3600) == -4) ? "  " : "* ") +
@@ -762,20 +767,20 @@ static void s_TestGMT(void)
         }
         LOG_POST("");
 
-        tn = "10/28/2001 00:01:00"; 
+        tn = "11/04/2007 00:01:00"; 
         LOG_POST("init  " + STR(tn));
         tn.SetTimeZonePrecision(CTime::eHour);
         te = tn; 
         tn.AddHour(-3); 
         te.AddHour(9);
         LOG_POST("-3h   " + STR(tn));
-        assert(tn.AsString() == "10/27/2001 21:01:00");
+        assert(tn.AsString() == "11/03/2007 21:01:00");
         LOG_POST("+9h   " + STR(te));
-        assert(te.AsString() == "10/28/2001 08:01:00");
+        assert(te.AsString() == "11/04/2007 08:01:00");
         th = tn; 
         th.AddHour(49);
         LOG_POST("+49h  " + STR(th));
-        assert(th.AsString() == "10/29/2001 21:01:00");
+        assert(th.AsString() == "11/05/2007 21:01:00");
         LOG_POST("");
 
         tn.AddHour(+2);
@@ -789,16 +794,16 @@ static void s_TestGMT(void)
         }
         LOG_POST("");
 
-        tn = "10/28/2001 09:01:00"; 
+        tn = "11/04/2007 09:01:00"; 
         LOG_POST("init  " + STR(tn));
         tn.SetTimeZonePrecision(CTime::eHour);
         te = tn; 
         tn.AddHour(-10); 
         te.AddHour(+10);
         LOG_POST("-10h  " + STR(tn));
-        assert(tn.AsString() == "10/28/2001 00:01:00");
+        assert(tn.AsString() == "11/04/2007 00:01:00");
         LOG_POST("+10h  " + STR(te));
-        assert(te.AsString() == "10/28/2001 19:01:00");
+        assert(te.AsString() == "11/04/2007 19:01:00");
         
         LOG_POST("\n");
     }}
