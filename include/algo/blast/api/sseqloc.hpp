@@ -54,20 +54,42 @@ struct SSeqLoc {
     mutable CRef<objects::CScope>    scope;
     
     /// Seq-loc describing regions to mask in the seqloc field
-    CConstRef<objects::CSeq_loc>     mask;
+    /// Acceptable types of Seq-loc are Seq-interval and Packed-int
+    /// @sa ignore_strand_in_mask
+    CRef<objects::CSeq_loc>          mask;
+
+    /// This member dictates how the strand in the mask member is interpreted.
+    /// If true, it means that the Seq-loc in mask is assumed to be on the plus
+    /// strand AND that the complement of this should also be applied (i.e.:
+    /// the strand specification of the mask member will be ignored). If it's
+    /// false, then the strand specification of the mask member will be obeyed
+    /// and only those regions on specific strands will be masked.
+    /// @note the default value of this field is true
+    /// @sa mask
+    bool                             ignore_strand_in_mask;
     
     SSeqLoc()
-        : seqloc(), scope(), mask() {}
+        : seqloc(), scope(), mask(), ignore_strand_in_mask(true) {}
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s)
-        : seqloc(sl), scope(s), mask(0) {}
+        : seqloc(sl), scope(s), mask(0), ignore_strand_in_mask(true) {}
     SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s)
-        : seqloc(&sl), scope(&s), mask(0) {}
+        : seqloc(&sl), scope(&s), mask(0), ignore_strand_in_mask(true) {}
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s,
-            const objects::CSeq_loc* m)
-        : seqloc(sl), scope(s), mask(m) {}
+            objects::CSeq_loc* m, bool ignore_strand_in_mask = true)
+        : seqloc(sl), scope(s), mask(m), 
+          ignore_strand_in_mask(ignore_strand_in_mask) {
+        if (ignore_strand_in_mask) {
+              mask->ResetStrand();
+        }
+    }
     SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s,
-            const objects::CSeq_loc& m)
-        : seqloc(&sl), scope(&s), mask(&m) {}
+            objects::CSeq_loc& m, bool ignore_strand_in_mask = true)
+        : seqloc(&sl), scope(&s), mask(&m),
+          ignore_strand_in_mask(ignore_strand_in_mask) {
+        if (ignore_strand_in_mask) {
+              mask->ResetStrand();
+        }
+    }
 };
 
 /// Vector of sequence locations

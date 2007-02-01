@@ -212,14 +212,20 @@ private:
     ETranslationFrame m_Frame;  ///< Frame to look for
 };
 
-/// Build a TMaskedQueryRegions from a Packed CSeq_loc.
-/// @param sloc Seq-loc describing masked query regions.
-/// @param program Blast program value.
+/// Auxiliary function to convert a Seq-loc describing masked query regions to a 
+/// TMaskedQueryRegions object
+/// @param sloc_in Seq-loc to use as source (must be Packed-int or Seq-int) [in]
+/// @param prog BLAST program type [in]
+/// @param assume_both_strands ignores the strand of sloc_in and adds masking
+/// locations to both strands in return value. This is irrelevant for protein
+/// queries
 /// @return List of masked query regions.
+/// @throws CBlastException if Seq-loc type cannot be converted to Packed-int
 NCBI_XBLAST_EXPORT
 TMaskedQueryRegions
 PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc,
-                                 EBlastProgramType program);
+                                 EBlastProgramType program,
+                                 bool assume_both_strands = false);
 
 /// Interface to build a CSeq-loc from a TMaskedQueryRegion; this
 /// method always throws an exception, because conversion in this

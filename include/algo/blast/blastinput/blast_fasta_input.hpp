@@ -98,10 +98,14 @@ private:
     ///           lowercase-masked regions in the query that was read in.
     ///           If there are no such locations, the Seq_loc is of type
     ///           'null', otherwise it is of type 'packed_seqint'
+    /// @param query_is_protein if NOT NULL, the value of this variable will
+    /// be filled with a boolean value which is set to true if a protein query
+    /// was read or false if a nucleotide query was read [out]
     /// @return The sequence in Seq_loc format
     ///
     CRef<objects::CSeq_loc> x_FastaToSeqLoc(
-                          vector<CConstRef<objects::CSeq_loc> > *lcase_mask);
+                          vector< CConstRef<objects::CSeq_loc> > *lcase_mask,
+                          bool* query_is_protein = NULL);
 };
 
 END_SCOPE(blast)
