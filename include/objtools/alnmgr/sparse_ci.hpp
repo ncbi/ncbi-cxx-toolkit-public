@@ -34,8 +34,6 @@
 
 #include <corelib/ncbimisc.hpp>
 
-#include <gui/widgets/aln_data/utils.hpp>
-
 #include <objtools/alnmgr/sparse_aln.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -80,7 +78,7 @@ public:
     CSparse_CI();
     CSparse_CI(const TAlignColl& coll, EFlags flag);
     CSparse_CI(const TAlignColl& coll, EFlags flag,
-               const CAlignUtils::TSignedRange& range);
+               const TSignedRange& range);
     CSparse_CI(const CSparse_CI& orig);
 
     virtual ~CSparse_CI();

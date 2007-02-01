@@ -39,13 +39,10 @@
 #include <util/align_range.hpp>
 #include <util/align_range_coll.hpp>
 
-#include <gui/widgets/aln_data/utils.hpp>
-#include <gui/widgets/aln_data/data_elements.hpp>
-
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
 
 #include <objtools/alnmgr/pairwise_aln.hpp>
+#include <objtools/alnmgr/aln_explorer.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -58,23 +55,22 @@ BEGIN_NCBI_SCOPE
 ///     master is always specified in CSparse-seg and has a Seq-id
 ///     we display it always anchored
 ///     chaning anchor is not supported
-class NCBI_XALNMGR_EXPORT CSparseAln : public CObject
+class NCBI_XALNMGR_EXPORT CSparseAln : public CObject, IAlnExplorer
 {
 public:
     /// Types
-    typedef CPairwiseAln::TRng TRng; ///< Synonym of TRange
-    typedef CPairwiseAln::TAlnRng TAlnRng; ///< Synonym of TAlignRange
-    typedef CPairwiseAln::TAlnRngColl TAlnRngColl; ///< Synonym of TAlignColl
+    typedef CPairwiseAln::TRng TRng;
+    typedef CPairwiseAln::TAlnRng TAlnRng;
+    typedef CPairwiseAln::TAlnRngColl TAlnRngColl;
     typedef CAnchoredAln::TDim TDim; ///< Synonym of TNumrow
-    
-    typedef SAlignTools::TAlignRange   TAlignRange;
-    typedef SAlignTools::TAlignColl    TAlignColl;
 
-    typedef CAlignUtils TUtils;
-    typedef TUtils::TNumrow TNumrow;
-    typedef TUtils::TResidue TResidue;
-    typedef TUtils::TSignedRange TSignedRange;
-    typedef TUtils::TRange TRange;
+    enum ESearchDirection {
+        eNone,
+        eBackwards,
+        eForward,
+        eLeft,
+        eRight
+    };
 
     /// Constructor
     CSparseAln(const CAnchoredAln& anchored_aln,
@@ -137,10 +133,10 @@ public:
 
     /// Position mapping functions
     TSignedSeqPos GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
-                                      TUtils::ESearchDirection dir = TUtils::eNone,
+                                      ESearchDirection dir = eNone,
                                       bool try_reverse_dir = true) const;
     TSignedSeqPos GetSeqPosFromAlnPos(TNumrow for_row, TSeqPos aln_pos,
-                                      TUtils::ESearchDirection dir = TUtils::eNone,
+                                      ESearchDirection dir = eNone,
                                       bool try_reverse_dir = true) const;
 
 
@@ -152,7 +148,7 @@ public:
 
     string& GetSeqString   (TNumrow row,                           //< which row
                             string &buffer,                        //< provide an empty buffer for the output
-                            const TUtils::TRange &seq_rng,         //< what range
+                            const TRange &seq_rng,                 //< what range
                             bool force_translation = false) const; //< optional na2aa translation (na only!)
 
     string& GetAlnSeqString(TNumrow row,                           //< which row
@@ -166,7 +162,7 @@ public:
 
     virtual IAlnSegmentIterator*
     CreateSegmentIterator(TNumrow row,
-                          const TUtils::TSignedRange& range,
+                          const TSignedRange& range,
                           IAlnSegmentIterator::EFlags flags) const;
 
     /// Wheather the alignment is translated (heterogenous), e.g. nuc-prot

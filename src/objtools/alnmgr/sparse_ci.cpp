@@ -215,7 +215,7 @@ CSparse_CI::CSparse_CI(const TAlignColl& coll, EFlags flag)
 
 
 CSparse_CI::CSparse_CI(const TAlignColl& coll, EFlags flag,
-                                 const CAlignUtils::TSignedRange& range)
+                       const TSignedRange& range)
 :   m_Coll(&coll),
     m_Flag(flag),
     m_Clip(NULL)

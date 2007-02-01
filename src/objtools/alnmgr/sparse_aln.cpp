@@ -37,7 +37,6 @@
 #include <objects/seqalign/Sparse_align.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 
-#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi::objects);
@@ -210,20 +209,20 @@ bool CSparseAln::IsTranslated() const {
 }
 
 
-inline  CSparseAln::TAlnRngColl::ESearchDirection
-    GetCollectionSearchDirection(CAlignUtils::ESearchDirection dir)
+inline CSparseAln::TAlnRngColl::ESearchDirection
+GetCollectionSearchDirection(CSparseAln::ESearchDirection dir)
 {
     typedef CSparseAln::TAlnRngColl   T;
     switch(dir) {
-    case CAlignUtils::eNone:
+    case CSparseAln::eNone:
         return T::eNone;
-    case CAlignUtils::eLeft:
+    case CSparseAln::eLeft:
         return T::eLeft;
-    case CAlignUtils::eRight:
+    case CSparseAln::eRight:
         return T::eRight;
-    case CAlignUtils::eForward:
+    case CSparseAln::eForward:
         return T::eForward;
-    case CAlignUtils::eBackwards:
+    case CSparseAln::eBackwards:
         return T::eBackwards;
     }
     _ASSERT(false); // invalid
@@ -233,9 +232,9 @@ inline  CSparseAln::TAlnRngColl::ESearchDirection
 
 TSignedSeqPos 
 CSparseAln::GetAlnPosFromSeqPos(TNumrow row, 
-                                      TSeqPos seq_pos,
-                                      TUtils::ESearchDirection dir,
-                                      bool try_reverse_dir) const
+                                TSeqPos seq_pos,
+                                ESearchDirection dir,
+                                bool try_reverse_dir) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
 
@@ -245,8 +244,8 @@ CSparseAln::GetAlnPosFromSeqPos(TNumrow row,
 
 
 TSignedSeqPos CSparseAln::GetSeqPosFromAlnPos(TNumrow row, TSeqPos aln_pos,
-                                                    TUtils::ESearchDirection dir,
-                                                    bool try_reverse_dir) const
+                                              ESearchDirection dir,
+                                              bool try_reverse_dir) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
 
@@ -341,7 +340,7 @@ string& CSparseAln::GetSeqString(TNumrow row,
 
 string& CSparseAln::GetSeqString(TNumrow row,
                                  string &buffer,
-                                 const TUtils::TRange &seq_range,
+                                 const TRange &seq_range,
                                  bool force_translation) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
@@ -449,7 +448,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
 
 IAlnSegmentIterator*
 CSparseAln::CreateSegmentIterator(TNumrow row,
-                                  const TUtils::TSignedRange& range,
+                                  const TSignedRange& range,
                                   IAlnSegmentIterator::EFlags flag) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());

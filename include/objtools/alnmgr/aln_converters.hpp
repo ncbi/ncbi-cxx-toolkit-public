@@ -25,7 +25,7 @@
 *
 * ===========================================================================
 *
-* Authors:  Kamen Todorov, NCBI
+* Author:  Kamen Todorov, NCBI
 *
 * File Description:
 *   Alignment converters
@@ -38,17 +38,12 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
 
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_SCOPE(objects)
-    class CDense_seg;
-END_SCOPE(objects)
 
 
 NCBI_XALNMGR_EXPORT
@@ -64,8 +59,8 @@ NCBI_XALNMGR_EXPORT
 void
 ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,       ///< output
                            const objects::CDense_seg& ds,    ///< input Dense-seg
-                           objects::CDense_seg::TDim row_1,  ///< which pair of rows
-                           objects::CDense_seg::TDim row_2,
+                           objects::CSeq_align::TDim row_1,  ///< which pair of rows
+                           objects::CSeq_align::TDim row_2,
                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
 
 
@@ -74,7 +69,7 @@ void
 ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,                   ///< output
                            const objects::CSeq_align::TSegs::TStd& stds, ///< input Stds
                            objects::CSeq_align::TDim row_1,              ///< which pair of rows 
-                           objects::CDense_seg::TDim row_2,
+                           objects::CSeq_align::TDim row_2,
                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
 
 
@@ -83,7 +78,7 @@ void
 ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,                           ///< output
                             const objects::CSeq_align::TSegs::TDendiag& dendiags, ///< input Dendiags
                             objects::CSeq_align::TDim row_1,                      ///< which pair of rows 
-                            objects::CDense_seg::TDim row_2,
+                            objects::CSeq_align::TDim row_2,
                             CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
 
 
@@ -92,16 +87,16 @@ void
 ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,             ///< output
                            const objects::CSparse_seg& sparse_seg, ///< input Sparse-seg
                            objects::CSeq_align::TDim row_1,        ///< which pair of rows 
-                           objects::CDense_seg::TDim row_2,
+                           objects::CSeq_align::TDim row_2,
                            CAlnUserOptions::EDirection direction = CAlnUserOptions::eBothDirections); ///< which direction
 
 
 /// Create an anchored alignment from Seq-align using hints
 template <class TAlnStats>
 CRef<CAnchoredAln> 
-CreateAnchoredAlnFromAln(const TAlnStats& aln_stats, ///< input
-                         size_t aln_idx,             ///< which input alignment
-                         CAlnUserOptions options)    ///< user options
+CreateAnchoredAlnFromAln(const TAlnStats& aln_stats,     ///< input
+                         size_t aln_idx,                 ///< which input alignment
+                         const CAlnUserOptions& options) ///< user options
 {
     typedef typename TAlnStats::TDim TDim;
     TDim dim = aln_stats.GetDimForAln(aln_idx);
@@ -161,7 +156,7 @@ template <class TAlnStats>
 void 
 CreateAnchoredAlnVec(TAlnStats& aln_stats,                 ///< input
                      vector<CRef<CAnchoredAln> >& out_vec, ///< output
-                     const CAlnUserOptions& options)
+                     const CAlnUserOptions& options)       ///< user options
 {
     _ASSERT(out_vec.empty());
     out_vec.resize(aln_stats.GetAlnCount());
