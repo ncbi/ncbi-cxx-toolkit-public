@@ -1008,9 +1008,10 @@ CDBAPIUnitTest::Test_DateTime(void)
     string sql;
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     CVariant value(eDB_DateTime);
-    CTime empty_ctime;
-    CVariant null_date(empty_ctime, eLong);
+    CVariant null_date(CTime(), eLong);
     CTime dt_value;
+
+    null_date.SetNull();
 
     if (true) {
         // Initialization ...

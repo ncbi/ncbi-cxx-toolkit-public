@@ -371,9 +371,16 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_SmallDateTime: {
             CDB_SmallDateTime& val = dynamic_cast<CDB_SmallDateTime&> (param);
+
             DBDATETIME4* dt        = (DBDATETIME4*) param_buff;
-            DBDATETIME4_days(dt)   = val.GetDays();
-            DBDATETIME4_mins(dt)   = val.GetMinutes();
+            if (param.IsNULL()) {
+                DBDATETIME4_days(dt) = 0;
+                DBDATETIME4_mins(dt) = 0;
+            } else {
+                DBDATETIME4_days(dt) = val.GetDays();
+                DBDATETIME4_mins(dt) = val.GetMinutes();
+            }
+
             r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBDATETIME4, -1,
                            is_null ? 0 : -1, (BYTE*) dt));
@@ -382,9 +389,16 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_DateTime: {
             CDB_DateTime& val = dynamic_cast<CDB_DateTime&> (param);
+
             DBDATETIME* dt = (DBDATETIME*) param_buff;
-            dt->dtdays     = val.GetDays();
-            dt->dttime     = val.Get300Secs();
+            if (param.IsNULL()) {
+                dt->dtdays = 0;
+                dt->dttime = 0;
+            } else {
+                dt->dtdays = val.GetDays();
+                dt->dttime = val.Get300Secs();
+            }
+
             r = Check(dbrpcparam(GetCmd(), (char*) GetParams().GetParamName(i).c_str(),
                            status, SYBDATETIME, -1,
                            is_null ? 0 : -1, (BYTE*) dt));

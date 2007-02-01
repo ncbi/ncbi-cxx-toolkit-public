@@ -254,9 +254,16 @@ bool CTL_BCPInCmd::x_AssignParams()
         case eDB_SmallDateTime: {
             CDB_SmallDateTime& par = dynamic_cast<CDB_SmallDateTime&> (param);
             param_fmt.datatype = CS_DATETIME4_TYPE;
+
             CS_DATETIME4 dt;
-            dt.days    = par.GetDays();
-            dt.minutes = par.GetMinutes();
+            if (param.IsNULL()) {
+                dt.days    = 0;
+                dt.minutes = 0;
+            } else {
+                dt.days    = par.GetDays();
+                dt.minutes = par.GetMinutes();
+            }
+
             memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME4));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       (CS_VOID*) m_Bind[i].buffer,
@@ -267,9 +274,16 @@ bool CTL_BCPInCmd::x_AssignParams()
         case eDB_DateTime: {
             CDB_DateTime& par = dynamic_cast<CDB_DateTime&> (param);
             param_fmt.datatype = CS_DATETIME_TYPE;
+
             CS_DATETIME dt;
-            dt.dtdays = par.GetDays();
-            dt.dttime = par.Get300Secs();
+            if (param.IsNULL()) {
+                dt.dtdays = 0;
+                dt.dttime = 0;
+            } else {
+                dt.dtdays = par.GetDays();
+                dt.dttime = par.Get300Secs();
+            }
+
             memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME));
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       (CS_VOID*) m_Bind[i].buffer,

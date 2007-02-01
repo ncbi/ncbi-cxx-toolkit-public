@@ -403,8 +403,14 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
 
         CS_DATETIME4 dt;
-        dt.days    = par.GetDays();
-        dt.minutes = par.GetMinutes();
+        if (param.IsNULL()) {
+            dt.days    = 0;
+            dt.minutes = 0;
+        } else {
+            dt.days    = par.GetDays();
+            dt.minutes = par.GetMinutes();
+        }
+
         ret_code = Check(ct_param(m_Cmd, &param_fmt,
                             (CS_VOID*) &dt, CS_UNUSED, indicator));
         break;
@@ -417,10 +423,16 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
 
         CS_DATETIME dt;
-        dt.dtdays = par.GetDays();
-        dt.dttime = par.Get300Secs();
+        if (param.IsNULL()) {
+            dt.dtdays = 0;
+            dt.dttime = 0;
+        } else {
+            dt.dtdays = par.GetDays();
+            dt.dttime = par.Get300Secs();
+        }
+
         ret_code = Check(ct_param(m_Cmd, &param_fmt,
-                            (CS_VOID*) &dt, CS_UNUSED, indicator));
+                         (CS_VOID*) &dt, CS_UNUSED, indicator));
         break;
     }
     default:

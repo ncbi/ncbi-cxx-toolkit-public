@@ -167,9 +167,16 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             case eDB_SmallDateTime: {
                 CDB_SmallDateTime& val =
                     dynamic_cast<CDB_SmallDateTime&> (param);
+
                 DBDATETIME4* dt = (DBDATETIME4*) pb;
-                dt->days        = val.GetDays();
-                dt->minutes     = val.GetMinutes();
+                if (param.IsNULL()) {
+                    dt->days    = 0;
+                    dt->minutes = 0;
+                } else {
+                    dt->days    = val.GetDays();
+                    dt->minutes = val.GetMinutes();
+                }
+
                 r = Check(bcp_bind(GetCmd(), (BYTE*) dt, 0, val.IsNULL() ? 0 : -1,
                              0, 0, SYBDATETIME4,  i + 1));
                 pb = (void*) (dt + 1);
@@ -177,9 +184,16 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_DateTime: {
                 CDB_DateTime& val = dynamic_cast<CDB_DateTime&> (param);
+
                 DBDATETIME* dt = (DBDATETIME*) pb;
-                dt->dtdays     = val.GetDays();
-                dt->dttime     = val.Get300Secs();
+                if (param.IsNULL()) {
+                    dt->dtdays = 0;
+                    dt->dttime = 0;
+                } else {
+                    dt->dtdays = val.GetDays();
+                    dt->dttime = val.Get300Secs();
+                }
+
                 r = Check(bcp_bind(GetCmd(), (BYTE*) dt, 0, val.IsNULL() ? 0 : -1,
                              0, 0, SYBDATETIME, i + 1));
                 pb = (void*) (dt + 1);
@@ -318,9 +332,16 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             case eDB_SmallDateTime: {
                 CDB_SmallDateTime& val =
                     dynamic_cast<CDB_SmallDateTime&> (param);
+
                 DBDATETIME4* dt = (DBDATETIME4*) pb;
-                dt->days        = val.GetDays();
-                dt->minutes     = val.GetMinutes();
+                if (param.IsNULL()) {
+                    dt->days    = 0;
+                    dt->minutes = 0;
+                } else {
+                    dt->days    = val.GetDays();
+                    dt->minutes = val.GetMinutes();
+                }
+
                 r = Check(bcp_colptr(GetCmd(), (BYTE*) dt, i + 1))
                     == SUCCEED &&
                     Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
@@ -330,9 +351,16 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_DateTime: {
                 CDB_DateTime& val = dynamic_cast<CDB_DateTime&> (param);
+
                 DBDATETIME* dt = (DBDATETIME*) pb;
-                dt->dtdays     = val.GetDays();
-                dt->dttime     = val.Get300Secs();
+                if (param.IsNULL()) {
+                    dt->dtdays = 0;
+                    dt->dttime = 0;
+                } else {
+                    dt->dtdays = val.GetDays();
+                    dt->dttime = val.Get300Secs();
+                }
+
                 r = Check(bcp_colptr(GetCmd(), (BYTE*) dt, i + 1))
                     == SUCCEED &&
                     Check(bcp_collen(GetCmd(), val.IsNULL() ? 0 : -1, i + 1))
