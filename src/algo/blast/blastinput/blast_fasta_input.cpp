@@ -77,7 +77,8 @@ CBlastFastaInputSource::End()
 
 CRef<CSeq_loc>
 CBlastFastaInputSource::x_FastaToSeqLoc(
-                         vector<CConstRef<CSeq_loc> > *lcase_mask)
+                         vector< CConstRef<CSeq_loc> > *lcase_mask,
+                         bool* query_is_protein)
 {
     CRef<CSeq_entry> seq_entry;
     
@@ -117,6 +118,10 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
         seqloc->SetInt().SetTo(seq_length);
     seqloc->SetInt().SetFrom(from);
 
+    if (query_is_protein) {
+        *query_is_protein = itr->IsAa();
+    }
+
     // set strand
     if (m_Config.GetStrand() == eNa_strand_other) {
         if (itr->IsAa())
@@ -147,10 +152,10 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
 SSeqLoc
 CBlastFastaInputSource::GetNextSSeqLoc()
 {
-    bool get_lcase_mask = m_Config.GetLowercaseMask();
-    vector<CConstRef<CSeq_loc> > lcase_mask;
+    const bool get_lcase_mask = m_Config.GetLowercaseMask();
+    vector< CConstRef<CSeq_loc> > lcase_mask;
 
-    vector<CConstRef<CSeq_loc> > *mask_ptr = 0;
+    vector< CConstRef<CSeq_loc> > *mask_ptr = 0;
     if (get_lcase_mask)
         mask_ptr = &lcase_mask;
     
@@ -158,7 +163,7 @@ CBlastFastaInputSource::GetNextSSeqLoc()
 
     SSeqLoc retval(seqloc, m_Scope);
     if (get_lcase_mask)
-        retval.mask.Reset(lcase_mask[0]);
+        retval.mask.Reset(const_cast<CSeq_loc*>(lcase_mask.front().GetPointer()));
 
     return retval;
 }
@@ -167,38 +172,28 @@ CBlastFastaInputSource::GetNextSSeqLoc()
 CRef<CBlastSearchQuery>
 CBlastFastaInputSource::GetNextSequence()
 {
-    bool get_lcase_mask = m_Config.GetLowercaseMask();
-    vector<CConstRef<CSeq_loc> > lcase_mask;
+    const bool get_lcase_mask = m_Config.GetLowercaseMask();
+    vector< CConstRef<CSeq_loc> > lcase_mask;
 
-    vector<CConstRef<CSeq_loc> > *mask_ptr = 0;
+    vector< CConstRef<CSeq_loc> > *mask_ptr = 0;
     if (get_lcase_mask)
         mask_ptr = &lcase_mask;
     
-    CRef<CSeq_loc> seqloc(x_FastaToSeqLoc(mask_ptr));
+    bool query_is_protein = false;
+    CRef<CSeq_loc> seqloc(x_FastaToSeqLoc(mask_ptr, &query_is_protein));
 
-    CRef<CBlastSearchQuery> retval(new CBlastSearchQuery(
-                               *seqloc, *m_Scope, TMaskedQueryRegions()));
+    TMaskedQueryRegions masks_in_query;
     if (get_lcase_mask) {
-        const CSeq_loc& maskloc = *lcase_mask[0];
-        if (maskloc.IsPacked_int()) {
-            const CPacked_seqint::Tdata& intervals = 
-                                maskloc.GetPacked_int().Get();
-            TMaskedQueryRegions new_regions;
-
-            ITERATE(CPacked_seqint::Tdata, itr, intervals) {
-                const CSeq_interval *intptr = &**itr;
-                CRef<CSeqLocInfo> sli(new CSeqLocInfo(
-                               const_cast<CSeq_interval *>(intptr),
-                               CSeqLocInfo::eFrameNotSet));
-                retval->AddMask(sli);
-            }
-        } else if (!maskloc.IsNull()) {
-            NCBI_THROW(CBlastException, eInvalidArgument, 
-                        "unexpected mask location type from ReadFasta");
-        }
+        const EBlastProgramType program = query_is_protein 
+            ? eBlastTypeBlastp 
+            : eBlastTypeBlastn;
+        const bool apply_mask_to_both_strands = true;
+        masks_in_query = 
+            PackedSeqLocToMaskedQueryRegions(lcase_mask.front(), program, 
+                                             apply_mask_to_both_strands);
     }
-
-    return retval;
+    return CRef<CBlastSearchQuery>
+        (new CBlastSearchQuery(*seqloc, *m_Scope, masks_in_query));
 }
 
 END_SCOPE(blast)

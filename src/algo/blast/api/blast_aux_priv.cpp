@@ -191,7 +191,8 @@ BlastBuildSearchResultSet(const vector< CConstRef<CSeq_id> >& query_ids,
 
 TMaskedQueryRegions
 PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in,
-                                 EBlastProgramType            prog)
+                                 EBlastProgramType            prog,
+                                 bool assume_both_strands)
 {
     if (sloc_in.Empty() || 
         sloc_in->Which() == CSeq_loc::e_not_set ||
@@ -253,8 +254,12 @@ PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc_in,
                 }
             } else {
                 // intervals with no strand assignment will use both.
-                do_pos = true;
-                do_neg = true;
+                do_pos = do_neg = true;
+            }
+
+            // deliberately override the strand option above, if so requested
+            if (assume_both_strands) {
+                do_pos = do_neg = true;
             }
             
             if (do_pos) {

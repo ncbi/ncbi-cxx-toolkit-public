@@ -105,7 +105,7 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
         SSeqLoc sl(seqloc, scope);
 
         if (get_lcase_mask) {
-            sl.mask.Reset(lcase_mask[index++]);
+            sl.mask.Reset(const_cast<CSeq_loc*>(&*lcase_mask[index++]));
         }
         retval.push_back(sl);
     }

@@ -183,8 +183,8 @@ CBlastQuerySourceOM::GetMaskedRegions(int i)
     if (m_QueryVector.NotEmpty()) {
         return m_QueryVector->GetMaskedRegions(i);
     } else {
-        return PackedSeqLocToMaskedQueryRegions( (*m_TSeqLocVector)[i].mask,
-                                                 m_Program );
+        return PackedSeqLocToMaskedQueryRegions((*m_TSeqLocVector)[i].mask,
+                     m_Program, (*m_TSeqLocVector)[i].ignore_strand_in_mask);
     }
 }
 

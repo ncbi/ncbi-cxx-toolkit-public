@@ -347,7 +347,7 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_db)
 
     // Remove any lower case masks, because they should not be used for the 
     // repeat locations search.
-    vector< CConstRef<CSeq_loc> > lcase_mask_v;
+    vector< CRef<CSeq_loc> > lcase_mask_v;
     lcase_mask_v.reserve(query.size());
     
     for (unsigned int index = 0; index < query.size(); ++index) {
