@@ -35,11 +35,11 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/continfo.hpp>
-#include <serial/ptrinfo.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
+#include <serial/impl/continfo.hpp>
+#include <serial/impl/ptrinfo.hpp>
+#include <serial/impl/stdtypes.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/choice.hpp>
 #include <vector>
 #include <memory>
 

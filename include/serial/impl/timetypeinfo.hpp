@@ -36,7 +36,7 @@
 #include <corelib/ncbitime.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/serial.hpp>
-#include <serial/stdtypesimpl.hpp>
+#include <serial/impl/stdtypesimpl.hpp>
 
 
 /** @addtogroup TypeInfoCPP

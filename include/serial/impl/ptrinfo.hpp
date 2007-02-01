@@ -33,7 +33,7 @@
 */
 
 #include <serial/typeinfo.hpp>
-#include <serial/typeref.hpp>
+#include <serial/impl/typeref.hpp>
 
 
 /** @addtogroup TypeInfoCPP

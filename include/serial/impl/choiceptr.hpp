@@ -33,8 +33,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/choice.hpp>
-#include <serial/stdtypes.hpp>
+#include <serial/impl/choice.hpp>
+#include <serial/impl/stdtypes.hpp>
 #include <serial/impl/stdtypeinfo.hpp>
 #include <map>
 

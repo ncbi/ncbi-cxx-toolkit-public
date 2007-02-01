@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/typeref.hpp>
+#include <serial/impl/typeref.hpp>
 #include <serial/datatool/comments.hpp>
 #include <list>
 #include <set>

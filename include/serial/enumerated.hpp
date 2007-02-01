@@ -32,7 +32,7 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-#include <serial/stdtypes.hpp>
+#include <serial/impl/stdtypes.hpp>
 #include <serial/enumvalues.hpp>
 
 

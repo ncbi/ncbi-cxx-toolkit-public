@@ -32,7 +32,7 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-#include <serial/ptrinfo.hpp>
+#include <serial/impl/ptrinfo.hpp>
 
 
 /** @addtogroup TypeInfoCPP

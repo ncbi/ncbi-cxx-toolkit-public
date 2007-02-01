@@ -33,8 +33,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/classinfob.hpp>
-#include <serial/member.hpp>
+#include <serial/impl/classinfob.hpp>
+#include <serial/impl/member.hpp>
 #include <list>
 
 

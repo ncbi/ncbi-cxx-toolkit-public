@@ -32,8 +32,8 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-#include <serial/classinfob.hpp>
-#include <serial/variant.hpp>
+#include <serial/impl/classinfob.hpp>
+#include <serial/impl/variant.hpp>
 
 
 /** @addtogroup TypeInfoCPP

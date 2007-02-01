@@ -34,8 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialutil.hpp>
-#include <serial/typeref.hpp>
-#include <serial/memberid.hpp>
+#include <serial/impl/typeref.hpp>
+#include <serial/impl/memberid.hpp>
 
 
 /** @addtogroup FieldsComplex

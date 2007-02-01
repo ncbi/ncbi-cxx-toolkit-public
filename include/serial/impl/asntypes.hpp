@@ -38,9 +38,8 @@
 
 #include <serial/typeinfo.hpp>
 #include <serial/serialutil.hpp>
-#include <serial/continfo.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/typeref.hpp>
+#include <serial/impl/continfo.hpp>
+#include <serial/impl/stdtypes.hpp>
 #include <serial/impl/serialasndef.hpp>
 
 

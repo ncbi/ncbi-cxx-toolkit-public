@@ -33,7 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/impl/classinfo.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE

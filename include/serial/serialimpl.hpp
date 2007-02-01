@@ -36,11 +36,11 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <serial/stltypes.hpp>
+#include <serial/impl/stltypes.hpp>
 #include <serial/enumerated.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choiceptr.hpp>
-#include <serial/autoptrinfo.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/choiceptr.hpp>
+#include <serial/impl/aliasinfo.hpp>
 #include <serial/impl/classinfohelper.hpp>
 
 

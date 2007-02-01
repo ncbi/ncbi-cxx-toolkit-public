@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <util/lightstr.hpp>
-#include <serial/item.hpp>
+#include <serial/impl/item.hpp>
 #include <vector>
 #include <map>
 

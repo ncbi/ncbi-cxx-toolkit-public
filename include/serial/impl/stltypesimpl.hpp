@@ -34,9 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/typeref.hpp>
-#include <serial/continfo.hpp>
-#include <serial/memberid.hpp>
+#include <serial/impl/continfo.hpp>
+#include <serial/impl/memberid.hpp>
 
 
 /** @addtogroup TypeInfoCPP

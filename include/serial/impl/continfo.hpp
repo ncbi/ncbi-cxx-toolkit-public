@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/typeref.hpp>
+#include <serial/impl/typeref.hpp>
 #include <memory>
 
 

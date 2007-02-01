@@ -41,8 +41,8 @@
 #include <vector>
 #include <memory>
 #include <serial/serialutil.hpp>
-#include <serial/stltypesimpl.hpp>
-#include <serial/ptrinfo.hpp>
+#include <serial/impl/stltypesimpl.hpp>
+#include <serial/impl/ptrinfo.hpp>
 #include <serial/objistr.hpp>
 
 

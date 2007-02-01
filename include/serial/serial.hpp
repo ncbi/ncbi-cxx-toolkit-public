@@ -32,7 +32,7 @@
 *   Serialization classes.
 */
 
-#include <serial/typeref.hpp>
+#include <serial/impl/typeref.hpp>
 
 
 /** @addtogroup GenClassSupport

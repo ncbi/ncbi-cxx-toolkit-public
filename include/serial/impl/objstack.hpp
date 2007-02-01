@@ -43,7 +43,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/exception.hpp>
-#include <serial/memberid.hpp>
+#include <serial/impl/memberid.hpp>
 #include <serial/typeinfo.hpp>
 
 

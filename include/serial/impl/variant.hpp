@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialutil.hpp>
-#include <serial/item.hpp>
+#include <serial/impl/item.hpp>
 #include <serial/impl/hookdata.hpp>
 #include <serial/impl/hookfunc.hpp>
 #include <serial/typeinfo.hpp>

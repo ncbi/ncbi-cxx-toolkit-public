@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/impl/stdtypeinfo.hpp>
-#include <serial/typeref.hpp>
+#include <serial/impl/typeref.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/impl/memberlist.hpp>
 #include <map>

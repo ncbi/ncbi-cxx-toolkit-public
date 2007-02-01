@@ -33,7 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/stdtypes.hpp>
+#include <serial/impl/stdtypes.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/serialutil.hpp>
 
