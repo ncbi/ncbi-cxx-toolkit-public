@@ -43,14 +43,14 @@
 
 BEGIN_NCBI_SCOPE
 
+
 // Hex symbols
 static const char s_Hex[] = "0123456789ABCDEF";
 
 
-inline
-std::string::size_type s_DiffPtr(const char* end, const char* start)
+inline SIZE_TYPE s_DiffPtr(const char* end, const char* start)
 {
-    return end ? (size_t)(end - start) : (size_t) 0;
+    return end ? (SIZE_TYPE)(end - start) : (SIZE_TYPE) 0;
 }
 
 const char *const kEmptyCStr = "";
@@ -64,6 +64,7 @@ const string& CNcbiEmptyString::FirstGet(void) {
     return s_Str;
 }
 #endif
+
 
 bool NStr::IsBlank(const string& str, SIZE_TYPE pos)
 {
@@ -456,8 +457,9 @@ enum ESkipMode {
     eSkipSpacesOnly     // spaces only 
 };
 
-void s_SkipAllowedSymbols(const CTempString& str, size_t& pos,
-                          ESkipMode skip_mode)
+void s_SkipAllowedSymbols(const CTempString& str,
+                          SIZE_TYPE&         pos,
+                          ESkipMode          skip_mode)
 {
     if (skip_mode == eSkipAll) {
         pos = str.length();
@@ -480,7 +482,7 @@ void s_SkipAllowedSymbols(const CTempString& str, size_t& pos,
 // of the string. Update 'base' value.
 // Update 'ptr' to current position in the string.
 
-bool s_CheckRadix(const CTempString& str, size_t& pos, int& base)
+bool s_CheckRadix(const CTempString& str, SIZE_TYPE& pos, int& base)
 {
     // Check base
     if ( base < 0  ||  base == 1  ||  base > 36 ) {
@@ -514,7 +516,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
     _ASSERT(flags == 0  ||  flags > 32);
 
     // Current position in the string
-    size_t pos = 0;
+    SIZE_TYPE pos = 0;
 
     // Skip allowed leading symbols
     if (flags & fAllowLeadingSymbols) {
@@ -549,8 +551,8 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
     Int8 limoff = kMax_I8 % base + (sign ? 1 : 0);
 
     // Number of symbols between two commas. '-1' means -- no comma yet.
-    int    comma  = -1;  
-    size_t numpos = pos;
+    int       comma  = -1;  
+    SIZE_TYPE numpos = pos;
 
     errno = 0;
     while (str[pos]) {
@@ -589,13 +591,13 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
 }
 
 
-Uint8
-NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
+Uint8 NStr::StringToUInt8(const CTempString& str,
+                          TStringToNumFlags flags, int base)
 {
     _ASSERT(flags == 0  ||  flags > 32);
 
     // Current position in the string
-    size_t pos = 0;
+    SIZE_TYPE pos = 0;
 
     // Skip allowed leading symbols
     if (flags & fAllowLeadingSymbols) {
@@ -623,8 +625,8 @@ NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
     int   limoff = int(kMax_UI8 % base);
 
     // Number of symbols between two commas. '-1' means -- no comma yet.
-    int    comma  = -1;  
-    size_t numpos = pos;
+    int       comma  = -1;  
+    SIZE_TYPE numpos = pos;
 
     errno = 0;
     while (str[pos]) {
@@ -661,13 +663,12 @@ NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
 }
 
 
-double
-NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
+double NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
 {
     _ASSERT(flags == 0  ||  flags > 32);
 
     // Current position in the string
-    size_t pos  = 0;
+    SIZE_TYPE pos  = 0;
 
     // Skip allowed leading symbols
     if (flags & fAllowLeadingSymbols) {
@@ -727,7 +728,7 @@ NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
 
 /// @internal
 static Uint8 s_DataSizeConvertQual(const CTempString&      str,
-                                   size_t&                 pos, 
+                                   SIZE_TYPE&              pos, 
                                    Uint8                   value,
                                    NStr::TStringToNumFlags flags)
 {
@@ -786,7 +787,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
     _ASSERT(flags == 0  ||  flags > 20);
 
     // Current position in the string
-    size_t pos = 0;
+    SIZE_TYPE pos = 0;
 
     // Find end of number representation
     {{
@@ -814,7 +815,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
         }
     }}
 
-    size_t numpos = pos;
+    SIZE_TYPE numpos = pos;
     char ch = str[pos];
     while (ch) {
         if ( !s_IsGoodCharForRadix(ch, base)  &&
@@ -867,7 +868,7 @@ void NStr::IntToString(string& out_str, long svalue,
         value = static_cast<unsigned long>(svalue);
     }
     
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT);
+    const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
@@ -910,7 +911,7 @@ void NStr::UIntToString(string&           out_str,
         return;
     }
 
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT);
+    const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
@@ -1044,7 +1045,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
         value = static_cast<Uint8>(svalue);
     }
 
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT);
+    const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
 
     char* pos = s_PrintUint8(buffer + kBufSize, value, flags, base);
@@ -1075,7 +1076,7 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
         return;
     }
 
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT);
+    const SIZE_TYPE kBufSize = CHAR_BIT  * sizeof(value);
     char  buffer[kBufSize];
 
     char* pos = s_PrintUint8(buffer + kBufSize, value, flags, base);
@@ -1243,10 +1244,10 @@ string NStr::FormatVarargs(const char* format, va_list args)
 
 #elif defined(HAVE_VSNPRINTF)
     // deal with implementation quirks
-    size_t size = 1024;
+    const SIZE_TYPE size = 1024;
     AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
     buf.get()[size-1] = buf.get()[size-2] = 0;
-    size_t n = vsnprintf(buf.get(), size, format, args);
+    SIZE_TYPE n = vsnprintf(buf.get(), size, format, args);
     while (n >= size  ||  buf.get()[size-2]) {
         if (buf.get()[size-1]) {
             ERR_POST(Warning << "Buffer overrun by buggy vsnprintf");
@@ -1408,7 +1409,7 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
 
 string& NStr::Replace(const string& src,
                       const string& search, const string& replace,
-                      string& dst, SIZE_TYPE start_pos, size_t max_replace)
+                      string& dst, SIZE_TYPE start_pos, SIZE_TYPE max_replace)
 {
     // source and destination should not be the same
     if (&src == &dst) {
@@ -1422,7 +1423,7 @@ string& NStr::Replace(const string& src,
          search == replace )
         return dst;
 
-    for (size_t count = 0; !(max_replace && count >= max_replace); count++) {
+    for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
         start_pos = dst.find(search, start_pos);
         if (start_pos == NPOS)
             break;
@@ -1435,7 +1436,7 @@ string& NStr::Replace(const string& src,
 
 string NStr::Replace(const string& src,
                      const string& search, const string& replace,
-                     SIZE_TYPE start_pos, size_t max_replace)
+                     SIZE_TYPE start_pos, SIZE_TYPE max_replace)
 {
     string dst;
     Replace(src, search, replace, dst, start_pos, max_replace);
@@ -1445,14 +1446,14 @@ string NStr::Replace(const string& src,
 
 string& NStr::ReplaceInPlace(string& src,
                              const string& search, const string& replace,
-                             SIZE_TYPE start_pos, size_t max_replace)
+                             SIZE_TYPE start_pos, SIZE_TYPE max_replace)
 {
     if ( start_pos + search.size() > src.size()  ||
          search == replace )
         return src;
 
     bool equal_len = (search.size() == replace.size());
-    for (size_t count = 0; !(max_replace && count >= max_replace); count++) {
+    for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
         start_pos = src.find(search, start_pos);
         if (start_pos == NPOS)
             break;
@@ -1741,112 +1742,96 @@ string NStr::Join(const vector<string>& arr, const string& delim)
 }
 
 
+enum ELanguage {
+    eLanguage_C,
+    eLanguage_Javascript
+};
+
+static string s_PrintableString(const string&      str,
+                                NStr::ENewLineMode nl_mode,
+                                ELanguage          lang)
+{
+    auto_ptr<CNcbiOstrstream> out;
+    SIZE_TYPE i, j = 0;
+
+    for (i = 0;  i < str.size();  i++) {
+        char c = str[i];
+        switch (c) {
+        case '\t':
+            c = 't';
+            break;
+        case '\v':
+            c = 'v';
+            break;
+        case '\b':
+            c = 'b';
+            break;
+        case '\r':
+            c = 'r';
+            break;
+        case '\f':
+            c = 'f';
+            break;
+        case '\a':
+            c = 'a';
+            break;
+        case '\n':
+            if (nl_mode == NStr::eNewLine_Quote)
+                c = 'n';
+            /*FALLTHRU*/
+        case '\\':
+        case '\'':
+        case '"':
+            break;
+        case '&':
+            if (lang != eLanguage_Javascript)
+                continue;
+            break;
+        default:
+            if (isprint((unsigned char) c))
+                continue;
+            break;
+        }
+        if (!out.get()) {
+            out.reset(new CNcbiOstrstream);
+        }
+        if (i > j) {
+            out->write(str.data() + j, i - j);
+        }
+        out->put('\\');
+        if (!isprint((unsigned char) c)  &&  c != '\n') {
+            out->put('0' +  ((unsigned char) c >> 6));
+            out->put('0' + (((unsigned char) c >> 3) & 7));
+            out->put('0' +  ((unsigned char) c & 7));
+        } else {
+            out->put(c);
+        }
+        j = i + 1;
+    }
+    if (j  &&  i > j) {
+        assert(out.get());
+        out->write(str.data() + j, i - j);
+    }
+    if (out.get()) {
+        // Return encoded string
+        return CNcbiOstrstreamToString(*out);
+    }
+
+    // All characters are good - return original string
+    return str;
+}
+
+        
 string NStr::PrintableString(const string&      str,
                              NStr::ENewLineMode nl_mode)
 {
-    ITERATE ( string, it, str ) {
-        if ( !isprint((unsigned char)(*it)) || *it == '"' || *it == '\\' ) {
-            // Bad character - convert via CNcbiOstrstream
-            CNcbiOstrstream out;
-            // Write first good characters in one chunk
-            out.write(str.data(), it-str.begin());
-            // Convert all other characters one by one
-            do {
-                if (isprint((unsigned char)(*it))) {
-                    // Escape '"' and '\\' anyway
-                    if ( *it == '"' || *it == '\\' )
-                        out.put('\\');
-                    out.put(*it);
-                }
-                else if (*it == '\n') {
-                    // New line needs special processing
-                    if (nl_mode == eNewLine_Quote) {
-                        out.write("\\n", 2);
-                    }
-                    else {
-                        out.put('\n');
-                    }
-                } else {
-                    // All other non-printable characters need to be escaped
-                    out.put('\\');
-                    if (*it == '\a') {        // bell (alert)
-                        out.put('a');
-                    } else if (*it == '\b') { // backspace
-                        out.put('b');
-                    } else if (*it == '\f') { // form feed
-                        out.put('f');
-                    } else if (*it == '\r') { // carriage return
-                        out.put('r');
-                    } else if (*it == '\t') {     // horizontal tab
-                        out.put('t');
-                    } else if (*it == '\v') { // vertical tab
-                        out.put('v');
-                    } else {
-                        // Hex string for non-standard codes
-                        out.put('x');
-                        out.put(s_Hex[(unsigned char) *it >> 4]);
-                        out.put(s_Hex[(unsigned char) *it & 15]);
-                    }
-                }
-            } while (++it < it_end); // it_end is from ITERATE macro
-
-            // Return encoded string
-            return CNcbiOstrstreamToString(out);
-        }
-    }
-    // All characters are good - return original string
-    return str;
+    return s_PrintableString(str, nl_mode, eLanguage_C);
 }
 
 
 string NStr::JavaScriptEncode(const string& str)
 {
-    ITERATE ( string, it, str ) {
-        if ( !isprint((unsigned char)(*it)) || *it == '\'' || *it == '\\' ) {
-            // Bad character - convert via CNcbiOstrstream
-            CNcbiOstrstream out;
-            // Write first good characters in one chunk
-            out.write(str.data(), it-str.begin());
-            // Convert all other characters one by one
-            do {
-               if (isprint((unsigned char)(*it))) {
-                    // Escape \', \" and \\ anyway.
-                    if ( *it == '\'' || *it == '"' || *it == '\\' )
-                        out.put('\\');
-                    out.put(*it);
-                } else {
-                    // All other non-printable characters need to be escaped
-                    out.put('\\');
-                    if (*it == '\b')        { // backspace
-                        out.put('b');
-                    } else if (*it == '\f') { // form feed
-                        out.put('f');
-                    } else if (*it == '\n') { // new line
-                        out.put('n');
-                    } else if (*it == '\r') { // carriage return
-                        out.put('r');
-                    } else if (*it == '\t') { // horizontal tab
-                        out.put('t');
-                    } else if (*it == '\v') { // vertical tab
-                        out.put('v');
-                    // Note, that not all browsers support all JS symbols
-                    // (for example - \e escape), so they will be encoded
-                    // to hex format.
-                    } else {
-                        // Hex string for non-standard codes.
-                        out.put('x');
-                        out.put(s_Hex[(unsigned char) *it >> 4]);
-                        out.put(s_Hex[(unsigned char) *it & 15]);
-                    }
-                }
-            } while (++it < it_end); // it_end is from ITERATE macro
-
-            // Return encoded string
-            return CNcbiOstrstreamToString(out);
-        }
-    }
-    // All characters are good - return original string
-    return str;
+    return s_PrintableString(str, eNewLine_Quote, eLanguage_Javascript);
 }
 
 
@@ -1876,34 +1861,36 @@ string NStr::ParseEscapes(const string& str)
         case 't':  out += '\t';  break;
         case 'v':  out += '\v';  break;
         case 'x':
-        {
-            pos = pos2 + 1;
-            while (pos2 <= pos  &&  pos2 + 1 < str.size()
-                   &&  isxdigit((unsigned char) str[pos2 + 1])) {
-                ++pos2;
-            }
-            if (pos2 >= pos) {
-                out += static_cast<char>
-                    (StringToUInt(str.substr(pos, pos2 - pos + 1), 0, 16));
-            } else {
-                NCBI_THROW2(CStringException, eFormat,
-                            "\\x used with no following digits", pos);
+            {
+                pos = pos2 + 1;
+                while (pos2 <= pos  &&  pos2 + 1 < str.size()
+                       &&  isxdigit((unsigned char) str[pos2 + 1])) {
+                    ++pos2;
+                }
+                if (pos2 >= pos) {
+                    out += static_cast<char>
+                        (StringToUInt(str.substr(pos, pos2 - pos + 1), 0, 16));
+                } else {
+                    NCBI_THROW2(CStringException, eFormat,
+                                "\\x followed by no hexadecimal digits", pos);
+                }
             }
             break;
-        }
         case '0':  case '1':  case '2':  case '3':
         case '4':  case '5':  case '6':  case '7':
-        {
-            pos = pos2;
-            unsigned char c = str[pos2] - '0';
-            while (pos2 < pos + 3  &&  pos2 + 1 < str.size()
-                   &&  str[pos2 + 1] >= '0'  &&  str[pos2 + 1] <= '7') {
-                c = (c << 3) | (str[++pos2] - '0');
+            {
+                pos = pos2;
+                unsigned char c = str[pos2] - '0';
+                while (pos2 < pos + 3  &&  pos2 + 1 < str.size()
+                       &&  str[pos2 + 1] >= '0'  &&  str[pos2 + 1] <= '7') {
+                    c = (c << 3) | (str[++pos2] - '0');
+                }
+                out += c;
             }
-            out += c;
-        }
+            break;
         default:
             out += str[pos2];
+            break;
         }
         pos = pos2 + 1;
     }
@@ -2206,9 +2193,10 @@ extern char* strdup(const char* str)
     }
     size_t size   = strlen(str) + 1;
     void*  result = malloc(size);
-    return (char*) (result ? memcpy(result, str, size) : 0);
+    return (char*)(result ? memcpy(result, str, size) : 0);
 }
 #endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8
@@ -2217,7 +2205,7 @@ SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
 {
     SIZE_TYPE count = 0;
     for (const char* src = c_str(); *src; ++src, ++count) {
-        size_t more=0;
+        SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
         while (more-- && good) {
             good = x_EvalNext(*(++src));
@@ -2231,11 +2219,12 @@ SIZE_TYPE CStringUTF8::GetSymbolCount(void) const
     return count;
 }
 
+
 SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0, cur_size=0;
     for (; *src && cur_size < buf_size; ++src, ++count, ++cur_size) {
-        size_t more=0;
+        SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
         while (more-- && good && ++cur_size < buf_size) {
             good = x_EvalNext(*(++src));
@@ -2247,11 +2236,12 @@ SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
     return count;
 }
 
+
 SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
 {
     SIZE_TYPE count = 0, cur_size=0;
     for (; *src && cur_size < buf_size; ++src, ++count, ++cur_size) {
-        size_t more=0;
+        SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
         while (more-- && good && cur_size < buf_size) {
             good = x_EvalNext(*(++src));
@@ -2266,6 +2256,7 @@ SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
     return cur_size;
 }
 
+
 string CStringUTF8::AsSingleByteString(EEncoding encoding) const
 {
     string result;
@@ -2275,6 +2266,7 @@ string CStringUTF8::AsSingleByteString(EEncoding encoding) const
     }
     return result;
 }
+
 
 #if defined(HAVE_WSTRING)
 wstring CStringUTF8::AsUnicode(void) const
@@ -2295,9 +2287,10 @@ wstring CStringUTF8::AsUnicode(void) const
 }
 #endif // HAVE_WSTRING
 
+
 EEncoding CStringUTF8::GuessEncoding( const char* src)
 {
-    size_t more=0;
+    SIZE_TYPE more = 0;
     bool cp1252, iso1, ascii, utf8;
     for (cp1252 = iso1 = ascii = utf8 = true; *src; ++src) {
         Uint1 ch = *src;
@@ -2339,7 +2332,8 @@ EEncoding CStringUTF8::GuessEncoding( const char* src)
         return eEncoding_UTF8;
     }
     return eEncoding_Unknown;
- }
+}
+
 
 bool CStringUTF8::MatchEncoding( const char* src, EEncoding encoding)
 {
@@ -2364,6 +2358,7 @@ bool CStringUTF8::MatchEncoding( const char* src, EEncoding encoding)
     return matches;
 }
 
+
 // cp1252, codepoints for chars 0x80 to 0x9F
 static const TUnicodeSymbol s_cp1252_table[] = {
     0x20AC, 0x003F, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
@@ -2371,6 +2366,7 @@ static const TUnicodeSymbol s_cp1252_table[] = {
     0x003F, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
     0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x003F, 0x017E, 0x0178
 };
+
 
 TUnicodeSymbol CStringUTF8::CharToSymbol(char c, EEncoding encoding)
 {
@@ -2396,6 +2392,7 @@ TUnicodeSymbol CStringUTF8::CharToSymbol(char c, EEncoding encoding)
     return (TUnicodeSymbol)ch;
 }
 
+
 char CStringUTF8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
 {
     if( encoding == eEncoding_UTF8 || encoding == eEncoding_Unknown) {
@@ -2419,6 +2416,7 @@ char CStringUTF8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
     return (char)cp;
 }
 
+
 void CStringUTF8::x_Validate(void) const
 {
     if (!IsValid()) {
@@ -2426,6 +2424,7 @@ void CStringUTF8::x_Validate(void) const
             "Source string is not in UTF8 format", 0);
     }
 }
+
 
 void CStringUTF8::x_AppendChar(TUnicodeSymbol c)
 {
@@ -2448,6 +2447,7 @@ void CStringUTF8::x_AppendChar(TUnicodeSymbol c)
     }
 }
 
+
 void CStringUTF8::x_Append(const char* src,
                            EEncoding encoding, EValidate validate)
 {
@@ -2469,7 +2469,7 @@ void CStringUTF8::x_Append(const char* src,
     }
 
     const char* srcBuf;
-    size_t needed = 0;
+    SIZE_TYPE needed = 0;
     for (srcBuf = src; *srcBuf; ++srcBuf) {
         needed += x_BytesNeeded( CharToSymbol( *srcBuf,encoding ) );
     }
@@ -2487,7 +2487,7 @@ void CStringUTF8::x_Append(const char* src,
 void CStringUTF8::x_Append(const wchar_t* src)
 {
     const wchar_t* srcBuf;
-    size_t needed = 0;
+    SIZE_TYPE needed = 0;
 
     for (srcBuf = src; *srcBuf; ++srcBuf) {
         needed += x_BytesNeeded( *srcBuf );
@@ -2502,7 +2502,8 @@ void CStringUTF8::x_Append(const wchar_t* src)
 }
 #endif // HAVE_WSTRING
 
-size_t CStringUTF8::x_BytesNeeded(TUnicodeSymbol c)
+
+SIZE_TYPE CStringUTF8::x_BytesNeeded(TUnicodeSymbol c)
 {
     Uint4 ch = c;
     if (ch < 0x80) {
@@ -2515,7 +2516,8 @@ size_t CStringUTF8::x_BytesNeeded(TUnicodeSymbol c)
     return 4;
 }
 
-bool CStringUTF8::x_EvalFirst(char ch, size_t& more)
+
+bool CStringUTF8::x_EvalFirst(char ch, SIZE_TYPE& more)
 {
     more = 0;
     if ((ch & 0x80) != 0) {
@@ -2532,15 +2534,17 @@ bool CStringUTF8::x_EvalFirst(char ch, size_t& more)
     return true;
 }
 
+
 bool CStringUTF8::x_EvalNext(char ch)
 {
     return (ch & 0xC0) == 0x80;
 }
 
+
 TUnicodeSymbol CStringUTF8::Decode(const char*& src)
 {
     TUnicodeSymbol chRes;
-    size_t more;
+    SIZE_TYPE more;
     Uint1 ch = *src;
     if ((ch & 0x80) == 0) {
         chRes = ch;
@@ -2569,7 +2573,8 @@ TUnicodeSymbol CStringUTF8::Decode(const char*& src)
     return chRes;
 }
 
-TUnicodeSymbol CStringUTF8::DecodeFirst(char ch, size_t& more)
+
+TUnicodeSymbol CStringUTF8::DecodeFirst(char ch, SIZE_TYPE& more)
 {
     TUnicodeSymbol chRes = 0;
     more = 0;
@@ -2588,6 +2593,7 @@ TUnicodeSymbol CStringUTF8::DecodeFirst(char ch, size_t& more)
     return chRes;
 }
 
+
 TUnicodeSymbol CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
 {
     if ((ch & 0xC0) == 0x80) {
@@ -2595,6 +2601,7 @@ TUnicodeSymbol CStringUTF8::DecodeNext(TUnicodeSymbol chU, char ch)
     }
     return 0;
 }
+
 
 const char* CStringException::GetErrCodeString(void) const
 {

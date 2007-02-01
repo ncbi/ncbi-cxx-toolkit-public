@@ -1420,8 +1420,9 @@ public:
     static string& Replace(const string& src,
                            const string& search,
                            const string& replace,
-                           string& dst,
-                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
+                           string&       dst,
+                           SIZE_TYPE     start_pos = 0,
+                           SIZE_TYPE     replace = 0);
 
     /// Replace occurrences of a substring within a string and returns the
     /// result as a new string.
@@ -1448,7 +1449,8 @@ public:
     static string Replace(const string& src,
                           const string& search,
                           const string& replace,
-                          SIZE_TYPE start_pos = 0, size_t max_replace = 0);
+                          SIZE_TYPE     start_pos = 0,
+                          SIZE_TYPE     max_replace = 0);
 
     /// Replace occurrences of a substring within a string.
     ///
@@ -1476,7 +1478,7 @@ public:
                                   const string& search,
                                   const string& replace,
                                   SIZE_TYPE     start_pos = 0,
-                                  size_t        max_replace = 0);
+                                  SIZE_TYPE     max_replace = 0);
 
     /// Whether to merge adjacent delimiters in Split and Tokenize.
     enum EMergeDelims {
@@ -1531,10 +1533,10 @@ public:
     ///   The list "arr" is also returned.
     /// @sa
     ///   Split, TokenizePattern, TokenizeInTwo
-    static vector<string>& Tokenize(const string&   str,
-                                    const string&   delim,
-                                    vector<string>& arr,
-                                    EMergeDelims    merge = eNoMergeDelims,
+    static vector<string>& Tokenize(const string&      str,
+                                    const string&      delim,
+                                    vector<string>&    arr,
+                                    EMergeDelims       merge = eNoMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
     /// Tokenize a string using the specified delimiter (string).
@@ -1558,10 +1560,10 @@ public:
     /// @sa
     ///   Split, Tokenize
     static
-    vector<string>& TokenizePattern(const string&   str,
-                                    const string&   delim,
-                                    vector<string>& arr,
-                                    EMergeDelims    merge = eNoMergeDelims,
+    vector<string>& TokenizePattern(const string&      str,
+                                    const string&      delim,
+                                    vector<string>&    arr,
+                                    EMergeDelims       merge = eNoMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
     /// Split a string into two pieces using the specified delimiters
@@ -1587,8 +1589,8 @@ public:
     ///   Split, Tokenoze, TokenizePattern
     static bool SplitInTwo(const string& str, 
                            const string& delim,
-                           string& str1,
-                           string& str2);
+                           string&       str1,
+                           string&       str2);
                          
 
     /// Join strings using the specified delimiter.
@@ -1608,7 +1610,7 @@ public:
     /// Assists in making a printable version of "str".
     enum ENewLineMode {
         eNewLine_Quote,         ///< Display "\n" instead of actual linebreak
-        eNewLine_Passthru       ///< Break the line on every "\n" occurrance
+        eNewLine_Passthru       ///< Break the line on every "\n" occurrence
     };
 
     /// Get a printable version of the specified string. 
@@ -2302,7 +2304,7 @@ public:
     ///   if the character is valid, - how many more characters to expect
     /// @return
     ///   non-zero, if the character is valid
-    static TUnicodeSymbol  DecodeFirst(char ch, size_t& more);
+    static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
 
     /// Convert next character of UTF8 sequence into Unicode
     ///
@@ -2333,9 +2335,9 @@ private:
     void x_Append(const wchar_t* src);
 #endif // HAVE_WSTRING
     /// Check how many bytes is needed to represent the code point in UTF8
-    static size_t x_BytesNeeded(TUnicodeSymbol ch);
+    static SIZE_TYPE x_BytesNeeded(TUnicodeSymbol ch);
     /// Check if the character is valid first code unit of UTF8
-    static bool   x_EvalFirst(char ch, size_t& more);
+    static bool   x_EvalFirst(char ch, SIZE_TYPE& more);
     /// Check if the character is valid non-first code unit of UTF8
     static bool   x_EvalNext(char ch);
 };

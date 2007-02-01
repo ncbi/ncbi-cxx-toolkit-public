@@ -765,21 +765,25 @@ static void s_Replace()
 
 static void s_PrintableString()
 {
-    NcbiCout << NcbiEndl << "NStr::PrinrableString() tests...";
+    NcbiCout << NcbiEndl << "NStr::PrintableString() tests...";
 
     // NStr::PrintableString()
     assert(NStr::PrintableString(kEmptyStr).empty());
-    assert(NStr::PrintableString("AB\\CD\nAB\rCD\vAB\tCD\'AB\"").
-           compare("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\\\"") == 0);
-    assert(NStr::PrintableString("A\020B" + string(1, '\0') + "CD").
-           compare("A\\x10B\\x00CD") == 0);
+    assert(NStr::PrintableString
+           ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"").compare
+           ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"") == 0);
+    assert(NStr::PrintableString
+           ("A\x01\x000F\020B" + string(1, '\0') + "CD").compare
+           ("A\\001\\017\\020B\\000CD") == 0);
 
     // NStr::ParseEscapes
     assert(NStr::ParseEscapes(kEmptyStr).empty());
-    assert(NStr::ParseEscapes("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\\\"").
-           compare("AB\\CD\nAB\rCD\vAB\tCD\'AB\"") == 0);
-    assert(NStr::ParseEscapes("A\\x10B\\x00CD").
-           compare("A\020B" + string(1, '\0') + "CD") == 0);
+    assert(NStr::ParseEscapes
+           ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"").compare
+           ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"") == 0);
+    assert(NStr::ParseEscapes
+           ("A\\1\\17\\020B\\x00""CD""\x000F").compare
+           ("A\x01\x0F\020B" + string(1, '\0') + "CD\x0F") == 0);
 
     OK;
 }
