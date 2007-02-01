@@ -36,15 +36,15 @@
 #if HAVE_NCBI_C
 
 #include <corelib/ncbiutil.hpp>
-#include <serial/asntypes.hpp>
-#include <serial/autoptrinfo.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/impl/asntypes.hpp>
+#include <serial/impl/autoptrinfo.hpp>
+#include <serial/impl/classinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/objcopy.hpp>
-#include <serial/classinfob.hpp>
+#include <serial/impl/classinfob.hpp>
 #include <serial/impl/typemap.hpp>
 #include <asn.h>
 

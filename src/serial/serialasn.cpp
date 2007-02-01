@@ -74,10 +74,10 @@
 
 #if HAVE_NCBI_C
 
-#include <serial/autoptrinfo.hpp>
-#include <serial/asntypes.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
+#include <serial/impl/autoptrinfo.hpp>
+#include <serial/impl/asntypes.hpp>
+#include <serial/impl/classinfo.hpp>
+#include <serial/impl/choice.hpp>
 #include <serial/serialimpl.hpp>
 #include <asn.h>
 
