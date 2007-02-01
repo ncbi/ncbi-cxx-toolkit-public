@@ -42,15 +42,6 @@
 #include <algo/phy_tree/bio_tree.hpp>
 #include <algo/phy_tree/bio_tree_conv.hpp>
 
-#include <serial/serial.hpp>
-#include <serial/serialasn.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
-#include <serial/ptrinfo.hpp>
-#include <serial/continfo.hpp>
-
-
 #include <objects/biotree/BioTreeContainer.hpp>
 #include <objects/biotree/FeatureDescr.hpp>
 #include <objects/biotree/FeatureDictSet.hpp>
