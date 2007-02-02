@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
 
 #include <util/logrotate.hpp>
@@ -85,7 +86,15 @@ void CTestLogrotateApplication::Init(void)
     arg_desc->AddDefaultKey
         ("limit", "N",
          "Approximate maximum length between rotations, in bytes",
-         CArgDescriptions::eInteger, "16384");
+         CArgDescriptions::eInteger, "16000");
+    arg_desc->AddOptionalKey
+        ("prefill", "N", "Start off with an N-byte log file",
+         CArgDescriptions::eInteger);
+    arg_desc->AddFlag
+        ("direct",
+         "Use the stream directly rather than through the diagnostics module");
+    arg_desc->AddFlag
+        ("perline", "Log each line to a separate stream instance");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -99,15 +108,33 @@ static unsigned int s_Rand(unsigned int limit)
 
 int CTestLogrotateApplication::Run(void)
 {
-    CArgs  args = GetArgs();
-    string me   = GetArguments().GetProgramBasename();
-    s_LogStream.reset(new CRotatingLogStream(me + ".log",
-                                             args["limit"].AsInteger()));
-    SetDiagStream(s_LogStream.get());
-    // enable verbose diagnostics for best effect
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostFlag(eDPF_All);
+    CArgs              args    = GetArgs();
+    string             me      = GetArguments().GetProgramBasename();
+    string             logname = me + ".log";
+    CNcbiStreamoff     limit   = args["limit"].AsInteger();
+    bool               direct  = args["direct"];
+    bool               perline = args["perline"];
+    IOS_BASE::openmode mode    = IOS_BASE::app | IOS_BASE::ate | IOS_BASE::out;
+
+    if (args["prefill"]) {
+        mode |= IOS_BASE::binary;
+        CNcbiOfstream out(logname.c_str(),
+                          IOS_BASE::out | IOS_BASE::trunc | IOS_BASE::binary);
+        int size = args["prefill"].AsInteger();
+        if (size > 0) {
+            out.seekp(NcbiInt8ToStreampos(size - 1));
+            out << endl;
+        }
+    }
+
+    s_LogStream.reset(new CRotatingLogStream(logname, limit));
+    if ( !direct ) {
+        SetDiagStream(s_LogStream.get());
+        // enable verbose diagnostics for best effect
+        SetDiagPostLevel(eDiag_Info);
+        SetDiagTrace(eDT_Enable);
+        SetDiagPostFlag(eDPF_All);
+    }
 #ifdef NCBI_OS_UNIX
     {{
         struct sigaction sa;
@@ -122,12 +149,23 @@ int CTestLogrotateApplication::Run(void)
     srand((unsigned int)time(0));
 
     for (unsigned int n = 0;  n < 1000000;  ++n) {
+        if (perline) {
+            s_LogStream.reset(new CRotatingLogStream(logname, limit));
+            if ( !direct ) {
+                SetDiagStream(s_LogStream.get());
+            }
+        }
         static const char* messages[] = { "foo", "bar", "baz", "quux" };
-        EDiagSev    severity = (EDiagSev)(s_Rand(eDiag_Fatal));
-        ErrCode     errcode(rand(), rand());
-        const char* message  = messages[s_Rand(4)];
-        CNcbiDiag diag(DIAG_COMPILE_INFO, severity);
-        diag << errcode << message << Endm;
+        const char* message = messages[s_Rand(4)];
+        if (direct) {
+            *s_LogStream << CurrentTime().AsString("Y-M-D h:m:s.S ")
+                         << me << ": " << message << endl;
+        } else {
+            EDiagSev  severity = (EDiagSev)(s_Rand(eDiag_Fatal));
+            ErrCode   errcode(rand(), rand());
+            CNcbiDiag diag(DIAG_COMPILE_INFO, severity);
+            diag << errcode << message << Endm;
+        }
         SleepMilliSec(s_Rand(256));
 #ifdef NCBI_OS_UNIX
         if (s_Signal) {
