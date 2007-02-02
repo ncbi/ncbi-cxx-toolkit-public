@@ -103,6 +103,12 @@ NCBI_PARAM_DEF_EX(bool, Diag, AutoWrite_Context, false, eParam_NoThread,
                   DIAG_AUTOWRITE_CONTEXT);
 typedef NCBI_PARAM_TYPE(Diag, AutoWrite_Context) TAutoWrite_Context;
 
+// Print system TID rather than CThread::GetSelf()
+NCBI_PARAM_DECL(bool, Diag, Print_System_TID);
+NCBI_PARAM_DEF_EX(bool, Diag, Print_System_TID, false, eParam_NoThread,
+                  DIAG_PRINT_SYSTEM_TID);
+typedef NCBI_PARAM_TYPE(Diag, Print_System_TID) TPrintSystemTID;
+
 
 ///////////////////////////////////////////////////////
 //  Static variables for Trace and Post filters
@@ -388,32 +394,111 @@ void CDiagContext::SetAutoWrite(bool value)
 }
 
 
-void CDiagContext::SetProperty(const string& name, const string& value)
+void PropTlsCleanup(CDiagContext::TProperties* value, void* /*cleanup_data*/)
 {
-    {{
+    delete value;
+}
+
+
+CDiagContext::TProperties*
+CDiagContext::x_GetThreadProps(bool force_create) const
+{
+    static CSafeStaticRef< CTls<TProperties> > s_ThreadProperties(0);
+    TProperties* props = s_ThreadProperties->GetValue();
+    if ( !props  &&  force_create ) {
+        props = new TProperties;
+        s_ThreadProperties->SetValue(props, PropTlsCleanup);
+    }
+    return props;
+}
+
+
+inline bool IsThreadProperty(const string& name)
+{
+    return
+        name == CDiagContext::kProperty_ClientIP   ||
+        name == CDiagContext::kProperty_SessionID  ||
+        name == CDiagContext::kProperty_ReqStatus  ||
+        name == CDiagContext::kProperty_ReqTime    ||
+        name == CDiagContext::kProperty_BytesRd    ||
+        name == CDiagContext::kProperty_BytesWr;
+}
+
+
+inline bool IsGlobalProperty(const string& name)
+{
+    return
+        name == CDiagContext::kProperty_UserName  ||
+        name == CDiagContext::kProperty_HostName  ||
+        name == CDiagContext::kProperty_HostIP    ||
+        name == CDiagContext::kProperty_AppName   ||
+        name == CDiagContext::kProperty_ExitSig   ||
+        name == CDiagContext::kProperty_ExitCode;
+}
+
+
+void CDiagContext::SetProperty(const string& name,
+                               const string& value,
+                               EPropertyMode mode)
+{
+    if ( mode == eProp_Default ) {
+        mode = IsGlobalProperty(name) ? eProp_Global : eProp_Thread;
+    }
+
+    if ( mode == eProp_Global ) {
         CMutexGuard LOCK(s_DiagMutex);
         m_Properties[name] = value;
-    }}
+    }
+    else {
+        TProperties* props = x_GetThreadProps(true);
+        _ASSERT(props);
+        (*props)[name] = value;
+    }
     if ( TAutoWrite_Context::GetDefault() ) {
         x_PrintMessage(SDiagMessage::eEvent_Extra, name + "=" + value);
     }
 }
 
 
-string CDiagContext::GetProperty(const string& name) const
+string CDiagContext::GetProperty(const string& name,
+                                 EPropertyMode mode) const
 {
+    if (mode == eProp_Thread  ||
+        (mode ==  eProp_Default  &&  !IsGlobalProperty(name))) {
+        TProperties* props = x_GetThreadProps(false);
+        if ( props ) {
+            TProperties::const_iterator tprop = props->find(name);
+            if ( tprop != props->end() ) {
+                return tprop->second;
+            }
+        }
+        if (mode == eProp_Thread) {
+            return kEmptyStr;
+        }
+    }
+    // Check global properties
     CMutexGuard LOCK(s_DiagMutex);
-    TProperties::const_iterator prop = m_Properties.find(name);
-    return prop != m_Properties.end() ? prop->second : kEmptyStr;
+    TProperties::const_iterator gprop = m_Properties.find(name);
+    return gprop != m_Properties.end() ? gprop->second : kEmptyStr;
 }
 
 
 void CDiagContext::PrintProperties(void) const
 {
-    CMutexGuard LOCK(s_DiagMutex);
-    ITERATE(TProperties, prop, m_Properties) {
+    {{
+        CMutexGuard LOCK(s_DiagMutex);
+        ITERATE(TProperties, gprop, m_Properties) {
+            x_PrintMessage(SDiagMessage::eEvent_Extra,
+                gprop->first + "=" + gprop->second);
+        }
+    }}
+    TProperties* props = x_GetThreadProps(false);
+    if ( !props ) {
+        return;
+    }
+    ITERATE(TProperties, tprop, *props) {
         x_PrintMessage(SDiagMessage::eEvent_Extra,
-            prop->first + "=" + prop->second);
+            tprop->first + "=" + tprop->second);
     }
 }
 
@@ -628,6 +713,18 @@ void CDiagContext::SetOldPostFormat(bool value)
 }
 
 
+bool CDiagContext::IsUsingSystemThreadId(void)
+{
+     return TPrintSystemTID::GetDefault();
+}
+
+
+void CDiagContext::UseSystemThreadId(bool value)
+{
+    TPrintSystemTID::SetDefault(value);
+}
+
+
 void CDiagContext::SetUsername(const string& username)
 {
     SetProperty(kProperty_UserName, username);
@@ -827,8 +924,10 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
         case eDS_ToMemory:
             if (old_log_name != kLogName_Memory) {
                 GetDiagContext().InitMessages(size_t(-1));
+                SetDiagStream(0, false, 0, 0, kLogName_Memory);
                 log_switched = true;
             }
+            collect = eDCM_NoChange; // prevent flushing to memory
             break;
         case eDS_Disable:
             if (old_log_name != kLogName_None) {
@@ -985,11 +1084,19 @@ bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 // For initialization only
 void* s_DiagHandlerInitializer = InitDiagHandler();
 
+
+inline Uint8 s_GetThreadId(void)
+{
+    return TPrintSystemTID::GetDefault() ?
+        CThreadSystemID::GetCurrent().m_ID : CThread::GetSelf();
+}
+
+
 CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream),
       m_InitialStreamFlags(m_Stream->flags()),
       m_PID(CProcess::GetCurrentPid()),
-      m_TID(CThread::GetSelf()),
+      m_TID(s_GetThreadId()),
       m_ThreadPostCount(0)
 {
     m_Diag = 0;

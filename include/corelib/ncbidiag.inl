@@ -121,8 +121,8 @@ private:
     typedef list<string> TPrefixList;
     TPrefixList m_PrefixList;
 
-    typedef int TTID;
-    typedef int TPID;
+    typedef Uint8 TTID;
+    typedef Uint8 TPID;
     // Cached process ID
     TPID m_PID;
     // Cached thread ID

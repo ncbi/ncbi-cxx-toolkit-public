@@ -917,9 +917,9 @@ struct SDiagMessageData;
 /// NOTE 2:  By default, the errors will be written to standard error stream.
 
 struct NCBI_XNCBI_EXPORT SDiagMessage {
-    typedef int  TPID;  ///< Process ID
-    typedef int  TTID;  ///< Thread ID
-    typedef Int8 TUID;  ///< Unique process ID
+    typedef Uint8 TPID;  ///< Process ID
+    typedef Uint8 TTID;  ///< Thread ID
+    typedef Int8  TUID;  ///< Unique process ID
 
     /// Initalize SDiagMessage fields.
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
@@ -1097,25 +1097,41 @@ public:
     /// app-log stream when a new value is set.
     void SetAutoWrite(bool value);
 
+    /// Property visibility flag.
+    enum EPropertyMode {
+        eProp_Default,  ///< Auto-mode for known properties, local for others
+        eProp_Global,   ///< The property is global for the application
+        eProp_Thread    ///< The property has separate value in each thread
+    };
+
     /// Set application context property by name.
     /// Write property to the log if AutoPrint flag is set.
-    void SetProperty(const string& name, const string& value);
+    /// Property mode defines if the property is a global or a
+    /// per-thread one. By default unknown properties are set as
+    /// thread-local.
+    void SetProperty(const string& name,
+                     const string& value,
+                     EPropertyMode mode = eProp_Default);
 
     /// Get application context property by name, return empty string if the
-    /// property is not set.
-    string GetProperty(const string& name) const;
+    /// property is not set. If mode is eProp_Default and the property is
+    /// not a known one, check thread-local properties first.
+    string GetProperty(const string& name,
+                       EPropertyMode mode = eProp_Default) const;
 
     /// Forced dump of all set properties.
     void PrintProperties(void) const;
 
+    /// Global properties
     static const char* kProperty_UserName;
     static const char* kProperty_HostName;
     static const char* kProperty_HostIP;
-    static const char* kProperty_ClientIP;
-    static const char* kProperty_SessionID;
     static const char* kProperty_AppName;
     static const char* kProperty_ExitSig;
     static const char* kProperty_ExitCode;
+    /// Per-thread properties
+    static const char* kProperty_ClientIP;
+    static const char* kProperty_SessionID;
     static const char* kProperty_ReqStatus;
     static const char* kProperty_ReqTime;
     static const char* kProperty_BytesRd;
@@ -1150,6 +1166,11 @@ public:
     static bool IsSetOldPostFormat(void);
     /// Set old/new format flag
     static void SetOldPostFormat(bool value);
+
+    /// Check if system TID is printed instead of CThread::GetSelf()
+    static bool IsUsingSystemThreadId(void);
+    /// Switch printing system TID (rather than CThread::GetSelf()) on/off
+    static void UseSystemThreadId(bool value = true);
 
     /// Set username property
     /// @sa SetDiagUserAndHost
@@ -1196,6 +1217,10 @@ private:
                         const string&            message) const;
 
     typedef map<string, string> TProperties;
+    friend void PropTlsCleanup(CDiagContext::TProperties*, void*);
+
+    // Get thread-local properties, create if the flag is set.
+    TProperties* x_GetThreadProps(bool force_create = false) const;
 
     // Saved messages to be flushed after setting up log files
     typedef list<SDiagMessage> TMessages;
