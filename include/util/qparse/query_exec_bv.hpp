@@ -127,25 +127,59 @@ public:
         _ASSERT(args.size() > 1);
         
         typename TParent::TBVContainer* bv_cont;        
-        bv_cont = this->MakeContainer(qnode);
-        BV* bv_res;
-        bv_cont->SetBV(bv_res = new BV);
+        BV* bv_res = 0;
         
-        for (size_t i = 0; i < args.size(); ++i) {
+        if (args.size() == 0) {
+            // No arg logical function...strange... TO DO:add diagnostics
+            return;   
+        }
+        
+        // first argument becomes the default result
+        
+        CQueryParseTree::TNode* arg_node = args[0];
+        typename TParent::TBVContainer* arg_cont = 
+                                this->GetContainer(*arg_node);
+        if (arg_cont) {
+            bv_cont = this->MakeContainer(qnode);        
+            typename TParent::TBVContainer::TBuffer *arg_buf = 
+                                                arg_cont->GetBuffer();
+            typename TParent::TBVContainer::TBitVector* arg_bv = 
+                                                arg_cont->GetBV();
+            if (arg_bv) {
+                bv_cont->SetBV(bv_res = new BV(*arg_bv));
+            } else
+            if (arg_buf) {
+               bv_cont->SetBV(bv_res = new BV);                
+               bm::operation_deserializer<BV>::deserialize(*bv_res,
+                                                  &((*arg_buf)[0]),
+                                                  0,
+                                                  bm::set_ASSIGN);
+            }
+        }
+        
+        
+        // all other arguments are logically combined with arg[0] 
+        
+        for (size_t i = 1; i < args.size(); ++i) {
             CQueryParseTree::TNode* arg_node = args[i];
             typename TParent::TBVContainer* arg_cont = 
                                     this->GetContainer(*arg_node);
             if (!arg_cont) {
-                continue;
+                // no argument... 
+                if (m_OpCode == bm::set_AND) {
+                    return; // no-op for an AND => 0
+                }
+                continue; // OR, SUB, etc is ok to continue
+            }
+            if (!bv_res) { // lazy init
+                bv_cont = this->MakeContainer(qnode);
+                bv_cont->SetBV(bv_res = new BV);
             }
             
             typename TParent::TBVContainer::TBuffer *arg_buf = 
                                                 arg_cont->GetBuffer();
             typename TParent::TBVContainer::TBitVector* arg_bv = 
                                                 arg_cont->GetBV();
-            
-            _ASSERT(arg_buf == 0 || arg_bv == 0);
-            _ASSERT(arg_buf != 0 || arg_bv != 0);
             
             if (arg_bv) {
                 bv_res->combine_operation(*arg_bv, (bm::operation) m_OpCode);
