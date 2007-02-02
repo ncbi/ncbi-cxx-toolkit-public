@@ -304,7 +304,7 @@ struct CNetScheduleJob
     string    progress_msg;  
 };
 
-class CNetScheduleSubmitter
+class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 {
 public:
 
@@ -379,7 +379,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////
-class CNetScheduleExecuter
+class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
 {
 public:
     /// Get a pending job. 
@@ -589,7 +589,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////
-class CNetScheduleAdmin
+class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 {
 public:
 
