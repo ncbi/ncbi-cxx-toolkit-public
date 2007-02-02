@@ -313,43 +313,43 @@ static void s_TestGMT(int idx)
     // Test AdjustTime
     {{   
         CTime::SetFormat("M/D/Y h:m:s");
-        CTime t("04/01/2001 01:01:00");
+        CTime t("03/11/2007 01:01:00");
         CTime tn;
         t.SetTimeZonePrecision(CTime::eTZPrecisionDefault);
 
         // GMT
         t.SetTimeZoneFormat(CTime::eGmt);
         tn = t + 5;  
-        OUTS( idx, __LINE__,  tn.AsString(), "04/06/2001 01:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "03/16/2007 01:01:00");
         tn = t + 40; 
-        OUTS( idx, __LINE__,  tn.AsString(), "05/11/2001 01:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "04/20/2007 01:01:00");
 
         // Local eNone
         t.SetTimeZoneFormat(CTime::eLocal);
         t.SetTimeZonePrecision(CTime::eNone);
         tn=t+5;
-        OUTS( idx, __LINE__,  tn.AsString(), "04/06/2001 01:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "03/16/2007 01:01:00");
         tn=t+40;
-        OUTS( idx, __LINE__,  tn.AsString(), "05/11/2001 01:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "04/20/2007 01:01:00");
 
         //Local eMonth
         t.SetTimeZonePrecision(CTime::eMonth);
         tn = t + 5;
         tn = t; 
         tn.AddMonth(-1);
-        OUTS( idx, __LINE__,  tn.AsString(), "03/01/2001 01:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "02/11/2007 01:01:00");
         tn = t; 
         tn.AddMonth(+1);
-        OUTS( idx, __LINE__,  tn.AsString(), "05/01/2001 02:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "04/11/2007 02:01:00");
 
         // Local eDay
         t.SetTimeZonePrecision(CTime::eDay);
         tn = t - 1; 
-        OUTS( idx, __LINE__,  tn.AsString(), "03/31/2001 01:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "03/10/2007 01:01:00");
         tn++;   
-        OUTS( idx, __LINE__,  tn.AsString(), "04/01/2001 01:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "03/11/2007 01:01:00");
         tn = t + 1; 
-        OUTS( idx, __LINE__,  tn.AsString(), "04/02/2001 02:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "03/12/2007 02:01:00");
 
         // Local eHour
         t.SetTimeZonePrecision(CTime::eHour);
@@ -357,30 +357,30 @@ static void s_TestGMT(int idx)
         tn.AddHour(-3);
         CTime te = t; 
         te.AddHour(3);
-        OUTS( idx, __LINE__,  tn.AsString(), "03/31/2001 22:01:00");
-        OUTS( idx, __LINE__,  te.AsString(), "04/01/2001 05:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "03/10/2007 22:01:00");
+        OUTS( idx, __LINE__,  te.AsString(), "03/11/2007 05:01:00");
         CTime th = tn; 
         th.AddHour(49);
-        OUTS( idx, __LINE__,  th.AsString(), "04/03/2001 00:01:00");
+        OUTS( idx, __LINE__,  th.AsString(), "03/13/2007 00:01:00");
 
-        tn = "10/28/2001 00:01:00"; 
+        tn = "11/04/2007 00:01:00"; 
         tn.SetTimeZonePrecision(CTime::eHour);
         te = tn; 
         tn.AddHour(-3); 
         te.AddHour(9);
-        OUTS( idx, __LINE__,  tn.AsString(), "10/27/2001 21:01:00");
-        OUTS( idx, __LINE__,  te.AsString(), "10/28/2001 08:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "11/03/2007 21:01:00");
+        OUTS( idx, __LINE__,  te.AsString(), "11/04/2007 08:01:00");
         th = tn; 
         th.AddHour(49);
-        OUTS( idx, __LINE__,  th.AsString(), "10/29/2001 21:01:00");
+        OUTS( idx, __LINE__,  th.AsString(), "11/05/2007 21:01:00");
 
-        tn = "10/28/2001 09:01:00"; 
+        tn = "11/04/2007 09:01:00"; 
         tn.SetTimeZonePrecision(CTime::eHour);
         te = tn; 
         tn.AddHour(-10); 
         te.AddHour(+10);
-        OUTS( idx, __LINE__,  tn.AsString(), "10/28/2001 00:01:00");
-        OUTS( idx, __LINE__,  te.AsString(), "10/28/2001 19:01:00");
+        OUTS( idx, __LINE__,  tn.AsString(), "11/04/2007 00:01:00");
+        OUTS( idx, __LINE__,  te.AsString(), "11/04/2007 19:01:00");
     }}
 }
 
