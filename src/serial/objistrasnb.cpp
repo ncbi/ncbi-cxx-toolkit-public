@@ -679,9 +679,9 @@ namespace {
     }
 }
 
-void CObjectIStreamAsnBinary::ReadString(string& s,
-                                         CPackString& pack_string,
-                                         EStringType type)
+void CObjectIStreamAsnBinary::ReadPackedString(string& s,
+                                               CPackString& pack_string,
+                                               EStringType type)
 {
     ExpectSysTag(eVisibleString);
     size_t length = ReadLength();

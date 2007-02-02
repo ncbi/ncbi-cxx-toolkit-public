@@ -635,9 +635,9 @@ public:
     // string
     virtual void ReadString(string& s,
                             EStringType type = eStringTypeVisible) = 0;
-    virtual void ReadString(string& s,
-                            CPackString& pack_string,
-                            EStringType type = eStringTypeVisible);
+    virtual void ReadPackedString(string& s,
+                                  CPackString& pack_string,
+                                  EStringType type = eStringTypeVisible);
     virtual void SkipString(EStringType type = eStringTypeVisible) = 0;
 
     // StringStore

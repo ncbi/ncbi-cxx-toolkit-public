@@ -247,7 +247,7 @@ void CPackString::SNode::SetString(void) const
 inline
 void CPackString::ReadString(CObjectIStream& in, string& s)
 {
-    in.ReadString(s, *this);
+    in.ReadPackedString(s, *this);
 }
 
 

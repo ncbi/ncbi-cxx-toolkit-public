@@ -1539,11 +1539,11 @@ void CObjectIStream::ReadStringStore(string& s)
     ReadString(s);
 }
 
-void CObjectIStream::ReadString(string& s,
-                                CPackString& pack_string,
-                                EStringType /* type */)
+void CObjectIStream::ReadPackedString(string& s,
+                                      CPackString& pack_string,
+                                      EStringType type)
 {
-    ReadString(s);
+    ReadString(s, type);
     pack_string.Pack(s);
 }
 

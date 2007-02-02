@@ -135,9 +135,9 @@ protected:
     virtual Uint8 ReadUint8(void);
     virtual double ReadDouble(void);
     virtual void ReadString(string& s,EStringType type = eStringTypeVisible);
-    virtual void ReadString(string& s,
-                            CPackString& pack_string,
-                            EStringType type);
+    virtual void ReadPackedString(string& s,
+                                  CPackString& pack_string,
+                                  EStringType type);
     virtual char* ReadCString(void);
     virtual void ReadStringStore(string& s);
 
