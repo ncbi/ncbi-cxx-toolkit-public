@@ -243,6 +243,7 @@ public:
                 // nothing...
                 // TO DO: report an error here
             }
+            return;
         }
         // muli-argument NOT...  
         // needs to be run as AND NOT or MINUS
