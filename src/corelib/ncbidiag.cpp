@@ -1087,8 +1087,11 @@ void* s_DiagHandlerInitializer = InitDiagHandler();
 
 inline Uint8 s_GetThreadId(void)
 {
-    return TPrintSystemTID::GetDefault() ?
-        CThreadSystemID::GetCurrent().m_ID : CThread::GetSelf();
+    if (TPrintSystemTID::GetDefault()) {
+        return reinterpret_cast<Uint8>(CThreadSystemID::GetCurrent().m_ID);
+    } else {
+        return CThread::GetSelf();
+    }
 }
 
 
