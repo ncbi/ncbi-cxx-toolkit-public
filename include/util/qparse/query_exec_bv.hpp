@@ -106,7 +106,75 @@ protected:
         }
         return c;
     }
+    
+    /// Unpack argument to result bitvector 
+    /// (use assignment for deserialization)
+    ///
+    BV* ArgToRes(CQueryParseTree::TNode& qnode,
+                 CQueryParseTree::TNode* arg_node)
+    {
+        TBVContainer* bv_cont;
+        BV* bv_res = 0;
+        TBVContainer* arg_cont = this->GetContainer(*arg_node);
+        if (arg_cont) {
+            bv_cont = this->MakeContainer(qnode);        
+            typename TBVContainer::TBuffer *arg_buf = arg_cont->GetBuffer();
+            typename TBVContainer::TBitVector* arg_bv = arg_cont->GetBV();
+            if (arg_bv) {
+                bv_cont->SetBV(bv_res = new BV(*arg_bv));
+            } else
+            if (arg_buf) {
+               bv_cont->SetBV(bv_res = new BV);                
+               bm::operation_deserializer<BV>::deserialize(*bv_res,
+                                                  &((*arg_buf)[0]),
+                                                  0,
+                                                  bm::set_ASSIGN);
+            }
+        }
+        return bv_res;
+    }
+    
+    void ProcessArgVector(CQueryParseTree::TNode&         qnode, 
+                          BV*                             bv_res,
+                          CQueryFunctionBase::TArgVector& args,
+                          const bm::set_operation         op_code)
+    {
+        for (size_t i = 1; i < args.size(); ++i) {
+            CQueryParseTree::TNode* arg_node = args[i];
+            TBVContainer* arg_cont = this->GetContainer(*arg_node);
+            if (!arg_cont) {
+                // no argument... 
+                if (op_code == bm::set_AND) {
+                    return; // no-op for an AND => 0
+                }
+                continue; // OR, SUB, etc is ok to continue
+            }
+            if (!bv_res) { // lazy init
+                TBVContainer* bv_cont = this->MakeContainer(qnode);
+                bv_cont->SetBV(bv_res = new BV);
+            }
+            
+            typename TBVContainer::TBuffer *arg_buf = arg_cont->GetBuffer();
+            typename TBVContainer::TBitVector* arg_bv = arg_cont->GetBV();
+            
+            if (arg_bv) {
+                bv_res->combine_operation(*arg_bv, (bm::operation) op_code);
+            } else
+            if (arg_buf) {
+               bm::operation_deserializer<BV>::deserialize(*bv_res,
+                                                  &((*arg_buf)[0]),
+                                                  0,
+                                                  op_code);
+            }
+        } // for        
+    
+    }
+                          
+                          
+    
 };
+
+
 
 /// Implementation of logical functions
 ///
@@ -126,7 +194,6 @@ public:
         this->MakeArgVector(qnode, args);
         _ASSERT(args.size() > 1);
         
-        typename TParent::TBVContainer* bv_cont;        
         BV* bv_res = 0;
         
         if (args.size() == 0) {
@@ -135,62 +202,10 @@ public:
         }
         
         // first argument becomes the default result
-        
-        CQueryParseTree::TNode* arg_node = args[0];
-        typename TParent::TBVContainer* arg_cont = 
-                                this->GetContainer(*arg_node);
-        if (arg_cont) {
-            bv_cont = this->MakeContainer(qnode);        
-            typename TParent::TBVContainer::TBuffer *arg_buf = 
-                                                arg_cont->GetBuffer();
-            typename TParent::TBVContainer::TBitVector* arg_bv = 
-                                                arg_cont->GetBV();
-            if (arg_bv) {
-                bv_cont->SetBV(bv_res = new BV(*arg_bv));
-            } else
-            if (arg_buf) {
-               bv_cont->SetBV(bv_res = new BV);                
-               bm::operation_deserializer<BV>::deserialize(*bv_res,
-                                                  &((*arg_buf)[0]),
-                                                  0,
-                                                  bm::set_ASSIGN);
-            }
-        }
-        
+        bv_res = this->ArgToRes(qnode, args[0]);
         
         // all other arguments are logically combined with arg[0] 
-        
-        for (size_t i = 1; i < args.size(); ++i) {
-            CQueryParseTree::TNode* arg_node = args[i];
-            typename TParent::TBVContainer* arg_cont = 
-                                    this->GetContainer(*arg_node);
-            if (!arg_cont) {
-                // no argument... 
-                if (m_OpCode == bm::set_AND) {
-                    return; // no-op for an AND => 0
-                }
-                continue; // OR, SUB, etc is ok to continue
-            }
-            if (!bv_res) { // lazy init
-                bv_cont = this->MakeContainer(qnode);
-                bv_cont->SetBV(bv_res = new BV);
-            }
-            
-            typename TParent::TBVContainer::TBuffer *arg_buf = 
-                                                arg_cont->GetBuffer();
-            typename TParent::TBVContainer::TBitVector* arg_bv = 
-                                                arg_cont->GetBV();
-            
-            if (arg_bv) {
-                bv_res->combine_operation(*arg_bv, (bm::operation) m_OpCode);
-            }
-            if (arg_buf) {
-               bm::operation_deserializer<BV>::deserialize(*bv_res,
-                                                  &((*arg_buf)[0]),
-                                                  0,
-                                                  m_OpCode);
-            }
-        } // for        
+        this->ProcessArgVector(qnode, bv_res, args, m_OpCode);
     }
 
 protected:
@@ -198,7 +213,42 @@ protected:
 };
 
 
-
+/// Implementation of logical NOT 
+///
+template<class BV>
+class CQueryFunction_BV_Not : public CQueryFunction_BV_Base<BV>
+{
+public:
+    typedef CQueryFunction_BV_Base<BV> TParent;
+public:
+    CQueryFunction_BV_Not()
+    {}
+    
+    virtual void Evaluate(CQueryParseTree::TNode& qnode)
+    {
+        CQueryFunctionBase::TArgVector args;
+        this->MakeArgVector(qnode, args);
+        _ASSERT(args.size() > 1);
+        
+        BV* bv_res = 0;
+        if (args.size() == 0) {
+            // No arg logical function...strange... TO DO:add diagnostics
+            return;   
+        }
+        bv_res = this->ArgToRes(qnode, args[0]);
+        if (args.size() == 1) { // unary NOT 
+            if (bv_res) {
+                bv_res->invert();
+            } else {
+                // nothing...
+                // TO DO: report an error here
+            }
+        }
+        // muli-argument NOT...  
+        // needs to be run as AND NOT or MINUS
+        this->ProcessArgVector(qnode, bv_res, args, bm::set_SUB);
+    }
+};
 
 /* @} */
 
