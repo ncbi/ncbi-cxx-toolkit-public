@@ -32,7 +32,7 @@
 
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/services/grid_worker.hpp>
 
 
@@ -110,13 +110,13 @@ public:
 
 
     /// Request node shutdown
-    void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
+    void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level) 
                       { m_ShutdownLevel = level; }
 
 
     /// Check if shutdown was requested.
     ///
-    CNetScheduleClient::EShutdownLevel GetShutdownLevel(void) 
+    CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void) 
                       { return m_ShutdownLevel; }
 
     CWNJobsWatcher& GetJobsWatcher();
@@ -132,7 +132,7 @@ private:
     CAtomicCounter m_JobsStarted;
     bool m_ReuseJobObject;
 
-    volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
+    volatile CNetScheduleAdmin::EShutdownLevel m_ShutdownLevel;
     auto_ptr<CWNJobsWatcher> m_JobsWatcher;
     const CTime  m_StartTime;
     CGridWorkerNode* m_Worker;

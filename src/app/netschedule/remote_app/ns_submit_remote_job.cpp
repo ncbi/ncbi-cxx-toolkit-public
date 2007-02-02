@@ -175,16 +175,9 @@ int CNSSubmitRemoveJobApp::Run(void)
     string service, host, sport;
     if ( args["ns"]) {
         service = args["ns"].AsString();
-        if (NStr::SplitInTwo(service, ":", host, sport)) {
-            /*unsigned int port =*/ NStr::StringToUInt(sport);
-            reg.Set(kNetScheduleDriverName, "host", host);
-            reg.Set(kNetScheduleDriverName, "port", sport);
-            m_UsePermanentConnection = true;
-        } else {
-            reg.Set(kNetScheduleDriverName, "service", service);
-            m_UsePermanentConnection = false;
-        }
-        reg.Set(kNetScheduleDriverName, "use_embedded_storage", "true");
+        reg.Set(kNetScheduleAPIDriverName, "service", service);
+        reg.Set(kNetScheduleAPIDriverName, "use_permanent_connection", "true");
+        reg.Set(kNetScheduleAPIDriverName, "use_embedded_storage", "true");
     }
 
     reg.Set(kNetCacheDriverName, "client_name", "ns_submit_remote_job");

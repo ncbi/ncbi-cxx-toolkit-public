@@ -39,7 +39,7 @@
 #include <corelib/blob_storage.hpp>
 
 #include <connect/connect_export.h>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -76,7 +76,7 @@ public:
 
     /// Set a job mask
     ///
-    void SetJobMask(CNetScheduleClient::TJobMask mask);
+    void SetJobMask(CNetScheduleAPI::TJobMask mask);
 
     /// Submit a job to the queue
     ///
@@ -89,11 +89,10 @@ private:
     CGridJobSubmitter(CGridClient&, bool use_progress, bool use_embedded_storage);
 
     CGridClient& m_GridClient;
-    string       m_Input;
+    CNetScheduleJob m_Job;
     bool         m_UseProgress;
     bool         m_UseEmbeddedStorage;
     auto_ptr<CNcbiOstream> m_WStream;
-    CNetScheduleClient::TJobMask m_JobMask;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -118,23 +117,23 @@ public:
     ///    (NetCache)  In this case use GetIStream method to get a stream with 
     ///    a job's result. 
     ///
-    const string& GetJobOutput() const    { return m_Output; }
+    const string& GetJobOutput() const    { return m_Job.output; }
     
     /// Get a job's input sting
-    const string& GetJobInput() const    { return m_Input; }
+    const string& GetJobInput() const    { return m_Job.input; }
 
     /// Get a job's return code
     //
-    int           GetReturnCode() const   { return m_RetCode; }
+    int           GetReturnCode() const   { return m_Job.ret_code; }
 
     /// If something bad has happend this method will return an
     /// explanation
     ///
-    const string& GetErrorMessage() const { return m_ErrMsg; }
+    const string& GetErrorMessage() const { return m_Job.error_msg; }
 
     /// Get a job status
     ///
-    CNetScheduleClient::EJobStatus GetStatus();
+    CNetScheduleAPI::EJobStatus GetStatus();
 
     /// Get a stream with a job's result. Stream is based on network
     /// data storage (NetCache). Size of the input data can be determined 
@@ -161,12 +160,7 @@ private:
     void x_SetJobKey(const string& job_key);
 
     CGridClient& m_GridClient;
-    string       m_JobKey;
-    //string       m_ProgressMsgKey;
-    string       m_Output;
-    string       m_ErrMsg;
-    string       m_Input;
-    int          m_RetCode;
+    CNetScheduleJob m_Job;
     size_t       m_BlobSize;
     bool         m_AutoCleanUp;
     bool         m_UseProgress;
@@ -205,7 +199,7 @@ public:
     ///     a job's input data from a storage when the job is
     ///     done or canceled
     ///
-    CGridClient(CNetScheduleClient& ns_client, 
+    CGridClient(const CNetScheduleSubmitter& ns_client, 
                 IBlobStorage& storage,
                 ECleanUp cleanup,
                 EProgressMsg progress_msg,
@@ -240,14 +234,13 @@ public:
     ///
     void RemoveDataBlob(const string& data_key);
 
-    CNetScheduleClient&  GetNSClient() { return m_NSClient; }
+    CNetScheduleSubmitter&  GetNSClient() { return m_NSClient; }
     IBlobStorage& GetStorage()  { return m_NSStorage; }
 
 private:
-    CNetScheduleClient&  m_NSClient;
+    CNetScheduleSubmitter  m_NSClient;
     IBlobStorage& m_NSStorage;
 
-    string                     m_Input;
     auto_ptr<CGridJobSubmitter> m_JobSubmitter;
     auto_ptr<CGridJobStatus>   m_JobStatus;
 

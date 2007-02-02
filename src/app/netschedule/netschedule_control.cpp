@@ -41,7 +41,7 @@
 
 #include "client_admin.hpp"
 
-#include <connect/services/netservice_api.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -248,6 +248,8 @@ private:
     void x_GetConnectionArgs(string& service, string& queue, int& retry, 
                              bool queue_requered);
     CNetScheduleClient_Control* x_CreateClient(bool queue_requered);
+    CNetScheduleAPI* x_CreateNewClient(bool queue_requered);
+
     CNSConnections* x_CreateConnections(bool queue_requered);
 
     bool CheckPermission();
@@ -268,6 +270,7 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
         queue = args["queue"].AsString();
 
     retry = 1;
+    /*
     if (args["retry"]) {
         retry = args["retry"].AsInteger();
         if (retry < 1) {
@@ -275,6 +278,7 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
             retry = 1;
         }
     }
+    */
     service = args["service"].AsString();               
 }
 
@@ -286,6 +290,13 @@ CNSConnections* CNetScheduleControl::x_CreateConnections(bool queue_requered)
     return new CNSConnections(service, queue, retry); 
 }
 
+CNetScheduleAPI* CNetScheduleControl::x_CreateNewClient(bool queue_requered)
+{
+    string service,queue;
+    int retry;
+    x_GetConnectionArgs(service, queue, retry, queue_requered);
+    return new CNetScheduleAPI(service, "netschedule_admin", queue);
+}
 CNetScheduleClient_Control* CNetScheduleControl::x_CreateClient(bool queue_requered)
 {
     string service,queue;
@@ -364,12 +375,12 @@ void CNetScheduleControl::Init(void)
                              "Print queue content for the specified job status",
                              CArgDescriptions::eString);
 
-
+    /*
     arg_desc->AddOptionalKey("retry",
                              "retry",
                              "Number of re-try attempts if connection failed",
                              CArgDescriptions::eInteger);
-
+    */
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -446,6 +457,7 @@ int CNetScheduleControl::Run(void)
 
     const CArgs& args = GetArgs();
     CNcbiOstream& os = NcbiCout;
+
 
     // commands which can be performed only on a single server
     auto_ptr<CNetScheduleClient_Control> ctl;

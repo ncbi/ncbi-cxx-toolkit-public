@@ -37,6 +37,8 @@
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
 
+#include <connect/services/blob_storage_netcache.hpp>
+
 #include <math.h>
 #include <algorithm>
 
@@ -49,6 +51,11 @@ public:
     virtual void Init(void);
     virtual int Run(void);
     virtual string GetProgramVersion(void) const;
+
+    virtual bool UseProgressMessage() const
+    {
+        return false;
+    }
 };
 
 string CGridClientTestApp::GetProgramVersion(void) const
@@ -59,7 +66,12 @@ string CGridClientTestApp::GetProgramVersion(void) const
 
 void CGridClientTestApp::Init(void)
 {
+    // hack!!! It needs to be removed when we know how to deal with unresolved
+    // symbols in plugins.
+    BlobStorage_RegisterDriver_NetCache(); 
+
     CGridClientApp::Init();
+
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -76,6 +88,7 @@ void CGridClientTestApp::Init(void)
                              "vsize",
                              "Size of the test vector",
                              CArgDescriptions::eInteger);
+
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -98,7 +111,7 @@ int CGridClientTestApp::Run(void)
         vsize = args["vsize"].AsInteger();
     }
 
-    CNetScheduleClient::EJobStatus status;
+    CNetScheduleAPI::EJobStatus status;
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
     CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
@@ -131,7 +144,7 @@ int CGridClientTestApp::Run(void)
     NcbiCout << "Waiting for jobs..." << jobs.size() << NcbiEndl;
     unsigned cnt = 0;
     SleepMilliSec(100);
-    
+
     while (jobs.size()) {
         NON_CONST_ITERATE(TJobs, it, jobs) {
             const string& jk = it->first;
@@ -140,7 +153,7 @@ int CGridClientTestApp::Run(void)
 
             status = job_status.GetStatus();
 
-            if (status == CNetScheduleClient::eDone) {
+            if (status == CNetScheduleAPI::eDone) {
                 CNcbiIstream& is = job_status.GetIStream();
                 int count;
                 is >> count;
@@ -156,11 +169,14 @@ int CGridClientTestApp::Run(void)
                 }
                 if (resvec.size() == dvec->size()) {
                     for(size_t i = 0; i < resvec.size(); ++i) {
-                        if( fabs((*dvec)[i] - resvec[i]) > 0.001 ) {
-                            LOG_POST( "Test failed! Wrong vector element." );
+                        //cout << (*dvec)[i] << " --- " << resvec[i] << ";  ";
+                        if( fabs((*dvec)[i] - resvec[i])/resvec[i] > 0.001 ) {
+                            LOG_POST( "Test failed! Wrong vector element. Difference is  " 
+                                      << fabs((*dvec)[i] - resvec[i]));
                             break;
                         }
                     }
+                    cout << endl;
                 }
                 else {
                     LOG_POST( "Test failed! Wrong vector size."  );
@@ -171,7 +187,7 @@ int CGridClientTestApp::Run(void)
                 ++cnt;
                 break;
             } 
-            else if (status == CNetScheduleClient::eFailed) {
+            else if (status == CNetScheduleAPI::eFailed) {
                 LOG_POST( "Job " << jk << " failed : " << job_status.GetErrorMessage() );
                 delete dvec;
                 jobs.erase(it);
@@ -179,7 +195,7 @@ int CGridClientTestApp::Run(void)
                 break;
             }
 
-            else if (status == CNetScheduleClient::eCanceled) {
+            else if (status == CNetScheduleAPI::eCanceled) {
                 NcbiCerr << "Job " << jk << " is canceled." << NcbiEndl;
                 delete dvec;
                 jobs.erase(it);

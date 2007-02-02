@@ -52,10 +52,7 @@ public:
     CWorkerNodeJobContext& GetJobContext();
 
     void SetJobContext(CWorkerNodeJobContext& job_context);
-    void SetJobContext(CWorkerNodeJobContext& job_context,
-                       const string& new_job_key, 
-                       const string& new_job_input,
-                       CNetScheduleClient::TJobMask jmask);
+    void SetJobContext(CWorkerNodeJobContext& job_context, const CNetScheduleJob& job);
     void CloseStreams();
     void Reset();
 
@@ -67,10 +64,9 @@ public:
     void JobDelayExpiration(unsigned runtime_inc);
 
     bool IsJobCommitted() const;
-    bool PutResult(int ret_code, string& new_job_key, string& new_job_input,
-                   CNetScheduleClient::TJobMask& jmask);
+    bool PutResult(int ret_code, CNetScheduleJob& new_job);
     void ReturnJob();
-    void PutFailure(const string& msg, int ret_code = 0);
+    void PutFailure(const string& msg);
     bool IsJobCanceled();
    
     IWorkerNodeJob* GetJob();
@@ -87,6 +83,7 @@ private:
 
     auto_ptr<IBlobStorage>        m_ProgressWriter;
     CRequestRateControl           m_MsgThrottler; 
+    long                          m_CheckStatusPeriod;
     CRequestRateControl           m_StatusThrottler; 
 
     CGridThreadContext(const CGridThreadContext&);

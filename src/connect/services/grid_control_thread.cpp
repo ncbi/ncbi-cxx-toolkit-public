@@ -95,10 +95,10 @@ public:
                      << " SERVER IS COMMITTING SUICIDE!!");
             CGridGlobals::GetInstance().KillNode();
         } else {
-            CNetScheduleClient::EShutdownLevel level =
-                CNetScheduleClient::eNormalShutdown;
+            CNetScheduleAdmin::EShutdownLevel level =
+                CNetScheduleAdmin::eNormalShutdown;
             if (request.find("IMMEDIATE") != NPOS) 
-                level = CNetScheduleClient::eShutdownImmidiate;
+                level = CNetScheduleAdmin::eShutdownImmidiate;
             os << "OK:";
             CGridGlobals::GetInstance().
                 RequestShutdown(level);
@@ -130,7 +130,7 @@ public:
             os << "Maximum job threads: " << node.GetMaxThreads() << endl;
 
         if (CGridGlobals::GetInstance().
-            GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
+            GetShutdownLevel() != CNetScheduleAdmin::eNoShutdown) {
                 os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
         }
         if (CGridGlobals::GetInstance().IsExclusiveMode())
@@ -166,9 +166,9 @@ public:
             os << "ERR:Wrong Queue. Required: " << node.GetQueueName();
             return false;
         } 
-        if (connection_info != node.GetConnectionInfo()) {
+        if (connection_info != node.GetServiceName()) {
             os << "ERR:Wrong Connection Info. Required: "                     
-               << node.GetConnectionInfo();
+               << node.GetServiceName();
             return false;
         }
         return true;

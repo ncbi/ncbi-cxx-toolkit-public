@@ -66,7 +66,6 @@ protected:
     void ShowBlob(const string& blob_key);
 
     virtual bool UseProgressMessage() const { return false; }
-    virtual bool UsePermanentConnection() const { return true; }
     virtual bool UseAutomaticCleanup() const { return false; }
 
 };
@@ -180,11 +179,11 @@ int CRemoteAppClientSampleApp::Run(void)
             it != job_keys.end(); ++it) {
         // Get a job status
             CGridJobStatus& job_status = GetGridClient().GetJobStatus(*it);
-            CNetScheduleClient::EJobStatus status;
+            CNetScheduleAPI::EJobStatus status;
             status = job_status.GetStatus();
 
             // A job is done here
-            if (status == CNetScheduleClient::eDone) {
+            if (status == CNetScheduleAPI::eDone) {
                 
                 result.Receive(job_status.GetIStream());
                 
@@ -204,7 +203,7 @@ int CRemoteAppClientSampleApp::Run(void)
             }
 
             // A job has failed
-            if (status == CNetScheduleClient::eFailed) {
+            if (status == CNetScheduleAPI::eFailed) {
                 ERR_POST( "Job " << *it << " failed : " 
                              << job_status.GetErrorMessage() );
                 failed_jobs.push_back(*it);
@@ -212,7 +211,7 @@ int CRemoteAppClientSampleApp::Run(void)
             }
 
             // A job has been canceled
-            if (status == CNetScheduleClient::eCanceled) {
+            if (status == CNetScheduleAPI::eCanceled) {
                 LOG_POST( "Job " << *it << " is canceled.");
                 done_jobs.push_back(it);
             }
@@ -250,10 +249,10 @@ void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
 void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
 {
     CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
-    CNetScheduleClient::EJobStatus status;
+    CNetScheduleAPI::EJobStatus status;
     status = job_status.GetStatus();
     // A job is done here
-    if (status == CNetScheduleClient::eDone) {
+    if (status == CNetScheduleAPI::eDone) {
         NcbiCout << "Job : " << job_key << NcbiEndl;
         NcbiCout << "Input : " << job_status.GetJobInput() << NcbiEndl; 
         NcbiCout << "Output : " << job_status.GetJobOutput() << NcbiEndl; 
@@ -271,13 +270,13 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key)
     }
     
     // A job has failed
-    if (status == CNetScheduleClient::eFailed) {
+    if (status == CNetScheduleAPI::eFailed) {
         ERR_POST( "Job " << job_key << " failed : " 
                   << job_status.GetErrorMessage() );
     }
     
     // A job has been canceled
-    if (status == CNetScheduleClient::eCanceled) {
+    if (status == CNetScheduleAPI::eCanceled) {
         LOG_POST( "Job " << job_key << " is canceled.");
     }
 }

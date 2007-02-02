@@ -38,13 +38,12 @@
 #include <connect/services/grid_client_app.hpp>
 #include <connect/services/ns_client_factory.hpp>
 
-
 BEGIN_NCBI_SCOPE
 
 
-CGridClientApp::CGridClientApp(CNetScheduleClient* ns_client, 
+CGridClientApp::CGridClientApp(CNetScheduleAPI* ns_client, 
                                IBlobStorage*       storage)
-: m_NSClient(ns_client), m_NSStorage(storage)
+    : m_NSClient(ns_client), m_NSStorage(storage)
 {
 }
 
@@ -54,15 +53,13 @@ CGridClientApp::~CGridClientApp()
 
 void CGridClientApp::Init(void)
 {
+
     CNcbiApplication::Init();
     if (!m_NSClient.get()) {
         CNetScheduleClientFactory cf(GetConfig());
         m_NSClient.reset(cf.CreateInstance());
         m_NSClient->SetProgramVersion(GetProgramVersion());
-        if (UsePermanentConnection()) {
-            m_NSClient->ActivateRequestRateControl(false);
-            m_NSClient->SetConnMode(CNetScheduleClient::eKeepConnection);
-        }
+
     }
     if( !m_NSStorage.get()) {
         CBlobStorageFactory cf(GetConfig());
@@ -76,16 +73,16 @@ void CGridClientApp::Init(void)
         CGridClient::eProgressMsgOff;
 
     bool use_embedded_input = false;
-    if (!GetConfig().Get(kNetScheduleDriverName, "use_embedded_storage").empty())
+    if (!GetConfig().Get(kNetScheduleAPIDriverName, "use_embedded_storage").empty())
         use_embedded_input = GetConfig().
-            GetBool(kNetScheduleDriverName, "use_embedded_storage", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0, 
                     CNcbiRegistry::eReturn);
     else
         use_embedded_input = GetConfig().
-            GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0, 
                     CNcbiRegistry::eReturn);
 
-    m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
+    m_GridClient.reset(new CGridClient(m_NSClient->GetSubmitter(), *m_NSStorage,
                                        cleanup, pmsg, use_embedded_input));
 }
 
@@ -95,7 +92,7 @@ bool CGridClientApp::UseProgressMessage() const
 }
 bool CGridClientApp::UsePermanentConnection() const
 {
-    return false;
+    return true;
 }
 bool CGridClientApp::UseAutomaticCleanup() const
 {

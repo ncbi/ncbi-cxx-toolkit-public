@@ -44,27 +44,26 @@ BEGIN_NCBI_SCOPE
 CNetScheduleClientFactory::CNetScheduleClientFactory(const IRegistry& reg)
 : m_Registry(reg)
 {
-    m_PM_NetSchedule.RegisterWithEntryPoint(NCBI_EntryPoint_xnetschedule);
+    m_PM_NetSchedule.RegisterWithEntryPoint(NCBI_EntryPoint_xnetscheduleapi);
 }
 
 
-CNetScheduleClient* CNetScheduleClientFactory::CreateInstance(void)
+CNetScheduleAPI* CNetScheduleClientFactory::CreateInstance(void)
 {
-    auto_ptr<CNetScheduleClient> ret;
+    auto_ptr<CNetScheduleAPI> ret;
 
     CConfig conf(m_Registry);
     const CConfig::TParamTree* param_tree = conf.GetTree();
     const TPluginManagerParamTree* netschedule_tree = 
-            param_tree->FindSubNode(kNetScheduleDriverName);
+            param_tree->FindSubNode(kNetScheduleAPIDriverName);
 
     if (netschedule_tree) {
         ret.reset( 
             m_PM_NetSchedule.CreateInstance(
-                    kNetScheduleDriverName,
+                    kNetScheduleAPIDriverName,
                     TPMNetSchedule::GetDefaultDrvVers(),
                     netschedule_tree)
             );
-        ret->ActivateRequestRateControl(false);
     }
     if (!ret.get())
         NCBI_THROW(CNSClientFactoryException,

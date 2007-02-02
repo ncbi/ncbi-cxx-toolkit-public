@@ -94,7 +94,7 @@ public:
             // Don't forget to check if shutdown has been requested
             if (count % 1000 == 0) {
                 if (context.GetShutdownLevel() 
-                    != CNetScheduleClient::eNoShutdown)
+                    != CNetScheduleAdmin::eNoShutdown)
                     return 1;
             }
             double d;
@@ -109,7 +109,7 @@ public:
         //
         for (int i = 0; i < m_Iters; ++i) {
             if (context.GetShutdownLevel() 
-                == CNetScheduleClient::eShutdownImmidiate) {
+                == CNetScheduleAdmin::eShutdownImmidiate) {
                 return 1;
             }
             context.PutProgressMessage("Iteration " + NStr::IntToString(i+1) +

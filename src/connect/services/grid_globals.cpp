@@ -66,7 +66,7 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
                          << m_MaxJobsAllowed << ") has been reached.\n" 
                          << "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
-                    RequestShutdown(CNetScheduleClient::eNormalShutdown);
+                    RequestShutdown(CNetScheduleAdmin::eNormalShutdown);
             }
         }
         break;
@@ -84,7 +84,7 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
                          << m_MaxFailuresAllowed << ") has been reached.\n" 
                          << "Sending the shutdown request." );
                 CGridGlobals::GetInstance().
-                    RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+                    RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
             }
         break;
     case eJobSucceed :
@@ -137,7 +137,7 @@ void CWNJobsWatcher::CheckInfinitLoop()
                              << it->first->GetJobKey());
                     it->second.second = true;      
                     CGridGlobals::GetInstance().
-                        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+                        RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
                 }
             } else
                 ++count;
@@ -175,7 +175,7 @@ auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
 
 CGridGlobals::CGridGlobals()
     : m_ReuseJobObject(false),
-      m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
+      m_ShutdownLevel(CNetScheduleAdmin::eNoShutdown),
       m_StartTime(CTime(CTime::eCurrent)),
       m_Worker(NULL),
       m_ExclusiveMode(false)

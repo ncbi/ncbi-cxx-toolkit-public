@@ -40,7 +40,7 @@
 #include <cgi/cgictx.hpp>
 
 #include <connect/services/grid_client.hpp>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/remote_app.hpp>
 
@@ -59,7 +59,7 @@ public:
 
 private:
     static CNetCacheClient* x_CreateNCClient(const string& service);
-    static CNetScheduleClient* x_CreateNSClient(const string& service, 
+    static CNetScheduleAPI* x_CreateNSClient(const string& service, 
                                                 const string& qname);
 
     static void x_RunNewJob(CGridClient& grid, const string& app_name,
@@ -143,11 +143,11 @@ int CRemoteAppDispatcher::ProcessRequest(CCgiContext& ctx)
 
         string service = reg.Get(app_name,"ns_service");
         string qname = reg.Get(app_name,"ns_queue");
-        auto_ptr<CNetScheduleClient> ns_client( x_CreateNSClient(service, qname) );
+        auto_ptr<CNetScheduleAPI> ns_client( x_CreateNSClient(service, qname) );
         service = reg.Get(app_name,"nc_service");
         auto_ptr<IBlobStorage> storage( new CBlobStorage_NetCache(x_CreateNCClient(service)) );
 
-        CGridClient grid(*ns_client, *storage, 
+        CGridClient grid(ns_client->GetSubmitter(), *storage, 
                          CGridClient::eManualCleanup,
                          CGridClient::eProgressMsgOff);
         
@@ -200,15 +200,15 @@ void CRemoteAppDispatcher::x_CheckJobStatus(CGridClient& grid, const string& app
                                             const string& jid, CNcbiOstream& os)
 {
     CGridJobStatus& stat = grid.GetJobStatus(jid);
-    CNetScheduleClient::EJobStatus st = stat.GetStatus();
+    CNetScheduleAPI::EJobStatus st = stat.GetStatus();
     os << (int)CRADispatcherClient::eJobStatusRes << " " << (int)st << " ";
     string token = app_name + '|' + jid;
     WriteStrWithLen(os, token);
     switch( st ) {
-    case CNetScheduleClient::eDone:        
+    case CNetScheduleAPI::eDone:        
         os << stat.GetIStream().rdbuf();
         break;
-    case CNetScheduleClient::eFailed:
+    case CNetScheduleAPI::eFailed:
         WriteStrWithLen(os, stat.GetErrorMessage());
         break;
     default:
@@ -235,17 +235,11 @@ CNetCacheClient* CRemoteAppDispatcher::x_CreateNCClient(const string& service)
     return new CNetCacheClient_LB("remote_app_dispatcher", service);
 }
 /* static */
-CNetScheduleClient* CRemoteAppDispatcher::x_CreateNSClient(const string& service, 
-                                                           const string& qname)
+CNetScheduleAPI* CRemoteAppDispatcher::x_CreateNSClient(const string& service, 
+                                                        const string& qname)
 {
-    auto_ptr<CNetScheduleClient> cln;
-    string host, sport;
-    if (NStr::SplitInTwo(service, ":", host, sport)) {
-        unsigned int port = NStr::StringToUInt(sport);
-        cln.reset(new CNetScheduleClient(host, port, "remote_app_dispatcher", qname));
-    } else {
-        cln.reset(new CNetScheduleClient_LB("remote_app_dispatcher", service, qname));
-    }
+    auto_ptr<CNetScheduleAPI> cln;
+    cln.reset(new CNetScheduleAPI(service, "remote_app_dispatcher", qname));
     cln->SetProgramVersion("RemoteAppDispatcher version 1.0.0");
     return cln.release();
 }

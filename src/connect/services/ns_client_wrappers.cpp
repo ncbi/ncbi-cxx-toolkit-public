@@ -60,109 +60,78 @@ const string& CNSCWrapperShared::GetClientName() const
     CFastMutexGuard gurad(m_Mutex);
     return m_NSClient.GetClientName();
 }
-string CNSCWrapperShared::GetConnectionInfo() const
+const string& CNSCWrapperShared::GetServiceName() const
 {
     CFastMutexGuard gurad(m_Mutex);
-    return m_NSClient.GetConnectionInfo();
+    return m_NSClient.GetServiceName();
 }
 
-bool CNSCWrapperShared::GetJob(string* job_key, 
-                                  string* input, 
-                               unsigned short udp_port,
-                               CNetScheduleClient::TJobMask* job_mask)
+bool CNSCWrapperShared::GetJob(CNetScheduleJob& job,
+                               unsigned short udp_port)
 {
     CFastMutexGuard gurad(m_Mutex);
-    CNetScheduleClient::TJobMask mask = CNetScheduleClient::eEmptyMask;
-    bool ret = m_NSClient.GetJob(job_key, input, udp_port, 0, 0, &mask);
-    if (job_mask) *job_mask = mask;
-    if (ret && (mask & CNetScheduleClient::eExclusiveJob))
+    bool ret = m_NSClient.GetJob(job, udp_port);
+    if ( ret && (job.mask & CNetScheduleAPI::eExclusiveJob))
         CGridGlobals::GetInstance().SetExclusiveMode(true);
     return ret;
 }
 
-bool CNSCWrapperShared::WaitJob(string*        job_key, 
-                                string*        input, 
+bool CNSCWrapperShared::WaitJob(CNetScheduleJob&  job, 
                                 unsigned       wait_time,
                                 unsigned short udp_port,
-                                CNetScheduleClient::EWaitMode wait_mode,
-                                CNetScheduleClient::TJobMask* job_mask)
+                                CNetScheduleExecuter::EWaitMode wait_mode)
 {
     CFastMutexGuard gurad(m_Mutex);
-    CNetScheduleClient::TJobMask mask = CNetScheduleClient::eEmptyMask;
-    //cerr << "WaitJob" << endl;
-    bool ret = m_NSClient.WaitJob(job_key, input,
-                              wait_time, udp_port, wait_mode, 0, 0, &mask);
-    if (job_mask) *job_mask = mask;
-    if (ret && (mask & CNetScheduleClient::eExclusiveJob))
+    bool ret = m_NSClient.WaitJob(job, wait_time, udp_port, wait_mode);
+    if (ret && (job.mask & CNetScheduleAPI::eExclusiveJob))
         CGridGlobals::GetInstance().SetExclusiveMode(true);
     return ret;
 }
 
-void CNSCWrapperShared::PutResult(const string& job_key, 
-                                  int           ret_code, 
-                                  const string& output)
+void CNSCWrapperShared::PutResult(const CNetScheduleJob& job)
 {
     CFastMutexGuard gurad(m_Mutex);
-    //cerr << "PutResult" << endl;
-    m_NSClient.PutResult(job_key, ret_code, output);
+    m_NSClient.PutResult(job);
 }
 
 
-bool CNSCWrapperShared::PutResultGetJob(const string& done_job_key,
-                                        int           done_ret_code, 
-                                        const string& done_output,
-                                        string*       new_job_key, 
-                                        string*       new_input,
-                                        CNetScheduleClient::TJobMask* job_mask)
+bool CNSCWrapperShared::PutResultGetJob(const CNetScheduleJob& done_job,
+                                        CNetScheduleJob& new_job)
 {
     CFastMutexGuard gurad(m_Mutex);
-    CNetScheduleClient::TJobMask mask = CNetScheduleClient::eEmptyMask;
-    //cerr << "PutResultGetJob" << endl;
-    bool ret = m_NSClient.PutResultGetJob(done_job_key, done_ret_code, 
-                                          done_output, new_job_key, new_input, 
-                                          0, 0, &mask);
-    if (job_mask) *job_mask = mask;
-    if (ret && (mask & CNetScheduleClient::eExclusiveJob))
+    bool ret = m_NSClient.PutResultGetJob(done_job, new_job);
+    if (ret && (new_job.mask & CNetScheduleAPI::eExclusiveJob))
         CGridGlobals::GetInstance().SetExclusiveMode(true);
     return ret;
 }
 
-void CNSCWrapperShared::PutProgressMsg(const string& job_key,
-                                       const string& progress_msg)
+void CNSCWrapperShared::PutProgressMsg(const CNetScheduleJob& job)
 {
     CFastMutexGuard gurad(m_Mutex);
-    //cerr << "PutProgressMsg" << endl;
-    m_NSClient.PutProgressMsg(job_key, progress_msg);
+    m_NSClient.PutProgressMsg(job);
 }
 
-string CNSCWrapperShared::GetProgressMsg(const string& job_key)
+void CNSCWrapperShared::GetProgressMsg(CNetScheduleJob& job)
 {
     CFastMutexGuard gurad(m_Mutex);
     //cerr << "GetProgressMsg" << endl;
-    return m_NSClient.GetProgressMsg(job_key);
+    m_NSClient.GetProgressMsg(job);
 }
 
-void CNSCWrapperShared::PutFailure(const string& job_key,
-                                   const string& err_msg,
-                                   const string& output,
-                                   int ret)
+
+void CNSCWrapperShared::PutFailure(const CNetScheduleJob& job)
 {
     CFastMutexGuard gurad(m_Mutex);
     //cerr << "PutFailure" << endl;
-    m_NSClient.PutFailure(job_key, err_msg, output, ret);
+    m_NSClient.PutFailure(job);
 }
 
-CNetScheduleClient::EJobStatus 
-CNSCWrapperShared::GetStatus(const string& job_key,
-                             int*          ret_code,
-                             string*       output,
-                             string*       err_msg,
-                             string*       input)
+CNetScheduleAPI::EJobStatus 
+CNSCWrapperShared::GetJobStatus(const string& job_key)
 {
     CFastMutexGuard gurad(m_Mutex);
     //cerr << "GetStatus" << endl;
-    return m_NSClient.GetStatus(job_key, ret_code, output,
-                                err_msg, input);
+    return m_NSClient.GetJobStatus(job_key);
 }
 
 void CNSCWrapperShared::ReturnJob(const string& job_key)
@@ -199,7 +168,8 @@ void CNSCWrapperShared::UnRegisterClient(unsigned short udp_port)
 
 
 /////////////////////////////////////////////////////////////////////
-///
+/// Is not used anymore
+/*
 CNSCWrapperExclusive::~CNSCWrapperExclusive()
 {
 }
@@ -218,93 +188,67 @@ string CNSCWrapperExclusive::GetConnectionInfo() const
     return m_NSClient->GetConnectionInfo();
 }
 
-bool CNSCWrapperExclusive::GetJob(string* job_key, 
-                                  string* input, 
-                                  unsigned short udp_port,
-                                  CNetScheduleClient::TJobMask* job_mask)
+bool CNSCWrapperExclusive::GetJob(CNetScheduleJob& job, 
+                                  unsigned short udp_port)
 {
     CFastMutexGuard gurad(m_Mutex);
-    CNetScheduleClient::TJobMask mask = CNetScheduleClient::eEmptyMask;
-    bool ret = m_NSClient->GetJob(job_key, input, udp_port, 0, 0, &mask);
-    if (job_mask) *job_mask = mask;
-    if (ret && (mask & CNetScheduleClient::eExclusiveJob))
+    bool ret = m_NSClient->GetJob(job, udp_port);
+    if (ret && (job.mask & CNetScheduleAPI::eExclusiveJob))
         CGridGlobals::GetInstance().SetExclusiveMode(true);
     return ret;
 }
 
-bool CNSCWrapperExclusive::WaitJob(string*        job_key, 
-                                   string*        input, 
+bool CNSCWrapperExclusive::WaitJob(CNetScheduleJob& job, 
                                    unsigned       wait_time,
                                    unsigned short udp_port,
-                                   CNetScheduleClient::EWaitMode wait_mode,
-                                   CNetScheduleClient::TJobMask* job_mask)
+                                   CNetScheduleExecuter::EWaitMode wait_mode)
 
 {
     CFastMutexGuard gurad(m_Mutex);
-    CNetScheduleClient::TJobMask mask = CNetScheduleClient::eEmptyMask;
-    bool ret = m_NSClient->WaitJob(job_key, input,
-                               wait_time, udp_port, wait_mode, 0, 0, &mask);
-    if (job_mask) *job_mask = mask;
-    if (ret && (mask & CNetScheduleClient::eExclusiveJob))
+    bool ret = m_NSClient->WaitJob(job, wait_time, udp_port, wait_mode);
+    if (ret && (job.mask & CNetScheduleAPI::eExclusiveJob))
         CGridGlobals::GetInstance().SetExclusiveMode(true);
     return ret;
 }
 
-void CNSCWrapperExclusive::PutResult(const string& job_key, 
-                                     int           ret_code, 
-                                     const string& output)
+void CNSCWrapperExclusive::PutResult(const CNetScheduleJob& job)
 {
-    m_NSClient->PutResult(job_key, ret_code, output);
+    m_NSClient->PutResult(job);
 }
 
 
-bool CNSCWrapperExclusive::PutResultGetJob(const string& done_job_key,
-                                           int           done_ret_code, 
-                                           const string& done_output,
-                                           string*       new_job_key, 
-                                           string*       new_input,
-                                           CNetScheduleClient::TJobMask* job_mask)
+bool CNSCWrapperExclusive::PutResultGetJob(const CNetScheduleJob& done_job,
+                                           CNetScheduleJob& new_job)
 {
     CFastMutexGuard gurad(m_Mutex);
-    CNetScheduleClient::TJobMask mask = CNetScheduleClient::eEmptyMask;
-    bool ret = m_NSClient->PutResultGetJob(done_job_key, done_ret_code, 
-                                           done_output, new_job_key, new_input,
-                                           0, 0, &mask);
-    if (job_mask) *job_mask = mask;
-    if (ret && (mask & CNetScheduleClient::eExclusiveJob))
+    bool ret = m_NSClient->PutResultGetJob(done_job, new_job);
+    if (ret && (new_job.mask & CNetScheduleClient::eExclusiveJob))
         CGridGlobals::GetInstance().SetExclusiveMode(true);
     return ret;
                             
 }
 
-void CNSCWrapperExclusive::PutProgressMsg(const string& job_key,
-                                          const string& progress_msg)
+void CNSCWrapperExclusive::PutProgressMsg(const CNetScheduleJob& job)
 {
-    m_NSClient->PutProgressMsg(job_key, progress_msg);
+    m_NSClient->PutProgressMsg(job);
 }
+
 
 string CNSCWrapperExclusive::GetProgressMsg(const string& job_key)
 {
     return m_NSClient->GetProgressMsg(job_key);
 }
 
-void CNSCWrapperExclusive::PutFailure(const string& job_key,
-                                      const string& err_msg,
-                                      const string& output,
-                                      int ret)
+
+void CNSCWrapperExclusive::PutFailure(const CNetScheduleJob& job)
 {
-    m_NSClient->PutFailure(job_key, err_msg, output, ret);
+    m_NSClient->PutFailure(job);
 }
 
-CNetScheduleClient::EJobStatus 
-CNSCWrapperExclusive::GetStatus(const string& job_key,
-                                int*          ret_code,
-                                string*       output,
-                                string*       err_msg,
-                                string*       input)
+CNetScheduleAPI::EJobStatus 
+CNSCWrapperExclusive::GetJobStatus(const string& job_key)
 {
-    return m_NSClient->GetStatus(job_key, ret_code, output,
-                                 err_msg, input);
+    return m_NSClient->GetJobStatus(job);
 }
 
 void CNSCWrapperExclusive::ReturnJob(const string& job_key)
@@ -332,6 +276,7 @@ void CNSCWrapperExclusive::UnRegisterClient(unsigned short udp_port)
 {
     m_NSClient->UnRegisterClient(udp_port);
 }
+*/
 
 END_NCBI_SCOPE
 

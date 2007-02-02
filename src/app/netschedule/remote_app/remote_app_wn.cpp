@@ -133,7 +133,7 @@ public:
         string stat;
         if( !finished_ok ) {
             if (context.GetShutdownLevel() == 
-                CNetScheduleClient::eShutdownImmidiate) 
+                CNetScheduleAdmin::eShutdownImmidiate) 
                 stat = " is canceled.";
         } else {
             if (ret != 0 && m_Params.GetNonZeroExitAction() != 
@@ -184,6 +184,7 @@ CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context)
     if (!file.Exists())
         NCBI_THROW(CException, eInvalid, 
                    "File : " + m_Params.GetAppPath() + " doesn't exists.");
+
     if (!CanExecRemoteApp(file))
         NCBI_THROW(CException, eInvalid, 
                    "Could not execute " + m_Params.GetAppPath() + " file.");

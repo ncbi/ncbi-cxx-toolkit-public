@@ -133,7 +133,7 @@ protected:
     virtual void OnExit(void)
     {
         CThread::OnExit();
-        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
         LOG_POST(CTime(CTime::eCurrent).AsString() << " Worker Node Thread exited.");
     }
 
@@ -162,7 +162,7 @@ protected:
     virtual void OnExit(void)
     {
         CThread::OnExit();
-        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
         LOG_POST(CTime(CTime::eCurrent).AsString() << " Control Thread exited.");
     }
 
@@ -272,7 +272,7 @@ void* CWorkerNodeIdleThread::Main()
         if ( x_IsAutoShutdownTime() ) {
             LOG_POST(CTime(CTime::eCurrent).AsString() 
                      << " There are no more jobs to be done. Exiting.");
-            CGridGlobals::GetInstance().RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
             break;
         }            
         unsigned int interval = m_AutoShutdown > 0 ? min (m_RunInterval,m_AutoShutdown) : m_RunInterval;
@@ -292,7 +292,7 @@ void* CWorkerNodeIdleThread::Main()
                     if ( x_IsAutoShutdownTime() ) {
                         LOG_POST(CTime(CTime::eCurrent).AsString() 
                                  << " There are no more jobs to be done. Exiting.");
-                        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+                        CGridGlobals::GetInstance().RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
                         m_ShutdownFlag = true;
                         break;
                     }            
@@ -340,7 +340,7 @@ void CWorkerNodeIdleTaskContext::RequestShutdown()
 {
     m_Thread.RequestShutdown();
     CGridGlobals::GetInstance().
-        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -399,7 +399,7 @@ void CGridWorkerApp_Impl::Init()
     //    SetDiagPostFlag(eDPF_DateTime);
   
     IRWRegistry& reg = m_App.GetConfig();
-    reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
+    reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
 
     if (!m_StorageFactory.get()) 
         m_StorageFactory.reset(new CBlobStorageFactory(reg));
@@ -458,9 +458,6 @@ int CGridWorkerApp_Impl::Run()
         reg.GetBool(kServerSec, "idle_exclusive", true, 0, 
                     CNcbiRegistry::eReturn);
 
-    bool permanent_conntction =
-        reg.GetBool(kServerSec, "use_permanent_connection", false, 0, 
-                    CNcbiRegistry::eReturn);
 
     bool reuse_job_object =
         reg.GetBool(kServerSec, "reuse_job_object", false, 0, 
@@ -484,14 +481,15 @@ int CGridWorkerApp_Impl::Run()
         reg.GetInt(kServerSec,"check_status_period",2,0,IRegistry::eReturn);
 
     bool use_embedded_input = false;
-    if (reg.HasEntry(kNetScheduleDriverName, "use_embedded_storage"))
+    if (reg.HasEntry(kNetScheduleAPIDriverName, "use_embedded_storage"))
         use_embedded_input = reg.
-            GetBool(kNetScheduleDriverName, "use_embedded_storage", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0, 
                     CNcbiRegistry::eReturn);
     else
         use_embedded_input = reg.
-            GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0, 
                     CNcbiRegistry::eReturn);
+
 
     CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
     string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
@@ -546,7 +544,6 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetMasterWorkerNodes(masters);
     m_WorkerNode->SetAdminHosts(admin_hosts);
     m_WorkerNode->ActivateServerLog(server_log);
-    m_WorkerNode->AcivatePermanentConnection(permanent_conntction);
     m_WorkerNode->SetCheckStatusPeriod(check_status_period);
 
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
@@ -579,7 +576,7 @@ int CGridWorkerApp_Impl::Run()
     // give sometime the thread to run
     SleepMilliSec(500);
     if (CGridGlobals::GetInstance().
-        GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
+        GetShutdownLevel() == CNetScheduleAdmin::eNoShutdown) {
         LOG_POST("\n=================== NEW RUN : " 
                  << CGridGlobals::GetInstance().GetStartTime().AsString()
                  << " ===================\n"
@@ -616,7 +613,7 @@ int CGridWorkerApp_Impl::Run()
 void CGridWorkerApp_Impl::RequestShutdown()
 {
     CGridGlobals::GetInstance().
-        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
 }
 
 

@@ -197,11 +197,13 @@ int CNSRemoveJobControlApp::Run(void)
 
     if (args["q"]) {
         string queue = args["q"].AsString();   
-        reg.Set(kNetScheduleDriverName, "queue_name", queue);
+        reg.Set(kNetScheduleAPIDriverName, "queue_name", queue);
     }
 
     if ( args["ns"]) {
-        s_FillReg(reg, kNetScheduleDriverName, args["ns"].AsString());
+        reg.Set(kNetScheduleAPIDriverName, "service", args["ns"].AsString());
+        reg.Set(kNetScheduleAPIDriverName, "use_permanent_connection", "true");
+        reg.Set(kNetScheduleAPIDriverName, "use_embedded_storage", "true");
     }
 
 

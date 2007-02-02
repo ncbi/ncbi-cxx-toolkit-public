@@ -114,7 +114,7 @@ public:
         string stat;
         if( !finished_ok ) {
             if (context.GetShutdownLevel() == 
-                CNetScheduleClient::eShutdownImmidiate) 
+                CNetScheduleAdmin::eShutdownImmidiate) 
                 stat = " is canceled.";
         } else {
             if (ret != 0 && m_Params.GetNonZeroExitAction() != 

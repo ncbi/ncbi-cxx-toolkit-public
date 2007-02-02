@@ -196,16 +196,16 @@ void CGridCgiApplication::InitGridClient()
         m_NSStorage.reset(cf.CreateInstance());
     }
     bool use_embedded_input = false;
-    if (!GetConfig().Get(kNetScheduleDriverName, "use_embedded_storage").empty())
+    if (!GetConfig().Get(kNetScheduleAPIDriverName, "use_embedded_storage").empty())
         use_embedded_input = GetConfig().
-            GetBool(kNetScheduleDriverName, "use_embedded_storage", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_storage", false, 0, 
                     CNcbiRegistry::eReturn);
     else
         use_embedded_input = GetConfig().
-            GetBool(kNetScheduleDriverName, "use_embedded_input", false, 0, 
+            GetBool(kNetScheduleAPIDriverName, "use_embedded_input", false, 0, 
                     CNcbiRegistry::eReturn);
 
-    m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
+    m_GridClient.reset(new CGridClient(m_NSClient->GetSubmitter(), *m_NSStorage,
                                        automatic_cleanup? 
                                             CGridClient::eAutomaticCleanup  :
                                             CGridClient::eManualCleanup,
@@ -378,43 +378,43 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
     string job_key = grid_ctx.GetEntryValue("job_key");
     CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
 
-    CNetScheduleClient::EJobStatus status;
+    CNetScheduleAPI::EJobStatus status;
     status = job_status.GetStatus();
     grid_ctx.SetJobInput(job_status.GetJobInput());
     grid_ctx.SetJobOutput(job_status.GetJobOutput());
             
     bool finished = false;
     switch (status) {
-    case CNetScheduleClient::eDone:
+    case CNetScheduleAPI::eDone:
         // a job is done
         OnJobDone(job_status, grid_ctx);
         finished = true;
         break;
-    case CNetScheduleClient::eFailed:
+    case CNetScheduleAPI::eFailed:
         // a job has failed
         OnJobFailed(job_status.GetErrorMessage(), grid_ctx);
         finished = true;
         break;
 
-    case CNetScheduleClient::eCanceled :
+    case CNetScheduleAPI::eCanceled :
         // A job has been canceled
         OnJobCanceled(grid_ctx);
         finished = true;
         break;
             
-    case CNetScheduleClient::eJobNotFound:
+    case CNetScheduleAPI::eJobNotFound:
         // A lost job
         OnJobFailed("Job is not found.", grid_ctx);
         finished = true;
         break;
                 
-    case CNetScheduleClient::ePending :
-    case CNetScheduleClient::eReturned:
+    case CNetScheduleAPI::ePending :
+    case CNetScheduleAPI::eReturned:
         // A job is in the Netscheduler's Queue
         OnJobPending(grid_ctx);
         break;
         
-    case CNetScheduleClient::eRunning:
+    case CNetScheduleAPI::eRunning:
         // A job is being processed by a worker node
         grid_ctx.SetJobProgressMessage(
                                        job_status.GetProgressMessage());

@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CGridClientApp : public CNcbiApplication
 {
 public:
-    CGridClientApp(CNetScheduleClient* ns_client = NULL, 
+    CGridClientApp(CNetScheduleAPI* ns_client = NULL, 
                    IBlobStorage*       storage = NULL);
 
     /// If you override this method, do call CGridClientApp::Init()
@@ -81,11 +81,12 @@ public:
 protected:
     virtual bool UseProgressMessage() const;
     virtual bool UseAutomaticCleanup() const;
+    NCBI_DEPRECATED
     virtual bool UsePermanentConnection() const;
 
 private:
 
-    auto_ptr<CNetScheduleClient> m_NSClient;
+    auto_ptr<CNetScheduleAPI> m_NSClient;
     auto_ptr<IBlobStorage>       m_NSStorage;
     auto_ptr<CGridClient>        m_GridClient;
 };

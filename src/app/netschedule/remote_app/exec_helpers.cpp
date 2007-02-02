@@ -264,7 +264,7 @@ public:
     virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid) 
     {
         if (m_Context.GetShutdownLevel() == 
-            CNetScheduleClient::eShutdownImmidiate) {
+            CNetScheduleAdmin::eShutdownImmidiate) {
             return CPipe::IProcessWatcher::eStop;
         }
 

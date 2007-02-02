@@ -138,7 +138,7 @@ public:
     ~CWorkerNodeJobContext();
 
     /// Get a job key
-    const string& GetJobKey() const        { return m_JobKey; }
+    const string& GetJobKey() const        { return m_Job.job_id; }
 
     /// Get a job input string.
     ///
@@ -149,7 +149,7 @@ public:
     ///    (NetCache)  In this case use GetIStream method to get a stream with 
     ///    an input data for the job
     ///
-    const string& GetJobInput() const      { return m_JobInput; }
+    const string& GetJobInput() const      { return m_Job.input; }
 
     /// Set a job's output. This string will be sent to
     /// the queue when job is done.
@@ -158,7 +158,7 @@ public:
     /// To send a large result use GetOStream method. Don't call this 
     /// method after GetOStream method is called.
     ///
-    void          SetJobOutput(const string& output) { m_JobOutput = output; }
+    void          SetJobOutput(const string& output) { m_Job.output = output; }
 
     /// Get a stream with input data for a job. Stream is based on network
     /// data storage (NetCache). Size of the input data can be determined 
@@ -204,7 +204,7 @@ public:
     /// and re-executed in a while)
     ///
     void CommitJobWithFailure(const string& err_msg) 
-    { m_JobCommitted = eFailure; m_ErrMsg = err_msg; }
+    { m_JobCommitted = eFailure; m_Job.error_msg = err_msg; }
 
     /// Check if node application shutdown was requested.
     ///
@@ -216,7 +216,7 @@ public:
     /// eImmidiate means node should exit immediately 
     /// (unfinished jobs are returned back to the queue)
     /// 
-    CNetScheduleClient::EShutdownLevel GetShutdownLevel(void) const;
+    CNetScheduleAdmin::EShutdownLevel GetShutdownLevel(void) const;
 
     /// Get a name of a queue where this node is connected to.
     ///
@@ -266,9 +266,9 @@ public:
     /// requested by another job this job will be returnd back to the queue.
     void RequestExclusiveMode();
 
-    const string& GetJobOutput() const { return m_JobOutput; }
+    const string& GetJobOutput() const { return m_Job.output; }
     
-    CNetScheduleClient::TJobMask GetJobMask() const { return m_Mask; }
+    CNetScheduleAPI::TJobMask GetJobMask() const { return m_Job.mask; }
 
 
 private:    
@@ -280,11 +280,10 @@ private:
 
     friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
-    string& SetJobOutput()             { return m_JobOutput; }
-    string& SetJobProgressMsgKey()     { return m_ProgressMsgKey; }
+    string& SetJobOutput()             { return m_Job.output; }
     size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
     bool IsJobExclusive() const        { return m_ExclusiveJob; }
-    const string& GetErrMsg() const    { return m_ErrMsg; }
+    const string& GetErrMsg() const    { return m_Job.error_msg; }
     
     friend class CWorkerNodeRequest;
     CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
@@ -295,30 +294,26 @@ private:
     /// Only a CGridWorkerNode can create an instance of this class
     friend class CGridWorkerNode;
     CWorkerNodeJobContext(CGridWorkerNode&   worker_node,
-                          const string&      job_key,
-                          const string&      job_input,
+                          const CNetScheduleJob& job,
                           unsigned int       job_nubmer,
-                          bool               log_requested,
-                          CNetScheduleClient::TJobMask jmask);
+                          bool               log_requested);
 
-    void Reset(const string& job_key,
-               const string& job_input,
-               unsigned int  job_nubmer,
-               CNetScheduleClient::TJobMask jmask);
+    void Reset(const CNetScheduleJob& job, unsigned int job_number);
 
     CGridWorkerNode&     m_WorkerNode;
-    string               m_JobKey;
-    string               m_JobInput;
-    string               m_JobOutput;
-    string               m_ProgressMsgKey;
+    CNetScheduleJob      m_Job;
+    //string               m_JobKey;
+    //string               m_JobInput;
+    //string               m_JobOutput;
+    //string               m_ProgressMsgKey;
     ECommitStatus        m_JobCommitted;
     size_t               m_InputBlobSize;
     bool                 m_LogRequested;
     unsigned int         m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
     bool                 m_ExclusiveJob;
-    string               m_ErrMsg;
-    CNetScheduleClient::TJobMask m_Mask;
+    //string               m_ErrMsg;
+    //CNetScheduleAPI::TJobMask m_Mask;
 
 
     /// The copy constructor and the assignment operator
@@ -394,6 +389,8 @@ public:
     virtual IWorkerNodeIdleTask* GetIdleTask() { return NULL; }
 };
 
+//DEFINE_STATIC_MUTEX(s_CreateJobMutex);
+
 template <typename TWorkerNodeJob>
 class CSimpleJobFactory : public IWorkerNodeJobFactory
 {
@@ -404,6 +401,7 @@ public:
     }
     virtual IWorkerNodeJob* CreateInstance(void)
     {
+        //CMutexGuard guard(s_CreateJobMutex);
         return new TWorkerNodeJob(*m_WorkerNodeInitContext);
     }
 
@@ -427,6 +425,7 @@ class CSimpleJobFactoryEx : public IWorkerNodeJobFactory
 public:
     virtual void Init(const IWorkerNodeInitContext& context) 
     {
+        //CMutexGuard guard(s_CreateJobMutex);
         m_WorkerNodeInitContext = &context;
         try {
             m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
@@ -438,6 +437,7 @@ public:
     }
     virtual IWorkerNodeJob* CreateInstance(void)
     {
+        //CMutexGuard guard(s_CreateJobMutex);
         return new TWorkerNodeJob(*m_WorkerNodeInitContext);
     }
     virtual IWorkerNodeIdleTask* GetIdleTask() { return m_IdleTask.get(); }
@@ -524,8 +524,6 @@ public:
     void ActivateServerLog(bool on_off) 
                       { m_LogRequested = on_off; }
 
-    void AcivatePermanentConnection(bool on_off);
-
     void SetMasterWorkerNodes(const string& hosts);
     void SetAdminHosts(const string& hosts);
     bool IsHostInAdminHostsList(const string& host) const;
@@ -556,7 +554,7 @@ public:
 
     /// Get a Connection Info
     ///
-    string GetConnectionInfo() const;
+    const string& GetServiceName() const;
 
     void PutOnHold(bool hold);
     bool IsOnHold() const;
@@ -569,7 +567,7 @@ private:
 
     auto_ptr<INSCWrapper>        m_NSReadClient;
     CFastMutex                   m_SharedClientMutex;
-    auto_ptr<CNetScheduleClient> m_SharedNSClient;
+    auto_ptr<CNetScheduleAPI>    m_SharedNSClient;
 
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
     unsigned int                 m_UdpPort;
@@ -623,8 +621,7 @@ private:
     set<SHost> m_Masters;
     set<unsigned int> m_AdminHosts;
 
-    bool x_GetNextJob(string& job_key, string& input, 
-                      CNetScheduleClient::TJobMask& jmask);
+    bool x_GetNextJob(CNetScheduleJob& job);
 
     friend class CWNJobsWatcher;
     friend class CWorkerNodeRequest;

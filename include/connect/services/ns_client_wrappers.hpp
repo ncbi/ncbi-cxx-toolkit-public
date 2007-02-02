@@ -31,7 +31,7 @@
  */
 
 #include <corelib/ncbimtx.hpp>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -43,49 +43,29 @@ public:
 
     virtual const string& GetQueueName() const = 0;
     virtual const string& GetClientName() const  = 0;
-    virtual string GetConnectionInfo() const = 0;
+    virtual const string& GetServiceName() const = 0;
 
-    virtual  bool GetJob(string* job_key, 
-                         string* input, 
-                         unsigned short udp_port,
-                         CNetScheduleClient::TJobMask* job_mask = 0) = 0;
+    virtual  bool GetJob(CNetScheduleJob& job,
+                         unsigned short udp_port) = 0;
     
-    virtual bool WaitJob(string*        job_key, 
-                         string*        input, 
+    virtual bool WaitJob(CNetScheduleJob& job, 
                          unsigned       wait_time,
                          unsigned short udp_port,
-                         CNetScheduleClient::EWaitMode wait_mode = 
-                         CNetScheduleClient::eNoWaitNotification,
-                         CNetScheduleClient::TJobMask* job_mask = 0) = 0;
+                         CNetScheduleExecuter::EWaitMode wait_mode = 
+                         CNetScheduleExecuter::eNoWaitNotification) = 0;
 
-    virtual void PutResult(const string& job_key, 
-                           int           ret_code, 
-                           const string& output) = 0;
+    virtual void PutResult(const CNetScheduleJob& job) = 0;
 
 
-    virtual bool PutResultGetJob(const string& done_job_key, 
-                                 int           done_ret_code, 
-                                 const string& done_output,
-                                 string*       new_job_key, 
-                                 string*       new_input,
-                                 CNetScheduleClient::TJobMask* job_mask = 0) = 0;
+    virtual bool PutResultGetJob(const CNetScheduleJob& done_job, CNetScheduleJob& new_job) = 0;
 
-    virtual void PutProgressMsg(const string& job_key, 
-                                const string& progress_msg) = 0;
+    virtual void PutProgressMsg(const CNetScheduleJob& job) = 0;
 
-    virtual string GetProgressMsg(const string& job_key) = 0;
+    virtual void GetProgressMsg(CNetScheduleJob& job) = 0;
 
-    virtual void PutFailure(const string& job_key, 
-                            const string& err_msg,
-                            const string& output = kEmptyStr,
-                            int ret = 0) = 0;
+    virtual void PutFailure(const CNetScheduleJob& job) = 0;
 
-    virtual CNetScheduleClient::EJobStatus 
-                       GetStatus(const string& job_key, 
-                                 int*          ret_code,
-                                 string*       output,
-                                 string*       err_msg = 0,
-                                 string*       input = 0) = 0;
+    virtual CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key) = 0;
 
     virtual void ReturnJob(const string& job_key) = 0;
 
@@ -105,7 +85,7 @@ public:
 class NCBI_XCONNECT_EXPORT CNSCWrapperShared : public INSCWrapper
 {
 public:
-    CNSCWrapperShared(CNetScheduleClient& ns_client, CFastMutex& mutex) 
+    CNSCWrapperShared(const CNetScheduleExecuter& ns_client, CFastMutex& mutex) 
         : m_NSClient(ns_client), m_Mutex(mutex) {}
 
     virtual ~CNSCWrapperShared();
@@ -114,49 +94,30 @@ public:
     virtual const string& GetQueueName() const ;
 
     virtual const string& GetClientName() const;
-    virtual string GetConnectionInfo() const;
+    virtual const string& GetServiceName() const;
 
-    virtual  bool GetJob(string* job_key, 
-                         string* input, 
-                         unsigned short udp_port,
-                         CNetScheduleClient::TJobMask* job_mask = 0);
-
-    virtual bool WaitJob(string*        job_key, 
-                         string*        input, 
+    virtual  bool GetJob(CNetScheduleJob& job,
+                         unsigned short udp_port);
+    
+    virtual bool WaitJob(CNetScheduleJob& job, 
                          unsigned       wait_time,
                          unsigned short udp_port,
-                         CNetScheduleClient::EWaitMode wait_mode = 
-                         CNetScheduleClient::eNoWaitNotification,
-                         CNetScheduleClient::TJobMask* job_mask = 0);
+                         CNetScheduleExecuter::EWaitMode wait_mode = 
+                         CNetScheduleExecuter::eNoWaitNotification);
 
-    virtual void PutResult(const string& job_key, 
-                           int           ret_code, 
-                           const string& output);
+    virtual void PutResult(const CNetScheduleJob& job);
 
 
-    virtual bool PutResultGetJob(const string& done_job_key, 
-                                 int           done_ret_code, 
-                                 const string& done_output,
-                                 string*       new_job_key, 
-                                 string*       new_input,
-                                 CNetScheduleClient::TJobMask* job_mask = 0);
+    virtual bool PutResultGetJob(const CNetScheduleJob& done_job, CNetScheduleJob& new_job);
 
-    virtual void PutProgressMsg(const string& job_key, 
-                                const string& progress_msg);
+    virtual void PutProgressMsg(const CNetScheduleJob& job);
 
-    virtual string GetProgressMsg(const string& job_key);
+    virtual void GetProgressMsg(CNetScheduleJob& job);
 
-    virtual void PutFailure(const string& job_key, 
-                            const string& err_msg,
-                            const string& output = kEmptyStr,
-                            int ret = 0);
+    virtual void PutFailure(const CNetScheduleJob& job);
 
-    virtual CNetScheduleClient::EJobStatus 
-                       GetStatus(const string& job_key, 
-                                 int*          ret_code,
-                                 string*       output,
-                                 string*       err_msg = 0,
-                                 string*       input   = 0);
+    virtual CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key);
+
 
     virtual void ReturnJob(const string& job_key);
 
@@ -172,16 +133,18 @@ public:
         
 private:
 
-    CNetScheduleClient& m_NSClient;
+    CNetScheduleExecuter m_NSClient;
     CFastMutex&         m_Mutex;
 };
 
 /////////////////////////////////////////////////////////////////////
-///
+/// 
+                                               
+/*
 class NCBI_XCONNECT_EXPORT CNSCWrapperExclusive : public INSCWrapper
 {
 public:
-    CNSCWrapperExclusive(CNetScheduleClient* ns_client, CFastMutex& mutex) 
+    CNSCWrapperExclusive(CNetScheduleExecuAPI* ns_client, CFastMutex& mutex) 
         : m_NSClient(ns_client), m_Mutex(mutex) {}
 
     virtual ~CNSCWrapperExclusive();
@@ -192,49 +155,27 @@ public:
     virtual const string& GetClientName() const;
     virtual string GetConnectionInfo() const;
 
-
-    virtual  bool GetJob(string* job_key, 
-                         string* input, 
-                         unsigned short udp_port,
-                         CNetScheduleClient::TJobMask* job_mask = 0);
-
-    virtual bool WaitJob(string*        job_key, 
-                         string*        input, 
+    virtual  bool GetJob(CNetScheduleJob& job,
+                         unsigned short udp_port);
+    
+    virtual bool WaitJob(CNetScheduleJob& job, 
                          unsigned       wait_time,
                          unsigned short udp_port,
-                         CNetScheduleClient::EWaitMode wait_mode = 
-                         CNetScheduleClient::eNoWaitNotification,
-                         CNetScheduleClient::TJobMask* job_mask = 0);
+                         CNetScheduleExecuter::EWaitMode wait_mode = 
+                         CNetScheduleExecuter::eNoWaitNotification);
+
+    virtual void PutResult(const CNetScheduleJob& job);
 
 
-    virtual void PutResult(const string& job_key, 
-                           int           ret_code, 
-                           const string& output);
+    virtual bool PutResultGetJob(const CNetScheduleJob& done_job, CNetScheduleJob& new_job);
 
+    virtual void PutProgressMsg(const CNetScheduleJob& job);
 
-    virtual bool PutResultGetJob(const string& done_job_key, 
-                                 int           done_ret_code, 
-                                 const string& done_output,
-                                 string*       new_job_key, 
-                                 string*       new_input,
-                                 CNetScheduleClient::TJobMask* job_mask = 0);
+    //    virtual string GetProgressMsg(const string& job_key);
 
-    virtual void PutProgressMsg(const string& job_key, 
-                                const string& progress_msg);
+    virtual void PutFailure(const CNetScheduleJob& job);
 
-    virtual string GetProgressMsg(const string& job_key);
-
-    virtual void PutFailure(const string& job_key, 
-                            const string& err_msg,
-                            const string& output = kEmptyStr,
-                            int ret = 0);
-
-    virtual CNetScheduleClient::EJobStatus 
-                       GetStatus(const string& job_key, 
-                                 int*          ret_code,
-                                 string*       output,
-                                 string*       err_msg = 0,
-                                 string*       input   = 0);
+    virtual CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key);
 
     virtual void ReturnJob(const string& job_key);
 
@@ -249,10 +190,12 @@ public:
         
 private:
 
-    auto_ptr<CNetScheduleClient> m_NSClient;
+    auto_ptr<CNetScheduleAPI> m_NSClient;
     CFastMutex&                  m_Mutex;
 
 };
+
+*/
 
 END_NCBI_SCOPE
 

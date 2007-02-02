@@ -37,7 +37,7 @@
 #include <misc/grid_cgi/cgi2grid.hpp>
 
 #include <connect/services/grid_client.hpp>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/services/ns_client_factory.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -78,7 +78,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                        const string&       project_name,
                                        const string&       return_url)
 {
-    auto_ptr<CNetScheduleClient> ns_client;
+    auto_ptr<CNetScheduleAPI> ns_client;
     auto_ptr<IBlobStorage> ns_storage;
     auto_ptr<CGridClient> grid_client;
 
@@ -88,7 +88,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
 
     CBlobStorageFactory cfs(app.GetConfig());
     ns_storage.reset(cfs.CreateInstance());
-    grid_client.reset(new CGridClient(*ns_client, *ns_storage,
+    grid_client.reset(new CGridClient(ns_client->GetSubmitter(), *ns_storage,
                                       CGridClient::eManualCleanup,
                                       CGridClient::eProgressMsgOn)
                       );

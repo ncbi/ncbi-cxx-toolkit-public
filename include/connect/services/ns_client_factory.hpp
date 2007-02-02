@@ -34,7 +34,7 @@
 #include <corelib/ncbi_config.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbiexpt.hpp>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -50,7 +50,7 @@ public:
     virtual ~INetScheduleClientFactory() {}
 
     /// Create a NetSchedule client
-    virtual CNetScheduleClient* CreateInstance(void) = 0;
+    virtual CNetScheduleAPI* CreateInstance(void) = 0;
 };
 
 
@@ -65,10 +65,10 @@ public:
     CNetScheduleClientFactory(const IRegistry& reg);
     virtual ~CNetScheduleClientFactory() {}
 
-    virtual CNetScheduleClient* CreateInstance(void);
+    virtual CNetScheduleAPI* CreateInstance(void);
 
 private:
-    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
+    typedef CPluginManager<CNetScheduleAPI> TPMNetSchedule;
     TPMNetSchedule   m_PM_NetSchedule;
     const IRegistry& m_Registry;
 };

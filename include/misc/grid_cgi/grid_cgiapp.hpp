@@ -43,7 +43,7 @@
 
 
 #include <connect/services/grid_client.hpp>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 #include <map>
 
@@ -270,7 +270,7 @@ private:
     bool x_JobStopRequested(const CGridCgiContext&) const;
     bool x_CheckJobStatus(CGridCgiContext& grid_ctx);
 
-    auto_ptr<CNetScheduleClient> m_NSClient;
+    auto_ptr<CNetScheduleAPI> m_NSClient;
     auto_ptr<IBlobStorage> m_NSStorage;
     auto_ptr<CGridClient> m_GridClient;
     

@@ -163,11 +163,11 @@ int CGridClientSampleApp::Run(void)
             it != job_keys.end(); ++it) {
             // Get a job status
             CGridJobStatus& job_status = GetGridClient().GetJobStatus(*it);
-            CNetScheduleClient::EJobStatus status;
+            CNetScheduleAPI::EJobStatus status;
             status = job_status.GetStatus();
 
             // A job is done here
-            if (status == CNetScheduleClient::eDone) {
+            if (status == CNetScheduleAPI::eDone) {
                 // Get an input stream
                 CNcbiIstream& is = job_status.GetIStream();
                 int count;
@@ -190,7 +190,7 @@ int CGridClientSampleApp::Run(void)
             }
             
             // A job has failed
-            if (status == CNetScheduleClient::eFailed) {
+            if (status == CNetScheduleAPI::eFailed) {
                 ERR_POST( "Job " << *it << " failed : " 
                           << job_status.GetErrorMessage() );
                 done_jobs.push_back(*it);
@@ -198,7 +198,7 @@ int CGridClientSampleApp::Run(void)
             }
 
             // A job has been canceled
-            if (status == CNetScheduleClient::eCanceled) {
+            if (status == CNetScheduleAPI::eCanceled) {
                 LOG_POST( "Job " << *it << " is canceled.");
                 done_jobs.push_back(*it);
                 break;
