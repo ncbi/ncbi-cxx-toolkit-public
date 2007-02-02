@@ -111,7 +111,10 @@ CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
     // it to disk. :-/
     new_size -= pptr() - pbase();
     m_Size = new_size;
-    if (m_Size - CNcbiStreampos(0) >= m_Limit) {
+    // Hold off on rotating logs until actually producing new output
+    // (even if they were already overdue for rotation), to avoid a
+    // possible recursive double-rotation scenario.
+    if (m_Size - CNcbiStreampos(0) >= m_Limit  &&  m_Size != old_size) {
         Rotate();
     }
     return result;
@@ -130,7 +133,8 @@ int CRotatingLogStreamBuf::sync(void)
     // pptr() ought to equal pbase() now, but just in case...
     new_size -= pptr() - pbase();
     m_Size = new_size;
-    if (m_Size - CNcbiStreampos(0) >= m_Limit) {
+    // Hold off on rotating logs until actually producing new output.
+    if (m_Size - CNcbiStreampos(0) >= m_Limit  &&  m_Size != old_size) {
         Rotate();
     }
     return result;
