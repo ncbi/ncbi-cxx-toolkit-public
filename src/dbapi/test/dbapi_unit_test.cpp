@@ -1008,7 +1008,8 @@ CDBAPIUnitTest::Test_DateTime(void)
     string sql;
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     CVariant value(eDB_DateTime);
-    CVariant null_date(CTime(), eLong);
+    CTime t;
+    CVariant null_date(t, eLong);
     CTime dt_value;
 
     if (true) {
@@ -1249,7 +1250,8 @@ CDBAPIUnitTest::Test_DateTimeBCP(void)
     string sql;
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     CVariant value(eDB_DateTime);
-    CVariant null_date(CTime(), eLong);
+    CTime t;
+    CVariant null_date(t, eLong);
     CTime dt_value;
 
     // Initialization ...
