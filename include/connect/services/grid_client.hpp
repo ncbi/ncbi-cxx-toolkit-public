@@ -78,6 +78,10 @@ public:
     ///
     void SetJobMask(CNetScheduleAPI::TJobMask mask);
 
+    /// Set a job tags
+    ///
+    void SetJobTags(const CNetScheduleAPI::TJobTags& tags);
+
     /// Submit a job to the queue
     ///
     /// @return a job key

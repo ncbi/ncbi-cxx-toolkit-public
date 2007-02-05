@@ -99,6 +99,10 @@ void CGridJobSubmitter::SetJobMask(CNetScheduleAPI::TJobMask mask)
 {
     m_Job.mask = mask;
 }
+void CGridJobSubmitter::SetJobTags(const CNetScheduleAPI::TJobTags& tags)
+{
+    m_Job.tags = tags;
+}
 
 CNcbiOstream& CGridJobSubmitter::GetOStream()
 {

@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 class CNSSubmitRemoveJobApp : public CGridClientApp
 {
 public:
-    CNSSubmitRemoveJobApp() : m_UsePermanentConnection(false) {}
+    CNSSubmitRemoveJobApp() {}
 
     virtual void Init(void);
     virtual int Run(void);
@@ -62,10 +62,8 @@ protected:
     void ShowBlob(const string& blob_key);
 
     virtual bool UseProgressMessage() const { return false; }
-    virtual bool UsePermanentConnection() const { return m_UsePermanentConnection; }
     virtual bool UseAutomaticCleanup() const { return false; }
-private:
-    bool m_UsePermanentConnection;
+
 };
 
 void CNSSubmitRemoveJobApp::Init(void)
@@ -166,11 +164,11 @@ int CNSSubmitRemoveJobApp::Run(void)
     IRWRegistry& reg = GetConfig();
 
     const CArgs& args = GetArgs();
-    reg.Set(kNetScheduleDriverName, "client_name", "ns_submit_remote_job");
+    reg.Set(kNetScheduleAPIDriverName, "client_name", "ns_submit_remote_job");
 
     if (args["q"]) {
         string queue = args["q"].AsString();   
-        reg.Set(kNetScheduleDriverName, "queue_name", queue);
+        reg.Set(kNetScheduleAPIDriverName, "queue_name", queue);
     }
     string service, host, sport;
     if ( args["ns"]) {
@@ -180,9 +178,9 @@ int CNSSubmitRemoveJobApp::Run(void)
         reg.Set(kNetScheduleAPIDriverName, "use_embedded_storage", "true");
     }
 
-    reg.Set(kNetCacheDriverName, "client_name", "ns_submit_remote_job");
 
     if ( args["nc"]) {
+        reg.Set(kNetCacheDriverName, "client_name", "ns_submit_remote_job");
         service = args["nc"].AsString();
         if (NStr::SplitInTwo(service, ":", host, sport)) {
             /*unsigned int port =*/ NStr::StringToUInt(sport);
@@ -203,7 +201,8 @@ int CNSSubmitRemoveJobApp::Run(void)
 
     CBlobStorageFactory factory(reg);
     CRemoteAppRequest request(factory);
-    CNetScheduleClient::TJobMask jmask = CNetScheduleClient::eEmptyMask;
+    CNetScheduleAPI::TJobMask jmask = CNetScheduleAPI::eEmptyMask;
+    CNetScheduleAPI::TJobTags jtags;
 
     if (args["args"]) {
         string cmd = args["args"].AsString();
@@ -236,12 +235,29 @@ int CNSSubmitRemoveJobApp::Run(void)
             request.SetAppRunTimeout(rt);
         }
         if (args["exclusive"]) {
-            jmask |= CNetScheduleClient::eExclusiveJob;
+            jmask |= CNetScheduleAPI::eExclusiveJob;
         }
-
+        
+        if (args["tags"]) {
+            string stags = args["tags"].AsString();
+            if (!stags.empty()) {
+                list<string> ltags;
+                NStr::Split(stags, ";", ltags);
+                if (ltags.size() != 0) {
+                    ITERATE(list<string>, s, ltags) {
+                        string key, value;
+                        NStr::SplitInTwo(*s,"=", key, value);
+                        if( !key.empty() )
+                            jtags.push_back(CNetScheduleAPI::TJobTag(key,value));
+                    }
+                }
+            }
+        }
 
         CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
         job_submitter.SetJobMask(jmask);
+        if (!jtags.empty())
+            job_submitter.SetJobTags(jtags);
         request.Send(job_submitter.GetOStream());        
         string job_key = job_submitter.Submit(affinity);
         if (out)
@@ -279,18 +295,34 @@ int CNSSubmitRemoveJobApp::Run(void)
                 unsigned int rt = NStr::StringToUInt(srt);
                 request.SetAppRunTimeout(rt);
             }
-            CNetScheduleClient::TJobMask jmask = CNetScheduleClient::eEmptyMask;
+            CNetScheduleAPI::TJobMask jmask = CNetScheduleAPI::eEmptyMask;
+            CNetScheduleAPI::TJobTags jtags;
             srt = s_FindParam(line, "exclusive=\"");
             if (!srt.empty()) {
                 if(NStr::CompareNocase(srt, "yes") == 0 ||
                    NStr::CompareNocase(srt, "true") == 0 ||
                    srt == "1" )
-                    jmask |= CNetScheduleClient::eExclusiveJob;
+                    jmask |= CNetScheduleAPI::eExclusiveJob;
+            }
+            string stags = s_FindParam(line, "tags=\"");
+            if (!stags.empty()) {
+                list<string> ltags;
+                NStr::Split(stags, ";", ltags);
+                if (ltags.size() != 0) {
+                    ITERATE(list<string>, s, ltags) {
+                        string key, value;
+                        NStr::SplitInTwo(*s,"=", key, value);
+                        if( !key.empty() )
+                            jtags.push_back(CNetScheduleAPI::TJobTag(key,value));
+                    }
+                }
             }
             
             CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
             request.Send(job_submitter.GetOStream());
             job_submitter.SetJobMask(jmask);
+            if (!jtags.empty())
+                job_submitter.SetJobTags(jtags);
             string job_key = job_submitter.Submit(affinity);
             if (out)
                 *out << job_key << NcbiEndl;
