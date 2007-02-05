@@ -43,7 +43,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <objtools/alnmgr/aln_reverse_converters.hpp>
+#include <objtools/alnmgr/aln_generators.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
 
 #include <serial/typeinfo.hpp> // for SerialAssign
