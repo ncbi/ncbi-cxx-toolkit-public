@@ -758,10 +758,12 @@ CDbapiFtdsCF2::CreateInstance(
     CVersionInfo version,
     const TPluginManagerParamTree* params) const
 {
-    TImplementation* drv = 0;
+    auto_ptr<TImplementation> drv;
+
     if ( !driver.empty() && driver != m_DriverName ) {
         return 0;
     }
+
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
@@ -819,7 +821,7 @@ CDbapiFtdsCF2::CreateInstance(
         }
 
         // Create a driver ...
-        drv = new CTDSContext( db_version );
+        drv.reset(new CTDSContext(db_version));
 
         // Set parameters ...
         if ( page_size ) {
@@ -831,7 +833,8 @@ CDbapiFtdsCF2::CreateInstance(
             drv->SetClientCharset( client_charset.c_str() );
         }
     }
-    return drv;
+
+    return drv.release();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

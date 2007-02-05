@@ -524,10 +524,12 @@ CDbapiOdbcCFBase::CreateInstance(
     CVersionInfo version,
     const TPluginManagerParamTree* params) const
 {
-    TImplementation* drv = 0;
+    auto_ptr<TImplementation> drv;
+
     if ( !driver.empty()  &&  driver != m_DriverName ) {
         return 0;
     }
+
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
@@ -562,7 +564,7 @@ CDbapiOdbcCFBase::CreateInstance(
         }
 
         // Create a driver ...
-        drv = new CODBCContext( SQL_OV_ODBC3, tds_version, use_dsn );
+        drv.reset(new CODBCContext( SQL_OV_ODBC3, tds_version, use_dsn));
 
         // Set parameters ...
         if ( page_size ) {
@@ -573,7 +575,8 @@ CDbapiOdbcCFBase::CreateInstance(
             drv->SetClientCharset( client_charset );
         }
     }
-    return drv;
+
+    return drv.release();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

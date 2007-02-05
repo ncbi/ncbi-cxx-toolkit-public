@@ -1114,10 +1114,12 @@ CDbapiCtlibCFBase::CreateInstance(
     CVersionInfo version,
     const TPluginManagerParamTree* params) const
 {
-    TImplementation* drv = 0;
+    auto_ptr<TImplementation> drv;
+
     if ( !driver.empty()  &&  driver != m_DriverName ) {
         return 0;
     }
+
     if (version.Match(NCBI_INTERFACE_VERSION(I_DriverContext))
                         != CVersionInfo::eNonCompatible) {
         // Mandatory parameters ....
@@ -1163,8 +1165,10 @@ CDbapiCtlibCFBase::CreateInstance(
         }
 
         // Create a driver ...
-        drv = new CTLibContext(reuse_context,
-                               GetCtlibTdsVersion(tds_version));
+        drv.reset(new CTLibContext(reuse_context,
+                                   GetCtlibTdsVersion(tds_version)
+                                   )
+                  );
 
         // Set parameters ...
         if ( page_size ) {
@@ -1183,7 +1187,8 @@ CDbapiCtlibCFBase::CreateInstance(
             drv->SetClientCharset( client_charset );
         }
     }
-    return drv;
+
+    return drv.release();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
