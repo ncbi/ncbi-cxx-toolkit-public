@@ -44,7 +44,7 @@ extern NCBI_DBAPIDRIVER_CTLIB_EXPORT const string kDBAPI_CTLIB_DriverName;
 extern "C"
 {
 
-#ifdef FTDS_IN_USE
+#if defined(FTDS_IN_USE)
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
@@ -58,7 +58,7 @@ NCBI_EntryPoint_xdbapi_ftds(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 
-#else
+#else // defined(FTDS_IN_USE)
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
@@ -66,7 +66,7 @@ NCBI_EntryPoint_xdbapi_ctlib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method);
 
-#endif
+#endif // defined(FTDS_IN_USE)
 
 } // extern C
 

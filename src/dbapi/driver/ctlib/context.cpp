@@ -1192,17 +1192,7 @@ CDbapiCtlibCFBase::CreateInstance(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-class CDbapiCtlibCF_Sybase : public CDbapiCtlibCFBase
-{
-public:
-    CDbapiCtlibCF_Sybase(void)
-    : CDbapiCtlibCFBase("ctlib")
-    {
-    }
-};
-
-
-#ifdef FTDS_IN_USE
+#if defined(FTDS_IN_USE)
 
 class CDbapiCtlibCF_ftds64_ctlib : public CDbapiCtlibCFBase
 {
@@ -1219,6 +1209,17 @@ class CDbapiCtlibCF_ftds : public CDbapiCtlibCFBase
 public:
     CDbapiCtlibCF_ftds(void)
     : CDbapiCtlibCFBase("ftds")
+    {
+    }
+};
+
+#else
+
+class CDbapiCtlibCF_Sybase : public CDbapiCtlibCFBase
+{
+public:
+    CDbapiCtlibCF_Sybase(void)
+    : CDbapiCtlibCFBase("ctlib")
     {
     }
 };
