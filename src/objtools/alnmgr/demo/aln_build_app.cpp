@@ -44,8 +44,10 @@
 
 #include <test/test_assert.h>
 
-#include <serial/objistr.hpp>
 #include <serial/iterator.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/serial.hpp>
 
 #include <objtools/alnmgr/aln_asn_reader.hpp>
 #include <objtools/alnmgr/aln_container.hpp>
@@ -53,7 +55,8 @@
 #include <objtools/alnmgr/aln_stats.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
-#include <objtools/alnmgr/sparse_aln.hpp> //< Temp, just to test it
+#include <objtools/alnmgr/aln_generators.hpp>
+#include <objtools/alnmgr/sparse_aln.hpp>
 #include <objtools/alnmgr/aln_builders.hpp>
 #include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/seqids_extractor.hpp>
@@ -110,6 +113,12 @@ void CAlnBuildApp::Init(void)
         ("print", "bool",
          "Print the sequence strings",
          CArgDescriptions::eBoolean, "f");
+
+
+    arg_desc->AddDefaultKey
+        ("asnout", "asn_out_file_name",
+         "Text ASN output",
+         CArgDescriptions::eOutputFile, "-");
 
 
     // Conversion option
@@ -290,6 +299,20 @@ int CAlnBuildApp::Run(void)
                  << sequence << endl;
         }
         ReportTime("GetAlnSeqString");
+    }
+
+
+
+    /// Create a Seq-align
+    CRef<CSeq_align> sa = 
+        CreateSeqAlignFromAnchoredAln(out_anchored_aln,
+                                      CSeq_align::TSegs::e_Denseg);
+    ReportTime("CreateSeqAlignFromAnchoredAln");
+    {
+        auto_ptr<CObjectOStream> asn_out
+            (CObjectOStream::Open(eSerial_AsnText, 
+                                  GetArgs()["asnout"].AsString()));
+        *asn_out << *sa;
     }
 
 
