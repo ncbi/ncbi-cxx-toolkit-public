@@ -100,6 +100,9 @@ protected:
     /// Get reference on parent execution environment
     CQueryExec& GetExec() { return *m_QExec; }
     
+    /// Get query tree (execution context)
+    CQueryParseTree& GetQueryTree();
+    
 private:    
     friend class CQueryExec;
     /// Set reference on parent query execution class
@@ -159,7 +162,11 @@ public:
     
     /// Run query tree evaluation
     ///
-    void Evaluate(CQueryParseTree::TNode& qnode);
+    void Evaluate(CQueryParseTree& qtree);
+    
+protected:
+    friend class CQueryFunctionBase;
+    CQueryParseTree* GetQTree() { return m_QTree; }
     
 private:
     CQueryExec(const CQueryExec&);
@@ -170,6 +177,7 @@ protected:
 protected:
     TFuncReg                       m_FuncReg;
     auto_ptr<CQueryFunctionBase>   m_ImplicitSearchFunc;
+    CQueryParseTree*               m_QTree;
 };
 
 

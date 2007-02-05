@@ -64,13 +64,18 @@ CQueryFunctionBase::GetArg0(CQueryParseTree::TNode& qnode)
     return *it;
 }
 
+CQueryParseTree& CQueryFunctionBase::GetQueryTree() 
+{ 
+    return *(GetExec().GetQTree()); 
+}
 
 
 
 
 
 CQueryExec::CQueryExec()
-: m_FuncReg(CQueryParseNode::eMaxType)
+: m_FuncReg(CQueryParseNode::eMaxType),
+  m_QTree(0)
 {
     for (size_t i = 0; i < m_FuncReg.size(); ++i) {
         m_FuncReg[i] = 0;
@@ -166,10 +171,12 @@ private:
 };
 
 
-void CQueryExec::Evaluate(CQueryParseTree::TNode& qnode)
+void CQueryExec::Evaluate(CQueryParseTree& qtree)
 {
+    m_QTree = &qtree;
     CQueryExecEvalFunc visitor(*this);
-    TreeDepthFirstTraverse(qnode, visitor);
+    TreeDepthFirstTraverse(*qtree.GetQueryTree(), visitor);
+    m_QTree = 0;
 }
 
 

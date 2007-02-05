@@ -149,13 +149,18 @@ protected:
                 }
                 continue; // OR, SUB, etc is ok to continue
             }
+            typename TBVContainer::TBuffer *arg_buf = arg_cont->GetBuffer();
+            typename TBVContainer::TBitVector* arg_bv = arg_cont->GetBV();
+            
             if (!bv_res) { // lazy init
                 TBVContainer* bv_cont = this->MakeContainer(qnode);
+                if (arg_bv) {
+                    bv_cont->SetBV(bv_res = new BV(*arg_bv));
+                    continue;
+                }
                 bv_cont->SetBV(bv_res = new BV);
             }
             
-            typename TBVContainer::TBuffer *arg_buf = arg_cont->GetBuffer();
-            typename TBVContainer::TBitVector* arg_bv = arg_cont->GetBV();
             
             if (arg_bv) {
                 bv_res->combine_operation(*arg_bv, (bm::operation) op_code);
@@ -240,8 +245,10 @@ public:
             if (bv_res) {
                 bv_res->invert();
             } else {
-                // nothing...
-                // TO DO: report an error here
+                typename TParent::TBVContainer* bv_cont 
+                                        = this->MakeContainer(qnode);
+                bv_cont->SetBV(bv_res = new BV);
+                bv_res->invert();
             }
             return;
         }
@@ -250,6 +257,106 @@ public:
         this->ProcessArgVector(qnode, bv_res, args, bm::set_SUB);
     }
 };
+
+
+/// Implementation of IN as OR-ed EQ search
+///
+/// Based on presumption that:
+///     a IN (1, 2, 3) is equivalent of (a=1 OR a=2 OR a=3)
+///
+template<class BV>
+class CQueryFunction_BV_In_Or : public CQueryFunction_BV_Base<BV>
+{
+public:
+    typedef CQueryFunction_BV_Base<BV> TParent;
+public:
+    CQueryFunction_BV_In_Or()
+    {}
+    
+    virtual void Evaluate(CQueryParseTree::TNode& qnode)
+    {
+        CQueryFunctionBase* func = this->m_QExec->GetFunc(CQueryParseNode::eEQ);
+        if (!func) { // EQ not registered
+            NCBI_THROW(CQueryParseException, eUnknownFunction, 
+               "Query execution failed. Unknown function: =");
+        }
+    
+        CQueryFunctionBase::TArgVector args;
+        this->MakeArgVector(qnode, args);
+        _ASSERT(args.size() > 1);
+                
+        // get first argument (used as left side EQ)
+        CQueryParseTree::TNode* arg_node0 = args[0];
+        BV* bv_res = 0;
+        
+        for (size_t i = 1; i < args.size(); ++i) {
+            CQueryParseTree::TNode* arg_node = args[i];
+            
+            // make a temp fake mini tree for EQ operation
+            //
+            auto_ptr<CQueryParseTree::TNode> eq_node;
+            try {
+                eq_node.reset(
+                    this->GetQueryTree().CreateNode(CQueryParseNode::eEQ, 
+                                                    arg_node0, 
+                                                    arg_node));
+                func->Evaluate(*eq_node);
+            } 
+            catch (CException&)
+            {
+                eq_node->RemoveAllSubNodes(CQueryParseTree::TNode::eNoDelete);
+                throw;
+            }
+            // no need to recursively delete the temp tree
+            eq_node->RemoveAllSubNodes(CQueryParseTree::TNode::eNoDelete);
+            
+            
+            typename TParent::TBVContainer* cont = this->GetContainer(*eq_node);
+            if (!cont) continue;
+            
+            typename 
+                TParent::TBVContainer::TBuffer *arg_buf = cont->GetBuffer();
+            typename 
+                TParent::TBVContainer::TBitVector* arg_bv = cont->GetBV();
+            
+            
+            if (!bv_res) { // first OR
+                typename TParent::TBVContainer* bv_cont = 
+                                                this->MakeContainer(qnode);
+                if (arg_bv) {
+                    bv_cont->SetBV(bv_res = new BV(*arg_bv));
+                    continue;
+                }
+                bv_cont->SetBV(bv_res = new BV);
+            }
+            
+            if (arg_bv) {
+                bv_res->combine_operation(*arg_bv, (bm::operation) bm::set_OR);
+            } else
+            if (arg_buf) {
+               bm::operation_deserializer<BV>::deserialize(*bv_res,
+                                                           &((*arg_buf)[0]),
+                                                           0,
+                                                           bm::set_OR);
+            }
+            
+        } // for
+        
+        if (qnode.GetValue().IsNot()) {
+           if (bv_res) {
+                bv_res->invert(); 
+           } 
+           else {
+                typename TParent::TBVContainer* bv_cont 
+                                        = this->MakeContainer(qnode);
+                bv_cont->SetBV(bv_res = new BV);
+                bv_res->invert();
+           }
+        }
+    }
+};
+
+
 
 /* @} */
 
