@@ -56,7 +56,8 @@
 #include <util/sequtil/sequtil_convert.hpp>
 
 #include <algo/structure/cd_utils/cuSequence.hpp>
-
+#include <objects/seqblock/PDB_block.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils) // namespace ncbi::objects::
@@ -414,6 +415,47 @@ bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, C
 		}
 	}
 	return acc.size() != 0;
+}
+
+
+bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block > pdbBlock)
+{
+	if (seqEntry->IsSeq())
+	{
+		const list< CRef< CSeqdesc > >& descrList = seqEntry->GetSeq().GetDescr().Get();
+		list< CRef< CSeqdesc > >::const_iterator cit = descrList.begin();
+		for (; cit != descrList.end(); cit++)
+		{
+			if ((*cit)->IsPdb())
+			{
+				CRef< CSeqdesc > desc= *cit;
+				pdbBlock.Reset( &(desc->SetPdb()) );
+				return true;
+			}
+		}
+	}
+	else
+	{
+		const list< CRef< CSeqdesc > >& descrList = seqEntry->GetSet().GetDescr().Get();
+		list< CRef< CSeqdesc > >::const_iterator cit = descrList.begin();
+		for (; cit != descrList.end(); cit++)
+		{
+			if ((*cit)->IsPdb())
+			{
+				CRef< CSeqdesc > desc= *cit;
+				pdbBlock.Reset( &(desc->SetPdb()) );
+				return true;
+			}
+		}
+		list< CRef< CSeq_entry > >::const_iterator lsei;
+		const list< CRef< CSeq_entry > >& seqEntryList = seqEntry->GetSet().GetSeq_set();  
+		for (lsei = seqEntryList.begin(); lsei != seqEntryList.end(); ++lsei) 
+		{
+			if(GetPDBBlockFromSeqEntry(*lsei, pdbBlock))
+				return true;
+		} 
+	}
+	return false;
 }
 
 END_SCOPE(cd_utils) // namespace ncbi::objects::

@@ -42,6 +42,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqblock/PDB_block.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -108,6 +109,8 @@ NCBI_CDUTILS_EXPORT
 bool IsConsensus(const CRef< CSeq_id >& seqId);
 NCBI_CDUTILS_EXPORT 
 bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, CRef< CSeq_id>& seqId);
+NCBI_CDUTILS_EXPORT 
+bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block > pdbBlock);
 
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 

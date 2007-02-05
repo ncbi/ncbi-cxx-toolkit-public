@@ -1284,6 +1284,7 @@ bool CDUpdater::reformatBioseq(CRef< CBioseq > bioseq, CRef< CSeq_entry > seqEnt
 	//get BioSource if there is none in bioseq
 	CSeq_descr& seqDescr = bioseq->SetDescr();
 	bool hasSource = false;
+	bool hasTitle = false;
 	//reset all fields except the source field
 
 	//need trim even if bioseq is not a Set
@@ -1299,7 +1300,10 @@ bool CDUpdater::reformatBioseq(CRef< CBioseq > bioseq, CRef< CSeq_entry > seqEnt
 				cit++;
 			}
 			else if ( (*cit)->IsTitle())
+			{
 				cit++;
+				hasTitle = true;
+			}
 			 //extract taxid/taxname from "TaxNamesData" field
 			//blastdb uses it to send tax info
 			else if ((*cit)->IsUser() && (!hasSource))
@@ -1384,6 +1388,20 @@ bool CDUpdater::reformatBioseq(CRef< CBioseq > bioseq, CRef< CSeq_entry > seqEnt
 			seqAnnot->SetData().SetIds().push_back(mmdbTag);
 			bioseq->SetAnnot().push_back(seqAnnot);
 		}
+		if (!hasTitle)
+		{
+			CRef< CPDB_block > pdbBlock;
+			if (GetPDBBlockFromSeqEntry(seqEntry, pdbBlock))
+			{
+				CRef< CSeqdesc > seqDesc(new CSeqdesc);
+				if (pdbBlock->CanGetCompound())
+				{
+					const list< string >& compounds = pdbBlock->GetCompound();
+					if (compounds.size() != 0)
+						seqDesc->SetTitle(*(compounds.begin()));
+				}
+			}
+		}
 	}
 	return true;
 	
@@ -1419,27 +1437,33 @@ int CDUpdater::GetAllIdsFromSeqEntry(CRef< CSeq_entry > seqEntry,
 		return slaveIds.size();
 	}
 }
-
+//get only protein
 bool CDUpdater::GetOneBioseqFromSeqEntry(CRef< CSeq_entry > seqEntry, 
 		CRef< CBioseq >& bioseq,const CSeq_id* seqId)
 {
 	if (seqEntry->IsSeq())
 	{
-		if (seqId)
+		if (seqEntry->GetSeq().IsAa())
 		{
-			if (SeqEntryHasSeqId(seqEntry, *seqId))
+			if (seqId)
+			{
+				if (SeqEntryHasSeqId(seqEntry, *seqId))
+				{
+					bioseq.Reset(&seqEntry->SetSeq());
+					return true;
+				}
+				else
+					return false;
+			}
+			else
 			{
 				bioseq.Reset(&seqEntry->SetSeq());
 				return true;
 			}
-			else
-				return false;
 		}
 		else
-		{
-			bioseq.Reset(&seqEntry->SetSeq());
-			return true;
-		}
+			return false;
+
 	}
 	else
 	{
