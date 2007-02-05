@@ -56,6 +56,9 @@
 #include <serial/objistrxml.hpp>
 #include <serial/objostrxml.hpp>
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
 BEGIN_NCBI_SCOPE
 
 int CDataTool::Run(void)
