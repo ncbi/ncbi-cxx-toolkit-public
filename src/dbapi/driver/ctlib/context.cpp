@@ -1202,6 +1202,8 @@ public:
 };
 
 
+#ifdef FTDS_IN_USE
+
 class CDbapiCtlibCF_ftds64_ctlib : public CDbapiCtlibCFBase
 {
 public:
@@ -1211,8 +1213,6 @@ public:
     }
 };
 
-
-#ifdef FTDS_IN_USE
 
 class CDbapiCtlibCF_ftds : public CDbapiCtlibCFBase
 {
@@ -1232,28 +1232,53 @@ END_SCOPE(ftds64_ctlib)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void
-NCBI_EntryPoint_xdbapi_ctlib(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-#ifdef FTDS_IN_USE
-    CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_Sybase>::NCBI_EntryPointImpl( info_list, method );
-#else
-    CHostEntryPointImpl<CDbapiCtlibCF_Sybase>::NCBI_EntryPointImpl( info_list, method );
-#endif
-}
+#if defined(FTDS_IN_USE)
 
 void
 NCBI_EntryPoint_xdbapi_ftds64_ctlib(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
-#ifdef FTDS_IN_USE
     CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_ftds64_ctlib>::NCBI_EntryPointImpl( info_list, method );
-#else
-    CHostEntryPointImpl<CDbapiCtlibCF_ftds64_ctlib>::NCBI_EntryPointImpl( info_list, method );
-#endif
+}
+
+void
+NCBI_EntryPoint_xdbapi_ftds(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_ftds>::NCBI_EntryPointImpl(
+        info_list,
+        method
+        );
+}
+
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
+void
+DBAPI_RegisterDriver_FTDS(void)
+{
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_ctlib );
+}
+
+
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
+void
+DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("ftds", ftds64_ctlib::CTLIB_CreateContext);
+    mgr.RegisterDriver("ftds64_tlib", ftds64_ctlib::CTLIB_CreateContext);
+    DBAPI_RegisterDriver_FTDS();
+}
+
+#else // defined(FTDS_IN_USE)
+
+void
+NCBI_EntryPoint_xdbapi_ctlib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiCtlibCF_Sybase>::NCBI_EntryPointImpl( info_list, method );
 }
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
@@ -1261,18 +1286,12 @@ void
 DBAPI_RegisterDriver_CTLIB(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ctlib );
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds64_ctlib );
 }
 
-///////////////////////////////////////////////////////////////////////////////
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
 {
-#ifdef FTDS_IN_USE
-    mgr.RegisterDriver("ctlib", ftds64_ctlib::CTLIB_CreateContext);
-#else
     mgr.RegisterDriver("ctlib", CTLIB_CreateContext);
-#endif
     DBAPI_RegisterDriver_CTLIB();
 }
 
@@ -1291,43 +1310,7 @@ extern "C" {
     }
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-#ifdef FTDS_IN_USE
-
-void
-NCBI_EntryPoint_xdbapi_ftds(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-#ifdef FTDS_IN_USE
-    CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_ftds>::NCBI_EntryPointImpl( info_list, method );
-#else
-    CHostEntryPointImpl<CDbapiCtlibCF_ftds>::NCBI_EntryPointImpl( info_list, method );
-#endif
-}
-
-NCBI_DBAPIDRIVER_CTLIB_EXPORT
-void
-DBAPI_RegisterDriver_FTDS(void)
-{
-    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
-}
-
-
-NCBI_DBAPIDRIVER_CTLIB_EXPORT
-void
-DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
-{
-#ifdef FTDS_IN_USE
-    mgr.RegisterDriver("ftds", ftds64_ctlib::CTLIB_CreateContext);
-#else
-    mgr.RegisterDriver("ftds", CTLIB_CreateContext);
-#endif
-    DBAPI_RegisterDriver_FTDS();
-}
-
-#endif
+#endif // defined(FTDS_IN_USE)
 
 END_NCBI_SCOPE
 
