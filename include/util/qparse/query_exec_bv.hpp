@@ -63,6 +63,9 @@ public:
     }
     TBuffer*    GetBuffer() { return m_BV_Buffer.get(); }
     TBitVector* GetBV()     { return m_BV.get(); }
+
+    TBuffer*    ReleaseBuffer() { return m_BV_Buffer.release(); }
+    TBitVector* ReleaseBV()     { return m_BV.release(); }
     
     /// Attach buffer (with ownership transfer)
     void SetBuffer(TBuffer* buf) { m_BV_Buffer.reset(buf); m_BV.reset(0); }

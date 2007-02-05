@@ -60,12 +60,12 @@ BEGIN_NCBI_SCOPE
 ///
 struct SNS_SubmitRecord
 {
-    unsigned  job_id;
-    char      input[kNetScheduleMaxDBDataSize];
-    char      affinity_token[kNetScheduleMaxDBDataSize];
-    unsigned  affinity_id;
-    string    tags;
-    unsigned  mask;
+    unsigned   job_id;
+    char       input[kNetScheduleMaxDBDataSize];
+    char       affinity_token[kNetScheduleMaxDBDataSize];
+    unsigned   affinity_id;
+    TNSTagList tags;
+    unsigned   mask;
 
     SNS_SubmitRecord()
     {
@@ -88,14 +88,14 @@ public:
            const string&   queue_name,
            unsigned        client_host_addr);
 
-    /// Is queue is empty long enough?
+    /// Is the queue empty long enough to be deleted?
     bool IsExpired(void);
 
     unsigned int Submit(SNS_SubmitRecord* rec,
-                        unsigned      host_addr = 0,
-                        unsigned      port = 0,
-                        unsigned      wait_timeout = 0,
-                        const char*   progress_msg = 0);
+                        unsigned          host_addr = 0,
+                        unsigned          port = 0,
+                        unsigned          wait_timeout = 0,
+                        const char*       progress_msg = 0);
 
     /// Submit job batch
     /// @return 
@@ -242,7 +242,7 @@ public:
     unsigned CountStatus(CNetScheduleClient::EJobStatus) const;
 
     void StatusStatistics(CNetScheduleClient::EJobStatus status,
-                          CJobStatusTracker::TBVector::statistics* st) const;
+                          TNSBitVector::statistics* st) const;
 
     /// Count database records
     unsigned CountRecs(void);
@@ -256,6 +256,8 @@ public:
                     const string& host,
                     unsigned      port);
 
+    string ExecQuery(const string& query, const string& action,
+                     const string& fields);
     /// Queue dump
     void PrintJobDbStat(unsigned job_id, 
                         CNcbiOstream & out,
@@ -304,8 +306,6 @@ private:
     SLockedQueue::TListenerList::iterator 
     x_FindListener(unsigned int host_addr, unsigned short udp_port);
 
-    void x_DropJob(unsigned job_id);
-
     /// Find the pending job.
     /// This method takes into account jobs available
     /// in the job status matrix and current 
@@ -323,9 +323,6 @@ private:
                     unsigned int*  job_id, 
                     char*          input,
                     unsigned*      job_mask);
-
-    CBDB_FileCursor* x_GetCursor(CBDB_Transaction& trans);
-
 
     time_t x_ComputeExpirationTime(unsigned time_run, 
                                    unsigned run_timeout) const; 
@@ -350,6 +347,7 @@ private:
 
     void x_AssignSubmitRec(SQueueDB&     db,
                            const SNS_SubmitRecord* rec,
+                           time_t        time_submit,
                            unsigned      host_addr,
                            unsigned      port,
                            unsigned      wait_timeout,
@@ -411,11 +409,11 @@ private:
     /// @param job_candidates
     ///     OUT set of jobs associated with specified affinities
     ///
-    void x_ReadAffIdx_NoLock(const bm::bvector<>& aff_id_set,
-                             bm::bvector<>*       job_candidates);
+    void x_ReadAffIdx_NoLock(const TNSBitVector& aff_id_set,
+                             TNSBitVector*       job_candidates);
 
-    void x_ReadAffIdx_NoLock(unsigned             aff_id,
-                             bm::bvector<>*       job_candidates);
+    void x_ReadAffIdx_NoLock(unsigned            aff_id,
+                             TNSBitVector*       job_candidates);
 
     void x_Count(TStatEvent event)
         { x_GetLQueue()->CountEvent(event); }
@@ -623,7 +621,7 @@ private:
     SQueueDescriptionDB             m_QueueDescriptionDB;
     CQueueCollection                m_QueueCollection;
 
-    bm::bvector<>                   m_UsedIds; /// id access locker
+    TNSBitVector                    m_UsedIds; /// id access locker
     CRef<CJobQueueCleanerThread>    m_PurgeThread;
 
     bool                 m_StopPurge;         ///< Purge stop flag

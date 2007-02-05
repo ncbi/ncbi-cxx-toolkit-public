@@ -40,6 +40,7 @@
 
 #include <util/thread_nonstop.hpp>
 
+#include "ns_types.hpp"
 #include "ns_db.hpp"
 #include "job_status.hpp"
 #include "queue_vc.hpp"
@@ -53,12 +54,13 @@ BEGIN_NCBI_SCOPE
 
 
 /// Queue parameters
-enum ELBCurveType {
-    eLBLinear = 0,
-    eLBRegression = 1
-};
 struct SQueueParameters
 {
+    enum ELBCurveType {
+        eLBLinear = 0,
+        eLBRegression = 1
+    };
+
     /// General parameters
     int timeout;
     int notif_timeout;
@@ -194,6 +196,8 @@ struct SQueueStatictics
     {}
 };
 
+typedef pair<string, string> TNSTag;
+typedef list<TNSTag> TNSTagList;
 
 class CJobTimeLine;
 class CNSLB_Coordinator;
@@ -212,11 +216,14 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
         eKindDynamic = 1
     };
     typedef int TQueueKind;
+    string                       qname;
     string                       qclass;           ///< Parameter class
     TQueueKind                   kind;             ///< 0 - static, 1 - dynamic
+
+    // Databases
     SQueueDB                     db;               ///< Main queue database
     SQueueAffinityIdx            aff_idx;          ///< Q affinity index
-    auto_ptr<CBDB_FileCursor>    cur;              ///< DB cursor
+    auto_ptr<CBDB_FileCursor>    m_Cursor;         ///< DB cursor
     CFastMutex                   lock;             ///< db, cursor lock
     CJobStatusTracker            status_tracker;   ///< status FSA
 
@@ -225,6 +232,9 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     CAffinityDict                affinity_dict;    ///< Affinity tokens
     CWorkerNodeAffinity          worker_aff_map;   ///< Affinity map
     CFastMutex                   aff_map_lock;     ///< worker_aff_map lck
+
+    STagDB                       m_TagDb;
+    CFastMutex                   m_TagLock;
 
     // queue parameters
     int                          timeout;        ///< Result exp. timeout
@@ -264,7 +274,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     /// Host access list for job execution (workers)
     CNetSchedule_AccessList      wnode_hosts;
 
-
     /// Queue monitor
     CNetScheduleMonitor          monitor;
 
@@ -293,25 +302,46 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     CAtomicCounter               m_LastId;
     // Moved here from CQueueDataBase
     /// vector of jobs to be deleted from db unconditionally
-    bm::bvector<>                m_JobsToDelete;
+    TNSBitVector                 m_JobsToDelete;
     /// its lock
     CFastMutex                   m_JobsToDeleteLock;
 
     // key -> value -> bitvector of job ids
-    typedef map<string, map<string, bm::bvector<> > > TTagMap;
+    // guarded by m_TagLock
+    typedef map<TNSTag, TNSBitVector> TTagMap;
     TTagMap                      m_TagMap;
 
-
-
+//public:
     // Constructor/destructor
     SLockedQueue(const string& queue_name,
         const string& qclass_name, TQueueKind queue_kind);
     ~SLockedQueue();
 
+    void Open(CBDB_Env& env, const string& path);
+
     /// get next job id (counter increment)
     unsigned int GetNextId();
     /// Returns first id for the batch
     unsigned int GetNextIdBatch(unsigned count);
+
+    // Erase job from all structures, request delayed db deletion
+    void Erase(unsigned job_id);
+
+    // Tags methods
+    typedef vector<unsigned char> TBuffer;
+    void SetTagDbTransaction(CBDB_Transaction* trans);
+    void AddTags(TNSTagList& tags, unsigned job_id);
+    void SLockedQueue::ReadTag(const string& key,
+                               const string& val,
+                               TBuffer& buf);
+
+    void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
+    void FlushTags(void);
+    void ClearTags(void);
+
+    unsigned DeleteBatch(unsigned batch_size);
+
+    CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
     // Statistics gathering objects
     friend class CStatisticsThread;
@@ -335,9 +365,11 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     typedef unsigned TStatEvent;
     CAtomicCounter m_EventCounter[eStatNumEvents];
     unsigned m_Average[eStatNumEvents];
-//public:
     void CountEvent(TStatEvent);
     double GetAverage(TStatEvent);
+
+private:
+    void x_FlushTags();
 };
 
 

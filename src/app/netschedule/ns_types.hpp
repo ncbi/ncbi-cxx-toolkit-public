@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_ACCESS_LIST__HPP
-#define NETSCHEDULE_ACCESS_LIST__HPP
+#ifndef NETSCHEDULE_NS_TYPES__HPP
+#define NETSCHEDULE_NS_TYPES__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,61 +26,26 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov, Victor Joukov
+ * Authors:  Victor Joukov
  *
  * File Description:
- *   NetSchedule access list.
+ *   NetSchedule common types
  *
  */
 
-/// @file access_list.hpp
-/// NetSchedule access lists, configures server-client access rights
+/// @file ns_types.hpp
+/// NetSchedule common types.
+///
+/// This file defines datatypes, common for internal working of NetSchedule
 ///
 /// @internal
 
-#include <corelib/ncbidbg.hpp>
-#include "ns_types.hpp"
-#include <corelib/ncbimtx.hpp>
-
+#include <util/bitset/ncbi_bitset.hpp>
 
 BEGIN_NCBI_SCOPE
 
-/// List of hosts allowed
-///
-/// @internal
-class CNetSchedule_AccessList
-{
-public:
-    CNetSchedule_AccessList()
-    {
-    }
-
-    /// @return TRUE if restriction list set
-    bool IsRestrictionSet() const;
-
-    /// is host allowed to connect
-    bool IsAllowed(unsigned ha) const;
-
-    /// Delimited lists of hosts allowed into the system
-    void SetHosts(const string& host_names);
-
-    void PrintHosts(CNcbiOstream & out) const;
-    
-private:
-    bool x_IsRestrictionSet() const 
-    {
-        return m_Hosts.any();
-    }
-private:
-    typedef TNSBitVector        THostVector;
-
-private:
-    mutable CRWLock             m_Lock;
-    THostVector                 m_Hosts;
-};
-
+typedef bm::bvector<> TNSBitVector;
 
 END_NCBI_SCOPE
 
-#endif 
-
+#endif /* NETSCHEDULE_NS_TYPES__HPP */

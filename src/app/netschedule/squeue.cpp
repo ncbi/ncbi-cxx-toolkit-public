@@ -35,6 +35,8 @@
 #include "nslb.hpp"
 
 
+#include <bdb/bdb_trans.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -119,6 +121,7 @@ SLockedQueue::SLockedQueue(const string& queue_name,
                            const string& qclass_name,
                            TQueueKind queue_kind)
   :
+    qname(queue_name),
     qclass(qclass_name),
     kind(queue_kind),
     timeout(3600), 
@@ -158,51 +161,227 @@ SLockedQueue::~SLockedQueue()
     delete run_time_line;
     delete lb_coordinator;
     if (delete_database) {
-        // TODO: remove queue database files
         db.Close();
         aff_idx.Close();
         affinity_dict.Close();
+        m_TagDb.Close();
         ITERATE(vector<string>, it, files) {
             // NcbiCout << "Wipig out " << *it << NcbiEndl;
             CFile(*it).Remove();
         }
     }
-    void *pData;
     m_StatThread->RequestStop();
-    m_StatThread->Join(&pData);
+    m_StatThread->Join(NULL);
+}
+
+void SLockedQueue::Open(CBDB_Env& env, const string& path)
+{
+    string prefix = string("jsq_") + qname;
+    string fname = prefix + ".db";
+    db.SetEnv(env);
+
+    db.RevSplitOff();
+    db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+    files.push_back(path + fname);
+
+    fname = prefix + "_affid.idx";
+    aff_idx.SetEnv(env);
+    aff_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+    files.push_back(path + fname);
+
+    affinity_dict.Open(env, qname);
+    files.push_back(path + prefix + "_affdict.db");
+    files.push_back(path + prefix + "_affdict_token.idx");
+
+    fname = prefix + "tag.db";
+    m_TagDb.SetEnv(env);
+    m_TagDb.Open(fname, CBDB_RawFile::eReadWriteCreate);
+    files.push_back(path + fname);
 }
 
 
 unsigned int SLockedQueue::GetNextId()
 {
-    unsigned int id;
-
     if (m_LastId.Get() >= kMax_I4) {
         m_LastId.Set(0);
     }
-    id = (unsigned) m_LastId.Add(1); 
 
-    /*
-    if ((id % 1000) == 0) {
-        m_Env->TransactionCheckpoint();
-    }
-    if ((id % 1000000) == 0) {
-        m_Env->CleanLog();
-    }
-    */
-
-    return id;
+    return (unsigned) m_LastId.Add(1);
 }
 
 
 unsigned int SLockedQueue::GetNextIdBatch(unsigned count)
 {
     if (m_LastId.Get() >= kMax_I4) {
+        // NB: This wrap-around zero will not work in the
+        // case of batch id - client expect monotonously
+        // growing range of ids.
         m_LastId.Set(0);
     }
     unsigned int id = (unsigned) m_LastId.Add(count);
     id = id - count + 1;
     return id;
+}
+
+
+void SLockedQueue::Erase(unsigned job_id)
+{
+    status_tracker.Erase(job_id);
+    // Request delayed record delete
+    CFastMutexGuard jtd_guard(m_JobsToDeleteLock);
+    m_JobsToDelete.set_bit(job_id);
+}
+
+
+void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
+{
+    m_TagDb.SetTransaction(trans);
+}
+
+
+void SLockedQueue::AddTags(TNSTagList& tags, unsigned job_id)
+{
+    CFastMutexGuard guard(m_TagLock);
+    ITERATE(TNSTagList, it, tags) {
+        TNSBitVector bv;
+        pair<TTagMap::iterator, bool> tag_map_it =
+            m_TagMap.insert(TTagMap::value_type((*it), bv));
+        if (tag_map_it.second) {
+            // Try to read bitvector from db
+            m_TagDb.key = it->first;
+            m_TagDb.val = it->second;
+            m_TagDb.ReadVector(&(tag_map_it.first)->second);
+        }
+        (tag_map_it.first)->second.set(job_id);
+    }
+}
+
+
+void SLockedQueue::ReadTag(const string& key,
+                           const string& val,
+                           TBuffer& buf)
+{
+    CFastMutexGuard guard(m_TagLock);
+    CBDB_Transaction trans(*m_TagDb.GetEnv(), 
+                        CBDB_Transaction::eTransASync,
+                        CBDB_Transaction::eNoAssociation);
+    m_TagDb.SetTransaction(&trans);
+    CBDB_FileCursor cur(m_TagDb);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << key << val;
+    if (cur.Fetch(&buf) == eBDB_Ok) {
+    }
+}
+
+
+void SLockedQueue::FlushTags(void)
+{
+    CFastMutexGuard guard(m_TagLock);
+    x_FlushTags();
+}
+
+
+void SLockedQueue::ClearTags(void)
+{
+    CFastMutexGuard guard(m_TagLock);
+    m_TagMap.clear();
+    // TODO: iterate over tags database, removing every entry
+}
+
+
+void SLockedQueue::x_FlushTags(void)
+{
+    ITERATE(TTagMap, it, m_TagMap) {
+        m_TagDb.key = it->first.first;
+        m_TagDb.val = it->first.second;
+        m_TagDb.WriteVector(it->second, STagDB::eCompact);
+    }
+    m_TagMap.clear();
+}
+
+
+void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
+                                const TNSBitVector& ids)
+{
+    CFastMutexGuard guard(m_TagLock);
+    m_TagDb.SetTransaction(&trans);
+    x_FlushTags();
+    CBDB_FileCursor cur(m_TagDb, trans,
+                        CBDB_FileCursor::eReadModifyUpdate);
+    // iterate over tags database, deleting ids from every entry
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+    CBDB_RawFile::TBuffer  buf;
+    TNSBitVector bv;
+    while (cur.Fetch(&buf) == eBDB_Ok) {
+        bv.clear(true);
+        bm::deserialize(bv, &buf[0]);
+        unsigned before_remove = bv.count();
+        bv -= ids;
+        if (bv.count() != before_remove) {
+            bv.optimize();
+            bv.optimize_gap_size();
+            size_t size = bm::serialize(bv, &buf[0]);
+            cur.UpdateBlob(&buf[0], size);
+        }
+    }
+}
+
+
+unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
+{
+    TNSBitVector batch;
+    {{
+        CFastMutexGuard guard(m_JobsToDeleteLock);
+        unsigned job_id = 0;
+        for (unsigned n = 0; n < batch_size &&
+                             (job_id = m_JobsToDelete.extract_next(job_id));
+             ++n)
+        {
+            batch.set(job_id);
+        }
+    }}
+    if (batch.none()) return 0;
+
+    CBDB_Transaction trans(*db.GetEnv(), 
+                        CBDB_Transaction::eTransASync,
+                        CBDB_Transaction::eNoAssociation);
+
+    unsigned del_rec = 0;
+    {{
+        CFastMutexGuard guard(lock);
+        db.SetTransaction(&trans);
+
+        CBDB_FileCursor& cur = *GetCursor(trans);
+        CBDB_CursorGuard cg(cur);    
+        for (TNSBitVector::enumerator en = batch.first();
+                en < batch.end();
+                ++en) {
+            unsigned job_id = *en;
+            cur.SetCondition(CBDB_FileCursor::eEQ);
+            cur.From << job_id;
+            if (cur.FetchFirst() == eBDB_Ok) {
+                cur.Delete(CBDB_File::eIgnoreError);
+                ++del_rec;
+            }
+        }
+    }}
+    x_RemoveTags(trans, batch);
+    trans.Commit();
+    return del_rec;
+}
+
+
+CBDB_FileCursor* SLockedQueue::GetCursor(CBDB_Transaction& trans)
+{
+    CBDB_FileCursor* cur = m_Cursor.get();
+    if (cur) { 
+        cur->ReOpen(&trans);
+        return cur;
+    }
+    cur = new CBDB_FileCursor(db, trans,
+                              CBDB_FileCursor::eReadModifyUpdate);
+    m_Cursor.reset(cur);
+    return cur;
 }
 
 

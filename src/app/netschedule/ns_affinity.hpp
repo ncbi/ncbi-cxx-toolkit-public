@@ -41,7 +41,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbicntr.hpp>
 
-#include <util/bitset/ncbi_bitset.hpp>
+#include "ns_types.hpp"
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
@@ -109,9 +109,9 @@ public:
     /// Affinity association information
     struct SAffinityInfo
     {
-        bm::bvector<>  aff_ids;          ///< List of affinity tokens
-        bm::bvector<>  candidate_jobs;   ///< List of job candidates for this node
-        bm::bvector<>  blacklisted_jobs; ///< List of jobs, blacklisted for node
+        TNSBitVector  aff_ids;          ///< List of affinity tokens
+        TNSBitVector  candidate_jobs;   ///< List of job candidates for this node
+        TNSBitVector  blacklisted_jobs; ///< List of jobs, blacklisted for node
 
         SAffinityInfo() 
             : aff_ids(bm::BM_GAP), candidate_jobs(bm::BM_GAP),
@@ -143,11 +143,11 @@ public:
 
     /// Remove affinity token association, input is specified by a 
     /// vector of ids
-    void RemoveAffinity(const bm::bvector<>& bv);
+    void RemoveAffinity(const TNSBitVector& bv);
 
     /// Retrieve all affinity ids assigned to all(any) worker nodes
     /// Logical OR (Union) of all SAffinityInfo::aff_ids
-    void GetAllAssignedAffinity(bm::bvector<>* aff_ids);
+    void GetAllAssignedAffinity(TNSBitVector* aff_ids);
 
 
     /// Free unused memory

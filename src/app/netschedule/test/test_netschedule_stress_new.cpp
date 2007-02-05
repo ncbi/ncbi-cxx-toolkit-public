@@ -90,15 +90,15 @@ void CTestNetScheduleStress::Init(void)
                      CArgDescriptions::eString);
 
 
-    arg_desc->AddOptionalKey("jcount", 
-                             "jcount",
+    arg_desc->AddOptionalKey("jobs", 
+                             "jobs",
                              "Number of jobs to submit",
                              CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey("batch", "batch",
                             "Test batch submit",
                             CArgDescriptions::eBoolean,
-                            "false",
+                            "true",
                             0);
 
     arg_desc->AddDefaultKey("keepconn", "keepconn",
@@ -211,7 +211,7 @@ void TestBatchSubmit(const string& service,
 
     for (unsigned i = 0; i < jcount; ++i) {
         CNetScheduleJob job("HELLO BSUBMIT", "affinity", CNetScheduleAPI::eExclusiveJob);
-        job.tags.push_back(CNetScheduleAPI::TJobTag("job_num", NStr::UIntToString(i)));
+        job.tags.push_back(CNetScheduleAPI::TJobTag("job_grp", NStr::UIntToString(i/10)));
         jobs.push_back(job);
     }
     
@@ -294,8 +294,8 @@ int CTestNetScheduleStress::Run(void)
     bool keepconn = args["keepconn"].AsBoolean();
 
     unsigned jcount = 10000;
-    if (args["jcount"]) {
-        jcount = args["jcount"].AsInteger();
+    if (args["jobs"]) {
+        jcount = args["jobs"].AsInteger();
     }
 
     //    TestRunTimeout(host, port, queue_name);

@@ -3,6 +3,7 @@ corelib/test$
 util$
 util/compress$
 util/fileblobstorage$
+util/qparse$
 util/demo$
 util/test$
 connect$

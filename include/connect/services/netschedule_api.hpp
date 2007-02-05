@@ -781,28 +781,30 @@ public:
         eUnknownQueueClass,
         eTooManyPendingJobs,
         eDataTooLong,
-        eInvalidClientOrVersion,
-        eOperationAccessDenied,
-        eDuplicateName
+        eInvalidClient,
+        eAccessDenied,
+        eDuplicateName,
+        eQuerySyntaxError
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
-        case eInternalError:          return "eInternalError";
-        case eProtocolSyntaxError:    return "eProtocolSyntaxError";
-        case eAuthenticationError:    return "eAuthenticationError";
-        case eKeyFormatError:         return "eKeyFormatError";
-        case eInvalidJobStatus:       return "eInvalidJobStatus";
-        case eUnknownQueue:           return "eUnknownQueue";
-        case eUnknownQueueClass:      return "eUnknownQueueClass";
-        case eTooManyPendingJobs:     return "eTooManyPendingJobs";
-        case eDataTooLong:            return "eDataTooLong";
-        case eInvalidClientOrVersion: return "eInvalidClientOrVersion";
-        case eOperationAccessDenied:  return "eOperationAccessDenied";
-        case eDuplicateName:          return "eDuplicateName";
-        default:                      return CException::GetErrCodeString();
+        case eInternalError:       return "eInternalError";
+        case eProtocolSyntaxError: return "eProtocolSyntaxError";
+        case eAuthenticationError: return "eAuthenticationError";
+        case eKeyFormatError:      return "eKeyFormatError";
+        case eInvalidJobStatus:    return "eInvalidJobStatus";
+        case eUnknownQueue:        return "eUnknownQueue";
+        case eUnknownQueueClass:   return "eUnknownQueueClass";
+        case eTooManyPendingJobs:  return "eTooManyPendingJobs";
+        case eDataTooLong:         return "eDataTooLong";
+        case eInvalidClient:       return "eInvalidClient";
+        case eAccessDenied:        return "eAccessDenied";
+        case eDuplicateName:       return "eDuplicateName";
+        case eQuerySyntaxError:    return "eQuerySyntaxError";
+        default:                   return CNetServiceException::GetErrCodeString();
         }
     }
 

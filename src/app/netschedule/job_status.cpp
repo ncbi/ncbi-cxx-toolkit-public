@@ -44,17 +44,17 @@ CJobStatusTracker::CJobStatusTracker()
    m_DoneCnt(0)
 {
     for (int i = 0; i < CNetScheduleClient::eLastStatus; ++i) {
-        bm::bvector<>* bv;
-        bv = new bm::bvector<>(bm::BM_GAP);
+        TNSBitVector* bv;
+        bv = new TNSBitVector(bm::BM_GAP);
 /*
         if (i == (int)CNetScheduleClient::eDone     ||
             i == (int)CNetScheduleClient::eCanceled ||
             i == (int)CNetScheduleClient::eFailed   ||
             i == (int)CNetScheduleClient::ePending
             ) {
-            bv = new bm::bvector<>(bm::BM_GAP);
+            bv = new TNSBitVector(bm::BM_GAP);
         } else {
-            bv = new bm::bvector<>();
+            bv = new TNSBitVector();
         }
 */
         m_StatusStor.push_back(bv);
@@ -65,7 +65,7 @@ CJobStatusTracker::CJobStatusTracker()
 CJobStatusTracker::~CJobStatusTracker()
 {
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
-        TBVector* bv = m_StatusStor[i];
+        TNSBitVector* bv = m_StatusStor[i];
         delete bv;
     }
 }
@@ -83,7 +83,7 @@ CNetScheduleClient::EJobStatus
 CJobStatusTracker::GetStatusNoLock(unsigned int job_id) const
 {
     for (int i = m_StatusStor.size()-1; i >= 0; --i) {
-        const TBVector& bv = *m_StatusStor[i];
+        const TNSBitVector& bv = *m_StatusStor[i];
         bool b = bv[job_id];
         if (b) {
             return (CNetScheduleClient::EJobStatus)i;
@@ -101,7 +101,7 @@ CJobStatusTracker::CountStatus(CNetScheduleClient::EJobStatus status) const
 {
     CReadLockGuard guard(m_Lock);
 
-    const TBVector& bv = *m_StatusStor[(int)status];
+    const TNSBitVector& bv = *m_StatusStor[(int)status];
     unsigned cnt = bv.count();
 
     if (status == CNetScheduleClient::ePending) {
@@ -111,16 +111,16 @@ CJobStatusTracker::CountStatus(CNetScheduleClient::EJobStatus status) const
 }
 
 
-void CJobStatusTracker::CountStatus(TStatusSummaryMap*   status_map,
-                                    const bm::bvector<>* candidate_set)
+void CJobStatusTracker::CountStatus(TStatusSummaryMap*  status_map,
+                                    const TNSBitVector* candidate_set)
 {
     _ASSERT(status_map);
-    status_map->erase(status_map->begin(), status_map->end());
+    status_map->clear();
     
     CReadLockGuard guard(m_Lock);
 
     for (size_t i = 0; i < m_StatusStor.size(); ++i) {
-        const TBVector& bv = *m_StatusStor[i];
+        const TNSBitVector& bv = *m_StatusStor[i];
         unsigned cnt;
         if (candidate_set) {
             cnt = bm::count_and(bv, *candidate_set);
@@ -138,7 +138,7 @@ unsigned CJobStatusTracker::Count(void)
 
     unsigned cnt = 0;
     for (size_t i = 0; i < m_StatusStor.size(); ++i) {
-        const TBVector& bv = *m_StatusStor[i];
+        const TNSBitVector& bv = *m_StatusStor[i];
         cnt += bv.count();
     }
     return cnt;
@@ -147,24 +147,24 @@ unsigned CJobStatusTracker::Count(void)
 
 void 
 CJobStatusTracker::StatusStatistics(CNetScheduleClient::EJobStatus status,
-                                    TBVector::statistics*          st) const
+                                    TNSBitVector::statistics*      st) const
 {
     _ASSERT(st);
     CReadLockGuard guard(m_Lock);
 
-    const TBVector& bv = *m_StatusStor[(int)status];
+    const TNSBitVector& bv = *m_StatusStor[(int)status];
     bv.calc_stat(st);
 
 }
 
 
 void CJobStatusTracker::StatusSnapshot(CNetScheduleClient::EJobStatus status,
-                                       TBVector*                      bv) const
+                                       TNSBitVector*                  bv) const
 {
     _ASSERT(bv);
     CReadLockGuard guard(m_Lock);
 
-    const TBVector& bv_s = *m_StatusStor[(int)status];
+    const TNSBitVector& bv_s = *m_StatusStor[(int)status];
     *bv |= bv_s;
 }
 
@@ -178,11 +178,11 @@ void CJobStatusTracker::Returned2Pending()
 
 void CJobStatusTracker::Returned2PendingNoLock()
 {
-    TBVector& bv_ret = *m_StatusStor[(int)CNetScheduleClient::eReturned];
+    TNSBitVector& bv_ret = *m_StatusStor[(int)CNetScheduleClient::eReturned];
     if (!bv_ret.any())
         return;
 
-    TBVector& bv_pen = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    TNSBitVector& bv_pen = *m_StatusStor[(int)CNetScheduleClient::ePending];
 
     bv_pen |= bv_ret;
     bv_ret.clear();
@@ -207,7 +207,7 @@ CJobStatusTracker::SetStatus(unsigned int  job_id,
     CWriteLockGuard guard(m_Lock);
 
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
-        TBVector& bv = *m_StatusStor[i];
+        TNSBitVector& bv = *m_StatusStor[i];
         bv.set(job_id, (int)status == (int)i);
     }
     m_BorrowedIds.set(job_id, false);
@@ -217,13 +217,18 @@ CJobStatusTracker::SetStatus(unsigned int  job_id,
     }
 }
 
+void CJobStatusTracker::Erase(unsigned int job_id)
+{
+    SetStatus(job_id, CNetScheduleClient::eJobNotFound);
+}
 
-void CJobStatusTracker::ClearAll(TBVector* bv)
+
+void CJobStatusTracker::ClearAll(TNSBitVector* bv)
 {
     CWriteLockGuard guard(m_Lock);
 
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
-        TBVector& bv1 = *m_StatusStor[i];
+        TNSBitVector& bv1 = *m_StatusStor[i];
         if (bv) {
             *bv |= bv1;
         }
@@ -239,15 +244,15 @@ void CJobStatusTracker::ClearAll(TBVector* bv)
 void CJobStatusTracker::FreeUnusedMem()
 {
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
-        TBVector& bv = *m_StatusStor[i];
+        TNSBitVector& bv = *m_StatusStor[i];
         {{
         CWriteLockGuard guard(m_Lock);
-        bv.optimize(0, TBVector::opt_free_0);
+        bv.optimize(0, TNSBitVector::opt_free_0);
         }}
     }
     {{
     CWriteLockGuard guard(m_Lock);
-    m_BorrowedIds.optimize(0, TBVector::opt_free_0);
+    m_BorrowedIds.optimize(0, TNSBitVector::opt_free_0);
     }}
 }
 
@@ -256,10 +261,10 @@ void CJobStatusTracker::FreeUnusedMem()
 void CJobStatusTracker::FreeUnusedMemNoLock()
 {
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
-        TBVector& bv = *m_StatusStor[i];
-        bv.optimize(0, TBVector::opt_free_0);
+        TNSBitVector& bv = *m_StatusStor[i];
+        bv.optimize(0, TNSBitVector::opt_free_0);
     }
-    m_BorrowedIds.optimize(0, TBVector::opt_free_0);
+    m_BorrowedIds.optimize(0, TNSBitVector::opt_free_0);
 }
 */
 
@@ -269,7 +274,7 @@ CJobStatusTracker::SetExactStatusNoLock(unsigned int job_id,
                       CNetScheduleClient::EJobStatus status,
                                         bool         set_clear)
 {
-    TBVector& bv = *m_StatusStor[(int)status];
+    TNSBitVector& bv = *m_StatusStor[(int)status];
     bv.set(job_id, set_clear);
 
     if ((status == CNetScheduleClient::ePending) && 
@@ -414,7 +419,7 @@ CJobStatusTracker::AddPendingBatch(unsigned job_id_from, unsigned job_id_to)
 {
     CWriteLockGuard guard(m_Lock);
 
-    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    TNSBitVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
 
     bv.set_range(job_id_from, job_id_to);
 }
@@ -428,11 +433,11 @@ CJobStatusTracker::AddPendingBatch(unsigned job_id_from, unsigned job_id_to)
 
 
 bool 
-CJobStatusTracker::GetPendingJobFromSet(bm::bvector<>* candidate_set,
+CJobStatusTracker::GetPendingJobFromSet(TNSBitVector* candidate_set,
                                         unsigned* job_id)
 {
     *job_id = 0;
-    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    TNSBitVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
 
     {{
         unsigned p_id;
@@ -471,7 +476,7 @@ CJobStatusTracker::GetPendingJobFromSet(bm::bvector<>* candidate_set,
         // look for the first pending candidate bit 
         {{
             CReadLockGuard guard(m_Lock);
-            bm::bvector<>::enumerator en(candidate_set->first());
+            TNSBitVector::enumerator en(candidate_set->first());
             if (!en.valid()) { // no more candidates
                 return bv.any();
             }
@@ -519,21 +524,21 @@ CJobStatusTracker::GetPendingJobFromSet(bm::bvector<>* candidate_set,
 
 
 bool 
-CJobStatusTracker::GetPendingJob(const bm::bvector<>& unwanted_jobs,
-                                 unsigned*            job_id)
+CJobStatusTracker::GetPendingJob(const TNSBitVector& unwanted_jobs,
+                                 unsigned*           job_id)
 {
     CWriteLockGuard guard(m_Lock);
     *job_id = 0;
-    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    TNSBitVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
     if (!bv.any()) {
         Returned2PendingNoLock();
         if (!bv.any()) {
             return false;
         }
     }
-    TBVector  bv_pending(bv);
+    TNSBitVector  bv_pending(bv);
     bv_pending -= unwanted_jobs;
-    bm::bvector<>::enumerator en(bv_pending.first());
+    TNSBitVector::enumerator en(bv_pending.first());
     if (!en.valid()) { // no more candidates
         return bv.any();
     }
@@ -548,11 +553,11 @@ CJobStatusTracker::GetPendingJob(const bm::bvector<>& unwanted_jobs,
 
 
 void 
-CJobStatusTracker::PendingIntersect(bm::bvector<>* candidate_set)
+CJobStatusTracker::PendingIntersect(TNSBitVector* candidate_set)
 {
     CReadLockGuard guard(m_Lock);
 
-    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    TNSBitVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
     *candidate_set &= bv;
 }
 
@@ -560,14 +565,15 @@ CJobStatusTracker::PendingIntersect(bm::bvector<>* candidate_set)
 unsigned 
 CJobStatusTracker::GetPendingJobNoLock()
 {
-    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    TNSBitVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
 
     bm::id_t job_id;
     int i = 0;
     do {
         job_id = bv.extract_next(m_LastPending);
         if (job_id) {
-            TBVector& bv2 = *m_StatusStor[(int)CNetScheduleClient::eRunning];
+            TNSBitVector& bv2 =
+                *m_StatusStor[(int)CNetScheduleClient::eRunning];
             bv2.set_bit(job_id, true);
             m_LastPending = job_id;
             break;
@@ -581,7 +587,7 @@ CJobStatusTracker::GetPendingJobNoLock()
 
 unsigned int CJobStatusTracker::BorrowPendingJob()
 {
-    TBVector& bv = 
+    TNSBitVector& bv = 
         *m_StatusStor[(int)CNetScheduleClient::ePending];
 
     bm::id_t job_id;
@@ -627,7 +633,7 @@ void CJobStatusTracker::ReturnBorrowedJob(unsigned int  job_id,
 
 bool CJobStatusTracker::AnyPending() const
 {
-    const TBVector& bv = 
+    const TNSBitVector& bv = 
         *m_StatusStor[(int)CNetScheduleClient::ePending];
 
     CReadLockGuard guard(m_Lock);
@@ -644,7 +650,7 @@ unsigned int CJobStatusTracker::GetFirstDone() const
 unsigned int 
 CJobStatusTracker::GetFirst(CNetScheduleClient::EJobStatus status) const
 {
-    const TBVector& bv = *m_StatusStor[(int)status];
+    const TNSBitVector& bv = *m_StatusStor[(int)status];
 
     CReadLockGuard guard(m_Lock);
     unsigned int job_id = bv.get_first();
@@ -686,7 +692,7 @@ CJobStatusTracker::IsStatusNoLock(unsigned int job_id,
     if (st1 == CNetScheduleClient::eJobNotFound) {
         return CNetScheduleClient::eJobNotFound;;
     } else {
-        const TBVector& bv = *m_StatusStor[(int)st1];
+        const TNSBitVector& bv = *m_StatusStor[(int)st1];
         if (bv[job_id]) {
             return st1;
         }
@@ -695,7 +701,7 @@ CJobStatusTracker::IsStatusNoLock(unsigned int job_id,
     if (st2 == CNetScheduleClient::eJobNotFound) {
         return CNetScheduleClient::eJobNotFound;;
     } else {
-        const TBVector& bv = *m_StatusStor[(int)st2];
+        const TNSBitVector& bv = *m_StatusStor[(int)st2];
         if (bv[job_id]) {
             return st2;
         }
@@ -704,7 +710,7 @@ CJobStatusTracker::IsStatusNoLock(unsigned int job_id,
     if (st3 == CNetScheduleClient::eJobNotFound) {
         return CNetScheduleClient::eJobNotFound;;
     } else {
-        const TBVector& bv = *m_StatusStor[(int)st3];
+        const TNSBitVector& bv = *m_StatusStor[(int)st3];
         if (bv[job_id]) {
             return st3;
         }
@@ -740,8 +746,8 @@ CJobStatusTracker::PrintStatusMatrix(CNcbiOstream& out) const
         out << "status:" 
             << CNetScheduleClient::StatusToString(
                         (CNetScheduleClient::EJobStatus)i) << "\n\n";
-        const TBVector& bv = *m_StatusStor[i];
-        TBVector::enumerator en(bv.first());
+        const TNSBitVector& bv = *m_StatusStor[i];
+        TNSBitVector::enumerator en(bv.first());
         for (int cnt = 0;en.valid(); ++en, ++cnt) {
             out << *en << ", ";
             if (cnt % 10 == 0) {
@@ -753,7 +759,7 @@ CJobStatusTracker::PrintStatusMatrix(CNcbiOstream& out) const
     } // for
 
     out << "status: Borrowed pending" << "\n\n";
-    TBVector::enumerator en(m_BorrowedIds.first());
+    TNSBitVector::enumerator en(m_BorrowedIds.first());
     for (int cnt = 0;en.valid(); ++en, ++cnt) {
         out << *en << ", ";
         if (cnt % 10 == 0) {
@@ -771,12 +777,12 @@ void CJobStatusTracker::IncDoneJobs()
     if (m_DoneCnt == 65535 * 2) {
         m_DoneCnt = 0;
         {{
-        TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::eDone];
-        bv.optimize(0, TBVector::opt_free_01);
+        TNSBitVector& bv = *m_StatusStor[(int)CNetScheduleClient::eDone];
+        bv.optimize(0, TNSBitVector::opt_free_01);
         }}
         {{
-        TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
-        bv.optimize(0, TBVector::opt_free_0);
+        TNSBitVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+        bv.optimize(0, TNSBitVector::opt_free_0);
         }}
     }
 }

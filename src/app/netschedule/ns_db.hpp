@@ -55,7 +55,6 @@
 
 BEGIN_NCBI_SCOPE
 
-
 /// BDB table to store queue
 ///
 /// @internal
@@ -142,11 +141,11 @@ struct SQueueDB : public CBDB_File
 ///
 /// @internal
 ///
-struct SQueueAffinityIdx : public CBDB_BvStore< bm::bvector<> >
+struct SQueueAffinityIdx : public CBDB_BvStore<TNSBitVector>
 {
     CBDB_FieldUint4 aff_id;
 
-    typedef CBDB_BvStore< bm::bvector<> > TParent;
+    typedef CBDB_BvStore<TNSBitVector> TParent;
 
     SQueueAffinityIdx()
     {
@@ -195,18 +194,18 @@ struct SAffinityDictTokenIdx : public CBDB_File
 ///
 /// @internal
 ///
-struct STagDB : public CBDB_BvStore< bm::bvector<> >
+struct STagDB : public CBDB_BvStore<TNSBitVector>
 {
-    CBDB_FieldString tag_key;
-    CBDB_FieldString tag_val;
+    CBDB_FieldString key;
+    CBDB_FieldString val;
 
-    typedef CBDB_BvStore< bm::bvector<> > TParent;
+    typedef CBDB_BvStore<TNSBitVector> TParent;
 
     STagDB()
     {
         DisableNull(); 
-        BindKey("tag_key", &tag_key);
-        BindKey("tag_val", &tag_val);
+        BindKey("key", &key);
+        BindKey("val", &val);
     }
 };
 

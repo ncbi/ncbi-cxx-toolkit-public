@@ -33,8 +33,9 @@
  */
 
 #include <corelib/ncbitime.hpp>
-#include <util/bitset/ncbi_bitset.hpp>
 #include <deque>
+
+#include "ns_types.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -45,7 +46,7 @@ BEGIN_NCBI_SCOPE
 class CJobTimeLine 
 {
 public:
-    typedef bm::bvector<>           TObjVector;
+    typedef TNSBitVector            TObjVector;
     typedef deque<TObjVector*>      TTimeLine;
 
 public:

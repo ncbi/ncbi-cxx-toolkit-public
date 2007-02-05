@@ -43,6 +43,10 @@
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_util.hpp>
 
+#include <util/qparse/query_parse.hpp>
+#include <util/qparse/query_exec.hpp>
+#include <util/qparse/query_exec_bv.hpp>
+
 #include "bdb_queue.hpp"
 
 #include "job_time_line.hpp"
@@ -64,9 +68,9 @@ DEFINE_STATIC_FAST_MUTEX(x_NetSchedulerMutex_BusyID);
 class CIdBusyGuard
 {
 public:
-    CIdBusyGuard(bm::bvector<>* id_set, 
-                 unsigned int   id,
-                 unsigned       timeout)
+    CIdBusyGuard(TNSBitVector* id_set, 
+                 unsigned int  id,
+                 unsigned      timeout)
         : m_IdSet(id_set), m_Id(id)
     {
         _ASSERT(id);
@@ -105,8 +109,8 @@ private:
     CIdBusyGuard(const CIdBusyGuard&);
     CIdBusyGuard& operator=(const CIdBusyGuard&);
 private:
-    bm::bvector<>*   m_IdSet;
-    unsigned int     m_Id;
+    TNSBitVector* m_IdSet;
+    unsigned int  m_Id;
 };
 
 
@@ -387,13 +391,13 @@ CNSLB_ThreasholdCurve* s_ConfigureCurve(const SQueueParameters& params,
     auto_ptr<CNSLB_ThreasholdCurve> curve;
     do {
 
-    if (params.lb_curve == eLBLinear) {
+    if (params.lb_curve == SQueueParameters::eLBLinear) {
         curve.reset(new CNSLB_ThreasholdCurve_Linear(params.lb_curve_high,
                                                      params.lb_curve_linear_low));
         break;
     }
 
-    if (params.lb_curve == eLBRegression) {
+    if (params.lb_curve == SQueueParameters::eLBRegression) {
         curve.reset(new CNSLB_ThreasholdCurve_Regression(params.lb_curve_high,
                                                 params.lb_curve_regression_a));
         break;
@@ -538,26 +542,12 @@ void CQueueDataBase::MountQueue(const string& qname,
     _ASSERT(m_Env);
 
     auto_ptr<SLockedQueue> q(new SLockedQueue(qname, qclass, kind));
-    string fname = string("jsq_") + qname + string(".db");
-    q->db.SetEnv(*m_Env);
-
-    q->db.RevSplitOff();
-    q->db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-    q->files.push_back(m_Path + fname);
-
-    fname = string("jsq_") + qname + string("_affid.idx");
-    q->aff_idx.SetEnv(*m_Env);
-    q->aff_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
-    q->files.push_back(m_Path + fname);
+    q->Open(*m_Env, m_Path);
 
     q->timeout = params.timeout;
     q->notif_timeout = params.notif_timeout;
     q->delete_done = params.delete_when_done;
     q->last_notif = time(0);
-
-    q->affinity_dict.Open(*m_Env, qname);
-    q->files.push_back(m_Path + "jsq_" + qname + string("_affdict.db"));
-    q->files.push_back(m_Path + "jsq_" + qname + string("_affdict_token.idx"));
 
     SLockedQueue& queue = m_QueueCollection.AddQueue(qname, q.release());
 
@@ -667,7 +657,7 @@ void CQueueDataBase::DeleteQueue(const string& qname)
         string msg = "Static queue \"";
         msg += qname;
         msg += "\" can not be deleted"; 
-        NCBI_THROW(CNetScheduleException, eOperationAccessDenied, msg);
+        NCBI_THROW(CNetScheduleException, eAccessDenied, msg);
     }
     // Signal queue to wipe out database files.
     CRef<SLockedQueue> queue(m_QueueCollection.GetLockedQueue(qname));
@@ -701,6 +691,7 @@ void CQueueDataBase::QueueInfo(const string& qname, int& kind,
     string comment_str(m_QueueDescriptionDB.comment);
     *comment = comment_str;
 }
+
 
 void CQueueDataBase::GetQueueNames(string *list, const string& sep) const
 {
@@ -887,14 +878,6 @@ void CQueueDataBase::Purge(void)
 
     unsigned global_del_rec = 0;
 
-    // Delete jobs unconditionally, from internal vector.
-    // This is done to spread massive job deletion in time
-    // and thus smooth out peak loads
-    // TODO: determine batch size based on load
-    unsigned n_jobs_to_delete = 10000; 
-    unsigned unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
-    global_del_rec += unc_del_rec;
-
     // check not to rescan the database too often 
     // when we have low client activity of inserting new jobs.
     /*
@@ -936,6 +919,7 @@ void CQueueDataBase::Purge(void)
         const unsigned batch_size = 100;
         if ((*it).IsExpired()) {
             queues_to_delete.push_back(it.GetName());
+            continue;
         }
         for (bool stop_flag = false; !stop_flag; ) {
             // stop if all statuses have less than batch_size jobs to delete
@@ -949,16 +933,21 @@ void CQueueDataBase::Purge(void)
 
             // do not delete more than certain number of
             // records from the queue in one Purge
-            if (queue_del_rec >= n_queue_limit) {
+            if (queue_del_rec >= n_queue_limit)
                 break;
-            } else {
-                SleepMilliSec(200);
-            }
 
             if (x_CheckStopPurge()) return;
         }
         global_del_rec += queue_del_rec;
-    } // ITERATE
+    }
+
+    // Delete jobs unconditionally, from internal vector.
+    // This is done to spread massive job deletion in time
+    // and thus smooth out peak loads
+    // TODO: determine batch size based on load
+    unsigned n_jobs_to_delete = 10000; 
+    unsigned unc_del_rec = x_PurgeUnconditional(n_jobs_to_delete);
+    global_del_rec += unc_del_rec;
 
     m_DeleteChkPointCnt += global_del_rec;
     if (m_DeleteChkPointCnt > 1000) {
@@ -1171,7 +1160,7 @@ unsigned CQueue::CountRecs()
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     CFastMutexGuard guard(q->lock);
-	q->db.SetTransaction(0);
+    q->db.SetTransaction(0);
     return q->db.CountRecs();
 }
 
@@ -1318,15 +1307,15 @@ CQueue::PrintJobDbStat(unsigned                       job_id,
         }
         out << "\n";
     } else {
-        CJobStatusTracker::TBVector bv;
+        TNSBitVector bv;
         q->status_tracker.StatusSnapshot(status, &bv);
 
-        CJobStatusTracker::TBVector::enumerator en(bv.first());
+        TNSBitVector::enumerator en(bv.first());
         for (;en.valid(); ++en) {
             unsigned id = *en;
             {{
                 CFastMutexGuard guard(q->lock);
-	            db.SetTransaction(0);
+                db.SetTransaction(0);
                 
                 db.id = id;
 
@@ -1397,7 +1386,7 @@ void CQueue::PrintAllJobDbStat(CNcbiOstream& out)
 
     db.SetTransaction(&trans);
 
-    CBDB_FileCursor& cur = *x_GetCursor(trans);
+    CBDB_FileCursor& cur = *q->GetCursor(trans);
     CBDB_CursorGuard cg(cur);    
 
     cur.SetCondition(CBDB_FileCursor::eGE);
@@ -1416,7 +1405,7 @@ void CQueue::PrintStat(CNcbiOstream& out)
 
     SQueueDB& db = q->db;
     CFastMutexGuard guard(q->lock);
-	db.SetTransaction(0);
+    db.SetTransaction(0);
     db.PrintStat(out);
 }
 
@@ -1428,16 +1417,16 @@ void CQueue::PrintQueue(CNcbiOstream&                  out,
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
-    CJobStatusTracker::TBVector bv;
+    TNSBitVector bv;
     q->status_tracker.StatusSnapshot(job_status, &bv);
     SQueueDB& db = q->db;
 
-    CJobStatusTracker::TBVector::enumerator en(bv.first());
+    TNSBitVector::enumerator en(bv.first());
     for (;en.valid(); ++en) {
         unsigned id = *en;
         {{
             CFastMutexGuard guard(q->lock);
-	        db.SetTransaction(0);
+            db.SetTransaction(0);
             
             db.id = id;
 
@@ -1446,6 +1435,111 @@ void CQueue::PrintQueue(CNcbiOstream&                  out,
             }
         }}
     }
+}
+
+
+// Functor for EQ
+class CQueryFunctionEQ : public CQueryFunction_BV_Base<TNSBitVector>
+{
+public:
+    CQueryFunctionEQ(CRef<SLockedQueue> queue) :
+      m_Queue(queue)
+    {}
+    typedef CQueryFunction_BV_Base<TNSBitVector> TParent;
+    typedef TParent::TBVContainer::TBuffer TBuffer;
+    typedef TParent::TBVContainer::TBitVector TBitVector;
+    virtual void Evaluate(CQueryParseTree::TNode& qnode);
+private:
+    void x_CheckArgs(const CQueryFunctionBase::TArgVector& args);
+    CRef<SLockedQueue> m_Queue;
+};
+
+void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
+{
+    CQueryFunctionBase::TArgVector args;
+    this->MakeArgVector(qnode, args);
+    x_CheckArgs(args);
+    const string& key = args[0]->GetValue().GetStrValue();
+    const string& val = args[1]->GetValue().GetStrValue();
+    //NcbiCout << "Key: " << key << " Value: " << val << NcbiEndl;
+    TBuffer* buf = new TBuffer;
+    m_Queue->ReadTag(key, val, *buf);
+    this->MakeContainer(qnode)->SetBuffer(buf);
+}
+
+void CQueryFunctionEQ::x_CheckArgs(const CQueryFunctionBase::TArgVector& args)
+{
+    if (args.size() != 2 ||
+        (args[0]->GetValue().GetType() != CQueryParseNode::eIdentifier  &&
+         args[0]->GetValue().GetType() != CQueryParseNode::eString)  ||
+        (args[1]->GetValue().GetType() != CQueryParseNode::eIdentifier  &&
+         args[1]->GetValue().GetType() != CQueryParseNode::eString)
+        ) {
+        NCBI_THROW(CNetScheduleException,
+             eQuerySyntaxError, "Wrong arguments for '='");
+    }
+}
+
+
+string CQueue::ExecQuery(const string& query, const string& action,
+                         const string& fields)
+{
+    //NcbiCout << "Query: \"" << query <<
+    //            "\" Action: \"" << action <<
+    //            "\" Fields: \"" << fields << "\"" << NcbiEndl;
+
+    CRef<SLockedQueue> q(x_GetLQueue());
+    CQueryParseTree qtree;
+    try {
+        qtree.Parse(query.c_str());
+    } catch (CQueryParseException& ex) {
+        NCBI_THROW(CNetScheduleException, eQuerySyntaxError, ex.GetMsg());
+    }
+    CQueryParseTree::TNode* top = qtree.GetQueryTree();
+    if (!top)
+        NCBI_THROW(CNetScheduleException,
+            eQuerySyntaxError, "Query syntax error");
+
+    CQueryExec qexec;
+    qexec.AddFunc(CQueryParseNode::eAnd,
+        new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_AND));
+    qexec.AddFunc(CQueryParseNode::eOr,
+        new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_OR));
+    qexec.AddFunc(CQueryParseNode::eSub,
+        new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_SUB));
+    qexec.AddFunc(CQueryParseNode::eXor,
+        new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_XOR));
+
+    qexec.AddFunc(CQueryParseNode::eEQ,
+        new CQueryFunctionEQ(q));
+
+    qexec.Evaluate(qtree);
+
+    IQueryParseUserObject* uo = top->GetValue().GetUserObject();
+    if (!uo)
+        NCBI_THROW(CNetScheduleException,
+            eQuerySyntaxError, "Query syntax error");
+    typedef CQueryEval_BV_Value<TNSBitVector> BV_UserObject;
+    BV_UserObject* result =
+        dynamic_cast<BV_UserObject*>(uo);
+    _ASSERT(result);
+    auto_ptr<TNSBitVector> bv(result->ReleaseBV());
+    if (!bv.get()) {
+        bv.reset(new TNSBitVector());
+        BV_UserObject::TBuffer *buf = result->ReleaseBuffer();
+        if (buf && buf->size()) {
+            bm::operation_deserializer<TNSBitVector>::deserialize(*bv,
+                                                &((*buf)[0]),
+                                                0,
+                                                bm::set_ASSIGN);
+        }
+    }
+
+    if (action == "COUNT") {
+        return NStr::IntToString(bv->count());
+    }
+
+    return "";
 }
 
 
@@ -1521,10 +1615,10 @@ CQueue::Submit(SNS_SubmitRecord* rec,
 
     {{
         CFastMutexGuard guard(q->lock);
-	    db.SetTransaction(&trans);
+        db.SetTransaction(&trans);
 
         x_AssignSubmitRec(db,
-            rec, host_addr, port, wait_timeout, progress_msg);
+            rec, time(0), host_addr, port, wait_timeout, progress_msg);
 
         db.Insert();
 
@@ -1533,12 +1627,24 @@ CQueue::Submit(SNS_SubmitRecord* rec,
             q->aff_idx.SetTransaction(&trans);
             x_AddToAffIdx_NoLock(rec->affinity_id, job_id);
         }
+
+        // update tags
+        q->SetTagDbTransaction(&trans);
+        q->AddTags(rec->tags, job_id);
+        q->FlushTags();
     }}
 
     trans.Commit();
     js_guard.Commit();
 
     if (was_empty) NotifyListeners(true);
+
+    if ((job_id % 1000) == 0) {
+        db.GetEnv()->TransactionCheckpoint();
+    }
+    if ((job_id % 1000000) == 0) {
+        db.GetEnv()->CleanLog();
+    }
 
     return job_id;
 }
@@ -1594,16 +1700,20 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
 
     {{
         CFastMutexGuard guard(q->lock);
-	    db.SetTransaction(&trans);
+        db.SetTransaction(&trans);
 
+        q->SetTagDbTransaction(&trans);
         unsigned job_id_cnt = job_id;
+        time_t now = time(0);
         NON_CONST_ITERATE(vector<SNS_SubmitRecord>, it, batch) {
             it->job_id = job_id_cnt;
             x_AssignSubmitRec(db,
-                &(*it), host_addr, port, wait_timeout, progress_msg);
+                &(*it), now, host_addr, port, wait_timeout, progress_msg);
             ++job_id_cnt;
             db.Insert();
-        } // ITERATE
+            // update tags
+            q->AddTags(it->tags, it->job_id);
+        }
 
         // Store the affinity index
         q->aff_idx.SetTransaction(&trans);
@@ -1617,6 +1727,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
             }
         }
     }}
+    q->FlushTags();
     trans.Commit();
 
     q->status_tracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
@@ -1630,6 +1741,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
 void 
 CQueue::x_AssignSubmitRec(SQueueDB&     db,
                           const SNS_SubmitRecord* rec,
+                          time_t        time_submit,
                           unsigned      host_addr,
                           unsigned      port,
                           unsigned      wait_timeout,
@@ -1638,7 +1750,7 @@ CQueue::x_AssignSubmitRec(SQueueDB&     db,
     db.id = rec->job_id;
     db.status = (int) CNetScheduleClient::ePending;
 
-    db.time_submit = time(0);
+    db.time_submit = time_submit;
     db.time_run = 0;
     db.time_done = 0;
     db.timeout = 0;
@@ -1683,7 +1795,7 @@ CQueue::CountStatus(CNetScheduleClient::EJobStatus st) const
 void 
 CQueue::StatusStatistics(
     CNetScheduleClient::EJobStatus status,
-    CJobStatusTracker::TBVector::statistics* st) const
+    TNSBitVector::statistics* st) const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     q->status_tracker.StatusStatistics(status, st);
@@ -1714,7 +1826,7 @@ void CQueue::ForceReschedule(unsigned int job_id)
                 db.run_counter = --run_counter;
             }
 
-	        db.SetTransaction(&trans);
+            db.SetTransaction(&trans);
             db.UpdateInsert();
             trans.Commit();
 
@@ -1759,7 +1871,7 @@ void CQueue::Cancel(unsigned int job_id)
                 db.status = (int) CNetScheduleClient::eCanceled;
                 db.time_done = time(0);
                 
-	            db.SetTransaction(&trans);
+                db.SetTransaction(&trans);
                 db.UpdateInsert();
                 trans.Commit();
             }
@@ -1777,7 +1889,8 @@ void CQueue::DropJob(unsigned job_id)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
-    x_DropJob(job_id);
+    q->Erase(job_id);
+    x_RemoveFromTimeLine(job_id);
 
     if (q->monitor.IsMonitorActive()) {
         CTime tmp_t(CTime::eCurrent);
@@ -1786,35 +1899,6 @@ void CQueue::DropJob(unsigned job_id)
         msg += NStr::IntToString(job_id);
         q->monitor.SendString(msg);
     }
-}
-
-
-void CQueue::x_DropJob(unsigned job_id)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-
-    SQueueDB& db = q->db;
-    CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransASync,
-                           CBDB_Transaction::eNoAssociation);
-
-    q->status_tracker.SetStatus(job_id, CNetScheduleClient::eJobNotFound);
-    {{
-        CFastMutexGuard guard(q->lock);
-        db.SetTransaction(&trans);
-
-        CBDB_FileCursor& cur = *x_GetCursor(trans);
-        CBDB_CursorGuard cg(cur);    
-        cur.SetCondition(CBDB_FileCursor::eEQ);
-        cur.From << job_id;
-
-        if (cur.FetchFirst() != eBDB_Ok) {
-            return;
-        }
-
-        x_DeleteDBRec(db, cur);
-    }}
-    trans.Commit();
 }
 
 
@@ -1828,8 +1912,7 @@ void CQueue::PutResult(unsigned int  job_id,
                                    job_id,
                                    CNetScheduleClient::eDone);
     if (q->delete_done) {
-        q->status_tracker.SetStatus(job_id, 
-                                    CNetScheduleClient::eJobNotFound);
+        q->Erase(job_id);
     }
     CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
     if (q->status_tracker.IsCancelCode(st)) {
@@ -1851,7 +1934,7 @@ void CQueue::PutResult(unsigned int  job_id,
             {{
                 CFastMutexGuard guard(q->lock);
                 db.SetTransaction(&trans);
-                CBDB_FileCursor& cur = *x_GetCursor(trans);
+                CBDB_FileCursor& cur = *q->GetCursor(trans);
                 CBDB_CursorGuard cg(cur);
                 rec_updated = 
                     x_UpdateDB_PutResultNoLock(db, curr, cur, 
@@ -2046,8 +2129,7 @@ CQueue::PutResultGetJob(unsigned int   done_job_id,
     // This is a HACK - if js_guard is not commited, it will rollback
     // to previous state, so it is safe to change status after the guard.
     if (q->delete_done) {
-        q->status_tracker.SetStatus(done_job_id, 
-                                    CNetScheduleClient::eJobNotFound);
+        q->Erase(done_job_id);
     }
     // TODO: implement transaction wrapper (a la js_guard above)
     // for x_FindPendingJob
@@ -2086,7 +2168,7 @@ repeat_transaction:
 
         CBDB_FileCursor* pcur;
         if (use_db_mutex) {
-            pcur = x_GetCursor(trans);
+            pcur = q->GetCursor(trans);
         } else {
             pcur = x_GetLocalCursor(trans);
         }
@@ -2219,7 +2301,7 @@ void CQueue::PutProgressMessage(unsigned int  job_id,
     db.SetTransaction(&trans);
 
     {{
-    CBDB_FileCursor& cur = *x_GetCursor(trans);
+    CBDB_FileCursor& cur = *q->GetCursor(trans);
     CBDB_CursorGuard cg(cur);    
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
@@ -2279,7 +2361,7 @@ void CQueue::JobFailed(unsigned int  job_id,
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(&trans);
 
-        CBDB_FileCursor& cur = *x_GetCursor(trans);
+        CBDB_FileCursor& cur = *q->GetCursor(trans);
         CBDB_CursorGuard cg(cur);    
 
         cur.SetCondition(CBDB_FileCursor::eEQ);
@@ -2378,7 +2460,7 @@ void CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
     CFastMutexGuard guard(q->lock);
     db.SetTransaction(&trans);
 
-    CBDB_FileCursor& cur = *x_GetCursor(trans);
+    CBDB_FileCursor& cur = *q->GetCursor(trans);
     CBDB_CursorGuard cg(cur);    
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
@@ -2455,7 +2537,7 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
     CFastMutexGuard guard(q->lock);
     db.SetTransaction(&trans);
 
-    CBDB_FileCursor& cur = *x_GetCursor(trans);
+    CBDB_FileCursor& cur = *q->GetCursor(trans);
     CBDB_CursorGuard cg(cur);    
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
@@ -2678,7 +2760,7 @@ fetch_db:
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(&trans);
 
-        CBDB_FileCursor& cur = *x_GetCursor(trans);
+        CBDB_FileCursor& cur = *q->GetCursor(trans);
         CBDB_CursorGuard cg(cur);    
 
         cur.SetCondition(CBDB_FileCursor::eEQ);
@@ -2896,7 +2978,7 @@ CQueue::x_FindPendingJob(const string&  client_name,
 
     unsigned job_id = 0;
 
-    bm::bvector<> blacklisted_jobs;
+    TNSBitVector blacklisted_jobs;
 
     // affinity: get list of job candidates
     // previous x_FindPendingJob() call may have precomputed candidate jobids
@@ -2922,7 +3004,7 @@ CQueue::x_FindPendingJob(const string&  client_name,
                     ai->candidate_jobs.count(); // speed up any()
                     if (!ai->candidate_jobs.any())
                         break;
-                    ai->candidate_jobs.optimize(0, bm::bvector<>::opt_free_0);
+                    ai->candidate_jobs.optimize(0, TNSBitVector::opt_free_0);
                 }
                 if (!ai->candidate_jobs.any())
                     break;
@@ -2942,7 +3024,7 @@ CQueue::x_FindPendingJob(const string&  client_name,
 
     // try to find a vacant(not taken by any other worker node) affinity id
     {{
-        bm::bvector<> assigned_aff;
+        TNSBitVector assigned_aff;
         {{
             CFastMutexGuard aff_guard(q->aff_map_lock);
             q->worker_aff_map.GetAllAssignedAffinity(&assigned_aff);
@@ -2951,7 +3033,7 @@ CQueue::x_FindPendingJob(const string&  client_name,
         if (assigned_aff.any()) {
             // get all jobs belonging to other (already assigned) affinities,
             // ORing them with our own blacklisted jobs
-            bm::bvector<> assigned_candidate_jobs(blacklisted_jobs);
+            TNSBitVector assigned_candidate_jobs(blacklisted_jobs);
             {{
                 CFastMutexGuard guard(q->lock);
                 // x_ReadAffIdx_NoLock actually ORs into second argument
@@ -3028,7 +3110,7 @@ get_job_id:
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(&trans);
 
-        CBDB_FileCursor& cur = *x_GetCursor(trans);
+        CBDB_FileCursor& cur = *q->GetCursor(trans);
         CBDB_CursorGuard cg(cur);
 
         upd_status =
@@ -3309,7 +3391,7 @@ bool CQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
     CRef<SLockedQueue> q(x_GetLQueue());
 
     unsigned aff_id = 0;
-    bm::bvector<> aff_jobs;
+    TNSBitVector aff_jobs;
     if (affinity_token && *affinity_token) {
         aff_id = q->affinity_dict.GetTokenId(affinity_token);
         if (!aff_id) {
@@ -3328,29 +3410,10 @@ bool CQueue::CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
 }
 
 
-CBDB_FileCursor* CQueue::x_GetCursor(CBDB_Transaction& trans)
-{
-    CRef<SLockedQueue> q(x_GetLQueue());
-
-    CBDB_FileCursor* cur = q->cur.get();
-    if (cur) { 
-        cur->ReOpen(&trans);
-        return cur;
-    }
-    cur = new CBDB_FileCursor(q->db, trans,
-                              CBDB_FileCursor::eReadModifyUpdate);
-    q->cur.reset(cur);
-    return cur;
-}
-
-
 bool CQueue::CheckDelete(unsigned int job_id)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     SQueueDB& db = q->db;
-    CBDB_Transaction trans(*db.GetEnv(),
-                           CBDB_Transaction::eTransASync,
-                           CBDB_Transaction::eNoAssociation);
 
     time_t curr = time(0);
     unsigned time_done, time_submit;
@@ -3358,12 +3421,14 @@ bool CQueue::CheckDelete(unsigned int job_id)
 
     {{
         CFastMutexGuard guard(q->lock);
-	    db.SetTransaction(0);
+        db.SetTransaction(0);
         
         db.id = job_id;
 
         if (db.Fetch() != eBDB_Ok) {
-            return true; // ? already deleted
+            // ? already deleted
+            LOG_POST(Warning << "Attempt to delete non-existent job");
+            return true;
         }
 
         int status = db.status;
@@ -3392,12 +3457,9 @@ bool CQueue::CheckDelete(unsigned int job_id)
                 return false;
             }
         }
-        CFastMutexGuard jtd_guard(q->m_JobsToDeleteLock);
-        q->m_JobsToDelete.set_bit(job_id);
-        // TODO: flush jobs-to-delete vector into db
     }}
 
-    q->status_tracker.SetStatus(job_id, CNetScheduleClient::eJobNotFound);
+    q->Erase(job_id);
 
     return true;
 }
@@ -3408,13 +3470,12 @@ void CQueue::x_DeleteDBRec(SQueueDB&  db, CBDB_FileCursor& cur)
 
     // dump the record
     {{
-        CFastMutexGuard dguard(q->rec_dump_lock);
+        CFastMutexGuard dump_guard(q->rec_dump_lock);
         if (q->rec_dump_flag) {
             x_PrintJobDbStat(db,
                              q->rec_dump,
                              ";",               // field separator
-                             false              // no field names
-                             );
+                             false);            // no field names
         }
     }}
 
@@ -3430,14 +3491,13 @@ CQueue::CheckDeleteBatch(unsigned batch_size,
     unsigned dcnt;
     for (dcnt = 0; dcnt < batch_size; ++dcnt) {
         unsigned job_id = q->status_tracker.GetFirst(status);
-        if (job_id == 0) {
+        if (job_id == 0)
             break;
-        }
         bool deleted = CheckDelete(job_id);
-        if (!deleted) {
+        if (!deleted)
             break;
-        }
-    } // for
+    }
+    // TODO: flush jobs-to-delete vector into db
     return dcnt;
 }
 
@@ -3447,44 +3507,7 @@ CQueue::DoDeleteBatch(unsigned batch_size)
 {
 
     CRef<SLockedQueue> q(x_GetLQueue());
-    SQueueDB& db = q->db;
-
-    bm::bvector<> batch;
-    {{
-        CFastMutexGuard guard(q->m_JobsToDeleteLock);
-        unsigned job_id = 0;
-        for (unsigned n = 0; n < batch_size &&
-                        (job_id = q->m_JobsToDelete.extract_next(job_id));
-                        ++n) {
-            batch.set(job_id);
-        }
-    }}
-    if (batch.none()) return 0;
-
-    CBDB_Transaction trans(*db.GetEnv(), 
-                        CBDB_Transaction::eTransASync,
-                        CBDB_Transaction::eNoAssociation);
-
-    unsigned del_rec = 0;
-    {{
-        CFastMutexGuard guard(q->lock);
-        db.SetTransaction(&trans);
-
-        CBDB_FileCursor& cur = *x_GetCursor(trans);
-        CBDB_CursorGuard cg(cur);    
-        for (bm::bvector<>::enumerator en = batch.first();
-                en < batch.end();
-                ++en) {
-            unsigned job_id = *en;
-            cur.SetCondition(CBDB_FileCursor::eEQ);
-            cur.From << job_id;
-            if (cur.FetchFirst() == eBDB_Ok) {
-                cur.Delete(CBDB_File::eIgnoreError);
-                ++del_rec;
-            }
-        }
-    }}
-    trans.Commit();
+    unsigned del_rec = q->DeleteBatch(batch_size);
     // monitor this
     if (q->monitor.IsMonitorActive()) {
         CTime tm(CTime::eCurrent);
@@ -3517,7 +3540,7 @@ void CQueue::ClearAffinityIdx()
 
         // get the first phisically available record in the queue database
 
-        CBDB_FileCursor& cur = *x_GetCursor(trans);
+        CBDB_FileCursor& cur = *q->GetCursor(trans);
         CBDB_CursorGuard cg(cur);
         cur.SetCondition(CBDB_FileCursor::eGE);
         cur.From << 0;
@@ -3532,7 +3555,7 @@ void CQueue::ClearAffinityIdx()
     }
 
 
-    bm::bvector<> bv(bm::BM_GAP);
+    TNSBitVector bv(bm::BM_GAP);
 
     // get list of all affinity tokens in the index
     {{
@@ -3550,8 +3573,8 @@ void CQueue::ClearAffinityIdx()
     }}
 
     // clear all hanging references
-    bm::bvector<>::enumerator en(bv.first());
-    for(; en.valid(); ++en) {
+    TNSBitVector::enumerator en(bv.first());
+    for (; en.valid(); ++en) {
         unsigned aff_id = *en;
         CFastMutexGuard guard(q->lock);
         CBDB_Transaction trans(*db.GetEnv(), 
@@ -3583,12 +3606,16 @@ void CQueue::ClearAffinityIdx()
 void CQueue::Truncate(void)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
-    CFastMutexGuard guard(q->m_JobsToDeleteLock);
-    CWriteLockGuard rtl_guard(q->rtl_lock);
-    q->status_tracker.ClearAll(&q->m_JobsToDelete);
-    q->run_time_line->ReInit(0);
+    {{
+        CFastMutexGuard db_guard(q->lock);
+        CFastMutexGuard jtd_guard(q->m_JobsToDeleteLock);
+        CWriteLockGuard rtl_guard(q->rtl_lock);
+        q->ClearTags();
+        q->status_tracker.ClearAll(&q->m_JobsToDelete);
+        q->run_time_line->ReInit(0);
+    }}
     // To update 'became_empty' timestamp
-    IsExpired();
+    IsExpired(); // locks q->lock
 }
 
 
@@ -3853,7 +3880,7 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(&trans);
 
-        CBDB_FileCursor& cur = *x_GetCursor(trans);
+        CBDB_FileCursor& cur = *q->GetCursor(trans);
         CBDB_CursorGuard cg(cur);
 
         cur.SetCondition(CBDB_FileCursor::eEQ);
@@ -4023,13 +4050,13 @@ void CQueue::x_AddToAffIdx_NoLock(const vector<SNS_SubmitRecord>& batch)
 }
 
 void 
-CQueue::x_ReadAffIdx_NoLock(const bm::bvector<>& aff_id_set,
-                            bm::bvector<>*       job_candidates)
+CQueue::x_ReadAffIdx_NoLock(const TNSBitVector& aff_id_set,
+                            TNSBitVector*       job_candidates)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     q->aff_idx.SetTransaction(0);
-    bm::bvector<>::enumerator en(aff_id_set.first());
-    for(; en.valid(); ++en) {  // for each affinity id
+    TNSBitVector::enumerator en(aff_id_set.first());
+    for (; en.valid(); ++en) {  // for each affinity id
         unsigned aff_id = *en;
         x_ReadAffIdx_NoLock(aff_id, job_candidates);
     }
@@ -4037,8 +4064,8 @@ CQueue::x_ReadAffIdx_NoLock(const bm::bvector<>& aff_id_set,
 
 
 void 
-CQueue::x_ReadAffIdx_NoLock(unsigned       aff_id,
-                            bm::bvector<>* job_candidates)
+CQueue::x_ReadAffIdx_NoLock(unsigned      aff_id,
+                            TNSBitVector* job_candidates)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     q->aff_idx.aff_id = aff_id;

@@ -45,6 +45,8 @@
 
 #include <map>
 
+#include "ns_types.hpp"
+
 BEGIN_NCBI_SCOPE
 
 
@@ -55,8 +57,7 @@ BEGIN_NCBI_SCOPE
 class CJobStatusTracker
 {
 public:
-    typedef bm::bvector<>     TBVector;
-    typedef vector<TBVector*> TStatusStorage;
+    typedef vector<TNSBitVector*> TStatusStorage;
 
     /// Status to number of jobs map
     typedef map<CNetScheduleClient::EJobStatus, unsigned> TStatusSummaryMap;
@@ -107,21 +108,21 @@ public:
     /// @return true - if there are any available pending jobs
     ///         false - queue has no pending jobs whatsoever 
     ///         (not just candidates)
-    bool GetPendingJobFromSet(bm::bvector<>* candidate_set,
-                              unsigned*      job_id);
+    bool GetPendingJobFromSet(TNSBitVector* candidate_set,
+                              unsigned*     job_id);
 
     /// Get any pending job, but it should NOT be in the unwanted list
     /// Presumed, that unwanted jobs are speculatively assigned to other
     /// worker nodes or postponed
-    bool GetPendingJob(const bm::bvector<>& unwanted_jobs,
-                       unsigned*            job_id);
+    bool GetPendingJob(const TNSBitVector& unwanted_jobs,
+                       unsigned*           job_id);
 
     /// Reschedule job without status check
     void ForceReschedule(unsigned job_id);
 
     /// Logical AND of candidates and pending jobs
     /// (candidate_set &= pending_set)
-    void PendingIntersect(bm::bvector<>* candidate_set);
+    void PendingIntersect(TNSBitVector* candidate_set);
 
     /// Return job id (job is taken out of the regular job matrix)
     /// 0 - no pending jobs
@@ -151,6 +152,8 @@ public:
     void SetStatus(unsigned int                    job_id, 
                    CNetScheduleClient::EJobStatus  status);
 
+    // Erase the job
+    void Erase(unsigned int job_id);
 
     /// Set job status without any protection 
     void SetExactStatusNoLock(
@@ -163,18 +166,18 @@ public:
 
     /// Count all status vectors using candidate_set(optional) as a mask 
     /// (AND_COUNT)
-    void CountStatus(TStatusSummaryMap*   status_map, 
-                     const bm::bvector<>* candidate_set);
+    void CountStatus(TStatusSummaryMap*  status_map, 
+                     const TNSBitVector* candidate_set);
 
     /// Count all jobs in any status
     unsigned Count(void);
 
     void StatusStatistics(CNetScheduleClient::EJobStatus status,
-                          TBVector::statistics*          st) const;
+                          TNSBitVector::statistics*      st) const;
 
     /// Specified status is OR-ed with the target vector
     void StatusSnapshot(CNetScheduleClient::EJobStatus status,
-                        TBVector*                      bv) const;
+                        TNSBitVector*                  bv) const;
 
     static
     bool IsCancelCode(CNetScheduleClient::EJobStatus status)
@@ -188,7 +191,7 @@ public:
     /// @param bv
     ///    If not NULL all ids from the matrix are OR-ed with this vector 
     ///    (bv is not cleared)
-    void ClearAll(TBVector* bv = 0);
+    void ClearAll(TNSBitVector* bv = 0);
 
     /// Free unused memory buffers
     void FreeUnusedMem();
@@ -241,7 +244,7 @@ private:
     TStatusStorage          m_StatusStor;
     mutable CRWLock         m_Lock;
     /// Pending Ids extracted out
-    TBVector                m_BorrowedIds; 
+    TNSBitVector            m_BorrowedIds; 
     /// Last pending id
     bm::id_t                m_LastPending;
     /// Done jobs counter

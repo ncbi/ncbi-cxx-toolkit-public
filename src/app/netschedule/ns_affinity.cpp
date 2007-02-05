@@ -320,7 +320,7 @@ void CWorkerNodeAffinity::RemoveAffinity(unsigned aff_id)
     }
 }
 
-void CWorkerNodeAffinity::RemoveAffinity(const bm::bvector<>& bv)
+void CWorkerNodeAffinity::RemoveAffinity(const TNSBitVector& bv)
 {
     NON_CONST_ITERATE(TAffMap, it, m_AffinityMap) {
         SAffinityInfo* ai = it->second;
@@ -328,7 +328,7 @@ void CWorkerNodeAffinity::RemoveAffinity(const bm::bvector<>& bv)
     }
 }
 
-void CWorkerNodeAffinity::GetAllAssignedAffinity(bm::bvector<>* aff_ids)
+void CWorkerNodeAffinity::GetAllAssignedAffinity(TNSBitVector* aff_ids)
 {
     _ASSERT(aff_ids);
 

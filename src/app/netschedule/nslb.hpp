@@ -41,7 +41,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <util/thread_nonstop.hpp>
 #include <util/resource_pool.hpp>
-#include <util/bitset/ncbi_bitset.hpp>
+#include "ns_types.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -246,7 +246,7 @@ private:
     CNSLB_LBSMD_Collector(const CNSLB_LBSMD_Collector&);
     CNSLB_LBSMD_Collector& operator=(const CNSLB_LBSMD_Collector&);
 private:
-    mutable bm::bvector<>     m_Hosts;
+    mutable TNSBitVector     m_Hosts;
 };
 
 /// LB coordinator

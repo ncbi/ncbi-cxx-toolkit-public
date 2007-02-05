@@ -119,18 +119,19 @@ CNetScheduleKey::operator string() const
 
 CNetScheduleExceptionMap::CNetScheduleExceptionMap()
 {
-    m_Map["eInternalError"] = CNetScheduleException::eInternalError;
+    m_Map["eInternalError"]       = CNetScheduleException::eInternalError;
     m_Map["eProtocolSyntaxError"] = CNetScheduleException::eProtocolSyntaxError;
     m_Map["eAuthenticationError"] = CNetScheduleException::eAuthenticationError;
-    m_Map["eKeyFormatError"] = CNetScheduleException::eKeyFormatError;
-    m_Map["eInvalidJobStatus"] = CNetScheduleException::eInvalidJobStatus;
-    m_Map["eUnknownQueue"] = CNetScheduleException::eUnknownQueue;
-    m_Map["eUnknownQueueClass"] = CNetScheduleException::eUnknownQueueClass;
-    m_Map["eTooManyPendingJobs"] = CNetScheduleException::eTooManyPendingJobs;
-    m_Map["eDataTooLong"] = CNetScheduleException::eDataTooLong;
-    m_Map["eInvalidClientOrVersion"] = CNetScheduleException::eInvalidClientOrVersion;
-    m_Map["eOperationAccessDenied"] = CNetScheduleException::eOperationAccessDenied;
-    m_Map["eDuplicateName"] = CNetScheduleException::eDuplicateName;
+    m_Map["eKeyFormatError"]      = CNetScheduleException::eKeyFormatError;
+    m_Map["eInvalidJobStatus"]    = CNetScheduleException::eInvalidJobStatus;
+    m_Map["eUnknownQueue"]        = CNetScheduleException::eUnknownQueue;
+    m_Map["eUnknownQueueClass"]   = CNetScheduleException::eUnknownQueueClass;
+    m_Map["eTooManyPendingJobs"]  = CNetScheduleException::eTooManyPendingJobs;
+    m_Map["eDataTooLong"]         = CNetScheduleException::eDataTooLong;
+    m_Map["eInvalidClient"]       = CNetScheduleException::eInvalidClient;
+    m_Map["eAccessDenied"]        = CNetScheduleException::eAccessDenied;
+    m_Map["eDuplicateName"]       = CNetScheduleException::eDuplicateName;
+    m_Map["eQuerySyntaxError"]    = CNetScheduleException::eQuerySyntaxError;
 }
 
 CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
