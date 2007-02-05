@@ -839,7 +839,7 @@ BEGIN_NCBI_SCOPE
     for ( Type::iterator NCBI_NAME2(Var,_next) = (Cont).begin(), \
           Var = NCBI_NAME2(Var,_next) != (Cont).end() ? NCBI_NAME2(Var,_next)++ : (Cont).end(); \
           NCBI_NAME2(Var,_next) != (Cont).end(); \
-          Var = NCBI_NAME2(Var,_next), ++NCBI_NAME2(Var,_next))
+          Var = NCBI_NAME2(Var,_next) != (Cont).end() ? NCBI_NAME2(Var,_next)++ : (Cont).end())
 
 
 /// ITERATE macro to reverse sequence through container elements.
