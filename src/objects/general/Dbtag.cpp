@@ -53,9 +53,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 typedef pair<const char*, CDbtag::EDbtagType> TDbxrefPair;
 static const TDbxrefPair kApprovedDbXrefs[] = {
-    TDbxrefPair("APiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB),
-    TDbxrefPair("APiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB),
-    TDbxrefPair("APiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB),
+    TDbxrefPair("ApiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB),
+    TDbxrefPair("ApiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB),
+    TDbxrefPair("ApiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB),
     TDbxrefPair("ASAP", CDbtag::eDbtagType_ASAP),
     TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
     TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
