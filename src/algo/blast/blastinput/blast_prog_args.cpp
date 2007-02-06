@@ -539,7 +539,6 @@ CRPSBlastArgs::SetOptions(const CArgs& args)
 
 #define ARG_OUTTYPE "D"
 #define ARG_QUERY_BATCH "M"
-#define ARG_MAXCHAIN "P"
 #define ARG_MINSCORE "s"
 #define ARG_FULLID "f"
 #define ARG_LOGEND "R"
@@ -601,13 +600,6 @@ CMegablastArgs::SetCommandLine()
                  CArgDescriptions::eInteger,
                  CArgDescriptions::fOptionalSeparator);
     arg_desc->AddAlias("-batch", ARG_QUERY_BATCH);
-
-    // longest chain for a single hash bucket
-    arg_desc->AddOptionalKey(ARG_MAXCHAIN, "max_chain", 
-                 "Maximal number of positions for a hash value "
-                 "(ignored; present only for backward compatibility)",
-                 CArgDescriptions::eInteger, 
-                 CArgDescriptions::fOptionalSeparator);
 
     // search strands
     arg_desc->AddOptionalKey(ARG_STRAND, "strand", 
