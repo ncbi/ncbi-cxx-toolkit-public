@@ -327,7 +327,7 @@ void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
 
 // try improving the segment by cutting it from the right
 void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2,
-                                         CConstRef<CSplicedAligner> aligner)
+                                              CConstRef<CSplicedAligner> aligner)
 {
     const size_t min_query_size = 4;
     
@@ -422,8 +422,12 @@ void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2
         // update the last two annotation chars
         const size_t adim = m_annot.size();
         if(adim > 2 && m_annot[adim - 3] == '>') {
-            m_annot[adim-2] = seq2[m_box[3] + 1];
-            m_annot[adim-1] = seq2[m_box[3] + 2];
+
+            const size_t len2 (aligner->GetSeqLen2());
+            const char c3 (m_box[3] + 1 < len2? seq2[m_box[3] + 1]: ' ');
+            const char c4 (m_box[3] + 2 < len2? seq2[m_box[3] + 2]: ' ');
+            m_annot[adim-2] = c3;
+            m_annot[adim-1] = c4;
         }
     }
 }
