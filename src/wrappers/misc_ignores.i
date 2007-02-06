@@ -251,6 +251,11 @@
 // Has protected enum as an argument
 %ignore ncbi::CNetScheduleAPI::ProcessServerError;
 
+// Has private typedef (CDiagContext::TProperties) as argument.
+// Because its declaration is a friend declaration, it must be referred to
+// without any "::" (SWIG bug, presumably). 
+%ignore PropTlsCleanup;
+
 
 /*
  * ===========================================================================
