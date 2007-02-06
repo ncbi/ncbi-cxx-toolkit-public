@@ -1403,7 +1403,9 @@ CTime& CTime::ToTime(ETimeZone tz)
 bool CTime::operator== (const CTime& t) const
 {
     CTime tmp(t);
-    tmp.ToTime(GetTimeZoneFormat());
+    if ( !IsEmptyDate() ) {
+        tmp.ToTime(GetTimeZoneFormat());
+    }
     return
         Year()       == tmp.Year()    &&
         Month()      == tmp.Month()   &&
@@ -1418,8 +1420,9 @@ bool CTime::operator== (const CTime& t) const
 bool CTime::operator> (const CTime& t) const
 {
     CTime tmp(t);
-    tmp.ToTime(GetTimeZoneFormat());
-
+    if ( !IsEmptyDate() ) {
+        tmp.ToTime(GetTimeZoneFormat());
+    }
     if (Year()   > tmp.Year())
         return true;
     if (Year()   < tmp.Year())
@@ -1454,8 +1457,9 @@ bool CTime::operator> (const CTime& t) const
 bool CTime::operator< (const CTime& t) const
 {
     CTime tmp(t);
-    tmp.ToTime(GetTimeZoneFormat());
-
+    if ( !IsEmptyDate() ) {
+        tmp.ToTime(GetTimeZoneFormat());
+    }
     if (Year()   < tmp.Year())
         return true;
     if (Year()   > tmp.Year())
