@@ -256,6 +256,9 @@
 // without any "::" (SWIG bug, presumably). 
 %ignore PropTlsCleanup;
 
+// va_list assignment is a problem on 64-bit SUSE
+%ignore ncbi::NStr::FormatVarargs;
+
 
 /*
  * ===========================================================================
