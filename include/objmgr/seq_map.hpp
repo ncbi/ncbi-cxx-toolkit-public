@@ -177,11 +177,31 @@ public:
     void SetRegionInChunk(CTSE_Chunk_Info& chunk, TSeqPos pos, TSeqPos length);
     void LoadSeq_data(TSeqPos pos, TSeqPos len, const CSeq_data& data);
 
+    void SetSegmentGap(const CSeqMap_CI& seg,
+                       TSeqPos length);
+    void SetSegmentData(const CSeqMap_CI& seg,
+                        TSeqPos length,
+                        CSeq_data& data);
     void SetSegmentRef(const CSeqMap_CI& seg,
                        TSeqPos length,
                        const CSeq_id_Handle& ref_id,
                        TSeqPos ref_pos,
                        bool ref_minus_strand);
+    /// Insert new gap into sequence map.
+    /// @param seg
+    ///   Iterator pointing to the place where new gap will be inserted.
+    ///   Becomes invalid after the call.
+    /// @return
+    ///   New iterator pointing to the new segment.
+    CSeqMap_CI InsertSegmentGap(const CSeqMap_CI& seg,
+                                TSeqPos length);
+    /// Delete segment from sequence map.
+    /// @param seg
+    ///   Iterator pointing to the segment to be deleted.
+    ///   Becomes invalid after the call.
+    /// @return
+    ///   New iterator pointing to the next segment.
+    CSeqMap_CI RemoveSegment(const CSeqMap_CI& seg);
 
 protected:
 
@@ -291,6 +311,7 @@ protected:
     TSeqPos x_ResolveSegmentLength(size_t index, CScope* scope) const;
     TSeqPos x_ResolveSegmentPosition(size_t index, CScope* scope) const;
 
+    void x_StartEditing(void);
     bool x_IsChanged(void) const;
     void x_SetChanged(size_t index);
     bool x_UpdateSeq_inst(CSeq_inst& inst);
@@ -307,8 +328,8 @@ protected:
     
     void x_LoadObject(const CSegment& seg) const;
     const CObject* x_GetObject(const CSegment& seg) const;
-    void x_SetObject(const CSegment& seg, const CObject& obj);
-    void x_SetChunk(const CSegment& seg, CTSE_Chunk_Info& chunk);
+    void x_SetObject(CSegment& seg, const CObject& obj);
+    void x_SetChunk(CSegment& seg, CTSE_Chunk_Info& chunk);
 
     virtual void x_SetSeq_data(size_t index, CSeq_data& data);
     virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);

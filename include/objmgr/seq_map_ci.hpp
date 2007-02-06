@@ -282,6 +282,7 @@ public:
     const CTSE_Handle& GetUsingTSE(void) const;
 
 private:
+    friend class CSeqMap;
     typedef CSeqMap_CI_SegmentInfo TSegmentInfo;
 
     const TSegmentInfo& x_GetSegmentInfo(void) const;
