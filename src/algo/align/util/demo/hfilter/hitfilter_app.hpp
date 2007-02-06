@@ -64,6 +64,10 @@ public:
 };
 
 
+BEGIN_SCOPE(objects)
+    class CSeq_align;
+END_SCOPE(objects)
+
 class CAppHitFilter : public CNcbiApplication
 {
 public:
@@ -78,11 +82,16 @@ public:
 
 private:
 
+    typedef list<CRef<objects::CSeq_align> > TSeqAlignList;
+
     void x_ReadInputHits(THitRefs* phitrefs);
+    void x_IterateSeqAlignList(const TSeqAlignList& sa_list, 
+                               THitRefs* phitrefs,
+                               bool parse_aln,
+                               const THit::TCoord& min_len,
+                               const double& min_idty) const;
     void x_DumpOutput(const THitRefs& hitrefs);
-
     void x_LoadConstraints(CNcbiIstream& istr, THitRefs& all);
-
     void x_LoadIDs(CNcbiIstream& istr);
 
     typedef map<string,string> TMapIds;
@@ -97,26 +106,6 @@ private:
 
 
 END_NCBI_SCOPE
-
-
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.4  2006/04/17 19:33:23  kapustin
- * Advance hfilter application
- *
- * Revision 1.3  2006/03/23 22:01:53  kapustin
- * Support external alignment restraints
- *
- * Revision 1.2  2006/03/21 16:19:12  kapustin
- * Add multiple greedy reconciliation algorithm for pairwise alignment filtering
- *
- * Revision 1.1  2004/12/21 20:07:47  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
 
 
 #endif /* ALGO_ALIGN_NW_DEMO_HFILTER_HITFILTER_APP__HPP */

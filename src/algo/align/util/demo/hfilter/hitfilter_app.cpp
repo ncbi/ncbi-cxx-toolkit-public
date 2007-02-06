@@ -38,6 +38,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <util/util_exception.hpp>
 
 #include <serial/objistr.hpp>
@@ -80,6 +81,9 @@ void CAppHitFilter::Init()
     argdescr->AddOptionalKey("file_in", "file_in", "Input file (stdin otherwise)",
                              CArgDescriptions::eInputFile,
                              CArgDescriptions::fBinary);
+
+    argdescr->AddFlag("sas", "Assume seq-align-set as the top-level structure "
+                      "for the input ASN hits", true);
     
     argdescr->AddDefaultKey("merge", "merge",
                             "Merge abutting alignments unless the merged "
@@ -197,37 +201,63 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs)
         }
     }
     else {
+
         const bool  parse_aln = fmt_out != g_m8;
 
         CObjectIStream* in_ptr =  CObjectIStream::Open(fmt_in == g_AsnTxt? 
                                   eSerial_AsnText: eSerial_AsnBinary, istr);
         auto_ptr<CObjectIStream> in (in_ptr);
 
+        const bool assume_sas (args["sas"]);
+
         while (!in->EndOfData()) {
 
-            CRef<CSeq_annot> sa (new CSeq_annot);
-            *in >> *sa;
+            if(assume_sas) {
 
-            typedef list<CRef<CSeq_align> > TSeqAlignList;
-            const TSeqAlignList& sa_list = sa->GetData().GetAlign();
-            ITERATE(TSeqAlignList, ii, sa_list) {
-                    
-                CRange<TSeqPos> r = (*ii)->GetSeqRange(0);
-                if(r.GetTo() - r.GetFrom() >= min_len) {
-
-                    THitRef hit (new THit(**ii, parse_aln));
-                    if(hit->GetIdentity() >= min_idty) {
-                        if(hit->GetQueryStrand() == false) {
-                            hit->FlipStrands();
-                        }
-                        phitrefs->push_back(hit);
-                    }
+                CRef<CSeq_align_set> sas (new CSeq_align_set);
+                *in >> *sas;
+                const TSeqAlignList& sa_list (sas->Get());
+                ITERATE(TSeqAlignList, ii, sa_list) {
+                    CRef<CSeq_align> seq_align (*ii);
+                    x_IterateSeqAlignList(seq_align->GetSegs().GetDisc().Get(), 
+                                          phitrefs, parse_aln, min_len, min_idty);
                 }
+            }
+            else {
+
+                CRef<CSeq_annot> seq_annot(new CSeq_annot);
+                *in >> *seq_annot;
+                const TSeqAlignList& sa_list (seq_annot->GetData().GetAlign());
+                x_IterateSeqAlignList(sa_list, phitrefs, parse_aln, 
+                                      min_len, min_idty);
             }
         }
     }
 }
 
+
+void CAppHitFilter::x_IterateSeqAlignList(const TSeqAlignList& sa_list,
+                                          THitRefs* phitrefs, 
+                                          bool parse_aln,
+                                          const THit::TCoord& min_len,
+                                          const double& min_idty) const
+
+{
+    ITERATE(TSeqAlignList, ii, sa_list) {
+                    
+        const CRange<TSeqPos> r ((*ii)->GetSeqRange(0));
+        if(r.GetTo() - r.GetFrom() >= min_len) {
+
+            THitRef hit (new THit(**ii, parse_aln));
+            if(hit->GetIdentity() >= min_idty) {
+                if(hit->GetQueryStrand() == false) {
+                    hit->FlipStrands();
+                }
+                phitrefs->push_back(hit);
+            }
+        }
+    }
+}
 
 void CAppHitFilter::x_DumpOutput(const THitRefs& hitrefs)
 {    
