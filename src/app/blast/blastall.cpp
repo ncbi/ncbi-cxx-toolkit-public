@@ -120,9 +120,10 @@ int CBlastall::Run(void)
     // initialize the database
 
     bool db_is_aa = (program == eBlastp || program == eBlastx);
-    CSeqDB seqdb(m_ArgDesc->GetDatabase(args),
-                 db_is_aa ? CSeqDB::eProtein : CSeqDB::eNucleotide);
-    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(&seqdb);
+    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(
+                                   m_ArgDesc->GetDatabase(args),
+                                   db_is_aa ? CSeqDB::eProtein :
+                                              CSeqDB::eNucleotide);
 
     char* error_str = BlastSeqSrcGetInitError(seq_src);
     if (error_str) {
@@ -193,12 +194,7 @@ int CBlastall::Run(void)
                                      new CObjMgr_QueryFactory(query_loc));
             CLocalBlast blaster(query_factory, opts, seq_src);
 
-            // we have three separate entities to represent the
-            // database: a seqsrc for blast, a data loader for the
-            // formatter, and a raw SeqDB object that is needed
-            // to reset the internal sequence iterator to the 
-            // beginning of the database. This should probably change
-            seqdb.ResetInternalChunkBookmark();
+            BlastSeqSrcResetChunkIterator(seq_src);
 
             // perform the search on the current batch
             blaster.SetNumberOfThreads(m_ArgDesc->GetNumThreads(args));
