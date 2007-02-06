@@ -79,8 +79,9 @@ public:
     unsigned int GetRetryLimit(void)           { return m_RetryLimit; }
             void SetRetryLimit(unsigned int n) { m_RetryLimit = n; }
 
-    EIO_Status SetTimeout(const STimeout* timeout,
-                          EIO_Event direction = eIO_ReadWrite);
+    EIO_Status      SetTimeout(const STimeout* timeout,
+                               EIO_Event direction = eIO_ReadWrite);
+    const STimeout* GetTimeout(EIO_Event direction = eIO_Read);
 
 protected:
     virtual string GetAffinity(const TRequest& request) const;
@@ -90,6 +91,9 @@ protected:
     virtual void x_Connect(void);
     virtual void x_Disconnect(void);
             void x_SetStream(CNcbiIostream* stream);
+    /// Connect to a URL.  (Discouraged; please establish and use a
+    /// suitable named service if possible.)
+            void x_ConnectURL(const string& url);
 
     /// Retry policy; by default, just _TRACEs the event and returns
     /// true.  May reset the connection (or do anything else, really),
@@ -229,6 +233,20 @@ EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
 
 template <class TRequest, class TReply>
 inline
+const STimeout* CRPCClient<TRequest, TReply>::GetTimeout(EIO_Event direction)
+{
+    CConn_IOStream* conn_stream
+        = dynamic_cast<CConn_IOStream*>(m_Stream.get());
+    if (conn_stream) {
+        return CONN_GetTimeout(conn_stream->GetCONN(), direction);
+    } else {
+        return m_Timeout;
+    }
+}
+
+
+template <class TRequest, class TReply>
+inline
 void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
 {
     CMutexGuard LOCK(m_Mutex);
@@ -298,6 +316,14 @@ void CRPCClient<TRequest, TReply>::x_SetStream(CNcbiIostream* stream)
     m_Stream.reset(stream);
     m_In .reset(CObjectIStream::Open(m_Format, *stream));
     m_Out.reset(CObjectOStream::Open(m_Format, *stream));
+}
+
+
+template <class TRequest, class TReply>
+inline
+void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
+{
+    x_SetStream(new CConn_HttpStream(url, fHCC_AutoReconnect, m_Timeout));
 }
 
 
