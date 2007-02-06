@@ -457,7 +457,7 @@ void CIndexedDb::PreSearch(
     CDbIndex::SSearchOptions sopt;
     sopt.word_size = lut_options->word_size;
     sopt.template_type = lut_options->mb_template_type;
-    sopt.two_hits = (word_options->window_size > 0);
+    sopt.two_hits = word_options->window_size;
 
     for( vector< string >::size_type v = 0; 
             v < index_names_.size(); v += threads_ ) {

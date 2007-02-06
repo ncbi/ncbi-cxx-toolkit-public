@@ -1725,27 +1725,71 @@ void CSeedRoots::Add2(
 //-------------------------------------------------------------------------
 /** Representation of a seed being tracked by the search algorithm.
 */
-struct STrackedSeed
+template< unsigned long NHITS >
+struct STrackedSeed;
+
+/** Specialization for one-hit based search. */
+template<>
+struct STrackedSeed< ONE_HIT >
 {
+    /** Instance constructor.
+
+        @param qoff Query offset.
+        @param soff Subject offset.
+        @param len  Seed length.
+        @param qright Rightmost position of the seed in query's coordinates.
+    */
+    STrackedSeed( 
+            TSeqPos qoff, TSeqPos soff, TSeqPos len, TSeqPos qright )
+        : qoff_( qoff ), soff_( soff ), len_( len ), qright_( qright )
+    {}
+
     TSeqPos qoff_;      /**< Query offset of the seed's origin. */
     TSeqPos soff_;      /**< Subject offset of the seed's origin. */
     TSeqPos len_;       /**< Length of the seed. */
     TSeqPos qright_;    /**< Offset of the rightmost position of the seed in the query. */
 };
 
+/** Specializarion for two-hit based search. */
+template<>
+struct STrackedSeed< TWO_HIT >
+{
+    /** Instance constructor.
+
+        @param qoff Query offset.
+        @param soff Subject offset.
+        @param len  Seed length.
+        @param qright Rightmost position of the seed in query's coordinates.
+    */
+    STrackedSeed( 
+            TSeqPos qoff, TSeqPos soff, TSeqPos len, TSeqPos qright )
+        : qoff_( qoff ), soff_( soff ), len_( len ), qright_( qright ),
+          second_hit_( 0 )
+    {}
+
+    TSeqPos qoff_;         /**< Query offset of the seed's origin. */
+    TSeqPos soff_;         /**< Subject offset of the seed's origin. */
+    TSeqPos len_;          /**< Length of the seed. */
+    TSeqPos qright_;       /**< Offset of the rightmost position of the seed in the query. */
+    TSeqPos second_hit_;   /**< Right end of the first hit. */
+};
+
 /** Representation of a collection of tacked seeds for a specific subject
     sequence.
 */
-template< typename subject_map_t >
-class CTrackedSeeds
+template< typename subject_map_t, unsigned long NHITS >
+class CTrackedSeeds_Base
 {
-    /**@name Some convenience type declaration. */
-    /**@{*/
-    typedef subject_map_t TSubjectMap;
-    typedef std::list< STrackedSeed > TSeeds;
-    typedef TSeeds::iterator TIter;
-    typedef std::vector< BlastInitHitList * > THitLists;
-    /**@}*/
+    protected:
+
+        /**@name Some convenience type declaration. */
+        /**@{*/
+        typedef subject_map_t TSubjectMap;
+        typedef STrackedSeed< NHITS > TTrackedSeed;
+        typedef std::list< TTrackedSeed > TSeeds;
+        typedef typename TSeeds::iterator TIter;
+        typedef std::vector< BlastInitHitList * > THitLists;
+        /**@}*/
 
     public:
 
@@ -1753,14 +1797,14 @@ class CTrackedSeeds
 
             @param subject_map The subject map instance.
         */
-        CTrackedSeeds( const TSubjectMap & subject_map ) 
+        CTrackedSeeds_Base( const TSubjectMap & subject_map ) 
             : subject_map_( &subject_map ), lid_( 0 )
         { it_ = seeds_.begin(); }
 
         /** Object copy constructor.
             @param rhs  [I]     source object to copy
         */
-        CTrackedSeeds( const CTrackedSeeds & rhs )
+        CTrackedSeeds_Base( const CTrackedSeeds_Base & rhs )
             : hitlists_( rhs.hitlists_ ), 
               seeds_( rhs.seeds_ ), subject_map_( rhs.subject_map_ ),
               lid_( rhs.lid_ )
@@ -1780,35 +1824,27 @@ class CTrackedSeeds
         /** Prepare for processing of the next query position. */
         void Reset();
 
-        /** Process seeds on diagonals below or equal to the seed
-            given as the parameter.
-            @param seed [I]     possible candidate for a 'tracked' seed
-            @return true if there is a tracked seed on the same diagonal
-                    as seed; false otherwise
-        */
-        bool EvalAndUpdate( const STrackedSeed & seed );
-
         /** Add a seed to the set of tracked seeds.
             @param seed         [I]     seed to add
             @param word_size    [I]     minimum size of a valid seed
         */
-        void Append( const STrackedSeed & seed, unsigned long word_size );
+        void Append( const TTrackedSeed & seed, unsigned long word_size );
 
         /** Add a seed to the set of tracked seeds.
             No check for word size is performed.
             @param seed         [I]     seed to add
         */
-        void AppendSimple( const STrackedSeed & seed );
+        void AppendSimple( const TTrackedSeed & seed );
 
         /** Save the remaining valid tracked seeds and clean up the 
             structure.
         */
-        void Finalize();
+        // void Finalize();
 
         /** Save the tracked seed for reporting in the search result set.
             @param seed [I]     seed to save
         */
-        void SaveSeed( const STrackedSeed & seed );
+        void SaveSeed( const TTrackedSeed & seed );
 
         /** Get the list of saved seeds.
 
@@ -1820,7 +1856,7 @@ class CTrackedSeeds
         BlastInitHitList * GetHitList( TSeqNum num ) const 
         { return hitlists_[num]; }
 
-    private:
+    protected:
 
         THitLists hitlists_;              /**< The result sets (one per chunk). */
         TSeeds seeds_;                    /**< List of seed candidates. */
@@ -1831,9 +1867,9 @@ class CTrackedSeeds
 };
 
 //-------------------------------------------------------------------------
-template< typename subject_map_t >
+template< typename subject_map_t, unsigned long NHITS >
 INLINE
-void CTrackedSeeds< subject_map_t >::Reset()
+void CTrackedSeeds_Base< subject_map_t, NHITS >::Reset()
 { it_ = seeds_.begin(); }
 
 /* This code is for testing purposes only.
@@ -1874,9 +1910,10 @@ void CTrackedSeeds< subject_map_t >::Reset()
 */
 
 //-------------------------------------------------------------------------
-template< typename subject_map_t >
+template< typename subject_map_t, unsigned long NHITS >
 INLINE
-void CTrackedSeeds< subject_map_t >::SaveSeed( const STrackedSeed & seed )
+void CTrackedSeeds_Base< subject_map_t, NHITS >::SaveSeed( 
+        const TTrackedSeed & seed )
 {
     if( seed.len_ > 0 ) {
         TSeqPos qoff = seed.qright_ - seed.len_ + 1;
@@ -1900,28 +1937,17 @@ void CTrackedSeeds< subject_map_t >::SaveSeed( const STrackedSeed & seed )
 }
 
 //-------------------------------------------------------------------------
-template< typename subject_map_t >
+template< typename subject_map_t, unsigned long NHITS >
 INLINE
-void CTrackedSeeds< subject_map_t >::Finalize()
-{
-    for( TSeeds::const_iterator cit = seeds_.begin(); 
-            cit != seeds_.end(); ++cit ) {
-        SaveSeed( *cit );
-    }
-}
-
-//-------------------------------------------------------------------------
-template< typename subject_map_t >
-INLINE
-void CTrackedSeeds< subject_map_t >::AppendSimple( 
-        const STrackedSeed & seed )
+void CTrackedSeeds_Base< subject_map_t, NHITS >::AppendSimple( 
+        const TTrackedSeed & seed )
 { seeds_.insert( it_, seed ); }
 
 //-------------------------------------------------------------------------
-template< typename subject_map_t >
+template< typename subject_map_t, unsigned long NHITS >
 INLINE
-void CTrackedSeeds< subject_map_t >::Append( 
-        const STrackedSeed & seed, unsigned long word_size )
+void CTrackedSeeds_Base< subject_map_t, NHITS >::Append( 
+        const TTrackedSeed & seed, unsigned long word_size )
 {
     if( it_ != seeds_.begin() ) {
         TIter tmp_it = it_; tmp_it--;
@@ -1949,29 +1975,212 @@ void CTrackedSeeds< subject_map_t >::Append(
 }
 
 //-------------------------------------------------------------------------
+/** CTrackedSeeds functionality that is different depending on
+    whether a one-hit or two-hit based search is used.
+*/
+template< typename subject_map_t, unsigned long NHITS >
+class CTrackedSeeds;
+
+//-------------------------------------------------------------------------
+/** Specialization for one-hit searches. */
+template< typename subject_map_t >
+class CTrackedSeeds< subject_map_t, ONE_HIT > 
+    : public CTrackedSeeds_Base< subject_map_t, ONE_HIT >
+{
+    /** @name Types forwarded from the base class. */
+    /**@{*/
+    typedef CTrackedSeeds_Base< subject_map_t, ONE_HIT > TBase;
+    typedef typename TBase::TSubjectMap TSubjectMap;
+    typedef typename TBase::TTrackedSeed TTrackedSeed;
+    typedef typename TBase::TSeeds TSeeds;
+    /**@}*/
+
+    public:
+
+        /** Object constructor. 
+
+            @param subject_map The subject map instance.
+        */
+        CTrackedSeeds( 
+                const TSubjectMap & subject_map, 
+                const CDbIndex::SSearchOptions & options ) 
+            : TBase( subject_map )
+        {}
+
+        /** Object copy constructor.
+            @param rhs  [I]     source object to copy
+        */
+        CTrackedSeeds( const CTrackedSeeds & rhs )
+            : TBase( rhs )
+        {}
+
+        /** Process seeds on diagonals below or equal to the seed
+            given as the parameter.
+            @param seed [I]     possible candidate for a 'tracked' seed
+            @return true if there is a tracked seed on the same diagonal
+                    as seed; false otherwise
+        */
+        bool EvalAndUpdate( const TTrackedSeed & seed );
+
+        /** Save the remaining valid tracked seeds and clean up the 
+            structure.
+        */
+        void Finalize();
+};
+
+//-------------------------------------------------------------------------
 template< typename subject_map_t >
 INLINE
-bool CTrackedSeeds< subject_map_t >::EvalAndUpdate( 
-        const STrackedSeed & seed )
+void CTrackedSeeds< subject_map_t, ONE_HIT >::Finalize()
 {
-    while( it_ != seeds_.end() ) {
-        TSeqPos step = seed.qoff_ - it_->qoff_;
-        TSeqPos it_soff_corr = it_->soff_ + step;
+    for( typename TSeeds::const_iterator cit = this->seeds_.begin(); 
+            cit != this->seeds_.end(); ++cit ) {
+        SaveSeed( *cit );
+    }
+}
+
+//-------------------------------------------------------------------------
+template< typename subject_map_t >
+INLINE
+bool CTrackedSeeds< subject_map_t, ONE_HIT >::EvalAndUpdate( 
+        const TTrackedSeed & seed )
+{
+    while( this->it_ != this->seeds_.end() ) {
+        TSeqPos step = seed.qoff_ - this->it_->qoff_;
+        TSeqPos it_soff_corr = this->it_->soff_ + step;
 
         if( it_soff_corr > seed.soff_ ) {
             return true;
         }
 
-        if( it_->qright_ < seed.qoff_ ) {
-            SaveSeed( *it_ );
-            it_ = seeds_.erase( it_ );
+        if( this->it_->qright_ < seed.qoff_ ) {
+            SaveSeed( *this->it_ );
+            this->it_ = this->seeds_.erase( this->it_ );
         }
         else {
-            ++it_;
+            ++this->it_;
             
             if( it_soff_corr == seed.soff_ ) {
                 return false;
             }
+        }
+    }
+
+    return true;
+}
+
+//-------------------------------------------------------------------------
+/** Specialization for two-hit searches. */
+template< typename subject_map_t >
+class CTrackedSeeds< subject_map_t, TWO_HIT > 
+    : public CTrackedSeeds_Base< subject_map_t, TWO_HIT >
+{
+    /** @name Types forwarded from the base class. */
+    /**@{*/
+    typedef CTrackedSeeds_Base< subject_map_t, TWO_HIT > TBase;
+    typedef typename TBase::TSubjectMap TSubjectMap;
+    typedef typename TBase::TTrackedSeed TTrackedSeed;
+    typedef typename TBase::TSeeds TSeeds;
+    /**@}*/
+
+    public:
+
+        /** Object constructor. 
+
+            @param subject_map The subject map instance.
+        */
+        CTrackedSeeds( 
+                const TSubjectMap & subject_map,
+                const CDbIndex::SSearchOptions & options ) 
+            : TBase( subject_map ), 
+              window_( options.two_hits ),
+              contig_len_( 2*options.word_size ),
+              word_size_( options.word_size )
+        {}
+
+        /** Process seeds on diagonals below or equal to the seed
+            given as the parameter.
+            @param seed [I]     possible candidate for a 'tracked' seed
+            @return true if there is a tracked seed on the same diagonal
+                    as seed; false otherwise
+        */
+        bool EvalAndUpdate( TTrackedSeed & seed );
+
+        /** Save the remaining valid tracked seeds and clean up the 
+            structure.
+        */
+        void Finalize();
+
+    private:
+
+        /** Verify two-seed criterion and save the seed if it is satisfied.
+
+            @param seed Seed to check and save.
+
+            @return true if seed was saved; false otherwise.
+        */
+        bool CheckAndSaveSeed( const TTrackedSeed & seed );
+
+        unsigned long window_;     /**< Window for two-hit based search. */
+        unsigned long contig_len_; /**< Min continuous length to save unconditionally. */
+        unsigned long word_size_;  /**< Target word size. */
+};
+
+
+//-------------------------------------------------------------------------
+template< typename subject_map_t >
+INLINE
+bool CTrackedSeeds< subject_map_t, TWO_HIT >::CheckAndSaveSeed( 
+        const TTrackedSeed & seed )
+{
+    if( (seed.second_hit_ > 0 && 
+                seed.qright_ - seed.len_ - window_ <= seed.second_hit_) ||
+        seed.len_ >= contig_len_ ) {
+        SaveSeed( seed );
+        return true;
+    }
+    else return false;
+}
+
+//-------------------------------------------------------------------------
+template< typename subject_map_t >
+INLINE
+void CTrackedSeeds< subject_map_t, TWO_HIT >::Finalize()
+{
+    for( typename TSeeds::const_iterator cit = this->seeds_.begin();
+            cit != this->seeds_.end(); ++cit ) {
+        CheckAndSaveSeed( *cit );
+    }
+}
+
+//-------------------------------------------------------------------------
+template< typename subject_map_t >
+INLINE
+bool CTrackedSeeds< subject_map_t, TWO_HIT >::EvalAndUpdate( 
+        TTrackedSeed & seed )
+{
+    while( this->it_ != this->seeds_.end() ) {
+        TSeqPos step = seed.qoff_ - this->it_->qoff_;
+        TSeqPos it_soff_corr = this->it_->soff_ + step;
+        if( it_soff_corr > seed.soff_ ) return true;
+
+        if( this->it_->qright_ + word_size_ + window_ < seed.qright_ ) {
+            CheckAndSaveSeed( *this->it_ );
+            this->it_ = this->seeds_.erase( this->it_ );
+        }
+        else if( this->it_->qright_ < seed.qoff_ ) {
+            if( CheckAndSaveSeed( *this->it_ ) ) {
+                this->it_ = this->seeds_.erase( this->it_ );
+            }
+            else if( it_soff_corr == seed.soff_ ) {
+                seed.second_hit_ = this->it_->qright_;
+                ++this->it_;
+            }
+            else { ++this->it_; }
+        }
+        else {
+            ++this->it_;
+            if( it_soff_corr == seed.soff_ ) return false;
         }
     }
 
@@ -1998,12 +2207,15 @@ class CDbIndex_Impl;
     @param OFF_TYPE    Offset encoding.
     @param COMPRESSION Offset compresion type.
     @param VER         Index version used.
+    @param NHITS       Number of hits needed to save a seed.
+    @param derived_t   Actual instance type.
 */
 template<
     typename word_t, 
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 class CSearch_Base
@@ -2018,7 +2230,7 @@ class CSearch_Base
         /**@{*/
         typedef CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER > TIndex_Impl;
         typedef typename TIndex_Impl::TSubjectMap TSubjectMap;
-        typedef CTrackedSeeds< TSubjectMap > TTrackedSeeds;
+        typedef CTrackedSeeds< TSubjectMap, NHITS > TTrackedSeeds;
         typedef derived_t TDerived;
         /**@}*/
 
@@ -2043,6 +2255,7 @@ class CSearch_Base
     protected:
 
         typedef typename TIndex_Impl::TWord TWord;      /**< Alias for convenience. */
+        typedef STrackedSeed< NHITS > TTrackedSeed;     /**< Alias for convenience. */
 
         /** Representation of the set of currently tracked seeds for
             all subject sequences. 
@@ -2079,7 +2292,7 @@ class CSearch_Base
                                 the number of positions to consider
         */
         void ExtendLeft( 
-                STrackedSeed & seed, TSeqPos nmax = ~(TSeqPos)0 ) const;
+                TTrackedSeed & seed, TSeqPos nmax = ~(TSeqPos)0 ) const;
 
         /** Extend a seed candidate to the right.
             Extends as far right as possible, unless nmax parameter is
@@ -2089,7 +2302,7 @@ class CSearch_Base
                                 many positions
         */
         void ExtendRight( 
-                STrackedSeed & seed, TSeqPos nmax = ~(TSeqPos)0 ) const;
+                TTrackedSeed & seed, TSeqPos nmax = ~(TSeqPos)0 ) const;
 
         /** Compute the seeds after all roots are collected. */
         void ComputeSeeds();
@@ -2128,9 +2341,10 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
-CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::CSearch_Base(
+CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::CSearch_Base(
         const TIndex_Impl & index_impl,
         const BLAST_SequenceBlk * query,
         const BlastSeqLoc * locs,
@@ -2144,7 +2358,7 @@ CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::CSearch_Base(
         CDbIndex::STRIDE;
     seeds_.resize( 
             index_impl_.NumSubjects() - 1, 
-            TTrackedSeeds( index_impl_.GetSubjectMap() ) );
+            TTrackedSeeds( index_impl_.GetSubjectMap(), options ) );
     for( typename TTrackedSeedsSet::size_type i = 0; i < seeds_.size(); ++i ) {
         seeds_[i].SetLId( (TSeqNum)i );
     }
@@ -2156,11 +2370,12 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 INLINE
-void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ExtendLeft( 
-        STrackedSeed & seed, TSeqPos nmax ) const
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::ExtendLeft( 
+        TTrackedSeed & seed, TSeqPos nmax ) const
 {
     static const unsigned long CR = CDbIndex::CR;
 
@@ -2229,11 +2444,12 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 INLINE
-void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ExtendRight( 
-        STrackedSeed & seed, TSeqPos nmax ) const
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::ExtendRight( 
+        TTrackedSeed & seed, TSeqPos nmax ) const
 {
     static const unsigned long CR = CDbIndex::CR;
 
@@ -2297,16 +2513,17 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 INLINE
-void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ProcessBoundaryOffset( 
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::ProcessBoundaryOffset( 
         TWord offset, TWord bounds )
 {
     TSeqPos nmaxleft  = (TSeqPos)(bounds>>CDbIndex::CODE_BITS);
     TSeqPos nmaxright = (TSeqPos)(bounds&((1<<CDbIndex::CODE_BITS) - 1));
-    STrackedSeed seed = 
-        { qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ };
+    TTrackedSeed seed( 
+            qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ );
     TTrackedSeeds & subj_seeds = seeds_[subject_];
     subj_seeds.EvalAndUpdate( seed );
 
@@ -2338,13 +2555,14 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 INLINE
-void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ProcessOffset( TWord offset )
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::ProcessOffset( TWord offset )
 {
-    STrackedSeed seed = 
-        { qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ };
+    TTrackedSeed seed(
+        qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ );
     TTrackedSeeds & subj_seeds = seeds_[subject_];
 
     if( subj_seeds.EvalAndUpdate( seed ) ) {
@@ -2361,11 +2579,12 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 INLINE
 unsigned long 
-CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ProcessRoot( 
+CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::ProcessRoot( 
         TTrackedSeeds & seeds, const SSeedRoot * root )
 {
     if( qoff_ != root->qoff_ ) {
@@ -2398,10 +2617,11 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 INLINE
-void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::ComputeSeeds()
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::ComputeSeeds()
 {
     TSeqNum num_subjects = index_impl_.NumSubjects() - 1;
 
@@ -2440,10 +2660,11 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 INLINE
-void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::SearchInt()
+void CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::SearchInt()
 {
     CNmerIterator< TIndex_Impl > nmer_it( 
             index_impl_, query_->sequence, qstart_, qstop_ );
@@ -2495,10 +2716,11 @@ template<
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
     unsigned long VER,
+    unsigned long NHITS,
     typename derived_t
 >
 CConstRef< CDbIndex::CSearchResults > 
-CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, derived_t >::operator()()
+CSearch_Base< word_t, OFF_TYPE, COMPRESSION, VER, NHITS, derived_t >::operator()()
 {
     const BlastSeqLoc * curloc = locs_;
 
@@ -2540,7 +2762,8 @@ template<
     typename word_t, 
     unsigned long OFF_TYPE, 
     unsigned long COMPRESSION,
-    unsigned long VER
+    unsigned long VER,
+    unsigned long NHITS
 >
 class CSearch;
 
@@ -2548,15 +2771,16 @@ class CSearch;
 template<
     typename word_t, 
     unsigned long COMPRESSION,
-    unsigned long VER
+    unsigned long VER,
+    unsigned long NHITS
 >
-class CSearch< word_t, OFFSET_RAW, COMPRESSION, VER > : public CSearch_Base< 
-    word_t, OFFSET_RAW, COMPRESSION, VER, 
-    CSearch< word_t, OFFSET_RAW, COMPRESSION, VER > >
+class CSearch< word_t, OFFSET_RAW, COMPRESSION, VER, NHITS > : public CSearch_Base< 
+    word_t, OFFSET_RAW, COMPRESSION, VER, NHITS,
+    CSearch< word_t, OFFSET_RAW, COMPRESSION, VER, NHITS > >
 {
     /** @name Convenience declarations. */
     /**@{*/
-    typedef CSearch_Base< word_t, OFFSET_RAW, COMPRESSION, VER, CSearch > TBase;
+    typedef CSearch_Base< word_t, OFFSET_RAW, COMPRESSION, VER, NHITS, CSearch > TBase;
     typedef typename TBase::TIndex_Impl TIndex_Impl;
     typedef typename TBase::TSearchOptions TSearchOptions;
     typedef typename TBase::TWord TWord;
@@ -2604,10 +2828,11 @@ class CSearch< word_t, OFFSET_RAW, COMPRESSION, VER > : public CSearch_Base<
 template<
     typename word_t, 
     unsigned long COMPRESSION,
-    unsigned long VER
+    unsigned long VER,
+    unsigned long NHITS
 >
 INLINE
-void CSearch< word_t, OFFSET_RAW, COMPRESSION, VER >::UpdateSubject( TWord offset )
+void CSearch< word_t, OFFSET_RAW, COMPRESSION, VER, NHITS >::UpdateSubject( TWord offset )
 {
     if( offset >= this->subj_end_off_ ) {
         this->subject_ = this->index_impl_.UpdateSubject( 
@@ -2620,10 +2845,11 @@ void CSearch< word_t, OFFSET_RAW, COMPRESSION, VER >::UpdateSubject( TWord offse
 template<
     typename word_t, 
     unsigned long COMPRESSION,
-    unsigned long VER
+    unsigned long VER,
+    unsigned long NHITS
 >
 INLINE
-void CSearch< word_t, OFFSET_RAW, COMPRESSION, VER >::SetSubjInfo()
+void CSearch< word_t, OFFSET_RAW, COMPRESSION, VER, NHITS >::SetSubjInfo()
 {
     this->index_impl_.SetSubjInfo( 
             this->subject_, this->subj_start_off_, this->subj_end_off_,
@@ -2635,17 +2861,18 @@ void CSearch< word_t, OFFSET_RAW, COMPRESSION, VER >::SetSubjInfo()
 template<
     typename word_t, 
     unsigned long COMPRESSION,
-    unsigned long VER
+    unsigned long VER,
+    unsigned long NHITS
 >
-class CSearch< word_t, OFFSET_COMBINED, COMPRESSION, VER > 
+class CSearch< word_t, OFFSET_COMBINED, COMPRESSION, VER, NHITS > 
     : public CSearch_Base< 
-        word_t, OFFSET_COMBINED, COMPRESSION, VER, 
-        CSearch< word_t, OFFSET_COMBINED, COMPRESSION, VER > >
+        word_t, OFFSET_COMBINED, COMPRESSION, VER, NHITS,
+        CSearch< word_t, OFFSET_COMBINED, COMPRESSION, VER, NHITS > >
 {
     /** @name Convenience declarations. */
     /**@{*/
     typedef CSearch_Base< 
-        word_t, OFFSET_COMBINED, COMPRESSION, VER, CSearch > TBase;
+        word_t, OFFSET_COMBINED, COMPRESSION, VER, NHITS, CSearch > TBase;
     typedef typename TBase::TIndex_Impl TIndex_Impl;
     typedef typename TBase::TSearchOptions TSearchOptions;
     typedef typename TBase::TWord TWord;
@@ -3107,9 +3334,16 @@ CDbIndex_Impl< word_t, OFF_TYPE, COMPRESSION, VER >::DoSearch(
         const BlastSeqLoc * locs,
         const SSearchOptions & search_options )
 {
-    CSearch< word_t, OFF_TYPE, COMPRESSION, VER > searcher( 
-            *this, query, locs, search_options );
-    return searcher();
+    if( search_options.two_hits == 0 ) {
+        CSearch< word_t, OFF_TYPE, COMPRESSION, VER, ONE_HIT > searcher( 
+                *this, query, locs, search_options );
+        return searcher();
+    }
+    else {
+        CSearch< word_t, OFF_TYPE, COMPRESSION, VER, TWO_HIT > searcher( 
+                *this, query, locs, search_options );
+        return searcher();
+    }
 }
 
 //-------------------------------------------------------------------------
