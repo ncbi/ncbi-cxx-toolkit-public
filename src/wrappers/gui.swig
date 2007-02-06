@@ -92,6 +92,8 @@ gui/core/GBProject.hpp
 gui/core/GBProjectHandle.hpp
 gui/core/GBProjectHandle_.hpp
 gui/core/GBProject_.hpp
+gui/core/GBProject_ver2.hpp
+gui/core/GBProject_ver2_.hpp
 gui/core/GBWorkspace.hpp
 gui/core/GBWorkspace_.hpp
 gui/core/MRUCache.hpp
@@ -100,6 +102,10 @@ gui/core/MessageHistoryInfo.hpp
 gui/core/MessageHistoryInfo_.hpp
 gui/core/MessageStatus.hpp
 gui/core/MessageStatus_.hpp
+gui/core/NCBI_Data_Handle_module.hpp
+gui/core/NCBI_GBenchService_module.hpp
+gui/core/NCBI_GUI_Project_module.hpp
+gui/core/NCBI_Plugin_module.hpp
 gui/core/PluginArg.hpp
 gui/core/PluginArgSet.hpp
 gui/core/PluginArgSet_.hpp
@@ -176,8 +182,6 @@ gui/core/plugin_registry.hpp
 gui/core/plugin_thread.hpp
 gui/core/plugin_utils.hpp
 gui/core/project_manager.hpp
-// Seems to be dead
-//gui/core/registry.hpp
 // dead? conflicts with iselection_service.hpp
 //gui/core/selection_service.hpp
 gui/core/task_manager.hpp
