@@ -127,16 +127,18 @@ public:
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
     CStaticPairArrayMap(typename TBase::const_iterator obj,
-                        typename TBase::size_type array_size)
-        : TBase(obj, array_size)
+                        typename TBase::size_type array_size,
+                        const char* file = 0, int line = 0)
+        : TBase(obj, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
     CStaticPairArrayMap(typename TBase::const_iterator obj,
                         typename TBase::size_type array_size,
-                        const typename TBase::key_compare& comp)
-        : TBase(obj, array_size, comp)
+                        const typename TBase::key_compare& comp,
+                        const char* file = 0, int line = 0)
+        : TBase(obj, array_size, comp, file, line)
     {
     }
 };
@@ -160,16 +162,18 @@ public:
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
     CStaticArrayMap(typename TBase::const_iterator obj,
-                    typename TBase::size_type array_size)
-        : TBase(obj, array_size)
+                    typename TBase::size_type array_size,
+                    const char* file = 0, int line = 0)
+        : TBase(obj, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
     CStaticArrayMap(typename TBase::const_iterator obj,
                     typename TBase::size_type array_size,
-                    const typename TBase::key_compare& comp)
-        : TBase(obj, array_size, comp)
+                    const typename TBase::key_compare& comp,
+                    const char* file = 0, int line = 0)
+        : TBase(obj, array_size, comp, file, line)
     {
     }
 };

@@ -190,20 +190,22 @@ public:
     /// Default constructor.  This will build a set around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticArraySearchBase(const_iterator obj, size_type array_size)
+    CStaticArraySearchBase(const_iterator obj, size_type array_size,
+                           const char* file = 0, int line = 0)
         : m_Begin(obj)
         , m_End(obj + array_size / sizeof(value_type))
     {
-        x_Validate();
+        x_Validate(file, line);
     }
 
     /// Constructor to initialize comparator object.
     CStaticArraySearchBase(const_iterator obj, size_type array_size,
-                           const key_compare& comp)
+                           const key_compare& comp,
+                           const char* file = 0, int line = 0)
         : m_Begin(comp, obj)
         , m_End(obj + array_size / sizeof(value_type))
     {
-        x_Validate();
+        x_Validate(file, line);
     }
 
     const value_compare& value_comp() const
@@ -292,16 +294,24 @@ public:
 
 protected:
     /// Perform sort-order validation.  This is a no-op in release mode.
-    void x_Validate() const
+    void x_Validate(const char* _DEBUG_ARG(file),
+                    int _DEBUG_ARG(line)) const
     {
 #ifdef _DEBUG
         const_iterator curr = begin(), prev = curr;
         if ( curr != end() ) {
             while ( ++curr != end() ) {
                 if ( !value_comp()(*prev, *curr) ) {
-                    ERR_POST(Fatal << "keys out of order: " <<
-                             getter::get_key(*prev) << " vs. " <<
-                             getter::get_key(*curr));
+                    NCBI_NS_NCBI::CDiagCompileInfo diag_compile_info
+                        (file? file: __FILE__,
+                         line? line: __LINE__,
+                         NCBI_CURRENT_FUNCTION,
+                         NCBI_MAKE_MODULE(NCBI_MODULE));
+                    NCBI_NS_NCBI::CNcbiDiag(diag_compile_info).GetRef()
+                        << NCBI_NS_NCBI::Fatal << "keys out of order: " <<
+                        getter::get_key(*prev) << " vs. " <<
+                        getter::get_key(*curr)
+                        << NCBI_NS_NCBI::Endm;
                 }
                 prev = curr;
             }
@@ -330,16 +340,18 @@ public:
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
     CStaticArraySet(typename TBase::const_iterator obj,
-                    typename TBase::size_type array_size)
-        : TBase(obj, array_size)
+                    typename TBase::size_type array_size,
+                    const char* file = 0, int line = 0)
+        : TBase(obj, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
     CStaticArraySet(typename TBase::const_iterator obj,
                     typename TBase::size_type array_size,
-                    const typename TBase::key_compare& comp)
-        : TBase(obj, array_size, comp)
+                    const typename TBase::key_compare& comp,
+                    const char* file = 0, int line = 0)
+        : TBase(obj, array_size, comp, file, line)
     {
     }
 };
