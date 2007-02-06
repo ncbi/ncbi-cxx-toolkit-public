@@ -61,8 +61,6 @@ public:
     CRemapClient(void);
     // destructor
     ~CRemapClient(void);
-    // we override this to use a server that's not a named service
-    void Ask(const TRequest& request, TReply& reply);
 
     // Convenience methods for querying
 
@@ -75,6 +73,11 @@ public:
                                   const string& from_build,
                                   const string& to_build,
                                   vector<CRef<objects::CSeq_loc> >& result);
+
+protected:
+    // we override this to use a server that's not a named service
+    void x_Connect();
+
 private:
     // Prohibit copy constructor and assignment operator
     CRemapClient(const CRemapClient& value);

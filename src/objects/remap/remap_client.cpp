@@ -59,13 +59,12 @@ CRemapClient::~CRemapClient(void)
 
 // For development, use an experimental server that is not
 // set up as a named service.
-void CRemapClient::Ask(const TRequest& request, TReply& reply)
+void CRemapClient::x_Connect()
 {
     const string kUrl = "http://graceland.ncbi.nlm.nih.gov:6224/"
         "staff/jcherry/remap/remap_server.cgi";
-    CConn_HttpStream http_stream(kUrl);
-    http_stream << MSerial_AsnBinary << request << flush;
-    http_stream >> MSerial_AsnBinary >> reply;
+    
+    x_SetStream(new CConn_HttpStream(kUrl));  // should really set timeout
 }
 
 
