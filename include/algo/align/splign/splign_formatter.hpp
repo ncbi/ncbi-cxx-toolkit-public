@@ -66,8 +66,23 @@ public:
     string AsExonTable(const CSplign::TResults* results = 0,
                        EFlags flags = fNone) const;
 
+    /// Format alignment as plain text.
+    ///
+    /// @param scope
+    ///   Source for sequence data.
+    /// @param results
+    ///   Splign results for formatting. If not specified, the results
+    ///   will be read from the object used to construct the formatter.
+    /// @param line_width
+    ///   The maximum number of alignment chars per line.
+    /// @param segnum
+    ///   The segment to print in each compartment, or -1 to print all segments.
+    /// @return
+    ///   Formatted alignment.
     string AsAlignmentText(CRef<objects::CScope> scope,
-                           const CSplign::TResults* results = 0) const;
+                           const CSplign::TResults* results = 0,
+                           size_t line_width = 80,
+                           int segnum = -1) const;
 
     CRef<objects::CSeq_align_set> AsSeqAlignSet(const CSplign::TResults*
                                                 results = 0) const;
@@ -91,45 +106,5 @@ private:
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- *
- * $Log$
- * Revision 1.14  2005/11/21 16:04:30  kapustin
- * +CSplignFormatter::EFlags
- *
- * Revision 1.13  2005/10/31 16:29:36  kapustin
- * Support traditional pairwise alignment text output
- *
- * Revision 1.12  2005/09/12 16:22:31  kapustin
- * Move compartmentization to xalgoutil
- *
- * Revision 1.11  2005/01/04 15:48:30  kapustin
- * Move SetSeqIds() implementation to the cpp file
- *
- * Revision 1.10  2005/01/03 22:47:20  kapustin
- * Implement seq-ids with CSeq_id instead of generic strings
- *
- * Revision 1.9  2004/11/29 14:36:45  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be 
- * specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two 
- * additional parameters to specify starting coordinates.
- *
- * Revision 1.8  2004/06/21 17:44:46  kapustin
- * Add result param to AsText and AsSeqAlignSet with zero default
- *
- * Revision 1.7  2004/05/04 15:23:44  ucko
- * Split splign code out of xalgoalign into new xalgosplign.
- *
- * Revision 1.6  2004/04/30 15:00:32  kapustin
- * Support ASN formatting
- *
- * Revision 1.5  2004/04/23 14:36:24  kapustin
- * Initial revision
- *
- * ===========================================================================
- */
 
 #endif
