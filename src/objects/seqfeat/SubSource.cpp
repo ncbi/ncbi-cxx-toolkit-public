@@ -93,10 +93,11 @@ void CSubSource::GetLabel(string* str) const
         TPair(eSubtype_rev_primer_seq,          "rev_primer_seq"),
         TPair(eSubtype_fwd_primer_name,         "fwd_primer_name"),
         TPair(eSubtype_rev_primer_name,         "rev_primer_name"),
-        TPair(eSubtype_other, "other")
+        TPair(eSubtype_other,                   "other")
     };
     typedef CStaticArrayMap<TSubtype, const char*> TSubtypeMap;
-    static const TSubtypeMap sc_Map(sc_Pairs, sizeof(sc_Pairs));
+    static const TSubtypeMap sc_Map(sc_Pairs, sizeof(sc_Pairs),
+                                    __FILE__, __LINE__);
 
     *str += '/';
     TSubtypeMap::const_iterator iter = sc_Map.find(GetSubtype());
@@ -133,7 +134,7 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 *
-* $Log$
+* $Log: SubSource.cpp,v $
 * Revision 1.3  2006/03/14 20:21:52  rsmith
 * Move BasicCleanup functionality from objects to objtools/cleanup
 *

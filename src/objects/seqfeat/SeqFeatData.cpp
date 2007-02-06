@@ -2166,7 +2166,8 @@ static const TQualPair kQualPairs[] = {
 };
 
 typedef CStaticArrayMap<CSeqFeatData::EQualifier, string> TQualsMap;
-static const TQualsMap sc_QualPairs(kQualPairs, sizeof(kQualPairs));
+static const TQualsMap sc_QualPairs(kQualPairs, sizeof(kQualPairs),
+                                    __FILE__, __LINE__);
 
 const string& CSeqFeatData::GetQulifierAsString(EQualifier qual)
 {

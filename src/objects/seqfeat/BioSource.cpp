@@ -126,7 +126,9 @@ static const TGenomeKey genome_key_to_subtype [] = {
 
 
 typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PNocase_CStr> TGenomeMap;
-static const TGenomeMap sm_GenomeKeys (genome_key_to_subtype, sizeof (genome_key_to_subtype));
+static const TGenomeMap sm_GenomeKeys (genome_key_to_subtype,
+                                       sizeof (genome_key_to_subtype),
+                                       __FILE__, __LINE__);
 
 CBioSource::EGenome CBioSource::GetGenomeByOrganelle (string organelle, NStr::ECase use_case, bool starts_with)
 {

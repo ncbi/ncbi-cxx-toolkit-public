@@ -351,7 +351,7 @@ static const TFeatKey feat_key_to_subtype [] = {
 };
 
 typedef CStaticArrayMap <const char*, const CSeqFeatData::ESubtype, PNocase_CStr> TFeatMap;
-static const TFeatMap sm_FeatKeys (feat_key_to_subtype, sizeof (feat_key_to_subtype));
+static const TFeatMap sm_FeatKeys (feat_key_to_subtype, sizeof (feat_key_to_subtype), __FILE__, __LINE__);
 
 
 typedef pair <const char *, const CFeature_table_reader_imp::EQual> TQualKey;
@@ -444,7 +444,7 @@ static const TQualKey qual_key_to_subtype [] = {
 };
 
 typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EQual, PNocase_CStr> TQualMap;
-static const TQualMap sm_QualKeys (qual_key_to_subtype, sizeof (qual_key_to_subtype));
+static const TQualMap sm_QualKeys (qual_key_to_subtype, sizeof (qual_key_to_subtype), __FILE__, __LINE__);
 
 
 typedef pair <const char *, const CFeature_table_reader_imp::EOrgRef> TOrgRefKey;
@@ -459,7 +459,7 @@ static const TOrgRefKey orgref_key_to_subtype [] = {
 };
 
 typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EOrgRef, PNocase_CStr> TOrgRefMap;
-static const TOrgRefMap sm_OrgRefKeys (orgref_key_to_subtype, sizeof (orgref_key_to_subtype));
+static const TOrgRefMap sm_OrgRefKeys (orgref_key_to_subtype, sizeof (orgref_key_to_subtype), __FILE__, __LINE__);
 
 
 typedef pair <const char *, const CBioSource::EGenome> TGenomeKey;
@@ -496,7 +496,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
 };
 
 typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PNocase_CStr> TGenomeMap;
-static const TGenomeMap sm_GenomeKeys (genome_key_to_subtype, sizeof (genome_key_to_subtype));
+static const TGenomeMap sm_GenomeKeys (genome_key_to_subtype, sizeof (genome_key_to_subtype), __FILE__, __LINE__);
 
 
 typedef pair <const char *, const CSubSource::ESubtype> TSubSrcKey;
@@ -541,7 +541,7 @@ static const TSubSrcKey subsrc_key_to_subtype [] = {
 };
 
 typedef CStaticArrayMap <const char*, const CSubSource::ESubtype, PNocase_CStr> TSubSrcMap;
-static const TSubSrcMap sm_SubSrcKeys (subsrc_key_to_subtype, sizeof (subsrc_key_to_subtype));
+static const TSubSrcMap sm_SubSrcKeys (subsrc_key_to_subtype, sizeof (subsrc_key_to_subtype), __FILE__, __LINE__);
 
 
 typedef pair <const char *, const COrgMod::ESubtype> TOrgModKey;
@@ -588,7 +588,7 @@ static const TOrgModKey orgmod_key_to_subtype [] = {
 };
 
 typedef CStaticArrayMap <const char*, const COrgMod::ESubtype, PNocase_CStr> TOrgModMap;
-static const TOrgModMap sm_OrgModKeys (orgmod_key_to_subtype, sizeof (orgmod_key_to_subtype));
+static const TOrgModMap sm_OrgModKeys (orgmod_key_to_subtype, sizeof (orgmod_key_to_subtype), __FILE__, __LINE__);
 
 
 typedef pair <const char *, const int> TTrnaKey;
@@ -655,7 +655,7 @@ static const TTrnaKey trna_key_to_subtype [] = {
 };
 
 typedef CStaticArrayMap <const char*, const int, PNocase_CStr> TTrnaMap;
-static const TTrnaMap sm_TrnaKeys (trna_key_to_subtype, sizeof (trna_key_to_subtype));
+static const TTrnaMap sm_TrnaKeys (trna_key_to_subtype, sizeof (trna_key_to_subtype), __FILE__, __LINE__);
 
 
 static const char * single_key_list [] = {
@@ -670,7 +670,7 @@ static const char * single_key_list [] = {
 };
 
 typedef CStaticArraySet <const char*, PNocase_CStr> TSingleSet;
-static const TSingleSet sc_SingleKeys (single_key_list, sizeof (single_key_list));
+static const TSingleSet sc_SingleKeys (single_key_list, sizeof (single_key_list), __FILE__, __LINE__);
 
 
 static const char * valid_inf_prefixes [] = {
@@ -688,7 +688,7 @@ static const char * valid_inf_prefixes [] = {
 };
 
 typedef CStaticArraySet <const char*, PNocase_CStr> TValidInfSet;
-static const TValidInfSet sc_InfPrefixes (valid_inf_prefixes, sizeof (valid_inf_prefixes));
+static const TValidInfSet sc_InfPrefixes (valid_inf_prefixes, sizeof (valid_inf_prefixes), __FILE__, __LINE__);
 
 
 // constructor

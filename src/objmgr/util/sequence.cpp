@@ -2712,7 +2712,8 @@ static const TCharPair sc_comp_tbl[32] = {
     TCharPair('y', 'R'),
 };
 typedef CStaticArrayMap<Char, Char> TComplement;
-static const TComplement sc_Complement(sc_comp_tbl, sizeof(sc_comp_tbl));
+static const TComplement sc_Complement(sc_comp_tbl, sizeof(sc_comp_tbl),
+                                       __FILE__, __LINE__);
 static const TComplement::const_iterator comp_end = sc_Complement.end();
 
 

@@ -1006,7 +1006,7 @@ static const string sc_RemarkText[] = {
   "unannotated staff_entry",
   "unannotated staff_review"
 };
-static const CStaticArraySet<string> sc_Remarks(sc_RemarkText, sizeof(sc_RemarkText));
+static const CStaticArraySet<string> sc_Remarks(sc_RemarkText, sizeof(sc_RemarkText), __FILE__, __LINE__);
 
 
 void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)

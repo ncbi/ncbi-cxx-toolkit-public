@@ -299,7 +299,8 @@ static const TSI sc_SatIndex[] = {
     TSI("TRACE_CHGR", TSK(TRDR::eSat_TRACE_CHGR, TRDR::eSubSat_main))
 };
 typedef CStaticArrayMap<const char*, TSK, PNocase_CStr> TSatMap;
-static const TSatMap sc_SatMap(sc_SatIndex, sizeof(sc_SatIndex));
+static const TSatMap sc_SatMap(sc_SatIndex, sizeof(sc_SatIndex),
+                               __FILE__, __LINE__);
 
 
 bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
