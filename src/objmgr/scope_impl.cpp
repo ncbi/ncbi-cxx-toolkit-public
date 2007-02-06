@@ -961,14 +961,15 @@ CScope_Impl::GetNonSharedDS(TPriority priority)
 
 CRef<CDataSource_ScopeInfo>
 CScope_Impl::AddDSBefore(CRef<CDataSource> ds,
-                         CRef<CDataSource_ScopeInfo> ds2)
+                         CRef<CDataSource_ScopeInfo> ds2,
+                         const CTSE_ScopeInfo* replaced_tse)
 {
     TWriteLockGuard guard(m_ConfLock);
     CRef<CDataSource_ScopeInfo> ds_info = x_GetDSInfo(*ds);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         if ( &*it == ds2 ) {
             it.InsertBefore(*ds_info);
-            x_ClearCacheOnNewData();
+            x_ClearCacheOnNewData(replaced_tse);
             return ds_info;
         }
     }
@@ -1355,14 +1356,15 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 
 
 CRef<CDataSource_ScopeInfo>
-CScope_Impl::GetEditDataSource(CDataSource_ScopeInfo& src_ds)
+CScope_Impl::GetEditDataSource(CDataSource_ScopeInfo& src_ds,
+                               const CTSE_ScopeInfo* replaced_tse)
 {
     if ( !src_ds.m_EditDS ) {
         TWriteLockGuard guard(m_ConfLock);
         if ( !src_ds.m_EditDS ) {
             CRef<CDataSource> ds(new CDataSource);
             _ASSERT(ds->CanBeEdited());
-            src_ds.m_EditDS = AddDSBefore(ds, Ref(&src_ds));
+            src_ds.m_EditDS = AddDSBefore(ds, Ref(&src_ds), replaced_tse);
             _ASSERT(src_ds.m_EditDS);
             _ASSERT(src_ds.m_EditDS->CanBeEdited());
         }
@@ -1424,7 +1426,8 @@ CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
     }
     CTSE_ScopeInfo& scope_info = handle.x_GetScopeInfo();
     CRef<CDataSource_ScopeInfo> old_ds(&scope_info.GetDSInfo());
-    CRef<CDataSource_ScopeInfo> new_ds = GetEditDataSource(*old_ds);
+    CRef<CDataSource_ScopeInfo> new_ds =
+        GetEditDataSource(*old_ds, &scope_info);
     // load all missing information if split
     //scope_info.m_TSE_Lock->GetCompleteSeq_entry();
     CRef<CTSE_Info> new_tse(new CTSE_Info(scope_info.m_TSE_Lock));

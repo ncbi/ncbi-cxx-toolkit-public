@@ -351,7 +351,9 @@ private:
     void x_ClearCacheOnRemoveData(void);
     void x_ClearAnnotCache(void);
 
-    CRef<CDataSource_ScopeInfo> GetEditDataSource(CDataSource_ScopeInfo& ds);
+    CRef<CDataSource_ScopeInfo>
+    GetEditDataSource(CDataSource_ScopeInfo& ds,
+                      const CTSE_ScopeInfo* replaced_tse = 0);
 
     CSeq_entry_EditHandle x_AttachEntry(const CBioseq_set_EditHandle& seqset,
                                         CRef<CSeq_entry_Info> entry,
@@ -423,8 +425,10 @@ public:
     CRef<CDataSource_ScopeInfo> AddDS(CRef<CDataSource> ds,
                                       TPriority priority);
     CRef<CDataSource_ScopeInfo> GetNonSharedDS(TPriority priority);
-    CRef<CDataSource_ScopeInfo> AddDSBefore(CRef<CDataSource> ds,
-                                            CRef<CDataSource_ScopeInfo> ds2);
+    CRef<CDataSource_ScopeInfo>
+    AddDSBefore(CRef<CDataSource> ds,
+                CRef<CDataSource_ScopeInfo> ds2,
+                const CTSE_ScopeInfo* replaced_tse = 0);
 
 private:
     // Get bioseq handles for sequences from the given TSE using the filter
