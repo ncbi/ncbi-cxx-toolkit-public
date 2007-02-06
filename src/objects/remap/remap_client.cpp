@@ -64,7 +64,7 @@ void CRemapClient::x_Connect()
     const string kUrl = "http://graceland.ncbi.nlm.nih.gov:6224/"
         "staff/jcherry/remap/remap_server.cgi";
     
-    x_SetStream(new CConn_HttpStream(kUrl));  // should really set timeout
+    x_ConnectURL(kUrl);
 }
 
 
