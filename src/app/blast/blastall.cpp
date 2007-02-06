@@ -121,9 +121,7 @@ int CBlastall::Run(void)
 
     bool db_is_aa = (program == eBlastp || program == eBlastx);
     BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(
-                                   m_ArgDesc->GetDatabase(args),
-                                   db_is_aa ? CSeqDB::eProtein :
-                                              CSeqDB::eNucleotide);
+                                   m_ArgDesc->GetDatabase(args), db_is_aa);
 
     char* error_str = BlastSeqSrcGetInitError(seq_src);
     if (error_str) {
