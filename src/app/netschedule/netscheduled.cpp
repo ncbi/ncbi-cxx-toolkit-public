@@ -51,7 +51,7 @@
 #include <connect/threaded_server.hpp>
 #include <connect/server.hpp>
 #include <connect/ncbi_socket.hpp>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <bdb/bdb_expt.hpp>
@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.2  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.3  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags"
@@ -1051,7 +1051,7 @@ void CNetScheduleHandler::ProcessMsgBatchEnd(BUF buffer)
 
 void CNetScheduleHandler::ProcessCancel()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->Cancel(job_id);
     WriteMsg("OK:");
 }
@@ -1059,7 +1059,7 @@ void CNetScheduleHandler::ProcessCancel()
 
 void CNetScheduleHandler::ProcessForceReschedule()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->ForceReschedule(job_id);
     WriteMsg("OK:");
 }
@@ -1067,7 +1067,7 @@ void CNetScheduleHandler::ProcessForceReschedule()
 
 void CNetScheduleHandler::ProcessDropJob()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->DropJob(job_id);
     WriteMsg("OK:");
 }
@@ -1075,7 +1075,7 @@ void CNetScheduleHandler::ProcessDropJob()
 
 void CNetScheduleHandler::ProcessJobRunTimeout()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->SetJobRunTimeout(job_id, m_JobReq.timeout);
     WriteMsg("OK:");
 }
@@ -1083,7 +1083,7 @@ void CNetScheduleHandler::ProcessJobRunTimeout()
 
 void CNetScheduleHandler::ProcessJobDelayExpiration()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->JobDelayExpiration(job_id, m_JobReq.timeout);
     WriteMsg("OK:");
 }
@@ -1101,7 +1101,7 @@ void CNetScheduleHandler::ProcessStatusSnapshot()
         return;
     }
     ITERATE(CJobStatusTracker::TStatusSummaryMap, it, st_map) {
-        string st_str = CNetScheduleClient::StatusToString(it->first);
+        string st_str = CNetScheduleAPI::StatusToString(it->first);
         st_str.push_back(' ');
         st_str.append(NStr::UIntToString(it->second));
         WriteMsg("OK:", st_str);
@@ -1112,15 +1112,15 @@ void CNetScheduleHandler::ProcessStatusSnapshot()
 
 void CNetScheduleHandler::ProcessStatus()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
 
-    CNetScheduleClient::EJobStatus status = m_Queue->GetStatus(job_id);
+    CNetScheduleAPI::EJobStatus status = m_Queue->GetStatus(job_id);
     char szBuf[kNetScheduleMaxDBDataSize * 2];
     int st = (int) status;
     int ret_code = 0;
 
     switch (status) {
-    case CNetScheduleClient::eDone:
+    case CNetScheduleAPI::eDone:
         {
             if (m_Queue->GetJobDescr(job_id, &ret_code, 
                                      m_JobReq.input,
@@ -1135,14 +1135,14 @@ void CNetScheduleHandler::ProcessStatus()
                 WriteMsg("OK:", szBuf);
                 return;
             } else {
-                st = (int)CNetScheduleClient::eJobNotFound;
+                st = (int)CNetScheduleAPI::eJobNotFound;
             }
         }
     break;
 
-    case CNetScheduleClient::eRunning:
-    case CNetScheduleClient::eReturned:
-    case CNetScheduleClient::ePending:
+    case CNetScheduleAPI::eRunning:
+    case CNetScheduleAPI::eReturned:
+    case CNetScheduleAPI::ePending:
         {
             bool b = m_Queue->GetJobDescr(job_id, 0, 
                                           m_JobReq.input,
@@ -1160,12 +1160,12 @@ void CNetScheduleHandler::ProcessStatus()
                 WriteMsg("OK:", szBuf);
                 return;
             } else {
-                st = (int)CNetScheduleClient::eJobNotFound;
+                st = (int) CNetScheduleAPI::eJobNotFound;
             }
         }
         break;
 
-    case CNetScheduleClient::eFailed:
+    case CNetScheduleAPI::eFailed:
         {
             char err[kNetScheduleMaxDBErrSize];
             bool b = m_Queue->GetJobDescr(job_id, &ret_code, 
@@ -1185,7 +1185,7 @@ void CNetScheduleHandler::ProcessStatus()
                 WriteMsg("OK:", szBuf);
                 return;
             } else {
-                st = (int)CNetScheduleClient::eJobNotFound;
+                st = (int) CNetScheduleAPI::eJobNotFound;
             }
         }
         break;
@@ -1202,7 +1202,7 @@ void CNetScheduleHandler::ProcessStatus()
 
 void CNetScheduleHandler::ProcessGetMessage()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     int ret_code;
     bool b = m_Queue->GetJobDescr(job_id, &ret_code, 
                                   0, 0, 0, m_JobReq.progress_msg);
@@ -1217,7 +1217,7 @@ void CNetScheduleHandler::ProcessGetMessage()
 
 void CNetScheduleHandler::ProcessPutMessage()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
 
     m_Queue->PutProgressMessage(job_id, m_JobReq.progress_msg);
     WriteMsg("OK:");
@@ -1271,7 +1271,7 @@ CNetScheduleHandler::ProcessJobExchange()
 
     unsigned done_job_id;
     if (!m_JobReq.job_key.empty()) {
-        done_job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+        done_job_id = CNetScheduleKey(m_JobReq.job_key).id;
     } else {
         done_job_id = 0;
     }
@@ -1379,7 +1379,7 @@ void CNetScheduleHandler::ProcessQuitSession(void)
 
 void CNetScheduleHandler::ProcessPutFailure()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->JobFailed(job_id, m_JobReq.err_msg, m_JobReq.output,
                        m_JobReq.job_return_code,
                        m_PeerAddr, m_AuthString);
@@ -1389,7 +1389,7 @@ void CNetScheduleHandler::ProcessPutFailure()
 
 void CNetScheduleHandler::ProcessPut()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->PutResult(job_id,
                        m_JobReq.job_return_code, m_JobReq.output);
     WriteMsg("OK:");
@@ -1398,7 +1398,7 @@ void CNetScheduleHandler::ProcessPut()
 
 void CNetScheduleHandler::ProcessReturn()
 {
-    unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+    unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
     m_Queue->ReturnJob(job_id);
     WriteMsg("OK:");
 }
@@ -1429,10 +1429,10 @@ void CNetScheduleHandler::ProcessPrintQueue()
 {
     // TODO this method can not support session, because socket is closed at
     // the end.
-    CNetScheduleClient::EJobStatus 
-        job_status = CNetScheduleClient::StringToStatus(m_JobReq.param1);
+    CNetScheduleAPI::EJobStatus 
+        job_status = CNetScheduleAPI::StringToStatus(m_JobReq.param1);
 
-    if (job_status == CNetScheduleClient::eJobNotFound) {
+    if (job_status == CNetScheduleAPI::eJobNotFound) {
         string err_msg = "Status unknown: " + m_JobReq.param1;
         WriteMsg("ERR:", err_msg);
         return;
@@ -1476,11 +1476,11 @@ void CNetScheduleHandler::ProcessDump()
         m_Queue->PrintAllJobDbStat(ios);
     } else {
         try {
-            unsigned job_id = CNetSchedule_GetJobId(m_JobReq.job_key);
+            unsigned job_id = CNetScheduleKey(m_JobReq.job_key).id;
 
-            CNetScheduleClient::EJobStatus status = m_Queue->GetStatus(job_id);
+            CNetScheduleAPI::EJobStatus status = m_Queue->GetStatus(job_id);
             
-            string st_str = CNetScheduleClient::StatusToString(status);
+            string st_str = CNetScheduleAPI::StatusToString(status);
             ios << "OK:" << "[Job status matrix]:" << st_str;
             ios << "OK:[Job DB]:" << endl;
             m_Queue->PrintJobDbStat(job_id, ios);
@@ -1488,11 +1488,11 @@ void CNetScheduleHandler::ProcessDump()
         catch (CException& ex)
         {
             // dump by status
-            CNetScheduleClient::EJobStatus 
-                job_status = CNetScheduleClient::StringToStatus(
+            CNetScheduleAPI::EJobStatus 
+                job_status = CNetScheduleAPI::StringToStatus(
                     m_JobReq.job_key);
 
-            if (job_status == CNetScheduleClient::eJobNotFound) {
+            if (job_status == CNetScheduleAPI::eJobNotFound) {
                 ios << "ERR:" << "Status unknown: " << m_JobReq.job_key;
                 return;
             }
@@ -1537,14 +1537,14 @@ void CNetScheduleHandler::ProcessStatistics()
     load_str += "/sec";
     WriteMsg("OK:", load_str);
 
-    for (int i = CNetScheduleClient::ePending; 
-         i < CNetScheduleClient::eLastStatus; ++i) {
-        CNetScheduleClient::EJobStatus st = 
-                        (CNetScheduleClient::EJobStatus) i;
+    for (int i = CNetScheduleAPI::ePending; 
+         i < CNetScheduleAPI::eLastStatus; ++i) {
+        CNetScheduleAPI::EJobStatus st = 
+                        (CNetScheduleAPI::EJobStatus) i;
         unsigned count = m_Queue->CountStatus(st);
 
 
-        string st_str = CNetScheduleClient::StatusToString(st);
+        string st_str = CNetScheduleAPI::StatusToString(st);
         st_str += ": ";
         st_str += NStr::UIntToString(count);
 

@@ -331,9 +331,10 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     typedef vector<unsigned char> TBuffer;
     void SetTagDbTransaction(CBDB_Transaction* trans);
     void AddTags(TNSTagList& tags, unsigned job_id);
-    void SLockedQueue::ReadTag(const string& key,
-                               const string& val,
-                               TBuffer& buf);
+    void ReadTag(const string& key, const string& val,
+                 TBuffer* buf);
+    void ReadTags(const string& key, TNSBitVector* bv);
+
 
     void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
     void FlushTags(void);

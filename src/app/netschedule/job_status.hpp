@@ -38,10 +38,9 @@
 ///
 /// @internal
 
-#include <util/bitset/ncbi_bitset.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 #include <map>
 
@@ -60,13 +59,13 @@ public:
     typedef vector<TNSBitVector*> TStatusStorage;
 
     /// Status to number of jobs map
-    typedef map<CNetScheduleClient::EJobStatus, unsigned> TStatusSummaryMap;
+    typedef map<CNetScheduleAPI::EJobStatus, unsigned> TStatusSummaryMap;
 
 public:
     CJobStatusTracker();
     ~CJobStatusTracker();
 
-    CNetScheduleClient::EJobStatus 
+    CNetScheduleAPI::EJobStatus 
         GetStatus(unsigned int job_id) const;
 
     /// Set job status. (Controls status change logic)
@@ -85,9 +84,9 @@ public:
     /// @return old status. Job may be already canceled (or failed)
     /// in this case status change is ignored
     /// 
-    CNetScheduleClient::EJobStatus
+    CNetScheduleAPI::EJobStatus
     ChangeStatus(unsigned int                   job_id, 
-                 CNetScheduleClient::EJobStatus status,
+                 CNetScheduleAPI::EJobStatus status,
                  bool*                          updated = NULL);
 
     /// Add closed interval of ids to pending status
@@ -131,7 +130,7 @@ public:
     /// Return borrowed job to the specified status
     /// (pending or running)
     void ReturnBorrowedJob(unsigned int  job_id, 
-                          CNetScheduleClient::EJobStatus status);
+                          CNetScheduleAPI::EJobStatus status);
 
     /// TRUE if we have pending jobs
     bool AnyPending() const;
@@ -143,14 +142,14 @@ public:
     unsigned int GetFirstDone() const;
 
     /// Get first job in the specified status
-    unsigned int GetFirst(CNetScheduleClient::EJobStatus  status) const;
+    unsigned int GetFirst(CNetScheduleAPI::EJobStatus  status) const;
 
     /// Set job status without logic control.
     /// @param status
     ///     Status to set (all other statuses are cleared)
     ///     Non existing status code clears all statuses
     void SetStatus(unsigned int                    job_id, 
-                   CNetScheduleClient::EJobStatus  status);
+                   CNetScheduleAPI::EJobStatus  status);
 
     // Erase the job
     void Erase(unsigned int job_id);
@@ -158,11 +157,11 @@ public:
     /// Set job status without any protection 
     void SetExactStatusNoLock(
         unsigned int                         job_id, 
-        CNetScheduleClient::EJobStatus       status,
+        CNetScheduleAPI::EJobStatus       status,
                               bool           set_clear);
 
     /// Return number of jobs in specified status
-    unsigned CountStatus(CNetScheduleClient::EJobStatus status) const;
+    unsigned CountStatus(CNetScheduleAPI::EJobStatus status) const;
 
     /// Count all status vectors using candidate_set(optional) as a mask 
     /// (AND_COUNT)
@@ -172,18 +171,18 @@ public:
     /// Count all jobs in any status
     unsigned Count(void);
 
-    void StatusStatistics(CNetScheduleClient::EJobStatus status,
+    void StatusStatistics(CNetScheduleAPI::EJobStatus status,
                           TNSBitVector::statistics*      st) const;
 
     /// Specified status is OR-ed with the target vector
-    void StatusSnapshot(CNetScheduleClient::EJobStatus status,
+    void StatusSnapshot(CNetScheduleAPI::EJobStatus status,
                         TNSBitVector*                  bv) const;
 
     static
-    bool IsCancelCode(CNetScheduleClient::EJobStatus status)
+    bool IsCancelCode(CNetScheduleAPI::EJobStatus status)
     {
-        return (status == CNetScheduleClient::eCanceled) ||
-               (status == CNetScheduleClient::eFailed);
+        return (status == CNetScheduleAPI::eCanceled) ||
+               (status == CNetScheduleAPI::eFailed);
     }
 
     /// Clear status storage
@@ -201,35 +200,35 @@ public:
 
 protected:
 
-    CNetScheduleClient::EJobStatus 
+    CNetScheduleAPI::EJobStatus 
         GetStatusNoLock(unsigned int job_id) const;
 
     /// Check if job is in specified status
     /// @return -1 if no, status value otherwise
-    CNetScheduleClient::EJobStatus 
+    CNetScheduleAPI::EJobStatus 
     IsStatusNoLock(unsigned int job_id, 
-        CNetScheduleClient::EJobStatus st1,
-        CNetScheduleClient::EJobStatus st2 = CNetScheduleClient::eJobNotFound,
-        CNetScheduleClient::EJobStatus st3 = CNetScheduleClient::eJobNotFound
+        CNetScheduleAPI::EJobStatus st1,
+        CNetScheduleAPI::EJobStatus st2 = CNetScheduleAPI::eJobNotFound,
+        CNetScheduleAPI::EJobStatus st3 = CNetScheduleAPI::eJobNotFound
         ) const;
 
     /// Check if job is in specified status and switch to new status
     /// @return TRUE if switched
     bool
     SwitchStatusNoLock(unsigned int job_id,
-        CNetScheduleClient::EJobStatus new_st,
-        CNetScheduleClient::EJobStatus st1,
-        CNetScheduleClient::EJobStatus st2 = CNetScheduleClient::eJobNotFound,
-        CNetScheduleClient::EJobStatus st3 = CNetScheduleClient::eJobNotFound
+        CNetScheduleAPI::EJobStatus new_st,
+        CNetScheduleAPI::EJobStatus st1,
+        CNetScheduleAPI::EJobStatus st2 = CNetScheduleAPI::eJobNotFound,
+        CNetScheduleAPI::EJobStatus st3 = CNetScheduleAPI::eJobNotFound
         );
 
 
     void ReportInvalidStatus(unsigned int    job_id, 
-             CNetScheduleClient::EJobStatus  status,
-             CNetScheduleClient::EJobStatus  old_status);
+             CNetScheduleAPI::EJobStatus  status,
+             CNetScheduleAPI::EJobStatus  old_status);
     void x_SetClearStatusNoLock(unsigned int job_id,
-             CNetScheduleClient::EJobStatus  status,
-             CNetScheduleClient::EJobStatus  old_status);
+             CNetScheduleAPI::EJobStatus  status,
+             CNetScheduleAPI::EJobStatus  old_status);
 
     void Returned2PendingNoLock();
     unsigned int GetPendingJobNoLock();
@@ -258,7 +257,7 @@ class CNetSchedule_JS_BorrowGuard
 public:
     CNetSchedule_JS_BorrowGuard(CJobStatusTracker& strack,
                                 unsigned int       job_id,
-        CNetScheduleClient::EJobStatus  old_status = CNetScheduleClient::ePending)
+        CNetScheduleAPI::EJobStatus  old_status = CNetScheduleAPI::ePending)
     : m_Tracker(strack),
       m_OldStatus(old_status),
        m_JobId(job_id)
@@ -273,7 +272,7 @@ public:
         }
     }
     
-    void ReturnToStatus(CNetScheduleClient::EJobStatus status)
+    void ReturnToStatus(CNetScheduleAPI::EJobStatus status)
     {
         if (m_JobId) {
             m_Tracker.ReturnBorrowedJob(m_JobId, status);
@@ -285,9 +284,9 @@ private:
     CNetSchedule_JS_BorrowGuard(const CNetSchedule_JS_BorrowGuard&);
     CNetSchedule_JS_BorrowGuard& operator=(const CNetSchedule_JS_BorrowGuard&);
 private:
-    CJobStatusTracker&              m_Tracker;
-    CNetScheduleClient::EJobStatus  m_OldStatus;
-    unsigned int                    m_JobId;
+    CJobStatusTracker&           m_Tracker;
+    CNetScheduleAPI::EJobStatus  m_OldStatus;
+    unsigned int                 m_JobId;
 };
 
 /// @internal
@@ -295,10 +294,10 @@ class CNetSchedule_JS_Guard
 {
 public:
     CNetSchedule_JS_Guard(
-        CJobStatusTracker&             strack,
-        unsigned int                   job_id,
-        CNetScheduleClient::EJobStatus status,
-        bool*                          updated = 0)
+        CJobStatusTracker&          strack,
+        unsigned int                job_id,
+        CNetScheduleAPI::EJobStatus status,
+        bool*                       updated = 0)
      : m_Tracker(strack),
        m_OldStatus(strack.ChangeStatus(job_id, status, updated)),
        m_JobId(job_id)
@@ -311,15 +310,15 @@ public:
         // roll back to the old status
         if (m_OldStatus >= -1) {
             m_Tracker.SetStatus(m_JobId, 
-              (CNetScheduleClient::EJobStatus)m_OldStatus);
+              (CNetScheduleAPI::EJobStatus) m_OldStatus);
         } 
     }
 
     void Commit() { m_OldStatus = -2; }
 
-    CNetScheduleClient::EJobStatus GetOldStatus() const
+    CNetScheduleAPI::EJobStatus GetOldStatus() const
     {
-        return (CNetScheduleClient::EJobStatus) m_OldStatus;
+        return (CNetScheduleAPI::EJobStatus) m_OldStatus;
     }
 
 

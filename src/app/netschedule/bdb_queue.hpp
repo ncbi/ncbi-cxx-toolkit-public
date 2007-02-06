@@ -44,7 +44,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbicntr.hpp>
 
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
 #include "notif_thread.hpp"
@@ -157,10 +157,10 @@ public:
                      char*        output,
                      char*        err_msg,
                      char*        progress_msg,
-                     CNetScheduleClient::EJobStatus expected_status 
-                                        = CNetScheduleClient::eJobNotFound);
+                     CNetScheduleAPI::EJobStatus expected_status 
+                                        = CNetScheduleAPI::eJobNotFound);
 
-    CNetScheduleClient::EJobStatus 
+    CNetScheduleAPI::EJobStatus 
     GetStatus(unsigned int job_id) const;
 
     /// count status snapshot for affinity token
@@ -189,7 +189,7 @@ public:
     /// @return
     ///    Number of deleted jobs
     unsigned CheckDeleteBatch(unsigned batch_size,
-                              CNetScheduleClient::EJobStatus status);
+                              CNetScheduleAPI::EJobStatus status);
     /// Actually delete batch jobs from jobs-to-delete vector
     /// @return
     ///    Number of deleted jobs
@@ -239,9 +239,9 @@ public:
     /// 0 means job ended in any way.
     time_t CheckExecutionTimeout(unsigned job_id, time_t curr_time);
 
-    unsigned CountStatus(CNetScheduleClient::EJobStatus) const;
+    unsigned CountStatus(CNetScheduleAPI::EJobStatus) const;
 
-    void StatusStatistics(CNetScheduleClient::EJobStatus status,
+    void StatusStatistics(CNetScheduleAPI::EJobStatus status,
                           TNSBitVector::statistics* st) const;
 
     /// Count database records
@@ -252,7 +252,7 @@ public:
     void PrintSubmHosts(CNcbiOstream & out) const;
     void PrintWNodeHosts(CNcbiOstream & out) const;
     void PrintQueue(CNcbiOstream& out, 
-                    CNetScheduleClient::EJobStatus job_status,
+                    CNetScheduleAPI::EJobStatus job_status,
                     const string& host,
                     unsigned      port);
 
@@ -261,8 +261,8 @@ public:
     /// Queue dump
     void PrintJobDbStat(unsigned job_id, 
                         CNcbiOstream & out,
-                        CNetScheduleClient::EJobStatus status 
-                                    = CNetScheduleClient::eJobNotFound);
+                        CNetScheduleAPI::EJobStatus status 
+                                    = CNetScheduleAPI::eJobNotFound);
     /// Dump all job records
     void PrintAllJobDbStat(CNcbiOstream & out);
 

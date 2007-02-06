@@ -35,7 +35,7 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/version.hpp>
 #include <corelib/ncbireg.hpp>
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
 
 #include <db.h>
@@ -574,10 +574,10 @@ void CQueueDataBase::MountQueue(const string& qname,
             queue.m_LastId.Set(job_id);
         }
         queue.status_tracker.SetExactStatusNoLock(job_id, 
-                      (CNetScheduleClient::EJobStatus) status, 
+                      (CNetScheduleAPI::EJobStatus) status, 
                       true);
 
-        if (status == (int) CNetScheduleClient::eRunning && 
+        if (status == (int) CNetScheduleAPI::eRunning && 
             queue.run_time_line) {
             // Add object to the first available slot
             // it is going to be rescheduled or dropped
@@ -906,12 +906,12 @@ void CQueueDataBase::Purge(void)
     // and expiration timeouts
     unsigned n_queue_limit = 2000; // TODO: determine this based on load
 
-    CNetScheduleClient::EJobStatus statuses_to_delete_from[] = {
-        CNetScheduleClient::eFailed, CNetScheduleClient::eCanceled,
-        CNetScheduleClient::eDone, CNetScheduleClient::ePending
+    CNetScheduleAPI::EJobStatus statuses_to_delete_from[] = {
+        CNetScheduleAPI::eFailed, CNetScheduleAPI::eCanceled,
+        CNetScheduleAPI::eDone, CNetScheduleAPI::ePending
     };
     const int kStatusesSize = sizeof(statuses_to_delete_from) /
-                              sizeof(CNetScheduleClient::EJobStatus);
+                              sizeof(CNetScheduleAPI::EJobStatus);
 
     vector<string> queues_to_delete;
     ITERATE(CQueueCollection, it, m_QueueCollection) {
@@ -925,7 +925,7 @@ void CQueueDataBase::Purge(void)
             // stop if all statuses have less than batch_size jobs to delete
             stop_flag = true;
             for (int n = 0; n < kStatusesSize; ++n) {
-                CNetScheduleClient::EJobStatus s = statuses_to_delete_from[n];
+                CNetScheduleAPI::EJobStatus s = statuses_to_delete_from[n];
                 unsigned del_rec = (*it).CheckDeleteBatch(batch_size, s);
                 stop_flag = stop_flag && (del_rec < batch_size);
                 queue_del_rec += del_rec;
@@ -1202,9 +1202,9 @@ void CQueue::x_PrintJobDbStat(SQueueDB&      db,
                               bool           fflag)
 {
     out << fsp << NS_PFNAME("id: ") << (unsigned) db.id << fsp;
-    CNetScheduleClient::EJobStatus status = 
-        (CNetScheduleClient::EJobStatus)(int)db.status;
-    out << NS_PFNAME("status: ") << CNetScheduleClient::StatusToString(status) 
+    CNetScheduleAPI::EJobStatus status = 
+        (CNetScheduleAPI::EJobStatus)(int)db.status;
+    out << NS_PFNAME("status: ") << CNetScheduleAPI::StatusToString(status) 
         << fsp;
 
     NS_PRINT_TIME(NS_PFNAME("time_submit: "), db.time_submit);
@@ -1276,9 +1276,9 @@ CQueue::x_PrintShortJobDbStat(SQueueDB&     db,
     sprintf(buf, NETSCHEDULE_JOBMASK, 
                  (unsigned)db.id, host.c_str(), port);
     out << buf << fsp;
-    CNetScheduleClient::EJobStatus status = 
-        (CNetScheduleClient::EJobStatus)(int)db.status;
-    out << CNetScheduleClient::StatusToString(status) << fsp;
+    CNetScheduleAPI::EJobStatus status = 
+        (CNetScheduleAPI::EJobStatus)(int)db.status;
+    out << CNetScheduleAPI::StatusToString(status) << fsp;
 
     out << "'" << (string) db.input    << "'" << fsp;
     out << "'" << (string) db.output   << "'" << fsp;
@@ -1289,14 +1289,14 @@ CQueue::x_PrintShortJobDbStat(SQueueDB&     db,
 
 
 void 
-CQueue::PrintJobDbStat(unsigned                       job_id, 
-                       CNcbiOstream&                  out,
-                       CNetScheduleClient::EJobStatus status)
+CQueue::PrintJobDbStat(unsigned                    job_id, 
+                       CNcbiOstream&               out,
+                       CNetScheduleAPI::EJobStatus status)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
     SQueueDB& db = q->db;
-    if (status == CNetScheduleClient::eJobNotFound) {
+    if (status == CNetScheduleAPI::eJobNotFound) {
         CFastMutexGuard guard(q->lock);
         db.SetTransaction(0);
         db.id = job_id;
@@ -1410,10 +1410,10 @@ void CQueue::PrintStat(CNcbiOstream& out)
 }
 
 
-void CQueue::PrintQueue(CNcbiOstream&                  out, 
-                        CNetScheduleClient::EJobStatus job_status,
-                        const string&                  host,
-                        unsigned                       port)
+void CQueue::PrintQueue(CNcbiOstream&               out, 
+                        CNetScheduleAPI::EJobStatus job_status,
+                        const string&               host,
+                        unsigned                    port)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
@@ -1456,15 +1456,34 @@ private:
 
 void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
 {
+    //NcbiCout << "Key: " << key << " Value: " << val << NcbiEndl;
     CQueryFunctionBase::TArgVector args;
     this->MakeArgVector(qnode, args);
     x_CheckArgs(args);
     const string& key = args[0]->GetValue().GetStrValue();
     const string& val = args[1]->GetValue().GetStrValue();
-    //NcbiCout << "Key: " << key << " Value: " << val << NcbiEndl;
-    TBuffer* buf = new TBuffer;
-    m_Queue->ReadTag(key, val, *buf);
-    this->MakeContainer(qnode)->SetBuffer(buf);
+    if (key == "status") {
+        // special case for status
+        CNetScheduleAPI::EJobStatus status =
+            CNetScheduleAPI::StringToStatus(val);
+        if (status == CNetScheduleAPI::eJobNotFound)
+            NCBI_THROW(CNetScheduleException,
+                eQuerySyntaxError, string("Unknown status: ") + val);
+        auto_ptr<TNSBitVector> bv(new TNSBitVector);
+        m_Queue->status_tracker.StatusSnapshot(status, bv.get());
+        this->MakeContainer(qnode)->SetBV(bv.release());
+    } else {
+        if (val == "*") {
+            // wildcard
+            auto_ptr<TNSBitVector> bv(new TNSBitVector);
+            m_Queue->ReadTags(key, bv.get());
+            this->MakeContainer(qnode)->SetBV(bv.release());
+        } else {
+            auto_ptr<TBuffer> buf(new TBuffer);
+            m_Queue->ReadTag(key, val, buf.get());
+            this->MakeContainer(qnode)->SetBuffer(buf.release());
+        }
+    }
 }
 
 void CQueryFunctionEQ::x_CheckArgs(const CQueryFunctionBase::TArgVector& args)
@@ -1509,6 +1528,10 @@ string CQueue::ExecQuery(const string& query, const string& action,
         new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_SUB));
     qexec.AddFunc(CQueryParseNode::eXor,
         new CQueryFunction_BV_Logic<TNSBitVector>(bm::set_XOR));
+    qexec.AddFunc(CQueryParseNode::eIn,
+        new CQueryFunction_BV_In_Or<TNSBitVector>());
+    qexec.AddFunc(CQueryParseNode::eNot,
+        new CQueryFunction_BV_Not<TNSBitVector>());
 
     qexec.AddFunc(CQueryParseNode::eEQ,
         new CQueryFunctionEQ(q));
@@ -1537,6 +1560,10 @@ string CQueue::ExecQuery(const string& query, const string& action,
 
     if (action == "COUNT") {
         return NStr::IntToString(bv->count());
+    } else if (action == "DROP") {
+    } else if (action == "FRES") {
+    } else if (action == "SLCT") {
+    } else if (action == "CNCL") {
     }
 
     return "";
@@ -1600,7 +1627,7 @@ CQueue::Submit(SNS_SubmitRecord* rec,
 
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    job_id,
-                                   CNetScheduleClient::ePending);
+                                   CNetScheduleAPI::ePending);
     rec->job_id = job_id;
     SQueueDB& db = q->db;
     CBDB_Transaction trans(*db.GetEnv(), 
@@ -1748,7 +1775,7 @@ CQueue::x_AssignSubmitRec(SQueueDB&     db,
                           const char*   progress_msg)
 {
     db.id = rec->job_id;
-    db.status = (int) CNetScheduleClient::ePending;
+    db.status = (int) CNetScheduleAPI::ePending;
 
     db.time_submit = time_submit;
     db.time_run = 0;
@@ -1785,7 +1812,7 @@ CQueue::x_AssignSubmitRec(SQueueDB&     db,
 
 
 unsigned 
-CQueue::CountStatus(CNetScheduleClient::EJobStatus st) const
+CQueue::CountStatus(CNetScheduleAPI::EJobStatus st) const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     return q->status_tracker.CountStatus(st);
@@ -1794,7 +1821,7 @@ CQueue::CountStatus(CNetScheduleClient::EJobStatus st) const
 
 void 
 CQueue::StatusStatistics(
-    CNetScheduleClient::EJobStatus status,
+    CNetScheduleAPI::EJobStatus status,
     TNSBitVector::statistics* st) const
 {
     CRef<SLockedQueue> q(x_GetLQueue());
@@ -1818,7 +1845,7 @@ void CQueue::ForceReschedule(unsigned int job_id)
         db.id = job_id;
         if (db.Fetch() == eBDB_Ok) {
             //int status = db.status;
-            db.status = (int) CNetScheduleClient::ePending;
+            db.status = (int) CNetScheduleAPI::ePending;
             db.worker_node5 = 0; 
 
             unsigned run_counter = db.run_counter;
@@ -1848,8 +1875,8 @@ void CQueue::Cancel(unsigned int job_id)
 
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    job_id,
-                                   CNetScheduleClient::eCanceled);
-    CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
+                                   CNetScheduleAPI::eCanceled);
+    CNetScheduleAPI::EJobStatus st = js_guard.GetOldStatus();
     if (q->status_tracker.IsCancelCode(st)) {
         js_guard.Commit();
         return;
@@ -1867,8 +1894,8 @@ void CQueue::Cancel(unsigned int job_id)
         db.id = job_id;
         if (db.Fetch() == eBDB_Ok) {
             int status = db.status;
-            if (status < (int) CNetScheduleClient::eCanceled) {
-                db.status = (int) CNetScheduleClient::eCanceled;
+            if (status < (int) CNetScheduleAPI::eCanceled) {
+                db.status = (int) CNetScheduleAPI::eCanceled;
                 db.time_done = time(0);
                 
                 db.SetTransaction(&trans);
@@ -1910,11 +1937,11 @@ void CQueue::PutResult(unsigned int  job_id,
 
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    job_id,
-                                   CNetScheduleClient::eDone);
+                                   CNetScheduleAPI::eDone);
     if (q->delete_done) {
         q->Erase(job_id);
     }
-    CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
+    CNetScheduleAPI::EJobStatus st = js_guard.GetOldStatus();
     if (q->status_tracker.IsCancelCode(st)) {
         js_guard.Commit();
         return;
@@ -2047,7 +2074,7 @@ CQueue::x_UpdateDB_PutResultNoLock(SQueueDB&            db,
     if (q->delete_done) {
         cur.Delete();
     } else {
-        db.status = (int) CNetScheduleClient::eDone;
+        db.status = (int) CNetScheduleAPI::eDone;
         db.ret_code = ret_code;
         db.output = output;
         db.time_done = curr;
@@ -2124,7 +2151,7 @@ CQueue::PutResultGetJob(unsigned int   done_job_id,
     bool need_update;
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    done_job_id,
-                                   CNetScheduleClient::eDone,
+                                   CNetScheduleAPI::eDone,
                                    &need_update);
     // This is a HACK - if js_guard is not commited, it will rollback
     // to previous state, so it is safe to change status after the guard.
@@ -2194,7 +2221,7 @@ repeat_transaction:
                 switch (upd_status) {
                 case eGetJobUpdate_JobFailed:
                     q->status_tracker.ChangeStatus(*job_id, 
-                                                   CNetScheduleClient::eFailed);
+                                                   CNetScheduleAPI::eFailed);
                     *job_id = 0;
                     break;
                 case eGetJobUpdate_JobStopped:
@@ -2346,7 +2373,7 @@ void CQueue::JobFailed(unsigned int  job_id,
     // disturbing from this state.
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    job_id,
-                                   CNetScheduleClient::eFailed);
+                                   CNetScheduleAPI::eFailed);
 
     SQueueDB& db = q->db;
     CBDB_Transaction trans(*db.GetEnv(), 
@@ -2385,13 +2412,13 @@ void CQueue::JobFailed(unsigned int  job_id,
             // Pending status is not a bug here, returned and pending
             // has the same meaning, but returned jobs are getting delayed
             // for a little while (eReturned status)
-            db.status = (int) CNetScheduleClient::ePending;
+            db.status = (int) CNetScheduleAPI::ePending;
             // We can do this because js_guard record only old state and
             // on Commit just releases job.
             q->status_tracker.SetStatus(job_id,
-                CNetScheduleClient::eReturned);
+                CNetScheduleAPI::eReturned);
         } else {
-            db.status = (int) CNetScheduleClient::eFailed;
+            db.status = (int) CNetScheduleAPI::eFailed;
         }
 
         // We don't need to lock affinity map anymore, so to reduce locking
@@ -2433,7 +2460,7 @@ void CQueue::JobFailed(unsigned int  job_id,
         msg += err_msg;
         msg += " output=";
         msg += output;
-        if (db.status == (int) CNetScheduleClient::ePending)
+        if (db.status == (int) CNetScheduleAPI::ePending)
             msg += " rescheduled";
         q->monitor.SendString(msg);
     }
@@ -2444,8 +2471,8 @@ void CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
-    CNetScheduleClient::EJobStatus st = GetStatus(job_id);
-    if (st != CNetScheduleClient::eRunning) {
+    CNetScheduleAPI::EJobStatus st = GetStatus(job_id);
+    if (st != CNetScheduleAPI::eRunning) {
         return;
     }
     SQueueDB& db = q->db;
@@ -2521,8 +2548,8 @@ void CQueue::JobDelayExpiration(unsigned job_id, unsigned tm)
     unsigned time_run;
     unsigned old_run_timeout;
 
-    CNetScheduleClient::EJobStatus st = GetStatus(job_id);
-    if (st != CNetScheduleClient::eRunning) {
+    CNetScheduleAPI::EJobStatus st = GetStatus(job_id);
+    if (st != CNetScheduleAPI::eRunning) {
         return;
     }
     SQueueDB& db = q->db;
@@ -2615,12 +2642,12 @@ void CQueue::ReturnJob(unsigned int job_id)
 
     CNetSchedule_JS_Guard js_guard(q->status_tracker, 
                                    job_id,
-                                   CNetScheduleClient::eReturned);
-    CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
+                                   CNetScheduleAPI::eReturned);
+    CNetScheduleAPI::EJobStatus st = js_guard.GetOldStatus();
     // if canceled or already returned or done
     if (q->status_tracker.IsCancelCode(st) || 
-        (st == CNetScheduleClient::eReturned) || 
-        (st == CNetScheduleClient::eDone)) {
+        (st == CNetScheduleAPI::eReturned) || 
+        (st == CNetScheduleAPI::eDone)) {
         js_guard.Commit();
         return;
     }
@@ -2640,7 +2667,7 @@ void CQueue::ReturnJob(unsigned int job_id)
             // Pending status is not a bug here, returned and pending
             // has the same meaning, but returned jobs are getting delayed
             // for a little while (eReturned status)
-            db.status = (int) CNetScheduleClient::ePending;
+            db.status = (int) CNetScheduleAPI::ePending;
             unsigned run_counter = db.run_counter;
             if (run_counter) {
                 db.run_counter = --run_counter;
@@ -2693,7 +2720,7 @@ void CQueue::x_GetJobLB(unsigned int   worker_node,
     }
     CNetSchedule_JS_BorrowGuard bguard(q->status_tracker, 
                                        *job_id,
-                                       CNetScheduleClient::ePending);
+                                       CNetScheduleAPI::ePending);
 
     time_t curr = time(0);
     unsigned lb_stall_time = 0;
@@ -2772,15 +2799,15 @@ fetch_db:
             *job_id = 0;
             return;
         }
-        CNetScheduleClient::EJobStatus status = 
-            (CNetScheduleClient::EJobStatus)(int)db.status;
+        CNetScheduleAPI::EJobStatus status = 
+            (CNetScheduleAPI::EJobStatus)(int)db.status;
 
         // internal integrity check
-        if (!(status == CNetScheduleClient::ePending ||
-              status == CNetScheduleClient::eReturned)
+        if (!(status == CNetScheduleAPI::ePending ||
+              status == CNetScheduleAPI::eReturned)
             ) {
             if (q->status_tracker.IsCancelCode(
-                (CNetScheduleClient::EJobStatus) status)) {
+                (CNetScheduleAPI::EJobStatus) status)) {
                 // this job has been canceled while i'm fetching
                 *job_id = 0;
                 return;
@@ -2789,7 +2816,7 @@ fetch_db:
                             << " job = " << *job_id
                             << " status = " << status
                             << " expected status = "
-                            << (int)CNetScheduleClient::ePending);
+                            << (int)CNetScheduleAPI::ePending);
             *job_id = 0;
             return;
         }
@@ -2813,10 +2840,10 @@ fetch_db:
             *job_id = 0; 
             db.time_run = 0;
             db.time_done = curr;
-            db.status = (int) CNetScheduleClient::eFailed;
+            db.status = (int) CNetScheduleAPI::eFailed;
             db.err_msg = "Job expired and cannot be scheduled.";
 
-            bguard.ReturnToStatus(CNetScheduleClient::eFailed);
+            bguard.ReturnToStatus(CNetScheduleAPI::eFailed);
 
             if (q->monitor.IsMonitorActive()) {
                 CTime tmp_t(CTime::eCurrent);
@@ -2898,7 +2925,7 @@ fetch_db:
 grant_job:
         // execution granted, update job record information
         if (*job_id) {
-            db.status = (int) CNetScheduleClient::eRunning;
+            db.status = (int) CNetScheduleAPI::eRunning;
             db.time_run = curr;
             db.run_timeout = 0;
             db.run_counter = ++run_counter;
@@ -2921,9 +2948,9 @@ grant_job:
                 break;
             default:
 
-                bguard.ReturnToStatus(CNetScheduleClient::eFailed);
+                bguard.ReturnToStatus(CNetScheduleAPI::eFailed);
                 ERR_POST(Error << "Too many run attempts. job=" << *job_id);
-                db.status = (int) CNetScheduleClient::eFailed;
+                db.status = (int) CNetScheduleAPI::eFailed;
                 db.err_msg = "Too many run attempts.";
                 db.time_done = curr;
                 db.run_counter = --run_counter;
@@ -2953,7 +2980,7 @@ grant_job:
         *job_id = 0;
         throw;
     }
-    bguard.ReturnToStatus(CNetScheduleClient::eRunning);
+    bguard.ReturnToStatus(CNetScheduleAPI::eRunning);
 
     if (q->monitor.IsMonitorActive() && *job_id) {
         CTime tmp_t(CTime::eCurrent);
@@ -3123,7 +3150,7 @@ get_job_id:
         switch (upd_status) {
         case eGetJobUpdate_JobFailed:
             q->status_tracker.ChangeStatus(*job_id,
-                                           CNetScheduleClient::eFailed);
+                                           CNetScheduleAPI::eFailed);
             *job_id = 0;
             break;
         case eGetJobUpdate_JobStopped:
@@ -3153,7 +3180,7 @@ get_job_id:
     } 
     catch (exception&)
     {
-        q->status_tracker.ChangeStatus(*job_id, CNetScheduleClient::ePending);
+        q->status_tracker.ChangeStatus(*job_id, CNetScheduleAPI::ePending);
         *job_id = 0;
         throw;
     }
@@ -3205,11 +3232,11 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
         *aff_id = db.aff_id;
 
         // internal integrity check
-        if (!(status == (int)CNetScheduleClient::ePending ||
-              status == (int)CNetScheduleClient::eReturned)
+        if (!(status == (int)CNetScheduleAPI::ePending ||
+              status == (int)CNetScheduleAPI::eReturned)
             ) {
             if (q->status_tracker.IsCancelCode(
-                (CNetScheduleClient::EJobStatus) status)) {
+                (CNetScheduleAPI::EJobStatus) status)) {
                 // this job has been canceled while i'm fetching
                 return eGetJobUpdate_JobStopped;
             }
@@ -3218,7 +3245,7 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
                 << " job = "     << job_id
                 << " status = "  << status
                 << " expected status = "
-                << (int)CNetScheduleClient::ePending);
+                << (int)CNetScheduleAPI::ePending);
             return eGetJobUpdate_JobStopped;
         }
 
@@ -3228,7 +3255,7 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
         unsigned run_counter = db.run_counter;
         *job_mask = db.mask;
 
-        db.status = (int) CNetScheduleClient::eRunning;
+        db.status = (int) CNetScheduleAPI::eRunning;
         db.time_run = curr;
         db.run_timeout = 0;
         db.run_counter = ++run_counter;
@@ -3245,10 +3272,10 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
             db.time_run = 0;
             db.time_done = curr;
             db.run_counter = --run_counter;
-            db.status = (int) CNetScheduleClient::eFailed;
+            db.status = (int) CNetScheduleAPI::eFailed;
             db.err_msg = "Job expired and cannot be scheduled.";
             q->status_tracker.ChangeStatus(job_id, 
-                                           CNetScheduleClient::eFailed);
+                                           CNetScheduleAPI::eFailed);
 
             cur.Update();
 
@@ -3281,9 +3308,9 @@ CQueue::x_UpdateDB_GetJobNoLock(SQueueDB&            db,
                 break;
             default:
                 q->status_tracker.ChangeStatus(job_id, 
-                                               CNetScheduleClient::eFailed);
+                                               CNetScheduleAPI::eFailed);
                 ERR_POST(Error << "Too many run attempts. job=" << job_id);
-                db.status = (int) CNetScheduleClient::eFailed;
+                db.status = (int) CNetScheduleAPI::eFailed;
                 db.err_msg = "Too many run attempts.";
                 db.time_done = curr;
                 db.run_counter = --run_counter;
@@ -3324,7 +3351,7 @@ CQueue::GetJobDescr(unsigned int job_id,
                     char*        output,
                     char*        err_msg,
                     char*        progress_msg,
-                    CNetScheduleClient::EJobStatus expected_status)
+                    CNetScheduleAPI::EJobStatus expected_status)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
 
@@ -3337,15 +3364,15 @@ CQueue::GetJobDescr(unsigned int job_id,
 
         db.id = job_id;
         if (db.Fetch() == eBDB_Ok) {
-            if (expected_status != CNetScheduleClient::eJobNotFound) {
-                CNetScheduleClient::EJobStatus status =
-                    (CNetScheduleClient::EJobStatus)(int)db.status;
+            if (expected_status != CNetScheduleAPI::eJobNotFound) {
+                CNetScheduleAPI::EJobStatus status =
+                    (CNetScheduleAPI::EJobStatus)(int)db.status;
                 if ((status != expected_status) 
                     // The 'Retuned' status does not get saved into db
                     // because it is temporary. (optimization).
                     // this condition reflects that logically Pending == Returned
-                    && !(status ==  CNetScheduleClient::ePending 
-                         && expected_status == CNetScheduleClient::eReturned)) {
+                    && !(status ==  CNetScheduleAPI::ePending 
+                         && expected_status == CNetScheduleAPI::eReturned)) {
                     goto wait_sleep;
                 }
             }
@@ -3377,7 +3404,7 @@ CQueue::GetJobDescr(unsigned int job_id,
     return false; // job not found
 }
 
-CNetScheduleClient::EJobStatus 
+CNetScheduleAPI::EJobStatus 
 CQueue::GetStatus(unsigned int job_id) const
 {
     const CRef<SLockedQueue> q(x_GetLQueue());
@@ -3444,7 +3471,7 @@ bool CQueue::CheckDelete(unsigned int job_id)
         time_done = db.time_done;
 
         // pending jobs expire just as done jobs
-        if (time_done == 0 && status == (int) CNetScheduleClient::ePending) {
+        if (time_done == 0 && status == (int) CNetScheduleAPI::ePending) {
             time_done = time_submit;
         }
 
@@ -3485,7 +3512,7 @@ void CQueue::x_DeleteDBRec(SQueueDB&  db, CBDB_FileCursor& cur)
 
 unsigned 
 CQueue::CheckDeleteBatch(unsigned batch_size,
-                         CNetScheduleClient::EJobStatus status)
+                         CNetScheduleAPI::EJobStatus status)
 {
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned dcnt;
@@ -3863,9 +3890,9 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
     CRef<SLockedQueue> q(x_GetLQueue());
     SQueueDB& db = q->db;
 
-    CNetScheduleClient::EJobStatus status = GetStatus(job_id);
+    CNetScheduleAPI::EJobStatus status = GetStatus(job_id);
 
-    if (status != CNetScheduleClient::eRunning) {
+    if (status != CNetScheduleAPI::eRunning) {
         return 0;
     }
 
@@ -3889,7 +3916,7 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
             return 0;
         }
         int status = db.status;
-        if (status != (int)CNetScheduleClient::eRunning) {
+        if (status != (int) CNetScheduleAPI::eRunning) {
             return 0;
         }
 
@@ -3901,7 +3928,7 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
         if (curr_time < exp_time) { 
             return exp_time;
         }
-        db.status = (int) CNetScheduleClient::ePending;
+        db.status = (int) CNetScheduleAPI::ePending;
         db.time_done = 0;
 
         cur.Update();
@@ -3909,7 +3936,7 @@ time_t CQueue::CheckExecutionTimeout(unsigned job_id, time_t curr_time)
 
     trans.Commit();
 
-    q->status_tracker.SetStatus(job_id, CNetScheduleClient::eReturned);
+    q->status_tracker.SetStatus(job_id, CNetScheduleAPI::eReturned);
 
     {{
         CTime tm(CTime::eCurrent);

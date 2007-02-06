@@ -50,7 +50,7 @@
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_bv_store.hpp>
 
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 
 BEGIN_NCBI_SCOPE

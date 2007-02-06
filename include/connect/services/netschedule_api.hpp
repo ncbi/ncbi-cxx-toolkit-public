@@ -70,6 +70,10 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 const string kNetScheduleKeyPrefix = "JSID";
 
 
+/// @internal
+#define NETSCHEDULE_JOBMASK "JSID_01_%u_%s_%u"
+
+
 /// Map from exception names to codes
 /// @internal
 class CNetScheduleExceptionMap
@@ -842,19 +846,6 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
 
 
 END_NCBI_SCOPE
-
-
-/*
- * ===========================================================================
- * $Log: netschedule_api.hpp,v $
- * Revision 1.2  2007/01/09 16:05:02  didenko
- * Moved CNetScheduleExceptions to the new NetSchedule API
- *
- * Revision 1.1  2007/01/09 15:29:54  didenko
- * Added new API for NetSchedule service
- *
- * ===========================================================================
- */
 
 
 #endif  /* CONN___NETSCHEDULE_API__HPP */
