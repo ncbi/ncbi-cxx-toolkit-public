@@ -136,7 +136,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbithr.hpp>
 #include <serial/enumvalues.hpp>
-#include <serial/enumerated.hpp>
+#include <serial/impl/enumerated.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>

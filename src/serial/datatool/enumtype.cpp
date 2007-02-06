@@ -36,7 +36,7 @@
 #include <serial/datatool/enumstr.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/srcutil.hpp>
-#include <serial/enumerated.hpp>
+#include <serial/impl/enumerated.hpp>
 
 BEGIN_NCBI_SCOPE
 

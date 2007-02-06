@@ -49,6 +49,12 @@ const CPrimitiveTypeInfo* CObjectTypeInfo::GetPrimitiveTypeInfo(void) const
     return CTypeConverter<CPrimitiveTypeInfo>::SafeCast(GetTypeInfo());
 }
 
+const CEnumeratedTypeInfo* CObjectTypeInfo::GetEnumeratedTypeInfo(void) const
+{
+    CheckTypeFamily(eTypeFamilyPrimitive);
+    return CTypeConverter<CEnumeratedTypeInfo>::SafeCast(GetTypeInfo());
+}
+
 const CClassTypeInfo* CObjectTypeInfo::GetClassTypeInfo(void) const
 {
     CheckTypeFamily(eTypeFamilyClass);
@@ -105,6 +111,11 @@ EPrimitiveValueType CObjectTypeInfo::GetPrimitiveValueType(void) const
 bool CObjectTypeInfo::IsPrimitiveValueSigned(void) const
 {
     return GetPrimitiveTypeInfo()->IsSigned();
+}
+
+const CEnumeratedTypeValues& CObjectTypeInfo::GetEnumeratedTypeValues(void) const
+{
+    return GetEnumeratedTypeInfo()->Values();
 }
 
 TMemberIndex CObjectTypeInfo::FindMemberIndex(const string& name) const
