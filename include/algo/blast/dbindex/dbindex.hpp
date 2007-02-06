@@ -71,6 +71,10 @@ const unsigned long FASTA       = 0UL;  /**< FASTA formatted input with
                                              masking information encoded
                                              in lower case letters. */
 
+// Switching between one-hit and two-hit searches.
+const unsigned long ONE_HIT     = 0UL;  /**< Use one-hit search (normal). */
+const unsigned long TWO_HIT     = 1UL;  /**< Use two-hit search. */
+
 // Level of progress reporting.
 const unsigned long REPORT_QUIET   = 0UL;       /**< No progress reporting. */
 const unsigned long REPORT_NORMAL  = 1UL;       /**< Normal reporting. */
@@ -310,7 +314,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         {
             unsigned long word_size;            /**< Target seed length. */
             unsigned long template_type;        /**< Type of the discontiguous pattern. */
-            unsigned long two_hits;             /**< Use two-hit method (see megablast docs). */
+            unsigned long two_hits;             /**< Window for two-hit method (see megablast docs). */
         };
 
         /** Create an index object.
