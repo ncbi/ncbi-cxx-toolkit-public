@@ -284,28 +284,17 @@ connect/services/netservice_client.hpp
 connect/services/ns_client_factory.hpp
 connect/threaded_server.hpp
 
-// these must come early to avoid %include within %import
+// this must come early to avoid %include within %import
 serial/pathhook.hpp
-serial/item.hpp
-serial/memberid.hpp
 
-// need this for CClassTypeInfoBase::CIteratorb base class
 serial/impl/memberlist.hpp
-
-serial/aliasinfo.hpp
-serial/asntypes.hpp
-serial/autoptrinfo.hpp
-serial/choice.hpp
-serial/choiceptr.hpp
-serial/classinfo.hpp
-serial/classinfob.hpp
-serial/continfo.hpp
+// need this for CClassTypeInfoBase::CIteratorb base class
+serial/impl/classinfob.hpp
 serial/delaybuf.hpp
 serial/enumerated.hpp
 serial/enumvalues.hpp
 serial/exception.hpp
 serial/iterator.hpp
-serial/member.hpp
 serial/objcopy.hpp
 serial/objectinfo.hpp
 serial/objectio.hpp
@@ -321,7 +310,6 @@ serial/objostrasn.hpp
 serial/objostrasnb.hpp
 serial/objostrxml.hpp
 serial/pack_string.hpp
-serial/ptrinfo.hpp
 serial/rpcbase.hpp
 serial/serial.hpp
 serial/serialasn.hpp
@@ -330,16 +318,9 @@ serial/serialdef.hpp
 serial/serialimpl.hpp
 serial/serializable.hpp
 serial/serialutil.hpp
-serial/stdtypes.hpp
-serial/stdtypesimpl.hpp
-serial/stltypes.hpp
-serial/stltypesimpl.hpp
-serial/timetypeinfo.hpp
 serial/typeinfo.hpp
 // looks dead; no .cpp, destructor not defined
 //serial/typemapper.hpp
-serial/typeref.hpp
-serial/variant.hpp
 
 // No export specifiers
 %ifndef WINDOWS serial/soap/soap_client.hpp
