@@ -750,6 +750,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         // Cleanup Publications        
         x_ExtendedCleanupPubs(bss);                
         
+        // Clean up MolInfo descriptors
+        x_ExtendedCleanupMolInfoDescriptors (bss);
+
         // Clean up BioSource features and descriptors last
         x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bss);
     } else {
@@ -770,6 +773,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         // Cleanup Publications        
         x_ExtendedCleanupPubs(bsh);                
         
+        // Clean up MolInfo descriptors
+        x_ExtendedCleanupMolInfoDescriptors (bss);
+
         // Clean up BioSource features and descriptors last
         x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh);
     }
@@ -811,7 +817,10 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     
     // Cleanup Publications
     x_ExtendedCleanupPubs(bsh);
-    
+
+    // Clean up MolInfo descriptors
+    x_ExtendedCleanupMolInfoDescriptors (bsh);
+
     // Clean up BioSource features and descriptors last
     x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bsh);
 }

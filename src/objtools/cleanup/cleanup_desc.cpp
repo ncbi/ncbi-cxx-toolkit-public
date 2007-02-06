@@ -225,82 +225,6 @@ void CCleanup_imp::x_RecurseDescriptorsForMerge(CBioseq_set_Handle bh, IsMergeCa
 }
 
 
-static CMolInfo::EBiomol s_MolTypeToBioMol(CSeqdesc::TMol_type mol_type)
-{
-    CMolInfo::EBiomol biomol = CMolInfo::eBiomol_unknown;
-    
-    switch (mol_type) {
-        case eGIBB_mol_unknown:
-            break;
-        case eGIBB_mol_genomic:
-            biomol = CMolInfo::eBiomol_genomic;
-            break;
-        case eGIBB_mol_pre_mRNA:
-            biomol = CMolInfo::eBiomol_pre_RNA;
-            break;
-        case eGIBB_mol_mRNA:
-            biomol = CMolInfo::eBiomol_mRNA;
-            break;
-        case eGIBB_mol_rRNA:
-            biomol = CMolInfo::eBiomol_rRNA;
-            break;
-        case eGIBB_mol_tRNA:
-            biomol = CMolInfo::eBiomol_tRNA;
-            break;
-        case eGIBB_mol_snRNA:
-            biomol = CMolInfo::eBiomol_snRNA;
-            break;
-        case eGIBB_mol_scRNA:
-            biomol = CMolInfo::eBiomol_scRNA;
-            break;
-        case eGIBB_mol_peptide:
-            biomol = CMolInfo::eBiomol_peptide;
-            break;
-        case eGIBB_mol_other_genetic:
-            biomol = CMolInfo::eBiomol_other_genetic;
-            break;
-        case eGIBB_mol_genomic_mRNA:
-            biomol = CMolInfo::eBiomol_genomic_mRNA;
-            break;
-        case eGIBB_mol_other:
-            biomol = CMolInfo::eBiomol_other;
-            break;
-    }
-    return biomol;
-}
-
-
-static CMolInfo::ETech s_MethodToTech (CSeqdesc::TMethod method)
-{
-    CMolInfo::ETech   tech = CMolInfo::eTech_unknown;
-    
-    switch (method) {
-        case eGIBB_method_concept_trans:
-             tech = CMolInfo::eTech_concept_trans;
-             break;
-        case eGIBB_method_seq_pept:
-             tech = CMolInfo::eTech_seq_pept;
-             break;
-        case eGIBB_method_both:
-             tech = CMolInfo::eTech_both;
-             break;
-        case eGIBB_method_seq_pept_overlap:
-             tech = CMolInfo::eTech_seq_pept_overlap;
-             break;
-        case eGIBB_method_seq_pept_homol:
-             tech = CMolInfo::eTech_seq_pept_homol;
-             break;
-        case eGIBB_method_concept_trans_a:
-             tech = CMolInfo::eTech_concept_trans_a;
-             break;
-        case eGIBB_method_other:
-             tech = CMolInfo::eTech_other;
-             break;
-    }
-    return CMolInfo::eTech_unknown;
-}
-
-
 bool IsEmpty (CGB_block& block) 
 {
     if ((!block.CanGetExtra_accessions() || block.GetExtra_accessions().size() == 0)
@@ -579,26 +503,21 @@ void CCleanup_imp::x_ChangeGBDiv (CSeq_entry_Handle seh, string div)
                                 || tech == CMolInfo::eTech_htgs_3) && NStr::Equal(gb_div, "HTG"))) {
                     gb_block.ResetDiv();
                     ChangeMade(CCleanupChange::eChangeOther);
-                } else if (tech == CMolInfo::eTech_unknown && NStr::Equal(gb_div, "STS")) {
-                    CMolInfo& m = const_cast<CMolInfo&> ((*molinfo).GetMolinfo());
-                    m.SetTech(CMolInfo::eTech_sts);
-                    gb_block.ResetDiv();
-                    ChangeMade(CCleanupChange::eChangeOther);
                 }
-			}
-			if (!NStr::IsBlank(div)) {
-			    if (NStr::Equal(div, gb_div)) {
-			        gb_block.ResetDiv();
-			        gb_block.ResetTaxonomy();
-			    } else if (NStr::Equal(gb_div, "UNA")
+			      }
+			      if (!NStr::IsBlank(div)) {
+			          if (NStr::Equal(div, gb_div)) {
+			              gb_block.ResetDiv();
+			              gb_block.ResetTaxonomy();
+			          } else if (NStr::Equal(gb_div, "UNA")
 			               || NStr::Equal(gb_div, "UNC")) {
-			        gb_block.ResetDiv();
-			        ChangeMade(CCleanupChange::eChangeOther);
-			    }
-			} 
-		}
-		++gbdesc_i;
-	}
+			              gb_block.ResetDiv();
+			              ChangeMade(CCleanupChange::eChangeOther);
+			          }
+			      } 
+		    }
+		    ++gbdesc_i;
+	  }
 }
 
 // Was EntryChangeGBSource in C Toolkit
@@ -1069,117 +988,6 @@ void CCleanup_imp::x_FuseMolInfos (CSeq_entry_Handle seh)
     }
 }
 
-static CMolInfo::ECompleteness s_ModifToCompleteness(CSeqdesc::TModif modif)
-{
-    ITERATE (CSeqdesc::TModif, it, modif) {
-        switch (*it) {
-            case eGIBB_mod_partial:
-                return CMolInfo::eCompleteness_partial;
-                break;
-            case eGIBB_mod_complete:
-                return CMolInfo::eCompleteness_complete;
-                break;
-            case eGIBB_mod_no_left:
-                return CMolInfo::eCompleteness_no_left;
-                break;
-            case eGIBB_mod_no_right:
-                return CMolInfo::eCompleteness_no_right;
-                break;
-            default:
-                break;
-        }
-    }
-    return CMolInfo::eCompleteness_unknown;
-}
-
-
-static CMolInfo::ETech s_ModifToTech(CSeqdesc::TModif modif)
-{
-    ITERATE (CSeqdesc::TModif, it, modif) {
-        switch (*it) {
-            case eGIBB_mod_est:
-                return CMolInfo::eTech_est;
-                break;
-            case eGIBB_mod_sts:
-                return CMolInfo::eTech_sts;
-                break;
-            case eGIBB_mod_survey:
-                return CMolInfo::eTech_survey;
-                break;
-            default:
-                break;
-        }
-    }
-    return CMolInfo::eTech_unknown;
-}
-
-
-static CBioSource::EGenome s_ModifToGenome(CSeqdesc::TModif modif)
-{
-    ITERATE (CSeqdesc::TModif, it, modif) {
-        switch (*it) {
-            case eGIBB_mod_extrachrom:
-                return CBioSource::eGenome_extrachrom;
-                break;
-            case eGIBB_mod_plasmid:
-                return CBioSource::eGenome_plasmid;
-                break;
-            case eGIBB_mod_mitochondrial:
-                return CBioSource::eGenome_mitochondrion;
-                break;
-            case eGIBB_mod_chloroplast:
-                return CBioSource::eGenome_chloroplast;
-                break;
-            case eGIBB_mod_kinetoplast:
-                return CBioSource::eGenome_kinetoplast;
-                break;
-            case eGIBB_mod_cyanelle:
-                return CBioSource::eGenome_cyanelle;
-                break;
-            case eGIBB_mod_transposon:
-                return CBioSource::eGenome_transposon;
-                break;
-            case eGIBB_mod_insertion_seq:
-                return CBioSource::eGenome_insertion_seq;
-                break;
-            case eGIBB_mod_macronuclear:
-                return CBioSource::eGenome_macronuclear;
-                break;
-            case eGIBB_mod_proviral:
-                return CBioSource::eGenome_proviral;
-                break;
-            case eGIBB_mod_chromoplast:
-                return CBioSource::eGenome_chromoplast;
-                break;
-            default:
-                break;
-        }
-    }
-    return CBioSource::eGenome_unknown;
-}
-
-
-static CBioSource::EOrigin s_ModifToOrigin(CSeqdesc::TModif modif)
-{
-    ITERATE (CSeqdesc::TModif, it, modif) {
-        switch (*it) {
-            case eGIBB_mod_mutagen:
-                return CBioSource::eOrigin_mut;
-                break;
-            case eGIBB_mod_natmut:
-                return CBioSource::eOrigin_natmut;
-                break;
-            case eGIBB_mod_synthetic:
-                return CBioSource::eOrigin_synthetic;
-                break;                            
-            default:
-                break;
-        }
-    }
-    return CBioSource::eOrigin_unknown;
-}
-
-
 void CCleanup_imp::x_FixMissingSources (CBioseq_Handle bh)
 {
     CSeqdesc_CI src_desc (bh, CSeqdesc::e_Source, 1);
@@ -1302,10 +1110,6 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     // this step was EntryChangeGBSource in the C Toolkit
     x_ChangeGenBankBlocks(bh.GetParentEntry());
  
-    // this step was FixProtMolInfo in the C Toolkit
-    x_AddMissingProteinMolInfo(bh.GetParentEntry());
-    // this step was FuseMolInfos in the C Toolkit
-    x_FuseMolInfos(bh);
     // this step was StripProtXrefs in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_StripProtXrefs);
     // this step was called by CheckMaps in the C Toolkit,
@@ -1317,17 +1121,9 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     // these steps were part of CheckGeneticCode in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_FixProteinIDs);
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_CheckConflictFlag);
-    // NOTE - this is still part of CheckGeneticCode in the C Toolkit.
-    // This step must be performed after the x_CheckConflictFlag step
-    CBioseq_CI bioseq_ci(bh);
-    while (bioseq_ci) {
-        x_SetMolInfoTechForConflictCDS (*bioseq_ci);
-        ++bioseq_ci;
-    }
     // final portion of CheckGeneticCode
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveAsn2ffGeneratedComments);
     
-    x_NormalizeMolInfo (bh);
 }
 
 
@@ -1350,10 +1146,6 @@ void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
     // The FixNucProtSet step from the C Toolkit is eliminated here, as it only applies
     // to Nuc-Prot sets and sets that might contain nuc-prot sets.
     
-    // this step was FixProtMolInfo in the C Toolkit
-    x_AddMissingProteinMolInfo(bh.GetParentEntry());
-    // this step was FuseMolInfos in the C Toolkit
-    x_FuseMolInfos(bh);
     // this step was StripProtXrefs in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_StripProtXrefs);
     // this step was called by CheckMaps in the C Toolkit,
@@ -1365,14 +1157,9 @@ void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
     // these steps were part of CheckGeneticCode in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_FixProteinIDs);
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_CheckConflictFlag);
-    // NOTE - this is still part of CheckGeneticCode in the C Toolkit.
-    // This step must be performed after the x_CheckConflictFlag step
-    x_SetMolInfoTechForConflictCDS (bh);
     // final portion of CheckGeneticCode
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveAsn2ffGeneratedComments);
 
-    // The NormalizeSegSeqMolInfo from the C Toolkit is eliminated here, as it only
-    // applies to MolInfo descriptors that need to be moved from sequences to sets
 }
 
 
@@ -1441,99 +1228,101 @@ void CCleanup_imp::x_GetGenBankTaxonomy(CBioseq_set_Handle bh, string &taxonomy)
 }
 
 
-// this function should find the highest level for which all of the
-// mol-info descriptors on sequences and sets below this level are
-// consistent, put the mol-info on this level, and remove all mol-info
-// descriptors below this level
+// this function should check segsets to see if all mol-info descriptors on sequences 
+// and sets below this level are consistent, put the mol-info on this level, and remove 
+// all mol-info descriptors below this level.
+// For all other sets, check the members of the set.
 // was NormalizeSegSeqMolInfo in C Toolkit
 void CCleanup_imp::x_NormalizeMolInfo(CBioseq_set_Handle bh)
 {
-    bool is_consistent = true;
-    int num_found = 0;
-    CRef<CMolInfo> mol(new CMolInfo);
-    CSeqdesc_CI desc_it(bh.GetParentEntry(), CSeqdesc::e_Molinfo);
-    while (desc_it && is_consistent) {
-        if (num_found == 0) {
-            //biomol
-            if (desc_it->GetMolinfo().CanGetBiomol()) {
-                mol->SetBiomol(desc_it->GetMolinfo().GetBiomol());
-            }
-            //completeness
-            if (desc_it->GetMolinfo().CanGetCompleteness()) {
-                mol->SetCompleteness(desc_it->GetMolinfo().GetCompleteness());
-            }
-            //tech
-            if (desc_it->GetMolinfo().CanGetTech()) {
-                mol->SetTech(desc_it->GetMolinfo().GetTech());
-            }
-            //techexp
-            if (desc_it->GetMolinfo().CanGetTechexp()) {
-                mol->SetTechexp(desc_it->GetMolinfo().GetTechexp());
-            }
-        } else {
-            //biomol
-            if (mol->CanGetBiomol()) {
-                if (!desc_it->GetMolinfo().CanGetBiomol()
-                    || mol->GetBiomol() != desc_it->GetMolinfo().GetBiomol()) {
-                    is_consistent = false;
-                }
-            } else if (desc_it->GetMolinfo().CanGetBiomol()) {
-                is_consistent = false;
-            }
-            //completeness
-            if (mol->CanGetCompleteness()) {
-                if (!desc_it->GetMolinfo().CanGetCompleteness()
-                    || mol->GetCompleteness() != desc_it->GetMolinfo().GetCompleteness()) {
-                    is_consistent = false;
-                }
-            } else if (desc_it->GetMolinfo().CanGetCompleteness()) {
-                is_consistent = false;
-            }
-             //tech
-            if (mol->CanGetTech()) {
-                if (!desc_it->GetMolinfo().CanGetTech()
-                    || mol->GetTech() != desc_it->GetMolinfo().GetTech()) {
-                    is_consistent = false;
-                }
-            } else if (desc_it->GetMolinfo().CanGetTech()) {
-                is_consistent = false;
-            }
-             //techexp
-            if (mol->CanGetTechexp()) {
-                if (!desc_it->GetMolinfo().CanGetTechexp()
-                    || !NStr::Equal(mol->GetTechexp(), desc_it->GetMolinfo().GetTechexp())) {
-                    is_consistent = false;
-                }
-            } else if (desc_it->GetMolinfo().CanGetTechexp()) {
-                is_consistent = false;
-            }
-        }
-        ++desc_it;
-        num_found++;
-    }
-           
-    if (is_consistent && num_found > 0) {
-        bool need_to_move = false;
-        // is one molinfo already on this set?
-        CSeqdesc_CI this_set_desc(bh.GetParentEntry(), CSeqdesc::e_Molinfo, 1);
-        if (!this_set_desc) {
-            need_to_move = true;
-        }
-        if (num_found > 1 || need_to_move) {
-            ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
-                x_RemoveDescrByType((**it), CSeqdesc::e_Molinfo);
-            }
-        }
-        if (need_to_move) {
-            CBioseq_set_EditHandle eh = bh.GetEditHandle();
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            desc->SetMolinfo(*mol);
-            eh.AddSeqdesc(*desc);
-        }
-    } else {
+    if (!bh.CanGetClass() || bh.GetClass() != CBioseq_set::eClass_segset) {
         ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
             if ((*it)->Which() == CSeq_entry::e_Set) {
                 x_NormalizeMolInfo(m_Scope->GetBioseq_setHandle((*it)->GetSet()));
+            }
+        }        
+    } else {
+        bool is_consistent = true;
+        int num_found = 0;
+        CRef<CMolInfo> mol(new CMolInfo);
+        CSeqdesc_CI desc_it(bh.GetParentEntry(), CSeqdesc::e_Molinfo);
+        while (desc_it && is_consistent) {
+            if (num_found == 0) {
+                //biomol
+                if (desc_it->GetMolinfo().CanGetBiomol()) {
+                    mol->SetBiomol(desc_it->GetMolinfo().GetBiomol());
+                }
+                //completeness
+                if (desc_it->GetMolinfo().CanGetCompleteness()) {
+                    mol->SetCompleteness(desc_it->GetMolinfo().GetCompleteness());
+                }
+                //tech
+                if (desc_it->GetMolinfo().CanGetTech()) {
+                    mol->SetTech(desc_it->GetMolinfo().GetTech());
+                }
+                //techexp
+                if (desc_it->GetMolinfo().CanGetTechexp()) {
+                    mol->SetTechexp(desc_it->GetMolinfo().GetTechexp());
+                }
+            } else {
+                //biomol
+                if (mol->CanGetBiomol()) {
+                    if (!desc_it->GetMolinfo().CanGetBiomol()
+                        || mol->GetBiomol() != desc_it->GetMolinfo().GetBiomol()) {
+                        is_consistent = false;
+                    }
+                } else if (desc_it->GetMolinfo().CanGetBiomol()) {
+                    is_consistent = false;
+                }
+                //completeness
+                if (mol->CanGetCompleteness()) {
+                    if (!desc_it->GetMolinfo().CanGetCompleteness()
+                        || mol->GetCompleteness() != desc_it->GetMolinfo().GetCompleteness()) {
+                        is_consistent = false;
+                    }
+                } else if (desc_it->GetMolinfo().CanGetCompleteness()) {
+                    is_consistent = false;
+                }
+                //tech
+                if (mol->CanGetTech()) {
+                    if (!desc_it->GetMolinfo().CanGetTech()
+                        || mol->GetTech() != desc_it->GetMolinfo().GetTech()) {
+                        is_consistent = false;
+                    }
+                } else if (desc_it->GetMolinfo().CanGetTech()) {
+                    is_consistent = false;
+                }
+                 //techexp
+                if (mol->CanGetTechexp()) {
+                    if (!desc_it->GetMolinfo().CanGetTechexp()
+                        || !NStr::Equal(mol->GetTechexp(), desc_it->GetMolinfo().GetTechexp())) {
+                        is_consistent = false;
+                    }
+                } else if (desc_it->GetMolinfo().CanGetTechexp()) {
+                    is_consistent = false;
+                }
+            }
+            ++desc_it;
+            num_found++;
+        }
+           
+        if (is_consistent && num_found > 0) {
+            bool need_to_move = false;
+            // is one molinfo already on this set?
+            CSeqdesc_CI this_set_desc(bh.GetParentEntry(), CSeqdesc::e_Molinfo, 1);
+            if (!this_set_desc) {
+                need_to_move = true;
+            }
+            if (num_found > 1 || need_to_move) {
+                ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
+                    x_RemoveDescrByType((**it), CSeqdesc::e_Molinfo);
+                }
+            }
+            if (need_to_move) {
+                CBioseq_set_EditHandle eh = bh.GetEditHandle();
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                desc->SetMolinfo(*mol);
+                eh.AddSeqdesc(*desc);
             }
         }
     }
@@ -1578,6 +1367,46 @@ void CCleanup_imp::x_SetMolInfoTechForConflictCDS (CBioseq_Handle bh)
         }
     }    
 }
+
+
+void CCleanup_imp::x_ExtendedCleanupMolInfoDescriptors(CBioseq_Handle bh)
+{
+    // this step was FuseMolInfos in the C Toolkit
+    x_FuseMolInfos (bh);
+
+    // this step was FixProtMolInfo in the C Toolkit
+    x_AddMissingProteinMolInfo(bh.GetParentEntry());
+
+    // The NormalizeSegSeqMolInfo from the C Toolkit is eliminated here, as it only
+    // applies to MolInfo descriptors that need to be moved from sequences to sets
+
+    // NOTE - this is still part of CheckGeneticCode in the C Toolkit.
+    // This step must be performed after the x_CheckConflictFlag step
+    x_SetMolInfoTechForConflictCDS (bh);
+}
+
+
+void CCleanup_imp::x_ExtendedCleanupMolInfoDescriptors(CBioseq_set_Handle bh)
+{
+    // this step was FuseMolInfos in the C Toolkit
+    x_FuseMolInfos (bh);
+
+    // this step was FixProtMolInfo in the C Toolkit
+    x_AddMissingProteinMolInfo(bh.GetParentEntry());
+
+    // this step was NormalizeSegSeqMolInfo in the C Toolkit
+    x_NormalizeMolInfo (bh);
+
+    // NOTE - this is still part of CheckGeneticCode in the C Toolkit.
+    // This step must be performed after the x_CheckConflictFlag step
+    CBioseq_CI bioseq_ci(bh);
+    while (bioseq_ci) {
+        x_SetMolInfoTechForConflictCDS (*bioseq_ci);
+        ++bioseq_ci;
+    }
+
+}
+
 
 
 END_objects_SCOPE // namespace ncbi::objects::

@@ -430,6 +430,8 @@ private:
 
     void x_NormalizeMolInfo(CBioseq_set_Handle bh);
     void x_SetMolInfoTechForConflictCDS (CBioseq_Handle bh);
+    void x_ExtendedCleanupMolInfoDescriptors(CBioseq_Handle bh);
+    void x_ExtendedCleanupMolInfoDescriptors(CBioseq_set_Handle bh);
 
     // Other Cleanup Functions    
     bool x_RemovePIDXrefs (CSeq_feat& feat);
