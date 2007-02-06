@@ -40,6 +40,8 @@
 
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -1872,18 +1874,11 @@ CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
         return nullret;
     }
     
-    // Get the data as a string, then as a stringstream, then build
-    // the actual asn.1 object.  How much 'extra' work is done here?
-    // Perhaps a dedicated ASN.1 memory-stream object would be of some
-    // benefit, particularly in the "called 100000 times" cases.
-    
-    istringstream asndata( string(asn_region, asn_region + (hdr_end - hdr_start)) );
-    
-    auto_ptr<CObjectIStream> inpstr(CObjectIStream::Open(eSerial_AsnBinary, asndata));
+    CObjectIStreamAsnBinary inpstr(asn_region, hdr_end - hdr_start);
     
     CRef<objects::CBlast_def_line_set> phil(new objects::CBlast_def_line_set);
     
-    *inpstr >> *phil;
+    inpstr >> *phil;
     
     return phil;
 }
@@ -1898,21 +1893,16 @@ CSeqDBVol::x_GetFilteredBinaryHeader(int                  oid,
     CRef<CBlast_def_line_set> dls =
         x_GetFilteredHeader(oid, have_oidlist, memb_bit, locked);
     
-    // Get the data as a string, then as a stringstream, then build
-    // the actual asn.1 object.  How much 'extra' work is done here?
-    // Perhaps a dedicated ASN.1 memory-stream object would be of some
-    // benefit, particularly in the "called 100000 times" cases.
+    CNcbiOstrstream asndata;
     
-    ostringstream asndata;
-    
-    auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnBinary, asndata));
-    
-    *outpstr << *dls;
-    
-    hdr_data.clear();
-    string str = asndata.str();
-    
-    hdr_data.assign(str.data(), str.data() + str.length());
+    {{
+        CObjectOStreamAsnBinary outpstr(asndata);
+        outpstr << *dls;
+    }}
+    size_t size = asndata.pcount();
+    const char* ptr = asndata.str();
+    asndata.freeze(false);
+    hdr_data.assign(ptr, ptr+size);
 }
 
 void CSeqDBVol::x_GetAmbChar(int oid,
