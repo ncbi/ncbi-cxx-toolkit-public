@@ -454,7 +454,13 @@ void CBioseq_Base_Info::RemoveAnnot(CRef<CSeq_annot_Info> info)
     x_DetachAnnot(info);
 
     m_Annot.erase(info_it);
-    m_ObjAnnot->erase(obj_it);
+    if ( m_Annot.empty() ) {
+        x_ResetObjAnnot();
+        m_ObjAnnot = 0;
+    }
+    else {
+        m_ObjAnnot->erase(obj_it);
+    }
 }
 
 
