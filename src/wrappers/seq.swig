@@ -638,6 +638,10 @@ namespace std {
 ncbi_specialize_std_vector(ncbi::objects::ENa_strand, PyInt_Check,
                            PyInt_AsLong, PyInt_FromLong);
 #endif
+#ifdef SWIGPERL
+specialize_std_vector(ncbi::objects::ENa_strand,
+                      SvIOK, (ENa_strand)SvIVX, sv_setiv);
+#endif
 }
 %template(vector_ENa_strand) std::vector<ncbi::objects::ENa_strand>;
 
