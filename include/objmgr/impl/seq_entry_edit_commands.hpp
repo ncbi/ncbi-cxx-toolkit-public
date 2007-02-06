@@ -283,36 +283,36 @@ public:
 
     virtual void Do(IScopeTransaction_Impl& tr) 
     {
-        m_EntryHandle = m_Scope.AttachAnnot(m_Handle, 
+        m_AnnotHandle = m_Scope.AttachAnnot(m_Handle, 
                                             TTrait::Restore(m_Annot));
-        if (!m_EntryHandle)
+        if (!m_AnnotHandle)
             return;
         tr.AddCommand(CRef<IEditCommand>(this));       
         IEditSaver* saver = GetEditSaver(m_Handle);
         if (saver) {
             tr.AddEditSaver(saver);
-            saver->Attach(m_Handle, m_EntryHandle, IEditSaver::eDo);
+            saver->Attach(m_Handle, m_AnnotHandle, IEditSaver::eDo);
         }
 
     }
     virtual void Undo()
     {
-        _ASSERT(m_EntryHandle);
-        m_Scope.RemoveAnnot(m_EntryHandle);
+        _ASSERT(m_AnnotHandle);
+        m_Scope.RemoveAnnot(m_AnnotHandle);
         IEditSaver* saver = GetEditSaver(m_Handle);
         if (saver) {
-            saver->Remove(m_Handle, m_EntryHandle, IEditSaver::eUndo);
+            saver->Remove(m_Handle, m_AnnotHandle, IEditSaver::eUndo);
         }
     }
 
-    CSeq_annot_EditHandle GetRet() const { return m_EntryHandle; }
+    CSeq_annot_EditHandle GetRet() const { return m_AnnotHandle; }
 
 private:
     CSeq_entry_EditHandle m_Handle;
     TStorage              m_Annot;
     CScope_Impl&          m_Scope;
 
-    CSeq_annot_EditHandle m_EntryHandle;
+    CSeq_annot_EditHandle m_AnnotHandle;
 
 };
 
