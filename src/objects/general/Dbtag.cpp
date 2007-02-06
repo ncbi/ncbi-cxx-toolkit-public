@@ -53,15 +53,15 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 typedef pair<const char*, CDbtag::EDbtagType> TDbxrefPair;
 static const TDbxrefPair kApprovedDbXrefs[] = {
-    TDbxrefPair("ApiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB),
-    TDbxrefPair("ApiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB),
-    TDbxrefPair("ApiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB),
     TDbxrefPair("ASAP", CDbtag::eDbtagType_ASAP),
     TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
     TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
     TDbxrefPair("ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host),
     TDbxrefPair("AceView/WormGenes", CDbtag::eDbtagType_AceView_WormGenes),
     TDbxrefPair("ApiDB", CDbtag::eDbtagType_ApiDB),
+    TDbxrefPair("ApiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB),
+    TDbxrefPair("ApiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB),
+    TDbxrefPair("ApiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB),
     TDbxrefPair("BDGP_EST", CDbtag::eDbtagType_BDGP_EST),
     TDbxrefPair("BDGP_INS", CDbtag::eDbtagType_BDGP_INS),
     TDbxrefPair("BoLD", CDbtag::eDbtagType_BoLD),
@@ -155,9 +155,11 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
 // case sensetive
 typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase_CStr> TDbxrefTypeMap;
 static const TDbxrefTypeMap sc_ApprovedDb(kApprovedDbXrefs,
-                                          sizeof(kApprovedDbXrefs));
+                                          sizeof(kApprovedDbXrefs),
+                                          __FILE__, __LINE__);
 static const TDbxrefTypeMap sc_ApprovedRefSeqDb(kApprovedRefSeqDbXrefs,
-                                                sizeof(kApprovedRefSeqDbXrefs));
+                                                sizeof(kApprovedRefSeqDbXrefs),
+                                                __FILE__, __LINE__);
 
 
 // destructor
@@ -359,7 +361,8 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/gene_detail.asp?gene_id=")
 };
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
-static const TUrlPrefixMap sc_UrlMap(sc_url_prefix, sizeof(sc_url_prefix));
+static const TUrlPrefixMap sc_UrlMap(sc_url_prefix, sizeof(sc_url_prefix),
+                                     __FILE__, __LINE__);
 
 
 string CDbtag::GetUrl(void) const
