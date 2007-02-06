@@ -115,13 +115,16 @@ public:
         bool             m_error;
         string           m_msg;
         bool             m_QueryStrand, m_SubjStrand;
+        size_t           m_cds_start, m_cds_stop;
         TSegments        m_segments;
         
-        SAlignedCompartment(void): m_id(0), m_error(true)
+        SAlignedCompartment(void): m_id(0), m_error(true), 
+                                   m_cds_start(0), m_cds_stop(0)
         {}
         
         SAlignedCompartment(size_t id, bool err, const char* msg):
-            m_id(id), m_error(err), m_msg(msg)
+            m_id(id), m_error(err), m_msg(msg),
+            m_cds_start(0), m_cds_stop(0)
         {}
         
         // return overall identity (including gaps)
@@ -201,8 +204,9 @@ protected:
     bool         m_strand;
     size_t       m_polya_start;
     bool         m_nopolya;
-    size_t       m_cds_start;
-    size_t       m_cds_stop;
+
+    size_t       m_cds_start; // in antisense, these are computed based on a reverse-
+    size_t       m_cds_stop;  // complimentary sequence, so start still less than stop
 
     // genomic sequence
     vector<char> m_genomic;
@@ -237,6 +241,8 @@ protected:
                           THit::TCoord start,
                           THit::TCoord finish,
                           bool retain);
+
+    void x_InitCDS(const THit::TId& id);
 
     /// forbidden
     CSplign(const CSplign&);
