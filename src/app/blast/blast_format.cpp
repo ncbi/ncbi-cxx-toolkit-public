@@ -38,6 +38,7 @@ Author: Jason Papadopoulos
 */
 
 #include <ncbi_pch.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include <util/tables/raw_scoremat.h>
 #include "blast_format.hpp"
@@ -217,16 +218,20 @@ CBlastFormat::PrintOneAlignSet(CSearchResults& results,
     // ASN.1 output is allowed as a separate 
     // formatted object, independent of the main
     // formatting process
-    if (m_AsnOut)
+    if (m_AsnOut) {
+        CSeq_annot seqannot;
+        seqannot.SetData().SetAlign() = aln_set.Get();
         m_AsnOutfile << MSerial_AsnText << aln_set;
+    }
 
     // ASN.1 formatting is straightforward
-    if (m_FormatType == 10) {
-        m_Outfile << MSerial_AsnText << aln_set;
-        return;
-    }
-    else if (m_FormatType == 11) {
-        m_Outfile << MSerial_AsnBinary << aln_set;
+    if (m_FormatType == 10 || m_FormatType == 11) {
+        CSeq_annot seqannot;
+        seqannot.SetData().SetAlign() = aln_set.Get();
+        if (m_FormatType == 10)
+            m_Outfile << MSerial_AsnText << seqannot;
+        else
+            m_Outfile << MSerial_AsnBinary << aln_set;
         return;
     }
 
