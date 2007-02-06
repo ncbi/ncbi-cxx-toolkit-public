@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Object information classes
 */
 
 #include <corelib/ncbistd.hpp>
@@ -40,6 +40,7 @@
 #include <serial/impl/stdtypes.hpp>
 #include <serial/impl/classinfo.hpp>
 #include <serial/impl/choice.hpp>
+#include <serial/impl/enumerated.hpp>
 #include <vector>
 #include <memory>
 
@@ -80,7 +81,8 @@ class CObjectInfoMI;
 class CObjectInfoCV;
 class CObjectInfoEI;
 
-/// Facilitate access to the data type information
+/// Facilitate access to the data type information.
+/// No concrete object is referenced.
 class NCBI_XSERIAL_EXPORT CObjectTypeInfo
 {
 public:
@@ -90,6 +92,7 @@ public:
 
     CObjectTypeInfo(TTypeInfo typeinfo = 0);
 
+    /// Get data type family
     ETypeFamily GetTypeFamily(void) const;
 
     bool Valid(void) const
@@ -102,28 +105,30 @@ public:
     bool operator!=(const CObjectTypeInfo& type) const;
 
     // primitive type interface
-    // only when GetTypeFamily() == CTypeInfo::eTypePrimitive
+    // only when GetTypeFamily() == eTypeFamilyPrimitive
     EPrimitiveValueType GetPrimitiveValueType(void) const;
     bool IsPrimitiveValueSigned(void) const;
+    // only when GetPrimitiveValueType() == ePrimitiveValueEnum
+    const CEnumeratedTypeValues& GetEnumeratedTypeValues(void) const;
 
     // container interface
-    // only when GetTypeFamily() == CTypeInfo::eTypeContainer
+    // only when GetTypeFamily() == eTypeFamilyContainer
     CObjectTypeInfo GetElementType(void) const;
 
     // class interface
-    // only when GetTypeFamily() == CTypeInfo::eTypeClass
+    // only when GetTypeFamily() == eTypeFamilyClass
     CMemberIterator BeginMembers(void) const;
     CMemberIterator FindMember(const string& memberName) const;
     CMemberIterator FindMemberByTag(int memberTag) const;
 
     // choice interface
-    // only when GetTypeFamily() == CTypeInfo::eTypeChoice
+    // only when GetTypeFamily() == eTypeFamilyChoice
     CVariantIterator BeginVariants(void) const;
     CVariantIterator FindVariant(const string& memberName) const;
     CVariantIterator FindVariantByTag(int memberTag) const;
 
     // pointer interface
-    // only when GetTypeFamily() == CTypeInfo::eTypePointer
+    // only when GetTypeFamily() == eTypeFamilyPointer
     CObjectTypeInfo GetPointedType(void) const;
 
     /// Set local (for the specified stream) read hook
@@ -256,6 +261,7 @@ public:
 public: // mostly for internal use
     TTypeInfo GetTypeInfo(void) const;
     const CPrimitiveTypeInfo* GetPrimitiveTypeInfo(void) const;
+    const CEnumeratedTypeInfo* GetEnumeratedTypeInfo(void) const;
     const CClassTypeInfo* GetClassTypeInfo(void) const;
     const CChoiceTypeInfo* GetChoiceTypeInfo(void) const;
     const CContainerTypeInfo* GetContainerTypeInfo(void) const;
@@ -456,6 +462,50 @@ public:
     CElementIterator BeginElements(void) const;
     void ReadContainer(CObjectIStream& in, CReadContainerElementHook& hook);
 };
+
+// get starting point of object hierarchy
+template<class C>
+inline
+TTypeInfo ObjectType(const C& /*obj*/)
+{
+    return C::GetTypeInfo();
+}
+
+template<class C>
+inline
+pair<TObjectPtr, TTypeInfo> ObjectInfo(C& obj)
+{
+    return pair<TObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
+}
+
+// get starting point of non-modifiable object hierarchy
+template<class C>
+inline
+pair<TConstObjectPtr, TTypeInfo> ConstObjectInfo(const C& obj)
+{
+    return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
+}
+
+template<class C>
+inline
+pair<TConstObjectPtr, TTypeInfo> ObjectInfo(const C& obj)
+{
+    return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
+}
+
+template<class C>
+inline
+pair<TObjectPtr, TTypeInfo> RefChoiceInfo(CRef<C>& obj)
+{
+    return pair<TObjectPtr, TTypeInfo>(&obj, C::GetRefChoiceTypeInfo());
+}
+
+template<class C>
+inline
+pair<TConstObjectPtr, TTypeInfo> ConstRefChoiceInfo(const CRef<C>& obj)
+{
+    return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetRefChoiceTypeInfo());
+}
 
 
 /* @} */

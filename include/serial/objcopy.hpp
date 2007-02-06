@@ -29,7 +29,9 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   ObjectStreamCopier reads serial data object from one stream and
+*   immediately writes it into another one, usually using different encoding
+*   format. Converted data is not stored in memory.
 */
 
 #include <corelib/ncbistd.hpp>

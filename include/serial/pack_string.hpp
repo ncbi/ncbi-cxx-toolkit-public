@@ -31,7 +31,7 @@
 */
 
 #include <serial/objhook.hpp>
-#include <serial/objecttype.hpp>
+#include <serial/impl/objecttype.hpp>
 #include <serial/objistr.hpp>
 
 #include <string>

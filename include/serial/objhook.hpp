@@ -35,7 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/objecttype.hpp>
+#include <serial/impl/objecttype.hpp>
 #include <serial/impl/objstack.hpp>
 #include <serial/objectiter.hpp>
 

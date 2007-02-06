@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/objecttype.hpp>
+#include <serial/impl/objecttype.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/serialbase.hpp>
 #include <set>

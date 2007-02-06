@@ -144,50 +144,6 @@ public:
         }
 };
 
-// get starting point of object hierarchy
-template<class C>
-inline
-TTypeInfo ObjectType(const C& /*obj*/)
-{
-    return C::GetTypeInfo();
-}
-
-template<class C>
-inline
-pair<TObjectPtr, TTypeInfo> ObjectInfo(C& obj)
-{
-    return pair<TObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
-}
-
-// get starting point of non-modifiable object hierarchy
-template<class C>
-inline
-pair<TConstObjectPtr, TTypeInfo> ConstObjectInfo(const C& obj)
-{
-    return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
-}
-
-template<class C>
-inline
-pair<TConstObjectPtr, TTypeInfo> ObjectInfo(const C& obj)
-{
-    return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
-}
-
-template<class C>
-inline
-pair<TObjectPtr, TTypeInfo> RefChoiceInfo(CRef<C>& obj)
-{
-    return pair<TObjectPtr, TTypeInfo>(&obj, C::GetRefChoiceTypeInfo());
-}
-
-template<class C>
-inline
-pair<TConstObjectPtr, TTypeInfo> ConstRefChoiceInfo(const CRef<C>& obj)
-{
-    return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetRefChoiceTypeInfo());
-}
-
 
 /* @} */
 

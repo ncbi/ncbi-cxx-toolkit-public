@@ -37,7 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <serial/impl/stltypes.hpp>
-#include <serial/enumerated.hpp>
+#include <serial/impl/enumerated.hpp>
 #include <serial/impl/classinfo.hpp>
 #include <serial/impl/choiceptr.hpp>
 #include <serial/impl/aliasinfo.hpp>

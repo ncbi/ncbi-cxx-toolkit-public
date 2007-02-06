@@ -62,6 +62,10 @@ public:
         }
     ~CDelayBuffer(void);
 
+    /// Check if there is input data in the buffer
+    ///
+    /// @return
+    ///   TRUE is the buffer is not empty
     bool Delayed(void) const
         {
             return m_Info.get() != 0;
@@ -69,26 +73,38 @@ public:
 
     DECLARE_OPERATOR_BOOL_PTR(m_Info.get());
 
+    /// Forget the stored data
     void Forget(void);
     
+    /// Parse stored data
     void Update(void)
         {
             if ( Delayed() )
                 DoUpdate();
         }
 
+    /// Check stored data format
+    ///
+    /// @param format
+    ///   Data format
+    /// @return
+    ///   TRUE is stored data is in this format
     bool HaveFormat(ESerialDataFormat format) const
         {
             const SInfo* info = m_Info.get();
             return info && info->m_DataFormat == format;
         }
+    
+    /// Get data source
     CByteSource& GetSource(void) const
         {
             return *m_Info->m_Source;
         }
 
+    /// Get member index
     TMemberIndex GetIndex(void) const;
 
+    /// Reset the buffer with a new data
     void SetData(const CItemInfo* itemInfo, TObjectPtr object,
                  ESerialDataFormat dataFormat, CByteSource& data);
 
