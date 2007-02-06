@@ -42,6 +42,7 @@
 #include <objects/general/Object_id.hpp>
 
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <algorithm>
 
@@ -159,8 +160,19 @@ string CSplignFormatter::AsExonTable(
 }
 
 
+void MakeLeftHeader(size_t x, string* ps) 
+{
+    string & s (*ps);
+    const string strx (NStr::IntToString(x));
+    copy(strx.begin(), strx.end(), s.begin() + 9 - strx.size());
+}
+
+
 string CSplignFormatter::AsAlignmentText(
-    CRef<objects::CScope> scope, const CSplign::TResults* results) const
+    CRef<objects::CScope> scope,
+    const CSplign::TResults* results,
+    size_t line_width,
+    int segnum) const
 
 {
     if(results == 0) {
@@ -168,13 +180,26 @@ string CSplignFormatter::AsAlignmentText(
     }
     
     const size_t extra_chars = 5;
-    const size_t max_width = 80;
     
-    const string querystr (m_QueryId->GetSeqIdString(true));
-    const string subjstr (m_SubjId->GetSeqIdString(true));
+    const string kNotSet ("id_not_set");
+    const string querystr (m_QueryId.IsNull()? kNotSet:
+                           m_QueryId->GetSeqIdString(true));
+    const string subjstr (m_SubjId.IsNull()? kNotSet:
+                          m_SubjId->GetSeqIdString(true));
+
+    // query seq-vector
+    CBioseq_Handle bh_query (scope->GetBioseqHandle(*m_QueryId));
+    CSeqVector sv_query (bh_query.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
+    string query_sequence_sense;
+    sv_query.GetSeqData(sv_query.begin(), sv_query.end(), query_sequence_sense);
+
+    // subject seq-vector
+    CBioseq_Handle bh_subj (scope->GetBioseqHandle(*m_SubjId));
+    CSeqVector sv_subj (bh_subj.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
 
     CNcbiOstrstream oss;
     oss.precision(3);
+    const string kTenner (10, ' '); // heading spaces
 
     ITERATE(CSplign::TResults, ii, *results) {
             
@@ -191,15 +216,6 @@ string CSplignFormatter::AsAlignmentText(
             << querystr << '(' << qc << ")\t" 
             << subjstr << '(' << sc << ')' << endl;
                 
-        // query seq-vector
-        CBioseq_Handle bh_query = scope->GetBioseqHandle(*m_QueryId);
-        CSeqVector sv_query = bh_query.GetSeqVector(
-                                  CBioseq_Handle::eCoding_Iupac);
-
-        // subject seq-vector
-        CBioseq_Handle bh_subj = scope->GetBioseqHandle(*m_SubjId);
-        CSeqVector sv_subj=bh_subj.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-
         size_t exons_total = 0;
         ITERATE(CSplign::TSegments, jj, ii->m_segments) {
             if(jj->m_exon) {
@@ -207,7 +223,29 @@ string CSplignFormatter::AsAlignmentText(
             }
         }
 
-        size_t exon_count = 0;
+        string query_sequence;
+        if(qstrand) {
+            query_sequence = query_sequence_sense;
+        }
+        else {
+            query_sequence.resize(query_sequence_sense.size());
+            transform(query_sequence_sense.rbegin(), query_sequence_sense.rend(),
+                      query_sequence.begin(),SCompliment());
+        }
+
+        string cds_sequence, query_protein;
+        if(ii->m_cds_start < ii->m_cds_stop) {
+
+            cds_sequence.resize(ii->m_cds_stop - ii->m_cds_start + 1);
+            copy(query_sequence.begin() + ii->m_cds_start,
+                 query_sequence.begin() + ii->m_cds_stop + 1,
+                 cds_sequence.begin());
+            CSeqTranslator::Translate(cds_sequence, query_protein);
+        }
+
+        size_t exon_count = 0, seg_count = 0;
+        int query_aa_idx (0);
+        int qframe(ii->m_cds_start < ii->m_cds_stop? -2: -3);
         ITERATE(CSplign::TSegments, jj, ii->m_segments) {
             
             const CSplign::TSegment& s = *jj;
@@ -269,30 +307,34 @@ string CSplignFormatter::AsAlignmentText(
                     transform(str.begin(), str.end(), 
                               subj.begin(), SCompliment());
                 }
-
-                sv_query.GetSeqData(sv_query.begin() + TSeqPos(q0),
-                                    sv_query.begin() + TSeqPos(q1 + 1), str);
-
-                vector<char> query (str.size());
-                if(qstrand) {
-                    copy(str.begin(), str.end(), query.begin());
+                
+                if(!qstrand) {
+                    const size_t Q0 (q0);
+                    q0 = query_sequence.size() - q1 - 1;
+                    q1 = query_sequence.size() - Q0 - 1;
                 }
-                else {
-                    reverse(str.begin(), str.end());
-                    transform(str.begin(), str.end(), 
-                              query.begin(), SCompliment());
+
+                vector<char> query (q1 - q0 + 1);
+                copy(query_sequence.begin() + q0, query_sequence.begin() + q1 + 1,
+                     query.begin());
+                
+                const bool do_print (segnum == -1 || int(seg_count) == segnum);
+                if(do_print) {
+
+                    oss << endl << " Exon " << (exon_count + 1) << " ("
+                        << (1 + s.m_box[0]) << '-' << (1 + s.m_box[1]) << ','
+                        << (1 + s.m_box[2]) << '-' << (1 + s.m_box[3]) << ") "
+                        << "Len = " << s.m_len << ' '
+                        << "Identity = " << s.m_idty << endl;
                 }
                 
-                oss << endl << "Exon " << (exon_count + 1) << " ("
-                    << (1 + s.m_box[0]) << '-' << (1 + s.m_box[1]) << ','
-                    << (1 + s.m_box[2]) << '-' << (1 + s.m_box[3]) << ") "
-                    << "Len = " << s.m_len << ' '
-                    << "Identity = " << s.m_idty << endl;
+                string l0 (kTenner);
+                string l1 (kTenner);
+                string l2 (kTenner);
+                string l3 (kTenner);
                 
-                string l0, l1, l2, l3;
-
-                l0 = NStr::IntToString(qbeg + 1) + ":" 
-                    + NStr::IntToString(sbeg + 1);
+                MakeLeftHeader(qbeg + 1, &l1);
+                MakeLeftHeader(sbeg + 1, &l3);
 
                 string trans;
                 if(exon_count > 0) {
@@ -304,10 +346,17 @@ string CSplignFormatter::AsAlignmentText(
                 }
 
                 size_t lines = 0;
-                for(size_t t = 0, td = trans.size(), 
-                        iq = 0, is = 0; t < td; ++t) {
+                for(size_t t = 0, td = trans.size(), iq = 0, is = 0; t < td; ++t) {
                     
-                    char c = trans[t], c1, c2, c3;
+                    char c = trans[t], c1, c2, c3, c0, c4;
+
+                    if(qframe == -2 && q0 + iq == ii->m_cds_start) {
+                        qframe = -1;
+                    }
+
+                    if(qframe >= 0 && q0 + iq >= ii->m_cds_stop) {
+                        qframe = -3;
+                    }
                     
                     switch(c) {
                  
@@ -342,48 +391,69 @@ string CSplignFormatter::AsAlignmentText(
                         break;
                         
                     default:
-                        NCBI_THROW( CAlgoAlignException,
-                                    eInternal,
-                                    g_msg_UnknownTranscriptSymbol + c);
+                        NCBI_THROW(CAlgoAlignException,
+                                   eInternal,
+                                   g_msg_UnknownTranscriptSymbol + c);
                     }
+
+                    c0 = c4 = ' ';
+                    if(qframe >= -1 && (c == 'M' || c == 'R' || c == 'D')) {
+                        qframe = (qframe + 1) % 3;
+                    }
+                    if(c != '#' && c != 'I' && qframe == 1) {
+                        c0 = query_protein[query_aa_idx++];
+                    }
+
+                    l0.push_back(c0);
                     l1.push_back(c1);
                     l2.push_back(c2);
                     l3.push_back(c3);
                     
-                    if(l1.size() == max_width) {
+                    if(l1.size() == 10 + line_width) {
 
-                        oss << l0 << endl << l1 << endl 
-                            << l2 << endl << l3 << endl << endl;
+                        if(do_print) {
+                            oss << l0 << endl << l1 << endl 
+                                << l2 << endl << l3 << endl << endl;
+                        }
+
                         ++lines;
-                        l1.resize(0); l2.resize(0); l3.resize(0);
-                        size_t q0;
+                        l0 = l1 = l2 = l3 = kTenner;
+                        size_t q0, s0;
                         if(qstrand) {
-                            q0 = qbeg + lines*max_width;
+                            q0 = qbeg + iq;
                         }
                         else {
-                            q0 = qbeg - lines*max_width;
+                            q0 = qbeg - iq;
                         }
 
-                        size_t s0;
-                        if(qstrand) {
-                            s0 = sbeg + lines*max_width;
+                        if(sstrand) {
+                            s0 = sbeg + is;
                         }
                         else {
-                            s0 = sbeg - lines*max_width;
+                            s0 = sbeg - is;
                         }
-
-                        l0 = NStr::IntToString(q0 + 1) + ":" 
-                            + NStr::IntToString(s0 + 1);
+                
+                        MakeLeftHeader(q0 + 1, &l1);
+                        MakeLeftHeader(s0 + 1, &l3);
                     }
                 }
-                if(l1.size()) {
-                    oss << l0 << endl << l1 << endl 
-                        << l2 << endl << l3 << endl;
-                    l0.resize(0); l1.resize(0); l2.resize(0); l3.resize(0);
+
+                if(l1.size() > 10) {
+
+                    if(do_print) {
+                        oss << l0 << endl << l1 << endl << l2 << endl << l3 << endl;
+                    }
+
+                    l0 = l1 = l2 = l3 = kTenner;
                 }
 
                 ++exon_count;
             }
+            else {
+                if(qframe >= 0) qframe = -3; // disable further translation
+            }
+
+            ++seg_count;
         }
     }
     

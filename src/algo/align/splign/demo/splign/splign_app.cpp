@@ -1015,12 +1015,6 @@ void CSplignApp::x_GetBl2SeqHits(
 
 void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
 {
-    /*
-    ITERATE(THitRefs, ii, hitrefs) {
-        cerr << (**ii) << endl;
-    }
-    */
-
     const CSplignFormatter::EFlags flags =
 #ifdef GENOME_PIPELINE
         CSplignFormatter::fNone;

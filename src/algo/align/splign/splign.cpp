@@ -315,10 +315,16 @@ void CSplign::ClearMem(void)
 
 void CSplign::x_SetPattern(THitRefs* phitrefs)
 {
+    m_alnmap.clear();
+    m_pattern.clear();
+
+    // sort the input by min query coordinate
     typedef CHitComparator<THit> THitComparator;
     THitComparator sorter (THitComparator::eQueryMin);
     stable_sort(phitrefs->begin(), phitrefs->end(), sorter);
 
+    // check that no two consecutive hits are farther than the max intron
+    // (extra short hits skipped)
     const size_t max_intron = 1048575; // 2^20
     size_t prev = 0;
     ITERATE(THitRefs, ii, *phitrefs) {
@@ -342,6 +348,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         prev = h->GetSubjStop();
     }
 
+    // save each hit longer than the minimum and test whether the hit is perfect
     vector<size_t> pattern0;
     vector<pair<bool,double> > imperfect;
     for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
@@ -358,14 +365,14 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         }
     }
 
-    const char* Seq1 = &m_mrna.front();
-    const size_t SeqLen1 = m_polya_start < kMax_UInt?
-        m_polya_start: m_mrna.size();
-    const char* Seq2 = &m_genomic.front();
-    const size_t SeqLen2 = m_genomic.size();
+    const size_t dim (pattern0.size());
+
+    const char* Seq1 (&m_mrna.front());
+    const size_t SeqLen1 (m_polya_start < kMax_UInt? m_polya_start: m_mrna.size());
+    const char* Seq2 (&m_genomic.front());
+    const size_t SeqLen2 (m_genomic.size());
     
-    // verify some conditions on the input hit pattern
-    size_t dim = pattern0.size();
+    // verify conditions on the input hit pattern
     CNcbiOstrstream ostr_err;
     bool severe = false;
     if(dim % 4 == 0) {
@@ -415,101 +422,141 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             NCBI_THROW(CAlgoAlignException, eNoAlignment, err);
         }
     }
-    else {
 
-        m_alnmap.clear();
-        m_pattern.clear();
-        
-        SAlnMapElem map_elem;
-        map_elem.m_box[0] = map_elem.m_box[2] = 0;
-        map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
-        
-        // build the alignment map
-        CBandAligner nwa;
-        for(size_t i = 0; i < dim; i += 4) {    
+    SAlnMapElem map_elem;
+    map_elem.m_box[0] = map_elem.m_box[2] = 0;
+    map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
+
+    // build the alignment map
+    CBandAligner nwa;
+    for(size_t i = 0; i < dim; i += 4) {    
             
-            size_t L1, R1, L2, R2;
-            size_t max_seg_size = 0;
+        size_t L1, R1, L2, R2;
+        size_t max_seg_size = 0;
 
-            bool imprf = imperfect[i/4].first;
-            if(imprf) {                
+        bool imprf = imperfect[i/4].first;
+        if(imprf) {                
 
-                const size_t len1 = pattern0[i+1] - pattern0[i] + 1;
-                const size_t len2 = pattern0[i+3] - pattern0[i+2] + 1;
-                const size_t maxlen = max(len1, len2);
-                const size_t band = size_t((1 - imperfect[i/4].second) * maxlen) + 2;
-                nwa.SetBand(band);
-                nwa.SetSequences(Seq1 + pattern0[i],   len1,
-                                 Seq2 + pattern0[i+2], len2,
-                                 false);
-                nwa.Run();
-                max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
-            }
-            else {
-                L1 = 0;
-                R1 = pattern0[i+1] - pattern0[i];
-                L2 = 0;
-                R2 = pattern0[i+3] - pattern0[i+2];
-                max_seg_size = R1 - L1 + 1;
-            }
-
-            if(max_seg_size) {
-
-                // make the core
-                {{
-                    const size_t cut = (1 + R1 - L1) / 5;
-                    const size_t l1 = L1 + cut, l2 = L2 + cut;
-                    const size_t r1 = R1 - cut, r2 = R2 - cut;
-                    if(l1 < r1 && l2 < r2) {
-                        L1 = l1; L2 = l2; 
-                        R1 = r1; R2 = r2;
-                    }
-                }}
-
-                const size_t hitlen_q = pattern0[i + 1] - pattern0[i] + 1;
-                const size_t hlq4 = hitlen_q/4;
-                const size_t sh = hlq4;
-                
-                size_t delta = sh > L1? sh - L1: 0;
-                size_t q0 = pattern0[i] + L1 + delta;
-                size_t s0 = pattern0[i+2] + L2 + delta;
-                
-                const size_t h2s_right = hitlen_q - R1 - 1;
-                delta = sh > h2s_right? sh - h2s_right: 0;
-                size_t q1 = pattern0[i] + R1 - delta;
-                size_t s1 = pattern0[i+2] + R2 - delta;
-                
-                if(q0 > q1 || s0 > s1) { // the longest segment too short
-                    q0 = pattern0[i] + L1;
-                    s0 = pattern0[i+2] + L2;
-                    q1 = pattern0[i] + R1;
-                    s1 = pattern0[i+2] + R2;
-                }
-
-                m_pattern.push_back(q0); m_pattern.push_back(q1);
-                m_pattern.push_back(s0); m_pattern.push_back(s1);
-                
-                const size_t pattern_dim = m_pattern.size();
-                if(map_elem.m_pattern_start == -1) {
-                    map_elem.m_pattern_start = pattern_dim - 4;
-                }
-                map_elem.m_pattern_end = pattern_dim - 1;
-            }
-            
-            map_elem.m_box[1] = pattern0[i+1];
-            map_elem.m_box[3] = pattern0[i+3];
+            const size_t len1 = pattern0[i+1] - pattern0[i] + 1;
+            const size_t len2 = pattern0[i+3] - pattern0[i+2] + 1;
+            const size_t maxlen = max(len1, len2);
+            const size_t band = size_t((1 - imperfect[i/4].second) * maxlen) + 2;
+            nwa.SetBand(band);
+            nwa.SetSequences(Seq1 + pattern0[i],   len1,
+                             Seq2 + pattern0[i+2], len2,
+                             false);
+            nwa.Run();
+            max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
         }
+        else {
+            L1 = 0;
+            R1 = pattern0[i+1] - pattern0[i];
+            L2 = 0;
+            R2 = pattern0[i+3] - pattern0[i+2];
+            max_seg_size = R1 - L1 + 1;
+        }
+
+        if(max_seg_size) {
+
+            // make the core
+            {{
+                const size_t cut = (1 + R1 - L1) / 5;
+                const size_t l1 = L1 + cut, l2 = L2 + cut;
+                const size_t r1 = R1 - cut, r2 = R2 - cut;
+                if(l1 < r1 && l2 < r2) {
+                    L1 = l1; L2 = l2; 
+                    R1 = r1; R2 = r2;
+                }
+            }}
+
+            const size_t hitlen_q = pattern0[i + 1] - pattern0[i] + 1;
+            const size_t hlq4 = hitlen_q/4;
+            const size_t sh = hlq4;
+                
+            size_t delta = sh > L1? sh - L1: 0;
+            size_t q0 = pattern0[i] + L1 + delta;
+            size_t s0 = pattern0[i+2] + L2 + delta;
+                
+            const size_t h2s_right = hitlen_q - R1 - 1;
+            delta = sh > h2s_right? sh - h2s_right: 0;
+            size_t q1 = pattern0[i] + R1 - delta;
+            size_t s1 = pattern0[i+2] + R2 - delta;
+                
+            if(q0 > q1 || s0 > s1) { // the longest segment too short
+                q0 = pattern0[i] + L1;
+                s0 = pattern0[i+2] + L2;
+                q1 = pattern0[i] + R1;
+                s1 = pattern0[i+2] + R2;
+            }
+
+            m_pattern.push_back(q0); m_pattern.push_back(q1);
+            m_pattern.push_back(s0); m_pattern.push_back(s1);
+                
+            const size_t pattern_dim = m_pattern.size();
+            if(map_elem.m_pattern_start == -1) {
+                map_elem.m_pattern_start = pattern_dim - 4;
+            }
+            map_elem.m_pattern_end = pattern_dim - 1;
+        }
+            
+        map_elem.m_box[1] = pattern0[i+1];
+        map_elem.m_box[3] = pattern0[i+3];
+    }
         
-        map_elem.m_box[1] = SeqLen1 - 1;
-        map_elem.m_box[3] = SeqLen2 - 1;
-        m_alnmap.push_back(map_elem);
+    map_elem.m_box[1] = SeqLen1 - 1;
+    map_elem.m_box[3] = SeqLen2 - 1;
+    m_alnmap.push_back(map_elem);
+}
+
+
+void CSplign::x_InitCDS(const THit::TId& id_query)
+{
+    m_cds_start = m_cds_stop = 0;
+
+    // attempt to find CDS in cache
+    TStrIdToCDS::const_iterator ie = m_CdsMap.end();
+    const string strid = id_query->AsFastaString();
+    TStrIdToCDS::const_iterator ii = m_CdsMap.find(strid);
+
+    if(ii == ie) {
+            
+        // Assign CDS to the max ORF longer than 90 bps and starting from ATG
+        //
+        USING_SCOPE(objects);
+        vector<CRef<CSeq_loc> > orfs;
+        vector<string> start_codon;
+        start_codon.push_back("ATG");
+        COrf::FindOrfs(m_mrna, orfs, 90, 1, start_codon);
+        TSeqPos max_len = 0;
+        TSeqPos max_from = 0;
+        TSeqPos max_to = 0;
+        ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
+            TSeqPos len = sequence::GetLength(**orf, NULL);
+            ENa_strand orf_strand ((*orf)->GetInt().GetStrand());
+            if (orf_strand != eNa_strand_minus) {
+                if (len > max_len) {
+                    max_len = len;
+                    max_from = (*orf)->GetInt().GetFrom();
+                    max_to = (*orf)->GetInt().GetTo();
+                }
+            }
+        }
+
+        // save to cache
+        if(max_len > 0) {
+            TCDS cds (m_cds_start = max_from, m_cds_stop = max_to);
+            m_CdsMap[strid] = cds;
+        }
+    }
+    else {
+        m_cds_start = ii->second.first;
+        m_cds_stop = ii->second.second;
     }
 }
 
 
 // PRE:  Input Blast hits.
 // POST: TResults - a vector of aligned compartments.
-
 void CSplign::Run(THitRefs* phitrefs)
 {
     if(!phitrefs) {
@@ -563,47 +610,12 @@ void CSplign::Run(THitRefs* phitrefs)
                        numeric_limits<THit::TCoord>::max(), false);
 
         if(!m_strand) {
-            // make reverse complimentary
+            // make a reverse complimentary
             reverse (m_mrna.begin(), m_mrna.end());
             transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
         }
 
-        // find and cache max ORF when in sense direction
-        if(m_strand) {
-
-            TStrIdToCDS::const_iterator ie = m_CdsMap.end();
-            const string strid = id_query->AsFastaString();
-            TStrIdToCDS::const_iterator ii = m_CdsMap.find(strid);
-            if(ii == ie) {
-            
-                USING_SCOPE(objects);
-                vector<CRef<CSeq_loc> > orfs;
-                vector<string> start_codon;
-                start_codon.push_back("ATG");
-                COrf::FindOrfs(m_mrna, orfs, 150, 1, start_codon);
-                TSeqPos max_len = 0;
-                TSeqPos max_from = 0;
-                TSeqPos max_to = 0;
-                ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
-                    TSeqPos len = sequence::GetLength(**orf, NULL);
-                    if ((*orf)->GetInt().GetStrand() != eNa_strand_minus) {
-                        if (len > max_len) {
-                            max_len = len;
-                            max_from = (*orf)->GetInt().GetFrom();
-                            max_to = (*orf)->GetInt().GetTo();
-                        }
-                    }
-                }
-
-                TCDS cds (m_cds_start = max_from, m_cds_stop = max_to);
-                m_CdsMap[strid] = cds;
-            }
-            else {
-                m_cds_start = ii->second.first;
-                m_cds_stop = ii->second.second;
-            }
-        }
-
+        x_InitCDS(id_query); // init m_cds_start, m_cds_stop
     }
 
     // compartments share the space between them
@@ -617,7 +629,7 @@ void CSplign::Run(THitRefs* phitrefs)
 
     for(size_t i = 0; i < dim; ++i, box += 4) {
         
-        if(i+1 == dim) {
+        if(i + 1 == dim) {
             smax = kMax_UInt;
             same_strand = false;
         }
@@ -635,10 +647,13 @@ void CSplign::Run(THitRefs* phitrefs)
 
             SAlignedCompartment ac = 
                 x_RunOnCompartment(&comp_hits, smin, smax, 0 /* phitrefs */ );
+
             ac.m_id = ++m_model_id;
             ac.m_segments = m_segments;
             ac.m_error = false;
             ac.m_msg = "Ok";
+            ac.m_cds_start = m_cds_start;
+            ac.m_cds_stop = m_cds_stop;
             m_result.push_back(ac);
         }
 
@@ -669,10 +684,11 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
                    numeric_limits<THit::TCoord>::max(), false);
 
     if(!m_strand) {
-
         reverse (m_mrna.begin(), m_mrna.end());
         transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
     }
+
+    x_InitCDS(id_query);
 
     bool rv = true;
     try {
@@ -682,6 +698,8 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
         ac.m_segments = m_segments;
         ac.m_error = false;
         ac.m_msg = "Ok";
+        ac.m_cds_start = m_cds_start;
+        ac.m_cds_stop = m_cds_stop;
 
         *result = ac;        
         m_mrna.resize(0);
@@ -1029,14 +1047,18 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         // prepare the pattern
         vector<size_t> pattern;
-        if(zone.m_pattern_start < 0) {
-            NCBI_THROW(CAlgoAlignException, eInternal,
-                       "CSplign::x_Run(): Invalid alignment pattern");
+        if(m_pattern.size() > 0) {
+
+            if(zone.m_pattern_start < 0) {
+                NCBI_THROW(CAlgoAlignException, eInternal,
+                           "CSplign::x_Run(): Invalid alignment pattern");
+            }
+            
+            copy(m_pattern.begin() + zone.m_pattern_start,
+                 m_pattern.begin() + zone.m_pattern_end + 1,
+                 back_inserter(pattern));
         }
-        
-        copy(m_pattern.begin() + zone.m_pattern_start,
-             m_pattern.begin() + zone.m_pattern_end + 1,
-             back_inserter(pattern));
+            
         for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
 
 #ifdef  DBG_DUMP_PATTERN
@@ -1051,6 +1073,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             pattern[j+2] -= zone.m_box[2];
             pattern[j+3] -= zone.m_box[2];
         }
+
         if(pattern.size()) {
             m_aligner->SetPattern(pattern);
         }
@@ -1581,8 +1604,10 @@ void CSplign::SAlignedCompartment::ToBuffer(TNetCacheBuffer* target) const
         NCBI_THROW(CAlgoAlignException, eBadParameter, g_msg_NullPointerPassed);
     }
 
-    const size_t core_size = sizeof m_id + sizeof m_error + m_msg.size() + 1
-        + sizeof m_QueryStrand + sizeof m_SubjStrand;
+    const size_t core_size (
+          sizeof m_id + sizeof m_error + m_msg.size() + 1
+        + sizeof m_QueryStrand + sizeof m_SubjStrand + sizeof m_cds_start
+        + sizeof m_cds_stop);
 
     vector<char> core (core_size);
 
@@ -1592,6 +1617,8 @@ void CSplign::SAlignedCompartment::ToBuffer(TNetCacheBuffer* target) const
     ElemToBuffer(m_msg, p);
     ElemToBuffer(m_QueryStrand, p);
     ElemToBuffer(m_SubjStrand, p);
+    ElemToBuffer(m_cds_start, p);
+    ElemToBuffer(m_cds_stop, p);
     
     typedef vector<TNetCacheBuffer> TBuffers;
     TBuffers vb (m_segments.size());
@@ -1625,8 +1652,11 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
 {
     using namespace splign_local;
 
-    const size_t min_size = sizeof m_id + sizeof m_error + 1 
-        + sizeof m_QueryStrand + sizeof m_SubjStrand;
+    const size_t min_size (
+          sizeof m_id + sizeof m_error + 1 
+        + sizeof m_QueryStrand + sizeof m_SubjStrand + sizeof m_cds_start 
+        + sizeof m_cds_stop);
+
     if(source.size() < min_size) {
         NCBI_THROW(CAlgoAlignException, eInternal, g_msg_NetCacheBufferIncomplete);
     }
@@ -1637,6 +1667,9 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
     ElemFromBuffer(m_msg, p);
     ElemFromBuffer(m_QueryStrand, p);
     ElemFromBuffer(m_SubjStrand, p);
+    ElemFromBuffer(m_cds_start, p);
+    ElemFromBuffer(m_cds_stop, p);
+
     const char* pe = &source.back();
     while(p <= pe) {
         size_t seg_buf_size = 0;
@@ -1650,191 +1683,3 @@ void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
 
 
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log: splign.cpp,v $
- * Revision 1.61  2006/09/26 15:29:16  kapustin
- * Complete alignment information can now be passed to x_RunOnCompartment() 
- * for additional filtering of compartment hits
- *
- * Revision 1.60  2006/08/29 20:21:23  kapustin
- * Iterate seg-level core post-processing until no new exons created
- *
- * Revision 1.59  2006/08/01 15:25:40  kapustin
- * Suppress a warning
- *
- * Revision 1.58  2006/07/18 19:36:58  kapustin
- * Retrieve longest ORF information when in sense direction. 
- * Use band-limited NW for best diag extraction.
- *
- * Revision 1.57  2006/06/05 12:52:23  kapustin
- * Screen off final alignments with overall identity below the threshold
- *
- * Revision 1.56  2006/05/22 16:01:12  kapustin
- * Adjust the term exon cut off procedure
- *
- * Revision 1.53  2006/04/19 14:47:10  kapustin
- * Eliminate hits shorter than the cut-off when pre-checking for max intron length
- *
- * Revision 1.52  2006/04/17 19:30:11  kapustin
- * Move intron max length check to x_SetPattern to assure proper hit order
- *
- * Revision 1.51  2006/04/12 16:32:50  kapustin
- * Fix an issue with truncated non-polya R-GAP's
- *
- * Revision 1.50  2006/04/05 13:55:22  dicuccio
- * Added destructor, forbiddent copy constructor
- *
- * Revision 1.49  2006/04/04 22:28:33  kapustin
- * Tackle error code/severity handling
- *
- * Revision 1.48  2006/03/21 16:20:50  kapustin
- * Various changes, mainly adjust the code with  other libs
- *
- * Revision 1.47  2006/02/14 15:41:25  kapustin
- * +AlignSingleCompartment()
- *
- * Revision 1.46  2006/02/13 19:31:54  kapustin
- * Do not pre-load mRNA
- *
- * Revision 1.45  2005/12/13 18:41:22  kapustin
- * Limit space to look beyond blast hit boundary with the max genomic extent 
- * for non-covered queries above kNonCoveredEndThreshold
- *
- * Revision 1.44  2005/12/01 18:31:55  kapustin
- * +CSplign::PreserveScope()
- *
- * Revision 1.43  2005/11/21 14:24:00  kapustin
- * Reset scope history after bioseq_handle is obtained
- *
- * Revision 1.42  2005/10/31 16:29:53  kapustin
- * Retrieve parameter defaults with static member methods
- *
- * Revision 1.41  2005/10/24 17:33:17  kapustin
- * Ensure input hits have positive query strand
- *
- * Revision 1.40  2005/10/19 17:56:35  kapustin
- * Switch to using ObjMgr+LDS to load sequence data
- *
- * Revision 1.39  2005/10/13 21:23:58  kapustin
- * Fix a typo - reverse the perfect hit flag
- *
- * Revision 1.38  2005/09/28 18:04:29  kapustin
- * Verify that perfect hits actually have equal sides. 
- * Use relative coordinates as pattern base
- *
- * Revision 1.37  2005/09/27 18:03:50  kapustin
- * Fix a bug in term segment identity improvement step (supposedly rare)
- *
- * Revision 1.36  2005/09/21 14:16:52  kapustin
- * Adjust box pointer type to avoid compilation errors with GCC/64
- *
- * Revision 1.35  2005/09/12 16:24:00  kapustin
- * Move compartmentization to xalgoalignutil.
- *
- * Revision 1.34  2005/09/06 17:52:52  kapustin
- * Add interface to max_extent member
- *
- * Revision 1.33  2005/08/29 14:14:49  kapustin
- * Retain last subject sequence in memory when in batch mode.
- *
- * Revision 1.32  2005/08/18 15:11:15  kapustin
- * Use fatal severety to report missing IDs
- *
- * Revision 1.31  2005/08/02 15:55:36  kapustin
- * +x_GetGenomicExtent()
- *
- * Revision 1.30  2005/07/05 16:50:47  kapustin
- * Adjust compartmentization and term genomic extent. 
- * Introduce min overall identity required for compartments to align.
- *
- * Revision 1.29  2005/06/02 13:30:17  kapustin
- * Adjust GetBox() for different orientations
- *
- * Revision 1.28  2005/06/01 18:57:29  kapustin
- * +SAlignedCompartment::GetBox()
- *
- * Revision 1.27  2005/05/10 18:02:36  kapustin
- * + x_ProcessTermSegm()
- *
- * Revision 1.26  2005/01/26 21:33:12  kapustin
- * ::IsConsensusSplce ==> CSplign::SSegment::s_IsConsensusSplice
- *
- * Revision 1.25  2004/12/16 23:12:26  kapustin
- * algo/align rearrangement
- *
- * Revision 1.24  2004/12/01 14:55:08  kapustin
- * +ElemToBuffer
- *
- * Revision 1.23  2004/11/29 14:37:16  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be 
- * specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two
- * additional parameters to specify starting coordinates.
- *
- * Revision 1.22  2004/09/27 17:12:38  kapustin
- * Move splign_compartment_finder.hpp to /include/algo/align/splign.
- * SetIntronLimits() => SetMaxIntron()
- *
- * Revision 1.21  2004/09/21 16:39:47  kapustin
- * Use separate constants to specify min term exon length and the min
- * non-covered query space
- *
- * Revision 1.20  2004/09/09 21:23:41  kapustin
- * Adjust min term exon size to use with fixed genomic extent
- *
- * Revision 1.19  2004/07/19 13:38:07  kapustin
- * Remove unused conditional code
- *
- * Revision 1.18  2004/06/29 20:51:52  kapustin
- * Use CRef to access CObject-derived members
- *
- * Revision 1.17  2004/06/23 18:56:38  kapustin
- * Increment model id for models with exceptions
- *
- * Revision 1.16  2004/06/21 18:43:20  kapustin
- * Tweak seg-level post-processing to reconcile boundary identity
- * improvement with rterm-exon cutting
- *
- * Revision 1.15  2004/06/16 21:02:43  kapustin
- * Set lower length limit for gaps treated as poly-A parts
- *
- * Revision 1.14  2004/06/07 13:46:46  kapustin
- * Rearrange seg-level postprocessing steps
- *
- * Revision 1.13  2004/06/03 19:27:54  kapustin
- * Add CSplign::GetIdentity(). Limit the genomic extension for small
- * terminal exons
- *
- * Revision 1.12  2004/05/24 16:13:57  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.11  2004/05/19 13:37:48  kapustin
- * Remove test dumping code
- *
- * Revision 1.10  2004/05/18 21:43:40  kapustin
- * Code cleanup
- *
- * Revision 1.9  2004/05/04 15:23:45  ucko
- * Split splign code out of xalgoalign into new xalgosplign.
- *
- * Revision 1.8  2004/05/03 15:22:18  johnson
- * added typedefs for public stl types
- *
- * Revision 1.7  2004/04/30 15:00:47  kapustin
- * Support ASN formatting
- *
- * Revision 1.6  2004/04/26 15:38:45  kapustin
- * Add model_id as a CSplign member
- *
- * Revision 1.5  2004/04/23 18:43:47  ucko
- * <cmath> -> <math.h>, since some older compilers (MIPSpro) lack the wrappers.
- *
- * Revision 1.4  2004/04/23 16:52:04  kapustin
- * Change the way we get donor address
- *
- * Revision 1.3  2004/04/23 14:37:44  kapustin
- * *** empty log message ***
- *
- * ===========================================================================
- */
