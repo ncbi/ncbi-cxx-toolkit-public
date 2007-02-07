@@ -123,7 +123,7 @@ CBlastFormat::x_FillScoreMatrix(const char *matrix_name)
         packed_matrix = &NCBISM_Pam70;
     else if (strcmp(matrix_name, "PAM250") == 0)
         packed_matrix = &NCBISM_Pam250;
-    else if (m_Program != "blastn") {
+    else if (m_Program != "blastn" && m_Program != "megablast") {
         NCBI_THROW(blast::CBlastException, 
                    CBlastException::eInvalidArgument,
                    "unsupported score matrix");
@@ -330,7 +330,7 @@ CBlastFormat::PrintOneAlignSet(CSearchResults& results,
     }
     display.SetAlignOption(flags);
 
-    if (m_Program == "blastn") {
+    if (m_Program == "blastn" || m_Program == "megablast") {
         display.SetMiddleLineStyle(CDisplaySeqalign::eBar);
         display.SetAlignType(CDisplaySeqalign::eNuc);
     }
@@ -360,7 +360,7 @@ CBlastFormat::PrintEpilog(CBlastOptions& options)
     CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                     m_Outfile, false);
 
-    if (m_Program == "blastn") {
+    if (m_Program == "blastn" || m_Program == "megablast") {
         m_Outfile << "\n\nMatrix: " << "blastn matrix " <<
                         options.GetMatchReward() << " " <<
                         options.GetMismatchPenalty() << endl;
