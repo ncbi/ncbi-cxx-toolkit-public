@@ -255,11 +255,12 @@ int CNSSubmitRemoveJobApp::Run(void)
         }
 
         CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
+        job_submitter.SetJobAffinity(affinity);
         job_submitter.SetJobMask(jmask);
         if (!jtags.empty())
             job_submitter.SetJobTags(jtags);
         request.Send(job_submitter.GetOStream());        
-        string job_key = job_submitter.Submit(affinity);
+        string job_key = job_submitter.Submit();
         if (out)
             *out << job_key << NcbiEndl;
         return 0;
@@ -320,10 +321,11 @@ int CNSSubmitRemoveJobApp::Run(void)
             
             CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
             request.Send(job_submitter.GetOStream());
+            job_submitter.SetJobAffinity(affinity);
             job_submitter.SetJobMask(jmask);
             if (!jtags.empty())
                 job_submitter.SetJobTags(jtags);
-            string job_key = job_submitter.Submit(affinity);
+            string job_key = job_submitter.Submit();
             if (out)
                 *out << job_key << NcbiEndl;
         }

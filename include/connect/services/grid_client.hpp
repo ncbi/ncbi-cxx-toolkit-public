@@ -78,9 +78,13 @@ public:
     ///
     void SetJobMask(CNetScheduleAPI::TJobMask mask);
 
-    /// Set a job tags
+    /// Set job tags
     ///
     void SetJobTags(const CNetScheduleAPI::TJobTags& tags);
+
+    /// Set a job affinity
+    ///
+    void SetJobAffinity(const string& affinity);
 
     /// Submit a job to the queue
     ///
@@ -102,6 +106,68 @@ private:
     /// are prohibited
     CGridJobSubmitter(const CGridJobSubmitter&);
     CGridJobSubmitter& operator=(CGridJobSubmitter&);
+};
+
+/// Grid Job Batch  Submiter
+///
+class NCBI_XCONNECT_EXPORT CGridJobBatchSubmitter
+{
+public:
+
+    ~CGridJobBatchSubmitter();
+
+    /// Set a job's input This string will be sent to 
+    /// then the job is submitted.
+    ///
+    /// This method can be used to send a short data to the worker node.
+    /// To send a large data use GetOStream method. Don't call this 
+    /// method after GetOStream method is called.
+    ///
+    void SetJobInput(const string& input);
+
+    /// Get a stream where a client can write an input 
+    /// data for the remote job
+    ///
+    CNcbiOstream& GetOStream();
+
+    /// Set a job mask
+    ///
+    void SetJobMask(CNetScheduleAPI::TJobMask mask);
+
+    /// Set job tags
+    ///
+    void SetJobTags(const CNetScheduleAPI::TJobTags& tags);
+
+    /// Set a job affinity
+    ///
+    void SetJobAffinity(const string& affinity);
+
+    void PrepareNextJob();
+
+    /// Submit a batch to the queue
+    ///
+    void Submit();
+
+    ///
+    void Reset();
+
+    const vector<CNetScheduleJob>& GetBatch() const { return m_Jobs; }
+private:
+    /// Only CGridClient can create an instnce of this class
+    friend class CGridClient;
+    CGridJobBatchSubmitter(CGridClient&, bool use_embedded_storage);
+
+    CGridClient& m_GridClient;
+    vector<CNetScheduleJob> m_Jobs;
+    size_t       m_JobIndex;
+    bool         m_UseEmbeddedStorage;
+    bool         m_HasBeenSubmitted;
+    auto_ptr<CNcbiOstream> m_WStream;
+
+    /// The copy constructor and the assignment operator
+    /// are prohibited
+    CGridJobBatchSubmitter(const CGridJobBatchSubmitter&);
+    CGridJobBatchSubmitter& operator=(CGridJobBatchSubmitter&);
 };
 
 /// Grid Job Status checker
@@ -217,6 +283,10 @@ public:
     ///
     CGridJobSubmitter& GetJobSubmitter();
 
+    /// Get a job submiter
+    ///
+    CGridJobBatchSubmitter& GetJobBatchSubmitter();
+
     /// Get a job status checker
     ///
     /// @param job_key
@@ -246,6 +316,7 @@ private:
     IBlobStorage& m_NSStorage;
 
     auto_ptr<CGridJobSubmitter> m_JobSubmitter;
+    auto_ptr<CGridJobBatchSubmitter> m_JobBatchSubmitter;
     auto_ptr<CGridJobStatus>   m_JobStatus;
 
     /// The copy constructor and the assignment operator
@@ -254,6 +325,26 @@ private:
     CGridClient& operator=(const CGridClient&);
 };
 
+/// Grid Client exception
+///
+class CGridClientException : public CException
+{
+public:
+    enum EErrCode {
+        eBatchHasAlreadyBeenSubmitted
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eBatchHasAlreadyBeenSubmitted: return "eBatchHasAlreadyBeenSubmitted";
+        default:                  return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CGridClientException, CException);
+};
 // Correct spelling
 #define CGridJobSubmiter CGridJobSubmitter
 
