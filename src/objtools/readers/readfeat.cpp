@@ -658,7 +658,7 @@ typedef CStaticArrayMap <const char*, const int, PNocase_CStr> TTrnaMap;
 static const TTrnaMap sm_TrnaKeys (trna_key_to_subtype, __FILE__, __LINE__);
 
 
-static const char * single_key_list [] = {
+static const char * const single_key_list [] = {
     "environmental_sample",
     "germline",
     "partial",
@@ -673,7 +673,7 @@ typedef CStaticArraySet <const char*, PNocase_CStr> TSingleSet;
 static const TSingleSet sc_SingleKeys (single_key_list, __FILE__, __LINE__);
 
 
-static const char * valid_inf_prefixes [] = {
+static const char * const valid_inf_prefixes [] = {
     "ab initio prediction",
     "nucleotide motif",
     "profile",
