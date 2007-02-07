@@ -387,7 +387,7 @@ bool CHandleRange::IntersectingWith(const TRange& range,
 
 bool CHandleRange::HasGaps(void) const
 {
-    return m_Ranges.size() > 1;
+    return m_Ranges.size() > 1  ||  m_MoreBefore  ||  m_MoreAfter;
 }
 
 
