@@ -145,7 +145,11 @@ private:
     inline static bool FromRangeAscendingSort(AlnInfo* const& info1,
                                               AlnInfo* const& info2)
     {
-        return info1->range.GetFrom() < info2->range.GetFrom();
+        if (info1->range.GetFrom() == info2->range.GetFrom()){
+            return info1->range.GetTo() < info2->range.GetTo();
+        } else {
+            return info1->range.GetFrom() < info2->range.GetFrom();
+        }
     } 
 
     ///merge overlapping seqalign
@@ -207,7 +211,7 @@ END_NCBI_SCOPE
 
 /* 
 *============================================================
-*$Log$
+*$Log: vectorscreen.hpp,v $
 *Revision 1.5  2006/10/04 20:06:27  jianye
 *expose internal alninfo list and remove VecscreenDisplay
 *
