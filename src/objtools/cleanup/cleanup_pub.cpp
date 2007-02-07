@@ -1303,42 +1303,6 @@ void CCleanup_imp::x_MergeDuplicatePubs(CBioseq_Handle bsh)
 }
 
 
-// Was SeqEntryPubsAsn4 in C Toolkit
-void CCleanup_imp::x_ConvertPubsToAsn4 (CSeq_entry_Handle seh)
-{
-    CBioseq_CI bs_ci (seh);
-    while (bs_ci) {
-        // Change any "citation" qualifiers to real citations
-        x_ChangeCitationQualToCitationPub(*bs_ci);
-        ++bs_ci;
-    }
-
-    // if any feature in the record contains an ImpFeat with a key of "Site-ref",
-    // convert 
-
-#if 0
-	BioseqSetPtr bioset = NULL;
-	ValNodePtr vnp = NULL, publist= NULL, tmp, v;
-	PubdescPtr		pubdesc;
-	Boolean foundSitRef = FALSE;
-	
-	if (!IS_Bioseq(sep)) {
-		bioset = (BioseqSetPtr) (sep->data.ptrvalue); /* top level set */
-	} 
-	
-	VisitFeaturesInSep (sep, (Pointer) &foundSitRef, HasSiteRef);
-	if (foundSitRef) {
-		SeqEntryExplore(sep, NULL, NewPubs);
-	}
-
-#endif
-
-    // remove all Site-ref imp feats
-    x_RecurseForSeqAnnots(*(seh.GetCompleteSeq_entry()), &ncbi::objects::CCleanup_imp::x_RemoveSiteRefImpFeats);
-    
-}
-
-
 bool CCleanup_imp::x_RemoveEmptyPubs (CPubdesc& pubdesc)
 {
     bool changes_made = false;
@@ -1452,11 +1416,15 @@ void CCleanup_imp::x_ExtendedCleanupPubs (CBioseq_set_Handle bss)
     // check pubs in Bioseqs, delete if they are already on the top
     x_RemoveDuplicatePubsFromBioseqsInSet(bss);
                                   
+    // remove all Site-ref imp feats
+    x_ActOnSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveSiteRefImpFeats);
 }
 
 
 void CCleanup_imp::x_ExtendedCleanupPubs (CBioseq_Handle bss)
 {
+    x_ChangeCitationQualToCitationPub(bss);
+
     x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyPubs);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyPubs);  
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ConvertFullLenPubFeatureToDescriptor);          
@@ -1464,6 +1432,9 @@ void CCleanup_imp::x_ExtendedCleanupPubs (CBioseq_Handle bss)
                                       &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
     //unique pubs
     x_MergeDuplicatePubs(bss);
+
+    // remove all Site-ref imp feats
+    x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveSiteRefImpFeats);
 }
 
 
@@ -1471,6 +1442,7 @@ void CCleanup_imp::x_ExtendedCleanupPubs (CSeq_annot_Handle sa)
 {
     x_RemoveEmptyPubs (sa);
     x_ConvertFullLenPubFeatureToDescriptor(sa);   
+    x_RemoveSiteRefImpFeats (sa);
 }
 
 

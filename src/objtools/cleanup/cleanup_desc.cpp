@@ -958,54 +958,6 @@ void CCleanup_imp::x_FuseMolInfos (CSeq_entry_Handle seh)
     }
 }
 
-void CCleanup_imp::x_FixMissingSources (CBioseq_Handle bh)
-{              
-    // this step was part of ToAsn4
-    x_ConvertPubsToAsn4(bh.GetParentEntry());
-        
-    // this step was also part of ToAsn4
-    string lineage = "";
-    x_GetGenBankTaxonomy(bh, lineage);
-    if (!NStr::IsBlank(lineage)) {
-        x_SetSourceLineage(bh, lineage);
-    }
-        
-}
-
-
-void CCleanup_imp::x_FixMissingSources (CBioseq_set_Handle bh)
-{                  
-    // this step was part of ToAsn4
-    x_ConvertPubsToAsn4(bh.GetParentEntry());
-        
-    // this step was also part of ToAsn4
-    string lineage = "";
-    x_GetGenBankTaxonomy(bh, lineage);
-    if (!NStr::IsBlank(lineage)) {
-        x_SetSourceLineage(bh, lineage);
-    }
-    
-    
-    if (bh.GetCompleteBioseq_set()->IsSetSeq_set()) {
-       CConstRef<CBioseq_set> b = bh.GetCompleteBioseq_set();
-       list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-       
-       ITERATE (list< CRef< CSeq_entry > >, it, set) {
-            x_FixMissingSources (**it);
-        }
-    }
-}
-
-void CCleanup_imp::x_FixMissingSources (const CSeq_entry& se)
-{
-    if (se.Which() == CSeq_entry::e_Seq) {
-        x_FixMissingSources(m_Scope->GetBioseqHandle(se.GetSeq()));
-    } else if (se.Which() == CSeq_entry::e_Set) {
-        x_FixMissingSources(m_Scope->GetBioseq_setHandle(se.GetSet()));
-    }
-}
-
-
 // This function was LoopSeqEntryToAsn3 in the C Toolkit
 void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
 {
@@ -1015,14 +967,9 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
         
     CheckNucProtSet(bh);
 
-    // This step was FixToAsn in the C Toolkit
-    x_FixMissingSources (bh);
-    
     // these two steps were EntryChangeImpFeat in the C Toolkit
     x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
     x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToProt);
-    // this step was EntryChangeGBSource in the C Toolkit
-    x_ChangeGenBankBlocks(bh.GetParentEntry());
  
     // this step was StripProtXrefs in the C Toolkit
     x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_StripProtXrefs);
@@ -1047,14 +994,9 @@ void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
     
-    // This step was FixToAsn in the C Toolkit
-    x_FixMissingSources (bh);
-    
     // these two steps were EntryChangeImpFeat in the C Toolkit
     x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
     x_RecurseForSeqAnnots(bh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToProt);
-    // this step was EntryChangeGBSource in the C Toolkit
-    x_ChangeGenBankBlocks(bh.GetParentEntry());
  
     // The FixNucProtSet step from the C Toolkit is eliminated here, as it only applies
     // to Nuc-Prot sets and sets that might contain nuc-prot sets.
@@ -1083,61 +1025,6 @@ void CCleanup_imp::LoopToAsn3 (CSeq_entry_Handle seh)
     } else if (seh.Which() == CSeq_entry::e_Set) {
         LoopToAsn3 (seh.GetSet());
     }
-}
-
-
-void CCleanup_imp::x_GetGenBankTaxonomy(const CSeq_entry& se, string &taxonomy)
-{
-    if (se.Which() == CSeq_entry::e_Seq) {
-        x_GetGenBankTaxonomy(m_Scope->GetBioseqHandle(se.GetSeq()), taxonomy);
-    } else if (se.Which() == CSeq_entry::e_Set) {
-        x_GetGenBankTaxonomy(m_Scope->GetBioseq_setHandle(se.GetSet()), taxonomy);
-    }
-}
-
-
-void CCleanup_imp::x_GetGenBankTaxonomy(CSeq_entry_Handle seh, string& taxonomy)
-{
-    x_GetGenBankTaxonomy(*(seh.GetCompleteSeq_entry()), taxonomy);
-}
-
-
-void CCleanup_imp::x_GetGenBankTaxonomy(CBioseq_Handle bh, string &taxonomy)
-{
-    if (!bh.CanGetInst_Repr()
-        || (bh.GetInst_Repr() != CSeq_inst::eRepr_raw
-            && bh.GetInst_Repr() != CSeq_inst::eRepr_const)) {
-        return;
-    }
-    CBioseq_EditHandle eh = bh.GetEditHandle();
-    if (eh.IsSetDescr()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
-            if ((*desc_it)->Which() == CSeqdesc::e_Genbank
-                && (*desc_it)->GetGenbank().CanGetTaxonomy()) {
-                taxonomy = (*desc_it)->GetGenbank().GetTaxonomy();
-                (*desc_it)->SetGenbank().ResetTaxonomy();
-            }
-        }
-    }
-}
-
-
-void CCleanup_imp::x_GetGenBankTaxonomy(CBioseq_set_Handle bh, string &taxonomy)
-{
-    CBioseq_set_EditHandle eh = bh.GetEditHandle();
-    if (eh.IsSetDescr()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
-            if ((*desc_it)->Which() == CSeqdesc::e_Genbank
-                && (*desc_it)->GetGenbank().CanGetTaxonomy()) {
-                taxonomy = (*desc_it)->GetGenbank().GetTaxonomy();
-                (*desc_it)->SetGenbank().ResetTaxonomy();
-            }
-        }
-    }
-    
-    ITERATE (list< CRef< CSeq_entry > >, it, bh.GetCompleteBioseq_set()->GetSeq_set()) {
-        x_GetGenBankTaxonomy(m_Scope->GetSeq_entryHandle(**it), taxonomy);
-    }    
 }
 
 

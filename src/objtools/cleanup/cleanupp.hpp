@@ -353,7 +353,6 @@ private:
     void x_RemoveDuplicatePubsFromBioseqsInSet(CBioseq_set_Handle bsh);
     void x_MergeDuplicatePubs(CBioseq_set_Handle bsh);    
     void x_MergeDuplicatePubs(CBioseq_Handle bsh);    
-    void x_ConvertPubsToAsn4 (CSeq_entry_Handle seh);
     
     bool x_RemoveEmptyPubs (CPubdesc& pubdesc);
     void x_RemoveEmptyPubs (CSeq_annot_Handle sa);
@@ -420,10 +419,6 @@ private:
     void x_FuseMolInfos (CBioseq_set_Handle bh);
     void x_FuseMolInfos (CSeq_entry_Handle seh);
     void x_AddMissingProteinMolInfo(CSeq_entry_Handle seh);
-    void x_GetGenBankTaxonomy(const CSeq_entry& se, string &taxonomy);
-    void x_GetGenBankTaxonomy(CSeq_entry_Handle seh, string& taxonomy);
-    void x_GetGenBankTaxonomy(CBioseq_Handle bs, string &taxonomy);
-    void x_GetGenBankTaxonomy(CBioseq_set_Handle bss, string &taxonomy);
 
     void x_NormalizeMolInfo(CBioseq_set_Handle bh);
     void x_SetMolInfoTechForConflictCDS (CBioseq_Handle bh);
@@ -455,10 +450,6 @@ private:
     
     void x_RemoveNucProtSetTitle(CBioseq_set_EditHandle bsh, const CSeq_entry& se);
     void x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const CSeq_entry& se, CSeqdesc::E_Choice desctype);
-
-    void x_FixMissingSources (CBioseq_Handle bh);
-    void x_FixMissingSources (CBioseq_set_Handle bh);
-    void x_FixMissingSources (const CSeq_entry& se);
 
     void LoopToAsn3 (CSeq_entry_Handle seh);
     void LoopToAsn3 (CBioseq_set_Handle bh);

@@ -713,7 +713,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     x_ChangeCitSub(bss);
 
     x_MoveGeneQuals (bss);
-    x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     // These two steps were EntryChangeImpFeat in the C Toolkit
     x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
@@ -734,11 +733,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
     if (seh.IsSet()) {
         bss = seh.GetSet().GetEditHandle();
         MoveCodingRegionsToNucProtSets(bss);
-        x_ChangeGenBankBlocks (bss.GetParentEntry());
-        x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
-        x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
@@ -746,6 +742,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bss, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
         x_RemoveMarkedGeneXrefs(bss);
         x_MergeAdjacentAnnots(bss);
+
+        // Remove empty GenBank block descriptors
+        x_RecurseForDescriptors(bss, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
 
         // Cleanup Publications        
         x_ExtendedCleanupPubs(bss);                
@@ -757,11 +756,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_ExtendedCleanupBioSourceDescriptorsAndFeatures (bss);
     } else {
         CBioseq_EditHandle bsh = seh.GetSeq().GetEditHandle();
-        x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
-        x_ChangeGenBankBlocks (bsh.GetParentEntry());
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
-        x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures);
     
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);
@@ -769,6 +765,9 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_set_Handle bss)
         x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
         x_RemoveMarkedGeneXrefs(bsh);
         x_MergeAdjacentAnnots(bsh);
+
+        // Remove empty GenBank block descriptors
+        x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
 
         // Cleanup Publications        
         x_ExtendedCleanupPubs(bsh);                
@@ -789,7 +788,6 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_ChangeCitSub(bsh);
     
     x_MoveGeneQuals (bsh);
-    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToCDS);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_ChangeImpFeatToProt);
@@ -802,11 +800,8 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
                                           
     RemoveEmptyFeaturesDescriptorsAndAnnots(bsh);
     
-    x_ChangeGenBankBlocks (bsh.GetParentEntry());
-    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_CleanGenbankBlockStrings);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_MoveDbxrefs);
 
-    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyFeatures); 
     
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_CheckCodingRegionEnds);        
@@ -814,7 +809,10 @@ void CCleanup_imp::ExtendedCleanup(CBioseq_Handle bsh)
     x_RecurseForSeqAnnots(bsh, &ncbi::objects::CCleanup_imp::x_RemoveUnnecessaryGeneXrefs);
     x_RemoveMarkedGeneXrefs(bsh);
     x_MergeAdjacentAnnots(bsh);
-    
+
+    // Remove empty GenBank block descriptors
+    x_RecurseForDescriptors(bsh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyGenbankDesc);
+
     // Cleanup Publications
     x_ExtendedCleanupPubs(bsh);
 
