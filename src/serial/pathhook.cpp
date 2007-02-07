@@ -30,7 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <serial/pathhook.hpp>
+#include <serial/impl/pathhook.hpp>
 #include <serial/impl/objstack.hpp>
 #include <serial/impl/item.hpp>
 #include <serial/impl/classinfob.hpp>
