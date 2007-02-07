@@ -851,6 +851,7 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
         m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));  
     }
+    bool master_is_na = false;
     //prepare defline
     CSeq_align_set actual_aln_list;
     CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
@@ -860,7 +861,10 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
              iter = actual_aln_list.Get().begin(); 
          iter != actual_aln_list.Get().end() && num_align < m_NumToShow; 
          iter++){
-        
+        if (is_first_aln) {
+            master_is_na = m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).
+                GetBioseqCore()->IsNa();
+        }
         subid = &((*iter)->GetSeq_id(1));
         if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))) {
             SDeflineInfo* sdl = x_GetDeflineInfo(**iter);
@@ -884,7 +888,7 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
       
     }
     //actual output
-    if((m_Option & eLinkout) && (m_Option & eHtml)){
+    if((m_Option & eLinkout) && (m_Option & eHtml) && !m_IsDbNa && !master_is_na){
         ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
             if((*iter)->linkout & eStructure){
                 char buf[512];
@@ -1190,7 +1194,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
     }
              
     //actual output
-    if((m_Option & eLinkout) && (m_Option & eHtml)){
+    if((m_Option & eLinkout) && (m_Option & eHtml) && !m_IsDbNa && !master_is_na){
         ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
             if((*iter)->linkout & eStructure){
                 char buf[512];
