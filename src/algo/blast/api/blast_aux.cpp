@@ -881,6 +881,38 @@ TSearchMessages::RemoveDuplicates()
     }
 }
 
+//
+// TMaskedQueryRegions
+//
+
+TMaskedQueryRegions
+TMaskedQueryRegions::RestrictToSeqInt(const CSeq_interval& location) const
+{
+    TMaskedQueryRegions retval;
+
+    TSeqRange loc(location.GetFrom(), 0);
+    loc.SetToOpen(location.GetTo());
+
+    ITERATE(TMaskedQueryRegions, maskinfo, *this) {
+        TSeqRange range = loc.IntersectionWith(**maskinfo);
+        if (range.NotEmpty()) {
+            const CSeq_interval& intv = (*maskinfo)->GetInterval();
+            const ENa_strand kStrand = intv.CanGetStrand() 
+                ? intv.GetStrand() : eNa_strand_unknown;
+            CRef<CSeq_interval> si
+                (new CSeq_interval(const_cast<CSeq_id&>(intv.GetId()), 
+                                   range.GetFrom(), 
+                                   range.GetToOpen(), 
+                                   kStrand));
+            CRef<CSeqLocInfo> sli(new CSeqLocInfo(si, 
+                                                  (*maskinfo)->GetFrame()));
+            retval.push_back(sli);
+        }
+    }
+
+    return retval;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
