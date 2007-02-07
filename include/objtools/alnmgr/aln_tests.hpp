@@ -95,7 +95,7 @@ public:
                 m_AlnIdVec.pop_back();
                 NCBI_EXCEPTION_THROW(e);
             }
-            m_AlnVec.push_back(&aln);
+            m_AlnVec.push_back(CConstRef<CSeq_align>(&aln));
         }
     }
 
