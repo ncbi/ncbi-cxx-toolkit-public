@@ -182,8 +182,7 @@ enum ESuppressSystemMessageBox {
     fSuppress_Exception = (1<<3),     ///< Unhandled exceptions
     fSuppress_All       = fSuppress_System | fSuppress_Runtime | 
                           fSuppress_Debug  | fSuppress_Exception,
-    fSuppress_Default   = fSuppress_System | fSuppress_Runtime | 
-                          fSuppress_Exception
+    fSuppress_Default   = fSuppress_All
 };
 /// Binary OR of "ESuppressSystemMessageBox"
 typedef int TSuppressSystemMessageBox;  
