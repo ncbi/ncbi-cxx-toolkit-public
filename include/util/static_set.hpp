@@ -413,6 +413,15 @@ public:
 };
 
 
+#define DEFINE_STATIC_ARRAY_MAP(Type, Var, Array) \
+    static const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__)
+
+#define DECLARE_CLASS_STATIC_ARRAY_MAP(Type, Var) \
+    static const Type Var
+
+#define DEFINE_CLASS_STATIC_ARRAY_MAP(Type, Var, Array) \
+    const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__)
+
 END_NCBI_SCOPE
 
 

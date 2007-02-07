@@ -524,7 +524,7 @@ static const TBiomolPair kBiomolMap[] = {
     TBiomolPair(CSeqFeatData::eSubtype_snoRNA,   CMolInfo::eBiomol_mRNA),
     TBiomolPair(CSeqFeatData::eSubtype_otherRNA, CMolInfo::eBiomol_transcribed_RNA)
 };
-static const TBiomolMap sc_BiomolMap(kBiomolMap, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TBiomolMap, sc_BiomolMap, kBiomolMap);
 
 
 CSeqdesc* CPromote::x_MakeMolinfoDesc(const CSeq_feat& feat) const

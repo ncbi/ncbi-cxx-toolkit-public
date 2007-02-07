@@ -444,7 +444,7 @@ static const TChoiceMapEntry sc_ChoiceArray[] = {
     TChoiceMapEntry("tpg",          CSeq_id::e_Tpg)
 };
 typedef CStaticArrayMap<const char*, CSeq_id::E_Choice, PNocase_CStr> TChoiceMap;
-static const TChoiceMap sc_ChoiceMap(sc_ChoiceArray, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TChoiceMap, sc_ChoiceMap, sc_ChoiceArray);
 
 
 static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
@@ -578,7 +578,7 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     TAccInfoMapEntry("unreserved_prot",         CSeq_id::eAcc_unreserved_prot)
 };
 typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo, PNocase_CStr> TAccInfoMap;
-static const TAccInfoMap sc_AccInfoMap(sc_AccInfoArray, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TAccInfoMap, sc_AccInfoMap, sc_AccInfoArray);
 
 static const char kDigits[] = "0123456789";
 

@@ -96,7 +96,7 @@ void CSubSource::GetLabel(string* str) const
         TPair(eSubtype_other,                   "other")
     };
     typedef CStaticArrayMap<TSubtype, const char*> TSubtypeMap;
-    static const TSubtypeMap sc_Map(sc_Pairs, __FILE__, __LINE__);
+    DEFINE_STATIC_ARRAY_MAP(TSubtypeMap, sc_Map, sc_Pairs);
 
     *str += '/';
     TSubtypeMap::const_iterator iter = sc_Map.find(GetSubtype());

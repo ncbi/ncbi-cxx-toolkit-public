@@ -181,7 +181,7 @@ static const TSiteElem sc_site_map[] = {
     TSiteElem("transmembrane-region", CSeqFeatData::eSite_transmembrane_region)
 };
 typedef CStaticArrayMap<const string, CSeqFeatData::TSite>   TSiteMap;
-static const TSiteMap sc_SiteMap(sc_site_map, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TSiteMap, sc_SiteMap, sc_site_map);
 
 
 // === Prot
@@ -192,7 +192,7 @@ static const string uninf_names[] = {
     "transit_peptide", "unknown", "unnamed"
 };
 typedef CStaticArraySet<string, PNocase> TUninformative;
-static const TUninformative sc_UninfNames(uninf_names, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TUninformative, sc_UninfNames, uninf_names);
 
 static bool s_IsInformativeName(const string& name)
 {
@@ -231,7 +231,7 @@ static const TRnaTypePair sc_rna_type_map[] = {
     TRnaTypePair("tRNA", CRNA_ref::eType_mRNA)
 };
 typedef CStaticArrayMap<const string, CRNA_ref::TType> TRnaTypeMap;
-static const TRnaTypeMap sc_RnaTypeMap(sc_rna_type_map, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TRnaTypeMap, sc_RnaTypeMap, sc_rna_type_map);
 
 
 // === Seq-feat.data

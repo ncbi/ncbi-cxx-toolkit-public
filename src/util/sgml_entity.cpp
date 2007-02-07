@@ -93,7 +93,7 @@ static const TSgmlAsciiPair sc_sgml_entity[] = {
 };
 
 typedef CStaticArrayMap<string, string> TSgmlAsciiMap;
-static const TSgmlAsciiMap sc_SgmlAsciiMap(sc_sgml_entity, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TSgmlAsciiMap, sc_SgmlAsciiMap, sc_sgml_entity);
 
 
 // in place conversion from SGML to ASCII

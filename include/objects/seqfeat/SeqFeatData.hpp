@@ -549,7 +549,7 @@ private:
         /// initialize our container of feature types and descriptions.
         void    x_Init(void);
     
-    const TBondMap sm_BondKeys;
+    DECLARE_CLASS_STATIC_ARRAY_MAP(TBondMap, sm_BondKeys);
     
 };
 
@@ -604,7 +604,7 @@ private:
         /// initialize our container of feature types and descriptions.
         void    x_Init(void);
     
-    const TSiteMap sm_SiteKeys;
+    DECLARE_CLASS_STATIC_ARRAY_MAP(TSiteMap, sm_SiteKeys);
     
 };
 

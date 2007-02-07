@@ -426,7 +426,7 @@ static const TStringPair bad_sfxs[] = {
     TStringPair("VI." , "VI")
 };
 typedef CStaticArrayMap<string, string> TSuffixMap;
-static const TSuffixMap sc_BadSuffixes(bad_sfxs, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TSuffixMap, sc_BadSuffixes, bad_sfxs);
 
 // move the suffix from the initials field to the suffix field.
 void CCleanup_imp::x_ExtractSuffixFromInitials(CName_std& name)

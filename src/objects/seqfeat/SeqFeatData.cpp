@@ -2166,7 +2166,7 @@ static const TQualPair kQualPairs[] = {
 };
 
 typedef CStaticArrayMap<CSeqFeatData::EQualifier, string> TQualsMap;
-static const TQualsMap sc_QualPairs(kQualPairs, __FILE__, __LINE__);
+DEFINE_STATIC_ARRAY_MAP(TQualsMap, sc_QualPairs, kQualPairs);
 
 const string& CSeqFeatData::GetQulifierAsString(EQualifier qual)
 {
@@ -2491,9 +2491,9 @@ static const CBondList::TBondKey bond_key_to_subtype [] = {
     CBondList::TBondKey ( "thiolester", CSeqFeatData::eBond_thiolester ),
     CBondList::TBondKey ( "xlink",      CSeqFeatData::eBond_xlink      )
 };
+DEFINE_CLASS_STATIC_ARRAY_MAP(CBondList::TBondMap, CBondList::sm_BondKeys, bond_key_to_subtype);
 
-
-CBondList::CBondList() : sm_BondKeys (bond_key_to_subtype, __FILE__, __LINE__)
+CBondList::CBondList()
 {
 }
 
@@ -2568,7 +2568,9 @@ static const CSiteList::TSiteKey site_key_to_subtype [] = {
     CSiteList::TSiteKey ( "unclassified",                CSeqFeatData::eSite_other                       ),
 };
 
-CSiteList::CSiteList() : sm_SiteKeys (site_key_to_subtype, __FILE__, __LINE__)
+DEFINE_CLASS_STATIC_ARRAY_MAP(CSiteList::TSiteMap, CSiteList::sm_SiteKeys, site_key_to_subtype);
+
+CSiteList::CSiteList()
 {
 }
 
