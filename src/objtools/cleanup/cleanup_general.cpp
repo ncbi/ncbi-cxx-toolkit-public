@@ -184,7 +184,7 @@ void CCleanup_imp::BasicCleanup(CPerson_id& pid, bool fix_initials)
 static const CName_std::TSuffixes& s_GetStandardSuffixes(void)
 {
     static const string sfxs[] = {"II", "III", "IV", "Jr.", "Sr.", "V", "VI"};
-    static const CName_std::TSuffixes suffixes(sfxs, __FILE__, __LINE__);
+    DEFINE_STATIC_ARRAY_MAP(CName_std::TSuffixes, suffixes, sfxs);
 
     return suffixes;
 }
