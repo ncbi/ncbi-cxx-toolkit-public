@@ -126,9 +126,28 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
+    template<size_t Size>
+    CStaticPairArrayMap(const typename TBase::value_type (&arr)[Size],
+                        const char* file, int line)
+        : TBase(arr, file, line)
+    {
+    }
+
+    /// Constructor to initialize comparator object.
+    template<size_t Size>
+    CStaticPairArrayMap(const typename TBase::value_type (&arr)[Size],
+                        const typename TBase::key_compare& comp,
+                        const char* file, int line)
+        : TBase(arr, comp, file, line)
+    {
+    }
+
+    /// default constructor.  This will build a map around a given array; the
+    /// storage of the end pointer is based on the supplied array size.  In
+    /// debug mode, this will verify that the array is sorted.
     CStaticPairArrayMap(typename TBase::const_iterator obj,
                         typename TBase::size_type array_size,
-                        const char* file = 0, int line = 0)
+                        const char* file, int line)
         : TBase(obj, array_size, file, line)
     {
     }
@@ -137,8 +156,27 @@ public:
     CStaticPairArrayMap(typename TBase::const_iterator obj,
                         typename TBase::size_type array_size,
                         const typename TBase::key_compare& comp,
-                        const char* file = 0, int line = 0)
+                        const char* file, int line)
         : TBase(obj, array_size, comp, file, line)
+    {
+    }
+
+    /// default constructor.  This will build a map around a given array; the
+    /// storage of the end pointer is based on the supplied array size.  In
+    /// debug mode, this will verify that the array is sorted.
+    NCBI_DEPRECATED_CTOR
+    (CStaticPairArrayMap(typename TBase::const_iterator obj,
+                         typename TBase::size_type array_size))
+        : TBase(obj, array_size, 0, 0)
+    {
+    }
+
+    /// Constructor to initialize comparator object.
+    NCBI_DEPRECATED_CTOR
+    (CStaticPairArrayMap(typename TBase::const_iterator obj,
+                         typename TBase::size_type array_size,
+                         const typename TBase::key_compare& comp))
+        : TBase(obj, array_size, comp, 0, 0)
     {
     }
 };
@@ -161,9 +199,28 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
+    template<size_t Size>
+    CStaticArrayMap(const typename TBase::value_type (&arr)[Size],
+                    const char* file, int line)
+        : TBase(arr, file, line)
+    {
+    }
+
+    /// Constructor to initialize comparator object.
+    template<size_t Size>
+    CStaticArrayMap(const typename TBase::value_type (&arr)[Size],
+                    const typename TBase::key_compare& comp,
+                    const char* file, int line)
+        : TBase(arr, comp, file, line)
+    {
+    }
+
+    /// default constructor.  This will build a map around a given array; the
+    /// storage of the end pointer is based on the supplied array size.  In
+    /// debug mode, this will verify that the array is sorted.
     CStaticArrayMap(typename TBase::const_iterator obj,
                     typename TBase::size_type array_size,
-                    const char* file = 0, int line = 0)
+                    const char* file, int line)
         : TBase(obj, array_size, file, line)
     {
     }
@@ -172,8 +229,27 @@ public:
     CStaticArrayMap(typename TBase::const_iterator obj,
                     typename TBase::size_type array_size,
                     const typename TBase::key_compare& comp,
-                    const char* file = 0, int line = 0)
+                    const char* file, int line)
         : TBase(obj, array_size, comp, file, line)
+    {
+    }
+
+    /// default constructor.  This will build a map around a given array; the
+    /// storage of the end pointer is based on the supplied array size.  In
+    /// debug mode, this will verify that the array is sorted.
+    NCBI_DEPRECATED_CTOR
+    (CStaticArrayMap(typename TBase::const_iterator obj,
+                     typename TBase::size_type array_size))
+        : TBase(obj, array_size, 0, 0)
+    {
+    }
+
+    /// Constructor to initialize comparator object.
+    NCBI_DEPRECATED_CTOR
+    (CStaticArrayMap(typename TBase::const_iterator obj,
+                     typename TBase::size_type array_size,
+                     const typename TBase::key_compare& comp))
+        : TBase(obj, array_size, comp, 0, 0)
     {
     }
 };

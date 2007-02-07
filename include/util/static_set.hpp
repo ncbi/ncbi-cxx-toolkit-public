@@ -190,10 +190,30 @@ public:
     /// Default constructor.  This will build a set around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
+    template<size_t Size>
+    CStaticArraySearchBase(const value_type (&arr)[Size],
+                           const char* file, int line)
+        : m_Begin(arr), m_End(arr + Size)
+    {
+        x_Validate(file, line);
+    }
+
+    /// Constructor to initialize comparator object.
+    template<size_t Size>
+    CStaticArraySearchBase(const value_type (&arr)[Size],
+                           const key_compare& comp,
+                           const char* file, int line)
+        : m_Begin(comp, arr), m_End(arr + Size)
+    {
+        x_Validate(file, line);
+    }
+
+    /// Default constructor.  This will build a set around a given array; the
+    /// storage of the end pointer is based on the supplied array size.  In
+    /// debug mode, this will verify that the array is sorted.
     CStaticArraySearchBase(const_iterator obj, size_type array_size,
-                           const char* file = 0, int line = 0)
-        : m_Begin(obj)
-        , m_End(obj + array_size / sizeof(value_type))
+                           const char* file, int line)
+        : m_Begin(obj), m_End(obj + array_size / sizeof(value_type))
     {
         x_Validate(file, line);
     }
@@ -201,9 +221,8 @@ public:
     /// Constructor to initialize comparator object.
     CStaticArraySearchBase(const_iterator obj, size_type array_size,
                            const key_compare& comp,
-                           const char* file = 0, int line = 0)
-        : m_Begin(comp, obj)
-        , m_End(obj + array_size / sizeof(value_type))
+                           const char* file, int line)
+        : m_Begin(comp, obj), m_End(obj + array_size / sizeof(value_type))
     {
         x_Validate(file, line);
     }
@@ -294,8 +313,7 @@ public:
 
 protected:
     /// Perform sort-order validation.  This is a no-op in release mode.
-    void x_Validate(const char* _DEBUG_ARG(file),
-                    int _DEBUG_ARG(line)) const
+    void x_Validate(const char* _DEBUG_ARG(file), int _DEBUG_ARG(line)) const
     {
 #ifdef _DEBUG
         const_iterator curr = begin(), prev = curr;
@@ -339,9 +357,28 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
+    template<size_t Size>
+    CStaticArraySet(const typename TBase::value_type (&arr)[Size],
+                    const char* file, int line)
+        : TBase(arr, file, line)
+    {
+    }
+
+    /// Constructor to initialize comparator object.
+    template<size_t Size>
+    CStaticArraySet(const typename TBase::value_type (&arr)[Size],
+                    const typename TBase::key_compare& comp,
+                    const char* file, int line)
+        : TBase(arr, comp, file, line)
+    {
+    }
+
+    /// default constructor.  This will build a map around a given array; the
+    /// storage of the end pointer is based on the supplied array size.  In
+    /// debug mode, this will verify that the array is sorted.
     CStaticArraySet(typename TBase::const_iterator obj,
                     typename TBase::size_type array_size,
-                    const char* file = 0, int line = 0)
+                    const char* file, int line)
         : TBase(obj, array_size, file, line)
     {
     }
@@ -350,8 +387,27 @@ public:
     CStaticArraySet(typename TBase::const_iterator obj,
                     typename TBase::size_type array_size,
                     const typename TBase::key_compare& comp,
-                    const char* file = 0, int line = 0)
+                    const char* file, int line)
         : TBase(obj, array_size, comp, file, line)
+    {
+    }
+
+    /// default constructor.  This will build a map around a given array; the
+    /// storage of the end pointer is based on the supplied array size.  In
+    /// debug mode, this will verify that the array is sorted.
+    NCBI_DEPRECATED_CTOR
+    (CStaticArraySet(typename TBase::const_iterator obj,
+                     typename TBase::size_type array_size))
+        : TBase(obj, array_size, 0, 0)
+    {
+    }
+
+    /// Constructor to initialize comparator object.
+    NCBI_DEPRECATED_CTOR
+    (CStaticArraySet(typename TBase::const_iterator obj,
+                     typename TBase::size_type array_size,
+                     const typename TBase::key_compare& comp))
+        : TBase(obj, array_size, comp, 0, 0)
     {
     }
 };
