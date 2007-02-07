@@ -291,7 +291,6 @@ serial/impl/memberlist.hpp
 // need this for CClassTypeInfoBase::CIteratorb base class
 serial/impl/classinfob.hpp
 serial/delaybuf.hpp
-serial/enumerated.hpp
 serial/enumvalues.hpp
 serial/exception.hpp
 serial/iterator.hpp
@@ -299,7 +298,6 @@ serial/objcopy.hpp
 serial/objectinfo.hpp
 serial/objectio.hpp
 serial/objectiter.hpp
-serial/objecttype.hpp
 serial/objhook.hpp
 serial/objistr.hpp
 serial/objistrasn.hpp
