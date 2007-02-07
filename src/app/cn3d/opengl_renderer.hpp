@@ -114,6 +114,7 @@ public:
 
     // tells the renderer what structure(s) it's to draw
     void AttachStructureSet(StructureSet *targetStructureSet);
+    void CenterViewOnAlignedResidues(void);
 
     // constructs the structure display lists (but doesn't draw them)
     void Construct(void);
@@ -152,9 +153,6 @@ public:
 
     // restore to saved view settings
     void RestoreSavedView(void);
-
-    // get current gl viewport - array of four int's: x, y, width, height
-    void GetViewport(int *viewport);
 
     // set font used by OpenGL to the wxFont associated with the glCanvas
     bool SetGLFont(int firstChar, int nChars, int fontBase);

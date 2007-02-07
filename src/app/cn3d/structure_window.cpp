@@ -1520,6 +1520,8 @@ bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *fil
     // if a preferred favorite has been specified (e.g. on the command line)
     bool foundPreferred = false;
     if (favoriteStyle.size() > 0) {
+        if (!IsWindowedMode())
+            LoadFavorites();
         CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
         for (f=favoriteStyles.Get().begin(); f!=fe; ++f) {
             if ((*f)->GetName() == favoriteStyle) {
@@ -1538,12 +1540,15 @@ bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *fil
     if (!foundPreferred) {
 
         // use style stored in asn data (already set up during StructureSet construction)
-        if (window && (*sset)->hasUserStyle) {
-            window->SetRenderingMenuFlag(0);
-            window->SetColoringMenuFlag(0);
+        if ((*sset)->hasUserStyle) {
+            TRACEMSG("Using global style from incoming data...");
+            if (window) {
+                window->SetRenderingMenuFlag(0);
+                window->SetColoringMenuFlag(0);
+            }
         }
 
-        // set default rendering style and view, and turn on corresponding style menu flags
+        // otherwise set default rendering style and view, and turn on corresponding style menu flags
         else {
             if ((*sset)->alignmentSet) {
                 (*sset)->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
@@ -1565,7 +1570,7 @@ bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *fil
     }
     
     renderer->AttachStructureSet(*sset);
-    if (!renderer->HasASNViewSettings())
+    if (IsWindowedMode() && !renderer->HasASNViewSettings())
         (*sset)->CenterViewOnAlignedResidues();
 
     return true;

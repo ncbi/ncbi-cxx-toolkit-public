@@ -370,6 +370,9 @@ bool Cn3DApp::OnInit(void)
     // give structure window initial focus
     structureWindow->Raise();
     structureWindow->SetFocus();
+    
+    // hack to fix some platforms that start with initially blank window
+    structureWindow->glCanvas->FakeOnSize();
 
     return true;
 }

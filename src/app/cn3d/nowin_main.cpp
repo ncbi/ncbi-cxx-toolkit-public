@@ -59,12 +59,12 @@
 #include "asn_reader.hpp"
 #include "cn3d_tools.hpp"
 #include "structure_set.hpp"
-#include "chemical_graph.hpp"
 #include "opengl_renderer.hpp"
-#include "alignment_manager.hpp"
 #include "cn3d_cache.hpp"
 #include "data_manager.hpp"
 #include "structure_window.hpp"
+#include "cn3d_png.hpp"
+#include "chemical_graph.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -130,7 +130,7 @@ void Cn3DNoWin::Init(void)
     CObjectOStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
 
     // set up argument processing
-    CArgDescriptions *argDescr = new CArgDescriptions();
+    CArgDescriptions *argDescr = new CArgDescriptions(false);
     argDescr->SetUsageContext(GetArguments().GetProgramName(), "No-Window Cn3D");
     
     // get data from file or network
@@ -140,6 +140,12 @@ void Cn3DNoWin::Init(void)
     // model, for network or Biostruc load
     argDescr->AddOptionalKey("o", "model", "Model type to use for coordinates", argDescr->eString);
     argDescr->SetConstraint("o", (new CArgAllow_Strings)->Allow("alpha")->Allow("single")->Allow("PDB"));
+    
+    // controls for output
+    argDescr->AddKey("p", "pngfile", "Output PNG file name", argDescr->eString);
+    argDescr->AddKey("w", "width", "Output width in pixels", argDescr->eInteger);
+    argDescr->AddKey("h", "height", "Output height in pixels", argDescr->eInteger);
+    argDescr->AddFlag("i", "Create interlaced PNG");
     
     // use favorite style
     argDescr->AddOptionalKey("s", "style", "Favorite style", argDescr->eString);
@@ -213,6 +219,10 @@ int Cn3DNoWin::Run(void)
         if (!sset)
             ERRORTHROW("Somehow ended up with NULL sset");
         auto_ptr < StructureSet > sset_ap(sset); // so we can be sure it's deleted
+        
+        // export PNG image
+        if (!ExportPNG(NULL, &renderer, args["p"].AsString(), args["w"].AsInteger(), args["h"].AsInteger(), args["i"].HasValue()))
+            ERRORTHROW("PNG export failed");
         
         TRACEMSG("Done!");
         status = 0;

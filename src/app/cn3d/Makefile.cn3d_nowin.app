@@ -26,7 +26,7 @@ SRC =	aaa_dummy_pch \
 	cn3d_cache \
 	cn3d_colors \
 	cn3d_glcanvas \
-	cn3d_png \
+	cn3d_png_nowin \
 	cn3d_pssm \
 	cn3d_refiner_interface \
 	cn3d_threader \
@@ -95,7 +95,7 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
 LIBS = \
-	$(WXWIDGETS_LIBS) \
+	$(WXWIDGETS_LIBS) -lOSMesa \
 	$(Z_LIBS) $(PNG_LIBS) $(PCRE_LIBS) \
 	$(ORIG_LIBS)
 

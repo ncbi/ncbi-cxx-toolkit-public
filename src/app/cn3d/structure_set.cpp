@@ -879,6 +879,7 @@ void StructureSet::CenterViewOnAlignedResidues(void)
 
     // set view
     renderer->CenterView(alignedCenter, radius);
+    TRACEMSG("Centered view at " << alignedCenter << " radius " << radius);
 }
 
 bool StructureSet::Draw(const AtomSet *atomSet) const

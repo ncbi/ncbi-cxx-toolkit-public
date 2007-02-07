@@ -386,6 +386,14 @@ void OpenGLRenderer::NewView(double eyeTranslateToAngleDegrees) const
 {
     if (cameraAngleRad <= 0.0) return;
 
+//    TRACEMSG("Camera_distance: " << cameraDistance);
+//    TRACEMSG("Camera_angle_rad: " << cameraAngleRad);
+//    TRACEMSG("Camera_look_at_X: " << cameraLookAtX);
+//    TRACEMSG("Camera_look_at_Y: " << cameraLookAtY);
+//    TRACEMSG("Camera_clip_near: " << cameraClipNear);
+//    TRACEMSG("Camera_clip_far: " << cameraClipFar);
+//    TRACEMSG("projection: " << projectionType);
+
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
 
@@ -427,6 +435,9 @@ void OpenGLRenderer::NewView(double eyeTranslateToAngleDegrees) const
         translate *= view.length() * tan(DegreesToRad(eyeTranslateToAngleDegrees));
         cameraLoc += translate;
     }
+//    TRACEMSG("Camera X: " << cameraLoc.x);
+//    TRACEMSG("Camera Y: " << cameraLoc.y);
+//    TRACEMSG("Camera Z: " << cameraLoc.z);
 
     // set camera position and direction
     gluLookAt(cameraLoc.x, cameraLoc.y, cameraLoc.z,    // the camera position
@@ -438,6 +449,9 @@ void OpenGLRenderer::NewView(double eyeTranslateToAngleDegrees) const
 
 void OpenGLRenderer::Display(void)
 {
+//    for (unsigned int m=0; m<16; ++m)
+//        TRACEMSG("viewMatrix[" << m << "]: " << viewMatrix[m]);
+
     if (structureSet) {
         const Vector& background = structureSet->styleManager->GetBackgroundColor();
         glClearColor(background[0], background[1], background[2], 1.0);
@@ -513,6 +527,7 @@ void OpenGLRenderer::Display(void)
         }
     }
 
+    glFinish();
     glFlush();
 
     // restore full viewport
@@ -661,6 +676,11 @@ void OpenGLRenderer::CenterView(const Vector& viewCenter, double radius)
 
     // do this so that this view is used upon restore
     SaveToASNViewSettings(NULL);
+}
+
+void OpenGLRenderer::CenterViewOnAlignedResidues(void)
+{
+    structureSet->CenterViewOnAlignedResidues();
 }
 
 void OpenGLRenderer::PushMatrix(const Matrix* m)
@@ -824,9 +844,11 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     currentFrame = ALL_FRAMES;
     if (!structureSet) initialViewFromASN.Reset();
 
-    Init();             // init GL system
-    Construct();        // draw structures
-    RestoreSavedView(); // load initial view if present
+    if (IsWindowedMode()) {
+        Init();             // init GL system
+        Construct();        // draw structures
+        RestoreSavedView(); // load initial view if present
+    }
 }
 
 void OpenGLRenderer::RecreateQuadric(void) const
@@ -1839,6 +1861,7 @@ bool OpenGLRenderer::LoadFromASNViewSettings(const ncbi::objects::CCn3d_user_ann
 {
     initialViewFromASN.Reset();
     if (!annotations.IsSetView()) return true;
+    TRACEMSG("Using view from incoming data...");
 
     // save a copy of the view settings
     initialViewFromASN.Reset(new CCn3d_view_settings);
@@ -1882,14 +1905,6 @@ void OpenGLRenderer::RestoreSavedView(void)
         initialViewFromASN->GetRotation_center().GetZ());
 
     NewView();
-}
-
-void OpenGLRenderer::GetViewport(int *viewport)
-{
-    if (glCanvas) glCanvas->SetCurrent();
-    GLint viewportGL[4];    // just in case GLint != int
-    glGetIntegerv(GL_VIEWPORT, viewportGL);
-    for (int i=0; i<4; ++i) viewport[i] = (int) viewportGL[i];
 }
 
 const wxFont& OpenGLRenderer::GetGLFont(void) const

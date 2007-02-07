@@ -201,6 +201,14 @@ void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
     renderer->NewView();
 }
 
+void Cn3DGLCanvas::FakeOnSize(void)
+{
+    int w, h;
+    GetClientSize(&w, &h);
+    wxSizeEvent se(wxSize(w, h));
+    OnSize(se);
+}
+
 void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
 {
     static bool dragging = false;

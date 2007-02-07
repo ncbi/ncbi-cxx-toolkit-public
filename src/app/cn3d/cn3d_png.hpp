@@ -34,15 +34,24 @@
 #ifndef CN3D_PNG__HPP
 #define CN3D_PNG__HPP
 
-#include <corelib/ncbistl.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
 
 
 BEGIN_SCOPE(Cn3D)
 
 class Cn3DGLCanvas;
+class OpenGLRenderer;
 
 // export a PNG - will bring up a dialog asking for filename and size params
-bool ExportPNG(Cn3DGLCanvas *glCanvas);
+bool ExportPNG(Cn3DGLCanvas *glCanvas,
+    // the following parameters should only be used in non-windowed mode (and glCanvas=NULL)
+    OpenGLRenderer *renderer = NULL,
+    const std::string& outputFilename = kEmptyStr,
+    int outputWidth = 0,
+    int outputHeight = 0,
+    bool outputInterlaced = false
+);
 
 END_SCOPE(Cn3D)
 

@@ -64,6 +64,7 @@ public:
     const wxFont& GetGLFont(void) const { return font; }
 
     void SuspendRendering(bool suspend);
+    void FakeOnSize(void);
 
 private:
     void OnPaint(wxPaintEvent& event);

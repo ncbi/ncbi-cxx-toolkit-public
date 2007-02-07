@@ -51,6 +51,10 @@
 #include <OpenGL/glu.h>
 #endif
 
+#ifdef CN3D_PNG_OSMESA
+#include <GL/osmesa.h>
+#endif
+
 #include <png.h>
 
 #include <wx/platform.h>
@@ -378,44 +382,69 @@ static void write_row_callback(png_structp png_ptr, png_uint_32 row, int pass)
     progressMeter->SetValue(progress);
 }
 
-bool ExportPNG(Cn3DGLCanvas *glCanvas)
+bool ExportPNG(Cn3DGLCanvas *glCanvas,
+    // the following parameters should only be used in non-windowed mode (and glCanvas=NULL)
+    OpenGLRenderer *renderer,
+    const string& outputFilename,
+    int outputWidth,
+    int outputHeight,
+    bool interlaced)
 {
+    // sanity checks
+    if (IsWindowedMode()) {
 #if !defined(__WXMSW__) && !defined(__WXGTK__) && !defined(__WXMAC__)
-    ERRORMSG("PNG export not (yet) implemented on this platform");
-    return false;
-#endif
-
-    if (!glCanvas || !glCanvas->renderer) {
-        ERRORMSG("ExportPNG() - bad glCanvas parameter");
+        ERRORMSG("PNG export not (yet) implemented on this platform");
         return false;
+#endif
+        if (!glCanvas || !glCanvas->renderer) {
+            ERRORMSG("ExportPNG() - bad glCanvas parameter");
+            return false;
+        }
+        renderer = glCanvas->renderer;
+    } 
+    
+    // non-windowed mode uses Mesa
+    else {
+#ifndef CN3D_PNG_OSMESA
+        ERRORMSG("cn3d_png_nowin must be compiled with CN3D_PNG_OSMESA");
+        return false;
+#endif
+#if !defined(OSMESA_MAJOR_VERSION) || !defined(OSMESA_MINOR_VERSION) || !defined(OSMESA_RGB)
+        ERRORMSG("Non-windowed rendering currently requires Mesa");
+        return false;
+#endif
+        if (glCanvas || !renderer) {
+            ERRORMSG("ExportPNG() - bad glCanvas/renderer parameters");
+            return false;
+        }
     }
 
-    bool success = false, shareDisplayLists = true, interlaced = true;
-    int outputWidth, outputHeight, bufferHeight, bytesPerPixel = 3, nChunks = 1;
+    bool success = false, shareDisplayLists = true;
+    int bufferHeight, bytesPerPixel = 3, nChunks = 1;
     wxString filename;
     FILE *out = NULL;
     unsigned char *rowStorage = NULL;
     png_structp png_ptr = NULL;
     png_infop info_ptr = NULL;
 
-    outputWidth = glCanvas->GetClientSize().GetWidth();		// initial size
-    outputHeight = glCanvas->GetClientSize().GetHeight();
-    if (!GetOutputParameters(&filename, &outputWidth, &outputHeight, &interlaced))
-        return true; // cancelled
+    if (IsWindowedMode()) {
+        outputWidth = glCanvas->GetClientSize().GetWidth();		// initial size
+        outputHeight = glCanvas->GetClientSize().GetHeight();
+        if (!GetOutputParameters(&filename, &outputWidth, &outputHeight, &interlaced))
+            return true; // cancelled
+    } else {
+        filename = outputFilename.c_str();
+    }
 
     try {
         INFOMSG("saving PNG file '" << filename.c_str() << "'");
 
-        // need to avoid any GL calls in glCanvas while off-screen rendering is happening; so
-        // temporarily prevent glCanvas from responding to window resize/exposure, etc.
-        glCanvas->SuspendRendering(true);
-
-        int windowViewport[4];
-        glCanvas->renderer->GetViewport(windowViewport);
-        TRACEMSG("window viewport: x,y: " << windowViewport[0] << ',' << windowViewport[1]
-            << " size: " << windowViewport[2] << ',' << windowViewport[3]);
-        INFOMSG("output size: " << outputWidth << ',' << outputHeight);
-
+        if (IsWindowedMode()) {
+            // need to avoid any GL calls in glCanvas while off-screen rendering is happening; so
+            // temporarily prevent glCanvas from responding to window resize/exposure, etc.
+            glCanvas->SuspendRendering(true);
+        }
+        
         // decide whether the in-memory image buffer can fit the whole drawing,
         // or whether we need to split it up into separate horizontal chunks
         bufferHeight = outputHeight;
@@ -426,16 +455,37 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             interlaced = false;
         }
 
-        // create and show progress meter
-        wxString message;
-        message.Printf("Writing PNG file %s (%ix%i)",
-            (wxString(wxFileNameFromPath(filename.c_str()))).c_str(),
-            outputWidth, outputHeight);
-        progressMeter = new ProgressMeter(NULL, message, "Saving...", PROGRESS_RESOLUTION);
+        INFOMSG("output size: " << outputWidth << 'x' << outputHeight << ", interlaced=" << (interlaced ? "yes" : "no"));
+
+        if (IsWindowedMode()) {
+            // create and show progress meter
+            wxString message;
+            message.Printf("Writing PNG file %s (%ix%i)",
+                (wxString(wxFileNameFromPath(filename.c_str()))).c_str(),
+                outputWidth, outputHeight);
+            progressMeter = new ProgressMeter(NULL, message, "Saving...", PROGRESS_RESOLUTION);
+        }
 
         // open the output file for writing
         out = fopen(filename.c_str(), "wb");
         if (!out) throw "can't open file for writing";
+        
+        // for non-windowed mode, use Mesa off-screen rendering API
+#ifdef CN3D_PNG_OSMESA
+        OSMesaContext mesaContext = 0;
+        unsigned char *mesaBuffer = NULL;
+
+        if ((mesaContext = OSMesaCreateContext(OSMESA_RGBA, NULL)) == 0)
+            throw "OSMesaCreateContext failed";
+        mesaBuffer = new unsigned char[outputWidth * bufferHeight * 4 * sizeof(GLubyte)];
+        if (OSMesaMakeCurrent(mesaContext, mesaBuffer, GL_UNSIGNED_BYTE, outputWidth, bufferHeight) != GL_TRUE)
+            throw "OSMesaMakeCurrent failed";
+        shareDisplayLists = false;
+        TRACEMSG("Created OSMesa context and made it current");
+
+#else
+
+        // set up off-screen contexts for windowed mode, possibly sharing display lists with main window context
 
 #if defined(__WXMSW__)
         HDC hdc = NULL, current_hdc = NULL;
@@ -444,7 +494,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         HBITMAP hbm = NULL;
         PIXELFORMATDESCRIPTOR pfd;
         int nPixelFormat;
-
+        
         current_hglrc = wglGetCurrentContext(); // save to restore later
         current_hdc = wglGetCurrentDC();
 
@@ -496,7 +546,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         GLXContext currentCtx = NULL, glCtx = NULL;
         GLXPixmap glxPixmap = 0;
         GLXDrawable currentXdrw = 0;
-        Display *display;
+        Display *display = NULL;
         int (*currentXErrHandler)(Display *, XErrorEvent *) = NULL;
 
         currentCtx = glXGetCurrentContext(); // save current context info
@@ -559,7 +609,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         int na = 0;
         AGLPixelFormat fmt = NULL;
         AGLContext ctx = NULL, currentCtx;
-
+        
     	currentCtx = aglGetCurrentContext();
 
     	// Mac pixels seem to always be 32-bit
@@ -599,9 +649,11 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (!aglSetCurrentContext(ctx))
         	throw "aglSetCurrentContext failed";
 
-        glCanvas->renderer->RecreateQuadric();	// Macs have context-sensitive quadrics...
-#endif
+        renderer->RecreateQuadric();	// Macs have context-sensitive quadrics...
 
+#endif  // WX*
+#endif  // OSMESA
+        
         TRACEMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
             << ", buffer height: " << bufferHeight << ", shared: " << shareDisplayLists);
 
@@ -628,10 +680,6 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
         png_write_info(png_ptr, info_ptr);
 
-        // set up camera so that it's the same view as it is in the window
-        glCanvas->renderer->Init();
-        glViewport(0, 0, outputWidth, outputHeight);
-        glCanvas->renderer->NewView();
 
         // Redraw the model into the new off-screen context, then use glReadPixels
         // to retrieve pixel data. It's much easier to use glReadPixels rather than
@@ -639,9 +687,23 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         // the potentially tricky work of translating from whatever pixel format
         // the buffer uses into "regular" RGB byte triples. If fonts need scaling,
         // have to reconstruct lists regardless of whether display lists are shared.
-        if (!shareDisplayLists || outputHeight != glCanvas->GetClientSize().GetHeight()) {
-            glCanvas->SetGLFontFromRegistry(((double) outputHeight) / glCanvas->GetClientSize().GetHeight());
-            glCanvas->renderer->Construct();
+        renderer->Init();
+        if (IsWindowedMode()) {
+            if (!shareDisplayLists || outputHeight != glCanvas->GetClientSize().GetHeight()) {
+                glCanvas->SetGLFontFromRegistry(((double) outputHeight) / glCanvas->GetClientSize().GetHeight());
+                renderer->Construct();
+            }
+        } else {
+            renderer->Construct();
+        }
+
+        // set up camera so that it's the same view as it is in the window (or in file for non-win mode)
+        glViewport(0, 0, outputWidth, outputHeight);
+        if (IsWindowedMode()) {
+            renderer->NewView();
+        } else {
+            renderer->CenterViewOnAlignedResidues();
+            renderer->RestoreSavedView();
         }
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
@@ -651,7 +713,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (interlaced) {
 
             // need to draw only once
-            glCanvas->renderer->Display();
+            renderer->Display();
 
             int pass, r;
             nRows = -outputHeight; // signal to monitor that we're interlacing
@@ -687,7 +749,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
                     TRACEMSG("drawing chunk #" << (chunk + 1));
                     glViewport(0, -chunk*bufferHeight, outputWidth, outputHeight);
                 }
-                glCanvas->renderer->Display();
+                renderer->Display();
 
                 // only draw "visible" part of top chunk
                 if (chunk == nChunks - 1)
@@ -716,13 +778,19 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             else
                 png_destroy_write_struct(&png_ptr, NULL);
         }
+        
+#ifdef CN3D_PNG_OSMESA
+        if (mesaBuffer) delete[] mesaBuffer;
+        OSMesaDestroyContext(mesaContext);
+#else
+
         if (progressMeter) {
             progressMeter->Close(true);
             progressMeter->Destroy();
             progressMeter = NULL;
         }
 
-    // platform-specific cleanup, restore context
+        // platform-specific cleanup, restore context
 #if defined(__WXMSW__)
         if (current_hdc && current_hglrc) wglMakeCurrent(current_hdc, current_hglrc);
         if (hglrc) wglDeleteContext(hglrc);
@@ -746,24 +814,28 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (ctx) aglDestroyContext(ctx);
         if (fmt) aglDestroyPixelFormat(fmt);
         if (base) delete[] base;
-        glCanvas->renderer->RecreateQuadric();	// Macs have context-sensitive quadrics...
-#endif
-
+        renderer->RecreateQuadric();	// Macs have context-sensitive quadrics...
+        
+#endif // WX*
+#endif // OSMESA
+        
     } catch (const char *err) {
         ERRORMSG("Error creating PNG: " << err);
     } catch (exception& e) {
         ERRORMSG("Uncaught exception while creating PNG: " << e.what());
     }
 
-    // reset font after "regular" context restore
-    glCanvas->SuspendRendering(false);
-    if (outputHeight != glCanvas->GetClientSize().GetHeight()) {
-        glCanvas->SetCurrent();
-        glCanvas->SetGLFontFromRegistry(1.0);
-        if (shareDisplayLists)
-            GlobalMessenger()->PostRedrawAllStructures();
+    if (IsWindowedMode()) {
+        // reset font after "regular" context restore
+        glCanvas->SuspendRendering(false);
+        if (outputHeight != glCanvas->GetClientSize().GetHeight()) {
+            glCanvas->SetCurrent();
+            glCanvas->SetGLFontFromRegistry(1.0);
+            if (shareDisplayLists)
+                GlobalMessenger()->PostRedrawAllStructures();
+        }
+        glCanvas->Refresh(false);
     }
-    glCanvas->Refresh(false);
 
     return success;
 }
