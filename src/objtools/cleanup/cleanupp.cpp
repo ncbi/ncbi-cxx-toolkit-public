@@ -1490,93 +1490,6 @@ static bool s_HasBackboneID (CBioseq_Handle bs)
     return false;
 }
 
-// was part of ChkSegset in C Toolkit (called by toporg, called by SeqEntryToAsn3Ex)
-void CCleanup_imp::CheckSegSet (CBioseq_Handle bs) 
-{
-    if (!bs.CanGetInst_Repr() 
-        || (bs.GetInst_Repr() != CSeq_inst::eRepr_raw
-            && bs.GetInst_Repr() != CSeq_inst::eRepr_const)
-        || !bs.CanGetInst_Mol()
-        || bs.GetInst_Mol() == CSeq_inst::eMol_aa
-        || ! s_HasBackboneID(bs)) {
-        return;
-    }
-    // look for org_ref features on the bioseq
-    // if we find one that covers the entire sequence, we're fine and we're done
-    // if we find exactly one org_ref feature but it does not cover the entire sequence,
-    // extend it to cover the entire sequence
-    SAnnotSelector sel(CSeqFeatData::e_Org);
-
-    CFeat_CI feat_ci (bs, sel);
-    bool found_one = false;
-    while (feat_ci) {
-        if (found_one) {
-            // more than one org feature - can't fix
-            return;
-        } else if (feat_ci->GetLocation().IsWhole()
-                   || (feat_ci->GetLocation().GetStart(eExtreme_Positional) == 0
-                       && feat_ci->GetLocation().GetStop(eExtreme_Positional) == bs.GetBioseqLength() - 1)) {
-            // found a full-length org feature
-            // nothing to fix
-            return;
-        } else {
-            found_one = true;
-        }
-        ++feat_ci;
-    }
-    if (found_one) {
-        // only one, doesn't cover entire sequence
-        feat_ci.Rewind();
-        const CSeq_feat& feat = feat_ci->GetOriginalFeature();
-        CSeq_feat_Handle fh = feat_ci->GetSeq_feat_Handle();
-        CRef<CSeq_feat> new_feat(new CSeq_feat);
-        new_feat->Assign(feat);
-        CRef<CSeq_id> new_id(new CSeq_id);
-        new_id->Assign(*(new_feat->GetLocation().GetId()));
-        new_feat->SetLocation().SetInt().SetId(*new_id);
-        new_feat->SetLocation().SetInt().SetFrom(0);
-        new_feat->SetLocation().SetInt().SetTo(bs.GetBioseqLength() - 1);
-        CSeq_feat_EditHandle efh(fh);
-        efh.Replace(*new_feat);
-        ChangeMade(CCleanupChange::eChangeFeatureLocation);
-    }    
-}
-
-
-void CCleanup_imp::CheckSegSet(CBioseq_set_Handle bss)
-{
-    if (!bss.CanGetClass()) {
-        return;
-    }
- 
-    CConstRef<CBioseq_set> b = bss.GetCompleteBioseq_set();
-    list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
-   
-    if (bss.GetClass() != CBioseq_set::eClass_segset) {
-        if (set.empty() || set.size() < 2) {
-            return;
-        }
-  
-        list< CRef< CSeq_entry > >::const_iterator se_it = set.begin();
-        ++se_it;
-        if ((*se_it)->Which() == CSeq_entry::e_Set) {
-            CBioseq_set_Handle parts = m_Scope->GetBioseq_setHandle((*se_it)->GetSet());
-
-            x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Org);
-            x_MoveIdenticalPartDescriptorsToSegSet (bss, parts, CSeqdesc::e_Update_date);
-        }
-	}
-	
-    ITERATE (list< CRef< CSeq_entry > >, it, set) {
-        if ((*it)->Which() == CSeq_entry::e_Set) {
-            CheckSegSet(m_Scope->GetBioseq_setHandle((**it).GetSet()));
-        } else if ((*it)->Which() == CSeq_entry::e_Seq) {
-            CheckSegSet(m_Scope->GetBioseqHandle((**it).GetSeq()));
-        }
-	}
-}
-
-
 void CCleanup_imp::CheckNucProtSet (CBioseq_set_Handle bss)
 {
     if (!bss.CanGetClass()) {
@@ -1595,7 +1508,6 @@ void CCleanup_imp::CheckNucProtSet (CBioseq_set_Handle bss)
         x_RemoveNucProtSetTitle(eh, **se_it);
         
         // promote descriptors on nuc to nuc-prot set if type not already on nuc-prot set
-        x_ExtractNucProtDescriptors(eh, **se_it, CSeqdesc::e_Org);
         x_ExtractNucProtDescriptors(eh, **se_it, CSeqdesc::e_Update_date);
 
     }

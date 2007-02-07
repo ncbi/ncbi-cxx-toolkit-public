@@ -1180,10 +1180,10 @@ void CCleanup_imp::x_SetSourceLineage(CBioseq_set_Handle bh, string lineage)
 }
 
 
-bool CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh)
+void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh)
 {
     CBioseq_set_EditHandle eh = bh.GetEditHandle();
-    bool added_source = false;
+
     if (eh.IsSetDescr()) {
         CSeq_descr::Tdata remove_list;
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
@@ -1199,17 +1199,15 @@ bool CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh)
             ChangeMade(CCleanupChange::eAddDescriptor);
             eh.RemoveSeqdesc(**it1);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
-            added_source = true;
         }        
     }
-    return added_source;
 }
 
 
-bool CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh)
+void CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh)
 {
     CBioseq_EditHandle eh = bh.GetEditHandle();
-    bool added_source = false;
+
     if (eh.IsSetDescr()) {
         CSeq_descr::Tdata remove_list;
         NON_CONST_ITERATE (CSeq_descr::Tdata, desc_it, eh.SetDescr().Set()) {
@@ -1225,98 +1223,7 @@ bool CCleanup_imp::x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh)
             ChangeMade(CCleanupChange::eAddDescriptor);
             eh.RemoveSeqdesc(**it1);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
-            added_source = true;
         }        
-    }
-    return added_source;
-}
-
-
-void CCleanup_imp::x_ConvertQualifiersToOrgMods (CSeq_feat& sf)
-{
-    CSeq_feat::TQual::iterator it = sf.SetQual().begin();
-    while (it != sf.SetQual().end()) {
-        CGb_qual& gb_qual = **it;
-        if (gb_qual.CanGetQual()) {
-            try {
-                COrgMod::TSubtype stype = COrgMod::GetSubtypeValue (gb_qual.GetQual());
-                CRef<COrgMod> org_mod(new COrgMod());
-                org_mod->SetSubtype (stype);
-                if (gb_qual.CanGetVal()) {
-                    org_mod->SetSubname (gb_qual.GetVal());
-                }
-                sf.SetData().SetBiosrc().SetOrg().SetOrgname().SetMod().push_back (org_mod);
-                it = sf.SetQual().erase(it);
-                ChangeMade (CCleanupChange::eAddOrgMod);
-                ChangeMade (CCleanupChange::eRemoveQualifier);
-            } catch (...) {
-                // name didn't match
-                ++it;
-            }
-        } else {
-            ++it;
-        }
-    }
-}
-
-
-void CCleanup_imp::x_ConvertQualifiersToSubSources (CSeq_feat& sf)
-{
-    CSeq_feat::TQual::iterator it = sf.SetQual().begin();
-    while (it != sf.SetQual().end()) {
-        CGb_qual& gb_qual = **it;
-        if (gb_qual.CanGetQual()) {
-            try {
-                CSubSource::TSubtype stype = CSubSource::GetSubtypeValue (gb_qual.GetQual());
-                CRef<CSubSource> org_mod(new CSubSource());
-                org_mod->SetSubtype (stype);
-                if (gb_qual.CanGetVal()) {
-                    org_mod->SetName (gb_qual.GetVal());
-                }
-                sf.SetData().SetBiosrc().SetSubtype().push_back (org_mod);
-                it = sf.SetQual().erase(it);
-                ChangeMade (CCleanupChange::eAddSubSource);
-                ChangeMade (CCleanupChange::eRemoveQualifier);
-            } catch (...) {
-                // name didn't match
-                ++it;
-            }
-        } else {
-            ++it;
-        }
-    }
-}
-
-
-void CCleanup_imp::x_ConvertMiscQualifiersToBioSource (CSeq_feat& sf)
-{
-    CSeq_feat::TQual::iterator it = sf.SetQual().begin();
-    while (it != sf.SetQual().end()) {
-        CGb_qual& gb_qual = **it;
-        if (gb_qual.CanGetQual()
-            && NStr::EqualNocase(gb_qual.GetQual(), "genome")
-            && gb_qual.CanGetVal()) {
-            CBioSource::TGenome genome = CBioSource::GetGenomeByOrganelle(gb_qual.GetVal());
-            if (genome != CBioSource::eGenome_unknown
-                && (!sf.GetData().GetBiosrc().CanGetGenome()
-                    || sf.GetData().GetBiosrc().GetGenome() == CBioSource::eGenome_unknown
-                    || (sf.GetData().GetBiosrc().GetGenome() == CBioSource::eGenome_mitochondrion
-                        && genome == CBioSource::eGenome_kinetoplast))) {
-                sf.SetData().SetBiosrc().SetGenome(genome);
-                ChangeMade(CCleanupChange::eChangeBioSourceGenome);
-            }
-            it = sf.SetQual().erase(it);
-            ChangeMade(CCleanupChange::eRemoveQualifier);
-        } else {
-            ++it;
-        }
-    }
-    if (sf.CanGetComment() && !NStr::IsBlank(sf.GetComment())) {
-        CRef<COrgMod> org_mod(new COrgMod(COrgMod::eSubtype_other, sf.GetComment()));
-        sf.SetData().SetBiosrc().SetOrg().SetOrgname().SetMod().push_back (org_mod);
-        sf.ResetComment();
-        ChangeMade(CCleanupChange::eRemoveComment);
-        ChangeMade(CCleanupChange::eAddOrgMod);
     }
 }
 
@@ -2196,10 +2103,15 @@ void CCleanup_imp::x_FixSetSource (CBioseq_set_Handle bh)
 
 // cleanup up BioSource Descriptors and Features
 // This process should start at the lowest levels and work its way up.
-// First, convert appropriate features to descriptors and merge biosource features
-// Then merge existing BioSource descriptors.
-// Then fix segmented sets.
-// Then fix nuc-prot sets (which could contain segmented sets).
+// 1) Convert Org_ref descriptors to BioSource descriptors 
+// 2) Convert Org_ref features to BioSource features.
+// 3) Convert appropriate full-length BioSource features to descriptors 
+// 4) Merge biosource features
+// 5) Merge existing BioSource descriptors.
+// 6) Fix segmented sets.
+// 7) Fix nuc-prot sets (which could contain segmented sets).
+// 8) Propagate BioSource descriptors on WGS, Mut, Pop, Phy, and Eco Sets
+
 void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
 {    
     vector<CSeq_feat_Handle> source_feat_list; // list of source features on this Bioseq
@@ -2208,6 +2120,8 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
                                                // should be merged
     bool any_removed = false;
     
+    bh.GetCompleteBioseq()->GetAnnot();
+
     CFeat_CI feat_ci(bh);
     while (feat_ci) {
         if (feat_ci->GetFeatType() == CSeqFeatData::e_Biosrc) {
@@ -2267,8 +2181,15 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh)
 
 void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_Handle bh)
 {
-    // First, clean up the features
+    // First, convert Org-ref descriptors to BioSource descriptors
+    x_ConvertOrgDescToSourceDescriptor (bh);
+    // Convert Org-ref features to BioSource features
+    x_ConvertOrgFeatToSource (bh);
+
+    // Convert full-length BioSource features to descriptors and
+    // merge BioSource features
     x_ExtendedCleanupBioSourceFeatures (bh);
+
     if (bh.IsSetDescr()) {
         // Now merge descriptors
         CSeq_descr::Tdata remove_list;    
@@ -2314,6 +2235,27 @@ void CCleanup_imp::x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_
         }
     }
     
+    // do generic tasks for this level
+    x_ConvertOrgDescToSourceDescriptor (bss);
+    x_ConvertOrgFeatToSource (bss);
+
+    // features are fixed when the Bioseq is fixed
+
+    if (bss.IsSetDescr()) {
+        // merge descriptors
+        CSeq_descr::Tdata remove_list;    
+        CBioseq_set_EditHandle edith = bss.GetEditHandle ();     
+        x_RecurseDescriptorsForMerge(edith.SetDescr(),
+                                     &ncbi::objects::CCleanup_imp::x_IsMergeableBioSource,
+                                     &ncbi::objects::CCleanup_imp::x_MergeDuplicateBioSources,
+                                     remove_list);           
+        for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+            it1 != remove_list.end(); ++it1) { 
+            edith.RemoveSeqdesc(**it1);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        }        
+    }
+
     // Now do set class-specific fixing
     if (bss.CanGetClass()) {
         switch (bss.GetClass()) {

@@ -404,14 +404,11 @@ private:
     void x_FixNucProtSources (CBioseq_set_Handle bh);
     void x_FixSetSource (CBioseq_set_Handle bh);
     
-    bool x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh);
-    bool x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh);
-    void x_ConvertQualifiersToOrgMods(CSeq_feat& sf);
-    void x_ConvertQualifiersToSubSources (CSeq_feat& sf);
-    void x_ConvertMiscQualifiersToBioSource (CSeq_feat& sf);
-    bool x_ConvertOrgAndImpFeatToSource(CSeq_annot_Handle sa);
-    bool x_ConvertOrgAndImpFeatToSource(CBioseq_set_Handle bh);
-    bool x_ConvertOrgAndImpFeatToSource(CBioseq_Handle bh);
+    void x_ConvertOrgDescToSourceDescriptor(CBioseq_set_Handle bh);
+    void x_ConvertOrgDescToSourceDescriptor(CBioseq_Handle bh);
+    void x_ConvertOrgFeatToSource(CSeq_annot_Handle sa);
+    void x_ConvertOrgFeatToSource(CBioseq_set_Handle bh);
+    void x_ConvertOrgFeatToSource(CBioseq_Handle bh);
 
     void x_ExtendedCleanupBioSourceFeatures(CBioseq_Handle bh);
     void x_ExtendedCleanupBioSourceDescriptorsAndFeatures(CBioseq_set_Handle bss);
@@ -466,11 +463,7 @@ private:
     void LoopToAsn3 (CSeq_entry_Handle seh);
     void LoopToAsn3 (CBioseq_set_Handle bh);
     void LoopToAsn3(CBioseq_Handle bh);
-    void CheckSegSet (CBioseq_Handle bs);
-    void CheckSegSet(CBioseq_set_Handle bss);
     void CheckNucProtSet (CBioseq_set_Handle bss);
-    void x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh, bool recurse = true);
-    void x_StripOldDescriptorsAndFeatures (CBioseq_Handle bh);
 
     // Prohibit copy constructor & assignment operator
     CCleanup_imp(const CCleanup_imp&);

@@ -813,36 +813,6 @@ void CCleanup_imp::x_ExtractNucProtDescriptors(CBioseq_set_EditHandle bsh, const
 }
 
 
-void CCleanup_imp::x_StripOldDescriptorsAndFeatures (CBioseq_set_Handle bh, bool recurse)
-{
-    // remove old descriptors
-    x_RemoveDescrByType (bh, CSeqdesc::e_Org, recurse);
-    
-    // remove old features
-    x_RemoveFeaturesBySubtype (bh, CSeqFeatData::eSubtype_org);
-    if (recurse) {
-        x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveImpSourceFeatures);
-    } else {
-        CBioseq_set_EditHandle eh = bh.GetEditHandle();
-        for (CSeq_annot_CI annot_it(eh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
-            annot_it; ++annot_it) {
-            x_RemoveImpSourceFeatures (*annot_it);
-        }
-    }
-}
-
-
-void CCleanup_imp::x_StripOldDescriptorsAndFeatures (CBioseq_Handle bh)
-{
-    // remove old descriptors
-    x_RemoveDescrByType (bh, CSeqdesc::e_Org);
-    
-    // remove old features
-    x_RemoveFeaturesBySubtype (bh, CSeqFeatData::eSubtype_org);
-    x_RecurseForSeqAnnots (bh, &ncbi::objects::CCleanup_imp::x_RemoveImpSourceFeatures);
-}
-
-
 // was FixProtMolInfo in C Toolkit
 void CCleanup_imp::x_AddMissingProteinMolInfo(CSeq_entry_Handle seh)
 {
@@ -989,85 +959,30 @@ void CCleanup_imp::x_FuseMolInfos (CSeq_entry_Handle seh)
 }
 
 void CCleanup_imp::x_FixMissingSources (CBioseq_Handle bh)
-{
-    CSeqdesc_CI src_desc (bh, CSeqdesc::e_Source, 1);
-    bool has_source = false;
-    bool has_source_feats = false;
-    if (src_desc) {
-        has_source = true;
-    } else {
-        // These steps were part of FixToAsn in the C Toolkit
-        has_source |= x_ConvertOrgDescToSourceDescriptor (bh);
-        has_source_feats = x_ConvertOrgAndImpFeatToSource (bh);
-
-    }
-    
-    if (!has_source && has_source_feats) {    
-        CSeqdesc_CI after(bh, CSeqdesc::e_Source, 1);
-        if (after) {
-            has_source = true;
-        }
-    }
-
-    
-    if (has_source) {
-        // this step was called StripOld
-        x_StripOldDescriptorsAndFeatures (bh);
-              
-        // this step was part of ToAsn4
-        x_ConvertPubsToAsn4(bh.GetParentEntry());
+{              
+    // this step was part of ToAsn4
+    x_ConvertPubsToAsn4(bh.GetParentEntry());
         
-        // this step was also part of ToAsn4
-        string lineage = "";
-        x_GetGenBankTaxonomy(bh, lineage);
-        if (!NStr::IsBlank(lineage)) {
-            x_SetSourceLineage(bh, lineage);
-        }        
+    // this step was also part of ToAsn4
+    string lineage = "";
+    x_GetGenBankTaxonomy(bh, lineage);
+    if (!NStr::IsBlank(lineage)) {
+        x_SetSourceLineage(bh, lineage);
     }
         
 }
 
 
 void CCleanup_imp::x_FixMissingSources (CBioseq_set_Handle bh)
-{
-    
-    CSeqdesc_CI src_desc (bh.GetParentEntry(), CSeqdesc::e_Source, 1);
-    bool has_source = false;
-    bool has_source_feats = false;
-    if (src_desc) {
-        has_source = true;
-    } else {
-        // These steps were part of FixToAsn in the C Toolkit
-        has_source |= x_ConvertOrgDescToSourceDescriptor (bh);
-
-        has_source_feats = x_ConvertOrgAndImpFeatToSource (bh);
-        CSeq_descr::Tdata remove_list;    
-        CBioseq_set_EditHandle edith = m_Scope->GetEditHandle(bh);     
-
-    }
-    
-    
-    if (!has_source && has_source_feats) {    
-        CSeqdesc_CI after(bh.GetParentEntry(), CSeqdesc::e_Source, 1);
-        if (after) {
-            has_source = true;
-        }
-    }
-
-    
-    if (has_source) {
-        // this step was called StripOld
-        x_StripOldDescriptorsAndFeatures (bh, false);
-              
-        // this step was part of ToAsn4
-        x_ConvertPubsToAsn4(bh.GetParentEntry());
+{                  
+    // this step was part of ToAsn4
+    x_ConvertPubsToAsn4(bh.GetParentEntry());
         
-        // this step was also part of ToAsn4
-        string lineage = "";
-        x_GetGenBankTaxonomy(bh, lineage);
-        if (!NStr::IsBlank(lineage)) {
-            x_SetSourceLineage(bh, lineage);
-        }        
+    // this step was also part of ToAsn4
+    string lineage = "";
+    x_GetGenBankTaxonomy(bh, lineage);
+    if (!NStr::IsBlank(lineage)) {
+        x_SetSourceLineage(bh, lineage);
     }
     
     
@@ -1098,7 +1013,6 @@ void CCleanup_imp::LoopToAsn3(CBioseq_set_Handle bh)
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
         
-    CheckSegSet(bh);
     CheckNucProtSet(bh);
 
     // This step was FixToAsn in the C Toolkit
@@ -1132,7 +1046,6 @@ void CCleanup_imp::LoopToAsn3(CBioseq_Handle bh)
 {
     // these steps were called RemoveEmptyTitleAndPubGenAsOnlyPub
     x_RecurseForDescriptors(bh, &ncbi::objects::CCleanup_imp::x_RemoveEmptyTitles);
-    CheckSegSet(bh);
     
     // This step was FixToAsn in the C Toolkit
     x_FixMissingSources (bh);
