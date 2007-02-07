@@ -40,7 +40,7 @@
 #include <set>
 #include <stack>
 
-#include <serial/pathhook.hpp>
+#include <serial/impl/pathhook.hpp>
 
 
 /** @addtogroup ObjHierarchy

@@ -39,7 +39,7 @@
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objhook.hpp>
-#include <serial/pathhook.hpp>
+#include <serial/impl/pathhook.hpp>
 
 
 /** @addtogroup ObjStreamSupport

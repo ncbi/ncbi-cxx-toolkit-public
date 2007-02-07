@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Description of enumerated data type values (named integers)
 */
 
 #include <corelib/ncbistd.hpp>
@@ -63,35 +63,60 @@ public:
         {
             return m_Name;
         }
+    /// Get ASN.1 module name
     const string& GetModuleName(void) const
         {
             return m_ModuleName;
         }
+    /// Set ASN.1 module name
     void SetModuleName(const string& name);
 
+    /// Check whether the type is defined as INTEGER in ASN.1 spec
     bool IsInteger(void) const
         {
             return m_Integer;
         }
+    /// Get the list of name-value pairs
     const TValues& GetValues(void) const
         {
             return m_Values;
         }
 
+    /// Add name-value pair
     void AddValue(const string& name, TEnumValueType value);
+    /// Add name-value pair
     void AddValue(const char* name, TEnumValueType value);
 
-    // returns value of enum element, if found
-    // otherwise, throws exception
+    /// Find numeric value by the name of the enum
+    ///
+    /// @param name
+    ///   Name of enum value
+    /// @return
+    ///   Numeric value, if found; otherwise, throws an exception
     TEnumValueType FindValue(const CLightString& name) const;
+    
+    /// Check whether enum with this name is defined
+    ///
+    /// @param name 
+    ///   Name of enum value
+    /// @return
+    ///   TRUE, if it is defined
     bool IsValidName(const CLightString& name) const;
 
-    // returns name of enum element, if found
-    // otherwise, if (allowBadValue == true) returns empty string,
-    // otherwise, throws exception
+    /// Find name of the enum by its numeric value
+    ///
+    /// @param value
+    ///   Numeric value
+    /// @param allowBadValue
+    ///   When TRUE, and the name is not found, return empty string;
+    ///   otherwise, throw an exception
+    /// @return
+    ///   Name of the enum
     const string& FindName(TEnumValueType value, bool allowBadValue) const;
 
+    /// Get name-to-value map
     const TNameToValue& NameToValue(void) const;
+    /// Get value-to-name map
     const TValueToName& ValueToName(void) const;
 
 private:

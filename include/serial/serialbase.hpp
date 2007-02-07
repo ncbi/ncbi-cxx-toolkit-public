@@ -130,8 +130,10 @@ public:
     CSerialObject(void);
     virtual ~CSerialObject(void);
     virtual const CTypeInfo* GetThisTypeInfo(void) const = 0;
+    /// Set object to copy of another one
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
+    /// Check if both objects contain the same values
     virtual bool Equals(const CSerialObject& object,
                         ESerialRecursionMode how = eRecursive) const;
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -145,12 +147,18 @@ public:
     static const char* ms_UnassignedStr;
     static const char  ms_UnassignedByte;
 
+    /// Check if object data type has namespace name
     bool HasNamespaceName(void) const;
+    /// Get namespace name
     const string& GetNamespaceName(void) const;
+    /// Set namespace name
     void SetNamespaceName(const string& ns_name);
 
+    /// Check if data type has namespace prefix
     bool HasNamespacePrefix(void) const;
+    /// Get namespace prefix
     const string& GetNamespacePrefix(void) const;
+    /// Set namespace prefix
     void SetNamespacePrefix(const string& ns_prefix);
 
 private:
@@ -158,6 +166,7 @@ private:
     static ESerialVerifyData ms_VerifyDataDefault;
 };
 
+/// XML attribute information item
 class NCBI_XSERIAL_EXPORT CSerialAttribInfoItem
 {
 public:
@@ -166,8 +175,11 @@ public:
     CSerialAttribInfoItem(const CSerialAttribInfoItem& other);
     virtual ~CSerialAttribInfoItem(void);
 
+    /// Get local name of the information item
     const string& GetName(void) const;
+    /// Get namespace name of the information item
     const string& GetNamespaceName(void) const;
+    /// Get normalized value of the information item
     const string& GetValue(void) const;
 private:
     string m_Name;
@@ -175,6 +187,10 @@ private:
     string m_Value;
 };
 
+/// Serializable object that stores any combination of parsable data
+///
+/// In DTD - elements with category ANY
+/// In XML schema - element of an unspecified type ('any')
 class NCBI_XSERIAL_EXPORT CAnyContentObject : public CSerialObject
 {
 public:
@@ -190,18 +206,28 @@ public:
     CAnyContentObject& operator= (const CAnyContentObject& other);
     bool operator== (const CAnyContentObject& other) const;
 
+    /// Set local name
     void SetName(const string& name);
+    /// Get local name
     const string& GetName(void) const;
+    /// Set normalized value
     void SetValue(const string& value);
+    /// Get normalized value
     const string& GetValue(void) const;
 
+    /// Set namespace name
     void SetNamespaceName(const string& ns_name);
+    /// Get namespace name
     const string& GetNamespaceName(void) const;
+    /// Set namespace prefix
     void SetNamespacePrefix(const string& ns_prefix);
+    /// Get namespace prefix
     const string& GetNamespacePrefix(void) const;
 
+    /// Add attribute
     void AddAttribute(const string& name,
                       const string& ns_name, const string& value);
+    /// Get object attributes
     const vector<CSerialAttribInfoItem>& GetAttributes(void) const;
 
 private:
@@ -364,6 +390,7 @@ private:
 //  Assignment and comparison for serializable objects
 //
 
+/// Set object to copy of another one
 template <class C>
 C& SerialAssign(C& dest, const C& src, ESerialRecursionMode how = eRecursive)
 {
@@ -376,6 +403,7 @@ C& SerialAssign(C& dest, const C& src, ESerialRecursionMode how = eRecursive)
     return dest;
 }
 
+/// Compare serial objects
 template <class C>
 bool SerialEquals(const C& object1, const C& object2,
                   ESerialRecursionMode how = eRecursive)
@@ -388,7 +416,7 @@ bool SerialEquals(const C& object1, const C& object2,
     return C::GetTypeInfo()->Equals(&object1, &object2, how);
 }
 
-// create on heap a clone of the source object
+/// Create on heap a clone of the source object
 template <typename C>
 C* SerialClone(const C& src)
 {

@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Iterators, which work on object information data
 */
 
 #include <corelib/ncbistd.hpp>
@@ -44,6 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Container iterator
 class NCBI_XSERIAL_EXPORT CConstObjectInfoEI
 {
 public:
@@ -86,6 +87,7 @@ private:
     CConstContainerElementIterator m_Iterator;
 };
 
+/// Container iterator
 class NCBI_XSERIAL_EXPORT CObjectInfoEI
 {
 public:
@@ -130,7 +132,8 @@ private:
     CContainerElementIterator m_Iterator;
 };
 
-class NCBI_XSERIAL_EXPORT CObjectTypeInfoII // item iterator (either member or variant)
+/// Item iterator (either member or variant)
+class NCBI_XSERIAL_EXPORT CObjectTypeInfoII 
 {
 public:
     const string& GetAlias(void) const;
@@ -170,6 +173,7 @@ private:
     TMemberIndex m_LastItemIndex;
 };
 
+/// Class member iterator
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoMI : public CObjectTypeInfoII
 {
     typedef CObjectTypeInfoII CParent;
@@ -236,6 +240,7 @@ private:
     CMemberInfo* GetNCMemberInfo(void) const;
 };
 
+/// Choice variant iterator
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoVI : public CObjectTypeInfoII
 {
     typedef CObjectTypeInfoII CParent;
@@ -298,6 +303,7 @@ private:
     CVariantInfo* GetNCVariantInfo(void) const;
 };
 
+/// Class member iterator
 class NCBI_XSERIAL_EXPORT CConstObjectInfoMI : public CObjectTypeInfoMI
 {
     typedef CObjectTypeInfoMI CParent;
@@ -322,6 +328,7 @@ private:
     CConstObjectInfo m_Object;
 };
 
+/// Class member iterator
 class NCBI_XSERIAL_EXPORT CObjectInfoMI : public CObjectTypeInfoMI
 {
     typedef CObjectTypeInfoMI CParent;
@@ -354,6 +361,7 @@ private:
     CObjectInfo m_Object;
 };
 
+/// Choice variant iterator
 class NCBI_XSERIAL_EXPORT CObjectTypeInfoCV
 {
 public:
@@ -422,6 +430,7 @@ private:
     CVariantInfo* GetNCVariantInfo(void) const;
 };
 
+/// Choice variant iterator
 class NCBI_XSERIAL_EXPORT CConstObjectInfoCV : public CObjectTypeInfoCV
 {
     typedef CObjectTypeInfoCV CParent;
@@ -444,6 +453,7 @@ private:
     TMemberIndex m_VariantIndex;
 };
 
+/// Choice variant iterator
 class NCBI_XSERIAL_EXPORT CObjectInfoCV : public CObjectTypeInfoCV
 {
     typedef CObjectTypeInfoCV CParent;

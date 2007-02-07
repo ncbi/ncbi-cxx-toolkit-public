@@ -36,7 +36,7 @@
 #include <corelib/ncbicntr.hpp>
 
 #include <serial/impl/hookdatakey.hpp>
-#include <serial/pathhook.hpp>
+#include <serial/impl/pathhook.hpp>
 
 
 /** @addtogroup HookSupport

@@ -41,7 +41,7 @@
 #include <serial/impl/objlist.hpp>
 #include <serial/objhook.hpp>
 #include <serial/impl/hookdatakey.hpp>
-#include <serial/pathhook.hpp>
+#include <serial/impl/pathhook.hpp>
 
 
 /** @addtogroup ObjStreamSupport
