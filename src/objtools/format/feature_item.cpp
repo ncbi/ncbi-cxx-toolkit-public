@@ -1482,8 +1482,7 @@ static const string sc_ValidExceptionText[] = {
   "reasons given in citation"
 };
 static const CStaticArraySet<string> sc_LegatExceptText(
-    sc_ValidExceptionText, sizeof(sc_ValidExceptionText),
-    __FILE__, __LINE__);
+    sc_ValidExceptionText, __FILE__, __LINE__);
 
 static bool s_IsValidExceptionText(const string& text)
 {
@@ -1506,8 +1505,7 @@ static const string sc_ValidRefSeqExceptionText[] = {
     "unclassified translation discrepancy"
 };
 static const CStaticArraySet<string> sc_LegalRefSeqExceptText(
-    sc_ValidRefSeqExceptionText, sizeof(sc_ValidRefSeqExceptionText),
-    __FILE__, __LINE__);
+    sc_ValidRefSeqExceptionText, __FILE__, __LINE__);
 
 static bool s_IsValidRefSeqExceptionText(const string& text)
 {
@@ -2199,8 +2197,7 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
 #undef DO_IMPORT
     };
     typedef const CStaticArrayMap<const char*, EFeatureQualifier, PNocase_CStr> TLegalImportMap;
-    static TLegalImportMap kLegalImportMap(kLegalImports, sizeof(kLegalImports),
-                                           __FILE__, __LINE__);
+    static TLegalImportMap kLegalImportMap(kLegalImports, __FILE__, __LINE__);
 
     bool check_qual_syntax = ctx.Config().CheckQualSyntax();
     bool is_operon = (m_Feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_operon);
@@ -2382,8 +2379,7 @@ static bool s_IsValidRptType(const string& type)
         "tandem", "terminal"
     };
     typedef CStaticArraySet<string, PNocase> TValidRptTypes;
-    static const TValidRptTypes valid_types(valid_rpt, sizeof(valid_rpt),
-                                            __FILE__, __LINE__);
+    static const TValidRptTypes valid_types(valid_rpt, __FILE__, __LINE__);
 
     return valid_types.find(type) != valid_types.end();
 }
@@ -2918,8 +2914,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_xtra_prod_quals, CSeqFeatData::eQual_note)
 };
 typedef CStaticArrayMap<EFeatureQualifier, CSeqFeatData::EQualifier> TQualMap;
-static const TQualMap sc_QualMap(sc_GbToFeatQualMap, sizeof(sc_GbToFeatQualMap),
-                                 __FILE__, __LINE__);
+static const TQualMap sc_QualMap(sc_GbToFeatQualMap, __FILE__, __LINE__);
 
 static CSeqFeatData::EQualifier s_GbToSeqFeatQual(EFeatureQualifier qual)
 {

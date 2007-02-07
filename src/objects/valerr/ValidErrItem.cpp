@@ -949,8 +949,7 @@ segments.")),
 };
 
 typedef CStaticArrayMap<unsigned int, TErrStrs> TErrTypeStrsMap;
-static const TErrTypeStrsMap sc_ErrStrsMap(sc_ErrStrs, sizeof(sc_ErrStrs),
-                                           __FILE__, __LINE__);
+static const TErrTypeStrsMap sc_ErrStrsMap(sc_ErrStrs, __FILE__, __LINE__);
 
 #undef BEGIN
 #undef END

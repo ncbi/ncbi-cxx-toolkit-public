@@ -240,7 +240,7 @@ void CTestStaticMap::TestStaticSet(void) const
     if ( error ) {
         SetAbortHandler(AbortThrow);
         try {
-            TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
+            TTst tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
         }
         catch ( abort_exception& /*exc*/ ) {
             LOG_POST(Info << "Test CStaticArraySet correctly detected error");
@@ -249,7 +249,7 @@ void CTestStaticMap::TestStaticSet(void) const
         SetAbortHandler(0);
         ERR_POST(Fatal << "Test CStaticArraySet failed to detected error");
     }
-    TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
+    TTst tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
 
     _ASSERT(ref.empty() == tst.empty());
     _ASSERT(ref.size() == tst.size());
@@ -332,7 +332,7 @@ void CTestStaticMap::TestStaticMap(void) const
     if ( error ) {
         SetAbortHandler(AbortThrow);
         try {
-            TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
+            TTst tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
         }
         catch ( abort_exception& /*exc*/ ) {
             LOG_POST(Info << "Test CStaticArrayMap correctly detected error");
@@ -341,7 +341,7 @@ void CTestStaticMap::TestStaticMap(void) const
         SetAbortHandler(0);
         ERR_POST(Fatal << "Test CStaticArrayMap failed to detected error");
     }
-    TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
+    TTst tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
 
     _ASSERT(ref.empty() == tst.empty());
     _ASSERT(ref.size() == tst.size());

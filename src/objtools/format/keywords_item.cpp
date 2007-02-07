@@ -88,24 +88,21 @@ static const string sc_EST[] = {
   "partial cDNA sequence", "putatively transcribed partial sequence",
   "transcribed sequence fragment"
 };
-static const CStaticArraySet<string> sc_EST_kw(sc_EST, sizeof(sc_EST),
-                                               __FILE__, __LINE__);
+static const CStaticArraySet<string> sc_EST_kw(sc_EST, __FILE__, __LINE__);
 
 
 // GSS keywords
 static const string sc_GSS[] = {
   "GSS", "trapped exon"
 };
-static const CStaticArraySet<string> sc_GSS_kw(sc_GSS, sizeof(sc_GSS),
-                                               __FILE__, __LINE__);
+static const CStaticArraySet<string> sc_GSS_kw(sc_GSS, __FILE__, __LINE__);
 
 // STS keywords
 static const string sc_STS[] = {
   "STS", "STS (sequence tagged site)", "STS sequence", 
   "STS(sequence tagged site)", "sequence tagged site"
 };
-static const CStaticArraySet<string> sc_STS_kw(sc_STS, sizeof(sc_STS),
-                                               __FILE__, __LINE__);
+static const CStaticArraySet<string> sc_STS_kw(sc_STS, __FILE__, __LINE__);
 
 
 static bool s_CheckSpecialKeyword(const string& keyword, ETechFlags tech)

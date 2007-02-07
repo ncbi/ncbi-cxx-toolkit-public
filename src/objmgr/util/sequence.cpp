@@ -2712,16 +2712,14 @@ static const TCharPair sc_comp_tbl[32] = {
     TCharPair('y', 'R'),
 };
 typedef CStaticArrayMap<Char, Char> TComplement;
-static const TComplement sc_Complement(sc_comp_tbl, sizeof(sc_comp_tbl),
-                                       __FILE__, __LINE__);
-static const TComplement::const_iterator comp_end = sc_Complement.end();
+static const TComplement sc_Complement(sc_comp_tbl, __FILE__, __LINE__);
 
 
 inline
 static char s_GetComplement(char c)
 {
     TComplement::const_iterator comp_it = sc_Complement.find(c);
-    return (comp_it != comp_end) ? comp_it->second : '\0';
+    return (comp_it != sc_Complement.end()) ? comp_it->second : '\0';
 }
 
 

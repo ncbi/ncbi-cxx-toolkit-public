@@ -155,10 +155,8 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
 // case sensetive
 typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase_CStr> TDbxrefTypeMap;
 static const TDbxrefTypeMap sc_ApprovedDb(kApprovedDbXrefs,
-                                          sizeof(kApprovedDbXrefs),
                                           __FILE__, __LINE__);
 static const TDbxrefTypeMap sc_ApprovedRefSeqDb(kApprovedRefSeqDbXrefs,
-                                                sizeof(kApprovedRefSeqDbXrefs),
                                                 __FILE__, __LINE__);
 
 
@@ -361,8 +359,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/gene_detail.asp?gene_id=")
 };
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
-static const TUrlPrefixMap sc_UrlMap(sc_url_prefix, sizeof(sc_url_prefix),
-                                     __FILE__, __LINE__);
+static const TUrlPrefixMap sc_UrlMap(sc_url_prefix, __FILE__, __LINE__);
 
 
 string CDbtag::GetUrl(void) const

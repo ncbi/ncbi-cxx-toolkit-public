@@ -184,7 +184,7 @@ void CCleanup_imp::BasicCleanup(CPerson_id& pid, bool fix_initials)
 static const CName_std::TSuffixes& s_GetStandardSuffixes(void)
 {
     static const string sfxs[] = {"II", "III", "IV", "Jr.", "Sr.", "V", "VI"};
-    static const CName_std::TSuffixes suffixes(sfxs, sizeof(sfxs));
+    static const CName_std::TSuffixes suffixes(sfxs, __FILE__, __LINE__);
 
     return suffixes;
 }
@@ -426,8 +426,7 @@ static const TStringPair bad_sfxs[] = {
     TStringPair("VI." , "VI")
 };
 typedef CStaticArrayMap<string, string> TSuffixMap;
-static const TSuffixMap sc_BadSuffixes(bad_sfxs, sizeof(bad_sfxs),
-                                       __FILE__, __LINE__);
+static const TSuffixMap sc_BadSuffixes(bad_sfxs, __FILE__, __LINE__);
 
 // move the suffix from the initials field to the suffix field.
 void CCleanup_imp::x_ExtractSuffixFromInitials(CName_std& name)

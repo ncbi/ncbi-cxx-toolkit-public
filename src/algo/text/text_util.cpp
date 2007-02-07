@@ -518,8 +518,7 @@ static const string sc_StopWordArray[] = {
     "your",
 };
 typedef CStaticArraySet<string> TStopWords;
-static const TStopWords sc_StopWords(sc_StopWordArray, sizeof(sc_StopWordArray),
-                                     __FILE__, __LINE__);
+static const TStopWords sc_StopWords(sc_StopWordArray, __FILE__, __LINE__);
 
 
 bool CTextUtil::IsStopWord(const string& str)

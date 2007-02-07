@@ -1666,7 +1666,7 @@ static const string sc_BypassMrnaTransCheckText[] = {
     "reasons given in citation",
     "unclassified transcription discrepancy",    
 };
-static const CStaticArraySet<string> sc_BypassMrnaTransCheck(sc_BypassMrnaTransCheckText, sizeof(sc_BypassMrnaTransCheckText), __FILE__, __LINE__);
+static const CStaticArraySet<string> sc_BypassMrnaTransCheck(sc_BypassMrnaTransCheckText, __FILE__, __LINE__);
 
 
 void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
@@ -2274,7 +2274,7 @@ static const string sc_BypassCdsTransCheckText[] = {
   "reasons given in citation",
   "unclassified translation discrepancy"  
 };
-static const CStaticArraySet<string> sc_BypassCdsTransCheck(sc_BypassCdsTransCheckText, sizeof(sc_BypassCdsTransCheckText));
+static const CStaticArraySet<string> sc_BypassCdsTransCheck(sc_BypassCdsTransCheckText, __FILE__, __LINE__);
 
 
 static void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& tse,
