@@ -3,7 +3,7 @@
 # Meta-makefile("APP" project)
 #################################
 
-APP_PROJ = blastall
+APP_PROJ = blastall megablast
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
