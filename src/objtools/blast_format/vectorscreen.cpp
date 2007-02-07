@@ -535,6 +535,9 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
                 list<AlnInfo*>::iterator iter_temp;
                 list<AlnInfo*>::iterator iter_lower = aln_info_vec[j].begin();
                 while(iter_lower != aln_info_vec[j].end()){
+                    CRange<TSeqPos> higher_range, lower_range;
+                    higher_range = (*iter_higher)->range;
+                    lower_range = (*iter_lower)->range;
                     if((*iter_higher)->range.IntersectingWith((*iter_lower)->range)){
                         //overlaps.  Need to handle
                         if((*iter_higher)->range.GetFrom() <=
@@ -561,21 +564,32 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
                                 //lower includes higher. need to break up lower
                                 //to 3 parts and delete the middle one(included
                                 //in higher one)
+                               
                                 aln_info_vec[j].
                                     insert(iter_lower, 
-                                           x_GetAlnInfo((*iter_lower)->range.GetFrom(),
-                                                        (*iter_higher)->range.GetFrom() - 1 ,
-                                                        (MatchType)j
-                                                        ));
+                                           x_GetAlnInfo((*iter_lower)->range.
+                                                        GetFrom(),
+                                                        (*iter_higher)->range.
+                                                        GetFrom() - 1 ,
+                                                        (MatchType)j));
+                                if ((*iter_higher)->range.GetTo() <
+                                    (*iter_lower)->range.GetTo()) {
+                                    //insert another piece only if lower has extra piece
+                                    aln_info_vec[j].
+                                        insert(iter_lower, 
+                                               x_GetAlnInfo((*iter_higher)->range.
+                                                            GetTo() + 1,
+                                                            (*iter_lower)->range.GetTo() ,
+                                                            (MatchType)j));
+                                }
+                                
                                 iter_temp = iter_lower;
                                 iter_lower ++;
                                 aln_info_vec[j].erase(iter_temp);
-                                aln_info_vec[j].
-                                    insert(iter_lower, 
-                                           x_GetAlnInfo((*iter_higher)->range.GetTo() + 1,
-                                                        (*iter_lower)->range.GetTo() ,
-                                                        (MatchType)j
-                                                        ));
+
+                                
+                               
+                               
                             } else {
                                 //partially overlap
                                 //reduce latter part of lower
@@ -611,21 +625,27 @@ void CVecscreen::x_BuildNonOverlappingRange(vector<CRef<CSeq_align_set> >
     list<AlnInfo*>::iterator cur_iter = m_AlnInfoList.begin();
     list<AlnInfo*>::iterator temp_iter;
     int i = 0;
+    
     while(cur_iter != m_AlnInfoList.end()){
         if(i > 0){
-            if((*cur_iter)->range.GetFrom() - (*prev_iter)->range.GetTo() >= 2){
+            CRange<TSeqPos> prev_range, cur_range;
+            prev_range = (*prev_iter)->range;
+            cur_range = (*cur_iter)->range;
+            int diff =  cur_range.GetFrom() - prev_range.GetTo();
+            if(diff >= 2){
                 //no overlaps, insert the range in between
                 
                 MatchType type = ((*cur_iter)->range.GetFrom() - 1) -
                     ((*prev_iter)->range.GetTo() + 1) + 1 > kSupectLength ?
                     eNoMatch : eSuspect;
+                
                 m_AlnInfoList.
                     insert(cur_iter,
-                           x_GetAlnInfo((*prev_iter)->range.GetTo() + 1, 
-                                        (*cur_iter)->range.GetFrom() - 1,
+                           x_GetAlnInfo(prev_range.GetTo() + 1, 
+                                        cur_range.GetFrom() - 1,
                                         type));
             }
-          
+            
         } else {
             if((*cur_iter)->range.GetFrom() > 0){
                 //insert the range infront of first align range
@@ -666,7 +686,7 @@ END_NCBI_SCOPE
 
 /* 
 *============================================================
-*$Log$
+*$Log: vectorscreen.cpp,v $
 *Revision 1.7  2006/10/04 20:05:05  jianye
 *print with xhtml tags and remove VecscreenDisplay
 *
