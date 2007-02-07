@@ -1119,6 +1119,11 @@ public:
     string GetProperty(const string& name,
                        EPropertyMode mode = eProp_Default) const;
 
+    /// Delete a property by name. If mode is eProp_Default and the property
+    /// is not a known one, check thread-local properties first.
+    void DeleteProperty(const string& name,
+                        EPropertyMode mode = eProp_Default);
+
     /// Forced dump of all set properties.
     void PrintProperties(void) const;
 

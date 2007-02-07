@@ -455,6 +455,7 @@ void CDiagContext::SetProperty(const string& name,
         (*props)[name] = value;
     }
     if ( TAutoWrite_Context::GetDefault() ) {
+        CMutexGuard LOCK(s_DiagMutex);
         x_PrintMessage(SDiagMessage::eEvent_Extra, name + "=" + value);
     }
 }
@@ -480,6 +481,32 @@ string CDiagContext::GetProperty(const string& name,
     CMutexGuard LOCK(s_DiagMutex);
     TProperties::const_iterator gprop = m_Properties.find(name);
     return gprop != m_Properties.end() ? gprop->second : kEmptyStr;
+}
+
+
+void CDiagContext::DeleteProperty(const string& name,
+                                    EPropertyMode mode)
+{
+    if (mode == eProp_Thread  ||
+        (mode ==  eProp_Default  &&  !IsGlobalProperty(name))) {
+        TProperties* props = x_GetThreadProps(false);
+        if ( props ) {
+            TProperties::iterator tprop = props->find(name);
+            if ( tprop != props->end() ) {
+                props->erase(tprop);
+                return;
+            }
+        }
+        if (mode == eProp_Thread) {
+            return;
+        }
+    }
+    // Check global properties
+    CMutexGuard LOCK(s_DiagMutex);
+    TProperties::iterator gprop = m_Properties.find(name);
+    if (gprop != m_Properties.end()) {
+        m_Properties.erase(gprop);
+    }
 }
 
 
