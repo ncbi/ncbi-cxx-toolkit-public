@@ -59,6 +59,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CSeq_loc;
+    class CSeq_interval;
     class CPacked_seqint;
 END_SCOPE(objects)
 
@@ -179,7 +180,21 @@ inline void CSeqLocInfo::SetFrame(int frame)
 }
 
 /// Collection of masked regions for a single query sequence
-typedef list< CRef<CSeqLocInfo> > TMaskedQueryRegions;
+class NCBI_XBLAST_EXPORT TMaskedQueryRegions : public list< CRef<CSeqLocInfo> >
+{
+public:
+    /// Return a new instance of this object that is restricted to the location
+    /// specified
+    /// @param location location describing the range to restrict. Note that
+    /// only the provided range is examined, the Seq-id and strand of the 
+    /// location (if assigned and different from unknown) is copied verbatim 
+    /// into the return value of this method [in]
+    /// @return empty TMaskedQueryRegions if this object is empty, otherwise 
+    /// the intersection of location and this object
+    TMaskedQueryRegions 
+    RestrictToSeqInt(const objects::CSeq_interval& location) const;
+};
+
 
 /// Collection of masked regions for all queries in a BLAST search
 /// @note this supports tra
