@@ -604,7 +604,6 @@ BlastExtensionOptionsValidate(EBlastProgramType program_number,
                                    kBlastMessageNoContext,
                             "Greedy extension only supported for BLASTN");
 			return BLASTERR_OPTION_PROGRAM_INVALID;
-		}
 	}
 
         if ((options->ePrelimGapExt == eSmithWatermanScoreOnly &&
