@@ -148,6 +148,12 @@ void Blast_PerrorEx(Blast_Message* *msg,
 /** BLAST search was interrupted via a user-provided callback */
 #define BLASTERR_INTERRUPTED                        103
 
+/** The option is not supported with the specified program. */
+#define BLASTERR_OPTION_PROGRAM_INVALID             201  
+
+  /** The value of the option is not supported (e.g., word size too small) */
+#define BLASTERR_OPTION_VALUE_INVALID               202
+
 #ifdef __cplusplus
 }
 #endif
