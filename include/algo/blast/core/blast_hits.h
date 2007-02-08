@@ -493,7 +493,7 @@ Int4
 Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program, 
                                           BlastHSPList* hsp_list);
 
-/** Reevaluate all HSPs in an HSP list, using ambiguity information. 
+/** Reevaluate all ungapped HSPs in an HSP list, using ambiguity information. 
  * This is/can only done either for an ungapped search, or if traceback is 
  * already available.
  * Subject sequence is uncompressed and saved here. Number of identities is
@@ -515,7 +515,7 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
  */
 NCBI_XBLAST_EXPORT
 Int2 
-Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program, 
+Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program, 
    BlastHSPList* hsp_list, BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, 
    const BlastInitialWordParameters* word_params,
@@ -535,20 +535,6 @@ NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
         BlastHSPList** combined_hsp_list_ptr, Int4 hsp_num_max);
 
-/** Given two hits and a 'split point', check if the hits can
- * be merged and do the merge if so. If both hits contain traceback,
- * The merged HSP has the start offsets of the first hit, the
- * end offsets of the second, and a merged version of the traceback
- * from the two hits (assuming they contain traceback)
- * @param hsp1 The first hit. If merging happens, this hit is
- *             overwritten with the merged version [in][out]
- * @param hsp2 The second hit [in]
- * @param start The subject offset corresponding to the split point [in]
- * @return TRUE if a merge was performed, FALSE if not
- */
-NCBI_XBLAST_EXPORT
-Boolean BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start);
-
 /** Merge an HSP list from a chunk of the subject sequence into a previously
  * computed HSP list.
  * @param hsp_list Contains HSPs from the new chunk [in]
@@ -561,7 +547,7 @@ Boolean BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start);
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list, 
                    BlastHSPList** combined_hsp_list_ptr, 
-                   Int4 hsp_num_max, Int4 start, Boolean merge_hsps);
+                   Int4 hsp_num_max, Int4 start);
 
 /** Adjust subject offsets in an HSP list if only part of the subject sequence
  * was searched. Used when long subject sequence is split into more manageable

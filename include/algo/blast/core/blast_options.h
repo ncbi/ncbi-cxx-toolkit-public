@@ -255,10 +255,8 @@ typedef struct BlastInitialWordOptions {
  *  gapped extensions
  */
 typedef enum EBlastPrelimGapExt {
-    eDynProgExt,                /**< standard affine gapping */
-    eGreedyExt,                 /**< Greedy extension (megaBlast) */
-    eGreedyWithTracebackExt,    /**< Greedy extension with Traceback
-                               calculated. */
+    eDynProgScoreOnly,          /**< standard affine gapping */
+    eGreedyScoreOnly,           /**< Greedy extension (megaBlast) */
     eSmithWatermanScoreOnly     /**< Score-only smith-waterman */
 } EBlastPrelimGapExt;
 
@@ -593,7 +591,6 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
 /** Fill non-default values in the BlastInitialWordOptions structure.
  * @param options The options structure [in] [out] 
  * @param program Program number (blastn, blastp, etc.) [in]
- * @param greedy Settings should assume greedy alignments. [in]
  * @param window_size Size of a largest window between 2 words for the two-hit
  *                    version [in]
  * @param xdrop_ungapped The value of the X-dropoff for ungapped extensions [in]
@@ -601,8 +598,8 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
 NCBI_XBLAST_EXPORT
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
-   EBlastProgramType program, Boolean greedy, Int4 window_size, 
-   double xdrop_ungapped);
+                EBlastProgramType program, 
+                Int4 window_size, double xdrop_ungapped);
 
 /** Deallocate memory for BlastExtensionOptions.
  * @param options Structure to free [in]
