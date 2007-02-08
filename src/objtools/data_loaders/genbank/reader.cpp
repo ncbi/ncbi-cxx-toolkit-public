@@ -154,7 +154,7 @@ int CReader::GetMaximumConnectionsLimit(void) const
 }
 
 
-void CReader::WaitBeforeNewConnection(TConn conn)
+void CReader::WaitBeforeNewConnection(TConn /*conn*/)
 {
     CMutexGuard guard(m_ConnectionsMutex);
     if ( !m_NextConnectTime.IsEmpty() ) {
@@ -181,13 +181,13 @@ void CReader::WaitBeforeNewConnection(TConn conn)
 }
 
 
-void CReader::RequestSucceeds(TConn conn)
+void CReader::RequestSucceeds(TConn /*conn*/)
 {
     m_CurrentFailCount = 0;
 }
 
 
-void CReader::RequestFailed(TConn conn)
+void CReader::RequestFailed(TConn /*conn*/)
 {
     CMutexGuard guard(m_ConnectionsMutex);
     ++m_CurrentFailCount;
@@ -198,8 +198,8 @@ void CReader::RequestFailed(TConn conn)
 void CReader::SetNewConnectionDelayMicroSec(unsigned long micro_sec)
 {
     CMutexGuard guard(m_ConnectionsMutex);
-    m_NextConnectTime =
-        CTime(CTime::eCurrent).AddTimeSpan(CTimeSpan(micro_sec*1e-6));
+    CTime curr(CTime::eCurrent);
+    m_NextConnectTime = curr.AddTimeSpan(CTimeSpan(micro_sec*1e-6));
 }
 
 
