@@ -167,6 +167,10 @@ int IntersectByMaster(CCdCore* ccd);
 NCBI_CDUTILS_EXPORT 
 int findHighestScoringRowByPssm(CCdCore* ccd);
 
+//return the number of PDBs fixed
+NCBI_CDUTILS_EXPORT
+int FixPDBDefline(CCdCore* cd);
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 

@@ -58,6 +58,7 @@
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <objects/seqblock/PDB_block.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/id1/id1_client.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils) // namespace ncbi::objects::
@@ -418,7 +419,7 @@ bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, C
 }
 
 
-bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block > pdbBlock)
+bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block >& pdbBlock)
 {
 	if (seqEntry->IsSeq())
 	{
@@ -454,6 +455,50 @@ bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block > pdb
 			if(GetPDBBlockFromSeqEntry(*lsei, pdbBlock))
 				return true;
 		} 
+	}
+	return false;
+}
+
+bool checkAndFixPdbBioseq(CRef< CBioseq > bioseq)
+{
+	const list< CRef< CSeq_id > >& idList = bioseq->GetId();
+	list< CRef< CSeq_id > >::const_iterator cit = idList.begin();
+	CRef< CSeq_id > pdbId;
+	for(; cit != idList.end(); cit++)
+		if( (*cit)->IsPdb() )
+			pdbId = *cit;
+	if (pdbId.Empty())
+		return false;
+	list< CRef< CSeqdesc > >& descrList = bioseq->SetDescr().Set();
+	list< CRef< CSeqdesc > >::const_iterator cdit = descrList.begin();
+	for (; cdit != descrList.end(); cdit++)
+	{
+		if ( (*cdit)->IsTitle() )
+			return false;
+	}
+	CID1Client id1Client;
+	id1Client.SetAllowDeadEntries(false);
+	CRef<CSeq_entry> seqEntry;
+	try {
+		seqEntry = id1Client.FetchEntry(*pdbId, 1);
+	} catch (...)
+	{
+		return false;
+	}
+	CRef< CPDB_block > pdbBlock;
+	if (GetPDBBlockFromSeqEntry(seqEntry, pdbBlock))
+	{
+		CRef< CSeqdesc > seqDesc(new CSeqdesc);
+		if (pdbBlock->CanGetCompound())
+		{
+			const list< string >& compounds = pdbBlock->GetCompound();
+			if (compounds.size() != 0)
+			{
+				seqDesc->SetTitle(*(compounds.begin()));
+				descrList.push_back(seqDesc);
+				return true;
+			}
+		}
 	}
 	return false;
 }

@@ -58,12 +58,9 @@
 #include "corelib/ncbitime.hpp"
 #include <objects/general/Date.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
-//#include "cdAlignmentAdaptor.hpp"
 #include <algo/structure/cd_utils/cuCdReadWriteASN.hpp>
-//#include "cdWorkshop.hpp"
-
 #include <algo/structure/cd_utils/cuAlign.hpp>
-//#include "algComponent.hpp"
+#include <algo/structure/cd_utils/cuSequence.hpp>
 #include <algo/structure/cd_utils/cuCD.hpp>
 #include <algo/structure/cd_utils/cuBlockIntersector.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeFactory.hpp>
@@ -650,6 +647,27 @@ bool RemasterWithStructure(CCdCore* cd, string* msg)
 	}
 	else
 		return false;
+}
+
+//return the number of PDBs fixed
+int FixPDBDefline(CCdCore* cd)
+{
+	CRef< CSeq_id > seqId;
+	AlignmentCollection ac(cd,CCdCore::USE_NORMAL_ALIGNMENT);
+	int nrows = ac.GetNumRows();
+	int numFixed = 0;
+	for (int i = 0; i < nrows; i++)
+	{
+		ac.GetSeqIDForRow(i,seqId);
+		if (seqId->IsPdb())
+		{
+			CRef< CBioseq > bioseq;
+			ac.GetBioseqForRow(i, bioseq);
+			if (checkAndFixPdbBioseq(bioseq))
+				numFixed++;
+		}
+	}
+	return numFixed;
 }
 
 bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)

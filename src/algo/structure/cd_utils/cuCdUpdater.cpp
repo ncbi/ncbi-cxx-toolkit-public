@@ -1399,6 +1399,7 @@ bool CDUpdater::reformatBioseq(CRef< CBioseq > bioseq, CRef< CSeq_entry > seqEnt
 					const list< string >& compounds = pdbBlock->GetCompound();
 					if (compounds.size() != 0)
 						seqDesc->SetTitle(*(compounds.begin()));
+					seqDescr.Set().push_back(seqDesc);
 				}
 			}
 		}

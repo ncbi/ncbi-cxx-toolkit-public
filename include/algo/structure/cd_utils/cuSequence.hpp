@@ -110,8 +110,9 @@ bool IsConsensus(const CRef< CSeq_id >& seqId);
 NCBI_CDUTILS_EXPORT 
 bool GetAccAndVersion(const CRef< CBioseq > bioseq, string& acc, int& version, CRef< CSeq_id>& seqId);
 NCBI_CDUTILS_EXPORT 
-bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block > pdbBlock);
-
+bool GetPDBBlockFromSeqEntry(CRef< CSeq_entry > seqEntry, CRef< CPDB_block >& pdbBlock);
+NCBI_CDUTILS_EXPORT 
+bool checkAndFixPdbBioseq(CRef< CBioseq > bioseq);
 END_SCOPE(cd_utils) // namespace ncbi::objects::
 
 END_NCBI_SCOPE
