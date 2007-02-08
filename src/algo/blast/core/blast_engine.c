@@ -249,8 +249,6 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
       BlastUngappedStats* ungapped_stats = NULL;
       BlastGappedStats* gapped_stats = NULL;
       Int4 **matrix;
-      const Boolean kPrelimTraceback = 
-         (ext_params->options->ePrelimGapExt == eGreedyWithTracebackExt);
       const Boolean kTranslatedSubject = 
         (Blast_SubjectIsTranslated(program_number) || program_number == eBlastTypeRpsTblastn);
       const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
@@ -356,10 +354,8 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
          }
 
          Blast_HSPListAdjustOffsets(hsp_list, offset);
-         /* Allow merging of HSPs either if traceback is already 
-            available, or if it is an ungapped search */
-         status = Blast_HSPListsMerge(&hsp_list, &combined_hsp_list,  kHspNumMax, offset,
-            (Boolean)(kPrelimTraceback || !score_options->gapped_calculation));
+         status = Blast_HSPListsMerge(&hsp_list, &combined_hsp_list,  
+                                      kHspNumMax, offset);
       } /* End loop on chunks of subject sequence */
 
       hsp_list = Blast_HSPListFree(hsp_list);  /* In case this was not freed in above loop. */
@@ -857,7 +853,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    BlastSeqSrcGetSeqArg seq_arg;
    Int2 status = 0;
    Int8 db_length = 0;
-   Boolean prelim_traceback;
    const BlastScoringOptions* score_options = score_params->options;
    const BlastHitSavingOptions* hit_options = hit_params->options;
    const BlastExtensionOptions* ext_options = ext_params->options;
@@ -897,8 +892,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    /* Update the parameters for linking HSPs, if necessary. */
    BlastLinkHSPParametersUpdate(word_params, hit_params, gapped_calculation);
    
-   prelim_traceback = (ext_options->ePrelimGapExt == eGreedyWithTracebackExt);
-
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
    /* Encoding is set so there are no sentinel bytes, and protein/nucleotide
@@ -948,15 +941,16 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       }
 
       if (hsp_list && hsp_list->hspcnt > 0) {
-         if (!gapped_calculation || prelim_traceback) {
-            /* The following must be performed for any ungapped search with a 
-               nucleotide database. */
+         if (!gapped_calculation) {
+            /* The following must be performed for any ungapped 
+               search with a nucleotide database. */
 	     if (Blast_SubjectIsNucleotide(program_number)) {
                status = 
-                  Blast_HSPListReevaluateWithAmbiguities(program_number, 
-                     hsp_list, query, seq_arg.seq, word_params, hit_params, 
-                     query_info, sbp, score_params, seq_src, 
-                     (db_options ? db_options->gen_code_string : NULL));
+                  Blast_HSPListReevaluateWithAmbiguitiesUngapped(
+                            program_number, hsp_list, query, 
+                            seq_arg.seq, word_params, hit_params, 
+                            query_info, sbp, score_params, seq_src, 
+                            (db_options ? db_options->gen_code_string : NULL));
                if (status) {
                   BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
                   return status;
@@ -964,7 +958,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                /* Relink HSPs if sum statistics is used, because scores might
                 * have changed after reevaluation with ambiguities, and there
                 * will be no traceback stage where relinking is done normally.
-                * If sum statistics is not used, just recalculate the e-values. 
+                * If sum statistics are not used, just recalculate e-values. 
                 */
                if (hit_params->link_hsp_params) {
                    status = 
@@ -974,10 +968,11 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                                       gapped_calculation);
                } else {
                   Blast_HSPListGetEvalues(query_info, hsp_list, 
-                                          score_options->gapped_calculation, 
+                                          gapped_calculation, 
                                           sbp, 0, 1.0);
                }
-               status = Blast_HSPListReapByEvalue(hsp_list, hit_params->options);
+               status = Blast_HSPListReapByEvalue(hsp_list, 
+                                          hit_params->options);
             }
              
             /* Calculate and fill the bit scores, since there will be no

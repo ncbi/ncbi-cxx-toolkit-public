@@ -179,14 +179,10 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
    Int4 max_d, max_d_1, Xdrop, d_diff, max_cost, gd, i;
    Int4 reward, penalty, gap_open, gap_extend;
    Int4 Mis_cost, GE_cost;
-   Boolean do_traceback;
    
    if (score_params == NULL || ext_params == NULL) 
       return NULL;
    
-   do_traceback = 
-      (ext_params->options->ePrelimGapExt != eGreedyExt);
-
    if (score_params->reward % 2 == 1) {
       reward = 2*score_params->reward;
       penalty = -2*score_params->penalty;
@@ -262,9 +258,8 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
    }
    gamp->max_score = (Int4*) malloc(sizeof(Int4) * (max_d + 1 + d_diff));
 
-   if (do_traceback)
-      gamp->space = MBSpaceNew(0);
-   if (!gamp->max_score || (do_traceback && !gamp->space))
+   gamp->space = MBSpaceNew(0);
+   if (!gamp->max_score || !gamp->space)
       /* Failure in one of the memory allocations */
       s_BlastGreedyAlignsFree(gamp);
 
@@ -311,7 +306,7 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
 
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff;
 
-   if (ext_params->options->ePrelimGapExt == eDynProgExt) {
+   if (ext_params->options->ePrelimGapExt == eDynProgScoreOnly) {
       /* allocate structures for ordinary dynamic programming */
       gap_align->dp_mem_alloc = 1000;
       gap_align->dp_mem = (BlastGapDP *)malloc(gap_align->dp_mem_alloc *
@@ -2992,7 +2987,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    Boolean is_greedy;
    Boolean is_rpsblast = Blast_ProgramIsRpsBlast(program_number);
    Int4 max_offset;
-   Int4 rps_cutoff_index;
+   Int4 rps_cutoff_index = 0;
    Int2 status = 0;
    BlastHSPList* hsp_list = NULL;
    const BlastHitSavingOptions* hit_options = hit_params->options;
@@ -3015,7 +3010,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
    is_prot = (program_number != eBlastTypeBlastn &&
               program_number != eBlastTypePhiBlastn);
-   is_greedy = (ext_params->options->ePrelimGapExt != eDynProgExt);
+   is_greedy = (ext_params->options->ePrelimGapExt == eGreedyScoreOnly);
 
    /* turn on approximate gapped alignment if 1) the search 
       specifies it, and 2) the first, highest-scoring ungapped 
@@ -3188,10 +3183,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                          gap_align, score_params, 
                          init_hsp->offsets.qs_offsets.q_off, 
                          init_hsp->offsets.qs_offsets.s_off, 
-                         (Boolean) TRUE, 
-                         (Boolean) (ext_params->options->ePrelimGapExt == 
-                                    eGreedyWithTracebackExt),
-                         fence_hit);
+                         (Boolean) TRUE, FALSE, fence_hit);
          } else {
             /*  Assuming the ungapped alignment is long enough to
                 contain an 8-letter seed of exact matches, start 

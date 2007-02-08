@@ -457,8 +457,6 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
       (*options)->gap_trigger = BLAST_GAP_TRIGGER_NUCL;
       (*options)->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
    }
-   /* Except in one special case of greedy gapped extension, we always do 
-      ungapped extension. Let the special case unset this option. */
    (*options)->ungapped_extension = TRUE;
    (*options)->program_number = program;
 
@@ -491,16 +489,11 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
 
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
-   EBlastProgramType program, Boolean greedy, Int4 window_size, 
-   double xdrop_ungapped)
+                EBlastProgramType program, Int4 window_size, 
+                double xdrop_ungapped)
 {
    if (!options)
       return BLASTERR_INVALIDPARAM;
-
-   /* Ungapped extension is performed in all cases except when greedy
-      gapped extension is used. */
-   if (program == eBlastTypeBlastn && greedy)
-       options->ungapped_extension = FALSE;
 
    if (window_size != 0)
       options->window_size = window_size;
@@ -541,7 +534,7 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
         (*options)->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
     }
 
-    (*options)->ePrelimGapExt = eDynProgExt;
+    (*options)->ePrelimGapExt = eDynProgScoreOnly;
     (*options)->eTbackExt = eDynProgTbck;
 
     /** @todo how to determine this for PSI-BLAST bootstrap run (i.e. when
@@ -563,25 +556,17 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
    if (!options)
       return BLASTERR_INVALIDPARAM;
 
-   if (program == eBlastTypeBlastn ||
-       program == eBlastTypePhiBlastn) {
-      switch (greedy) {
-      case 1:
-         options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
-         options->ePrelimGapExt = eGreedyWithTracebackExt;
-         break;
-      case 2:
+   if (program == eBlastTypeBlastn || program == eBlastTypePhiBlastn) {
+      if (greedy) {
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
          options->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
-         options->ePrelimGapExt = eGreedyExt;
+         options->ePrelimGapExt = eGreedyScoreOnly;
          options->eTbackExt = eGreedyTbck;
-         break;
-      default: /* Non-greedy */
+      } else {
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_NUCL;
          options->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
-         options->ePrelimGapExt = eDynProgExt;
+         options->ePrelimGapExt = eDynProgScoreOnly;
          options->eTbackExt = eDynProgTbck;
-         break;
       }
    }
 
@@ -611,13 +596,12 @@ BlastExtensionOptionsValidate(EBlastProgramType program_number,
 	if (options == NULL)
 		return  BLASTERR_INVALIDPARAM;
 
-	if (program_number != eBlastTypeBlastn)
+	if (program_number != eBlastTypeBlastn &&
+            (options->ePrelimGapExt == eGreedyScoreOnly ||
+             options->eTbackExt == eGreedyTbck))
 	{
-		if (options->ePrelimGapExt == eGreedyWithTracebackExt || 
-          options->ePrelimGapExt == eGreedyExt ||
-          options->eTbackExt == eGreedyTbck)
-		{
-			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
+		Blast_MessageWrite(blast_msg, eBlastSevWarning, 
+                                   kBlastMessageNoContext,
                             "Greedy extension only supported for BLASTN");
 			return BLASTERR_OPTION_PROGRAM_INVALID;
 		}
@@ -1418,8 +1402,7 @@ static Int2 s_BlastExtensionScoringOptionsValidate(EBlastProgramType program_num
     {
         if (score_options->gap_open == 0 && score_options->gap_extend == 0)
         {
-	    if (ext_options->ePrelimGapExt != eGreedyWithTracebackExt && 
-                ext_options->ePrelimGapExt != eGreedyExt && 
+	    if (ext_options->ePrelimGapExt != eGreedyScoreOnly && 
                 ext_options->eTbackExt != eGreedyTbck)
 	    {
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,

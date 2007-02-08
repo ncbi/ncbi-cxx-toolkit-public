@@ -1146,9 +1146,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
    } else {
       BlastSeqSrcGetSeqArg seq_arg;
       EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
-      Boolean perform_traceback = 
-         (score_params->options->gapped_calculation && 
-          (ext_params->options->ePrelimGapExt != eGreedyWithTracebackExt));
+      Boolean perform_traceback = score_params->options->gapped_calculation;
       const Boolean kPhiBlast = Blast_ProgramIsPhiBlast(program_number);
 
       memset((void*) &seq_arg, 0, sizeof(seq_arg));

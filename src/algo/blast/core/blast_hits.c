@@ -841,28 +841,6 @@ Blast_HSPGetAdjustedOffsets(EBlastProgramType program, BlastHSP* hsp,
    }
 }
 
-/** Checks if the first HSP is contained in the second. 
- * @todo FIXME: can this function be reused in other contexts?
- */
-static Boolean 
-s_BlastHSPContained(BlastHSP* hsp1, BlastHSP* hsp2)
-{
-   Boolean hsp_start_is_contained=FALSE, hsp_end_is_contained=FALSE;
-
-   if (hsp1->score > hsp2->score)
-      return FALSE;
-
-   if (CONTAINED_IN_HSP(hsp2->query.offset, hsp2->query.end, hsp1->query.offset, hsp2->subject.offset, hsp2->subject.end, hsp1->subject.offset) == TRUE) {
-      hsp_start_is_contained = TRUE;
-   }
-   if (CONTAINED_IN_HSP(hsp2->query.offset, hsp2->query.end, hsp1->query.end, hsp2->subject.offset, hsp2->subject.end, hsp1->subject.end) == TRUE) {
-      hsp_end_is_contained = TRUE;
-   }
-   
-   return (hsp_start_is_contained && hsp_end_is_contained);
-}
-
-
 Int2
 Blast_HSPGetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk, 
                                       BlastHSP* hsp,
@@ -1139,219 +1117,41 @@ s_EndDiagCompareHSPs(const void* v1, const void* v2)
 }
 
 
-/** An auxiliary structure used for merging ungapped regions of HSPs */
-typedef struct BlastHSPSegment {
-   Int4 q_start; /**< Query start of segment. */
-   Int4 s_start; /**< Subject start of segment. */
-   Int4 length;  /**< length of segment. */
-   Int4 diagonal; /**< diagonal (q_start - s_start). */
-   Int4 esp_offset;  /**< element of an edit script this node refers to */
-} BlastHSPSegment;
-
-
-/** function populate a BlastHSPSegment.
- *
- * @param segment Object to be allocated and populated [in|out]
- * @param q_start Start of match on query [in]
- * @param s_start Start of match on subject [in]
- * @param length The length of the segment [in]
- * @param esp_offset Relevant element of GapEditScript [in]
+/** Given two hits, check if the hits can be merged and do 
+ * the merge if so. Hits must not contain traceback
+ * @param hsp1 The first hit. If merging happens, this hit is
+ *             overwritten with the merged version [in][out]
+ * @param hsp2 The second hit [in]
+ * @return TRUE if a merge was performed, FALSE if not
  */
-static void
-s_AddHSPSegment(BlastHSPSegment* segment, Int4 q_start, 
-                Int4 s_start, Int4 length, Int4 esp_offset)
+static Boolean 
+s_BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2)
 {
-   segment->q_start = q_start;
-   segment->s_start = s_start;
-   segment->length = length;
-   segment->diagonal = q_start - s_start;
-   segment->esp_offset = esp_offset;
-}
+   ASSERT(!hsp1->gap_info || !hsp2->gap_info);
 
-Boolean 
-BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
-{
-   BlastHSPSegment *segment1, *segment2;
-   Int4 num_segments1, num_segments2;
-   Boolean merged = FALSE;
-   GapEditScript* esp1;
-   GapEditScript* esp2;
-   Int4 q_start, s_start;
-   Int4 max_s_end = -1;  /* furthest extent of first HSP. */
-   Int4 i, j;
-
-   if (!hsp1->gap_info || !hsp2->gap_info)
-   {
-      /* No traceback; just combine the boundaries of the
-         two HSPs, assuming they intersect at all */
-      if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end,
-                           hsp2->query.offset,
-                           hsp1->subject.offset, hsp1->subject.end,
-                           hsp2->subject.offset) ||
-          CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end,
-                           hsp2->query.end,
-                           hsp1->subject.offset, hsp1->subject.end,
-                           hsp2->subject.end)) {
-         hsp1->query.offset = MIN(hsp1->query.offset, hsp2->query.offset);
-         hsp1->subject.offset = MIN(hsp1->subject.offset, hsp2->subject.offset);
-         hsp1->query.end = MAX(hsp1->query.end, hsp2->query.end);
-         hsp1->subject.end = MAX(hsp1->subject.end, hsp2->subject.end);
-         if (hsp2->score > hsp1->score) {
-             hsp1->query.gapped_start = hsp2->query.gapped_start;
-             hsp1->subject.gapped_start = hsp2->subject.gapped_start;
-             hsp1->score = hsp2->score;
-         }
-         return TRUE;
-      } else {
-         return FALSE;
+   /* combine the boundaries of the two HSPs, 
+      assuming they intersect at all */
+   if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end,
+                        hsp2->query.offset,
+                        hsp1->subject.offset, hsp1->subject.end,
+                        hsp2->subject.offset) ||
+       CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end,
+                        hsp2->query.end,
+                        hsp1->subject.offset, hsp1->subject.end,
+                        hsp2->subject.end)) {
+      hsp1->query.offset = MIN(hsp1->query.offset, hsp2->query.offset);
+      hsp1->subject.offset = MIN(hsp1->subject.offset, hsp2->subject.offset);
+      hsp1->query.end = MAX(hsp1->query.end, hsp2->query.end);
+      hsp1->subject.end = MAX(hsp1->subject.end, hsp2->subject.end);
+      if (hsp2->score > hsp1->score) {
+          hsp1->query.gapped_start = hsp2->query.gapped_start;
+          hsp1->subject.gapped_start = hsp2->subject.gapped_start;
+          hsp1->score = hsp2->score;
       }
+      return TRUE;
    }
 
-   /* the merging of edit scripts is somewhat basic; we do not
-      attempt to produce an optimal-scoring edit script from the
-      edit scripts of hsp1 and hsp2. The two edit scripts are only
-      spliced together if each contains an ungapped region, on
-      the same diagonal, and the two ungapped regions overlap */
-
-   /* save each ungapped region of hsp1 that ends beyond
-      the split point; also save the furthest extent on the
-      subject sequence that these regions achieve */
-
-   num_segments1 = 0;
-   esp1 = hsp1->gap_info;
-   q_start = hsp1->query.offset;
-   s_start = hsp1->subject.offset;
-   segment1 = (BlastHSPSegment *)malloc(esp1->size * sizeof(BlastHSPSegment));
-   for (i = 0; i < esp1->size; i++) {
-      Int4 region_size = esp1->num[i];
-
-      switch (esp1->op_type[i]) {
-      case eGapAlignSub:
-         if (s_start + region_size > start) {
-            s_AddHSPSegment(segment1 + num_segments1,
-                            q_start, s_start, region_size, i);
-            max_s_end = MAX(max_s_end, s_start + region_size);
-            num_segments1++;
-         }
-         q_start += region_size;
-         s_start += region_size;
-         break;
-
-      case eGapAlignIns:
-         q_start += region_size;
-         break;
-
-      case eGapAlignDel:
-         s_start += region_size;
-         break;
-
-      default:
-         break;
-      }
-   }
-
-   /* save each ungapped region of hsp2; each such 
-      region automatically starts beyond the split point. 
-      Regions that start beyond the maximum subject offset
-      found in hsp1 above do not need to be tested, since
-      they will never overlap */
-         
-   num_segments2 = 0;
-   esp2 = hsp2->gap_info;
-   q_start = hsp2->query.offset;
-   s_start = hsp2->subject.offset;
-   segment2 = (BlastHSPSegment *)malloc(esp2->size * sizeof(BlastHSPSegment));
-   for (i = 0; i < esp2->size; i++) {
-      Int4 region_size = esp2->num[i];
-
-      switch (esp2->op_type[i]) {
-      case eGapAlignSub:
-         s_AddHSPSegment(segment2 + num_segments2, 
-                         q_start, s_start, region_size, i);
-         num_segments2++;
-         q_start += region_size;
-         s_start += region_size;
-         break;
-
-      case eGapAlignIns:
-         q_start += region_size;
-         break;
-
-      case eGapAlignDel:
-         s_start += region_size;
-         break;
-
-      default:
-         break;
-      }
-
-      if (s_start >= max_s_end)
-         break;
-   }
-
-   if (num_segments1 == 0 || num_segments2 == 0) {
-      goto clean_up;
-   }
-
-   /* perform an all-against-all search for two ungapped
-      segments, one from each list, that overlap and lie
-      on the same diagonal */
-
-   for (i = 0; i < num_segments1; i++) {
-      for (j = 0; j < num_segments2; j++) {
-
-         BlastHSPSegment *region1 = segment1 + i;
-         BlastHSPSegment *region2 = segment2 + j;
-
-         if (region1->diagonal == region2->diagonal && (
-              /* test for region 2 starting inside region1 */
-             (region1->q_start <= region2->q_start &&
-              region1->q_start + region1->length >= region2->q_start) ||
-              /* test for region 1 starting inside region2 */
-             (region1->q_start >= region2->q_start && 
-              region1->q_start <= region2->q_start + region2->length) ) ) {
-
-            /* splice the two edit scripts together; first allocate
-               another edit script, large enough to hold the combined
-               set of edit operations */
-            Int4 new_size = region1->esp_offset + 
-                               (esp2->size - region2->esp_offset);
-            GapEditScript* new_esp = GapEditScriptNew(new_size);
-
-            /* copy over the first part of the edit script, including
-               the edit operation that will change */
-
-            GapEditScriptPartialCopy(new_esp, 0, esp1, 0, region1->esp_offset); 
-
-            /* splice region1 and region2 together. The length of the
-               resulting segment must be such that the start offset of
-               region1 and the end offset of region2 do not change */
-
-            new_esp->num[region1->esp_offset] = region2->q_start + 
-                                        region2->length - region1->q_start;
-
-            /* copy the last part of the edit script */
-            GapEditScriptPartialCopy(new_esp, region1->esp_offset + 1, esp2, 
-                                   region2->esp_offset + 1, esp2->size - 1); 
-
-            /* modify the rest of hsp1; note that we don't know
-               the final score without examining sequence data,
-               so just choose the largest score available */
-            hsp1->gap_info = GapEditScriptDelete(hsp1->gap_info);
-            hsp1->gap_info = new_esp;
-            hsp1->query.end = hsp2->query.end;
-            hsp1->subject.end = hsp2->subject.end;
-            hsp1->score = MAX(hsp1->score, hsp2->score);
-            merged = TRUE;
-            goto clean_up;
-         }
-      }
-   }
-
-clean_up:
-   free(segment1);
-   free(segment2);
-   return merged;
+   return FALSE;
 }
 
 /** Maximal diagonal distance between HSP starting offsets, within which HSPs 
@@ -2010,61 +1810,8 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
    return hsp_list->hspcnt;
 }
 
-/** Diagonal distance between HSPs, outside of which one HSP cannot be 
- * considered included in the other.
- */ 
-#define MIN_DIAG_DIST 60
-
-/** Remove redundant HSPs in an HSP list based on a diagonal inclusion test: if 
- * an HSP is within a certain diagonal distance of another HSP, and its endpoints 
- * are contained in a rectangle formed by another HSP, then it is removed.
- * Performed only after a single-phase greedy gapped extension, when there is no 
- * extra traceback stage that could fix the inclusions.
- * @param query_blk Query sequence for the HSPs
- * @param subject_blk Subject sequence for the HSPs
- * @param query_info Used to map HSPs uniquely onto the complete
- *                   set of query sequences
- * @param hsp_list HSP list to check (must be in standard sorted order) [in/out]
- */
-static void
-s_BlastHSPListCheckDiagonalInclusion(BLAST_SequenceBlk* query_blk, 
-                                     BLAST_SequenceBlk* subject_blk, 
-                                     const BlastQueryInfo* query_info, 
-                                     BlastHSPList* hsp_list)
-{
-   Int4 index;
-   BlastHSP** hsp_array = hsp_list->hsp_array;
-   BlastIntervalTree *tree;
-
-   if (hsp_list->hspcnt <= 1)
-      return;
-
-   /* Remove any HSPs that are contained within other HSPs.
-      Since the list is sorted by score already, any HSP
-      contained by a previous HSP is guaranteed to have a
-      lower score, and may be purged. */
-
-   tree = Blast_IntervalTreeInit(0, query_blk->length + 1,
-                                 0, subject_blk->length + 1);
-
-   for (index = 0; index < hsp_list->hspcnt; index++) {
-       BlastHSP *hsp = hsp_array[index];
-       
-       if (BlastIntervalTreeContainsHSP(tree, hsp, query_info,
-                                        MIN_DIAG_DIST)) {
-           hsp_array[index] = Blast_HSPFree(hsp);
-       }
-       else {
-           BlastIntervalTreeAddHSP(hsp, tree, query_info, 
-                                   eQueryAndSubject);
-       }
-   }
-   tree = Blast_IntervalTreeFree(tree);
-   Blast_HSPListPurgeNullHSPs(hsp_list);
-}
-
 Int2 
-Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program, 
+Blast_HSPListReevaluateWithAmbiguitiesUngapped(EBlastProgramType program, 
    BlastHSPList* hsp_list, BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, 
    const BlastInitialWordParameters* word_params,
@@ -2075,7 +1822,6 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
    BlastHSP** hsp_array,* hsp;
    Uint1* query_start,* subject_start = NULL;
    Int4 index, context, hspcnt;
-   Boolean gapped;
    Boolean purge, delete_hsp;
    Int2 status = 0;
    const Boolean kTranslateSubject = Blast_SubjectIsTranslated(program);
@@ -2083,10 +1829,11 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
    Uint1* translation_buffer = NULL;
    Int4* frame_offsets = NULL;
 
+   ASSERT(!score_params->options->gapped_calculation);
+
    if (!hsp_list)
       return status;
 
-   gapped = score_params->options->gapped_calculation;
    hspcnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
 
@@ -2139,31 +1886,23 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
       query_start = query_blk->sequence +
           query_info->contexts[context].query_offset;
 
-      if (gapped) {
-         /* NB: This can only happen for blastn after greedy extension with 
-            traceback. */
-         delete_hsp = 
-            Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query_start, 
-               subject_start, hit_params, score_params, sbp);
-      } else {
-         if (kTranslateSubject) {
-            if (partial_translation) {
-               Int4 subject_length = 0; /* Dummy variable */
-               Blast_HSPGetPartialSubjectTranslation(subject_blk, hsp, FALSE,
-                  gen_code_string, &translation_buffer, &subject_start,
-                  &subject_length, &start_shift);
-            } else {
-               Int4 subject_context = BLAST_FrameToContext(hsp->subject.frame,
-                                                     program);
-               subject_start = 
-                  translation_buffer + frame_offsets[subject_context] + 1;
-            }
+      if (kTranslateSubject) {
+         if (partial_translation) {
+            Int4 subject_length = 0; /* Dummy variable */
+            Blast_HSPGetPartialSubjectTranslation(subject_blk, hsp, FALSE,
+               gen_code_string, &translation_buffer, &subject_start,
+               &subject_length, &start_shift);
+         } else {
+            Int4 subject_context = BLAST_FrameToContext(hsp->subject.frame,
+                                                  program);
+            subject_start = 
+               translation_buffer + frame_offsets[subject_context] + 1;
          }
-
-         delete_hsp = 
-            Blast_HSPReevaluateWithAmbiguitiesUngapped(hsp, query_start, 
-               subject_start, word_params, sbp, kTranslateSubject);
       }
+
+      delete_hsp = 
+         Blast_HSPReevaluateWithAmbiguitiesUngapped(hsp, query_start, 
+            subject_start, word_params, sbp, kTranslateSubject);
    
       if (!delete_hsp) {
           delete_hsp = 
@@ -2180,33 +1919,17 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);
          purge = TRUE;
       }
-
    }
 
    sfree(translation_buffer);
    sfree(frame_offsets);
     
-   if (purge) {
+   if (purge)
       Blast_HSPListPurgeNullHSPs(hsp_list);
-   }
-
-   /* If greedy extension with traceback was used, remove
-      any HSPs that share a starting or ending diagonal
-      with a higher-scoring HSP. */
-   if (gapped) 
-      Blast_HSPListPurgeHSPsWithCommonEndpoints(program, hsp_list);
 
    /* Sort the HSP array by score (scores may have changed!) */
    Blast_HSPListSortByScore(hsp_list);
-
-   /* If greedy extension with traceback was used, check for 
-      HSP inclusion in a diagonal strip around another HSP. */
-   if (gapped) 
-      s_BlastHSPListCheckDiagonalInclusion(query_blk, subject_blk,
-                                           query_info, hsp_list);
-
-   Blast_HSPListAdjustOddBlastnScores(hsp_list, gapped, sbp);
-
+   Blast_HSPListAdjustOddBlastnScores(hsp_list, FALSE, sbp);
    return 0;
 }
 
@@ -2330,8 +2053,7 @@ Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
 
 Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr, 
                    BlastHSPList** combined_hsp_list_ptr,
-                   Int4 hsp_num_max, Int4 start, 
-                   Boolean merge_hsps)
+                   Int4 hsp_num_max, Int4 start) 
 {
    BlastHSPList* combined_hsp_list = *combined_hsp_list_ptr;
    BlastHSPList* hsp_list = *hsp_list_ptr;
@@ -2419,23 +2141,9 @@ Int2 Blast_HSPListsMerge(BlastHSPList** hsp_list_ptr,
    
             if (hsp1->context == hsp2->context && 
                 ABS(end_diag - start_diag) < OVERLAP_DIAG_CLOSE) {
-               if (merge_hsps) {
-                  if (BlastMergeTwoHSPs(hsp1, hsp2, start)) {
-                     /* Free the second HSP. */
-                     hspp2[index2] = Blast_HSPFree(hsp2);
-                  }
-               } else {
-                  if (s_BlastHSPContained(hsp1, hsp2)) {
-                     /* Point the first HSP to the new HSP; free the old HSP. */
-                     hspp1[index1] = hsp2;
-                     hspp2[index2] = NULL;
-                     Blast_HSPFree(hsp1);
-                     /* hsp1 has been removed, so break out of the inner loop */
-                     break;
-                  } else if (s_BlastHSPContained(hsp2, hsp1)) {
-                     /* Just free the second HSP */
-                     hspp2[index2] = Blast_HSPFree(hsp2);
-                  }
+               if (s_BlastMergeTwoHSPs(hsp1, hsp2)) {
+                  /* Free the second HSP. */
+                  hspp2[index2] = Blast_HSPFree(hsp2);
                }
             } else {
                /* This and remaining HSPs are too far from the one being 
@@ -2504,19 +2212,14 @@ void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list,
 {
     int index;
     
-    if (!hsp_list || hsp_list->hspcnt == 0)
-        return;
-
-    if (gapped_calculation == FALSE)
-      return;
-
-    if (sbp->round_down == FALSE)
-      return;
+    if (!hsp_list || hsp_list->hspcnt == 0 ||
+        gapped_calculation == FALSE ||
+        sbp->round_down == FALSE)
+       return;
     
-    for (index = 0; index < hsp_list->hspcnt; ++index) {
-        hsp_list->hsp_array[index]->score -= 
-            (hsp_list->hsp_array[index]->score & 1);
-    }
+    for (index = 0; index < hsp_list->hspcnt; ++index)
+        hsp_list->hsp_array[index]->score &= ~1;
+
     /* Sort the HSPs again, since the order may have to be different now. */
     Blast_HSPListSortByScore(hsp_list);
 }
