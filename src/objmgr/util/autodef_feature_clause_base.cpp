@@ -52,14 +52,14 @@ BEGIN_SCOPE(objects)
 using namespace sequence;
 
 CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base() :
-                              m_MakePlural(false),
-                              m_SuppressLocusTag(false),
                               m_GeneIsPseudo(false),
-                              m_IsUnknown(false),
-                              m_ClauseInfoOnly(false),
                               m_IsAltSpliced(false),
                               m_HasmRNA(false),
                               m_HasGene(false),
+                              m_MakePlural(false),
+                              m_IsUnknown(false),
+                              m_ClauseInfoOnly(false),
+                              m_SuppressLocusTag(false),
                               m_SuppressSubfeatures(false),
                               m_DeleteMe(false)
 {
@@ -67,14 +67,14 @@ CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base() :
 
 
 CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base(bool suppress_locus_tag) :
-                              m_MakePlural(false),
-                              m_SuppressLocusTag(suppress_locus_tag),
                               m_GeneIsPseudo(false),
-                              m_IsUnknown(false),
-                              m_ClauseInfoOnly(false),
                               m_IsAltSpliced(false),
                               m_HasmRNA(false),
                               m_HasGene(false),
+                              m_MakePlural(false),
+                              m_IsUnknown(false),
+                              m_ClauseInfoOnly(false),
+                              m_SuppressLocusTag(suppress_locus_tag),
                               m_DeleteMe(false)
 {
 }
@@ -1479,8 +1479,8 @@ void CAutoDefUnknownGeneList::Label()
 
 CAutoDefExonListClause::CAutoDefExonListClause(CBioseq_Handle bh, bool suppress_locus_tags)
                   : CAutoDefFeatureClause_Base(suppress_locus_tags),
-                    m_BH (bh),
-                    m_SuppressFinalAnd(false)
+                    m_SuppressFinalAnd(false),
+                    m_BH(bh)
 {
     m_Typeword = "exon";
     m_TypewordChosen = true;

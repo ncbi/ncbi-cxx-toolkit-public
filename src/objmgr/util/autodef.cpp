@@ -50,15 +50,15 @@ BEGIN_SCOPE(objects)
 
             
 CAutoDef::CAutoDef()
-    : m_SuppressAltSplicePhrase(false),
-      m_FeatureListType(eListAllFeatures),
+    : m_FeatureListType(eListAllFeatures),
       m_MiscFeatRule(eDelete),
+      m_SpecifyNuclearProduct(false),
       m_ProductFlag(CBioSource::eGenome_unknown),
       m_AltSpliceFlag(false),
+      m_SuppressAltSplicePhrase(false),
       m_SuppressLocusTags(false),
       m_GeneOppStrand(false),
       m_RemoveTransposonAndInsertionSequenceSubfeatures(false),
-      m_SpecifyNuclearProduct(false),
       m_KeepExons(false),
       m_KeepIntrons(false),
       m_KeepPromoters(false),

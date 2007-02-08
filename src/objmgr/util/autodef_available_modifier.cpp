@@ -48,25 +48,25 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CAutoDefAvailableModifier::CAutoDefAvailableModifier() 
-                    : m_AllUnique (true), 
-                      m_AllPresent (true), 
-                      m_IsUnique(true), 
-                      m_IsOrgMod(true), 
+                    : m_IsOrgMod(true), 
                       m_SubSrcType(CSubSource::eSubtype_other),
-                      m_OrgModType(COrgMod::eSubtype_other)
+                      m_OrgModType(COrgMod::eSubtype_other),
+                      m_AllUnique (true), 
+                      m_AllPresent (true), 
+                      m_IsUnique(true)
 {
     m_ValueList.clear();
 }
 
 
 CAutoDefAvailableModifier::CAutoDefAvailableModifier(unsigned int type, bool is_orgmod)
-                    : m_AllUnique (true), 
+                    : m_IsOrgMod(is_orgmod), 
+                      m_SubSrcType(CSubSource::eSubtype_other),
+                      m_OrgModType(COrgMod::eSubtype_other),
+                      m_AllUnique (true),
                       m_AllPresent (true), 
                       m_IsUnique(true), 
-                      m_IsOrgMod(is_orgmod), 
-                      m_IsRequested (false),
-                      m_SubSrcType(CSubSource::eSubtype_other),
-                      m_OrgModType(COrgMod::eSubtype_other)
+                      m_IsRequested (false)
 {
     m_ValueList.clear();
     if (is_orgmod) {

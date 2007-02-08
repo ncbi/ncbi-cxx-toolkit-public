@@ -51,8 +51,8 @@ BEGIN_SCOPE(objects)
 using namespace sequence;
 
 CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc) 
-                              : m_BH (bh),
-                              m_MainFeat(main_feat)
+                              : m_MainFeat(main_feat),
+                                m_BH(bh)
 {
     x_SetBiomol();
     m_ClauseList.clear();
