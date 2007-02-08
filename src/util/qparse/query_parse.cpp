@@ -100,11 +100,13 @@ CQueryParseNode::CQueryParseNode(EType op, const string& orig_text)
 
 const string& CQueryParseNode::GetStrValue() const
 {
-    if (m_Type != eIdentifier && m_Type != eString) {
-        NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
-                   "Incorrect query node type");
+    if (m_Type == eIdentifier || m_Type == eString) {
+        return m_Value;
+    } else if (m_Type == eIntConst || m_Type == eFloatConst) {
+        return m_OrigText;
     }
-    return m_Value;
+    NCBI_THROW(CQueryParseException, eIncorrectNodeType, 
+               "Incorrect query node type");
 }
 
 Int4 CQueryParseNode::GetInt() const

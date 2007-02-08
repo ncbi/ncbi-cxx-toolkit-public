@@ -1462,6 +1462,8 @@ void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
     x_CheckArgs(args);
     const string& key = args[0]->GetValue().GetStrValue();
     const string& val = args[1]->GetValue().GetStrValue();
+    auto_ptr<TNSBitVector> bv;
+    auto_ptr<TBuffer> buf;
     if (key == "status") {
         // special case for status
         CNetScheduleAPI::EJobStatus status =
@@ -1469,31 +1471,42 @@ void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
         if (status == CNetScheduleAPI::eJobNotFound)
             NCBI_THROW(CNetScheduleException,
                 eQuerySyntaxError, string("Unknown status: ") + val);
-        auto_ptr<TNSBitVector> bv(new TNSBitVector);
+        bv.reset(new TNSBitVector);
         m_Queue->status_tracker.StatusSnapshot(status, bv.get());
-        this->MakeContainer(qnode)->SetBV(bv.release());
     } else {
         if (val == "*") {
             // wildcard
-            auto_ptr<TNSBitVector> bv(new TNSBitVector);
+            bv.reset(new TNSBitVector);
             m_Queue->ReadTags(key, bv.get());
-            this->MakeContainer(qnode)->SetBV(bv.release());
         } else {
-            auto_ptr<TBuffer> buf(new TBuffer);
+            buf.reset(new TBuffer);
             m_Queue->ReadTag(key, val, buf.get());
-            this->MakeContainer(qnode)->SetBuffer(buf.release());
         }
     }
+    if (qnode.GetValue().IsNot()) {
+        // Apply NOT here
+        if (bv.get()) {
+            bv.get()->invert();
+        } else if (buf.get()) {
+            bv.reset(new TNSBitVector());
+            bm::operation_deserializer<TNSBitVector>::deserialize(*bv,
+                                                &((*buf.get())[0]),
+                                                0,
+                                                bm::set_ASSIGN);
+            bv.get()->invert();
+        }
+    }
+    if (bv.get())
+        this->MakeContainer(qnode)->SetBV(bv.release());
+    else if (buf.get())
+        this->MakeContainer(qnode)->SetBuffer(buf.release());
 }
 
 void CQueryFunctionEQ::x_CheckArgs(const CQueryFunctionBase::TArgVector& args)
 {
     if (args.size() != 2 ||
         (args[0]->GetValue().GetType() != CQueryParseNode::eIdentifier  &&
-         args[0]->GetValue().GetType() != CQueryParseNode::eString)  ||
-        (args[1]->GetValue().GetType() != CQueryParseNode::eIdentifier  &&
-         args[1]->GetValue().GetType() != CQueryParseNode::eString)
-        ) {
+         args[0]->GetValue().GetType() != CQueryParseNode::eString)) {
         NCBI_THROW(CNetScheduleException,
              eQuerySyntaxError, "Wrong arguments for '='");
     }
@@ -1557,7 +1570,8 @@ string CQueue::ExecQuery(const string& query, const string& action,
                                                 bm::set_ASSIGN);
         }
     }
-
+    // Filter against status matrix
+    q->status_tracker.Validate(bv.get());
     if (action == "COUNT") {
         return NStr::IntToString(bv->count());
     } else if (action == "DROP") {

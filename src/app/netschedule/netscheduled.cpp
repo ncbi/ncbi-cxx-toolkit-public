@@ -913,7 +913,7 @@ bool CNetScheduleHandler::x_ParseArguments(const char*s, const SArgument* arg_de
 {
     const char* token;
     int tsize;
-    ENSTokenType ttype;
+    ENSTokenType ttype = eNST_None; // if arglist is empty, it should be successful
 
     while (arg_descr->atype != eNSA_None && // extra arguments are just ignored
            (ttype = x_GetToken(s, token, tsize)) >= 0) // end or error

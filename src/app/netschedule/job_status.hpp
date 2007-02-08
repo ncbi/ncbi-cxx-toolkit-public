@@ -123,6 +123,10 @@ public:
     /// (candidate_set &= pending_set)
     void PendingIntersect(TNSBitVector* candidate_set);
 
+    /// Logical AND with statuses ORed cleans up a list from non-existing
+    /// jobs
+    void Validate(TNSBitVector* ids);
+
     /// Return job id (job is taken out of the regular job matrix)
     /// 0 - no pending jobs
     unsigned BorrowPendingJob();

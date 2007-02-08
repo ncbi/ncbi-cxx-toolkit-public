@@ -177,11 +177,7 @@ protected:
         } // for        
     
     }
-                          
-                          
-    
 };
-
 
 
 /// Implementation of logical functions
@@ -236,7 +232,6 @@ public:
     {
         CQueryFunctionBase::TArgVector args;
         this->MakeArgVector(qnode, args);
-        _ASSERT(args.size() > 1);
         
         BV* bv_res = 0;
         if (args.size() == 0) {
@@ -358,7 +353,6 @@ public:
         }
     }
 };
-
 
 
 /* @} */
