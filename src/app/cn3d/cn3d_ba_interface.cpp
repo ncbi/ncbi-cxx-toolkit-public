@@ -227,7 +227,8 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         if (u <= 0)
             return false;
         nAln = (unsigned int) u;
-        progress.reset(new ProgressMeter(NULL, "Running block alignment...", "Working", nAln));
+        if (nAln > 1)
+            progress.reset(new ProgressMeter(NULL, "Running block alignment...", "Working", nAln));
     }
 
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
@@ -284,7 +285,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             newAlignments->push_back(newAlignment);
             continue;
         }
-        if (nAln > 1)
+        if (progress.get())
             progress->SetValue(a);
 
         // dependent sequence info

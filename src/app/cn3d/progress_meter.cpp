@@ -95,8 +95,8 @@ ProgressMeter::ProgressMeter(wxWindow *myParent,
     // automatically bring up the window and let it be shown right away
     Show(true);
 
-#if defined(__WXGTK__) || defined(__WXMAC__)
-    // wxSafeYield seems to force redraws in wxGTK and does ugly things in
+#if defined(__WXMAC__)
+    // wxSafeYield seems to do ugly things in
     // wxMac, so make window modal so that it's safe to call wxYield() instead
     SetFocus();
     MakeModal(true);
@@ -108,7 +108,7 @@ ProgressMeter::ProgressMeter(wxWindow *myParent,
 
 void ProgressMeter::OnCloseWindow(wxCloseEvent& event)
 {
-#if defined(__WXGTK__) || defined(__WXMAC__)
+#if defined(__WXMAC__)
     TRACEMSG("can veto: " << event.CanVeto());
     if (event.CanVeto()) {
         event.Veto();
@@ -129,7 +129,7 @@ void ProgressMeter::SetValue(int value, bool doYield)
 
         // yield for window redraw
         if (doYield)
-#if defined(__WXGTK__) || defined(__WXMAC__)
+#if defined(__WXMAC__)
             wxYield();  // wxSafeYield is ugly on these platforms
 #else
             wxSafeYield();
