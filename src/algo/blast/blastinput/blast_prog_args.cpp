@@ -826,7 +826,7 @@ CMegablastArgs::SetOptions(const CArgs& args)
     }
 
     if (args[ARG_NO_GREEDY] && args[ARG_NO_GREEDY].AsBoolean() == true) {
-        opt.SetGapExtnAlgorithm(eDynProgExt);
+        opt.SetGapExtnAlgorithm(eDynProgScoreOnly);
         opt.SetGapTracebackAlgorithm(eDynProgTbck);
     }
 
