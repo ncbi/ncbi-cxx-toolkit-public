@@ -169,7 +169,7 @@ static const TFormatElem sc_FormatArray[] = {
     TFormatElem("tbl",       CFlatFileConfig::eFormat_FTable)
 };
 typedef CStaticArrayMap<const char*, TFFFormat, PNocase_CStr> TFormatMap;
-static const TFormatMap sc_FormatMap(sc_FormatArray, sizeof(sc_FormatArray));
+DEFINE_STATIC_ARRAY_MAP(TFormatMap, sc_FormatMap, sc_FormatArray);
 
 int CConversionApp::GetFlatFormat(const string& name)
 {
