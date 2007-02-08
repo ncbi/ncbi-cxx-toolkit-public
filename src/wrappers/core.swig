@@ -284,9 +284,6 @@ connect/services/netservice_client.hpp
 connect/services/ns_client_factory.hpp
 connect/threaded_server.hpp
 
-// this must come early to avoid %include within %import
-serial/pathhook.hpp
-
 serial/impl/memberlist.hpp
 // need this for CClassTypeInfoBase::CIteratorb base class
 serial/impl/classinfob.hpp
