@@ -680,7 +680,12 @@ public:
     void GetQueueList(ISink& sink) const;
     ///////////////////////////////////???????????????///////////////////
 
-    
+    /// Query by tags
+    unsigned long Count(const string& query) const;
+    void ForceReschedule(const string& query) const;
+    void Cancel(const string& query) const;
+    void Select(const string& query, const vector<string>& fields, CNcbiOstream& os) const;
+
 private:
     friend class CNetScheduleAPI;
     CNetScheduleAdmin(const CNetScheduleAPI& api) : m_API(&api) {}

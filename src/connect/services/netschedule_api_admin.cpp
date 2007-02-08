@@ -218,6 +218,31 @@ void CNetScheduleAdmin::GetQueueList(ISink& sink) const
 }
 
 
+unsigned long CNetScheduleAdmin::Count(const string& query) const
+{
+    unsigned long count = 0;
+    string cmd = "QERY ";
+    cmd.append("\"");
+    cmd.append(NStr::PrintableString(query));
+    cmd.append("\"");
+
+    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+        it != m_API->GetPoll().end(); ++it) {
+        string resp = m_API->SendCmdWaitResponse(*it, cmd);
+        count += NStr::StringToULong(resp);
+    }
+    return count;
+}
+void CNetScheduleAdmin::ForceReschedule(const string& query) const
+{
+}
+void CNetScheduleAdmin::Cancel(const string& query) const
+{
+}
+void CNetScheduleAdmin::Select(const string& query, const vector<string>& fields, CNcbiOstream& os) const
+{
+}
+
 END_NCBI_SCOPE
 
 

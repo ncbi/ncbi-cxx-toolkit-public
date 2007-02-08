@@ -375,6 +375,11 @@ void CNetScheduleControl::Init(void)
                              "Print queue content for the specified job status",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("count",
+                             "query",
+                             "Count all jobs with tags set by query string",
+                             CArgDescriptions::eString);
+
     /*
     arg_desc->AddOptionalKey("retry",
                              "retry",
@@ -544,6 +549,11 @@ int CNetScheduleControl::Run(void)
         return 0;
     }
 
+    if( args["count"]) {
+        string query = args["count"].AsString();
+        auto_ptr<CNetScheduleAPI> cln(x_CreateNewClient(true));
+        os << cln->GetAdmin().Count(query) << endl;
+    }
     return 0;
 }
 
