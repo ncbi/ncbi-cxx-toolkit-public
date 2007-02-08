@@ -161,24 +161,14 @@ public:
     {
     }
 
-    /// default constructor.  This will build a map around a given array; the
-    /// storage of the end pointer is based on the supplied array size.  In
-    /// debug mode, this will verify that the array is sorted.
     NCBI_DEPRECATED_CTOR
     (CStaticPairArrayMap(typename TBase::const_iterator obj,
-                         typename TBase::size_type array_size))
-        : TBase(obj, array_size, 0, 0)
-    {
-    }
+                         typename TBase::size_type array_size));
 
-    /// Constructor to initialize comparator object.
     NCBI_DEPRECATED_CTOR
     (CStaticPairArrayMap(typename TBase::const_iterator obj,
                          typename TBase::size_type array_size,
-                         const typename TBase::key_compare& comp))
-        : TBase(obj, array_size, comp, 0, 0)
-    {
-    }
+                         const typename TBase::key_compare& comp));
 };
 
 
@@ -234,26 +224,53 @@ public:
     {
     }
 
-    /// default constructor.  This will build a map around a given array; the
-    /// storage of the end pointer is based on the supplied array size.  In
-    /// debug mode, this will verify that the array is sorted.
     NCBI_DEPRECATED_CTOR
     (CStaticArrayMap(typename TBase::const_iterator obj,
-                     typename TBase::size_type array_size))
-        : TBase(obj, array_size, 0, 0)
-    {
-    }
+                     typename TBase::size_type array_size));
 
-    /// Constructor to initialize comparator object.
     NCBI_DEPRECATED_CTOR
     (CStaticArrayMap(typename TBase::const_iterator obj,
                      typename TBase::size_type array_size,
-                     const typename TBase::key_compare& comp))
-        : TBase(obj, array_size, comp, 0, 0)
-    {
-    }
+                     const typename TBase::key_compare& comp));
 };
 
+
+// Deprecated constructors (defined here to avoid GCC 3.3 parse errors)
+
+
+template <class PairType, class KeyCompare>
+CStaticPairArrayMap<PairType, KeyCompare>::CStaticPairArrayMap
+(typename TBase::const_iterator obj,
+ typename TBase::size_type array_size)
+    : TBase(obj, array_size, 0, 0)
+{
+}
+
+template <class PairType, class KeyCompare>
+CStaticPairArrayMap<PairType, KeyCompare>::CStaticPairArrayMap
+(typename TBase::const_iterator obj,
+ typename TBase::size_type array_size,
+ const typename TBase::key_compare& comp)
+ : TBase(obj, array_size, comp, 0, 0)
+{
+}
+
+template <class KeyType, class ValueType, class KeyCompare>
+CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
+(typename TBase::const_iterator obj,
+ typename TBase::size_type array_size)
+ : TBase(obj, array_size, 0, 0)
+{
+}
+
+template <class KeyType, class ValueType, class KeyCompare>
+CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
+(typename TBase::const_iterator obj,
+ typename TBase::size_type array_size,
+ const typename TBase::key_compare& comp)
+    : TBase(obj, array_size, comp, 0, 0)
+{
+}
 
 END_NCBI_SCOPE
 
