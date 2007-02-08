@@ -109,7 +109,7 @@ Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions* *repeat_options)
 
     *repeat_options = (SRepeatFilterOptions*) calloc(1, sizeof(SRepeatFilterOptions));
     if (*repeat_options == NULL)
-        return 1;
+        return BLASTERR_MEMORY;
 
     (*repeat_options)->database = strdup(kRepeatDB);
 
@@ -319,7 +319,7 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
        {
            Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, 
               "SBlastFilterOptionsValidate: NULL filter_options");
-           return 1;
+           return BLASTERR_INVALIDPARAM;
        }
 
        if (filter_options->repeatFilterOptions)
@@ -329,7 +329,7 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
                if (blast_message)
                   Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                    "SBlastFilterOptionsValidate: Repeat filtering only supported with blastn");
-               return 1;
+               return  BLASTERR_OPTION_PROGRAM_INVALID;
            }
            if (filter_options->repeatFilterOptions->database == NULL ||
                strlen(filter_options->repeatFilterOptions->database) == 0)
@@ -337,7 +337,7 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
                if (blast_message)
                   Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                    "SBlastFilterOptionsValidate: No repeat database specified for repeat filtering");
-               return 1;
+               return BLASTERR_INVALIDPARAM;
            }
        }
 
@@ -348,7 +348,7 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
                if (blast_message)
                   Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                    "SBlastFilterOptionsValidate: Dust filtering only supported with blastn");
-               return 1;
+               return BLASTERR_OPTION_PROGRAM_INVALID;
            }
        }
   
@@ -359,7 +359,7 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
                if (blast_message)
                   Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                    "SBlastFilterOptionsValidate: SEG filtering is not supported with blastn");
-               return 1;
+               return BLASTERR_OPTION_PROGRAM_INVALID;
            }
        }
 
@@ -386,12 +386,12 @@ BlastQuerySetUpOptionsNew(QuerySetUpOptions* *options)
    Int2 status = 0;
 
    if (options == NULL)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
    *options = (QuerySetUpOptions*) calloc(1, sizeof(QuerySetUpOptions));
    
    if (*options == NULL)
-      return 1;
+      return BLASTERR_MEMORY;
 
    (*options)->genetic_code = BLAST_GENETIC_CODE;
 
@@ -407,7 +407,7 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
    Int2 status = 0;
 
    if (options == NULL)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
    
    if (strand_option && 
        (program == eBlastTypeBlastn || program == eBlastTypePhiBlastn || 
@@ -445,7 +445,7 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
    *options = 
       (BlastInitialWordOptions*) calloc(1, sizeof(BlastInitialWordOptions));
    if (*options == NULL)
-      return 1;
+      return BLASTERR_MEMORY;
 
    if (program != eBlastTypeBlastn &&
        program != eBlastTypePhiBlastn) {	/* protein-protein options. */
@@ -482,7 +482,7 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
    {
       Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                             "x_dropoff must be greater than zero");
-         return (Int2) -1;
+         return BLASTERR_OPTION_VALUE_INVALID;
    }
    
    return 0;
@@ -495,7 +495,7 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
    double xdrop_ungapped)
 {
    if (!options)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
    /* Ungapped extension is performed in all cases except when greedy
       gapped extension is used. */
@@ -528,7 +528,7 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
            calloc(1, sizeof(BlastExtensionOptions));
 
 	if (*options == NULL)
-		return 1;
+		return BLASTERR_MEMORY;
 
 	if (program != eBlastTypeBlastn &&
         program != eBlastTypePhiBlastn) /* protein-protein options. */
@@ -561,7 +561,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
    double x_dropoff_final)
 {
    if (!options)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
    if (program == eBlastTypeBlastn ||
        program == eBlastTypePhiBlastn) {
@@ -609,7 +609,7 @@ BlastExtensionOptionsValidate(EBlastProgramType program_number,
 
 {
 	if (options == NULL)
-		return 1;
+		return  BLASTERR_INVALIDPARAM;
 
 	if (program_number != eBlastTypeBlastn)
 	{
@@ -619,7 +619,7 @@ BlastExtensionOptionsValidate(EBlastProgramType program_number,
 		{
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
                             "Greedy extension only supported for BLASTN");
-			return (Int2) 2;
+			return BLASTERR_OPTION_PROGRAM_INVALID;
 		}
 	}
 
@@ -632,7 +632,7 @@ BlastExtensionOptionsValidate(EBlastProgramType program_number,
                                    kBlastMessageNoContext,
                            "Score-only and traceback Smith-Waterman must "
                            "both be specified");
-		return (Int2) 3;
+		return BLASTERR_OPTION_VALUE_INVALID;
 	}
 
 	return 0;
@@ -658,7 +658,7 @@ BlastScoringOptionsNew(EBlastProgramType program_number, BlastScoringOptions* *o
    *options = (BlastScoringOptions*) calloc(1, sizeof(BlastScoringOptions));
 
    if (*options == NULL)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
    
    if (program_number != eBlastTypeBlastn &&
        program_number != eBlastTypePhiBlastn) {	/* protein-protein options. */
@@ -690,7 +690,7 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
    const char *matrix, Int4 gap_open, Int4 gap_extend)
 {
    if (!options)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
    if (program_number != eBlastTypeBlastn &&
        program_number != eBlastTypePhiBlastn) {	/* protein-protein options. */
@@ -728,14 +728,14 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 
 {
 	if (options == NULL)
-		return 1;
+		return BLASTERR_INVALIDPARAM;
 
    if (program_number == eBlastTypeTblastx && 
               options->gapped_calculation)
    {
       Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
          "Gapped search is not allowed for tblastx");
-		return (Int2) 2;
+		return BLASTERR_OPTION_PROGRAM_INVALID;
    }
 
 	if (program_number == eBlastTypeBlastn ||
@@ -745,13 +745,13 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 		{
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
                             "BLASTN penalty must be negative");
-			return (Int2) 2;
+			return BLASTERR_OPTION_VALUE_INVALID;
 		}
                 if (options->gapped_calculation && options->gap_open > 0 && options->gap_extend == 0) 
                 {
                         Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
                            "BLASTN gap extension penalty cannot be 0");
-                        return (Int2) 2;
+                        return BLASTERR_OPTION_VALUE_INVALID;
                 }
 	}
 	else
@@ -770,7 +770,7 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 				buffer = BLAST_PrintMatrixMessage(options->matrix); 
                                 Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext, buffer);
 				sfree(buffer);
-				return (Int2) 2;
+				return BLASTERR_OPTION_VALUE_INVALID;
 				
 			}
 			else if (status == 2)
@@ -782,7 +782,7 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
                         options->decline_align); 
                                 Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext, buffer);
 				sfree(buffer);
-				return (Int2) 2;
+				return BLASTERR_OPTION_VALUE_INVALID;
 			}
                     }
 	       }
@@ -793,7 +793,7 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 	{
           Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
              "Out-of-frame only permitted for blastx and tblastn");
-          return (Int2) 2;
+          return  BLASTERR_OPTION_PROGRAM_INVALID;
 	}
 
 	return 0;
@@ -804,11 +804,11 @@ Int2
 BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions* old_opt)
 {
     if (old_opt == NULL || new_opt == NULL)
-       return -1;
+       return BLASTERR_INVALIDPARAM;
 
     *new_opt = (BlastScoringOptions*) BlastMemDup(old_opt, sizeof(BlastScoringOptions));
     if (*new_opt == NULL)
-       return -1;
+       return BLASTERR_MEMORY;
 
     if (old_opt->matrix)
        (*new_opt)->matrix = strdup(old_opt->matrix);
@@ -927,7 +927,7 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
    *options = (LookupTableOptions*) calloc(1, sizeof(LookupTableOptions));
    
    if (*options == NULL)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
    
    switch (program_number) {
    case eBlastTypeBlastn:
@@ -979,7 +979,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    Int4 threshold, Int4 word_size)
 {
    if (!options)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
    if (program_number == eBlastTypeBlastn) {
       if (is_megablast)	{
@@ -1018,7 +1018,7 @@ Int2 BLAST_GetSuggestedThreshold(EBlastProgramType program_number, const char* m
       return 0;
 
     if (matrixName == NULL)
-      return -1;
+      return BLASTERR_INVALIDPARAM;
 
     if(strcasecmp(matrixName, "BLOSUM62") == 0)
         *threshold = kB62_threshold;
@@ -1051,7 +1051,7 @@ Int2 BLAST_GetSuggestedWindowSize(EBlastProgramType program_number, const char* 
       return 0;
 
     if (matrixName == NULL)
-      return -1;
+      return BLASTERR_INVALIDPARAM;
 
     if(strcasecmp(matrixName, "BLOSUM62") == 0)
         *window_size = kB62_windowsize;
@@ -1103,12 +1103,12 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
    const Boolean kPhiBlast = Blast_ProgramIsPhiBlast(program_number);
 
 	if (options == NULL)
-		return 1;
+		return BLASTERR_INVALIDPARAM;
 
     if (options->phi_pattern && !kPhiBlast) {
         Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
             "PHI pattern can be specified only for blastp and blastn");
-        return (Int2) 2;
+        return BLASTERR_OPTION_PROGRAM_INVALID;
     }
 
     /* For PHI BLAST, the subsequent word size tests are not needed. */
@@ -1121,7 +1121,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 	{
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                          "Non-zero threshold required");
-		return (Int2) 2;
+		return BLASTERR_OPTION_VALUE_INVALID;
 	}
 
 	if (options->word_size <= 0)
@@ -1129,19 +1129,19 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         if ( !Blast_ProgramIsRpsBlast(program_number)) {
             Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                                      "Word-size must be greater than zero");
-            return (Int2) 2;
+            return BLASTERR_OPTION_VALUE_INVALID;
         }
 	} else if (program_number == eBlastTypeBlastn && options->word_size < 4)
 	{
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext, 
                   "Word-size must be 4 or greater for nucleotide comparison");
-		return (Int2) 2;
+		return BLASTERR_OPTION_VALUE_INVALID;
 	} else if (program_number != eBlastTypeBlastn && options->word_size > 5)
 	{
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                          "Word-size must be less"
                          "than 6 for protein comparison");
-		return (Int2) 2;
+		return BLASTERR_OPTION_VALUE_INVALID;
 	}
 
 	if (program_number != eBlastTypeBlastn && 
@@ -1149,7 +1149,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 	{
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                          "Megablast lookup table only supported with blastn");
-		return (Int2) 2;
+		return BLASTERR_OPTION_PROGRAM_INVALID;
 	}
 
    if (program_number == eBlastTypeBlastn && options->mb_template_length > 0) {
@@ -1157,11 +1157,11 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
               options->mb_template_length, options->mb_template_type)) {
          Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                             "Invalid discontiguous template parameters");
-         return (Int2) 2;
+         return BLASTERR_OPTION_VALUE_INVALID;
       } else if (options->lut_type != eMBLookupTable) {
          Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
             "Invalid lookup table type for discontiguous Mega BLAST");
-         return (Int2) 2;
+         return BLASTERR_OPTION_VALUE_INVALID;
       } 
    }
 	return 0;
@@ -1183,7 +1183,7 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
    *options = (BlastHitSavingOptions*) calloc(1, sizeof(BlastHitSavingOptions));
    
    if (*options == NULL)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
    (*options)->hitlist_size = BLAST_HITLIST_SIZE;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
@@ -1213,7 +1213,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
                            Int4 min_diag_separation)
 {
    if (!options)
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
    if (hitlist_size)
       options->hitlist_size = hitlist_size;
@@ -1236,20 +1236,20 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
    const BlastHitSavingOptions* options, Blast_Message* *blast_msg)
 {
 	if (options == NULL)
-		return 1;
+		return BLASTERR_INVALIDPARAM;
 
 	if (options->hitlist_size < 1)
 	{
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                          "No hits are being saved");
-		return (Int2) 2;
+		return BLASTERR_OPTION_VALUE_INVALID;
 	}
 
 	if (options->expect_value <= 0.0 && options->cutoff_score <= 0)
 	{
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
          "expect value or cutoff score must be greater than zero");
-		return (Int2) 2;
+		return BLASTERR_OPTION_VALUE_INVALID;
 	}	
 
    if (options->longest_intron != 0 && 
@@ -1257,14 +1257,14 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
        program_number != eBlastTypeBlastx) {
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
          "Uneven gap linking of HSPs is allowed for blastx and tblastn only");
-		return (Int2) 2;
+		return BLASTERR_OPTION_PROGRAM_INVALID;
    }
 
 	if (options->culling_limit < 0)
 	{
 		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                     "culling limit must be greater than or equal to zero");
-		return (Int2) 2;
+		return BLASTERR_OPTION_VALUE_INVALID;
 	}	
 
 	return 0;
@@ -1275,11 +1275,11 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    PSIBlastOptions* options = NULL;
 
    if ( !psi_options )
-      return 1;
+      return BLASTERR_INVALIDPARAM;
 
    options = (PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions));
    if ( !options ) 
-       return 1;
+       return BLASTERR_MEMORY;
 
    *psi_options = options;
    options->inclusion_ethresh = PSI_INCLUSION_ETHRESH;
@@ -1328,12 +1328,12 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptions** db_options)
    BlastDatabaseOptions* options = NULL;
 
    if ( !db_options ) {
-       return 1;
+       return BLASTERR_INVALIDPARAM;
    }
 
    options = (BlastDatabaseOptions*) calloc(1, sizeof(BlastDatabaseOptions));
    if ( !options ) {
-       return 1;
+       return  BLASTERR_MEMORY;
    }
 
    options->genetic_code = BLAST_GENETIC_CODE;
@@ -1412,7 +1412,7 @@ static Int2 s_BlastExtensionScoringOptionsValidate(EBlastProgramType program_num
                            Blast_Message* *blast_msg)
 {
     if (ext_options == NULL || score_options == NULL)
-        return -1;
+        return BLASTERR_INVALIDPARAM;
 
     if (program_number == eBlastTypeBlastn)
     {
@@ -1424,7 +1424,7 @@ static Int2 s_BlastExtensionScoringOptionsValidate(EBlastProgramType program_num
 	    {
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
                             "Greedy extension must be used if gap existence and extension options are zero");
-			return (Int2) 2;
+			return BLASTERR_OPTION_VALUE_INVALID;
 	    }
 	}
     }
@@ -1471,6 +1471,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log: blast_options.c,v $
+ * Revision 1.193  2007/01/21 08:45:12  kazimird
+ * Synchronized with the C++ Toolkit.
+ *
  * Revision 1.191  2006/12/13 14:13:37  madden
  * Doxygen fixes
  *
