@@ -858,7 +858,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
    const BlastInitialWordParameters* word_params,
    Int8 db_length, Int4 subject_length)
 {
-    Blast_KarlinBlk* kbp;
+    Blast_KarlinBlk* kbp = NULL;
     double gap_prob, gap_decay_rate, x_variable, y_variable;
     Int4 expected_length, window_size, query_length;
     Int8 search_sp;
@@ -941,6 +941,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log: blast_parameters.c,v $
+ * Revision 1.33  2007/01/21 08:45:12  kazimird
+ * Synchronized with the C++ Toolkit.
+ *
  * Revision 1.32  2006/12/13 19:12:56  papadopo
  * remove dynamic choice of seed extension method (no practical difference between the various methods now)
  *
