@@ -143,13 +143,13 @@ ShowHideDialog::ShowHideDialog(
 
 void ShowHideDialog::OnSelection(wxCommandEvent& event)
 {
-    int i;
+    unsigned int i;
 
     // get states as they are before this selection
     for (i=0; i<listBox->GetCount(); ++i) tempItemsEnabled[i] = (*itemsEnabled)[i];
 
     // update from current listbox selections
-    for (i=0; i<listBox->GetCount(); ++i) (*itemsEnabled)[i] = listBox->Selected(i);
+    for (i=0; i<listBox->GetCount(); ++i) (*itemsEnabled)[i] = listBox->IsSelected(i);
 
     // do the selection changed callback, and adjust selections according to what's changed
     if (callbackObject && callbackObject->SelectionChangedCallback(tempItemsEnabled, *itemsEnabled)) {
@@ -159,7 +159,7 @@ void ShowHideDialog::OnSelection(wxCommandEvent& event)
         for (i=0; i<listBox->GetCount(); ++i) listBox->SetSelection(i, (*itemsEnabled)[i]);
 
         // horrible kludge to keep vertical scroll at same position...
-        if (pV >= 0 && pV < listBox->GetCount()) {
+        if (pV >= 0 && pV < (int) listBox->GetCount()) {
             listBox->SetSelection(listBox->GetCount() - 1, true);
             listBox->SetSelection(listBox->GetCount() - 1, (*itemsEnabled)[listBox->GetCount() - 1]);
             listBox->SetSelection(pV, true);

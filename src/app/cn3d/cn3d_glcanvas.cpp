@@ -137,10 +137,10 @@ bool Cn3DGLCanvas::MeasureText(const string& text, int *width, int *height, int 
     memoryDC.SetTextBackground(*wxGREEN);
     memoryDC.SetTextForeground(*wxRED);
 
-    memoryDC.BeginDrawing();
+//    memoryDC.BeginDrawing();
     memoryDC.Clear();
     memoryDC.DrawText(text.c_str(), 0, 0);
-    memoryDC.EndDrawing();
+//    memoryDC.EndDrawing();
 
     // then convert bitmap to image so that we can read individual pixels (ugh...)
     wxImage image(memoryBitmap.ConvertToImage());

@@ -152,7 +152,7 @@ BEGIN_EVENT_TABLE(StructureWindow, wxFrame)
 END_EVENT_TABLE()
 
 StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
-    wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
+    wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE),
     glCanvas(NULL), cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
     cddRefDialog(NULL), cddBookRefDialog(NULL), cddOverview(NULL),
     spinIncrement(3.0), helpController(NULL), helpConfig(NULL),
@@ -776,7 +776,7 @@ static string GetFavoritesFile(bool forRead)
     if (file == NO_FAVORITES_FILE) {
         file = wxFileSelector("Select a file for favorites:",
             GetPrefsDir().c_str(), "Favorites", "", "*.*",
-            forRead ? wxOPEN : wxSAVE | wxOVERWRITE_PROMPT).c_str();
+            (forRead ? wxFD_OPEN : (wxFD_SAVE | wxFD_OVERWRITE_PROMPT))).c_str();
         if (file.size() > 0)
             if (!RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, file))
                 ERRORMSG("Error setting favorites file in registry");
@@ -1400,7 +1400,7 @@ static EModel_type GetModelTypeFromUser(wxWindow *parent)
 }
 
 // do data loading only, nothing involving windows (shared by both modes)
-bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *filename, 
+bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *filename,
     CNcbi_mime_asn1 *mimeData, const string& favoriteStyle, EModel_type model, StructureWindow *window)
 {
     // set up various paths relative to given filename
@@ -1568,7 +1568,7 @@ bool LoadDataOnly(StructureSet **sset, OpenGLRenderer *renderer, const char *fil
             }
         }
     }
-    
+
     renderer->AttachStructureSet(*sset);
     if (IsWindowedMode() && !renderer->HasASNViewSettings())
         (*sset)->CenterViewOnAlignedResidues();
@@ -1597,8 +1597,8 @@ bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmen
         glCanvas->Refresh(false);
     }
 
-    if (!LoadDataOnly(&(glCanvas->structureSet), glCanvas->renderer, 
-            filename, mimeData, preferredFavoriteStyle, eModel_type_ncbi_all_atom, this)) 
+    if (!LoadDataOnly(&(glCanvas->structureSet), glCanvas->renderer,
+            filename, mimeData, preferredFavoriteStyle, eModel_type_ncbi_all_atom, this))
     {
         SetCursor(wxNullCursor);
         return false;
@@ -1631,7 +1631,7 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
     if (event.GetId() == MID_OPEN) {
         const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str(),
             "", "", "All Files|*.*|Cn3D Files (*.cn3)|*.cn3",
-            wxOPEN | wxFILE_MUST_EXIST);
+            wxFD_OPEN | wxFD_FILE_MUST_EXIST);
         if (!filestr.IsEmpty())
             LoadData(filestr.c_str(), false, false);
     }
@@ -1677,7 +1677,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
             fn.GetName(),
 #endif
             "All Files|*.*|Binary (*.cn3)|*.cn3|Text (*.cn3)|*.cn3|Text CDD (*.cn3)|*.cn3",
-            wxSAVE | wxOVERWRITE_PROMPT);
+            wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
         dialog.SetFilterIndex(glCanvas->structureSet->IsCDD() ? 3 : (outputBinary ? 1 : 2));
         if (dialog.ShowModal() == wxID_OK)
             outputFilename = dialog.GetPath();

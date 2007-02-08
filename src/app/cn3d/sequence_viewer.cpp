@@ -517,7 +517,7 @@ void SequenceViewer::ExportAlignment(eExportType type)
 #else
         baseName,
 #endif
-        wildcard, wxSAVE | wxOVERWRITE_PROMPT);
+        wildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     dialog.SetFilterIndex(0);
     if (dialog.ShowModal() == wxID_OK)
         outputFile = dialog.GetPath();

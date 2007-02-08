@@ -57,7 +57,7 @@ END_EVENT_TABLE()
 ProgressMeter::ProgressMeter(wxWindow *myParent,
         const wxString& message, const wxString& title, int maximumValue) :
     wxDialog(myParent, -1, title, wxPoint(50, 50), wxDefaultSize,
-        wxCAPTION | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR) // not closeable or resizable
+        wxCAPTION | wxFRAME_NO_TASKBAR) // not closeable or resizable
 {
     // construct the panel
     wxPanel *parent = new wxPanel(this, -1);

@@ -220,7 +220,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(cType, ID_C_TYPE, wxChoice)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tAddress, ID_T_ADDRESS, wxTextCtrl)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tSubaddress, ID_T_SUBADDRESS, wxTextCtrl)
-    if (selectedItem >= 0 && selectedItem < listbox->GetCount() && listbox->GetClientData(selectedItem) && !isNew) {
+    if (selectedItem >= 0 && selectedItem < (int) listbox->GetCount() && listbox->GetClientData(selectedItem) && !isNew) {
         listbox->SetSelection(selectedItem, true);
         const CCdd_book_ref& bref =
             (*(reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem))))->GetBook_ref();
@@ -264,11 +264,11 @@ void CDDBookRefDialog::SetWidgetStates(void)
     bool readOnly;
     RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
     bUp->Enable(!readOnly && !editOn && selectedItem > 0);
-    bDown->Enable(!readOnly && !editOn && selectedItem < listbox->GetCount() - 1);
-    bEdit->Enable(!readOnly && !editOn && selectedItem >= 0 && selectedItem < listbox->GetCount());
+    bDown->Enable(!readOnly && !editOn && selectedItem < (int) listbox->GetCount() - 1);
+    bEdit->Enable(!readOnly && !editOn && selectedItem >= 0 && selectedItem < (int) listbox->GetCount());
     bSave->Enable(!readOnly && editOn);
     bNew->Enable(!readOnly && !editOn);
-    bDelete->Enable(!readOnly && selectedItem >= 0 && selectedItem < listbox->GetCount());
+    bDelete->Enable(!readOnly && selectedItem >= 0 && selectedItem < (int) listbox->GetCount());
     bLaunch->Enable(!editOn);
     bPaste->Enable(!readOnly && !editOn);
 }
@@ -319,7 +319,7 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
         if (event.GetId() == ID_B_UP && selectedItem > 0) {
             switchWith = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem - 1));
             --selectedItem;
-        } else if (event.GetId() == ID_B_DOWN && selectedItem < listbox->GetCount() - 1){
+        } else if (event.GetId() == ID_B_DOWN && selectedItem < (int) listbox->GetCount() - 1){
             switchWith = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem + 1));
             ++selectedItem;
         } else {

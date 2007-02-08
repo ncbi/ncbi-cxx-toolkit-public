@@ -278,7 +278,7 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
         x, y;
     static int prevVsY = -1;
 
-    memDC.BeginDrawing();
+//    memDC.BeginDrawing();
 
     // set font for characters
     if (alignment) {
@@ -348,7 +348,7 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
         }
     }
 
-    memDC.EndDrawing();
+//    memDC.EndDrawing();
 
     // Blit from memory DC to paintDC to avoid flicker
     wxPaintDC paintDC(this);
@@ -680,7 +680,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
 
             TRACEMSG("drawing initial rubberband");
             wxClientDC dc(this);
-            dc.BeginDrawing();
+//            dc.BeginDrawing();
             currentRubberbandType =
                 (mouseMode == SequenceViewerWidget::eSelectRectangle ||
                  mouseMode == SequenceViewerWidget::eSelectColumns ||
@@ -698,7 +698,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             } else {
                 DrawRubberband(dc, fromX, fromY, fromX, fromY, vsX, vsY);
             }
-            dc.EndDrawing();
+//            dc.EndDrawing();
         }
     }
 
@@ -711,7 +711,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
 
         dragging = false;
         wxClientDC dc(this);
-        dc.BeginDrawing();
+//        dc.BeginDrawing();
         dc.SetFont(*currentFont);
 
         // remove rubberband
@@ -726,7 +726,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             if (cellX != (int)fromX || cellY != (int)fromY)
                 DrawCell(dc, cellX, cellY, vsX, vsY, true);
         }
-        dc.EndDrawing();
+//        dc.EndDrawing();
 
         // adjust for column/row selection
         if (mouseMode == SequenceViewerWidget::eSelectColumns || mouseMode == SequenceViewerWidget::eSelectBlocks) {
@@ -757,7 +757,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
     else if (dragging && (cellX != (int)prevToX || cellY != (int)prevToY)) {
 
         wxClientDC dc(this);
-        dc.BeginDrawing();
+//        dc.BeginDrawing();
         dc.SetFont(*currentFont);
         currentRubberbandType = eDot;
         if (mouseMode == SequenceViewerWidget::eSelectRectangle ||
@@ -773,7 +773,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
                 DrawRubberband(dc, cellX, cellY, cellX, cellY, vsX, vsY);
             }
         }
-        dc.EndDrawing();
+//        dc.EndDrawing();
         prevToX = cellX;
         prevToY = cellY;
     }
@@ -794,7 +794,7 @@ SequenceViewerWidget_TitleArea::SequenceViewerWidget_TitleArea(
         wxWindowID id,
         const wxPoint& pos,
         const wxSize& size) :
-    wxWindow(parent, id, pos, size, wxNO_3D),
+    wxWindow(parent, id, pos, size, wxNO_BORDER),
     sequenceArea(NULL), alignment(NULL), highlightedTitleRow(-1), titleFont(NULL),
     cellHeight(0), maxTitleWidth(20)
 {
@@ -856,7 +856,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
 
     int vsX, vsY, updTop, updBottom, firstRow, lastRow, row;
 
-    dc.BeginDrawing();
+//    dc.BeginDrawing();
 
     // set font for characters
     if (alignment) {
@@ -921,7 +921,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
         }
     }
 
-    dc.EndDrawing();
+//    dc.EndDrawing();
 }
 
 void SequenceViewerWidget_TitleArea::OnMouseEvent(wxMouseEvent& event)
@@ -983,12 +983,16 @@ void SequenceViewerWidget_TitleArea::OnMouseEvent(wxMouseEvent& event)
 ///////// This is the implementation of SequenceViewerWidget /////////
 //////////////////////////////////////////////////////////////////////
 
+BEGIN_EVENT_TABLE(SequenceViewerWidget, wxSplitterWindow)
+    EVT_SPLITTER_DCLICK(-1, SequenceViewerWidget::OnDoubleClick)
+END_EVENT_TABLE()
+
 SequenceViewerWidget::SequenceViewerWidget(
         wxWindow* parent,
         wxWindowID id,
         const wxPoint& pos,
         const wxSize& size) :
-    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_3DBORDER | wxNO_3D)
+    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_BORDER)
 {
     sequenceArea = new SequenceViewerWidget_SequenceArea(this);
     titleArea = new SequenceViewerWidget_TitleArea(this);
@@ -997,13 +1001,14 @@ SequenceViewerWidget::SequenceViewerWidget(
     titleArea->SetSequenceArea(sequenceArea);
 
     SplitVertically(titleArea, sequenceArea);
+    SetMinimumPaneSize(50);
 }
 
 SequenceViewerWidget::~SequenceViewerWidget(void)
 {
 }
 
-void SequenceViewerWidget::OnDoubleClickSash(unsigned int x, unsigned int y)
+void SequenceViewerWidget::OnDoubleClick(wxSplitterEvent& event)
 {
     Unsplit(titleArea);
 }

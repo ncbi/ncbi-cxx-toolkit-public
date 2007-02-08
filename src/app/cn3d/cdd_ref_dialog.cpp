@@ -147,7 +147,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
     wxArrayInt selections;
     int nSelected = listbox->GetSelections(selections);
     selectItem = (nSelected > 0) ? selections.Item(selections.GetCount() - 1) : -1;
-    if (selectItem >= 0 && selectItem < listbox->GetCount())    // pointer to last descr selected
+    if (selectItem >= 0 && selectItem < (int) listbox->GetCount())    // pointer to last descr selected
         descr = dynamic_cast<CCdd_descr*>(reinterpret_cast<CObject*>(listbox->GetClientData(selectItem)));
 
     // launch URL(s) given PMID
@@ -268,7 +268,7 @@ void CDDRefDialog::ResetListBox(void)
             listbox->Append(title, d->GetPointer());
         }
     }
-    if (selectItem >= 0 && selectItem < listbox->GetCount())
+    if (selectItem >= 0 && selectItem < (int) listbox->GetCount())
         listbox->SetSelection(selectItem, true);
 }
 

@@ -208,12 +208,12 @@ void AnnotateDialog::OnSelection(wxCommandEvent& event)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(otherBox, otherID, wxListBox)
 
     // deselect everything in the other box
-    int e, o;
+    unsigned int e, o;
     for (o=0; o<otherBox->GetCount(); ++o) otherBox->SetSelection(o, false);
 
     // turn on corresponding item in other box
     for (e=0; e<eventBox->GetCount(); ++e) {
-        if (eventBox->Selected(e)) {
+        if (eventBox->IsSelected(e)) {
             for (o=0; o<otherBox->GetCount(); ++o) {
                 if (otherBox->GetClientData(o) == eventBox->GetClientData(e)) {
                     otherBox->SetSelection(o, true);
@@ -248,7 +248,7 @@ void AnnotateDialog::SetButtonStates(void)
     bTurnOn->Enable(availableSelected && !displayedSelected);
     bTurnOff->Enable(displayedSelected);
     bMoveUp->Enable(availableSelected && available->GetSelection() > 0);
-    bMoveDown->Enable(availableSelected && available->GetSelection() < available->GetCount() - 1);
+    bMoveDown->Enable(availableSelected && available->GetSelection() < (int) available->GetCount() - 1);
 
     bNew->Enable(HighlightsPresent());
     bEdit->Enable(availableSelected);

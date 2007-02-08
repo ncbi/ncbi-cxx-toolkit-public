@@ -179,7 +179,7 @@ void PNGOptionsDialog::OnButton(wxCommandEvent& event)
             wxString filename = wxFileSelector(
                 "Choose a filename for output", GetUserDir().c_str(), "",
                 ".png", "All Files|*.*|PNG files (*.png)|*.png",
-                wxSAVE | wxOVERWRITE_PROMPT);
+                wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
             if (filename.size() > 0) tName->SetValue(filename);
             break;
         }
@@ -401,8 +401,8 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
             return false;
         }
         renderer = glCanvas->renderer;
-    } 
-    
+    }
+
     // non-windowed mode uses Mesa
     else {
 #ifndef CN3D_PNG_OSMESA
@@ -444,7 +444,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
             // temporarily prevent glCanvas from responding to window resize/exposure, etc.
             glCanvas->SuspendRendering(true);
         }
-        
+
         // decide whether the in-memory image buffer can fit the whole drawing,
         // or whether we need to split it up into separate horizontal chunks
         bufferHeight = outputHeight;
@@ -469,7 +469,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
         // open the output file for writing
         out = fopen(filename.c_str(), "wb");
         if (!out) throw "can't open file for writing";
-        
+
         // for non-windowed mode, use Mesa off-screen rendering API
 #ifdef CN3D_PNG_OSMESA
         OSMesaContext mesaContext = 0;
@@ -494,7 +494,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
         HBITMAP hbm = NULL;
         PIXELFORMATDESCRIPTOR pfd;
         int nPixelFormat;
-        
+
         current_hglrc = wglGetCurrentContext(); // save to restore later
         current_hdc = wglGetCurrentDC();
 
@@ -609,7 +609,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
         int na = 0;
         AGLPixelFormat fmt = NULL;
         AGLContext ctx = NULL, currentCtx;
-        
+
     	currentCtx = aglGetCurrentContext();
 
     	// Mac pixels seem to always be 32-bit
@@ -653,7 +653,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
 
 #endif  // WX*
 #endif  // OSMESA
-        
+
         TRACEMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
             << ", buffer height: " << bufferHeight << ", shared: " << shareDisplayLists);
 

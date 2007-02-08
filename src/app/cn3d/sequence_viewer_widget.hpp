@@ -136,7 +136,9 @@ private:
     SequenceViewerWidget_SequenceArea *sequenceArea;
     SequenceViewerWidget_TitleArea *titleArea;
 
-    void OnDoubleClickSash(unsigned int x, unsigned int y);
+    void OnDoubleClick(wxSplitterEvent& event);
+
+    DECLARE_EVENT_TABLE()
 };
 
 #endif // WX_SEQUENCE_VIEWER_WIDGET__HPP

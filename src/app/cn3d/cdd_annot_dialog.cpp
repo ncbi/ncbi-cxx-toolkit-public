@@ -326,7 +326,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
         else
             annots->Append("(no description)", a->GetPointer());
     }
-    if (selectAnnot < annots->GetCount())
+    if (selectAnnot < (int) annots->GetCount())
         annots->SetSelection(selectAnnot);
     else if (annots->GetCount() > 0)
         annots->SetSelection(0);
@@ -352,7 +352,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
                 evidTitle = "(unknown type)";
             evids->Append(evidTitle, e->GetPointer());
         }
-        if (selectEvidence < evids->GetCount())
+        if (selectEvidence < (int) evids->GetCount())
             evids->SetSelection(selectEvidence);
         else if (evids->GetCount() > 0)
             evids->SetSelection(0);
@@ -366,7 +366,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     bEditAnnot->Enable(selectedAnnot != NULL && !readOnly);
     bHighlight->Enable(selectedAnnot != NULL);
     bAnnotUp->Enable(annots->GetSelection() > 0 && !readOnly);
-    bAnnotDown->Enable(annots->GetSelection() < annots->GetCount() - 1 && !readOnly);
+    bAnnotDown->Enable(annots->GetSelection() < ((int) annots->GetCount()) - 1 && !readOnly);
     bNewEvid->Enable(selectedAnnot != NULL && !readOnly);
     bDelEvid->Enable(selectedEvid != NULL && !readOnly);
     bEditEvid->Enable(selectedEvid != NULL && !readOnly);
@@ -374,7 +374,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
         ((selectedEvid->IsReference() && selectedEvid->GetReference().IsPmid()) ||
          IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvid) || selectedEvid->IsComment()));
     bEvidUp->Enable(evids->GetSelection() > 0 && !readOnly);
-    bEvidDown->Enable(evids->GetSelection() < evids->GetCount() - 1 && !readOnly);
+    bEvidDown->Enable(evids->GetSelection() < ((int) evids->GetCount()) - 1 && !readOnly);
 }
 
 void CDDAnnotateDialog::NewAnnotation(void)

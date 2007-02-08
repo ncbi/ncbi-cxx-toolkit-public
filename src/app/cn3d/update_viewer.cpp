@@ -333,7 +333,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
     newSequences->clear();
 
     wxString fastaFile = wxFileSelector("Choose a FASTA file from which to import",
-        "", "", "", "*.*", wxOPEN | wxFILE_MUST_EXIST, *viewerWindow);
+        "", "", "", "*.*", wxFD_OPEN | wxFD_FILE_MUST_EXIST, *viewerWindow);
     if (fastaFile.size() > 0) {
 
         // get Seq-entry of all sequences in the file
@@ -612,7 +612,7 @@ void UpdateViewer::ImportStructure(void)
 
     else if (importFrom == FROM_FILE) {
         string filename = wxFileSelector("Choose a single-structure file:",
-            GetUserDir().c_str(), "", "", "*.*", wxOPEN | wxFILE_MUST_EXIST, *viewerWindow).c_str();
+            GetUserDir().c_str(), "", "", "*.*", wxFD_OPEN | wxFD_FILE_MUST_EXIST, *viewerWindow).c_str();
         if (filename.size() == 0) return;
         bool readOK = false;
         string err;
