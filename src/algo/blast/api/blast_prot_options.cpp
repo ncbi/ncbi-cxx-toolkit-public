@@ -82,7 +82,7 @@ CBlastProteinOptionsHandle::SetGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_PROT);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_PROT);
     SetGapTrigger(BLAST_GAP_TRIGGER_PROT);
-    m_Opts->SetGapExtnAlgorithm(eDynProgExt);
+    m_Opts->SetGapExtnAlgorithm(eDynProgScoreOnly);
     m_Opts->SetGapTracebackAlgorithm(eDynProgTbck);
 }
 

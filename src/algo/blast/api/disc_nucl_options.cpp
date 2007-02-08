@@ -75,7 +75,7 @@ CDiscNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
-    SetGapExtnAlgorithm(eDynProgExt);
+    SetGapExtnAlgorithm(eDynProgScoreOnly);
     SetGapTracebackAlgorithm(eDynProgTbck);
 }
 

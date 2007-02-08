@@ -151,7 +151,7 @@ CBlastNucleotideOptionsHandle::SetGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
-    SetGapExtnAlgorithm(eDynProgExt);
+    SetGapExtnAlgorithm(eDynProgScoreOnly);
     SetGapTracebackAlgorithm(eDynProgTbck);
 }
 
@@ -161,9 +161,7 @@ CBlastNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
-    SetGapExtnAlgorithm(eGreedyWithTracebackExt);
-    /* Traceback will not be performed, but set traceback extension algorithm
-       to greedy, for consistency of default gap penalties. */
+    SetGapExtnAlgorithm(eGreedyScoreOnly);
     SetGapTracebackAlgorithm(eGreedyTbck); 
 }
 
