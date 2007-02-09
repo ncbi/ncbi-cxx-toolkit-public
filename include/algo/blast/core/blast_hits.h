@@ -541,7 +541,6 @@ Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
  * @param combined_hsp_list_ptr Contains HSPs from previous chunks [in] [out]
  * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if INT4_MAX) [in]
  * @param start Offset where the current subject chunk starts [in]
- * @param merge_hsps Should the overlapping HSPs be merged into one? [in]
  * @return 0 if HSP lists have been merged successfully, -1 otherwise.
  */
 NCBI_XBLAST_EXPORT
