@@ -133,6 +133,8 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp, const Uint1* query,
         const Uint1*   query_var;     /* Current character in the query */
         query_var = query + hsp->query.gapped_start + left;
         for ( ; subject_var < subject_right; subject_var++, query_var++) {
+            ASSERT(*query_var < sbp->matrix->ncols);
+            ASSERT(*subject_var < sbp->matrix->nrows);
            score += sbp->matrix->data[*query_var][*subject_var];
         }
     } else {
