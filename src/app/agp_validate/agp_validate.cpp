@@ -94,14 +94,20 @@ public:
     "\n"
     "USAGE: agp_validate [-options] [input files...]\n"
     "\n"
+    "agp_validate without any options performs all validation checks except\n"
+    "for those that require the component sequences to be available in GenBank.\n"
+    "It also reports component, gap, scaffold and object statistics.\n"
+    "\n"
     "OPTIONS:\n"
-    "  -alt      Check component Accessions, Lengths and Taxids using GenBank data.\n"
+    "  -alt      Check component Accessions, Lengths and Taxonomy ID using GenBank data.\n"
     "            This can be very time-consuming, and is done separately from most other checks.\n"
-    "  -a        Check component Accessions (but not lengths or taxids); faster than \"-alt\".\n"
+    "  -a        Check component Accessions (not lengths or taxids); slightly faster than \"-alt\".\n"
+    "  -species  Allow components from different subspecies during Taxid checks (implies -alt).\n"
+    "  Checking component accessions, lengths and the taxonomy ID requires that the components\n"
+    "  are available in GenBank.\n"
     /*
     "  -al, -at  Check component Accessions, Lengths (-al), Taxids (-at).\n"
     */
-    "  -species  Allow components from different subspecies during Taxid checks.\n"
     "\n"
     "  -list         List error and warning messages.\n"
     "  -limit COUNT  Print only the first COUNT messages of each type.\n"
@@ -179,7 +185,8 @@ int CAgpValidateApplication::Run(void)
      exit(0);
    }
 
-  if     ( args["alt"].HasValue() ) m_ValidationType = VT_AccLenTaxid;
+  if( args["alt"].HasValue() || args["species"].HasValue() )
+    m_ValidationType = VT_AccLenTaxid;
   /*
   else if( args["al" ].HasValue() ) m_ValidationType = VT_AccLen;
   else if( args["at" ].HasValue() ) m_ValidationType = VT_AccTaxid;

@@ -410,7 +410,7 @@ void CAltValidator::CheckTaxids()
     if(agp_taxid) {
       cerr << ":\nless than 80% of components have one common taxid="<<agp_taxid<<"";
     }
-    // else: not taxid was found
+    // else: no taxid was found
     cerr << ".\n";
     return;
   }

@@ -225,6 +225,7 @@ CAgpErr::CAgpErr()
   m_line_num_prev=0;
   m_prev_printed=false;
   m_two_lines_involved=false;
+  m_invalid_prev=false;
 
   memset(m_MsgCount , 0, sizeof(m_MsgCount ));
   memset(m_MustSkip , 0, sizeof(m_MustSkip ));
@@ -313,6 +314,9 @@ void CAgpErr::LineDone(const string& s, int line_num, bool invalid_line)
   if(invalid_line) {
     m_invalid_prev = true;
     m_lines_skipped++;
+  }
+  else {
+    m_invalid_prev = false;
   }
 
   m_two_lines_involved=false;
