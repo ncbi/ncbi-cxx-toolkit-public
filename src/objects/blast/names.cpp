@@ -154,7 +154,9 @@ TField B4Param_FilterString          ("FilterString",          CBlast4_value::e_
 TField B4Param_FinalDbSeq            ("FinalDbSeq",            CBlast4_value::e_Integer);
 TField B4Param_FirstDbSeq            ("FirstDbSeq",            CBlast4_value::e_Integer);
 TField B4Param_GapExtensionCost      ("GapExtensionCost",      CBlast4_value::e_Integer);
+TField B4Param_GapExtnAlgorithm      ("GapExtnAlgorithm",      CBlast4_value::e_Integer);
 TField B4Param_GapOpeningCost        ("GapOpeningCost",        CBlast4_value::e_Integer);
+TField B4Param_GapTracebackAlgorithm ("GapTracebackAlgorithm", CBlast4_value::e_Integer);
 TField B4Param_GiList                ("GiList",                CBlast4_value::e_Integer_list);
 TField B4Param_HitlistSize           ("HitlistSize",           CBlast4_value::e_Integer);
 TField B4Param_HspRangeMax           ("HspRangeMax",           CBlast4_value::e_Integer);
