@@ -392,7 +392,11 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaRefseq)
     CHECK_NO_THROW(id.Reset(new CSeq_id("ref|NM_000170.1")));
     CHECK(id->IsOther());
     CHECK_EQUAL(id->GetOther().GetAccession(), string("NM_000170"));
-    CHECK_EQUAL(id->GetOther().GetVersion(), 1);
+    // CHECK_EQUAL(id->GetOther().GetVersion(), 1);
+    // Split up to avoid mysterious WorkShop 5.5 11381x-19 errors:
+    int version;
+    CHECK_NO_THROW(version = id->GetOther().GetVersion());
+    CHECK_EQUAL(version, 1);
     // Don't try to do anything with the release field, which is no longer
     // supported.
 }
