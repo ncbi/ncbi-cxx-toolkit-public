@@ -60,8 +60,12 @@ struct NCBI_BDB_EXPORT SVolumesDB : public CBDB_File
     CBDB_FieldString       backup_loc;     ///< Location of volume backup
 
 
-    SVolumesDB()
+    SVolumesDB() 
+        : CBDB_File(CBDB_File::eDuplicatesDisable, 
+                    CBDB_File::eQueue)
     {
+        DisableNull();
+
         BindKey("volume_id",   &volume_id);
 
         BindData("type",           &type);
@@ -72,13 +76,13 @@ struct NCBI_BDB_EXPORT SVolumesDB : public CBDB_File
         BindData("date_to",        &date_to);
         BindData("mtimestamp",     &mtimestamp);
         BindData("relo_volume_id", &relo_volume_id);
-        BindData("location",       &location, 2048);
-        BindData("backup_loc",     &backup_loc, 2048);
+        BindData("location",       &location, 1024);
+        BindData("backup_loc",     &backup_loc, 1024);
     }
 
 private:
     SVolumesDB(const SVolumesDB&);
-    SVolumesDB& operator(const SVolumesDB&);
+    SVolumesDB& operator=(const SVolumesDB&);
 };
 
 /// Volumes management
@@ -110,16 +114,18 @@ public:
     /// database, which is always opens as transactional BDB environment.
     /// Do NOT keep any other databases or environments at the same location
     ///
-    /// @param dir_name
+    /// @param dir_path
     ///    Location of volume management database.
     ///
-    void Open(const string& dir_name);
+    void Open(const string& dir_path);
 
     /// Close volume management database
     ///
     void Close();
 
     /// Get volume record
+    /// (throws an exception if record not found)
+    ///
     const SVolumesDB& FetchVolumeRec(unsigned volume_id);
 
     /// Register a new volume 
@@ -172,14 +178,50 @@ public:
 
     /// Utility to convert status to string
     static string StatusToString(EVolumeStatus status);
-
-
+protected:
+    /// Check if status change is possible
+    bool x_CheckStatusChange(EVolumeStatus old_status, 
+                             EVolumeStatus new_status);
+    void x_ChangeCurrentStatus(unsigned volume_id,
+                               EVolumeStatus status);
 private:
     CBDB_Volumes(const CBDB_Volumes&);
     CBDB_Volumes& operator=(const CBDB_Volumes&);
+    friend class CBDB_VolumesTransaction;
 private:
     auto_ptr<CBDB_Env>      m_Env;
-    auto_ptr<CBDB_Volumes>  m_VolumesDB;
+    auto_ptr<SVolumesDB>    m_VolumesDB;
+    string                  m_Path;
+};
+
+/// Exceptions specific to volumes management
+///
+class CBDB_VolumesException : public CBDB_Exception
+{
+public:
+    enum EErrCode {
+        eTransactionsNotAvailable,
+        eVolumeNotFound,
+        eVolumeLocked,
+        eVolumeNotLocked,
+        eVolumeStatusIncorrect
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eTransactionsNotAvailable: return "eTransactionsNotAvailable";
+        case eVolumeNotFound:           return "eVolumeNotFound";
+        case eVolumeLocked:             return "eVolumeLocked";
+        case eVolumeNotLocked:          return "eVolumeNotLocked";
+        case eVolumeStatusIncorrect:    return "eVolumeStatusIncorrect";
+
+        default: return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CBDB_VolumesException, CBDB_Exception);
 };
 
 
