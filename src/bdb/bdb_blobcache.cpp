@@ -1175,7 +1175,7 @@ void CBDB_Cache::Open(const string& cache_path,
         }
         catch (CBDB_ErrnoException& err_ex)
         {
-            if (err_ex.BDB_GetErrno() == DB_RUNRECOVERY) {
+            if (err_ex.IsRecovery()) {
                 LOG_POST(Warning <<
                          "LC: '" << cache_name <<
                          "'Warning: DB_ENV returned DB_RUNRECOVERY code."
