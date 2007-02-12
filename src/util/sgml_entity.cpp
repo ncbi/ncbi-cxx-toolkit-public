@@ -105,15 +105,23 @@ void Sgml2Ascii(string& sgml)
     while (amp != NPOS) {
         SIZE_TYPE semi = sgml.find(';', amp);
         if (semi != NPOS) {
-            TSgmlAsciiMap::const_iterator it = 
-                sc_SgmlAsciiMap.find(sgml.substr(amp + 1, semi - amp - 1));
+            size_t old_len = semi - amp - 1;
+            TSgmlAsciiMap::const_iterator it =
+                sc_SgmlAsciiMap.find(sgml.substr(amp + 1, old_len));
             if (it != sc_SgmlAsciiMap.end()) {
+                size_t new_len = it->second.size();
                 sgml[amp] = '<';
                 sgml[semi] =  '>';
-                sgml.replace(amp + 1, semi - amp - 1, it->second);
+                sgml.replace(amp + 1, old_len, it->second);
+                semi = amp + 1 + new_len;
+            }
+            else {
+                semi = amp;
             }
         }
-
+        else {
+            semi = amp;
+        }
         amp = sgml.find('&', semi + 1);
     }
 }
