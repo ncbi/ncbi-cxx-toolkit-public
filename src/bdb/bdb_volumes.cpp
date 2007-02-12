@@ -271,6 +271,33 @@ void CBDB_Volumes::Merge(unsigned volume_id_new,
     trans.Commit();
 }
 
+void CBDB_Volumes::EnumerateVolumes(vector<unsigned>& vlist, bool avail)
+{
+    vlist.resize(0);
+    CBDB_FileCursor cur(*m_VolumesDB);
+    while (cur.Fetch() == eBDB_Ok) {
+        unsigned volume_id = m_VolumesDB->volume_id;
+        if (avail) {
+            EVolumeStatus status = 
+                (EVolumeStatus)(unsigned)m_VolumesDB->status;
+            switch (status) {
+            case eOnlinePassive:
+            case eOnlineActive:
+            case eOnlineMaintenance:
+                break;
+            default:
+                continue;
+            } // switch
+        }
+        vlist.push_back(volume_id);
+    }
+}
+
+SVolumesDB& CBDB_Volumes::GetVolumeDB()
+{
+    return *m_VolumesDB;
+}
+
 void CBDB_Volumes::SetDateRange(unsigned volume_id,
                                 unsigned from, 
                                 unsigned to)

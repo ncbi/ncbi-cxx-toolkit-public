@@ -128,6 +128,10 @@ public:
     ///
     const SVolumesDB& FetchVolumeRec(unsigned volume_id);
 
+    /// Get low level access to volumes database (be careful will you!)
+    SVolumesDB& GetVolumeDB();
+
+
     /// Register a new volume 
     ///
     /// @return volume id
@@ -175,6 +179,14 @@ public:
     void SetDateRange(unsigned volume_id,
                       unsigned from, 
                       unsigned to);
+
+    /// Get list of all available volumes 
+    /// @param vlist  
+    ///     List of volumes
+    /// @param avail
+    ///     When TRUE returns only online volumes
+    ///     (FALSE - all volumes)
+    void EnumerateVolumes(vector<unsigned>& vlist, bool avail = false);
 
     /// Utility to convert status to string
     static string StatusToString(EVolumeStatus status);
