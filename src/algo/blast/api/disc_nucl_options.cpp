@@ -55,18 +55,23 @@ void
 CDiscNucleotideOptionsHandle::SetMBLookupTableDefaults()
 {
     CBlastNucleotideOptionsHandle::SetMBLookupTableDefaults();
+    bool defaults_mode = m_Opts->GetDefaultsMode();
+    m_Opts->SetDefaultsMode(false);
     SetTemplateType(0);
     SetTemplateLength(21);
     SetWordSize(BLAST_WORDSIZE_NUCL);
-    SetFullByteScan(false);
+    m_Opts->SetDefaultsMode(defaults_mode);
 }
 
 void 
 CDiscNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
+    bool defaults_mode = m_Opts->GetDefaultsMode();
+    m_Opts->SetDefaultsMode(false);
     SetWindowSize(BLAST_WINDOW_SIZE_DISC);
-    SetUngappedExtension(false);
+    m_Opts->SetDefaultsMode(defaults_mode);
+    SetUngappedExtension(false);  // not yet supported over the network.
 }
 
 void
@@ -75,8 +80,11 @@ CDiscNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
+    bool defaults_mode = m_Opts->GetDefaultsMode();
+    m_Opts->SetDefaultsMode(false);
     SetGapExtnAlgorithm(eDynProgScoreOnly);
     SetGapTracebackAlgorithm(eDynProgTbck);
+    m_Opts->SetDefaultsMode(defaults_mode);
 }
 
 void
