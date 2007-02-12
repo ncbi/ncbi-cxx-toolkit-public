@@ -123,11 +123,16 @@ class CStaticPairArrayMap
 {
     typedef CStaticArraySearchBase<PKeyValuePair<PairType>, KeyCompare> TBase;
 public:
+    typedef typename TBase::value_type value_type;
+    typedef typename TBase::const_iterator const_iterator;
+    typedef typename TBase::size_type size_type;
+    typedef typename TBase::key_compare key_compare;
+
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
     template<size_t Size>
-    CStaticPairArrayMap(const typename TBase::value_type (&arr)[Size],
+    CStaticPairArrayMap(const value_type (&arr)[Size],
                         const char* file, int line)
         : TBase(arr, file, line)
     {
@@ -135,8 +140,8 @@ public:
 
     /// Constructor to initialize comparator object.
     template<size_t Size>
-    CStaticPairArrayMap(const typename TBase::value_type (&arr)[Size],
-                        const typename TBase::key_compare& comp,
+    CStaticPairArrayMap(const value_type (&arr)[Size],
+                        const key_compare& comp,
                         const char* file, int line)
         : TBase(arr, comp, file, line)
     {
@@ -145,30 +150,30 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticPairArrayMap(typename TBase::const_iterator obj,
-                        typename TBase::size_type array_size,
+    CStaticPairArrayMap(const_iterator obj,
+                        size_type array_size,
                         const char* file, int line)
         : TBase(obj, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
-    CStaticPairArrayMap(typename TBase::const_iterator obj,
-                        typename TBase::size_type array_size,
-                        const typename TBase::key_compare& comp,
+    CStaticPairArrayMap(const_iterator obj,
+                        size_type array_size,
+                        const key_compare& comp,
                         const char* file, int line)
         : TBase(obj, array_size, comp, file, line)
     {
     }
 
     NCBI_DEPRECATED_CTOR
-    (CStaticPairArrayMap(typename TBase::const_iterator obj,
-                         typename TBase::size_type array_size));
+    (CStaticPairArrayMap(const_iterator obj,
+                         size_type array_size));
 
     NCBI_DEPRECATED_CTOR
-    (CStaticPairArrayMap(typename TBase::const_iterator obj,
-                         typename TBase::size_type array_size,
-                         const typename TBase::key_compare& comp));
+    (CStaticPairArrayMap(const_iterator obj,
+                         size_type array_size,
+                         const key_compare& comp));
 };
 
 
@@ -186,11 +191,16 @@ class CStaticArrayMap
     typedef CStaticArraySearchBase<PKeyValuePair<pair<KeyType, ValueType> >,
                                    KeyCompare> TBase;
 public:
+    typedef typename TBase::value_type value_type;
+    typedef typename TBase::const_iterator const_iterator;
+    typedef typename TBase::size_type size_type;
+    typedef typename TBase::key_compare key_compare;
+
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
     template<size_t Size>
-    CStaticArrayMap(const typename TBase::value_type (&arr)[Size],
+    CStaticArrayMap(const value_type (&arr)[Size],
                     const char* file, int line)
         : TBase(arr, file, line)
     {
@@ -198,8 +208,8 @@ public:
 
     /// Constructor to initialize comparator object.
     template<size_t Size>
-    CStaticArrayMap(const typename TBase::value_type (&arr)[Size],
-                    const typename TBase::key_compare& comp,
+    CStaticArrayMap(const value_type (&arr)[Size],
+                    const key_compare& comp,
                     const char* file, int line)
         : TBase(arr, comp, file, line)
     {
@@ -208,30 +218,30 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticArrayMap(typename TBase::const_iterator obj,
-                    typename TBase::size_type array_size,
+    CStaticArrayMap(const_iterator obj,
+                    size_type array_size,
                     const char* file, int line)
         : TBase(obj, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
-    CStaticArrayMap(typename TBase::const_iterator obj,
-                    typename TBase::size_type array_size,
-                    const typename TBase::key_compare& comp,
+    CStaticArrayMap(const_iterator obj,
+                    size_type array_size,
+                    const key_compare& comp,
                     const char* file, int line)
         : TBase(obj, array_size, comp, file, line)
     {
     }
 
     NCBI_DEPRECATED_CTOR
-    (CStaticArrayMap(typename TBase::const_iterator obj,
-                     typename TBase::size_type array_size));
+    (CStaticArrayMap(const_iterator obj,
+                     size_type array_size));
 
     NCBI_DEPRECATED_CTOR
-    (CStaticArrayMap(typename TBase::const_iterator obj,
-                     typename TBase::size_type array_size,
-                     const typename TBase::key_compare& comp));
+    (CStaticArrayMap(const_iterator obj,
+                     size_type array_size,
+                     const key_compare& comp));
 };
 
 
@@ -240,34 +250,34 @@ public:
 
 template <class PairType, class KeyCompare>
 CStaticPairArrayMap<PairType, KeyCompare>::CStaticPairArrayMap
-(typename TBase::const_iterator obj,
- typename TBase::size_type array_size)
+(const_iterator obj,
+ size_type array_size)
     : TBase(obj, array_size, 0, 0)
 {
 }
 
 template <class PairType, class KeyCompare>
 CStaticPairArrayMap<PairType, KeyCompare>::CStaticPairArrayMap
-(typename TBase::const_iterator obj,
- typename TBase::size_type array_size,
- const typename TBase::key_compare& comp)
+(const_iterator obj,
+ size_type array_size,
+ const key_compare& comp)
  : TBase(obj, array_size, comp, 0, 0)
 {
 }
 
 template <class KeyType, class ValueType, class KeyCompare>
 CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
-(typename TBase::const_iterator obj,
- typename TBase::size_type array_size)
+(const_iterator obj,
+ size_type array_size)
  : TBase(obj, array_size, 0, 0)
 {
 }
 
 template <class KeyType, class ValueType, class KeyCompare>
 CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
-(typename TBase::const_iterator obj,
- typename TBase::size_type array_size,
- const typename TBase::key_compare& comp)
+(const_iterator obj,
+ size_type array_size,
+ const key_compare& comp)
     : TBase(obj, array_size, comp, 0, 0)
 {
 }

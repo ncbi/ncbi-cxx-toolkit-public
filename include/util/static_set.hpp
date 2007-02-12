@@ -354,11 +354,16 @@ class CStaticArraySet
 {
     typedef CStaticArraySearchBase<PKeyValueSelf<KeyType>, KeyCompare> TBase;
 public:
+    typedef typename TBase::value_type value_type;
+    typedef typename TBase::const_iterator const_iterator;
+    typedef typename TBase::size_type size_type;
+    typedef typename TBase::key_compare key_compare;
+
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
     template<size_t Size>
-    CStaticArraySet(const typename TBase::value_type (&arr)[Size],
+    CStaticArraySet(const value_type (&arr)[Size],
                     const char* file, int line)
         : TBase(arr, file, line)
     {
@@ -366,8 +371,8 @@ public:
 
     /// Constructor to initialize comparator object.
     template<size_t Size>
-    CStaticArraySet(const typename TBase::value_type (&arr)[Size],
-                    const typename TBase::key_compare& comp,
+    CStaticArraySet(const value_type (&arr)[Size],
+                    const key_compare& comp,
                     const char* file, int line)
         : TBase(arr, comp, file, line)
     {
@@ -376,30 +381,30 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticArraySet(typename TBase::const_iterator obj,
-                    typename TBase::size_type array_size,
+    CStaticArraySet(const_iterator obj,
+                    size_type array_size,
                     const char* file, int line)
         : TBase(obj, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
-    CStaticArraySet(typename TBase::const_iterator obj,
-                    typename TBase::size_type array_size,
-                    const typename TBase::key_compare& comp,
+    CStaticArraySet(const_iterator obj,
+                    size_type array_size,
+                    key_compare& comp,
                     const char* file, int line)
         : TBase(obj, array_size, comp, file, line)
     {
     }
 
     NCBI_DEPRECATED_CTOR
-    (CStaticArraySet(typename TBase::const_iterator obj,
-                     typename TBase::size_type array_size));
+    (CStaticArraySet(const_iterator obj,
+                     size_type array_size));
 
     NCBI_DEPRECATED_CTOR
-    (CStaticArraySet(typename TBase::const_iterator obj,
-                     typename TBase::size_type array_size,
-                     const typename TBase::key_compare& comp));
+    (CStaticArraySet(const_iterator obj,
+                     size_type array_size,
+                     const key_compare& comp));
 };
 
 
@@ -417,17 +422,17 @@ public:
 
 template <class KeyType, class KeyCompare>
 CStaticArraySet<KeyType, KeyCompare>::CStaticArraySet
-(typename TBase::const_iterator obj,
- typename TBase::size_type array_size)
+(const_iterator obj,
+ size_type array_size)
   : TBase(obj, array_size, 0, 0)
 {
 }
 
 template <class KeyType, class KeyCompare>
 CStaticArraySet<KeyType, KeyCompare>::CStaticArraySet
-(typename TBase::const_iterator obj,
- typename TBase::size_type array_size,
- const typename TBase::key_compare& comp)
+(const_iterator obj,
+ size_type array_size,
+ const key_compare& comp)
   : TBase(obj, array_size, comp, 0, 0)
 {
 }
