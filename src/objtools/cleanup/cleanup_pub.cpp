@@ -1188,7 +1188,8 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                                         x_RemovePubMatch(**remainder_it, (*first_descr_it)->GetPub());
                                         ++remainder_it;
                                     }
-                                    parts.AddSeqdesc(**first_descr_it);
+                                    CBioseq_set_EditHandle segset_edit = bsh.GetEditHandle();
+                                    segset_edit.AddSeqdesc(**first_descr_it);
                                     ChangeMade (CCleanupChange::eMoveDescriptor);
                                     remove_list.push_back(*first_descr_it);
                                 }
@@ -1216,7 +1217,8 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
                                     while (remainder_it != parts.GetCompleteBioseq_set()->GetSeq_set().end()) {
                                         x_RemovePubMatch(**remainder_it, (*first_descr_it)->GetPub());
                                     }
-                                    parts.AddSeqdesc(**first_descr_it);
+                                    CBioseq_set_EditHandle segset_edit = bsh.GetEditHandle();
+                                    segset_edit.AddSeqdesc(**first_descr_it);
                                     ChangeMade (CCleanupChange::eMoveDescriptor);
                                     remove_list.push_back(*first_descr_it);
                                 }
