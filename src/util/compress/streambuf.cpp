@@ -110,7 +110,7 @@ CCompressionStreambuf::~CCompressionStreambuf()
 
     CCompressionStreamProcessor* sp;
     #define msg_where    "CCompressionStreambuf::~CCompressionStreambuf: "
-    #define msg_overflow "Overflow occured, lost some processed data " \
+    #define msg_overflow "Overflow occurred, lost some processed data " \
                          "through call Finalize()"
     #define msg_error    "Finalize() failed"
 
