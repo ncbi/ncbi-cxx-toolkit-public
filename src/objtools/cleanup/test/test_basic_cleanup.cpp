@@ -373,7 +373,7 @@ SIZE_TYPE CTest_cleanupApplication::PrintChanges
         string errOutName = args["x"].AsString();
 
         CNcbiOstream* os = &NcbiCerr;
-        if (errOutName == "-")
+        if (errOutName != "-")
             os = &(args["x"].AsOutputFile());
 
         if ( changes->ChangeCount() == 0 ) {
@@ -409,7 +409,7 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  *
- * $Log$
+ * $Log: test_basic_cleanup.cpp,v $
  * Revision 1.5  2006/11/15 13:49:15  rsmith
  * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
  *
