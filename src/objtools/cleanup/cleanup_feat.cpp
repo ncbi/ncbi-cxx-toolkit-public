@@ -2418,7 +2418,15 @@ void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
                 overlapped_feat_ci.Rewind();
                 while (overlapped_feat_ci) {
                     bool changed = false;
-                    if (!overlapped_feat_ci->GetData().IsGene() && overlapped_feat_ci->IsSetQual()) {
+                    // check to make sure feature is contained in (or same location as) gene
+                    sequence::ECompare loc_compare = 
+                                sequence::Compare(overlapped_feat_ci->GetOriginalFeature().GetLocation(),
+                                                  gene_ci->GetOriginalFeature().GetLocation(),
+                                                  m_Scope);
+                    if ((loc_compare == sequence::eContained
+                         || loc_compare == sequence::eSame)
+                        && !overlapped_feat_ci->GetData().IsGene()
+                        && overlapped_feat_ci->IsSetQual()) {
                         CSeq_feat_EditHandle efh(overlapped_feat_ci->GetSeq_feat_Handle());
                         CRef<CSeq_feat> new_feat(new CSeq_feat);
                         new_feat->Assign(overlapped_feat_ci->GetOriginalFeature());
