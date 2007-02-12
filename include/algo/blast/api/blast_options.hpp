@@ -355,6 +355,7 @@ public:
     
     /// If this is true, remote options will ignore "Set" calls.
     void SetDefaultsMode(bool dmode);
+    bool GetDefaultsMode() const;
     
 private:
     /// Prohibit copy c-tor 
