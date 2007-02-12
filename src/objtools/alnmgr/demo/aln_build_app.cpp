@@ -308,11 +308,20 @@ int CAlnBuildApp::Run(void)
         CreateSeqAlignFromAnchoredAln(out_anchored_aln,
                                       CSeq_align::TSegs::e_Denseg);
     ReportTime("CreateSeqAlignFromAnchoredAln");
-    {
-        auto_ptr<CObjectOStream> asn_out
-            (CObjectOStream::Open(eSerial_AsnText, 
-                                  GetArgs()["asnout"].AsString()));
-        *asn_out << *sa;
+    auto_ptr<CObjectOStream> asn_out
+        (CObjectOStream::Open(eSerial_AsnText, 
+                              GetArgs()["asnout"].AsString()));
+    *asn_out << *sa;
+
+
+    /// Create individual Dense-segs (one per CPairwiseAln)
+    ITERATE(CAnchoredAln::TPairwiseAlnVector,
+            pairwise_aln_i, 
+            out_anchored_aln.GetPairwiseAlns()) {
+
+        CRef<CDense_seg> ds = 
+            CreateDensegFromPairwiseAln(**pairwise_aln_i);
+        *asn_out << *ds;
     }
 
 

@@ -56,6 +56,11 @@ CRef<CDense_seg>
 CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln);
 
 
+NCBI_XALNMGR_EXPORT
+CRef<CDense_seg>
+CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln);
+
+
 END_NCBI_SCOPE
 
 

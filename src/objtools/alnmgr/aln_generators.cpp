@@ -144,15 +144,15 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln)
         }
     }
 
-    int num = dim * numseg;
+    int matrix_size = dim * numseg;
 
     /// Strands (just resize, will set while setting starts)
     CDense_seg::TStrands& strands = ds->SetStrands();
-    strands.resize(num, eNa_strand_minus);
+    strands.resize(matrix_size, eNa_strand_minus);
 
     /// Starts
     CDense_seg::TStarts& starts = ds->SetStarts();
-    starts.resize(num, -1);
+    starts.resize(matrix_size, -1);
     for (row = 0;  row < dim;  ++row) {
         CDense_seg::TNumseg seg = 0;
         CPairwiseAln::TAlnRngColl::const_iterator aln_rng_i = pairwises[row]->begin();
@@ -167,7 +167,7 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln)
                  aln_rng_i->GetSecondFrom() :
                  aln_rng_i->GetSecondToOpen() - lens[seg]);
             while (seg < numseg  &&  anchor_starts[seg] < aln_rng_i->GetFirstToOpen()) {
-                _ASSERT(row + seg * dim < num);
+                _ASSERT(row + seg * dim < matrix_size);
                 starts[row + seg * dim] = start;
                 if (direct) {
                     strands[row + seg * dim] = eNa_strand_plus;
@@ -184,6 +184,67 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln)
         }
     }
 
+#if _DEBUG
+    ds->Validate(true);
+#endif    
+    return ds;
+}
+
+
+CRef<CDense_seg>
+CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln)
+{
+    /// Create a dense-seg
+    CRef<CDense_seg> ds(new CDense_seg);
+
+
+    /// Determine dimensions
+    CDense_seg::TNumseg& numseg = ds->SetNumseg();
+    numseg = pairwise_aln.size();
+    ds->SetDim(2);
+    int matrix_size = 2 * numseg;
+
+    CDense_seg::TLens& lens = ds->SetLens();
+    lens.resize(numseg);
+
+    CDense_seg::TStarts& starts = ds->SetStarts();
+    starts.resize(matrix_size, -1);
+
+    CDense_seg::TIds& ids = ds->SetIds();
+    ids.resize(2);
+
+
+    /// Ids
+    ids[0].Reset(new CSeq_id);
+    SerialAssign<CSeq_id>(*ids[0], pairwise_aln.GetFirstId()->GetSeqId());
+    ids[1].Reset(new CSeq_id);
+    SerialAssign<CSeq_id>(*ids[1], pairwise_aln.GetSecondId()->GetSeqId());
+
+
+    /// Tmp vars
+    CDense_seg::TNumseg seg = 0;
+    int matrix_pos = 0;
+
+
+    /// Main loop to set all values
+    ITERATE(CPairwiseAln::TAlnRngColl, aln_rng_i, pairwise_aln) {
+        starts[matrix_pos++] = aln_rng_i->GetFirstFrom();
+        if ( !aln_rng_i->IsDirect() ) {
+            if ( !ds->IsSetStrands() ) {
+                ds->SetStrands().resize(matrix_size, eNa_strand_plus);
+            }
+            ds->SetStrands()[matrix_pos] = eNa_strand_minus;
+        }
+        starts[matrix_pos++] = aln_rng_i->GetSecondFrom();
+        lens[seg++] = aln_rng_i->GetLength();
+    }
+    _ASSERT(matrix_pos == matrix_size);
+    _ASSERT(seg == numseg);
+
+
+#ifdef _DEBUG
+    ds->Validate(true);
+#endif
     return ds;
 }
 
