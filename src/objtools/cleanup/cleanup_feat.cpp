@@ -534,6 +534,8 @@ void CCleanup_imp::BasicCleanup(const CSeq_feat_Handle& sfh)
             }
         }
         break;
+    default:
+        break;
     }
 }
 
@@ -2372,7 +2374,14 @@ void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
         bool   same = true;
         bool   any = false;
         while (overlapped_feat_ci && same) {
-            if (overlapped_feat_ci->IsSetQual()) {
+            // check to make sure feature is contained in (or same location as) gene
+            sequence::ECompare loc_compare = sequence::Compare(overlapped_feat_ci->GetOriginalFeature().GetLocation(),
+                                                               gene_ci->GetOriginalFeature().GetLocation(),
+                                                               m_Scope);
+            if ((loc_compare == sequence::eContained
+                  || loc_compare == sequence::eSame)
+                  && !overlapped_feat_ci->GetData().IsGene() 
+                  && overlapped_feat_ci->IsSetQual()) {
                 ITERATE (CSeq_feat::TQual, qual_it, overlapped_feat_ci->GetQual()) {
                     if ((*qual_it)->CanGetQual() 
                         && NStr::Equal((*qual_it)->GetQual(), "map")
@@ -2391,6 +2400,7 @@ void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
             ++overlapped_feat_ci;
         }
         if (any && same) {
+            string gene_map = "";
             if(!gene_ci->GetData().GetGene().IsSetMaploc()
                || NStr::IsBlank(gene_ci->GetData().GetGene().GetMaploc())) {
                 CSeq_feat_EditHandle efh(gene_ci->GetSeq_feat_Handle());
@@ -2399,30 +2409,36 @@ void CCleanup_imp::x_MoveMapQualsToGeneMaploc (CSeq_annot_Handle sa)
                 new_feat->SetData().SetGene().SetMaploc(map);
                 efh.Replace(*new_feat);
                 ChangeMade(CCleanupChange::eChangeOther);                    
+                gene_map = map;
+            } else {
+                gene_map = gene_ci->GetData().GetGene().GetMaploc();
             }
-            overlapped_feat_ci.Rewind();
-            while (overlapped_feat_ci) {
-                bool changed = false;
-                if (overlapped_feat_ci->IsSetQual()) {
-                    CSeq_feat_EditHandle efh(gene_ci->GetSeq_feat_Handle());
-                    CRef<CSeq_feat> new_feat(new CSeq_feat);
-                    new_feat->Assign(overlapped_feat_ci->GetOriginalFeature());
-                    CSeq_feat::TQual::iterator qual_it = new_feat->SetQual().begin();
-                    while (qual_it != new_feat->SetQual().end()) {
-                        if ((*qual_it)->CanGetQual() 
-                            && NStr::Equal((*qual_it)->GetQual(), "map")) {
-                            qual_it = new_feat->SetQual().erase(qual_it);
-                            changed = true;
-                        } else {
-                            ++qual_it;
+        
+            if (NStr::Equal (gene_map, map)) {
+                overlapped_feat_ci.Rewind();
+                while (overlapped_feat_ci) {
+                    bool changed = false;
+                    if (!overlapped_feat_ci->GetData().IsGene() && overlapped_feat_ci->IsSetQual()) {
+                        CSeq_feat_EditHandle efh(overlapped_feat_ci->GetSeq_feat_Handle());
+                        CRef<CSeq_feat> new_feat(new CSeq_feat);
+                        new_feat->Assign(overlapped_feat_ci->GetOriginalFeature());
+                        CSeq_feat::TQual::iterator qual_it = new_feat->SetQual().begin();
+                        while (qual_it != new_feat->SetQual().end()) {
+                            if ((*qual_it)->CanGetQual() 
+                                && NStr::Equal((*qual_it)->GetQual(), "map")) {
+                                qual_it = new_feat->SetQual().erase(qual_it);
+                                changed = true;
+                            } else {
+                                ++qual_it;
+                            }
+                        }
+                        if (changed) {
+                            efh.Replace(*new_feat);
+                            ChangeMade(CCleanupChange::eRemoveQualifier);
                         }
                     }
-                    if (changed) {
-                        efh.Replace(*new_feat);
-                        ChangeMade(CCleanupChange::eRemoveQualifier);
-                    }
+                    ++overlapped_feat_ci;   
                 }
-                ++overlapped_feat_ci;   
             }
             
         }
