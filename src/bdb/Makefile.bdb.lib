@@ -5,9 +5,8 @@
 
 SRC = bdb_types bdb_file bdb_cursor bdb_blob \
       bdb_expt bdb_env bdb_filedump bdb_volumes \
-      bdb_trans bdb_query bdb_query_parser_main bdb_util bdb_dict_store 
+      bdb_trans bdb_query bdb_query_parser_main bdb_util bdb_dict_store
 
-      
 LIB = bdb
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
