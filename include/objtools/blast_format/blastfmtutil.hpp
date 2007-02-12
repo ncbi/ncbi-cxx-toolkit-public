@@ -52,10 +52,10 @@ USING_SCOPE (objects);
 
 /*** Default number of one-line descriptions to display in the traditional
  * BLAST report */
-extern const size_t kBlastFmtDflt_NumDescriptions;
+NCBI_XBLASTFORMAT_EXPORT extern const size_t kBlastFmtDflt_NumDescriptions;
 
 /*** Default number of alignments to display in the traditional BLAST report */
-extern const size_t kBlastFmtDflt_NumAlignments;
+NCBI_XBLASTFORMAT_EXPORT extern const size_t kBlastFmtDflt_NumAlignments;
 
 ///blast related url
 

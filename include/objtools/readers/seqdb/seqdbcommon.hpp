@@ -298,7 +298,7 @@ public:
 /// the intersection of the two.  Note that both input arguments are
 /// sorted to GI order in-place.
 
-class CIntersectionGiList : public CSeqDBGiList {
+class NCBI_XOBJREAD_EXPORT CIntersectionGiList : public CSeqDBGiList {
 public:
     /// Construct an intersection of two lists of GIs.
     ///

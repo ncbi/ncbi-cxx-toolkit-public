@@ -76,7 +76,7 @@ const string kNetScheduleKeyPrefix = "JSID";
 
 /// Map from exception names to codes
 /// @internal
-class CNetScheduleExceptionMap
+class NCBI_XCONNECT_EXPORT CNetScheduleExceptionMap
 {
 public:
     CNetScheduleExceptionMap();
