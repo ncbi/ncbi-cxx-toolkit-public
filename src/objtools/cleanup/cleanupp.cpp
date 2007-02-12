@@ -445,6 +445,8 @@ void CCleanup_imp::BasicCleanup(CSeq_entry_Handle& seh)
     for (; fi; ++fi) {
         BasicCleanup(fi->GetSeq_feat_Handle());
     }
+    // special GB-block cleanup. Was in Extended Cleanup.
+    x_ChangeGenBankBlocks(seh);
     // do the non-handle stuff
     BasicCleanup(const_cast<CSeq_entry&>(*seh.GetCompleteSeq_entry()));
     Finish(seh);
