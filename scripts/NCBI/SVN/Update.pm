@@ -47,51 +47,12 @@ sub CallSubversion
 {
     my ($Self, @Params) = @_;
 
-    my $PID = open(PIPE, '-|');
+    local $" = '" "';
 
-    confess "$Self->{MyName}: cannot fork: $!\n" unless defined $PID;
+    my @Output = `"$Self->{SvnPath}" "@Params"`;
+    chomp @Output;
 
-    unless ($PID)
-    {
-        open(STDERR, ">&STDOUT")
-            or die "$Self->{MyName}: cannot dup STDOUT: $!\n";
-
-        local @ENV{qw(PATH IFS CDPATH ENV BASH_ENV TERM)} = ('') x 6;
-
-        exec($Self->{SvnPath}, @Params)
-            or die "$Self->{MyName}: cannot exec `$Self->{SvnPath}': $!\n"
-    }
-
-    my @Buffers;
-    my $Buffer;
-    my $Bytes;
-
-    binmode PIPE;
-
-    while ($Bytes = read PIPE, $Buffer, $Self->{BufferSize})
-    {
-        push @Buffers, $Buffer
-    }
-
-    confess("$Self->{MyName}: error reading pipe: $!") unless defined $Bytes;
-
-    close(PIPE);
-
-    my $Output = join('', @Buffers);
-
-    if ($?)
-    {
-        local $" = ' ';
-
-        warn "$Self->{MyName}: `$Self->{SvnPath}' failed" .
-            ($? & 128 ? ' with core dump' : '') .
-            ': exit=' . ($? >> 8) . ' signal=' . ($? & 127) . "\n"
-            if $? & 255;
-
-        confess("$Self->{MyName}: $Self->{SvnPath} @Params failed: $Output")
-    }
-
-    return $Output
+    return @Output
 }
 
 sub CreateEmpty
@@ -114,9 +75,9 @@ sub SwitchToRecursive
 
         print "L $Dir\n";
 
-        for my $SubDir (split("\n", $Self->CallSubversion('list', $Dir)))
+        for my $SubDir ($Self->CallSubversion('list', $Dir))
         {
-            if ($SubDir =~ m/^(.+)\/$/o)
+            if ($SubDir =~ m/^(.+)\/$/os)
             {
                 $SubDir = "$Dir/$1";
 
