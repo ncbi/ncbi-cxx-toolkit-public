@@ -1067,6 +1067,46 @@ void CCleanup_imp::x_RemovePubMatch(const CSeq_entry& se, const CPubdesc& pd)
 }
 
 
+static bool s_IsRefSeq (CBioseq_Handle bh)
+{
+    ITERATE (CBioseq_Handle::TId, it, bh.GetId()) {
+        CSeq_id::EAccessionInfo info = (*it).GetSeqId()->IdentifyAccession();
+        if (info == CSeq_id::eAcc_refseq_chromosome
+            || info == CSeq_id::eAcc_refseq_contig
+            || info == CSeq_id::eAcc_refseq_genome
+            || info == CSeq_id::eAcc_refseq_genomic
+            || info == CSeq_id::eAcc_refseq_mrna
+            || info == CSeq_id::eAcc_refseq_mrna_predicted
+            || info == CSeq_id::eAcc_refseq_ncrna
+            || info == CSeq_id::eAcc_refseq_ncrna_predicted
+            || info == CSeq_id::eAcc_refseq_prot
+            || info == CSeq_id::eAcc_refseq_prot_predicted
+            || info == CSeq_id::eAcc_refseq_unreserved
+            || info == CSeq_id::eAcc_refseq_wgs_intermed
+            || info == CSeq_id::eAcc_refseq_wgs_nuc
+            || info == CSeq_id::eAcc_refseq_wgs_prot) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool s_IsRefSeq (CBioseq_set_Handle bh)
+{
+    if (!bh.CanGetClass() || bh.GetClass() != CBioseq_set::eClass_segset) {
+        return false;
+    }
+    CBioseq_CI b_ci (bh);
+    while (b_ci) {
+        if (s_IsRefSeq (*b_ci)) {
+            return true;
+        }
+        ++b_ci;
+    }
+    return false;
+}
+
+
 void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
 {
     if (!bsh.GetCompleteBioseq_set()->IsSetSeq_set()) {
@@ -1083,30 +1123,36 @@ void CCleanup_imp::x_MergeAndMovePubs(CBioseq_set_Handle bsh)
         CSeq_descr::Tdata remove_list;
         bool moved_descriptor = false;
         if (se.IsSeq()) {
-            CBioseq_EditHandle nbh = (m_Scope->GetBioseqHandle(se.GetSeq())).GetEditHandle();
-            NON_CONST_ITERATE (CSeq_descr::Tdata, it, nbh.SetDescr().Set()) {
-                if ((*it)->Which() == CSeqdesc::e_Pub) {
-                    bseh.AddSeqdesc(**it);
-                    remove_list.push_back(*it);
-                    moved_descriptor = true;
+            CBioseq_Handle nbh = m_Scope->GetBioseqHandle(se.GetSeq());
+            if (!s_IsRefSeq (nbh)) {
+                CBioseq_EditHandle nbeh = nbh.GetEditHandle();
+                NON_CONST_ITERATE (CSeq_descr::Tdata, it, nbeh.SetDescr().Set()) {
+                    if ((*it)->Which() == CSeqdesc::e_Pub) {
+                        bseh.AddSeqdesc(**it);
+                        remove_list.push_back(*it);
+                        moved_descriptor = true;
+                    }
                 }
-            }
-            for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
-                 it1 != remove_list.end(); ++it1) { 
-                nbh.RemoveSeqdesc(**it1);
+                for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+                     it1 != remove_list.end(); ++it1) { 
+                    nbeh.RemoveSeqdesc(**it1);
+                }
             }
         } else if (se.IsSet()) {
-            CBioseq_set_EditHandle nbh = (m_Scope->GetBioseq_setHandle(se.GetSet())).GetEditHandle();
-            NON_CONST_ITERATE (CSeq_descr::Tdata, it, nbh.SetDescr().Set()) {
-                if ((*it)->Which() == CSeqdesc::e_Pub) {
-                    bseh.AddSeqdesc(**it);
-                    moved_descriptor = true;
-                    remove_list.push_back(*it);
+            CBioseq_set_Handle nbh = m_Scope->GetBioseq_setHandle(se.GetSet());
+            if (!s_IsRefSeq(nbh)) {
+                CBioseq_set_EditHandle nbeh = nbh.GetEditHandle();
+                NON_CONST_ITERATE (CSeq_descr::Tdata, it, nbeh.SetDescr().Set()) {
+                    if ((*it)->Which() == CSeqdesc::e_Pub) {
+                        bseh.AddSeqdesc(**it);
+                        moved_descriptor = true;
+                        remove_list.push_back(*it);
+                    }
                 }
-            }
-            for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
-                 it1 != remove_list.end(); ++it1) { 
-                nbh.RemoveSeqdesc(**it1);
+                for (CSeq_descr::Tdata::iterator it1 = remove_list.begin();
+                     it1 != remove_list.end(); ++it1) { 
+                    nbeh.RemoveSeqdesc(**it1);
+                }
             }
         }
         if (moved_descriptor) {
@@ -1400,6 +1446,7 @@ void CCleanup_imp::x_ExtendedCleanupPubs (CBioseq_set_Handle bss)
     // merge equivalent cit-sub pub descriptors
     x_ActOnDescriptorsForMerge(bss, &ncbi::objects::CCleanup_imp::x_IsCitSubPub, 
                                       &ncbi::objects::CCleanup_imp::x_CitSubsMatch);
+
     //MoveSegmPubs
     //MoveNPPubs
     x_MergeAndMovePubs(bss);
