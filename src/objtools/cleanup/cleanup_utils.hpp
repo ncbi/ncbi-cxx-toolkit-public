@@ -69,28 +69,25 @@ bool ConvertDoubleQuotes(string& str)
 }
 
 
-/// truncate spaces and semicolons
-bool CleanString(string& str, bool rm_trailing_junk = false);
+/// truncate spaces and other trailing characters.
+bool CleanString(string& str, bool rm_trailing_period = false);
 
-/// remove a trailing semicolon, 
-/// if it is not preceded by an ampersand
-bool RemoveTrailingSemicolon(string& str);
+/// remove a trailing period, 
+bool RemoveTrailingPeriod(string& str);
 
-/// remove trailing white space, periods, commas, tildes and semicolons
-/// but leave a single or 3 trailing periods.
+/// remove trailing white space, commas, tildes and semicolons
 bool RemoveTrailingJunk(string& str);
 
 /// remove white space between pairs of tildes.
 /// "~ ~  ~ a~" -> "~~~ a~"
 bool  RemoveSpacesBetweenTildes(string& str);
 
+/// remove duplicate internal semicolons.
+/// "a;;b" will become "a;b".
+void TrimInternalSemicolons (string& str);
+
 /// Change double to single quotes
 bool CleanDoubleQuote(string& str);
-
-// truncate trailing and leading spaces, trailing semicolons,
-// and redundant semicolons and extra spaces after semicolons
-bool CleanVisString(string& str);
-bool CleanVisStringList ( list< string >& str_list);
 
 bool OnlyPunctuation (string str);
 

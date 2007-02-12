@@ -335,7 +335,7 @@ void CCleanup_imp::BasicCleanup(CSeqdesc& sd)
 // CGB_block data member cleanup
 void CCleanup_imp::BasicCleanup(CGB_block& gbb)   
 {
-    CLEAN_STRING_LIST(gbb, Extra_accessions);
+    CLEAN_STRING_LIST_JUNK(gbb, Extra_accessions);
     if (gbb.IsSetExtra_accessions()) {
         CGB_block::TExtra_accessions& x_accs = gbb.SetExtra_accessions();
         if ( ! objects::is_sorted(x_accs.begin(), x_accs.end())) {
@@ -350,16 +350,16 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
     }
     
     CLEAN_STRING_LIST(gbb, Keywords);
+    // don't sort keywords, but get rid of dups.
     if (gbb.IsSetKeywords()) {
         if (RemoveDupsNoSort(gbb.SetKeywords(), m_Mode != eCleanup_EMBL)) { // case insensitive
             ChangeMade(CCleanupChange::eCleanKeywords);
         }        
     }
     
-    // don't sort keywords, but get rid of dups.
     
-    CLEAN_STRING_MEMBER_JUNK(gbb, Source);
-    CLEAN_STRING_MEMBER_JUNK(gbb, Origin);
+    CLEAN_STRING_MEMBER(gbb, Source);
+    CLEAN_STRING_MEMBER(gbb, Origin);
     //
     //  origin:
     //  append period if there isn't one already
@@ -372,14 +372,14 @@ void CCleanup_imp::BasicCleanup(CGB_block& gbb)
         }
     }
     CLEAN_STRING_MEMBER(gbb, Date);
-    CLEAN_STRING_MEMBER(gbb, Div);
-    CLEAN_STRING_MEMBER(gbb, Taxonomy);
+    CLEAN_STRING_MEMBER_JUNK(gbb, Div);
+    gbb.ResetTaxonomy();
 }
 
 
 void CCleanup_imp::BasicCleanup(CEMBL_block& emb)
 {
-    CLEAN_STRING_LIST(emb, Extra_acc);
+    CLEAN_STRING_LIST_JUNK(emb, Extra_acc);
     if ( ! objects::is_sorted(emb.GetExtra_acc().begin(),
                               emb.GetExtra_acc().end())) {
         emb.SetExtra_acc().sort();
@@ -552,7 +552,7 @@ void CCleanup_imp::BasicCleanup(CSeq_loc& sl)
             sl.SetInt().SetId(*id);
             sl.SetInt().SetFrom(0);
             sl.SetInt().SetTo(bs_len - 1);
-            ChangeMade(CCleanupChange::eChangeSeqloc);
+            ChangeMade(CCleanupChange::eChangeWholeLocation);
         }
     }
     
@@ -982,99 +982,6 @@ bool IsEmpty (CSeq_feat& sf)
 }
 
 
-void CCleanup_imp::x_ExtendedCleanStrings (CSeqdesc& sd)
-{  
-    switch (sd.Which()) {
-        case CSeqdesc::e_Mol_type:
-        case CSeqdesc::e_Method:
-        case CSeqdesc::e_Modif:
-        case CSeqdesc::e_Num:
-        case CSeqdesc::e_Maploc:
-        case CSeqdesc::e_Pir:
-        case CSeqdesc::e_User:
-        case CSeqdesc::e_Sp:
-        case CSeqdesc::e_Dbxref:
-        case CSeqdesc::e_Embl:
-        case CSeqdesc::e_Create_date:
-        case CSeqdesc::e_Update_date:
-        case CSeqdesc::e_Prf:
-        case CSeqdesc::e_Pdb:
-        case CSeqdesc::e_Het:
-        case CSeqdesc::e_Molinfo:
-            // nothing to clean
-            return;
-            break;
-        case CSeqdesc::e_Name:
-            CleanVisString(sd.SetName());
-            break;
-        case CSeqdesc::e_Title:
-            CleanVisString(sd.SetTitle());
-            break;
-        case CSeqdesc::e_Org:
-            x_ExtendedCleanStrings (sd.SetOrg());
-            break;
-        case CSeqdesc::e_Genbank:
-            x_CleanGenbankBlockStrings(sd.SetGenbank());
-            break;
-        case CSeqdesc::e_Region:
-            CleanVisString(sd.SetRegion());
-            break;
-        case CSeqdesc::e_Comment:
-            TrimSpacesAndJunkFromEnds(sd.SetComment(), true);
-            if (OnlyPunctuation (sd.SetComment())) {
-                sd.SetComment("");
-            }
-            break;
-        case CSeqdesc::e_Pub:
-            if (sd.GetPub().CanGetComment()) {
-                if (IsOnlinePub(sd.GetPub())) {
-                    NStr::TruncateSpacesInPlace (sd.SetPub().SetComment(), NStr::eTrunc_Both);
-                } else {
-                    CleanVisString(sd.SetPub().SetComment());
-                }
-                if (NStr::IsBlank(sd.GetPub().GetComment())) {
-                    sd.SetPub().ResetComment();
-                }
-            }
-            break;
-        case CSeqdesc::e_Source:
-            x_ExtendedCleanSubSourceList (sd.SetSource());
-            if (sd.SetSource().CanGetOrg()) {
-                x_ExtendedCleanStrings (sd.SetSource().SetOrg());
-            }
-            break;
-        default:
-            break;                     
-    }
-    
-}
-
-
-void CCleanup_imp::x_ExtendedCleanStrings (CSeq_descr& sdr)
-{
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, sdr.Set()) {
-        x_ExtendedCleanStrings(**it);
-        // NOTE: At this point in the C Toolkit, we check for empty
-        // descriptors and remove them.
-        // We need a definition for "emptiness" for each of the
-        // descriptor types.
-    }
-}
-
-
-void CCleanup_imp::x_ExtendedCleanStrings (CSeq_annot_Handle sah)
-{
-    if (sah.IsFtable()) {
-        CFeat_CI feat_ci(sah);
-        while (feat_ci) {
-            x_ExtendedCleanStrings (const_cast< CSeq_feat& > (feat_ci->GetOriginalFeature()));
-            // NOTE: At this point in the C Toolkit, we check for empty features and remove them.
-            // We need a definition for "emptiness" for each of the feature types.
-            ++feat_ci;
-        }
-    }        
-}
-
 // Was GetRidOfEmptyFeatsDescCallback in the C Toolkit
 void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs)
 {
@@ -1084,7 +991,6 @@ void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs)
     vector<CSeq_annot_EditHandle> sah; // copy annot handles to not to break iterator while moving
     CSeq_annot_CI annot_it(bseh.GetSeq_entry_Handle(), CSeq_annot_CI::eSearch_entry);
     for(; annot_it; ++annot_it) {
-        x_ExtendedCleanStrings (*annot_it);
         if ((*annot_it).IsFtable()) {
             CFeat_CI feat_ci((*annot_it));
             if (!feat_ci) {
@@ -1097,11 +1003,6 @@ void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_Handle bs)
     ITERATE ( vector<CSeq_annot_EditHandle>, it, sah ) {
         (*it).Remove();
     }
-    
-    if (bseh.IsSetDescr()) {
-        x_ExtendedCleanStrings (bseh.SetDescr());
-    }
-    
 }
 
 
@@ -1113,7 +1014,6 @@ void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle b
     vector<CSeq_annot_EditHandle> sah; // copy annot handles to not to break iterator while moving
     CSeq_annot_CI annot_it(bseh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
     for(; annot_it; ++annot_it) {
-        x_ExtendedCleanStrings (*annot_it);
         if ((*annot_it).IsFtable()) {
             CFeat_CI feat_ci((*annot_it));
             if (!feat_ci) {
@@ -1127,10 +1027,6 @@ void CCleanup_imp::RemoveEmptyFeaturesDescriptorsAndAnnots (CBioseq_set_Handle b
         (*it).Remove();
     }
     
-    if (bseh.IsSetDescr()) {
-        x_ExtendedCleanStrings (bseh.SetDescr());
-    }
-
     if (bs.GetCompleteBioseq_set()->IsSetSeq_set()) {
        CConstRef<CBioseq_set> b = bs.GetCompleteBioseq_set();
        list< CRef< CSeq_entry > > set = (*b).GetSeq_set();
@@ -1524,7 +1420,7 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *
- * $Log$
+ * $Log: cleanupp.cpp,v $
  * Revision 1.60  2007/01/11 19:09:14  bollin
  * Bug fixes for ExtendedCleanup
  *

@@ -129,7 +129,7 @@ void CCleanup_imp::x_DbCleanup(string& db)
 void CCleanup_imp::BasicCleanup(CDbtag& dbtag)
 {
     if (dbtag.IsSetDb()) {
-        if (CleanString(dbtag.SetDb())) {
+        if (CleanString(dbtag.SetDb(), true)) {
             ChangeMade(CCleanupChange::eTrimSpaces);
         }
     } else {

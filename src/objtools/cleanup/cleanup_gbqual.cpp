@@ -473,6 +473,7 @@ bool CCleanup_imp::BasicCleanup(CSeq_feat& feat, CGb_qual& gb_qual)
         } else {
             (feat.SetComment() += "; ") += val;
         }
+        ChangeMade(CCleanupChange::eChangeComment);
         ChangeMade(CCleanupChange::eChangeQualifiers);
         return true;  // mark qual for deletion
     } else if (NStr::EqualNocase(qual, "db_xref")) {
@@ -536,7 +537,7 @@ static bool s_IsJustQuotes(const string& str)
 
 void CCleanup_imp::BasicCleanup(CGb_qual& gbq)
 {
-    CLEAN_STRING_MEMBER(gbq, Qual);
+    CLEAN_STRING_MEMBER_JUNK(gbq, Qual);
     if (!gbq.IsSetQual()) {
         gbq.SetQual(kEmptyStr);
     }
@@ -656,7 +657,7 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *
- * $Log$
+ * $Log: cleanup_gbqual.cpp,v $
  * Revision 1.7  2006/07/26 19:39:40  rsmith
  * add change reporting
  *

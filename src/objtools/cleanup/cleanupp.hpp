@@ -265,8 +265,6 @@ private:
 
     void x_MergeMultipleDates (CSeq_descr& sdr, CSeq_descr::Tdata& remove_list);
 
-    void x_ExtendedCleanStrings (CSeqdesc& sd);
-    void x_ExtendedCleanStrings (COrg_ref& org);
     void x_CleanOrgNameStrings (COrgName& on);
     void x_ExtendedCleanSubSourceList (CBioSource& bs);
     
@@ -330,15 +328,6 @@ private:
     void x_RemoveEmptyFeatureAnnots (CBioseq_Handle bs);
     void x_RemoveEmptyFeatureAnnots (CBioseq_set_Handle bs);
     
-    void x_ExtendedCleanStrings (CSeq_descr& sdr);
-    void x_ExtendedCleanStrings (CSeq_annot_Handle sah);
-    void x_ExtendedCleanStrings (CSeq_feat& feat);
-    void x_ExtendedCleanStrings (CGene_ref& gene_ref);
-    void x_ExtendedCleanStrings (CProt_ref& prot_ref);
-    void x_ExtendedCleanStrings (CRNA_ref& rna_ref);
-    void x_ExtendedCleanStrings (CPubdesc& pd);
-    void x_ExtendedCleanStrings (CImp_feat& imf);
-
     bool x_IsCitSubPub(const CSeqdesc& sd);
     bool x_CitSubsMatch(CSeqdesc& sd1, CSeqdesc& sd2);
 

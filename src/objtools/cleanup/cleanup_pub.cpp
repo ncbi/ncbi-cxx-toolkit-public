@@ -520,12 +520,6 @@ bool CCleanup_imp::x_CitSubsMatch(CSeqdesc& sd1, CSeqdesc& sd2)
 }
 
 
-void CCleanup_imp::x_ExtendedCleanStrings (CPubdesc& pd)
-{
-    EXTENDED_CLEAN_STRING_MEMBER (pd, Comment);
-}
-
-
 #define IS_NONEMPTY_STRING_MEMBER(o, x) \
 ((o).IsSet##x() && !NStr::IsBlank((o).Get##x()))
 

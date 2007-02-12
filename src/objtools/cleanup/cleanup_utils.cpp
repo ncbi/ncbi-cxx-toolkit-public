@@ -54,7 +54,7 @@ BEGIN_SCOPE(objects)
 
 using namespace sequence;
 
-bool CleanString(string& str, bool rm_trailing_junk)
+bool CleanString(string& str, bool rm_trailing_period)
 {
     size_t orig_slen = str.size();
     NStr::TruncateSpacesInPlace(str, NStr::eTrunc_Begin);
@@ -62,11 +62,12 @@ bool CleanString(string& str, bool rm_trailing_junk)
     while (!str.empty()  &&  slen != str.size()) {
         slen = str.size();
         NStr::TruncateSpacesInPlace(str, NStr::eTrunc_End);
-        RemoveTrailingSemicolon(str);
-        if (rm_trailing_junk) {
-            RemoveTrailingJunk(str);
+        RemoveTrailingJunk(str);
+        if (rm_trailing_period) {
+            RemoveTrailingPeriod(str);
         }
     }
+    TrimInternalSemicolons(str);
     if (orig_slen != str.size()) {
         return true;
     }
@@ -74,15 +75,15 @@ bool CleanString(string& str, bool rm_trailing_junk)
 }
 
 
-bool RemoveTrailingSemicolon(string& str)
+bool RemoveTrailingPeriod(string& str)
 {
-    if (str[str.length() - 1] == ';') {
+    if (str[str.length() - 1] == '.') {
         bool remove = true;
-        size_t semicolon = str.length() - 1;
+        size_t period = str.length() - 1;
         size_t amp = str.find_last_of('&');
         if (amp != NPOS) {
             remove = false;
-            for (size_t i = amp + 1; i < semicolon; ++i) {
+            for (size_t i = amp + 1; i < period; ++i) {
                 if (isspace((unsigned char) str[i])) {
                     remove = true;
                     break;
@@ -90,7 +91,7 @@ bool RemoveTrailingSemicolon(string& str)
             }
         }
         if (remove) {
-            str.resize(semicolon);
+            str.resize(period);
             return true;
         }
     }
@@ -100,23 +101,11 @@ bool RemoveTrailingSemicolon(string& str)
 
 bool RemoveTrailingJunk(string& str)
 {
-    SIZE_TYPE end_str =  str.find_last_not_of(" \t\n\r.,~;");
+    SIZE_TYPE end_str =  str.find_last_not_of(" \t\n\r,~;");
     if (end_str == NPOS) {
-        end_str = 0;
+        end_str = 0; // everything is junk.
     } else {
         ++end_str; // indexes the first character to remove.
-    }
-    if (end_str >= str.length()) {
-        return false; // nothing to remove.
-    }
-    // save trailing period or ellipses.
-    if (str[end_str] == '.') {
-        ++end_str;
-        if ( (end_str + 1) < str.length()  &&  
-             str[end_str] == '.'  && 
-             str[end_str + 1] == '.' ) {
-            end_str += 2;
-        }
     }
     if (end_str >= str.length()) {
         return false; // nothing to remove.
@@ -204,46 +193,6 @@ void TrimInternalSemicolons (string& str)
             pos = NStr::Find (str, ";", pos + 1);
         }
     }
-}
-
-
-bool CleanVisString (string& str)
-{
-    bool changed;
-    size_t s_len = str.length();
-    changed = CleanString (str);
-    TrimInternalSemicolons (str);
-    if (str.length() != s_len) {
-        changed = true;
-    }
-    return changed;
-}
-
-
-bool CleanVisStringList ( list< string >& str_list)
-{
-    list< string > non_blank;
-    bool changed = false;
-                   
-    non_blank.clear();
-    while (str_list.size() > 0) {
-        string tmp = str_list.front();
-        str_list.pop_front();
-        changed |= CleanVisString (tmp);
-                        
-        if (!NStr::IsBlank (tmp)) {
-            non_blank.push_back (tmp);
-        } else {
-            changed = true;
-        }
-    }
-    str_list.clear();
-    while (non_blank.size() > 0) {
-        string tmp = non_blank.front();
-        non_blank.pop_front();
-        str_list.push_back(tmp);
-    }
-    return changed;
 }
 
 

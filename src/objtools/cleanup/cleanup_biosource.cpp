@@ -483,8 +483,8 @@ static bool s_OrgModCompareSubtypeFirst(const CRef<COrgMod>& om1,
 void CCleanup_imp::BasicCleanup(COrgName& on)
 {
     CLEAN_STRING_MEMBER(on, Attrib);
-    CLEAN_STRING_MEMBER(on, Lineage);
-    CLEAN_STRING_MEMBER(on, Div);
+    CLEAN_STRING_MEMBER_JUNK(on, Lineage);
+    CLEAN_STRING_MEMBER_JUNK(on, Div);
     if (on.IsSetMod()) {
         COrgName::TMod& mods = on.SetMod();
         size_t mods_cnt = mods.size();
@@ -1061,35 +1061,13 @@ bool CCleanup_imp::x_MergeDuplicateBioSources(CSeqdesc& sd1, CSeqdesc& sd2)
 
 void CCleanup_imp::x_CleanOrgNameStrings(COrgName &on)
 {
-    if (on.CanGetAttrib()) {
-        CleanVisString(on.SetAttrib());
-    }
-    if (on.CanGetLineage()) {
-        CleanVisString(on.SetLineage());
-    }
-    if (on.CanGetDiv()) {
-        CleanVisString(on.SetDiv());
-    }
+    CLEAN_STRING_MEMBER(on, Attrib);
+    CLEAN_STRING_MEMBER_JUNK(on, Lineage);
+    CLEAN_STRING_MEMBER_JUNK(on, Div);
     if (on.IsSetMod()) {
         NON_CONST_ITERATE(COrgName::TMod, modI, on.SetMod()) {
-            CleanVisString ((*modI)->SetSubname());
+            CleanString ((*modI)->SetSubname());
         }
-    }
-}
-
-
-void CCleanup_imp::x_ExtendedCleanStrings (COrg_ref &org)
-{
-    EXTENDED_CLEAN_STRING_MEMBER(org, Taxname);
-    EXTENDED_CLEAN_STRING_MEMBER(org, Common);
-    if (org.IsSetMod()) {
-        CleanVisStringList (org.SetMod());
-    }
-    if (org.IsSetSyn()) {
-        CleanVisStringList (org.SetSyn());
-    }
-    if (org.CanGetOrgname()) {
-        x_CleanOrgNameStrings(org.SetOrgname());
     }
 }
 
@@ -1102,14 +1080,14 @@ void CCleanup_imp::x_ExtendedCleanSubSourceList (CBioSource &bs)
         tmp.clear();
         NON_CONST_ITERATE (CBioSource::TSubtype, it, subtypes) {
             if ((*it)->CanGetAttrib()) {
-                CleanVisString((*it)->SetAttrib());
+                CleanString((*it)->SetAttrib());
             }
             int subtype = (*it)->GetSubtype();
             if (subtype != CSubSource::eSubtype_germline
                 && subtype != CSubSource::eSubtype_rearranged
                 && subtype != CSubSource::eSubtype_transgenic
                 && subtype != CSubSource::eSubtype_environmental_sample) {
-                CleanVisString((*it)->SetName());
+                CleanString((*it)->SetName());
                 if (!NStr::IsBlank((*it)->GetName())) {
                     tmp.push_back(*it);
                 }
@@ -1665,7 +1643,7 @@ void CCleanup_imp::x_Common (COrg_ref& host, const COrg_ref& guest, bool flag_ch
 
 // This was BioSourceCommon in toporg.c in the C Toolkit
 // If the BioSources are not identical for all of the parts in a segmented set, the following steps 
-// will be taken to create a ìcommonî BioSource descriptor:
+// will be taken to create a √¨common√Æ BioSource descriptor:
 // 1. If no BioSource descriptor exists on the segmented set, the first BioSource descriptor found 
 // on any part will be copied to the segmented set.
 // 2. For the following items, if the value for the BioSource descriptor on any part is set and 
@@ -1839,7 +1817,7 @@ bool CCleanup_imp::x_PromoteMergeableSource (CBioseq_set_Handle dst, const CBioS
 // with the BioSources from the parts, the BioSource descriptors on the parts will remain on the parts.
 // Different BioSources on Segmented Set Parts
 // If the BioSources are not identical for all of the parts in a segmented set, the following steps 
-// will be taken to create a ìcommonî BioSource descriptor:
+// will be taken to create a √¨common√Æ BioSource descriptor:
 // 1. If no BioSource descriptor exists on the segmented set, the first BioSource descriptor found 
 // on any part will be copied to the segmented set.
 // 2. For the following items, if the value for the BioSource descriptor on any part is set and 

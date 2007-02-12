@@ -272,7 +272,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     bool changed = false;
     // clean extra accessions
     if (block.IsSetExtra_accessions()) {
-        changed |= CleanVisStringList(block.SetExtra_accessions());
+        changed |= CleanStringContainer(block.SetExtra_accessions());
         if (block.GetExtra_accessions().size() == 0) {
             block.ResetExtra_accessions();
             changed = true;
@@ -281,7 +281,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
                 
     // clean keywords
     if (block.IsSetKeywords()) {
-        changed |= CleanVisStringList(block.SetKeywords());
+        changed |= CleanStringContainer(block.SetKeywords());
         if (block.GetKeywords().size() == 0) {
             block.ResetKeywords();
             changed = true;
@@ -291,7 +291,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     // clean source
     if (block.IsSetSource()) {
         string source = block.GetSource();
-        changed |= CleanVisString (source);
+        changed |= CleanString (source);
         if (NStr::IsBlank (source)) {
             block.ResetSource();
             changed = true;
@@ -302,7 +302,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     // clean origin
     if (block.IsSetOrigin()) {
         string origin = block.GetOrigin();
-        changed |= CleanVisString (origin);
+        changed |= CleanString (origin);
         if (NStr::IsBlank (origin)) {
             block.ResetOrigin();
             changed = true;
@@ -313,7 +313,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     //clean date
     if (block.IsSetDate()) {
         string date = block.GetDate();
-        changed |= CleanVisString (date);
+        changed |= CleanString (date);
         if (NStr::IsBlank (date)) {
             block.ResetDate();
             changed = true;
@@ -324,7 +324,7 @@ void CCleanup_imp::x_CleanGenbankBlockStrings (CGB_block& block)
     //clean div
     if (block.IsSetDiv()) {
         string div = block.GetDiv();
-        changed |= CleanVisString (div);
+        changed |= CleanString (div);
         if (NStr::IsBlank (div)) {
             block.ResetDiv();
             changed = true;
