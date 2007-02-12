@@ -213,7 +213,7 @@ private:
         p->SetName(field.GetName());
         p->SetValue(*v);
         
-        m_ReqOpts->Set().push_back(p);
+        x_AttachValue(p);
     }
     
     void x_SetOneParam(CBlast4Field & field, const char ** x)
@@ -225,7 +225,7 @@ private:
         p->SetName(field.GetName());
         p->SetValue(*v);
         
-        m_ReqOpts->Set().push_back(p);
+        x_AttachValue(p);
     }
     
     void x_SetOneParam(CBlast4Field & field, const bool * x)
@@ -237,7 +237,7 @@ private:
         p->SetName(field.GetName());
         p->SetValue(*v);
         
-        m_ReqOpts->Set().push_back(p);
+        x_AttachValue(p);
     }
     
     void x_SetOneParam(CBlast4Field & field, CRef<objects::CBlast4_cutoff> * x)
@@ -249,7 +249,7 @@ private:
         p->SetName(field.GetName());
         p->SetValue(*v);
         
-        m_ReqOpts->Set().push_back(p);
+        x_AttachValue(p);
     }
     
     void x_SetOneParam(CBlast4Field & field, const double * x)
@@ -261,7 +261,7 @@ private:
         p->SetName(field.GetName());
         p->SetValue(*v);
         
-        m_ReqOpts->Set().push_back(p);
+        x_AttachValue(p);
     }
     
     void x_SetOneParam(CBlast4Field & field, const Int8 * x)
@@ -273,7 +273,7 @@ private:
         p->SetName(field.GetName());
         p->SetValue(*v);
         
-        m_ReqOpts->Set().push_back(p);
+        x_AttachValue(p);
     }
     
     void x_SetOneParam(CBlast4Field & field, objects::EBlast4_strand_type * x)
@@ -284,6 +284,20 @@ private:
         CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
         p->SetName(field.GetName());
         p->SetValue(*v);
+        
+        x_AttachValue(p);
+    }
+    
+    void x_AttachValue(CRef<objects::CBlast4_parameter> p)
+    {
+        typedef objects::CBlast4_parameter TParam;
+        
+        NON_CONST_ITERATE(list< CRef<TParam> >, iter, m_ReqOpts->Set()) {
+            if ((**iter).GetName() == p->GetName()) {
+                (*iter) = p;
+                return;
+            }
+        }
         
         m_ReqOpts->Set().push_back(p);
     }
