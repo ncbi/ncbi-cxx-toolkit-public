@@ -191,6 +191,12 @@ public:
     {
         m_DefaultsMode = dmode;
     }
+
+    bool GetDefaultsMode()
+    {
+        return m_DefaultsMode;
+    }
+    
     
 private:
     //CRef<objects::CBlast4_queue_search_request> m_Req;
@@ -460,6 +466,22 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
             return;
         }
         
+    case eBlastOpt_MBTemplateLength:
+        x_SetParam(B4Param_MBTemplateLength, v);
+        return;
+        
+    case eBlastOpt_MBTemplateType:
+        x_SetParam(B4Param_MBTemplateType, v);
+        return;
+        
+    case eBlastOpt_GapExtnAlgorithm:
+        x_SetParam(B4Param_GapExtnAlgorithm, v);
+        return;
+        
+    case eBlastOpt_GapTracebackAlgorithm:
+        x_SetParam(B4Param_GapTracebackAlgorithm, v);
+        return;
+        
     default:
         break;
     }
@@ -605,6 +627,18 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
     case eBlastOpt_MaskAtHash:
         x_SetParam(B4Param_MaskAtHash, v);
         return;
+        
+/*  What about this???
+    case eBlastOpt_FullByteScan:
+        x_SetParam(B4Param_FullByteScan, v);
+        return;
+*/
+
+/* This is needed !!
+    case eBlastOpt_UngappedExtension:
+        x_SetParam(B4Param_UngappedExtension, v);
+        return;
+*/
         
     default:
         break;
@@ -1940,6 +1974,15 @@ void CBlastOptions::SetDefaultsMode(bool dmode)
     if (m_Remote) {
         m_Remote->SetDefaultsMode(dmode);
     }
+}
+
+bool CBlastOptions::GetDefaultsMode() const
+{
+    if (m_Remote) {
+        return m_Remote->GetDefaultsMode();
+    }
+    else
+        return false;
 }
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
