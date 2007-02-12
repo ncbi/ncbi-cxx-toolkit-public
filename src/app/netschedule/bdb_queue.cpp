@@ -3557,7 +3557,7 @@ CQueue::DoDeleteBatch(unsigned batch_size)
     CRef<SLockedQueue> q(x_GetLQueue());
     unsigned del_rec = q->DeleteBatch(batch_size);
     // monitor this
-    if (q->monitor.IsMonitorActive()) {
+    if (del_rec > 0 && q->monitor.IsMonitorActive()) {
         CTime tm(CTime::eCurrent);
         string msg = tm.AsString();
         msg += " CQueue::DeleteBatch: " +
