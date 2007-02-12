@@ -562,16 +562,13 @@ CJobStatusTracker::PendingIntersect(TNSBitVector* candidate_set)
 }
 
 
-void CJobStatusTracker::Validate(TNSBitVector* ids)
+void CJobStatusTracker::GetAliveJobs(TNSBitVector& ids)
 {
     CReadLockGuard guard(m_Lock);
-
-    TNSBitVector bvFilter;
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
         TNSBitVector& bv = *m_StatusStor[i];
-        bvFilter |= bv;
+        ids |= bv;
     }
-    *ids &= bvFilter;
 }
 
 

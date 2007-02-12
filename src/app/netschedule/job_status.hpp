@@ -125,7 +125,7 @@ public:
 
     /// Logical AND with statuses ORed cleans up a list from non-existing
     /// jobs
-    void Validate(TNSBitVector* ids);
+    void GetAliveJobs(TNSBitVector& ids);
 
     /// Return job id (job is taken out of the regular job matrix)
     /// 0 - no pending jobs

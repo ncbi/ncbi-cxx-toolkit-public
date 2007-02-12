@@ -239,20 +239,27 @@ void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 }
 
 
-void SLockedQueue::AddTags(TNSTagList& tags, unsigned job_id)
+void SLockedQueue::AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id)
 {
-    CFastMutexGuard guard(m_TagLock);
     ITERATE(TNSTagList, it, tags) {
         TNSBitVector bv;
-        pair<TTagMap::iterator, bool> tag_map_it =
-            m_TagMap.insert(TTagMap::value_type((*it), bv));
-        if (tag_map_it.second) {
-            // Try to read bitvector from db
-            m_TagDb.key = it->first;
-            m_TagDb.val = it->second;
-            m_TagDb.ReadVector(&(tag_map_it.first)->second);
-        }
+        pair<TNSTagMap::iterator, bool> tag_map_it =
+            tag_map.insert(TNSTagMap::value_type((*it), bv));
         (tag_map_it.first)->second.set(job_id);
+    }
+}
+
+
+void SLockedQueue::AddTags(TNSTagMap& tag_map)
+{
+    CWriteLockGuard guard(m_TagLock);
+    ITERATE(TNSTagMap, it, tag_map) {
+        m_TagDb.key = it->first.first;
+        m_TagDb.val = it->first.second;
+        TNSBitVector bv;
+        m_TagDb.ReadVector(&bv);
+        bv |= it->second;
+        m_TagDb.WriteVector(bv, STagDB::eCompact);
     }
 }
 
@@ -261,7 +268,7 @@ void SLockedQueue::ReadTag(const string& key,
                            const string& val,
                            TBuffer* buf)
 {
-    CFastMutexGuard guard(m_TagLock);
+    // Guarded by m_TagLock through GetTagLock()
     CBDB_Transaction trans(*m_TagDb.GetEnv(), 
                         CBDB_Transaction::eTransASync,
                         CBDB_Transaction::eNoAssociation);
@@ -276,7 +283,7 @@ void SLockedQueue::ReadTag(const string& key,
 
 void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
 {
-    CFastMutexGuard guard(m_TagLock);
+    // Guarded by m_TagLock through GetTagLock()
     CBDB_Transaction trans(*m_TagDb.GetEnv(), 
                         CBDB_Transaction::eTransASync,
                         CBDB_Transaction::eNoAssociation);
@@ -294,40 +301,11 @@ void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
 }
 
 
-void SLockedQueue::FlushTags(void)
-{
-    CFastMutexGuard guard(m_TagLock);
-    x_FlushTags();
-}
-
-
-void SLockedQueue::ClearTags(void)
-{
-    CFastMutexGuard guard(m_TagLock);
-    m_TagMap.clear();
-    // TODO: iterate over tags database, removing every entry
-    // Not necessary, because background purge process will clean up
-    // tags db also.
-}
-
-
-void SLockedQueue::x_FlushTags(void)
-{
-    ITERATE(TTagMap, it, m_TagMap) {
-        m_TagDb.key = it->first.first;
-        m_TagDb.val = it->first.second;
-        m_TagDb.WriteVector(it->second, STagDB::eCompact);
-    }
-    m_TagMap.clear();
-}
-
-
 void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
                                 const TNSBitVector& ids)
 {
-    CFastMutexGuard guard(m_TagLock);
+    CWriteLockGuard guard(m_TagLock);
     m_TagDb.SetTransaction(&trans);
-    x_FlushTags();
     CBDB_FileCursor cur(m_TagDb, trans,
                         CBDB_FileCursor::eReadModifyUpdate);
     // iterate over tags database, deleting ids from every entry

@@ -1521,6 +1521,8 @@ string CQueue::ExecQuery(const string& query, const string& action,
     //            "\" Fields: \"" << fields << "\"" << NcbiEndl;
 
     CRef<SLockedQueue> q(x_GetLQueue());
+    TNSBitVector alive_jobs;
+    q->status_tracker.GetAliveJobs(alive_jobs);
     CQueryParseTree qtree;
     try {
         qtree.Parse(query.c_str());
@@ -1549,7 +1551,10 @@ string CQueue::ExecQuery(const string& query, const string& action,
     qexec.AddFunc(CQueryParseNode::eEQ,
         new CQueryFunctionEQ(q));
 
-    qexec.Evaluate(qtree);
+    {{
+        CReadLockGuard(q->GetTagLock());
+        qexec.Evaluate(qtree);
+    }}
 
     IQueryParseUserObject* uo = top->GetValue().GetUserObject();
     if (!uo)
@@ -1571,7 +1576,7 @@ string CQueue::ExecQuery(const string& query, const string& action,
         }
     }
     // Filter against status matrix
-    q->status_tracker.Validate(bv.get());
+    *(bv.get()) &= alive_jobs;
     if (action == "COUNT") {
         return NStr::IntToString(bv->count());
     } else if (action == "DROP") {
@@ -1671,8 +1676,9 @@ CQueue::Submit(SNS_SubmitRecord* rec,
 
         // update tags
         q->SetTagDbTransaction(&trans);
-        q->AddTags(rec->tags, job_id);
-        q->FlushTags();
+        TNSTagMap tag_map;
+        q->AppendTags(tag_map, rec->tags, job_id);
+        q->AddTags(tag_map);
     }}
 
     trans.Commit();
@@ -1738,6 +1744,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
+    TNSTagMap tag_map;
 
     {{
         CFastMutexGuard guard(q->lock);
@@ -1753,7 +1760,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
             ++job_id_cnt;
             db.Insert();
             // update tags
-            q->AddTags(it->tags, it->job_id);
+            q->AppendTags(tag_map, it->tags, it->job_id);
         }
 
         // Store the affinity index
@@ -1768,7 +1775,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
             }
         }
     }}
-    q->FlushTags();
+    q->AddTags(tag_map);
     trans.Commit();
 
     q->status_tracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
@@ -3651,7 +3658,6 @@ void CQueue::Truncate(void)
         CFastMutexGuard db_guard(q->lock);
         CFastMutexGuard jtd_guard(q->m_JobsToDeleteLock);
         CWriteLockGuard rtl_guard(q->rtl_lock);
-        q->ClearTags();
         q->status_tracker.ClearAll(&q->m_JobsToDelete);
         q->run_time_line->ReInit(0);
     }}

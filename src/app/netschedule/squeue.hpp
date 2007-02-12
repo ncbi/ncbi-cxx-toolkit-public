@@ -198,6 +198,8 @@ struct SQueueStatictics
 
 typedef pair<string, string> TNSTag;
 typedef list<TNSTag> TNSTagList;
+// key -> value -> bitvector of job ids
+typedef map<TNSTag, TNSBitVector> TNSTagMap;
 
 class CJobTimeLine;
 class CNSLB_Coordinator;
@@ -234,7 +236,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     CFastMutex                   aff_map_lock;     ///< worker_aff_map lck
 
     STagDB                       m_TagDb;
-    CFastMutex                   m_TagLock;
+    CRWLock                      m_TagLock;
 
     // queue parameters
     int                          timeout;        ///< Result exp. timeout
@@ -306,11 +308,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     /// its lock
     CFastMutex                   m_JobsToDeleteLock;
 
-    // key -> value -> bitvector of job ids
-    // guarded by m_TagLock
-    typedef map<TNSTag, TNSBitVector> TTagMap;
-    TTagMap                      m_TagMap;
-
 //public:
     // Constructor/destructor
     SLockedQueue(const string& queue_name,
@@ -330,15 +327,15 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     // Tags methods
     typedef vector<unsigned char> TBuffer;
     void SetTagDbTransaction(CBDB_Transaction* trans);
-    void AddTags(TNSTagList& tags, unsigned job_id);
+    static void AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id);
+    void AddTags(TNSTagMap& tag_map);
     void ReadTag(const string& key, const string& val,
                  TBuffer* buf);
     void ReadTags(const string& key, TNSBitVector* bv);
-
-
     void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
-    void FlushTags(void);
-    void ClearTags(void);
+//    void FlushTags(void);
+//    void ClearTags(void);
+    CRWLock& GetTagLock() { return m_TagLock; }
 
     unsigned DeleteBatch(unsigned batch_size);
 
@@ -368,9 +365,6 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     unsigned m_Average[eStatNumEvents];
     void CountEvent(TStatEvent);
     double GetAverage(TStatEvent);
-
-private:
-    void x_FlushTags();
 };
 
 
