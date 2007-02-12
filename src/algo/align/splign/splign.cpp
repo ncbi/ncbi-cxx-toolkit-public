@@ -922,6 +922,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
 
             const char* p0 = &m_mrna[qmin] + s.m_box[0];
             const char* p1 = &m_mrna[qmin] + s.m_box[1] + 1;
+            const size_t len_chars (p1 - p0);
             size_t count = 0;
             for(const char* pc = p0; pc != p1; ++pc) {
                 if(*pc == 'A') ++count;
@@ -930,10 +931,14 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             double min_a_content = 0.799;
             // also check splices
             if(s.m_exon && j > 0 && m_segments[j-1].m_exon) {
+
                 bool consensus = TSegment
                    ::s_IsConsensusSplice(m_segments[j-1].GetDonor(), s.GetAcceptor());
-                if(!consensus) {
+                if(!consensus || len_chars <= 6 ) {
                     min_a_content = 0.599;
+                }
+                if(len_chars < 3) {
+                    min_a_content = 0.49;
                 }
             }
 
@@ -942,7 +947,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             }
         
 
-            if(double(count)/(p1 - p0) < min_a_content) {
+            if(double(count)/len_chars < min_a_content) {
                 if(s.m_exon) break;
             }
             else {
