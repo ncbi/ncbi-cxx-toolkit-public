@@ -34,7 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <util/utf8.hpp>
-#include <stdio.h>
+#include <util/sgml_entity.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -46,6 +46,8 @@ class CTestUtf8 : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
+    void TestUtf8(void);
+    void TestSgml(void);
 };
 
 
@@ -63,6 +65,14 @@ void CTestUtf8::Init(void)
 // Run test
 
 int CTestUtf8::Run(void)
+{
+    TestUtf8();
+    TestSgml();
+    NcbiCout << NcbiEndl << NcbiEndl;
+    return 0;
+}
+
+void CTestUtf8::TestUtf8(void)
 {
     const char* sTest[]={
           "Archiv für Gynäkologie",
@@ -84,46 +94,70 @@ int CTestUtf8::Run(void)
     // Start passes
 
     //-----------------------------------
-    printf("\nUTF -> Ascii\n\n");
+    NcbiCout << "\nUTF -> Ascii\n" << NcbiEndl;
 
     for (size_t i=0; i<MAX_TEST_NUM; i++)
     {
         sRes=utf8::StringToAscii(sTest[i]);
-        sRes+='\0';
-        printf("%s\t -> %s\n",sTest[i],sRes.data());
+        NcbiCout << sTest[i] << "\t -> " << sRes << NcbiEndl;
     }
 
     //-----------------------------------
-    printf("\nUTF -> Chars\n\n");
+    NcbiCout << "\nUTF -> Chars\n" << NcbiEndl;
 
     for (size_t i=0; i<MAX_TEST_NUM; i++)
     {
         s=sTest[i]; 
-        printf("%s\n\n",s.data());
+        NcbiCout << s << "\n" << NcbiEndl;
 
         for (size_t j=0; j<s.size(); )
         {
             ch=utf8::StringToChar(s.data()+j, &len, false, &stat);
-            printf("%c (len = %i)\t - result %c, status %i\n",\
-                   s.data()[j],len,ch,stat);
+            NcbiCout << s[j] << " (len = "<<len<<")\t - result "
+                     << ch << ", status " << stat << NcbiEndl;
             j+=len;
         }
-        printf("----\n");
+        NcbiCout << "----" << NcbiEndl;
     }
 
     //-----------------------------------
-    printf("\nUTF -> Vector (last string)\n\n");
+    NcbiCout << "\nUTF -> Vector (last string)\n" << NcbiEndl;
 
     v=utf8::StringToVector(sTest[4]);    
     for (size_t i=0; i<v.size(); i++)
     {
-        printf("%lu ",v[i]);
+        NcbiCout << v[i] << ' ';
     }
 
     //-----------------------------------
+}
 
-    printf("\n\n");
-    return 0;
+
+void CTestUtf8::TestSgml(void)
+{
+    const size_t MAX_TEST_NUM = 4;
+    const char* sTest[MAX_TEST_NUM]={
+        "&Agr;&Bgr;&Dgr;&EEgr;&Egr;&Ggr;&Igr;&KHgr;&Kgr;&zgr;",
+        ";&Agr;;&Bgr;;&Dgr;;&EEgr;;&Egr;;&Ggr;;&Igr;;&KHgr;;&Kgr;;&zgr;;",
+        ";&Agr;&&Bgr;&&Dgr;&&EEgr;&&Egr;&&Ggr;&&Igr;&&KHgr;&&Kgr;&&zgr;&",
+        ";&Agr;&;&Bgr;&;&Dgr;&;&EEgr;&;&Egr;&;&Ggr;&;&Igr;&;&KHgr;&;&Kgr;&;&zgr;&;"
+    };
+    const char* sResult[MAX_TEST_NUM]={
+        "<Alpha><Beta><Delta><Eta><Epsilon><Gamma><Iota><Chi><Kappa><zeta>",
+        ";<Alpha>;<Beta>;<Delta>;<Eta>;<Epsilon>;<Gamma>;<Iota>;<Chi>;<Kappa>;<zeta>;",
+        ";<Alpha>&<Beta>&<Delta>&<Eta>&<Epsilon>&<Gamma>&<Iota>&<Chi>&<Kappa>&<zeta>&",
+        ";<Alpha>&;<Beta>&;<Delta>&;<Eta>&;<Epsilon>&;<Gamma>&;<Iota>&;<Chi>&;<Kappa>&;<zeta>&;"
+    };
+
+    //-----------------------------------
+    NcbiCout << "\nSGML -> Ascii\n" << NcbiEndl;
+
+    for (size_t i=0; i<MAX_TEST_NUM; i++)
+    {
+        string sRes = Sgml2Ascii(sTest[i]);
+        NcbiCout << sTest[i] << " -> " << sRes << NcbiEndl;
+        _ASSERT(sRes == sResult[i]);
+    }
 }
 
 
