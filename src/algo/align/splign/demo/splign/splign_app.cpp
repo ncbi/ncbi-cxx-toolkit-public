@@ -78,10 +78,10 @@ void CSplignApp::Init()
 {
     HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-    SetVersion(CVersionInfo(1, 21, 0, "Splign"));  
+    SetVersion(CVersionInfo(1, 22, 0, "Splign"));  
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-    string program_name ("Splign v.1.21");
+    string program_name ("Splign v.1.22");
 
 #ifdef GENOME_PIPELINE
     program_name += 'p';
@@ -859,10 +859,11 @@ int CSplignApp::Run()
         static_cast<CSplicedAligner*> (new CSplicedAligner16):
         static_cast<CSplicedAligner*> (new CSplicedAligner32)  );
 
-    aligner->SetWi(0, args["Wi0"].AsInteger());
-    aligner->SetWi(1, args["Wi1"].AsInteger());
-    aligner->SetWi(2, args["Wi2"].AsInteger());
-    aligner->SetWi(3, args["Wi3"].AsInteger());
+    for(size_t m = 0; m < aligner->GetSpliceTypeCount(); ++m) {
+        const string param_name ("Wi" + NStr::IntToString(m));
+        aligner->SetWi(m, args[param_name].AsInteger());
+    }
+
 
 #if GENOME_PIPELINE
     aligner->SetWm(args["Wm"].AsInteger());
