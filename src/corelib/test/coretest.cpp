@@ -699,12 +699,10 @@ static void TestException_AuxTrace(void)
             // Sigh.  WorkShop 5.3 is stupid, and complains about
             // const char* vs. const char[15] without this cast.
             THROW0_TRACE((const char*) "Throw a string");
-        } catch (const char* _DEBUG_ARG(e)) {
-            _TRACE("THROW0_TRACE: " << e);
+        } catch (const char* /*e*/) {
             RETHROW_TRACE;
         }
-    } catch (const char* _DEBUG_ARG(e)) {
-        _TRACE("RETHROW_TRACE: " << e);
+    } catch (const char* /*e*/) {
     }
 
     try {
