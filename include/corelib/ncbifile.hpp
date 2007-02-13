@@ -1430,6 +1430,7 @@ public:
 /// CFileUtil --
 ///
 /// Utility functions.
+///
 /// Throws an exceptions on error.
 
 class NCBI_XNCBI_EXPORT CFileUtil
@@ -1527,7 +1528,7 @@ public:
     ///   Pointer to structure which receives file system information.
     static void GetFileSystemInfo(const string& path, SFileSystemInfo* info);
 
-    /// Get disk space information.
+    /// Get free disk space information.
     ///
     /// Get information for the user associated with the calling thread only.
     /// If per-user quotas are in use, that some returned values may be less
@@ -1538,10 +1539,10 @@ public:
     /// @return
     ///   The amount of free space.
     /// @sa 
-    ///   GetFileSystemInfo, GetDiskInformation
+    ///   GetFileSystemInfo, GetTotalDiskSpace
     static Uint8 GetFreeDiskSpace(const string& path);
 
-    /// Get disk space information.
+    /// Get total disk space information.
     ///
     /// Get information for the user associated with the calling thread only.
     /// If per-user quotas are in use, that some returned values may be less
@@ -1550,9 +1551,9 @@ public:
     ///   String that specifies file system for which information
     ///   is to be returned. 
     /// @return
-    ///   The amount of free space.
+    ///   The amount of total disk space.
     /// @sa 
-    ///   GetFileSystemInfo, GetDiskInformation
+    ///   GetFileSystemInfo, GetFreeDiskSpace
     static Uint8 GetTotalDiskSpace(const string& path);
 };
 
