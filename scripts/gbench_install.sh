@@ -27,7 +27,7 @@ for t in algo doc view; do
    done
 done
 
-BINS='gbench-bin gbench_plugin_scan gbench_monitor gbench_feedback_agent'
+BINS='gbench-bin gbench_plugin_scan gbench_monitor gbench_feedback_agent gbench_cache_agent'
 
 Usage()
 {
