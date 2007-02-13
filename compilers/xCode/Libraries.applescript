@@ -201,7 +201,7 @@ property gbench_svc_cli : {name:"gbench_svc_cli", path:"gui:core", inc:{"gbench_
 
 property xgbplugin : {name:"xgbplugin", path:"gui:core", inc:{"plugin__.cpp", "plugin___.cpp"}, asn1:true, asn1Name:"plugin"}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
-property gui_objutils : {name:"gui_objutils", path:"gui:objutils"}
+property gui_objutils : {name:"gui_objutils", path:"gui:objutils", exc:{"fingp_seqfeat.cpp", "fingp_seqid.cpp", "fingp_seqloc.cpp"}}
 property gui__config : {name:"gui__config", path:"gui:config"}
 property gui_opengl : {name:"gui_opengl", path:"gui:opengl"}
 property gui__graph : {name:"gui__graph", path:"gui:graph"}
@@ -255,7 +255,7 @@ property gui_algo_validator : {name:"gui_algo_validator", path:"gui:plugins:algo
 property gui_algo_basic : {name:"gui_algo_basic", path:"gui:plugins:algo:basic"}
 property gui_algo_cn3d : {name:"gui_algo_cn3d", path:"gui:plugins:algo:cn3d"}
 property gui_algo_external : {name:"gui_algo_external", path:"gui:plugins:algo:external"}
-property gui_algo_external_out : {name:"gui_algo_external_out", path:"gui:plugins:algo:basic", inc:{"output_dlg.cpp"}} -- a shared dialog from other plugin
+property gui_algo_external_out : {name:"gui_algo_external_out", path:"gui:plugins:algo:basic"}
 property gui_algo_gnomon : {name:"gui_algo_gnomon", path:"gui:plugins:algo:gnomon"}
 property gui_algo_linkout : {name:"gui_algo_linkout", path:"gui:plugins:algo:linkout"}
 property gui_algo_phylo : {name:"gui_algo_phylo", path:"gui:plugins:algo:phylo"}
@@ -322,7 +322,7 @@ property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core g
 property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_cdd ncbi_xloader_genbank ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
 
 property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb ncbi_xloader_genbank", bundle:true, req:true}
-property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
+property algo_external : {name:"algo_external", libs:{gui_algo_external}, dep:"gui_core gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
 property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", bundle:true, req:true}
 property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_xcache_bdb gui_dialogs gui_widgets gui_widgets_seq ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache ncbi_xcache_netcache" & FLTK_LIBS, bundle:true, req:true}
 property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_web ncbi_seq ncbi_seqext", bundle:true, req:true}
