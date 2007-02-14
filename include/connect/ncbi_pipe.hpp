@@ -352,27 +352,79 @@ public:
     ///   Open, Close, CProcess class
     TProcessHandle GetProcessHandle(void) const;
 
+
+    /// Callback interface for ExecWait method
+    ///
+    /// @sa ExecWait
     class NCBI_XCONNECT_EXPORT IProcessWatcher 
     {
     public:
+        /// an action which ExecWait method should take 
+        /// after Watch method has returned
         enum EAction {
-            eContinue,
-            eStop
+            eContinue, ///< Continue running
+            eStop      ///< Kill the chiled process and exit
         };
         virtual ~IProcessWatcher();
-        virtual EAction Watch(TProcessHandle) = 0;
+        
+        
+        /// This method is getting called periodically during 
+        /// the process execution by ExecWait method.
+        ///
+        /// @param pid
+        ///   Process Id to monitor to
+        /// @return
+        ///   eStop if the process should be killed, eContinue otherwise
+        virtual EAction Watch(TProcessHandle pid) = 0;
     };
 
+    /// ExecWait return code
     enum EFinish {
-        eDone,
-        eCanceled
+        eDone,     ///< Process finished normally
+        eCanceled  ///< Watcher requested process termination
     };
+
+    /// Execute a command with the vector of arguments and wait for its
+    /// completion.
+    /// 
+    /// @param cmd
+    ///   Command name to execute.
+    ///   Be aware if the command contains relative path and 'current_dir'
+    ///   parameter is specified. Because on moment of execution the current
+    ///   directory is undefined, and can be still the same as in the parent
+    ///   process or already be changed to 'current_dir'. So, using absolute
+    ///   path is recommended in this case.
+    /// @param args
+    ///   Vector of string arguments for the command (argv[0] excluded).
+    /// @param in
+    ///   Stream this data which will be sent to the child process's stdin
+    /// @param out
+    ///   Stream where the child process's stdout will be written to
+    /// @param err
+    ///   Stream where the child process's stderr will be written to
+    /// @param exit_code
+    ///   The child process's exit_code
+    /// @current_dir
+    ///   Current directory for the new process.
+    ///   The string must be an absolute path. On MS Windows it should
+    ///   also contains drive letter. If this parameter is empty, the new
+    ///   process will have the same current directory as the calling process.
+    /// @param env
+    ///   Pointer to vector with environment variables which will be used
+    ///   instead of current environment. Last value in an array must be NULL.
+    /// @param watcher
+    ///   Call back object to monitor the child process execution status
+    /// @return 
+    ///   eDone if process has finished normally and eCanceled if a watcher 
+    ///   decided to stop it.
+    ///
+    /// @sa IProcessWatcher
     static EFinish ExecWait(const string&         cmd,
                             const vector<string>& args,
                             CNcbiIstream&         in,
                             CNcbiOstream&         out,
                             CNcbiOstream&         err,
-                            int&                  exit_value,
+                            int&                  exit_code,
                             const string&         current_dir = kEmptyStr,
                             const char* const     env[]       = 0,
                             IProcessWatcher*      watcher     = 0);
