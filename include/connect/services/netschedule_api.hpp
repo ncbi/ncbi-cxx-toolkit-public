@@ -715,7 +715,6 @@ inline CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
 inline CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
 {
     DiscoverLowPriorityServers(true);
-    SetConnMode(INetServiceAPI::eKeepConnection);
     return CNetScheduleAdmin(*this);
 }
 

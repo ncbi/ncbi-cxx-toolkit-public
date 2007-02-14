@@ -137,9 +137,10 @@ void CNetScheduleAdmin::DumpQueue(ISink& sink) const
     string cmd = "DUMP\r\n";        
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
-        it->WriteStr(cmd);
-        m_API->PrintServerOut(*it, os);
+        CNetSrvConnectorHolder ch = *it;
+        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(ch));
+        ch->WriteStr(cmd);
+        m_API->PrintServerOut(ch, os);
     }
 }
 
@@ -149,9 +150,10 @@ void CNetScheduleAdmin::PrintQueue(ISink& sink, CNetScheduleAPI::EJobStatus stat
     string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status) + "\r\n";        
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
-        it->WriteStr(cmd);
-        m_API->PrintServerOut(*it, os);
+        CNetSrvConnectorHolder ch = *it;
+        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(ch));
+        ch->WriteStr(cmd);
+        m_API->PrintServerOut(ch, os);
     }
 }
 
@@ -167,9 +169,10 @@ void CNetScheduleAdmin::GetServerStatistics(ISink& sink,
     cmd += "\r\n";
     for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
         it != m_API->GetPoll().end(); ++it) {
-        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
-        it->WriteStr(cmd);
-        m_API->PrintServerOut(*it, os);
+        CNetSrvConnectorHolder ch = *it;
+        CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(ch));
+        ch->WriteStr(cmd);
+        m_API->PrintServerOut(ch, os);
     }
 }
 
