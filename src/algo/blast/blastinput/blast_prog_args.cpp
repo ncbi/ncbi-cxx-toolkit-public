@@ -820,11 +820,6 @@ CMegablastArgs::SetOptions(const CArgs& args)
     if (args[ARG_MAX_HSP])
         opt.SetMaxNumHspPerSequence(args[ARG_MAX_HSP].AsInteger());
 
-    if (args[ARG_DISCONTIG_STRIDE1] &&
-        args[ARG_DISCONTIG_STRIDE1].AsBoolean() == false) {
-        opt.SetFullByteScan(true);
-    }
-
     if (args[ARG_NO_GREEDY] && args[ARG_NO_GREEDY].AsBoolean() == true) {
         opt.SetGapExtnAlgorithm(eDynProgScoreOnly);
         opt.SetGapTracebackAlgorithm(eDynProgTbck);
