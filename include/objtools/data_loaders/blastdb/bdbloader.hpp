@@ -87,6 +87,12 @@ public:
         const EDbType dbtype = eUnknown,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        CRef<CSeqDB> db_handle,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(CConstRef<CSeqDB> db_handle);
     static string GetLoaderNameFromArgs(const SBlastDbParam& param);
     static string GetLoaderNameFromArgs(const string& dbname = "nr",
                                         const EDbType dbtype = eUnknown)
@@ -149,9 +155,14 @@ private:
     
     typedef CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam> TMaker;
     friend class CParamLoaderMaker<CBlastDbDataLoader, SBlastDbParam>;
+
+    typedef CParamLoaderMaker<CBlastDbDataLoader, CRef<CSeqDB> > TRecycler;
+    friend class CParamLoaderMaker<CBlastDbDataLoader, CRef<CSeqDB> >;
     
     CBlastDbDataLoader(const string&        loader_name,
                        const SBlastDbParam& param);
+    CBlastDbDataLoader(const string&        loader_name,
+                       CRef<CSeqDB>         db_handle);
     
     /// Prevent automatic copy constructor generation
     CBlastDbDataLoader(const CBlastDbDataLoader &);
