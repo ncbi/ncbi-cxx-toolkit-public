@@ -353,6 +353,21 @@ public:
                        CBDB_RawFile::EReallocMode allow_realloc,
                        CBDB_Transaction* trans = 0);
 
+    /// Create stream oriented reader
+    /// @returns NULL if BLOB not found
+    ///
+    /// This method does NOT block the specified ID from concurrent access
+    /// for the life of IReader. The nature of BDB IReader is that each Read
+    /// maps into BDB get, so somebody can delete the BLOB between IReader calls.
+    /// This potential race should be taken into account in MT concurrent 
+    /// application.
+    ///
+    /// Caller is responsible for deletion.
+    ///
+    IReader* CreateReader(unsigned          id,
+                          CBDB_Transaction* trans = 0);
+
+
     /// Get size of the BLOB
     ///
     /// @note Price of this operation is almost the same as getting
@@ -369,7 +384,8 @@ public:
 						                        CBDB_RawFile::eThrowOnError,
                         CBDB_Transaction* trans = 0);
 
-
+    /// Reclaim unused memory 
+    void FreeUnusedMem();
 protected:
     /// Close volumes without saving or doing anything with id demux
     void CloseVolumes();
@@ -563,6 +579,41 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned          id,
         found = m_IdDeMux->SetCoordinatesFast(id, coord, false);
     }}
 
+}
+
+template<class TBV, class TObjDeMux, class TL>
+IReader* 
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CreateReader(unsigned          id,
+                                                      CBDB_Transaction* trans)
+{
+    unsigned coord[2];
+    bool found;
+    {{
+        CReadLockGuard lg(m_IdDeMuxLock);
+        found = m_IdDeMux->GetCoordinatesFast(id, coord);
+    }}
+    if (!found) {
+        return 0;
+    }
+    SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
+    {{
+        TLockGuard lg(*(dbp.lock));
+        if (trans) {
+            dbp.db->SetTransaction(trans);
+        }
+        dbp.db->id = id;
+        if (dbp.db->Fetch() != eBDB_Ok) {
+            return 0;
+        }
+        return dbp.db->CreateReader();
+    }}
+}
+
+template<class TBV, class TObjDeMux, class TL>
+void CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::FreeUnusedMem()
+{
+   CWriteLockGuard lg(m_IdDeMuxLock);
+   m_IdDeMux->FreeUnusedMem();
 }
 
 

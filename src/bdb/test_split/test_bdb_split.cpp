@@ -127,6 +127,8 @@ int CBDB_SplitTest::Run(void)
         split_store.UpdateInsert(3, buf_small, 256);
         split_store.UpdateInsert(4, buf_large, 1024 * 1024);
 
+        split_store.FreeUnusedMem();
+
         split_store.Save();
         }}
 
@@ -187,27 +189,3 @@ int main(int argc, const char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.5  2006/11/30 16:22:13  vasilche
- * Fixed for new API.
- *
- * Revision 1.4  2006/11/30 12:42:09  dicuccio
- * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
- * vector<unsigned char>
- *
- * Revision 1.3  2006/05/02 20:14:53  kuznets
- * Fixed misprint
- *
- * Revision 1.2  2006/04/03 13:15:27  kuznets
- * +test for ReadRealloc()
- *
- * Revision 1.1  2006/03/29 16:59:27  kuznets
- * Moving bdb split test to a separate directory
- *
- * Revision 1.1  2006/03/28 16:51:55  kuznets
- * intial revision
- *
- * ===========================================================================
- */
