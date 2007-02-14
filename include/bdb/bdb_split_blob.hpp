@@ -47,6 +47,7 @@
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_bv_store.hpp>
 #include <bdb/bdb_cursor.hpp>
+#include <bdb/bdb_trans.hpp>
 
 #include <util/id_mux.hpp>
 
@@ -299,7 +300,7 @@ public:
     /// If you modified storage (like added new BLOBs to the storage)
     /// you MUST call save; otherwise some disposition information is lost.
     ///
-    void Save();
+    void Save(CBDB_Transaction* trans=0);
 
 
     void SetVolumeCacheSize(unsigned int cache_size) 
@@ -322,19 +323,23 @@ public:
     /// @param id      insertion key
     /// @param data    buffer pointer
     /// @param size    LOB data size in bytes
+    /// @param trans   BDB transaction
     ///
     EBDB_ErrCode Insert(unsigned  id, 
-                        const void* data, size_t size);
+                        const void* data, size_t size,
+                        CBDB_Transaction* trans = 0);
 
     /// Update or insert BLOB
     EBDB_ErrCode UpdateInsert(unsigned id, 
-                              const void* data, size_t size);
+                              const void* data, size_t size,
+                              CBDB_Transaction* trans = 0);
 
     /// Read BLOB into vector. 
     /// If BLOB does not fit, method resizes the vector to accomodate.
     /// 
     EBDB_ErrCode ReadRealloc(unsigned id, 
-	                         CBDB_RawFile::TBuffer& buffer);
+	                         CBDB_RawFile::TBuffer& buffer,
+                             CBDB_Transaction* trans = 0);
 
 
     /// Fetch LOB record directly into the provided '*buf'.
@@ -345,7 +350,8 @@ public:
     EBDB_ErrCode Fetch(unsigned     id, 
                        void**       buf, 
                        size_t       buf_size, 
-                       CBDB_RawFile::EReallocMode allow_realloc);
+                       CBDB_RawFile::EReallocMode allow_realloc,
+                       CBDB_Transaction* trans = 0);
 
     /// Get size of the BLOB
     ///
@@ -354,12 +360,14 @@ public:
     /// hoping it fits in the buffer and resizing the buffer on exception.
     ///
     EBDB_ErrCode BlobSize(unsigned   id, 
-                          size_t*    blob_size);
+                          size_t*    blob_size,
+                          CBDB_Transaction* trans = 0);
 
     /// Delete BLOB
     EBDB_ErrCode Delete(unsigned id, 
 	                    CBDB_RawFile::EIgnoreError on_error = 
-						                        CBDB_RawFile::eThrowOnError);
+						                        CBDB_RawFile::eThrowOnError,
+                        CBDB_Transaction* trans = 0);
 
 
 protected:
@@ -369,7 +377,9 @@ protected:
     void LoadIdDeMux(TIdDeMux& de_mux, TDeMuxStore& dict_file);
 
     /// Store id demux (projection vectors) into the database file
-    void SaveIdDeMux(const TIdDeMux& de_mux, TDeMuxStore& dict_file);
+    void SaveIdDeMux(const TIdDeMux&    de_mux, 
+                     TDeMuxStore&       dict_file,
+                     CBDB_Transaction*  trans);
 
     /// Select preferred page size for the specified slice
     unsigned GetPageSize(unsigned splice) const;
@@ -468,9 +478,10 @@ void CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::CloseVolumes()
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Insert(unsigned int id, 
-                                               const void*  data, 
-                                               size_t       size)
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Insert(unsigned int     id, 
+                                               const void*       data, 
+                                               size_t            size,
+                                               CBDB_Transaction* trans)
 {
     unsigned coord[2];
     {{
@@ -486,6 +497,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Insert(unsigned int id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
+        if (trans) {
+            dbp.db->SetTransaction(trans);
+        }
         dbp.db->id = id;
         return dbp.db->Insert(data, size);
     }}
@@ -493,9 +507,10 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Insert(unsigned int id,
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int id, 
-                                                     const void*  data, 
-                                                     size_t       size)
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int     id, 
+                                                     const void*       data, 
+                                                     size_t            size,
+                                                     CBDB_Transaction* trans)
 {
     unsigned coord[2];
     bool found;
@@ -504,11 +519,14 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int id,
         found = m_IdDeMux->GetCoordinatesFast(id, coord);
     }}
     if (!found) {
-        return Insert(id, data, size);
+        return Insert(id, data, size, trans);
     }
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
+        if (trans) {
+            dbp.db->SetTransaction(trans);
+        }
         dbp.db->id = id;
         return dbp.db->UpdateInsert(data, size);
     }}
@@ -516,8 +534,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::UpdateInsert(unsigned int id,
 
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
-CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned     id, 
-                                               CBDB_RawFile::EIgnoreError on_error)
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned          id, 
+                                      CBDB_RawFile::EIgnoreError  on_error,
+                                               CBDB_Transaction*  trans)
 {
     unsigned coord[2];
     bool found;
@@ -531,9 +550,19 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Delete(unsigned     id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
+        if (trans) {
+            dbp.db.SetTransaction(trans);
+        }
         dbp.db->id = id;
         return dbp.db->Delete(on_error);
     }}
+
+    // clear coordinate mapping
+    {{
+        CWriteLockGuard lg(m_IdDeMuxLock);
+        found = m_IdDeMux->SetCoordinatesFast(id, coord, false);
+    }}
+
 }
 
 
@@ -542,7 +571,8 @@ EBDB_ErrCode
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Fetch(unsigned     id, 
                                               void**       buf, 
                                               size_t       buf_size, 
-                               CBDB_RawFile::EReallocMode allow_realloc)
+                               CBDB_RawFile::EReallocMode  allow_realloc,
+                               CBDB_Transaction*           trans)
 {
     unsigned coord[2];
     bool found;
@@ -556,6 +586,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Fetch(unsigned     id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
+        if (trans) {
+            dbp.db->SetTransaction(trans);
+        }
         dbp.db->id = id;
         return dbp.db->Fetch(buf, buf_size, allow_realloc);
     }}
@@ -565,7 +598,8 @@ template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(
                                             unsigned               id,
-                                            CBDB_RawFile::TBuffer& buffer)
+                                            CBDB_RawFile::TBuffer& buffer,
+                                            CBDB_Transaction*      trans)
 {
     unsigned coord[2];
     bool found;
@@ -579,6 +613,10 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
+
+        if (trans) {
+            dbp.db->SetTransaction(trans);
+        }
         dbp.db->id = id;
         EBDB_ErrCode e = dbp.db->ReadRealloc(buffer);
         return e;
@@ -589,7 +627,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::ReadRealloc(
 template<class TBV, class TObjDeMux, class TL>
 EBDB_ErrCode 
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id, 
-                                                 size_t*    blob_size)
+                                                 size_t*    blob_size,
+                                                 CBDB_Transaction*  trans)
 {
     unsigned coord[2];
     bool found;
@@ -603,6 +642,9 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::BlobSize(unsigned   id,
     SLockedDb& dbp = this->GetDb(coord[0], coord[1]);
     {{
         TLockGuard lg(*(dbp.lock));
+        if (trans) {
+            dbp.db.SetTransaction(trans);
+        }
         dbp.db->id = id;
         EBDB_ErrCode e = dbp.db->Fetch();
         if (e != eBDB_Ok) {
@@ -672,17 +714,21 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::LoadIdDeMux(TIdDeMux&      de_mux,
 
 template<class TBV, class TObjDeMux, class TL>
 void 
-CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save()
+CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Save(CBDB_Transaction* trans)
 {
-    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile);
+    this->SaveIdDeMux(*m_IdDeMux, *m_DictFile, trans);
 }
 
 
 template<class TBV, class TObjDeMux, class TL>
 void 
 CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(const TIdDeMux& de_mux, 
-                                                   TDeMuxStore&    dict_file)
+                                                 TDeMuxStore&      dict_file,
+                                                 CBDB_Transaction* trans)
 {
+    if (trans) {
+        dict_file.SetTransaction(trans);
+    }
     size_t N = de_mux.GetN();
     for (size_t i = 0; i < N; ++i) {
         const typename TIdDeMux::TDimVector& dv = de_mux.GetDimVector(i);
@@ -791,68 +837,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::GetDb(unsigned vol, unsigned slice)
 }
 
 
-
-
-
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.16  2006/12/14 13:10:17  dicuccio
- * Call Save() in dtor of split blob store
- *
- * Revision 1.15  2006/11/30 14:19:59  kuznets
- * Removed buf_size parameter (ReadRealloc()) size passed as vector property
- *
- * Revision 1.14  2006/11/30 12:42:08  dicuccio
- * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
- * vector<unsigned char>
- *
- * Revision 1.13  2006/10/04 12:26:30  dicuccio
- * Drop noisy LOG_POST()s.  Added dtor.
- *
- * Revision 1.12  2006/09/22 15:41:21  dicuccio
- * Provide better implementation of demultiplexer - store data in matrix and find
- * best spot in matrix to minimize the number of volumes created
- *
- * Revision 1.11  2006/09/21 14:01:41  dicuccio
- * CBDB_BlobDeMux: made SelectSplit public
- *
- * Revision 1.10  2006/09/05 15:13:25  dicuccio
- * Modified BDB split store: use up to 64k page sizes, fixed problems with holes
- * in slice detection
- *
- * Revision 1.9  2006/06/26 12:34:39  dicuccio
- * Expose environment through GetEnv()
- *
- * Revision 1.8  2006/05/09 20:18:33  kuznets
- * fixed bug in loading persistent demux state
- *
- * Revision 1.7  2006/05/09 18:19:52  kuznets
- * Added persistent demux
- *
- * Revision 1.6  2006/05/08 14:59:59  kuznets
- * Fixed bug with splitting based on number of records
- *
- * Revision 1.5  2006/05/02 20:14:36  kuznets
- * Fixed misprint
- *
- * Revision 1.4  2006/05/02 19:46:15  kuznets
- * Fixed bug in (un)opening split slice database
- *
- * Revision 1.3  2006/04/03 13:16:01  kuznets
- * Fixed ReadRealloc()
- *
- * Revision 1.2  2006/03/28 17:17:03  kuznets
- * Fixed GCC compilation issues
- *
- * Revision 1.1  2006/03/28 16:41:59  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
 
 #endif 
 
