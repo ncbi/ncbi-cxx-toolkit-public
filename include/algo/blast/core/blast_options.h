@@ -180,10 +180,6 @@ typedef struct LookupTableOptions {
    Int4 word_size; /**< Determines the size of the lookup table */
    Uint1 mb_template_length; /**< Length of the discontiguous words */
    Uint1 mb_template_type; /**< Type of a discontiguous word template */
-   Int4 max_positions; /**< Max number of positions per word (MegaBlast only);
-                         no restriction if 0 */
-   Boolean full_byte_scan; /**< subject sequence should be scanned a byte at a time 
-                           applies only to discontiguous megablast. */
    char* phi_pattern;  /**< PHI-BLAST pattern */
    Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
                              PHI-BLAST */
