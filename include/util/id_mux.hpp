@@ -193,6 +193,9 @@ public:
 
     /// Resize dimesion, create bitset content
     void InitDim(size_t i, size_t dim_size);
+
+    /// Reclaim unused memory 
+    void FreeUnusedMem();
 private: 
     // TO DO: implement copy semantics
     CIdDeMux(const CIdDeMux&);
@@ -251,6 +254,22 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinatesFast(unsigned  id,
     return true;
 }
 
+template<class TBV, class TBVFact>
+void CIdDeMux<TBV, TBVFact>::FreeUnusedMem()
+{
+    size_t N = m_DimSpace.size();
+    for (size_t i = 0; i < N; ++i) {
+        bool dim_found = false;
+        const TDimVector& dv = GetDimVector(i);
+        size_t M = dv.size();
+        for (size_t j = 0; j < M; ++j) {
+            if (dv[j].get() == 0) 
+                continue;
+            TBitVector& bv = *(dv[j]);
+            bv.optimize(0, TBitVector::opt_free_0);
+        } // for j
+    } // for i
+}
 
 template<class TBV, class TBVFact>
 void 
