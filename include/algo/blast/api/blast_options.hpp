@@ -143,12 +143,6 @@ public:
     unsigned char GetMBTemplateType() const;
     void SetMBTemplateType(unsigned char type);
 
-    int GetMBMaxPositions() const;
-    void SetMBMaxPositions(int m);
-
-    bool GetFullByteScan() const;
-    void SetFullByteScan(bool val = true);
-
     /******************* Query setup options ************************/
     const char* GetFilterString() const;
     void SetFilterString(const char* f);

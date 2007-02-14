@@ -93,19 +93,6 @@ public:
         }
     }
 
-    /// Specifies that a byte at a time should be scanned.
-    bool GetFullByteScan() const
-    {
-      return m_Opts->GetFullByteScan();
-    }
-
-    /// Specifies that a byte at a time should be scanned.
-    /// @param val scan one byte at a time if true, one letter if false [in]
-    void SetFullByteScan(bool val) 
-    {
-      m_Opts->SetFullByteScan(val);
-    }
-
     /// NOTE: Unavailable for discontiguous megablast
     /// @throws CBlastException if this is called on an object configured for
     /// discontiguous megablast
