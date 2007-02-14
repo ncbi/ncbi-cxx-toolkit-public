@@ -255,7 +255,6 @@ CBlast2seqApplication::ProcessCommandLineArgs()
     }
     if (args["templen"].AsInteger()) {
         opt.SetMBTemplateLength(args["templen"].AsInteger());
-        opt.SetFullByteScan(false);
     }
     if (args["templtype"].AsInteger()) {
         opt.SetMBTemplateType(args["templtype"].AsInteger());
@@ -279,7 +278,6 @@ CBlast2seqApplication::ProcessCommandLineArgs()
                 dynamic_cast<CDiscNucleotideOptionsHandle*>(retval);
 
             disc_nucl_handle->SetTemplateLength(args["templen"].AsInteger());
-            disc_nucl_handle->SetFullByteScan(false);
         }
         if (args["templtype"].AsInteger()) {
             opt.SetMBTemplateType(args["templtype"].AsInteger());

@@ -87,12 +87,6 @@ public:
     unsigned char GetMBTemplateType() const;
     void SetMBTemplateType(unsigned char type);
 
-    int GetMBMaxPositions() const;
-    void SetMBMaxPositions(int m);
-
-    bool GetFullByteScan() const;
-    void SetFullByteScan(bool val = true);
-
     /******************* Query setup options ************************/
     const char* GetFilterString() const;
     void SetFilterString(const char* f);
@@ -418,7 +412,6 @@ CBlastOptionsLocal::SetLookupTableType(ELookupTableType type)
 {
     m_LutOpts->lut_type = type;
     if (type == eMBLookupTable) {
-       m_LutOpts->max_positions = INT4_MAX;
        m_LutOpts->word_size = BLAST_WORDSIZE_MEGABLAST;
     } 
 }
@@ -457,30 +450,6 @@ inline void
 CBlastOptionsLocal::SetMBTemplateType(unsigned char type)
 {
     m_LutOpts->mb_template_type = type;
-}
-
-inline int
-CBlastOptionsLocal::GetMBMaxPositions() const
-{
-    return m_LutOpts->max_positions;
-}
-
-inline void
-CBlastOptionsLocal::SetMBMaxPositions(int m)
-{
-    m_LutOpts->max_positions = m;
-}
-
-inline bool
-CBlastOptionsLocal::GetFullByteScan() const
-{
-    return m_LutOpts->full_byte_scan ? true: false;
-}
-
-inline void
-CBlastOptionsLocal::SetFullByteScan(bool val)
-{
-    m_LutOpts->full_byte_scan = val;
 }
 
 /******************* Query setup options ************************/

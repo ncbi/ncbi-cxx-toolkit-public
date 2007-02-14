@@ -120,7 +120,6 @@ CBlastNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetLookupTableType(eMBLookupTable);
     SetWordSize(BLAST_WORDSIZE_MEGABLAST);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_MEGABLAST);
-    m_Opts->SetMBMaxPositions(INT4_MAX);
 }
 
 void

@@ -151,8 +151,6 @@ CLookupTableOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) co
     ddc.Log("word_size", m_Ptr->word_size);
     ddc.Log("mb_template_length", m_Ptr->mb_template_length);
     ddc.Log("mb_template_type", m_Ptr->mb_template_type);
-    ddc.Log("max_positions", m_Ptr->max_positions);
-    ddc.Log("full_byte_scan", m_Ptr->full_byte_scan);
 }
 
 void

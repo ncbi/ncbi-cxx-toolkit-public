@@ -67,7 +67,6 @@ enum EBlastOptIdx {
     eBlastOpt_AlphabetSize,
     eBlastOpt_MBTemplateLength,
     eBlastOpt_MBTemplateType,
-    eBlastOpt_MBMaxPositions,
     eBlastOpt_FilterString,
     eBlastOpt_MaskAtHash,
     eBlastOpt_DustFiltering,
@@ -85,7 +84,6 @@ enum EBlastOptIdx {
     eBlastOpt_WindowSize,
     eBlastOpt_SeedContainerType,
     eBlastOpt_SeedExtensionMethod,
-    eBlastOpt_FullByteScan,
     eBlastOpt_UngappedExtension,
     eBlastOpt_XDropoff,
     eBlastOpt_GapXDropoff,
@@ -839,44 +837,6 @@ CBlastOptions::SetMBTemplateType(unsigned char type)
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_MBTemplateType, type);
-    }
-}
-
-int 
-CBlastOptions::GetMBMaxPositions() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetMBMaxPositions() not available.");
-    }
-    return m_Local->GetMBMaxPositions();
-}
-void 
-CBlastOptions::SetMBMaxPositions(int m)
-{
-    if (m_Local) {
-        m_Local->SetMBMaxPositions(m);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_MBMaxPositions, m);
-    }
-}
-
-bool 
-CBlastOptions::GetFullByteScan() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetFullByteScan() not available.");
-    }
-    return m_Local->GetFullByteScan();
-}
-void 
-CBlastOptions::SetFullByteScan(bool val)
-{
-    if (m_Local) {
-        m_Local->SetFullByteScan(val);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_FullByteScan, val);
     }
 }
 
