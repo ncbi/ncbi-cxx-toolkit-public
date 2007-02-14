@@ -58,7 +58,8 @@ public:
     /// Constructor to compare 2 sequences with default options
     CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p);
 
-    /// Constructor to compare query against all subject sequences with default options
+    /// Constructor to compare query against all subject sequences with 
+    /// default options
     CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, EProgram p);
 
     /// Constructor to allow query concatenation with default options
@@ -69,7 +70,8 @@ public:
     CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, 
             CBlastOptionsHandle& opts);
 
-    /// Constructor to compare query against all subject sequences with specified options
+    /// Constructor to compare query against all subject sequences with
+    /// specified options
     CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
             CBlastOptionsHandle& opts);
 

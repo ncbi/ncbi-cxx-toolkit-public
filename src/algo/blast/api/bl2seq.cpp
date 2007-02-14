@@ -172,10 +172,6 @@ CBl2Seq::x_ResetSubjectDs()
     mi_pSeqSrc = BlastSeqSrcFree(mi_pSeqSrc);
     mi_pResults = Blast_HSPResultsFree(mi_pResults);
     mi_pDiagnostics = Blast_DiagnosticsFree(mi_pDiagnostics);
-    // TODO: Should clear class wrappers for internal parameters structures?
-    //      -> destructors will be called for them
-    //m_OptsHandle->SetDbSeqNum(0);  // FIXME: Really needed?
-    //m_OptsHandle->SetDbLength(0);  // FIXME: Really needed?
 }
 
 TSeqAlignVector
