@@ -365,7 +365,7 @@ static NCBI_INLINE Int4 s_BlastSmallNaRetrieveHits(
     }
     else {
         Int4 num_hits = 0;
-        Int4 src_off = -(index + 2);
+        Int4 src_off = -index;
         index = overflow[src_off++];
         do {
             offset_pairs[total_hits+num_hits].qs_offsets.q_off = index;
@@ -1555,6 +1555,30 @@ static NCBI_INLINE Int4 s_BlastMBLookupRetrieve(BlastMBLookupTable * lookup,
     return i;
 }
 
+/** 
+* Like s_BlastMBLookupRetrieve, except the second hashtable is accessed.
+* @param lookup The lookup table to read from. [in]
+* @param index The index value of the word to retrieve. [in]
+* @param offset_pairs A pointer into the destination array. [out]
+* @param s_off The subject offset to be associated with the retrieved query offset(s). [in]
+* @return The number of hits copied.
+*/
+static NCBI_INLINE Int4 s_BlastMBLookupRetrieve2(BlastMBLookupTable * lookup,
+                                                 Int4 index,
+                                                 BlastOffsetPair * offset_pairs,
+                                                 Int4 s_off)
+{
+    Int4 i=0;
+    Int4 q_off = lookup->hashtable2[index];
+
+    while (q_off) {
+        offset_pairs[i].qs_offsets.q_off   = q_off - 1;
+        offset_pairs[i++].qs_offsets.s_off = s_off;
+        q_off = lookup->next_pos2[q_off];
+    }
+    return i;
+}
+
 /** access the megablast lookup table */
 #define MB_ACCESS_HITS()                                \
    if (s_BlastMBLookupHasHits(mb_lt, index)) {          \
@@ -1562,6 +1586,21 @@ static NCBI_INLINE Int4 s_BlastMBLookupRetrieve(BlastMBLookupTable * lookup,
            break;                                       \
        total_hits += s_BlastMBLookupRetrieve(mb_lt,     \
                   index, offset_pairs + total_hits,     \
+                  s_off);                               \
+   }
+
+/** access the megablast lookup table with two templates */
+#define MB_ACCESS_HITS2()                               \
+   if (total_hits >= max_hits)                          \
+       break;                                           \
+   if (s_BlastMBLookupHasHits(mb_lt, index)) {          \
+       total_hits += s_BlastMBLookupRetrieve(mb_lt,     \
+                  index, offset_pairs + total_hits,     \
+                  s_off);                               \
+   }                                                    \
+   if (s_BlastMBLookupHasHits(mb_lt, index2)) {         \
+       total_hits += s_BlastMBLookupRetrieve2(mb_lt,    \
+                  index2, offset_pairs + total_hits,    \
                   s_off);                               \
    }
 
@@ -2300,181 +2339,6 @@ base_3:
 }
 
 /** Scan the compressed subject sequence, returning 11- or 12-letter 
- * discontiguous words with stride 1 or stride 4. Assumes a megablast 
- * lookup table
- * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
- * @param subject The (compressed) sequence to be scanned for words [in]
- * @param start_offset The offset into the sequence in actual coordinates [in]
- * @param offset_pairs Array of query and subject positions where words are 
- *                found [out]
- * @param max_hits The allocated size of the above array - how many offsets 
- *        can be returned [in]
- * @param end_offset Where the scanning should stop [in], has stopped [out]
-*/
-static Int4 s_MB_DiscWordScanSubject_Any(const LookupTableWrap* lookup_wrap, 
-       const BLAST_SequenceBlk* subject, Int4 start_offset,
-       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits, 
-       Int4* end_offset)
-{
-   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
-   Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
-   Int4 total_hits = 0;
-   Uint4 q_off, s_off;
-   Int4 index, index2=0;
-   Uint8 accum;
-   Boolean two_templates = mb_lt->two_templates;
-   EDiscTemplateType template_type = mb_lt->template_type;
-   EDiscTemplateType second_template_type = mb_lt->second_template_type;
-   PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
-   Uint1 pv_array_bts = mb_lt->pv_array_bts;
-   Uint4 template_length = mb_lt->template_length;
-   Uint4 curr_base = COMPRESSION_RATIO - (start_offset % COMPRESSION_RATIO);
-   Uint4 last_base = subject->length;
-
-   ASSERT(lookup_wrap->lut_type == eMBLookupTable);
-
-   /* Since the test for number of hits here is done after adding them, 
-      subtract the longest chain length from the allowed offset array size. */
-   max_hits -= mb_lt->longest_chain;
-
-   accum = (Uint8)(*s++);
-
-   if (mb_lt->scan_step == 4) {
-
-      /* The accumulator is filled with the first (template_length -
-         COMPRESSION_RATIO) bases to scan, 's' points to the first byte
-         of 'sequence' that contains bases not in the accumulator,
-         and curr_base is the offset of the next base to add */
-
-      while (curr_base < template_length - COMPRESSION_RATIO) {
-         accum = accum << 8 | *s++;
-         curr_base += COMPRESSION_RATIO;
-      }
-      if (curr_base > template_length - COMPRESSION_RATIO) {
-         accum = accum >> (2 * (curr_base - 
-                    (template_length - COMPRESSION_RATIO)));
-         s--;
-      }
-      curr_base = start_offset + template_length;
-
-      while (curr_base <= last_base) {
-          
-         /* add the next 4 bases to the accumulator. These are
-            shifted into the low-order 8 bits. curr_base was already
-            incremented, but that doesn't change how the next bases
-            are shifted in */
-
-         accum = (accum << 8);
-         switch (curr_base % COMPRESSION_RATIO) {
-         case 0: accum |= s[0]; break;
-         case 1: accum |= (s[0] << 2 | s[1] >> 6); break;
-         case 2: accum |= (s[0] << 4 | s[1] >> 4); break;
-         case 3: accum |= (s[0] << 6 | s[1] >> 2); break;
-         }
-         s++;
-
-         index = ComputeDiscontiguousIndex(accum, template_type);
-  
-         if (PV_TEST(pv_array, index, pv_array_bts)) {
-            q_off = mb_lt->hashtable[index];
-            s_off = curr_base - template_length;
-            while (q_off) {
-               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-               q_off = mb_lt->next_pos[q_off];
-            }
-         }
-         if (two_templates) {
-            index2 = ComputeDiscontiguousIndex(accum, second_template_type);
-
-            if (PV_TEST(pv_array, index2, pv_array_bts)) {
-               q_off = mb_lt->hashtable2[index2];
-               s_off = curr_base - template_length;
-               while (q_off) {
-                  offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-                  q_off = mb_lt->next_pos2[q_off];
-               }
-            }
-         }
-
-         curr_base += COMPRESSION_RATIO;
-
-         /* test for buffer full. This test counts 
-            for both templates (they both add hits 
-            or neither one does) */
-         if (total_hits >= max_hits)
-            break;
-
-      }
-   } else {
-      const Int4 kScanStep = 1; /* scan one letter at a time. */
-      const Int4 kScanShift = 2; /* scan 2 bits (i.e. one base) at a time*/
-
-      /* The accumulator is filled with the first (template_length -
-         kScanStep) bases to scan, 's' points to the first byte
-         of 'sequence' that contains bases not in the accumulator,
-         and curr_base is the offset of the next base to add */
-
-      while (curr_base < template_length - kScanStep) {
-         accum = accum << 8 | *s++;
-         curr_base += COMPRESSION_RATIO;
-      }
-      if (curr_base > template_length - kScanStep) {
-         accum = accum >> (2 * (curr_base - (template_length - kScanStep)));
-         s--;
-      }
-      curr_base = start_offset + template_length;
-
-      while (curr_base <= last_base) {
-
-         /* shift the next base into the low-order bits of the accumulator */
-         accum = (accum << kScanShift) | 
-                 NCBI2NA_UNPACK_BASE(s[0], 
-                         3 - (curr_base - kScanStep) % COMPRESSION_RATIO);
-         if (curr_base % COMPRESSION_RATIO == 0)
-            s++;
-
-         index = ComputeDiscontiguousIndex(accum, template_type);
-       
-         if (PV_TEST(pv_array, index, pv_array_bts)) {
-            q_off = mb_lt->hashtable[index];
-            s_off = curr_base - template_length;
-            while (q_off) {
-               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-               q_off = mb_lt->next_pos[q_off];
-            }
-         }
-         if (two_templates) {
-            index2 = ComputeDiscontiguousIndex(accum, second_template_type);
-
-            if (PV_TEST(pv_array, index2, pv_array_bts)) {
-               q_off = mb_lt->hashtable2[index2];
-               s_off = curr_base - template_length;
-               while (q_off) {
-                  offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
-                  offset_pairs[total_hits++].qs_offsets.s_off = s_off;
-                  q_off = mb_lt->next_pos2[q_off];
-               }
-            }
-         }
-
-         curr_base += kScanStep;
-
-         /* test for buffer full. This test counts 
-            for both templates (they both add hits 
-            or neither one does) */
-         if (total_hits >= max_hits)
-            break;
-      }
-   }
-   *end_offset = curr_base - template_length;
-
-   return total_hits;
-}
-
-/** Scan the compressed subject sequence, returning 11- or 12-letter 
  * discontiguous words with stride 1. Assumes a megablast lookup table
  * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
  * @param subject The (compressed) sequence to be scanned for words [in]
@@ -2556,6 +2420,103 @@ base_3:
 
       index = ComputeDiscontiguousIndex(accum >> 2, template_type);
       MB_ACCESS_HITS();
+      s_off++;
+   }
+
+   *end_offset = s_off;
+   return total_hits;
+}
+
+/** Scan the compressed subject sequence, returning 11- or 12-letter 
+ * discontiguous words with stride 1 and two separate templates. 
+ * Assumes a megablast lookup table, and that the two templates have
+ * the same wordsize and length
+ * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param start_offset The offset into the sequence in actual coordinates [in]
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                found [out]
+ * @param max_hits The allocated size of the above array - how many offsets 
+ *        can be returned [in]
+ * @param end_offset Where the scanning should stop [in], has stopped [out]
+*/
+static Int4 s_MB_DiscWordScanSubject_TwoTemplates_1(
+       const LookupTableWrap* lookup_wrap, 
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits, 
+       Int4* end_offset)
+{
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
+   Uint1* s = subject->sequence + start_offset / COMPRESSION_RATIO;
+   Int4 total_hits = 0;
+   Uint4 s_off = start_offset;
+   Int4 index, index2;
+   Uint8 accum = 0;
+   EDiscTemplateType template_type = mb_lt->template_type;
+   EDiscTemplateType second_template_type = mb_lt->second_template_type;
+   Uint4 template_length = mb_lt->template_length;
+   Uint4 last_offset = subject->length - template_length;
+
+   ASSERT(lookup_wrap->lut_type == eMBLookupTable);
+   max_hits -= mb_lt->longest_chain;
+
+   /* fill the accumulator */
+   index = s_off - (s_off % COMPRESSION_RATIO);
+   while(index < s_off + template_length) {
+      accum = accum << 8 | *s++;
+      index += COMPRESSION_RATIO;
+   }
+
+   /* note that the part of the loop we jump to will
+      depend on the number of extra bases (0-3) in the 
+      accumulator, and not on the value of s_off */
+   switch (index - (s_off + template_length)) {
+   case 1: 
+       goto base_3;
+   case 2: 
+       goto base_2;
+   case 3: 
+       /* this branch of the main loop adds another
+          byte from s[], which is not needed in the
+          initial value of the accumulator */
+       accum = accum >> 8;
+       s--;
+       goto base_1;
+   }
+
+   while (s_off <= last_offset) {
+
+      index = ComputeDiscontiguousIndex(accum, template_type);
+      index2 = ComputeDiscontiguousIndex(accum, second_template_type);
+      MB_ACCESS_HITS2();
+      s_off++;
+
+base_1:
+      if (s_off > last_offset)
+         break;
+
+      accum = accum << 8 | *s++;
+      index = ComputeDiscontiguousIndex(accum >> 6, template_type);
+      index2 = ComputeDiscontiguousIndex(accum >> 6, second_template_type);
+      MB_ACCESS_HITS2();
+      s_off++;
+
+base_2:
+      if (s_off > last_offset)
+         break;
+
+      index = ComputeDiscontiguousIndex(accum >> 4, template_type);
+      index2 = ComputeDiscontiguousIndex(accum >> 4, second_template_type);
+      MB_ACCESS_HITS2();
+      s_off++;
+
+base_3:
+      if (s_off > last_offset)
+         break;
+
+      index = ComputeDiscontiguousIndex(accum >> 2, template_type);
+      index2 = ComputeDiscontiguousIndex(accum >> 2, second_template_type);
+      MB_ACCESS_HITS2();
       s_off++;
    }
 
@@ -2816,19 +2777,15 @@ void BlastMBChooseScanSubject(LookupTableWrap *lookup_wrap)
     ASSERT(lookup_wrap->lut_type == eMBLookupTable);
 
     if (mb_lt->discontiguous) {
-        if (mb_lt->scan_step == 1 && !mb_lt->two_templates) {
-            if (mb_lt->template_type == eDiscTemplate_11_18_Coding)
-                mb_lt->scansub_callback = 
-                                (void *)s_MB_DiscWordScanSubject_11_18_1;
-            else if (mb_lt->template_type == eDiscTemplate_11_21_Coding)
-                mb_lt->scansub_callback = 
-                                (void *)s_MB_DiscWordScanSubject_11_21_1;
-            else
-                mb_lt->scansub_callback = (void *)s_MB_DiscWordScanSubject_1;
-        }
-        else {
-            mb_lt->scansub_callback = (void *)s_MB_DiscWordScanSubject_Any;
-        }
+        if (mb_lt->two_templates)
+            mb_lt->scansub_callback = 
+                       (void *)s_MB_DiscWordScanSubject_TwoTemplates_1;
+        else if (mb_lt->template_type == eDiscTemplate_11_18_Coding)
+            mb_lt->scansub_callback = (void *)s_MB_DiscWordScanSubject_11_18_1;
+        else if (mb_lt->template_type == eDiscTemplate_11_21_Coding)
+            mb_lt->scansub_callback = (void *)s_MB_DiscWordScanSubject_11_21_1;
+        else
+            mb_lt->scansub_callback = (void *)s_MB_DiscWordScanSubject_1;
     }
     else {
         Int4 scan_step = mb_lt->scan_step;

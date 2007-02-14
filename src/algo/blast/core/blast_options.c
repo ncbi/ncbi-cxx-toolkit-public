@@ -917,9 +917,6 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
        /* Blastn default is megablast. */
        (*options)->word_size = BLAST_WORDSIZE_MEGABLAST;
        (*options)->lut_type = eMBLookupTable;
-       (*options)->max_positions = INT4_MAX;
-       /* Discontig mb scanning default is one base at a time. */
-       (*options)->full_byte_scan = FALSE; 
        break;
    case eBlastTypeRpsBlast: case eBlastTypeRpsTblastn:
        (*options)->word_size = BLAST_WORDSIZE_PROT;
@@ -968,7 +965,6 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       if (is_megablast)	{
          options->lut_type = eMBLookupTable;
          options->word_size = BLAST_WORDSIZE_MEGABLAST;
-         options->max_positions = INT4_MAX;
       }	else {
          options->lut_type = eNaLookupTable;
          options->word_size = BLAST_WORDSIZE_NUCL;
@@ -1453,6 +1449,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log: blast_options.c,v $
+ * Revision 1.196  2007/02/08 17:55:32  kazimird
+ * Synchronized with the C++ Toolkit.
+ *
  * Revision 1.193  2007/01/21 08:45:12  kazimird
  * Synchronized with the C++ Toolkit.
  *

@@ -195,8 +195,8 @@ static Int4 s_BlastSmallNaLookupFinalize(Int4 **thin_backbone,
                                          BLAST_SequenceBlk *query)
 {
     Int4 i;
-    Int4 overflow_cells_needed = 0;
-    Int4 overflow_cursor = 0;
+    Int4 overflow_cells_needed = 2;
+    Int4 overflow_cursor = 2;
     Int4 longest_chain = 0;
 #ifdef LOOKUP_VERBOSE
     Int4 backbone_occupancy = 0;
@@ -282,7 +282,7 @@ static Int4 s_BlastSmallNaLookupFinalize(Int4 **thin_backbone,
                -(overflow offset where hits occur). Since a
                cell value of -1 is reserved to mean 'empty cell',
                the value stored begins at -2 */
-            lookup->final_backbone[i] = -(overflow_cursor + 2);
+            lookup->final_backbone[i] = -overflow_cursor;
             for (j = 0; j < num_hits; j++) {
                 lookup->overflow[overflow_cursor++] =
                     thin_backbone[i][j + 2];
@@ -921,8 +921,6 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    if (lookup_options->mb_template_length > 0) {
         /* discontiguous megablast */
         mb_lt->scan_step = 1;
-        if (lookup_options->full_byte_scan)
-            mb_lt->scan_step = 4;
         status = s_FillDiscMBTable(query, location, mb_lt, lookup_options);
    }
    else {
