@@ -180,6 +180,30 @@ CBDB_BLobStream* CBDB_BLobFile::CreateStream()
     return new CBDB_BLobStream(m_DB, dbt, 0, GetTxn()); 
 }
 
+CBDB_BlobReaderWriter* CBDB_BLobFile::CreateReaderWriter()
+{
+    EBDB_ErrCode ret = Fetch();
+
+    DBT* dbt = CloneDBT_Key();
+    // lob exists, we can read it now (or write)
+    if (ret == eBDB_Ok) {
+        return new CBDB_BlobReaderWriter(m_DB, dbt, LobSize(), GetTxn());
+    }
+    // no lob yet (write stream)
+    return new CBDB_BlobReaderWriter(m_DB, dbt, 0, GetTxn()); 
+}
+
+IReader* CBDB_BLobFile::CreateReader()
+{
+    EBDB_ErrCode ret = Fetch();
+
+    DBT* dbt = CloneDBT_Key();
+    // lob exists, we can read it now (or write)
+    if (ret == eBDB_Ok) {
+        return new CBDB_BlobReaderWriter(m_DB, dbt, LobSize(), GetTxn());
+    }
+    return 0; 
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -194,9 +218,110 @@ CBDB_IdBlobFile::CBDB_IdBlobFile(EDuplicateKeys dup_keys,
     BindKey("id", &id);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_BlobReaderWriter::
+//
+
+
+CBDB_BlobReaderWriter::CBDB_BlobReaderWriter(DB*     db, 
+                                             DBT*    dbt_key, 
+                                             size_t  blob_size, 
+                                             DB_TXN* txn)
+: m_DB(db),
+  m_DBT_Key(dbt_key),
+  m_DBT_Data(0),
+  m_Txn(txn),
+  m_Pos(0),
+  m_BlobSize(blob_size)
+{
+    m_DBT_Data = new DBT;
+    ::memset(m_DBT_Data, 0, sizeof(DBT)); 
+}
+
+
+CBDB_BlobReaderWriter::~CBDB_BlobReaderWriter()
+{
+    CBDB_File::DestroyDBT_Clone(m_DBT_Key);
+    delete m_DBT_Data;
+}
+
+void CBDB_BlobReaderWriter::SetTransaction(CBDB_Transaction* trans) 
+{
+    if (trans) {
+        m_Txn = trans->GetTxn();
+    } else {
+        m_Txn = 0;
+    }
+}
+
+ERW_Result 
+CBDB_BlobReaderWriter::PendingCount(size_t* count)
+{ 
+    if (count) {
+        *count = (m_BlobSize > 0 ? (m_BlobSize - m_Pos) : 0); 
+    }
+    return eRW_Success;
+}
+
+ERW_Result CBDB_BlobReaderWriter::Read(void*   buf,
+                                       size_t  count,
+                                       size_t* bytes_read)
+{
+    m_DBT_Data->flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
+
+    m_DBT_Data->data = buf;
+    m_DBT_Data->ulen = (unsigned)count;
+    m_DBT_Data->dlen = (unsigned)count;
+    m_DBT_Data->doff = m_Pos;
+    m_DBT_Data->size = 0;
+    
+    int ret = m_DB->get(m_DB,
+                        0,         // DB_TXN*
+                        m_DBT_Key,
+                        m_DBT_Data,
+                        0);
+    BDB_CHECK(ret, "CBDB_BlobReaderWriter");
+
+    m_Pos += m_DBT_Data->size;
+    *bytes_read = m_DBT_Data->size;
+    return eRW_Success;
+    
+}
+
+ERW_Result CBDB_BlobReaderWriter::Write(const void* buf,
+                                        size_t      count,
+                                        size_t*     bytes_written)
+{
+    m_DBT_Data->flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
+
+    m_DBT_Data->data = const_cast<void*> (buf);
+    m_DBT_Data->size = (unsigned)count;
+    m_DBT_Data->ulen = (unsigned)count;
+    m_DBT_Data->doff = m_Pos;
+    m_DBT_Data->dlen = (unsigned)count;
+
+    int ret = m_DB->put(m_DB,
+                        m_Txn,
+                        m_DBT_Key,
+                        m_DBT_Data,
+                        0);
+    BDB_CHECK(ret, "CBDB_BlobReaderWriter");
+
+    m_Pos += (unsigned)count;
+    if (bytes_written) {
+        *bytes_written = count;
+    }
+    return eRW_Success;
+}
+
+ERW_Result CBDB_BlobReaderWriter::Flush(void)
+{
+    return eRW_Success;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
-//  CBDB_BLobFile::
+//  CBDB_BLobStream::
 //
 
 CBDB_BLobStream::CBDB_BLobStream(DB* db, 

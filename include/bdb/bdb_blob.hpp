@@ -35,6 +35,7 @@
 /// @file bdb_blob.hpp
 /// BDB library BLOB support.
 
+#include <corelib/reader_writer.hpp>
 #include <bdb/bdb_file.hpp>
 
 
@@ -47,6 +48,7 @@ BEGIN_NCBI_SCOPE
 
 
 class CBDB_BLobStream;
+class CBDB_BlobReaderWriter;
 
 /// Berkeley DB BLOB File class. 
 ///
@@ -132,6 +134,14 @@ public:
     /// Caller is responsible for deletion.
     CBDB_BLobStream* CreateStream();
 
+    /// Creates stream like object to retrieve or write BLOB by chunks.
+    /// Caller is responsible for deletion.
+    CBDB_BlobReaderWriter* CreateReaderWriter();
+
+    /// Creates stream like object to read BLOB by chunks.
+    /// Return NULL if not found
+    IReader* CreateReader();
+
 };
 
 /// Variant of BLOB storage for integer key database
@@ -145,6 +155,50 @@ public:
                     EDBType        db_type  = eBtree);
 };
 
+/// Stream style BDB BLOB reader
+///
+/// Class wraps partial data access functionality of Berkeley DB.
+/// All I/O directly calls  corresponding Berkeley DB methods 
+/// without any buffering. For better performance it's advised to read or 
+/// write data in chunks of substantial size.
+///
+class NCBI_BDB_EXPORT CBDB_BlobReaderWriter : public IReaderWriter
+{
+protected:
+    CBDB_BlobReaderWriter(DB* db, DBT* dbt_key, size_t blob_size, DB_TXN* txn);
+public:
+    ~CBDB_BlobReaderWriter();
+
+    /// Set current transaction
+    void SetTransaction(CBDB_Transaction* trans);
+
+
+    virtual ERW_Result Read(void*   buf,
+                            size_t  count,
+                            size_t* bytes_read);
+    virtual ERW_Result PendingCount(size_t* count);
+
+    virtual ERW_Result Write(const void* buf,
+                             size_t      count,
+                             size_t*     bytes_written);
+
+    virtual ERW_Result Flush(void);
+
+private:
+    CBDB_BlobReaderWriter(const CBDB_BlobReaderWriter&);
+    CBDB_BlobReaderWriter& operator=(const CBDB_BlobReaderWriter&);
+    friend class CBDB_BLobFile;
+private:
+    DB*        m_DB;
+    DBT*       m_DBT_Key;
+    DBT*       m_DBT_Data;
+    DB_TXN*    m_Txn;
+    unsigned   m_Pos;
+    size_t     m_BlobSize;
+};
+
+
+class CBDB_BlobWriter;
 
 /// Berkeley DB BLOB File stream. 
 ///
