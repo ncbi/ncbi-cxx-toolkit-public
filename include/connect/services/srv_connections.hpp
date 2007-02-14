@@ -50,129 +50,6 @@ void DiscoverLBServices(const string& service_name,
                         bool all_services = true);
 
 
-struct undefined_t {};
-
-template<typename TDerived>
-struct CServiceClientTraits {
-    typedef undefined_t client_type;
-};
-
-template<typename TDerived>
-struct Wrapper
-{
-    TDerived& derived()
-    {
-        return *static_cast<TDerived*>(this);
-    }
-
-    TDerived const& derived() const
-    {
-        return *static_cast<TDerived const*>(this);
-    }
-};
-
-template<typename TDerived>
-class CServiceConnections : public Wrapper<TDerived>
-{
-    typedef typename CServiceClientTraits<TDerived>::client_type client_t;
-    typedef vector<client_t*> TConnections;
-public:
-    CServiceConnections(const string& service)
-        : m_Service(service), m_Discovered(false)  {}
-
-    ~CServiceConnections() 
-    {
-        ITERATE(typename TConnections, it, m_Connections) {
-            delete *it;
-        }
-    }
-
-    const string& GetService() const { return m_Service; }
-    bool IsHostPortConfig() { x_DiscoverConnections(); return m_HostPort; }
-
-    template<typename Func>
-    void for_each(Func func) {
-        typename TConnections::const_iterator it_b = GetCont().begin();
-        typename TConnections::const_iterator it_e = GetCont().end();
-        while( it_b != it_e ) {
-            func( **it_b );
-            ++it_b;
-        }
-    }
-
-private:
-
-    TConnections& GetCont() {
-        x_DiscoverConnections();
-        return m_Connections;
-    }
-
-    string m_Service;
-    bool m_HostPort;
-    bool m_Discovered;
-    TConnections m_Connections;
-    void x_DiscoverConnections()
-    {
-        if (m_Discovered) return;
-        string sport, host;
-        typedef vector<pair<string, unsigned short> > TSrvs;
-        TSrvs srvs;
-        if ( NStr::SplitInTwo(m_Service, ":", host, sport) ) {
-            try {
-                unsigned int port = NStr::StringToInt(sport);
-                srvs.push_back(make_pair(host, (unsigned short)port));
-                m_HostPort = true;
-            } catch (...) {
-            }
-        } else {
-            DiscoverLBServices(m_Service, srvs);
-            m_HostPort = false;
-        }
-        if (srvs.empty())
-            NCBI_THROW(CCoreException, eInvalidArg, "\"" +m_Service+ "\" is not a valid service name");
-
-        ITERATE(TSrvs, it, srvs) {
-            m_Connections.push_back(this->derived().CreateClient(it->first, it->second));
-        }
-        m_Discovered = true;
-    }
-};
-
-template<typename TClient>
-class ICtrlCmd
-{
-public:
-    explicit ICtrlCmd(CNcbiOstream& os) : m_Os(os) {}
-    virtual ~ICtrlCmd () {}
-
-    CNcbiOstream& GetStream() { return m_Os;};
-    
-    virtual void Execute(TClient& cln) = 0;
-
-private:
-    CNcbiOstream& m_Os;
-};
-
-template<typename TClient, typename TConnections>
-class CCtrlCmdRunner 
-{
-public:
-    CCtrlCmdRunner(TConnections& connections, ICtrlCmd<TClient>& cmd)
-        : m_Connections(&connections), m_Cmd(&cmd) {}
-
-    void operator()(TClient& cln) {
-        if ( !m_Connections->IsHostPortConfig() ) 
-            m_Cmd->GetStream() << m_Connections->GetService() 
-                              << "(" << cln.GetHost() << ":" << cln.GetPort() << "): ";
-        m_Cmd->Execute(cln);
-    }
-
-private:
-    TConnections* m_Connections;
-    ICtrlCmd<TClient>* m_Cmd;
-};
-
-
 /******************************************************************/
 
 class NCBI_XCONNECT_EXPORT CNetSrvConnector
@@ -199,6 +76,8 @@ public:
     void WriteStr(const string& str);
     void WriteBuf(const void* buf, size_t len);
     void WaitForServer(unsigned int wait_sec = 20);
+
+    void Telnet(CNcbiOstream& out, const string& stop_string = kEmptyStr);
 
     void Disconnect();
 private:
@@ -438,6 +317,129 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetSrvConnException, CException);
 };
 
+
+///////////////////////////////////////////////////////////////////////////
+struct undefined_t {};
+
+template<typename TDerived>
+struct CServiceClientTraits {
+    typedef undefined_t client_type;
+};
+
+template<typename TDerived>
+struct Wrapper
+{
+    TDerived& derived()
+    {
+        return *static_cast<TDerived*>(this);
+    }
+
+    TDerived const& derived() const
+    {
+        return *static_cast<TDerived const*>(this);
+    }
+};
+
+template<typename TDerived>
+class CServiceConnections : public Wrapper<TDerived>
+{
+    typedef typename CServiceClientTraits<TDerived>::client_type client_t;
+    typedef vector<client_t*> TConnections;
+public:
+    CServiceConnections(const string& service)
+        : m_Service(service), m_Discovered(false)  {}
+
+    ~CServiceConnections() 
+    {
+        ITERATE(typename TConnections, it, m_Connections) {
+            delete *it;
+        }
+    }
+
+    const string& GetService() const { return m_Service; }
+    bool IsHostPortConfig() { x_DiscoverConnections(); return m_HostPort; }
+
+    template<typename Func>
+    void for_each(Func func) {
+        typename TConnections::const_iterator it_b = GetCont().begin();
+        typename TConnections::const_iterator it_e = GetCont().end();
+        while( it_b != it_e ) {
+            func( **it_b );
+            ++it_b;
+        }
+    }
+
+private:
+
+    TConnections& GetCont() {
+        x_DiscoverConnections();
+        return m_Connections;
+    }
+
+    string m_Service;
+    bool m_HostPort;
+    bool m_Discovered;
+    TConnections m_Connections;
+    void x_DiscoverConnections()
+    {
+        if (m_Discovered) return;
+        string sport, host;
+        typedef vector<pair<string, unsigned short> > TSrvs;
+        TSrvs srvs;
+        if ( NStr::SplitInTwo(m_Service, ":", host, sport) ) {
+            try {
+                unsigned int port = NStr::StringToInt(sport);
+                srvs.push_back(make_pair(host, (unsigned short)port));
+                m_HostPort = true;
+            } catch (...) {
+            }
+        } else {
+            DiscoverLBServices(m_Service, srvs);
+            m_HostPort = false;
+        }
+        if (srvs.empty())
+            NCBI_THROW(CCoreException, eInvalidArg, "\"" +m_Service+ "\" is not a valid service name");
+
+        ITERATE(TSrvs, it, srvs) {
+            m_Connections.push_back(this->derived().CreateClient(it->first, it->second));
+        }
+        m_Discovered = true;
+    }
+};
+
+template<typename TClient>
+class ICtrlCmd
+{
+public:
+    explicit ICtrlCmd(CNcbiOstream& os) : m_Os(os) {}
+    virtual ~ICtrlCmd () {}
+
+    CNcbiOstream& GetStream() { return m_Os;};
+    
+    virtual void Execute(TClient& cln) = 0;
+
+private:
+    CNcbiOstream& m_Os;
+};
+
+template<typename TClient, typename TConnections>
+class CCtrlCmdRunner 
+{
+public:
+    CCtrlCmdRunner(TConnections& connections, ICtrlCmd<TClient>& cmd)
+        : m_Connections(&connections), m_Cmd(&cmd) {}
+
+    void operator()(TClient& cln) {
+        if ( !m_Connections->IsHostPortConfig() ) 
+            m_Cmd->GetStream() << m_Connections->GetService() 
+                              << "(" << cln.GetHost() << ":" << cln.GetPort() << "): ";
+        m_Cmd->Execute(cln);
+    }
+
+private:
+    TConnections* m_Connections;
+    ICtrlCmd<TClient>* m_Cmd;
+};
 
 
 

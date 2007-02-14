@@ -39,190 +39,10 @@
 
 #include <corelib/ncbiexpt.hpp>
 
-#include "client_admin.hpp"
-
 #include <connect/services/netschedule_api.hpp>
 
 
-BEGIN_NCBI_SCOPE
-
-CNetScheduleClient_Control* s_CreateNSClient(const string& host, unsigned int port,
-                                             const string& queue, int retry = 1) 
-{
-    auto_ptr<CNetScheduleClient_Control> cln(new CNetScheduleClient_Control(host,port,queue));
-    if (retry > 1) {
-        for (int i = 0; i < retry; ++i) {
-            try {
-                cln->CheckConnect(kEmptyStr);
-                break;
-            } catch (exception&) {
-                SleepMilliSec(5 * 1000);
-            }
-        }
-    }
-    return cln.release();
-}
-
-class CNSConnections;
-template<>
-struct CServiceClientTraits<CNSConnections> {
-    typedef CNetScheduleClient_Control client_type;
-};
-
-struct CNSConnections : public CServiceConnections<CNSConnections>
-{
-public:
-    typedef CNetScheduleClient_Control TClient;
-    typedef CServiceConnections<CNSConnections> TParent;
-
-    CNSConnections(const string& service, const string& queue, int retry = 1) 
-        : TParent(service), m_Queue(queue), m_Retry(retry)
-    {}
-
-    const string& GetQueueName() const { return m_Queue; }
-
-    TClient* CreateClient(const string& host, unsigned int port)
-    {
-        return s_CreateNSClient(host,port,m_Queue,m_Retry);
-    }
-private:
-    string m_Queue;
-    int m_Retry;
-};
-
-
-typedef ICtrlCmd<CNetScheduleClient_Control> INSCtrlCmd;
-
-END_NCBI_SCOPE
-
 USING_NCBI_SCOPE;
-
-class VersionCmd : public INSCtrlCmd
-{
-public:
-    
-    explicit VersionCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        GetStream() << cln.ServerVersion() << endl;
-    }
-};
-
-class QueueListCmd : public INSCtrlCmd
-{
-public:
-    explicit QueueListCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        GetStream() << cln.GetQueueList() << endl;
-    }
-};
-class ReconfCmd : public INSCtrlCmd
-{
-public:
-    explicit ReconfCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        cln.ReloadServerConfig();
-        GetStream() << "Reconfigured." << endl;
-    }
-};
-
-class QueueCreateCmd : public INSCtrlCmd
-{
-public:
-    QueueCreateCmd(CNcbiOstream& os, const string& new_queue, const  string& qclass) 
-        : INSCtrlCmd(os), m_QueueName(new_queue), m_QClass(qclass) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        cln.CreateQueue(m_QueueName, m_QClass);
-        GetStream() << "Queue: \"" << m_QueueName << "\" is created." << endl;
-    }
-private:
-    string m_QueueName;
-    string m_QClass;
-};
-class DeleteQueueCmd : public INSCtrlCmd
-{
-public:
-    explicit DeleteQueueCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        cln.DeleteQueue(cln.GetQueueName());
-        GetStream() << "Queue deleted: " << cln.GetQueueName() << endl;
-    }
-};
-
-class StatCmd : public INSCtrlCmd
-{
-public:
-    explicit StatCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        GetStream() << "Queue: \"" << cln.GetQueueName() << "\"" << endl;
-        cln.PrintStatistics(GetStream());
-        GetStream() << endl;
-    }
-};
-class DropJobsCmd : public INSCtrlCmd
-{
-public:
-    explicit DropJobsCmd(CNcbiOstream& os) : INSCtrlCmd(os) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        cln.DropQueue();
-        GetStream() << "Queue: \"" << cln.GetQueueName() << "\" dropped." << endl;
-    }
-};
-class DumpCmd : public INSCtrlCmd
-{
-public:
-    DumpCmd(CNcbiOstream& os, const string& jid) : INSCtrlCmd(os), m_Jid(jid) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        GetStream() << "Queue: \"" << cln.GetQueueName() << "\"" << endl;
-        cln.DumpQueue(GetStream(), m_Jid);
-        GetStream() << endl;
-    }
-private:
-    string m_Jid;
-};
-
-class PrintQueueCmd : public INSCtrlCmd
-{
-public:
-    PrintQueueCmd(CNcbiOstream& os, 
-                  CNetScheduleClient::EJobStatus status) : INSCtrlCmd(os), m_Status(status) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        GetStream() << "Queue: \"" << cln.GetQueueName() << "\"" << endl;
-        cln.PrintQueue(NcbiCout, m_Status);
-        GetStream() << endl;
-    }
-private:
-    CNetScheduleClient::EJobStatus m_Status;
-};
-
-class AffinityStatCmd : public INSCtrlCmd
-{
-public:
-    AffinityStatCmd(CNcbiOstream& os, const string& affinity) 
-        : INSCtrlCmd(os), m_Affinity(affinity) {}
-
-    virtual void Execute(CNetScheduleClient_Control& cln) {;
-        GetStream() << "Queue: \"" << cln.GetQueueName() << "\"" << endl;
-        CNetScheduleClient::TStatusMap st_map;
-        cln.StatusSnapshot(&st_map, m_Affinity);
-        ITERATE(CNetScheduleClient::TStatusMap, it, st_map) {
-            GetStream() << CNetScheduleClient::StatusToString(it->first) << ": "
-                        << it->second
-                        << endl;
-        }
-        GetStream() << endl;
-    }
-private:
-    string m_Affinity;
-};
 
 
 /// NetSchedule control application
@@ -236,21 +56,10 @@ public:
     int Run(void);
 
 private:
-    typedef CCtrlCmdRunner<CNetScheduleClient_Control,CNSConnections> TCmdRunner;
-
-    void x_ExecCmd(INSCtrlCmd& cmd, bool queue_requered)
-    {
-        auto_ptr<CNSConnections> conn(x_CreateConnections(queue_requered));
-        TCmdRunner runner(*conn, cmd);
-        conn->for_each(runner);
-    }
 
     void x_GetConnectionArgs(string& service, string& queue, int& retry, 
                              bool queue_requered);
-    CNetScheduleClient_Control* x_CreateClient(bool queue_requered);
     CNetScheduleAPI* x_CreateNewClient(bool queue_requered);
-
-    CNSConnections* x_CreateConnections(bool queue_requered);
 
     bool CheckPermission();
 };
@@ -264,6 +73,9 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
         NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -service");
     if (queue_requered && !args["queue"] )
         NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -queue");
+
+
+
 
     queue = "noname";
     if (queue_requered && args["queue"] )
@@ -282,13 +94,6 @@ void CNetScheduleControl::x_GetConnectionArgs(string& service, string& queue, in
     service = args["service"].AsString();               
 }
 
-CNSConnections* CNetScheduleControl::x_CreateConnections(bool queue_requered)
-{
-    string service,queue;
-    int retry;
-    x_GetConnectionArgs(service, queue, retry, queue_requered);
-    return new CNSConnections(service, queue, retry); 
-}
 
 CNetScheduleAPI* CNetScheduleControl::x_CreateNewClient(bool queue_requered)
 {
@@ -296,23 +101,6 @@ CNetScheduleAPI* CNetScheduleControl::x_CreateNewClient(bool queue_requered)
     int retry;
     x_GetConnectionArgs(service, queue, retry, queue_requered);
     return new CNetScheduleAPI(service, "netschedule_admin", queue);
-}
-CNetScheduleClient_Control* CNetScheduleControl::x_CreateClient(bool queue_requered)
-{
-    string service,queue;
-    int retry;
-    x_GetConnectionArgs(service, queue, retry, queue_requered);
-
-    string sport, host;
-    if ( NStr::SplitInTwo(service, ":", host, sport) ) {
-        try {
-            unsigned int port = NStr::StringToInt(sport);
-            return s_CreateNSClient(host,port,queue,retry);
-        } catch (...) {
-        }
-    }
-    NCBI_THROW(CArgException, eNoArg, 
-               "Wrong service format: \"" + service + "\". It should be host:port.");
 }
 
 
@@ -352,17 +140,29 @@ void CNetScheduleControl::Init(void)
     arg_desc->AddFlag("reconf", "Reload server configuration");
     arg_desc->AddFlag("qlist", "List available queues");
 
-    arg_desc->AddFlag("qcreate", "Create queue (qclass should be present)");
+    arg_desc->AddFlag("qcreate", "Create queue (qclass should be present, and comment is an optional parameter)");
 
     arg_desc->AddOptionalKey("qclass",
                              "queue_class",
                              "Class for queue creation",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("comment",
+                             "commeet",
+                             "Optional parameter for qcreate command",
+                             CArgDescriptions::eString);
+
     arg_desc->AddFlag("qdelete","Delete queue");
 
     arg_desc->AddFlag("drop", "Drop ALL jobs in the queue (no questions asked!)");
-    arg_desc->AddFlag("stat", "Print queue statistics");
+    arg_desc->AddOptionalKey("stat",
+                             "type",
+                             "Print queue statistics",
+                             CArgDescriptions::eString);
+    arg_desc->SetConstraint("stat", 
+                            &(*new CArgAllow_Strings(NStr::eNocase), 
+                              "brief", "all"));
+
     arg_desc->AddOptionalKey("affstat",
                              "affinity",
                              "Print queue statistics summary based on affinity",
@@ -390,67 +190,25 @@ void CNetScheduleControl::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-class NSClient : public INetServiceAPI
+
+class CSimpleSink : public CNetScheduleAdmin::ISink
 {
 public:
-    NSClient(const string& service_name, const string& client_name, const string& queue_name)
-        : INetServiceAPI(service_name, client_name), m_QueueName(queue_name)
-    {}
-
-
-
-    enum EStatisticsOptions 
-    {
-        eStatisticsAll,
-        eStaticticsBrief
-    };
-    void PrintStatistics(CNcbiOstream&      out, 
-                         EStatisticsOptions opt = eStaticticsBrief) const;
-
-    static string SendCmdWaitResponce(CNetSrvConnector& conn, const string& cmd, const string& job_key);
-
-private:
-
-    string m_QueueName;
-
-    virtual void x_SendAuthetication(CNetSrvConnector& conn) const
-    {
-        conn.WriteStr(GetClientName() + "\r\n");
-        conn.WriteStr(m_QueueName + "\r\n");
-    }
+    CSimpleSink(CNcbiOstream& os) : m_Os(os), m_NeedLF(false) {}
+    ~CSimpleSink() { if (m_NeedLF) m_Os << endl; }
     
+    CNcbiOstream& GetOstream(const string& conn_info)
+    {
+        if (m_NeedLF) m_Os << endl;
+        m_Os << conn_info << endl;
+        m_NeedLF = true;
+        return m_Os;
+    }
+private:
+    CNcbiOstream& m_Os;
+    bool m_NeedLF;
 };
 
-/* static */
-string NSClient::SendCmdWaitResponce(CNetSrvConnector& conn, const string& cmd, const string& job_key)
-{
-    string tmp = cmd;
-    if (!job_key.empty())
-        tmp += ' ' + job_key;
-    tmp += "\r\n";
-    conn.WriteStr(tmp);
-    conn.WaitForServer();
-    if (!conn.ReadStr(tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
-                   "Communication error");
-    }
-    return tmp;
-}
-
-void NSClient::PrintStatistics(CNcbiOstream&   out,  EStatisticsOptions opt) const
-{
-    string cmd = "STAT";
-    if (opt == NSClient::eStatisticsAll) {
-        cmd += " ALL";
-    }
-    cmd += "\r\n";
-    CNetSrvConnectorPoll::iterator it = GetPoll().begin();
-    for( ; it != GetPoll().end(); ++it) {
-        out << GetServiceName() << "(" << it->GetHost() << ":" << it->GetPort() << ")" << endl;
-        it->WriteStr(cmd);
-        PrintServerOut(*it, out);
-    }
-}
 
 int CNetScheduleControl::Run(void)
 {
@@ -464,96 +222,124 @@ int CNetScheduleControl::Run(void)
     CNcbiOstream& os = NcbiCout;
 
 
-    // commands which can be performed only on a single server
-    auto_ptr<CNetScheduleClient_Control> ctl;
+    auto_ptr<CNetScheduleAPI> ctl;
     if (args["shutdown"]) {
-        ctl.reset(x_CreateClient(false));
-        ctl->ShutdownServer();
+        ctl.reset(x_CreateNewClient(false));
+        ctl->GetAdmin().ShutdownServer();
         os << "Shutdown request has been sent to server" << endl;
     }
     else if (args["die"]) {
-        ctl.reset(x_CreateClient(false));
-        ctl->ShutdownServer(CNetScheduleClient::eDie);
+        ctl.reset(x_CreateNewClient(false));
+        ctl->GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
         os << "Die request has been sent to server" << endl;
     }
     else if (args["log"]) {
-        ctl.reset(x_CreateClient(false));
+        ctl.reset(x_CreateNewClient(false));
         bool on_off = args["log"].AsBoolean();
-        ctl->Logging(on_off);
+        ctl->GetAdmin().Logging(on_off);
         os << "Logging turned " 
            << (on_off ? "ON" : "OFF") << " on the server" << endl;
     }
     else if (args["monitor"]) {
-        ctl.reset(x_CreateClient(true));
-        ctl->Monitor(os);
+        ctl.reset(x_CreateNewClient(true));
+        ctl->GetAdmin().Monitor(os);
     }
-
-    if (ctl.get())
-        return 0;
-
-    auto_ptr<INSCtrlCmd> cmd;
-    // commands which don't requeire a queue name as a parameter
-    if (args["ver"]) 
-        cmd.reset(new VersionCmd(os));
-
-    else if (args["qlist"]) 
-        cmd.reset(new QueueListCmd(os));
-
-    else if (args["reconf"]) 
-        cmd.reset(new ReconfCmd(os));
-
+    else if( args["count"]) {
+        ctl.reset(x_CreateNewClient(true));
+        string query = args["count"].AsString();
+        os << ctl->GetAdmin().Count(query) << endl;
+    }
+    else if (args["reconf"]) {
+        ctl.reset(x_CreateNewClient(false));
+        ctl->GetAdmin().ReloadServerConfig();
+        os << "Reconfigured." << endl;
+    }
     else if (args["qcreate"]) {
+        ctl.reset(x_CreateNewClient(false));
         if (!args["qclass"] )
             NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -qclass");
         if (!args["queue"] )
             NCBI_THROW(CArgException, eNoArg, "Missing requered agrument: -queue");
+        string comment;
+        if (args["comment"]) {
+            comment = args["comment"].AsString();
+        }
         string new_queue = args["queue"].AsString();
         string qclass = args["qclass"].AsString();
-        cmd.reset(new QueueCreateCmd(os, new_queue, qclass));
+        ctl->GetAdmin().CreateQueue(new_queue, qclass, comment);
+        os << "Queue \"" << new_queue << "\" has been created." << endl;
     }
-    if (cmd.get()) {
-        x_ExecCmd(*cmd, false);
-        return 0;
+    else if (args["qdelete"]) {
+        ctl.reset(x_CreateNewClient(true));
+        ctl->GetAdmin().DeleteQueue(ctl->GetQueueName());
+        os << "Queue \"" << ctl->GetQueueName() << "\" has been deleted." << endl;
     }
-    
-    // commands which requeire a queue name as a parameter
-    if (args["stat"]) 
-        cmd.reset(new StatCmd(os));
-    else if (args["drop"])
-        cmd.reset(new DropJobsCmd(os));
+    else if (args["drop"]) {
+        ctl.reset(x_CreateNewClient(true));
+        ctl->GetAdmin().DropQueue();
+        os << "All jobs from the queue \"" << ctl->GetQueueName() 
+           << "\" has been dropped." << endl;
+    }
     else if (args["dump"]) {
+        ctl.reset(x_CreateNewClient(true));
         string jid;
-        if (args["jid"] )
+        if (args["jid"] ) {
             jid = args["jid"].AsString();
-        cmd.reset(new DumpCmd(os, jid));
+            ctl->GetAdmin().DumpJob(os,jid);
+        } else {            
+            CSimpleSink sink(os);
+            ctl->GetAdmin().DumpQueue(sink);
+        }
+    }
+    else if (args["ver"]) {
+        ctl.reset(x_CreateNewClient(false));
+        CSimpleSink sink(os);
+        ctl->GetAdmin().GetServerVersion(sink);
+    }
+    else if (args["qlist"]) {
+        ctl.reset(x_CreateNewClient(false));
+        CSimpleSink sink(os);
+        ctl->GetAdmin().GetQueueList(sink);
+    }
+    else if (args["stat"]) {
+        string sstatus = args["stat"].AsString();
+        CNetScheduleAdmin::EStatisticsOptions st = CNetScheduleAdmin::eStaticticsBrief;
+        if (NStr::CompareNocase(sstatus, "all") == 0) 
+            st = CNetScheduleAdmin::eStatisticsAll;
+        ctl.reset(x_CreateNewClient(true));
+        CSimpleSink sink(os);
+        ctl->GetAdmin().GetServerStatistics(sink, st);
     }
     else if (args["qprint"]) {
         string sstatus = args["qprint"].AsString();
-        CNetScheduleClient::EJobStatus status =
-            CNetScheduleClient::StringToStatus(sstatus);
-        if (status == CNetScheduleClient::eJobNotFound) {
+        CNetScheduleAPI::EJobStatus status =
+            CNetScheduleAPI::StringToStatus(sstatus);
+        if (status == CNetScheduleAPI::eJobNotFound) {
             ERR_POST("Status string unknown:" << sstatus);
             return 1;
         }
-        cmd.reset(new PrintQueueCmd(os, status));
+        ctl.reset(x_CreateNewClient(true));
+        CSimpleSink sink(os);
+        ctl->GetAdmin().PrintQueue(sink, status);
     }
     else if (args["affstat"]) {
         string affinity = args["affstat"].AsString();
-        cmd.reset(new AffinityStatCmd(os, affinity));
-    }
-    else if (args["qdelete"])
-        cmd.reset(new DeleteQueueCmd(os));
+        ctl.reset(x_CreateNewClient(true));
 
-    if (cmd.get()) {
-        x_ExecCmd(*cmd, true);
-        return 0;
+        os << "Queue: \"" << ctl->GetQueueName() << "\"" << endl;
+        CNetScheduleAdmin::TStatusMap st_map;
+        ctl->GetAdmin().StatusSnapshot(st_map, affinity);
+        ITERATE(CNetScheduleAdmin::TStatusMap, it, st_map) {
+            os << CNetScheduleAPI::StatusToString(it->first) << ": "
+               << it->second
+               << endl;
+        }
+        os << endl;
+    } else {
+        NCBI_THROW(CArgException, eNoArg, 
+                   "Unknown command or command is not specified.");
     }
 
-    if( args["count"]) {
-        string query = args["count"].AsString();
-        auto_ptr<CNetScheduleAPI> cln(x_CreateNewClient(true));
-        os << cln->GetAdmin().Count(query) << endl;
-    }
     return 0;
 }
 

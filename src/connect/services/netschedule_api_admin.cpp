@@ -44,8 +44,8 @@ void CNetScheduleAdmin::DropJob(const string& job_key) const
 void CNetScheduleAdmin::ShutdownServer(CNetScheduleAdmin::EShutdownLevel level) const
 {
     if (m_API->GetPoll().IsLoadBalanced()) {
-        // TODO throw an exception.
-        return;
+        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed, 
+                   "This command is allowed only for non-loadbalance client.");
     }
 
     string cmd = "SHUTDOWN ";
@@ -67,8 +67,8 @@ void CNetScheduleAdmin::ShutdownServer(CNetScheduleAdmin::EShutdownLevel level) 
 void CNetScheduleAdmin::ReloadServerConfig() const
 {
     if (m_API->GetPoll().IsLoadBalanced()) {
-        // TODO throw an exception.
-        return;
+        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed, 
+                   "This command is allowed only for non-loadbalance client.");
     }
     m_API->SendCmdWaitResponse(m_API->x_GetConnector(), "RECO"); 
 
@@ -102,8 +102,9 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname) const
 
 void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key) const
 {
-    string cmd = "DUMP " + job_key;
-    CNetSrvConnector& conn = m_API->x_GetConnector(job_key);
+    string cmd = "DUMP " + job_key + "\r\n";
+    CNetSrvConnectorHolder conn = m_API->x_GetConnector(job_key);
+    conn->WriteStr(cmd);
     m_API->PrintServerOut(conn, out);
 }
 
@@ -133,7 +134,7 @@ void CNetScheduleAdmin::GetServerVersion(ISink& sink) const
 
 void CNetScheduleAdmin::DumpQueue(ISink& sink) const
 {
-    string cmd = "DUMP";        
+    string cmd = "DUMP\r\n";        
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
         CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
@@ -145,7 +146,7 @@ void CNetScheduleAdmin::DumpQueue(ISink& sink) const
 
 void CNetScheduleAdmin::PrintQueue(ISink& sink, CNetScheduleAPI::EJobStatus status) const
 {
-    string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status);;        
+    string cmd = "QPRT " + CNetScheduleAPI::StatusToString(status) + "\r\n";        
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
         CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
@@ -163,6 +164,7 @@ void CNetScheduleAdmin::GetServerStatistics(ISink& sink,
     if (opt == eStatisticsAll) {
         cmd += " ALL";
     }
+    cmd += "\r\n";
     for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
         it != m_API->GetPoll().end(); ++it) {
         CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
@@ -174,42 +176,34 @@ void CNetScheduleAdmin::GetServerStatistics(ISink& sink,
 
 void CNetScheduleAdmin::Monitor(CNcbiOstream & out) const
 {
-    /*
-    CheckConnect(kEmptyStr);
-    CSockGuard sg(*m_Sock);
-
-    MakeCommandPacket(&m_Tmp, "MONI ");
-    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
-    m_Tmp = "QUIT";
-    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
-
-    STimeout rto;
-    rto.sec = 1;
-    rto.usec = 0;
-    m_Sock->SetTimeout(eIO_Read, &rto);
-
-    string line;
-    while (1) {
-
-        EIO_Status st = m_Sock->ReadLine(line);       
-        if (st == eIO_Success) {
-            if (m_Tmp == "END")
-                break;
-            out << line << "\n" << flush;
-        } else {
-            EIO_Status st = m_Sock->GetStatus(eIO_Open);
-            if (st != eIO_Success) {
-                break;
-            }
-        }
+    if (m_API->GetPoll().IsLoadBalanced()) {
+        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed, 
+                   "This command is allowed only for non-loadbalance client.");
     }
-    */
+    
+    CNetSrvConnectorHolder conn = m_API->x_GetConnector();
+    conn->WriteStr("MONI QUIT\r\n");
+
+    conn->Telnet(out, "END");
+}
+
+void CNetScheduleAdmin::Logging(bool on_off) const
+{
+
+    if (m_API->GetPoll().IsLoadBalanced()) {
+        NCBI_THROW(CNetScheduleException, eCommandIsNotAllowed, 
+                   "This command is allowed only for non-loadbalance client.");
+    }
+    string cmd = "LOG ";
+    cmd += on_off ? "ON" : "OFF";
+
+    m_API->SendCmdWaitResponse(m_API->x_GetConnector(), cmd); 
 }
 
 
 void CNetScheduleAdmin::GetQueueList(ISink& sink) const
 {
-    string cmd = "QLIST";
+    string cmd = "QLST";
     for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
         it != m_API->GetPoll().end(); ++it) {
         CNcbiOstream& os = sink.GetOstream(m_API->GetConnectionInfo(*it));
@@ -217,6 +211,40 @@ void CNetScheduleAdmin::GetQueueList(ISink& sink) const
     }
 }
 
+
+void CNetScheduleAdmin::StatusSnapshot(CNetScheduleAdmin::TStatusMap&  status_map,
+                                       const string& affinity_token) const
+{
+    string cmd = "STSN";
+    cmd.append(" aff=\"");
+    cmd.append(affinity_token);
+    cmd.append("\"");
+
+    for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
+        it != m_API->GetPoll().end(); ++it) {
+        it->WriteStr(cmd);
+        it->WaitForServer();
+
+        string line;
+        while (true) {
+            if (it->ReadStr(line)) {
+                break;
+            }
+            m_API->CheckServerOK(line);
+            if (line == "END")
+                break;
+
+            // parse the status message
+            string st_str, cnt_str;
+            bool delim = NStr::SplitInTwo(line, " ", st_str, cnt_str);
+            if (delim) {
+                CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::StringToStatus(st_str);
+                unsigned cnt = NStr::StringToUInt(cnt_str);
+                status_map[status] += cnt;
+            }
+        }
+    }
+}
 
 unsigned long CNetScheduleAdmin::Count(const string& query) const
 {

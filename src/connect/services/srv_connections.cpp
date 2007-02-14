@@ -146,6 +146,33 @@ void CNetSrvConnector::WaitForServer(unsigned wait_sec)
     }
 }
 
+void CNetSrvConnector::Telnet( CNcbiOstream& out, const string& stop_string)
+{
+    _ASSERT(x_IsConnected());
+
+    STimeout rto;
+    rto.sec = 1;
+    rto.usec = 0;
+    m_Socket->SetTimeout(eIO_Read, &rto);
+
+    string line;
+    while (1) {
+
+        EIO_Status st = m_Socket->ReadLine(line);       
+        if (st == eIO_Success) {
+            if (!stop_string.empty() && line == stop_string)
+                break;
+            out << line << "\n" << flush;
+        } else {
+            EIO_Status st = m_Socket->GetStatus(eIO_Open);
+            if (st != eIO_Success) {
+                break;
+            }
+        }
+    }
+
+}
+
 void CNetSrvConnector::x_CheckConnect()
 {
     if (x_IsConnected())

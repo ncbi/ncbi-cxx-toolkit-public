@@ -227,7 +227,9 @@ private:
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key, Arg1 arg1) const
     {
         string tmp = cmd;
-        tmp += ' ' + job_key + ' ' + ToStr<Arg1>::Convert(arg1);
+        if (!job_key.empty())
+            tmp += ' ' + job_key + ' ';
+        tmp += ToStr<Arg1>::Convert(arg1);
         return SendCmdWaitResponse(x_GetConnector(job_key), tmp);   
     }
     template<typename Arg1, typename Arg2>
@@ -235,7 +237,9 @@ private:
                                     Arg1 arg1, Arg2 arg2) const
     {
         string tmp = cmd;
-        tmp += ' ' + job_key + ' ' + ToStr<Arg1>::Convert(arg1) + ' ' + ToStr<Arg2>::Convert(arg2);
+        if (!job_key.empty())
+            tmp += ' ' + job_key + ' ';
+        tmp += ToStr<Arg1>::Convert(arg1) + ' ' + ToStr<Arg2>::Convert(arg2);
         return SendCmdWaitResponse(x_GetConnector(job_key), tmp);   
     }
     template<typename Arg1, typename Arg2, typename Arg3>
@@ -243,7 +247,9 @@ private:
                                     Arg1 arg1, Arg2 arg2, Arg3 arg3) const
     {
         string tmp = cmd;
-        tmp += ' ' + job_key + ' ' + ToStr<Arg1>::Convert(arg1) + ' ' 
+        if (!job_key.empty())
+            tmp += ' ' + job_key + ' ';
+        tmp += ToStr<Arg1>::Convert(arg1) + ' ' 
             + ToStr<Arg2>::Convert(arg2) + ' ' + ToStr<Arg3>::Convert(arg3);
         return SendCmdWaitResponse(x_GetConnector(job_key), tmp);   
     }
@@ -605,7 +611,7 @@ public:
     ///    Status map (status to job count)
     /// @param affinity_token
     ///    Affinity token (optional)
-    void StatusSnapshot(TStatusMap*   status_map,
+    void StatusSnapshot(TStatusMap& status_map,
                         const string& affinity_token) const;
 
 
@@ -709,6 +715,7 @@ inline CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
 inline CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
 {
     DiscoverLowPriorityServers(true);
+    SetConnMode(INetServiceAPI::eKeepConnection);
     return CNetScheduleAdmin(*this);
 }
 
@@ -793,7 +800,8 @@ public:
         eInvalidClient,
         eAccessDenied,
         eDuplicateName,
-        eQuerySyntaxError
+        eQuerySyntaxError,
+        eCommandIsNotAllowed
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -813,6 +821,7 @@ public:
         case eAccessDenied:        return "eAccessDenied";
         case eDuplicateName:       return "eDuplicateName";
         case eQuerySyntaxError:    return "eQuerySyntaxError";
+        case eCommandIsNotAllowed: return "eCommandIsNotAllowed";
         default:                   return CNetServiceException::GetErrCodeString();
         }
     }
