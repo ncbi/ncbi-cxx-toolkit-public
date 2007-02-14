@@ -259,7 +259,6 @@ void CIdDeMux<TBV, TBVFact>::FreeUnusedMem()
 {
     size_t N = m_DimSpace.size();
     for (size_t i = 0; i < N; ++i) {
-        bool dim_found = false;
         const TDimVector& dv = GetDimVector(i);
         size_t M = dv.size();
         for (size_t j = 0; j < M; ++j) {
