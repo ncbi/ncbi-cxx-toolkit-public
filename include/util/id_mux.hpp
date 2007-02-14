@@ -164,15 +164,20 @@ public:
     /// 
     bool GetCoordinatesFast(unsigned id, unsigned* coord) const;
 
-    /// Set id using dimensional point
+    /// Set/clear id using dimensional point
     ///
     /// Method does NOT check if the same id already been assigned 
     /// to some different coordinates. In other words this method
     /// allows alternative projections.
-    void SetCoordinates(unsigned id, const TDimensionalPoint& coord);
+    void SetCoordinates(unsigned                 id, 
+                        const TDimensionalPoint& coord,
+                        bool                     set_flag = true);
 
-    /// Set coordinates C-style
-    void SetCoordinatesFast(unsigned id, const unsigned* coord);
+    /// Set/clear coordinates C-style
+    void SetCoordinatesFast(unsigned id, 
+                            const unsigned* coord,
+                            bool            set_flag = true);
+
 
     /// Get dimension vector
     /// @param i
@@ -220,6 +225,7 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinates(unsigned id,
     return GetCoordinatesFast(id, &((*coord)[0]));
 }
 
+
 template<class TBV, class TBVFact>
 bool CIdDeMux<TBV, TBVFact>::GetCoordinatesFast(unsigned  id, 
                                                 unsigned* coord) const
@@ -248,18 +254,20 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinatesFast(unsigned  id,
 
 template<class TBV, class TBVFact>
 void 
-CIdDeMux<TBV, TBVFact>::SetCoordinates(unsigned id, 
-                                       const TDimensionalPoint& coord)
+CIdDeMux<TBV, TBVFact>::SetCoordinates(unsigned                 id, 
+                                       const TDimensionalPoint& coord,
+                                       bool                     set_flag)
 {
     _ASSERT(coord.size() == GetN());
-    SetCoordinatesFast(id, &(coord[0]));
+    SetCoordinatesFast(id, &(coord[0]), set_flag);
 }
 
 
 template<class TBV, class TBVFact>
 void 
-CIdDeMux<TBV, TBVFact>::SetCoordinatesFast(unsigned id, 
-                                           const unsigned* coord)
+CIdDeMux<TBV, TBVFact>::SetCoordinatesFast(unsigned        id, 
+                                           const unsigned* coord,
+                                           bool            set_flag)
 {
     size_t N = GetN();
     for (size_t i = 0; i < N; ++i) {
@@ -269,10 +277,13 @@ CIdDeMux<TBV, TBVFact>::SetCoordinatesFast(unsigned id,
             dv.resize(c+1);
         }
         TBitVector* bv = dv[c].get();
+        if (set_flag == false && bv == 0) {
+            continue; // nothing to do
+        }
         if (!bv) {
             dv[c] = bv = TBVFactory::Create();
         }
-        bv->set(id);
+        bv->set(id, set_flag);
     } // for i
 }
 
@@ -321,25 +332,5 @@ void CIdDeMux<TBV, TBVFact>::InitDim(size_t i, size_t dim_size)
 
 END_NCBI_SCOPE
 
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2006/03/28 14:45:25  kuznets
-* +SetProjection()
-*
-* Revision 1.4  2006/03/23 17:08:08  kuznets
-* typo fix
-*
-* Revision 1.3  2006/03/23 13:50:16  kuznets
-* Added some C-style (works faster in some situations)
-*
-* Revision 1.2  2006/03/23 13:32:10  gouriano
-* Sync PutDimVector declaration and definition
-*
-* Revision 1.1  2006/03/22 19:30:36  kuznets
-* initial revision
-*
-* ---------------------------------------------------------------------------
-*/
 
 #endif  /* UTIL___ID_MUX__HPP */
