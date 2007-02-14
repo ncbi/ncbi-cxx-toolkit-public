@@ -46,7 +46,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CBlastDbDataLoader::TRegisterLoaderInfo CBlastDbDataLoader::RegisterInObjectManager(
+CBlastDbDataLoader::TRegisterLoaderInfo 
+CBlastDbDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string& dbname,
     const EDbType dbtype,
@@ -59,6 +60,17 @@ CBlastDbDataLoader::TRegisterLoaderInfo CBlastDbDataLoader::RegisterInObjectMana
     return maker.GetRegisterInfo();
 }
 
+CBlastDbDataLoader::TRegisterLoaderInfo 
+CBlastDbDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    CRef<CSeqDB> db_handle,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    TRecycler recycler(db_handle);
+    CDataLoader::RegisterInObjectManager(om, recycler, is_default, priority);
+    return recycler.GetRegisterInfo();
+}
 
 inline
 string DbTypeToStr(CBlastDbDataLoader::EDbType dbtype)
@@ -81,10 +93,26 @@ CSeqDB::ESeqType DbTypeToSeqType(CBlastDbDataLoader::EDbType dbtype)
     }
 }
 
+inline
+CBlastDbDataLoader::EDbType SeqTypeToDbType(CSeqDB::ESeqType seq_type)
+{
+    switch (seq_type) {
+    case CSeqDB::eNucleotide:   return CBlastDbDataLoader::eNucleotide;
+    case CSeqDB::eProtein:      return CBlastDbDataLoader::eProtein;
+    default:                    return CBlastDbDataLoader::eUnknown;
+    }
+}
 
 string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
     return "BLASTDB_" + param.m_DbName + DbTypeToStr(param.m_DbType);
+}
+
+string CBlastDbDataLoader::GetLoaderNameFromArgs(CConstRef<CSeqDB> db_handle)
+{
+    _ASSERT(db_handle.NotEmpty());
+    return "BLASTDB_" + db_handle->GetDBNameList() + 
+        DbTypeToStr(SeqTypeToDbType(db_handle->GetSequenceType()));
 }
 
 
@@ -95,6 +123,16 @@ CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
       m_DBType       (param.m_DbType)
 {
     m_SeqDB.Reset(new CSeqDB(m_DBName, DbTypeToSeqType(m_DBType)));
+}
+
+CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
+                                       CRef<CSeqDB>        db_handle)
+    : CDataLoader    (loader_name)
+{
+    if (db_handle.Empty()) {
+        NCBI_THROW(CSeqDBException, eArgErr, "Empty BLAST database handle");
+    }
+    m_SeqDB = db_handle;
 }
 
 CBlastDbDataLoader::~CBlastDbDataLoader(void)
