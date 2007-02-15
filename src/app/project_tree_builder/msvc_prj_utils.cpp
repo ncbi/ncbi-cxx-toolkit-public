@@ -299,6 +299,9 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
         config.m_Debug = registry.GetString(config_name, 
                                             "debug",
                                             "FALSE") != "FALSE";
+        if (GetApp().m_TweakVTune) {
+            config.m_Debug = true;
+        }
         config.m_RuntimeLibrary = registry.GetString(config_name, 
                                                      "runtimeLibraryOption",
                                                      "0");

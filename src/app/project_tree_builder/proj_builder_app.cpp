@@ -236,6 +236,7 @@ CProjBulderApp::CProjBulderApp(void)
     m_Dll = false;
     m_AddMissingLibs = false;
     m_ScanWholeTree  = true;
+    m_TweakVTune = false;
     m_CurrentBuildTree = 0;
     m_ConfirmCfg = false;
 }

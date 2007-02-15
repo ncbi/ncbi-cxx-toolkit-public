@@ -15,3 +15,4 @@
 #define IDC_STATIC_PROJTAG             1013
 #define IDC_EDIT_PROJTAG               1014
 #define IDC_STATIC_FRAME               1015
+#define IDC_CHECK_VTUNE                1016
