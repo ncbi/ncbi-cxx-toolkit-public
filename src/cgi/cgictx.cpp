@@ -348,6 +348,13 @@ string CCgiContext::RetrieveTrackingId() const
     if(TCGI_DisableTrackingCookie::GetDefault()) 
         return "";
 
+    bool is_found = false;
+    const CCgiEntry& entry = m_Request->GetEntry(TCGI_TrackingCookieName::GetDefault(), 
+                                                &is_found);
+    if (is_found) {
+        return entry.GetValue();
+    }
+
     const CCgiCookies& cookies = m_Request->GetCookies();
 
     string tid;
