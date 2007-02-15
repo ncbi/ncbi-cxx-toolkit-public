@@ -508,7 +508,8 @@ CPsiBlastValidate::QueryFactory(CRef<IQueryFactory> query_factory,
         CFormatGuess::SequenceType((const char*)sblk->sequence_start,
                                    static_cast<unsigned>(sblk->length));
     if (sequence_type == CFormatGuess::eNucleotide) {
-        excpt_msg.assign("PSI-BLAST cannot accept nucleotide queries");
+        excpt_msg.assign("PSI-BLAST cannot accept nucleotide ");
+        excpt_msg += (qf_type == eQFT_Query ? "queries" : "subjects");
         NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
     }
 }
