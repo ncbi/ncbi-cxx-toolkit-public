@@ -332,7 +332,11 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
     return total_hits;
 }
 
-void BlastNaChooseScanSubject(LookupTableWrap *lookup_wrap)
+/** Choose the most appropriate function to scan through
+ * subject sequences, assuming a standard blastn lookup table
+ * @param lookup_wrap Structure containing lookup table [in][out]
+ */
+static void s_NaChooseScanSubject(LookupTableWrap *lookup_wrap)
 {
     BlastNaLookupTable *lookup = (BlastNaLookupTable *)lookup_wrap->lut;
 
@@ -1431,7 +1435,11 @@ base_3:
     return total_hits;
 }
 
-void BlastSmallNaChooseScanSubject(LookupTableWrap *lookup_wrap)
+/** Choose the most appropriate function to scan through
+ * subject sequences, assuming a small-query blastn lookup table
+ * @param lookup_wrap Structure containing lookup table [in][out]
+ */
+static void s_SmallNaChooseScanSubject(LookupTableWrap *lookup_wrap)
 {
     /* the specialized scanning routines below account for
        anything the nucleotide lookup table construction
@@ -2761,7 +2769,11 @@ base_3:
    return total_hits;
 }
 
-void BlastMBChooseScanSubject(LookupTableWrap *lookup_wrap)
+/** Choose the most appropriate function to scan through
+ * subject sequences, assuming a megablast lookup table
+ * @param lookup_wrap Structure containing lookup table [in][out]
+ */
+static void s_MBChooseScanSubject(LookupTableWrap *lookup_wrap)
 {
     /* the specialized scanning routines below account for
        anything the nucleotide lookup table construction
@@ -2838,4 +2850,14 @@ void BlastMBChooseScanSubject(LookupTableWrap *lookup_wrap)
             break;
         }
     }
+}
+
+void BlastChooseNucleotideScanSubject(LookupTableWrap *lookup_wrap)
+{
+    if (lookup_wrap->lut_type == eNaLookupTable)
+        s_NaChooseScanSubject(lookup_wrap);
+    else if (lookup_wrap->lut_type == eSmallNaLookupTable)
+        s_SmallNaChooseScanSubject(lookup_wrap);
+    else
+        s_MBChooseScanSubject(lookup_wrap);
 }

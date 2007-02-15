@@ -644,8 +644,6 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    BlastCoreAuxStruct* aux_struct;
    Boolean blastp = (lookup_wrap->lut_type == eAaLookupTable ||
                      lookup_wrap->lut_type == eRPSLookupTable);
-   Boolean small_na = (lookup_wrap->lut_type == eSmallNaLookupTable);
-   Boolean mb_lookup = (lookup_wrap->lut_type == eMBLookupTable);
    Boolean indexed_mb_lookup = (lookup_wrap->lut_type == eIndexedMBLookupTable);
    Boolean phi_lookup = (lookup_wrap->lut_type == ePhiLookupTable ||
                          lookup_wrap->lut_type == ePhiNaLookupTable);
@@ -671,14 +669,9 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    } else if (blastp) {
       aux_struct->WordFinder = BlastAaWordFinder;
    } else {
+      BlastChooseNucleotideScanSubject(lookup_wrap);
       BlastChooseNaExtend(lookup_wrap);
       aux_struct->WordFinder = BlastNaWordFinder;
-      if (small_na)
-         BlastSmallNaChooseScanSubject(lookup_wrap);
-      else if (mb_lookup)
-         BlastMBChooseScanSubject(lookup_wrap);
-      else
-         BlastNaChooseScanSubject(lookup_wrap);
    }
    
    aux_struct->offset_pairs = 
