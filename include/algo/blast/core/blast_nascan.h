@@ -48,22 +48,10 @@ typedef Int4 (*TNaScanSubjectFunction)(const LookupTableWrap* lookup_wrap,
                                   Int4* end_offset);
 
 /** Choose the most appropriate function to scan through
- * subject sequences, assuming a standard blastn lookup table
+ * nucleotide subject sequences
  * @param lookup_wrap Structure containing lookup table [in][out]
  */
-void BlastNaChooseScanSubject(LookupTableWrap *lookup_wrap);
-
-/** Choose the most appropriate function to scan through
- * subject sequences, assuming a small-query blastn lookup table
- * @param lookup_wrap Structure containing lookup table [in][out]
- */
-void BlastSmallNaChooseScanSubject(LookupTableWrap *lookup_wrap);
-
-/** Choose the most appropriate function to scan through
- * subject sequences, assuming a megablast lookup table
- * @param lookup_wrap Structure containing lookup table [in][out]
- */
-void BlastMBChooseScanSubject(LookupTableWrap *lookup_wrap);
+void BlastChooseNucleotideScanSubject(LookupTableWrap *lookup_wrap);
 
 #ifdef __cplusplus
 }
