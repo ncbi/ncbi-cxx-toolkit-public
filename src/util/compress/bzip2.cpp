@@ -104,7 +104,8 @@ bool CBZip2Compression::CompressBuffer(
     }
     if ( !dst_buf || !dst_len ) {
         SetError(BZ_PARAM_ERROR, "bad argument");
-        ERR_POST(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
+        ERR_COMPRESS(
+            FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
     LIMIT_SIZE_PARAM_U(src_len);
@@ -120,7 +121,8 @@ bool CBZip2Compression::CompressBuffer(
     *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK) {
-        ERR_POST(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
+        ERR_COMPRESS(
+            FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
     return true;
@@ -164,7 +166,8 @@ bool CBZip2Compression::DecompressBuffer(
     *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK ) {
-        ERR_POST(FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
+        ERR_COMPRESS(
+            FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
         return false;
     }
     return true;
@@ -320,7 +323,8 @@ bool CBZip2CompressionFile::Open(const string& file_name, EMode mode)
     if ( errcode != BZ_OK ) {
         Close();
         SetError(errcode, GetBZip2ErrorDescription(errcode));
-        ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Open", false));
+        ERR_COMPRESS(
+            FormatErrorMessage("CBZip2CompressionFile::Open", false));
         return false;
     };
     SetError(BZ_OK);
@@ -351,7 +355,8 @@ long CBZip2CompressionFile::Read(void* buf, size_t len)
             m_DecompressMode = eMode_Decompress;
             SetError(errcode, GetBZip2ErrorDescription(errcode));
             if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
-                ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Read", false));
+                ERR_COMPRESS(
+                    FormatErrorMessage("CBZip2CompressionFile::Read", false));
                 return -1;
             } 
             if ( errcode == BZ_STREAM_END ) {
@@ -376,7 +381,8 @@ long CBZip2CompressionFile::Write(const void* buf, size_t len)
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
     if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
-        ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Write", false));
+        ERR_COMPRESS(
+            FormatErrorMessage("CBZip2CompressionFile::Write", false));
         return -1;
     }; 
     return len;
@@ -405,7 +411,8 @@ bool CBZip2CompressionFile::Close(void)
     }
 
     if ( errcode != BZ_OK ) {
-        ERR_POST(FormatErrorMessage("CBZip2CompressionFile::Close", false));
+        ERR_COMPRESS(
+            FormatErrorMessage("CBZip2CompressionFile::Close", false));
         return false;
     }; 
     return true;
@@ -455,7 +462,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CBZip2Compressor::Init"));
+    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Init"));
     return eStatus_Error;
 }
 
@@ -484,7 +491,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
     if ( errcode == BZ_RUN_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CBZip2Compressor::Process"));
+    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Process"));
     return eStatus_Error;
 }
 
@@ -515,7 +522,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
     if ( errcode == BZ_FLUSH_OK ) {
         return eStatus_Overflow;
     }
-    ERR_POST(FormatErrorMessage("CBZip2Compressor::Flush"));
+    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Flush"));
     return eStatus_Error;
 }
 
@@ -546,7 +553,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
     case BZ_STREAM_END:
         return eStatus_EndOfData;
     }
-    ERR_POST(FormatErrorMessage("CBZip2Compressor::Finish"));
+    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::Finish"));
     return eStatus_Error;
 }
 
@@ -560,7 +567,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::End(void)
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CBZip2Compressor::End"));
+    ERR_COMPRESS(FormatErrorMessage("CBZip2Compressor::End"));
     return eStatus_Error;
 }
 
@@ -600,7 +607,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Init(void)
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CBZip2Decompressor::Init"));
+    ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::Init"));
     return eStatus_Error;
 }
 
@@ -657,7 +664,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
             case BZ_STREAM_END:
                 return eStatus_EndOfData;
             }
-            ERR_POST(FormatErrorMessage("CBZip2Decompressor::Process"));
+            ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::Process"));
             return eStatus_Error;
         }
         /* else eMode_ThansparentRead :  see below */
@@ -704,7 +711,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::End(void)
          errcode == BZ_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CBZip2Decompressor::End"));
+    ERR_COMPRESS(FormatErrorMessage("CBZip2Decompressor::End"));
     return eStatus_Error;
 }
 

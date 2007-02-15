@@ -277,13 +277,13 @@ bool CZipCompression::CompressBuffer(
     }
     if ( !dst_buf || !dst_len ) {
         SetError(Z_STREAM_ERROR, "bad argument");
-        ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
     *dst_len = 0;
     if (src_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
-        ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
     LIMIT_SIZE_PARAM_U(dst_size);
@@ -296,7 +296,7 @@ bool CZipCompression::CompressBuffer(
         header_len = s_WriteGZipHeader(dst_buf, dst_size);
         if (!header_len) {
             SetError(Z_STREAM_ERROR, "Cannot write gzip header");
-            ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
+            ERR_COMPRESS(FormatErrorMessage("CZipCompression::CompressBuffer"));
             return false;
         }
     }
@@ -307,7 +307,7 @@ bool CZipCompression::CompressBuffer(
     // Check for source > 64K on 16-bit machine:
     if ( STREAM->avail_in != src_len ) {
         SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
-        ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
 #endif
@@ -315,7 +315,7 @@ bool CZipCompression::CompressBuffer(
     STREAM->avail_out = (unsigned int)(dst_size - header_len);
     if ( STREAM->avail_out != dst_size - header_len ) {
         SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
-        ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
 
@@ -341,7 +341,7 @@ bool CZipCompression::CompressBuffer(
     }
     SetError(errcode, zError(errcode));
     if ( errcode != Z_OK ) {
-        ERR_POST(FormatErrorMessage("CZipCompression::CompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
 
@@ -353,7 +353,7 @@ bool CZipCompression::CompressBuffer(
             (char*)dst_buf + *dst_len, dst_size, src_len, crc);
         if ( !footer_len ) {
             SetError(-1, "Cannot write gzip footer");
-            ERR_POST(FormatErrorMessage("CZipCompressor::CompressBuffer"));
+            ERR_COMPRESS(FormatErrorMessage("CZipCompressor::CompressBuffer"));
             return false;
         }
         *dst_len += footer_len;
@@ -375,13 +375,13 @@ bool CZipCompression::DecompressBuffer(
     }
     if ( !dst_buf || !dst_len ) {
         SetError(Z_STREAM_ERROR, "bad argument");
-        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
     *dst_len = 0;
     if (src_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
-        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
     LIMIT_SIZE_PARAM_U(dst_size);
@@ -399,14 +399,14 @@ bool CZipCompression::DecompressBuffer(
     // Check for source > 64K on 16-bit machine:
     if ( STREAM->avail_in != src_len - header_len ) {
         SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
-        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
     STREAM->next_out = (unsigned char*)dst_buf;
     STREAM->avail_out = (unsigned int)dst_size;
     if ( STREAM->avail_out != dst_size ) {
         SetError(Z_BUF_ERROR, zError(Z_BUF_ERROR));
-        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
 
@@ -446,7 +446,7 @@ bool CZipCompression::DecompressBuffer(
     // Decompression results processing
     SetError(errcode, zError(errcode));
     if ( errcode != Z_OK ) {
-        ERR_POST(FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
     return true;
@@ -787,7 +787,7 @@ CCompressionProcessor::EStatus CZipCompressor::Init(void)
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CZipCompressor::Init"));
+    ERR_COMPRESS(FormatErrorMessage("CZipCompressor::Init"));
     return eStatus_Error;
 }
 
@@ -800,7 +800,7 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
 {
     if (in_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
-        ERR_POST(FormatErrorMessage("CZipCompressor::Process"));
+        ERR_COMPRESS(FormatErrorMessage("CZipCompressor::Process"));
         return eStatus_Error;
     }
     LIMIT_SIZE_PARAM_U(out_size);
@@ -812,7 +812,7 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
         header_len = s_WriteGZipHeader(out_buf, out_size, &m_FileInfo);
         if (!header_len) {
             SetError(-1, "Cannot write gzip header");
-            ERR_POST(FormatErrorMessage("CZipCompressor::Process"));
+            ERR_COMPRESS(FormatErrorMessage("CZipCompressor::Process"));
             return eStatus_Error;
         }
         m_NeedWriteHeader = false;
@@ -838,7 +838,7 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CZipCompressor::Process"));
+    ERR_COMPRESS(FormatErrorMessage("CZipCompressor::Process"));
     return eStatus_Error;
 }
 
@@ -868,7 +868,7 @@ CCompressionProcessor::EStatus CZipCompressor::Flush(
         }
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CZipCompressor::Flush"));
+    ERR_COMPRESS(FormatErrorMessage("CZipCompressor::Flush"));
     return eStatus_Error;
 }
 
@@ -902,14 +902,14 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
                 s_WriteGZipFooter(out_buf + *out_avail, STREAM->avail_out,
                                   GetProcessedSize(), m_CRC32);
             if ( !footer_len ) {
-                ERR_POST("CZipCompressor::Finish: Cannot write gzip footer");
+                ERR_COMPRESS("CZipCompressor::Finish: Cannot write gzip footer");
                 return eStatus_Overflow;
             }
             *out_avail += footer_len;
         }
         return eStatus_EndOfData;
     }
-    ERR_POST(FormatErrorMessage("CZipCompressor::Finish"));
+    ERR_COMPRESS(FormatErrorMessage("CZipCompressor::Finish"));
     return eStatus_Error;
 }
 
@@ -923,7 +923,7 @@ CCompressionProcessor::EStatus CZipCompressor::End(void)
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CZipCompressor::End"));
+    ERR_COMPRESS(FormatErrorMessage("CZipCompressor::End"));
     return eStatus_Error;
 }
 
@@ -972,7 +972,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Init(void)
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CZipDecompressor::Init"));
+    ERR_COMPRESS(FormatErrorMessage("CZipDecompressor::Init"));
     return eStatus_Error;
 }
 
@@ -988,7 +988,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
     }
     if (in_len > kMax_UInt) {
         SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
-        ERR_POST(FormatErrorMessage("CZipDecompressor::Process"));
+        ERR_COMPRESS(FormatErrorMessage("CZipDecompressor::Process"));
         return eStatus_Error;
     }
     LIMIT_SIZE_PARAM_U(out_size);
@@ -1098,7 +1098,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
             case Z_STREAM_END:
                 return eStatus_EndOfData;
             }
-            ERR_POST(FormatErrorMessage("CZipDecompressor::Process"));
+            ERR_COMPRESS(FormatErrorMessage("CZipDecompressor::Process"));
             return eStatus_Error;
         }
         /* else eMode_ThansparentRead :  see below */
@@ -1162,7 +1162,7 @@ CCompressionProcessor::EStatus CZipDecompressor::End(void)
          errcode == Z_OK ) {
         return eStatus_Success;
     }
-    ERR_POST(FormatErrorMessage("CZipDecompressor::End"));
+    ERR_COMPRESS(FormatErrorMessage("CZipDecompressor::End"));
     return eStatus_Error;
 }
 

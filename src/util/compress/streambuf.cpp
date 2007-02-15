@@ -120,10 +120,10 @@ CCompressionStreambuf::~CCompressionStreambuf()
         if ( sp->m_State == CCompressionStreamProcessor::eActive ) {
             Finalize(CCompressionStream::eRead);
             if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
-                ERR_POST(msg_where << msg_overflow);
+                ERR_COMPRESS(msg_where << msg_overflow);
             }
             if ( sp->m_LastStatus == CP::eStatus_Error ) {
-                ERR_POST(msg_where << msg_error);
+                ERR_COMPRESS(msg_where << msg_error);
             }
         }
         sp->m_Processor->End();
@@ -135,10 +135,10 @@ CCompressionStreambuf::~CCompressionStreambuf()
         if ( sp->m_State == CCompressionStreamProcessor::eActive ) {
             Finalize(CCompressionStream::eWrite);
             if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
-                ERR_POST(msg_where << msg_overflow);
+                ERR_COMPRESS(msg_where << msg_overflow);
             }
             if ( sp->m_LastStatus == CP::eStatus_Error ) {
-                ERR_POST(msg_where << msg_error);
+                ERR_COMPRESS(msg_where << msg_error);
             }
         }
         sp->m_Processor->End();
