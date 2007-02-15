@@ -485,6 +485,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                         env->QTree().CreateNode(CQueryParseNode::eIn, 0, 0,
                                            string(not_start, ptr-not_start+2));
                     env->AttachToPool(qnode);
+			        env->SetIN_Context(qnode);                    
                     qnode->GetValue().SetLoc(line, line_pos);
                     qnode->GetValue().SetNot();
                     
