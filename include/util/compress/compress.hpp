@@ -51,6 +51,9 @@ const streamsize kCompressionDefaultBufSize = 16*1024;
 class CCompressionFile;
 class CCompressionStreambuf;
 
+// Macro to report errors in compression API
+#define ERR_COMPRESS(message) ERR_POST(Warning << message)
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
