@@ -1003,13 +1003,13 @@ public:
         e_ProbeMemory = true,
         
         /// Maximum memory: 2 GB for non-WinOS, 32 bit systems.
-        e_MaxMemory32 = 1024 << 20, //2048 << 20,
+        e_MaxMemory32 = 768 << 20, //2048 << 20,
 #else
         /// Probe address space with special allocations.
         e_ProbeMemory = false,
         
         /// Maximum memory: 1 GB for WinOS, 2 GB for other 32 bit.
-        e_MaxMemory32 = 1024 << 20,
+        e_MaxMemory32 = 768 << 20,
 #endif
         
         /// Minimum memory bound.

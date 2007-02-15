@@ -1426,7 +1426,9 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
     }
 }
 
-const Int8 CSeqDBMapStrategy::e_MaxMemory64 = Int8(256) << 30;
+// 16 GB should be enough
+
+const Int8 CSeqDBMapStrategy::e_MaxMemory64 = Int8(16) << 30;
 
 Int8 CSeqDBMapStrategy::m_GlobalMaxBound = 0;
 
