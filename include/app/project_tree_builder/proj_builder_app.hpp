@@ -114,6 +114,7 @@ public:
     bool m_BuildPtb;
     bool m_AddMissingLibs;
     bool m_ScanWholeTree;
+    bool m_TweakVTune;
     string m_BuildRoot;
     string m_ProjTags;
     bool m_ConfirmCfg;

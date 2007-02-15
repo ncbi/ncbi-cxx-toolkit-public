@@ -186,8 +186,16 @@ public:
     }
 
     SUPPORT_COMPILER_OPTION(MinimalRebuild)
-    SUPPORT_COMPILER_OPTION(BasicRuntimeChecks)
-
+    virtual string BasicRuntimeChecks(void) const
+    {
+        if (GetApp().m_TweakVTune) {
+            return "0";
+        }
+        return GetCompilerOpt(m_MsvcMetaMakefile,
+                              m_MsvcProjectMakefile,
+                              "BasicRuntimeChecks",
+                              m_Config );
+    }
     virtual string RuntimeLibrary(void) const
     {
 	    return m_RuntimeLibraryOption;
@@ -357,7 +365,17 @@ public:
         }
 	    return add + m_AdditionalLibraryDirectories;
     }
-    SUPPORT_LINKER_OPTION(FixedBaseAddress)
+
+    virtual string FixedBaseAddress(void) const
+    {
+        if (GetApp().m_TweakVTune) {
+            return "1";
+        }
+        return GetLinkerOpt(m_MsvcMetaMakefile,
+                            m_MsvcProjectMakefile,
+                            "FixedBaseAddress",
+                            m_Config );
+    }
 
 private:
     string      m_AdditionalOptions;
