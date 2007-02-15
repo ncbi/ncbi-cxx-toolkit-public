@@ -110,7 +110,7 @@ public:
 
     /// Add all object ids to the vector up to the specified slot
     /// [0, slot] closed interval
-    void EnumerateObjects(TObjVector* objects, unsigned slot) const;
+    void EnumerateObjects(TBitVector* objects, unsigned slot) const;
 
     /// Truncate the timeline from the head up to the specified slot
     /// slot + 1 becomes the new head
@@ -251,7 +251,7 @@ unsigned CTimeLine<BV>::TimeLineSlot(time_t tm) const
 }
 
 template<class BV> 
-void CTimeLine<BV>::EnumerateObjects(TObjVector* objects, unsigned slot) const
+void CTimeLine<BV>::EnumerateObjects(TBitVector* objects, unsigned slot) const
 {
     _ASSERT(objects);
 
