@@ -117,30 +117,6 @@ const int gz_magic[2] = {0x1f, 0x8b};
 #define RESERVED     0xE0 // bits 5..7: reserved/
 
 
-// Store only 4 bytes for value
-static void s_StoreUI4(unsigned char* buf, unsigned long value)
-{
-    if ( value > kMax_UI4 ) {
-        ERR_POST("CZipCompression:  Stored value " \
-                 "exceeded maximum size for Uint4 type");
-    }
-    for (int i = 0; i < 4; i++) {
-        buf[i] = (unsigned char)(value & 0xff);
-        value >>= 8;
-    }
-}
-
-
-static void s_GetUI4(unsigned char* buf, unsigned long& value)
-{
-    value = 0;
-    for (int i = 3; i >= 0; i--) {
-        value <<= 8;
-        value += buf[i];
-    }
-}
-
-
 // Returns length of the .gz header if it exist or 0 otherwise.
 // If 'info' not NULL, fill it with information from header.
 static
@@ -167,7 +143,7 @@ size_t s_CheckGZipHeader(const void* src_buf, size_t src_len,
     size_t header_len = 10; 
 
     if ( info ) {
-        s_GetUI4((unsigned char*)buf+4, (unsigned long&)info->mtime);
+        CCompressionUtil::GetUI4(buf+4, (unsigned long&)info->mtime);
     }
 
     // Skip the extra fields
@@ -246,7 +222,7 @@ static size_t s_WriteGZipHeader(void* src_buf, size_t buf_size,
     buf[3] = flags;
     /* 4-7 mtime */
     if ( info  &&  info->mtime ) {
-        s_StoreUI4((unsigned char*)buf+4, (unsigned long)info->mtime);
+        CCompressionUtil::StoreUI4(buf+4, (unsigned long)info->mtime);
     }
     /* 8 - xflags == 0*/
     buf[9] = OS_CODE;
@@ -264,8 +240,8 @@ static size_t s_WriteGZipFooter(void*         buf,
     if (buf_size < 8) {
         return 0;
     }
-    s_StoreUI4((unsigned char*)buf, crc);
-    s_StoreUI4((unsigned char*)buf+4, total);
+    CCompressionUtil::StoreUI4(buf, crc);
+    CCompressionUtil::StoreUI4((unsigned char*)buf+4, total);
 
     return 8;
 }

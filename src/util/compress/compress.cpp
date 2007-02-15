@@ -163,6 +163,43 @@ CCompressionFile::~CCompressionFile(void)
 }
 
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCompressionUtil
+//
+
+void CCompressionUtil::StoreUI4(void* buffer, unsigned long value)
+{
+    if ( !buffer ) {
+        NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
+    }
+    if ( value > kMax_UI4 ) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "Stored value exceeded maximum size for Uint4 type");
+    }
+    unsigned char* buf = (unsigned char*)buffer;
+    for (int i = 0; i < 4; i++) {
+        buf[i] = (unsigned char)(value & 0xff);
+        value >>= 8;
+    }
+}
+
+/// Read 4 bytes from buffer as unsigned long value
+void CCompressionUtil::GetUI4(void* buffer, unsigned long value)
+{
+    if ( !buffer ) {
+        NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
+    }
+    unsigned char* buf = (unsigned char*)buffer;
+    value = 0;
+    for (int i = 3; i >= 0; i--) {
+        value <<= 8;
+        value += buf[i];
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
