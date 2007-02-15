@@ -80,11 +80,8 @@ CDiscNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
-    bool defaults_mode = m_Opts->GetDefaultsMode();
-    m_Opts->SetDefaultsMode(false);
     SetGapExtnAlgorithm(eDynProgScoreOnly);
     SetGapTracebackAlgorithm(eDynProgTbck);
-    m_Opts->SetDefaultsMode(defaults_mode);
 }
 
 void
