@@ -319,7 +319,6 @@ void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
         bv -= ids;
         if (bv.count() != before_remove) {
             bv.optimize();
-            bv.optimize_gap_size();
             size_t size = bm::serialize(bv, &buf[0]);
             cur.UpdateBlob(&buf[0], size);
         }
@@ -353,9 +352,7 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
 
         CBDB_FileCursor& cur = *GetCursor(trans);
         CBDB_CursorGuard cg(cur);    
-        for (TNSBitVector::enumerator en = batch.first();
-                en < batch.end();
-                ++en) {
+        for (TNSBitVector::enumerator en = batch.first(); en.valid(); ++en) {
             unsigned job_id = *en;
             cur.SetCondition(CBDB_FileCursor::eEQ);
             cur.From << job_id;
@@ -364,8 +361,8 @@ unsigned SLockedQueue::DeleteBatch(unsigned batch_size)
                 ++del_rec;
             }
         }
+        x_RemoveTags(trans, batch);
     }}
-    x_RemoveTags(trans, batch);
     trans.Commit();
     return del_rec;
 }

@@ -74,7 +74,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.5  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.6  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags"
@@ -1708,7 +1708,7 @@ void CNetScheduleHandler::ProcessQueueInfo()
 void CNetScheduleHandler::ProcessQuery()
 {
     string res = m_Queue->ExecQuery(NStr::ParseEscapes(m_JobReq.param1),
-                                    NStr::ParseEscapes(m_JobReq.param2),
+                                    m_JobReq.param2,
                                     NStr::ParseEscapes(m_JobReq.param3));
     WriteMsg("OK:", res, false, false);
 }

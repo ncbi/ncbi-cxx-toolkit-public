@@ -1758,7 +1758,20 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
             x_AssignSubmitRec(db,
                 &(*it), now, host_addr, port, wait_timeout, progress_msg);
             ++job_id_cnt;
-            db.Insert();
+            //for (unsigned n_tries = 0; true; ) {
+            //    try {
+                    db.Insert();
+            //    } catch (CBDB_ErrnoException& ex) {
+            //        if ((ex.IsDeadLock() || ex.IsNoMem()) &&
+            //            ++n_tries < k_max_dead_locks) {
+            //            SleepMilliSec(250);
+            //            continue;
+            //        }
+            //        ERR_POST("Too many transaction repeats in CQueue::SubmitBatch");
+            //        throw;
+            //    }
+            //    break;
+            //}
             // update tags
             q->AppendTags(tag_map, it->tags, it->job_id);
         }
@@ -1774,8 +1787,8 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
                 x_AddToAffIdx_NoLock(batch);
             }
         }
+        q->AddTags(tag_map);
     }}
-    q->AddTags(tag_map);
     trans.Commit();
 
     q->status_tracker.AddPendingBatch(job_id, job_id + batch.size() - 1);
