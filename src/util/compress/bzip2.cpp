@@ -117,13 +117,12 @@ bool CBZip2Compression::CompressBuffer(
                       (char*)dst_buf, &x_dst_len,
                       (char*)src_buf, (unsigned int)src_len,
                       GetLevel(), 0, 0 );
+    *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK) {
-        *dst_len = 0;
         ERR_POST(FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
-    *dst_len = x_dst_len;
     return true;
 }
 
@@ -162,13 +161,12 @@ bool CBZip2Compression::DecompressBuffer(
         return (dst_size >= src_len);
     }
     // Standard decompression results processing
+    *dst_len = x_dst_len;
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode != BZ_OK ) {
-        *dst_len = 0;
         ERR_POST(FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
         return false;
     }
-    *dst_len = x_dst_len;
     return true;
 }
 
