@@ -1187,6 +1187,9 @@ CId2Reader::x_ProcessError(CReaderRequestResult& /*result*/,
             if ( NStr::FindNoCase(error.GetMessage(), "removed") != NPOS ) {
                 error_flags |= fError_warning_suppressed;
             }
+            if ( NStr::FindNoCase(error.GetMessage(), "suppressed") != NPOS ) {
+                error_flags |= fError_warning_suppressed;
+            }
         }
         break;
     case CID2_Error::eSeverity_failed_command:
