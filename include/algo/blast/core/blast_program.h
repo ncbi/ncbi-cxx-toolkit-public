@@ -148,6 +148,9 @@ Boolean Blast_ProgramIsPhiBlast(EBlastProgramType p);
  */
 Boolean Blast_ProgramIsRpsBlast(EBlastProgramType p);
 
+/** Returns true if program is not undefined
+ * @param p program type [in]
+ */
 Boolean Blast_ProgramIsValid(EBlastProgramType p);
 
 #ifdef __cplusplus
