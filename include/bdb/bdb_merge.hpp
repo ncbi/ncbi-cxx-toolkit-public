@@ -82,9 +82,9 @@ public:
 
 protected:
     TBlobFile*                  m_BlobFile;
-    EOwnership                  m_OwnBlobFile;
-    size_t                      m_FetchBufferSize;
+    auto_ptr<TBlobFile>         m_BlobFile_Owned;
     auto_ptr<CBDB_FileCursor>   m_Cursor;
+    size_t                      m_FetchBufferSize;
     bool                        m_Eof;
     const void*                 m_Data;
     size_t                      m_DataLen;
@@ -174,9 +174,9 @@ protected:
 protected:
     mutable CFastMutex          m_Lock;
     TBlobFile*                  m_BlobFile;
-    EOwnership                  m_OwnBlobFile;
-    size_t                      m_FetchBufferSize;
+    auto_ptr<TBlobFile>         m_BlobFile_Owned;
     auto_ptr<CBDB_FileCursor>   m_Cursor;
+    size_t                      m_FetchBufferSize;
     bool                        m_Eof;
     bool                        m_Good;
     const void*                 m_Data;
@@ -306,18 +306,17 @@ CBDB_MergeBlobWalker<BF>::CBDB_MergeBlobWalker(TBlobFile*   blob_file,
                                                EOwnership   own,
                                                size_t       fetch_buffer_size)
  : m_BlobFile(blob_file),
-   m_OwnBlobFile(own),
    m_FetchBufferSize(fetch_buffer_size),
    m_Eof(false)
 {
+    if (own == eTakeOwnership) {
+        m_BlobFile_Owned.reset(m_BlobFile);
+    }
 }
 
 template<class BF>
 CBDB_MergeBlobWalker<BF>::~CBDB_MergeBlobWalker()
 {
-    if (m_OwnBlobFile == eTakeOwnership) {
-        delete m_BlobFile;
-    }
 }
 
 template<class BF>
@@ -508,12 +507,14 @@ CBDB_MergeBlobWalkerAsync<BF>::CBDB_MergeBlobWalkerAsync(
                                                EOwnership   own,
                                                size_t       fetch_buffer_size)
  : m_BlobFile(blob_file),
-   m_OwnBlobFile(own),
    m_FetchBufferSize(fetch_buffer_size),
    m_Eof(false),
    m_Good(true),
    m_AsyncImpl(*this)
 {
+    if (own == eTakeOwnership) {
+        m_BlobFile_Owned.reset(m_BlobFile);
+    }
     m_JobThread.Reset(new CJobThread(*this));
     m_JobThread->Run();
 }
@@ -521,9 +522,6 @@ CBDB_MergeBlobWalkerAsync<BF>::CBDB_MergeBlobWalkerAsync(
 template<class BF>
 CBDB_MergeBlobWalkerAsync<BF>::~CBDB_MergeBlobWalkerAsync()
 {
-    if (m_OwnBlobFile == eTakeOwnership) {
-        delete m_BlobFile;
-    }
 }
 
 template<class BF>
