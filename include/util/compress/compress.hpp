@@ -383,7 +383,7 @@ public:
     static void StoreUI4(void* buf, unsigned long value);
 
     /// Read 4 bytes from buffer as unsigned long value.
-    static void GetUI4(void* buf, unsigned long value);
+    static void GetUI4(void* buf, unsigned long& value);
 };
 
 

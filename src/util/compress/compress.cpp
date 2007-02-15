@@ -187,7 +187,7 @@ void CCompressionUtil::StoreUI4(void* buffer, unsigned long value)
 }
 
 /// Read 4 bytes from buffer as unsigned long value
-void CCompressionUtil::GetUI4(void* buffer, unsigned long value)
+void CCompressionUtil::GetUI4(void* buffer, unsigned long& value)
 {
     if ( !buffer ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
