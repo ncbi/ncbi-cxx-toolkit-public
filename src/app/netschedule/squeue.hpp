@@ -37,8 +37,8 @@
 #include <corelib/ncbireg.hpp>
 
 #include <util/logrotate.hpp>
-
 #include <util/thread_nonstop.hpp>
+#include <util/time_line.hpp>
 
 #include "ns_types.hpp"
 #include "ns_db.hpp"
@@ -201,7 +201,8 @@ typedef list<TNSTag> TNSTagList;
 // key -> value -> bitvector of job ids
 typedef map<TNSTag, TNSBitVector> TNSTagMap;
 
-class CJobTimeLine;
+// slight violation of naming convention for porting to util/time_line
+typedef CTimeLine<TNSBitVector> CJobTimeLine;
 class CNSLB_Coordinator;
 /// Mutex protected Queue database with job status FSM 
 ///

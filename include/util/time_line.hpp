@@ -32,6 +32,7 @@
  *                   
  */
 
+#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbitime.hpp>
 #include <deque>
 
@@ -69,7 +70,7 @@ template <class BV>
 class CTimeLine 
 {
 public:
-    typedef TBitVector            BV;
+    typedef BV                    TBitVector;
     typedef deque<TBitVector*>    TTimeLine;
 
 public:
@@ -133,6 +134,8 @@ private:
 
 
 
+#define TIMELINE_ITERATE(Var, Cont) \
+    for ( typename TTimeLine::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
 template<class BV> 
 CTimeLine<BV>::CTimeLine(unsigned discr_factor, time_t tm)
@@ -144,7 +147,7 @@ CTimeLine<BV>::CTimeLine(unsigned discr_factor, time_t tm)
 template<class BV> 
 CTimeLine<BV>::~CTimeLine()
 {
-    NON_CONST_ITERATE(TTimeLine, it, m_TimeLine) {
+    TIMELINE_ITERATE(it, m_TimeLine) {
         TBitVector* bv = *it;
         delete bv;
     }
@@ -153,7 +156,7 @@ CTimeLine<BV>::~CTimeLine()
 template<class BV> 
 void CTimeLine<BV>::ReInit(time_t tm)
 {
-    NON_CONST_ITERATE(TTimeLine, it, m_TimeLine) {
+    TIMELINE_ITERATE(it, m_TimeLine) {
         TBitVector* bv = *it;
         delete bv;
     }
@@ -184,7 +187,7 @@ void CTimeLine<BV>::AddObjectToSlot(unsigned slot, unsigned object_id)
     }
     TBitVector* bv = m_TimeLine[slot];
     if (bv == 0) {
-        bv = new TBitVector(bm::BM_GAP);
+        bv = new TBitVector(); // bm::BM_GAP is NOT defined for template bv
         m_TimeLine[slot] = bv;
     }
     bv->set(object_id);
@@ -213,7 +216,7 @@ bool CTimeLine<BV>::RemoveObject(time_t object_time, unsigned object_id)
 template<class BV> 
 void CTimeLine<BV>::RemoveObject(unsigned object_id)
 {
-    NON_CONST_ITERATE(TTimeLine, it, m_TimeLine) {
+    TIMELINE_ITERATE(it, m_TimeLine) {
         TBitVector* bv = *it;
         if (bv) {
             bool changed = bv->set_bit(object_id, false);
@@ -283,7 +286,6 @@ void CTimeLine<BV>::HeadTruncate(unsigned slot)
     }
     m_TimeLineHead = new_head;
 }
-
 
 
 

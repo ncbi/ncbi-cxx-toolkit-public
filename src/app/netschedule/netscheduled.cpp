@@ -61,7 +61,6 @@
 #include <db.h>
 
 #include "job_status.hpp"
-#include "job_time_line.hpp"
 #include "access_list.hpp"
 
 #if defined(NCBI_OS_UNIX)
@@ -74,7 +73,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server Version 2.9.6  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server Version 2.9.7  build " __DATE__ " " __TIME__
 
 #define NETSCHEDULED_FEATURES \
     "protocol=1;dyn_queues;tags"

@@ -46,10 +46,10 @@
 #include <util/qparse/query_parse.hpp>
 #include <util/qparse/query_exec.hpp>
 #include <util/qparse/query_exec_bv.hpp>
+#include <util/time_line.hpp>
 
 #include "bdb_queue.hpp"
 
-#include "job_time_line.hpp"
 #include "nslb.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -478,6 +478,7 @@ void CQueueDataBase::Configure(const IRegistry& reg, unsigned* min_run_timeout)
             std::min(*min_run_timeout, (unsigned)params->run_timeout_precision);
         if (!no_default_queues && NStr::CompareNocase(tmp, "queue") == 0) {
             m_QueueDescriptionDB.queue = qclass;
+            m_QueueDescriptionDB.kind = SLockedQueue::eKindStatic;
             m_QueueDescriptionDB.qclass = qclass;
             m_QueueDescriptionDB.UpdateInsert();
         }
@@ -1030,6 +1031,7 @@ void CQueueDataBase::x_CleanParamMap(void)
         SQueueParameters* params = it->second;
         delete params;
     }
+    m_QueueParamMap.clear();
 }
 
 
@@ -3892,12 +3894,12 @@ void CQueue::CheckExecutionTimeout()
     }
     --curr_slot;
 
-    CJobTimeLine::TObjVector bv;
+    TNSBitVector bv;
     {{
         CReadLockGuard guard(q->rtl_lock);
         tl.EnumerateObjects(&bv, curr_slot);
     }}
-    CJobTimeLine::TObjVector::enumerator en(bv.first());
+    TNSBitVector::enumerator en(bv.first());
     for ( ;en.valid(); ++en) {
         unsigned job_id = *en;
         unsigned exp_time = CheckExecutionTimeout(job_id, curr);
