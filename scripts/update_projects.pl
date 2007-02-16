@@ -3,33 +3,46 @@
 
 use strict;
 
-use File::Basename;
+my ($ScriptDir, $ScriptName);
+
+BEGIN
+{
+    ($ScriptDir, $ScriptName) = $0 =~ m/^(?:(.+)[\\\/])?(.+)$/;
+    $ScriptDir ||= '.'
+}
+
+use lib $ScriptDir;
+
+use NCBI::SVN::MultiSwitch;
+
 use File::Spec;
 use File::Find;
 use Cwd;
 use Fcntl qw(F_SETFD);
 
-my $DefaultRepos = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++';
+my $DefaultRepos = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit';
+
+my $MultiSwitch = NCBI::SVN::MultiSwitch->new(MyName => $ScriptName);
 
 my @UnsafeVars = qw(PATH IFS CDPATH ENV BASH_ENV TERM);
 my %OldEnv;
 @OldEnv{@UnsafeVars} = delete @ENV{@UnsafeVars};
 
-my ($ScriptName, $ScriptDir) = fileparse($0);
 $ScriptDir = Cwd::realpath($ScriptDir);
 
 my @ProjectDirs = ("$ScriptDir/projects", "$ScriptDir/internal/projects");
 
-# Print usage in case if a wrong number of arguments is passed.
-if (@ARGV < 1 || @ARGV > 2 || $ARGV[0] eq '--help')
+sub Usage
 {
+    my ($Error) = @_;
+
     print STDERR $ScriptName . ' $Revision$' . <<EOF;
 
 This script checks out files required for building the specified project
 and optionally (re-)configures and builds it.
 
 Usage:
-    $ScriptName Project [BuildDir]
+    $ScriptName [-switch-map SwitchMap] Project [BuildDir]
 
 Where:
     Project - The name of the project you want to build or a pathname
@@ -105,7 +118,11 @@ EOF
 
     print STDERR "\n" if $Column > 0;
 
-    die <<EOF
+    print STDERR <<EOF;
+
+    SwitchMap - Pathname of the file containing working copy directory
+        switch plan. This parameter can only be used during the initial
+        checkout - see the Description section below.
 
     BuildDir - Path to the target directory. The presence (or absence)
         of this argument designates the mode of operation - see
@@ -119,6 +136,8 @@ Description:
         the C++ Toolkit tree out into it, along with any additional
         infrastructure needed for the build system to work.
         If the directory already exists, it must be empty.
+        If the SwitchMap file is specified, the script will switch
+        working copy directories in accordance with this file.
         The script will then optionally configure and build
         the new tree.
 
@@ -127,6 +146,7 @@ Description:
         argument, it will update the sources and headers for the
         specified projects. The script will then optionally
         reconfigure and rebuild the tree.
+        The -switch-map paramter cannot be used in this mode.
 
 Examples:
     1. Perform initial checkout of project "connect" and its
@@ -142,6 +162,14 @@ Examples:
         \$ $ScriptName connect
 
 EOF
+
+    if ($Error)
+    {
+        print STDERR "Error:  $Error.\n";
+        exit 1
+    }
+
+    exit 0
 }
 
 sub FindSubversion
@@ -243,7 +271,38 @@ sub FindProjectListing
     die "$Context: unable to find project '$Project'\n"
 }
 
-my ($MainProject, $BuildDir) = @ARGV;
+Usage() if @ARGV < 1 || $ARGV[0] eq '--help';
+
+my ($SwitchMapFile, $MainProject, $BuildDir);
+
+while (@ARGV)
+{
+    my $Arg = shift @ARGV;
+
+    if ($Arg eq '-switch-map')
+    {
+        $SwitchMapFile = shift @ARGV or Usage("Pathname missing after $Arg")
+    }
+    elsif (!$MainProject)
+    {
+        $MainProject = $Arg
+    }
+    elsif (!$BuildDir)
+    {
+        $BuildDir = $Arg
+    }
+    else
+    {
+        Usage('Too many command line arguments')
+    }
+}
+
+Usage('Missing mandatory argument Project') unless $MainProject;
+
+Usage('-switch-map can only be used in the checkout mode')
+    if $SwitchMapFile && !$BuildDir;
+
+#$SwitchMapFile = Cwd::realpath($SwitchMapFile);
 
 $MainProject = FindProjectListing($MainProject, $ScriptName);
 
@@ -348,7 +407,7 @@ sub NewTreeTraversal
 
 NewTreeTraversal(\%NewTree, $BuildDir);
 
-my $SVN = FindSubversion() || die 'Unable to find "svn" in PATH';
+my $SVN = $MultiSwitch->GetSvnPath();
 
 unless ($RepositoryURL)
 {
@@ -357,7 +416,7 @@ unless ($RepositoryURL)
 else
 {
     system($SVN, ($NewCheckout ? 'co' : 'switch'), '-N',
-        $RepositoryURL, $BuildDir)
+        "$RepositoryURL/trunk/c++", $BuildDir)
 }
 
 if (@NonRecursiveUpdates)
@@ -373,6 +432,9 @@ if (@RecursiveUpdates)
 
     system($SVN, 'update', @RecursiveUpdates)
 }
+
+$MultiSwitch->SwitchUsingMap($SwitchMapFile, $RepositoryURL, $BuildDir)
+    if $SwitchMapFile;
 
 my @ConfigOptions;
 
