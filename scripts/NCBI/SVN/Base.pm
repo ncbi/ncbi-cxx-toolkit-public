@@ -29,7 +29,7 @@ sub new
 
     return bless
     {
-        MyName => ($Param{MyName} || __PACKAGE__),
+        MyName => ($Param{MyName} || $Class),
         SvnPath => ($Param{SvnPath} || FindSubversion())
     }, $Class
 }
