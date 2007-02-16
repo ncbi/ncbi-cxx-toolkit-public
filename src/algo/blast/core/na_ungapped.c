@@ -386,7 +386,7 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
     Uint4 last_hit;
     Uint4 hit_saved;
     DiagStruct *hit_level_array;
-    BlastUngappedCutoffs *cutoffs;
+    BlastUngappedCutoffs *cutoffs = NULL;
 
     hit_level_array = diag_table->hit_level_array;
     ASSERT(hit_level_array);
@@ -502,7 +502,7 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
     Int4 rc;
     Int4 last_hit, hit_saved=0;
     Int4 s_pos = s_end + hash_table->offset;
-    BlastUngappedCutoffs *cutoffs;
+    BlastUngappedCutoffs *cutoffs = NULL;
 
     window_size = word_params->options->window_size;
     two_hits = (window_size > 0);
