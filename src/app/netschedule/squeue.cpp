@@ -300,6 +300,7 @@ void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
 }
 
 
+static unsigned run = 0;
 void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
                                 const TNSBitVector& ids)
 {
@@ -312,15 +313,22 @@ void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
     CBDB_RawFile::TBuffer  buf;
     TNSBitVector bv;
     while (cur.Fetch(&buf) == eBDB_Ok) {
-        bv.clear(true);
+        run++;
         bm::deserialize(bv, &buf[0]);
         unsigned before_remove = bv.count();
         bv -= ids;
         if (bv.count() != before_remove) {
             bv.optimize();
+            TNSBitVector::statistics st;
+            bv.calc_stat(&st);
+            if (st.max_serialize_mem > buf.size()) {
+                buf.resize(st.max_serialize_mem);
+            }
+
             size_t size = bm::serialize(bv, &buf[0]);
             cur.UpdateBlob(&buf[0], size);
         }
+        bv.clear(true);
     }
 }
 
