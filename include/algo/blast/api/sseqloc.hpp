@@ -78,7 +78,7 @@ struct SSeqLoc {
             objects::CSeq_loc* m, bool ignore_mask_strand = true)
         : seqloc(sl), scope(s), mask(m), 
           ignore_strand_in_mask(ignore_mask_strand) {
-        if (ignore_strand_in_mask) {
+        if (m != NULL && ignore_strand_in_mask) {
               mask->ResetStrand();
         }
     }
