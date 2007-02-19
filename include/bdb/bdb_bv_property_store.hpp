@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 
 template <class PropKey, class PropValue>
-class CBDB_PropertyDictionary : public CBDB_BLobFile
+class CBDB_PropertyDictionary : public CBDB_File
 {
 public:
     typedef pair<PropKey, PropValue> TKey;
@@ -57,7 +57,8 @@ public:
 
     /// @}
 
-    TKey GetKey();
+    TKey   GetCurrentKey() const;
+    TKeyId GetCurrentUid() const;
 
     EBDB_ErrCode Read(TKeyId* key_idx);
     EBDB_ErrCode Read(const PropKey& prop,
@@ -70,6 +71,7 @@ public:
 private:
     typename SBDB_TypeTraits<PropKey>::TFieldType   m_PropKey;
     typename SBDB_TypeTraits<PropValue>::TFieldType m_PropVal;
+    typename SBDB_TypeTraits<TKeyId>::TFieldType    m_Uid;
     TKeyId m_MaxUid;
 };
 
@@ -104,8 +106,9 @@ inline
 CBDB_PropertyDictionary<PropKey, PropValue>::CBDB_PropertyDictionary()
 : m_MaxUid(0)
 {
-    BindKey("key", &m_PropKey);
-    BindKey("val", &m_PropVal);
+    BindKey ("key", &m_PropKey);
+    BindKey ("val", &m_PropVal);
+    BindData("uid", &m_Uid);
 }
 
 
@@ -122,10 +125,19 @@ Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::GetKey(const TKey& key)
 template <class PropKey, class PropValue>
 inline
 typename CBDB_PropertyDictionary<PropKey, PropValue>::TKey
-CBDB_PropertyDictionary<PropKey, PropValue>::GetKey()
+CBDB_PropertyDictionary<PropKey, PropValue>::GetCurrentKey() const
 {
     TKey key((PropKey)m_PropKey, (PropValue)m_PropVal);
     return key;
+}
+
+
+template <class PropKey, class PropValue>
+inline
+typename CBDB_PropertyDictionary<PropKey, PropValue>::TKeyId
+CBDB_PropertyDictionary<PropKey, PropValue>::GetCurrentUid() const
+{
+    return (TKeyId)m_Uid;
 }
 
 
@@ -137,12 +149,8 @@ Uint4 CBDB_PropertyDictionary<PropKey, PropValue>::PutKey(const TKey& key)
         /// scan the database looking for the maximal UID
         CBDB_FileCursor cursor(*this);
         cursor.SetCondition(CBDB_FileCursor::eFirst);
-        TKeyId this_uid = 0;
-        void* p = &this_uid;
-        while (cursor.Fetch(CBDB_FileCursor::eDefault,
-                            &p, sizeof(this_uid),
-                            CBDB_RawFile::eReallocForbidden) == eBDB_Ok) {
-            m_MaxUid = max(m_MaxUid, this_uid);
+        while (cursor.Fetch() == eBDB_Ok) {
+            m_MaxUid = max(m_MaxUid, (TKeyId)m_Uid);
         }
     }
 
@@ -160,8 +168,11 @@ template <class PropKey, class PropValue>
 inline EBDB_ErrCode
 CBDB_PropertyDictionary<PropKey, PropValue>::Read(TKeyId* key_idx)
 {
-    void* p = key_idx;
-    return Fetch(&p, sizeof(TKeyId), CBDB_RawFile::eReallocForbidden);
+    EBDB_ErrCode err = Fetch();
+    if (err == eBDB_Ok  &&  key_idx) {
+        *key_idx = m_Uid;
+    }
+    return err;
 }
 
 
@@ -185,7 +196,8 @@ CBDB_PropertyDictionary<PropKey, PropValue>::Write(const PropKey& prop,
 {
     m_PropKey = prop;
     m_PropVal = value;
-    return UpdateInsert(&key_idx, sizeof(key_idx));
+    m_Uid     = key_idx;
+    return UpdateInsert();
 }
 
 
