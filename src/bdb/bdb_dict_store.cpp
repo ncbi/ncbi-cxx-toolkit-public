@@ -41,7 +41,8 @@ BEGIN_NCBI_SCOPE
 CBDB_BlobDictionary<string>::CBDB_BlobDictionary()
     : m_MaxUid(0)
 {
-    BindKey("key", &m_Key);
+    BindKey ("key", &m_Key);
+    BindData("uid", &m_Uid);
 }
 
 EBDB_ErrCode CBDB_BlobDictionary<string>::Read(const string& key, Uint4* val)
@@ -53,21 +54,31 @@ EBDB_ErrCode CBDB_BlobDictionary<string>::Read(const string& key, Uint4* val)
 
 EBDB_ErrCode CBDB_BlobDictionary<string>::Read(Uint4* val)
 {
-    void* p = val;
-    return Fetch(&p, sizeof(Uint4), CBDB_RawFile::eReallocForbidden);
+    EBDB_ErrCode err = Fetch();
+    if (err == eBDB_Ok  &&  val) {
+        *val = m_Uid;
+    }
+    return err;
 }
 
 
 EBDB_ErrCode CBDB_BlobDictionary<string>::Write(const string& key, Uint4 val)
 {
     m_Key = key;
-    return UpdateInsert(&val, sizeof(val));
+    m_Uid = val;
+    return UpdateInsert();
 }
 
 
-string CBDB_BlobDictionary<string>::GetKey()
+string CBDB_BlobDictionary<string>::GetCurrentKey() const
 {
     return (string)m_Key;
+}
+
+
+Uint4 CBDB_BlobDictionary<string>::GetCurrentUid() const
+{
+    return (Uint4)m_Uid;
 }
 
 
@@ -95,10 +106,9 @@ Uint4 CBDB_BlobDictionary<string>::PutKey(const string& key)
     }
 
     Uint4 next_uid = m_MaxUid + 1;
-    m_Key = key;
-    if (UpdateInsert(&next_uid, sizeof(next_uid)) == eBDB_Ok) {
+    if (Write(key, next_uid) == eBDB_Ok) {
         m_MaxUid = next_uid;
-        return m_MaxUid;
+        return next_uid;
     } else {
         return 0;
     }
