@@ -113,7 +113,7 @@ public:
 ///
 
 template<>
-class CBDB_BlobDictionary<string> : public CBDB_BLobFile
+class CBDB_BlobDictionary<string> : public CBDB_File
 {
 public:
     CBDB_BlobDictionary<string>();
@@ -127,7 +127,8 @@ public:
     /// @}
 
     /// retrieve the current key
-    string GetKey();
+    string GetCurrentKey() const;
+    Uint4 GetCurrentUid() const;
 
     /// read a particular key's value
     EBDB_ErrCode Read (const string& key, Uint4* val);
@@ -140,6 +141,7 @@ public:
 
 private:
     CBDB_FieldString m_Key;
+    CBDB_FieldUint4  m_Uid;
 
     Uint4 m_MaxUid;
 };
