@@ -36,7 +36,6 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/psiblast.hpp>
-//#include "subject_psi_database.hpp"
 #include "psiblast_impl.hpp"
 
 #include <objects/scoremat/PssmWithParameters.hpp>
