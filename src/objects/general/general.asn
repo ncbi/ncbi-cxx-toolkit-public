@@ -10,7 +10,7 @@
 NCBI-General DEFINITIONS ::=
 BEGIN
 
-EXPORTS Date, Person-id, Object-id, Dbtag, Int-fuzz, User-object;
+EXPORTS Date, Person-id, Object-id, Dbtag, Int-fuzz, User-object, User-field;
 
 -- StringStore is really a VisibleString.  It is used to define very
 --   long strings which may need to be stored by the receiving program
