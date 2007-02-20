@@ -128,7 +128,7 @@ void CId1FetchApp::Init(void)
          "GI id of the Seq-Entry to fetch",
          CArgDescriptions::eInteger);
     arg_desc->SetConstraint
-        ("gi", new CArgAllow_Integers(0, 99999999));
+        ("gi", new CArgAllow_Integers(0, kMax_Int));
 
     // Output format
     arg_desc->AddDefaultKey
@@ -165,7 +165,7 @@ void CId1FetchApp::Init(void)
          "(Sub)entity number (retrieval number) to dump",
          CArgDescriptions::eInteger);
     arg_desc->SetConstraint
-        ("ent", new CArgAllow_Integers(0, 99999999));
+        ("ent", new CArgAllow_Integers(0, kMax_Int));
 
     // Type of lookup
     arg_desc->AddDefaultKey
