@@ -34,7 +34,6 @@ makedir()
   test -d "$1"  ||  mkdir $2 "$1"  ||  error "Cannot create \"$1\""
 }
 
-
 echo "[`basename $script`] NCBI C++:  \"$builddir\" to \"$target\"..."
 sleep 2
 
@@ -47,6 +46,22 @@ srcdir="$target"/src
 libdir="$target"/lib
 bindir="$target"/bin
 cldir="$target"/compilers
+tmpdir="$target"/tmp
+
+
+install()
+{
+    makedir "$2" -p
+    tmp_cwd=`pwd`
+    cd "$1"
+    #rm "$tmpdir"/flist 2>/dev/null
+    find . -type f |
+    grep -v '/\.svn/' > "$tmpdir"/flist
+    tar cf - -T "$tmpdir"/flist | (cd "$2" ; tar xf - )
+    #rm "$tmpdir"/flist 2>/dev/null
+    cd "$tmp_cwd"
+}
+
 
 
 # Check
@@ -57,33 +72,26 @@ test -d "$builddir"  ||  error "Absent build dir \"$builddir\""
 test -d "$target"  &&  find "$target" -type f -exec rm -f {} \; >/dev/null 2>&1
 makedir "$target" -p
 
+makedir "$tmpdir" -p
 
 # Documentation
-makedir "$docdir" -p
-cp -pr "$builddir"/doc/* "$docdir"
-cd "$docdir"
-find . -type d -name ".svn" -exec rm -rf {} \; >/dev/null 2>&1
-
+echo "[`basename $script`] Installing documentation..."
+install "$builddir/doc" "$docdir"
 
 # Scripts
-makedir "$scriptdir" -p
-cp -pr "$builddir"/scripts/* "$scriptdir"
-cd "$scriptdir"
-find . -type d -name ".svn" -exec rm -rf -f {} \; >/dev/null 2>&1
-
+echo "[`basename $script`] Installing scripts..."
+install "$builddir/scripts" "$scriptdir"
 
 # Include dir
-makedir "$incdir" -p
-cp -pr "$builddir"/include/* "$incdir"
-cd "$incdir"
-find . -type d -name ".svn" -exec rm -rf -f {} \; >/dev/null 2>&1
-
+echo "[`basename $script`] Installing include files..."
+install "$builddir/include" "$incdir"
 
 # Source dir
-makedir "$srcdir" -p
-cp -pr "$builddir"/src/* "$srcdir"
-cd "$srcdir"
-find . -type d -name ".svn" -exec rm -rf -f {} \; >/dev/null 2>&1
+echo "[`basename $script`] Installing source files..."
+install "$builddir/src" "$srcdir"
+
+rm -f "$tmpdir/*"
+rmdir "$tmpdir"
 
 
 # Libraries
