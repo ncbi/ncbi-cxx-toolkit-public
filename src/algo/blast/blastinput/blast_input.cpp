@@ -27,7 +27,7 @@
  *
  */
 
-/** @file blast_input.cpp
+/** @file algo/blast/blastinput/blast_input.cpp
  * Convert sources of sequence data into blast sequence input
  */
 
