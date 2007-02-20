@@ -962,12 +962,6 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                 log_switched = true;
             }
             break;
-        case eDS_ToSyslog:
-            if (old_log_name != "SYSLOG") {
-                SetDiagHandler(new CSysLog);
-                log_switched = true;
-            }
-            break;
         case eDS_User:
             // log_switched = true;
             collect = eDCM_Discard;
@@ -978,6 +972,18 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             }
             collect = eDCM_Discard;
             break;
+        case eDS_ToSyslog:
+            if (old_log_name != "SYSLOG") {
+                try {
+                    SetDiagHandler(new CSysLog);
+                    log_switched = true;
+                    break;
+                } catch (...) {
+                    // fall through
+                }
+            } else {
+                break;
+            }
         case eDS_ToStdlog:
         case eDS_Default:
             if ( app ) {
