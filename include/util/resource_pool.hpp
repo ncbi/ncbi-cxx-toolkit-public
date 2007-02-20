@@ -204,9 +204,7 @@ public:
 
     ~CResourcePoolGuard()
     {
-        if (m_Value) {
-            m_Pool.Return(m_Value);
-        }
+        Return();
     }
 
     /// Return the pointer to the caller, not to the pool
@@ -216,7 +214,21 @@ public:
         m_Value = 0;
         return ret;
     }
+    
+    /// Get the protected pointer
+    typename Pool::TValue* Get() { return m_Value; }
 
+    /// Return the protected object back to the pool
+    void Return() 
+    {
+        if (m_Value) {
+            m_Pool.Return(m_Value);
+        }
+        m_Value = 0;
+    }
+private:
+    CResourcePoolGuard(const CResourcePoolGuard&);
+    CResourcePoolGuard& operator=(const CResourcePoolGuard&);
 private:
     Pool&                     m_Pool;
     typename Pool::TValue*    m_Value;
@@ -228,39 +240,5 @@ private:
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.9  2006/11/22 09:17:39  kuznets
- * Fixed recoursive mutex bug
- *
- * Revision 1.8  2006/11/21 06:50:01  kuznets
- * Added Pool locking parameter (mutex)
- *
- * Revision 1.7  2006/11/17 07:36:32  kuznets
- * added guard Release() method
- *
- * Revision 1.6  2006/01/10 14:58:26  kuznets
- * +GetIfAvailable()
- *
- * Revision 1.5  2004/03/10 16:51:09  kuznets
- * Fixed compilation problems (GCC)
- *
- * Revision 1.4  2004/03/10 16:16:48  kuznets
- * Add accessors to internal list of free objects
- *
- * Revision 1.3  2004/02/23 19:18:20  kuznets
- * +CResourcePool::Forget to manually remove objects from the pool.
- *
- * Revision 1.2  2004/02/17 19:06:59  kuznets
- * GCC warning fix
- *
- * Revision 1.1  2004/02/13 20:24:47  kuznets
- * Initial revision. CResourcePool implements light weight solution for pooling
- * of heavy weight objects (intended as optimization tool).
- *
- *
- * ===========================================================================
- */
 
 #endif  /* UTIL___RESOURCEPOOL__HPP */
