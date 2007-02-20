@@ -60,7 +60,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CPsiBlastImpl::CPsiBlastImpl(CRef<objects::CPssmWithParameters> pssm,
-                             IPsiBlastSubject* subject,
+                             CRef<CLocalDbAdapter> subject,
                              CConstRef<CPSIBlastOptionsHandle> options)
 : m_Pssm(pssm), m_Query(0), m_Subject(subject), m_OptsHandle(options),
     m_ResultType(eDatabaseSearch)
@@ -71,7 +71,7 @@ CPsiBlastImpl::CPsiBlastImpl(CRef<objects::CPssmWithParameters> pssm,
 }
 
 CPsiBlastImpl::CPsiBlastImpl(CRef<IQueryFactory> query,
-                             IPsiBlastSubject* subject,
+                             CRef<CLocalDbAdapter> subject,
                              CConstRef<CBlastProteinOptionsHandle> options)
 : m_Pssm(0), m_Query(query), m_Subject(subject), m_OptsHandle(options),
     m_ResultType(eDatabaseSearch)
@@ -98,11 +98,10 @@ CPsiBlastImpl::x_Validate()
     }
 
     // Validate the subject
-    if ( !m_Subject ) {
+    if (m_Subject.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Missing database or subject sequences");
     }
-    m_Subject->Validate();
 }
 
 void

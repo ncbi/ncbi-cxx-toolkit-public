@@ -35,10 +35,8 @@ blast_objmgr_tools \
 hspstream_queue \
 repeats_filter_cxx \
 blast_mtlock \
-psiblast_subject \
-subject_psi_database \
-subject_psi_sequences \
 psibl2seq \
+local_db_adapter \
 psiblast \
 psiblast_impl \
 psiblast_iteration \

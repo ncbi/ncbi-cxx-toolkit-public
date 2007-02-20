@@ -35,6 +35,7 @@
 
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
+#include <algo/blast/api/local_db_adapter.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -78,12 +79,12 @@ public:
     /// sequences
     /// @param query_factory 
     ///     Protein query sequence to search (only 1 is allowed!) [in]
-    /// @param dbinfo
-    ///     Description of the database to search [in]
+    /// @param blastdb
+    ///     Adapter to the BLAST database to search [in]
     /// @param options
     ///     PSI-BLAST options [in]
     CPsiBlast(CRef<IQueryFactory> query_factory,
-              const CSearchDatabase& dbinfo, 
+              CRef<CLocalDbAdapter> blastdb,
               CConstRef<CPSIBlastOptionsHandle> options);
 
     /// Constructor to compare a PSSM against a database of protein sequences
@@ -95,12 +96,12 @@ public:
     ///     effect). If both the scores and frequency ratios are provided, the 
     ///     scores are given priority and are used in the search. [in|out]
     ///     @todo how should scaled PSSM scores be handled?
-    /// @param dbinfo
-    ///     Description of the database to search [in]
+    /// @param blastdb
+    ///     Adapter to the BLAST database to search [in]
     /// @param options
     ///     PSI-BLAST options [in]
     CPsiBlast(CRef<objects::CPssmWithParameters> pssm,
-              const CSearchDatabase& dbinfo, 
+              CRef<CLocalDbAdapter> blastdb,
               CConstRef<CPSIBlastOptionsHandle> options);
 
     /// Destructor
@@ -119,8 +120,8 @@ public:
 
 private:
 
-    /// Interface pointer to PSI-BLAST subject abstraction
-    class IPsiBlastSubject* m_Subject;
+    /// Reference to a BLAST subject/database object
+    CRef<CLocalDbAdapter> m_Subject;
 
     /// Implementation class
     class CPsiBlastImpl* m_Impl;

@@ -36,7 +36,7 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/psiblast.hpp>
-#include "subject_psi_database.hpp"
+//#include "subject_psi_database.hpp"
 #include "psiblast_impl.hpp"
 
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -51,40 +51,26 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CPsiBlast::CPsiBlast(CRef<IQueryFactory> query_factory,
-                     const CSearchDatabase& dbinfo, 
+                     CRef<CLocalDbAdapter> blastdb,
                      CConstRef<CPSIBlastOptionsHandle> options)
-: m_Subject(new CBlastSubjectDb(dbinfo)), m_Impl(0)
+: m_Subject(blastdb), m_Impl(0)
 {
-    try {
-        m_Impl = new CPsiBlastImpl
-            (query_factory, 
-             m_Subject, 
-             CConstRef<CBlastProteinOptionsHandle>(options.GetPointer()));
-    } catch (const CBlastException&) {
-        delete m_Subject;
-        throw;
-    }
+    m_Impl = new CPsiBlastImpl(query_factory, m_Subject, 
+         CConstRef<CBlastProteinOptionsHandle>(options.GetPointer()));
 }
 
 CPsiBlast::CPsiBlast(CRef<objects::CPssmWithParameters> pssm,
-                     const CSearchDatabase& dbinfo, 
+                     CRef<CLocalDbAdapter> blastdb,
                      CConstRef<CPSIBlastOptionsHandle> options)
-: m_Subject(new CBlastSubjectDb(dbinfo)), m_Impl(0)
+: m_Subject(blastdb), m_Impl(0)
 {
-    try { m_Impl = new CPsiBlastImpl(pssm, m_Subject, options); }
-    catch (const CBlastException&) {
-        delete m_Subject;
-        throw;
-    }
+    m_Impl = new CPsiBlastImpl(pssm, m_Subject, options);
 }
 
 CPsiBlast::~CPsiBlast()
 {
     if (m_Impl) {
         delete m_Impl;
-    }
-    if (m_Subject) {
-        delete m_Subject;
     }
 }
 

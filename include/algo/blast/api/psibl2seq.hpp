@@ -35,6 +35,7 @@
 
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
+#include <algo/blast/api/local_db_adapter.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -93,11 +94,19 @@ public:
 
 private:
 
-    /// Interface pointer to PSI-BLAST subject abstraction
-    class IPsiBlastSubject* m_Subject;
+    /// Reference to a BLAST subject/database object
+    CRef<CLocalDbAdapter> m_Subject;
 
     /// Implementation class
     class CPsiBlastImpl* m_Impl;
+
+    /// Auxiliary method to initialize the subject
+    /// @param subject query factory describing the subject sequence(s) [in]
+    /// @param options PSI-BLAST options [in]
+    /// @throws CBlastException if options is empty
+    /// @post the m_Subject member will be initialized
+    void x_InitSubject(CRef<IQueryFactory> subject,
+                       const CBlastOptionsHandle* options);
 
     /// Prohibit copy constructor
     CPsiBl2Seq(const CPsiBl2Seq& rhs);

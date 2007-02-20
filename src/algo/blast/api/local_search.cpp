@@ -171,7 +171,8 @@ CLocalPssmSearch::Run()
     CConstRef<CBioseq> query(&m_Pssm->GetPssm().GetQuery().GetSeq());
     CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(query));
 
-    CPsiBlast psiblast(query_factory, *m_Subject, psi_opts);
+    CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_Subject));
+    CPsiBlast psiblast(query_factory, dbadapter, psi_opts);
     CRef<CSearchResults> psi_results = psiblast.Run();
 
     retval.AddResult(psi_results);

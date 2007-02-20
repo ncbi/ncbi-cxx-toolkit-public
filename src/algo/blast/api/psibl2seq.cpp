@@ -54,40 +54,34 @@ BEGIN_SCOPE(blast)
 CPsiBl2Seq::CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
                        CRef<IQueryFactory> subject,
                        CConstRef<CPSIBlastOptionsHandle> options)
-: m_Subject(0), m_Impl(0)
 {
-    m_Subject = new CBlastSubjectSeqs
-        (subject, CConstRef<CBlastOptionsHandle>(options.GetPointer()));
-    try {
-        m_Impl = new CPsiBlastImpl(pssm, m_Subject, options);
-    } catch (const CBlastException&) {
-        delete m_Subject;
-        throw;
-    }
+    x_InitSubject(subject, options.GetPointer());
+    m_Impl = new CPsiBlastImpl(pssm, m_Subject, options);
 }
 
 CPsiBl2Seq::CPsiBl2Seq(CRef<IQueryFactory> query,
                        CRef<IQueryFactory> subject,
                        CConstRef<CBlastProteinOptionsHandle> options)
-: m_Subject(0), m_Impl(0)
 {
-    m_Subject = new CBlastSubjectSeqs
-        (subject, CConstRef<CBlastOptionsHandle>(options.GetPointer()));
-    try {
-        m_Impl = new CPsiBlastImpl(query, m_Subject, options);
-    } catch (const CBlastException&) {
-        delete m_Subject;
-        throw;
+    x_InitSubject(subject, options.GetPointer());
+    m_Impl = new CPsiBlastImpl(query, m_Subject, options);
+}
+
+void
+CPsiBl2Seq::x_InitSubject(CRef<IQueryFactory> subject, 
+                          const CBlastOptionsHandle* options)
+{
+    if ( !options ) {
+        NCBI_THROW(CBlastException, eInvalidArgument, "Missing options");
     }
+    CConstRef<CBlastOptionsHandle> opts_handle(options);
+    m_Subject.Reset(new CLocalDbAdapter(subject, opts_handle));
 }
 
 CPsiBl2Seq::~CPsiBl2Seq()
 {
     if (m_Impl) {
         delete m_Impl;
-    }
-    if (m_Subject) {
-        delete m_Subject;
     }
 }
 

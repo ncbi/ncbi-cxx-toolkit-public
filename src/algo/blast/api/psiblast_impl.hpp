@@ -35,7 +35,7 @@
 #define ALGO_BLAST_API___PSIBLAST_IMPL__HPP
 
 #include <algo/blast/api/uniform_search.hpp>
-#include "psiblast_subject.hpp"
+#include <algo/blast/api/local_db_adapter.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -67,7 +67,7 @@ public:
     /// @param subject Subject sequence(s) to search [in]
     /// @param options PSI-BLAST options [in]
     CPsiBlastImpl(CRef<objects::CPssmWithParameters> pssm,
-                  IPsiBlastSubject* subject,
+                  CRef<CLocalDbAdapter> subject,
                   CConstRef<CPSIBlastOptionsHandle> options);
 
     /// Constructor to handle the first iteration of PSI-BLAST when the query
@@ -77,7 +77,7 @@ public:
     /// @param subject Protein sequence to search [in]
     /// @param options Protein options [in]
     CPsiBlastImpl(CRef<IQueryFactory> query,
-                  IPsiBlastSubject* subject,
+                  CRef<CLocalDbAdapter> subject,
                   CConstRef<CBlastProteinOptionsHandle> options);
 
     /// Run the PSI-BLAST engine for one iteration
@@ -104,8 +104,8 @@ private:
     /// Query sequence (either extracted from PSSM or provided in constructor)
     CRef<IQueryFactory> m_Query;
 
-    /// PSI-BLAST subject abstraction (we don't own this resource)
-    IPsiBlastSubject* m_Subject;
+    /// PSI-BLAST subject abstraction
+    CRef<CLocalDbAdapter> m_Subject;
 
     /// Options to use
     CConstRef<CBlastOptionsHandle> m_OptsHandle;
