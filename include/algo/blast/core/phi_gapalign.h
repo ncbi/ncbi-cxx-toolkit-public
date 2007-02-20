@@ -83,6 +83,9 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
  *                     pattern match lengths [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
  * @param gapped_stats Return statistics (not filled if NULL) [out]
+ * @param fence_hit Not curently supported for PHI-blast but here
+ *   for compatiability.  Normally true here indicates that an 
+ *   overrun was detected. [out]
  * @return Status, 0 on success, -1 on failure.
  */
 Int2 PHIGetGappedScore (EBlastProgramType program_number, 
