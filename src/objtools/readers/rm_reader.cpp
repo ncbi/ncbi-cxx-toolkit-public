@@ -380,8 +380,11 @@ bool CRmOutReader::MakeFeature( const CMaskData& mask_data, CRef<CSeq_feat>& fea
     interval.SetTo( max( mask_data.outer_pos_begin, mask_data.outer_pos_end ) -1 );
     interval.SetStrand( strcmp( mask_data.strand.c_str(), "C" ) ? 
         eNa_strand_plus : eNa_strand_minus );
-    CSeq_id seq_id( mask_data.query_sequence );
-    interval.SetId().Assign( seq_id );
+
+    CBioseq::TId ids;
+    CSeq_id::ParseFastaIds(ids, mask_data.query_sequence);
+    location->SetId(*FindBestChoice(ids, CSeq_id::Score));
+
     feat->SetLocation( *location );
     
     //  qualifiers:
