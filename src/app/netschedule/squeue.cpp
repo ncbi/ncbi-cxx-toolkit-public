@@ -194,6 +194,8 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
 
     fname = prefix + "tag.db";
     m_TagDb.SetEnv(env);
+    m_TagDb.SetPageSize(32*1024);
+    m_TagDb.RevSplitOff();
     m_TagDb.Open(fname, CBDB_RawFile::eReadWriteCreate);
     files.push_back(path + fname);
 }
@@ -241,7 +243,7 @@ void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 void SLockedQueue::AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id)
 {
     ITERATE(TNSTagList, it, tags) {
-        TNSBitVector bv;
+        TNSBitVector bv(bm::BM_GAP, bm::gap_len_table_min<true>::_len);
         pair<TNSTagMap::iterator, bool> tag_map_it =
             tag_map.insert(TNSTagMap::value_type((*it), bv));
         (tag_map_it.first)->second.set(job_id);
@@ -252,13 +254,19 @@ void SLockedQueue::AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job
 void SLockedQueue::AddTags(TNSTagMap& tag_map)
 {
     CWriteLockGuard guard(m_TagLock);
-    ITERATE(TNSTagMap, it, tag_map) {
+    NON_CONST_ITERATE(TNSTagMap, it, tag_map) {
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
-        TNSBitVector bv;
-        m_TagDb.ReadVector(&bv);
-        bv |= it->second;
-        m_TagDb.WriteVector(bv, STagDB::eCompact);
+        EBDB_ErrCode err = m_TagDb.ReadVector(&it->second, bm::set_OR);
+        if (err != eBDB_NotFound) {
+            m_TagDb.key = it->first.first;
+            m_TagDb.val = it->first.second;
+            m_TagDb.Delete();
+        }
+        m_TagDb.key = it->first.first;
+        m_TagDb.val = it->first.second;
+        it->second.optimize();
+        m_TagDb.WriteVector(it->second, STagDB::eNoCompact);
     }
 }
 
