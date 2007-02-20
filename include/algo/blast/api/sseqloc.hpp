@@ -68,12 +68,27 @@ struct SSeqLoc {
     /// @sa mask
     bool                             ignore_strand_in_mask;
     
+    /// Default constructor
     SSeqLoc()
         : seqloc(), scope(), mask(), ignore_strand_in_mask(true) {}
+
+    /// Parameterized constructor
+    /// @param sl Sequence location [in]
+    /// @param s Scope to retrieve sl [in]
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s)
         : seqloc(sl), scope(s), mask(0), ignore_strand_in_mask(true) {}
+
+    /// Parameterized constructor
+    /// @param sl Sequence location [in]
+    /// @param s Scope to retrieve sl [in]
     SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s)
         : seqloc(&sl), scope(&s), mask(0), ignore_strand_in_mask(true) {}
+
+    /// Parameterized constructor
+    /// @param sl Sequence location [in]
+    /// @param s Scope to retrieve sl [in]
+    /// @param m Masking location(s) applicable to sl [in]
+    /// @param ignore_mask_strand Ignore the mask specified in m? [in]
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s,
             objects::CSeq_loc* m, bool ignore_mask_strand = true)
         : seqloc(sl), scope(s), mask(m), 
@@ -82,6 +97,12 @@ struct SSeqLoc {
               mask->ResetStrand();
         }
     }
+
+    /// Parameterized constructor
+    /// @param sl Sequence location [in]
+    /// @param s Scope to retrieve sl [in]
+    /// @param m Masking location(s) applicable to sl [in]
+    /// @param ignore_mask_strand Ignore the mask specified in m? [in]
     SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s,
             objects::CSeq_loc& m, bool ignore_mask_strand = true)
         : seqloc(&sl), scope(&s), mask(&m),
@@ -258,12 +279,14 @@ public:
     
     /// Add a masked region to the set for a query.
     /// @param i The index of the query.
-    /// @param mqr The masked region to add.
+    /// @param sli The masked region to add.
     void AddMask(size_type i, CRef<CSeqLocInfo> sli)
     {
         m_Queries[i]->AddMask(sli);
     }
     
+    /// Get the CBlastSearchQuery object at index i
+    /// @param i The index of a query.
     CRef<CBlastSearchQuery>
     GetBlastSearchQuery(size_type i) const
     {

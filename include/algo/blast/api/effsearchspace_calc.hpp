@@ -70,13 +70,13 @@ public:
     /// Retrieve the effective search space calculated for a given query
     /// context. This is needed because translated searches might have slightly
     /// different search spaces for each of its contexts.
-    /// @param query_index index of the query sequence of interest
+    /// @param ctx_index index of the query sequence of interest
     Int8 GetEffSearchSpaceForContext(size_t ctx_index) const;
 
 private:
-    CRef<IQueryFactory> m_QueryFactory;
-    EBlastProgramType m_Program;
-    BlastQueryInfo* m_QueryInfo;
+    CRef<IQueryFactory> m_QueryFactory; ///< source of query sequence(s)
+    EBlastProgramType m_Program;        ///< BLAST program
+    BlastQueryInfo* m_QueryInfo;        ///< struct to store eff. search spaces
 };
 
 END_SCOPE(blast)
