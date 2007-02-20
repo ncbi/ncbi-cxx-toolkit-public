@@ -348,10 +348,11 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         CLDS_FastaScanner fscan(*this, file_id, type_id);
         ScanFastaFile(&fscan, 
                       input, 
-                      fReadFasta_AssumeNuc | 
-                      fReadFasta_AllSeqIds |
-                      fReadFasta_OneSeq    |
-                      fReadFasta_NoSeqData);
+                      CFastaReader::fAssumeNuc  |
+                      CFastaReader::fAllSeqIds  |
+                      CFastaReader::fOneSeq     |
+                      CFastaReader::fNoSeqData  |
+                      CFastaReader::fParseRawID);
     } else {
         LOG_POST(Info << "Unsupported file format: " << file_name);
     }
