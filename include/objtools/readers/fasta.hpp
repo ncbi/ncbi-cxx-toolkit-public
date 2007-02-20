@@ -78,7 +78,8 @@ public:
         fAllSeqIds  = 0x40,  ///< Read Seq-ids past the first ^A (see note)
         fNoSeqData  = 0x80,  ///< Parse the deflines but skip the data
         fRequireID  = 0x100, ///< Reject deflines that lack IDs
-        fDLOptional = 0x200  ///< Don't require a leading defline
+        fDLOptional = 0x200, ///< Don't require a leading defline
+        fParseRawID = 0x400  ///< Try to identify raw accessions
     };
     typedef int TFlags; ///< binary OR of EFlags
 

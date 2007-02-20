@@ -412,7 +412,7 @@ bool CFastaReader::ParseIDs(const TStr& s)
     CBioseq::TId& ids = SetIDs();
     // CBioseq::TId  old_ids = ids;
     size_t count = 0;
-    if (str.find('|') != NPOS) {
+    if (TestFlag(fParseRawID)  ||  str.find('|') != NPOS) {
         try {
             count = CSeq_id::ParseFastaIds(ids, str, true); // be generous
         } catch (CSeqIdException&) {
