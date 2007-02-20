@@ -10,7 +10,9 @@
 #  NCBI C++ libraries and applications for all platforms, or just for the
 #  specified one.
 
-REPOS='https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++'
+REPOS_DEVELOPMENT='https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++'
+REPOS_PRODUCTION='https://svn.ncbi.nlm.nih.gov/repos/toolkit/production/current/c++'
+REPOS=$REPOS_DEVELOPMENT
 
 ##  Cmd.-line args
 script_name=`basename $0`
@@ -101,6 +103,10 @@ for cmd_arg in "$@" ; do
   esac
 done 
 
+
+if test "$srctree" = "production" ; then
+    REPOS=$REPOS_PRODUCTION
+fi
 revision="{$timestamp}"
 svn_cmd='svn --non-interactive'
 
@@ -110,7 +116,6 @@ if test "$export" = "yes" ; then
 else
     checkout_cmd="$svn_cmd update -r \"$revision\" \$*"
 fi
-
 
 # This function calls with 2 arguments: <path> [-N]
 # If you change number of arguments please update checkout_cmd above
@@ -138,130 +143,128 @@ cd "$target_dir"  ||  Usage "Cannot cd to $target_dir"
 target_dir=`pwd`
 
 if test "$srctree" = "development" ; then
-  srctree= # actual name in the repository
-  Checkout ${srctree}doc
+  Checkout doc
 fi
 
-Checkout ${srctree}src -N
-Checkout ${srctree}src/connect -N
-Checkout ${srctree}src/connect/ext
-Checkout ${srctree}src/connect/services
-Checkout ${srctree}src/connect/test
-Checkout ${srctree}src/corelib
-Checkout ${srctree}src/util
-Checkout ${srctree}src/cgi
-Checkout ${srctree}src/html
-Checkout ${srctree}src/misc
-Checkout ${srctree}src/serial
-Checkout ${srctree}src/app
-Checkout ${srctree}src/algo
-Checkout ${srctree}src/bdb
-Checkout ${srctree}src/sqlite
+Checkout src -N
+Checkout src/connect -N
+Checkout src/connect/ext
+Checkout src/connect/services
+Checkout src/connect/test
+Checkout src/corelib
+Checkout src/util
+Checkout src/cgi
+Checkout src/html
+Checkout src/misc
+Checkout src/serial
+Checkout src/app
+Checkout src/algo
+Checkout src/bdb
+Checkout src/sqlite
 if test "$with_internal" != "no" ; then
-    Checkout ${srctree}src/internal -N
-    Checkout ${srctree}src/internal/align_model 
-    Checkout ${srctree}src/internal/ID -N
-    Checkout ${srctree}src/internal/ID/utils -N
-    Checkout ${srctree}src/internal/log
+    Checkout src/internal -N
+    Checkout src/internal/align_model 
+    Checkout src/internal/ID -N
+    Checkout src/internal/ID/utils -N
+    Checkout src/internal/log
 fi
 
-Checkout ${srctree}include -N
-Checkout ${srctree}include/connect -N
-Checkout ${srctree}include/connect/ext
-Checkout ${srctree}include/connect/services
-Checkout ${srctree}include/corelib
-Checkout ${srctree}include/util
-Checkout ${srctree}include/cgi
-Checkout ${srctree}include/html
-Checkout ${srctree}include/misc
-Checkout ${srctree}include/serial
-Checkout ${srctree}include/app
-Checkout ${srctree}include/test
-Checkout ${srctree}include/algo
-Checkout ${srctree}include/bdb
-Checkout ${srctree}include/sqlite
+Checkout include -N
+Checkout include/connect -N
+Checkout include/connect/ext
+Checkout include/connect/services
+Checkout include/corelib
+Checkout include/util
+Checkout include/cgi
+Checkout include/html
+Checkout include/misc
+Checkout include/serial
+Checkout include/app
+Checkout include/test
+Checkout include/algo
+Checkout include/bdb
+Checkout include/sqlite
 if test "$with_internal" != "no" ; then
-    Checkout ${srctree}include/internal -N
-    Checkout ${srctree}include/internal/align_model 
-    Checkout ${srctree}include/internal/ID -N
-    Checkout ${srctree}include/internal/ID/utils -N
-    Checkout ${srctree}include/internal/log
+    Checkout include/internal -N
+    Checkout include/internal/align_model 
+    Checkout include/internal/ID -N
+    Checkout include/internal/ID/utils -N
+    Checkout include/internal/log
 fi
 
 case "$platform" in
   all )
-    Checkout ${srctree}src/dbapi
-    Checkout ${srctree}include/dbapi
-    Checkout ${srctree}src/connect/daemons
-    Checkout ${srctree}include/connect/daemons
-    Checkout ${srctree}compilers
-    Checkout ${srctree}src/check
+    Checkout src/dbapi
+    Checkout include/dbapi
+    Checkout src/connect/daemons
+    Checkout include/connect/daemons
+    Checkout compilers
+    Checkout src/check
     ;;
   unix )
-    Checkout ${srctree}src/dbapi
-    Checkout ${srctree}include/dbapi
-    Checkout ${srctree}src/connect/daemons
-    Checkout ${srctree}include/connect/daemons
-    Checkout ${srctree}compilers -N
-    Checkout ${srctree}src/check
+    Checkout src/dbapi
+    Checkout include/dbapi
+    Checkout src/connect/daemons
+    Checkout include/connect/daemons
+    Checkout compilers -N
+    Checkout src/check
     ;;
   msvc )
-    Checkout ${srctree}src/dbapi
-    Checkout ${srctree}include/dbapi
-    Checkout ${srctree}compilers -N
-    Checkout ${srctree}compilers/msvc710_prj
-    Checkout ${srctree}compilers/msvc800_prj
-    Checkout ${srctree}src/check
+    Checkout src/dbapi
+    Checkout include/dbapi
+    Checkout compilers -N
+    Checkout compilers/msvc710_prj
+    Checkout compilers/msvc800_prj
+    Checkout src/check
     ;;
   cygwin)
-    Checkout ${srctree}src/dbapi
-    Checkout ${srctree}include/dbapi
-    Checkout ${srctree}compilers -N
-    Checkout ${srctree}compilers/cygwin
-    Checkout ${srctree}src/check
+    Checkout src/dbapi
+    Checkout include/dbapi
+    Checkout compilers -N
+    Checkout compilers/cygwin
+    Checkout src/check
     ;;
   mac )
-    Checkout ${srctree}src/dbapi -N
-    Checkout ${srctree}src/dbapi/driver -N
-    Checkout ${srctree}include/dbapi -N
-    Checkout ${srctree}include/dbapi/driver -N
-    Checkout ${srctree}include/dbapi/driver/util -N
-    Checkout ${srctree}src/connect/mitsock
-    Checkout ${srctree}compilers -N
-    Checkout ${srctree}compilers/mac_prj
-    Checkout ${srctree}compilers/xCode
+    Checkout src/dbapi -N
+    Checkout src/dbapi/driver -N
+    Checkout include/dbapi -N
+    Checkout include/dbapi/driver -N
+    Checkout include/dbapi/driver/util -N
+    Checkout src/connect/mitsock
+    Checkout compilers -N
+    Checkout compilers/mac_prj
+    Checkout compilers/xCode
     ;;
 esac
 
 case "$platform" in
   all | unix | cygwin | mac )
-    Checkout ${srctree} -N
-    Checkout ${srctree}scripts
+    Checkout scripts
     ;;
   msvc )
-    Checkout ${srctree}scripts -N
-    Checkout ${srctree}scripts/check
-    Checkout ${srctree}scripts/projects
+    Checkout scripts -N
+    Checkout scripts/check
+    Checkout scripts/projects
     ;;
 esac
 
 if test "$with_objects" != "no" ; then
-    Checkout ${srctree}src/objects
-    Checkout ${srctree}src/objmgr
-    Checkout ${srctree}src/objtools
-    Checkout ${srctree}include/objects
-    Checkout ${srctree}include/objmgr
-    Checkout ${srctree}include/objtools
+    Checkout src/objects
+    Checkout src/objmgr
+    Checkout src/objtools
+    Checkout include/objects
+    Checkout include/objmgr
+    Checkout include/objtools
 fi
 
 if test "$with_ctools" != "no" ; then
-    Checkout ${srctree}src/ctools
-    Checkout ${srctree}include/ctools
+    Checkout src/ctools
+    Checkout include/ctools
 fi
 
 if test "$with_gui" != "no" ; then
-    Checkout ${srctree}src/gui
-    Checkout ${srctree}include/gui
+    Checkout src/gui
+    Checkout include/gui
 fi
 
 
@@ -328,6 +331,7 @@ fi
 # Generate checkout info file
 cat <<EOF >$checkout_info
 For platform   : ${platform}
+Source tree    : ${srctree}
 Sources date   : ${timestamp}
 Checkout date  : `date`
 Is exported    : ${export}
@@ -342,5 +346,4 @@ The core NCBI C++ toolkit tree has been successfully deployed:
 
 `cat $checkout_info`
 In directory   : ${target_dir}
-Source tree    : ${srctree}
 EOF
