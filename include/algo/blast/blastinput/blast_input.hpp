@@ -27,7 +27,7 @@
  *
  */
 
-/** @file blast_input.hpp
+/** @file algo/blast/blastinput/blast_input.hpp
  * Interface for converting sources of sequence data into
  * blast sequence input
  */
