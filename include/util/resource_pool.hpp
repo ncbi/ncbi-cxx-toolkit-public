@@ -32,7 +32,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <vector>
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
@@ -60,7 +60,7 @@ public:
     typedef Lock                           TLock;
     typedef typename Lock::TWriteLockGuard TWriteLockGuard;
     typedef Value*                         TValuePtr;
-    typedef vector<Value*>                 TPoolList;
+    typedef deque<Value*>                  TPoolList;
 
 public:
     CResourcePool()
