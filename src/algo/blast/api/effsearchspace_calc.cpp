@@ -52,6 +52,8 @@ BEGIN_SCOPE(blast)
 class CFilteringMemento
 {
 public:
+    /// Parametrized constructor
+    /// @param opts_memento snapshopt of the BLAST options [in]
     CFilteringMemento(CBlastOptionsMemento* opts_memento)
         : m_OptsMemento(opts_memento), m_FilterString(0), m_FilterOpts(0)
     {
@@ -62,6 +64,7 @@ public:
                                eEmpty);
     }
 
+    /// Destructor
     ~CFilteringMemento()
     {
         m_OptsMemento->m_QueryOpts->filter_string = m_FilterString;
@@ -70,9 +73,11 @@ public:
     }
 
 private:
-    CBlastOptionsMemento* m_OptsMemento;
-    char* m_FilterString;
-    SBlastFilterOptions* m_FilterOpts;
+    CBlastOptionsMemento* m_OptsMemento;    /**< snapshopt of BLAST options */
+    char* m_FilterString;                   /**< original filtering string
+                                              specified in m_OptsMemento */
+    SBlastFilterOptions* m_FilterOpts;      /**< original filtering options
+                                              specified in m_OptsMemento */
 };
 
 CEffectiveSearchSpaceCalculator::CEffectiveSearchSpaceCalculator
