@@ -245,7 +245,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     while (i < data->n_cand) {
         /* NB all servers have been loaded in accordance with iter->external */
         info = (SSERV_Info*) data->cand[i].info;
-        if (info->rate > 0.0  ||  iter->promiscuous) {
+        if (info->rate > 0.0  ||  iter->ok_dead  ||  iter->ok_suppressed) {
             const char* c = SERV_NameOfInfo(info);
             for (n = 0;  n < iter->n_skip;  n++) {
                 const SSERV_Info* skip = iter->skip[n];
@@ -287,7 +287,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                 break;
             data->i_cand++;
             data->cand[i].status = info->rate < 0.0 ? 0.0 : info->rate;
-            if (iter->promiscuous)
+            if (iter->ok_dead  ||  iter->ok_suppressed)
                 break;
             i++;
         }
@@ -309,7 +309,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                 if (iter->external  &&  temp->locl)
                     continue; /* external mapping req'd; local server */
                 assert(!(temp->locl & 0xF0)); /* no private DNS */
-                if (temp->rate > 0.0  ||  iter->promiscuous) {
+                if (temp->rate > 0.0 || iter->ok_dead || iter->ok_suppressed) {
                     data->cand[i].status = data->cand[n].status;
                     info = temp;
                     n = i;
