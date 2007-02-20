@@ -390,10 +390,10 @@ static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope)
 ///@return: the from string
 ///
 static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
-                           int db_type,const char *dbName,const char *rid, const char *queryID,bool showTreeButtons)
+                           int db_type, const string& dbName,const char *rid, const char *queryID,bool showTreeButtons)
 {
-
-    char buf[4096] = {""};
+    string temp_buf = NcbiEmptyString;
+    char* buf = new char[dbName.size() + 4096];
     if(form_name){             
         string localClientButtons = "";
         if(showTreeButtons) {
@@ -412,7 +412,7 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
             sprintf(buf, template_str.c_str(), form_name, query_number,
                 db_is_na?1:0, query_number, form_name, query_number, db_type, 
                 query_number,query_number,             
-                rid,dbName,queryID,form_name,query_number,rid,query_number,form_name,query_number);  	        
+                    rid,dbName.c_str(),queryID,form_name,query_number,rid,query_number,form_name,query_number);  	        
         
         }
         else {
@@ -422,7 +422,9 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
         }
 
     }
-    return buf;
+    temp_buf = buf;
+    delete [] buf;
+    return temp_buf;
 }
 
 ///Gets Query Seq ID from Seq Align
@@ -1547,7 +1549,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     //get sequence 
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){ 
         out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber, 
-                          x_GetDbType(actual_aln_list),m_DbName.c_str(),m_Rid.c_str(),
+                          x_GetDbType(actual_aln_list),m_DbName, m_Rid.c_str(),
                           s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),m_AlignOption & eDisplayTreeView);                          
         out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
     }
@@ -1787,7 +1789,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){
         out<<"</form>\n";        
         out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa, m_QueryNumber, 
-                          x_GetDbType(actual_aln_list),m_DbName.c_str(),m_Rid.c_str(),
+                          x_GetDbType(actual_aln_list),m_DbName, m_Rid.c_str(),
                           s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),m_AlignOption & eDisplayTreeView);                         
     }
 }
