@@ -53,6 +53,10 @@ CSysLog::CSysLog(const string& ident, TFlags flags, EFacility default_facility)
       m_DefaultFacility((default_facility == eDefaultFacility) ? 0 
                         : x_TranslateFacility(default_facility))
 {
+#ifndef NCBI_OS_UNIX
+    NCBI_THROW(CCoreException, eInvalidArg,
+               "CSysLog not implemented for this platform");
+#endif
     if (flags & fConnectNow) {
         CMutexGuard GUARD(sm_Mutex);
         x_Connect();
@@ -62,6 +66,10 @@ CSysLog::CSysLog(const string& ident, TFlags flags, EFacility default_facility)
 CSysLog::CSysLog(const string& ident, TFlags flags, int default_facility)
     : m_Ident(ident), m_Flags(flags), m_DefaultFacility(default_facility)
 {
+#ifndef NCBI_OS_UNIX
+    NCBI_THROW(CCoreException, eInvalidArg,
+               "CSysLog not implemented for this platform");
+#endif
     if (flags & fConnectNow) {
         CMutexGuard GUARD(sm_Mutex);
         x_Connect();
