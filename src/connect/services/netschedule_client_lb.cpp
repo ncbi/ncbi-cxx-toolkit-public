@@ -210,7 +210,7 @@ void CNetScheduleClient_LB::ObtainServerList(const string& service_name)
     SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
     TSERV_Type stype = fSERV_Any;
     if (m_DiscoverLowPriorityServers) {
-        stype |= fSERV_Promiscuous;
+        stype |= fSERV_IncludeSuppressed;
     }
     SERV_ITER srv_it = SERV_Open(service_name.c_str(), stype, 0, net_info);
     ConnNetInfo_Destroy(net_info);

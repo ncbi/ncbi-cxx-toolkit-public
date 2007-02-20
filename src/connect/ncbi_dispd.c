@@ -147,10 +147,17 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     assert(!!net_info->stateless == !!iter->stateless);
     /* Obtain additional header information */
     if ((!(s = SERV_Print(iter, 0))
-         || ConnNetInfo_OverrideUserHeader(net_info, s))                    &&
-        ConnNetInfo_OverrideUserHeader(net_info, !iter->promiscuous
-                                       ? "Dispatch-Mode: INFORMATION_ONLY\r\n"
-                                       : "Dispatch-Mode: PROMISCUOUS\r\n")  &&
+         || ConnNetInfo_OverrideUserHeader(net_info, s))
+        &&
+        ConnNetInfo_OverrideUserHeader(net_info,
+                                       iter->ok_dead  &&  iter->ok_suppressed
+                                       ? "Dispatch-Mode: PROMISCUOUS\r\n"
+                                       : iter->ok_dead
+                                       ? "Dispatch-Mode: OK_DEAD\r\n"
+                                       : iter->ok_suppressed
+                                       ? "Dispatch-Mode: OK_SUPPRESSED\r\n"
+                                       : "Dispatch-Mode: INFORMATION_ONLY\r\n")
+        &&
         ConnNetInfo_OverrideUserHeader(net_info, iter->reverse_dns
                                        ? "Client-Mode: REVERSE_DNS\r\n"
                                        : !net_info->stateless

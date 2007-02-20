@@ -46,7 +46,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
 
     assert(bonus >= 1.0);
     assert(iter  &&  get_candidate);
-    if (iter->ismask  ||  iter->promiscuous)
+    if (iter->ismask  ||  iter->ok_dead  ||  iter->ok_suppressed)
         return 0/*first entry (DISPD: probably) fits*/;
     best_match = 0/*false*/;
     for (n = 0; ; n++) {

@@ -330,7 +330,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
             for (i = 0; i < sizeof(k_FlagTag)/sizeof(k_FlagTag[0]); i++) {
                 size_t n = strlen(k_FlagTag[i]);
                 if (strncasecmp(str, k_FlagTag[i], n) == 0) {
-                    info->flag = (ESERV_Flags) i;
+                    info->flag = (ESERV_Flag) i;
                     str += n;
                     break;
                 }

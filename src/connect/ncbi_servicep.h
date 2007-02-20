@@ -57,29 +57,29 @@ typedef struct {
 /* Iterator structure
  */
 struct SSERV_IterTag {
-    const char*       name;  /* requested service name, private storage      */
-    TSERV_Type        type;  /* requested server type(s), specials stripped  */
-    unsigned int      host;  /* preferred host to select, network b.o.       */
-    unsigned short    port;  /* preferred port to select, host b.o.          */
-    double            pref;  /* range [0..100] %%                            */
-    size_t          n_skip;  /* actual number of servers in the array        */
-    size_t          a_skip;  /* number of allocated slots in the array       */
-    SSERV_Info**      skip;  /* servers to skip (w/names)                    */
-    const SSERV_Info* last;  /* last server info taken out                   */
+    const char*         name; /* requested service name, private storage     */
+    TSERV_Type          type; /* requested server type(s), specials stripped */
+    unsigned int        host; /* preferred host to select, network b.o.      */
+    unsigned short      port; /* preferred port to select, host b.o.         */
+    double              pref; /* range [0..100] %%                           */
+    size_t            n_skip; /* actual number of servers in the array       */
+    size_t            a_skip; /* number of allocated slots in the array      */
+    SSERV_Info**        skip; /* servers to skip (w/names)                   */
+    const SSERV_Info*   last; /* last server info taken out                  */
+    const SSERV_VTable*   op; /* table of virtual functions                  */
 
-    const SSERV_VTable* op;  /* table of virtual functions                   */
-
-    void*             data;  /* private data field                           */
-    unsigned      ismask:1;  /* whether the name is to be treated as a mask  */
-    unsigned promiscuous:1;  /* as taken from..                              */
-    unsigned reverse_dns:1;  /*            ..types passed..                  */
-    unsigned   stateless:1;  /*                        .. in SERV_*() calls  */
-    unsigned    external:1;  /* whether this is an external request          */
-    const char*        arg;  /* argument to match; original pointer          */
-    size_t          arglen;  /* == 0 for NULL pointer above                  */
-    const char*        val;  /* value to match; original pointer             */
-    size_t          vallen;  /* == 0 for NULL pointer above                  */
-    TNCBI_Time        time;  /* the time of call                             */
+    void*               data; /* private data field                          */
+    unsigned        ismask:1; /* whether the name is to be treated as a mask */
+    unsigned       ok_dead:1; /* as taken..                                  */
+    unsigned ok_suppressed:1; /*      ..from types..                         */
+    unsigned   reverse_dns:1; /*               ..as passed into..            */
+    unsigned     stateless:1; /*                            ..SERV_*() calls */
+    unsigned      external:1; /* whether this is an external request         */
+    const char*          arg; /* argument to match; original pointer         */
+    size_t            arglen; /* == 0 for NULL pointer above                 */
+    const char*          val; /* value to match; original pointer            */
+    size_t            vallen; /* == 0 for NULL pointer above                 */
+    TNCBI_Time          time; /* the time of call                            */
 };
 
 

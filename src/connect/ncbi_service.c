@@ -170,35 +170,37 @@ static SERV_ITER s_Open(const char*          service,
         return 0;
     }
 
-    iter->name            = s;
-    iter->type            = types & ~special_flags;
-    iter->host            = (preferred_host == SERV_LOCALHOST
-                             ? SOCK_GetLocalHostAddress(eDefault)
-                             : preferred_host);
-    iter->port            = preferred_port;
-    iter->pref            = (preference < 0.0
-                             ? -1.0
-                             :  0.01 * (preference > 100.0
-                                        ? 100.0
-                                        : preference));
+    iter->name              = s;
+    iter->type              = types & ~special_flags;
+    iter->host              = (preferred_host == SERV_LOCALHOST
+                               ? SOCK_GetLocalHostAddress(eDefault)
+                               : preferred_host);
+    iter->port              = preferred_port;
+    iter->pref              = (preference < 0.0
+                               ? -1.0
+                               :  0.01 * (preference > 100.0
+                                          ? 100.0
+                                          : preference));
     if (ismask)
-        iter->ismask      = 1;
-    if (types & fSERV_Promiscuous)
-        iter->promiscuous = 1;
+        iter->ismask        = 1;
+    if (types & fSERV_IncludeDead)
+        iter->ok_dead       = 1;
+    if (types & fSERV_IncludeSuppressed)
+        iter->ok_suppressed = 1;
     if (types & fSERV_ReverseDns)
-        iter->reverse_dns = 1;
+        iter->reverse_dns   = 1;
     if (types & fSERV_Stateless)
-        iter->stateless   = 1;
-    iter->external        = external;
+        iter->stateless     = 1;
+    iter->external          = external;
     if (arg) {
-        iter->arg         = arg;
-        iter->arglen      = strlen(arg);
+        iter->arg           = arg;
+        iter->arglen        = strlen(arg);
     }
     if (iter->arglen  &&  val) {
-        iter->val         = val;
-        iter->vallen      = strlen(val);
+        iter->val           = val;
+        iter->vallen        = strlen(val);
     }
-    iter->time            = (TNCBI_Time) time(0);
+    iter->time              = (TNCBI_Time) time(0);
 
     if (n_skip) {
         size_t i;

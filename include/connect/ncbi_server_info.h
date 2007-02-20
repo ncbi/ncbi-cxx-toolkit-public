@@ -72,7 +72,7 @@ typedef enum {
 typedef enum {
     fSERV_Regular = 0x0,
     fSERV_Blast   = 0x1
-} ESERV_Flags;
+} ESERV_Flag;
 
 
 #define SERV_DEFAULT_FLAG           fSERV_Regular
@@ -148,7 +148,7 @@ typedef struct {
     EMIME_Type          mime_t; /* type,                                     */
     EMIME_SubType       mime_s; /*     subtype,                              */
     EMIME_Encoding      mime_e; /*         and encoding for content-type     */
-    ESERV_Flags           flag; /* algorithm flag for the server             */
+    ESERV_Flag            flag; /* algorithm flag for the server             */
     unsigned char reserved[14]; /* zeroed reserved area - do not use!        */
     unsigned short      quorum; /* quorum required to override this entry    */
     USERV_Info               u; /* server type-specific data/params          */
