@@ -229,8 +229,8 @@ private:
 
 /// Auxiliary function to convert a Seq-loc describing masked query regions to a 
 /// TMaskedQueryRegions object
-/// @param sloc_in Seq-loc to use as source (must be Packed-int or Seq-int) [in]
-/// @param prog BLAST program type [in]
+/// @param sloc Seq-loc to use as source (must be Packed-int or Seq-int) [in]
+/// @param program BLAST program type [in]
 /// @param assume_both_strands ignores the strand of sloc_in and adds masking
 /// locations to both strands in return value. This is irrelevant for protein
 /// queries
