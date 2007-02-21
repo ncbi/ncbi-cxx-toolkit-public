@@ -28,11 +28,9 @@ services="
    NC_Reserve"
 
 hosts="
-   service0:9001   \
    service1:9001   \
    service2:9001   \
    service3:9001   \
-   service0:9005   \
    service3:9005   \
    service1:9002   \
    service2:9002   \
