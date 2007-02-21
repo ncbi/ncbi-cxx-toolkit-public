@@ -69,6 +69,12 @@ public:
             m_Size = m_Capacity = new_size;
         }
     }
+    void clear()
+    {
+        x_Deallocate();
+        m_Buffer = 0;
+    }
+
     value_type& operator[](size_t i) const { return m_Buffer[i]; }
     value_type* data() { return m_Buffer; }
 private:
