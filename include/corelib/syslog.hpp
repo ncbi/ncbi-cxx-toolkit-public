@@ -108,7 +108,8 @@ public:
 
     void HonorRegistrySettings(IRegistry* reg = 0);
 
-    string GetLogName(void) { return "SYSLOG"; }
+    static const char* kLogName_Syslog;
+    string GetLogName(void) { return kLogName_Syslog; }
 
 private:
     static int x_TranslateFlags   (TFlags flags);

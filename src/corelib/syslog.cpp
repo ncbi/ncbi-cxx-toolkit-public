@@ -48,6 +48,10 @@ BEGIN_NCBI_SCOPE
 DEFINE_CLASS_STATIC_MUTEX(CSysLog::sm_Mutex);
 CSysLog* CSysLog::sm_Current = NULL;
 
+
+const char* CSysLog::kLogName_Syslog = "SYSLOG";
+
+
 CSysLog::CSysLog(const string& ident, TFlags flags, EFacility default_facility)
     : m_Ident(ident), m_Flags(flags),
       m_DefaultFacility((default_facility == eDefaultFacility) ? 0 
