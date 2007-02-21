@@ -761,6 +761,10 @@ CDB_VarChar& CDB_VarChar::SetValue(const string& s,
 {
     Assign(s, enc);
 
+    if (s.size() > 255) {
+        ERR_POST(Warning << "String of size " << s.size() << " was truncated to 255 characters" );
+    }
+
     m_Size = s.copy(m_Val, sizeof(m_Val) - 1);
     m_Val[m_Size] = '\0';
     return *this;
@@ -771,6 +775,13 @@ CDB_VarChar& CDB_VarChar::SetValue(const char* s,
                                    EEncoding enc)
 {
     Assign(s, string::npos, enc);
+
+    if (s) {
+        size_t size = strlen(s);
+        if (size > sizeof(m_Val) - 1) {
+            ERR_POST(Warning << "String of size " << size << " was truncated to 255 characters" );
+        }
+    }
 
     if ( s ) {
         for (m_Size = 0;  (m_Size < sizeof(m_Val) - 1)  &&  (*s != '\0');
@@ -788,6 +799,13 @@ CDB_VarChar& CDB_VarChar::SetValue(const char* s, size_t l,
                                    EEncoding enc)
 {
     Assign(s, l, enc);
+
+    if (s) {
+        size_t size = min(strlen(s), l);
+        if (size > sizeof(m_Val) - 1) {
+            ERR_POST(Warning << "String of size " << size << " was truncated to 255 characters" );
+        }
+    }
 
     if ( s ) {
         m_Size = l < sizeof(m_Val) ? l : sizeof(m_Val) - 1;

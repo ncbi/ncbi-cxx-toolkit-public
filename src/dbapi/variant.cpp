@@ -259,20 +259,11 @@ CVariant::CVariant(bool v)
 CVariant::CVariant(const string& v)
     : m_data(new CDB_VarChar(v))
 {
-    if (v.size() > 255) {
-        ERR_POST(Warning << "String of size " << v.size() << " was truncated to 255 characters" );
-    }
 }
 
 CVariant::CVariant(const char* s)
     : m_data(new CDB_VarChar(s))
 {
-    if (s) {
-        size_t size = strlen(s);
-        if (size > 255) {
-            ERR_POST(Warning << "String of size " << size << " was truncated to 255 characters" );
-        }
-    }
 }
 
 CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
