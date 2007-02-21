@@ -74,6 +74,7 @@ BEGIN_SCOPE(blast)
 
 /** Convert a list of mask locations to a CSeq_loc object.
  * @param query Query sequence location [in]
+ * @param scope Scope for use by object manager [in]
  * @param loc_list List of mask locations [in]
  * @return List of mask locations in a CSeq_loc form or NULL if loc_list is
  * NULL
