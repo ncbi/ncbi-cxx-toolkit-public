@@ -152,7 +152,7 @@ type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
 
 
 static string k_GetTreeViewForm =  "<FORM  method=\"post\" \
-action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&dbname=%s&queryID=%s&distmode=on\" \
+action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&queryID=%s&distmode=on\" \
 name=\"tree%s%d\" target=\"trv%s\"> \
 <input type=button value=\"Distance tree of results\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
 <input type=\"hidden\" name=\"sequenceSet\" value=\"\"><input type=\"hidden\" name=\"screenWidth\" value=\"\"></form>";
@@ -412,7 +412,7 @@ static string s_GetSeqForm(char* form_name, bool db_is_na, int query_number,
             sprintf(buf, template_str.c_str(), form_name, query_number,
                 db_is_na?1:0, query_number, form_name, query_number, db_type, 
                 query_number,query_number,             
-                    rid,dbName.c_str(),queryID,form_name,query_number,rid,query_number,form_name,query_number);  	        
+                    rid,queryID,form_name,query_number,rid,query_number,form_name,query_number);  	        
         
         }
         else {
