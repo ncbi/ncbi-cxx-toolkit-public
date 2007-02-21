@@ -136,7 +136,7 @@ CBlastInput::GetAllSeqs()
 }
 
 
-CBlastInputSource::CBlastInputSource(CObjectManager& objmgr)
+CBlastInputSource::CBlastInputSource(objects::CObjectManager& objmgr)
     : m_ObjMgr(objmgr),
       m_Scope(new CScope(objmgr))
 {
