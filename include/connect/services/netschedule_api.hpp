@@ -663,7 +663,8 @@ public:
     {
     public:
         virtual ~ISink() {};
-        virtual CNcbiOstream& GetOstream(const string& connection_info) = 0;
+        virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn) = 0;
+        virtual void EndOfData(CNetSrvConnector& conn) {}
     };
     /// Print version string
     void GetServerVersion(ISink& sink) const;
@@ -695,6 +696,9 @@ public:
 private:
     friend class CNetScheduleAPI;
     CNetScheduleAdmin(const CNetScheduleAPI& api) : m_API(&api) {}
+
+    void x_SendCmdToAll(const string& cmd, ISink& sink) const;
+    void x_SendCmdToAll1(const string& cmd, ISink& sink) const;
     
     const CNetScheduleAPI* m_API;
 };

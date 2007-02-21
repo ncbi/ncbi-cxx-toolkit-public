@@ -194,19 +194,20 @@ void CNetScheduleControl::Init(void)
 class CSimpleSink : public CNetScheduleAdmin::ISink
 {
 public:
-    CSimpleSink(CNcbiOstream& os) : m_Os(os), m_NeedLF(false) {}
-    ~CSimpleSink() { if (m_NeedLF) m_Os << endl; }
+    CSimpleSink(CNcbiOstream& os) : m_Os(os) {}
+    ~CSimpleSink() {}
     
-    CNcbiOstream& GetOstream(const string& conn_info)
+    virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn)
     {
-        if (m_NeedLF) m_Os << endl;
-        m_Os << conn_info << endl;
-        m_NeedLF = true;
+        m_Os << conn.GetHost() << ":" << conn.GetPort() << endl;
         return m_Os;
+    }
+    virtual void EndOfData(CNetSrvConnector& conn)
+    {
+        m_Os << endl;
     }
 private:
     CNcbiOstream& m_Os;
-    bool m_NeedLF;
 };
 
 
