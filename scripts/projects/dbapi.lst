@@ -8,3 +8,6 @@ connect$
 connect/ext$
 dbapi
 misc
+cgi$ update-only
+connect/services$ update-only
+html$ update-only
