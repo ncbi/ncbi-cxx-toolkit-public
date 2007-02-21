@@ -861,11 +861,8 @@ CDB_Char::CDB_Char(size_t s,
 {
     m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
     m_Val = new char[m_Size + 1];
-    size_t l = v.copy(m_Val, m_Size);
-    if (l < m_Size) {
-        memset(m_Val + l, ' ', m_Size - l);
-    }
-    m_Val[m_Size] = '\0';
+
+    SetValue(v);
 }
 
 
@@ -877,19 +874,7 @@ CDB_Char::CDB_Char(size_t len,
     m_Size = (len < 1) ? 1 : (len > kMaxCharSize ? kMaxCharSize : len);
     m_Val = new char[m_Size + 1];
 
-    if ( str ) {
-        size_t l;
-        for (l = 0;  (l < m_Size)  &&  (*str != '\0');  ++str) {
-            m_Val[l++] = *str;
-        }
-        if (l < m_Size) {
-            memset(m_Val + l, ' ', m_Size - l);
-        }
-    } else {
-        memset(m_Val, ' ', m_Size);
-    }
-
-    m_Val[m_Size] = '\0';
+    SetValueInternal(str, len);
 }
 
 
@@ -906,12 +891,7 @@ CDB_Char& CDB_Char::operator= (const CDB_Char& v)
 {
     if (this != &v) {
         Assign(v);
-
-        size_t l = (m_Size > v.m_Size) ? v.m_Size : m_Size;
-        memmove(m_Val, v.m_Val, l);
-        if (l < m_Size) {
-            memset(m_Val + l, ' ', m_Size - l);
-        }
+        SetValueInternal(v.m_Val, v.m_Size);
     }
 
     return *this;
@@ -921,11 +901,7 @@ CDB_Char& CDB_Char::operator= (const CDB_Char& v)
 CDB_Char& CDB_Char::operator= (const string& v)
 {
     Assign(v);
-
-    size_t l = v.copy(m_Val, m_Size);
-    if (l < m_Size) {
-        memset(m_Val + l, ' ', m_Size - l);
-    }
+    SetValue(v);
 
     return *this;
 }
@@ -934,39 +910,84 @@ CDB_Char& CDB_Char::operator= (const string& v)
 CDB_Char& CDB_Char::operator= (const char* v)
 {
     Assign(v);
-
-    if (v != NULL) {
-        size_t l;
-
-        for (l = 0;  (l < m_Size)  &&  (*v != '\0');  ++v) {
-            m_Val[l++] = *v;
-        }
-        if (l < m_Size) {
-            memset(m_Val + l, ' ', m_Size - l);
-        }
-    }
+    SetValue(v);
 
     return *this;
 }
 
 
-void CDB_Char::SetValue(const char* str,
-                        size_t len,
-                        EEncoding enc)
+void
+CDB_Char::SetValue(const char* str)
 {
-    Assign(str, len, enc);
+    if ( str ) {
+        size_t l;
 
+        _ASSERT(m_Val);
+
+        for (l = 0;  (l < m_Size)  &&  (*str != '\0');  ++str) {
+            m_Val[l++] = *str;
+        }
+
+        if (*str == '\0') {
+            ERR_POST(Warning << "String was truncated to " <<
+                     m_Size << " characters" );
+        }
+
+        if (l < m_Size) {
+            memset(m_Val + l, ' ', m_Size - l);
+        }
+    } else {
+        memset(m_Val, ' ', m_Size);
+    }
+
+    m_Val[m_Size] = '\0';
+}
+
+
+void
+CDB_Char::SetValue(const string& str)
+{
+    if (m_Size < str.size()) {
+        ERR_POST(Warning << "String of size " << str.size() <<
+                 " was truncated to " << m_Size << " characters" );
+    }
+
+    size_t l = str.copy(m_Val, m_Size);
+    if (l < m_Size) {
+        memset(m_Val + l, ' ', m_Size - l);
+    }
+
+    m_Val[m_Size] = '\0';
+}
+
+
+void
+CDB_Char::SetValueInternal(const char* str, size_t len)
+{
     if ( str ) {
         if (len >= m_Size) {
             memcpy(m_Val, str, m_Size);
-        }
-        else {
+            ERR_POST(Warning << "String of size " << len <<
+                     " was truncated to " << m_Size<< " characters" );
+        } else {
             if ( len ) {
                 memcpy(m_Val, str, len);
             }
             memset(m_Val + len, ' ', m_Size - len);
         }
     }
+
+    m_Val[m_Size] = '\0';
+}
+
+
+void
+CDB_Char::SetValue(const char* str,
+                   size_t len,
+                   EEncoding enc)
+{
+    Assign(str, len, enc);
+    SetValueInternal(str, len);
 }
 
 
@@ -990,13 +1011,13 @@ void CDB_Char::AssignValue(CDB_Object& v)
 
     if(m_Size < cv.m_Size) {
         delete [] m_Val;
-        m_Val = new char[cv.m_Size+1];
+        m_Val = new char[cv.m_Size + 1];
     }
 
     m_Size = cv.m_Size;
 
     if(!cv.IsNULL()) {
-        memcpy(m_Val, cv.m_Val, m_Size+1);
+        memcpy(m_Val, cv.m_Val, m_Size + 1);
     }
 }
 

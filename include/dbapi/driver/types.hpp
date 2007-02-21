@@ -502,10 +502,15 @@ public:
     virtual CDB_Object* Clone()   const;
 
     virtual void AssignValue(CDB_Object& v);
-    virtual ~CDB_Char();
+    virtual ~CDB_Char(void);
+
+private:
+    void SetValue(const char* str);
+    void SetValueInternal(const char* str, size_t len);
+    void SetValue(const string& str);
 
 protected:
-    size_t      m_Size;
+    size_t      m_Size; // Number of characters not including last '\0'
     char*       m_Val;
 };
 
