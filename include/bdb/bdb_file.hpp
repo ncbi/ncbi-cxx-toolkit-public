@@ -67,7 +67,6 @@ class CBDB_Transaction;
 
 /// Raw file class wraps up basic Berkeley DB operations. 
 ///
-
 class NCBI_BDB_EXPORT CBDB_RawFile
 {
 public:
@@ -120,7 +119,7 @@ public:
     };
 
     /// typedef for raw buffer operations
-    typedef vector<unsigned char> TBuffer;
+    typedef CSimpleBuffer TBuffer;
 
 public:
     CBDB_RawFile(EDuplicateKeys dup_keys = eDuplicatesDisable,

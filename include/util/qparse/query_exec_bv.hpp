@@ -35,6 +35,7 @@
 #include <util/qparse/query_exec.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/bmserial.h>
+#include <util/simple_buffer.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -53,7 +54,7 @@ template<class BV>
 class CQueryEval_BV_Value : public IQueryParseUserObject
 {
 public:
-    typedef vector<unsigned char> TBuffer;
+    typedef CSimpleBuffer         TBuffer;
     typedef BV                    TBitVector;
     
     CQueryEval_BV_Value() {}

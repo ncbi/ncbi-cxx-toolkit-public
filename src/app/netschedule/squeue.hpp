@@ -326,7 +326,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     void Erase(unsigned job_id);
 
     // Tags methods
-    typedef vector<unsigned char> TBuffer;
+    typedef CSimpleBuffer TBuffer;
     void SetTagDbTransaction(CBDB_Transaction* trans);
     static void AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id);
     void AddTags(TNSTagMap& tag_map);

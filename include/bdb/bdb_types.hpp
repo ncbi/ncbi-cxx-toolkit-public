@@ -36,6 +36,7 @@
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include <corelib/ncbistr.hpp>
+#include <util/simple_buffer.hpp>
 
 #include <string>
 #include <vector>
@@ -192,6 +193,8 @@ class CBDB_Field;
 class CBDB_File;
 class CBDB_FileCursor;
 class CBDB_FC_Condition;
+
+
 
 
 /// BDB Data Field interface definition.
