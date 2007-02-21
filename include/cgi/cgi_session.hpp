@@ -219,7 +219,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// ICgiSessionStogage --
+/// ICgiSessionStorage --
 ///
 ///   Implement data storage and retrieval for CCgiSession.
 ///   @sa CCgiSession
