@@ -822,8 +822,11 @@ private:
     /// region holds prior to garbage collection.
     CSeqDBImplFlush m_FlushCB;
     
-    /// Memory management layer.
-    mutable CSeqDBAtlas m_Atlas;
+    /// Memory management layer guard (RIIA) object.
+    CSeqDBAtlasHolder m_AtlasHolder;
+    
+    /// Reference to memory management layer.
+    mutable CSeqDBAtlas & m_Atlas;
     
     /// The list of database names provided to the constructor.
     string m_DBNames;

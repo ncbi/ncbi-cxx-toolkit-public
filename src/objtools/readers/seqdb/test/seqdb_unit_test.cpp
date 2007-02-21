@@ -2361,6 +2361,36 @@ BOOST_AUTO_UNIT_TEST(IntersectionGiList)
     }
 }
 
+BOOST_AUTO_UNIT_TEST(SharedMemoryMaps)
+{
+    START;
+    
+    CSeqDB seqdb1("nt", CSeqDB::eNucleotide);
+    CSeqDB seqdb2("nt", CSeqDB::eNucleotide);
+    
+    const char *s1 = 0, *s2 = 0;
+    
+    seqdb1.GetSequence(0, & s1);
+    seqdb2.GetSequence(0, & s2);
+    
+    try {
+        CHECK(s1 == s2);
+    }
+    catch(...) {
+        if (s1)
+            seqdb1.RetSequence(& s1);
+        if (s2)
+            seqdb2.RetSequence(& s2);
+        throw;
+    }
+    
+    if (s1)
+        seqdb1.RetSequence(& s1);
+    if (s2)
+        seqdb2.RetSequence(& s2);
+}
+
+
 #ifdef NCBI_OS_DARWIN
 // nonsense to work around linker screwiness (horribly kludgy)
 class CDummyDLF : public CDataLoaderFactory {

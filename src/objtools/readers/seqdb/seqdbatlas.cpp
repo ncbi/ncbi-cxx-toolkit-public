@@ -179,12 +179,11 @@ TOut SeqDB_CheckLength(TIn value)
     return result;
 }
 
-CSeqDBAtlas::CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb)
+CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
     : m_UseMmap           (use_mmap),
       m_CurAlloc          (0),
       m_LastFID           (0),
       m_OpenRegionsTrigger(CSeqDBMapStrategy::eOpenRegionsWindow),
-      m_FlushCB           (cb),
       m_Strategy          (*this)
 {
     for(int i = 0; i < eNumRecent; i++) {
@@ -377,9 +376,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
         return;
     }
     
-    if (m_FlushCB) {
-        (*m_FlushCB)();
-    }
+    x_FlushAll();
     
     x_ClearRecent();
     
@@ -1599,81 +1596,6 @@ void CSeqDBMapStrategy::x_SetBounds(Uint8 bound)
                         m_SliceSize / overhang_ratio);
 }
 
-/// Match the filename to the given pattern.
-/// 
-/// The pattern matches if it is found at the end of the filename.
-///
-/// @param pattern A possible suffix of filename.
-/// @param filename A filename.
-/// @return True iff pattern is a suffix of filename.
-static bool s_MatchExpr(string pattern, string filename)
-{
-    if (filename.size() < pattern.size())
-        return false;
-    
-    int offset = filename.size() - pattern.size();
-    
-    return 0 == memcmp(filename.data() + offset,
-                       pattern.data(),
-                       pattern.size());
-}
-
-void CSeqDBAtlas::RemoveMatches(const vector<string> & patterns,
-                                CSeqDBLockHold       & locked)
-{
-    Lock(locked);
-    
-    Verify(true);
-    
-    if (m_FlushCB) {
-        (*m_FlushCB)();
-    }
-    
-    x_ClearRecent();
-    
-    size_t i = 0;
-    
-    while(i < m_Regions.size()) {
-        CRegionMap * mr = m_Regions[i];
-        
-        if (mr->InUse()) {
-            i++;
-            continue;
-        }
-        
-        bool matches = false;
-        
-        for(size_t p = 0; p < patterns.size(); p++) {
-            if (s_MatchExpr(patterns[p], mr->Name())) {
-                matches = true;
-                break;
-            }
-        }
-        
-        if (! matches) {
-            i++;
-            continue;
-        }
-        
-        size_t last = m_Regions.size() - 1;
-        
-        if (i != last) {
-            m_Regions[i] = m_Regions[last];
-        }
-        
-        m_Regions.pop_back();
-        
-        m_CurAlloc -= mr->Length();
-        
-        m_NameOffsetLookup.erase(mr);
-        m_AddressLookup.erase(mr->Data());
-        
-        delete mr;
-    }
-    
-    Verify(true);
-}
-
 void CSeqDBAtlas::SetDefaultMemoryBound(Uint8 bytes)
 {
     CSeqDBMapStrategy::SetDefaultMemoryBound(bytes);
@@ -1690,6 +1612,48 @@ void CSeqDBMapStrategy::SetDefaultMemoryBound(Uint8 bytes)
     }
     m_GlobalMaxBound = bytes;
 }
+
+CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool            use_mmap,
+                                     CSeqDBFlushCB * flush)
+    : m_FlushCB(flush)
+{
+    CFastMutexGuard guard(m_Lock);
+    
+    if (m_Count == 0) {
+        m_Atlas = new CSeqDBAtlas(use_mmap);
+    }
+    
+    if (flush) {
+        CSeqDBLockHold locked(*m_Atlas);
+        m_Atlas->AddRegionFlusher(flush, locked);
+    }
+    
+    m_Count ++;
+}
+
+CSeqDBAtlasHolder::~CSeqDBAtlasHolder()
+{
+    CFastMutexGuard guard(m_Lock);
+    m_Count --;
+    
+    if (m_FlushCB) {
+        CSeqDBLockHold locked(*m_Atlas);
+        m_Atlas->RemoveRegionFlusher(m_FlushCB, locked);
+    }
+    
+    if (m_Count == 0) {
+        delete m_Atlas;
+    }
+}
+
+CSeqDBAtlas & CSeqDBAtlasHolder::Get()
+{
+    _ASSERT(m_Atlas);
+    return *m_Atlas;
+}
+
+int CSeqDBAtlasHolder::m_Count = 0;
+CSeqDBAtlas * CSeqDBAtlasHolder::m_Atlas = NULL;
 
 END_NCBI_SCOPE
 

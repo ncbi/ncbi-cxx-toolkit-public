@@ -1184,9 +1184,7 @@ public:
     /// 
     /// @param use_mmap
     ///   If false, use read(); if true, use mmap() or similar.
-    /// @param cb
-    ///   Callback to release CSeqMemLease objects before garbage collection.
-    CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb);
+    CSeqDBAtlas(bool use_mmap);
     
     /// The destructor unmaps and frees all associated memory.
     ~CSeqDBAtlas();
@@ -1510,22 +1508,24 @@ public:
     /// collection, which attempts to free enough regions to satisfy
     /// the memory bound.  The normal default memory bound is defined
     /// at the top of the atlas code, and is something like 1 GB.  The
-    /// second parameter is the slice size.  This is (basically) much
-    /// memory is acquired at one time for code that uses mmap().
-    /// Setting this smaller should reduce page table thrashing for
-    /// programs that "jump around" in the database any only get a few
-    /// sequences.  Setting it larger should reduce the amount of time
-    /// the atlas spends finding the next slice when the calling code
-    /// crosses a "slice boundary".  The default is something like
-    /// 256MB.  Both defaults used here should be good enough for all
-    /// but the worst cases.  Note that the memory bound should not be
-    /// set according to how much memory the computer has, but rather,
-    /// how much address space the application can spare.  SeqDB does
-    /// not prevent itself from going over the memory bound,
-    /// particularly if the user is holding onto mapped sequence data
-    /// for extended periods of time.  Also note that if the atlas
-    /// code thinks these parameters are set to unreasonable values,
-    /// it will silently adjust them.
+    /// second parameter is the slice size.  This is (basically) how
+    /// much memory is acquired at one time for code that uses mmap().
+    ///
+    /// Setting this to a smaller value should reduce page table
+    /// thrashing for programs that access the database in a
+    /// non-sequential pattern, and which only use a small portion of
+    /// the database.  Setting it larger should reduce the amount of
+    /// time the atlas spends finding the next slice when the calling
+    /// code crosses a "slice boundary".  The default is something
+    /// like 256MB.  Both defaults used here should be good enough for
+    /// all but the worst cases.  Note that the memory bound should
+    /// not be set according to how much memory the computer has, but
+    /// rather, how much address space the application can spare.
+    /// SeqDB does not prevent itself from going over the memory
+    /// bound, particularly if the user is holding onto mapped
+    /// sequence data for extended periods of time.  Also note that if
+    /// the atlas code thinks these parameters are set to unreasonable
+    /// values, it will silently adjust them.
     /// 
     /// @param mb
     ///   Total amount of address space the atlas can use.
@@ -1641,23 +1641,55 @@ public:
         m_Strategy.MentionOid(oid, num_oids);
     }
     
-    /// Remove mappings for filenames that match these patterns.
-    /// 
-    /// All file mappings are searched, and any mapped areas of files
-    /// whose names match one of these strings will be unmapped.  The
-    /// match is only successful if the string is an exact suffix of
-    /// the filename.
+    /// Add a garbage collection callback.
     ///
-    /// @param patterns Patterns to match against.
-    /// @param locked Lock holder object for this thread.
-    void RemoveMatches(const vector<string> & patterns,
-                       CSeqDBLockHold       & locked);
+    /// Some classes in the SeqDB library keep holds on regions of
+    /// memory.  This may represent a large subset of the collectable
+    /// memory, so in order for garbage collection to be effective,
+    /// these holds should be detached at the beginning of a garbage
+    /// collection run.  To accomplish this, each SeqDB object creates
+    /// a callback functor that knows how to release its holds; it
+    /// adds this functor to the atlas using the interface shown here.
+    ///
+    /// @param flusher A callback functor to flush held regions.
+    /// @param locked The lock holder object for this thread.
+    void AddRegionFlusher(CSeqDBFlushCB * flusher, CSeqDBLockHold & locked)
+    {
+        Lock(locked);
+        m_Flushers.push_back(flusher);
+    }
+    
+    /// Remove a garbage collection callback.
+    ///
+    /// This removes a garbage collection callback from the list
+    /// stored in the atlas.  It is called in preparation for
+    /// destruction of a CSeqDBImpl object.
+    ///
+    /// @param flusher A callback functor to flush held regions.
+    /// @param locked The lock holder object for this thread.
+    void RemoveRegionFlusher(CSeqDBFlushCB * flusher, CSeqDBLockHold & locked)
+    {
+        Lock(locked);
+        
+        _ASSERT(m_Flushers.size());
+        
+        for(size_t i = 0; i < m_Flushers.size(); i++) {
+            if (m_Flushers[i] == flusher) {
+                m_Flushers[i] = m_Flushers.back();
+                m_Flushers.pop_back();
+                return;
+            }
+        }
+        _ASSERT(0);
+    }
     
     /// Set global default memory bound.
     ///
     /// This sets the default, global memory bound used for all SeqDB
     /// objects.  If zero is specified, an appropriate default will be
     /// selected based on system information.
+    ///
+    /// @param bytes Number of bytes to use as the global memory bound.
     static void SetDefaultMemoryBound(Uint8 bytes);
     
 private:
@@ -1834,6 +1866,18 @@ private:
         m_Recent[0] = r;
     }
     
+    /// Call all callbacks.
+    /// 
+    /// This method calls all the GC callbacks in preparation for a
+    /// garbage collection run or similar processing.  This method
+    /// assumes the lock is held.
+    void x_FlushAll()
+    {
+        for(size_t i = 0; i < m_Flushers.size(); i++) {
+            (*m_Flushers[i])();
+        }
+    }
+    
     // Data
     
     /// Protects most of the critical regions of the SeqDB library.
@@ -1910,11 +1954,11 @@ private:
     /// regions are opened.
     int m_OpenRegionsTrigger;
     
-    /// Callback to flush memory leases before a garbage collector.
-    CSeqDBFlushCB * m_FlushCB;
-    
     /// Cache of file existence and length.
     map< string, pair<bool, TIndx> > m_FileSize;
+    
+    /// Callbacks to flush memory leases before a garbage collection.
+    vector<CSeqDBFlushCB*> m_Flushers;
     
     /// Flexible memory allocation manager.
     CSeqDBMapStrategy m_Strategy;
@@ -2002,6 +2046,41 @@ inline void CSeqDBMemLease::IncrementRefCnt()
     _ASSERT(m_Data && m_RMap);
     m_RMap->AddRef();
 }
+
+/// Guard object for the SeqDBAtlas singleton.
+///
+/// The CSeqDBAtlas object is a singleton - only one exists at any
+/// given time, and only if a CSeqDB object exists.  This object
+/// implements that policy.  When no CSeqDBAtlas object exists, the
+/// first CSeqDB object to be created will decide whether memory
+/// mapping is enabled.  One of these objects is owned by every
+/// CSeqDBImpl object (and the frames of a few static functions.)
+class CSeqDBAtlasHolder {
+public:
+    /// Constructor.
+    /// @param use_mmap If true, memory mapping will be used.
+    /// @param flusher The garbage collection callback.
+    CSeqDBAtlasHolder(bool use_mmap, CSeqDBFlushCB * flusher = NULL);
+    
+    /// Destructor.
+    ~CSeqDBAtlasHolder();
+    
+    /// Get the CSeqDBAtlas object.
+    CSeqDBAtlas & Get();
+    
+private:
+    /// Garbage collection callback.
+    CSeqDBFlushCB * m_FlushCB;
+    
+    /// Lock protecting this object's fields
+    CFastMutex m_Lock;
+    
+    /// Count of users of the CSeqDBAtlas object.
+    static int m_Count;
+    
+    /// The CSeqDBAtlas object itself.
+    static CSeqDBAtlas * m_Atlas;
+};
 
 
 END_NCBI_SCOPE

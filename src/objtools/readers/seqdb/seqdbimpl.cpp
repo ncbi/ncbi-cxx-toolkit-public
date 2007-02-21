@@ -43,7 +43,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
                        int            oid_end,
                        bool           use_mmap,
                        CSeqDBGiList * gi_list)
-    : m_Atlas           (use_mmap, & m_FlushCB),
+    : m_AtlasHolder     (use_mmap, & m_FlushCB),
+      m_Atlas           (m_AtlasHolder.Get()),
       m_DBNames         (db_name_list),
       m_Aliases         (m_Atlas, db_name_list, prot_nucl),
       m_VolSet          (m_Atlas,
@@ -120,23 +121,12 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     
     SetIterationRange(oid_begin, oid_end);
     
-    {
-        vector<string> patterns;
-        patterns.push_back(".nal");
-        patterns.push_back(".pal");
-        patterns.push_back(".gil");
-        patterns.push_back(".msk");
-        patterns.push_back("index.alx");
-        
-        CSeqDBLockHold locked(m_Atlas);
-        m_Atlas.RemoveMatches(patterns, locked);
-    }
-    
     CHECK_MARKER();
 }
 
 CSeqDBImpl::CSeqDBImpl()
-    : m_Atlas           (false, & m_FlushCB),
+    : m_AtlasHolder     (false, & m_FlushCB),
+      m_Atlas           (m_AtlasHolder.Get()),
       m_Aliases         (m_Atlas, "", '-'),
       m_RestrictBegin   (0),
       m_RestrictEnd     (0),
@@ -1032,8 +1022,10 @@ CSeqDBImpl::FindVolumePaths(const string   & dbname,
                             char             prot_nucl,
                             vector<string> & paths)
 {
-    CSeqDBImplFlush m_FlushCB;
-    CSeqDBAtlas atlas(true, & m_FlushCB);
+    CSeqDBAtlasHolder AH(true, 0);
+    CSeqDBAtlas & atlas(AH.Get());
+    
+    // This constructor handles its own locking.
     CSeqDBAliasFile aliases(atlas, dbname, prot_nucl);
     paths = aliases.GetVolumeNames();
 }
