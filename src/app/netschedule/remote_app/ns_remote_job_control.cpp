@@ -153,7 +153,7 @@ void CNSRemoveJobControlApp::Init(void)
 class CWNodeShutdownAction : public  CNSInfoCollector::IAction<CWNodeInfo>
 {
 public:
-    CWNodeShutdownAction(CNetScheduleClient::EShutdownLevel level)
+    CWNodeShutdownAction(CNetScheduleAdmin::EShutdownLevel level)
         : m_Level(level) {}
 
     virtual ~CWNodeShutdownAction() {};
@@ -163,7 +163,7 @@ public:
         info.Shutdown(m_Level);
     }
 private:
-    CNetScheduleClient::EShutdownLevel m_Level;
+    CNetScheduleAdmin::EShutdownLevel m_Level;
 };
 
 
@@ -188,10 +188,9 @@ int CNSRemoveJobControlApp::Run(void)
     auto_ptr<CNSInfoCollector> info_collector;
     
     IRWRegistry& reg = GetConfig();
-    reg.Set(kNetCacheDriverName, "client_name", "ns_remote_job_control");
-    reg.Set(kNetScheduleDriverName, "client_name", "ns_remote_job_control");
 
     if ( args["nc"]) {
+        reg.Set(kNetCacheDriverName, "client_name", "ns_remote_job_control");
         s_FillReg(reg, kNetCacheDriverName, args["nc"].AsString());
     }
 
@@ -201,6 +200,7 @@ int CNSRemoveJobControlApp::Run(void)
     }
 
     if ( args["ns"]) {
+        reg.Set(kNetScheduleAPIDriverName, "client_name", "ns_remote_job_control");
         reg.Set(kNetScheduleAPIDriverName, "service", args["ns"].AsString());
         reg.Set(kNetScheduleAPIDriverName, "use_permanent_connection", "true");
         reg.Set(kNetScheduleAPIDriverName, "use_embedded_storage", "true");
@@ -224,38 +224,28 @@ int CNSRemoveJobControlApp::Run(void)
 
     try {
     auto_ptr<CConfig::TParamTree> ptree(CConfig::ConvertRegToTree(reg));
-    const CConfig::TParamTree* ns_tree = ptree->FindSubNode(kNetScheduleDriverName);
+    const CConfig::TParamTree* ns_tree = ptree->FindSubNode(kNetScheduleAPIDriverName);
     if (!ns_tree) 
         NCBI_THROW(CArgException, eInvalidArg,
-                   "Could not find \"" + string(kNetScheduleDriverName) + "\" section");
+                   "Could not find \"" + string(kNetScheduleAPIDriverName) + "\" section");
 
     CConfig ns_conf(ns_tree);
-    string queue = ns_conf.GetString(kNetScheduleDriverName, "queue_name", CConfig::eErr_NoThrow, "");
+    string queue = ns_conf.GetString(kNetScheduleAPIDriverName, "queue_name", CConfig::eErr_NoThrow, "");
     NStr::TruncateSpacesInPlace(queue);
     if (queue.empty()) 
-        NCBI_THROW(CArgException, eInvalidArg,
-                   "\"queue_name\" parameter is not set neither in config file nor in cmd line");
+        //        NCBI_THROW(CArgException, eInvalidArg,
+        //                   "\"queue_name\" parameter is not set neither in config file nor in cmd line");
+        queue = "noname";
 
-    string service, host;
-    service = ns_conf.GetString(kNetScheduleDriverName, "service", CConfig::eErr_NoThrow, "");
+    string service = ns_conf.GetString(kNetScheduleAPIDriverName, "service", CConfig::eErr_NoThrow, "");
     NStr::TruncateSpacesInPlace(service);
-    host = ns_conf.GetString(kNetScheduleDriverName, "host", CConfig::eErr_NoThrow, "");
-    NStr::TruncateSpacesInPlace(host);
-    if (service.empty() && host.empty())
+    if (service.empty())
         NCBI_THROW(CArgException, eInvalidArg,
-                   "Neither \"service\" nor \"host\" parameters are not set "
+                   "\"service\" parameter is not set "
                    "neither in config file nor in cmd line");
 
     CBlobStorageFactory factory(reg);
-    if (!service.empty())
-        info_collector.reset(new CNSInfoCollector(queue, service,
-                                                  factory));
-    else {
-        unsigned short port = ns_conf.GetInt(kNetScheduleDriverName, "port",
-                                             CConfig::eErr_Throw, 0);
-        info_collector.reset(new CNSInfoCollector(queue, host, port,
-                                                  factory));
-    }
+    info_collector.reset(new CNSInfoCollector(queue, service, factory));
 
     CNSInfoRenderer::TFlags flags = 0;
     if (args["attr"]) {
@@ -292,14 +282,14 @@ int CNSRemoveJobControlApp::Run(void)
     if (args["jlist"]) {
         string sstatus = args["jlist"].AsString();
         if (NStr::CompareNocase(sstatus, "all") == 0) {
-            for(int i = 0; i < CNetScheduleClient::eLastStatus; ++i) {                
-                CNetScheduleClient::EJobStatus status = 
-                    (CNetScheduleClient::EJobStatus)i;
+            for(int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {                
+                CNetScheduleAPI::EJobStatus status = 
+                    (CNetScheduleAPI::EJobStatus)i;
                 renderer->RenderJobByStatus(status, flags);
             }
         } else {
-            CNetScheduleClient::EJobStatus status = 
-                CNetScheduleClient::StringToStatus(sstatus);
+            CNetScheduleAPI::EJobStatus status = 
+                CNetScheduleAPI::StringToStatus(sstatus);
             renderer->RenderJobByStatus(status, flags);
         }
     } else if (args["jid"]) {
@@ -315,14 +305,14 @@ int CNSRemoveJobControlApp::Run(void)
     } else if (args["cmd"]) {
         string cmd = args["cmd"].AsString();
         if (NStr::CompareNocase(cmd, "shutdown_nodes") == 0) {
-            CNetScheduleClient::EShutdownLevel level = 
-                CNetScheduleClient::eShutdownImmidiate;
+            CNetScheduleAdmin::EShutdownLevel level = 
+                CNetScheduleAdmin::eShutdownImmidiate;
             CWNodeShutdownAction action(level);
             info_collector->TraverseNodes(action);
         }
         if (NStr::CompareNocase(cmd, "kill_nodes") == 0) {
-            CNetScheduleClient::EShutdownLevel level = 
-                level = CNetScheduleClient::eDie;
+            CNetScheduleAdmin::EShutdownLevel level = 
+                level = CNetScheduleAdmin::eDie;
             CWNodeShutdownAction action(level);
             info_collector->TraverseNodes(action);
         }

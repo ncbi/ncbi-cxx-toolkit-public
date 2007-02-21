@@ -180,12 +180,12 @@ private:
 
 
 
-void CNSInfoRenderer::RenderJobByStatus(CNetScheduleClient::EJobStatus status,
+void CNSInfoRenderer::RenderJobByStatus(CNetScheduleAPI::EJobStatus status,
                                         TFlags flags)
 {
     ITagWriter::TAttributes attrs;
     attrs.push_back(ITagWriter::TAttribute
-                    ("Status", CNetScheduleClient::StatusToString(status) ));
+                    ("Status", CNetScheduleAPI::StatusToString(status) ));
 
     STagGuard guard(m_Writer,"Jobs", attrs);    
     CNSJobListRenderAction action(*this, flags & ~eStatus);
@@ -200,16 +200,16 @@ void CNSInfoRenderer::RenderJob(const string& job_id, TFlags flags)
 
 void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
 {   
-    CNetScheduleClient::EJobStatus status = info.GetStatus();
+    CNetScheduleAPI::EJobStatus status = info.GetStatus();
     ITagWriter::TAttributes attrs;
     attrs.push_back(ITagWriter::TAttribute("Id", info.GetId()));
     if (flags & eStatus)
         attrs.push_back(ITagWriter::TAttribute
                         ("Status", 
-                         CNetScheduleClient::StatusToString(status) ));
+                         CNetScheduleAPI::StatusToString(status) ));
 
-    if (flags & eRetCode && (status == CNetScheduleClient::eDone ||
-                             status == CNetScheduleClient::eFailed) )
+    if (flags & eRetCode && (status == CNetScheduleAPI::eDone ||
+                             status == CNetScheduleAPI::eFailed) )
         attrs.push_back(ITagWriter::TAttribute
                         ("RetCode", 
                          NStr::IntToString(info.GetRetCode()) ));
@@ -224,7 +224,7 @@ void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
     if (flags & eCmdLine) {
         x_RenderString("CmdLine", info.GetCmdLine());
     }
-    if (flags & eErrMsg && status == CNetScheduleClient::eFailed) {
+    if (flags & eErrMsg && status == CNetScheduleAPI::eFailed) {
         x_RenderString("ErrMsg", info.GetErrMsg());
     }
     if (flags & eStdIn) {
@@ -240,9 +240,9 @@ void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
     if (flags & eRawInput) {
         x_RenderString("RawInput", info.GetRawInput());
     }
-    if ((flags & eRawOutput) && (status == CNetScheduleClient::eDone ||
-                                 status == CNetScheduleClient::eFailed ||
-                                 status == CNetScheduleClient::eCanceled)) {
+    if ((flags & eRawOutput) && (status == CNetScheduleAPI::eDone ||
+                                 status == CNetScheduleAPI::eFailed ||
+                                 status == CNetScheduleAPI::eCanceled)) {
         x_RenderString("RawOutput", info.GetRawOutput());
     }    
 
@@ -333,46 +333,29 @@ void CNSInfoRenderer::RenderWNodes(TFlags flags)
     m_Collector.TraverseNodes(action);
 }
 
-class CNSServerQRenderAction : public  CNSInfoCollector::IAction<CNSServerInfo>
-{
-public:
-    CNSServerQRenderAction(CNSInfoRenderer& renderer)
-        : m_Renderer(renderer) {}
-
-    virtual ~CNSServerQRenderAction() {};
-
-    virtual void operator()(const CNSServerInfo& info)
-    {
-        m_Renderer.RenderQueueList(info);
-    }
-private:
-    CNSInfoRenderer& m_Renderer;
-};
-
 void CNSInfoRenderer::RenderQueueList()
 {
-    STagGuard guard(m_Writer,"Queues");    
-    CNSServerQRenderAction action(*this);
-    m_Collector.TraverseNSServers(action);
-}
-void CNSInfoRenderer::RenderQueueList(const CNSServerInfo& info)
-{
-    list<string> qlist;
-    info.GetQueueList(qlist);
-    if (qlist.empty())
-        return;
+    STagGuard guard(m_Writer,"Queues");
+    CNSInfoCollector::TQueueCont queues;
+    m_Collector.GetQueues(queues);
+    for( CNSInfoCollector::TQueueCont::const_iterator it = queues.begin();
+         it != queues.end(); ++it) {
+        if (it->second.empty())
+            continue;
 
-    ITagWriter::TAttributes attrs;
-    attrs.push_back(ITagWriter::TAttribute("Host", info.GetHost()));
-    attrs.push_back(ITagWriter::TAttribute
-                    ("Port", NStr::IntToString(info.GetPort())));
-    
-    STagGuard guard(m_Writer,"NSServer", attrs);
-    ITERATE(list<string>, it, qlist) {
-        x_RenderString("Queue", *it);
+        ITagWriter::TAttributes attrs;
+        attrs.push_back(ITagWriter::TAttribute("Host", 
+            CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(it->first.first))));
+        attrs.push_back(ITagWriter::TAttribute
+                        ("Port", NStr::UIntToString(it->first.second)));
+        
+        STagGuard guard(m_Writer,"NSServer", attrs);
+        ITERATE(list<string>, itl, it->second) {
+            x_RenderString("Queue", *itl);
+        }
     }
+        
 }
-
 ///////////////////////////////////////////////////////
 //
 

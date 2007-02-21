@@ -35,7 +35,6 @@
 #include <corelib/blob_storage.hpp>
 #include <corelib/rwstream.hpp>
 
-#include <connect/ncbi_service.h>
 #include <connect/services/grid_rw_impl.hpp>
 
 #include "info_collector.hpp"
@@ -44,16 +43,17 @@ BEGIN_NCBI_SCOPE
 
 
 CNSJobInfo::CNSJobInfo(const string& id, CNSInfoCollector& collector)
-    : m_Id(id), m_Status(CNetScheduleClient::eLastStatus),
-      m_RetCode(-1), m_Collector(collector), m_Request(NULL), m_Result(NULL)
+    : m_Status(CNetScheduleAPI::eLastStatus),
+      m_Collector(collector), m_Request(NULL), m_Result(NULL)
 {
+    m_Job.job_id = id;
 }
 
 CNSJobInfo::~CNSJobInfo()
 {
 }
 
-CNetScheduleClient::EJobStatus CNSJobInfo::GetStatus() const
+CNetScheduleAPI::EJobStatus CNSJobInfo::GetStatus() const
 {
     x_Load();
     return m_Status;
@@ -62,18 +62,18 @@ CNetScheduleClient::EJobStatus CNSJobInfo::GetStatus() const
 const string& CNSJobInfo::GetRawInput() const
 {
     x_Load();
-    return m_Input;
+    return m_Job.input;
 }
 
 const string& CNSJobInfo::GetRawOutput() const
 {
     x_Load();
-    return m_Output;
+    return m_Job.output;
 }
 const string& CNSJobInfo::GetErrMsg() const
 {
     x_Load();
-    return m_ErrMsg;
+    return m_Job.error_msg;
 }
 
 
@@ -98,16 +98,16 @@ const string& CNSJobInfo::GetCmdLine() const
 int CNSJobInfo::GetRetCode() const
 {
     x_Load();
-    return m_RetCode;
+    return m_Job.ret_code;
 }
 
 void CNSJobInfo::x_Load()
 {
-    if (m_Status != CNetScheduleClient::eLastStatus)
+    if (m_Status != CNetScheduleAPI::eLastStatus)
         return;
 
-    CNSClientHelper& cln = m_Collector.x_GetClient(m_Id);
-    m_Status = cln.GetStatus(m_Id, &m_RetCode, &m_Output, &m_ErrMsg, &m_Input);
+    CNetScheduleAPI& cln = m_Collector.x_GetAPI();
+    m_Status = cln.GetJobDetails(m_Job);
 }
 void CNSJobInfo::x_Load() const
 {
@@ -158,72 +158,65 @@ CWNodeInfo::~CWNodeInfo()
 {
 }
 
-void CWNodeInfo::Shutdown(CNetScheduleClient::EShutdownLevel level) const
+void CWNodeInfo::Shutdown(CNetScheduleAdmin::EShutdownLevel level) const
 {
-    CNSClientHelper cln(m_Host, m_Port, "noname");
-    cln.ShutdownServer(level);
+    CNetScheduleAPI cln(m_Host+":"+NStr::UIntToString(m_Port), "netschedule_admin", "noname");
+    cln.GetAdmin().ShutdownServer(level);
 }
-
-//////////////////////////////////////////////////////////////////////
-///
-CNSServerInfo::~CNSServerInfo() 
-{}
-
-void CNSServerInfo::GetQueueList(list<string>& qlist) const
-{
-    m_Collector.x_GetQueueList(CNSInfoCollector::TSrvID(m_Host,m_Port), qlist);
-}
-
-CNSServerInfo::CNSServerInfo(const string& host, unsigned int port, 
-                         CNSInfoCollector& collector)
-    : m_Host(host), m_Port(port), m_Collector(collector)
-{
-}
-
 
 ///////////////////////////////////////////////////////////////////
 //
 CNSInfoCollector::CNSInfoCollector(const string& queue, 
                                    const string& service_name,
                                    CBlobStorageFactory& factory)
-    : m_QueueName(queue), m_Factory(factory)
+    : m_Services(new CNetScheduleAPI(service_name, "netschedule_admin", queue)), 
+      m_Factory(factory)
 {
-    SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
-    TSERV_Type stype = fSERV_Any | fSERV_Promiscuous;
-    SERV_ITER srv_it = SERV_Open(service_name.c_str(), stype, 0, net_info);
-    ConnNetInfo_Destroy(net_info);
+    m_Services->DiscoverLowPriorityServers(true);
+    m_Services->SetConnMode(INetServiceAPI::eKeepConnection);
+}
 
-    if (srv_it != 0) {
-        const SSERV_Info* sinfo;
-        while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
-            
-            string host = CSocketAPI::gethostbyaddr(sinfo->host);
-            string::size_type pos = host.find_first_of(".");
-            if (pos != string::npos) {
-                host.erase(pos, host.size());
-            }
-            x_GetClient(host,sinfo->port);
 
-        } // while
-        SERV_Close(srv_it);
+class ISimpleSink : public CNetScheduleAdmin::ISink
+{
+public:
+    ISimpleSink() : m_Str(new CNcbiStrstream) {}
+    virtual ~ISimpleSink() {}
+
+    virtual CNcbiOstream& GetOstream(CNetSrvConnector& conn)
+    {
+        return *m_Str;
     }
-}
+    virtual void EndOfData(CNetSrvConnector& conn)
+    {
+        ParseStream(*m_Str, conn);
+        m_Str.reset(new CNcbiStrstream);
+    }
+    
+private:
 
-CNSInfoCollector::CNSInfoCollector(const string& queue, 
-                                   const string& host, unsigned short port,
-                                   CBlobStorageFactory& factory)
-    : m_QueueName(queue), m_Factory(factory)
-{
-    x_GetClient(host,port);
-}
+    virtual void ParseStream(CNcbiIstream& strm, CNetSrvConnector& conn) = 0;
 
-void CNSInfoCollector::TraverseJobs(CNetScheduleClient::EJobStatus status, 
-                                    CNSInfoCollector::IAction<CNSJobInfo>& action)
+    auto_ptr<CNcbiStrstream> m_Str;
+    
+};
+
+
+class CJobsSink : public ISimpleSink
 {
-    NON_CONST_ITERATE(TServices, it, m_Services) {
-        CNcbiStrstream str;
-        CNSClientHelper& cln = (*it->second);
-        cln.PrintQueue(str, status);
+public:
+    CJobsSink(CNSInfoCollector::IAction<CNSJobInfo>& action,
+                CNSInfoCollector& collector) 
+        : m_Action(action), m_Collector(collector)
+    {}
+    virtual ~CJobsSink() {}
+
+private:
+    CNSInfoCollector::IAction<CNSJobInfo>& m_Action;
+    CNSInfoCollector& m_Collector;
+    
+    virtual void ParseStream(CNcbiIstream& str, CNetSrvConnector&)
+    {
         while (str.good()) {
             string line;
             NcbiGetlineEOL(str, line);
@@ -231,29 +224,18 @@ void CNSInfoCollector::TraverseJobs(CNetScheduleClient::EJobStatus status,
                 continue;
             string jid, rest;
             NStr::SplitInTwo(line, " \t", jid, rest);
-            action(CNSJobInfo(jid, *this));
+            CNSJobInfo job_info(jid, m_Collector);
+            m_Action(job_info);
         }
     }
-}
+};
 
-CNSClientHelper& CNSInfoCollector::x_GetClient(const string& job_id)
+
+void CNSInfoCollector::TraverseJobs(CNetScheduleAPI::EJobStatus status, 
+                                    IAction<CNSJobInfo>& action)
 {
-    CNetSchedule_Key key;
-    CNetSchedule_ParseJobKey(&key, job_id);
-    return x_GetClient(key.hostname, key.port);
-}
-    
-CNSClientHelper& CNSInfoCollector::x_GetClient(const string& host, 
-                                               unsigned short port)
-{
-    TServices::iterator it = m_Services.find(make_pair(host,port));
-    if (it != m_Services.end())
-        return *(it->second);
-    AutoPtr<CNSClientHelper> cln(new CNSClientHelper(host, port, m_QueueName));
-    cln->SetConnMode(CNetScheduleClient::eKeepConnection);
-    CNSClientHelper* ret = &*cln;
-    m_Services[make_pair(host,port)] = cln;
-    return *ret;
+    CJobsSink sink(action, *this);
+    m_Services->GetAdmin().PrintQueue(sink, status);
 }
 
 CNSJobInfo* CNSInfoCollector::CreateJobInfo(const string& job_id)
@@ -283,24 +265,51 @@ CNcbiIstream& CNSInfoCollector::GetBlobContent(const string& blob_id,
     return m_Storage->GetIStream(blob_id, blob_size);
 }
 
-void CNSInfoCollector::x_GetQueueList(const TSrvID& srv, list<string>& qlist)
+
+class CQueuesSink : public ISimpleSink
 {
-    TServices::iterator it = m_Services.find(srv);
-    if (it != m_Services.end()) {
-        CNSClientHelper& cln = *(it->second);
-        string ql = cln.GetQueueList();
-        NStr::Split(ql, ",;", qlist);        
+public:
+    CQueuesSink(CNSInfoCollector::TQueueCont& queues) :  m_Queues(queues) {}
+    virtual ~CQueuesSink() {}
+
+private:
+    CNSInfoCollector::TQueueCont& m_Queues;
+    
+    virtual void ParseStream(CNcbiIstream& str, CNetSrvConnector& conn)
+    {
+        string line;
+        NcbiGetlineEOL(str, line);
+        if (line.empty())
+            return;
+        list<string>& qlist = m_Queues[make_pair(conn.GetHost(), conn.GetPort())];
+        NStr::Split(line, ",;", qlist);        
     }
+};
+
+
+void CNSInfoCollector::GetQueues(TQueueCont& queues)
+{
+    CQueuesSink sink(queues);
+    m_Services->GetAdmin().GetQueueList(sink);
 }
 
-void CNSInfoCollector::TraverseNodes(IAction<CWNodeInfo>& action)
-{
-    std::set<pair<string, unsigned short> > unique;
-    NON_CONST_ITERATE(TServices, it, m_Services) {
-        CNcbiStrstream ios;
-        CNSClientHelper& cln = (*it->second);
-        cln.PrintStatistics(ios);
 
+class CNodesSink : public ISimpleSink
+{
+public:
+    CNodesSink(CNSInfoCollector::IAction<CWNodeInfo>& action,
+               CNSInfoCollector& collector) 
+        : m_Action(action), m_Collector(collector)
+    {}
+    virtual ~CNodesSink() {}
+
+private:
+    CNSInfoCollector::IAction<CWNodeInfo>& m_Action;
+    CNSInfoCollector& m_Collector;
+    std::set<pair<string, unsigned short> > m_Unique;
+    
+    virtual void ParseStream(CNcbiIstream& ios, CNetSrvConnector& conn)
+    {
         bool nodes_info = false;        
         string str;
         while ( NcbiGetlineEOL(ios, str) ) {
@@ -325,38 +334,37 @@ void CNSInfoCollector::TraverseNodes(IAction<CWNodeInfo>& action)
                 prog = prog.substr(6,prog.size()-8);
                 string host;
                 NStr::SplitInTwo(str, " ", host, str);
-                string::size_type pos = host.find_first_of(".");
-                if (pos != string::npos) {
-                    host.erase(pos, host.size());
-                }
+                //string::size_type pos = host.find_first_of(".");
+                //if (pos != string::npos) {
+                //    host.erase(pos, host.size());
+                //}
                 if( NStr::Compare(host, "localhost") == 0)
-                    host = it->first.first;
+                    host = CSocketAPI::gethostbyaddr(CSocketAPI::gethostbyname(conn.GetHost()));
                 NStr::TruncateSpacesInPlace(str);
                 string sport, stime;
                 NStr::SplitInTwo(str, " ", sport, stime);
                 NStr::SplitInTwo(sport, ":", str, sport);
                 NStr::TruncateSpacesInPlace(stime);
                 unsigned short port = (unsigned short)NStr::StringToInt(sport);
-                if (unique.insert(make_pair(host,port)).second)
-                    action(CWNodeInfo(name, prog,host, port, 
-                                      CTime(stime, "M/D/Y h:m:s")));
+                if (m_Unique.insert(make_pair(host,port)).second) {
+                    CWNodeInfo info(name, prog,host, port, CTime(stime, "M/D/Y h:m:s"));
+                    m_Action(info);
+                }
             }
         }
     }
-}
-void CNSInfoCollector::TraverseNSServers(IAction<CNSServerInfo>& action)
+};
+
+
+void CNSInfoCollector::TraverseNodes(IAction<CWNodeInfo>& action)
 {
-    NON_CONST_ITERATE(TServices, it, m_Services) {
-        action( CNSServerInfo(it->first.first, it->first.second, *this) );
-    }
+    CNodesSink sink(action,*this);
+    m_Services->GetAdmin().GetServerStatistics(sink, CNetScheduleAdmin::eStaticticsBrief);
 }
 
 void CNSInfoCollector::DropQueue()
 {
-    NON_CONST_ITERATE(TServices, it, m_Services) {
-        CNSClientHelper& cln = (*it->second);
-        cln.DropQueue();
-    }
+    m_Services->GetAdmin().DropQueue();
 }
 
 

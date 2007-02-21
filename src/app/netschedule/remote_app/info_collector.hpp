@@ -35,51 +35,24 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/blob_storage.hpp>
 
-#include <connect/services/netschedule_client.hpp>
+#include <connect/services/netschedule_api.hpp>
 #include <connect/services/remote_job.hpp>
 
 BEGIN_NCBI_SCOPE
 
-
-/// Proxy class to open ShutdownServer
-///
-/// @internal
-class CNSClientHelper : public CNetScheduleClient 
-{
-public:
-    CNSClientHelper(const string&  host,
-                    unsigned short port,
-                    const string&  queue)
-      : CNetScheduleClient(host, port, "netschedule_admin", queue)
-    {}
-
-    using CNetScheduleClient::ShutdownServer;
-    using CNetScheduleClient::DropQueue;
-    using CNetScheduleClient::PrintStatistics;
-    using CNetScheduleClient::Monitor;
-    using CNetScheduleClient::DumpQueue;
-    using CNetScheduleClient::PrintQueue;
-    using CNetScheduleClient::Logging;
-    using CNetScheduleClient::ReloadServerConfig;
-    using CNetScheduleClient::GetQueueList;
-    // using CNetScheduleClient::CheckConnect;
-    virtual bool CheckConnect(const string& key)
-    {
-        return CNetScheduleClient::CheckConnect(key);
-    }
-};
-
-//////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 ///
 class CNSInfoCollector;
 
 class CNSJobInfo
 {
 public:
+    CNSJobInfo(const string& id, CNSInfoCollector& collector);
+
     ~CNSJobInfo();
 
-    CNetScheduleClient::EJobStatus GetStatus() const;
-    const string& GetId() const { return m_Id; }
+    CNetScheduleAPI::EJobStatus GetStatus() const;
+    const string& GetId() const { return m_Job.job_id; }
     const string& GetRawInput() const;
     const string& GetRawOutput() const;
     const string& GetErrMsg() const;
@@ -91,8 +64,6 @@ public:
     const string& GetCmdLine() const;
    
 private:
-    friend class CNSInfoCollector;
-    CNSJobInfo(const string& id, CNSInfoCollector& collector);
 
     void x_Load();
     void x_Load() const;
@@ -101,12 +72,8 @@ private:
     CRemoteAppRequest_Executer& x_GetRequest() const;
     CRemoteAppResult&           x_GetResult() const;
 
-    string m_Id;
-    CNetScheduleClient::EJobStatus m_Status;
-    string m_Input;
-    string m_Output;
-    int m_RetCode;
-    string m_ErrMsg;
+    CNetScheduleJob m_Job;
+    CNetScheduleAPI::EJobStatus m_Status;
 
     CNSInfoCollector& m_Collector;
     mutable CRemoteAppRequest_Executer* m_Request;
@@ -121,6 +88,9 @@ private:
 class CWNodeInfo
 {
 public:
+    CWNodeInfo(const string& name, const string& prog,
+               const string& host, unsigned short port,
+               const CTime& last_access);
     ~CWNodeInfo();
     
     const string& GetName() const { return m_Host; }
@@ -129,13 +99,9 @@ public:
     unsigned short GetPort() const { return m_Port; }
     const CTime& GetLastAccess() const { return m_LastAccess; }
 
-    void Shutdown(CNetScheduleClient::EShutdownLevel level) const;
+    void Shutdown(CNetScheduleAdmin::EShutdownLevel level) const;
 
 private:
-    friend class CNSInfoCollector;
-    CWNodeInfo(const string& name, const string& prog,
-               const string& host, unsigned short port,
-               const CTime& last_access);
     
     string m_Name;
     string m_Prog;
@@ -147,38 +113,10 @@ private:
 
 //////////////////////////////////////////////////////////////////////
 ///
-class CNSServerInfo
-{
-public:
-    ~CNSServerInfo();
-
-    const string& GetHost() const { return m_Host; }
-    unsigned int GetPort() const { return m_Port; }
-
-    void GetQueueList(list<string>& qlist) const;
-
-private:
-    friend class CNSInfoCollector;
-    CNSServerInfo(const string& host, unsigned int port, 
-                CNSInfoCollector& collector);
-
-    string m_Host;
-    unsigned short m_Port;
-
-    CNSInfoCollector& m_Collector;
-
-    CNSServerInfo(const CNSServerInfo&);
-    CNSServerInfo& operator=(const CNSServerInfo&);
-};
-
-//////////////////////////////////////////////////////////////////////
-///
 class CNSInfoCollector
 {
 public:
     CNSInfoCollector(const string& queue, const string& service_name,
-                     CBlobStorageFactory& factory);
-    CNSInfoCollector(const string& queue, const string& host, unsigned short port,
                      CBlobStorageFactory& factory);
 
     template<typename TInfo>
@@ -188,10 +126,13 @@ public:
         virtual void operator()(const TInfo& info) = 0;
     };
 
-    void TraverseJobs(CNetScheduleClient::EJobStatus, IAction<CNSJobInfo>&);
+    typedef map<pair<string,unsigned int>, list<string> > TQueueCont;
+
+    void TraverseJobs(CNetScheduleAPI::EJobStatus, IAction<CNSJobInfo>&);
     void TraverseNodes(IAction<CWNodeInfo>&);
-    void TraverseNSServers(IAction<CNSServerInfo>&);
     void DropQueue();
+
+    void GetQueues(TQueueCont& queues);
 
     CNSJobInfo* CreateJobInfo(const string& job_id);
 
@@ -200,22 +141,15 @@ public:
 private:
 
     friend class CNSJobInfo;
-    friend class CNSServerInfo;
 
-    typedef pair<string, unsigned short> TSrvID;
-    typedef map<TSrvID, AutoPtr<CNSClientHelper> > TServices;
+    auto_ptr<CNetScheduleAPI> m_Services;
+    CNetScheduleAPI& x_GetAPI() { return *m_Services; }
 
-    TServices m_Services;
-    CNSClientHelper& x_GetClient(const string& job_id);
-    CNSClientHelper& x_GetClient(const string& host, unsigned short port);
     CRemoteAppRequest_Executer& x_GetRequest();
     CRemoteAppResult& x_GetResult();
 
     IBlobStorage* x_CreateStorage() { return m_Factory.CreateInstance(); }
 
-    void x_GetQueueList(const TSrvID&, list<string>& qlist);
-
-    string m_QueueName;
     CBlobStorageFactory& m_Factory;
 
     auto_ptr<IBlobStorage> m_Storage;

@@ -152,7 +152,7 @@ public:
 
     void RenderJob(const string& job_id, TFlags flags = eMinimal);
     void RenderJob(const CNSJobInfo& info, TFlags flags = eMinimal);
-    void RenderJobByStatus(CNetScheduleClient::EJobStatus status,
+    void RenderJobByStatus(CNetScheduleAPI::EJobStatus status,
                            TFlags flags = eMinimal);
 
     void RenderBlob(const string& blob_id);
@@ -161,7 +161,7 @@ public:
     void RenderWNode(const CWNodeInfo& info, TFlags flags = eMinimal);
 
     void RenderQueueList();
-    void RenderQueueList(const CNSServerInfo& info);
+    //    void RenderQueueList(const CNSServerInfo& info);
 
 private:
     void x_RenderString(const string& name, const string& value);
