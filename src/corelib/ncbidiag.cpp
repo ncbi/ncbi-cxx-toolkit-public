@@ -510,7 +510,7 @@ void CDiagContext::DeleteProperty(const string& name,
 }
 
 
-void CDiagContext::PrintProperties(void) const
+void CDiagContext::PrintProperties(void)
 {
     {{
         CMutexGuard LOCK(s_DiagMutex);
@@ -530,31 +530,31 @@ void CDiagContext::PrintProperties(void) const
 }
 
 
-void CDiagContext::PrintStart(const string& message) const
+void CDiagContext::PrintStart(const string& message)
 {
     x_PrintMessage(SDiagMessage::eEvent_Start, message);
 }
 
 
-void CDiagContext::PrintStop(void) const
+void CDiagContext::PrintStop(void)
 {
     x_PrintMessage(SDiagMessage::eEvent_Stop, kEmptyStr);
 }
 
 
-void CDiagContext::PrintExtra(const string& message) const
+void CDiagContext::PrintExtra(const string& message)
 {
     x_PrintMessage(SDiagMessage::eEvent_Extra, message);
 }
 
 
-void CDiagContext::PrintRequestStart(const string& message) const
+void CDiagContext::PrintRequestStart(const string& message)
 {
     x_PrintMessage(SDiagMessage::eEvent_RequestStart, message);
 }
 
 
-void CDiagContext::PrintRequestStop(void) const
+void CDiagContext::PrintRequestStop(void)
 {
     x_PrintMessage(SDiagMessage::eEvent_RequestStop, kEmptyStr);
 }
@@ -639,8 +639,21 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
 }
 
 
+void RequestStopWatchTlsCleanup(CStopWatch* value, void* /*cleanup_data*/)
+{
+    delete value;
+}
+
+
+CTls<CStopWatch>& s_GetRequestStopWatchTls(void)
+{
+    static CSafeStaticRef< CTls<CStopWatch> > s_RequestStopWatch(0);
+    return s_RequestStopWatch.Get();
+}
+
+
 void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
-                                  const string&            message) const
+                                  const string&            message)
 {
     if ( IsSetOldPostFormat() ) {
         return;
@@ -653,8 +666,25 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     switch ( event ) {
     case SDiagMessage::eEvent_Start:
     case SDiagMessage::eEvent_Extra:
-    case SDiagMessage::eEvent_RequestStart:
         break;
+    case SDiagMessage::eEvent_RequestStart:
+        {
+            // Reset properties
+            DeleteProperty(kProperty_ReqStatus);
+            DeleteProperty(kProperty_ReqTime);
+            DeleteProperty(kProperty_BytesRd);
+            DeleteProperty(kProperty_BytesWr);
+            // Start stopwatch
+            CStopWatch* sw = s_GetRequestStopWatchTls().GetValue();
+            if ( !sw ) {
+                sw = new CStopWatch;
+                s_GetRequestStopWatchTls().
+                    SetValue(sw, RequestStopWatchTlsCleanup);
+            }
+            _ASSERT(sw);
+            sw->Start();
+            break;
+        }
     case SDiagMessage::eEvent_Stop:
         prop = GetProperty(kProperty_ExitSig);
         if ( !prop.empty() ) {
@@ -675,34 +705,49 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         ostr << m_StopWatch->AsString();
         break;
     case SDiagMessage::eEvent_RequestStop:
-        prop = GetProperty(kProperty_ReqStatus);
-        if ( !prop.empty() ) {
-            ostr << prop;
-            need_space = true;
-        }
-        prop = GetProperty(kProperty_ReqTime);
-        if ( !prop.empty() ) {
+        {
+            prop = GetProperty(kProperty_ReqStatus);
+            if ( !prop.empty() ) {
+                ostr << prop;
+                need_space = true;
+            }
+            prop = GetProperty(kProperty_ReqTime);
+            if ( prop.empty() ) {
+                // Try to get time from the stopwatch
+                CStopWatch* sw = s_GetRequestStopWatchTls().GetValue();
+                if ( sw ) {
+                    prop = sw->AsString();
+                    s_GetRequestStopWatchTls().Reset();
+                }
+            }
+            if ( !prop.empty() ) {
+                if (need_space) {
+                    ostr << " ";
+                }
+                ostr << prop;
+                need_space = true;
+            }
+            prop = GetProperty(kProperty_BytesRd);
+            if ( prop.empty() ) {
+                prop = "0";
+            }
             if (need_space) {
                 ostr << " ";
             }
+            ostr << prop << " ";
+            prop = GetProperty(kProperty_BytesWr);
+            if ( prop.empty() ) {
+                prop = "0";
+            }
             ostr << prop;
             need_space = true;
+            // Reset properties
+            DeleteProperty(kProperty_ReqStatus);
+            DeleteProperty(kProperty_ReqTime);
+            DeleteProperty(kProperty_BytesRd);
+            DeleteProperty(kProperty_BytesWr);
+            break;
         }
-        prop = GetProperty(kProperty_BytesRd);
-        if ( prop.empty() ) {
-            prop = "0";
-        }
-        if (need_space) {
-            ostr << " ";
-        }
-        ostr << prop << " ";
-        prop = GetProperty(kProperty_BytesWr);
-        if ( prop.empty() ) {
-            prop = "0";
-        }
-        ostr << prop;
-        need_space = true;
-        break;
     }
     if ( !message.empty() ) {
         if (need_space) {
@@ -973,7 +1018,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             collect = eDCM_Discard;
             break;
         case eDS_ToSyslog:
-            if (old_log_name != "SYSLOG") {
+            if (old_log_name != CSysLog::kLogName_Syslog) {
                 try {
                     SetDiagHandler(new CSysLog);
                     log_switched = true;
@@ -1000,15 +1045,37 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                     log_switched = true;
                     break;
                 }
+                // Try to switch to /log/fallback/
+                log_name = CFile::ConcatPath("/log/fallback/", log_base);
+                if ( SetLogFile(log_name, eDiagFile_All) ) {
+                    log_switched = true;
+                    break;
+                }
                 // Try cwd/ for eDS_ToStdlog only
                 if (ds == eDS_ToStdlog) {
                     log_name = CFile::ConcatPath(".", log_base);
                     log_switched = SetLogFile(log_name, eDiagFile_All);
                 }
                 if ( !log_switched ) {
-                    ERR_POST(Info << "Failed to open log file " +
+                    ERR_POST(Info << "Failed to set log file to " +
                         CFile::NormalizePath(log_name));
                 }
+            }
+            else {
+                static const char* kDefaultFallback = "/log/fallback/UNKNOWN";
+                // Try to switch to /log/fallback/UNKNOWN
+                if ( SetLogFile(kDefaultFallback, eDiagFile_All) ) {
+                    log_switched = true;
+                }
+                else {
+                    ERR_POST(Info <<
+                        "Failed to set log file to " << kDefaultFallback);
+                }
+            }
+            if (!log_switched  &&  old_log_name != kLogName_Stderr) {
+                SetDiagHandler(new CStreamDiagHandler(&cerr,
+                    true, kLogName_Stderr), true);
+                log_switched = true;
             }
             break;
         default:
@@ -1099,7 +1166,7 @@ const char*    CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
 
 void* InitDiagHandler(void)
 {
-    CDiagContext::SetupDiag(eDS_ToStderr, 0, eDCM_Init);
+    CDiagContext::SetupDiag(eDS_Default, 0, eDCM_Init);
     return 0;
 }
 
@@ -2668,6 +2735,10 @@ bool s_CanOpenLogFile(const string& file_name)
             return false;
         }
     }
+    // Need at least 20K of free space to write logs
+    if (CFileUtil::GetFreeDiskSpace(file_name) < 1024*20) {
+        return false;
+    }
     CDirEntry::TMode mode = 0;
     return entry.GetMode(&mode)  &&  (mode & CDirEntry::fWrite) != 0;
 }
@@ -2873,7 +2944,6 @@ extern bool SetLogFile(const string& file_name,
             CNcbiOfstream* str = new CNcbiOfstream(file_name.c_str(),
                 s_GetLogOpenMode());
             if ( !str->is_open() ) {
-                SetLogFile("-", eDiagFile_All, quick_flush);
                 ERR_POST(Info << "Failed to initialize log: "
                     << file_name);
                 return false;

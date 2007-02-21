@@ -1125,7 +1125,7 @@ public:
                         EPropertyMode mode = eProp_Default);
 
     /// Forced dump of all set properties.
-    void PrintProperties(void) const;
+    void PrintProperties(void);
 
     /// Global properties
     static const char* kProperty_UserName;
@@ -1157,15 +1157,15 @@ public:
     ///   extra
     ///   request-start
     ///   request-stop [STATUS] [REQ_ELAPSED_TIME] [BYTES_RD] [BYTES_WR]
-    void PrintStart(const string& message) const;
+    void PrintStart(const string& message);
     /// Print exit message.
-    void PrintStop(void) const;
+    void PrintStop(void);
     /// Print extra message.
-    void PrintExtra(const string& message) const;
+    void PrintExtra(const string& message);
     /// Print request start message (for request-driven applications)
-    void PrintRequestStart(const string& message) const;
+    void PrintRequestStart(const string& message);
     /// Print request stop message (for request-driven applications)
-    void PrintRequestStop(void) const;
+    void PrintRequestStop(void);
 
     /// Check old/new format flag (for compatibility only)
     static bool IsSetOldPostFormat(void);
@@ -1219,7 +1219,7 @@ private:
     void x_CreateUID(void) const;
     // Write message to the log using current handler
     void x_PrintMessage(SDiagMessage::EEventType event,
-                        const string&            message) const;
+                        const string&            message);
 
     typedef map<string, string> TProperties;
     friend void PropTlsCleanup(CDiagContext::TProperties*, void*);
