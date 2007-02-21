@@ -27,7 +27,7 @@
  *
  */
 
-/** @file blast_input.hpp
+/** @file algo/blast/api/demo/blast_input.hpp
  * Reading FASTA sequences from input file
  */
 

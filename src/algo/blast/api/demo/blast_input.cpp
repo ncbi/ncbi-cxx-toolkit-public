@@ -27,7 +27,7 @@
  *
  */
 
-/** @file blast_input.cpp
+/** @file algo/blast/api/demo/blast_input.cpp
  * Reading FASTA from an input file
  */
 
