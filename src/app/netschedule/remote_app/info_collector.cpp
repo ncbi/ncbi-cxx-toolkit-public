@@ -281,7 +281,9 @@ private:
         NcbiGetlineEOL(str, line);
         if (line.empty())
             return;
-        list<string>& qlist = m_Queues[make_pair(conn.GetHost(), conn.GetPort())];
+        CNSInfoCollector::TQueueCont::key_type key
+            (conn.GetHost(), conn.GetPort());
+        list<string>& qlist = m_Queues[key];
         NStr::Split(line, ",;", qlist);        
     }
 };
