@@ -205,7 +205,16 @@ public:
     SUPPORT_COMPILER_OPTION(UsePrecompiledHeader)
     SUPPORT_COMPILER_OPTION(WarningLevel)
     SUPPORT_COMPILER_OPTION(Detect64BitPortabilityProblems)
-    SUPPORT_COMPILER_OPTION(DebugInformationFormat)
+    virtual string DebugInformationFormat(void) const
+    {
+        if (GetApp().m_TweakVTune) {
+            return "3";
+        }
+        return GetCompilerOpt(m_MsvcMetaMakefile,
+                              m_MsvcProjectMakefile,
+                              "DebugInformationFormat",
+                              m_Config );
+    }
     SUPPORT_COMPILER_OPTION(CompileAs)
     SUPPORT_COMPILER_OPTION(InlineFunctionExpansion)
     SUPPORT_COMPILER_OPTION(OmitFramePointers)
@@ -322,7 +331,16 @@ public:
     
     SUPPORT_LINKER_OPTION(LinkIncremental)
     SUPPORT_LINKER_OPTION(LargeAddressAware)
-    SUPPORT_LINKER_OPTION(GenerateDebugInformation)
+    virtual string GenerateDebugInformation(void) const
+    {
+        if (GetApp().m_TweakVTune) {
+            return "TRUE";
+        }
+        return GetLinkerOpt(m_MsvcMetaMakefile,
+                            m_MsvcProjectMakefile,
+                            "GenerateDebugInformation",
+                            m_Config );
+    }
 
     virtual string ProgramDatabaseFile(void) const
     {
