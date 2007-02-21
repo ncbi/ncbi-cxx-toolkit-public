@@ -80,8 +80,9 @@ LDS_LoadTSE(CLDS_Database& lds_db,
     case CFormatGuess::eFasta:
         in.seekg(obj_descr.pos);
         return ReadFasta(in, 
-                         fReadFasta_AssumeNuc |
-                         fReadFasta_OneSeq);
+                         CFastaReader::fAssumeNuc |
+                         CFastaReader::fOneSeq    |
+                         CFastaReader::fParseRawID);
     case CFormatGuess::eTextASN:
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
