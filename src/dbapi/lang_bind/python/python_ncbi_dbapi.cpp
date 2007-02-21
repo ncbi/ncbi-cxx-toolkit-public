@@ -41,6 +41,10 @@
 #include "pythonpp/pythonpp_date.hpp"
 #include "../../ds_impl.hpp"
 
+#if !defined(NCBI_OS_MSWIN)
+#include <dlfcn.h>
+#endif
+
 //////////////////////////////////////////////////////////////////////////////
 // Compatibility macros
 //
@@ -282,6 +286,55 @@ CDataSourcePool::GetDataSource(
     */
 
 //////////////////////////////////////////////////////////////////////////////
+static
+string RetrieveModuleFileName(void)
+{
+    string file_name;
+
+#if defined(NCBI_OS_MSWIN)
+    // Add an additional search path ...
+    const DWORD buff_size = 1024;
+    DWORD cur_size = 0;
+    char buff[buff_size];
+    HMODULE mh = NULL;
+    const char* module_name = NULL;
+
+// #ifdef NDEBUG
+//     module_name = "python_ncbi_dbapi.pyd";
+// #else
+//     module_name = "python_ncbi_dbapi_d.pyd";
+// #endif
+
+    // Get module handle ...
+    MEMORY_BASIC_INFORMATION mbi;
+    VirtualQuery((const void*)RetrieveModuleFileName, &mbi, sizeof(mbi));
+    mh = (HINSTANCE)mbi.AllocationBase;
+
+//     if ( mh = GetModuleHandle( module_name ) ) {
+    if (mh) {
+        if ( cur_size = GetModuleFileName( mh, buff, buff_size ) ) {
+            if ( cur_size < buff_size ) {
+                file_name = buff;
+            }
+        }
+    }
+
+#else
+
+    ::Dl_info dli;
+
+    // if (::dladdr(&ncbi::python::CConnection::CConnection, &dli) != 0) {
+    void* method_ptr = (void*)RetrieveModuleFileName;
+    if (::dladdr(method_ptr, &dli) != 0) {
+        file_name = dli.dli_fname;
+    }
+
+#endif
+
+    return file_name;
+}
+
+//////////////////////////////////////////////////////////////////////////////
 CConnection::CConnection(
     const CConnParam& conn_param,
     EConnectionMode conn_mode
@@ -292,31 +345,9 @@ CConnection::CConnection(
 , m_DefTransaction( NULL )
 , m_ConnectionMode( conn_mode )
 {
-#if defined(NCBI_OS_MSWIN)
-    // Add an additional search path ...
-    const DWORD buff_size = 1024;
-    DWORD cur_size = 0;
-    char buff[buff_size];
-    HMODULE mh = NULL;
-    const char* module_name = NULL;
-
-#ifdef NDEBUG
-    module_name = "python_ncbi_dbapi.pyd";
-#else
-    module_name = "python_ncbi_dbapi_d.pyd";
-#endif
-
-    if ( mh = GetModuleHandle( module_name ) ) {
-        if ( cur_size = GetModuleFileName( mh, buff, buff_size ) ) {
-            if ( cur_size < buff_size ) {
-                CFile file( buff );
-
-                m_DM.AddDllSearchPath( file.GetDir().c_str() );
-            }
-        }
-    }
-
-#endif
+    CFile file(RetrieveModuleFileName());
+    m_ModuleName = file.GetBase();
+    m_DM.AddDllSearchPath(file.GetDir().c_str());
 
     try {
         m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
@@ -2460,14 +2491,13 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
     { NULL, NULL }
 };
 
-
-// Module initialization
-PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
+static
+void init_common(const string& module_name)
 {
     char* rev_str = "$Revision$";
     PyObject *module;
 
-    pythonpp::CModuleExt::Declare("python_ncbi_dbapi", python_ncbi_dbapi_methods);
+    pythonpp::CModuleExt::Declare(module_name, python_ncbi_dbapi_methods);
 
     // Define module attributes ...
     pythonpp::CModuleExt::AddConst("apilevel", "2.0");
@@ -2483,13 +2513,13 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
     PyDateTime_IMPORT;
 
     // Declare CBinary
-    python::CBinary::Declare("python_ncbi_dbapi.BINARY");
+    python::CBinary::Declare(string(module_name + ".BINARY").c_str());
 
     // Declare CNumber
-    python::CNumber::Declare("python_ncbi_dbapi.NUMBER");
+    python::CNumber::Declare(string(module_name + ".NUMBER").c_str());
 
     // Declare CRowID
-    python::CRowID::Declare("python_ncbi_dbapi.ROWID");
+    python::CRowID::Declare(string(module_name + ".ROWID").c_str());
 
     // Declare CConnection
     python::CConnection::
@@ -2498,7 +2528,7 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
         Def("rollback",     &python::CConnection::rollback,     "rollback").
         Def("cursor",       &python::CConnection::cursor,       "cursor").
         Def("transaction",  &python::CConnection::transaction,  "transaction");
-    python::CConnection::Declare("python_ncbi_dbapi.Connection");
+    python::CConnection::Declare(string(module_name + ".Connection").c_str());
 
     // Declare CTransaction
     python::CTransaction::
@@ -2506,7 +2536,7 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
         Def("cursor",       &python::CTransaction::cursor,       "cursor").
         Def("commit",       &python::CTransaction::commit,       "commit").
         Def("rollback",     &python::CTransaction::rollback,     "rollback");
-    python::CTransaction::Declare("python_ncbi_dbapi.Transaction");
+    python::CTransaction::Declare(string(module_name + ".Transaction").c_str());
 
     // Declare CCursor
     python::CCursor::
@@ -2521,7 +2551,7 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
         Def("setinputsizes", &python::CCursor::setinputsizes, "setinputsizes").
         Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize").
         Def("get_proc_return_status", &python::CCursor::get_proc_return_status, "get_proc_return_status");
-    python::CCursor::Declare("python_ncbi_dbapi.Cursor");
+    python::CCursor::Declare(string(module_name + ".Cursor").c_str());
 
     ///////////////////////////////////
     // Dclare types ...
@@ -2563,6 +2593,47 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
     python::CIntegrityError::Declare("IntegrityError");
     python::CDataError::Declare("DataError");
     python::CNotSupportedError::Declare("NotSupportedError");
+}
+
+// Module initialization
+PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
+{
+    init_common("python_ncbi_dbapi");
+}
+
+PYDBAPI_MODINIT_FUNC(initncbi_dbapi)
+{
+    init_common("ncbi_dbapi");
+}
+
+PYDBAPI_MODINIT_FUNC(initncbi_dbapi_current)
+{
+    init_common("ncbi_dbapi_current");
+}
+
+PYDBAPI_MODINIT_FUNC(initncbi_dbapi_frozen)
+{
+    init_common("ncbi_dbapi_frozen");
+}
+
+PYDBAPI_MODINIT_FUNC(initncbi_dbapi_metastable)
+{
+    init_common("ncbi_dbapi_metastable");
+}
+
+PYDBAPI_MODINIT_FUNC(initncbi_dbapi_potluck)
+{
+    init_common("ncbi_dbapi_potluck");
+}
+
+PYDBAPI_MODINIT_FUNC(initncbi_dbapi_production)
+{
+    init_common("ncbi_dbapi_production");
+}
+
+PYDBAPI_MODINIT_FUNC(initncbi_dbapi_stable)
+{
+    init_common("ncbi_dbapi_stable");
 }
 
 END_NCBI_SCOPE

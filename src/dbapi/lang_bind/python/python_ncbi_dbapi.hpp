@@ -632,6 +632,7 @@ private:
     CTransaction*           m_DefTransaction;   //< The lifetime of the default transaction will be managed by Python
     TTransList              m_TransList;        //< List of user-defined transactions
     const EConnectionMode   m_ConnectionMode;
+    string                  m_ModuleName;
 };
 
 //////////////////////////////////////////////////////////////////////////////
