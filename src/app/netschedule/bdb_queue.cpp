@@ -1680,7 +1680,7 @@ CQueue::Submit(SNS_SubmitRecord* rec,
         q->SetTagDbTransaction(&trans);
         TNSTagMap tag_map;
         q->AppendTags(tag_map, rec->tags, job_id);
-        q->AddTags(tag_map);
+        q->FlushTags(tag_map);
     }}
 
     trans.Commit();
@@ -1789,7 +1789,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
                 x_AddToAffIdx_NoLock(batch);
             }
         }
-        q->AddTags(tag_map);
+        q->FlushTags(tag_map);
     }}
     trans.Commit();
 

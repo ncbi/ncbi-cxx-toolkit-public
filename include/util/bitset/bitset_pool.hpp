@@ -52,7 +52,7 @@ public:
 
 public:
     CBVResourcePool(bm::strategy strat=bm::BM_GAP) 
-    : CResourcePool(),
+    : CResourcePool<BV, Lock>(),
       m_Strat(strat)
     {}
 

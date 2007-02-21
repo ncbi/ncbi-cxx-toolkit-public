@@ -243,21 +243,23 @@ void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 void SLockedQueue::AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id)
 {
     ITERATE(TNSTagList, it, tags) {
-        TNSBitVector bv(bm::BM_GAP, bm::gap_len_table_min<true>::_len);
+        TNSBitVector *bv = m_BVPool.Get();
         pair<TNSTagMap::iterator, bool> tag_map_it =
             tag_map.insert(TNSTagMap::value_type((*it), bv));
-        (tag_map_it.first)->second.set(job_id);
+        if (!tag_map_it.second)
+            m_BVPool.Return(bv);
+        (tag_map_it.first)->second->set(job_id);
     }
 }
 
 
-void SLockedQueue::AddTags(TNSTagMap& tag_map)
+void SLockedQueue::FlushTags(TNSTagMap& tag_map)
 {
     CWriteLockGuard guard(m_TagLock);
     NON_CONST_ITERATE(TNSTagMap, it, tag_map) {
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
-        EBDB_ErrCode err = m_TagDb.ReadVector(&it->second, bm::set_OR);
+        EBDB_ErrCode err = m_TagDb.ReadVector(it->second, bm::set_OR);
         if (err != eBDB_NotFound) {
             m_TagDb.key = it->first.first;
             m_TagDb.val = it->first.second;
@@ -265,9 +267,11 @@ void SLockedQueue::AddTags(TNSTagMap& tag_map)
         }
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
-        it->second.optimize();
-        m_TagDb.WriteVector(it->second, STagDB::eNoCompact);
+        it->second->optimize();
+        m_TagDb.WriteVector(*(it->second), STagDB::eNoCompact);
+        m_BVPool.Return(it->second);
     }
+    tag_map.clear();
 }
 
 
@@ -308,7 +312,6 @@ void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
 }
 
 
-static unsigned run = 0;
 void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
                                 const TNSBitVector& ids)
 {
@@ -321,7 +324,6 @@ void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
     CBDB_RawFile::TBuffer  buf;
     TNSBitVector bv;
     while (cur.Fetch(&buf) == eBDB_Ok) {
-        run++;
         bm::deserialize(bv, &buf[0]);
         unsigned before_remove = bv.count();
         bv -= ids;

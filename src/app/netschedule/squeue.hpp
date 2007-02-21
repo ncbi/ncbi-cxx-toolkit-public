@@ -199,7 +199,7 @@ struct SQueueStatictics
 typedef pair<string, string> TNSTag;
 typedef list<TNSTag> TNSTagList;
 // key -> value -> bitvector of job ids
-typedef map<TNSTag, TNSBitVector> TNSTagMap;
+typedef map<TNSTag, TNSBitVector*> TNSTagMap;
 
 // slight violation of naming convention for porting to util/time_line
 typedef CTimeLine<TNSBitVector> CJobTimeLine;
@@ -309,6 +309,8 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     /// its lock
     CFastMutex                   m_JobsToDeleteLock;
 
+    TNSBVPool                    m_BVPool;
+
 //public:
     // Constructor/destructor
     SLockedQueue(const string& queue_name,
@@ -328,14 +330,12 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     // Tags methods
     typedef CSimpleBuffer TBuffer;
     void SetTagDbTransaction(CBDB_Transaction* trans);
-    static void AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id);
-    void AddTags(TNSTagMap& tag_map);
+    void AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id);
+    void FlushTags(TNSTagMap& tag_map);
     void ReadTag(const string& key, const string& val,
                  TBuffer* buf);
     void ReadTags(const string& key, TNSBitVector* bv);
     void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
-//    void FlushTags(void);
-//    void ClearTags(void);
     CRWLock& GetTagLock() { return m_TagLock; }
 
     unsigned DeleteBatch(unsigned batch_size);
