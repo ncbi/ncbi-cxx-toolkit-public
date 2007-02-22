@@ -79,7 +79,7 @@ static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
     const char* name = SERV_NameOfInfo(info);
     /* First check that the new server info updates an existing one */
     for (i = 0; i < data->n_cand; i++) {
-        if (strcasecmp(name, SERV_NameOfInfo(data->cand[i].info))
+        if (strcasecmp(name, SERV_NameOfInfo(data->cand[i].info)) == 0
             &&  SERV_EqualInfo(info, data->cand[i].info)) {
             /* Replace older version */
             free((void*) data->cand[i].info);
