@@ -63,10 +63,19 @@ class NCBI_DBAPIDRIVER_EXPORT CConnection
 
 public:
     CConnection(CDriverContext& dc,
-                bool isBCPable = false,
-                bool reusable = false,
-                const string& pool_name = kEmptyStr,
-                bool hasSecureLogin = false
+                bool isBCPable  = false,
+                bool reusable   = false,
+                const string&   pool_name = kEmptyStr,
+                bool            hasSecureLogin = false
+                );
+    CConnection(CDriverContext& dc,
+                const string&   srv_name,
+                const string&   user_name,
+                const string&   passwd,
+                bool isBCPable  = false,
+                bool reusable   = false,
+                const string&   pool_name = kEmptyStr,
+                bool            hasSecureLogin = false
                 );
     virtual ~CConnection(void);
 
@@ -90,6 +99,20 @@ public:
     EEncoding GetClientEncoding(void) const;
 
     void SetExtraMsg(const string& msg);
+
+
+    const string& GetServerName(void) const
+    {
+        return ServerName();
+    }
+    const string& GetUserName(void) const
+    {
+        return UserName();
+    }
+    const string& GetPassword(void) const
+    {
+        return Password();
+    }
 
 protected:
     /// Check out if connection is alive (this function doesn't ping the server,

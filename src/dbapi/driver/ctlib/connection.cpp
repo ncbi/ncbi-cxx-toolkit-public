@@ -277,11 +277,14 @@ CTL_Connection::GetBLKVersion(void) const
     return blk_version;
 }
 
-void
-CTL_Connection::x_CmdAlloc(CS_COMMAND** cmd)
+CS_COMMAND*
+CTL_Connection::x_CmdAlloc(void)
 {
-    CheckSFB(ct_cmd_alloc(x_GetSybaseConn(), cmd),
+    CS_COMMAND* cmd;
+    CheckSFB(ct_cmd_alloc(x_GetSybaseConn(), &cmd),
              "ct_cmd_alloc failed", 110001);
+
+    return cmd;
 }
 
 
@@ -306,14 +309,16 @@ bool CTL_Connection::IsAlive()
 CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
                                      unsigned int  nof_params)
 {
-    CS_COMMAND* cmd;
-
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     SetExtraMsg(extra_msg);
 
-    x_CmdAlloc(&cmd);
+    CTL_LangCmd* lcmd = new CTL_LangCmd(
+        this,
+        x_CmdAlloc(),
+        lang_query,
+        nof_params
+        );
 
-    CTL_LangCmd* lcmd = new CTL_LangCmd(this, cmd, lang_query, nof_params);
     return Create_LangCmd(*lcmd);
 }
 
@@ -321,14 +326,16 @@ CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
 CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
                                 unsigned int  nof_args)
 {
-    CS_COMMAND* cmd;
-
     string extra_msg = "RPC Command: " + rpc_name;
     SetExtraMsg(extra_msg);
 
-    x_CmdAlloc(&cmd);
+    CTL_RPCCmd* rcmd = new CTL_RPCCmd(
+        this,
+        x_CmdAlloc(),
+        rpc_name,
+        nof_args
+        );
 
-    CTL_RPCCmd* rcmd = new CTL_RPCCmd(this, cmd, rpc_name, nof_args);
     return Create_RPCCmd(*rcmd);
 }
 
@@ -346,7 +353,13 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
     string extra_msg = "BCP Table: " + table_name;
     SetExtraMsg(extra_msg);
 
-    CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(this, cmd, table_name, nof_columns);
+    CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(
+        this,
+        cmd,
+        table_name,
+        nof_columns
+        );
+
     return Create_BCPInCmd(*bcmd);
 }
 
@@ -356,16 +369,19 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
                                       unsigned int  nof_params,
                                       unsigned int  batch_size)
 {
-    CS_COMMAND* cmd;
-
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
         query + "\"";
     SetExtraMsg(extra_msg);
 
-    x_CmdAlloc(&cmd);
+    CTL_CursorCmd* ccmd = new CTL_CursorCmd(
+        this,
+        x_CmdAlloc(),
+        cursor_name,
+        query,
+        nof_params,
+        batch_size
+        );
 
-    CTL_CursorCmd* ccmd = new CTL_CursorCmd(this, cmd, cursor_name, query,
-                                            nof_params, batch_size);
     return Create_CursorCmd(*ccmd);
 }
 
@@ -386,9 +402,8 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     }
 
     auto_ptr<I_ITDescriptor> d_guard(p_desc);
-    CS_COMMAND* cmd;
 
-    x_CmdAlloc(&cmd);
+    CS_COMMAND* cmd = x_CmdAlloc();
 
     if (Check(ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA))
         != CS_SUCCEED) {
@@ -495,9 +510,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
 
 
     auto_ptr<I_ITDescriptor> d_guard(p_desc);
-    CS_COMMAND* cmd;
-
-    x_CmdAlloc(&cmd);
+    CS_COMMAND* cmd = x_CmdAlloc();
 
     if (Check(ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA))
         != CS_SUCCEED) {

@@ -134,23 +134,37 @@ EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
 
     const CS_DATAFMT& fmt = m_ColFmt[item_num];
     switch ( fmt.datatype ) {
-    case CS_BINARY_TYPE:    return eDB_VarBinary;
-    case CS_BIT_TYPE:       return eDB_Bit;
-    case CS_CHAR_TYPE:      return eDB_VarChar;
-    case CS_DATETIME_TYPE:  return eDB_DateTime;
-    case CS_DATETIME4_TYPE: return eDB_SmallDateTime;
-    case CS_TINYINT_TYPE:   return eDB_TinyInt;
-    case CS_SMALLINT_TYPE:  return eDB_SmallInt;
-    case CS_INT_TYPE:       return eDB_Int;
+    case CS_VARBINARY_TYPE:
+    case CS_BINARY_TYPE:        return eDB_VarBinary;
+    case CS_BIT_TYPE:           return eDB_Bit;
+    // case CS_CHAR_TYPE:      return eDB_VarChar;
+    // Char/Varchar may be longer than 255 characters ...
+    case CS_VARCHAR_TYPE:
+    case CS_CHAR_TYPE:          return eDB_LongChar;
+    case CS_DATETIME_TYPE:      return eDB_DateTime;
+    case CS_DATETIME4_TYPE:     return eDB_SmallDateTime;
+    case CS_TINYINT_TYPE:       return eDB_TinyInt;
+    case CS_SMALLINT_TYPE:      return eDB_SmallInt;
+    case CS_INT_TYPE:           return eDB_Int;
+    case CS_LONG_TYPE:          return eDB_BigInt;
     case CS_DECIMAL_TYPE:
-    case CS_NUMERIC_TYPE:   return (fmt.scale == 0  &&  fmt.precision < 20)
+    case CS_NUMERIC_TYPE:       return (fmt.scale == 0  &&  fmt.precision < 20)
                                 ? eDB_BigInt : eDB_Numeric;
-    case CS_FLOAT_TYPE:     return eDB_Double;
-    case CS_REAL_TYPE:      return eDB_Float;
-    case CS_TEXT_TYPE:      return eDB_Text;
-    case CS_IMAGE_TYPE:     return eDB_Image;
-    case CS_LONGCHAR_TYPE:  return eDB_LongChar;
-    case CS_LONGBINARY_TYPE: return eDB_LongBinary;
+    case CS_FLOAT_TYPE:         return eDB_Double;
+    case CS_REAL_TYPE:          return eDB_Float;
+    case CS_TEXT_TYPE:          return eDB_Text;
+    case CS_IMAGE_TYPE:         return eDB_Image;
+    case CS_LONGCHAR_TYPE:      return eDB_LongChar;
+    case CS_LONGBINARY_TYPE:    return eDB_LongBinary;
+
+//     case CS_MONEY_TYPE:
+//     case CS_MONEY4_TYPE:
+//     case CS_SENSITIVITY_TYPE:
+//     case CS_BOUNDARY_TYPE:
+//     case CS_VOID_TYPE:
+//     case CS_USHORT_TYPE:
+//     case CS_UNICHAR_TYPE:
+//     case CS_UNIQUE_TYPE:
     }
 
     return eDB_UnsupportedType;

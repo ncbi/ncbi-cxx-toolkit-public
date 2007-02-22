@@ -187,7 +187,7 @@ CTL_Cmd::Cancel(void)
     if ( m_WasSent ) {
         if ( HaveResult() ) {
             // to prevent ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT) call:
-            ((CTL_RowResult*)m_Res)->m_EOR = true;
+            m_Res->m_EOR = true;
 
             DeleteResult();
         }
@@ -457,6 +457,23 @@ void CTL_Cmd::GetRowCount(int* cnt)
         *cnt = (int) n;
     }
 }
+
+
+CS_COMMAND*
+CTL_Cmd::CmdAlloc(void)
+{
+    CS_COMMAND* cmd;
+    CheckSFB(
+        ct_cmd_alloc(
+            GetConnection().GetNativeConnection().GetNativeHandle(),
+            &cmd
+            ),
+        "ct_cmd_alloc failed", 110001
+        );
+
+    return cmd;
+}
+
 
 CDB_Result* CTL_Cmd::MakeResult(void)
 {

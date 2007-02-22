@@ -35,10 +35,18 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(impl)
 
-CDB_Result* CCommand::Create_Result(CResult& result)
+///////////////////////////////////////////////////////////////////////////
+CCommand::~CCommand(void)
+{
+}
+
+
+CDB_Result*
+CCommand::Create_Result(CResult& result)
 {
     return new CDB_Result(&result);
 }
+
 
 ///////////////////////////////////////////////////////////////////////////
 CBaseCmd::CBaseCmd(const string& query, unsigned int nof_params) :

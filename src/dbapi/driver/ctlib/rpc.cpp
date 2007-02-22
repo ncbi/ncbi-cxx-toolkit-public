@@ -162,23 +162,20 @@ CTL_RPCCmd::CreateResult(impl::CResult& result)
 CTL_RPCCmd::~CTL_RPCCmd()
 {
     try {
-        DetachInterface();
-
         DropCmd(*this);
 
-        Close();
+        x_Close();
+
+        DetachInterface();
     }
     NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
 }
 
 
 void
-CTL_RPCCmd::Close(void)
+CTL_RPCCmd::x_Close(void)
 {
     if (x_GetSybaseCmd()) {
-
-        // ????
-        DetachInterface();
 
         Cancel();
 

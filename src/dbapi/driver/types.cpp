@@ -455,6 +455,16 @@ void CWString::Assign(const wstring& str)
 
 
 /////////////////////////////////////////////////////////////////////////////
+static
+void CheckStringTruncation(size_t cur_len, size_t max_len)
+{
+    if (cur_len > max_len) {
+        ERR_POST(Warning << "String of size " << cur_len <<
+                 " was truncated to " << max_len << " characters");
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //  CDB_Object::
 //
 
@@ -761,9 +771,7 @@ CDB_VarChar& CDB_VarChar::SetValue(const string& s,
 {
     Assign(s, enc);
 
-    if (s.size() > 255) {
-        ERR_POST(Warning << "String of size " << s.size() << " was truncated to 255 characters" );
-    }
+    CheckStringTruncation(s.size(), sizeof(m_Val) - 1);
 
     m_Size = s.copy(m_Val, sizeof(m_Val) - 1);
     m_Val[m_Size] = '\0';
@@ -777,10 +785,7 @@ CDB_VarChar& CDB_VarChar::SetValue(const char* s,
     Assign(s, string::npos, enc);
 
     if (s) {
-        size_t size = strlen(s);
-        if (size > sizeof(m_Val) - 1) {
-            ERR_POST(Warning << "String of size " << size << " was truncated to 255 characters" );
-        }
+        CheckStringTruncation(strlen(s), sizeof(m_Val) - 1);
     }
 
     if ( s ) {
@@ -801,10 +806,7 @@ CDB_VarChar& CDB_VarChar::SetValue(const char* s, size_t l,
     Assign(s, l, enc);
 
     if (s) {
-        size_t size = min(strlen(s), l);
-        if (size > sizeof(m_Val) - 1) {
-            ERR_POST(Warning << "String of size " << size << " was truncated to 255 characters" );
-        }
+        CheckStringTruncation(min(strlen(s), l), sizeof(m_Val) - 1);
     }
 
     if ( s ) {
@@ -928,10 +930,7 @@ CDB_Char::SetValue(const char* str)
             m_Val[l++] = *str;
         }
 
-        if (*str == '\0') {
-            ERR_POST(Warning << "String was truncated to " <<
-                     m_Size << " characters" );
-        }
+        CheckStringTruncation(strlen(str), m_Size);
 
         if (l < m_Size) {
             memset(m_Val + l, ' ', m_Size - l);
@@ -947,10 +946,7 @@ CDB_Char::SetValue(const char* str)
 void
 CDB_Char::SetValue(const string& str)
 {
-    if (m_Size < str.size()) {
-        ERR_POST(Warning << "String of size " << str.size() <<
-                 " was truncated to " << m_Size << " characters" );
-    }
+    CheckStringTruncation(str.size(), m_Size);
 
     size_t l = str.copy(m_Val, m_Size);
     if (l < m_Size) {
@@ -967,8 +963,8 @@ CDB_Char::SetValueInternal(const char* str, size_t len)
     if ( str ) {
         if (len >= m_Size) {
             memcpy(m_Val, str, m_Size);
-            ERR_POST(Warning << "String of size " << len <<
-                     " was truncated to " << m_Size<< " characters" );
+
+            CheckStringTruncation(len, m_Size);
         } else {
             if ( len ) {
                 memcpy(m_Val, str, len);

@@ -281,6 +281,11 @@ public:
         return *m_Cntx;
     }
 
+    const ctlib::Connection& GetNativeConnection(void) const
+    {
+        return m_Handle;
+    }
+
 protected:
     virtual bool IsAlive(void);
 
@@ -317,7 +322,7 @@ protected:
     /// Returns: true - if successfully closed an open connection.
     ///          false - if not
     virtual bool Close(void);
-    void x_CmdAlloc(CS_COMMAND** cmd);
+    CS_COMMAND* x_CmdAlloc(void);
 
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
@@ -327,7 +332,7 @@ private:
     CS_CONNECTION* x_GetSybaseConn(void) const { return m_Handle.GetNativeHandle(); }
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
 
-    CTLibContext*   m_Cntx;
+    CTLibContext*       m_Cntx;
     ctlib::Connection   m_Handle;
 };
 
@@ -377,6 +382,8 @@ protected:
     {
         return GetConnection().IsMultibyteClientEncoding();
     }
+
+    CS_COMMAND* CmdAlloc(void);
 
 protected:
     // Result-related ...
@@ -472,8 +479,6 @@ protected:
                const string& proc_name, unsigned int nof_params);
     virtual ~CTL_RPCCmd(void);
 
-    void Close(void);
-
 protected:
     virtual bool Send(void);
     virtual bool WasSent(void) const;
@@ -488,6 +493,7 @@ protected:
 
 private:
     bool x_AssignParams(void);
+    void x_Close(void);
 };
 
 

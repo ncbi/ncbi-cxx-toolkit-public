@@ -49,9 +49,7 @@ BEGIN_SCOPE(impl)
 class NCBI_DBAPIDRIVER_EXPORT CCommand
 {
 public:
-    virtual ~CCommand(void)
-    {
-    }
+    virtual ~CCommand(void);
 
     void Release(void)
     {

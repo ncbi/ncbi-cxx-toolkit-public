@@ -58,6 +58,11 @@ CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
     m_Bind(nof_columns),
     m_RowCount(0)
 {
+//     CS_BLKDESC* cmd;
+//     if (blk_alloc(x_GetSybaseConn(), GetBLKVersion(), &cmd) != CS_SUCCEED) {
+//         DATABASE_DRIVER_ERROR( "blk_alloc failed", 110004 );
+//     }
+
     SetExecCntxInfo("BCP table name: " + table_name);
 }
 

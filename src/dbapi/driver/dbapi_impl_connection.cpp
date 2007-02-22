@@ -85,15 +85,38 @@ CConnection::CConnection(CDriverContext& dc,
                          bool reusable,
                          const string& pool_name,
                          bool hasSecureLogin
-                         ) :
-    m_DriverContext(&dc),
-    m_MsgHandlers(dc.GetConnHandlerStack()),
-    m_Interface(NULL),
-    m_ResProc(NULL),
-    m_Pool(pool_name),
-    m_Reusable(reusable),
-    m_BCPable(isBCPable),
-    m_SecureLogin(hasSecureLogin)
+                         )
+: m_DriverContext(&dc)
+, m_MsgHandlers(dc.GetConnHandlerStack())
+, m_Interface(NULL)
+, m_ResProc(NULL)
+, m_Pool(pool_name)
+, m_Reusable(reusable)
+, m_BCPable(isBCPable)
+, m_SecureLogin(hasSecureLogin)
+{
+}
+
+CConnection::CConnection(CDriverContext& dc,
+                         const string&   srv_name,
+                         const string&   user_name,
+                         const string&   passwd,
+                         bool            isBCPable,
+                         bool            reusable,
+                         const string&   pool_name,
+                         bool            hasSecureLogin
+                         )
+: m_DriverContext(&dc)
+, m_MsgHandlers(dc.GetConnHandlerStack())
+, m_Interface(NULL)
+, m_ResProc(NULL)
+, m_Server(srv_name)
+, m_User(user_name)
+, m_Passwd(passwd)
+, m_Pool(pool_name)
+, m_Reusable(reusable)
+, m_BCPable(isBCPable)
+, m_SecureLogin(hasSecureLogin)
 {
 }
 
