@@ -725,6 +725,20 @@ static void s_TEST_Dir(void)
                 "/usr/bin/", "/etc/" ) == "../../etc/" );
 #endif
     }}
+
+    // Creation of absolute path from relative path
+    {{
+        string cwd = CDir::GetCwd();
+
+        assert( CDirEntry::CreateAbsolutePath("")   == cwd );
+        assert( CDirEntry::CreateAbsolutePath(".")  == cwd );
+
+#if defined(NCBI_OS_MSWIN)
+        assert( CDirEntry::CreateAbsolutePath("C:\\path\\") == "C:\\path\\" );
+#elif defined(NCBI_OS_UNIX)
+        assert( CDirEntry::CreateAbsolutePath("/usr/path") == "/usr/path" );
+#endif
+    }}
 }
 
 
