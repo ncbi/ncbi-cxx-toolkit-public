@@ -513,6 +513,17 @@ string CDirEntry::CreateRelativePath( const string& path_from,
 }
 
 
+string CDirEntry::CreateAbsolutePath(const string& path)
+{
+    if ( IsAbsolutePath(path) ) {
+        return path;
+    }
+    string  result = CDirEntry::ConcatPath(CDir::GetCwd(), path);
+    result = CDirEntry::NormalizePath(result);
+    return result;
+}
+
+
 string CDirEntry::ConvertToOSPath(const string& path)
 {
     // Not process empty or absolute path

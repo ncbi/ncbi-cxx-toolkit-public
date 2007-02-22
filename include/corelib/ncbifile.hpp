@@ -280,6 +280,16 @@ public:
     static string CreateRelativePath(const string& path_from, 
                                      const string& path_to);
 
+    /// Get an absoluite path from some relative path.
+    ///
+    /// @param path 
+    ///   Relative path. Note that the argument must be OS-specific.
+    /// @return
+    ///   Corresponding absolute path. 
+    ///   Original string if it is represent an abolute path.
+    ///   Current directory if the path is an empty string.
+    static string CreateAbsolutePath(const string& path);
+
     /// Concatenate two parts of the path for the current OS.
     ///
     /// Note that the arguments must be OS-specific.
