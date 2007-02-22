@@ -194,6 +194,9 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                                                 first element of the result set
                     @param size         [I]     number of logical subjects covered by
                                                 this result set
+                    @param map          [I]     mapping from (subject, chunk) pairs to
+                                                logical sequence ids
+                    @param map_size     [I]     number of elements in map
                 */
                 template< typename word_t >
                 CSearchResults( 
@@ -550,7 +553,6 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
     private:
 
         /** Load index from an open stream.
-            @param VERSION      index format version
             @param is   [I]     stream containing index data
             @return object containing loaded index data
         */
@@ -560,7 +562,6 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
         /** Load index from a named file.
             Usually this is used to memmap() the file data into
             the index structure.
-            @param VERSION      index format version
             @param fname        [I]     index file name
             @return object containing loaded index data
         */
@@ -605,8 +606,8 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 //-------------------------------------------------------------------------
 /** Metafunction that computes the base word type from the index width. */
 template< unsigned long WIDTH > struct SWord {};
-template<> struct SWord< WIDTH_32 > { typedef Uint4 type; };
-template<> struct SWord< WIDTH_64 > { typedef Uint8 type; };
+template<> struct SWord< WIDTH_32 > { typedef Uint4 type; /**< Metafunction result. */};
+template<> struct SWord< WIDTH_64 > { typedef Uint8 type; /**< Metafunction result. */};
 
 END_SCOPE( blastdbindex )
 END_NCBI_SCOPE
