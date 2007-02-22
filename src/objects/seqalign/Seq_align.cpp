@@ -98,6 +98,7 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         return GetSegs().GetDenseg().GetSeqRange(row);
+
     case C_Segs::e_Dendiag:
         {
             CRange<TSeqPos> rng;
@@ -106,6 +107,7 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
             }
             return rng;
         }
+
     case C_Segs::e_Std:
         {
             CRange<TSeqPos> rng;
@@ -152,6 +154,16 @@ CRange<TSeqPos> CSeq_align::GetSeqRange(TDim row) const
             }
             return rng;
         }
+
+    case C_Segs::e_Disc:
+        {
+            CRange<TSeqPos> rng;
+            ITERATE (C_Segs::TDisc::Tdata, disc_i, GetSegs().GetDisc().Get()) {
+                rng.CombineWith((*disc_i)->GetSeqRange(row));
+            }
+            return rng;
+        }
+
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CSeq_align::GetSeqRange() currently does not handle "
