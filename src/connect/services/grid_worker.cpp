@@ -515,8 +515,8 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
                 if(m_LogRequested) {
                     LOG_POST(CTime(CTime::eCurrent).AsString() << " Job " << job.job_id 
                              << " has been returned back to the queue because it " 
-                             << "requested an Exclusive Mode but another job is "
-                             << "already have the exclusive status.");
+                             << "requested an Exclusive Mode but another job "
+                             << "already has the exclusive status.");
                 }
                 x_ReturnJob(job.job_id);
             }
