@@ -59,6 +59,7 @@ extern "C" {
 /** Construct a new instance of index based subject sequence source.
 
     @param retval Preallocated instance of BlastSeqSrc structure.
+    @param args Arguments for the constructor.
     @return \e retval with filled in fields.
 */
 static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args );
@@ -163,9 +164,9 @@ class CIndexedDb : public CObject
 
         typedef SThreadLocal TThreadLocal; /**< Type for thread local data. */
 
-        typedef std::list< TThreadLocal * > TThreadDataSet; /** Type of a set of allocated TThreadLocal objects. */
+        typedef std::list< TThreadLocal * > TThreadDataSet; /**< Type of a set of allocated TThreadLocal objects. */
 
-        static TThreadDataSet Thread_Data_Set; /* Set of allocated TThreadLocal objects. */
+        static TThreadDataSet Thread_Data_Set; /**< Set of allocated TThreadLocal objects. */
 
         /** Object constructor.
             
@@ -414,10 +415,19 @@ CIndexedDb::~CIndexedDb()
 }
 
 //------------------------------------------------------------------------------
+/** One thread of the indexed seed search. */
 class CPreSearchThread : public CThread
 {
     public:
 
+        /** Object constructor.
+
+            @param queries Query descriptor.
+            @param locs Valid query intervals.
+            @param sopt Search options.
+            @param index Database index reference.
+            @param results Search results are returned in this object.
+        */
         CPreSearchThread(
                 BLAST_SequenceBlk * queries,
                 BlastSeqLoc * locs,
@@ -428,16 +438,22 @@ class CPreSearchThread : public CThread
               index_( index ), results_( results )
         {}
 
+        /** Main procedure of the thread.
+
+            @return Search results.
+        */
         virtual void * Main( void );
+
+        /** Procedure to invoke on thread exit. */
         virtual void OnExit( void ) {}
 
     private:
 
-        BLAST_SequenceBlk * queries_;
-        BlastSeqLoc * locs_;
-        const CDbIndex::SSearchOptions & sopt_;
-        CRef< CDbIndex > & index_;
-        CConstRef< CDbIndex::CSearchResults > & results_;
+        BLAST_SequenceBlk * queries_;   /**< Query descriptor. */
+        BlastSeqLoc * locs_;            /**< Valid query intervals. */
+        const CDbIndex::SSearchOptions & sopt_; /**< Search options. */
+        CRef< CDbIndex > & index_;      /**< Database index reference. */
+        CConstRef< CDbIndex::CSearchResults > & results_; /**< Search results. */
 };
 
 //------------------------------------------------------------------------------
@@ -809,10 +825,6 @@ static BlastSeqSrc * s_IDbSrcNew( BlastSeqSrc * retval, void * args )
 }
 
 //------------------------------------------------------------------------------
-/** Get the seeds corresponding to the given subject sequence and chunk.
-
-    The function is a C language wrapper around CIndexedDb::GetResults().
-*/
 static void s_MB_IdbGetResults(
         void * idb_v,
         Int4 oid_i, Int4 chunk_i,

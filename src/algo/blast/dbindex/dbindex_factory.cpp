@@ -105,13 +105,12 @@ class CProgressReporter
 
     private:
 
-        unsigned long real_level_;      /** Message reporting level. */
-        unsigned long requested_level_; /** User requested reporting level. */
+        unsigned long real_level_;      /**< Message reporting level. */
+        unsigned long requested_level_; /**< User requested reporting level. */
 };
 
 //-------------------------------------------------------------------------
 /** A simple function to report progress of the index creation.
-  @param T type of the value being displayed
   @param real_level      the reporting level of <TT>msg</TT>
   @param requested_level the level of reporting requested by the user
   @param t               value to display 
@@ -125,7 +124,6 @@ inline void report_progress(
 
 //-------------------------------------------------------------------------
 /** Convert an integer to hex string representation.
-    @param word_t the type of the integer
     @param word [I]     the integer value
     @return string containing the hexadecimal representation of word.
 */
@@ -209,7 +207,7 @@ class CSubjectMap_Base
 
             /** Object constructor.
                 @param start start of the new segment
-                @param end one past the end of the new segment
+                @param stop one past the end of the new segment
               */
             SSeqSeg( TSeqPos start, TSeqPos stop = 0 )
                 : start_( start ), stop_( stop )
@@ -1192,18 +1190,18 @@ class COffsetList< word_t, UNCOMPRESSED >
     public:
 
         /** Add an offset to the list. Update the total.
-            @param item offset to be appended to the list
-            @total [I/O] change in the length of the list will
-                         be applied to this argument
+            @param item  [I]   offset to be appended to the list
+            @param total [I/O] change in the length of the list will
+                               be applied to this argument
         */
         void AddData( TWord item, TWord & total );
 
         /** Truncate the list to the value of offset. Update the total.
             The function removes the tail of the list corresponding
             to elements that are at least as great as offset.
-            @param offset offset value threshold
-            @total [I/O] change in the length of the list will
-                         be applied to this argument
+            @param offset [I]   offset value threshold
+            @param total  [I/O] change in the length of the list will
+                                be applied to this argument
         */
         void TruncateList( TWord offset, TWord & total );
 
@@ -1333,10 +1331,9 @@ class COffsetData
         typedef word_t TWord;                   /**< Rename for consistency. */
 
         /** Object constructor.
-            @param hkey_width size of the Nmer in bases
             @param subject_map structure to use to map logical oids to the
                                actual sequence data
-            @param report_level level of verbosity requested by the user
+            @param options index creation options
         */
         COffsetData( 
                 TSubjectMap & subject_map, 

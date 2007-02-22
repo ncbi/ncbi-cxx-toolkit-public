@@ -37,13 +37,21 @@
 
 BEGIN_NCBI_SCOPE
 
+/** Main application class. */
 class CMkIndexApplication : public CNcbiApplication
 {
     public:
 
+        /** String containing program usage information. */
         static const char * const USAGE_LINE;
 
+        /** Application initialization. */
         virtual void Init();
+
+        /** Application main procedure.
+
+            @return application exit code
+        */
         virtual int Run();
 };
 

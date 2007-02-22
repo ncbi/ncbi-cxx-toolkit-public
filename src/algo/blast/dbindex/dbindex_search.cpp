@@ -2956,11 +2956,13 @@ template<
 >
 struct CDbIndex_Traits< word_t, OFF_TYPE, COMPRESSION, 3 >
 {
+    /** Offset data type. */
     typedef COffsetData< 
         word_t, 
         CZeroEndOffsetIterator< word_t, UNCOMPRESSED >, 
         COMPRESSION 
     > TOffsetData;
+    /** Subject map type. */
     typedef CSubjectMap< word_t, OFF_TYPE > TSubjectMap;
 };
 
@@ -2972,11 +2974,13 @@ template<
 >
 struct CDbIndex_Traits< word_t, OFF_TYPE, COMPRESSION, 4 >
 {
+    /** Offset data type. */
     typedef COffsetData< 
         word_t, 
         CPreOrderedOffsetIterator< word_t, UNCOMPRESSED >, 
         COMPRESSION 
     > TOffsetData;
+    /** Subject map type. */
     typedef CSubjectMap< word_t, OFF_TYPE > TSubjectMap;
 };
 
@@ -2988,11 +2992,13 @@ template<
 >
 struct CDbIndex_Traits< word_t, OFF_TYPE, COMPRESSION, 5 >
 {
+    /** Offset data type. */
     typedef COffsetData< 
         word_t, 
         CPreOrderedOffsetIterator< word_t, UNCOMPRESSED >, 
         COMPRESSION 
     > TOffsetData;
+    /** Subject map type. */
     typedef CSubjectMap< word_t, OFF_TYPE > TSubjectMap;
 };
 
@@ -3054,6 +3060,7 @@ class CDbIndex_Impl : public CDbIndex
         /** Create an offset list iterator corresponding to the given
             Nmer value.
             @param nmer [I]     the Nmer value
+            @param mod  [I]     determines the stride size
             @return the iterator over the offset list corresponding to nmer
         */
         const TOffsetIterator OffsetIterator( TWord nmer, unsigned long mod ) const
@@ -3080,7 +3087,7 @@ class CDbIndex_Impl : public CDbIndex
 
         /** Return the subject information based on the given logical subject
             id.
-            @param subj         [I]     logical subject id
+            @param subject      [I]     logical subject id
             @param start_off    [O]     smallest offset value for subj
             @param end_off      [O]     smallest offset value for subj + 1
             @param start        [0]     starting offset of subj in the sequence store
