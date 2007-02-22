@@ -1010,7 +1010,7 @@ void CBDB_File::Discard()
 
 
 /// @internal
-unsigned int
+size_t
 BDB_compare_prefix(DB* dbp, const DBT* a, const DBT* b)
 {
 	size_t cnt, len;
