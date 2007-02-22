@@ -70,6 +70,9 @@ public:
 
     void DiscoverLowPriorityServers(bool on_off);
 
+    void SetRebalanceStrategy( IRebalanceStrategy* strategy, 
+                               EOwnership owner = eTakeOwnership);
+
 protected:
     CNetSrvConnectorPoll& GetPoll();
     CNetSrvConnectorPoll& GetPoll() const;
@@ -96,14 +99,17 @@ private:
     }
     virtual void x_SendAuthetication(CNetSrvConnector& conn) const = 0;
 
+    void x_CreatePoll();
+
     string m_ServiceName;
     string m_ClientName;
 
     auto_ptr<CNetSrvConnector::IEventListener> m_Authenticator;
-    auto_ptr<IRebalanceStrategy> m_RebalanceStrategy;
     auto_ptr<CNetSrvConnectorPoll> m_Poll;
     EConnectionMode m_ConnMode;
     bool m_LPServices;
+    IRebalanceStrategy* m_RebalanceStrategy;
+    auto_ptr<IRebalanceStrategy> m_RebalanceStrategyGuard;
 
     INetServiceAPI(const INetServiceAPI&);
     INetServiceAPI& operator=(const INetServiceAPI&);

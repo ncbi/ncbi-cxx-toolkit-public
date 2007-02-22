@@ -51,7 +51,8 @@ private:
 
 INetServiceAPI::INetServiceAPI(const string& service_name, const string& client_name)
     : m_ServiceName(service_name), m_ClientName(client_name), 
-      m_ConnMode(eCloseConnection), m_LPServices(false)
+      m_ConnMode(eCloseConnection), m_LPServices(false), m_RebalanceStrategy(NULL)
+
 {
 }
 
@@ -65,6 +66,8 @@ INetServiceAPI::EConnectionMode INetServiceAPI::GetConnMode() const
 
 void INetServiceAPI::SetConnMode(EConnectionMode conn_mode)
 {
+    if (m_ConnMode == conn_mode )
+        return;
     m_ConnMode = conn_mode;
     if( m_Poll.get())
         m_Poll->UsePermanentConnection(conn_mode == eKeepConnection);
@@ -72,23 +75,43 @@ void INetServiceAPI::SetConnMode(EConnectionMode conn_mode)
 
 void INetServiceAPI::DiscoverLowPriorityServers(bool on_off)
 {
+    if (m_LPServices == on_off)
+        return;
     m_LPServices = on_off;
     if ( m_Poll.get())
         m_Poll->DiscoverLowPriorityServers(on_off);
 }
 
+void INetServiceAPI::SetRebalanceStrategy(IRebalanceStrategy* strategy, EOwnership owner)
+{
+    m_RebalanceStrategy = strategy;
+    if (owner == eTakeOwnership)
+        m_RebalanceStrategyGuard.reset(m_RebalanceStrategy);
+    else
+        m_RebalanceStrategyGuard.reset();
+    if (m_Poll.get()) 
+        m_Poll->SetRebalanceStrategy(m_RebalanceStrategy);    
+}
+
+void  INetServiceAPI::x_CreatePoll()
+{
+    if (!m_Authenticator.get())
+        m_Authenticator.reset(new CNetServiceAuthenticator(*this));
+    if (!m_RebalanceStrategy ) {
+        m_RebalanceStrategyGuard.reset(new CSimpleRebalanceStrategy(50,10));
+        m_RebalanceStrategy = m_RebalanceStrategyGuard.get();
+    }
+    m_Poll.reset(new CNetSrvConnectorPoll(m_ServiceName, 
+                                          m_Authenticator.get(), 
+                                          m_RebalanceStrategy));
+    m_Poll->UsePermanentConnection(m_ConnMode == eKeepConnection);
+    m_Poll->DiscoverLowPriorityServers(m_LPServices);
+}
 
 CNetSrvConnectorPoll& INetServiceAPI::GetPoll() 
 {
     if (!m_Poll.get()) {
-        m_Authenticator.reset(new CNetServiceAuthenticator(*this));
-        if (!m_RebalanceStrategy.get())
-            m_RebalanceStrategy.reset(new CSimpleRebalanceStrategy(5,10));
-        m_Poll.reset(new CNetSrvConnectorPoll(m_ServiceName, 
-                                              m_Authenticator.get(), 
-                                              m_RebalanceStrategy.get()));
-        m_Poll->UsePermanentConnection(m_ConnMode == eKeepConnection);
-        m_Poll->DiscoverLowPriorityServers(m_LPServices);
+        x_CreatePoll();
     }
     return *m_Poll;
 }
