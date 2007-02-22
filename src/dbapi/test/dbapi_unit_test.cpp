@@ -983,11 +983,12 @@ CDBAPIUnitTest::Test_Insert(void)
         auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
         BOOST_CHECK( rs.get() != NULL );
 
-        for(int i = 0; i < num_of_tests; ++i ) {
+        for(int i = 0; i < num_of_tests; ++i) {
             BOOST_CHECK( rs->Next() );
 
             string vc1000_value = rs->GetVariant(2).GetString();
 
+            BOOST_CHECK_EQUAL( test_msg.size(), vc1000_value.size() );
             BOOST_CHECK_EQUAL( test_msg, vc1000_value );
         }
 
@@ -2303,9 +2304,10 @@ CDBAPIUnitTest::Test_Variant2(void)
             char_val += 1;
 
             auto_stmt->SetParam( CVariant( Int4(i) ), "@id" );
-            // !!! A line below will cause the ftds64_ctlib to crash ....
-//             auto_stmt->SetParam( CVariant::LongChar(str_val.c_str(), str_val.size() ), "@val" );
-            auto_stmt->SetParam( CVariant(str_val), "@val" );
+            auto_stmt->SetParam(
+                CVariant::LongChar(str_val.c_str(), str_val.size()),
+                "@val"
+                );
             // Execute a statement with parameters ...
             auto_stmt->ExecuteUpdate( sql );
         }
@@ -6412,9 +6414,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     // !!! Need to be fixed !!!
-    if (args.GetDriverName() != "ftds64_ctlib" // Doesn't work for some reason ...
-        && args.GetDriverName() != "ftds64_odbc" // No BCP at the moment ...
-        && args.GetDriverName() != "odbcw" // No BCP at the moment ...
+    if (args.IsBCPAvailable()
+        && args.GetDriverName() != "ftds64_ctlib" // Doesn't work for some reason ...
         && args.GetDriverName() != "ctlib" // Doesn't work for some reason ...
         && args.GetDriverName() != "msdblib" // Doesn't work for some reason ...
         && !(args.GetDriverName() == "ftds" &&
@@ -6459,15 +6460,20 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         }
 
         // ctlib/ftds64_ctlib will work in case of protocol version 12.5 only
-        // ftds + Sybaseand dblib won't work because of the early protocol versions.
-        if (((args.GetDriverName() == "ftds" ||
-              args.GetDriverName() == "ftds63" ||
-              args.GetDriverName() == "odbc" ||
-              args.GetDriverName() == "odbcw" ||
-              args.GetDriverName() == "ftds64_odbc" ||
-              // args.GetDriverName() == "ftds64_ctlib" || // !!! This driver won't work because it supports CS_VERSION_110 only. !!!
-              args.GetDriverName() == "ftds64_dblib" ) &&
-             args.GetServerType() == CTestArguments::eMsSql)
+        // ftds + Sybase and dblib won't work because of the early
+        // protocol versions.
+        if ((((args.GetDriverName() == "ftds"
+               && args.GetServerType() == CTestArguments::eMsSql)
+              || args.GetDriverName() == "ftds63"
+              || args.GetDriverName() == "odbc"
+              || args.GetDriverName() == "odbcw"
+              || args.GetDriverName() == "ftds64_odbc"
+              // !!! This driver won't work with Sybase because it supports
+              // CS_VERSION_110 only. !!!
+              || (args.GetDriverName() == "ftds64_ctlib"
+                  && args.GetServerType() == CTestArguments::eMsSql)
+              || args.GetDriverName() == "ftds64_dblib"
+              ))
              // args.GetDriverName() == "ctlib" ||
             ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert,
