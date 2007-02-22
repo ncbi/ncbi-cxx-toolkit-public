@@ -895,6 +895,7 @@ void CNetScheduleHandler::ProcessMsgBatchHeader(BUF buffer)
                              "Batch submit error - BATCH expected");
         }
     }
+    m_BatchSubmitVector.clear();
     m_ProcessMessage = &CNetScheduleHandler::ProcessMsgRequest;
     m_Server->GetQueueDB()->TransactionCheckPoint();
 }

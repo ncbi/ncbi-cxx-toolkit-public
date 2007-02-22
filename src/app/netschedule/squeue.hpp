@@ -237,7 +237,7 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     CFastMutex                   aff_map_lock;     ///< worker_aff_map lck
 
     STagDB                       m_TagDb;
-    CRWLock                      m_TagLock;
+    CFastMutex                   m_TagLock;
 
     // queue parameters
     int                          timeout;        ///< Result exp. timeout
@@ -331,12 +331,12 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     typedef CSimpleBuffer TBuffer;
     void SetTagDbTransaction(CBDB_Transaction* trans);
     void AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id);
-    void FlushTags(TNSTagMap& tag_map);
+    void FlushTags(TNSTagMap& tag_map, CBDB_Transaction& trans);
     void ReadTag(const string& key, const string& val,
                  TBuffer* buf);
     void ReadTags(const string& key, TNSBitVector* bv);
     void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
-    CRWLock& GetTagLock() { return m_TagLock; }
+    CFastMutex& GetTagLock() { return m_TagLock; }
 
     unsigned DeleteBatch(unsigned batch_size);
 

@@ -1554,7 +1554,8 @@ string CQueue::ExecQuery(const string& query, const string& action,
         new CQueryFunctionEQ(q));
 
     {{
-        CReadLockGuard(q->GetTagLock());
+        CFastMutexGuard(q->GetTagLock());
+        q->SetTagDbTransaction(NULL);
         qexec.Evaluate(qtree);
     }}
 
@@ -1677,10 +1678,9 @@ CQueue::Submit(SNS_SubmitRecord* rec,
         }
 
         // update tags
-        q->SetTagDbTransaction(&trans);
         TNSTagMap tag_map;
         q->AppendTags(tag_map, rec->tags, job_id);
-        q->FlushTags(tag_map);
+        q->FlushTags(tag_map, trans);
     }}
 
     trans.Commit();
@@ -1789,7 +1789,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
                 x_AddToAffIdx_NoLock(batch);
             }
         }
-        q->FlushTags(tag_map);
+        q->FlushTags(tag_map, trans);
     }}
     trans.Commit();
 

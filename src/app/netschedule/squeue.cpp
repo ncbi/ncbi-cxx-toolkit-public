@@ -253,9 +253,10 @@ void SLockedQueue::AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job
 }
 
 
-void SLockedQueue::FlushTags(TNSTagMap& tag_map)
+void SLockedQueue::FlushTags(TNSTagMap& tag_map, CBDB_Transaction& trans)
 {
-    CWriteLockGuard guard(m_TagLock);
+    CFastMutexGuard guard(m_TagLock);
+    m_TagDb.SetTransaction(&trans);
     NON_CONST_ITERATE(TNSTagMap, it, tag_map) {
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
@@ -280,10 +281,10 @@ void SLockedQueue::ReadTag(const string& key,
                            TBuffer* buf)
 {
     // Guarded by m_TagLock through GetTagLock()
-    CBDB_Transaction trans(*m_TagDb.GetEnv(), 
-                        CBDB_Transaction::eTransASync,
-                        CBDB_Transaction::eNoAssociation);
-    m_TagDb.SetTransaction(&trans);
+    //CBDB_Transaction trans(*m_TagDb.GetEnv(), 
+    //                    CBDB_Transaction::eTransASync,
+    //                    CBDB_Transaction::eNoAssociation);
+    //m_TagDb.SetTransaction(&trans);
     CBDB_FileCursor cur(m_TagDb);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key << val;
@@ -295,10 +296,10 @@ void SLockedQueue::ReadTag(const string& key,
 void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
 {
     // Guarded by m_TagLock through GetTagLock()
-    CBDB_Transaction trans(*m_TagDb.GetEnv(), 
-                        CBDB_Transaction::eTransASync,
-                        CBDB_Transaction::eNoAssociation);
-    m_TagDb.SetTransaction(&trans);
+    //CBDB_Transaction trans(*m_TagDb.GetEnv(), 
+    //                    CBDB_Transaction::eTransASync,
+    //                    CBDB_Transaction::eNoAssociation);
+    //m_TagDb.SetTransaction(&trans);
     CBDB_FileCursor cur(m_TagDb);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key;
@@ -315,7 +316,7 @@ void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
 void SLockedQueue::x_RemoveTags(CBDB_Transaction& trans,
                                 const TNSBitVector& ids)
 {
-    CWriteLockGuard guard(m_TagLock);
+    CFastMutexGuard guard(m_TagLock);
     m_TagDb.SetTransaction(&trans);
     CBDB_FileCursor cur(m_TagDb, trans,
                         CBDB_FileCursor::eReadModifyUpdate);
