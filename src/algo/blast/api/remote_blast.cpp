@@ -2017,6 +2017,14 @@ CSearchResultSet CRemoteBlast::GetResultSet()
     CSearchResultSet rs;
     
     TSeqAlignVector R = GetSeqAlignSets();
+    if (eDebug == m_Verbose) {
+        NcbiCout << "Converted TSeqAlignVector" << endl;
+        int i = 0;
+        ITERATE(TSeqAlignVector, itr, R) {
+            NcbiCout << "Query # " << ++i << endl 
+                     << MSerial_AsnText << **itr << endl;
+        }
+    }
     const vector<string> & W = GetWarningVector();
     const vector<string> & E = GetErrorVector();
     
