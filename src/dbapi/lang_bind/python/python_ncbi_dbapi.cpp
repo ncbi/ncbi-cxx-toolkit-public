@@ -38,7 +38,9 @@
 
 #include "python_ncbi_dbapi.hpp"
 #include "pythonpp/pythonpp_pdt.hpp"
-#include "pythonpp/pythonpp_date.hpp"
+#if PY_VERSION_HEX >= 0x02040000
+#  include "pythonpp/pythonpp_date.hpp"
+#endif
 #include "../../ds_impl.hpp"
 
 #if !defined(NCBI_OS_MSWIN)
@@ -1307,6 +1309,7 @@ MakeTupleFromResult(IResultSet& rs)
             // BIT --> BOOL ...
             tuple[i] = pythonpp::CBool( value.GetBit() );
             break;
+#if PY_VERSION_HEX >= 0x02040000
         case eDB_DateTime :
         case eDB_SmallDateTime :
             {
@@ -1322,6 +1325,7 @@ MakeTupleFromResult(IResultSet& rs)
                     );
             }
             break;
+#endif
         case eDB_VarChar :
         case eDB_Char :
         case eDB_LongChar :
@@ -2230,6 +2234,9 @@ static
 PyObject*
 Date(PyObject *self, PyObject *args)
 {
+#if PY_VERSION_HEX < 0x02040000
+    pythonpp::CError::SetString("python_ncbi_dbapi::Date requires Python 2.4 or newer.");
+#else
     try {
         int year;
         int month;
@@ -2257,6 +2264,7 @@ Date(PyObject *self, PyObject *args)
     catch(...) {
         pythonpp::CError::SetString("Unknown error in python_ncbi_dbapi::Date");
     }
+#endif
 
     return NULL;
 }
@@ -2267,6 +2275,9 @@ static
 PyObject*
 Time(PyObject *self, PyObject *args)
 {
+#if PY_VERSION_HEX < 0x02040000
+    pythonpp::CError::SetString("python_ncbi_dbapi::Time requires Python 2.4 or newer.");
+#else
     try {
         int hour;
         int minute;
@@ -2294,6 +2305,7 @@ Time(PyObject *self, PyObject *args)
     catch(...) {
         pythonpp::CError::SetString("Unknown error in python_ncbi_dbapi::Time");
     }
+#endif
 
     return NULL;
 }
@@ -2305,6 +2317,9 @@ static
 PyObject*
 Timestamp(PyObject *self, PyObject *args)
 {
+#if PY_VERSION_HEX < 0x02040000
+    pythonpp::CError::SetString("python_ncbi_dbapi::Timestamp requires Python 2.4 or newer.");
+#else
     try {
         int year;
         int month;
@@ -2338,6 +2353,7 @@ Timestamp(PyObject *self, PyObject *args)
     catch(...) {
         pythonpp::CError::SetString("Unknown error in python_ncbi_dbapi::Timestamp");
     }
+#endif
 
     return NULL;
 }
@@ -2509,8 +2525,10 @@ void init_common(const string& module_name)
 
     ///////////////////////////////////
 
+#if PY_VERSION_HEX >= 0x02040000
     // Initialize DateTime module ...
     PyDateTime_IMPORT;
+#endif
 
     // Declare CBinary
     python::CBinary::Declare(string(module_name + ".BINARY").c_str());

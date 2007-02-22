@@ -116,9 +116,11 @@ CPythonDBAPITest::TestBasic(void)
         ExecuteStr("cursor = connection.cursor()\n");
         ExecuteStr("cursor2 = conn_simple.cursor()\n");
 
+#if PY_VERSION_HEX >= 0x02040000
         ExecuteStr("date_val = python_ncbi_dbapi.Date(1, 1, 1)\n");
         ExecuteStr("time_val = python_ncbi_dbapi.Time(1, 1, 1)\n");
         ExecuteStr("timestamp_val = python_ncbi_dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
+#endif
         ExecuteStr("binary_val = python_ncbi_dbapi.Binary('Binary test')\n");
 
         ExecuteStr("cursor.execute('select qq = 57 + 33') \n");

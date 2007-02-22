@@ -842,6 +842,7 @@ public:
     }
 };
 
+#if PY_VERSION_HEX >= 0x02040000
 // PySet_Type
 class CSet : public CObject
 {
@@ -871,6 +872,7 @@ public:
         return PyFrozenSet_CheckExact(obj);
     }
 };
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 inline

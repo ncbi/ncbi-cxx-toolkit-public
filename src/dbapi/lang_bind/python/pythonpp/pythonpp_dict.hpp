@@ -415,7 +415,11 @@ public:
     }
     static bool HasExactSameType(PyObject* obj)
     {
+#ifdef PyDict_CheckExact
         return PyDict_CheckExact(obj);
+#else
+        return obj->ob_type == &PyDict_Type;
+#endif
     }
 };
 
