@@ -285,7 +285,8 @@ public:
     /// @param path 
     ///   Relative path. Note that the argument must be OS-specific.
     /// @return
-    ///   Corresponding absolute path. 
+    ///   Corresponding absolute path (current directory will be
+    ///   used for creation of this path).
     ///   Original string if it is represent an abolute path.
     ///   Current directory if the path is an empty string.
     static string CreateAbsolutePath(const string& path);
