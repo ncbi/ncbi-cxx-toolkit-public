@@ -3486,37 +3486,31 @@ esac
 ## Python
 if test "$with_python" != "no" ; then
    case "$with_python" in
-      yes | "" ) : ${PYTHON_PATH:="/usr/local/python-2.4"} ;;
-      */*      ) PYTHON_PATH=$with_python                  ;;
+      yes | "" ) : ${PYTHON_PATH:="/usr/local/python-2.4.4"} ;;
+      */*      ) PYTHON_PATH=$with_python                    ;;
    esac
-   PYTHON_INCLUDE="-I$PYTHON_PATH/include/python2.4"
-   PYTHON_LIBPATH="$PYTHON_PATH/lib/python2.4/config"
-   PYTHON_LIBS="-L$PYTHON_LIBPATH ${CONF_f_runpath}${PYTHON_LIBPATH} -lpython2.4 -lutil -lpthread -lm -ldl"
-   CPPFLAGS="$PYTHON_INCLUDE $orig_CPPFLAGS"
-   LIBS="$PYTHON_LIBS $orig_LIBS"
-   AC_CACHE_CHECK([for PYTHON libraries in $PYTHON_PATH], ncbi_cv_lib_python,
-      [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#include <Python.h>]],
-          [[Py_Initialize(); Py_Finalize();]])],
-          [ncbi_cv_lib_python=yes], [ncbi_cv_lib_python=no])])
+   NCBI_CHECK_PYTHON()
+   NCBI_CHECK_PYTHON(2.3)
+   NCBI_CHECK_PYTHON(2.4)
+   NCBI_CHECK_PYTHON(2.5)
    if test "$ncbi_cv_lib_python" = "no"; then
-      with_python="no"
+      # Favor python 2.4 as the only version configure historically
+      # recognized, but otherwise prefer newer versions.
+      if test "$ncbi_cv_lib_python24" = "yes"; then
+         PYTHON_INCLUDE=$PYTHON24_INCLUDE
+         PYTHON_LIBS=$PYTHON24_LIBS
+      elif test "$ncbi_cv_lib_python25" = "yes"; then
+         PYTHON_INCLUDE=$PYTHON25_INCLUDE
+         PYTHON_LIBS=$PYTHON25_LIBS
+      elif test "$ncbi_cv_lib_python23" = "yes"; then
+         PYTHON_INCLUDE=$PYTHON23_INCLUDE
+         PYTHON_LIBS=$PYTHON23_LIBS
+      fi
+      if test -n "$PYTHON_LIBS"; then
+         NCBI_PACKAGE(PYTHON)
+         AC_DEFINE(HAVE_PYTHON, 1)
+      fi
    fi
-fi
-if test "$with_python" = "no" ; then
-   PYTHON_PATH="No_Python"
-   PYTHON_INCLUDE=
-   PYTHON_LIBS=
-else
-   NCBI_PACKAGE(PYTHON)
-   AC_DEFINE(HAVE_PYTHON, 1, [Define to 1 if Python libraries are available.])
 fi
 
 ## CPPUNIT
@@ -5496,8 +5490,6 @@ AC_SUBST(BERKELEYDB_CXX_LIBS)
 AC_SUBST(BERKELEYDB_CXX_STATIC_LIBS)
 AC_SUBST(ODBC_INCLUDE)
 AC_SUBST(ODBC_LIBS)
-AC_SUBST(PYTHON_INCLUDE)
-AC_SUBST(PYTHON_LIBS)
 AC_SUBST(CPPUNIT_INCLUDE)
 AC_SUBST(CPPUNIT_LIBS)
 AC_SUBST(BOOST_INCLUDE)

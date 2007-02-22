@@ -226,3 +226,51 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
  AC_SUBST($2_INCLUDE)
  AC_SUBST($2_LIBS)
 ])
+
+AC_DEFUN(NCBI_CHECK_PYTHON,
+[_NCBI_CHECK_PYTHON([PYTHON]patsubst($1, [\.], []), $@)])
+
+AC_DEFUN(_NCBI_CHECK_PYTHON,
+[AC_PATH_PROG($1, python$2, [],
+    [$PYTHON_PATH/bin:$PATH:/usr/local/python-$2/bin])
+ if test -x "[$]$1"; then
+    $1_VERSION=`[$]$1 -c 'from distutils import sysconfig; print sysconfig.get_config_var("VERSION")' 2>/dev/null`
+ else
+    $1_VERSION=
+    [ncbi_cv_lib_]m4_tolower($1)=no
+ fi
+ if test -n "[$]$1_VERSION"; then
+    $1_INCLUDE=`[$]$1 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
+    $1_LIBPATH=`[$]$1 -c 'from distutils import sysconfig; print sysconfig.get_config_var("LIBPL")'`
+    $1_DEPS=`[$]$1 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
+    $1_LIBS="-L[$]$1_LIBPATH $CONF_f_runpath[$]$1_LIBPATH -lpython[$]$1_VERSION [$]$1_DEPS"
+    CPPFLAGS="[$]$1_INCLUDE $orig_CPPFLAGS"
+    LIBS="[$]$1_LIBS $orig_LIBS"
+    AC_CACHE_CHECK([for usable Python [$]$1_VERSION libraries],
+       [ncbi_cv_lib_]m4_tolower($1),
+       [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+           [[
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#include <Python.h>]],
+           [[Py_Initialize(); Py_Finalize();]])],
+           [[ncbi_cv_lib_]m4_tolower($1)=yes],
+           [[ncbi_cv_lib_]m4_tolower($1)=no])])
+ else
+    [ncbi_cv_lib_]m4_tolower($1)=no
+ fi
+ if test "[$ncbi_cv_lib_]m4_tolower($1)" = "no"; then
+    $1_INCLUDE=
+    $1_LIBS=
+ else
+    NCBI_PACKAGE($1)
+    AC_DEFINE(HAVE_$1, 1, [Define to 1 if Python $2 libraries are available.])
+ fi
+ AC_SUBST($1_INCLUDE)
+ AC_SUBST($1_LIBS)
+])
+ 
