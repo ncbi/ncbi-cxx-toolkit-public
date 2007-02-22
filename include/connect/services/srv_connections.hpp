@@ -215,7 +215,7 @@ public:
         friend class CNetSrvConnectorPoll;
         explicit iterator(const CNetSrvConnectorPoll& poll, bool last = false, bool random = false)
             : m_Poll(&poll), m_Pivot(random? (rand() %  m_Poll->m_Services.size())+1 : 1),
-              m_CurIndex(last? 0 : m_Pivot)
+              m_CurIndex(last || m_Poll->m_Services.empty()? 0 : m_Pivot)
         {}
 
 
@@ -269,6 +269,11 @@ public:
     void DiscoverLowPriorityServers(bool on_off) { 
         m_DiscoverLowPriorityServers = on_off; 
         if (m_RebalanceStrategy) m_RebalanceStrategy->Reset();
+    }
+
+    void SetRebalanceStrategy(IRebalanceStrategy* strategy)
+    {
+        m_RebalanceStrategy = strategy;
     }
 
 private:

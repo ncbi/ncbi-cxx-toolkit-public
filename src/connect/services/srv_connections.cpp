@@ -43,6 +43,7 @@ void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name,
                                              vector<pair<string,unsigned short> >& services,
                                              bool all_services)
 {
+    //    cout << "DiscoverLBServicesDiscoverLBServices" <<endl;
     SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
     TSERV_Type stype = fSERV_Any;
     if (all_services)
@@ -57,6 +58,7 @@ void NCBI_XCONNECT_EXPORT DiscoverLBServices(const string& service_name,
             
             // string host = CSocketAPI::gethostbyaddr(sinfo->host);
             string host = CSocketAPI::ntoa(sinfo->host);
+            //cout << "DiscoverLBServices: " << host <<endl;
             // string::size_type pos = host.find_first_of(".");
             // if (pos != string::npos) {
             //    host.erase(pos, host.size());
@@ -242,12 +244,15 @@ bool CNetSrvConnector::x_IsConnected()
     EIO_Status io_st = m_Socket->Read(0,1,0,eIO_ReadPeek);
     bool ret = false;
     switch (io_st) {
+    case eIO_Closed:
+        m_Socket->Close();
+        return false;
     case eIO_Success:
         if (m_Socket->GetStatus(eIO_Read) != eIO_Success) 
             break;
     case eIO_Timeout:
         ret = true;
-    default:
+    default:        
         break;
     }
     if (m_Socket->SetTimeout(eIO_Read, tmp) != eIO_Success)
@@ -278,7 +283,7 @@ CNetSrvConnectorPoll::CNetSrvConnectorPoll(const string& service,
         m_Services.push_back(TService(host, port));
         m_IsLoadBalanced = false;
     } else {
-        DiscoverLBServices(service, m_Services, m_DiscoverLowPriorityServers);
+        //DiscoverLBServices(service, m_Services, m_DiscoverLowPriorityServers);
         m_IsLoadBalanced = true;
     }
 }
@@ -319,9 +324,9 @@ CNetSrvConnectorHolder CNetSrvConnectorPoll::GetSpecific(const string& host, uns
 
 void CNetSrvConnectorPoll::x_Rebalance()
 {
-    if (!m_IsLoadBalanced || !m_RebalanceStrategy)
+    if (!m_IsLoadBalanced)
         return;
-    if(m_RebalanceStrategy->NeedRebalance()) {
+    if( !m_RebalanceStrategy || m_RebalanceStrategy->NeedRebalance()) {
         m_Services.clear();
         DiscoverLBServices(m_ServiceName, m_Services, m_DiscoverLowPriorityServers);               
     }
