@@ -218,8 +218,11 @@ public:
     /// size_type type definition
     typedef vector< CRef<CSearchResults> >::size_type size_type;
     
-    /// size_type type definition
+    /// typedef for a vector of CRef<CBlastAncillaryData>
     typedef vector< CRef<CBlastAncillaryData> > TAncillaryVector;
+
+    /// const_iterator type definition
+    typedef vector< CRef<CSearchResults> >::const_iterator const_iterator;
     
     /// Default constructor
     CSearchResultSet() {}
@@ -273,6 +276,17 @@ public:
     {
         return m_Results.size();
     }
+
+    /// Identical to GetNumResults, provided to facilitate STL-style iteration
+    size_type size() const { return GetNumResults(); }
+
+    /// Returns const_iterator to beginning of container, provided to
+    /// facilitate STL-style iteration
+    const_iterator begin() const { return m_Results.begin(); }
+
+    /// Returns const_iterator to end of container, provided to
+    /// facilitate STL-style iteration
+    const_iterator end() const { return m_Results.end(); }
     
     /// Add results to this object, intended to be used by internal
     /// BLAST APIs to populate this object
