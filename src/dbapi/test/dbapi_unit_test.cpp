@@ -167,7 +167,7 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
 , m_DS( NULL )
 , m_TableName( "#dbapi_unit_table" )
 {
-    SetDiagFilter(eDiagFilter_All, "!/dbapi/driver/ctlib");
+    // SetDiagFilter(eDiagFilter_Trace, "!/dbapi/driver/ctlib");
 }
 
 CDBAPIUnitTest::~CDBAPIUnitTest(void)
@@ -6365,16 +6365,17 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
         // !!! It does not work in case of a new FTDS driver.
         if ((args.GetDriverName() == "ftds" &&
-            args.GetServerType() == CTestArguments::eMsSql) ||
-            args.GetDriverName() == "ctlib" ||
-            // args.GetDriverName() == "dblib" || // Code will hang up with dblib for some reason ...
-            args.GetDriverName() == "ftds63" ||
-            args.GetDriverName() == "odbc" ||
-            args.GetDriverName() == "odbcw" ||
-            // args.GetDriverName() == "msdblib" || // doesn't work ...
-            args.GetDriverName() == "ftds64_odbc" ||
-            args.GetDriverName() == "ftds64_ctlib" ||
-            args.GetDriverName() == "ftds64_dblib" ) {
+            args.GetServerType() == CTestArguments::eMsSql)
+            || args.GetDriverName() == "ctlib"
+            // || args.GetDriverName() == "dblib" // Code will hang up with dblib for some reason ...
+            || args.GetDriverName() == "ftds63"
+            || args.GetDriverName() == "odbc"
+            || args.GetDriverName() == "odbcw"
+            // || args.GetDriverName() == "msdblib" // doesn't work ...
+            || args.GetDriverName() == "ftds64_odbc"
+            || args.GetDriverName() == "ftds64_ctlib"
+            || args.GetDriverName() == "ftds64_dblib"
+            ) {
             //
             boost::unit_test::test_case* tc_cursor =
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor,
@@ -6507,7 +6508,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     if ( args.IsBCPAvailable()
-         && args.GetDriverName() != "ftds64_ctlib"  // Something is broken in ftds64_ctlib ...
          && args.GetDriverName() != "msdblib"     // Just does'nt work for some reason
          ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTimeBCP,
@@ -6624,17 +6624,17 @@ CTestArguments::CTestArguments(int argc, char * argv[]) :
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", \
                       "gateway", "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib", \
-                      "odbcw"
+                      "odbcw", "mtds"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "OBERON"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway", \
-                      "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib"
+                      "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib", "mtds"
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ftds", "ftds63", "gateway", \
-                      "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib"
+                      "ftds64_dblib", "ftds64_odbc", "ftds64_ctlib", "mtds"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
