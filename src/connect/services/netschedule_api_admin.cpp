@@ -85,7 +85,8 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
     }
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
-        m_API->SendCmdWaitResponse(*it, param); 
+        CNetSrvConnectorHolder ch = *it;
+        m_API->SendCmdWaitResponse(ch, param); 
     }
 }
 
@@ -96,7 +97,8 @@ void CNetScheduleAdmin::DeleteQueue(const string& qname) const
 
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
-        m_API->SendCmdWaitResponse(*it, param); 
+        CNetSrvConnectorHolder ch = *it;
+        m_API->SendCmdWaitResponse(ch, param); 
     }
 }
 
@@ -114,7 +116,8 @@ void CNetScheduleAdmin::DropQueue() const
 
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
-        m_API->SendCmdWaitResponse(*it, cmd); 
+        CNetSrvConnectorHolder ch = *it;
+        m_API->SendCmdWaitResponse(ch, cmd); 
     }
 }
 
@@ -214,16 +217,17 @@ void CNetScheduleAdmin::StatusSnapshot(CNetScheduleAdmin::TStatusMap&  status_ma
     string cmd = "STSN";
     cmd.append(" aff=\"");
     cmd.append(affinity_token);
-    cmd.append("\"");
+    cmd.append("\"\r\n");
 
     for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
         it != m_API->GetPoll().end(); ++it) {
-        it->WriteStr(cmd);
-        it->WaitForServer();
+        CNetSrvConnectorHolder ch = *it;
+        ch->WriteStr(cmd);
+        ch->WaitForServer();
 
         string line;
         while (true) {
-            if (it->ReadStr(line)) {
+            if (!ch->ReadStr(line)) {
                 break;
             }
             m_API->CheckServerOK(line);
@@ -252,7 +256,8 @@ unsigned long CNetScheduleAdmin::Count(const string& query) const
 
     for(CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
         it != m_API->GetPoll().end(); ++it) {
-        string resp = m_API->SendCmdWaitResponse(*it, cmd);
+        CNetSrvConnectorHolder ch = *it;
+        string resp = m_API->SendCmdWaitResponse(ch, cmd);
         count += NStr::StringToULong(resp);
     }
     return count;
