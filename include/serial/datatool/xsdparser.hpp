@@ -75,6 +75,8 @@ protected:
     void ParseExtension(DTDElement& node);
     void ParseRestriction(DTDElement& node);
     void ParseAttribute(DTDElement& node);
+    
+    void ParseAny(DTDElement& node);
 
     string ParseAttributeContent(void);
     void ParseContent(DTDAttribute& att);

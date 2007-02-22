@@ -167,7 +167,7 @@ protected:
     void CloseTagIfNamed(TTypeInfo type);
     bool WillHaveName(TTypeInfo elementType);
 
-    bool HasAnyContent(const CClassTypeInfoBase* classType);
+    TMemberIndex HasAnyContent(const CClassTypeInfoBase* classType);
     bool HasMoreElements(TTypeInfo elementType);
     TMemberIndex FindDeep(TTypeInfo type, const CLightString& name) const;
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -203,6 +203,7 @@ protected:
     void EndArrayElement(void);
 
     void CheckStdXml(const CClassTypeInfoBase* classType);
+    TTypeInfo GetRealTypeInfo(TTypeInfo typeInfo);
     ETypeFamily GetRealTypeFamily(TTypeInfo typeInfo);
     ETypeFamily GetContainerElementTypeFamily(TTypeInfo typeInfo);
 

@@ -132,6 +132,7 @@ enum EPrimitiveValueType {
     ePrimitiveValueEnum,           ///< enum
     ePrimitiveValueOctetString,    ///< vector<(signed|unsigned)? char>
     ePrimitiveValueBitString,      //
+    ePrimitiveValueAny,
     ePrimitiveValueOther
 };
 

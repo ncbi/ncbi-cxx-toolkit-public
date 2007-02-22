@@ -348,6 +348,7 @@ protected:
     void EndArrayElement(void);
 
     void CheckStdXml(const CClassTypeInfoBase* classType);
+    TTypeInfo GetRealTypeInfo(TTypeInfo typeInfo);
     ETypeFamily GetRealTypeFamily(TTypeInfo typeInfo);
     ETypeFamily GetContainerElementTypeFamily(TTypeInfo typeInfo);
 
