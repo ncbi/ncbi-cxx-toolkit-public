@@ -412,17 +412,19 @@ public:
             NStr::TruncateSpacesInPlace(service);
 
             if (!service.empty()) {
-                /*
                 unsigned int rebalance_time = conf.GetInt(m_DriverName, 
                                                           "rebalance_time",
                                                           CConfig::eErr_NoThrow, 10);
                 unsigned int rebalance_requests = conf.GetInt(m_DriverName,
                                                               "rebalance_requests",
                                                               CConfig::eErr_NoThrow, 100);
-                */
                 drv.reset(new CNetScheduleAPI(service,
                                               client_name, 
                                               queue_name) );
+                drv->SetRebalanceStrategy(
+                               new CSimpleRebalanceStrategy(rebalance_requests,
+                                                            rebalance_time),
+                               eTakeOwnership);
 
                 bool permanent_conntction =
                     conf.GetBool(m_DriverName, "use_permanent_connection",  
