@@ -178,6 +178,8 @@ public:
     /// Turn OFF reverse splitting
     void RevSplitOff();
 
+    void DisableCmpOverride() { m_CmpOverride = false; }
+
     const string& FileName() const;
     const string& Database() const;
 
@@ -274,11 +276,12 @@ protected:
     unsigned          m_RecLen;
 
 private:
-    bool             m_DB_Attached;  //!< TRUE if m_DB doesn't belong here
-    bool             m_ByteSwapped;  //!< TRUE if file created on a diff.arch.
-    bool             m_RevSplitOff;  //!< TRUE if reverse splitting is off
-    string           m_FileName;     //!< filename
-    string           m_Database;     //!< db name in file (optional)
+    bool             m_DB_Attached;    //!< TRUE if m_DB doesn't belong here
+    bool             m_ByteSwapped;    //!< TRUE if file created on a diff.arch.
+    bool             m_RevSplitOff;    //!< TRUE if reverse splitting is off
+    bool             m_CmpOverride;    //!< TRUE - NCBI BDB sets its own cmp
+    string           m_FileName;       //!< filename
+    string           m_Database;       //!< db name in file (optional)
     unsigned         m_PageSize;
     unsigned         m_CacheSize;
     EDuplicateKeys   m_DuplicateKeys;
@@ -457,6 +460,10 @@ public:
     /// Run database verification (DB->verify)
     void Verify(const char* filename, const char* database, FILE* backup);
 
+    /// Turn ON prefix compression. 
+    /// Should be turned on for string based keys. (not LString)
+    void EnablePrefixCompression() { m_PrefixCompress = true; }
+
 protected:
     /// Unpack internal record buffers
     void Discard();
@@ -552,6 +559,7 @@ private:
     bool                           m_LegacyString;
 	bool                           m_OwnFields;
     bool                           m_DisabledNull;
+    bool                           m_PrefixCompress; //!< TRUE if prefix compression ON
 
     friend class CBDB_FileCursor;
 };

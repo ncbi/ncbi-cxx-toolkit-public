@@ -122,6 +122,7 @@ CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys, EDBType db_type)
   m_DB_Attached(false),
   m_ByteSwapped(false),
   m_RevSplitOff(false),
+  m_CmpOverride(true),
   m_PageSize(0),
   m_CacheSize(256 * 1024),
   m_DuplicateKeys(dup_keys)
@@ -390,7 +391,6 @@ void CBDB_RawFile::x_RemoveTransaction(CBDB_Transaction* trans)
 }
 
 
-
 void CBDB_RawFile::x_CreateDB(unsigned rec_len)
 {
     _ASSERT(m_DB == 0);
@@ -401,7 +401,7 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
     int ret = db_create(&m_DB, m_Env ? m_Env->GetEnv() : 0, 0);
     BDB_CHECK(ret, 0);
 
-    if (m_DB_Type == eBtree) {
+    if (m_DB_Type == eBtree && m_CmpOverride) {
         SetCmp(m_DB);
     }
 
@@ -419,6 +419,7 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
 
     if (DuplicatesAllowed()) {
         ret = m_DB->set_flags(m_DB, DB_DUP);
+
         BDB_CHECK(ret, 0);
     }
 
@@ -426,7 +427,6 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
         ret = m_DB->set_flags(m_DB, DB_REVSPLITOFF);
         BDB_CHECK(ret, 0);
     }
-
     if (m_DB_Type == eQueue) {
         _ASSERT(rec_len);
         m_RecLen = rec_len;
@@ -718,7 +718,8 @@ CBDB_File::CBDB_File(EDuplicateKeys dup_keys, EDBType db_type)
       m_DataBufDisabled(false),
       m_LegacyString(false),
       m_OwnFields(false),
-      m_DisabledNull(false)
+      m_DisabledNull(false),
+      m_PrefixCompress(false)
 {
 }
 
@@ -1008,6 +1009,26 @@ void CBDB_File::Discard()
 }
 
 
+/// @internal
+unsigned int
+BDB_compare_prefix(DB* dbp, const DBT* a, const DBT* b)
+{
+	size_t cnt, len;
+	char* p1, *p2;
+
+    cnt = 1; len = a->size > b->size ? b->size : a->size; 
+    p1 = (char*)a->data, p2 = (char*)b->data;
+    for (;len--; ++p1, ++p2, ++cnt) { 
+        if (*p1 != *p2) {
+            return (cnt);
+        }
+    }
+    if (a->size < b->size) return (a->size + 1); 
+    if (b->size < a->size) return (b->size + 1); 
+    return (b->size); 
+}
+
+
 void CBDB_File::SetCmp(DB* db)
 {
     _ASSERT(m_DB_Type == eBtree);
@@ -1015,6 +1036,11 @@ void CBDB_File::SetCmp(DB* db)
     _ASSERT(func);
     int ret = db->set_bt_compare(db, func);
     BDB_CHECK(ret, 0);
+
+    if (m_PrefixCompress) {
+        ret = m_DB->set_bt_prefix(m_DB, BDB_compare_prefix);
+        BDB_CHECK(ret, 0);
+    }
 }
 
 
