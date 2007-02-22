@@ -19,14 +19,6 @@ sub new
     return $Self
 }
 
-sub CreateEmpty
-{
-    my (undef, $Pathname) = @_;
-
-    open FILE, '>', $Pathname or confess "$Pathname\: $!";
-    close FILE
-}
-
 sub SwitchToRecursive
 {
     my ($Self, $Dir) = @_;
@@ -35,8 +27,6 @@ sub SwitchToRecursive
 
     unless (-f $RFile)
     {
-        unlink "$Dir/.svn/ncbi-N";
-
         print "L $Dir\n";
 
         for my $SubDir ($Self->CallSubversion('list', $Dir))
@@ -55,30 +45,69 @@ sub SwitchToRecursive
                 }
             }
         }
-
-        $Self->CreateEmpty($RFile)
     }
 }
 
-sub NewTreeTraversal
+sub IncludeNonExistingDir
 {
-    my ($Self, $Branch, $Path) = @_;
+    my ($Self, $Path, $Branch) = @_;
 
-    while (my ($Dir, $Contents) = each %$Branch)
+    if (ref $Branch)
     {
-        $Dir = "$Path/$Dir" if $Path;
+        push @{$Self->{NonRecursiveUpdates}}, $Path;
 
-        if (ref $Contents)
+        while (my ($SubDir, $SubBranch) = each %$Branch)
         {
-            push @{$Self->{NonRecursiveUpdates}}, $Dir;
+            $Self->IncludeNonExistingDir("$Path/$SubDir", $SubBranch)
+        }
+    }
+    else
+    {
+        push @{$Self->{RecursiveUpdates}}, $Path
+    }
+}
 
-            $Self->NewTreeTraversal($Contents, $Dir)
+sub IncludeExistingDir
+{
+    my ($Self, $Path, $ParentBranch, $Dir) = @_;
+
+    my $Branch = $ParentBranch->{$Dir};
+
+    unless (-d $Path)
+    {
+        $Self->IncludeNonExistingDir($Path, $Branch)
+    }
+    else
+    {
+        die "$Self->{MyName}: directory '$Path' is not under source control.\n"
+            unless -d "$Path/.svn";
+
+        unless (ref $Branch)
+        {
+            $Self->SwitchToRecursive($Path);
+
+            push @{$Self->{RecursiveUpdates}}, $Path
+        }
+        elsif (-f "$Path/.svn/ncbi-R")
+        {
+            $ParentBranch->{$Dir} = undef;
+
+            push @{$Self->{RecursiveUpdates}}, $Path
         }
         else
         {
-            push @{$Self->{RecursiveUpdates}}, $Dir;
+            push @{$Self->{NonRecursiveUpdates}}, $Path;
 
-            $Self->SwitchToRecursive($Dir) if -d $Dir
+            for my $SubDir ($Self->ReadNFile("$Path/.svn/ncbi-N"))
+            {
+                $Self->CollectUpdates("$Path/$SubDir")
+                    unless exists $Branch->{$SubDir}
+            }
+
+            for my $SubDir (keys %$Branch)
+            {
+                $Self->IncludeExistingDir("$Path/$SubDir", $Branch, $SubDir)
+            }
         }
     }
 }
@@ -103,35 +132,52 @@ sub ReadNFile
     return @DirNames
 }
 
-sub SwitchToNonRecursive
+sub CreateNFiles
 {
     my ($Self, $Branch, $Path) = @_;
+
+    return unless ref $Branch;
 
     unlink "$Path/.svn/ncbi-R";
 
     my $NFile = "$Path/.svn/ncbi-N";
 
-    my %Exists = map {$_ => 1} $Self->ReadNFile($NFile);
+    my @OldDirs = grep {!exists $Branch->{$_} && -d "$Path/$_"}
+        $Self->ReadNFile($NFile);
 
-    open FILE, '>>', $NFile or die "$NFile\: $!";
+    my @NewDirs = grep {-d "$Path/$_"} keys %$Branch;
 
-    while (my ($Dir, $Contents) = each %$Branch)
+    open FILE, '>', $NFile or confess "$NFile\: $!";
+
+    for my $SubDir (@OldDirs, @NewDirs)
     {
-        print FILE "$Dir\n" unless $Exists{$Dir}
+        print FILE "$SubDir\n"
     }
 
     close FILE;
 
-    while (my ($Dir, $Contents) = each %$Branch)
+    for my $SubDir (@NewDirs)
     {
-        if (ref $Contents)
-        {
-            $Dir = "$Path/$Dir";
+        $Self->CreateNFiles($Branch->{$SubDir}, "$Path/$SubDir")
+    }
+}
 
-            push @{$Self->{NonRecursiveUpdates}}, $Dir;
+sub PerformUpdates
+{
+    my ($Self) = @_;
 
-            $Self->SwitchToNonRecursive($Contents, $Dir)
-        }
+    if ($Self->{NonRecursiveUpdates})
+    {
+        print "Performing non-recursive updates:\n";
+
+        system $Self->{SvnPath}, 'update', '-N', @{$Self->{NonRecursiveUpdates}}
+    }
+
+    if ($Self->{RecursiveUpdates})
+    {
+        print "Performing recursive updates:\n";
+
+        system $Self->{SvnPath}, 'update', @{$Self->{RecursiveUpdates}}
     }
 }
 
@@ -149,7 +195,8 @@ sub UpdateDirList
 Path:
     for my $Path (@Paths)
     {
-        $Path =~ m/(?:^|\/)\.\.(?:\/|$)/o && die "Path '$Path' contains '..'\n";
+        $Path =~ m/(?:^|\/)\.\.(?:\/|$)/o &&
+            die "$Self->{MyName}: path '$Path' contains '..'\n";
 
         $Path =~ s/\/\.(?=\/|$)//go;
 
@@ -178,37 +225,37 @@ Path:
         $Branch->{$Path} = undef if $Path
     }
 
-    $Self->NewTreeTraversal(\%NewTree);
+    $Self->IncludeExistingDir('.', \%NewTree, '.');
 
-    if ($Self->{NonRecursiveUpdates})
+    $Self->PerformUpdates();
+
+    $Self->CreateNFiles($NewTree{'.'}, '.');
+
+    # Create R files.
+    my @RecursiveUpdates = grep {-d $_} @{$Self->{RecursiveUpdates}};
+
+    if (@RecursiveUpdates)
     {
-        print "Performing non-recursive updates:\n";
-
-        system $Self->{SvnPath}, 'update', '-N', @{$Self->{NonRecursiveUpdates}}
-    }
-
-    $Self->SwitchToNonRecursive($NewTree{'.'}, '.') if $NewTree{'.'};
-
-    if ($Self->{RecursiveUpdates})
-    {
-        print "Performing recursive updates:\n";
-
-        system $Self->{SvnPath}, 'update', @{$Self->{RecursiveUpdates}};
-
         find(sub
         {
             if (m/^\.svn$/)
             {
                 unlink '.svn/ncbi-N';
-                $Self->CreateEmpty('.svn/ncbi-R') unless -f '.svn/ncbi-R'
+                unless (-f '.svn/ncbi-R')
+                {
+                    open FILE, '>.svn/ncbi-R' or confess $!;
+                    close FILE
+                }
             }
-        }, @{$Self->{RecursiveUpdates}})
+        }, @RecursiveUpdates)
     }
 }
 
 sub CollectUpdates
 {
     my ($Self, $Dir) = @_;
+
+    return unless -d $Dir;
 
     confess "Directory '$Dir' is not a working copy" unless -d "$Dir/.svn";
 
@@ -239,21 +286,7 @@ sub UpdateCWD
 
     $Self->CollectUpdates('.');
 
-    local $, = ' ';
-
-    if ($Self->{NonRecursiveUpdates})
-    {
-        print "Performing non-recursive updates:\n";
-
-        system $Self->{SvnPath}, 'update', '-N', @{$Self->{NonRecursiveUpdates}}
-    }
-
-    if ($Self->{RecursiveUpdates})
-    {
-        print "Performing recursive updates:\n";
-
-        system $Self->{SvnPath}, 'update', @{$Self->{RecursiveUpdates}}
-    }
+    $Self->PerformUpdates()
 }
 
 1
