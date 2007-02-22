@@ -771,17 +771,30 @@ void CAnyContentDataType::PrintASN(CNcbiOstream& out, int /* indent */) const
 
 void CAnyContentDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only) const
 {
-    if (!contents_only) {
-        PrintASNNewLine(out,indent++) <<
-            "<xs:element name=\"" << XmlTagName() << "\">";
-    }
-    PrintASNNewLine(out,indent++) << "<xs:complexType>";
-    PrintASNNewLine(out,indent++) << "<xs:sequence>";
-    PrintASNNewLine(out,indent)   << "<xs:any processContents=\"lax\"/>";
-    PrintASNNewLine(out,--indent) << "</xs:sequence>";
-    PrintASNNewLine(out,--indent) << "</xs:complexType>";
-    if (!contents_only) {
-        PrintASNNewLine(out,--indent) << "</xs:element>";
+    const CDataMember* mem = GetDataMember();
+    if (mem) {
+        PrintASNNewLine(out,indent)   << "<xs:any processContents=\"lax\"";
+        const string& ns = GetNamespaceName();
+        if (!ns.empty()) {
+            out << " namespace=\"" << ns << "\"";
+        }
+        if (mem->Optional()) {
+            out << " minOccurs=\"0\"";
+        }
+        out << "/>";
+    } else {
+        if (!contents_only) {
+            PrintASNNewLine(out,indent++) <<
+                "<xs:element name=\"" << XmlTagName() << "\">";
+        }
+        PrintASNNewLine(out,indent++) << "<xs:complexType>";
+        PrintASNNewLine(out,indent++) << "<xs:sequence>";
+        PrintASNNewLine(out,indent)   << "<xs:any processContents=\"lax\"/>";
+        PrintASNNewLine(out,--indent) << "</xs:sequence>";
+        PrintASNNewLine(out,--indent) << "</xs:complexType>";
+        if (!contents_only) {
+            PrintASNNewLine(out,--indent) << "</xs:element>";
+        }
     }
 }
 

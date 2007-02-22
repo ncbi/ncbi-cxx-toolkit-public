@@ -1029,11 +1029,15 @@ void CObjectOStreamXml::WriteContainer(const CContainerTypeInfo* cType,
 #endif
 void CObjectOStreamXml::BeginArrayElement(TTypeInfo elementType)
 {
-    if (x_IsStdXml() && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
-        TopFrame().SetNotag();
-    } else {
-        OpenStackTag(0);
+    if (x_IsStdXml()) {
+        CObjectTypeInfo type(GetRealTypeInfo(elementType));
+        if (type.GetTypeFamily() != eTypeFamilyPrimitive ||
+            type.GetPrimitiveValueType() == ePrimitiveValueAny) {
+            TopFrame().SetNotag();
+            return;
+        }
     }
+    OpenStackTag(0);
 }
 
 void CObjectOStreamXml::EndArrayElement(void)
@@ -1150,17 +1154,21 @@ void CObjectOStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
     m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
 }
 
-ETypeFamily CObjectOStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
+TTypeInfo CObjectOStreamXml::GetRealTypeInfo(TTypeInfo typeInfo)
 {
-    ETypeFamily type = typeInfo->GetTypeFamily();
-    if (type == eTypeFamilyPointer) {
+    if (typeInfo->GetTypeFamily() == eTypeFamilyPointer) {
         const CPointerTypeInfo* ptr =
             dynamic_cast<const CPointerTypeInfo*>(typeInfo);
         if (ptr) {
-            type = ptr->GetPointedType()->GetTypeFamily();
+            typeInfo = ptr->GetPointedType();
         }
     }
-    return type;
+    return typeInfo;
+}
+
+ETypeFamily CObjectOStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
+{
+    return GetRealTypeInfo( typeInfo )->GetTypeFamily();
 }
 
 ETypeFamily CObjectOStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)

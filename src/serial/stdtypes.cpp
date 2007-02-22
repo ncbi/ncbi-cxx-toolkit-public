@@ -1560,7 +1560,7 @@ public:
 };
 
 CPrimitiveTypeInfoAnyContent::CPrimitiveTypeInfoAnyContent(void)
-    : CParent(sizeof(CAnyContentObject), ePrimitiveValueOther)
+    : CParent(sizeof(CAnyContentObject), ePrimitiveValueAny)
 {
     m_IsCObject = true;
     typedef CPrimitiveTypeFunctions<ncbi::CAnyContentObject> TFunctions;

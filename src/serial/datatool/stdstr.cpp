@@ -161,7 +161,7 @@ CAnyContentTypeStrings::CAnyContentTypeStrings(const string& type,
 
 CTypeStrings::EKind CAnyContentTypeStrings::GetKind(void) const
 {
-    return eKindOther;
+    return eKindObject;
 }
 
 string CAnyContentTypeStrings::GetInitializer(void) const

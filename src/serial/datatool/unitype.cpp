@@ -113,15 +113,25 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
     string userType = typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
 
     if (GetEnforcedStdXml() && (typeStatic || (typeRef && tag == userType))) {
-        PrintASNNewLine(out, indent++) << "<xs:element ";
-        if (typeRef) {
-            out << "ref";
+        bool any = dynamic_cast<const CAnyContentDataType*>(typeStatic) != 0;
+        PrintASNNewLine(out, indent++);
+        if (any) {
+            out << "<xs:any processContents=\"lax\"";
+            const string& ns = GetNamespaceName();
+            if (!ns.empty()) {
+                out << " namespace=\"" << ns << "\"";
+            }
         } else {
-            out << "name";
-        }
-        out << "=\"" << tag << "\"";
-        if (typeStatic && !type.empty()) {
-            out << " type=\"" << type << "\"";
+            out << "<xs:element ";
+            if (typeRef) {
+                out << "ref";
+            } else {
+                out << "name";
+            }
+            out << "=\"" << tag << "\"";
+            if (typeStatic && !type.empty()) {
+                out << " type=\"" << type << "\"";
+            }
         }
         if (GetParentType()) {
             bool isOptional = GetDataMember() ?

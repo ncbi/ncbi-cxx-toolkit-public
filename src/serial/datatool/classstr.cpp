@@ -92,8 +92,7 @@ bool CClassTypeStrings::x_IsNullWithAttlist(TMembers::const_iterator i) const
 
 bool CClassTypeStrings::x_IsAnyContentType(TMembers::const_iterator i) const
 {
-    return i->haveFlag ?
-        (dynamic_cast<CAnyContentTypeStrings*>(i->type.get()) != 0) : false;
+    return (dynamic_cast<CAnyContentTypeStrings*>(i->type.get()) != 0);
 }
 
 
@@ -148,6 +147,9 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
             ptrType = "Ref";
         else
             ptrType = "false";
+    }
+    if (dynamic_cast<CAnyContentTypeStrings*>(type.get()) != 0) {
+        ptrType = "Ref";
     }
 
     if ( ptrType == "Ref" ) {
@@ -405,7 +407,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         size_t set_index;
         size_t set_offset;
         Uint4  set_mask, set_mask_maybe;
-        bool isNull, isNullWithAtt;
+        bool isNull, isNullWithAtt, as_ref;
         ITERATE ( TMembers, i, m_Members ) {
             // generate IsSet... method
             ++member_index;
@@ -413,6 +415,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             set_offset = (2*member_index)%(8*sizeof(Uint4));
             set_mask   = (0x03 << set_offset);
             set_mask_maybe = (0x01 << set_offset);
+            as_ref = i->ref /*|| x_IsAnyContentType(i)*/;
             {
                 isNull = x_IsNullType(i);
                 isNullWithAtt = x_IsNullWithAttlist(i);
@@ -478,7 +481,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "    if ( "DELAY_PREFIX<<i->cName<<" )\n"
                             "        return true;\n";
                     }
-                    if ( i->ref ) {
+                    if ( as_ref ) {
                         // CRef
                         if (isNullWithAtt) {
                             inlineMethods <<
@@ -525,7 +528,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "{\n";
                 if (!i->defaultValue.empty() ||
                     i->type->GetKind() == eKindContainer ||
-                    (i->ref && !i->canBeNull)) {
+                    (as_ref && !i->canBeNull)) {
                     inlineMethods <<"    return true;\n";
                 } else {
                     if (isNull || isNullWithAtt) {
@@ -544,7 +547,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             string destructionCode = i->type->GetDestructionCode(i->valueName);
             string assignValue = i->defaultValue;
             string resetCode;
-            if ( assignValue.empty() && !i->ref ) {
+            if ( assignValue.empty() && !as_ref ) {
                 resetCode = i->type->GetResetCode(i->valueName);
                 if ( resetCode.empty() )
                     assignValue = i->type->GetInitializer();
@@ -557,7 +560,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             setters <<
                 "    void Reset"<<i->cName<<"(void);\n";
             // inline only when non reference and doesn't have reset code
-            bool inl = !i->ref && resetCode.empty();
+            bool inl = !as_ref && resetCode.empty();
             code.MethodStart(inl) <<
                 "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
                 "{\n";
@@ -566,7 +569,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
             }
             WriteTabbed(code.Methods(inl), destructionCode);
-            if ( (i->ref && !i->canBeNull) ) {
+            if ( (as_ref && !i->canBeNull) ) {
                 if ( assignValue.empty() )
                     assignValue = i->type->GetInitializer();
                 code.Methods(inl) <<
@@ -575,7 +578,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "        return;\n"
                     "    }\n";
             }
-            if ( i->ref ) {
+            if ( as_ref ) {
                 if ( !i->optional ) {
                     // just reset value
                     resetCode = i->type->GetResetCode(i->valueName);
@@ -667,7 +670,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     code.Methods(inl) <<
                         "    "DELAY_PREFIX<<i->cName<<".Update();\n";
                 }
-                if ( (i->ref && !i->canBeNull) ) {
+                if ( (as_ref && !i->canBeNull) ) {
                     code.Methods(inl) <<
                         "    if ( !"<<i->mName<<" ) {\n"
                         "        const_cast<"<<code.GetClassNameDT()<<"*>(this)->Reset"<<i->cName<<"();\n"
@@ -688,7 +691,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
 
             // generate setter
-            if ( i->ref ) {
+            if ( as_ref ) {
                 if (!isNullWithAtt) {
                     // generate reference setter
                     if (CClassCode::GetDoxygenComments()) {
@@ -755,7 +758,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         inlineMethods <<
                             "    "DELAY_PREFIX<<i->cName<<".Update();\n";
                     }
-                    if ( (i->ref && !i->canBeNull) ) {
+                    if ( (as_ref && !i->canBeNull) ) {
                         inlineMethods <<
                             "    if ( !"<<i->mName<<" ) {\n"
                             "        Reset"<<i->cName<<"();\n"
@@ -940,7 +943,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    "DELAY_PREFIX<<i->cName<<".Update();\n";
                 }
                 inlineMethods << "    return ";
-                if ( i->ref )
+                if ( as_ref )
                     inlineMethods << "*";
                 inlineMethods <<
                     i->mName<<";\n"
@@ -977,7 +980,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
                 }
                 inlineMethods << "    return ";
-                if ( i->ref )
+                if ( as_ref )
                     inlineMethods << "*";
                 inlineMethods <<
                     i->mName<<";\n"
@@ -1018,7 +1021,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         }
         {
             ITERATE ( TMembers, i, m_Members ) {
-                if ( i->ref ) {
+                if ( i->ref /*|| x_IsAnyContentType(i)*/) {
                     code.ClassPrivate() <<
                         "    "<<ncbiNamespace<<"CRef< "<<i->tName<<" > "<<i->mName<<";\n";
                 }
@@ -1035,11 +1038,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate member initializers
     {
         bool has_non_null_refs = false;
+        bool as_ref;
         ITERATE ( TMembers, i, m_Members ) {
-            if ( (i->ref && !i->canBeNull) ) {
+            as_ref = i->ref /*|| x_IsAnyContentType(i)*/;
+            if ( (as_ref && !i->canBeNull) ) {
                 has_non_null_refs = true;
             }
-            else if ( !i->ref && !x_IsNullType(i) ) {
+            else if ( !as_ref && !x_IsNullType(i) ) {
                 string init = i->defaultValue;
                 if ( init.empty() )
                     init = i->type->GetInitializer();
@@ -1052,7 +1057,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         if ( has_non_null_refs ) {
             code.AddConstructionCode("if ( !IsAllocatedInPool() ) {\n");
             ITERATE ( TMembers, i, m_Members ) {
-                if ( (i->ref && !i->canBeNull) ) {
+                as_ref = i->ref /*|| x_IsAnyContentType(i)*/;
+                if ( (as_ref && !i->canBeNull) ) {
                     code.AddConstructionCode("    Reset"+i->cName+"();\n");
                 }
             }
@@ -1061,10 +1067,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     }
 
     // generate Reset method
-    code.ClassPublic() <<
-        "    /// Reset the whole object\n"
-        "    ";
     if ( !wrapperClass ) {
+        code.ClassPublic() <<
+            "    /// Reset the whole object\n"
+            "    ";
         if ( HaveUserClass() )
             code.ClassPublic() << "virtual ";
         code.ClassPublic() <<
@@ -1175,7 +1181,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             bool addEnum = false;
             bool addRef = false;
             
-            bool ref = i->ref;
+            bool ref = i->ref /*|| x_IsAnyContentType(i)*/;
             if ( ref ) {
                 methods << "REF_";
                 addCType = true;

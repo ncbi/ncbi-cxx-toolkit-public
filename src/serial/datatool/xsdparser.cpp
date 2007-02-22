@@ -422,6 +422,21 @@ void XSDParser::ParseContent(DTDElement& node)
         case K_ATTRIBUTE:
             ParseAttribute(node);
             break;
+        case K_ANY:
+            if (node.GetType() != DTDElement::eSequence) {
+                ParseError("Unexpected element type");
+            } else {
+                string name = node.GetName();
+                name += "__emb#__";
+                name += NStr::IntToString(emb++);
+                m_MapElement[name].SetName(name);
+                m_MapElement[name].SetSourceLine(Lexer().CurrentLine());
+                m_MapElement[name].SetEmbedded();
+                m_MapElement[name].SetType(DTDElement::eAny);
+                ParseAny(m_MapElement[name]);
+                AddElementContent(node,name);
+            }
+            break;
         case K_SEQUENCE:
             if (node.GetType() == DTDElement::eUnknown) {
                 node.SetType(DTDElement::eSequence);
@@ -609,6 +624,58 @@ void XSDParser::ParseAttribute(DTDElement& node)
     }
     if (tok == K_CLOSING) {
         ParseContent(att);
+    }
+    m_ExpectLastComment = true;
+}
+
+void XSDParser::ParseAny(DTDElement& node)
+{
+    TToken tok = GetRawAttributeSet();
+    const string& name = node.GetName();
+    if (GetAttribute("processContents")) {
+        if (!IsValue("lax") && !IsValue("skip")) {
+            ParseError("Unsupported attribute");
+        }
+    }
+    if (GetAttribute("minOccurs")) {
+        int m = NStr::StringToInt(m_Value);
+        DTDElement::EOccurrence occNow, occNew;
+        occNew = occNow = node.GetOccurrence();
+        if (m == 0) {
+            if (occNow == DTDElement::eOne) {
+                occNew = DTDElement::eZeroOrOne;
+            } else if (occNow == DTDElement::eOneOrMore) {
+                occNew = DTDElement::eZeroOrMore;
+            }
+        } else if (m != 1) {
+            ParseError("Unsupported attribute");
+        }
+        if (occNow != occNew) {
+            node.SetOccurrence(occNew);
+        }
+    }
+    if (GetAttribute("maxOccurs")) {
+        int m = IsValue("unbounded") ? -1 : NStr::StringToInt(m_Value);
+        DTDElement::EOccurrence occNow, occNew;
+        occNew = occNow = node.GetOccurrence();
+        if (m == -1) {
+            if (occNow == DTDElement::eOne) {
+                occNew = DTDElement::eOneOrMore;
+            } else if (occNow == DTDElement::eZeroOrOne) {
+                occNew = DTDElement::eZeroOrMore;
+            }
+        } else if (m != 1) {
+            ParseError("Unsupported attribute");
+        }
+        if (occNow != occNew) {
+            node.SetOccurrence(occNew);
+        }
+    }
+    if (GetAttribute("namespace")) {
+        node.SetNamespaceName(m_Value);
+    }
+    if (tok == K_CLOSING) {
+        ParseContent(node);
     }
     m_ExpectLastComment = true;
 }

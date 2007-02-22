@@ -1373,16 +1373,45 @@ void CObjectIStreamXml::EndContainerElement(void)
     }
 }
 
-bool CObjectIStreamXml::HasAnyContent(const CClassTypeInfoBase* classType)
+TMemberIndex CObjectIStreamXml::HasAnyContent(const CClassTypeInfoBase* classType)
 {
     const CItemsInfo& items = classType->GetItems();
-    if (items.Size() == 1) {
-        const CItemInfo* itemInfo = items.GetItemInfo( items.FirstIndex());
+    for (TMemberIndex i = items.FirstIndex(); i <= items.LastIndex(); ++i) {
+        const CItemInfo* itemInfo = items.GetItemInfo( i );
         if (itemInfo->GetId().HasAnyContent()) {
-            return true;
+            return i;
+        }
+        if (itemInfo->GetId().HasNotag()) {
+            if (itemInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyContainer) {
+                CObjectTypeInfo elem = CObjectTypeInfo(itemInfo->GetTypeInfo()).GetElementType();
+                if (elem.GetTypeFamily() == eTypeFamilyPointer) {
+                    elem = elem.GetPointedType();
+                }
+                if (elem.GetTypeFamily() == eTypeFamilyPrimitive &&
+                    elem.GetPrimitiveValueType() == ePrimitiveValueAny) {
+                    return i;
+                }
+            }
         }
     }
-    return false;
+/*
+    if (items.Size() == 1) {
+        const CItemInfo* itemInfo = items.GetItemInfo( items.FirstIndex() );
+        if (itemInfo->GetId().HasNotag()) {
+            if (itemInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyContainer) {
+                CObjectTypeInfo elem = CObjectTypeInfo(itemInfo->GetTypeInfo()).GetElementType();
+                if (elem.GetTypeFamily() == eTypeFamilyPointer) {
+                    elem = elem.GetPointedType();
+                }
+                if (elem.GetTypeFamily() == eTypeFamilyPrimitive &&
+                    elem.GetPrimitiveValueType() == ePrimitiveValueAny) {
+                    return items.FirstIndex();
+                }
+            }
+        }
+    }
+*/
+    return kInvalidMember;
 }
 
 bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
@@ -1399,7 +1428,7 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
     }
     if (x_IsStdXml()) {
         CLightString tagName;
-        TTypeInfo type = elementType;
+        TTypeInfo type = GetRealTypeInfo(elementType);
         // this is to handle STL containers of primitive types
         if (GetRealTypeFamily(type) == eTypeFamilyPrimitive) {
             if (!m_RejectedTag.empty()) {
@@ -1408,18 +1437,12 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
             } else {
                 tagName = ReadName(BeginOpeningTag());
                 UndoClassMember();
-                bool res = (tagName == m_LastPrimitive);
+                bool res = (tagName == m_LastPrimitive ||
+                    CObjectTypeInfo(type).GetPrimitiveValueType() == ePrimitiveValueAny);
                 if (!res) {
                     m_LastPrimitive.erase();
                 }
                 return res;
-            }
-        }
-        if (type->GetTypeFamily() == eTypeFamilyPointer) {
-            const CPointerTypeInfo* ptr =
-                dynamic_cast<const CPointerTypeInfo*>(type);
-            if (ptr) {
-                type = ptr->GetPointedType();
             }
         }
         const CClassTypeInfoBase* classType =
@@ -1437,7 +1460,7 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
 
             if (classType->GetName().empty()) {
                 return classType->GetItems().FindDeep(tagName) != kInvalidMember ||
-                    HasAnyContent(classType);
+                    HasAnyContent(classType) != kInvalidMember;
             }
             return tagName == classType->GetName();
         }
@@ -1515,11 +1538,15 @@ void CObjectIStreamXml::SkipContainer(const CContainerTypeInfo* containerType)
 
 void CObjectIStreamXml::BeginArrayElement(TTypeInfo elementType)
 {
-    if (x_IsStdXml() && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
-        TopFrame().SetNotag();
-    } else {
-        OpenStackTag(0);
+    if (x_IsStdXml()) {
+        CObjectTypeInfo type(GetRealTypeInfo(elementType));
+        if (type.GetTypeFamily() != eTypeFamilyPrimitive ||
+            type.GetPrimitiveValueType() == ePrimitiveValueAny) {
+            TopFrame().SetNotag();
+            return;
+        }
     }
+    OpenStackTag(0);
 }
 
 void CObjectIStreamXml::EndArrayElement(void)
@@ -1652,20 +1679,7 @@ void CObjectIStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
     m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
 }
 
-ETypeFamily CObjectIStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
-{
-    ETypeFamily type = typeInfo->GetTypeFamily();
-    if (type == eTypeFamilyPointer) {
-        const CPointerTypeInfo* ptr =
-            dynamic_cast<const CPointerTypeInfo*>(typeInfo);
-        if (ptr) {
-            type = ptr->GetPointedType()->GetTypeFamily();
-        }
-    }
-    return type;
-}
-
-ETypeFamily CObjectIStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
+TTypeInfo CObjectIStreamXml::GetRealTypeInfo(TTypeInfo typeInfo)
 {
     if (typeInfo->GetTypeFamily() == eTypeFamilyPointer) {
         const CPointerTypeInfo* ptr =
@@ -1674,6 +1688,17 @@ ETypeFamily CObjectIStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
             typeInfo = ptr->GetPointedType();
         }
     }
+    return typeInfo;
+}
+
+ETypeFamily CObjectIStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
+{
+    return GetRealTypeInfo( typeInfo )->GetTypeFamily();
+}
+
+ETypeFamily CObjectIStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
+{
+    typeInfo = GetRealTypeInfo( typeInfo );
     _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
     const CContainerTypeInfo* ptr =
         dynamic_cast<const CContainerTypeInfo*>(typeInfo);
@@ -1847,7 +1872,8 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                 return kInvalidMember;
             if (pos <= classType->GetItems().LastIndex()) {
                 const CMemberInfo* mem_info = classType->GetMemberInfo(pos);
-                if (mem_info->GetId().HasNotag()) {
+                if (mem_info->GetId().HasNotag() &&
+                    !mem_info->GetId().HasAnyContent()) {
                     if (GetRealTypeFamily(mem_info->GetTypeInfo()) == eTypeFamilyPrimitive) {
                         TopFrame().SetNotag();
                         return pos;
@@ -1896,9 +1922,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     }
     if (x_IsStdXml()) {
         UndoClassMember();
-        if (pos==first && HasAnyContent(classType)) {
+        ind = HasAnyContent(classType);
+        if (ind != kInvalidMember) {
             TopFrame().SetNotag();
-            return first;
+            return ind;
         }
         if (GetSkipUnknownMembers() == eSerialSkipUnknown_Yes &&
             pos <= classType->GetMembers().LastIndex()) {

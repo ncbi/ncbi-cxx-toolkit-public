@@ -742,10 +742,12 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
     map<string,DTDElement>::iterator i;
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
 
-        if (i->second.GetName().empty() && i->first != s_SpecialName) {
+        DTDElement::EType type = i->second.GetType();
+        if (i->second.GetName().empty() &&
+            i->first != s_SpecialName &&
+            type != DTDElement::eAny) {
             ParseError(i->first.c_str(),"definition");
         }
-        DTDElement::EType type = i->second.GetType();
 
         bool generate = type != DTDElement::eUnknown;
         if (m_SrcType == eDTD) {
@@ -792,7 +794,8 @@ CDataType* DTDParser::x_Type(
             string refName = refs.front();
             DTDElement& refNode = m_MapElement[refName];
             if (refNode.IsEmbedded() && !refNode.IsNamed() &&
-                (node.GetOccurrence(refName) == DTDElement::eOne)) {
+                (node.GetOccurrence(refName) == DTDElement::eOne) &&
+                refNode.GetType() != DTDElement::eAny) {
                 type = x_Type(refNode,
                               fromInside ? occ : refNode.GetOccurrence(),
                               fromInside);
@@ -909,9 +912,12 @@ CDataType* DTDParser::TypesBlock(
         }
         DTDElement& refNode = m_MapElement[*i];
         if (refNode.GetName().empty()) {
-//            ParseError(i->c_str(),"definition");
-            ERR_POST(Warning << "Undefined type: " << *i);
-            refNode.SetName(*i);
+            if (refNode.GetType() == DTDElement::eAny) {
+                refNode.SetName("_Any");
+            } else {
+                ERR_POST(Warning << "Undefined type: " << *i);
+                refNode.SetName(*i);
+            }
         }
         DTDElement::EOccurrence occ = node.GetOccurrence(*i);
         if (refNode.IsEmbedded()) {
