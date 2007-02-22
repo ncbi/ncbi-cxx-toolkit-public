@@ -447,22 +447,22 @@ private:
     void x_SetAlgoOpts(void);
     
     /// Set an integer parameter (not used yet).
-    /// @param name Name of option.
+    /// @param field CBlast4Field object corresponding to option.
     /// @param value Pointer to integer value to use.
     void x_SetOneParam(objects::CBlast4Field & field, const int * value);
     
     /// Set a list of integers.
-    /// @param name Name of option.
+    /// @param field CBlast4Field object corresponding to option.
     /// @param value Pointer to list of integers to use.
     void x_SetOneParam(objects::CBlast4Field & field, const list<int> * value);
     
     /// Set a string parameter.
-    /// @param name Name of option.
+    /// @param field CBlast4Field object corresponding to option.
     /// @param value Pointer to pointer to null delimited string.
     void x_SetOneParam(objects::CBlast4Field & field, const char ** value);
 
     /// Set a masking location for query
-    /// @param value masking location [in]
+    /// @param mask masking location [in]
     void x_SetOneParam(objects::CBlast4Field & field, CRef<objects::CBlast4_mask> mask);
     
     /// Determine what state the search is in.
@@ -537,6 +537,7 @@ private:
                        string                           & errors,    // out
                        string                           & warnings); // out
     
+    /// Fetch the request info (wait for completion if necessary).
     void x_GetRequestInfo();
     
     /// Set the masking locations AFTER the queries have been set in the 
@@ -559,6 +560,19 @@ private:
                           const TValueList             & L,
                           struct SInteractingOptions   & io);
     
+    /// Adjust the EProgram based on option values.
+    ///
+    /// The blast4 protocol uses a notion of program and service to
+    /// represent the type of search to do.  However, for some values
+    /// of program and service, it is necessary to look at options
+    /// values in order to determine the precise EProgram value.  This
+    /// is particularly true when dealing with discontiguous megablast
+    /// for example.
+    ///
+    /// @param L The list of options used for this search.
+    /// @param pstr The program string used by the blast4 protocol.
+    /// @param program The EProgram suggested by program+service.
+    /// @return The EProgram value as adjusted by options.
     EProgram x_AdjustProgram(const TValueList & L,
                              const string     & pstr,
                              EProgram           program);
@@ -665,7 +679,7 @@ public:
     /// handle required.
     ///
     /// @param program Blast4 program string (e.g. blastn or blastp).
-    /// @param program Blast4 service string (e.g. plain or rpsblast).
+    /// @param service Blast4 service string (e.g. plain or rpsblast).
     CBlastOptionsBuilder(const string & program,
                          const string & service);
     
@@ -704,24 +718,35 @@ public:
     list<int> GetGiList();
     
 private:
+    /// Optional-value idiom.
+    ///
+    /// This template defines both a value type and a flag to indicate
+    /// whether that value type has been set.  Rather than require the
+    /// designer to choose out-of-range values that indicate an unset
+    /// condition for each field, this design encodes this information
+    /// directly.  It is parameterized on the type of data to store.
     template<typename T>
     class SOptional {
     public:
+        /// Constructor.
         SOptional()
             : m_IsSet(false), m_Value(T())
         {
         }
         
+        /// Check whether the value has been set.
         bool Have()
         {
             return m_IsSet;
         }
         
+        /// Get the value.
         T Get()
         {
             return m_Value;
         }
         
+        /// Assign the field from another optional field.
         SOptional<T> & operator=(const T & x)
         {
             m_IsSet = true;
@@ -730,35 +755,91 @@ private:
         }
         
     private:
+        /// True if the value has been specified.
         bool m_IsSet;
+        
+        /// The value itself, valid only if m_IsSet is true.
         T    m_Value;
     };
     
+    /// Compute the EProgram value to use for this search.
+    ///
+    /// The blast4 protocol uses a notion of program and service to
+    /// represent the type of search to do.  This method computes the
+    /// EProgram value corresponding to these strings.  Sometimes this
+    /// result should be modified based on the value of other options.
+    /// @sa x_AdjustProgram.
+    ///
+    /// @param program The program string used by blast4.
+    /// @param service The service string used by blast4.
+    /// @return The EProgram value corresponding to these strings.
     EProgram x_ComputeProgram(const string & program,
                               const string & service);
     
+    /// Adjust the EProgram based on option values.
+    ///
+    /// The blast4 protocol uses a notion of program and service to
+    /// represent the type of search to do.  However, for some values
+    /// of program and service, it is necessary to look at options
+    /// values in order to determine the precise EProgram value.  This
+    /// is particularly true when dealing with discontiguous megablast
+    /// for example.
+    ///
+    /// @param L The list of options used for this search.
+    /// @param program The EProgram suggested by program+service.
+    /// @return The EProgram value as adjusted by options.
     EProgram
     x_AdjustProgram(const TValueList & L,
                     EProgram           program);
     
+    /// Apply values directly to BlastOptions object.
+    ///
+    /// This function applies the values of certain blast4 parameter
+    /// list options to the BlastOptions object.  It is called after
+    /// all other options are set.  This design allows options which
+    /// interact with each other to be handled as a group.
+    ///
+    /// @param boh Blast options handle.
     void x_ApplyInteractions(CBlastOptionsHandle & boh);
     
+    /// Apply the value of one option to the CBlastOptionsHandle.
+    /// @param opts The blast options handle.
+    /// @param p The parameter to apply to the options handle.
     void x_ProcessOneOption(CBlastOptionsHandle        & opts,
                             objects::CBlast4_parameter & p);
     
+    /// Apply the value of all options to the CBlastOptionsHandle.
+    ///
+    /// A list of blast4 parameters is used to configure the provided
+    /// CBlastOptionsHandle object.
+    ///
+    /// @param opts The blast options handle.
+    /// @param L The list of parameters to add to the options.
     void x_ProcessOptions(CBlastOptionsHandle & opts,
-                        const TValueList    & L);
+                          const TValueList    & L);
     
+    /// Program value for blast4 protocol.
     string m_Program;
+    
+    /// Service value for blast4 protocol.
     string m_Service;
-    bool   m_PerformCulling;
-    int    m_HspRangeMax;
     
-    // Specific option values and 'set-ness'.
+    /// Whether to perform culling.
+    bool m_PerformCulling;
     
+    /// How much culling to do.
+    int m_HspRangeMax;
+    
+    /// The entreq query to use (or none).
     SOptional<string>      m_EntrezQuery;
+    
+    /// The first OID to process (or none).
     SOptional<int>         m_FirstDbSeq;
+    
+    /// The last OID to process (or none).
     SOptional<int>         m_FinalDbSeq;
+    
+    /// The GI list (or none).
     SOptional< list<int> > m_GiList;
 };
 

@@ -745,7 +745,8 @@ void CRemoteBlast::x_SetAlgoOpts(void)
 }
 
 // the "int" version is not actually used (no program options need it.)
-void CRemoteBlast::x_SetOneParam(CBlast4Field & field, const int * x)
+void CRemoteBlast::x_SetOneParam(objects::CBlast4Field & field,
+                                 const int * x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetInteger(*x);
@@ -758,7 +759,8 @@ void CRemoteBlast::x_SetOneParam(CBlast4Field & field, const int * x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(CBlast4Field & field, CRef<objects::CBlast4_mask> mask)
+void CRemoteBlast::x_SetOneParam(objects::CBlast4Field & field,
+                                 CRef<objects::CBlast4_mask> mask)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetQuery_mask(*mask);
@@ -772,7 +774,8 @@ void CRemoteBlast::x_SetOneParam(CBlast4Field & field, CRef<objects::CBlast4_mas
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(CBlast4Field & field, const list<int> * x)
+void CRemoteBlast::x_SetOneParam(objects::CBlast4Field & field,
+                                 const list<int> * x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetInteger_list() = *x;
@@ -785,7 +788,8 @@ void CRemoteBlast::x_SetOneParam(CBlast4Field & field, const list<int> * x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(CBlast4Field & field, const char ** x)
+void CRemoteBlast::x_SetOneParam(objects::CBlast4Field & field,
+                                 const char ** x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetString().assign((x && (*x)) ? (*x) : "");
@@ -1232,6 +1236,19 @@ x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
     return request;
 }
 
+/// Process error messages from a reply object.
+///
+/// Every reply object from blast4 has a space for error and warning
+/// messages.  This function extracts such messages and returns them
+/// to the user in two strings.  All warnings are returned in one
+/// string, concatenated together with a newline as the delimiter, and
+/// all error messages are concatenated together in another string in
+/// the same way.  If there are no warnings or errors, the resulting
+/// strings will be empty.
+///
+/// @param reply The reply object from blast4.
+/// @param errors Concatenated error messages (if any).
+/// @param warnings Concatenated warning messages (if any).
 static void
 s_ProcessErrorsFromReply(CRef<objects::CBlast4_reply> reply, 
                          string& errors, 
@@ -1603,8 +1620,9 @@ CBlastOptionsBuilder::x_ComputeProgram(const string & program,
     return ProgramNameToEnum(p);
 }
 
-void CBlastOptionsBuilder::x_ProcessOneOption(CBlastOptionsHandle & opts,
-                                              CBlast4_parameter   & p)
+void CBlastOptionsBuilder::
+x_ProcessOneOption(CBlastOptionsHandle        & opts,
+                   objects::CBlast4_parameter & p)
 {
     const CBlast4_value & v = p.GetValue();
     
@@ -1835,7 +1853,7 @@ CBlastOptionsBuilder::x_ProcessOptions(CBlastOptionsHandle & opts,
 void CBlastOptionsBuilder::x_ApplyInteractions(CBlastOptionsHandle & boh)
 {
     CBlastOptions & bo = boh.SetOptions();
-        
+    
     if (m_PerformCulling) {
         bo.SetCullingLimit(m_HspRangeMax);
     }

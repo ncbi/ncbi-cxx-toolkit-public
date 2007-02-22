@@ -135,6 +135,14 @@ CRemoteBlast & CRemoteSeqSearch::x_RemoteBlast()
     return *m_RemoteBlast;
 }
 
+/// Build a result set from results in a remote blast search.
+///
+/// The remote blast object will be queried for results and these will
+/// be used to build a CSearchResultSet.  If the search has not yet
+/// completed, this function will wait until it has.
+///
+/// @param rb The remote blast object representing the search.
+/// @return The results of the search as a CSearchResultSet.
 static CSearchResultSet
 s_BuildResultsRemote(CRemoteBlast & rb);
 

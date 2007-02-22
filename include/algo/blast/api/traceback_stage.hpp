@@ -56,46 +56,50 @@ class IBlastSeqInfoSrc;
 class NCBI_XBLAST_EXPORT CBlastTracebackSearch : public CObject
 {
 public:
-    // Create a BlastSeqSrc wrapping the provided CSeqDB object.
+    /// Create a BlastSeqSrc wrapping the provided CSeqDB object.
     CBlastTracebackSearch(CRef<IQueryFactory>     qf,
                           CRef<CBlastOptions>     opts,
                           CRef<CSeqDB>            dbinfo,
                           CRef<TBlastHSPStream>   hsps,
                           CConstRef<objects::CPssmWithParameters> pssm = null);
     
-    // Create a BlastSeqSrc using a new constructed CSeqDB.
+    /// Create a BlastSeqSrc using a new constructed CSeqDB.
     CBlastTracebackSearch(CRef<IQueryFactory>     qf,
                           CRef<CBlastOptions>     opts,
                           const CSearchDatabase & dbinfo,
                           CRef<TBlastHSPStream>   hsps);
     
-    // We don't own the IBlastSeqSrcAdapter.
+    
+    /// Create a BlastSeqSrc using an IBlastSeqSrcAdapter.
+    /// @note We don't own the IBlastSeqSrcAdapter.
     CBlastTracebackSearch(CRef<IQueryFactory>   qf,
                           CRef<CBlastOptions>   opts,
                           IBlastSeqSrcAdapter & db,
                           CRef<TBlastHSPStream> hsps);
     
-    // We don't own the BlastSeqSrc
+    /// Create a BlastSeqSrc using an IBlastSeqSrcAdapter.
+    /// @note We don't own the BlastSeqSrc
     CBlastTracebackSearch(CRef<IQueryFactory>   qf,
                           CRef<CBlastOptions>   opts,
                           BlastSeqSrc         * seqsrc,
                           CRef<TBlastHSPStream> hsps);
     
-    /// Use the internal data and return value of the preliminary search to
-    /// proceed with the traceback.
+    /// Use the internal data and return value of the preliminary
+    /// search to proceed with the traceback.
     CBlastTracebackSearch(CRef<IQueryFactory> query_factory,
                           CRef<SInternalData> internal_data,
                           const CBlastOptions& opts,
                           const IBlastSeqInfoSrc& seqinfo_src,
                           TSearchMessages& search_msgs);
     
-    // is this enough? 
+    /// Destructor.
     virtual ~CBlastTracebackSearch();
     
+    /// Run the traceback search.
     CSearchResultSet Run();
-
-    /// Specifies how the Seq-align-set returned as part of the results if
-    /// formatted.
+    
+    /// Specifies how the Seq-align-set returned as part of the
+    /// results is formatted.
     void SetResultType(EResultType type);
 
     /// Sets the m_DBscanInfo field.
@@ -115,9 +119,16 @@ private:
     
     // C++ data
     
+    /// The query to search for.
     CRef<IQueryFactory>             m_QueryFactory;
+
+    /// The options with which this search is configured.
     CRef<CBlastOptions>             m_Options;
+    
+    /// Fields and data from the preliminary search.
     CRef<SInternalData>             m_InternalData;
+    
+    /// Options from the preliminary search.
     const CBlastOptionsMemento*     m_OptsMemento; // the options memento...
     
     /// Warnings and Errors
@@ -126,18 +137,21 @@ private:
     // Wrapped C objects
     
     // The output of traceback, I think...
+    
+    /// The data resulting from the traceback phase.
     CRef< CStructWrapper<BlastHSPResults> > m_HspResults;
-
+    
     /// Pointer to the IBlastSeqInfoSrc object to use to generate the
     /// Seq-aligns
     IBlastSeqInfoSrc* m_SeqInfoSrc;
+    
     /// True if the field above must be deleted by this class, false otherwise
     bool m_OwnSeqInfoSrc;
-
+    
     /// Determines if BLAST database search or BLAST 2 sequences style of
     /// results should be produced
     EResultType m_ResultType;
-
+    
     /// Tracks information from database scanning phase.  Right now only used
     /// for the number of occurrences of a pattern in phiblast run.
     CRef<SDatabaseScanData> m_DBscanInfo;
