@@ -2726,7 +2726,7 @@ CFileDiagHandler::~CFileDiagHandler(void)
 
 bool s_CanOpenLogFile(const string& file_name)
 {
-    CDirEntry entry(file_name);
+    CDirEntry entry(CDirEntry::CreateAbsolutePath(file_name));
     if ( !entry.Exists() ) {
         // Use directory instead, must be writable
         string dir = entry.GetDir();
@@ -2736,7 +2736,7 @@ bool s_CanOpenLogFile(const string& file_name)
         }
     }
     // Need at least 20K of free space to write logs
-    if (CFileUtil::GetFreeDiskSpace(file_name) < 1024*20) {
+    if (CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20) {
         return false;
     }
     CDirEntry::TMode mode = 0;
