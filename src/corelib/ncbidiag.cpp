@@ -677,10 +677,9 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
             // Start stopwatch
             CStopWatch* sw = s_GetRequestStopWatchTls().GetValue();
             if ( !sw ) {
-                sw = new CStopWatch;
+                sw = new CStopWatch(CStopWatch::eStart);
                 s_GetRequestStopWatchTls().
                     SetValue(sw, RequestStopWatchTlsCleanup);
-                sw->Start();
             }
             else {
                 sw->Restart();
@@ -2738,9 +2737,11 @@ bool s_CanOpenLogFile(const string& file_name)
         }
     }
     // Need at least 20K of free space to write logs
+    /*
     if (CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20) {
         return false;
     }
+    */
     CDirEntry::TMode mode = 0;
     return entry.GetMode(&mode)  &&  (mode & CDirEntry::fWrite) != 0;
 }
