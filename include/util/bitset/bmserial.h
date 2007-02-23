@@ -113,13 +113,15 @@ enum serialization_header_mask {
     BM_HM_DEFAULT = 1,
     BM_HM_RESIZE  = (1 << 1), // resized vector
     BM_HM_ID_LIST = (1 << 2), // id list stored
-    BM_HM_NO_BO   = (1 << 3)  // no byte-order
+    BM_HM_NO_BO   = (1 << 3), // no byte-order
+    BM_HM_NO_GAPL = (1 << 4)  // no GAP levels
 };
 
 
 /// Bit mask flags for serialization algorithm
 enum serialization_flags {
-    BM_NO_BYTE_ORDER = 1      ///< save no byte-order info (save some space)
+    BM_NO_BYTE_ORDER = 1,       ///< save no byte-order info (save some space)
+    BM_NO_GAP_LENGTH = (1 << 1) ///< save no GAP info (save some space)
 };
 
 /*!
@@ -187,6 +189,10 @@ unsigned serialize(const BV& bv,
     if (serialization_flags & BM_NO_BYTE_ORDER) 
         header_flag |= BM_HM_NO_BO;
 
+    if (serialization_flags & BM_NO_GAP_LENGTH) 
+        header_flag |= BM_HM_NO_GAPL;
+
+
     enc.put_8(header_flag);
 
     if (!(serialization_flags & BM_NO_BYTE_ORDER))
@@ -198,7 +204,10 @@ unsigned serialize(const BV& bv,
     unsigned i,j;
 
     // keep GAP levels information
-    enc.put_16(bman.glen(), bm::gap_levels);
+    if (!(serialization_flags & BM_NO_GAP_LENGTH))
+    {
+        enc.put_16(bman.glen(), bm::gap_levels);
+    }
 
     // save size (only if bvector has been down-sized)
     if (header_flag & BM_HM_RESIZE) 
@@ -726,11 +735,14 @@ unsigned deserializer<BV, DEC>::deserialize(bvector_type&        bv,
 
     unsigned i;
 
-    gap_word_t glevels[bm::gap_levels];
-    // keep GAP levels information
-    for (i = 0; i < bm::gap_levels; ++i)
+    if (!(header_flag & BM_HM_NO_GAPL)) 
     {
-        glevels[i] = dec.get_16();
+        gap_word_t glevels[bm::gap_levels];
+        // read GAP levels information
+        for (i = 0; i < bm::gap_levels; ++i)
+        {
+            glevels[i] = dec.get_16();
+        }
     }
 
     if (header_flag & (1 << 1))
@@ -1139,11 +1151,14 @@ serial_stream_iterator<DEC>::serial_stream_iterator(const unsigned char* buf)
     }
     else
     {
-        unsigned i;
-        // keep GAP levels info
-        for (i = 0; i < bm::gap_levels; ++i)
+        if (!(header_flag & BM_HM_NO_GAPL)) 
         {
-            glevels_[i] = decoder_.get_16();
+            unsigned i;
+            // keep GAP levels info
+            for (i = 0; i < bm::gap_levels; ++i)
+            {
+                glevels_[i] = decoder_.get_16();
+            }
         }
 
         if (header_flag & (1 << 1))
