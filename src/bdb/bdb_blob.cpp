@@ -114,7 +114,7 @@ CBDB_BLobFile::ReadRealloc(TBuffer& buffer)
             // check if we have insufficient buffer
             if (ex.IsBufferSmall() || ex.IsNoMem()) {
                 // increase the buffer and re-read
-                buffer.resize(LobSize());
+                buffer.resize_mem(LobSize());
             } else {
                 throw;
             }
@@ -594,99 +594,4 @@ void CBDB_LobFile::SetCmp(DB*)
     BDB_CHECK(ret, 0);
 }
 
-
 END_NCBI_SCOPE
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.29  2006/11/30 14:16:11  kuznets
- * Removed buf_size parameter (ReadRealloc()) size passed as vector property
- *
- * Revision 1.28  2006/11/30 12:42:08  dicuccio
- * Standardize buffer handling around CBDB_RawFile::TBuffer, a typedef for
- * vector<unsigned char>
- *
- * Revision 1.27  2006/11/30 11:09:21  kuznets
- * Tweaked buffer read to resize vector to full capacity
- *
- * Revision 1.26  2006/11/14 13:27:38  dicuccio
- * Use field widths in comparators
- *
- * Revision 1.25  2006/03/28 16:37:28  kuznets
- * +ReadRealloc()
- *
- * Revision 1.24  2006/01/13 14:42:44  vasilche
- * Fixed comparison in assert() call.
- *
- * Revision 1.23  2005/12/14 19:26:42  kuznets
- * Added support for queue db type
- *
- * Revision 1.22  2005/09/19 13:02:41  dicuccio
- * Add fag to permit duplicate keys in a BLob file
- *
- * Revision 1.21  2004/12/28 16:45:44  kuznets
- * +CBDB_BlobFile::UpdateInsert()
- *
- * Revision 1.20  2004/12/07 16:09:17  kuznets
- * Compatibility changes (berkelye db v4.3)
- *
- * Revision 1.19  2004/07/14 20:00:30  rotmistr
- * InsertUpdate added
- *
- * Revision 1.18  2004/06/04 16:10:32  kuznets
- * Fixed bug with byteswapping when writin/reading LOBs
- *
- * Revision 1.17  2004/05/17 20:55:11  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.16  2004/03/12 15:08:04  kuznets
- * Removed unnecessary DB_NODUPDATA flag (db->put)
- *
- * Revision 1.15  2003/12/29 17:06:24  kuznets
- * +CBDB_BlobStream::SetTransaction()
- *
- * Revision 1.14  2003/12/29 16:52:29  kuznets
- * Added transaction support for BLOB stream
- *
- * Revision 1.13  2003/10/24 13:40:32  kuznets
- * Implemeneted PendingCount
- *
- * Revision 1.12  2003/09/29 16:44:56  kuznets
- * Reimplemented SetCmp to fix cross-platform byte swapping bug
- *
- * Revision 1.11  2003/09/29 16:27:06  kuznets
- * Cleaned up 64-bit compilation warnings
- *
- * Revision 1.10  2003/09/26 18:48:30  kuznets
- * Removed dead SetCmp function
- *
- * Revision 1.9  2003/09/17 18:18:42  kuznets
- * Implemented BLOB streaming
- *
- * Revision 1.8  2003/07/02 17:55:34  kuznets
- * Implementation modifications to eliminated direct dependency from <db.h>
- *
- * Revision 1.7  2003/06/10 20:08:27  kuznets
- * Fixed function names.
- *
- * Revision 1.6  2003/05/09 13:44:57  kuznets
- * Fixed a bug in cursors based on BLOB storage
- *
- * Revision 1.5  2003/05/08 13:43:40  kuznets
- * Bug fix.
- *
- * Revision 1.4  2003/05/05 20:15:32  kuznets
- * Added CBDB_BLobFile
- *
- * Revision 1.3  2003/04/29 19:07:22  kuznets
- * Cosmetics..
- *
- * Revision 1.2  2003/04/28 14:51:55  kuznets
- * #include directives changed to conform the NCBI policy
- *
- * Revision 1.1  2003/04/24 16:34:30  kuznets
- * Initial revision
- *
- * ===========================================================================
- */

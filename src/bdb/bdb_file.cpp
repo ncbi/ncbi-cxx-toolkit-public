@@ -1204,7 +1204,7 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
         // record has been deleted
         return eBDB_KeyEmpty;
     case DB_BUFFER_SMALL:
-        buf->resize(m_DBT_Data->size);
+        buf->resize_mem(m_DBT_Data->size);
         return this->ReadCursor(dbc, DB_CURRENT, buf);
         break;       
     } // switch
