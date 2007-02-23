@@ -261,11 +261,6 @@ void SLockedQueue::FlushTags(TNSTagMap& tag_map, CBDB_Transaction& trans)
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
         EBDB_ErrCode err = m_TagDb.ReadVector(it->second, bm::set_OR);
-        if (err != eBDB_NotFound) {
-            m_TagDb.key = it->first.first;
-            m_TagDb.val = it->first.second;
-            m_TagDb.Delete();
-        }
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
         it->second->optimize();
