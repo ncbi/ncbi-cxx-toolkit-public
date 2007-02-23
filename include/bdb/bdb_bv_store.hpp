@@ -628,8 +628,10 @@ CBDB_BvStore<TBV>::WriteVector(const TBitVector&  bv,
     if (st1.max_serialize_mem > m_Buffer.size()) {
         m_Buffer.resize_mem(st1.max_serialize_mem);
     }
-    size_t size = bm::serialize(*bv_to_store, &m_Buffer[0], 
-                                m_STmpBlock, bm::BM_NO_BYTE_ORDER);
+    size_t size = 
+        bm::serialize(*bv_to_store, &m_Buffer[0], 
+                      m_STmpBlock, 
+                      bm::BM_NO_BYTE_ORDER | bm::BM_NO_GAP_LENGTH);
     return UpdateInsert(&m_Buffer[0], size);
 }
 
