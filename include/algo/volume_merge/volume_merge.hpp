@@ -38,6 +38,7 @@
 #include <corelib/ncbimisc.hpp>
 
 #include <util/resource_pool.hpp>
+#include <util/simple_buffer.hpp>
 
 #include <vector>
 
@@ -59,7 +60,7 @@ public:
     /// merge algorithm interfaces
     /// Raw buffers are allocated/deallocated using one central 
     /// resource pool
-    typedef vector<unsigned char> TRawBuffer;
+    typedef CSimpleBuffer TRawBuffer;
 
     /// Memory manager for raw buffers to avoid unnecessary reallocations
     /// and memory fragmentation
