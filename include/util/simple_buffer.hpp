@@ -88,6 +88,30 @@ public:
         }
     }
 
+    /// Resize the buffer. No data preservation.
+    void resize_mem(size_type new_size)
+    {
+        if (new_size < m_Capacity) {
+            m_Size = new_size;
+        } else {
+            value_type* new_buffer = new value_type[new_size];
+            x_Deallocate();
+            m_Buffer = new_buffer;
+            m_Size = m_Capacity = new_size;
+        }
+    }
+
+    /// Reserve memory. No data preservation guarantees.
+    void reserve_mem(size_type new_size)
+    {
+        if (new_size > m_Capacity) {
+            value_type* new_buffer = new value_type[new_size];
+            x_Deallocate();
+            m_Buffer = new_buffer;
+            m_Capacity = new_size;
+        }
+    }
+
     void clear()
     {
         x_Deallocate();
