@@ -44,8 +44,9 @@ class CSimpleBuffer
 {
 public:
     typedef unsigned char value_type;
+    typedef size_t        size_type;
 public:
-    CSimpleBuffer(size_t size=0) 
+    CSimpleBuffer(size_type size=0) 
     {
         if (size) {
             m_Buffer = new value_type[size];
@@ -56,37 +57,65 @@ public:
     }
     ~CSimpleBuffer() { delete [] m_Buffer; }
 
-    size_t size() const { return m_Size; }
-    size_t capacity() const { return m_Capacity; }
+    size_type size() const { return m_Size; }
+    size_type capacity() const { return m_Capacity; }
 
-    void resize(size_t new_size)
+    void reserve(size_type new_size)
+    {
+        if (new_size > m_Capacity) {
+            value_type* new_buffer = new value_type[new_size];
+            if (m_Size) {
+                memcpy(new_buffer, m_Buffer, m_Size);
+            }
+            x_Deallocate();
+            m_Buffer = new_buffer;
+            m_Capacity = new_size;
+        }
+    }
+
+    void resize(size_type new_size)
     {
         if (new_size < m_Capacity) {
             m_Size = new_size;
         } else {
+            value_type* new_buffer = new value_type[new_size];
+            if (m_Size) {
+                memcpy(new_buffer, m_Buffer, m_Size);
+            }
             x_Deallocate();
-            m_Buffer = new value_type[new_size];
+            m_Buffer = new_buffer;
             m_Size = m_Capacity = new_size;
         }
     }
+
     void clear()
     {
         x_Deallocate();
-        m_Buffer = 0;
     }
 
-    value_type& operator[](size_t i) const { return m_Buffer[i]; }
-    value_type* data() { return m_Buffer; }
+    value_type& operator[](size_type i) const
+    {
+        _ASSERT(m_Buffer);
+        _ASSERT(i < m_Size);
+        return m_Buffer[i];
+    }
+    value_type* data()
+    {
+        _ASSERT(m_Buffer);
+        return m_Buffer;
+    }
+
 private:
     void x_Deallocate()
     {
         delete [] m_Buffer; 
+        m_Buffer = NULL;
         m_Size = m_Capacity = 0;
     }
 private:
     value_type* m_Buffer;
-    size_t      m_Size;
-    size_t      m_Capacity;
+    size_type      m_Size;
+    size_type      m_Capacity;
 };
 
 
