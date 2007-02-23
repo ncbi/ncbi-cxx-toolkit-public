@@ -616,7 +616,7 @@ CBDB_BvStore<TBV>::WriteVector(const TBitVector&  bv,
         m_TmpBVec.clear(true); // clear vector by memory deallocation
         m_TmpBVec = bv;
         m_TmpBVec.optimize();
-        m_TmpBVec.optimize_gap_size();
+        //m_TmpBVec.optimize_gap_size();
         bv_to_store = &m_TmpBVec;
     } else {
         bv_to_store = &bv;
@@ -626,7 +626,7 @@ CBDB_BvStore<TBV>::WriteVector(const TBitVector&  bv,
     bv_to_store->calc_stat(&st1);
 
     if (st1.max_serialize_mem > m_Buffer.size()) {
-        m_Buffer.resize(st1.max_serialize_mem);
+        m_Buffer.resize_mem(st1.max_serialize_mem);
     }
     size_t size = bm::serialize(*bv_to_store, &m_Buffer[0], 
                                 m_STmpBlock, bm::BM_NO_BYTE_ORDER);
@@ -645,7 +645,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadRealloc(TBitVector* bv,
         if (ex.IsBufferSmall() || ex.IsNoMem()) {
             // increase the buffer and re-read
             unsigned buf_size = LobSize();
-            m_Buffer.resize(buf_size);
+            m_Buffer.resize_mem(buf_size);
             err = Read(bv, clear_target_vec);
         } else {
             throw;
@@ -666,11 +666,11 @@ EBDB_ErrCode CBDB_BvStore<TBV>::Read(TBitVector*  bv,
                                      bool         clear_target_vec)
 {
     if (m_Buffer.size() < m_Buffer.capacity()) {
-        m_Buffer.resize(m_Buffer.size());
+        m_Buffer.resize_mem(m_Buffer.size());
     }	
 	else
     if (m_Buffer.size() == 0) {
-        m_Buffer.resize(16384);
+        m_Buffer.resize_mem(16384);
     }
 	
     void* p = &m_Buffer[0];
