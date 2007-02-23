@@ -680,9 +680,11 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                 sw = new CStopWatch;
                 s_GetRequestStopWatchTls().
                     SetValue(sw, RequestStopWatchTlsCleanup);
+                sw->Start();
             }
-            _ASSERT(sw);
-            sw->Start();
+            else {
+                sw->Restart();
+            }
             break;
         }
     case SDiagMessage::eEvent_Stop:
