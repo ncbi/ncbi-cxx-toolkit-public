@@ -344,7 +344,8 @@ unsigned serialize(const BV& bv,
         }
         else
         {
-            unsigned head_idx, tail_idx;
+            unsigned head_idx = 0;
+            unsigned tail_idx = 0;
             bit_find_head_tail(blk, &head_idx, &tail_idx);
 
             if (head_idx == (unsigned)-1) // zero block
