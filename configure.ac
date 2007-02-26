@@ -5206,10 +5206,6 @@ if test "$with_gbench" != "no"  -a  -d ${real_srcdir}/src/gui/gbench \
      reason="$reason${sep}OpenGL"
      sep=", "
    fi
-   if test "$with_sqlite" = "no"; then
-     reason="$reason${sep}SQLite"
-     sep=", "
-   fi
    if test "$with_bdb" = "no"; then
      reason="$reason${sep}Berkeley DB 4.3"
      sep=", "
