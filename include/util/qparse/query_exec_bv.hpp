@@ -148,9 +148,8 @@ protected:
             TBVContainer* arg_cont = this->GetContainer(*arg_node);
             if (!arg_cont) {
                 // no argument... 
-                if (op_code == bm::set_AND) {
+                if (op_code == bm::set_AND)
                     return; // no-op for an AND => 0
-                }
                 continue; // OR, SUB, etc is ok to continue
             }
             typename TBVContainer::TBuffer *arg_buf = arg_cont->GetBuffer();
@@ -158,6 +157,9 @@ protected:
             
             if (!bv_res) { // lazy init
                 TBVContainer* bv_cont = this->MakeContainer(qnode);
+                // the earliest chance to return empty set if op == AND
+                if (op_code == bm::set_AND)
+                    return;
                 if (arg_bv) {
                     bv_cont->SetBV(bv_res = new BV(*arg_bv));
                     continue;

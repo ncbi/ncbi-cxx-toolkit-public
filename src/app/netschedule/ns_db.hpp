@@ -132,7 +132,7 @@ struct SQueueDB : public CBDB_File
         BindData("err_msg", &err_msg, kNetScheduleMaxDBErrSize);
         BindData("progress_msg", &progress_msg, kNetScheduleMaxDBDataSize);
 
-        BindData("tags",  &tags);
+        // BindData("tags",  &tags); not used yet
     }
 };
 

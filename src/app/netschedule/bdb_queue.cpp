@@ -1485,6 +1485,7 @@ void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
             if (!m_Queue->ReadTag(key, val, buf.get())) {
                 // Signal empty set by setting empty bitvector
                 bv.reset(new TNSBitVector());
+                buf.reset(NULL);
             }
         }
     }
