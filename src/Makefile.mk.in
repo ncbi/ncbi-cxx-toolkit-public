@@ -163,8 +163,12 @@ MT_SFX = @MT_SFX@
 APP_OR_NULL = @APP_OR_NULL@
 
 ### DLL specifics
-# whether to build the lib as static or dynamic
-LIB_OR_DLL = @LIB_OR_DLL@
+# whether to build the lib as static or dynamic; valid settings
+# are lib, dll, both, $(USUAL_AND_DLL), and $(USUAL_AND_LIB).
+LIB_OR_DLL    = @LIB_OR_DLL@
+USUAL_AND_DLL = @USUAL_AND_DLL@
+USUAL_AND_LIB = @USUAL_AND_LIB@
+
 # library name suffix; either "-static" or empty
 STATIC     = @STATIC@
 # hard-coded; use only for "LIB_OR_DLL = both" libraries!
@@ -182,6 +186,9 @@ ALLOW_UNDEF     = @ALLOW_UNDEF@
 FORBID_UNDEF    = @FORBID_UNDEF@
 DLL_UNDEF_FLAGS = $(ALLOW_UNDEF)
 LDFLAGS_DLL     = $(LDFLAGS) $(DLL_UNDEF_FLAGS)
+
+# Alternate DLL_LIB setting to use when configured --with-dll.
+DLL_DLIB = $(DLL_LIB)
 
 ### To enable extra, potentially unsafe, optimization, use these flags
 ### INSTEAD of $(ORIG_*FLAGS).

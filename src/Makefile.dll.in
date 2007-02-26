@@ -6,9 +6,12 @@
 # a single shared(DLL) library [LIB] made of object files [SRC] and [OBJ]
 # where [SRC].o will be automagically compiled from [SRC].cpp or
 # [SRC].c, and [OBJ].o must be already compiled by this time.
-# The following libs will be used to resolve external referencies:
-#   [DLL_LIB]  -- libs located in the NCBI C++ "lib/" dir;
-#   [DLL_LIBS] -- 3rd-party libs
+# The following libs will be used to resolve external references:
+#   [DLL_LIB] or [DLL_DLIB] -- libs located in the NCBI C++ "lib/" dir;
+#   [LIBS]                  -- 3rd-party libs
+#
+# The library will be linked against DLL_DLIB in --with-dll configurations
+# (and --with-gbench configurations) and DLL_LIB otherwise.
 #
 ################
 ## Example of usage:
@@ -48,8 +51,9 @@ XOBJ          = $(OBJ:=@obj_ext@)
 XDLL          = $(LIB:%=@lib_pre@%@dll_ext@)
 XDLL_LOADABLE = $(LIB:%=@lib_pre@%@loadable_ext@)
 XDLLDEP       = .$(LIB).dep
-XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
-XDLL_LIBDEP = $(DLL_LIB:%=$(status_dir)/.%.dep)
+XDLL_LIBS     = @DLL_LIB_SETTING@
+XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
+XDLL_LIBDEP = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 
 $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL)

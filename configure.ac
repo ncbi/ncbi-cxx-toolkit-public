@@ -1313,12 +1313,20 @@ else
    esac
 fi
 
-if test "$LIB_OR_DLL" = "dll"; then
-   STATIC=
-else
-   STATIC="-static"
-fi
+DLL_LIB_SETTING='$(DLL_DLIB)'
+STATIC="-static"
+USUAL_AND_DLL=both
+USUAL_AND_LIB=both
+
+case "$LIB_OR_DLL" in
+   dll) USUAL_AND_DLL=dll; STATIC= ;;
+   lib) USUAL_AND_LIB=lib; DLL_LIB_SETTING='$(DLL_LIB)' ;;
+esac
+
+AC_SUBST(DLL_LIB_SETTING)
 AC_SUBST(STATIC)
+AC_SUBST(USUAL_AND_DLL)
+AC_SUBST(USUAL_AND_LIB)
 
 
 #### GNU compiler::  common flags and definitions
