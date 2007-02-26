@@ -2737,11 +2737,13 @@ bool s_CanOpenLogFile(const string& file_name)
         }
     }
     // Need at least 20K of free space to write logs
-    /*
-    if (CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20) {
-        return false;
+    try {
+        if (CFileUtil::GetFreeDiskSpace(entry.GetDir()) < 1024*20) {
+            return false;
+        }
     }
-    */
+    catch (CException) {
+    }
     CDirEntry::TMode mode = 0;
     return entry.GetMode(&mode)  &&  (mode & CDirEntry::fWrite) != 0;
 }
