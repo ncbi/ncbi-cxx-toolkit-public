@@ -76,8 +76,6 @@ void AddFunc_Arg(void*                   parm,
     }
 }
 
-
-
 %}
 
 %pure_parser   /* Reentrant parser */
@@ -85,6 +83,9 @@ void AddFunc_Arg(void*                   parm,
 %token IDENT
 %token STRING
 %token NUM_INT
+%token SELECT
+%token FROM
+%token WHERE
 
 
 %left AND
@@ -110,13 +111,72 @@ void AddFunc_Arg(void*                   parm,
 
 input :
     exp
-/*    
-    {
-        CQueryParserEnv* env = (CQueryParserEnv*)parm;
-        env->SetParseTree($1);
-    }
-*/    
+    | select_clause
 ;
+
+
+
+select_clause :
+    /* select clause */
+    SELECT obj_list FROM obj_list opt_where
+    {
+    CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+        
+    $1->MoveSubnodes($2);    
+    $1->InsertNode($1->SubNodeBegin(), $2);    
+        
+    
+    $1->AddNode($3);
+    $3->MoveSubnodes($4);
+    $3->InsertNode($3->SubNodeBegin(), $4);    
+    if ($5) {
+        $1->AddNode($5);
+    }
+    
+    env->ForgetPoolNode($1);
+    env->ForgetPoolNode($2);
+    env->ForgetPoolNode($3);
+    env->ForgetPoolNode($4);
+    env->ForgetPoolNode($5);
+    
+    env->SetSELECT_Context(0);
+    env->SetFROM_Context(0);
+    
+    $$ = $1;
+    env->AttachQueryTree($$);
+    
+    }
+;
+
+opt_where :
+    /* empty */
+    {
+    $$=0;
+    }
+    |
+    WHERE exp
+    {
+    CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
+    $1->AddNode($2);
+    env->ForgetPoolNode($2);
+    $$ = $1;
+    }
+;
+
+obj_list:
+    scalar_value
+    {
+        $$ = $1;
+    }    
+    | obj_list ',' scalar_value
+    {
+        $$ = $1;
+        CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);        
+        $$->AddNode($3);
+        env->ForgetPoolNode($3);
+    }    
+;
+
 
 scalar_value :
     /* integer constant */
@@ -147,6 +207,14 @@ scalar_list:
         AddFunc_Arg(parm, $3);
     }    
 ;
+
+/* IN sub-expression */
+in_sub_expr:
+    scalar_list
+    |
+    select_clause
+;
+
 exp :
     scalar_value
     {
@@ -244,7 +312,7 @@ exp :
         QTreeAddNode(parm, $$ = $2, $1, $3);
     }
     /* IN */
-    | scalar_value IN '(' scalar_list ')'
+    | scalar_value IN '(' in_sub_expr ')'
     {
         $$ = $2;
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);
