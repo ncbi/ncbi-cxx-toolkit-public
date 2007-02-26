@@ -81,7 +81,7 @@ CreateMakefile_Lib()
   lib_name="$5"
 
   case "$proj_type/$proj_subtype" in
-   lib/*)
+   lib/?*)
      src="${lib_name}__ ${lib_name}___"
      cat > $user_makefile <<EOF
 #
@@ -381,7 +381,7 @@ old_proj_name=${proj_subtype}_sample
 
 case "$proj_type" in
   lib )
-    CreateMakefile_Lib $makefile_name $proj_name $proj_subtype ;;
+    CreateMakefile_Lib $makefile_name $proj_name '' "$proj_subtype" $proj_name ;;
   app )
     CreateMakefile_App $makefile_name $proj_name $proj_subdir $proj_subtype $proj_name $old_proj_name ;;
   * )
