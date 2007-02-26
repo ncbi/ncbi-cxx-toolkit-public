@@ -373,6 +373,7 @@ special  CAI61342-CAI61347  embl_tpa_prot
 special  CAI77244-CAI77245  embl_tpa_prot
 special  CAI77247           embl_tpa_prot
 special  CAI84981-CAI85013  embl_tpa_prot
+special  CAI96537           embl_tpa_prot
 special  CAI99158-CAI99163  embl_tpa_prot
 special  CAI99872           embl_tpa_prot
 special  CAJ00225-CAJ00252  embl_tpa_prot
@@ -383,6 +384,7 @@ special  CAJ30481-CAJ30484  embl_tpa_prot
 special  CAJ31324           embl_tpa_prot
 special  CAJ33891           embl_tpa_prot
 special  CAJ43786-CAJ43809  embl_tpa_prot
+special  CAJ43920           embl_tpa_prot
 special  CAJ55345           embl_tpa_prot
 special  CAJ55730-CAJ55733  embl_tpa_prot
 special  CAJ55745-CAJ55747  embl_tpa_prot
