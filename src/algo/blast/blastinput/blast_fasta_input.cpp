@@ -55,7 +55,7 @@ USING_SCOPE(objects);
 
 CBlastFastaInputSource::CBlastFastaInputSource(CObjectManager& objmgr,
                                                CNcbiIstream& infile,
-                                               ENa_strand strand,
+                                               objects::ENa_strand strand,
                                                bool lowercase,
                                                bool believe_defline,
                                                TSeqPos from,
@@ -77,7 +77,7 @@ CBlastFastaInputSource::End()
 
 CRef<CSeq_loc>
 CBlastFastaInputSource::x_FastaToSeqLoc(
-                         vector< CConstRef<CSeq_loc> > *lcase_mask,
+                         vector< CConstRef<objects::CSeq_loc> > *lcase_mask,
                          bool* query_is_protein)
 {
     CRef<CSeq_entry> seq_entry;
