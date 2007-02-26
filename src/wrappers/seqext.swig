@@ -202,6 +202,7 @@ objmgr/seq_feat_handle.hpp
 objmgr/seq_graph_handle.hpp
 objects/seq/seq_id_handle.hpp
 objects/seq/seq_id_mapper.hpp
+objects/seq/seq_loc_mapper_base.hpp
 objmgr/seq_loc_mapper.hpp
 objmgr/seq_map.hpp
 objmgr/seq_map_ci.hpp
