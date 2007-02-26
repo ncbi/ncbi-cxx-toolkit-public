@@ -668,7 +668,9 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             const CSeq_align::C_Segs::TDisc& disc =
                 align.GetSegs().GetDisc();
             ITERATE ( CSeq_align_set::Tdata, it, disc.Get() ) {
-                x_ProcessAlign(hrmaps, **it, 0);
+                x_ProcessAlign(hrmaps, **it, loc_index_shift);
+                // loc_index_shift += (*it)->GetDim();
+                loc_index_shift = hrmaps.size();
             }
             break;
         }
