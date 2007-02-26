@@ -433,8 +433,10 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_VarChar : public CDB_String
 {
 public:
+    enum { kMaxVarCharSize = 8000 + 1 };
+
     // constructors
-    CDB_VarChar();
+    CDB_VarChar(void);
     CDB_VarChar(const string& s,
                 EEncoding enc = eEncoding_Unknown);
     CDB_VarChar(const char* s,
@@ -466,7 +468,7 @@ public:
 
 protected:
     size_t m_Size;
-    char   m_Val[256];
+    char   m_Val[kMaxVarCharSize];
 };
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Char : public CDB_String

@@ -137,10 +137,10 @@ EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
     case CS_VARBINARY_TYPE:
     case CS_BINARY_TYPE:        return eDB_VarBinary;
     case CS_BIT_TYPE:           return eDB_Bit;
-    // case CS_CHAR_TYPE:      return eDB_VarChar;
-    // Char/Varchar may be longer than 255 characters ...
     case CS_VARCHAR_TYPE:
-    case CS_CHAR_TYPE:          return eDB_LongChar;
+    case CS_CHAR_TYPE:          return eDB_VarChar;
+    // Char/Varchar may be longer than 255 characters ...
+//     case CS_CHAR_TYPE:          return eDB_LongChar;
     case CS_DATETIME_TYPE:      return eDB_DateTime;
     case CS_DATETIME4_TYPE:     return eDB_SmallDateTime;
     case CS_TINYINT_TYPE:       return eDB_TinyInt;
