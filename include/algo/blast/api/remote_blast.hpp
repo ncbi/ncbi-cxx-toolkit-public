@@ -462,6 +462,7 @@ private:
     void x_SetOneParam(objects::CBlast4Field & field, const char ** value);
 
     /// Set a masking location for query
+    /// @param field CBlast4Field object corresponding to option.
     /// @param mask masking location [in]
     void x_SetOneParam(objects::CBlast4Field & field, CRef<objects::CBlast4_mask> mask);
     
