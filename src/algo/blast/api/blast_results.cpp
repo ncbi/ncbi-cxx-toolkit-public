@@ -51,8 +51,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CSearchResults::CSearchResults(CConstRef<CSeq_id> query,
-                               CRef<CSeq_align_set> align,
+CSearchResults::CSearchResults(CConstRef<objects::CSeq_id> query,
+                               CRef<objects::CSeq_align_set> align,
                                const TQueryMessages& errs,
                                CRef<CBlastAncillaryData> ancillary_data,
                                const TMaskedQueryRegions* query_masks)
@@ -136,6 +136,13 @@ CSearchResultSet::operator[](const objects::CSeq_id & ident)
     return CRef<CSearchResults>();
 }
 
+/// Find the first alignment in a set of blast results, and
+//  return the sequence identifier of the first sequence in the alignment.
+//  All alignments in the blast results are assumed to contain the
+//  same identifier
+// @param align_set The blast results
+// @return The collection of sequence ID's corresponding to the
+//         first sequence of the first alignment
 static CConstRef<CSeq_id>
 s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
 {
@@ -162,7 +169,7 @@ s_ExtractSeqId(CConstRef<CSeq_align_set> align_set)
     return retval;
 }
 
-CSearchResultSet::CSearchResultSet(vector< CConstRef<CSeq_id> > queries,
+CSearchResultSet::CSearchResultSet(TQueryIdVector               queries,
                                    TSeqAlignVector              aligns,
                                    TSearchMessages              msg_vec,
                                    TAncillaryVector             ancillary_data,
@@ -187,11 +194,11 @@ CSearchResultSet::CSearchResultSet(TSeqAlignVector aligns,
     x_Init(queries, aligns, msg_vec, ancillary_data, NULL);
 }
 
-void CSearchResultSet::x_Init(vector< CConstRef<CSeq_id> > queries,
-                              TSeqAlignVector              aligns,
-                              TSearchMessages              msg_vec,
-                              TAncillaryVector             ancillary_data,
-                              const TSeqLocInfoVector*     query_masks)
+void CSearchResultSet::x_Init(vector< CConstRef<objects::CSeq_id> > queries,
+                              TSeqAlignVector                    aligns,
+                              TSearchMessages                    msg_vec,
+                              TAncillaryVector                   ancillary_data,
+                              const TSeqLocInfoVector*           query_masks)
 {
     _ASSERT(aligns.size() == ancillary_data.size());
     _ASSERT(aligns.size() == msg_vec.size());
