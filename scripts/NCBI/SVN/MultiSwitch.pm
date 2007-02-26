@@ -8,9 +8,13 @@ use Carp qw(confess);
 
 use base qw(NCBI::SVN::Base);
 
-sub SwitchUsingMap
+sub new
 {
-    my ($Self, $MapFileName, $Repos, $WorkingDir) = @_;
+    my $Self = NCBI::SVN::Base::new(@_);
+
+    my ($MapFileName, $WorkingDir) = @$Self{qw(MapFileName WorkingDir)};
+
+    confess 'MapFileName parameter is missing' unless $MapFileName;
 
     my @SwitchPlan;
 
@@ -34,7 +38,16 @@ sub SwitchUsingMap
 
     close FILE;
 
-    for (@SwitchPlan)
+    $Self->{SwitchPlan} = \@SwitchPlan;
+
+    return $Self
+}
+
+sub SwitchUsingMap
+{
+    my ($Self, $Repos) = @_;
+
+    for (@{$Self->{SwitchPlan}})
     {
         my ($FromDir, $ToDir) = @$_;
 

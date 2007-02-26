@@ -13,6 +13,7 @@ BEGIN
 
 use lib $ScriptDir;
 
+use NCBI::SVN::Update;
 use NCBI::SVN::MultiSwitch;
 
 use File::Spec;
@@ -22,7 +23,7 @@ use Fcntl qw(F_SETFD);
 
 my $DefaultRepos = 'https://svn.ncbi.nlm.nih.gov/repos/toolkit';
 
-my $MultiSwitch = NCBI::SVN::MultiSwitch->new(MyName => $ScriptName);
+my $Update = NCBI::SVN::Update->new(MyName => $ScriptName);
 
 my @UnsafeVars = qw(PATH IFS CDPATH ENV BASH_ENV TERM);
 my %OldEnv;
@@ -172,33 +173,9 @@ EOF
     exit 0
 }
 
-sub FindSubversion
-{
-    my $Path = $OldEnv{PATH};
-    my ($Delim, $RE, $Program);
-
-    if ($Path !~ m/;/)
-    {
-        $Delim = ':';
-        $RE = qr/^([-\w.\/]+)$/o;
-        $Program = '/svn'
-    }
-    else
-    {
-        $Delim = ';';
-        $RE = qr/^((?:\w:)?[-\w .\\]+)$/o;
-        $Program = '\\svn.exe'
-    }
-
-    for $Path (split($Delim, $Path))
-    {
-        return $Path if $Path =~ $RE && -x ($Path = $1 . $Program)
-    }
-
-    return undef
-}
-
 my @Paths;
+
+my %AllProjects;
 
 my $RepositoryURL;
 
@@ -239,6 +216,8 @@ sub ReadProjectListingFile
         }
         else
         {
+            $AllProjects{$_} = 1;
+
             if (m{(?:corelib|dbapi/driver|objects/objmgr|objmgr|serial)/$}o)
             {
                 push @Paths, 'include/' . $_ . 'impl'
@@ -302,8 +281,6 @@ Usage('Missing mandatory argument Project') unless $MainProject;
 Usage('-switch-map can only be used in the checkout mode')
     if $SwitchMapFile && !$BuildDir;
 
-#$SwitchMapFile = Cwd::realpath($SwitchMapFile);
-
 $MainProject = FindProjectListing($MainProject, $ScriptName);
 
 ReadProjectListingFile($MainProject, $ScriptName);
@@ -354,107 +331,39 @@ while (@ProjectQueue)
     ReadProjectListingFile(FindProjectListing($Project, $Context), $Context)
 }
 
-my %NewTree;
+my $SVN = $Update->GetSvnPath();
 
-Path:
-for my $Path (@Paths)
-{
-    my $Branch = \%NewTree;
-
-    while ($Path =~ m/(.*?)\/(.*)/)
-    {
-        $Path = $2;
-
-        next unless $1;
-
-        my $Dir = $1;
-
-        if (exists($Branch->{$Dir}))
-        {
-            next Path unless ref($Branch = $Branch->{$Dir})
-        }
-        else
-        {
-            $Branch = $Branch->{$Dir} = {}
-        }
-    }
-
-    $Branch->{$Path} = undef if $Path
-}
-
-my @NonRecursiveUpdates;
-my @RecursiveUpdates;
-
-sub NewTreeTraversal
-{
-    my ($Branch, $Path) = @_;
-
-    while (my ($Dir, $Contents) = each %$Branch)
-    {
-        $Dir = "$Path/$Dir";
-
-        if (ref $Contents)
-        {
-            push @NonRecursiveUpdates, $Dir;
-            NewTreeTraversal($Contents, $Dir)
-        }
-        else
-        {
-            push @RecursiveUpdates, $Dir
-        }
-    }
-}
-
-NewTreeTraversal(\%NewTree, $BuildDir);
-
-my $SVN = $MultiSwitch->GetSvnPath();
-
-unless ($RepositoryURL)
-{
-    unshift @NonRecursiveUpdates, $BuildDir
-}
-else
+if ($RepositoryURL)
 {
     system($SVN, ($NewCheckout ? 'co' : 'switch'), '-N',
         "$RepositoryURL/trunk/c++", $BuildDir)
 }
 
-if (@NonRecursiveUpdates)
-{
-    print "Performing non-recursive updates:\n";
+my $MultiSwitch;
 
-    system($SVN, 'update', '-N', @NonRecursiveUpdates)
-}
+$MultiSwitch = NCBI::SVN::MultiSwitch->new(MyName => $ScriptName,
+    SvnPath => $SVN, MapFileName => $SwitchMapFile) if $SwitchMapFile;
 
-if (@RecursiveUpdates)
-{
-    print "Performing recursive updates:\n";
+chdir $BuildDir;
 
-    system($SVN, 'update', @RecursiveUpdates)
-}
+$Update->UpdateDirList(@Paths);
 
-$MultiSwitch->SwitchUsingMap($SwitchMapFile, $RepositoryURL, $BuildDir)
-    if $SwitchMapFile;
+$MultiSwitch->SwitchUsingMap($RepositoryURL) if $MultiSwitch;
+
+exit 0 if $^O eq 'MSWin32';
 
 my @ConfigOptions;
 
-if (my $SrcDirBranch = $NewTree{src})
+for my $OptProject (qw(dbapi serial objects app internal))
 {
-    for my $SubProject (qw(dbapi serial objects app internal))
-    {
-        push @ConfigOptions, (exists $SrcDirBranch->{$SubProject} ?
-            '--with-' : '--without-') . $SubProject
-    }
+    push @ConfigOptions, ($AllProjects{$OptProject} ?
+        '--with-' : '--without-') . $OptProject
 }
 
 while (my ($Var, $Val) = each %OldEnv)
 {
     $ENV{$Var} = $Val if defined $Val
 }
-
-exit 0 if $^O eq 'MSWin32';
-
-chdir $BuildDir;
 
 my ($Child, $Parent);
 
