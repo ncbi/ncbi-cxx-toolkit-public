@@ -1199,9 +1199,11 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
 
     switch (ret) {
     case DB_NOTFOUND:
+        buf->resize_mem(0);
         return eBDB_NotFound;
     case DB_KEYEMPTY:
         // record has been deleted
+        buf->resize_mem(0);
         return eBDB_KeyEmpty;
     case DB_BUFFER_SMALL:
         buf->resize_mem(m_DBT_Data->size);

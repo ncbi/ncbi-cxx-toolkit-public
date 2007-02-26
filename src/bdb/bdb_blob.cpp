@@ -95,17 +95,17 @@ CBDB_BLobFile::ReadRealloc(TBuffer& buffer)
     // use the maximum capacity
     size_t capacity = buffer.capacity();
     if (capacity > buffer.size()) {
-        buffer.resize(capacity);
+        buffer.resize_mem(capacity);
     }
     if (buffer.size() == 0) {
-        buffer.resize(10);
+        buffer.resize_mem(10);
     }
     while(1) {
         try {
             void* p = &buffer[0];
             ret = Fetch(&p, buffer.size(), eReallocForbidden);
             if (ret != eBDB_Ok) {
-                buffer.resize(0);
+                buffer.resize_mem(0);
                 return ret;
             }
             buffer.resize(LobSize());
