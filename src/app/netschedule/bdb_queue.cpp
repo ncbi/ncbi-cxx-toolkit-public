@@ -1482,7 +1482,10 @@ void CQueryFunctionEQ::Evaluate(CQueryParseTree::TNode& qnode)
             m_Queue->ReadTags(key, bv.get());
         } else {
             buf.reset(new TBuffer);
-            m_Queue->ReadTag(key, val, buf.get());
+            if (!m_Queue->ReadTag(key, val, buf.get())) {
+                // Signal empty set by setting empty bitvector
+                bv.reset(new TNSBitVector());
+            }
         }
     }
     if (qnode.GetValue().IsNot()) {
@@ -1678,7 +1681,7 @@ CQueue::Submit(SNS_SubmitRecord* rec,
         }
 
         // update tags
-        TNSTagMap tag_map;
+        CNSTagMap tag_map(q.GetObject());
         q->AppendTags(tag_map, rec->tags, job_id);
         q->FlushTags(tag_map, trans);
     }}
@@ -1746,7 +1749,7 @@ CQueue::SubmitBatch(vector<SNS_SubmitRecord>& batch,
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
-    TNSTagMap tag_map;
+    CNSTagMap tag_map(q.GetObject());
 
     {{
         CFastMutexGuard guard(q->lock);

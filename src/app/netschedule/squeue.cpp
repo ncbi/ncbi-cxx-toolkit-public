@@ -116,6 +116,25 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 }
 
 
+
+CNSTagMap::CNSTagMap(SLockedQueue& queue) :
+    m_BVPool(&queue.m_BVPool)
+{
+}
+
+
+CNSTagMap::~CNSTagMap()
+{
+    NON_CONST_ITERATE(TNSTagMap, it, m_TagMap) {
+        if (it->second) {
+            m_BVPool->Return(it->second);
+            it->second = 0;
+        }
+    }
+}
+
+
+
 SLockedQueue::SLockedQueue(const string& queue_name,
                            const string& qclass_name,
                            TQueueKind queue_kind)
@@ -192,7 +211,7 @@ void SLockedQueue::Open(CBDB_Env& env, const string& path)
     files.push_back(path + prefix + "_affdict.db");
     files.push_back(path + prefix + "_affdict_token.idx");
 
-    fname = prefix + "tag.db";
+    fname = prefix + "_tag.idx";
     m_TagDb.SetEnv(env);
     m_TagDb.SetPageSize(32*1024);
     m_TagDb.RevSplitOff();
@@ -240,12 +259,12 @@ void SLockedQueue::SetTagDbTransaction(CBDB_Transaction* trans)
 }
 
 
-void SLockedQueue::AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id)
+void SLockedQueue::AppendTags(CNSTagMap& tag_map, TNSTagList& tags, unsigned job_id)
 {
     ITERATE(TNSTagList, it, tags) {
         TNSBitVector *bv = m_BVPool.Get();
         pair<TNSTagMap::iterator, bool> tag_map_it =
-            tag_map.insert(TNSTagMap::value_type((*it), bv));
+            tag_map.m_TagMap.insert(TNSTagMap::value_type((*it), bv));
         if (!tag_map_it.second)
             m_BVPool.Return(bv);
         (tag_map_it.first)->second->set(job_id);
@@ -253,11 +272,11 @@ void SLockedQueue::AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job
 }
 
 
-void SLockedQueue::FlushTags(TNSTagMap& tag_map, CBDB_Transaction& trans)
+void SLockedQueue::FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans)
 {
     CFastMutexGuard guard(m_TagLock);
     m_TagDb.SetTransaction(&trans);
-    NON_CONST_ITERATE(TNSTagMap, it, tag_map) {
+    NON_CONST_ITERATE(TNSTagMap, it, tag_map.m_TagMap) {
         m_TagDb.key = it->first.first;
         m_TagDb.val = it->first.second;
         EBDB_ErrCode err = m_TagDb.ReadVector(it->second, bm::set_OR);
@@ -266,12 +285,13 @@ void SLockedQueue::FlushTags(TNSTagMap& tag_map, CBDB_Transaction& trans)
         it->second->optimize();
         m_TagDb.WriteVector(*(it->second), STagDB::eNoCompact);
         m_BVPool.Return(it->second);
+        it->second = 0;
     }
-    tag_map.clear();
+    tag_map.m_TagMap.clear();
 }
 
 
-void SLockedQueue::ReadTag(const string& key,
+bool SLockedQueue::ReadTag(const string& key,
                            const string& val,
                            TBuffer* buf)
 {
@@ -283,8 +303,8 @@ void SLockedQueue::ReadTag(const string& key,
     CBDB_FileCursor cur(m_TagDb);
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << key << val;
-    if (cur.Fetch(buf) == eBDB_Ok) {
-    }
+    
+    return cur.Fetch(buf) == eBDB_Ok;
 }
 
 
@@ -300,10 +320,14 @@ void SLockedQueue::ReadTags(const string& key, TNSBitVector* bv)
     cur.From << key;
     TBuffer buf;
     bm::set_operation op_code = bm::set_ASSIGN;
-    while (cur.Fetch(&buf) == eBDB_Ok) {
+    EBDB_ErrCode err;
+    while ((err = cur.Fetch(&buf)) == eBDB_Ok) {
         bm::operation_deserializer<TNSBitVector>::deserialize(
             *bv,&(buf[0]), 0, op_code);
         op_code = bm::set_OR;
+    }
+    if (err != eBDB_Ok  &&  err != eBDB_NotFound) {
+        // TODO: signal disaster somehow, e.g. throw CBDB_Exception
     }
 }
 

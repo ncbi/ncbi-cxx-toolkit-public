@@ -196,10 +196,23 @@ struct SQueueStatictics
     {}
 };
 
+
 typedef pair<string, string> TNSTag;
 typedef list<TNSTag> TNSTagList;
-// key -> value -> bitvector of job ids
+// key, value -> bitvector of job ids
 typedef map<TNSTag, TNSBitVector*> TNSTagMap;
+// Safe container for tag map
+struct SLockedQueue;
+class CNSTagMap
+{
+public:
+    CNSTagMap(SLockedQueue& queue);
+    ~CNSTagMap();
+    TNSTagMap m_TagMap;
+private:
+    TNSBVPool* m_BVPool;
+};
+
 
 // slight violation of naming convention for porting to util/time_line
 typedef CTimeLine<TNSBitVector> CJobTimeLine;
@@ -330,9 +343,9 @@ struct SLockedQueue : public CWeakObjectBase<SLockedQueue>
     // Tags methods
     typedef CSimpleBuffer TBuffer;
     void SetTagDbTransaction(CBDB_Transaction* trans);
-    void AppendTags(TNSTagMap& tag_map, TNSTagList& tags, unsigned job_id);
-    void FlushTags(TNSTagMap& tag_map, CBDB_Transaction& trans);
-    void ReadTag(const string& key, const string& val,
+    void AppendTags(CNSTagMap& tag_map, TNSTagList& tags, unsigned job_id);
+    void FlushTags(CNSTagMap& tag_map, CBDB_Transaction& trans);
+    bool ReadTag(const string& key, const string& val,
                  TBuffer* buf);
     void ReadTags(const string& key, TNSBitVector* bv);
     void x_RemoveTags(CBDB_Transaction& trans, const TNSBitVector& ids);
