@@ -311,7 +311,7 @@ public:
     {
         for (const char * p = m_End - 1;  p >= m_Begin;  --p) {
             if (*p == ch) {
-                return p - m_Begin;
+                return int(p - m_Begin);
             }
         }
         
@@ -375,7 +375,7 @@ public:
     /// Return the length of the string in bytes.
     int Size() const
     {
-        return m_End-m_Begin;
+        return int(m_End-m_Begin);
     }
     
     /// Returns a reference to a specific character of the string.

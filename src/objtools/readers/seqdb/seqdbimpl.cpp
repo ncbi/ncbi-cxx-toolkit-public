@@ -622,7 +622,7 @@ int CSeqDBImpl::x_GetNumSeqs() const
     Int8 rv = m_Aliases.GetNumSeqs(m_VolSet);
     _ASSERT((rv & 0x7FFFFFFF) == rv);
     
-    return rv;
+    return (int) rv;
 }
 
 int CSeqDBImpl::x_GetNumOIDs() const
@@ -641,10 +641,9 @@ int CSeqDBImpl::x_GetNumOIDs() const
     // number can overestimate so much that it wraps a signed int.
     
     _ASSERT(num_oids <= m_Aliases.GetNumOIDs(m_VolSet));
-    
     _ASSERT((num_oids & 0x7FFFFFFF) == num_oids);
     
-    return num_oids;
+    return (int) num_oids;
 }
 
 Uint8 CSeqDBImpl::x_GetTotalLength() const

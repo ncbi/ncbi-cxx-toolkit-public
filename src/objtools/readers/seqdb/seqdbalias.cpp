@@ -329,7 +329,7 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
         
         for(i = 0; i < m_DBList.size(); i++) {
             CSeqDB_Substring sub(m_DBList[i].GetBasePathS());
-            sub.EraseFront(common + 1);
+            sub.EraseFront((int) common + 1);
             
             m_DBList[i].Assign(sub);
         }

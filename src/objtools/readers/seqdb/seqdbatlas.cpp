@@ -44,6 +44,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/resource.h>
+#include <unistd.h>
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -1527,7 +1529,7 @@ Uint8 CSeqDBMapStrategy::x_Pick(Uint8 low, Uint8 high, Uint8 guess)
         high = low;
     }
     
-    int bs = m_BlockSize;
+    int bs = int(m_BlockSize);
     
     if (guess < low) {
         guess = (low + bs - 1);
@@ -1603,13 +1605,41 @@ void CSeqDBAtlas::SetDefaultMemoryBound(Uint8 bytes)
 
 void CSeqDBMapStrategy::SetDefaultMemoryBound(Uint8 bytes)
 {
+    Uint8 app_space = CSeqDBMapStrategy::e_AppSpace;
+    
     if (bytes == 0) {
         if (sizeof(int*) == 4) {
             bytes = e_MaxMemory32;
         } else {
             bytes = e_MaxMemory64;
         }
+        
+#if defined(NCBI_OS_UNIX)
+        rlimit vspace;
+        rusage ruse;
+        
+        int rc = getrlimit(RLIMIT_AS, & vspace);
+        int rc2 = getrusage(RUSAGE_SELF, & ruse);
+        _ASSERT(rc == 0 && rc2 == 0);
+        
+        Uint8 max_mem = vspace.rlim_cur;
+        Uint8 max_mem75 = (max_mem/4)*3;
+        
+        if (max_mem < (app_space*2)) {
+            app_space = max_mem/2;
+        } else {
+            max_mem -= app_space;
+            if (max_mem > max_mem75) {
+                max_mem = max_mem75;
+            }
+        }
+	
+        if (max_mem < bytes) {
+            bytes = max_mem;
+        }
+#endif
     }
+    
     m_GlobalMaxBound = bytes;
 }
 

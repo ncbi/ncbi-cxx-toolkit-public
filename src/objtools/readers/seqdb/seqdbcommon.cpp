@@ -817,7 +817,7 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
     int sz = 0;
     
     for(unsigned i = 0; i < dbs.size(); i++) {
-        sz += 3 + dbs[i].size();
+        sz += int(3 + dbs[i].size());
     }
     
     dbname.reserve(sz);
@@ -892,7 +892,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
     int list_i = 0;
     int list_n = gilist.Size();
     int gis_i = 0;
-    int gis_n = gis.size();
+    int gis_n = (int) gis.size();
     
     while(list_i < list_n && gis_i < gis_n) {
         int L = gilist[list_i].gi;

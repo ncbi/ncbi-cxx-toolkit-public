@@ -1012,6 +1012,14 @@ public:
         e_MaxMemory32 = 768 << 20,
 #endif
         
+        // Up to the AppSpace setting, SeqDB will try to consume at
+        // most half of the available memory.  Beyond this point,
+        // SeqDB will only leave the AppSpace amount for the
+        // application.
+        
+        /// Application space - maximum memory set aside for the app.
+        e_AppSpace = 256 << 20,
+        
         /// Minimum memory bound.
         e_MinMemory = 64 << 20,
         
