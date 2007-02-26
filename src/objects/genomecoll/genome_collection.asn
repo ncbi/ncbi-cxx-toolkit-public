@@ -82,6 +82,10 @@ GC-Assembly ::= SEQUENCE
     -- **NOTE: not set = not known!!
     partial BOOLEAN OPTIONAL,
 
+    -- flag: is it reference assembly?
+    --  ** NOTE: not set = not known!
+    reference BOOLEAN OPTIONAL,
+
     -- level of coverage for this assembly
     -- **NOTE: not set = not known!!
     coverage INTEGER OPTIONAL,
