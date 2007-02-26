@@ -15,7 +15,7 @@ compiler="${3:-msvc710}"
 compiler="${compiler}_prj"
 
 # Real number of argument is 2.
-# The 3th argument don not used here (32|64-bit architecture),
+# The 3th argument do not used here (32|64-bit architecture),
 # but is needed for master installation script.
 if test -n "$4" ; then
   echo "USAGE:  `basename $script` [build_dir] [install_dir]"
@@ -35,7 +35,6 @@ makedir()
 }
 
 echo "[`basename $script`] NCBI C++:  \"$builddir\" to \"$target\"..."
-sleep 2
 
 
 # Derive the destination dirs
@@ -51,14 +50,13 @@ tmpdir="$target"/tmp
 
 install()
 {
+    test -d "$1"  ||  return;
     makedir "$2" -p
     tmp_cwd=`pwd`
     cd "$1"
-    #rm "$tmpdir"/flist 2>/dev/null
     find . -type f |
     grep -v '/\.svn/' > "$tmpdir"/flist
     tar cf - -T "$tmpdir"/flist | (cd "$2" ; tar xf - )
-    #rm "$tmpdir"/flist 2>/dev/null
     cd "$tmp_cwd"
 }
 
@@ -90,11 +88,11 @@ install "$builddir/include" "$incdir"
 echo "[`basename $script`] Installing source files..."
 install "$builddir/src" "$srcdir"
 
-rm -f "$tmpdir/*"
-rmdir "$tmpdir"
+rm -rf "$tmpdir"
 
 
 # Libraries
+echo "[`basename $script`] Installing libraries..."
 for i in 'Debug' 'Release' ; do
   for j in '' 'DLL' ; do
     for b in 'static' 'dll' ; do
@@ -117,6 +115,7 @@ done
 
 
 # Executables
+echo "[`basename $script`] Installing executables..."
 makedir "$bindir" -p
 for i in 'DLL' '' ; do
   if test -d "$builddir"/compilers/$compiler/static/bin/Release$i ; then
@@ -129,6 +128,7 @@ for i in 'DLL' '' ; do
 done
 
 # Gbench public installation
+echo "[`basename $script`] Installing Gbench..."
 for i in ReleaseDLL DebugDLL; do
   if test -d "$builddir"/compilers/$compiler/dll/bin/"$i" ; then
     cp -pr "$builddir"/compilers/$compiler/dll/bin/$i/gbench "$bindir"
@@ -138,6 +138,7 @@ done
 
 
 # Compiler dir (copy all .pdb and configurable files files for debug purposes)
+echo "[`basename $script`] Installing .pdb files..."
 makedir "$cldir" -p
 pdb_files=`find "$builddir"/compilers -type f -a \( -name '*.pdb' -o  -name '*.c' -o  -name '*.cpp' \) 2>/dev/null`
 cd "$cldir"
