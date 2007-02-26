@@ -93,6 +93,7 @@ CLocalBlast::Run()
     // filtered query regions should be masked in the BLAST_SequenceBlk
     // already.
     
+    m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
     m_InternalData = m_PrelimSearch->Run();
     _ASSERT(m_InternalData);
 

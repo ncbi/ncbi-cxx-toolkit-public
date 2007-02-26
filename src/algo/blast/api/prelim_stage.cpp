@@ -184,6 +184,8 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch()
     typedef vector< CRef<CPrelimSearchThread> > TBlastThreads;
     TBlastThreads the_threads(GetNumberOfThreads());
 
+    _TRACE("Launching BLAST with " << GetNumberOfThreads() << " threads");
+
     // Create the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
         thread->Reset(new CPrelimSearchThread(*m_InternalData, 
