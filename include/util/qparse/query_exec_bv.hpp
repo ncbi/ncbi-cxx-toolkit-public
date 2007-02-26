@@ -174,6 +174,11 @@ protected:
                                                   &((*arg_buf)[0]),
                                                   0,
                                                   op_code);
+            } else {
+                if (op_code == bm::set_AND) {
+                    bv_res->clear(true);
+                    return;
+                }
             }
         } // for        
     
