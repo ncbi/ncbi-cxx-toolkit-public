@@ -38,6 +38,7 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
+#include <algo/blast/core/blast_def.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -116,6 +117,21 @@ const double kDfltArgGapTrigger = 22.0;
 const string kArgUngapped("ungapped");
 
 const string kArgCompBasedStats("comp_based_stats");
+
+const string kArgSegFiltering("seg");
+const string kDfltArgSegFiltering =
+    NStr::IntToString(kSegWindow) + string(" ") +
+    NStr::DoubleToString(kSegLocut) + string(" ") +
+    NStr::DoubleToString(kSegHicut);
+
+const string kArgDustFiltering("dust");
+const string kDfltArgDustFiltering =
+    NStr::IntToString(kDustLevel) + string(" ") +
+    NStr::DoubleToString(kDustWindow) + string(" ") +
+    NStr::DoubleToString(kDustLinker);
+
+const string kArgFilteringDb("filtering_db");
+const string kArgLookupTableMaskingOnly("soft_masking");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

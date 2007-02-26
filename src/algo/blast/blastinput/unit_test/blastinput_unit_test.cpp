@@ -382,7 +382,7 @@ BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
 {
     START;
     CPsiBlastAppArgs psiblast_args;
-    CString2Args s2a("-M BLOSUM80 -d ecoli -dbtype prot ");
+    CString2Args s2a("-matrix BLOSUM80 -db ecoli -dbtype prot ");
     auto_ptr<CArgs> args(s2a.CreateCArgs(psiblast_args));
 
     CRef<CPSIBlastOptionsHandle> opts = psiblast_args.SetOptions(*args);
@@ -399,7 +399,7 @@ BOOST_AUTO_UNIT_TEST(PsiBlastAppMissingMandatoryArguments)
     BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(psiblast_args)), 
                       CArgException);
 
-    s2a.Reset("-M BLOSUM80");
+    s2a.Reset("-matrix BLOSUM80");
     BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(psiblast_args)), 
                       CArgException);
 }

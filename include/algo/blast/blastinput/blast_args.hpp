@@ -129,30 +129,6 @@ private:
     string m_ProgDesc;
 };
 
-#if 0
-/** This class must be owned by every BLAST binary argument FIXME! */
-class NCBI_XBLAST_EXPORT CBlastProgramArgs : public IBlastCmdLineArgs
-{
-public:
-    enum EChoice {
-        eBlastall
-
-    };
-    CBlastProgramArgs(EChoice choice);
-
-    EProgram GetProgram() const { return m_Program; }
-    CRef<CBlastOptionsHandle> CreateOptionsHandle() const;
-
-    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
-    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
-                                         CBlastOptions& options);
-
-private:
-    EProgram m_Program;
-    EChoice m_Choice;
-};
-#endif
-
 /** Argument class to retrieve and set the window size BLAST algorithm 
  * option */
 class NCBI_XBLAST_EXPORT CWindowSizeArg : public IBlastCmdLineArgs
@@ -195,6 +171,19 @@ public:
     CGenericSearchArgs(bool query_is_protein = true)
         : m_QueryIsProtein(query_is_protein) {}
          
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+private:
+    bool m_QueryIsProtein;  /**< true if the query is protein */
+};
+
+class NCBI_XBLAST_EXPORT CFilteringArgs : public IBlastCmdLineArgs
+{
+public:
+    CFilteringArgs(bool query_is_protein = true)
+        : m_QueryIsProtein(query_is_protein) {}
+
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
                                          CBlastOptions& options);

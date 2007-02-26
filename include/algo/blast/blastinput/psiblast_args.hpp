@@ -62,6 +62,7 @@ public:
     CRef<CQueryOptionsArgs> GetQueryOptionsArgs() const;
     CRef<CFormattingArgs> GetFormattingArgs() const;
     size_t GetNumThreads() const;
+    bool ExecuteRemotely() const;
     size_t GetNumberOfIterations() const;
 
     CNcbiIstream& GetInputStream() const;
@@ -77,6 +78,7 @@ private:
     CRef<CBlastDatabaseArgs> m_BlastDbArgs;
     CRef<CFormattingArgs> m_FormattingArgs;
     CRef<CMTArgs> m_MTArgs;
+    CRef<CRemoteArgs> m_RemoteArgs;
     CRef<CStdCmdLineArgs> m_StdCmdLineArgs;
     CRef<CPsiBlastArgs> m_PsiBlastArgs;
 };

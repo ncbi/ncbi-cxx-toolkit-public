@@ -83,6 +83,9 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(new CGenericSearchArgs);
     m_Args.push_back(arg);
 
+    arg.Reset(new CFilteringArgs(true));
+    m_Args.push_back(arg);
+
     arg.Reset(new CMatrixNameArg);
     m_Args.push_back(arg);
 
@@ -102,6 +105,10 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
 
     m_MTArgs.Reset(new CMTArgs);
     arg.Reset(m_MTArgs);
+    m_Args.push_back(arg);
+
+    m_RemoteArgs.Reset(new CRemoteArgs);
+    arg.Reset(m_RemoteArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CCompositionBasedStatsArgs);
@@ -177,6 +184,12 @@ size_t
 CPsiBlastAppArgs::GetNumThreads() const
 {
     return m_MTArgs->GetNumThreads();
+}
+
+bool
+CPsiBlastAppArgs::ExecuteRemotely() const
+{
+    return m_RemoteArgs->ExecuteRemotely();
 }
 
 size_t

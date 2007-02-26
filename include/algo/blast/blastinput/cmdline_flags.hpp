@@ -173,6 +173,25 @@ extern const string kArgUngapped;
 /// Argument to specify the composition based statistics mode to sue
 extern const string kArgCompBasedStats;
 
+
+/// Argument to specify SEG filtering on query sequence(s)
+extern const string kArgSegFiltering;
+/// Default arguments to apply SEG filtering on query sequence(s)
+extern const string kDfltArgSegFiltering;
+
+/// Argument to specify DUST filtering on query sequence(s)
+extern const string kArgDustFiltering;
+/// Default arguments to apply DUST filtering on query sequence(s)
+extern const string kDfltArgDustFiltering;
+
+/// Argument to specify a filtering database (i.e.: one containing repetitive
+/// elements)
+extern const string kArgFilteringDb;
+
+/// Argument to specify to mask query during lookup table creation
+extern const string kArgLookupTableMaskingOnly;
+
+
 /* OLD C TOOLKIT ARGUMENTS */
 
 //#define ARG_QUERY "i"

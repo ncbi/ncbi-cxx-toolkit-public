@@ -109,50 +109,6 @@ CProgramDescriptionArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                              blast::Version.GetReleaseDate());
 }
 
-#if 0
-CBlastProgramArgs::CBlastProgramArgs(CBlastProgramArgs::EChoice choice)
-    : m_Program(eBlastNotSet), m_Choice(choice)
-{
-}
-
-void
-CBlastProgramArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
-{
-    switch (m_Choice) {
-    case eBlastall:
-        arg_desc.AddKey(ARG_PROGRAM, "blast_program", 
-                        "Type of BLAST program",
-                        CArgDescriptions::eString,
-                        CArgDescriptions::fOptionalSeparator);
-        arg_desc.SetConstraint(ARG_PROGRAM, &(*new CArgAllow_Strings, 
-                    "blastp", "blastn", "blastx", "tblastn", "tblastx"));
-        arg_desc.AddAlias("-program", ARG_PROGRAM);
-        break;
-
-    default:
-        abort();
-    }
-}
-
-void
-CBlastProgramArgs::ExtractAlgorithmOptions(const CArgs& args, 
-                                           CBlastOptions& /*options*/)
-{
-    m_Program = ProgramNameToEnum(args[ARG_PROGRAM].AsString());
-    if (m_Program == eBlastn && 
-        args[ARG_MEGABLAST] && args[ARG_MEGABLAST].AsBoolean()) {
-        m_Program = eMegablast;
-    }
-}
-
-CRef<CBlastOptionsHandle>
-CBlastProgramArgs::CreateOptionsHandle() const
-{
-    _ASSERT(m_Program != eBlastNotSet);
-    return CRef<CBlastOptionsHandle>(CBlastOptionsFactory::Create(m_Program));
-}
-#endif
-
 void
 CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
@@ -263,6 +219,74 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 }
 
+void
+CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetCurrentGroup("Query filtering options");
+
+    if (m_QueryIsProtein) {
+        arg_desc.AddDefaultKey(kArgSegFiltering, "SEG_options",
+                "Filter query sequence with SEG (Format: window locut hicut)",
+                CArgDescriptions::eString, kDfltArgSegFiltering);
+        arg_desc.SetConstraint(kArgSegFiltering, NULL, 
+                               CArgDescriptions::eConstraintInvert);
+    } else {
+        arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
+            "Filter query sequence with DUST (Format: level window, linker)",
+            CArgDescriptions::eString, kDfltArgDustFiltering);
+        arg_desc.SetConstraint(kArgSegFiltering, NULL, 
+                               CArgDescriptions::eConstraintInvert);
+    }
+
+    arg_desc.AddFlag(kArgLookupTableMaskingOnly,
+                     "Apply filtering locations as soft masks?", true);
+    arg_desc.AddOptionalKey(kArgFilteringDb, "filtering_database",
+            "BLAST database containing filtering elements (i.e.: repeats)",
+            CArgDescriptions::eString);
+
+    arg_desc.SetCurrentGroup("");
+}
+
+void
+CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, 
+                                            CBlastOptions& opt)
+{
+    if (args[kArgEvalue]) {
+        opt.SetEvalueThreshold(args[kArgEvalue].AsDouble());
+    }
+
+    if (args[ARG_FILTER]) {
+        opt.SetFilterString(args[ARG_FILTER].AsString().c_str());
+    }
+
+    if (args[kArgGapOpen]) {
+        opt.SetGapOpeningCost(args[kArgGapOpen].AsInteger());
+    }
+
+    if (args[kArgGapExtend]) {
+        opt.SetGapExtensionCost(args[kArgGapExtend].AsInteger());
+    }
+
+    if (args[kArgUngappedXDropoff]) {
+        opt.SetXDropoff(args[kArgUngappedXDropoff].AsDouble());
+    }
+
+    if (args[kArgGappedXDropoff]) {
+        opt.SetGapXDropoff(args[kArgGappedXDropoff].AsDouble());
+    }
+
+    if (args[kArgFinalGappedXDropoff]) {
+        opt.SetGapXDropoffFinal(args[kArgFinalGappedXDropoff].AsDouble());
+    }
+
+    if (args[kArgWordSize]) {
+        opt.SetWordSize(args[kArgWordSize].AsInteger());
+    }
+
+    if (args[kArgEffSearchSpace]) {
+        opt.SetEffectiveSearchSpace(args[kArgEffSearchSpace].AsInt8());
+    }
+}
 void
 CWindowSizeArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {

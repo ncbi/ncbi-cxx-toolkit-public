@@ -59,8 +59,9 @@ CBlastpAppArgs::CBlastpAppArgs()
     m_Args.push_back(arg);
 
     arg.Reset(new CGenericSearchArgs);
-    // FIXME: enable this?
-    //arg->SetDefaultWordSize(BLASTP_WORDSIZE);
+    m_Args.push_back(arg);
+
+    arg.Reset(new CFilteringArgs(true));
     m_Args.push_back(arg);
 
     arg.Reset(new CMatrixNameArg);
