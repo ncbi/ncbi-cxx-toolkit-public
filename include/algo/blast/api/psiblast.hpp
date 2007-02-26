@@ -33,6 +33,7 @@
 #ifndef ALGO_BLAST_API___PSIBLAST__HPP
 #define ALGO_BLAST_API___PSIBLAST__HPP
 
+#include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
@@ -72,7 +73,7 @@ class IQueryFactory;
 /// alignment = psiblast->Run();
 /// ...
 /// @endcode
-class NCBI_XBLAST_EXPORT CPsiBlast : public CObject
+class NCBI_XBLAST_EXPORT CPsiBlast : public CObject, public CThreadable
 {
 public:
     /// Constructor to compare a single sequence against a database of protein

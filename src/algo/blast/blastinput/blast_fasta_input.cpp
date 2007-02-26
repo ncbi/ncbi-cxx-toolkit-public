@@ -58,10 +58,9 @@ CBlastFastaInputSource::CBlastFastaInputSource(CObjectManager& objmgr,
                                                objects::ENa_strand strand,
                                                bool lowercase,
                                                bool believe_defline,
-                                               TSeqPos from,
-                                               TSeqPos to)
+                                               TSeqRange range)
     : CBlastInputSource(objmgr),
-      m_Config(strand, lowercase, believe_defline, from, to),
+      m_Config(strand, lowercase, believe_defline, range),
       m_InputFile(infile),
       m_Counter(0)
 {
@@ -80,72 +79,55 @@ CBlastFastaInputSource::x_FastaToSeqLoc(
                          vector< CConstRef<objects::CSeq_loc> > *lcase_mask,
                          bool* query_is_protein)
 {
+    static const TSeqRange kEmptyRange(TSeqRange::GetEmpty());
+
+    const int flags = fReadFasta_OneSeq | (m_Config.GetBelieveDeflines()
+        ? fReadFasta_AllSeqIds
+        : fReadFasta_NoParseID);
+
     CRef<CSeq_entry> seq_entry;
-    
-    int flags;
-    TSeqPos from = m_Config.GetFrom();
-    TSeqPos to = m_Config.GetTo();
-
-    flags = fReadFasta_OneSeq;
-    if (m_Config.GetBelieveDeflines() == true)
-        flags |= fReadFasta_AllSeqIds;
-    else
-        flags |= fReadFasta_NoParseID;
-
-    if ( !(seq_entry = ReadFasta(m_InputFile, flags, 
-                                     &m_Counter, lcase_mask))) {
-        NCBI_THROW(CObjReaderException, eInvalid, 
-                       "Could not retrieve seq entry");
+    if ( !(seq_entry = ReadFasta(m_InputFile, flags, &m_Counter, lcase_mask))) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Could not retrieve seq entry");
     }
 
     m_Scope->AddTopLevelSeqEntry(*seq_entry);
 
     CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry));
-    CRef<CSeq_loc> seqloc(new CSeq_loc());
-    TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
-                                             m_Scope) - 1;
-
-    if (to > seq_length || from > seq_length ||
-        (to > 0 && to < from)) {
-        NCBI_THROW(CObjReaderException, eInvalid, 
-                  "Invalid sequence range");
-    }
-
-    // set sequence range
-    if (to > 0)
-        seqloc->SetInt().SetTo(to);
-    else
-        seqloc->SetInt().SetTo(seq_length);
-    seqloc->SetInt().SetFrom(from);
-
-    if (query_is_protein) {
-        *query_is_protein = itr->IsAa();
-    }
+    CRef<CSeq_loc> retval(new CSeq_loc());
 
     // set strand
-    if (m_Config.GetStrand() == eNa_strand_other) {
+    if (m_Config.GetStrand() == eNa_strand_other ||
+        m_Config.GetStrand() == eNa_strand_unknown) {
         if (itr->IsAa())
-            seqloc->SetInt().SetStrand(eNa_strand_unknown);
+            retval->SetInt().SetStrand(eNa_strand_unknown);
         else
-            seqloc->SetInt().SetStrand(eNa_strand_both);
-    }
-    else if (m_Config.GetStrand() == eNa_strand_unknown) {
-        if (itr->IsNa()) {
-            NCBI_THROW(CObjReaderException, eInvalid, 
-                       "Cannot assign unknown strand to nucleotide sequence");
-        }
-        seqloc->SetInt().SetStrand(eNa_strand_other);
-    }
-    else {
+            retval->SetInt().SetStrand(eNa_strand_both);
+    } else {
         if (itr->IsAa()) {
-            NCBI_THROW(CObjReaderException, eInvalid, 
+            NCBI_THROW(CBlastException, eInvalidArgument, 
                        "Cannot assign nucleotide strand to protein sequence");
         }
-        seqloc->SetInt().SetStrand(m_Config.GetStrand());
+        retval->SetInt().SetStrand(m_Config.GetStrand());
     }
 
-    seqloc->SetInt().SetId().Assign(*itr->GetId().front());
-    return seqloc;
+    // sanity checks for the range
+    const TSeqPos from = m_Config.GetRange().GetFrom() == kEmptyRange.GetFrom()
+        ? 0 : m_Config.GetRange().GetFrom();
+    const TSeqPos to = m_Config.GetRange().GetTo() == kEmptyRange.GetTo()
+        ? 0 : m_Config.GetRange().GetTo();
+    const TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
+                                                   m_Scope) - 1;
+    if (to > seq_length || from > seq_length || (to > 0 && to < from)) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Invalid sequence range");
+    }
+    // set sequence range
+    retval->SetInt().SetFrom(from);
+    retval->SetInt().SetTo(to > 0 ? to : seq_length);
+
+    retval->SetInt().SetId().Assign(*itr->GetId().front());
+    return retval;
 }
 
 

@@ -70,10 +70,10 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
 
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
-                                       IBlastSeqSrcAdapter& ssa)
+                                       CRef<CLocalDbAdapter> db)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
-    BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
+    BlastSeqSrc* seqsrc = db->MakeSeqSrc();
     x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
 }

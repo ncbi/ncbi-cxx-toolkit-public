@@ -41,6 +41,8 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
+#include <algo/blast/blastinput/blast_args.hpp>
+
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
 #  undef numeric_limits
@@ -52,12 +54,6 @@
 #  include <boost/test/parameterized_test.hpp>
 #endif
 #include <boost/current_function.hpp>
-
-#ifdef NCBI_OS_DARWIN
-#include <corelib/plugin_manager_store.hpp>
-#include <objmgr/data_loader_factory.hpp>
-#include <objtools/data_loaders/genbank/processors.hpp>
-#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -78,7 +74,6 @@ using boost::unit_test::test_suite;
 
 #define CHECK(expr)       CHECK_NO_THROW(BOOST_CHECK(expr))
 #define CHECK_EQUAL(x, y) CHECK_NO_THROW(BOOST_CHECK_EQUAL(x, y))
-#define CHECK_THROW(s, x) BOOST_CHECK_THROW(s, x)
 
 #define DECLARE_SOURCE(file)                                    \
     CRef<CObjectManager> om(CObjectManager::GetInstance());     \
@@ -128,12 +123,14 @@ BOOST_AUTO_UNIT_TEST(s_RangeBoth)
     START;
     DECLARE_SOURCE("data/aa.129295");
 
-    source.m_Config.SetFrom(50);
-    source.m_Config.SetTo(100);
+    source.m_Config.SetRange().SetFrom(50);
+    source.m_Config.SetRange().SetTo(100);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
 
     CHECK_EQUAL((TSeqPos)50, ssl.seqloc->GetInt().GetFrom());
     CHECK_EQUAL((TSeqPos)100, ssl.seqloc->GetInt().GetTo());
+    CHECK_EQUAL((TSeqPos)50, ssl.seqloc->GetStart(eExtreme_Positional));
+    CHECK_EQUAL((TSeqPos)100, ssl.seqloc->GetStop(eExtreme_Positional));
 }
 
 BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
@@ -141,11 +138,13 @@ BOOST_AUTO_UNIT_TEST(s_RangeStartOnly)
     START;
     DECLARE_SOURCE("data/aa.129295");
 
-    source.m_Config.SetFrom(50);
+    source.m_Config.SetRange().SetFrom(50);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
 
     CHECK_EQUAL((TSeqPos)50, ssl.seqloc->GetInt().GetFrom());
     CHECK_EQUAL((TSeqPos)231, ssl.seqloc->GetInt().GetTo());
+    CHECK_EQUAL((TSeqPos)50, ssl.seqloc->GetStart(eExtreme_Positional));
+    CHECK_EQUAL((TSeqPos)231, ssl.seqloc->GetStop(eExtreme_Positional));
 }
 
 BOOST_AUTO_UNIT_TEST(s_RangeInvalid)
@@ -153,9 +152,9 @@ BOOST_AUTO_UNIT_TEST(s_RangeInvalid)
     START;
     DECLARE_SOURCE("data/aa.129295");
 
-    source.m_Config.SetFrom(100);
-    source.m_Config.SetTo(50);
-    CHECK_THROW(source.GetNextSSeqLoc(), CObjReaderException);
+    source.m_Config.SetRange().SetFrom(100);
+    source.m_Config.SetRange().SetTo(50);
+    BOOST_CHECK_THROW(source.GetNextSSeqLoc(), CBlastException);
 }
 
 BOOST_AUTO_UNIT_TEST(s_ParseDefline)
@@ -165,6 +164,8 @@ BOOST_AUTO_UNIT_TEST(s_ParseDefline)
 
     source.m_Config.SetBelieveDeflines(true);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetId()->Which());
+    CHECK_EQUAL(129295, ssl.seqloc->GetId()->GetGi());
     CHECK_EQUAL(CSeq_id::e_Gi, ssl.seqloc->GetInt().GetId().Which());
     CHECK_EQUAL(129295, ssl.seqloc->GetInt().GetId().GetGi());
 }
@@ -175,7 +176,7 @@ BOOST_AUTO_UNIT_TEST(s_BadProtStrand)
     DECLARE_SOURCE("data/aa.129295");
 
     source.m_Config.SetStrand(eNa_strand_both);
-    CHECK_THROW(source.GetNextSSeqLoc(), CObjReaderException);
+    BOOST_CHECK_THROW(source.GetNextSSeqLoc(), CBlastException);
 }
 
 BOOST_AUTO_UNIT_TEST(s_ReadFastaNucl)
@@ -183,16 +184,23 @@ BOOST_AUTO_UNIT_TEST(s_ReadFastaNucl)
     START;
     DECLARE_SOURCE("data/nt.cat");
 
+    // note that the side effect of this is that the length of the sequence
+    // will be computed and set
+    source.m_Config.SetRange().SetFrom(0);
     CHECK(source.End() == false);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
     CHECK(source.End() == false);
 
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetStrand());
+    CHECK_EQUAL((TSeqPos)645, ssl.seqloc->GetStop(eExtreme_Positional));
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
     CHECK_EQUAL((TSeqPos)645, ssl.seqloc->GetInt().GetTo());
 
     ssl = source.GetNextSSeqLoc();
     CHECK(source.End() == true);
 
+    CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetStrand());
+    CHECK_EQUAL((TSeqPos)359, ssl.seqloc->GetStop(eExtreme_Positional));
     CHECK_EQUAL(eNa_strand_both, ssl.seqloc->GetInt().GetStrand());
     CHECK_EQUAL((TSeqPos)359, ssl.seqloc->GetInt().GetTo());
     CHECK(!ssl.mask);
@@ -205,19 +213,13 @@ BOOST_AUTO_UNIT_TEST(s_NuclStrand)
 
     source.m_Config.SetStrand(eNa_strand_plus);
     blast::SSeqLoc ssl = source.GetNextSSeqLoc();
+    CHECK_EQUAL(eNa_strand_plus, ssl.seqloc->GetStrand());
     CHECK_EQUAL(eNa_strand_plus, ssl.seqloc->GetInt().GetStrand());
 
     source.m_Config.SetStrand(eNa_strand_minus);
     ssl = source.GetNextSSeqLoc();
+    CHECK_EQUAL(eNa_strand_minus, ssl.seqloc->GetStrand());
     CHECK_EQUAL(eNa_strand_minus, ssl.seqloc->GetInt().GetStrand());
-}
-
-BOOST_AUTO_UNIT_TEST(s_NuclBadStrand)
-{
-    DECLARE_SOURCE("data/nt.cat");
-
-    source.m_Config.SetStrand(eNa_strand_unknown);
-    CHECK_THROW(source.GetNextSSeqLoc(), CObjReaderException);
 }
 
 BOOST_AUTO_UNIT_TEST(s_NuclLcaseMask)
@@ -257,12 +259,14 @@ BOOST_AUTO_UNIT_TEST(s_MultiRange)
 {
     START;
     DECLARE_SOURCE("data/aa.cat");
-    source.m_Config.SetFrom(50);
-    source.m_Config.SetTo(100);
+    source.m_Config.SetRange().SetFrom(50);
+    source.m_Config.SetRange().SetTo(100);
     CBlastInput in(&source);
 
     blast::TSeqLocVector v = in.GetAllSeqLocs();
     NON_CONST_ITERATE(blast::TSeqLocVector, itr, v) {
+        CHECK_EQUAL((TSeqPos)50, itr->seqloc->GetStart(eExtreme_Positional));
+        CHECK_EQUAL((TSeqPos)100, itr->seqloc->GetStop(eExtreme_Positional));
         CHECK_EQUAL((TSeqPos)50, itr->seqloc->GetInt().GetFrom());
         CHECK_EQUAL((TSeqPos)100, itr->seqloc->GetInt().GetTo());
     }
@@ -281,68 +285,121 @@ BOOST_AUTO_UNIT_TEST(s_MultiBatch)
     CHECK_EQUAL((size_t)7, v.size());
     CHECK_EQUAL((TSeqPos)530, v[0].seqloc->GetInt().GetTo());
     CHECK_EQUAL(1346057, v[0].seqloc->GetInt().GetId().GetGi());
+    CHECK_EQUAL(1346057, v[0].seqloc->GetId()->GetGi());
 
     v = in.GetNextSeqLocBatch();
     CHECK_EQUAL((size_t)8, v.size());
     CHECK_EQUAL((TSeqPos)445, v[0].seqloc->GetInt().GetTo());
     CHECK_EQUAL(1170625, v[0].seqloc->GetInt().GetId().GetGi());
+    CHECK_EQUAL(1170625, v[0].seqloc->GetId()->GetGi());
 
     v = in.GetNextSeqLocBatch();
     CHECK_EQUAL((size_t)4, v.size());
     CHECK_EQUAL((TSeqPos)688, v[0].seqloc->GetInt().GetTo());
     CHECK_EQUAL(114152, v[0].seqloc->GetInt().GetId().GetGi());
+    CHECK_EQUAL(114152, v[0].seqloc->GetId()->GetGi());
 
     CHECK(source.End());
 }
 
-#ifdef NCBI_OS_DARWIN
-// nonsense to work around linker screwiness (horribly kludgy)
-class CDummyDLF : public CDataLoaderFactory {
+/// Auxiliary class to convert a string into an argument count and vector
+class CString2Args
+{
 public:
-    CDummyDLF() : CDataLoaderFactory(kEmptyStr) { }
-    CDataLoader* CreateAndRegister(CObjectManager&,
-                                   const TPluginManagerParamTree*) const
-        { return 0; }
+    CString2Args(const string& cmd_line_args) {
+        x_Init(cmd_line_args);
+    }
+
+    ~CString2Args() {
+        x_CleanUp();
+    }
+
+    void Reset(const string& cmd_line_args) {
+        x_CleanUp();
+        x_Init(cmd_line_args);
+    }
+
+    CArgs* CreateCArgs(CPsiBlastAppArgs& args) const {
+        auto_ptr<CArgDescriptions> arg_desc(args.SetCommandLine());
+        CNcbiArguments ncbi_args(m_Argc, m_Argv);
+        return arg_desc->CreateArgs(ncbi_args);
+    }
+
+private:
+
+    /// Functor to help remove empty strings from a container
+    struct empty_string_remover : public unary_function<bool, string> {
+        bool operator() (const string& str) {
+            return str.empty();
+        }
+    };
+
+    /// Extract the arguments from a command line
+    vector<string> x_TokenizeCmdLine(const string& cmd_line_args) {
+        vector<string> retval;
+        NStr::Tokenize(cmd_line_args, " ", retval);
+        vector<string>::iterator new_end = remove_if(retval.begin(), 
+                                                     retval.end(), 
+                                                     empty_string_remover());
+        retval.erase(new_end, retval.end());
+        return retval;
+    }
+
+    /// Convert a C++ string into a C-style string
+    char* x_ToCString(const string& str) {
+        char* retval = new char[str.size()+1];
+        strncpy(retval, str.c_str(), str.size());
+        retval[str.size()] = '\0';
+        return retval;
+    }
+
+    void x_CleanUp() {
+        for (size_t i = 0; i < m_Argc; i++) {
+            delete [] m_Argv[i];
+        }
+        delete [] m_Argv;
+    }
+
+    void x_Init(const string& cmd_line_args) {
+        const string program_name("./blastinput_unit_test");
+        vector<string> args = x_TokenizeCmdLine(cmd_line_args);
+        m_Argc = args.size() + 1;   // one extra for dummy program name
+        m_Argv = new char*[m_Argc];
+        m_Argv[0] = x_ToCString(program_name);
+        for (size_t i = 0; i < args.size(); i++) {
+            m_Argv[i+1] = x_ToCString(args[i]);
+        }
+    }
+
+    char** m_Argv;
+    size_t m_Argc;
 };
 
-void s_ForceSymbolDefinitions(CReadDispatcher& rd)
+
+/* Test for the PSI-BLAST command line application arguments */
+
+BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
 {
-    auto_ptr<CDataLoaderFactory> dlf(new CDummyDLF);
-    CRef<CProcessor> pid2(new CProcessor_ID2(rd));
-    CPluginManagerGetterImpl::GetBase(kEmptyStr);
+    START;
+    CPsiBlastAppArgs psiblast_args;
+    CString2Args s2a("-M BLOSUM80 -d ecoli -dbtype prot ");
+    auto_ptr<CArgs> args(s2a.CreateCArgs(psiblast_args));
+
+    CRef<CPSIBlastOptionsHandle> opts = psiblast_args.SetOptions(*args);
+
+    CHECK_EQUAL(opts->GetMatrixName(), "BLOSUM80");
 }
-#endif
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.8  2006/10/10 16:26:53  ucko
- * Hack around bogus failures on Darwin, whose linker doesn't entirely
- * care for the way we build shared libraries.
- *
- * Revision 1.7  2006/10/02 17:05:04  papadopo
- * use blast scope
- *
- * Revision 1.6  2006/08/30 19:57:55  papadopo
- * remove redundant work
- *
- * Revision 1.5  2006/08/30 19:55:03  camacho
- * Make verbose output less restrictive
- *
- * Revision 1.4  2006/08/30 19:30:01  papadopo
- * 1. Add nucleotide sequence tests
- * 2. Add multi-query-fetch tests
- * 3. Add optional verbose output
- *
- * Revision 1.3  2006/08/30 18:03:40  papadopo
- * add protein fasta parsing unit tests
- *
- * Revision 1.2  2006/08/29 20:43:28  papadopo
- * add includes, add first test
- *
- * Revision 1.1  2006/08/29 20:13:49  papadopo
- * unit tests for blastinput library
- *
- * ===========================================================================
- */
+BOOST_AUTO_UNIT_TEST(PsiBlastAppMissingMandatoryArguments)
+{
+    START;
+    CPsiBlastAppArgs psiblast_args;
+    CString2Args s2a("");
+    auto_ptr<CArgs> args;
+    BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(psiblast_args)), 
+                      CArgException);
 
+    s2a.Reset("-M BLOSUM80");
+    BOOST_CHECK_THROW(args.reset(s2a.CreateCArgs(psiblast_args)), 
+                      CArgException);
+}

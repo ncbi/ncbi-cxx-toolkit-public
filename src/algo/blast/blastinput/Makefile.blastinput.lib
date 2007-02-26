@@ -1,6 +1,13 @@
 # $Id$
 
-SRC_CXX = blast_input blast_fasta_input blast_args blast_prog_args
+SRC_CXX = \
+blast_input \
+blast_fasta_input \
+blast_args \
+cmdline_flags \
+blast_input_aux \
+blastp_args \
+psiblast_args
 
 SRC  = $(SRC_CXX)
 

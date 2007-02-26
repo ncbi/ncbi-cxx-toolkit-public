@@ -57,18 +57,12 @@ public:
     /// @param believe_defline If true, all sequences ID's are parsed;
     ///                 otherwise all sequences receive a local ID set
     ///                 to a monotonically increasing count value [in]
-    /// @param from All sequence locations start at this offset [in]
-    /// @param to All sequence locations end at this offset (end of sequence
-    ///           if zero) [in]
-    ///
+    /// @param range Range restriction for all sequences (default means no
+    //                  restriction) [in]
     CBlastInputConfig(objects::ENa_strand strand = objects::eNa_strand_other,
                      bool lowercase = false,
                      bool believe_defline = false,
-                     TSeqPos from = 0,
-                     TSeqPos to = 0)
-        : m_Strand(strand), m_LowerCaseMask(lowercase),
-          m_BelieveDeflines(believe_defline), 
-          m_From(from), m_To(to) {}
+                     TSeqRange range = TSeqRange());
 
     /// Destructor
     ///
@@ -103,32 +97,20 @@ public:
     ///
     bool GetBelieveDeflines() const { return m_BelieveDeflines; }
 
-    /// Set start offset of all sequences
-    /// @param from Start offset
-    ///
-    void SetFrom(TSeqPos from) { m_From = from; }
+    /// Set range for all sequences
+    /// @param r range to use [in]
+    void SetRange(const TSeqRange& r) { m_Range = r; }
+    TSeqRange& SetRange(void) { return m_Range; }
 
-    /// Get current start offset of all sequences
-    /// @return Current start offset
-    ///
-    TSeqPos GetFrom() const { return m_From; }
-
-    /// Set end offset of all sequences
-    /// @param to Start offset
-    ///
-    void SetTo(TSeqPos to) { m_To = to; }
-
-    /// Get current end offset of all sequences
-    /// @return Current end offset
-    ///
-    TSeqPos GetTo() const { return m_To; }
+    /// Get range for all sequences
+    /// @return range specified for all sequences
+    TSeqRange GetRange() const { return m_Range; }
 
 private:
     objects::ENa_strand m_Strand;  ///< strand to assign to sequences
     bool m_LowerCaseMask;          ///< whether to save lowercase mask locs
     bool m_BelieveDeflines;        ///< whether to parse sequence IDs
-    TSeqPos m_From;                ///< sequence start offsets
-    TSeqPos m_To;                  ///< sequence end offsets
+    TSeqRange m_Range;             ///< sequence range
 };
 
 

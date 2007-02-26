@@ -46,6 +46,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
+CBlastInputConfig::CBlastInputConfig(objects::ENa_strand strand,
+                                     bool lowercase,
+                                     bool believe_defline,
+                                     TSeqRange range)
+: m_Strand(strand), m_LowerCaseMask(lowercase), 
+  m_BelieveDeflines(believe_defline), m_Range(range)
+{}
 
 TSeqLocVector
 CBlastInput::GetNextSeqLocBatch()

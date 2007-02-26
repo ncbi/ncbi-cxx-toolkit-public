@@ -34,6 +34,7 @@
 #ifndef ALGO_BLAST_API___PSIBLAST_IMPL__HPP
 #define ALGO_BLAST_API___PSIBLAST_IMPL__HPP
 
+#include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 
@@ -58,7 +59,7 @@ class CPSIBlastOptionsHandle;
 class CBlastProteinOptionsHandle;
 
 /// Implementation class for PSI-BLAST (database search and 2 sequences).
-class CPsiBlastImpl {
+class CPsiBlastImpl : public CThreadable {
 public:
 
     /// Constructor for restarting PSI-BLAST iterations with a previously

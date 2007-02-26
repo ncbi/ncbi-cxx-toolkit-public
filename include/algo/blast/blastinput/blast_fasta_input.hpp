@@ -35,6 +35,7 @@
 #define ALGO_BLAST_BLASTINPUT___BLAST_FASTA_INPUT__HPP
 
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -55,17 +56,14 @@ public:
     /// @param believe_defline If true, all sequences ID's are parsed;
     ///                 otherwise all sequences receive a local ID set
     ///                 to a monotonically increasing count value [in]
-    /// @param from All sequence locations start at this offset [in]
-    /// @param to All sequence locations end at this offset (end of sequence
-    ///           if zero) [in]
-    ///
+    /// @param range Range restriction for all sequences (default means no
+    //                  restriction) [in]
     CBlastFastaInputSource(objects::CObjectManager& objmgr,
                    CNcbiIstream& infile,
                    objects::ENa_strand strand = objects::eNa_strand_other,
                    bool lowercase = false,
                    bool believe_defline = false,
-                   TSeqPos from = 0,
-                   TSeqPos to = 0);
+                   TSeqRange range = TSeqRange());
 
     /// Destructor
     ///

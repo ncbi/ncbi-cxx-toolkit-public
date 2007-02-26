@@ -55,15 +55,12 @@ class NCBI_XBLAST_EXPORT CLocalBlast : public CObject, public CThreadable
 {
 public:
     CLocalBlast(CRef<IQueryFactory> query_factory,
-                //CConstRef<CBlastOptionsHandle> opts_handle,
                 CRef<CBlastOptionsHandle> opts_handle,
                 const CSearchDatabase& dbinfo);
     CLocalBlast(CRef<IQueryFactory> query_factory,
-                //CConstRef<CBlastOptionsHandle> opts_handle,
                 CRef<CBlastOptionsHandle> opts_handle,
-                IBlastSeqSrcAdapter& db);
+                CRef<CLocalDbAdapter> db);
     CLocalBlast(CRef<IQueryFactory> query_factory,
-                //CConstRef<CBlastOptionsHandle> opts_handle,
                 CRef<CBlastOptionsHandle> opts_handle,
                 BlastSeqSrc* seqsrc);
     

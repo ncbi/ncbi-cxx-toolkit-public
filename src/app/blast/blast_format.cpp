@@ -49,10 +49,10 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
 
-CBlastFormat::CBlastFormat(string program, string dbname, 
+CBlastFormat::CBlastFormat(const CBlastOptions& options, const string& dbname, 
                  int format_type, bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
-                 string asn_outfile, int num_summary, 
+                 int num_summary, 
                  const char *matrix_name,
                  bool show_gi, bool is_html,
                  int qgencode, int dbgencode,
@@ -60,7 +60,8 @@ CBlastFormat::CBlastFormat(string program, string dbname,
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_is_aa), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
-          m_Program(program), m_DbName(dbname),
+          m_Program(Blast_ProgramNameFromType(options.GetProgramType())), 
+          m_DbName(dbname),
           m_QueryGenCode(qgencode), m_DbGenCode(dbgencode),
           m_ShowGi(show_gi), m_ShowLinkedSetSize(show_linked),
           m_MatrixSet(false)
@@ -76,12 +77,6 @@ CBlastFormat::CBlastFormat(string program, string dbname,
                    CBlastException::eInvalidArgument,
                    "XML output format not supported");
     }
-
-    // ASN.1 output can output to a separate stream, even
-    // if the ordinary output type is not ASN.1
-    m_AsnOut = !asn_outfile.empty();
-    if (m_AsnOut)
-        m_AsnOutfile.open(asn_outfile.c_str());
 
     x_FillScoreMatrix(matrix_name);
     x_FillDbInfo();
@@ -182,8 +177,7 @@ CBlastFormat::PrintProlog()
 }
 
 void
-CBlastFormat::x_PrintOneQueryFooter(CBlastAncillaryData& summary,
-                                    CBlastOptions& options)
+CBlastFormat::x_PrintOneQueryFooter(const CBlastAncillaryData& summary)
 {
     const Blast_KarlinBlk *kbp_ungap = summary.GetUngappedKarlinBlk();
     m_Outfile << endl;
@@ -209,22 +203,21 @@ CBlastFormat::x_PrintOneQueryFooter(CBlastAncillaryData& summary,
 }
 
 void
-CBlastFormat::PrintOneAlignSet(CSearchResults& results,
-                               CScope& scope,
-                               CBlastOptions& options)
+CBlastFormat::PrintOneAlignSet(const CSearchResults& results,
+                               CScope& scope)
 {
     const CSeq_align_set& aln_set = *results.GetSeqAlign();
 
-    // ASN.1 output is allowed as a separate 
-    // formatted object, independent of the main
-    // formatting process
-    if (m_AsnOut) {
-        CSeq_annot seqannot;
-        seqannot.SetData().SetAlign() = aln_set.Get();
-        m_AsnOutfile << MSerial_AsnText << aln_set;
-    }
-
     // ASN.1 formatting is straightforward
+    if (m_FormatType == 10) {
+        m_Outfile << MSerial_AsnText << aln_set;
+        return;
+    }
+    else if (m_FormatType == 11) {
+        m_Outfile << MSerial_AsnBinary << aln_set;
+        return;
+    }
+#if 0
     if (m_FormatType == 10 || m_FormatType == 11) {
         CSeq_annot seqannot;
         seqannot.SetData().SetAlign() = aln_set.Get();
@@ -234,6 +227,7 @@ CBlastFormat::PrintOneAlignSet(CSearchResults& results,
             m_Outfile << MSerial_AsnBinary << aln_set;
         return;
     }
+#endif
 
     // tabular formatting just prints each alignment in turn
     // (plus a header)
@@ -267,7 +261,7 @@ CBlastFormat::PrintOneAlignSet(CSearchResults& results,
     if (aln_set.Get().empty() ||
         aln_set.Get().front()->GetSegs().GetDisc().Get().empty()) {
         m_Outfile << "\n\n ***** No hits found *****\n\n" << endl;
-        x_PrintOneQueryFooter(*results.GetAncillaryData(), options);
+        x_PrintOneQueryFooter(*results.GetAncillaryData());
         return;
     }
 
@@ -346,11 +340,11 @@ CBlastFormat::PrintOneAlignSet(CSearchResults& results,
 
     // print the ancillary data for this query
 
-    x_PrintOneQueryFooter(*results.GetAncillaryData(), options);
+    x_PrintOneQueryFooter(*results.GetAncillaryData());
 }
 
 void 
-CBlastFormat::PrintEpilog(CBlastOptions& options)
+CBlastFormat::PrintEpilog(const CBlastOptions& options)
 {
     // some output types don't have a footer
     if (m_FormatType >= 8)

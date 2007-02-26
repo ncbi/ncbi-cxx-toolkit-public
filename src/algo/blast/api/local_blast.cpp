@@ -53,7 +53,6 @@ BEGIN_SCOPE(blast)
 
 CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
                          CRef<CBlastOptionsHandle> opts_handle,
-                         //CConstRef<CBlastOptionsHandle> opts_handle,
                          const CSearchDatabase& dbinfo)
 : m_QueryFactory    (qf),
   m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
@@ -64,8 +63,7 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
 
 CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
                          CRef<CBlastOptionsHandle> opts_handle,
-                         //CConstRef<CBlastOptionsHandle> opts_handle,
-                         IBlastSeqSrcAdapter& db)
+                         CRef<CLocalDbAdapter> db)
 : m_QueryFactory    (qf),
   m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
   m_InternalData    (0),
@@ -75,7 +73,6 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
 
 CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
                          CRef<CBlastOptionsHandle> opts_handle,
-                         //CConstRef<CBlastOptionsHandle> opts_handle,
                          BlastSeqSrc* seqsrc)
 : m_QueryFactory    (qf),
   m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),

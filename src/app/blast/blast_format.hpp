@@ -41,10 +41,11 @@ Author: Jason Papadopoulos
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_results.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
-#include <objtools/blast_format/blastfmtutil.hpp>
 #include <objtools/blast_format/tabular.hpp>
 #include <objtools/blast_format/showalign.hpp>
 #include <objtools/blast_format/showdefline.hpp>
+#include <objtools/blast_format/blastfmtutil.hpp>
+#include <algo/blast/blastinput/cmdline_flags.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -83,13 +84,15 @@ public:
     ///                    append the number of hits in the linked set of
     ///                    the best alignment to each database sequence [in]
     ///
-    CBlastFormat(string program, string dbname, 
+    CBlastFormat(const blast::CBlastOptions& opts, const string& dbname, 
                  int format_type, bool db_is_aa,
                  bool believe_query, CNcbiOstream& outfile,
-                 string asn_outfile, int num_summary, 
-                 const char *matrix_name,
-                 bool show_gi = false, bool is_html = false, 
-                 int qgencode = 1, int dbgencode = 1, 
+                 int num_summary, 
+                 const char *matrix_name = BLAST_DEFAULT_MATRIX,
+                 bool show_gi = false, 
+                 bool is_html = false, 
+                 int qgencode = blast::kDfltArgQueryGeneticCode, 
+                 int dbgencode = blast::kDfltArgDbGeneticCode, 
                  bool show_linked = false);
 
     /// Destructor
@@ -103,25 +106,20 @@ public:
     ///                ancillary data to be output [in]
     /// @param scope The scope to use for retrieving sequence data
     ///              (must contain query and database sequences) [in]
-    /// @param options Options used for performing the blast search [in]
-    ///
-    void PrintOneAlignSet(blast::CSearchResults& results,
-                          objects::CScope& scope,
-                          blast::CBlastOptions& options);
+    void PrintOneAlignSet(const blast::CSearchResults& results,
+                          objects::CScope& scope);
 
     /// Print the footer of the blast report
     /// @param options Options used for performing the blast search [in]
     ///
-    void PrintEpilog(blast::CBlastOptions& options);
+    void PrintEpilog(const blast::CBlastOptions& options);
 
 private:
     int m_FormatType;           ///< Format type
     bool m_IsHTML;              ///< true if HTML output desired
     bool m_DbIsAA;              ///< true if database has protein sequences
     bool m_BelieveQuery;        ///< true if query sequence IDs are parsed
-    bool m_AsnOut;              ///< true if separate ASN.1 output produced
     CNcbiOstream& m_Outfile;    ///< stream to receive output
-    CNcbiOfstream m_AsnOutfile; ///< stream to receive separate ASN.1 output
     int m_NumSummary;           ///< number of 1-line summaries
     string m_Program;           ///< blast program
     string m_DbName;            ///< name of blast database
@@ -145,15 +143,14 @@ private:
     /// @param summary The ancillary data to report [in]
     /// @param options Options used for blast search [in]
     ///
-    void x_PrintOneQueryFooter(blast::CBlastAncillaryData& summary,
-                               blast::CBlastOptions& options);
+    void x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary);
 
     /// Initialize the score matrix to be used for formatting
     /// (if applicable)
     /// @param matrix_name Name of score matrix. NULL defaults to
     ///                    BLOSUM62 [in]
     ///
-    void x_FillScoreMatrix(const char *matrix_name);
+    void x_FillScoreMatrix(const char *matrix_name = BLAST_DEFAULT_MATRIX);
 
     /// Initialize database statistics
     void x_FillDbInfo();

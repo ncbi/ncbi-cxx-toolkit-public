@@ -136,6 +136,7 @@ CPsiBlastImpl::Run()
                                      opts, 
                                      m_Subject->MakeSeqSrc(), 
                                      m_Pssm);
+    prelim_search.SetNumberOfThreads(GetNumberOfThreads());
     CRef<SInternalData> core_data = prelim_search.Run();
 
     // Run the traceback stage

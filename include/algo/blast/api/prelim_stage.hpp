@@ -38,6 +38,7 @@
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/uniform_search.hpp>
+#include <algo/blast/api/local_db_adapter.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 
 /** @addtogroup AlgoBlast
@@ -48,11 +49,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-// Forward declaration
-class IBlastSeqSrcAdapter;
-
 /// Search class to perform the preliminary stage of the BLAST search
-/// NOTE: Non-const CBlastOptions is only needed for RPS-BLAST!!!
 class NCBI_XBLAST_EXPORT CBlastPrelimSearch : public CObject, public CThreadable
 {
 public:
@@ -68,7 +65,7 @@ public:
     /// @note we don't own the BlastSeqSrc
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                        CRef<CBlastOptions> options,
-                       IBlastSeqSrcAdapter& db);
+                       CRef<CLocalDbAdapter> db);
 
     /// Constructor which takes a PSSM and an already initialized BlastSeqSrc
     /// object
