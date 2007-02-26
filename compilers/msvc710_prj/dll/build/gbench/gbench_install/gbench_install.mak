@@ -278,6 +278,7 @@ all : dirs \
     $(PLUGINS) \
     $(INTERNAL_PLUGINS) \
     $(RESOURCES) \
+    EXTRA_RESOURCES \
     $(PATTERNS) \
     $(GBENCH)/plugins/plugin-cache
 
@@ -352,6 +353,10 @@ $(RESOURCES) : $(SRCDIR)\gui\res\$@
     @if not exist $(GBENCH)\$(*D) mkdir $(GBENCH)\$(*D)
     @if exist $(SRCDIR)\gui\res\$@ echo Updating $@...
     @if exist $(SRCDIR)\gui\res\$@ $(COPY) $(SRCDIR)\gui\res\$@ $(GBENCH)\$@ > NUL
+
+EXTRA_RESOURCES : $(SRCDIR)\objects\seqloc\accguide.txt
+    @if not exist $(GBENCH)\etc mkdir $(GBENCH)\etc 
+    $(COPY) $(SRCDIR)\objects\seqloc\accguide.txt $(GBENCH)\etc
 
 ###############################################################
 #
