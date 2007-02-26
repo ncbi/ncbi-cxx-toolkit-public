@@ -45,10 +45,12 @@ BEGIN_SCOPE(ftds64_ctlib)
 //  CTL_RPCCmd::
 //
 
-CTL_RPCCmd::CTL_RPCCmd(CTL_Connection* conn, CS_COMMAND* cmd,
-                       const string& proc_name, unsigned int nof_params) :
-    CTL_Cmd(conn, cmd),
-    impl::CBaseCmd(proc_name, nof_params)
+CTL_RPCCmd::CTL_RPCCmd(CTL_Connection* conn,
+                       const string& proc_name,
+                       unsigned int nof_params
+                       )
+: CTL_Cmd(conn)
+, impl::CBaseCmd(proc_name, nof_params)
 {
     SetExecCntxInfo("RPC Command: " + proc_name);
 }

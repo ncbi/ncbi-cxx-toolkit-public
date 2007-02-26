@@ -45,13 +45,16 @@ BEGIN_SCOPE(ftds64_ctlib)
 //  CTL_CursorCmd::
 //
 
-CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn, CS_COMMAND* cmd,
-                             const string& cursor_name, const string& query,
-                             unsigned int nof_params, unsigned int fetch_size) :
-    CTL_Cmd(conn, cmd),
-    impl::CCursorCmd(cursor_name, query, nof_params),
-    m_FetchSize(fetch_size),
-    m_Used(false)
+CTL_CursorCmd::CTL_CursorCmd(CTL_Connection* conn,
+                             const string& cursor_name,
+                             const string& query,
+                             unsigned int nof_params,
+                             unsigned int fetch_size
+                             )
+: CTL_Cmd(conn)
+, impl::CCursorCmd(cursor_name, query, nof_params)
+, m_FetchSize(fetch_size)
+, m_Used(false)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
         query + "\"";

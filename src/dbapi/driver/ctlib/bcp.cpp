@@ -49,20 +49,13 @@ BEGIN_SCOPE(ftds64_ctlib)
 //
 
 CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection* conn,
-                           CS_BLKDESC* cmd,
                            const string& table_name,
-                           unsigned int nof_columns) :
-    CTL_Cmd(conn, NULL),
-    impl::CBaseCmd(table_name, nof_columns),
-    m_Cmd(cmd),
-    m_Bind(nof_columns),
-    m_RowCount(0)
+                           unsigned int nof_columns)
+: CTL_BCPCmd(conn)
+, impl::CBaseCmd(table_name, nof_columns)
+, m_Bind(nof_columns)
+, m_RowCount(0)
 {
-//     CS_BLKDESC* cmd;
-//     if (blk_alloc(x_GetSybaseConn(), GetBLKVersion(), &cmd) != CS_SUCCEED) {
-//         DATABASE_DRIVER_ERROR( "blk_alloc failed", 110004 );
-//     }
-
     SetExecCntxInfo("BCP table name: " + table_name);
 }
 
@@ -586,9 +579,9 @@ CTL_BCPInCmd::Close(void)
 
         Cancel();
 
-        Check(blk_drop(x_GetSybaseCmd()));
-
-        m_Cmd = NULL;
+//         Check(blk_drop(x_GetSybaseCmd()));
+//
+//         m_Cmd = NULL;
     }
 }
 

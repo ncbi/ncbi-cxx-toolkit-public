@@ -277,17 +277,6 @@ CTL_Connection::GetBLKVersion(void) const
     return blk_version;
 }
 
-CS_COMMAND*
-CTL_Connection::x_CmdAlloc(void)
-{
-    CS_COMMAND* cmd;
-    CheckSFB(ct_cmd_alloc(x_GetSybaseConn(), &cmd),
-             "ct_cmd_alloc failed", 110001);
-
-    return cmd;
-}
-
-
 bool CTL_Connection::IsAlive()
 {
     CS_INT status;
@@ -314,7 +303,6 @@ CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
 
     CTL_LangCmd* lcmd = new CTL_LangCmd(
         this,
-        x_CmdAlloc(),
         lang_query,
         nof_params
         );
@@ -331,7 +319,6 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
 
     CTL_RPCCmd* rcmd = new CTL_RPCCmd(
         this,
-        x_CmdAlloc(),
         rpc_name,
         nof_args
         );
@@ -345,17 +332,11 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
 {
     CHECK_DRIVER_ERROR( !IsBCPable(), "No bcp on this connection", 110003 );
 
-    CS_BLKDESC* cmd;
-    if (blk_alloc(x_GetSybaseConn(), GetBLKVersion(), &cmd) != CS_SUCCEED) {
-        DATABASE_DRIVER_ERROR( "blk_alloc failed", 110004 );
-    }
-
     string extra_msg = "BCP Table: " + table_name;
     SetExtraMsg(extra_msg);
 
     CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(
         this,
-        cmd,
         table_name,
         nof_columns
         );
@@ -375,7 +356,6 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 
     CTL_CursorCmd* ccmd = new CTL_CursorCmd(
         this,
-        x_CmdAlloc(),
         cursor_name,
         query,
         nof_params,
@@ -387,43 +367,15 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 
 
 CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
-                                             size_t data_size, bool log_it)
+                                             size_t data_size,
+                                             bool log_it)
 {
-    CHECK_DRIVER_ERROR( !data_size, "wrong (zero) data size", 110092 );
 
-    I_ITDescriptor* p_desc= 0;
-
-    // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
-        // this is not a native descriptor
-        p_desc= x_GetNativeITDescriptor
-            (dynamic_cast<CDB_ITDescriptor&> (descr_in));
-        if(p_desc == 0) return 0;
-    }
-
-    auto_ptr<I_ITDescriptor> d_guard(p_desc);
-
-    CS_COMMAND* cmd = x_CmdAlloc();
-
-    if (Check(ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA))
-        != CS_SUCCEED) {
-        Check(ct_cmd_drop(cmd));
-        DATABASE_DRIVER_ERROR( "ct_command failed", 110093 );
-    }
-
-    CTL_ITDescriptor& desc = p_desc? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
-        dynamic_cast<CTL_ITDescriptor&> (descr_in);
-    // desc.m_Desc.datatype   = CS_TEXT_TYPE;
-    desc.m_Desc.total_txtlen  = (CS_INT)data_size;
-    desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
-
-    if (Check(ct_data_info(cmd, CS_SET, CS_UNUSED, &desc.m_Desc)) != CS_SUCCEED) {
-        Check(ct_cancel(0, cmd, CS_CANCEL_ALL));
-        Check(ct_cmd_drop(cmd));
-        DATABASE_DRIVER_ERROR( "ct_data_info failed", 110093 );
-    }
-
-    CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(this, cmd, data_size);
+    CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(this,
+                                                  descr_in,
+                                                  data_size,
+                                                  log_it
+                                                  );
     return Create_SendDataCmd(*sd_cmd);
 }
 
@@ -490,19 +442,20 @@ CTL_Connection::~CTL_Connection()
 }
 
 
-bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
+bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in,
+                                CDB_Stream& img,
                                 bool log_it)
 {
     CS_INT size = (CS_INT) img.Size();
     if ( !size )
         return false;
 
-    I_ITDescriptor* p_desc= 0;
+    I_ITDescriptor* p_desc = 0;
 
     // check what type of descriptor we've got
     if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
         // this is not a native descriptor
-        p_desc= x_GetNativeITDescriptor
+        p_desc = x_GetNativeITDescriptor
             (dynamic_cast<CDB_ITDescriptor&> (descr_in));
         if(p_desc == 0)
             return false;
@@ -510,7 +463,15 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
 
 
     auto_ptr<I_ITDescriptor> d_guard(p_desc);
-    CS_COMMAND* cmd = x_CmdAlloc();
+    CS_COMMAND* cmd = NULL;
+
+    CheckSFB(
+        ct_cmd_alloc(
+            x_GetSybaseConn(),
+            &cmd
+            ),
+        "ct_cmd_alloc failed", 110001
+        );
 
     if (Check(ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA))
         != CS_SUCCEED) {
@@ -714,11 +675,56 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 
 
 CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection* conn,
-                                 CS_COMMAND* cmd,
-                                 size_t nof_bytes) :
-    CTL_Cmd(conn, cmd),
-    impl::CSendDataCmd(nof_bytes)
+                                 I_ITDescriptor& descr_in,
+                                 size_t nof_bytes,
+                                 bool log_it
+                                 )
+: CTL_Cmd(conn)
+, impl::CSendDataCmd(nof_bytes)
 {
+    CHECK_DRIVER_ERROR(!nof_bytes, "wrong (zero) data size", 110092);
+
+    I_ITDescriptor* p_desc = NULL;
+
+    // check what type of descriptor we've got
+    if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+        // this is not a native descriptor
+        p_desc = GetConnection().x_GetNativeITDescriptor(
+            dynamic_cast<CDB_ITDescriptor&> (descr_in)
+            );
+        if(p_desc == 0) {
+            DATABASE_DRIVER_ERROR( "ct_command failedCannot retrieve I_ITDescriptor.", 110093 );
+        }
+    }
+
+    auto_ptr<I_ITDescriptor> d_guard(p_desc);
+
+    if (Check(ct_command(x_GetSybaseCmd(),
+                         CS_SEND_DATA_CMD,
+                         0,
+                         CS_UNUSED,
+                         CS_COLUMN_DATA
+                         )
+              )
+        != CS_SUCCEED) {
+        DATABASE_DRIVER_ERROR( "ct_command failed", 110093 );
+    }
+
+    CTL_ITDescriptor& desc = p_desc ? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
+        dynamic_cast<CTL_ITDescriptor&> (descr_in);
+    // desc.m_Desc.datatype   = CS_TEXT_TYPE;
+    desc.m_Desc.total_txtlen  = (CS_INT)nof_bytes;
+    desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
+
+    if (Check(ct_data_info(x_GetSybaseCmd(),
+                           CS_SET,
+                           CS_UNUSED,
+                           &desc.m_Desc
+                           )
+              ) != CS_SUCCEED) {
+        Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_ALL));
+        DATABASE_DRIVER_ERROR( "ct_data_info failed", 110093 );
+    }
 }
 
 

@@ -46,24 +46,37 @@ BEGIN_SCOPE(ftds64_ctlib)
 //  CTL_Cmd::
 //
 
-CTL_Cmd::CTL_Cmd(CTL_Connection* conn,
-                 CS_COMMAND* cmd) :
-    m_HasFailed(false),
-    m_WasSent(false),
-    m_RowCount(-1),
-    m_Connect(conn),
-    m_Cmd(cmd),
-    m_Res(NULL)
+CTL_CmdBase::CTL_CmdBase(CTL_Connection* conn)
+: m_HasFailed(false)
+, m_WasSent(false)
+, m_RowCount(-1)
+, m_Connect(conn)
 {
 }
 
 
-CTL_Cmd::~CTL_Cmd(void)
+CTL_CmdBase::~CTL_CmdBase(void)
 {
 }
 
 
-CS_RETCODE CTL_Cmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+CS_RETCODE
+CTL_CmdBase::CheckSF(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+{
+    switch (Check(rc)) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        m_HasFailed = true;
+        DATABASE_DRIVER_ERROR( msg, msg_num );
+    }
+
+    return rc;
+}
+
+
+CS_RETCODE
+CTL_CmdBase::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
     switch (Check(rc)) {
     case CS_SUCCEED:
@@ -81,7 +94,8 @@ CS_RETCODE CTL_Cmd::CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_nu
 }
 
 
-CS_RETCODE CTL_Cmd::CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+CS_RETCODE
+CTL_CmdBase::CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
     switch (Check(rc)) {
     case CS_SUCCEED:
@@ -101,7 +115,8 @@ CS_RETCODE CTL_Cmd::CheckSentSFB(CS_RETCODE rc, const char* msg, unsigned int ms
 }
 
 
-CS_RETCODE CTL_Cmd::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num)
+CS_RETCODE
+CTL_CmdBase::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_num)
 {
     switch (Check(rc)) {
     case CS_SUCCEED:
@@ -123,6 +138,35 @@ CS_RETCODE CTL_Cmd::CheckSFBCP(CS_RETCODE rc, const char* msg, unsigned int msg_
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_Cmd::
+//
+
+CTL_Cmd::CTL_Cmd(CTL_Connection* conn)
+: CTL_CmdBase(conn)
+, m_Cmd(NULL)
+, m_Res(NULL)
+{
+    CheckSFB(
+        ct_cmd_alloc(
+            GetConnection().GetNativeConnection().GetNativeHandle(),
+            &m_Cmd
+            ),
+        "ct_cmd_alloc failed", 110001
+        );
+}
+
+
+CTL_Cmd::~CTL_Cmd(void)
+{
+    try {
+        Check(ct_cmd_drop(x_GetSybaseCmd()));
+    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+}
+
+
 void CTL_Cmd::DropSybaseCmd(void)
 {
 #if 0
@@ -135,17 +179,6 @@ void CTL_Cmd::DropSybaseCmd(void)
 #endif
 
     m_Cmd = NULL;
-}
-
-bool
-CTL_Cmd::ProcessResultInternal(CDB_Result& res)
-{
-    if(GetConnection().GetResultProcessor()) {
-        GetConnection().GetResultProcessor()->ProcessResult(res);
-        return true;
-    }
-
-    return false;
 }
 
 bool
@@ -176,6 +209,17 @@ CTL_Cmd::ProcessResults(void)
         default:
             continue;
         }
+    }
+
+    return false;
+}
+
+bool
+CTL_Cmd::ProcessResultInternal(CDB_Result& res)
+{
+    if(GetConnection().GetResultProcessor()) {
+        GetConnection().GetResultProcessor()->ProcessResult(res);
+        return true;
     }
 
     return false;
@@ -233,7 +277,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
 
         CS_INT value = (CS_INT) par.Value();
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
+        ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                                   (CS_VOID*) &value, CS_UNUSED, indicator));
         break;
     }
@@ -245,7 +289,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
 
         CS_SMALLINT value = (CS_SMALLINT) par.Value();
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
+        ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                             (CS_VOID*) &value, CS_UNUSED, indicator));
         break;
     }
@@ -257,7 +301,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
 
         CS_TINYINT value = (CS_TINYINT) par.Value();
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
+        ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                             (CS_VOID*) &value, CS_UNUSED, indicator));
         break;
     }
@@ -269,7 +313,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
 
         CS_BIT value = (CS_BIT) par.Value();
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
+        ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                             (CS_VOID*) &value, CS_UNUSED, indicator));
         break;
     }
@@ -287,7 +331,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         if (longlong_to_numeric(v8, 18, value.array) == 0)
             return false;
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
+        ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                             (CS_VOID*) &value, CS_UNUSED, indicator));
         break;
     }
@@ -298,8 +342,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             break;
         }
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) par.Value(),
+                                  (CS_INT) par.Size(),
+                                  indicator)
+                         );
         break;
     }
     case eDB_LongChar: {
@@ -315,8 +363,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             break;
         }
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) par.Value(),
+                                  (CS_INT) par.Size(),
+                                  indicator)
+                         );
         break;
     }
     case eDB_VarChar: {
@@ -334,8 +386,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             break;
         }
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) par.Value(),
+                                  (CS_INT) par.Size(),
+                                  indicator)
+                         );
         break;
     }
     case eDB_Binary: {
@@ -345,8 +401,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             break;
         }
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) par.Value(),
+                                  (CS_INT) par.Size(),
+                                  indicator)
+                         );
         break;
     }
     case eDB_LongBinary: {
@@ -356,8 +416,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             break;
         }
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) par.Value(),
+                                  (CS_INT) par.Size(),
+                                  indicator)
+                         );
         break;
     }
     case eDB_VarBinary: {
@@ -367,8 +431,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             break;
         }
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt, (CS_VOID*) par.Value(),
-                            (CS_INT) par.Size(), indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) par.Value(),
+                                  (CS_INT) par.Size(),
+                                  indicator)
+                         );
         break;
     }
     case eDB_Float: {
@@ -379,8 +447,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
 
         CS_REAL value = (CS_REAL) par.Value();
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) &value,
+                                  CS_UNUSED,
+                                  indicator)
+                         );
         break;
     }
     case eDB_Double: {
@@ -391,8 +463,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         }
 
         CS_FLOAT value = (CS_FLOAT) par.Value();
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
-                            (CS_VOID*) &value, CS_UNUSED, indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) &value,
+                                  CS_UNUSED,
+                                  indicator)
+                         );
         break;
     }
     case eDB_SmallDateTime: {
@@ -411,8 +487,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             dt.minutes = par.GetMinutes();
         }
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
-                            (CS_VOID*) &dt, CS_UNUSED, indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) &dt,
+                                  CS_UNUSED,
+                                  indicator)
+                         );
         break;
     }
     case eDB_DateTime: {
@@ -431,8 +511,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             dt.dttime = par.Get300Secs();
         }
 
-        ret_code = Check(ct_param(m_Cmd, &param_fmt,
-                         (CS_VOID*) &dt, CS_UNUSED, indicator));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  (CS_VOID*) &dt,
+                                  CS_UNUSED,
+                                  indicator)
+                         );
         break;
     }
     default:
@@ -440,7 +524,12 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     }
 
     if ( declare_only ) {
-        ret_code = Check(ct_param(m_Cmd, &param_fmt, 0, CS_UNUSED, 0));
+        ret_code = Check(ct_param(x_GetSybaseCmd(),
+                                  &param_fmt,
+                                  0,
+                                  CS_UNUSED,
+                                  0)
+                         );
     }
 
     return (ret_code == CS_SUCCEED);
@@ -452,26 +541,15 @@ void CTL_Cmd::GetRowCount(int* cnt)
     CS_INT n;
     CS_INT outlen;
     if (cnt  &&
-        ct_res_info(m_Cmd, CS_ROW_COUNT, &n, CS_UNUSED, &outlen) == CS_SUCCEED
+        ct_res_info(x_GetSybaseCmd(),
+                    CS_ROW_COUNT,
+                    &n,
+                    CS_UNUSED,
+                    &outlen
+                    ) == CS_SUCCEED
         && n >= 0  &&  n != CS_NO_COUNT) {
         *cnt = (int) n;
     }
-}
-
-
-CS_COMMAND*
-CTL_Cmd::CmdAlloc(void)
-{
-    CS_COMMAND* cmd;
-    CheckSFB(
-        ct_cmd_alloc(
-            GetConnection().GetNativeConnection().GetNativeHandle(),
-            &cmd
-            ),
-        "ct_cmd_alloc failed", 110001
-        );
-
-    return cmd;
 }
 
 
@@ -555,13 +633,45 @@ CDB_Result* CTL_Cmd::MakeResult(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //
+//  CTL_BCPCmd::
+//
+
+CTL_BCPCmd::CTL_BCPCmd(CTL_Connection* conn)
+: CTL_CmdBase(conn)
+, m_Cmd(NULL)
+{
+    CheckSF(
+        blk_alloc(
+            GetConnection().GetNativeConnection().GetNativeHandle(),
+            GetConnection().GetBLKVersion(),
+            &m_Cmd
+            ),
+        "blk_alloc failed", 110004
+        );
+}
+
+
+CTL_BCPCmd::~CTL_BCPCmd(void)
+{
+    try {
+        Check(blk_drop(x_GetSybaseCmd()));
+    }
+    NCBI_CATCH_ALL( NCBI_CURRENT_FUNCTION )
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 //  CTL_LangCmd::
 //
 
-CTL_LangCmd::CTL_LangCmd(CTL_Connection* conn, CS_COMMAND* cmd,
-                         const string& lang_query, unsigned int nof_params) :
-    CTL_Cmd(conn, cmd),
-    impl::CBaseCmd(lang_query, nof_params)
+CTL_LangCmd::CTL_LangCmd(CTL_Connection* conn,
+                         const string& lang_query,
+                         unsigned int nof_params
+                         )
+: CTL_Cmd(conn)
+, impl::CBaseCmd(lang_query, nof_params)
 {
     SetExecCntxInfo("SQL Command: \"" + lang_query + "\"");
 }
@@ -693,9 +803,8 @@ CTL_LangCmd::Close(void)
 
     Cancel();
 
-    Check(ct_cmd_drop(x_GetSybaseCmd()));
-
-    SetSybaseCmd(NULL);
+//     Check(ct_cmd_drop(x_GetSybaseCmd()));
+//     SetSybaseCmd(NULL);
 }
 
 
