@@ -150,6 +150,8 @@ public:
     /// @param query List of query identifiers [in]
     /// @param align alignments for a single query sequence [in]
     /// @param errs error messages for this query sequence [in]
+    /// @param ancillary_data Miscellaneous output from the blast engine [in]
+    /// @param query_masks Mask locations for this query [in]
     CSearchResults(CConstRef<objects::CSeq_id>     query,
                    CRef<objects::CSeq_align_set>   align, 
                    const TQueryMessages          & errs,
@@ -238,6 +240,7 @@ public:
     /// @param aligns vector of all queries' alignments [in]
     /// @param msg_vec vector of all queries' messages [in]
     /// @param ancillary_data vector of per-query search ancillary data [in]
+    /// @param query_masks Mask locations for this query [in]
     CSearchResultSet(TQueryIdVector  ids,
                      TSeqAlignVector aligns,
                      TSearchMessages msg_vec,
