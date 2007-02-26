@@ -121,7 +121,10 @@ int CPsiBlastApp::Run(void)
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
 
-        CRef<CPSIBlastOptionsHandle> opts(m_CmdLineArgs->SetOptions(args));
+        CRef<CBlastOptionsHandle> handle(m_CmdLineArgs->SetOptions(args));
+        CRef<CPSIBlastOptionsHandle> opts;
+        opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*handle));
+        _ASSERT(opts.NotEmpty());
         const CBlastOptions& opt = opts->GetOptions();
 
         CBlastFastaInputSource fasta(*m_ObjMgr, 

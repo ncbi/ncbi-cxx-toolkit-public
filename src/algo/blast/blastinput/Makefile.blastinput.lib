@@ -7,6 +7,7 @@ blast_args \
 cmdline_flags \
 blast_input_aux \
 blastp_args \
+blastn_args \
 psiblast_args
 
 SRC  = $(SRC_CXX)

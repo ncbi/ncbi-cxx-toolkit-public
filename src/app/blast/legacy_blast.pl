@@ -151,6 +151,7 @@ sub handle_blastall($)
     $retval .= "-match_reward $opt_r "      if (defined $opt_r);
     $retval .= "-culling_limit $opt_K "     if (defined $opt_K);
     $retval .= "-max_intron_length $opt_t " if (defined $opt_t);
+    $retval .= "-frame_shift_penalty $opt_w " if (defined $opt_w);
     if (defined $opt_C) {
         # handle composition based statistics!
         $retval .= "-comp_based_stats $opt_C ";
@@ -215,6 +216,10 @@ sub handle_blastpgp($)
     my $retval;
 
     $retval .= "-gap_trigger $opt_N "       if (defined $opt_N);
+    $retval .= "-num_iterations $opt_j "    if (defined $opt_j);
+    # Will these work ?
+    $retval .= "-in_pssm $opt_R "           if (defined $opt_R);
+    $retval .= "-out_pssm $opt_C "          if (defined $opt_C);
 
     return $retval;
 }
@@ -222,11 +227,11 @@ __END__
 
 =head1 NAME
 
-B<legacy_blast.pl> - Download pre-formatted BLAST databases from NCBI
+B<legacy_blast.pl> - Convert 
 
 =head1 SYNOPSIS
 
-update_blastdb.pl [options] blastdb ...
+legacy_blast.pl [options] blastdb ...
 
 =head1 OPTIONS
 

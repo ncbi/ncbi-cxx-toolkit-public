@@ -35,45 +35,23 @@
 #define ALGO_BLAST_BLASTINPUT___BLASTP_ARGS__HPP
 
 #include <algo/blast/blastinput/blast_args.hpp>
-#include <algo/blast/api/blast_advprot_options.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Handles command line arguments for blastp binary
-class NCBI_XBLAST_EXPORT CBlastpAppArgs : public CObject
+class NCBI_XBLAST_EXPORT CBlastpAppArgs : public CBlastAppArgs
 {
 public:
     /// Constructor
     CBlastpAppArgs();
 
-    /// Compute the command line arguments to use
-    CArgDescriptions* SetCommandLine();
+    virtual int GetQueryBatchSize() const;
 
-    /// Compute the blast options to use
-    /// @param args The list of command line args from which data
-    ///             will be retrieved [in]
-    CRef<CBlastAdvancedProteinOptionsHandle> SetOptions(const CArgs& args);
-
-    CRef<CBlastDatabaseArgs> GetBlastDatabaseArgs() const;
-    CRef<CQueryOptionsArgs> GetQueryOptionsArgs() const;
-    CRef<CFormattingArgs> GetFormattingArgs() const;
-    size_t GetNumThreads() const;
-
-    CNcbiIstream& GetInputStream() const;
-    CNcbiOstream& GetOutputStream() const;
-
-    bool ExecuteRemotely() const;
-    int GetQueryBatchSize() const;
-
-private:
-    TBlastCmdLineArgs m_Args;
-    CRef<CQueryOptionsArgs> m_QueryOptsArgs;
-    CRef<CBlastDatabaseArgs> m_BlastDbArgs;
-    CRef<CFormattingArgs> m_FormattingArgs;
-    CRef<CMTArgs> m_MTArgs;
-    CRef<CRemoteArgs> m_RemoteArgs;
-    CRef<CStdCmdLineArgs> m_StdCmdLineArgs;
+protected:
+    virtual CRef<CBlastOptionsHandle>
+    x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
+                          const CArgs& args);
 };
 
 

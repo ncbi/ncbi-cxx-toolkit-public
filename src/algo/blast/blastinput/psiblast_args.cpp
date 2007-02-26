@@ -37,6 +37,7 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
 #include "blast_input_aux.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -67,23 +68,24 @@ USING_SCOPE(objects);
 
 CPsiBlastAppArgs::CPsiBlastAppArgs()
 {
+    bool const kQueryIsProtein = true;
     CRef<IBlastCmdLineArgs> arg;
     arg.Reset(new CProgramDescriptionArgs("psiblast", 
-                                          "Position-Specific Iterated BLAST"));
+                                          "Position-Specific Initiated BLAST"));
     m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
-    m_BlastDbArgs.Reset(new CBlastDatabaseArgs(true));
+    m_BlastDbArgs.Reset(new CBlastDatabaseArgs(kQueryIsProtein));
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 
     arg.Reset(new CGenericSearchArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CFilteringArgs(true));
+    arg.Reset(new CFilteringArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
     arg.Reset(new CMatrixNameArg);
@@ -95,7 +97,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(new CWindowSizeArg);
     m_Args.push_back(arg);
 
-    m_QueryOptsArgs.Reset(new CQueryOptionsArgs(true));
+    m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));
     arg.Reset(m_QueryOptsArgs);
     m_Args.push_back(arg);
 
@@ -122,92 +124,17 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     m_Args.push_back(arg);
 }
 
-CArgDescriptions*
-CPsiBlastAppArgs::SetCommandLine()
+CRef<CBlastOptionsHandle>
+CPsiBlastAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
+                                        const CArgs& args)
 {
-    return SetUpCommandLineArguments(m_Args);
-}
-
-CRef<CPSIBlastOptionsHandle>
-CPsiBlastAppArgs::SetOptions(const CArgs& args)
-{
-    const CBlastOptions::EAPILocality locality = 
-        args[kArgRemote] ? CBlastOptions::eRemote : CBlastOptions::eLocal;
-    CRef<CPSIBlastOptionsHandle> retval(new CPSIBlastOptionsHandle(locality));
-
-    CBlastOptions& opt = retval->SetOptions();
-    NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
-        (*arg)->ExtractAlgorithmOptions(args, opt);
-    }
-
-    /*
-    if (args[ARG_MATRIX])
-        opt.SetMatrixName(args[ARG_MATRIX].AsString().c_str());
-        */
-
-    /*
-    if (args[ARG_DBSIZE])
-        opt.SetDbLength((Int8) args[ARG_DBSIZE].AsDouble());
-
-    if (args[ARG_COMP_BASED_STATS]) {
-        s_SetCompositionBasedStats(program, opt, 
-                                   args[ARG_COMP_BASED_STATS].AsString(),
-                                   args[ARG_SMITH_WATERMAN],
-                                   args[ARG_SMITH_WATERMAN].AsBoolean());
-    }
-        */
-
-    //s_SetWordThreshold(opt, program, args, opt.GetMatrixName());
-
-    return retval;
-}
-
-CRef<CBlastDatabaseArgs>
-CPsiBlastAppArgs::GetBlastDatabaseArgs() const
-{
-    return m_BlastDbArgs;
-}
-
-CRef<CQueryOptionsArgs>
-CPsiBlastAppArgs::GetQueryOptionsArgs() const
-{
-    return m_QueryOptsArgs;
-}
-
-CRef<CFormattingArgs>
-CPsiBlastAppArgs::GetFormattingArgs() const
-{
-    return m_FormattingArgs;
-}
-
-size_t
-CPsiBlastAppArgs::GetNumThreads() const
-{
-    return m_MTArgs->GetNumThreads();
-}
-
-bool
-CPsiBlastAppArgs::ExecuteRemotely() const
-{
-    return m_RemoteArgs->ExecuteRemotely();
+    return CRef<CBlastOptionsHandle>(new CPSIBlastOptionsHandle(locality));
 }
 
 size_t
 CPsiBlastAppArgs::GetNumberOfIterations() const
 {
     return m_PsiBlastArgs->GetNumberOfIterations();
-}
-
-CNcbiIstream&
-CPsiBlastAppArgs::GetInputStream() const
-{
-    return m_StdCmdLineArgs->GetInputStream();
-}
-
-CNcbiOstream&
-CPsiBlastAppArgs::GetOutputStream() const
-{
-    return m_StdCmdLineArgs->GetOutputStream();
 }
 
 CRef<CPssmWithParameters>

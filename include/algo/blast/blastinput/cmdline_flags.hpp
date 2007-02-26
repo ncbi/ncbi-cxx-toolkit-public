@@ -162,6 +162,9 @@ extern const string kArgCullingLimit;
 /// Default argument to specify the culling limit
 extern const int kDfltArgCullingLimit;
 
+/// Argument to specify the frame shift penality
+extern const string kArgFrameShiftPenalty;
+
 /// Argument to specify number of bits to initiate gapping
 extern const string kArgGapTrigger;
 /// Default value for number of bits to initiate gapping
@@ -191,6 +194,15 @@ extern const string kArgFilteringDb;
 /// Argument to specify to mask query during lookup table creation
 extern const string kArgLookupTableMaskingOnly;
 
+/* PSI-BLAST options */
+
+/// Argument to select the number of iterations to perform in PSI-BLAST
+extern const string kArgPSINumIterations;
+
+/// Argument to specify a 'checkpoint' file to recover the PSSM from
+extern const string kArgPSIInputChkPntFile;
+/// Argument to specify a 'checkpoint' file to write the PSSM
+extern const string kArgPSIOutputChkPntFile;
 
 /* OLD C TOOLKIT ARGUMENTS */
 
@@ -198,7 +210,7 @@ extern const string kArgLookupTableMaskingOnly;
 //#define ARG_EVALUE "e"
 //#define ARG_FORMAT "m"
 //#define ARG_OUT "o"
-#define ARG_FILTER "F"
+//#define ARG_FILTER "F"
 //#define ARG_GAPOPEN "G"
 //#define ARG_GAPEXT "E"
 //#define ARG_XDROP "X"
@@ -221,9 +233,9 @@ extern const string kArgLookupTableMaskingOnly;
 /* PSI-BLAST arguments */
 #define ARG_PSEUDOCOUNT "c"
 #define ARG_INCLUSION_THRESHOLD "h"
-#define ARG_NUM_ITERATIONS "j"
+//#define ARG_NUM_ITERATIONS "j"
 
-#define ARG_CHECKPOINT "C"
+//#define ARG_CHECKPOINT "C"
 #define ARG_ASCII_MATRIX "Q"
 #define ARG_MSA_RESTART "B"
 //#define ARG_GAP_TRIGGER "N"
@@ -232,8 +244,8 @@ extern const string kArgLookupTableMaskingOnly;
 
 //#define ARG_PROGRAM "p"
 //#define ARG_DB "d"
-#define ARG_MISMATCH "q"
-#define ARG_MATCH "r"
+//#define ARG_MISMATCH "q"
+//#define ARG_MATCH "r"
 //#define ARG_THRESHOLD "f"
 //#define ARG_QGENETIC_CODE "query_gencode"
 //#define ARG_DBGENETIC_CODE "db_gencode"
@@ -242,9 +254,9 @@ extern const string kArgLookupTableMaskingOnly;
 //#define ARG_MATRIX "M"
 //#define ARG_DBSIZE "z"
 //#define ARG_STRAND "S"
-#define ARG_PSI_CHKPNT "R"
-#define ARG_MEGABLAST "n"
-#define ARG_FRAMESHIFT "w"
+//#define ARG_PSI_CHKPNT "R"
+//#define ARG_MEGABLAST "n"
+//#define ARG_FRAMESHIFT "w"
 //#define ARG_INTRON "t"
 //#define ARG_COMP_BASED_STATS "comp_based_stats"
 //#define ARG_COMP_BASED_STATS "C"

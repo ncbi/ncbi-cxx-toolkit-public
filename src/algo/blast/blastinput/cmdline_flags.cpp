@@ -111,6 +111,8 @@ const int kDfltArgMaxIntronLength = 0;
 const string kArgCullingLimit("culling_limit");
 const int kDfltArgCullingLimit = 1;
 
+const string kArgFrameShiftPenalty("frame_shift_penalty");
+
 const string kArgGapTrigger("gap_trigger");
 const double kDfltArgGapTrigger = 22.0;
 
@@ -132,6 +134,10 @@ const string kDfltArgDustFiltering =
 
 const string kArgFilteringDb("filtering_db");
 const string kArgLookupTableMaskingOnly("soft_masking");
+
+const string kArgPSINumIterations("num_iterations");
+const string kArgPSIInputChkPntFile("in_pssm");
+const string kArgPSIOutputChkPntFile("out_pssm");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

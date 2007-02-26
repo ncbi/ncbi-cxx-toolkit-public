@@ -48,6 +48,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <util/format_guess.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include "blast_input_aux.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -120,13 +121,6 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      CArgDescriptions::eDouble,
                      NStr::DoubleToString(kDfltArgEvalue));
 
-    // filter string
-    arg_desc.AddOptionalKey(ARG_FILTER, "filter_string", 
-                  "Filter query sequence (DUST with blastn, SEG with others)",
-                  CArgDescriptions::eString,
-                  CArgDescriptions::fOptionalSeparator);
-    arg_desc.AddAlias("-filter", ARG_FILTER);
-
     // gap open penalty
     const int kGOpen = m_QueryIsProtein 
         ? BLAST_GAP_OPEN_PROT : BLAST_GAP_OPEN_MEGABLAST;
@@ -186,10 +180,6 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetEvalueThreshold(args[kArgEvalue].AsDouble());
     }
 
-    if (args[ARG_FILTER]) {
-        opt.SetFilterString(args[ARG_FILTER].AsString().c_str());
-    }
-
     if (args[kArgGapOpen]) {
         opt.SetGapOpeningCost(args[kArgGapOpen].AsInteger());
     }
@@ -226,16 +216,14 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     if (m_QueryIsProtein) {
         arg_desc.AddDefaultKey(kArgSegFiltering, "SEG_options",
-                "Filter query sequence with SEG (Format: window locut hicut)",
-                CArgDescriptions::eString, kDfltArgSegFiltering);
-        arg_desc.SetConstraint(kArgSegFiltering, NULL, 
-                               CArgDescriptions::eConstraintInvert);
+                        "Filter query sequence with SEG "
+                        "(Format: 'window locut hicut', or 'none')",
+                        CArgDescriptions::eString, kDfltArgSegFiltering);
     } else {
         arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
-            "Filter query sequence with DUST (Format: level window, linker)",
-            CArgDescriptions::eString, kDfltArgDustFiltering);
-        arg_desc.SetConstraint(kArgSegFiltering, NULL, 
-                               CArgDescriptions::eConstraintInvert);
+                        "Filter query sequence with DUST "
+                        "(Format: 'level window linker', or 'none')",
+                        CArgDescriptions::eString, kDfltArgDustFiltering);
     }
 
     arg_desc.AddFlag(kArgLookupTableMaskingOnly,
@@ -247,46 +235,52 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
-void
-CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, 
-                                            CBlastOptions& opt)
+void 
+CFilteringArgs::x_TokenizeFilteringArgs(const string& filtering_args, 
+                                        vector<string>& output) const
 {
-    if (args[kArgEvalue]) {
-        opt.SetEvalueThreshold(args[kArgEvalue].AsDouble());
+    output.clear();
+    NStr::Tokenize(filtering_args, " ", output);
+}
+
+void
+CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
+{
+    if (args[kArgLookupTableMaskingOnly]) {
+        opt.SetMaskAtHash(true);
     }
 
-    if (args[ARG_FILTER]) {
-        opt.SetFilterString(args[ARG_FILTER].AsString().c_str());
+    vector<string> tokens;
+
+    if (m_QueryIsProtein && args[kArgSegFiltering]) {
+        const string& seg_opts = args[kArgSegFiltering].AsString();
+        if (seg_opts == "none") {
+            opt.SetSegFiltering(false);
+        } else {
+            x_TokenizeFilteringArgs(seg_opts, tokens);
+            opt.SetSegFilteringWindow(NStr::StringToInt(tokens[0]));
+            opt.SetSegFilteringLocut(NStr::StringToDouble(tokens[1]));
+            opt.SetSegFilteringHicut(NStr::StringToDouble(tokens[2]));
+        }
     }
 
-    if (args[kArgGapOpen]) {
-        opt.SetGapOpeningCost(args[kArgGapOpen].AsInteger());
+    if ( !m_QueryIsProtein && args[kArgDustFiltering]) {
+        const string& dust_opts = args[kArgDustFiltering].AsString();
+        if (dust_opts == "none") {
+            opt.SetDustFiltering(false);
+        } else {
+            x_TokenizeFilteringArgs(dust_opts, tokens);
+            opt.SetDustFilteringLevel(NStr::StringToInt(tokens[0]));
+            opt.SetDustFilteringWindow(NStr::StringToInt(tokens[1]));
+            opt.SetDustFilteringLinker(NStr::StringToInt(tokens[2]));
+        }
     }
 
-    if (args[kArgGapExtend]) {
-        opt.SetGapExtensionCost(args[kArgGapExtend].AsInteger());
-    }
-
-    if (args[kArgUngappedXDropoff]) {
-        opt.SetXDropoff(args[kArgUngappedXDropoff].AsDouble());
-    }
-
-    if (args[kArgGappedXDropoff]) {
-        opt.SetGapXDropoff(args[kArgGappedXDropoff].AsDouble());
-    }
-
-    if (args[kArgFinalGappedXDropoff]) {
-        opt.SetGapXDropoffFinal(args[kArgFinalGappedXDropoff].AsDouble());
-    }
-
-    if (args[kArgWordSize]) {
-        opt.SetWordSize(args[kArgWordSize].AsInteger());
-    }
-
-    if (args[kArgEffSearchSpace]) {
-        opt.SetEffectiveSearchSpace(args[kArgEffSearchSpace].AsInt8());
+    if (args[kArgFilteringDb]) {
+        opt.SetRepeatFilteringDB(args[kArgFilteringDb].AsString().c_str());
     }
 }
+
 void
 CWindowSizeArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
@@ -364,14 +358,14 @@ CMatrixNameArg::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 void
 CNuclArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.SetCurrentGroup("nucleotide search options");
+    arg_desc.SetCurrentGroup("nucleotide scoring options");
 
     // blastn mismatch penalty
     arg_desc.AddDefaultKey(kArgMismatch, "penalty", 
                            "Penalty for a nucleotide mismatch", 
                            CArgDescriptions::eInteger,
                            NStr::IntToString(kDfltArgMismatch));
-    arg_desc.SetConstraint(kArgMatch, 
+    arg_desc.SetConstraint(kArgMismatch, 
                            new CArgAllowValuesLessThanOrEqual(0));
 
     // blastn match reward
@@ -527,22 +521,23 @@ CLargestIntronSizeArgs::ExtractAlgorithmOptions(const CArgs& args,
 void
 CFrameShiftArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddOptionalKey(ARG_FRAMESHIFT, "frameshift",
+    // applicable in blastx/tblastn, off by default
+    arg_desc.AddOptionalKey(kArgFrameShiftPenalty, "frameshift",
                             "Frame shift penalty (for use with out-of-frame "
                             "gapped alignment in blastx or tblastn, default "
                             "ignored)",
-                            CArgDescriptions::eInteger,
-                            CArgDescriptions::fOptionalSeparator);
-    arg_desc.AddAlias("-frameshift", ARG_FRAMESHIFT);
+                            CArgDescriptions::eInteger);
+    arg_desc.SetConstraint(kArgFrameShiftPenalty, 
+                           new CArgAllowValuesGreaterThanOrEqual(1));
 }
 
 void
 CFrameShiftArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
 {
-    if (args[ARG_FRAMESHIFT] && args[ARG_FRAMESHIFT].AsInteger() > 0) {
+    if (args[kArgFrameShiftPenalty]) {
         opt.SetOutOfFrameMode();
-        opt.SetFrameShiftPenalty(args[ARG_FRAMESHIFT].AsInteger());
+        opt.SetFrameShiftPenalty(args[kArgFrameShiftPenalty].AsInteger());
     }
 }
 
@@ -638,22 +633,21 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     if (m_DbTarget == eNucleotideDb) {
         // PSI-tblastn checkpoint
-        arg_desc.AddOptionalKey(ARG_PSI_CHKPNT, "psi_chkpt_file", 
+        arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
                                 "PSI-TBLASTN checkpoint file",
-                                CArgDescriptions::eInputFile,
-                                CArgDescriptions::fOptionalSeparator);
-        arg_desc.AddAlias("-psi_chkpt_file", ARG_PSI_CHKPNT);
+                                CArgDescriptions::eInputFile);
     } else {
         // Number of iterations
-        arg_desc.AddOptionalKey(ARG_NUM_ITERATIONS, "num_iterations",
-                                "Number of iterations to perform",
-                                CArgDescriptions::eInteger,
-                                CArgDescriptions::fOptionalSeparator);
+        arg_desc.AddDefaultKey(kArgPSINumIterations, "int_value",
+                               "Number of iterations to perform",
+                               CArgDescriptions::eInteger,
+                               NStr::IntToString(1));
+        arg_desc.SetConstraint(kArgPSINumIterations, 
+                               new CArgAllowValuesGreaterThanOrEqual(1));
         // checkpoint file
-        arg_desc.AddOptionalKey(ARG_CHECKPOINT, "checkpoint_file",
+        arg_desc.AddOptionalKey(kArgPSIOutputChkPntFile, "checkpoint_file",
                                 "File name to store checkpoint file",
-                                CArgDescriptions::eOutputFile,
-                                CArgDescriptions::fOptionalSeparator);
+                                CArgDescriptions::eOutputFile);
         // ASCII matrix file
         arg_desc.AddOptionalKey(ARG_ASCII_MATRIX, "ascii_mtx_file",
                                 "File name to store ASCII version of PSSM",
@@ -666,11 +660,9 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 CArgDescriptions::eInputFile,
                                 CArgDescriptions::fOptionalSeparator);
         // PSI-BLAST checkpoint
-        arg_desc.AddOptionalKey(ARG_PSI_CHKPNT, "psi_chkpt_file", 
+        arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file", 
                                 "PSI-BLAST checkpoint file",
-                                CArgDescriptions::eInputFile,
-                                CArgDescriptions::fOptionalSeparator);
-        arg_desc.AddAlias("-psi_chkpt_file", ARG_PSI_CHKPNT);
+                                CArgDescriptions::eInputFile);
     }
 
     arg_desc.SetCurrentGroup("");
@@ -681,20 +673,22 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                                        CBlastOptions& /* opt */)
 {
     if (m_DbTarget == eProteinDb) {
-        if (args[ARG_NUM_ITERATIONS]) {
-            m_NumIterations = args[ARG_NUM_ITERATIONS].AsInteger();
+        if (args[kArgPSINumIterations]) {
+            m_NumIterations = args[kArgPSINumIterations].AsInteger();
         }
-        if (args[ARG_CHECKPOINT]) {
+        if (args[kArgPSIOutputChkPntFile]) {
             m_CheckPointOutputStream = NULL;    /* FIXME */
         }
         if (args[ARG_ASCII_MATRIX]) {
+            cerr << "Warning: ASCII MATRIX NOT HANDLED\n";
         }
         if (args[ARG_MSA_RESTART]) {
+            cerr << "Warning: INPUT ALIGNMENT FILE NOT HANDLED\n";
         }
     }
 
-    if (args[ARG_PSI_CHKPNT]) {
-        CNcbiIstream& in = args[ARG_PSI_CHKPNT].AsInputFile();
+    if (args[kArgPSIInputChkPntFile]) {
+        CNcbiIstream& in = args[kArgPSIInputChkPntFile].AsInputFile();
         m_Pssm.Reset(new CPssmWithParameters);
         switch (CFormatGuess().Format(in)) {
         case CFormatGuess::eBinaryASN:
@@ -798,8 +792,8 @@ void
 CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     // database filename
-    arg_desc.AddKey(kArgDb, "database_name", "BLAST database name",
-                    CArgDescriptions::eString);
+    arg_desc.AddOptionalKey(kArgDb, "database_name", "BLAST database name", 
+                            CArgDescriptions::eString);
 
     if (m_RequestMoleculeType) {
         arg_desc.AddKey(kArgDbType, "database_type", 
@@ -818,6 +812,10 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey(kArgGiList, "filename", 
                             "Restrict search of database to list of GI's",
                             CArgDescriptions::eString);
+
+    arg_desc.AddOptionalKey(kArgSubject, "subject_input_file",
+                            "Subject sequence(s) to search",
+                            CArgDescriptions::eInputFile);
 }
 
 void
@@ -828,16 +826,25 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
     EMoleculeType mol_type = Blast_SubjectIsNucleotide(opts.GetProgramType())
         ? CSearchDatabase::eBlastDbIsNucleotide
         : CSearchDatabase::eBlastDbIsProtein;
-    m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(), mol_type));
+    
+    if (args[kArgDb]) {
 
-    if (args[kArgGiList]) {
-        m_GiListFileName.assign(args[kArgGiList].AsString());
-        /// This is only needed if the gi list is to be submitted remotely
-        if (args[kArgRemote] && CFile(m_GiListFileName).Exists()) {
-            vector<int> gis;
-            SeqDB_ReadGiList(m_GiListFileName, gis);
-            m_SearchDb->SetGiListLimitation(gis);
+        m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(), 
+                                             mol_type));
+        if (args[kArgGiList]) {
+            m_GiListFileName.assign(args[kArgGiList].AsString());
+            /// This is only needed if the gi list is to be submitted remotely
+            if (args[kArgRemote] && CFile(m_GiListFileName).Exists()) {
+                vector<int> gis;
+                SeqDB_ReadGiList(m_GiListFileName, gis);
+                m_SearchDb->SetGiListLimitation(gis);
+            }
         }
+    } else if (args[kArgSubject]) {
+        throw runtime_error("Setting of subject sequences unimplemented");
+    } else {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+           "Either a BLAST database or subject sequence(s) must be specified");
     }
 
     if (opts.GetEffectiveSearchSpace() != 0) {
@@ -1050,117 +1057,24 @@ CStdCmdLineArgs::GetOutputStream() const
     return *m_OutputStream;
 }
 
-#if 0
-string
-CBlastArgs::GetAsnOutputFile(const CArgs& args)
+CArgDescriptions*
+CBlastAppArgs::SetCommandLine()
 {
-    if (!args[ARG_ASNOUT])
-        return string();
-    return args[ARG_ASNOUT].AsString();
+    return SetUpCommandLineArguments(m_Args);
 }
 
-void
-CBlastArgs::GetQueryLoc(const CArgs& args, int& from, int& to)
+CRef<CBlastOptionsHandle>
+CBlastAppArgs::SetOptions(const CArgs& args)
 {
-    from = to = 0;
-    TSeqRange range(CQueryOptionsArgs().GetRange(args));
-
-    if (range == TSeqRange::GetEmpty()) {
-        return;
+    const CBlastOptions::EAPILocality locality = 
+        args[kArgRemote] ? CBlastOptions::eRemote : CBlastOptions::eLocal;
+    CRef<CBlastOptionsHandle> handle(x_CreateOptionsHandle(locality, args));
+    CBlastOptions& opts = handle->SetOptions();
+    NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
+        (*arg)->ExtractAlgorithmOptions(args, opts);
     }
-    from = range.GetFrom();
-    to = range.GetTo();
+    return handle;
 }
-
-int
-CBlastArgs::GetNumThreads(const CArgs& args)
-{
-    if (!args[ARG_THREADS])
-        return 1;
-    return args[ARG_THREADS].AsInteger();
-}
-int
-CBlastArgs::GetFormatType(const CArgs& args)
-{
-    if (!args[ARG_FORMAT])
-        return 0;
-    return args[ARG_FORMAT].AsInteger();
-}
-
-int
-CBlastArgs::GetNumDescriptions(const CArgs& args)
-{
-    if (!args[ARG_DESCRIPTIONS])
-        return 500;
-    return args[ARG_DESCRIPTIONS].AsInteger();
-}
-
-int
-CBlastArgs::GetNumDBSeq(const CArgs& args)
-{
-    if (!args[ARG_ALIGNMENTS])
-        return 250;
-    return args[ARG_ALIGNMENTS].AsInteger();
-}
-
-int
-CBlastArgs::GetWindowSize(const CArgs& args)
-{
-    if (!args[ARG_WINDOW])
-        return 0;
-    return args[ARG_WINDOW].AsInteger();
-}
-
-bool
-CBlastArgs::GetShowGi(const CArgs& args)
-{
-    if (!args[ARG_SHOWGI])
-        return false;
-    return args[ARG_SHOWGI].AsBoolean();
-}
-
-bool
-CBlastArgs::GetBelieveQuery(const CArgs& args)
-{
-    if (!args[ARG_BELIEVEQUERY])
-        return false;
-    return args[ARG_BELIEVEQUERY].AsBoolean();
-}
-
-bool
-CBlastArgs::GetLowercase(const CArgs& args)
-{
-    if (!args[ARG_LCASE])
-        return false;
-    return args[ARG_LCASE].AsBoolean();
-}
-
-bool
-CBlastArgs::GetHtml(const CArgs& args)
-{
-    if (!args[ARG_HTML])
-        return false;
-    return args[ARG_HTML].AsBoolean();
-}
-
-int
-CBlastArgs::GetQueryBatchSize(const CArgs& args)
-{
-    return kMax_Int;
-}
-
-
-void
-CBlastArgs::x_SetOptions(const CArgs& args, CBlastOptionsHandle* handle)
-{
-    CBlastOptions& opt = handle->SetOptions();
-
-    if (args[ARG_SEARCHSP])
-        opt.SetEffectiveSearchSpace((Int8) args[ARG_SEARCHSP].AsDouble());
-    if (args[ARG_ALIGNMENTS])
-        opt.SetHitlistSize(args[ARG_ALIGNMENTS].AsInteger());
-}
-#endif
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

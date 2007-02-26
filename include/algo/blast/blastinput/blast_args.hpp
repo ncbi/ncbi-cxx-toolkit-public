@@ -189,6 +189,9 @@ public:
                                          CBlastOptions& options);
 private:
     bool m_QueryIsProtein;  /**< true if the query is protein */
+
+    void x_TokenizeFilteringArgs(const string& filtering_args,
+                                 vector<string>& output) const;
 };
 
 /// Defines values for match and mismatch in nucleotide comparisons
@@ -462,83 +465,62 @@ public:
                                          CBlastOptions& opts);
 };
 
+/// Type definition of a container of IBlastCmdLineArgs
 typedef vector< CRef<IBlastCmdLineArgs> > TBlastCmdLineArgs;
 
-#if 0
-/// Handle command line arguments for blastall binary
-class NCBI_XBLAST_EXPORT CBlastallArgs : public CObject
+
+/// Base class for a generic BLAST command line binary
+class NCBI_XBLAST_EXPORT CBlastAppArgs : public CObject
 {
 public:
-    /// Constructor
-    CBlastallArgs();
+    virtual ~CBlastAppArgs() {}
 
-#if 0
-    /// Retrieve the blast program
-    /// @param args The list of command line args from which data
-    ///             will be retrieved [in]
-    string GetProgram(const CArgs& args);
+    CArgDescriptions* SetCommandLine();
 
-    /// Retrieve the blast database name
-    /// @param args The list of command line args from which data
-    ///             will be retrieved [in]
-    string GetDatabase(const CArgs& args);
-#endif
-
-    CNcbiIstream& GetInputStream() const;
-    CNcbiOstream& GetOutputStream() const;
-
-
-#if 0
-    /// Retrieve list of GIs to search
-    /// @param args The list of command line args from which data
-    ///             will be retrieved [in]
-    string GetGilist(const CArgs& args);
-
-    /// Retrieve the size of the database to use
-    /// @param args The list of command line args from which data
-    ///             will be retrieved [in]
-    double GetDBSize(const CArgs& args);
-#endif
-
-    /// Return the maximum size of a batch of different query sequences
-    /// that will be searched simultaneously
-    /// @param args The list of command line args from which data
-    ///             will be retrieved [in]
-    virtual int GetQueryBatchSize(const CArgs& args);
-
-    /// Compute the command line arguments to use
-    CArgDescriptions * SetCommandLine();
+    CRef<CBlastOptionsHandle> SetOptions(const CArgs& args);
 
     CRef<CBlastDatabaseArgs> GetBlastDatabaseArgs() const {
         return m_BlastDbArgs;
     }
+
     CRef<CQueryOptionsArgs> GetQueryOptionsArgs() const {
         return m_QueryOptsArgs;
     }
+
     CRef<CFormattingArgs> GetFormattingArgs() const {
         return m_FormattingArgs;
     }
+
     size_t GetNumThreads() const {
         return m_MTArgs->GetNumThreads();
     }
 
-    /// Compute the blast options to use
-    /// @param args The list of command line args from which data
-    ///             will be retrieved [in]
-    CRef<blast::CBlastOptionsHandle> SetOptions(const CArgs& args);
+    CNcbiIstream& GetInputStream() const {
+        return m_StdCmdLineArgs->GetInputStream();
+    }
+    CNcbiOstream& GetOutputStream() const {
+        return m_StdCmdLineArgs->GetOutputStream();
+    }
 
-private:
+    bool ExecuteRemotely() const {
+        return m_RemoteArgs->ExecuteRemotely();
+    }
+
+    virtual int GetQueryBatchSize() const = 0;
+
+protected:
     TBlastCmdLineArgs m_Args;
-    CRef<CBlastProgramArgs> m_Program;
     CRef<CQueryOptionsArgs> m_QueryOptsArgs;
     CRef<CBlastDatabaseArgs> m_BlastDbArgs;
     CRef<CFormattingArgs> m_FormattingArgs;
     CRef<CMTArgs> m_MTArgs;
+    CRef<CRemoteArgs> m_RemoteArgs;
     CRef<CStdCmdLineArgs> m_StdCmdLineArgs;
+
+    virtual CRef<CBlastOptionsHandle>
+    x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
+                          const CArgs& args) = 0;
 };
-#endif
-
-
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

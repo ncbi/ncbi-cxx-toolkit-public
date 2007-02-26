@@ -35,13 +35,12 @@
 #define ALGO_BLAST_BLASTINPUT___PSIBLAST_ARGS__HPP
 
 #include <algo/blast/blastinput/blast_args.hpp>
-#include <algo/blast/api/psiblast_options.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Handle command line arguments for psiblast binary
-class NCBI_XBLAST_EXPORT CPsiBlastAppArgs : public CObject
+class NCBI_XBLAST_EXPORT CPsiBlastAppArgs : public CBlastAppArgs
 {
 public:
     /// PSI-BLAST can only run one query at a time
@@ -50,36 +49,24 @@ public:
     /// Constructor
     CPsiBlastAppArgs();
 
-    /// Compute the command line arguments to use
-    CArgDescriptions* SetCommandLine();
+    //CRef<blast::CPSIBlastOptionsHandle> SetOptions(const CArgs& args);
 
-    /// Compute the blast options to use
-    /// @param args The list of command line args from which data
-    ///             will be retrieved [in]
-    CRef<blast::CPSIBlastOptionsHandle> SetOptions(const CArgs& args);
-
-    CRef<CBlastDatabaseArgs> GetBlastDatabaseArgs() const;
-    CRef<CQueryOptionsArgs> GetQueryOptionsArgs() const;
-    CRef<CFormattingArgs> GetFormattingArgs() const;
-    size_t GetNumThreads() const;
-    bool ExecuteRemotely() const;
     size_t GetNumberOfIterations() const;
-
-    CNcbiIstream& GetInputStream() const;
-    CNcbiOstream& GetOutputStream() const;
-
     CRef<objects::CPssmWithParameters> GetPssm() const;
 
-    int GetQueryBatchSize() const;
+    virtual int GetQueryBatchSize() const;
 
-private:
-    TBlastCmdLineArgs m_Args;
-    CRef<CQueryOptionsArgs> m_QueryOptsArgs;
-    CRef<CBlastDatabaseArgs> m_BlastDbArgs;
-    CRef<CFormattingArgs> m_FormattingArgs;
-    CRef<CMTArgs> m_MTArgs;
-    CRef<CRemoteArgs> m_RemoteArgs;
-    CRef<CStdCmdLineArgs> m_StdCmdLineArgs;
+protected:
+    virtual CRef<CBlastOptionsHandle>
+    x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
+                          const CArgs& args);
+    //TBlastCmdLineArgs m_Args;
+    //CRef<CQueryOptionsArgs> m_QueryOptsArgs;
+    //CRef<CBlastDatabaseArgs> m_BlastDbArgs;
+    //CRef<CFormattingArgs> m_FormattingArgs;
+    //CRef<CMTArgs> m_MTArgs;
+    //CRef<CRemoteArgs> m_RemoteArgs;
+    //CRef<CStdCmdLineArgs> m_StdCmdLineArgs;
     CRef<CPsiBlastArgs> m_PsiBlastArgs;
 };
 

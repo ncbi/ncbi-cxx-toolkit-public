@@ -37,6 +37,7 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/blastp_args.hpp>
+#include <algo/blast/api/blast_advprot_options.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include "blast_input_aux.hpp"
 
@@ -46,8 +47,10 @@ USING_SCOPE(objects);
 
 CBlastpAppArgs::CBlastpAppArgs()
 {
+    const bool kQueryIsProtein = true;
     CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CProgramDescriptionArgs("blastp", "Protein BLAST"));
+    arg.Reset(new CProgramDescriptionArgs("blastp", 
+                                          "Protein-Protein BLAST"));
     m_Args.push_back(arg);
 
     m_StdCmdLineArgs.Reset(new CStdCmdLineArgs);
@@ -61,7 +64,7 @@ CBlastpAppArgs::CBlastpAppArgs()
     arg.Reset(new CGenericSearchArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CFilteringArgs(true));
+    arg.Reset(new CFilteringArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
     arg.Reset(new CMatrixNameArg);
@@ -73,7 +76,7 @@ CBlastpAppArgs::CBlastpAppArgs()
     arg.Reset(new CWindowSizeArg);
     m_Args.push_back(arg);
 
-    m_QueryOptsArgs.Reset(new CQueryOptionsArgs(true));
+    m_QueryOptsArgs.Reset(new CQueryOptionsArgs(kQueryIsProtein));
     arg.Reset(m_QueryOptsArgs);
     m_Args.push_back(arg);
 
@@ -93,24 +96,12 @@ CBlastpAppArgs::CBlastpAppArgs()
     m_Args.push_back(arg);
 }
 
-CArgDescriptions*
-CBlastpAppArgs::SetCommandLine()
+CRef<CBlastOptionsHandle> 
+CBlastpAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, 
+                                      const CArgs& args)
 {
-    return SetUpCommandLineArguments(m_Args);
-}
-
-CRef<CBlastAdvancedProteinOptionsHandle> 
-CBlastpAppArgs::SetOptions(const CArgs& args)
-{
-    const CBlastOptions::EAPILocality locality = 
-        args[kArgRemote] ? CBlastOptions::eRemote : CBlastOptions::eLocal;
-    CRef<CBlastAdvancedProteinOptionsHandle> retval
+    CRef<CBlastOptionsHandle> retval
         (new CBlastAdvancedProteinOptionsHandle(locality));
-
-    CBlastOptions& opt = retval->SetOptions();
-    NON_CONST_ITERATE(TBlastCmdLineArgs, arg, m_Args) {
-        (*arg)->ExtractAlgorithmOptions(args, opt);
-    }
     return retval;
 }
 
@@ -119,49 +110,6 @@ CBlastpAppArgs::GetQueryBatchSize() const
 {
     return blast::GetQueryBatchSize("blastp");
 }
-
-CRef<CBlastDatabaseArgs>
-CBlastpAppArgs::GetBlastDatabaseArgs() const
-{
-    return m_BlastDbArgs;
-}
-
-CRef<CQueryOptionsArgs>
-CBlastpAppArgs::GetQueryOptionsArgs() const
-{
-    return m_QueryOptsArgs;
-}
-
-CRef<CFormattingArgs>
-CBlastpAppArgs::GetFormattingArgs() const
-{
-    return m_FormattingArgs;
-}
-
-size_t
-CBlastpAppArgs::GetNumThreads() const
-{
-    return m_MTArgs->GetNumThreads();
-}
-
-CNcbiIstream&
-CBlastpAppArgs::GetInputStream() const
-{
-    return m_StdCmdLineArgs->GetInputStream();
-}
-
-bool
-CBlastpAppArgs::ExecuteRemotely() const
-{
-    return m_RemoteArgs->ExecuteRemotely();
-}
-
-CNcbiOstream&
-CBlastpAppArgs::GetOutputStream() const
-{
-    return m_StdCmdLineArgs->GetOutputStream();
-}
-
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
