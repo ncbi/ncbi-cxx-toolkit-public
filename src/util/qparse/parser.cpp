@@ -38,6 +38,8 @@
 #include <util/qparse/query_parse.hpp>
 #include <util/resource_pool.hpp>
 
+#include <stack>
+
 
 USING_NCBI_SCOPE;
 
@@ -99,7 +101,9 @@ public:
       m_Verbose(false),
       m_Case(CQueryParseTree::eCaseInsensitive),
       m_ParseTolerance(CQueryParseTree::eSyntaxCheck),
-      m_InNode(0)
+      m_InNode(0),
+      m_SelectNode(0),
+      m_FromNode(0)
     {
         m_QueryLen = ::strlen(m_Query);
         m_Line = m_LinePos = 0;
@@ -202,6 +206,11 @@ public:
     {
         return m_NodePool;
     }
+
+    void ForgetPoolNode(CQueryParseTree::TNode* qnode)
+    {
+        if (qnode) m_NodePool.Forget(qnode);
+    }
     
     void ForgetPoolNodes(CQueryParseTree::TNode* qnode1, 
                          CQueryParseTree::TNode* qnode2)
@@ -238,6 +247,18 @@ public:
     }
     CQueryParseTree::TNode* GetIN_Context() { return m_InNode; }
 
+    void SetSELECT_Context(CQueryParseTree::TNode* select_node)
+    {
+        m_SelectNode = select_node;
+    }
+    CQueryParseTree::TNode* GetSELECT_Context() { return m_SelectNode; }
+
+    void SetFROM_Context(CQueryParseTree::TNode* from_node)
+    {
+        m_FromNode = from_node;
+    }
+    CQueryParseTree::TNode* GetFROM_Context() { return m_FromNode; }
+
 private:
     CQueryParseTree& m_QTree;   ///< Base query tree reference
     const char*      m_Query;   ///< Request buffer. (Source for the scanner)
@@ -263,6 +284,12 @@ private:
     
     /// operator "IN" context pointer
     CQueryParseTree::TNode*             m_InNode;
+
+    /// "SELECT" context pointer
+    CQueryParseTree::TNode*             m_SelectNode;
+
+    /// "FROM" context pointer
+    CQueryParseTree::TNode*             m_FromNode;
 
 };
 

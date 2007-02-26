@@ -142,6 +142,15 @@ public:
         case CQueryParseNode::eRange:
             PrintElement("RANGE", qnode);
             break;
+        case CQueryParseNode::eSelect:
+            PrintElement("SELECT", qnode);
+            break;
+        case CQueryParseNode::eFrom:
+            PrintElement("FROM", qnode);
+            break;            
+        case CQueryParseNode::eWhere:
+            PrintElement("WHERE", qnode);
+            break;
         case CQueryParseNode::eEQ:
             if (qnode.IsNot()) {
                 PrintElement("!=", qnode);

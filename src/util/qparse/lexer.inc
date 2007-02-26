@@ -235,6 +235,11 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     const char* token_end = 0;
     CQueryParseTree::TNode* qnode = 0;    
     CQueryParseTree::TNode* in_node = env->GetIN_Context();
+    CQueryParseTree::TNode* select_node = env->GetSELECT_Context();
+    CQueryParseTree::TNode* from_node = env->GetFROM_Context();
+    
+    // comma works as a token breaker?
+    bool comma_break = in_node || select_node || from_node;
 
     // skip leading white space
     //
@@ -303,7 +308,81 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->SetIN_Context(qnode);
         qnode->GetValue().SetLoc(line, line_pos);
         return IN;
-
+    // SELECT, SUB
+    case 'S':
+        if ( !s_Compare(ptr, end, "ELECT", case_sense) ) {
+            // SUB
+            if ( !s_Compare(ptr, end, "UB", case_sense) ) {
+                break;
+            }
+            ptr += 2;
+            if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
+                break;
+            }
+            env->Skip(2);
+            if (verbose) { _TRACE("token: SUB"); }
+            *lvalp = qnode = 
+                env->QTree().CreateNode(CQueryParseNode::eSub, 0, 0,
+                                        string(ptr-3, 3));
+            env->AttachToPool(qnode);                
+            qnode->GetValue().SetLoc(line, line_pos);
+            return SUB;
+        }
+        ptr += 5;
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
+            break;
+        }
+        env->Skip(5);
+        if (verbose) { _TRACE("token: SELECT"); }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(CQueryParseNode::eSelect, 0, 0,
+                                    string(ptr-6, 6));
+        env->AttachToPool(qnode); 
+        env->SetSELECT_Context(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);        
+        return SELECT;
+    // FROM
+    case 'F':
+        if ( !select_node ) {  // FROM depends on previous SELECT
+            break;
+        }
+        if (!s_Compare(ptr, end, "ROM", case_sense)) {
+            break;
+        }
+        ptr += 3;
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
+            break;
+        }
+        env->Skip(3);
+        if (verbose) { _TRACE("token: FROM"); }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(CQueryParseNode::eFrom, 0, 0,
+                                    string(ptr-4, 4));
+        env->AttachToPool(qnode); 
+        env->SetFROM_Context(qnode);
+        qnode->GetValue().SetLoc(line, line_pos);
+        return FROM;
+    // WHERE
+    case 'W':
+        if ( !select_node ) {  // WHERE depends on previous SELECT
+            break;
+        }
+        if (!s_Compare(ptr, end, "HERE", case_sense)) {
+            break;
+        }
+        ptr += 4;
+        if (ptr != end  &&  !s_IsSpaceTerm(ptr) ) {
+            break;
+        }
+        env->Skip(4);
+        if (verbose) { _TRACE("token: WHERE"); }
+        *lvalp = qnode = 
+            env->QTree().CreateNode(CQueryParseNode::eWhere, 0, 0,
+                                    string(ptr-5, 5));
+        env->AttachToPool(qnode); 
+        qnode->GetValue().SetLoc(line, line_pos);
+        return WHERE;
+        
     // LIKE
     case 'L':
         if ( !s_Compare(ptr, end, "IKE", case_sense) ) {
@@ -358,7 +437,8 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                                     string(ptr-1, 2));
         env->AttachToPool(qnode);                
         qnode->GetValue().SetLoc(line, line_pos);
-        return AND;    
+        return AND;
+/*            
     // SUB
     case 'S':
         if ( !s_Compare(ptr, end, "UB", case_sense) ) {
@@ -376,6 +456,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         env->AttachToPool(qnode);                
         qnode->GetValue().SetLoc(line, line_pos);
         return SUB;
+*/        
     // XOR
     case 'X':
         if ( !s_Compare(ptr, end, "OR", case_sense) ) {
@@ -673,7 +754,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
         if (verbose) { _TRACE("token: close-paren"); }
         return c;
     case ',':
-        if (in_node) {
+        if (comma_break) {
             return c;
         }
         break;
@@ -704,7 +785,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
     }
 
 
-    // Field search metadata [MESH]
+    // Field search metadata like "[MESH]"
     //
     if (c == '[') {
         string token, orig_token;
@@ -768,7 +849,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                 }
                 break;
             }
-            if (in_node && *ptr == ',') {
+            if (comma_break && *ptr == ',') {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << string(ptr, end));
                 }
@@ -797,7 +878,7 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
                 }
                 break;
             }
-            if (in_node && *ptr == ',') {
+            if (comma_break && *ptr == ',') {
                 if (verbose) { 
                     _TRACE("found breaking paren: " << string(ptr, end));
                 }
@@ -846,13 +927,23 @@ int yylex(CQueryParseTree::TNode** lvalp, void* param)
             break;
         }
         
+        if (select_node) {
+            if (s_Compare(ptr, end, "FROM",case_sense)) {
+                break;
+            }
+        }
         
+        if (select_node) {
+            if (s_Compare(ptr, end, "WHERE",case_sense)) {
+                break;
+            }
+        }
         
         if (s_IsOperatorChar(*ptr)) {
             break;
         }
         
-        if (in_node && *ptr == ',') {
+        if (comma_break && *ptr == ',') {
             break;
         }
         

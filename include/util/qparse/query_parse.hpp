@@ -106,6 +106,11 @@ public:
         eLT,
         eLE,
         
+        // SQL specific components
+        eSelect,
+        eFrom,
+        eWhere,
+        
         eMaxType
     };
     

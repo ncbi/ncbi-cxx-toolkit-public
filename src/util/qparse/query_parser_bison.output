@@ -1,283 +1,303 @@
-Conflict in state 13 between rule 30 and token AND resolved as reduce.
-Conflict in state 13 between rule 30 and token NOT resolved as reduce.
-Conflict in state 13 between rule 30 and token OR resolved as shift.
-Conflict in state 13 between rule 30 and token SUB resolved as shift.
-Conflict in state 13 between rule 30 and token XOR resolved as shift.
-Conflict in state 13 between rule 30 and token RANGE resolved as shift.
-Conflict in state 13 between rule 30 and token EQ resolved as shift.
-Conflict in state 13 between rule 30 and token NOTEQ resolved as shift.
-Conflict in state 13 between rule 30 and token GT resolved as shift.
-Conflict in state 13 between rule 30 and token GE resolved as shift.
-Conflict in state 13 between rule 30 and token LT resolved as shift.
-Conflict in state 13 between rule 30 and token LE resolved as shift.
-Conflict in state 45 between rule 11 and token AND resolved as reduce.
-Conflict in state 45 between rule 11 and token NOT resolved as shift.
-Conflict in state 45 between rule 11 and token OR resolved as shift.
-Conflict in state 45 between rule 11 and token SUB resolved as shift.
-Conflict in state 45 between rule 11 and token XOR resolved as shift.
-Conflict in state 45 between rule 11 and token RANGE resolved as shift.
-Conflict in state 45 between rule 11 and token EQ resolved as shift.
-Conflict in state 45 between rule 11 and token NOTEQ resolved as shift.
-Conflict in state 45 between rule 11 and token GT resolved as shift.
-Conflict in state 45 between rule 11 and token GE resolved as shift.
-Conflict in state 45 between rule 11 and token LT resolved as shift.
-Conflict in state 45 between rule 11 and token LE resolved as shift.
-Conflict in state 47 between rule 29 and token AND resolved as reduce.
-Conflict in state 47 between rule 29 and token NOT resolved as reduce.
-Conflict in state 47 between rule 29 and token OR resolved as shift.
-Conflict in state 47 between rule 29 and token SUB resolved as shift.
-Conflict in state 47 between rule 29 and token XOR resolved as shift.
-Conflict in state 47 between rule 29 and token RANGE resolved as shift.
-Conflict in state 47 between rule 29 and token EQ resolved as shift.
-Conflict in state 47 between rule 29 and token NOTEQ resolved as shift.
-Conflict in state 47 between rule 29 and token GT resolved as shift.
-Conflict in state 47 between rule 29 and token GE resolved as shift.
-Conflict in state 47 between rule 29 and token LT resolved as shift.
-Conflict in state 47 between rule 29 and token LE resolved as shift.
-Conflict in state 47 between rule 30 and token OR resolved as shift.
-Conflict in state 47 between rule 30 and token SUB resolved as shift.
-Conflict in state 47 between rule 30 and token XOR resolved as shift.
-Conflict in state 47 between rule 30 and token RANGE resolved as shift.
-Conflict in state 47 between rule 30 and token EQ resolved as shift.
-Conflict in state 47 between rule 30 and token NOTEQ resolved as shift.
-Conflict in state 47 between rule 30 and token GT resolved as shift.
-Conflict in state 47 between rule 30 and token GE resolved as shift.
-Conflict in state 47 between rule 30 and token LT resolved as shift.
-Conflict in state 47 between rule 30 and token LE resolved as shift.
-Conflict in state 49 between rule 13 and token AND resolved as reduce.
-Conflict in state 49 between rule 13 and token NOT resolved as reduce.
-Conflict in state 49 between rule 13 and token OR resolved as reduce.
-Conflict in state 49 between rule 13 and token SUB resolved as shift.
-Conflict in state 49 between rule 13 and token XOR resolved as shift.
-Conflict in state 49 between rule 13 and token RANGE resolved as shift.
-Conflict in state 49 between rule 13 and token EQ resolved as shift.
-Conflict in state 49 between rule 13 and token NOTEQ resolved as shift.
-Conflict in state 49 between rule 13 and token GT resolved as shift.
-Conflict in state 49 between rule 13 and token GE resolved as shift.
-Conflict in state 49 between rule 13 and token LT resolved as shift.
-Conflict in state 49 between rule 13 and token LE resolved as shift.
-Conflict in state 51 between rule 12 and token AND resolved as reduce.
-Conflict in state 51 between rule 12 and token NOT resolved as reduce.
-Conflict in state 51 between rule 12 and token OR resolved as reduce.
-Conflict in state 51 between rule 12 and token SUB resolved as reduce.
-Conflict in state 51 between rule 12 and token XOR resolved as shift.
-Conflict in state 51 between rule 12 and token RANGE resolved as shift.
-Conflict in state 51 between rule 12 and token EQ resolved as shift.
-Conflict in state 51 between rule 12 and token NOTEQ resolved as shift.
-Conflict in state 51 between rule 12 and token GT resolved as shift.
-Conflict in state 51 between rule 12 and token GE resolved as shift.
-Conflict in state 51 between rule 12 and token LT resolved as shift.
-Conflict in state 51 between rule 12 and token LE resolved as shift.
-Conflict in state 53 between rule 14 and token AND resolved as reduce.
-Conflict in state 53 between rule 14 and token NOT resolved as reduce.
-Conflict in state 53 between rule 14 and token OR resolved as reduce.
-Conflict in state 53 between rule 14 and token SUB resolved as reduce.
-Conflict in state 53 between rule 14 and token XOR resolved as reduce.
-Conflict in state 53 between rule 14 and token RANGE resolved as shift.
-Conflict in state 53 between rule 14 and token EQ resolved as shift.
-Conflict in state 53 between rule 14 and token NOTEQ resolved as shift.
-Conflict in state 53 between rule 14 and token GT resolved as shift.
-Conflict in state 53 between rule 14 and token GE resolved as shift.
-Conflict in state 53 between rule 14 and token LT resolved as shift.
-Conflict in state 53 between rule 14 and token LE resolved as shift.
-Conflict in state 54 between rule 17 and token AND resolved as reduce.
-Conflict in state 54 between rule 17 and token NOT resolved as reduce.
-Conflict in state 54 between rule 17 and token OR resolved as reduce.
-Conflict in state 54 between rule 17 and token SUB resolved as reduce.
-Conflict in state 54 between rule 17 and token XOR resolved as reduce.
-Conflict in state 54 between rule 17 and token RANGE resolved as reduce.
-Conflict in state 54 between rule 17 and token EQ resolved as shift.
-Conflict in state 54 between rule 17 and token NOTEQ resolved as shift.
-Conflict in state 54 between rule 17 and token GT resolved as shift.
-Conflict in state 54 between rule 17 and token GE resolved as shift.
-Conflict in state 54 between rule 17 and token LT resolved as shift.
-Conflict in state 54 between rule 17 and token LE resolved as shift.
-Conflict in state 55 between rule 22 and token AND resolved as reduce.
-Conflict in state 55 between rule 22 and token NOT resolved as reduce.
-Conflict in state 55 between rule 22 and token OR resolved as reduce.
-Conflict in state 55 between rule 22 and token SUB resolved as reduce.
-Conflict in state 55 between rule 22 and token XOR resolved as reduce.
-Conflict in state 55 between rule 22 and token RANGE resolved as reduce.
-Conflict in state 55 between rule 22 and token EQ resolved as reduce.
-Conflict in state 55 between rule 22 and token NOTEQ resolved as shift.
-Conflict in state 55 between rule 22 and token GT resolved as shift.
-Conflict in state 55 between rule 22 and token GE resolved as shift.
-Conflict in state 55 between rule 22 and token LT resolved as shift.
-Conflict in state 55 between rule 22 and token LE resolved as shift.
-Conflict in state 56 between rule 23 and token AND resolved as reduce.
-Conflict in state 56 between rule 23 and token NOT resolved as reduce.
-Conflict in state 56 between rule 23 and token OR resolved as reduce.
-Conflict in state 56 between rule 23 and token SUB resolved as reduce.
-Conflict in state 56 between rule 23 and token XOR resolved as reduce.
-Conflict in state 56 between rule 23 and token RANGE resolved as reduce.
-Conflict in state 56 between rule 23 and token EQ resolved as reduce.
-Conflict in state 56 between rule 23 and token NOTEQ resolved as reduce.
-Conflict in state 56 between rule 23 and token GT resolved as shift.
-Conflict in state 56 between rule 23 and token GE resolved as shift.
-Conflict in state 56 between rule 23 and token LT resolved as shift.
-Conflict in state 56 between rule 23 and token LE resolved as shift.
-Conflict in state 57 between rule 24 and token AND resolved as reduce.
-Conflict in state 57 between rule 24 and token NOT resolved as reduce.
-Conflict in state 57 between rule 24 and token OR resolved as reduce.
-Conflict in state 57 between rule 24 and token SUB resolved as reduce.
-Conflict in state 57 between rule 24 and token XOR resolved as reduce.
-Conflict in state 57 between rule 24 and token RANGE resolved as reduce.
-Conflict in state 57 between rule 24 and token EQ resolved as reduce.
-Conflict in state 57 between rule 24 and token NOTEQ resolved as reduce.
-Conflict in state 57 between rule 24 and token GT resolved as reduce.
-Conflict in state 57 between rule 24 and token GE resolved as shift.
-Conflict in state 57 between rule 24 and token LT resolved as shift.
-Conflict in state 57 between rule 24 and token LE resolved as shift.
-Conflict in state 58 between rule 25 and token AND resolved as reduce.
-Conflict in state 58 between rule 25 and token NOT resolved as reduce.
-Conflict in state 58 between rule 25 and token OR resolved as reduce.
-Conflict in state 58 between rule 25 and token SUB resolved as reduce.
-Conflict in state 58 between rule 25 and token XOR resolved as reduce.
-Conflict in state 58 between rule 25 and token RANGE resolved as reduce.
-Conflict in state 58 between rule 25 and token EQ resolved as reduce.
-Conflict in state 58 between rule 25 and token NOTEQ resolved as reduce.
-Conflict in state 58 between rule 25 and token GT resolved as reduce.
-Conflict in state 58 between rule 25 and token GE resolved as reduce.
-Conflict in state 58 between rule 25 and token LT resolved as shift.
-Conflict in state 58 between rule 25 and token LE resolved as shift.
-Conflict in state 59 between rule 26 and token AND resolved as reduce.
-Conflict in state 59 between rule 26 and token NOT resolved as reduce.
-Conflict in state 59 between rule 26 and token OR resolved as reduce.
-Conflict in state 59 between rule 26 and token SUB resolved as reduce.
-Conflict in state 59 between rule 26 and token XOR resolved as reduce.
-Conflict in state 59 between rule 26 and token RANGE resolved as reduce.
-Conflict in state 59 between rule 26 and token EQ resolved as reduce.
-Conflict in state 59 between rule 26 and token NOTEQ resolved as reduce.
-Conflict in state 59 between rule 26 and token GT resolved as reduce.
-Conflict in state 59 between rule 26 and token GE resolved as reduce.
-Conflict in state 59 between rule 26 and token LT resolved as reduce.
-Conflict in state 59 between rule 26 and token LE resolved as shift.
-Conflict in state 60 between rule 27 and token AND resolved as reduce.
-Conflict in state 60 between rule 27 and token NOT resolved as reduce.
-Conflict in state 60 between rule 27 and token OR resolved as reduce.
-Conflict in state 60 between rule 27 and token SUB resolved as reduce.
-Conflict in state 60 between rule 27 and token XOR resolved as reduce.
-Conflict in state 60 between rule 27 and token RANGE resolved as reduce.
-Conflict in state 60 between rule 27 and token EQ resolved as reduce.
-Conflict in state 60 between rule 27 and token NOTEQ resolved as reduce.
-Conflict in state 60 between rule 27 and token GT resolved as reduce.
-Conflict in state 60 between rule 27 and token GE resolved as reduce.
-Conflict in state 60 between rule 27 and token LT resolved as reduce.
-Conflict in state 60 between rule 27 and token LE resolved as reduce.
+Conflict in state 18 between rule 38 and token AND resolved as reduce.
+Conflict in state 18 between rule 38 and token NOT resolved as reduce.
+Conflict in state 18 between rule 38 and token OR resolved as shift.
+Conflict in state 18 between rule 38 and token SUB resolved as shift.
+Conflict in state 18 between rule 38 and token XOR resolved as shift.
+Conflict in state 18 between rule 38 and token RANGE resolved as shift.
+Conflict in state 18 between rule 38 and token EQ resolved as shift.
+Conflict in state 18 between rule 38 and token NOTEQ resolved as shift.
+Conflict in state 18 between rule 38 and token GT resolved as shift.
+Conflict in state 18 between rule 38 and token GE resolved as shift.
+Conflict in state 18 between rule 38 and token LT resolved as shift.
+Conflict in state 18 between rule 38 and token LE resolved as shift.
+Conflict in state 51 between rule 19 and token AND resolved as reduce.
+Conflict in state 51 between rule 19 and token NOT resolved as shift.
+Conflict in state 51 between rule 19 and token OR resolved as shift.
+Conflict in state 51 between rule 19 and token SUB resolved as shift.
+Conflict in state 51 between rule 19 and token XOR resolved as shift.
+Conflict in state 51 between rule 19 and token RANGE resolved as shift.
+Conflict in state 51 between rule 19 and token EQ resolved as shift.
+Conflict in state 51 between rule 19 and token NOTEQ resolved as shift.
+Conflict in state 51 between rule 19 and token GT resolved as shift.
+Conflict in state 51 between rule 19 and token GE resolved as shift.
+Conflict in state 51 between rule 19 and token LT resolved as shift.
+Conflict in state 51 between rule 19 and token LE resolved as shift.
+Conflict in state 53 between rule 37 and token AND resolved as reduce.
+Conflict in state 53 between rule 37 and token NOT resolved as reduce.
+Conflict in state 53 between rule 37 and token OR resolved as shift.
+Conflict in state 53 between rule 37 and token SUB resolved as shift.
+Conflict in state 53 between rule 37 and token XOR resolved as shift.
+Conflict in state 53 between rule 37 and token RANGE resolved as shift.
+Conflict in state 53 between rule 37 and token EQ resolved as shift.
+Conflict in state 53 between rule 37 and token NOTEQ resolved as shift.
+Conflict in state 53 between rule 37 and token GT resolved as shift.
+Conflict in state 53 between rule 37 and token GE resolved as shift.
+Conflict in state 53 between rule 37 and token LT resolved as shift.
+Conflict in state 53 between rule 37 and token LE resolved as shift.
+Conflict in state 53 between rule 38 and token OR resolved as shift.
+Conflict in state 53 between rule 38 and token SUB resolved as shift.
+Conflict in state 53 between rule 38 and token XOR resolved as shift.
+Conflict in state 53 between rule 38 and token RANGE resolved as shift.
+Conflict in state 53 between rule 38 and token EQ resolved as shift.
+Conflict in state 53 between rule 38 and token NOTEQ resolved as shift.
+Conflict in state 53 between rule 38 and token GT resolved as shift.
+Conflict in state 53 between rule 38 and token GE resolved as shift.
+Conflict in state 53 between rule 38 and token LT resolved as shift.
+Conflict in state 53 between rule 38 and token LE resolved as shift.
+Conflict in state 55 between rule 21 and token AND resolved as reduce.
+Conflict in state 55 between rule 21 and token NOT resolved as reduce.
+Conflict in state 55 between rule 21 and token OR resolved as reduce.
+Conflict in state 55 between rule 21 and token SUB resolved as shift.
+Conflict in state 55 between rule 21 and token XOR resolved as shift.
+Conflict in state 55 between rule 21 and token RANGE resolved as shift.
+Conflict in state 55 between rule 21 and token EQ resolved as shift.
+Conflict in state 55 between rule 21 and token NOTEQ resolved as shift.
+Conflict in state 55 between rule 21 and token GT resolved as shift.
+Conflict in state 55 between rule 21 and token GE resolved as shift.
+Conflict in state 55 between rule 21 and token LT resolved as shift.
+Conflict in state 55 between rule 21 and token LE resolved as shift.
+Conflict in state 57 between rule 20 and token AND resolved as reduce.
+Conflict in state 57 between rule 20 and token NOT resolved as reduce.
+Conflict in state 57 between rule 20 and token OR resolved as reduce.
+Conflict in state 57 between rule 20 and token SUB resolved as reduce.
+Conflict in state 57 between rule 20 and token XOR resolved as shift.
+Conflict in state 57 between rule 20 and token RANGE resolved as shift.
+Conflict in state 57 between rule 20 and token EQ resolved as shift.
+Conflict in state 57 between rule 20 and token NOTEQ resolved as shift.
+Conflict in state 57 between rule 20 and token GT resolved as shift.
+Conflict in state 57 between rule 20 and token GE resolved as shift.
+Conflict in state 57 between rule 20 and token LT resolved as shift.
+Conflict in state 57 between rule 20 and token LE resolved as shift.
+Conflict in state 59 between rule 22 and token AND resolved as reduce.
+Conflict in state 59 between rule 22 and token NOT resolved as reduce.
+Conflict in state 59 between rule 22 and token OR resolved as reduce.
+Conflict in state 59 between rule 22 and token SUB resolved as reduce.
+Conflict in state 59 between rule 22 and token XOR resolved as reduce.
+Conflict in state 59 between rule 22 and token RANGE resolved as shift.
+Conflict in state 59 between rule 22 and token EQ resolved as shift.
+Conflict in state 59 between rule 22 and token NOTEQ resolved as shift.
+Conflict in state 59 between rule 22 and token GT resolved as shift.
+Conflict in state 59 between rule 22 and token GE resolved as shift.
+Conflict in state 59 between rule 22 and token LT resolved as shift.
+Conflict in state 59 between rule 22 and token LE resolved as shift.
+Conflict in state 60 between rule 25 and token AND resolved as reduce.
+Conflict in state 60 between rule 25 and token NOT resolved as reduce.
+Conflict in state 60 between rule 25 and token OR resolved as reduce.
+Conflict in state 60 between rule 25 and token SUB resolved as reduce.
+Conflict in state 60 between rule 25 and token XOR resolved as reduce.
+Conflict in state 60 between rule 25 and token RANGE resolved as reduce.
+Conflict in state 60 between rule 25 and token EQ resolved as shift.
+Conflict in state 60 between rule 25 and token NOTEQ resolved as shift.
+Conflict in state 60 between rule 25 and token GT resolved as shift.
+Conflict in state 60 between rule 25 and token GE resolved as shift.
+Conflict in state 60 between rule 25 and token LT resolved as shift.
+Conflict in state 60 between rule 25 and token LE resolved as shift.
+Conflict in state 61 between rule 30 and token AND resolved as reduce.
+Conflict in state 61 between rule 30 and token NOT resolved as reduce.
+Conflict in state 61 between rule 30 and token OR resolved as reduce.
+Conflict in state 61 between rule 30 and token SUB resolved as reduce.
+Conflict in state 61 between rule 30 and token XOR resolved as reduce.
+Conflict in state 61 between rule 30 and token RANGE resolved as reduce.
+Conflict in state 61 between rule 30 and token EQ resolved as reduce.
+Conflict in state 61 between rule 30 and token NOTEQ resolved as shift.
+Conflict in state 61 between rule 30 and token GT resolved as shift.
+Conflict in state 61 between rule 30 and token GE resolved as shift.
+Conflict in state 61 between rule 30 and token LT resolved as shift.
+Conflict in state 61 between rule 30 and token LE resolved as shift.
+Conflict in state 62 between rule 31 and token AND resolved as reduce.
+Conflict in state 62 between rule 31 and token NOT resolved as reduce.
+Conflict in state 62 between rule 31 and token OR resolved as reduce.
+Conflict in state 62 between rule 31 and token SUB resolved as reduce.
+Conflict in state 62 between rule 31 and token XOR resolved as reduce.
+Conflict in state 62 between rule 31 and token RANGE resolved as reduce.
+Conflict in state 62 between rule 31 and token EQ resolved as reduce.
+Conflict in state 62 between rule 31 and token NOTEQ resolved as reduce.
+Conflict in state 62 between rule 31 and token GT resolved as shift.
+Conflict in state 62 between rule 31 and token GE resolved as shift.
+Conflict in state 62 between rule 31 and token LT resolved as shift.
+Conflict in state 62 between rule 31 and token LE resolved as shift.
+Conflict in state 63 between rule 32 and token AND resolved as reduce.
+Conflict in state 63 between rule 32 and token NOT resolved as reduce.
+Conflict in state 63 between rule 32 and token OR resolved as reduce.
+Conflict in state 63 between rule 32 and token SUB resolved as reduce.
+Conflict in state 63 between rule 32 and token XOR resolved as reduce.
+Conflict in state 63 between rule 32 and token RANGE resolved as reduce.
+Conflict in state 63 between rule 32 and token EQ resolved as reduce.
+Conflict in state 63 between rule 32 and token NOTEQ resolved as reduce.
+Conflict in state 63 between rule 32 and token GT resolved as reduce.
+Conflict in state 63 between rule 32 and token GE resolved as shift.
+Conflict in state 63 between rule 32 and token LT resolved as shift.
+Conflict in state 63 between rule 32 and token LE resolved as shift.
+Conflict in state 64 between rule 33 and token AND resolved as reduce.
+Conflict in state 64 between rule 33 and token NOT resolved as reduce.
+Conflict in state 64 between rule 33 and token OR resolved as reduce.
+Conflict in state 64 between rule 33 and token SUB resolved as reduce.
+Conflict in state 64 between rule 33 and token XOR resolved as reduce.
+Conflict in state 64 between rule 33 and token RANGE resolved as reduce.
+Conflict in state 64 between rule 33 and token EQ resolved as reduce.
+Conflict in state 64 between rule 33 and token NOTEQ resolved as reduce.
+Conflict in state 64 between rule 33 and token GT resolved as reduce.
+Conflict in state 64 between rule 33 and token GE resolved as reduce.
+Conflict in state 64 between rule 33 and token LT resolved as shift.
+Conflict in state 64 between rule 33 and token LE resolved as shift.
+Conflict in state 65 between rule 34 and token AND resolved as reduce.
+Conflict in state 65 between rule 34 and token NOT resolved as reduce.
+Conflict in state 65 between rule 34 and token OR resolved as reduce.
+Conflict in state 65 between rule 34 and token SUB resolved as reduce.
+Conflict in state 65 between rule 34 and token XOR resolved as reduce.
+Conflict in state 65 between rule 34 and token RANGE resolved as reduce.
+Conflict in state 65 between rule 34 and token EQ resolved as reduce.
+Conflict in state 65 between rule 34 and token NOTEQ resolved as reduce.
+Conflict in state 65 between rule 34 and token GT resolved as reduce.
+Conflict in state 65 between rule 34 and token GE resolved as reduce.
+Conflict in state 65 between rule 34 and token LT resolved as reduce.
+Conflict in state 65 between rule 34 and token LE resolved as shift.
+Conflict in state 66 between rule 35 and token AND resolved as reduce.
+Conflict in state 66 between rule 35 and token NOT resolved as reduce.
+Conflict in state 66 between rule 35 and token OR resolved as reduce.
+Conflict in state 66 between rule 35 and token SUB resolved as reduce.
+Conflict in state 66 between rule 35 and token XOR resolved as reduce.
+Conflict in state 66 between rule 35 and token RANGE resolved as reduce.
+Conflict in state 66 between rule 35 and token EQ resolved as reduce.
+Conflict in state 66 between rule 35 and token NOTEQ resolved as reduce.
+Conflict in state 66 between rule 35 and token GT resolved as reduce.
+Conflict in state 66 between rule 35 and token GE resolved as reduce.
+Conflict in state 66 between rule 35 and token LT resolved as reduce.
+Conflict in state 66 between rule 35 and token LE resolved as reduce.
 
 
 State 3 contains 1 shift/reduce conflict.
-State 13 contains 5 shift/reduce conflicts.
-State 21 contains 3 shift/reduce conflicts.
-State 34 contains 17 shift/reduce conflicts.
-State 35 contains 3 shift/reduce conflicts and 18 reduce/reduce conflicts.
-State 36 contains 19 reduce/reduce conflicts.
-State 44 contains 3 shift/reduce conflicts.
-State 45 contains 5 shift/reduce conflicts.
-State 46 contains 3 shift/reduce conflicts.
-State 47 contains 5 shift/reduce conflicts and 9 reduce/reduce conflicts.
-State 48 contains 3 shift/reduce conflicts.
-State 49 contains 5 shift/reduce conflicts.
+State 18 contains 5 shift/reduce conflicts.
+State 26 contains 3 shift/reduce conflicts.
+State 39 contains 17 shift/reduce conflicts.
+State 42 contains 3 shift/reduce conflicts and 18 reduce/reduce conflicts.
+State 43 contains 19 reduce/reduce conflicts.
 State 50 contains 3 shift/reduce conflicts.
 State 51 contains 5 shift/reduce conflicts.
 State 52 contains 3 shift/reduce conflicts.
-State 53 contains 5 shift/reduce conflicts.
-State 54 contains 5 shift/reduce conflicts.
+State 53 contains 5 shift/reduce conflicts and 9 reduce/reduce conflicts.
+State 54 contains 3 shift/reduce conflicts.
 State 55 contains 5 shift/reduce conflicts.
-State 56 contains 5 shift/reduce conflicts.
+State 56 contains 3 shift/reduce conflicts.
 State 57 contains 5 shift/reduce conflicts.
-State 58 contains 5 shift/reduce conflicts.
+State 58 contains 3 shift/reduce conflicts.
 State 59 contains 5 shift/reduce conflicts.
 State 60 contains 5 shift/reduce conflicts.
+State 61 contains 5 shift/reduce conflicts.
+State 62 contains 5 shift/reduce conflicts.
+State 63 contains 5 shift/reduce conflicts.
+State 64 contains 5 shift/reduce conflicts.
+State 65 contains 5 shift/reduce conflicts.
+State 66 contains 5 shift/reduce conflicts.
 
 
 Grammar
 
   Number, Line, Rule
-    1 111 input -> exp
-    2 121 scalar_value -> NUM_INT
-    3 128 scalar_value -> STRING
-    4 133 scalar_value -> IDENT
-    5 139 scalar_list -> scalar_value
-    6 144 scalar_list -> scalar_list ',' scalar_value
-    7 150 exp -> scalar_value
-    8 155 exp -> STRING IDENT
-    9 164 exp -> exp exp
-   10 175 exp -> '(' exp ')'
-   11 185 exp -> exp AND exp
-   12 190 exp -> exp SUB exp
-   13 195 exp -> exp OR exp
-   14 200 exp -> exp XOR exp
-   15 205 exp -> scalar_value BETWEEN scalar_value AND scalar_value
-   16 218 exp -> scalar_value NOT_BETWEEN scalar_value AND scalar_value
-   17 232 exp -> exp RANGE exp
-   18 237 exp -> scalar_value LIKE scalar_value
-   19 242 exp -> scalar_value NOT_LIKE scalar_value
-   20 247 exp -> scalar_value IN '(' scalar_list ')'
-   21 258 exp -> scalar_value NOT_IN '(' scalar_list ')'
-   22 269 exp -> exp EQ exp
-   23 274 exp -> exp NOTEQ exp
-   24 278 exp -> exp GT exp
-   25 282 exp -> exp GE exp
-   26 286 exp -> exp LT exp
-   27 290 exp -> exp LE exp
-   28 294 exp -> '(' exp ')'
-   29 299 exp -> exp NOT exp
-   30 304 exp -> NOT exp
-   31 313 exp -> error STRING
-   32 322 exp -> error IDENT
-   33 331 exp -> error NUM_INT
-   34 340 exp -> exp error
-   35 352 exp -> '(' exp error
-   36 362 exp -> exp OR error
-   37 372 exp -> exp XOR error
-   38 382 exp -> exp NOT error
-   39 392 exp -> exp AND error
-   40 402 exp -> exp SUB error
+    1 112 input -> exp
+    2 114 input -> select_clause
+    3 119 select_clause -> SELECT obj_list FROM obj_list opt_where
+    4 151 opt_where -> /* empty */
+    5 156 opt_where -> WHERE exp
+    6 166 obj_list -> scalar_value
+    7 171 obj_list -> obj_list ',' scalar_value
+    8 181 scalar_value -> NUM_INT
+    9 188 scalar_value -> STRING
+   10 193 scalar_value -> IDENT
+   11 199 scalar_list -> scalar_value
+   12 204 scalar_list -> scalar_list ',' scalar_value
+   13 212 in_sub_expr -> scalar_list
+   14 214 in_sub_expr -> select_clause
+   15 218 exp -> scalar_value
+   16 223 exp -> STRING IDENT
+   17 232 exp -> exp exp
+   18 243 exp -> '(' exp ')'
+   19 253 exp -> exp AND exp
+   20 258 exp -> exp SUB exp
+   21 263 exp -> exp OR exp
+   22 268 exp -> exp XOR exp
+   23 273 exp -> scalar_value BETWEEN scalar_value AND scalar_value
+   24 286 exp -> scalar_value NOT_BETWEEN scalar_value AND scalar_value
+   25 300 exp -> exp RANGE exp
+   26 305 exp -> scalar_value LIKE scalar_value
+   27 310 exp -> scalar_value NOT_LIKE scalar_value
+   28 315 exp -> scalar_value IN '(' in_sub_expr ')'
+   29 326 exp -> scalar_value NOT_IN '(' scalar_list ')'
+   30 337 exp -> exp EQ exp
+   31 342 exp -> exp NOTEQ exp
+   32 346 exp -> exp GT exp
+   33 350 exp -> exp GE exp
+   34 354 exp -> exp LT exp
+   35 358 exp -> exp LE exp
+   36 362 exp -> '(' exp ')'
+   37 367 exp -> exp NOT exp
+   38 372 exp -> NOT exp
+   39 381 exp -> error STRING
+   40 390 exp -> error IDENT
+   41 399 exp -> error NUM_INT
+   42 408 exp -> exp error
+   43 420 exp -> '(' exp error
+   44 430 exp -> exp OR error
+   45 440 exp -> exp XOR error
+   46 450 exp -> exp NOT error
+   47 460 exp -> exp AND error
+   48 470 exp -> exp SUB error
 
 
 Terminals, with rules where they appear
 
 $ (-1)
-'(' (40) 10 20 21 28 35
-')' (41) 10 20 21 28
-',' (44) 6
-error (256) 31 32 33 34 35 36 37 38 39 40
-IDENT (257) 4 8 32
-STRING (258) 3 8 31
-NUM_INT (259) 2 33
-AND (260) 11 15 16 39
-NOT (261) 29 30 38
-OR (262) 13 36
-SUB (263) 12 40
-XOR (264) 14 37
-RANGE (265) 17
-EQ (266) 22
-NOTEQ (267) 23
-GT (268) 24
-GE (269) 25
-LT (270) 26
-LE (271) 27
-BETWEEN (272) 15
-NOT_BETWEEN (273) 16
-LIKE (274) 18
-NOT_LIKE (275) 19
-IN (276) 20
-NOT_IN (277) 21
+'(' (40) 18 28 29 36 43
+')' (41) 18 28 29 36
+',' (44) 7 12
+error (256) 39 40 41 42 43 44 45 46 47 48
+IDENT (257) 10 16 40
+STRING (258) 9 16 39
+NUM_INT (259) 8 41
+SELECT (260) 3
+FROM (261) 3
+WHERE (262) 5
+AND (263) 19 23 24 47
+NOT (264) 37 38 46
+OR (265) 21 44
+SUB (266) 20 48
+XOR (267) 22 45
+RANGE (268) 25
+EQ (269) 30
+NOTEQ (270) 31
+GT (271) 32
+GE (272) 33
+LT (273) 34
+LE (274) 35
+BETWEEN (275) 23
+NOT_BETWEEN (276) 24
+LIKE (277) 26
+NOT_LIKE (278) 27
+IN (279) 28
+NOT_IN (280) 29
 
 
 Nonterminals, with rules where they appear
 
-input (27)
-    on left: 1
-scalar_value (28)
-    on left: 2 3 4, on right: 5 6 7 15 16 18 19 20 21
-scalar_list (29)
-    on left: 5 6, on right: 6 20 21
-exp (30)
-    on left: 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
-    26 27 28 29 30 31 32 33 34 35 36 37 38 39 40, on right: 1 9 10
-    11 12 13 14 17 22 23 24 25 26 27 28 29 30 34 35 36 37 38 39 40
+input (30)
+    on left: 1 2
+select_clause (31)
+    on left: 3, on right: 2 14
+opt_where (32)
+    on left: 4 5, on right: 3
+obj_list (33)
+    on left: 6 7, on right: 3 7
+scalar_value (34)
+    on left: 8 9 10, on right: 6 7 11 12 15 23 24 26 27 28 29
+scalar_list (35)
+    on left: 11 12, on right: 12 13 29
+in_sub_expr (36)
+    on left: 13 14, on right: 28
+exp (37)
+    on left: 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
+    33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48,
+    on right: 1 5 17 18 19 20 21 22 25 30 31 32 33 34 35 36 37 38 42
+    43 44 45 46 47 48
 
 
 state 0
@@ -286,1251 +306,1216 @@ state 0
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    SELECT	shift, and go to state 5
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    input	go to state 72
-    scalar_value	go to state 7
-    exp 	go to state 8
+    input	go to state 85
+    select_clause	go to state 8
+    scalar_value	go to state 9
+    exp 	go to state 10
 
 
 
 state 1
 
-    exp  ->  error . STRING   (rule 31)
-    exp  ->  error . IDENT   (rule 32)
-    exp  ->  error . NUM_INT   (rule 33)
+    exp  ->  error . STRING   (rule 39)
+    exp  ->  error . IDENT   (rule 40)
+    exp  ->  error . NUM_INT   (rule 41)
 
-    IDENT	shift, and go to state 9
-    STRING	shift, and go to state 10
-    NUM_INT	shift, and go to state 11
+    IDENT	shift, and go to state 11
+    STRING	shift, and go to state 12
+    NUM_INT	shift, and go to state 13
 
 
 
 state 2
 
-    scalar_value  ->  IDENT .   (rule 4)
+    scalar_value  ->  IDENT .   (rule 10)
 
-    $default	reduce using rule 4 (scalar_value)
+    $default	reduce using rule 10 (scalar_value)
 
 
 
 state 3
 
-    scalar_value  ->  STRING .   (rule 3)
-    exp  ->  STRING . IDENT   (rule 8)
+    scalar_value  ->  STRING .   (rule 9)
+    exp  ->  STRING . IDENT   (rule 16)
 
-    IDENT	shift, and go to state 12
+    IDENT	shift, and go to state 14
 
-    IDENT	[reduce using rule 3 (scalar_value)]
-    $default	reduce using rule 3 (scalar_value)
+    IDENT	[reduce using rule 9 (scalar_value)]
+    $default	reduce using rule 9 (scalar_value)
 
 
 
 state 4
 
-    scalar_value  ->  NUM_INT .   (rule 2)
+    scalar_value  ->  NUM_INT .   (rule 8)
 
-    $default	reduce using rule 2 (scalar_value)
+    $default	reduce using rule 8 (scalar_value)
 
 
 
 state 5
 
-    exp  ->  NOT . exp   (rule 30)
+    select_clause  ->  SELECT . obj_list FROM obj_list opt_where   (rule 3)
 
-    error	shift, and go to state 1
     IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
+    STRING	shift, and go to state 15
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
 
-    scalar_value	go to state 7
-    exp 	go to state 13
+    obj_list	go to state 16
+    scalar_value	go to state 17
 
 
 
 state 6
 
-    exp  ->  '(' . exp ')'   (rule 10)
-    exp  ->  '(' . exp ')'   (rule 28)
-    exp  ->  '(' . exp error   (rule 35)
+    exp  ->  NOT . exp   (rule 38)
 
     error	shift, and go to state 1
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 7
-    exp 	go to state 14
+    scalar_value	go to state 9
+    exp 	go to state 18
 
 
 
 state 7
 
-    exp  ->  scalar_value .   (rule 7)
-    exp  ->  scalar_value . BETWEEN scalar_value AND scalar_value   (rule 15)
-    exp  ->  scalar_value . NOT_BETWEEN scalar_value AND scalar_value   (rule 16)
-    exp  ->  scalar_value . LIKE scalar_value   (rule 18)
-    exp  ->  scalar_value . NOT_LIKE scalar_value   (rule 19)
-    exp  ->  scalar_value . IN '(' scalar_list ')'   (rule 20)
-    exp  ->  scalar_value . NOT_IN '(' scalar_list ')'   (rule 21)
+    exp  ->  '(' . exp ')'   (rule 18)
+    exp  ->  '(' . exp ')'   (rule 36)
+    exp  ->  '(' . exp error   (rule 43)
 
-    BETWEEN	shift, and go to state 15
-    NOT_BETWEEN	shift, and go to state 16
-    LIKE	shift, and go to state 17
-    NOT_LIKE	shift, and go to state 18
-    IN  	shift, and go to state 19
-    NOT_IN	shift, and go to state 20
+    error	shift, and go to state 1
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    $default	reduce using rule 7 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 19
 
 
 
 state 8
 
-    input  ->  exp .   (rule 1)
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
+    input  ->  select_clause .   (rule 2)
 
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    AND 	shift, and go to state 22
-    NOT 	shift, and go to state 23
-    OR  	shift, and go to state 24
-    SUB 	shift, and go to state 25
-    XOR 	shift, and go to state 26
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 1 (input)
-    scalar_value	go to state 7
-    exp 	go to state 34
+    $default	reduce using rule 2 (input)
 
 
 
 state 9
 
-    exp  ->  error IDENT .   (rule 32)
+    exp  ->  scalar_value .   (rule 15)
+    exp  ->  scalar_value . BETWEEN scalar_value AND scalar_value   (rule 23)
+    exp  ->  scalar_value . NOT_BETWEEN scalar_value AND scalar_value   (rule 24)
+    exp  ->  scalar_value . LIKE scalar_value   (rule 26)
+    exp  ->  scalar_value . NOT_LIKE scalar_value   (rule 27)
+    exp  ->  scalar_value . IN '(' in_sub_expr ')'   (rule 28)
+    exp  ->  scalar_value . NOT_IN '(' scalar_list ')'   (rule 29)
 
-    $default	reduce using rule 32 (exp)
+    BETWEEN	shift, and go to state 20
+    NOT_BETWEEN	shift, and go to state 21
+    LIKE	shift, and go to state 22
+    NOT_LIKE	shift, and go to state 23
+    IN  	shift, and go to state 24
+    NOT_IN	shift, and go to state 25
+
+    $default	reduce using rule 15 (exp)
 
 
 
 state 10
 
-    exp  ->  error STRING .   (rule 31)
+    input  ->  exp .   (rule 1)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    $default	reduce using rule 31 (exp)
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    AND 	shift, and go to state 27
+    NOT 	shift, and go to state 28
+    OR  	shift, and go to state 29
+    SUB 	shift, and go to state 30
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 1 (input)
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 11
 
-    exp  ->  error NUM_INT .   (rule 33)
+    exp  ->  error IDENT .   (rule 40)
 
-    $default	reduce using rule 33 (exp)
+    $default	reduce using rule 40 (exp)
 
 
 
 state 12
 
-    exp  ->  STRING IDENT .   (rule 8)
+    exp  ->  error STRING .   (rule 39)
 
-    $default	reduce using rule 8 (exp)
+    $default	reduce using rule 39 (exp)
 
 
 
 state 13
 
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  NOT exp .   (rule 30)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
+    exp  ->  error NUM_INT .   (rule 41)
 
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    OR  	shift, and go to state 24
-    SUB 	shift, and go to state 25
-    XOR 	shift, and go to state 26
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 30 (exp)
-    error	[reduce using rule 30 (exp)]
-    IDENT	[reduce using rule 30 (exp)]
-    STRING	[reduce using rule 30 (exp)]
-    NUM_INT	[reduce using rule 30 (exp)]
-    AND 	reduce using rule 30 (exp)
-    NOT 	reduce using rule 30 (exp)
-    '(' 	[reduce using rule 30 (exp)]
-    ')' 	reduce using rule 30 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
+    $default	reduce using rule 41 (exp)
 
 
 
 state 14
 
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  '(' exp . ')'   (rule 10)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  '(' exp . ')'   (rule 28)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  '(' exp . error   (rule 35)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
+    exp  ->  STRING IDENT .   (rule 16)
 
-    error	shift, and go to state 35
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    AND 	shift, and go to state 22
-    NOT 	shift, and go to state 23
-    OR  	shift, and go to state 24
-    SUB 	shift, and go to state 25
-    XOR 	shift, and go to state 26
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-    ')' 	shift, and go to state 36
-
-    scalar_value	go to state 7
-    exp 	go to state 34
+    $default	reduce using rule 16 (exp)
 
 
 
 state 15
 
-    exp  ->  scalar_value BETWEEN . scalar_value AND scalar_value   (rule 15)
+    scalar_value  ->  STRING .   (rule 9)
 
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
-    NUM_INT	shift, and go to state 4
-
-    scalar_value	go to state 38
+    $default	reduce using rule 9 (scalar_value)
 
 
 
 state 16
 
-    exp  ->  scalar_value NOT_BETWEEN . scalar_value AND scalar_value   (rule 16)
+    select_clause  ->  SELECT obj_list . FROM obj_list opt_where   (rule 3)
+    obj_list  ->  obj_list . ',' scalar_value   (rule 7)
 
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
-    NUM_INT	shift, and go to state 4
-
-    scalar_value	go to state 39
+    FROM	shift, and go to state 40
+    ',' 	shift, and go to state 41
 
 
 
 state 17
 
-    exp  ->  scalar_value LIKE . scalar_value   (rule 18)
+    obj_list  ->  scalar_value .   (rule 6)
 
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
-    NUM_INT	shift, and go to state 4
-
-    scalar_value	go to state 40
+    $default	reduce using rule 6 (obj_list)
 
 
 
 state 18
 
-    exp  ->  scalar_value NOT_LIKE . scalar_value   (rule 19)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  NOT exp .   (rule 38)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
+    error	shift, and go to state 26
     IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
+    STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
+    OR  	shift, and go to state 29
+    SUB 	shift, and go to state 30
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 41
+    $   	reduce using rule 38 (exp)
+    error	[reduce using rule 38 (exp)]
+    IDENT	[reduce using rule 38 (exp)]
+    STRING	[reduce using rule 38 (exp)]
+    NUM_INT	[reduce using rule 38 (exp)]
+    AND 	reduce using rule 38 (exp)
+    NOT 	reduce using rule 38 (exp)
+    '(' 	[reduce using rule 38 (exp)]
+    ')' 	reduce using rule 38 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 19
 
-    exp  ->  scalar_value IN . '(' scalar_list ')'   (rule 20)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  '(' exp . ')'   (rule 18)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  '(' exp . ')'   (rule 36)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  '(' exp . error   (rule 43)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    '(' 	shift, and go to state 42
+    error	shift, and go to state 42
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    AND 	shift, and go to state 27
+    NOT 	shift, and go to state 28
+    OR  	shift, and go to state 29
+    SUB 	shift, and go to state 30
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+    ')' 	shift, and go to state 43
+
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 20
 
-    exp  ->  scalar_value NOT_IN . '(' scalar_list ')'   (rule 21)
+    exp  ->  scalar_value BETWEEN . scalar_value AND scalar_value   (rule 23)
 
-    '(' 	shift, and go to state 43
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
+
+    scalar_value	go to state 44
 
 
 
 state 21
 
-    exp  ->  error . STRING   (rule 31)
-    exp  ->  error . IDENT   (rule 32)
-    exp  ->  error . NUM_INT   (rule 33)
-    exp  ->  exp error .   (rule 34)
+    exp  ->  scalar_value NOT_BETWEEN . scalar_value AND scalar_value   (rule 24)
 
-    IDENT	shift, and go to state 9
-    STRING	shift, and go to state 10
-    NUM_INT	shift, and go to state 11
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
 
-    IDENT	[reduce using rule 34 (exp)]
-    STRING	[reduce using rule 34 (exp)]
-    NUM_INT	[reduce using rule 34 (exp)]
-    $default	reduce using rule 34 (exp)
+    scalar_value	go to state 45
 
 
 
 state 22
 
-    exp  ->  exp AND . exp   (rule 11)
-    exp  ->  exp AND . error   (rule 39)
+    exp  ->  scalar_value LIKE . scalar_value   (rule 26)
 
-    error	shift, and go to state 44
     IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
+    STRING	shift, and go to state 15
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
 
-    scalar_value	go to state 7
-    exp 	go to state 45
+    scalar_value	go to state 46
 
 
 
 state 23
 
-    exp  ->  exp NOT . exp   (rule 29)
-    exp  ->  NOT . exp   (rule 30)
-    exp  ->  exp NOT . error   (rule 38)
+    exp  ->  scalar_value NOT_LIKE . scalar_value   (rule 27)
 
-    error	shift, and go to state 46
     IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
+    STRING	shift, and go to state 15
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
 
-    scalar_value	go to state 7
-    exp 	go to state 47
+    scalar_value	go to state 47
 
 
 
 state 24
 
-    exp  ->  exp OR . exp   (rule 13)
-    exp  ->  exp OR . error   (rule 36)
+    exp  ->  scalar_value IN . '(' in_sub_expr ')'   (rule 28)
 
-    error	shift, and go to state 48
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
-
-    scalar_value	go to state 7
-    exp 	go to state 49
+    '(' 	shift, and go to state 48
 
 
 
 state 25
 
-    exp  ->  exp SUB . exp   (rule 12)
-    exp  ->  exp SUB . error   (rule 40)
+    exp  ->  scalar_value NOT_IN . '(' scalar_list ')'   (rule 29)
 
-    error	shift, and go to state 50
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
-
-    scalar_value	go to state 7
-    exp 	go to state 51
+    '(' 	shift, and go to state 49
 
 
 
 state 26
 
-    exp  ->  exp XOR . exp   (rule 14)
-    exp  ->  exp XOR . error   (rule 37)
+    exp  ->  error . STRING   (rule 39)
+    exp  ->  error . IDENT   (rule 40)
+    exp  ->  error . NUM_INT   (rule 41)
+    exp  ->  exp error .   (rule 42)
 
-    error	shift, and go to state 52
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    IDENT	shift, and go to state 11
+    STRING	shift, and go to state 12
+    NUM_INT	shift, and go to state 13
 
-    scalar_value	go to state 7
-    exp 	go to state 53
+    IDENT	[reduce using rule 42 (exp)]
+    STRING	[reduce using rule 42 (exp)]
+    NUM_INT	[reduce using rule 42 (exp)]
+    $default	reduce using rule 42 (exp)
 
 
 
 state 27
 
-    exp  ->  exp RANGE . exp   (rule 17)
+    exp  ->  exp AND . exp   (rule 19)
+    exp  ->  exp AND . error   (rule 47)
 
-    error	shift, and go to state 1
+    error	shift, and go to state 50
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 7
-    exp 	go to state 54
+    scalar_value	go to state 9
+    exp 	go to state 51
 
 
 
 state 28
 
-    exp  ->  exp EQ . exp   (rule 22)
+    exp  ->  exp NOT . exp   (rule 37)
+    exp  ->  NOT . exp   (rule 38)
+    exp  ->  exp NOT . error   (rule 46)
 
-    error	shift, and go to state 1
+    error	shift, and go to state 52
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 7
-    exp 	go to state 55
+    scalar_value	go to state 9
+    exp 	go to state 53
 
 
 
 state 29
 
-    exp  ->  exp NOTEQ . exp   (rule 23)
+    exp  ->  exp OR . exp   (rule 21)
+    exp  ->  exp OR . error   (rule 44)
 
-    error	shift, and go to state 1
+    error	shift, and go to state 54
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 7
-    exp 	go to state 56
+    scalar_value	go to state 9
+    exp 	go to state 55
 
 
 
 state 30
 
-    exp  ->  exp GT . exp   (rule 24)
+    exp  ->  exp SUB . exp   (rule 20)
+    exp  ->  exp SUB . error   (rule 48)
 
-    error	shift, and go to state 1
+    error	shift, and go to state 56
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 7
+    scalar_value	go to state 9
     exp 	go to state 57
 
 
 
 state 31
 
-    exp  ->  exp GE . exp   (rule 25)
+    exp  ->  exp XOR . exp   (rule 22)
+    exp  ->  exp XOR . error   (rule 45)
 
-    error	shift, and go to state 1
+    error	shift, and go to state 58
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 7
-    exp 	go to state 58
+    scalar_value	go to state 9
+    exp 	go to state 59
 
 
 
 state 32
 
-    exp  ->  exp LT . exp   (rule 26)
+    exp  ->  exp RANGE . exp   (rule 25)
 
     error	shift, and go to state 1
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 7
-    exp 	go to state 59
+    scalar_value	go to state 9
+    exp 	go to state 60
 
 
 
 state 33
 
-    exp  ->  exp LE . exp   (rule 27)
+    exp  ->  exp EQ . exp   (rule 30)
 
     error	shift, and go to state 1
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 5
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 7
-    exp 	go to state 60
+    scalar_value	go to state 9
+    exp 	go to state 61
 
 
 
 state 34
 
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp exp .   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
+    exp  ->  exp NOTEQ . exp   (rule 31)
 
-    error	shift, and go to state 21
+    error	shift, and go to state 1
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    AND 	shift, and go to state 22
-    NOT 	shift, and go to state 23
-    OR  	shift, and go to state 24
-    SUB 	shift, and go to state 25
-    XOR 	shift, and go to state 26
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    $   	reduce using rule 9 (exp)
-    error	[reduce using rule 9 (exp)]
-    IDENT	[reduce using rule 9 (exp)]
-    STRING	[reduce using rule 9 (exp)]
-    NUM_INT	[reduce using rule 9 (exp)]
-    AND 	[reduce using rule 9 (exp)]
-    NOT 	[reduce using rule 9 (exp)]
-    OR  	[reduce using rule 9 (exp)]
-    SUB 	[reduce using rule 9 (exp)]
-    XOR 	[reduce using rule 9 (exp)]
-    RANGE	[reduce using rule 9 (exp)]
-    EQ  	[reduce using rule 9 (exp)]
-    NOTEQ	[reduce using rule 9 (exp)]
-    GT  	[reduce using rule 9 (exp)]
-    GE  	[reduce using rule 9 (exp)]
-    LT  	[reduce using rule 9 (exp)]
-    LE  	[reduce using rule 9 (exp)]
-    '(' 	[reduce using rule 9 (exp)]
-    ')' 	reduce using rule 9 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
+    scalar_value	go to state 9
+    exp 	go to state 62
 
 
 
 state 35
 
-    exp  ->  error . STRING   (rule 31)
-    exp  ->  error . IDENT   (rule 32)
-    exp  ->  error . NUM_INT   (rule 33)
-    exp  ->  exp error .   (rule 34)
-    exp  ->  '(' exp error .   (rule 35)
+    exp  ->  exp GT . exp   (rule 32)
 
-    IDENT	shift, and go to state 9
-    STRING	shift, and go to state 10
-    NUM_INT	shift, and go to state 11
+    error	shift, and go to state 1
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
 
-    $   	reduce using rule 35 (exp)
-    error	reduce using rule 34 (exp)
-    error	[reduce using rule 35 (exp)]
-    IDENT	[reduce using rule 34 (exp)]
-    IDENT	[reduce using rule 35 (exp)]
-    STRING	[reduce using rule 34 (exp)]
-    STRING	[reduce using rule 35 (exp)]
-    NUM_INT	[reduce using rule 34 (exp)]
-    NUM_INT	[reduce using rule 35 (exp)]
-    AND 	reduce using rule 34 (exp)
-    AND 	[reduce using rule 35 (exp)]
-    NOT 	reduce using rule 34 (exp)
-    NOT 	[reduce using rule 35 (exp)]
-    OR  	reduce using rule 34 (exp)
-    OR  	[reduce using rule 35 (exp)]
-    SUB 	reduce using rule 34 (exp)
-    SUB 	[reduce using rule 35 (exp)]
-    XOR 	reduce using rule 34 (exp)
-    XOR 	[reduce using rule 35 (exp)]
-    RANGE	reduce using rule 34 (exp)
-    RANGE	[reduce using rule 35 (exp)]
-    EQ  	reduce using rule 34 (exp)
-    EQ  	[reduce using rule 35 (exp)]
-    NOTEQ	reduce using rule 34 (exp)
-    NOTEQ	[reduce using rule 35 (exp)]
-    GT  	reduce using rule 34 (exp)
-    GT  	[reduce using rule 35 (exp)]
-    GE  	reduce using rule 34 (exp)
-    GE  	[reduce using rule 35 (exp)]
-    LT  	reduce using rule 34 (exp)
-    LT  	[reduce using rule 35 (exp)]
-    LE  	reduce using rule 34 (exp)
-    LE  	[reduce using rule 35 (exp)]
-    '(' 	reduce using rule 34 (exp)
-    '(' 	[reduce using rule 35 (exp)]
-    ')' 	reduce using rule 34 (exp)
-    ')' 	[reduce using rule 35 (exp)]
-    $default	reduce using rule 34 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 63
+
 
 
 state 36
 
-    exp  ->  '(' exp ')' .   (rule 10)
-    exp  ->  '(' exp ')' .   (rule 28)
+    exp  ->  exp GE . exp   (rule 33)
 
-    $   	reduce using rule 10 (exp)
-    $   	[reduce using rule 28 (exp)]
-    error	reduce using rule 10 (exp)
-    error	[reduce using rule 28 (exp)]
-    IDENT	reduce using rule 10 (exp)
-    IDENT	[reduce using rule 28 (exp)]
-    STRING	reduce using rule 10 (exp)
-    STRING	[reduce using rule 28 (exp)]
-    NUM_INT	reduce using rule 10 (exp)
-    NUM_INT	[reduce using rule 28 (exp)]
-    AND 	reduce using rule 10 (exp)
-    AND 	[reduce using rule 28 (exp)]
-    NOT 	reduce using rule 10 (exp)
-    NOT 	[reduce using rule 28 (exp)]
-    OR  	reduce using rule 10 (exp)
-    OR  	[reduce using rule 28 (exp)]
-    SUB 	reduce using rule 10 (exp)
-    SUB 	[reduce using rule 28 (exp)]
-    XOR 	reduce using rule 10 (exp)
-    XOR 	[reduce using rule 28 (exp)]
-    RANGE	reduce using rule 10 (exp)
-    RANGE	[reduce using rule 28 (exp)]
-    EQ  	reduce using rule 10 (exp)
-    EQ  	[reduce using rule 28 (exp)]
-    NOTEQ	reduce using rule 10 (exp)
-    NOTEQ	[reduce using rule 28 (exp)]
-    GT  	reduce using rule 10 (exp)
-    GT  	[reduce using rule 28 (exp)]
-    GE  	reduce using rule 10 (exp)
-    GE  	[reduce using rule 28 (exp)]
-    LT  	reduce using rule 10 (exp)
-    LT  	[reduce using rule 28 (exp)]
-    LE  	reduce using rule 10 (exp)
-    LE  	[reduce using rule 28 (exp)]
-    '(' 	reduce using rule 10 (exp)
-    '(' 	[reduce using rule 28 (exp)]
-    ')' 	reduce using rule 10 (exp)
-    ')' 	[reduce using rule 28 (exp)]
-    $default	reduce using rule 10 (exp)
+    error	shift, and go to state 1
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
+
+    scalar_value	go to state 9
+    exp 	go to state 64
+
 
 
 state 37
 
-    scalar_value  ->  STRING .   (rule 3)
+    exp  ->  exp LT . exp   (rule 34)
 
-    $default	reduce using rule 3 (scalar_value)
+    error	shift, and go to state 1
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
+
+    scalar_value	go to state 9
+    exp 	go to state 65
 
 
 
 state 38
 
-    exp  ->  scalar_value BETWEEN scalar_value . AND scalar_value   (rule 15)
+    exp  ->  exp LE . exp   (rule 35)
 
-    AND 	shift, and go to state 61
+    error	shift, and go to state 1
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
+
+    scalar_value	go to state 9
+    exp 	go to state 66
 
 
 
 state 39
 
-    exp  ->  scalar_value NOT_BETWEEN scalar_value . AND scalar_value   (rule 16)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp exp .   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    AND 	shift, and go to state 62
-
-
-
-state 40
-
-    exp  ->  scalar_value LIKE scalar_value .   (rule 18)
-
-    $default	reduce using rule 18 (exp)
-
-
-
-state 41
-
-    exp  ->  scalar_value NOT_LIKE scalar_value .   (rule 19)
-
-    $default	reduce using rule 19 (exp)
-
-
-
-state 42
-
-    exp  ->  scalar_value IN '(' . scalar_list ')'   (rule 20)
-
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
-    NUM_INT	shift, and go to state 4
-
-    scalar_value	go to state 63
-    scalar_list	go to state 64
-
-
-
-state 43
-
-    exp  ->  scalar_value NOT_IN '(' . scalar_list ')'   (rule 21)
-
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
-    NUM_INT	shift, and go to state 4
-
-    scalar_value	go to state 63
-    scalar_list	go to state 65
-
-
-
-state 44
-
-    exp  ->  error . STRING   (rule 31)
-    exp  ->  error . IDENT   (rule 32)
-    exp  ->  error . NUM_INT   (rule 33)
-    exp  ->  exp AND error .   (rule 39)
-
-    IDENT	shift, and go to state 9
-    STRING	shift, and go to state 10
-    NUM_INT	shift, and go to state 11
-
-    IDENT	[reduce using rule 39 (exp)]
-    STRING	[reduce using rule 39 (exp)]
-    NUM_INT	[reduce using rule 39 (exp)]
-    $default	reduce using rule 39 (exp)
-
-
-
-state 45
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp AND exp .   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
+    error	shift, and go to state 26
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOT 	shift, and go to state 23
-    OR  	shift, and go to state 24
-    SUB 	shift, and go to state 25
-    XOR 	shift, and go to state 26
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 11 (exp)
-    error	[reduce using rule 11 (exp)]
-    IDENT	[reduce using rule 11 (exp)]
-    STRING	[reduce using rule 11 (exp)]
-    NUM_INT	[reduce using rule 11 (exp)]
-    AND 	reduce using rule 11 (exp)
-    '(' 	[reduce using rule 11 (exp)]
-    ')' 	reduce using rule 11 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 46
-
-    exp  ->  error . STRING   (rule 31)
-    exp  ->  error . IDENT   (rule 32)
-    exp  ->  error . NUM_INT   (rule 33)
-    exp  ->  exp NOT error .   (rule 38)
-
-    IDENT	shift, and go to state 9
-    STRING	shift, and go to state 10
-    NUM_INT	shift, and go to state 11
-
-    IDENT	[reduce using rule 38 (exp)]
-    STRING	[reduce using rule 38 (exp)]
-    NUM_INT	[reduce using rule 38 (exp)]
-    $default	reduce using rule 38 (exp)
-
-
-
-state 47
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp NOT exp .   (rule 29)
-    exp  ->  NOT exp .   (rule 30)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    OR  	shift, and go to state 24
-    SUB 	shift, and go to state 25
-    XOR 	shift, and go to state 26
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 29 (exp)
-    $   	[reduce using rule 30 (exp)]
-    error	[reduce using rule 29 (exp)]
-    error	[reduce using rule 30 (exp)]
-    IDENT	[reduce using rule 29 (exp)]
-    IDENT	[reduce using rule 30 (exp)]
-    STRING	[reduce using rule 29 (exp)]
-    STRING	[reduce using rule 30 (exp)]
-    NUM_INT	[reduce using rule 29 (exp)]
-    NUM_INT	[reduce using rule 30 (exp)]
-    AND 	reduce using rule 29 (exp)
-    AND 	[reduce using rule 30 (exp)]
-    NOT 	reduce using rule 29 (exp)
-    NOT 	[reduce using rule 30 (exp)]
-    '(' 	[reduce using rule 29 (exp)]
-    '(' 	[reduce using rule 30 (exp)]
-    ')' 	reduce using rule 29 (exp)
-    ')' 	[reduce using rule 30 (exp)]
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 48
-
-    exp  ->  error . STRING   (rule 31)
-    exp  ->  error . IDENT   (rule 32)
-    exp  ->  error . NUM_INT   (rule 33)
-    exp  ->  exp OR error .   (rule 36)
-
-    IDENT	shift, and go to state 9
-    STRING	shift, and go to state 10
-    NUM_INT	shift, and go to state 11
-
-    IDENT	[reduce using rule 36 (exp)]
-    STRING	[reduce using rule 36 (exp)]
-    NUM_INT	[reduce using rule 36 (exp)]
-    $default	reduce using rule 36 (exp)
-
-
-
-state 49
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp OR exp .   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    SUB 	shift, and go to state 25
-    XOR 	shift, and go to state 26
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 13 (exp)
-    error	[reduce using rule 13 (exp)]
-    IDENT	[reduce using rule 13 (exp)]
-    STRING	[reduce using rule 13 (exp)]
-    NUM_INT	[reduce using rule 13 (exp)]
-    AND 	reduce using rule 13 (exp)
-    NOT 	reduce using rule 13 (exp)
-    OR  	reduce using rule 13 (exp)
-    '(' 	[reduce using rule 13 (exp)]
-    ')' 	reduce using rule 13 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 50
-
-    exp  ->  error . STRING   (rule 31)
-    exp  ->  error . IDENT   (rule 32)
-    exp  ->  error . NUM_INT   (rule 33)
-    exp  ->  exp SUB error .   (rule 40)
-
-    IDENT	shift, and go to state 9
-    STRING	shift, and go to state 10
-    NUM_INT	shift, and go to state 11
-
-    IDENT	[reduce using rule 40 (exp)]
-    STRING	[reduce using rule 40 (exp)]
-    NUM_INT	[reduce using rule 40 (exp)]
-    $default	reduce using rule 40 (exp)
-
-
-
-state 51
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp SUB exp .   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    XOR 	shift, and go to state 26
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 12 (exp)
-    error	[reduce using rule 12 (exp)]
-    IDENT	[reduce using rule 12 (exp)]
-    STRING	[reduce using rule 12 (exp)]
-    NUM_INT	[reduce using rule 12 (exp)]
-    AND 	reduce using rule 12 (exp)
-    NOT 	reduce using rule 12 (exp)
-    OR  	reduce using rule 12 (exp)
-    SUB 	reduce using rule 12 (exp)
-    '(' 	[reduce using rule 12 (exp)]
-    ')' 	reduce using rule 12 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 52
-
-    exp  ->  error . STRING   (rule 31)
-    exp  ->  error . IDENT   (rule 32)
-    exp  ->  error . NUM_INT   (rule 33)
-    exp  ->  exp XOR error .   (rule 37)
-
-    IDENT	shift, and go to state 9
-    STRING	shift, and go to state 10
-    NUM_INT	shift, and go to state 11
-
-    IDENT	[reduce using rule 37 (exp)]
-    STRING	[reduce using rule 37 (exp)]
-    NUM_INT	[reduce using rule 37 (exp)]
-    $default	reduce using rule 37 (exp)
-
-
-
-state 53
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp XOR exp .   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    RANGE	shift, and go to state 27
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 14 (exp)
-    error	[reduce using rule 14 (exp)]
-    IDENT	[reduce using rule 14 (exp)]
-    STRING	[reduce using rule 14 (exp)]
-    NUM_INT	[reduce using rule 14 (exp)]
-    AND 	reduce using rule 14 (exp)
-    NOT 	reduce using rule 14 (exp)
-    OR  	reduce using rule 14 (exp)
-    SUB 	reduce using rule 14 (exp)
-    XOR 	reduce using rule 14 (exp)
-    '(' 	[reduce using rule 14 (exp)]
-    ')' 	reduce using rule 14 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 54
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp RANGE exp .   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    EQ  	shift, and go to state 28
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
+    AND 	shift, and go to state 27
+    NOT 	shift, and go to state 28
+    OR  	shift, and go to state 29
+    SUB 	shift, and go to state 30
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
 
     $   	reduce using rule 17 (exp)
     error	[reduce using rule 17 (exp)]
     IDENT	[reduce using rule 17 (exp)]
     STRING	[reduce using rule 17 (exp)]
     NUM_INT	[reduce using rule 17 (exp)]
-    AND 	reduce using rule 17 (exp)
-    NOT 	reduce using rule 17 (exp)
-    OR  	reduce using rule 17 (exp)
-    SUB 	reduce using rule 17 (exp)
-    XOR 	reduce using rule 17 (exp)
-    RANGE	reduce using rule 17 (exp)
+    AND 	[reduce using rule 17 (exp)]
+    NOT 	[reduce using rule 17 (exp)]
+    OR  	[reduce using rule 17 (exp)]
+    SUB 	[reduce using rule 17 (exp)]
+    XOR 	[reduce using rule 17 (exp)]
+    RANGE	[reduce using rule 17 (exp)]
+    EQ  	[reduce using rule 17 (exp)]
+    NOTEQ	[reduce using rule 17 (exp)]
+    GT  	[reduce using rule 17 (exp)]
+    GE  	[reduce using rule 17 (exp)]
+    LT  	[reduce using rule 17 (exp)]
+    LE  	[reduce using rule 17 (exp)]
     '(' 	[reduce using rule 17 (exp)]
     ')' 	reduce using rule 17 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
+    scalar_value	go to state 9
+    exp 	go to state 39
+
+
+
+state 40
+
+    select_clause  ->  SELECT obj_list FROM . obj_list opt_where   (rule 3)
+
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
+
+    obj_list	go to state 67
+    scalar_value	go to state 17
+
+
+
+state 41
+
+    obj_list  ->  obj_list ',' . scalar_value   (rule 7)
+
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
+
+    scalar_value	go to state 68
+
+
+
+state 42
+
+    exp  ->  error . STRING   (rule 39)
+    exp  ->  error . IDENT   (rule 40)
+    exp  ->  error . NUM_INT   (rule 41)
+    exp  ->  exp error .   (rule 42)
+    exp  ->  '(' exp error .   (rule 43)
+
+    IDENT	shift, and go to state 11
+    STRING	shift, and go to state 12
+    NUM_INT	shift, and go to state 13
+
+    $   	reduce using rule 43 (exp)
+    error	reduce using rule 42 (exp)
+    error	[reduce using rule 43 (exp)]
+    IDENT	[reduce using rule 42 (exp)]
+    IDENT	[reduce using rule 43 (exp)]
+    STRING	[reduce using rule 42 (exp)]
+    STRING	[reduce using rule 43 (exp)]
+    NUM_INT	[reduce using rule 42 (exp)]
+    NUM_INT	[reduce using rule 43 (exp)]
+    AND 	reduce using rule 42 (exp)
+    AND 	[reduce using rule 43 (exp)]
+    NOT 	reduce using rule 42 (exp)
+    NOT 	[reduce using rule 43 (exp)]
+    OR  	reduce using rule 42 (exp)
+    OR  	[reduce using rule 43 (exp)]
+    SUB 	reduce using rule 42 (exp)
+    SUB 	[reduce using rule 43 (exp)]
+    XOR 	reduce using rule 42 (exp)
+    XOR 	[reduce using rule 43 (exp)]
+    RANGE	reduce using rule 42 (exp)
+    RANGE	[reduce using rule 43 (exp)]
+    EQ  	reduce using rule 42 (exp)
+    EQ  	[reduce using rule 43 (exp)]
+    NOTEQ	reduce using rule 42 (exp)
+    NOTEQ	[reduce using rule 43 (exp)]
+    GT  	reduce using rule 42 (exp)
+    GT  	[reduce using rule 43 (exp)]
+    GE  	reduce using rule 42 (exp)
+    GE  	[reduce using rule 43 (exp)]
+    LT  	reduce using rule 42 (exp)
+    LT  	[reduce using rule 43 (exp)]
+    LE  	reduce using rule 42 (exp)
+    LE  	[reduce using rule 43 (exp)]
+    '(' 	reduce using rule 42 (exp)
+    '(' 	[reduce using rule 43 (exp)]
+    ')' 	reduce using rule 42 (exp)
+    ')' 	[reduce using rule 43 (exp)]
+    $default	reduce using rule 42 (exp)
+
+
+state 43
+
+    exp  ->  '(' exp ')' .   (rule 18)
+    exp  ->  '(' exp ')' .   (rule 36)
+
+    $   	reduce using rule 18 (exp)
+    $   	[reduce using rule 36 (exp)]
+    error	reduce using rule 18 (exp)
+    error	[reduce using rule 36 (exp)]
+    IDENT	reduce using rule 18 (exp)
+    IDENT	[reduce using rule 36 (exp)]
+    STRING	reduce using rule 18 (exp)
+    STRING	[reduce using rule 36 (exp)]
+    NUM_INT	reduce using rule 18 (exp)
+    NUM_INT	[reduce using rule 36 (exp)]
+    AND 	reduce using rule 18 (exp)
+    AND 	[reduce using rule 36 (exp)]
+    NOT 	reduce using rule 18 (exp)
+    NOT 	[reduce using rule 36 (exp)]
+    OR  	reduce using rule 18 (exp)
+    OR  	[reduce using rule 36 (exp)]
+    SUB 	reduce using rule 18 (exp)
+    SUB 	[reduce using rule 36 (exp)]
+    XOR 	reduce using rule 18 (exp)
+    XOR 	[reduce using rule 36 (exp)]
+    RANGE	reduce using rule 18 (exp)
+    RANGE	[reduce using rule 36 (exp)]
+    EQ  	reduce using rule 18 (exp)
+    EQ  	[reduce using rule 36 (exp)]
+    NOTEQ	reduce using rule 18 (exp)
+    NOTEQ	[reduce using rule 36 (exp)]
+    GT  	reduce using rule 18 (exp)
+    GT  	[reduce using rule 36 (exp)]
+    GE  	reduce using rule 18 (exp)
+    GE  	[reduce using rule 36 (exp)]
+    LT  	reduce using rule 18 (exp)
+    LT  	[reduce using rule 36 (exp)]
+    LE  	reduce using rule 18 (exp)
+    LE  	[reduce using rule 36 (exp)]
+    '(' 	reduce using rule 18 (exp)
+    '(' 	[reduce using rule 36 (exp)]
+    ')' 	reduce using rule 18 (exp)
+    ')' 	[reduce using rule 36 (exp)]
+    $default	reduce using rule 18 (exp)
+
+
+state 44
+
+    exp  ->  scalar_value BETWEEN scalar_value . AND scalar_value   (rule 23)
+
+    AND 	shift, and go to state 69
+
+
+
+state 45
+
+    exp  ->  scalar_value NOT_BETWEEN scalar_value . AND scalar_value   (rule 24)
+
+    AND 	shift, and go to state 70
+
+
+
+state 46
+
+    exp  ->  scalar_value LIKE scalar_value .   (rule 26)
+
+    $default	reduce using rule 26 (exp)
+
+
+
+state 47
+
+    exp  ->  scalar_value NOT_LIKE scalar_value .   (rule 27)
+
+    $default	reduce using rule 27 (exp)
+
+
+
+state 48
+
+    exp  ->  scalar_value IN '(' . in_sub_expr ')'   (rule 28)
+
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
+    SELECT	shift, and go to state 5
+
+    select_clause	go to state 71
+    scalar_value	go to state 72
+    scalar_list	go to state 73
+    in_sub_expr	go to state 74
+
+
+
+state 49
+
+    exp  ->  scalar_value NOT_IN '(' . scalar_list ')'   (rule 29)
+
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
+
+    scalar_value	go to state 72
+    scalar_list	go to state 75
+
+
+
+state 50
+
+    exp  ->  error . STRING   (rule 39)
+    exp  ->  error . IDENT   (rule 40)
+    exp  ->  error . NUM_INT   (rule 41)
+    exp  ->  exp AND error .   (rule 47)
+
+    IDENT	shift, and go to state 11
+    STRING	shift, and go to state 12
+    NUM_INT	shift, and go to state 13
+
+    IDENT	[reduce using rule 47 (exp)]
+    STRING	[reduce using rule 47 (exp)]
+    NUM_INT	[reduce using rule 47 (exp)]
+    $default	reduce using rule 47 (exp)
+
+
+
+state 51
+
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp AND exp .   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
+
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    NOT 	shift, and go to state 28
+    OR  	shift, and go to state 29
+    SUB 	shift, and go to state 30
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 19 (exp)
+    error	[reduce using rule 19 (exp)]
+    IDENT	[reduce using rule 19 (exp)]
+    STRING	[reduce using rule 19 (exp)]
+    NUM_INT	[reduce using rule 19 (exp)]
+    AND 	reduce using rule 19 (exp)
+    '(' 	[reduce using rule 19 (exp)]
+    ')' 	reduce using rule 19 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
+
+
+
+state 52
+
+    exp  ->  error . STRING   (rule 39)
+    exp  ->  error . IDENT   (rule 40)
+    exp  ->  error . NUM_INT   (rule 41)
+    exp  ->  exp NOT error .   (rule 46)
+
+    IDENT	shift, and go to state 11
+    STRING	shift, and go to state 12
+    NUM_INT	shift, and go to state 13
+
+    IDENT	[reduce using rule 46 (exp)]
+    STRING	[reduce using rule 46 (exp)]
+    NUM_INT	[reduce using rule 46 (exp)]
+    $default	reduce using rule 46 (exp)
+
+
+
+state 53
+
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp NOT exp .   (rule 37)
+    exp  ->  NOT exp .   (rule 38)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
+
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    OR  	shift, and go to state 29
+    SUB 	shift, and go to state 30
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 37 (exp)
+    $   	[reduce using rule 38 (exp)]
+    error	[reduce using rule 37 (exp)]
+    error	[reduce using rule 38 (exp)]
+    IDENT	[reduce using rule 37 (exp)]
+    IDENT	[reduce using rule 38 (exp)]
+    STRING	[reduce using rule 37 (exp)]
+    STRING	[reduce using rule 38 (exp)]
+    NUM_INT	[reduce using rule 37 (exp)]
+    NUM_INT	[reduce using rule 38 (exp)]
+    AND 	reduce using rule 37 (exp)
+    AND 	[reduce using rule 38 (exp)]
+    NOT 	reduce using rule 37 (exp)
+    NOT 	[reduce using rule 38 (exp)]
+    '(' 	[reduce using rule 37 (exp)]
+    '(' 	[reduce using rule 38 (exp)]
+    ')' 	reduce using rule 37 (exp)
+    ')' 	[reduce using rule 38 (exp)]
+    scalar_value	go to state 9
+    exp 	go to state 39
+
+
+
+state 54
+
+    exp  ->  error . STRING   (rule 39)
+    exp  ->  error . IDENT   (rule 40)
+    exp  ->  error . NUM_INT   (rule 41)
+    exp  ->  exp OR error .   (rule 44)
+
+    IDENT	shift, and go to state 11
+    STRING	shift, and go to state 12
+    NUM_INT	shift, and go to state 13
+
+    IDENT	[reduce using rule 44 (exp)]
+    STRING	[reduce using rule 44 (exp)]
+    NUM_INT	[reduce using rule 44 (exp)]
+    $default	reduce using rule 44 (exp)
 
 
 
 state 55
 
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp EQ exp .   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp OR exp .   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    error	shift, and go to state 21
+    error	shift, and go to state 26
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    NOTEQ	shift, and go to state 29
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
+    SUB 	shift, and go to state 30
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 21 (exp)
+    error	[reduce using rule 21 (exp)]
+    IDENT	[reduce using rule 21 (exp)]
+    STRING	[reduce using rule 21 (exp)]
+    NUM_INT	[reduce using rule 21 (exp)]
+    AND 	reduce using rule 21 (exp)
+    NOT 	reduce using rule 21 (exp)
+    OR  	reduce using rule 21 (exp)
+    '(' 	[reduce using rule 21 (exp)]
+    ')' 	reduce using rule 21 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
+
+
+
+state 56
+
+    exp  ->  error . STRING   (rule 39)
+    exp  ->  error . IDENT   (rule 40)
+    exp  ->  error . NUM_INT   (rule 41)
+    exp  ->  exp SUB error .   (rule 48)
+
+    IDENT	shift, and go to state 11
+    STRING	shift, and go to state 12
+    NUM_INT	shift, and go to state 13
+
+    IDENT	[reduce using rule 48 (exp)]
+    STRING	[reduce using rule 48 (exp)]
+    NUM_INT	[reduce using rule 48 (exp)]
+    $default	reduce using rule 48 (exp)
+
+
+
+state 57
+
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp SUB exp .   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
+
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 20 (exp)
+    error	[reduce using rule 20 (exp)]
+    IDENT	[reduce using rule 20 (exp)]
+    STRING	[reduce using rule 20 (exp)]
+    NUM_INT	[reduce using rule 20 (exp)]
+    AND 	reduce using rule 20 (exp)
+    NOT 	reduce using rule 20 (exp)
+    OR  	reduce using rule 20 (exp)
+    SUB 	reduce using rule 20 (exp)
+    '(' 	[reduce using rule 20 (exp)]
+    ')' 	reduce using rule 20 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
+
+
+
+state 58
+
+    exp  ->  error . STRING   (rule 39)
+    exp  ->  error . IDENT   (rule 40)
+    exp  ->  error . NUM_INT   (rule 41)
+    exp  ->  exp XOR error .   (rule 45)
+
+    IDENT	shift, and go to state 11
+    STRING	shift, and go to state 12
+    NUM_INT	shift, and go to state 13
+
+    IDENT	[reduce using rule 45 (exp)]
+    STRING	[reduce using rule 45 (exp)]
+    NUM_INT	[reduce using rule 45 (exp)]
+    $default	reduce using rule 45 (exp)
+
+
+
+state 59
+
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp XOR exp .   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
+
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
 
     $   	reduce using rule 22 (exp)
     error	[reduce using rule 22 (exp)]
@@ -1542,151 +1527,47 @@ state 55
     OR  	reduce using rule 22 (exp)
     SUB 	reduce using rule 22 (exp)
     XOR 	reduce using rule 22 (exp)
-    RANGE	reduce using rule 22 (exp)
-    EQ  	reduce using rule 22 (exp)
     '(' 	[reduce using rule 22 (exp)]
     ')' 	reduce using rule 22 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
-state 56
+state 60
 
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp NOTEQ exp .   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp RANGE exp .   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    error	shift, and go to state 21
+    error	shift, and go to state 26
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
-    GT  	shift, and go to state 30
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 23 (exp)
-    error	[reduce using rule 23 (exp)]
-    IDENT	[reduce using rule 23 (exp)]
-    STRING	[reduce using rule 23 (exp)]
-    NUM_INT	[reduce using rule 23 (exp)]
-    AND 	reduce using rule 23 (exp)
-    NOT 	reduce using rule 23 (exp)
-    OR  	reduce using rule 23 (exp)
-    SUB 	reduce using rule 23 (exp)
-    XOR 	reduce using rule 23 (exp)
-    RANGE	reduce using rule 23 (exp)
-    EQ  	reduce using rule 23 (exp)
-    NOTEQ	reduce using rule 23 (exp)
-    '(' 	[reduce using rule 23 (exp)]
-    ')' 	reduce using rule 23 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 57
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp GT exp .   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    GE  	shift, and go to state 31
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 24 (exp)
-    error	[reduce using rule 24 (exp)]
-    IDENT	[reduce using rule 24 (exp)]
-    STRING	[reduce using rule 24 (exp)]
-    NUM_INT	[reduce using rule 24 (exp)]
-    AND 	reduce using rule 24 (exp)
-    NOT 	reduce using rule 24 (exp)
-    OR  	reduce using rule 24 (exp)
-    SUB 	reduce using rule 24 (exp)
-    XOR 	reduce using rule 24 (exp)
-    RANGE	reduce using rule 24 (exp)
-    EQ  	reduce using rule 24 (exp)
-    NOTEQ	reduce using rule 24 (exp)
-    GT  	reduce using rule 24 (exp)
-    '(' 	[reduce using rule 24 (exp)]
-    ')' 	reduce using rule 24 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 58
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp GE exp .   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    LT  	shift, and go to state 32
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
 
     $   	reduce using rule 25 (exp)
     error	[reduce using rule 25 (exp)]
@@ -1699,240 +1580,559 @@ state 58
     SUB 	reduce using rule 25 (exp)
     XOR 	reduce using rule 25 (exp)
     RANGE	reduce using rule 25 (exp)
-    EQ  	reduce using rule 25 (exp)
-    NOTEQ	reduce using rule 25 (exp)
-    GT  	reduce using rule 25 (exp)
-    GE  	reduce using rule 25 (exp)
     '(' 	[reduce using rule 25 (exp)]
     ')' 	reduce using rule 25 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 59
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp LT exp .   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    LE  	shift, and go to state 33
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 26 (exp)
-    error	[reduce using rule 26 (exp)]
-    IDENT	[reduce using rule 26 (exp)]
-    STRING	[reduce using rule 26 (exp)]
-    NUM_INT	[reduce using rule 26 (exp)]
-    AND 	reduce using rule 26 (exp)
-    NOT 	reduce using rule 26 (exp)
-    OR  	reduce using rule 26 (exp)
-    SUB 	reduce using rule 26 (exp)
-    XOR 	reduce using rule 26 (exp)
-    RANGE	reduce using rule 26 (exp)
-    EQ  	reduce using rule 26 (exp)
-    NOTEQ	reduce using rule 26 (exp)
-    GT  	reduce using rule 26 (exp)
-    GE  	reduce using rule 26 (exp)
-    LT  	reduce using rule 26 (exp)
-    '(' 	[reduce using rule 26 (exp)]
-    ')' 	reduce using rule 26 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
-
-
-
-state 60
-
-    exp  ->  exp . exp   (rule 9)
-    exp  ->  exp . AND exp   (rule 11)
-    exp  ->  exp . SUB exp   (rule 12)
-    exp  ->  exp . OR exp   (rule 13)
-    exp  ->  exp . XOR exp   (rule 14)
-    exp  ->  exp . RANGE exp   (rule 17)
-    exp  ->  exp . EQ exp   (rule 22)
-    exp  ->  exp . NOTEQ exp   (rule 23)
-    exp  ->  exp . GT exp   (rule 24)
-    exp  ->  exp . GE exp   (rule 25)
-    exp  ->  exp . LT exp   (rule 26)
-    exp  ->  exp . LE exp   (rule 27)
-    exp  ->  exp LE exp .   (rule 27)
-    exp  ->  exp . NOT exp   (rule 29)
-    exp  ->  exp . error   (rule 34)
-    exp  ->  exp . OR error   (rule 36)
-    exp  ->  exp . XOR error   (rule 37)
-    exp  ->  exp . NOT error   (rule 38)
-    exp  ->  exp . AND error   (rule 39)
-    exp  ->  exp . SUB error   (rule 40)
-
-    error	shift, and go to state 21
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 3
-    NUM_INT	shift, and go to state 4
-    '(' 	shift, and go to state 6
-
-    $   	reduce using rule 27 (exp)
-    error	[reduce using rule 27 (exp)]
-    IDENT	[reduce using rule 27 (exp)]
-    STRING	[reduce using rule 27 (exp)]
-    NUM_INT	[reduce using rule 27 (exp)]
-    AND 	reduce using rule 27 (exp)
-    NOT 	reduce using rule 27 (exp)
-    OR  	reduce using rule 27 (exp)
-    SUB 	reduce using rule 27 (exp)
-    XOR 	reduce using rule 27 (exp)
-    RANGE	reduce using rule 27 (exp)
-    EQ  	reduce using rule 27 (exp)
-    NOTEQ	reduce using rule 27 (exp)
-    GT  	reduce using rule 27 (exp)
-    GE  	reduce using rule 27 (exp)
-    LT  	reduce using rule 27 (exp)
-    LE  	reduce using rule 27 (exp)
-    '(' 	[reduce using rule 27 (exp)]
-    ')' 	reduce using rule 27 (exp)
-    scalar_value	go to state 7
-    exp 	go to state 34
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 61
 
-    exp  ->  scalar_value BETWEEN scalar_value AND . scalar_value   (rule 15)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp EQ exp .   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
+    error	shift, and go to state 26
     IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
+    STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 66
+    $   	reduce using rule 30 (exp)
+    error	[reduce using rule 30 (exp)]
+    IDENT	[reduce using rule 30 (exp)]
+    STRING	[reduce using rule 30 (exp)]
+    NUM_INT	[reduce using rule 30 (exp)]
+    AND 	reduce using rule 30 (exp)
+    NOT 	reduce using rule 30 (exp)
+    OR  	reduce using rule 30 (exp)
+    SUB 	reduce using rule 30 (exp)
+    XOR 	reduce using rule 30 (exp)
+    RANGE	reduce using rule 30 (exp)
+    EQ  	reduce using rule 30 (exp)
+    '(' 	[reduce using rule 30 (exp)]
+    ')' 	reduce using rule 30 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 62
 
-    exp  ->  scalar_value NOT_BETWEEN scalar_value AND . scalar_value   (rule 16)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp NOTEQ exp .   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
+    error	shift, and go to state 26
     IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
+    STRING	shift, and go to state 3
     NUM_INT	shift, and go to state 4
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
 
-    scalar_value	go to state 67
+    $   	reduce using rule 31 (exp)
+    error	[reduce using rule 31 (exp)]
+    IDENT	[reduce using rule 31 (exp)]
+    STRING	[reduce using rule 31 (exp)]
+    NUM_INT	[reduce using rule 31 (exp)]
+    AND 	reduce using rule 31 (exp)
+    NOT 	reduce using rule 31 (exp)
+    OR  	reduce using rule 31 (exp)
+    SUB 	reduce using rule 31 (exp)
+    XOR 	reduce using rule 31 (exp)
+    RANGE	reduce using rule 31 (exp)
+    EQ  	reduce using rule 31 (exp)
+    NOTEQ	reduce using rule 31 (exp)
+    '(' 	[reduce using rule 31 (exp)]
+    ')' 	reduce using rule 31 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 63
 
-    scalar_list  ->  scalar_value .   (rule 5)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp GT exp .   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    $default	reduce using rule 5 (scalar_list)
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 32 (exp)
+    error	[reduce using rule 32 (exp)]
+    IDENT	[reduce using rule 32 (exp)]
+    STRING	[reduce using rule 32 (exp)]
+    NUM_INT	[reduce using rule 32 (exp)]
+    AND 	reduce using rule 32 (exp)
+    NOT 	reduce using rule 32 (exp)
+    OR  	reduce using rule 32 (exp)
+    SUB 	reduce using rule 32 (exp)
+    XOR 	reduce using rule 32 (exp)
+    RANGE	reduce using rule 32 (exp)
+    EQ  	reduce using rule 32 (exp)
+    NOTEQ	reduce using rule 32 (exp)
+    GT  	reduce using rule 32 (exp)
+    '(' 	[reduce using rule 32 (exp)]
+    ')' 	reduce using rule 32 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 64
 
-    scalar_list  ->  scalar_list . ',' scalar_value   (rule 6)
-    exp  ->  scalar_value IN '(' scalar_list . ')'   (rule 20)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp GE exp .   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    ',' 	shift, and go to state 68
-    ')' 	shift, and go to state 69
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 33 (exp)
+    error	[reduce using rule 33 (exp)]
+    IDENT	[reduce using rule 33 (exp)]
+    STRING	[reduce using rule 33 (exp)]
+    NUM_INT	[reduce using rule 33 (exp)]
+    AND 	reduce using rule 33 (exp)
+    NOT 	reduce using rule 33 (exp)
+    OR  	reduce using rule 33 (exp)
+    SUB 	reduce using rule 33 (exp)
+    XOR 	reduce using rule 33 (exp)
+    RANGE	reduce using rule 33 (exp)
+    EQ  	reduce using rule 33 (exp)
+    NOTEQ	reduce using rule 33 (exp)
+    GT  	reduce using rule 33 (exp)
+    GE  	reduce using rule 33 (exp)
+    '(' 	[reduce using rule 33 (exp)]
+    ')' 	reduce using rule 33 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 65
 
-    scalar_list  ->  scalar_list . ',' scalar_value   (rule 6)
-    exp  ->  scalar_value NOT_IN '(' scalar_list . ')'   (rule 21)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp LT exp .   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    ',' 	shift, and go to state 68
-    ')' 	shift, and go to state 70
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 34 (exp)
+    error	[reduce using rule 34 (exp)]
+    IDENT	[reduce using rule 34 (exp)]
+    STRING	[reduce using rule 34 (exp)]
+    NUM_INT	[reduce using rule 34 (exp)]
+    AND 	reduce using rule 34 (exp)
+    NOT 	reduce using rule 34 (exp)
+    OR  	reduce using rule 34 (exp)
+    SUB 	reduce using rule 34 (exp)
+    XOR 	reduce using rule 34 (exp)
+    RANGE	reduce using rule 34 (exp)
+    EQ  	reduce using rule 34 (exp)
+    NOTEQ	reduce using rule 34 (exp)
+    GT  	reduce using rule 34 (exp)
+    GE  	reduce using rule 34 (exp)
+    LT  	reduce using rule 34 (exp)
+    '(' 	[reduce using rule 34 (exp)]
+    ')' 	reduce using rule 34 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 66
 
-    exp  ->  scalar_value BETWEEN scalar_value AND scalar_value .   (rule 15)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp LE exp .   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
 
-    $default	reduce using rule 15 (exp)
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 35 (exp)
+    error	[reduce using rule 35 (exp)]
+    IDENT	[reduce using rule 35 (exp)]
+    STRING	[reduce using rule 35 (exp)]
+    NUM_INT	[reduce using rule 35 (exp)]
+    AND 	reduce using rule 35 (exp)
+    NOT 	reduce using rule 35 (exp)
+    OR  	reduce using rule 35 (exp)
+    SUB 	reduce using rule 35 (exp)
+    XOR 	reduce using rule 35 (exp)
+    RANGE	reduce using rule 35 (exp)
+    EQ  	reduce using rule 35 (exp)
+    NOTEQ	reduce using rule 35 (exp)
+    GT  	reduce using rule 35 (exp)
+    GE  	reduce using rule 35 (exp)
+    LT  	reduce using rule 35 (exp)
+    LE  	reduce using rule 35 (exp)
+    '(' 	[reduce using rule 35 (exp)]
+    ')' 	reduce using rule 35 (exp)
+    scalar_value	go to state 9
+    exp 	go to state 39
 
 
 
 state 67
 
-    exp  ->  scalar_value NOT_BETWEEN scalar_value AND scalar_value .   (rule 16)
+    select_clause  ->  SELECT obj_list FROM obj_list . opt_where   (rule 3)
+    obj_list  ->  obj_list . ',' scalar_value   (rule 7)
 
-    $default	reduce using rule 16 (exp)
+    WHERE	shift, and go to state 76
+    ',' 	shift, and go to state 41
+
+    $default	reduce using rule 4 (opt_where)
+
+    opt_where	go to state 77
 
 
 
 state 68
 
-    scalar_list  ->  scalar_list ',' . scalar_value   (rule 6)
+    obj_list  ->  obj_list ',' scalar_value .   (rule 7)
 
-    IDENT	shift, and go to state 2
-    STRING	shift, and go to state 37
-    NUM_INT	shift, and go to state 4
-
-    scalar_value	go to state 71
+    $default	reduce using rule 7 (obj_list)
 
 
 
 state 69
 
-    exp  ->  scalar_value IN '(' scalar_list ')' .   (rule 20)
+    exp  ->  scalar_value BETWEEN scalar_value AND . scalar_value   (rule 23)
 
-    $default	reduce using rule 20 (exp)
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
+
+    scalar_value	go to state 78
 
 
 
 state 70
 
-    exp  ->  scalar_value NOT_IN '(' scalar_list ')' .   (rule 21)
+    exp  ->  scalar_value NOT_BETWEEN scalar_value AND . scalar_value   (rule 24)
 
-    $default	reduce using rule 21 (exp)
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
+
+    scalar_value	go to state 79
 
 
 
 state 71
 
-    scalar_list  ->  scalar_list ',' scalar_value .   (rule 6)
+    in_sub_expr  ->  select_clause .   (rule 14)
 
-    $default	reduce using rule 6 (scalar_list)
+    $default	reduce using rule 14 (in_sub_expr)
 
 
 
 state 72
 
-    $   	go to state 73
+    scalar_list  ->  scalar_value .   (rule 11)
+
+    $default	reduce using rule 11 (scalar_list)
 
 
 
 state 73
 
-    $   	go to state 74
+    scalar_list  ->  scalar_list . ',' scalar_value   (rule 12)
+    in_sub_expr  ->  scalar_list .   (rule 13)
+
+    ',' 	shift, and go to state 80
+
+    $default	reduce using rule 13 (in_sub_expr)
 
 
 
 state 74
+
+    exp  ->  scalar_value IN '(' in_sub_expr . ')'   (rule 28)
+
+    ')' 	shift, and go to state 81
+
+
+
+state 75
+
+    scalar_list  ->  scalar_list . ',' scalar_value   (rule 12)
+    exp  ->  scalar_value NOT_IN '(' scalar_list . ')'   (rule 29)
+
+    ',' 	shift, and go to state 80
+    ')' 	shift, and go to state 82
+
+
+
+state 76
+
+    opt_where  ->  WHERE . exp   (rule 5)
+
+    error	shift, and go to state 1
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    NOT 	shift, and go to state 6
+    '(' 	shift, and go to state 7
+
+    scalar_value	go to state 9
+    exp 	go to state 83
+
+
+
+state 77
+
+    select_clause  ->  SELECT obj_list FROM obj_list opt_where .   (rule 3)
+
+    $default	reduce using rule 3 (select_clause)
+
+
+
+state 78
+
+    exp  ->  scalar_value BETWEEN scalar_value AND scalar_value .   (rule 23)
+
+    $default	reduce using rule 23 (exp)
+
+
+
+state 79
+
+    exp  ->  scalar_value NOT_BETWEEN scalar_value AND scalar_value .   (rule 24)
+
+    $default	reduce using rule 24 (exp)
+
+
+
+state 80
+
+    scalar_list  ->  scalar_list ',' . scalar_value   (rule 12)
+
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 15
+    NUM_INT	shift, and go to state 4
+
+    scalar_value	go to state 84
+
+
+
+state 81
+
+    exp  ->  scalar_value IN '(' in_sub_expr ')' .   (rule 28)
+
+    $default	reduce using rule 28 (exp)
+
+
+
+state 82
+
+    exp  ->  scalar_value NOT_IN '(' scalar_list ')' .   (rule 29)
+
+    $default	reduce using rule 29 (exp)
+
+
+
+state 83
+
+    opt_where  ->  WHERE exp .   (rule 5)
+    exp  ->  exp . exp   (rule 17)
+    exp  ->  exp . AND exp   (rule 19)
+    exp  ->  exp . SUB exp   (rule 20)
+    exp  ->  exp . OR exp   (rule 21)
+    exp  ->  exp . XOR exp   (rule 22)
+    exp  ->  exp . RANGE exp   (rule 25)
+    exp  ->  exp . EQ exp   (rule 30)
+    exp  ->  exp . NOTEQ exp   (rule 31)
+    exp  ->  exp . GT exp   (rule 32)
+    exp  ->  exp . GE exp   (rule 33)
+    exp  ->  exp . LT exp   (rule 34)
+    exp  ->  exp . LE exp   (rule 35)
+    exp  ->  exp . NOT exp   (rule 37)
+    exp  ->  exp . error   (rule 42)
+    exp  ->  exp . OR error   (rule 44)
+    exp  ->  exp . XOR error   (rule 45)
+    exp  ->  exp . NOT error   (rule 46)
+    exp  ->  exp . AND error   (rule 47)
+    exp  ->  exp . SUB error   (rule 48)
+
+    error	shift, and go to state 26
+    IDENT	shift, and go to state 2
+    STRING	shift, and go to state 3
+    NUM_INT	shift, and go to state 4
+    AND 	shift, and go to state 27
+    NOT 	shift, and go to state 28
+    OR  	shift, and go to state 29
+    SUB 	shift, and go to state 30
+    XOR 	shift, and go to state 31
+    RANGE	shift, and go to state 32
+    EQ  	shift, and go to state 33
+    NOTEQ	shift, and go to state 34
+    GT  	shift, and go to state 35
+    GE  	shift, and go to state 36
+    LT  	shift, and go to state 37
+    LE  	shift, and go to state 38
+    '(' 	shift, and go to state 7
+
+    $   	reduce using rule 5 (opt_where)
+    ')' 	reduce using rule 5 (opt_where)
+    scalar_value	go to state 9
+    exp 	go to state 39
+
+
+
+state 84
+
+    scalar_list  ->  scalar_list ',' scalar_value .   (rule 12)
+
+    $default	reduce using rule 12 (scalar_list)
+
+
+
+state 85
+
+    $   	go to state 86
+
+
+
+state 86
+
+    $   	go to state 87
+
+
+
+state 87
 
     $default	accept
 

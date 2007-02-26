@@ -345,7 +345,7 @@ void StaticEvaluate(const char* q, int res)
 int CTestQParse::Run(void)
 {
     {{
-    const char* queries[] = {           
+    const char* queries[] = {       
         "\n\r\n(asdf != 2)",
         "    asdf != 2",
         " 1 AND 0 ",
@@ -385,8 +385,12 @@ int CTestQParse::Run(void)
          "feature IN    \n(\"cds\", gene , snp, \"bio nonsense\")",         
          "binding id NOT     IN   (1, 20)",
          "vitamin C issue not between 1 and 10",
-         "drug NOT LIKE aspirin", 
-         "db not in (pubmed, gene)"
+         "drug NOT LIKE aspirin",                  
+         "db not in (pubmed, gene)",
+         "SELECT aaa FROM table1",
+         "SELECT aaa,bbbb FROM table1,table2",
+         "SELECT aaa,bbbb,cccc,dddd FROM table1 WHERE fld1=10 OR fld2=12",         
+         "SELECT f1,f2,f22 FROM t1,t2 WHERE aaa=1 OR fld2 IN ( SELECT f31,f41 FROM t3 WHERE v=10 )"
          
     };    
     int l = sizeof (queries) / sizeof(queries[0]);
@@ -442,6 +446,10 @@ int CTestQParse::Run(void)
             new CQueryFunction_BV_Logic<bm::bvector<> >(bm::set_SUB));
     qexec.AddFunc(CQueryParseNode::eXor,
             new CQueryFunction_BV_Logic<bm::bvector<> >(bm::set_XOR));
+    qexec.AddFunc(CQueryParseNode::eNot,
+            new CQueryFunction_BV_Not<bm::bvector<> >());
+    qexec.AddFunc(CQueryParseNode::eIn,
+            new CQueryFunction_BV_In_Or<bm::bvector<> >());
    
    
     //ParseFile("/net/garret/export/home/dicuccio/work/text-mining/sample-queries/unique-queries.50000");
