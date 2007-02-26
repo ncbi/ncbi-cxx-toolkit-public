@@ -1237,7 +1237,8 @@ void CAnnot_Collector::x_AddPostMappings(void)
         amit->second->Convert(annot_ref,
             m_Selector->m_FeatProduct ? CSeq_loc_Conversion::eProduct :
                                         CSeq_loc_Conversion::eLocation);
-        if ( !annot_ref.GetMappingInfo().GetTotalRange().Empty() ) {
+        if ( annot_ref.IsAlign() ||
+             !annot_ref.GetMappingInfo().GetTotalRange().Empty() ) {
             x_AddObject(annot_ref);
         }
     }

@@ -431,6 +431,14 @@ int CSeq_align_Mapper::GetSeqWidth(const CSeq_id& id) const
 }
 
 
+CSeq_align_Mapper_Base*
+CSeq_align_Mapper::CreateSubAlign(const CSeq_align& align,
+                                  EWidthFlag map_widths)
+{
+    return new CSeq_align_Mapper(align, map_widths, m_Scope);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

@@ -55,6 +55,8 @@ public:
 
 protected:
     virtual int GetSeqWidth(const CSeq_id& id) const;
+    virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSeq_align& align,
+                                                   EWidthFlag map_widths);
 
 private:
     typedef CSeq_loc_Conversion_Set::TRange       TRange;

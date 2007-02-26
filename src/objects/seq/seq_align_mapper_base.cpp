@@ -437,9 +437,8 @@ void CSeq_align_Mapper_Base::x_Init(const CSeq_align_set& align_set)
     const CSeq_align_set::Tdata& data = align_set.Get();
     ITERATE(CSeq_align_set::Tdata, it, data) {
         m_SubAligns.push_back(
-            Ref(new CSeq_align_Mapper_Base(**it,
-            m_MapWidths ? CSeq_align_Mapper_Base::eWidth_Map
-            : CSeq_align_Mapper_Base::eWidth_NoMap)));
+            Ref(CreateSubAlign(**it,
+                               m_MapWidths ? eWidth_Map : eWidth_NoMap)));
     }
 }
 
@@ -960,6 +959,14 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
 int CSeq_align_Mapper_Base::GetSeqWidth(const CSeq_id& id) const
 {
     return 0;
+}
+
+
+CSeq_align_Mapper_Base*
+CSeq_align_Mapper_Base::CreateSubAlign(const CSeq_align& align,
+                                       EWidthFlag map_widths)
+{
+    return new CSeq_align_Mapper_Base(align, map_widths);
 }
 
 

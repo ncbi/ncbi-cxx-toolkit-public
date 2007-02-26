@@ -124,6 +124,8 @@ protected:
     CSeq_align_Mapper_Base(void);
 
     virtual int GetSeqWidth(const CSeq_id& id) const;
+    virtual CSeq_align_Mapper_Base* CreateSubAlign(const CSeq_align& align,
+                                                   EWidthFlag map_widths);
 
     void x_Init(const CSeq_align& align);
     SAlignment_Segment& x_InsertSeg(TSegments::iterator& where,
