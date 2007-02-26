@@ -41,7 +41,7 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
-#include <algo/blast/blastinput/blast_args.hpp>
+#include <algo/blast/blastinput/psiblast_args.hpp>
 
 // Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
 #if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
