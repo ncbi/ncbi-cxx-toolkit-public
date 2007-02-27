@@ -336,12 +336,15 @@ protected:
     /// @param end
     ///     The offset for the first byte after the area to read.
     /// @param keep
-    ///     True if an extra hold should be acquired on the data.
+    ///     Specify true to get a returnable hold for the SeqDB client.
+    /// @param hold
+    ///     Specify true to get a request-duration hold.
     /// @param locked
     ///     The lock holder object for this thread.
     const char * x_GetRegion(TIndx            start,
                              TIndx            end,
                              bool             keep,
+                             bool             hold,
                              CSeqDBLockHold & locked) const
     {
         m_Atlas.Lock(locked);
@@ -352,6 +355,10 @@ protected:
         
         if (keep) {
             m_Lease.IncrementRefCnt();
+        }
+        
+        if (hold) {
+            locked.HoldRegion(m_Lease);
         }
         
         return m_Lease.GetPtr(start);
@@ -859,6 +866,8 @@ public:
     ///     The offset for the first byte after the area to read.
     /// @param keep
     ///     True if an extra hold should be acquired on the data.
+    /// @param hold
+    ///     Specify true to get a request-duration hold.
     /// @param locked
     ///     The lock holder object for this thread.
     /// @return
@@ -866,9 +875,10 @@ public:
     const char * GetRegion(TIndx            start,
                            TIndx            end,
                            bool             keep,
+                           bool             hold,
                            CSeqDBLockHold & locked) const
     {
-        return x_GetRegion(start, end, keep, locked);
+        return x_GetRegion(start, end, keep, hold, locked);
     }
 };
 
@@ -954,7 +964,10 @@ public:
                            TIndx            end,
                            CSeqDBLockHold & locked) const
     {
-        return x_GetRegion(start, end, false, locked);
+        // Header data never requires the 'hold' option because asn.1
+        // processing is done immediately.
+        
+        return x_GetRegion(start, end, false, false, locked);
     }
 };
 

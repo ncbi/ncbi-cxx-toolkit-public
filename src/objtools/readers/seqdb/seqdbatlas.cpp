@@ -1682,6 +1682,45 @@ CSeqDBAtlas & CSeqDBAtlasHolder::Get()
     return *m_Atlas;
 }
 
+CSeqDBLockHold::~CSeqDBLockHold()
+{
+    CHECK_MARKER();
+    
+    if (m_Holds.size()) {
+        m_Atlas.Lock(*this);
+        for(size_t i = 0; i < m_Holds.size(); i++) {
+            m_Holds[i]->RetRef();
+        }
+        m_Holds.clear();
+    }
+    
+    m_Atlas.Unlock(*this);
+    BREAK_MARKER();
+}
+
+/// Get a hold a region of memory.
+void CSeqDBLockHold::HoldRegion(CSeqDBMemLease & lease)
+{
+    m_Atlas.Lock(*this);
+    
+    CRegionMap * rmap = lease.GetRegionMap();
+    
+    _ASSERT(rmap);
+    
+    for(size_t i = 0; i < m_Holds.size(); i++) {
+        if (m_Holds[i] == rmap)
+            return;
+    }
+    
+    if (m_Holds.empty()) {
+        m_Holds.reserve(4);
+    }
+    
+    m_Holds.push_back(rmap);
+    rmap->AddRef();
+}
+
+
 int CSeqDBAtlasHolder::m_Count = 0;
 CSeqDBAtlas * CSeqDBAtlasHolder::m_Atlas = NULL;
 

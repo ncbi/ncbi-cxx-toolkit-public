@@ -263,6 +263,13 @@ private:
 };
 
 
+/// Forward declaration for CRegionMap.
+class CRegionMap;
+
+/// Forward declaration for CRegionMap.
+class CSeqDBMemLease;
+
+
 /// CSeqDBLockHold
 /// 
 /// This class is used to keep track of whether this thread holds the
@@ -291,11 +298,14 @@ public:
         INIT_CLASS_MARK();
     }
     
+    /// Get a hold a region of memory.
+    void HoldRegion(CSeqDBMemLease & lease);
+    
     /// Destructor
     /// 
     /// The class will unlock the atlas's lock on destruction (if it
     /// is the owner of that lock).
-    inline ~CSeqDBLockHold();
+    ~CSeqDBLockHold();
     
 private:
     CLASS_MARKER_FIELD("LHLD")
@@ -309,6 +319,9 @@ private:
     
     /// This reference allows unlock on exit.
     class CSeqDBAtlas & m_Atlas;
+    
+    /// These are memory leases that should not flush during GC.
+    vector<CRegionMap*> m_Holds;
     
     /// If this is true, this thread owns the atlas lock.
     bool m_Locked;
@@ -821,6 +834,15 @@ public:
     ///   Returns true if the held region includes the offset range.
     inline bool Contains(TIndx begin, TIndx end) const;
     
+    /// Get a pointer to the internal region map.
+    ///
+    /// @return
+    ///   A pointer to the region map held here.
+    CRegionMap * GetRegionMap() const
+    {
+        return m_RMap;
+    }
+    
     /// Get a pointer to the specified offset.
     /// 
     /// Given an offset (which is assumed to be available here), this
@@ -922,7 +944,7 @@ private:
     TIndx m_End;
     
     /// Points to the object that manages the file region. 
-   class CRegionMap * m_RMap;
+    class CRegionMap * m_RMap;
 };
 
 
@@ -2034,13 +2056,6 @@ bool CRegionMap::operator < (const CRegionMap & other) const
     // Sort ascending by size of mapping.
     
     return m_End < other.m_End;
-}
-
-inline CSeqDBLockHold::~CSeqDBLockHold()
-{
-    CHECK_MARKER();
-    m_Atlas.Unlock(*this);
-    BREAK_MARKER();
 }
 
 inline CSeqDBMemReg::~CSeqDBMemReg()

@@ -1715,13 +1715,29 @@ int CSeqDBVol::x_GetSequence(int              oid,
         // The normal consumer of this data relies on them, and can
         // walk off memory if a sequence ends on a slice boundary.
         
-        *buffer = m_Seq.GetRegion(start_offset-1, end_offset+1, keep, locked) + 1;
+        *buffer = m_Seq.GetRegion(start_offset-1,
+                                  end_offset+1,
+                                  keep,
+                                  false,
+                                  locked) + 1;
     } else if ('n' == seqtype) {
-        // The last byte is partially full; the last two bits of
-        // the last byte store the number of nucleotides in the
-        // last byte (0 to 3).
+        // The last byte is partially full; the last two bits of the
+        // last byte store the number of nucleotides in the last byte
+        // (0 to 3).
         
-        *buffer = m_Seq.GetRegion(start_offset, end_offset, keep, locked);
+        // 'Hold' is used if we are going to fetch another kind of
+        // data after this data, but before we are done actually using
+        // this data.  If can_release is true, we will return after
+        // this.  If keep is true, we don't need hold because keep
+        // will already have preserved the region.
+        
+        bool hold = ! (keep || can_release);
+        
+        *buffer = m_Seq.GetRegion(start_offset,
+                                  end_offset,
+                                  keep,
+                                  hold,
+                                  locked);
         
         // If we are returning a hold on the sequence (keep), and the
         // caller does not need the lock after this (can_release) we
@@ -1926,9 +1942,13 @@ void CSeqDBVol::x_GetAmbChar(int oid,
     if (length) {
         int total = length / 4;
         
+        // 'hold' should be false here because we only need the data
+        // for the duration of this function.
+        
         Int4 * buffer =
             (Int4*) m_Seq.GetRegion(start_offset,
                                     start_offset + (total * 4),
+                                    false,
                                     false,
                                     locked);
         
@@ -2394,7 +2414,7 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     }
     
     if (buffer) {
-        *buffer = m_Seq.GetRegion(map_begin, map_end, true, locked);
+        *buffer = m_Seq.GetRegion(map_begin, map_end, true, false, locked);
         *buffer += (start_S - map_begin);
     }
     
