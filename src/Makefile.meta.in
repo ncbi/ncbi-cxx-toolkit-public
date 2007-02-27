@@ -264,7 +264,11 @@ PROJECTS  = $(builddir)/projects.pseudo.i
 # Some preprocessors only accept files with appropriate extensions....
 $(builddir)/projects.pseudo.c: $(PROJECTS_)
 	rm -f $@
-	$(LN_S) $(PROJECTS_) $@
+	if test -r "$(PROJECTS_)"; then \
+	    $(LN_S) "$(PROJECTS_)" $@; \
+	else \
+	    echo ".*" > $@; \
+	fi
 
 $(PROJECTS): $(builddir)/projects.pseudo.c
 	$(CPP) -I`dirname $(PROJECTS_)` -I$(top_srcdir)/scripts/projects \
