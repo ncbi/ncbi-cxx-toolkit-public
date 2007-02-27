@@ -435,7 +435,7 @@ CSeq_align_Mapper_Base*
 CSeq_align_Mapper::CreateSubAlign(const CSeq_align& align,
                                   EWidthFlag map_widths)
 {
-    return new CSeq_align_Mapper(align, map_widths, m_Scope);
+    return new CSeq_align_Mapper(align, map_widths == eWidth_Map, m_Scope);
 }
 
 
