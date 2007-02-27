@@ -97,6 +97,11 @@ private:
     bool     m_Created; // true only if the loader was just created
 
 public:
+    SRegisterLoaderInfo()
+        : m_Loader(0)
+    {
+    }
+
     // Used internally to populate the structure
     void Set(CDataLoader* loader, bool created)
     {
