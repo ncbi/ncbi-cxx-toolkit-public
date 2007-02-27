@@ -6,7 +6,7 @@
 # Meta-makefile -- BDB demo applications
 #################################
 
-APP_PROJ = demo1 demo2 demo3 demo4
+APP_PROJ = demo1 demo2 demo3
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
