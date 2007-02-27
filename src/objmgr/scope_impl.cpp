@@ -2172,7 +2172,7 @@ void CScope_Impl::SetActiveTransaction(IScopeTransaction_Impl* transaction)
 
 bool CScope_Impl::IsTransactionActive() const
 {
-    return m_Transaction;
+    return m_Transaction != 0;
 }
 
 
