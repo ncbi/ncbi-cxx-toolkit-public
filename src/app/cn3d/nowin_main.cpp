@@ -111,6 +111,10 @@ public:
 
 void Cn3DNoWin::Init(void)
 {
+    // turn off some Mesa-related env vars, irrelevant to off-screen rendering and not platform-indepdendent
+    setenv("MESA_NO_3DNOW", "true", 1);
+    setenv("MESA_NO_SSE", "true", 1);
+    
     // setup the diagnostic stream
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info);   // report all messages
