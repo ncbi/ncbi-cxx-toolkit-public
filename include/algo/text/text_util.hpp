@@ -94,15 +94,22 @@ struct SStringLess : public binary_function<string, string, bool>
 /// 
 /// for each c in the string
 ///
+template<class IT>
+size_t StringHash17(IT start, IT end)
+{
+    size_t hval = 0;
+    for (; start != end; ++start) {
+        hval = ((hval << 4) + hval) + *start;
+    }
+    return hval;
+}
+
+/// Functor-adaptor for StringHash17
 struct SStringHash
 {
     size_t operator()(const string& s) const
     {
-        size_t hval = 0;
-        ITERATE (string, it, s) {
-            hval = ((hval << 4) + hval) + *it;
-        }
-        return hval;
+        return StringHash17(s.begin(), s.end());
     }
 };
 
