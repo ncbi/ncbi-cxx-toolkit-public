@@ -387,7 +387,7 @@ BOOST_AUTO_UNIT_TEST(PsiBlastAppTestMatrix)
 
     CRef<CBlastOptionsHandle> opts = psiblast_args.SetOptions(*args);
 
-    CHECK_EQUAL(opts->GetOptions().GetMatrixName(), "BLOSUM80");
+    CHECK_EQUAL(opts->GetOptions().GetMatrixName(), string("BLOSUM80"));
 }
 
 BOOST_AUTO_UNIT_TEST(PsiBlastAppMissingMandatoryArguments)
