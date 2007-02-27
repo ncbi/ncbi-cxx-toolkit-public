@@ -88,7 +88,7 @@ public:
     CShowBlastDefline(const CSeq_align_set& seqalign,                       
                       CScope& scope,
                       size_t line_length = 65,
-                      size_t deflines_to_show = kBlastFmtDflt_NumDescriptions,
+                      size_t deflines_to_show = blast::kDfltArgNumDescriptions,
                       bool translated_nuc_alignment = false);
     
     ~CShowBlastDefline();

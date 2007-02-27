@@ -44,18 +44,12 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 #include <algo/blast/api/version.hpp>
+#include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <util/math/matrix.hpp>
 
 /**setting up scope*/
 BEGIN_NCBI_SCOPE
 USING_SCOPE (objects);
-
-/*** Default number of one-line descriptions to display in the traditional
- * BLAST report */
-NCBI_XBLASTFORMAT_EXPORT extern const size_t kBlastFmtDflt_NumDescriptions;
-
-/*** Default number of alignments to display in the traditional BLAST report */
-NCBI_XBLASTFORMAT_EXPORT extern const size_t kBlastFmtDflt_NumAlignments;
 
 ///blast related url
 
@@ -332,7 +326,7 @@ public:
     ///
     static void PruneSeqalign(CSeq_align_set& source_aln, 
                               CSeq_align_set& new_aln,
-                              unsigned int num = kBlastFmtDflt_NumAlignments);
+                              unsigned int num = blast::kDfltArgNumAlignments);
 
     /// Count alignment length, number of gap openings and total number of gaps
     /// in a single alignment.

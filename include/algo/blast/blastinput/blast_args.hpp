@@ -401,8 +401,8 @@ class NCBI_XBLAST_EXPORT CFormattingArgs : public IBlastCmdLineArgs
 public:
     CFormattingArgs()
         : m_FormattedOutputChoice(0), m_ShowGis(false), 
-        m_NumDescriptions(kBlastFmtDflt_NumDescriptions),
-        m_NumAlignments(kBlastFmtDflt_NumAlignments), m_Html(false)
+        m_NumDescriptions(kDfltArgNumDescriptions),
+        m_NumAlignments(kDfltArgNumAlignments), m_Html(false)
     {};
 
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);

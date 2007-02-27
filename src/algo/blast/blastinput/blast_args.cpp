@@ -896,7 +896,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                  "Number of database sequences to show one-line "
                  "descriptions for",
                  CArgDescriptions::eInteger,
-                 NStr::IntToString(kBlastFmtDflt_NumDescriptions));
+                 NStr::IntToString(kDfltArgNumDescriptions));
     arg_desc.SetConstraint(kArgNumDescriptions, 
                            new CArgAllowValuesGreaterThanOrEqual(1));
 
@@ -904,7 +904,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgNumAlignments, "int_value",
                  "Number of database sequences to show alignments for",
                  CArgDescriptions::eInteger, 
-                 NStr::IntToString(kBlastFmtDflt_NumAlignments));
+                 NStr::IntToString(kDfltArgNumAlignments));
     arg_desc.SetConstraint(kArgNumAlignments, 
                            new CArgAllowValuesGreaterThanOrEqual(1));
 

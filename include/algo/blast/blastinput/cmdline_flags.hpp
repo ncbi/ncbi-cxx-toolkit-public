@@ -87,6 +87,8 @@ extern const string kArgEvalue;
 /// Default value for expectation value cutoff
 extern const double kDfltArgEvalue;
 
+/* Formatting options */
+
 /// Argument to select formatted output type
 extern const string kArgOutputFormat;
 /// Default value for formatted output type
@@ -97,9 +99,15 @@ extern const string kArgShowGIs;
 /// Argument to specify the number of one-line descriptions to show in the
 /// traditional BLAST report
 extern const string kArgNumDescriptions;
+/// Default number of one-line descriptions to display in the traditional
+/// BLAST report
+extern const size_t kDfltArgNumDescriptions;
 /// Argument to specify the number of alignments to show in the traditional 
 /// BLAST report
 extern const string kArgNumAlignments;
+/// Default number of alignments to display in the traditional BLAST report
+extern const size_t kDfltArgNumAlignments;
+
 
 /// Argument to select the gap opening penalty
 extern const string kArgGapOpen;

@@ -75,9 +75,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE (ncbi);
 USING_SCOPE(objects);
 
-const size_t kBlastFmtDflt_NumDescriptions = 500;
-const size_t kBlastFmtDflt_NumAlignments = 250;
-
 bool kTranslation;
 CRef<CScope> kScope;
 

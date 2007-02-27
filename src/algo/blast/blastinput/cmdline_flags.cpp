@@ -75,7 +75,10 @@ const string kArgOutputFormat("outfmt");
 const int kDfltArgOutputFormat = 0;
 const string kArgShowGIs("show_gis");
 const string kArgNumDescriptions("num_descriptions");
+const size_t kDfltArgNumDescriptions = 500;
 const string kArgNumAlignments("num_alignments");
+const size_t kDfltArgNumAlignments = 250;
+
 
 const string kArgGapOpen("gapopen");
 const string kArgGapExtend("gapextend");
