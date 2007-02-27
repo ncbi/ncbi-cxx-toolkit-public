@@ -32,11 +32,39 @@
 
 #include <ncbi_pch.hpp>
 #include <connect/services/netschedule_api.hpp>
+#include <connect/ncbi_conn_exception.hpp>
 
 #include "netschedule_api_wait.hpp"
 
 BEGIN_NCBI_SCOPE
 
+inline
+bool s_SendCmdWaitResponse(const CNetScheduleAPI& api, CNetSrvConnector& con, 
+                           const string& cmd, size_t& err_count, string* resp = NULL)
+{
+    string r;
+    try {
+        r = api.SendCmdWaitResponse(con, cmd);
+    } catch (CNetServiceException& ex) {
+        ERR_POST( con.GetHost() << ":" << con.GetPort() 
+                  << " returned error: \"" << ex.what() << "\"");
+        if (ex.GetErrCode() == CNetServiceException::eCommunicationError) {
+            if( ++err_count >= api.GetPoll().GetServersNumber() )
+                NCBI_THROW(CNetServiceException, eCommunicationError, 
+                           "Communication error");
+            return false;
+        } else throw;
+    } catch (CIO_Exception& ex) {
+        ERR_POST( con.GetHost() << ":" << con.GetPort() 
+                  << " returned error: \"" << ex.what() << "\"");
+        if( ++err_count >= api.GetPoll().GetServersNumber() )
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                       "Communication error");
+        return false;
+    }
+    if (resp) *resp = r;
+    return true;
+}
 
 void CNetScheduleExecuter::SetRunTimeout(const string& job_key, 
                                          unsigned      time_to_run) const
@@ -56,14 +84,19 @@ void CNetScheduleExecuter::JobDelayExpiration(const string& job_key,
 bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, 
                                   unsigned short udp_port) const
 {
+    size_t err_count = 0;
+    string cmd = "GET";
+    if (udp_port != 0) 
+        cmd += ' ' + NStr::IntToString(udp_port);
+
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().random_begin(); 
          it != m_API->GetPoll().end(); ++it) {
-        string cmd = "GET";
-        if (udp_port != 0) 
-            cmd += ' ' + NStr::IntToString(udp_port);
-    
-        string resp = m_API->SendCmdWaitResponse(*it, cmd);
-        
+        CNetSrvConnectorHolder ch = *it;
+          
+        string resp;
+        if (!s_SendCmdWaitResponse(*m_API, ch, cmd, err_count, &resp))
+            continue;
+       
         if (!resp.empty()) {
             job.mask = CNetScheduleAPI::eEmptyMask;
             string tmp;
@@ -79,13 +112,15 @@ bool CNetScheduleExecuter::GetJobWaitNotify(CNetScheduleJob& job,
                                             unsigned   wait_time,
                                             unsigned short udp_port) const
 {
-
+    size_t err_count = 0;
+    string cmd = "WGET";
+    cmd += ' ' + NStr::IntToString(udp_port) + ' ' + NStr::IntToString(wait_time);
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().random_begin(); 
          it != m_API->GetPoll().end(); ++it) {
-        string cmd = "WGET";
-        cmd += ' ' + NStr::IntToString(udp_port) + ' ' + NStr::IntToString(wait_time);
 
-        string resp = m_API->SendCmdWaitResponse(*it, cmd);
+        string resp;
+        if (!s_SendCmdWaitResponse(*m_API,*it, cmd, err_count, &resp))
+            continue;
         
         if (!resp.empty()) {
             job.mask = CNetScheduleAPI::eEmptyMask;
@@ -323,10 +358,13 @@ void CNetScheduleExecuter::ReturnJob(const string& job_key) const
 void CNetScheduleExecuter::x_RegUnregClient(const string&  cmd, 
                                             unsigned short udp_port) const
 {
+    size_t err_count = 0;
     string tmp = cmd + ' ' + NStr::IntToString(udp_port);
     for (CNetSrvConnectorPoll::iterator it = m_API->GetPoll().begin(); 
          it != m_API->GetPoll().end(); ++it) {
-        m_API->SendCmdWaitResponse(*it, tmp); 
+        CNetSrvConnectorHolder ch = *it;
+
+        s_SendCmdWaitResponse(*m_API, ch, tmp, err_count);
     }
 }
 

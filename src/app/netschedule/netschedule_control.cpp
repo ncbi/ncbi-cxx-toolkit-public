@@ -374,5 +374,5 @@ bool CNetScheduleControl::CheckPermission()
 
 int main(int argc, const char* argv[])
 {
-    return CNetScheduleControl().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CNetScheduleControl().AppMain(argc, argv); //, 0, eDS_Default, 0);
 }

@@ -46,8 +46,7 @@ USING_NCBI_SCOPE;
 class CGridClientSampleApp : public CGridClientApp
 {
 public:
-    CGridClientSampleApp() 
-        : m_PermanentConnection(false), m_ProgressMessage(false) {}
+    CGridClientSampleApp() : m_ProgressMessage(false) {}
 
     virtual void Init(void);
     virtual int Run(void);
@@ -61,16 +60,11 @@ public:
 
         return "SampleNodeClient version 1.0.1";
     }
-    virtual bool UsePermanentConnection() const
-    {
-        return m_PermanentConnection;
-    }
     virtual bool UseProgressMessage() const
     {
         return m_ProgressMessage;
     }
 private:
-    bool m_PermanentConnection;
     bool m_ProgressMessage;
 };
 
@@ -100,9 +94,6 @@ void CGridClientSampleApp::Init(void)
     arg_desc->AddFlag("pm", 
                       "Use Progress Messages");
 
-    arg_desc->AddFlag("nopc", 
-                      "Don't Use Permanent Connection");
-
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -120,7 +111,6 @@ int CGridClientSampleApp::Run(void)
     if (args["jobs"]) {
         jobs_number = args["jobs"].AsInteger();
     }
-    m_PermanentConnection = !args["nopc"];
     m_ProgressMessage = args["pm"];
 
     // Don't forget to call it
@@ -222,7 +212,7 @@ int CGridClientSampleApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CGridClientSampleApp().AppMain(argc, argv, 0, eDS_Default, "grid_client_sample.ini");
+    return CGridClientSampleApp().AppMain(argc, argv);
 } 
 
 

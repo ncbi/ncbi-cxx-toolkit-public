@@ -239,6 +239,8 @@ public:
     iterator random_begin() { x_Rebalance(); return iterator(*this,false,true); }
     iterator end() { return iterator(*this, true); }
 
+    size_t GetServersNumber() const { return m_Services.size(); }
+
     template<class Pred>
     bool Find(Pred func) {
         x_Rebalance();

@@ -589,10 +589,13 @@ int CGridWorkerApp_Impl::Run()
         try {
             m_WorkerNode->Start();
                 //control_server.Run();
-        }
-        catch (exception& ex) {
+        } catch (exception& ex) {
             ERR_POST(CTime(CTime::eCurrent).AsString()
                      << " Couldn't run a worker node: " << ex.what()  << "\n");
+            RequestShutdown();
+        } catch (...) {
+            ERR_POST(CTime(CTime::eCurrent).AsString()
+                     << " Couldn't run a worker node: Unknown error\n");
             RequestShutdown();
         }
         control_server.RequestShutdown();

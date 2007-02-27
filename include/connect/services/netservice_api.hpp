@@ -73,9 +73,11 @@ public:
     void SetRebalanceStrategy( IRebalanceStrategy* strategy, 
                                EOwnership owner = eTakeOwnership);
 
-protected:
+    string SendCmdWaitResponse(CNetSrvConnector& conn, const string& cmd) const;
     CNetSrvConnectorPoll& GetPoll();
     CNetSrvConnectorPoll& GetPoll() const;
+
+protected:
 
     static void TrimErr(string& err_msg);
     void CheckServerOK(string& response) const ;
@@ -88,8 +90,6 @@ protected:
 
     void PrintServerOut(CNetSrvConnector& conn, CNcbiOstream& out) const;
     
-    string SendCmdWaitResponse(CNetSrvConnector& conn, const string& cmd) const;
-
     string GetConnectionInfo(CNetSrvConnector& conn) const;
 
 private:

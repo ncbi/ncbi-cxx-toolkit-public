@@ -297,10 +297,14 @@ void CWorkerNodeRequest::Process(void)
     try {
         s_RunJob(x_GetThreadContext());
     } catch (...) {
-        m_Context->GetWorkerNode().x_ReturnJob(m_Context->GetJobKey());
+        ERR_POST(CTime(CTime::eCurrent).AsString() << " Error during job run");
+        try {
+            m_Context->GetWorkerNode().x_ReturnJob(m_Context->GetJobKey());
+        } catch (...) {
+            ERR_POST(CTime(CTime::eCurrent).AsString() << " Could not return job back to queue.");
+        }
         CGridGlobals::GetInstance().
             RequestShutdown(CNetScheduleAdmin::eShutdownImmidiate);
-        throw;
     }
 }
 
