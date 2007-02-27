@@ -315,16 +315,32 @@ CObjMgr_LocalQueryData::GetSeqLength(size_t index)
 class CObjMgr_RemoteQueryData : public IRemoteQueryData
 {
 public:
+    /// Construct query data from a TSeqLocVector.
+    /// @param queries Queries expressed as a TSeqLocVector.
     CObjMgr_RemoteQueryData(const TSeqLocVector* queries);
+    
+    /// Construct query data from a CBlastQueryVector.
+    /// @param queries Queries expressed as a CBlastQueryVector.
     CObjMgr_RemoteQueryData(CBlastQueryVector & queries);
+    
+    /// Construct query data from a list of CSeq_loc objects.
+    /// @param queries Queries expressed as a list of CSeq_loc objects.
     CObjMgr_RemoteQueryData(const CObjMgr_QueryFactory::TSeqLocs* queries);
     
+    /// Accessor for the CBioseq_set.
     virtual CRef<objects::CBioseq_set> GetBioseqSet();
+
+    /// Accessor for the TSeqLocs.
     virtual TSeqLocs GetSeqLocs();
 
 private:
+    /// Queries, if input representation is TSeqLocVector, or NULL.
     const TSeqLocVector* m_Queries;
+
+    /// Queries, if input representation is a CBlastQueryVector, or NULL.
     const CRef<CBlastQueryVector> m_QueryVector;
+
+    /// Queries, if input representation is a list of CSeq_locs, or NULL.
     const CObjMgr_QueryFactory::TSeqLocs* m_ClientSeqLocs;
 };
 
