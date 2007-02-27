@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include <bdb/bdb_types.hpp>
+#include <algo/text/text_util.hpp>
 #include <db.h>
 
 BEGIN_NCBI_SCOPE
@@ -264,6 +265,17 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
 
     return 0;
 }
+
+/// String hash function taken from SStringHash (algo/text/text_util)
+/// @internal
+unsigned int 
+BDB_Hash(DB *, const void *bytes, unsigned length)
+{
+    const unsigned char* buf = (const unsigned char*)bytes;
+    const unsigned char* buf_end = buf + length;
+    return StringHash17(buf, buf_end);
+}
+
 
 
 
@@ -524,6 +536,13 @@ CBDB_BufferManager::GetCompareFunction() const
         return BDB_Compare;
     bool byte_swapped = IsByteSwapped();
     return m_Fields[0]->GetCompareFunction(byte_swapped);
+}
+
+
+BDB_HashFunction 
+CBDB_BufferManager::GetHashFunction() const
+{
+    return BDB_Hash;
 }
 
 
@@ -1107,125 +1126,3 @@ CBDB_Field* CBDB_FieldFactory::Create(const string& type) const
 END_NCBI_SCOPE
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.38  2006/11/14 16:33:30  ucko
- * Add forgotten BDB_Uint8Compare implementation.
- *
- * Revision 1.37  2006/11/14 13:27:13  dicuccio
- * Added additional field types for Uint8, Int1, Uint2.  Clarified nomenclature
- * for BDB comparators - include field width for integral types always.
- *
- * Revision 1.36  2006/10/19 19:15:11  dicuccio
- * FIx _ASSERT() in CopyPackedFrom(): comparison should be <=, not <
- *
- * Revision 1.35  2006/09/12 16:55:14  kuznets
- * Implemented multi-row fetch
- *
- * Revision 1.34  2005/06/03 16:39:34  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.33  2005/03/15 14:46:45  kuznets
- * Optimization in record packing
- *
- * Revision 1.32  2004/09/02 15:37:02  rotmistr
- * Fixed name for UInt1 to Uint1
- *
- * Revision 1.31  2004/07/09 15:14:49  kuznets
- * Fixed warnings (MSVC 7)
- *
- * Revision 1.30  2004/06/29 12:25:40  kuznets
- * CBDB_BufferManager added functions to bulk copy fields
- *
- * Revision 1.29  2004/06/28 12:14:53  kuznets
- * Added uint1 to the types class factory
- *
- * Revision 1.28  2004/06/24 20:52:25  rotmistr
- * Added Int8 and UInt1 field types.
- *
- * Revision 1.27  2004/06/24 19:25:11  kuznets
- * Added ASSERT when somebody gets a NULL field
- *
- * Revision 1.26  2004/06/21 15:06:45  kuznets
- * Added BLOB (eBlob) to the list of types
- *
- * Revision 1.25  2004/06/17 16:25:50  kuznets
- * + ownership flag to BufferManager
- *
- * Revision 1.24  2004/06/17 13:38:02  kuznets
- * +CBDB_FieldFactory
- *
- * Revision 1.23  2004/05/17 20:55:11  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.22  2004/05/06 15:42:19  rotmistr
- * Changed Char type to UChar
- *
- * Revision 1.21  2004/05/05 19:18:21  rotmistr
- * CBDB_FieldChar added
- *
- * Revision 1.20  2004/03/08 13:30:39  kuznets
- * + ToString
- *
- * Revision 1.19  2004/02/17 19:05:21  kuznets
- * GCC warnings fix
- *
- * Revision 1.18  2004/02/12 19:54:39  kuznets
- * CBDB_BufferManager::GetFieldIndex()
- *
- * Revision 1.17  2004/02/04 17:03:39  kuznets
- * Fixed bug in LString manipulation.
- *
- * Revision 1.16  2003/12/22 18:54:14  kuznets
- * Implemeneted length prefixed string field (CBDB_FieldLString)
- *
- * Revision 1.15  2003/11/06 14:06:02  kuznets
- * Removing auto_ptr from CBDB_BufferManager
- *
- * Revision 1.14  2003/10/16 19:25:38  kuznets
- * Added field comparison limit to the fields manager
- *
- * Revision 1.13  2003/09/29 16:27:06  kuznets
- * Cleaned up 64-bit compilation warnings
- *
- * Revision 1.12  2003/09/17 13:31:12  kuznets
- * Implemented Int2Compare family of functions
- *
- * Revision 1.11  2003/09/11 16:34:35  kuznets
- * Implemented byte-order independence.
- *
- * Revision 1.10  2003/07/25 15:47:15  kuznets
- * Added support for double field type
- *
- * Revision 1.9  2003/07/23 20:21:43  kuznets
- * Implemented new improved scheme for setting BerkeleyDB comparison function.
- * When table has non-segmented key the simplest(and fastest) possible function
- * is assigned (automatically without reloading CBDB_File::SetCmp function).
- *
- * Revision 1.8  2003/07/02 17:55:35  kuznets
- * Implementation modifications to eliminated direct dependency from <db.h>
- *
- * Revision 1.7  2003/06/10 20:08:27  kuznets
- * Fixed function names.
- *
- * Revision 1.6  2003/05/27 18:43:45  kuznets
- * Fixed some compilation problems with GCC 2.95
- *
- * Revision 1.5  2003/05/02 14:12:11  kuznets
- * Bug fix
- *
- * Revision 1.4  2003/04/29 19:07:22  kuznets
- * Cosmetics..
- *
- * Revision 1.3  2003/04/29 19:04:47  kuznets
- * Fixed a bug in buffers management
- *
- * Revision 1.2  2003/04/28 14:51:55  kuznets
- * #include directives changed to conform the NCBI policy
- *
- * Revision 1.1  2003/04/24 16:34:30  kuznets
- * Initial revision
- *
- * ===========================================================================
- */

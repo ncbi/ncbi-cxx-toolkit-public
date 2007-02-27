@@ -55,6 +55,8 @@ extern "C" {
     struct __db_txn; typedef struct __db_txn DB_TXN;
 
     typedef int (*BDB_CompareFunction)(DB*, const DBT*, const DBT*);
+    typedef unsigned int (*BDB_HashFunction)
+                            (DB *, const void *bytes, unsigned length);
 }
 
 BEGIN_NCBI_SCOPE
@@ -184,6 +186,10 @@ BDB_ByteSwap_FloatCompare(DB*, const DBT* val1, const DBT* val2);
 NCBI_BDB_EXPORT int
 BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
 
+
+/// General purpose hash function
+unsigned int 
+NCBI_BDB_EXPORT BDB_Hash(DB *, const void *bytes, unsigned length);
 
 }
 
@@ -1728,6 +1734,9 @@ protected:
     /// Return buffer compare function
     BDB_CompareFunction GetCompareFunction() const;
 
+    /// Return buffer hash function
+    BDB_HashFunction GetHashFunction() const;
+
     /// Set C-str detection
     void SetLegacyStringsCheck(bool value) { m_LegacyString = value; }
 
@@ -2485,184 +2494,5 @@ void DeleteFields(CBDB_BufferManager& buf)
 END_NCBI_SCOPE
 
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.55  2006/11/21 13:24:33  dicuccio
- * Added type traits class for disambiguating BDB field type given a concrete type
- *
- * Revision 1.54  2006/11/20 08:23:18  kuznets
- * +GetInt() to CBDB_Field interface
- *
- * Revision 1.53  2006/11/14 13:27:13  dicuccio
- * Added additional field types for Uint8, Int1, Uint2.  Clarified nomenclature
- * for BDB comparators - include field width for integral types always.
- *
- * Revision 1.52  2006/09/12 16:55:28  kuznets
- * Implemented multi-row fetch
- *
- * Revision 1.51  2005/06/03 16:20:36  lavr
- * Explicit (unsigned char) casts in ctype routines
- *
- * Revision 1.50  2005/03/30 15:04:25  jcherry
- * Added export specifiers
- *
- * Revision 1.49  2005/03/15 14:45:48  kuznets
- * Optimization in record packing
- *
- * Revision 1.48  2004/11/09 20:03:41  kuznets
- * Bug fix. Removed obsolete assert
- *
- * Revision 1.47  2004/09/02 15:37:02  rotmistr
- * Fixed name for UInt1 to Uint1
- *
- * Revision 1.46  2004/08/17 14:33:38  dicuccio
- * Use NStr::CompareNocase() instead of NStr::strcasecmp() because the latter
- * gives SWIG an especially hard time in Windows.
- *
- * Revision 1.45  2004/07/09 15:15:24  kuznets
- * Fixed warning (MSVC 7)
- *
- * Revision 1.44  2004/06/29 12:25:24  kuznets
- * CBDB_BufferManager added functions to bulk copy fields
- *
- * Revision 1.43  2004/06/28 14:33:39  kuznets
- * +CBDB_BufferManager::HasNull()
- *
- * Revision 1.42  2004/06/28 12:15:08  kuznets
- * Added uint1 to the types class factory
- *
- * Revision 1.41  2004/06/24 20:52:24  rotmistr
- * Added Int8 and UInt1 field types.
- *
- * Revision 1.40  2004/06/24 19:25:32  kuznets
- * Added ASSERT when somebody gets a NULL field
- *
- * Revision 1.39  2004/06/21 15:06:18  kuznets
- * Added BLOB (eBlob) to the list of types
- *
- * Revision 1.38  2004/06/17 16:25:27  kuznets
- * + ownership flag to BufferManager
- *
- * Revision 1.37  2004/06/17 13:37:28  kuznets
- * +CBDB_FieldFactory
- *
- * Revision 1.36  2004/05/06 15:42:58  rotmistr
- * Changed Char type to UChar
- *
- * Revision 1.35  2004/05/05 19:18:21  rotmistr
- * CBDB_FieldChar added
- *
- * Revision 1.34  2004/04/26 16:43:59  ucko
- * Qualify inherited dependent names with this-> where needed by GCC 3.4.
- *
- * Revision 1.33  2004/03/08 13:30:14  kuznets
- * + ToString method
- *
- * Revision 1.32  2004/02/12 19:54:00  kuznets
- * + CBDB_BufferManager::GetFieldIndex()
- *
- * Revision 1.31  2004/02/04 17:02:34  kuznets
- * Commented operator char* for LString type to avoid ambuiguity
- *
- * Revision 1.30  2004/02/04 15:08:12  kuznets
- * + CBDB_FieldLString::operator string() const
- *
- * Revision 1.29  2003/12/23 22:31:31  ucko
- * Fix typo that could lead to stack overruns.
- *
- * Revision 1.28  2003/12/22 18:52:43  kuznets
- * Implemeneted length prefixed string field (CBDB_FieldLString)
- *
- * Revision 1.27  2003/12/10 19:13:37  kuznets
- * Added support of berkeley db transactions
- *
- * Revision 1.26  2003/11/06 14:05:08  kuznets
- * Dismissed auto_ptr from CBDB_BufferManager because of the delete / delete []
- * mismatch. Gives errors in some memory profilers (valgrind).
- *
- * Revision 1.25  2003/10/28 14:19:19  kuznets
- * Calling DoubleToString without precision (%g format) for float and double
- * BDB fields (more accurate results for scientific data)
- *
- * Revision 1.24  2003/10/27 14:19:12  kuznets
- * + methods to convert BDB types to string
- *
- * Revision 1.23  2003/10/16 19:25:25  kuznets
- * Added field comparison limit to the fields manager
- *
- * Revision 1.22  2003/09/29 16:25:14  kuznets
- * Cleaned up warnings for 64-bit mode
- *
- * Revision 1.21  2003/09/26 20:45:57  kuznets
- * Comments cleaned up
- *
- * Revision 1.20  2003/09/17 13:30:28  kuznets
- * Put comparison functions into ncbi namespace.
- *
- * Revision 1.19  2003/09/16 15:14:48  kuznets
- * Added Int2 (short int) field type
- *
- * Revision 1.18  2003/09/15 15:49:25  kuznets
- * Fixed some compilation warnings(SunCC)
- *
- * Revision 1.17  2003/09/11 16:34:13  kuznets
- * Implemented byte-order independence.
- *
- * Revision 1.16  2003/08/26 18:50:26  kuznets
- * Added forward declararion of DB_ENV structure
- *
- * Revision 1.15  2003/07/31 16:39:32  dicuccio
- * Minor corrections: remove EXPORT specifier from pure inline classes; added
- * virtual dtor to abstract classes
- *
- * Revision 1.14  2003/07/25 15:46:47  kuznets
- * Added support for double field type
- *
- * Revision 1.13  2003/07/23 20:21:27  kuznets
- * Implemented new improved scheme for setting BerkeleyDB comparison function.
- * When table has non-segmented key the simplest(and fastest) possible function
- * is assigned (automatically without reloading CBDB_File::SetCmp function).
- *
- * Revision 1.12  2003/07/22 16:05:20  kuznets
- * Resolved operators ambiguity (GCC-MSVC conflict of interests)
- *
- * Revision 1.11  2003/07/22 15:48:34  kuznets
- * Fixed minor compilation issue with GCC
- *
- * Revision 1.10  2003/07/16 13:32:04  kuznets
- * Implemented CBDB_FieldString::SetString (part of IBDB_FieldConvert interface)
- *
- * Revision 1.9  2003/07/02 17:53:59  kuznets
- * Eliminated direct dependency from <db.h>
- *
- * Revision 1.8  2003/06/27 18:57:16  dicuccio
- * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
- *
- * Revision 1.7  2003/06/10 20:07:27  kuznets
- * Fixed header files not to repeat information from the README file
- *
- * Revision 1.6  2003/06/03 18:50:09  kuznets
- * Added dll export/import specifications
- *
- * Revision 1.5  2003/05/27 16:13:21  kuznets
- * Destructors of key classes declared virtual to make GCC happy
- *
- * Revision 1.4  2003/05/22 19:31:51  kuznets
- * +CBDB_FieldString::operator= (const string& str)
- *
- * Revision 1.3  2003/05/05 20:14:41  kuznets
- * Added CBDB_BLobFile, CBDB_File changed to support more flexible data record
- * management.
- *
- * Revision 1.2  2003/04/29 16:48:31  kuznets
- * Fixed minor warnings in Sun Workshop compiler
- *
- * Revision 1.1  2003/04/24 16:31:16  kuznets
- * Initial revision
- *
- * ===========================================================================
- */
 
 #endif  /* BDB_TYPES__HPP */

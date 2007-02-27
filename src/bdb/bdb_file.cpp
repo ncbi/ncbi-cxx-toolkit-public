@@ -404,6 +404,9 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
     if (m_DB_Type == eBtree && m_CmpOverride) {
         SetCmp(m_DB);
     }
+    if (m_DB_Type == eHash && m_CmpOverride) {
+        SetHash(m_DB);
+    }
 
     if ( m_PageSize ) {
         ret = m_DB->set_pagesize(m_DB, m_PageSize);
@@ -703,6 +706,23 @@ void CBDB_RawFile::x_SetByteSwapped(bool bswp)
 {
     m_ByteSwapped = bswp;
 }
+
+
+void CBDB_RawFile::SetHashFillFactor(unsigned h_ffactor)
+{
+    _ASSERT(m_DB_Type == eHash);
+    int ret = m_DB->set_h_ffactor(m_DB, h_ffactor);
+    BDB_CHECK(ret, FileName().c_str());
+}
+
+void CBDB_RawFile::SetHashNelem(unsigned h_nelem)
+{
+    _ASSERT(m_DB_Type == eHash);
+    int ret = m_DB->set_h_nelem(m_DB, h_nelem);
+    BDB_CHECK(ret, FileName().c_str());
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1041,6 +1061,15 @@ void CBDB_File::SetCmp(DB* db)
         ret = m_DB->set_bt_prefix(m_DB, BDB_compare_prefix);
         BDB_CHECK(ret, 0);
     }
+}
+
+void CBDB_File::SetHash(DB* db)
+{
+    _ASSERT(m_DB_Type == eHash);
+    BDB_HashFunction func = m_KeyBuf->GetHashFunction();
+    _ASSERT(func);
+    int ret = db->set_h_hash(db, func);
+    BDB_CHECK(ret, 0);
 }
 
 

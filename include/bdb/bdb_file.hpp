@@ -83,7 +83,8 @@ public:
     /// Berkeley DB database type
     enum EDBType {
         eBtree,
-        eQueue
+        eQueue,
+        eHash
     };
 
     /// BLOB read mode, controld data buffer reallocation when
@@ -178,6 +179,7 @@ public:
     /// Turn OFF reverse splitting
     void RevSplitOff();
 
+    /// Disable BTREE comparison override
     void DisableCmpOverride() { m_CmpOverride = false; }
 
     const string& FileName() const;
@@ -186,6 +188,10 @@ public:
     /// Set comparison function. Default implementation installs bdb_types based
     /// function. Can be overloaded for some specific cases.
     virtual void SetCmp(DB*) = 0;
+
+    /// Set hash function. Default implementation installs bdb_types based
+    /// function. Can be overloaded for some specific cases.
+    virtual void SetHash(DB*) = 0;
 
     /// Return TRUE if the file is open
     bool IsOpen() const;
@@ -228,6 +234,16 @@ public:
     /// Get record length 
     /// Works for fixed length record DBs only (Queue)
     unsigned GetRecLen() const;
+
+    /// Set hash table density (fill factor)
+    void SetHashFillFactor(unsigned h_ffactor);
+
+    /// Set an estimate of hash table final size
+    void SetHashNelem(unsigned h_nelem);
+
+    /// Disable hash method override
+    /// (Berkeley DB will use it's own default hashing method)
+    void DisableHashOverride() { m_CmpOverride = false; }
 
 private:
     CBDB_RawFile(const CBDB_RawFile&);
@@ -471,6 +487,9 @@ protected:
     /// Set comparison function. Default implementation installs bdb_types based
     /// function. Can be overloaded for some specific cases.
     virtual void SetCmp(DB*);
+
+    /// Set hash function
+    virtual void SetHash(DB*);
 
     /// Read DB cursor
     EBDB_ErrCode ReadCursor(DBC* dbc, unsigned int bdb_flag);
