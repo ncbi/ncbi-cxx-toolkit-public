@@ -335,6 +335,10 @@ do
     COMMON_ExecRB cp $file $new_file
 done
 
+# Install miscellaneous scripts
+mkdir -p ${target_dir}/etc
+COMMON_ExecRB cp ${source_dir}/../../objects/seqloc/accguide.txt ${target_dir}/etc
+
 echo "Configuring plugin cache"
 # COMMON_AddRunpath may interfere with compiled-in runpaths, so we
 # explicitly search third-party library directories.
