@@ -377,7 +377,7 @@ static bool s_GetImpLabel
     bool empty = true;
     
     // If the key is Site-ref
-    if (!NStr::CompareNocase(key, "Site-ref")) {
+    if (NStr::EqualNocase(key, "Site-ref")) {
         if (feat.IsSetCit()) {
             // Create label based on Pub-set
             feat.GetCit().GetLabel(tlabel);
@@ -386,16 +386,16 @@ static bool s_GetImpLabel
     // else if the key is not Site-ref
     } else if (label_type == eContent) {
         // If the key is CDS
-        if (!NStr::CompareNocase(key, "CDS")) {
+        if (NStr::EqualNocase(key, "CDS")) {
             *tlabel += "[CDS]";
         // else if the key is repeat_unit or repeat_region
-        } else if (!NStr::CompareNocase(key, "repeat_unit")  ||
-                   !NStr::CompareNocase(key, "repeat_region")) {
+        } else if (NStr::EqualNocase(key, "repeat_unit")  ||
+                   NStr::EqualNocase(key, "repeat_region")) {
             if (feat.IsSetQual()) {
                 // Loop thru the feature qualifiers
                 ITERATE( CSeq_feat::TQual, it, feat.GetQual()) {
                     // If qualifier qual is rpt_family append qualifier val
-                    if (!NStr::CompareNocase((*it)->GetQual(),"rpt_family")) { 
+                    if (NStr::EqualNocase((*it)->GetQual(),"rpt_family")) { 
                         *tlabel += (*it)->GetVal();
                         empty = false;
                         break;
@@ -408,10 +408,10 @@ static bool s_GetImpLabel
                 *tlabel += type_label ? *type_label : string("");
             }
         // else if the key is STS
-        } else if (!NStr::CompareNocase(key, "STS")) {
+        } else if (NStr::EqualNocase(key, "STS")) {
             if (feat.IsSetQual()) {
                 ITERATE( CSeq_feat::TQual, it, feat.GetQual()) {
-                    if (!NStr::CompareNocase((*it)->GetQual(),"standard_name"))
+                    if (NStr::EqualNocase((*it)->GetQual(),"standard_name"))
                     { 
                            *tlabel = (*it)->GetVal();
                            empty = false;
@@ -434,26 +434,25 @@ static bool s_GetImpLabel
                 }
             }
         // else if the key is misc_feature
-        } else if (NStr::CompareNocase(key, "misc_feature")) {
+        } else if (NStr::EqualNocase(key, "misc_feature")) {
             if (feat.IsSetQual()) {
                 // Look for a single qualifier qual in order of preference 
                 // "standard_name", "function", "number", any and
                 // append to tlabel and return if found
                 ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
-                    if (!NStr::CompareNocase((*it)->GetQual(),"standard_name"))
-                    {
-                         *tlabel += (*it)->GetVal();
-                         return false;
+                    if (NStr::EqualNocase((*it)->GetQual(),"standard_name")) {
+                        *tlabel += (*it)->GetVal();
+                        return false;
                     }
                 }
                 ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
-                    if (!NStr::CompareNocase((*it)->GetQual(), "function")) {
-                         *tlabel += (*it)->GetVal();
-                         return false;
+                    if (NStr::EqualNocase((*it)->GetQual(), "function")) {
+                        *tlabel += (*it)->GetVal();
+                        return false;
                     }
                 }
                 ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
-                    if (!NStr::CompareNocase((*it)->GetQual(), "number")) {
+                    if (NStr::EqualNocase((*it)->GetQual(), "number")) {
                         *tlabel += (*it)->GetVal();
                         return false;
                     }
@@ -469,7 +468,6 @@ static bool s_GetImpLabel
                 }
             }
         }
-                
     } 
     return false;                
 }
