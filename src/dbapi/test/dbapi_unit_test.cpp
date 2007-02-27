@@ -6415,7 +6415,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // !!! Need to be fixed !!!
     if (args.IsBCPAvailable()
-        && args.GetDriverName() != "msdblib" // Doesn't work for some reason ...
         && !(args.GetDriverName() == "ftds" &&
              args.GetServerType() == CTestArguments::eSybase)
         ) {
