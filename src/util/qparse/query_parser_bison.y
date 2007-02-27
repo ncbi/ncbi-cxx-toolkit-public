@@ -323,7 +323,7 @@ exp :
         env->SetIN_Context(0);
     }
     /* NOT IN */
-    | scalar_value NOT_IN '(' scalar_list ')'
+    | scalar_value NOT_IN '(' in_sub_expr ')'
     {
         $$ = $2;
         CQueryParserEnv* env = reinterpret_cast<CQueryParserEnv*>(parm);

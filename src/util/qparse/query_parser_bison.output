@@ -222,7 +222,7 @@ Grammar
    26 305 exp -> scalar_value LIKE scalar_value
    27 310 exp -> scalar_value NOT_LIKE scalar_value
    28 315 exp -> scalar_value IN '(' in_sub_expr ')'
-   29 326 exp -> scalar_value NOT_IN '(' scalar_list ')'
+   29 326 exp -> scalar_value NOT_IN '(' in_sub_expr ')'
    30 337 exp -> exp EQ exp
    31 342 exp -> exp NOTEQ exp
    32 346 exp -> exp GT exp
@@ -290,9 +290,9 @@ obj_list (33)
 scalar_value (34)
     on left: 8 9 10, on right: 6 7 11 12 15 23 24 26 27 28 29
 scalar_list (35)
-    on left: 11 12, on right: 12 13 29
+    on left: 11 12, on right: 12 13
 in_sub_expr (36)
-    on left: 13 14, on right: 28
+    on left: 13 14, on right: 28 29
 exp (37)
     on left: 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
     33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48,
@@ -420,7 +420,7 @@ state 9
     exp  ->  scalar_value . LIKE scalar_value   (rule 26)
     exp  ->  scalar_value . NOT_LIKE scalar_value   (rule 27)
     exp  ->  scalar_value . IN '(' in_sub_expr ')'   (rule 28)
-    exp  ->  scalar_value . NOT_IN '(' scalar_list ')'   (rule 29)
+    exp  ->  scalar_value . NOT_IN '(' in_sub_expr ')'   (rule 29)
 
     BETWEEN	shift, and go to state 20
     NOT_BETWEEN	shift, and go to state 21
@@ -698,7 +698,7 @@ state 24
 
 state 25
 
-    exp  ->  scalar_value NOT_IN . '(' scalar_list ')'   (rule 29)
+    exp  ->  scalar_value NOT_IN . '(' in_sub_expr ')'   (rule 29)
 
     '(' 	shift, and go to state 49
 
@@ -1158,14 +1158,17 @@ state 48
 
 state 49
 
-    exp  ->  scalar_value NOT_IN '(' . scalar_list ')'   (rule 29)
+    exp  ->  scalar_value NOT_IN '(' . in_sub_expr ')'   (rule 29)
 
     IDENT	shift, and go to state 2
     STRING	shift, and go to state 15
     NUM_INT	shift, and go to state 4
+    SELECT	shift, and go to state 5
 
+    select_clause	go to state 71
     scalar_value	go to state 72
-    scalar_list	go to state 75
+    scalar_list	go to state 73
+    in_sub_expr	go to state 75
 
 
 
@@ -1988,10 +1991,8 @@ state 74
 
 state 75
 
-    scalar_list  ->  scalar_list . ',' scalar_value   (rule 12)
-    exp  ->  scalar_value NOT_IN '(' scalar_list . ')'   (rule 29)
+    exp  ->  scalar_value NOT_IN '(' in_sub_expr . ')'   (rule 29)
 
-    ',' 	shift, and go to state 80
     ')' 	shift, and go to state 82
 
 
@@ -2058,7 +2059,7 @@ state 81
 
 state 82
 
-    exp  ->  scalar_value NOT_IN '(' scalar_list ')' .   (rule 29)
+    exp  ->  scalar_value NOT_IN '(' in_sub_expr ')' .   (rule 29)
 
     $default	reduce using rule 29 (exp)
 
