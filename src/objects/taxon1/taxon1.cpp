@@ -1314,7 +1314,7 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
 		    } else
 			return true;
 		}
-	    } catch( CEofException& eoe ) {
+	    } catch( CEofException& /*eoe*/ ) {
 		bNeedReconnect = true;
 	    } catch( exception& e ) {
 		SetLastError( e.what() );
