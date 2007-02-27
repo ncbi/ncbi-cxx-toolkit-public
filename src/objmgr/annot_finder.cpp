@@ -107,7 +107,7 @@ public:
 
     virtual void CollectRangeMaps( vector<CHandleRangeMap>& hrmaps) const
     {
-        CAnnotObject_Info::x_ProcessAlign(hrmaps, m_Align, 0);        
+        CAnnotObject_Info::x_ProcessAlign(hrmaps, m_Align);        
     }
     virtual CAnnotType_Index::TIndexRange GetIndexRange() const
     {

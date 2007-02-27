@@ -66,12 +66,10 @@ private:
 
     friend class CSeq_loc_Conversion_Set;
 
-    void Convert(CSeq_loc_Conversion_Set& cvts,
-                 unsigned int loc_index_shift = 0);
+    void Convert(CSeq_loc_Conversion_Set& cvts);
 
     // Mapping through CSeq_loc_Conversion
-    void x_ConvertAlignCvt(CSeq_loc_Conversion_Set& cvts,
-                           unsigned int loc_index_shift);
+    void x_ConvertAlignCvt(CSeq_loc_Conversion_Set& cvts);
     void x_ConvertRowCvt(CSeq_loc_Conversion& cvt,
                          size_t row);
     void x_ConvertRowCvt(TIdMap& cvts,

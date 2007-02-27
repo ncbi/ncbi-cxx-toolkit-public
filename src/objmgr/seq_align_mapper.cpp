@@ -80,38 +80,32 @@ bool CConversionRef_Less::operator()(const CRef<CSeq_loc_Conversion>& x,
 }
 
 
-void CSeq_align_Mapper::Convert(CSeq_loc_Conversion_Set& cvts,
-                                unsigned int loc_index_shift)
+void CSeq_align_Mapper::Convert(CSeq_loc_Conversion_Set& cvts)
 {
     m_DstAlign.Reset();
 
     if (m_SubAligns.size() > 0) {
         NON_CONST_ITERATE(TSubAligns, it, m_SubAligns) {
             dynamic_cast<CSeq_align_Mapper*>(it->GetPointer())->
-                Convert(cvts, loc_index_shift);
-            loc_index_shift += (*it)->GetDim();
+                Convert(cvts);
         }
         return;
     }
-    x_ConvertAlignCvt(cvts, loc_index_shift);
+    x_ConvertAlignCvt(cvts);
 }
 
 
-void CSeq_align_Mapper::x_ConvertAlignCvt(CSeq_loc_Conversion_Set& cvts,
-                                          unsigned int loc_index_shift)
+void CSeq_align_Mapper::x_ConvertAlignCvt(CSeq_loc_Conversion_Set& cvts)
 {
     if (cvts.m_CvtByIndex.size() == 0) {
         // Single mapping
         _ASSERT(cvts.m_SingleConv);
-        x_ConvertRowCvt(*cvts.m_SingleConv,
-            cvts.m_SingleIndex - loc_index_shift);
+        x_ConvertRowCvt(*cvts.m_SingleConv, cvts.m_SingleIndex);
         return;
     }
-    CSeq_loc_Conversion_Set::TConvByIndex::iterator idx_it =
-        cvts.m_CvtByIndex.lower_bound(loc_index_shift);
-    for ( ; idx_it != cvts.m_CvtByIndex.end()
-        &&  idx_it->first < loc_index_shift + GetDim(); ++idx_it) {
-        x_ConvertRowCvt(idx_it->second, idx_it->first - loc_index_shift);
+    NON_CONST_ITERATE(CSeq_loc_Conversion_Set::TConvByIndex, idx_it,
+        cvts.m_CvtByIndex) {
+        x_ConvertRowCvt(idx_it->second, idx_it->first);
     }
 }
 

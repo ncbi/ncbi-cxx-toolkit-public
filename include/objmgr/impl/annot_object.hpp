@@ -204,8 +204,7 @@ public:
     const TLocs::iterator& x_GetLocsIter(void) const;
 
     static void x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
-                               const CSeq_align& align,
-                               int loc_index_shift);
+                               const CSeq_align& align);
     static void x_ProcessFeat(vector<CHandleRangeMap>& hrmaps,
                               const CSeq_feat& feat);
     static void x_ProcessGraph(vector<CHandleRangeMap>& hrmaps,

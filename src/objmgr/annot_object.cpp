@@ -354,7 +354,7 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         const CSeq_align& align = GetAlign();
         // TODO: separate alignment locations
         hrmaps.clear();
-        x_ProcessAlign(hrmaps, align, 0);
+        x_ProcessAlign(hrmaps, align);
         break;
     }
     case C_Data::e_Locs:
@@ -509,8 +509,7 @@ void CAnnotObject_Info::x_Locs_AddFeatSubtype(int ftype,
 
 /* static */
 void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
-                                       const CSeq_align& align,
-                                       int loc_index_shift)
+                                       const CSeq_align& align)
 {
     //### Check the implementation.
     switch ( align.GetSegs().Which() ) {
@@ -538,8 +537,8 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     ERR_POST(Warning << "Invalid 'strands' size in dendiag");
                     dim = min(dim, (int)diag.GetStrands().size());
                 }
-                if ((int)hrmaps.size() < loc_index_shift + dim) {
-                    hrmaps.resize(loc_index_shift + dim);
+                if ((int)hrmaps.size() < dim) {
+                    hrmaps.resize(dim);
                 }
                 TSeqPos len = (*it)->GetLen();
                 for (int row = 0; row < dim; ++row) {
@@ -550,7 +549,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     if ( (*it)->IsSetStrands() ) {
                         loc.SetInt().SetStrand((*it)->GetStrands()[row]);
                     }
-                    hrmaps[loc_index_shift + row].AddLocation(loc);
+                    hrmaps[row].AddLocation(loc);
                 }
             }
             break;
@@ -579,8 +578,8 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                 ERR_POST(Warning << "Invalid 'strands' size in denseg");
                 dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
             }
-            if ((int)hrmaps.size() < loc_index_shift + dim) {
-                hrmaps.resize(loc_index_shift + dim);
+            if ((int)hrmaps.size() < dim) {
+                hrmaps.resize(dim);
             }
             for (int seg = 0;  seg < numseg;  seg++) {
                 for (int row = 0;  row < dim;  row++) {
@@ -595,7 +594,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     if ( denseg.IsSetStrands() ) {
                         loc.SetInt().SetStrand(denseg.GetStrands()[seg*dim + row]);
                     }
-                    hrmaps[loc_index_shift + row].AddLocation(loc);
+                    hrmaps[row].AddLocation(loc);
                 }
             }
             break;
@@ -605,14 +604,14 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             const CSeq_align::C_Segs::TStd& std =
                 align.GetSegs().GetStd();
             ITERATE ( CSeq_align::C_Segs::TStd, it, std ) {
-                if ((int)hrmaps.size() < loc_index_shift + (*it)->GetDim()) {
-                    hrmaps.resize(loc_index_shift + (*it)->GetDim());
+                if ((int)hrmaps.size() < (*it)->GetDim()) {
+                    hrmaps.resize((*it)->GetDim());
                 }
                 ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
                     CSeq_loc_CI row_it(**it_loc);
                     for (int row = 0; row_it; ++row_it, ++row) {
-                        if (loc_index_shift + row >= (int)hrmaps.size()) {
-                            hrmaps.resize(loc_index_shift + row + 1);
+                        if (row >= (int)hrmaps.size()) {
+                            hrmaps.resize(row + 1);
                         }
                         CSeq_loc loc;
                         loc.SetInt().SetId().Assign(row_it.GetSeq_id());
@@ -621,7 +620,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                         if ( row_it.GetStrand() != eNa_strand_unknown ) {
                             loc.SetInt().SetStrand(row_it.GetStrand());
                         }
-                        hrmaps[loc_index_shift + row].AddLocation(loc);
+                        hrmaps[row].AddLocation(loc);
                     }
                 }
             }
@@ -643,8 +642,8 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             if (dim > (int)packed.GetLens().size()) {
                 dim = packed.GetLens().size();
             }
-            if ((int)hrmaps.size() < loc_index_shift + dim) {
-                hrmaps.resize(loc_index_shift + dim);
+            if ((int)hrmaps.size() < dim) {
+                hrmaps.resize(dim);
             }
             for (int seg = 0;  seg < numseg;  seg++) {
                 for (int row = 0;  row < dim;  row++) {
@@ -657,7 +656,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                         if ( packed.IsSetStrands() ) {
                             loc.SetInt().SetStrand(packed.GetStrands()[seg*dim + row]);
                         }
-                        hrmaps[loc_index_shift + row].AddLocation(loc);
+                        hrmaps[row].AddLocation(loc);
                     }
                 }
             }
@@ -668,9 +667,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             const CSeq_align::C_Segs::TDisc& disc =
                 align.GetSegs().GetDisc();
             ITERATE ( CSeq_align_set::Tdata, it, disc.Get() ) {
-                x_ProcessAlign(hrmaps, **it, loc_index_shift);
-                // loc_index_shift += (*it)->GetDim();
-                loc_index_shift = hrmaps.size();
+                x_ProcessAlign(hrmaps, **it);
             }
             break;
         }
