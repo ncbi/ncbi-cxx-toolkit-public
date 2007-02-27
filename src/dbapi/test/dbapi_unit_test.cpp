@@ -200,7 +200,7 @@ void
 CDBAPIUnitTest::TestInit(void)
 {
     try {
-//         DBLB_INSTALL_DEFAULT();
+        DBLB_INSTALL_DEFAULT();
 
         if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
             m_max_varchar_size = 8000;
@@ -5216,28 +5216,28 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
         try {
             I_DriverContext* drv_context = m_DS->GetDriverContext();
 
-        	if( drv_context == NULL ) {
+            if( drv_context == NULL ) {
                 BOOST_FAIL("FATAL: Unable to load context for dbdriver " +
                            sDbDriver);
-        	}
-        	drv_context->SetMaxTextImageSize( 0x7fffffff );
-        	drv_context->SetLoginTimeout( s_tTimeOut );
-        	drv_context->SetTimeout( s_tTimeOut );
+            }
+            drv_context->SetMaxTextImageSize( 0x7fffffff );
+            drv_context->SetLoginTimeout( s_tTimeOut );
+            drv_context->SetTimeout( s_tTimeOut );
 
-        	pDbLink = drv_context->Connect( sDbServer, sDbUser, sDbPasswd,
-        				    0, true, "Service" );
+            pDbLink = drv_context->Connect( sDbServer, sDbUser, sDbPasswd,
+                            0, true, "Service" );
 
-        	string sUseDb = "use "+sDbName;
-        	auto_ptr<CDB_LangCmd> pUseCmd( pDbLink->LangCmd( sUseDb.c_str() ) );
-        	if( pUseCmd->Send() ) {
-        	    pUseCmd->DumpResults();
-        	} else {
+            string sUseDb = "use "+sDbName;
+            auto_ptr<CDB_LangCmd> pUseCmd( pDbLink->LangCmd( sUseDb.c_str() ) );
+            if( pUseCmd->Send() ) {
+                pUseCmd->DumpResults();
+            } else {
                 BOOST_FAIL("Unable to send sql command "+ sUseDb);
-        	}
+            }
         } catch( CDB_Exception& dbe ) {
-        	sErr = "CDB Exception from "+dbe.OriginatedFrom()+":"+
-        	    dbe.SeverityString(dbe.Severity())+": "+
-        	    dbe.Message();
+            sErr = "CDB Exception from "+dbe.OriginatedFrom()+":"+
+                dbe.SeverityString(dbe.Severity())+": "+
+                dbe.Message();
 
             BOOST_FAIL(sErr);
         }
@@ -5391,43 +5391,43 @@ CDBAPIUnitTest::Test_NCBI_LS(void)
         string sError;
 
         try {
-        	if( pRpc->Send() ) {
-        	    // Save results
-        	    while ( !bFetchErr && pRpc->HasMoreResults() ) {
-            		auto_ptr<CDB_Result> pRes( pRpc->Result() );
-            		if( !pRes.get() ) {
-            		    continue;
-            		}
-            		if( pRes->ResultType() == eDB_RowResult ) {
-            		    while( pRes->Fetch() ) {
+            if( pRpc->Send() ) {
+                // Save results
+                while ( !bFetchErr && pRpc->HasMoreResults() ) {
+                    auto_ptr<CDB_Result> pRes( pRpc->Result() );
+                    if( !pRes.get() ) {
+                        continue;
+                    }
+                    if( pRes->ResultType() == eDB_RowResult ) {
+                        while( pRes->Fetch() ) {
                             ++acc_num;
-                			pRes->GetItem( &db_uid );
+                            pRes->GetItem( &db_uid );
                                     // cout << "uid=" << db_uid.Value();
-                			pRes->GetItem( &db_score );
+                            pRes->GetItem( &db_score );
                                     // cout << " score=" << db_score.Value() << endl;
-            		    }
-            		} else if( pRes->ResultType() == eDB_StatusResult ) {
-            		    while( pRes->Fetch() ) {
-                			pRes->GetItem( &status );
-                			if( status.Value() < 0 ) {
-                			    sError = "Bad status value " +
+                        }
+                    } else if( pRes->ResultType() == eDB_StatusResult ) {
+                        while( pRes->Fetch() ) {
+                            pRes->GetItem( &status );
+                            if( status.Value() < 0 ) {
+                                sError = "Bad status value " +
                                     NStr::IntToString(status.Value())
-                				+ " from RPC 'FindAccount'";
-                			    bFetchErr = true;
-                			    break;
-                			}
-            		    }
-            		}
-        	    }
-        	} else { // Error sending rpc
-        	    sError = "Error sending rpc 'FindAccount' to db server";
-        	    bFetchErr = true;
-        	}
+                                + " from RPC 'FindAccount'";
+                                bFetchErr = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else { // Error sending rpc
+                sError = "Error sending rpc 'FindAccount' to db server";
+                bFetchErr = true;
+            }
         }  catch( CDB_Exception& dbe ) {
-        	sError = "CDB Exception from "+dbe.OriginatedFrom()+":"+
-        	    dbe.SeverityString(dbe.Severity())+": "+
-        	    dbe.Message();
-        	bFetchErr = true;
+            sError = "CDB Exception from "+dbe.OriginatedFrom()+":"+
+                dbe.SeverityString(dbe.Severity())+": "+
+                dbe.Message();
+            bFetchErr = true;
         }
 
         BOOST_CHECK( acc_num > 0 );
@@ -6415,8 +6415,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // !!! Need to be fixed !!!
     if (args.IsBCPAvailable()
-        && args.GetDriverName() != "ftds64_ctlib" // Doesn't work for some reason ...
-        && args.GetDriverName() != "ctlib" // Doesn't work for some reason ...
         && args.GetDriverName() != "msdblib" // Doesn't work for some reason ...
         && !(args.GetDriverName() == "ftds" &&
              args.GetServerType() == CTestArguments::eSybase)
@@ -6523,13 +6521,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
 
     // !!! There are still problems ...
-    if ( args.GetDriverName() == "dblib"
-         || args.GetDriverName() == "ftds"
-         || args.GetDriverName() == "ftds63"
-         || args.GetDriverName() == "ftds64_dblib"
-         || args.GetDriverName() == "ftds64_ctlib"
-         // || args.GetDriverName() == "ftds64_odbc" // No BCP at the moment ...
-         ) {
+    if (args.IsBCPAvailable())
+    {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow,
                                    DBAPIInstance);
         tc->depends_on(tc_init);
