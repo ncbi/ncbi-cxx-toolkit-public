@@ -64,10 +64,25 @@ public:
         eScore_PercentIdentity
     };
 
+    /// @name Functions to add scores directly to Seq-aligns
+    /// @{
+
     void AddScore(CScope& scope, CSeq_align& align,
                   EScoreType score);
     void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
                   EScoreType score);
+
+    /// @}
+
+    /// @name Functions to compute scores without adding
+    /// @{
+
+    int GetIdentityCount  (CScope& scope, const CSeq_align& align);
+    int GetMismatchCount  (CScope& scope, const CSeq_align& align);
+    int GetGapCount       (const CSeq_align& align);
+    TSeqPos GetAlignLength(const CSeq_align& align);
+
+    /// @}
 
 };
 
