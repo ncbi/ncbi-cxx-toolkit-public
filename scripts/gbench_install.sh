@@ -370,9 +370,6 @@ for f in ${source_dir}/patterns/*; do
     fi
 done
 
-# copy raw accession identification guide
-DoCopy ${source_dir}/../../objects/seqloc/accguide.txt ${target_dir}/etc
-
 [ "$setup_src" = yes ] || exit 0
 
 # Do this last, to be sure the symlink doesn't end up dangling.
