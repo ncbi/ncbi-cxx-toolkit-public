@@ -217,6 +217,8 @@ sub handle_blastpgp($)
 
     $retval .= "-gap_trigger $opt_N "       if (defined $opt_N);
     $retval .= "-num_iterations $opt_j "    if (defined $opt_j);
+    $retval .= "-pseudocount $opt_c "       if (defined $opt_c);
+    $retval .= "-inclusion_ethresh $opt_h " if (defined $opt_h);
     # Will these work ?
     $retval .= "-in_pssm $opt_R "           if (defined $opt_R);
     $retval .= "-out_pssm $opt_C "          if (defined $opt_C);

@@ -91,8 +91,8 @@ public:
                  const char *matrix_name = BLAST_DEFAULT_MATRIX,
                  bool show_gi = false, 
                  bool is_html = false, 
-                 int qgencode = blast::kDfltArgQueryGeneticCode, 
-                 int dbgencode = blast::kDfltArgDbGeneticCode, 
+                 int qgencode = BLAST_GENETIC_CODE,
+                 int dbgencode = BLAST_GENETIC_CODE,
                  bool show_linked = false);
 
     /// Destructor

@@ -36,6 +36,7 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <corelib/ncbienv.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>

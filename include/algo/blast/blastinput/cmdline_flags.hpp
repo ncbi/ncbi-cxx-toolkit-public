@@ -63,13 +63,8 @@ extern const string kArgGiList;
 
 /// Query genetic code
 extern const string kArgQueryGeneticCode;
-/// Default value for query genetic code
-extern const int kDfltArgQueryGeneticCode;
-
 /// Database genetic code
 extern const string kArgDbGeneticCode;
-/// Default value for database genetic code
-extern const int kDfltArgDbGeneticCode;
 
 /// Argument to determine whether searches should be run locally or remotely
 extern const string kArgRemote;
@@ -79,13 +74,9 @@ extern const string kArgNumThreads;
 
 /// Argument for scoring matrix
 extern const string kArgMatrixName;
-/// Default value for scoring matrix
-extern const string kDfltArgMatrixName;
 
 /// Argument for expectation value cutoff
 extern const string kArgEvalue;
-/// Default value for expectation value cutoff
-extern const double kDfltArgEvalue;
 
 /* Formatting options */
 
@@ -116,12 +107,8 @@ extern const string kArgGapExtend;
 
 /// Argument to select the nucleotide mismatch penalty
 extern const string kArgMismatch;
-/// Default value for nucleotide mismatch penalty
-extern const int kDfltArgMismatch;
 /// Argument to select the nucleotide match reward
 extern const string kArgMatch;
-/// Default value for nucleotide match reward
-extern const int kDfltArgMatch;
 
 /// Argument to select the ungapped X dropoff value
 extern const string kArgUngappedXDropoff;
@@ -175,8 +162,6 @@ extern const string kArgFrameShiftPenalty;
 
 /// Argument to specify number of bits to initiate gapping
 extern const string kArgGapTrigger;
-/// Default value for number of bits to initiate gapping
-extern const double kDfltArgGapTrigger;
 
 /// Argument to specify whether the search should be ungapped only
 extern const string kArgUngapped;
@@ -212,34 +197,18 @@ extern const string kArgPSIInputChkPntFile;
 /// Argument to specify a 'checkpoint' file to write the PSSM
 extern const string kArgPSIOutputChkPntFile;
 
+/// Argument to specify the pseudo-count value used when constructing PSSM
+extern const string kArgPSIPseudocount;
+/// Argument to specify the evalue inclusion threshold for considering
+/// aligned sequences for PSSM constructions
+extern const string kArgPSIInclusionEThreshold;
+
 /* OLD C TOOLKIT ARGUMENTS */
 
-//#define ARG_QUERY "i"
-//#define ARG_EVALUE "e"
-//#define ARG_FORMAT "m"
-//#define ARG_OUT "o"
-//#define ARG_FILTER "F"
-//#define ARG_GAPOPEN "G"
-//#define ARG_GAPEXT "E"
-//#define ARG_XDROP "X"
-//#define ARG_SHOWGI "I"
-//#define ARG_DESCRIPTIONS "v"
-//#define ARG_ALIGNMENTS "b"
-//#define ARG_THREADS "a"
-//#define ARG_ASNOUT "O"
-//#define ARG_BELIEVEQUERY "J"
-//#define ARG_WORDSIZE "W"
-//#define ARG_CULLING_LIMIT "K"
-//#define ARG_SEARCHSP "Y"
-//#define ARG_HTML "T"
-//#define ARG_LCASE "U"
-//#define ARG_XDROP_UNGAPPED "y"
-//#define ARG_XDROP_FINAL "Z"
-//#define ARG_QUERYLOC "L"
 //#define ARG_WINDOW "A"
 
 /* PSI-BLAST arguments */
-#define ARG_PSEUDOCOUNT "c"
+//#define ARG_PSEUDOCOUNT "c"
 #define ARG_INCLUSION_THRESHOLD "h"
 //#define ARG_NUM_ITERATIONS "j"
 

@@ -38,7 +38,7 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
-#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_options.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -57,19 +57,14 @@ const string kArgDbType("dbtype");
 const string kArgGiList("gilist");
 
 const string kArgQueryGeneticCode("query_gencode");
-const int kDfltArgQueryGeneticCode = 1;
-
 const string kArgDbGeneticCode("db_gencode");
-const int kDfltArgDbGeneticCode = 1;
 
 const string kArgRemote("remote");
 const string kArgNumThreads("num_threads");
 
 const string kArgMatrixName("matrix");
-const string kDfltArgMatrixName("BLOSUM62");
 
 const string kArgEvalue("evalue");
-const double kDfltArgEvalue = 10.0;
 
 const string kArgOutputFormat("outfmt");
 const int kDfltArgOutputFormat = 0;
@@ -84,9 +79,7 @@ const string kArgGapOpen("gapopen");
 const string kArgGapExtend("gapextend");
 
 const string kArgMismatch("mismatch_penalty");
-const int kDfltArgMismatch = -3;
 const string kArgMatch("match_reward");
-const int kDfltArgMatch = 1;
 
 const string kArgUngappedXDropoff("xdrop_ungap");
 const string kArgGappedXDropoff("xdrop_gap");
@@ -117,7 +110,6 @@ const int kDfltArgCullingLimit = 1;
 const string kArgFrameShiftPenalty("frame_shift_penalty");
 
 const string kArgGapTrigger("gap_trigger");
-const double kDfltArgGapTrigger = 22.0;
 
 const string kArgUngapped("ungapped");
 
@@ -141,6 +133,8 @@ const string kArgLookupTableMaskingOnly("soft_masking");
 const string kArgPSINumIterations("num_iterations");
 const string kArgPSIInputChkPntFile("in_pssm");
 const string kArgPSIOutputChkPntFile("out_pssm");
+const string kArgPSIPseudocount("pseudocount");
+const string kArgPSIInclusionEThreshold("inclusion_ethresh");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

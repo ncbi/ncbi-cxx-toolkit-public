@@ -41,7 +41,6 @@
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
-#include <objtools/blast_format/blastfmtutil.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
@@ -256,9 +255,13 @@ private:
 class NCBI_XBLAST_EXPORT CGapTriggerArgs : public IBlastCmdLineArgs
 {
 public:
+    CGapTriggerArgs(bool query_is_protein) 
+        : m_QueryIsProtein(query_is_protein) {}
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
                                          CBlastOptions& options);
+private:
+    bool m_QueryIsProtein;  /**< true if the query is protein */
 };
 
 class NCBI_XBLAST_EXPORT CPssmEngineArgs : public IBlastCmdLineArgs

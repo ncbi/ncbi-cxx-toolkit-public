@@ -116,7 +116,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     arg.Reset(new CCompositionBasedStatsArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGapTriggerArgs);
+    arg.Reset(new CGapTriggerArgs(kQueryIsProtein));
     m_Args.push_back(arg);
 
     m_PsiBlastArgs.Reset(new CPsiBlastArgs);

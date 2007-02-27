@@ -119,7 +119,7 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
                      "Expectation value (E) threshold for saving hits ",
                      CArgDescriptions::eDouble,
-                     NStr::DoubleToString(kDfltArgEvalue));
+                     NStr::DoubleToString(BLAST_EXPECT_VALUE));
 
     // gap open penalty
     const int kGOpen = m_QueryIsProtein 
@@ -217,12 +217,12 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if (m_QueryIsProtein) {
         arg_desc.AddDefaultKey(kArgSegFiltering, "SEG_options",
                         "Filter query sequence with SEG "
-                        "(Format: 'window locut hicut', or 'none')",
+                        "(Format: 'window locut hicut', or 'no' to disable)",
                         CArgDescriptions::eString, kDfltArgSegFiltering);
     } else {
         arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
                         "Filter query sequence with DUST "
-                        "(Format: 'level window linker', or 'none')",
+                        "(Format: 'level window linker', or 'no' to disable)",
                         CArgDescriptions::eString, kDfltArgDustFiltering);
     }
 
@@ -254,7 +254,7 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 
     if (m_QueryIsProtein && args[kArgSegFiltering]) {
         const string& seg_opts = args[kArgSegFiltering].AsString();
-        if (seg_opts == "none") {
+        if (seg_opts == "no") {
             opt.SetSegFiltering(false);
         } else {
             x_TokenizeFilteringArgs(seg_opts, tokens);
@@ -266,7 +266,7 @@ CFilteringArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& opt)
 
     if ( !m_QueryIsProtein && args[kArgDustFiltering]) {
         const string& dust_opts = args[kArgDustFiltering].AsString();
-        if (dust_opts == "none") {
+        if (dust_opts == "no") {
             opt.SetDustFiltering(false);
         } else {
             x_TokenizeFilteringArgs(dust_opts, tokens);
@@ -343,8 +343,8 @@ CMatrixNameArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.AddDefaultKey(kArgMatrixName, "matrix_name", 
                            "Scoring matrix name",
-                           CArgDescriptions::eString,
-                           kDfltArgMatrixName);
+                           CArgDescriptions::eString, 
+                           string(BLAST_DEFAULT_MATRIX));
 }
 
 void
@@ -364,7 +364,7 @@ CNuclArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgMismatch, "penalty", 
                            "Penalty for a nucleotide mismatch", 
                            CArgDescriptions::eInteger,
-                           NStr::IntToString(kDfltArgMismatch));
+                           NStr::IntToString(BLAST_PENALTY));
     arg_desc.SetConstraint(kArgMismatch, 
                            new CArgAllowValuesLessThanOrEqual(0));
 
@@ -372,7 +372,7 @@ CNuclArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgMatch, "reward", 
                            "Reward for a nucleotide match", 
                            CArgDescriptions::eInteger, 
-                           NStr::IntToString(kDfltArgMatch));
+                           NStr::IntToString(BLAST_REWARD));
     arg_desc.SetConstraint(kArgMatch, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
@@ -549,13 +549,13 @@ CGeneticCodeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddDefaultKey(kArgQueryGeneticCode, "int_value", 
                                "Genetic code to use to translate query",
                                CArgDescriptions::eInteger,
-                               NStr::IntToString(kDfltArgQueryGeneticCode));
+                               NStr::IntToString(BLAST_GENETIC_CODE));
     } else {
         // DB genetic code
         arg_desc.AddDefaultKey(kArgDbGeneticCode, "int_value", 
                                "Genetic code to use to translate database",
                                CArgDescriptions::eInteger,
-                               NStr::IntToString(kDfltArgDbGeneticCode));
+                               NStr::IntToString(BLAST_GENETIC_CODE));
     }
 }
 
@@ -578,10 +578,12 @@ CGeneticCodeArgs::ExtractAlgorithmOptions(const CArgs& args,
 void
 CGapTriggerArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
+    const double default_value = m_QueryIsProtein
+        ? BLAST_GAP_TRIGGER_PROT : BLAST_GAP_TRIGGER_NUCL;
     arg_desc.AddDefaultKey(kArgGapTrigger, "float_value", 
                            "Number of bits to trigger gapping",
                            CArgDescriptions::eDouble,
-                           NStr::DoubleToString(kDfltArgGapTrigger));
+                           NStr::DoubleToString(default_value));
 }
 
 void
@@ -599,16 +601,16 @@ CPssmEngineArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("PSSM engine options");
 
     // Pseudo count
-    arg_desc.AddOptionalKey(ARG_PSEUDOCOUNT, "pseudocount",
-                             "Pseudo-count value used when constructing PSSM",
-                             CArgDescriptions::eInteger,
-                             CArgDescriptions::fOptionalSeparator);
+    arg_desc.AddDefaultKey(kArgPSIPseudocount, "pseudocount",
+                           "Pseudo-count value used when constructing PSSM",
+                           CArgDescriptions::eInteger,
+                           NStr::IntToString(PSI_PSEUDO_COUNT_CONST));
 
     // Evalue inclusion threshold
-    arg_desc.AddOptionalKey(ARG_INCLUSION_THRESHOLD, "ethresh",
-                         "E-value inclusion threshold for pairwise alignments",
-                             CArgDescriptions::eDouble,
-                             CArgDescriptions::fOptionalSeparator);
+    arg_desc.AddDefaultKey(kArgPSIInclusionEThreshold, "ethresh", 
+                   "E-value inclusion threshold for pairwise alignments", 
+                   CArgDescriptions::eDouble,
+                   NStr::DoubleToString(PSI_INCLUSION_ETHRESH));
 
     arg_desc.SetCurrentGroup("");
 }
@@ -617,12 +619,12 @@ void
 CPssmEngineArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
 {
-    if (args[ARG_PSEUDOCOUNT]) {
-        opt.SetPseudoCount(args[ARG_PSEUDOCOUNT].AsInteger());
+    if (args[kArgPSIPseudocount]) {
+        opt.SetPseudoCount(args[kArgPSIPseudocount].AsInteger());
     }
 
-    if (args[ARG_INCLUSION_THRESHOLD]) {
-        opt.SetInclusionThreshold(args[ARG_INCLUSION_THRESHOLD].AsDouble());
+    if (args[kArgPSIInclusionEThreshold]) {
+        opt.SetInclusionThreshold(args[kArgPSIInclusionEThreshold].AsDouble());
     }
 }
 
@@ -822,7 +824,6 @@ void
 CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
                                             CBlastOptions& opts)
 {
-    _ASSERT(args[kArgDb]);
     EMoleculeType mol_type = Blast_SubjectIsNucleotide(opts.GetProgramType())
         ? CSearchDatabase::eBlastDbIsNucleotide
         : CSearchDatabase::eBlastDbIsProtein;
