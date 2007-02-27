@@ -297,7 +297,7 @@ CWriteDB_Impl::x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq
         defline->SetSeqid() = ids;
         ids.clear();
         
-        unsigned pos = titles.find(" >");
+        size_t pos = titles.find(" >");
         string T;
         
         if (pos != titles.npos) {
