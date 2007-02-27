@@ -245,7 +245,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     while (i < data->n_cand) {
         /* NB all servers have been loaded in accordance with iter->external */
         info = (SSERV_Info*) data->cand[i].info;
-        if (info->rate > 0.0  ||  iter->ok_dead  ||  iter->ok_suppressed) {
+        if (info->rate > 0.0  ||  iter->ok_dead) {
             const char* c = SERV_NameOfInfo(info);
             for (n = 0;  n < iter->n_skip;  n++) {
                 const SSERV_Info* skip = iter->skip[n];
@@ -287,7 +287,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                 break;
             data->i_cand++;
             data->cand[i].status = info->rate < 0.0 ? 0.0 : info->rate;
-            if (iter->ok_dead  ||  iter->ok_suppressed)
+            if (iter->ok_dead)
                 break;
             i++;
         }
@@ -309,7 +309,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                 if (iter->external  &&  temp->locl)
                     continue; /* external mapping req'd; local server */
                 assert(!(temp->locl & 0xF0)); /* no private DNS */
-                if (temp->rate > 0.0 || iter->ok_dead || iter->ok_suppressed) {
+                if (temp->rate > 0.0  ||  iter->ok_dead) {
                     data->cand[i].status = data->cand[n].status;
                     info = temp;
                     n = i;
@@ -404,34 +404,3 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
         *info = 0;
     return &s_op;
 }
-
-
-/*
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.8  2006/05/20 00:55:26  lavr
- * Fix ChangeLog for last revision
- *
- * Revision 1.7  2006/05/20 00:54:41  lavr
- * Allow LOCAL_SERVER spec to enclose in [double]quotes (mostly for C tkit)
- *
- * Revision 1.6  2006/05/19 23:24:56  lavr
- * Speed-up s_LoadSingleService()
- *
- * Revision 1.5  2006/04/20 19:23:24  lavr
- * Remove a comment that referenced iter->external
- *
- * Revision 1.4  2006/04/20 13:59:30  lavr
- * Use standardized registry key to lookup services and servers
- *
- * Revision 1.3  2006/04/19 14:45:55  lavr
- * Unconditionally skip internal servers in external searches
- *
- * Revision 1.2  2006/04/05 15:06:55  lavr
- * Fully implemented and working
- *
- * Revision 1.1  2006/03/28 18:27:32  lavr
- * Initial revision (not yet working)
- *
- * ==========================================================================
- */
