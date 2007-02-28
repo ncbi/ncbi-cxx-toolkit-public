@@ -71,6 +71,21 @@ CHit::CHit(int seq1_index, int seq2_index, int score,
 }   
 
 
+CHit::CHit(int seq1_index, int seq2_index, int score, 
+           const CDense_diag& dendiag)
+    : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index),
+      m_Score(score), m_EditScript(dendiag)
+{
+    _ASSERT(dendiag.GetDim() == 2);
+
+    const CDense_diag::TStarts& starts = dendiag.GetStarts();
+    const CDense_diag::TLen len = dendiag.GetLen();
+    m_SeqRange1 = TRange(starts[0], starts[0] + len - 1);
+    m_SeqRange2 = TRange(starts[1], starts[1] + len - 1);
+    VerifyHit();
+}   
+
+
 void CHit::AddUpSubHits()
 {
     _ASSERT(HasSubHits());

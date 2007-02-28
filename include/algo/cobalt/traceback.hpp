@@ -40,6 +40,7 @@ Contents: Interface for CEditScript class
 /// Interface for CEditScript class
 
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Dense_diag.hpp>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/align/nw/nw_aligner.hpp>
 
@@ -63,10 +64,16 @@ public:
     ///
     CEditScript(GapEditScript *blast_tback);
 
-    /// Generate traceback from a Seq-align
-    /// @param sa Seq-align represnting a single pairwise alignment [in]
+    /// Generate traceback from a Dense_seg
+    /// @param denseg Dense_seg representing a single pairwise alignment [in]
     ///
     CEditScript(const objects::CDense_seg& denseg);
+
+    /// Generate traceback from a Dense_diag
+    /// @param dendiag Dense_diag representing a single 
+    ///                ungapped pairwise alignment [in]
+    ///
+    CEditScript(const objects::CDense_diag& dendiag);
 
     /// Destructor
     ///

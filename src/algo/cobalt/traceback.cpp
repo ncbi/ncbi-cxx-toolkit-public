@@ -100,6 +100,15 @@ CEditScript::CEditScript(const CDense_seg& denseg)
 }
 
 
+CEditScript::CEditScript(const CDense_diag& dendiag)
+{
+    _ASSERT(dendiag.GetDim() == 2);
+
+    const CDense_diag::TLen& len = dendiag.GetLen();
+    AddOps(eGapAlignSub, (int)len);
+}
+
+
 CEditScript
 CEditScript::MakeEditScript(const CNWAligner::TTranscript& tback, 
                            TRange tback_range)
