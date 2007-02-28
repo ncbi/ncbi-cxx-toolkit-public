@@ -1618,7 +1618,15 @@ void CSeqDBMapStrategy::SetDefaultMemoryBound(Uint8 bytes)
         rlimit vspace;
         rusage ruse;
         
+
+#ifdef RLIMIT_AS        
         int rc = getrlimit(RLIMIT_AS, & vspace);
+#elif defined(RLIMIT_RSS)
+        int rc = getrlimit(RLIMIT_RSS, & vspace);
+#else
+        int rc = 0;
+        vspace.rlim_cur = RLIM_INFINITY;
+#endif
         int rc2 = getrusage(RUSAGE_SELF, & ruse);
         _ASSERT(rc == 0 && rc2 == 0);
         
