@@ -5663,7 +5663,7 @@ CContextThread::Main(void)
 void  CContextThread::OnExit(void)
 {
     if (m_DS) {
-        m_DM.DestroyDs(m_Args.GetDriverName());
+        m_DM.DestroyDs(m_DS);
     }
 }
 
@@ -6256,17 +6256,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    // We cannot run this test till we have an appropriate method in DBAPI
-    // to destroy a context.
-//     if (args.GetDriverName() == "ctlib" ||
-//         args.GetDriverName() == "ftds64_ctlib" ||
-//         args.GetDriverName() == "odbc" ||
-//         args.GetDriverName() == "ftds64_odbc"
-//         ) {
-//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
-//                                    DBAPIInstance);
-//         add(tc);
-//     }
+    if (args.GetDriverName() == "ctlib"
+        // || args.GetDriverName() == "ftds64_ctlib" // signal: memory access violation
+        || args.GetDriverName() == "odbc"
+        || args.GetDriverName() == "ftds64_odbc"
+        ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DriverContext_Many,
+                                   DBAPIInstance);
+        add(tc);
+    }
 
     boost::unit_test::test_case* tc_init =
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
