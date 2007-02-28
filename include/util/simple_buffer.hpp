@@ -57,6 +57,24 @@ public:
     }
     ~CSimpleBuffer() { delete [] m_Buffer; }
 
+    CSimpleBuffer(const CSimpleBuffer& sb) 
+    {
+        m_Buffer = new value_type[sb.size()];
+        m_Size = m_Capacity = sb.size();
+        memcpy(m_Buffer, sb.data(), m_Size);
+    }
+    CSimpleBuffer& operator=(const CSimpleBuffer& sb) 
+    {
+        if (sb.size() < m_Capacity) {
+            m_Size = sb.size();
+        } else {
+            x_Deallocate();
+            m_Buffer = new value_type[sb.size()];
+            m_Size = m_Capacity = sb.size();
+        }
+        memcpy(m_Buffer, sb.data(), m_Size);
+    }
+
     size_type size() const { return m_Size; }
     size_type capacity() const { return m_Capacity; }
 
