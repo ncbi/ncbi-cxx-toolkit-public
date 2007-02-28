@@ -73,6 +73,7 @@ public:
             m_Size = m_Capacity = sb.size();
         }
         memcpy(m_Buffer, sb.data(), m_Size);
+        return *this;
     }
 
     size_type size() const { return m_Size; }
@@ -135,11 +136,23 @@ public:
         x_Deallocate();
     }
 
-    value_type& operator[](size_type i) const
+    const value_type& operator[](size_type i) const
     {
         _ASSERT(m_Buffer);
         _ASSERT(i < m_Size);
         return m_Buffer[i];
+    }
+    value_type& operator[](size_type i)
+    {
+        _ASSERT(m_Buffer);
+        _ASSERT(i < m_Size);
+        return m_Buffer[i];
+    }
+
+    const value_type* data() const
+    {
+        _ASSERT(m_Buffer);
+        return m_Buffer;
     }
     value_type* data()
     {
