@@ -191,7 +191,7 @@ public:
 
     /// Set hash function. Default implementation installs bdb_types based
     /// function. Can be overloaded for some specific cases.
-    virtual void SetHash(DB*) = 0;
+    virtual void SetHash(DB*);
 
     /// Return TRUE if the file is open
     bool IsOpen() const;
@@ -487,9 +487,6 @@ protected:
     /// Set comparison function. Default implementation installs bdb_types based
     /// function. Can be overloaded for some specific cases.
     virtual void SetCmp(DB*);
-
-    /// Set hash function
-    virtual void SetHash(DB*);
 
     /// Read DB cursor
     EBDB_ErrCode ReadCursor(DBC* dbc, unsigned int bdb_flag);

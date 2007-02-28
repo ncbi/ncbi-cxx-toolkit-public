@@ -722,6 +722,12 @@ void CBDB_RawFile::SetHashNelem(unsigned h_nelem)
     BDB_CHECK(ret, FileName().c_str());
 }
 
+void CBDB_RawFile::SetHash(DB* db)
+{
+    _ASSERT(m_DB_Type == eHash);
+    int ret = db->set_h_hash(db, BDB_Hash);
+    BDB_CHECK(ret, 0);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1063,14 +1069,6 @@ void CBDB_File::SetCmp(DB* db)
     }
 }
 
-void CBDB_File::SetHash(DB* db)
-{
-    _ASSERT(m_DB_Type == eHash);
-    BDB_HashFunction func = m_KeyBuf->GetHashFunction();
-    _ASSERT(func);
-    int ret = db->set_h_hash(db, func);
-    BDB_CHECK(ret, 0);
-}
 
 
 CBDB_File::TUnifiedFieldIndex 
