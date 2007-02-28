@@ -43,7 +43,9 @@
 #endif
 #include "../../ds_impl.hpp"
 
-#if !defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_CYGWIN)
+#include <corelib/ncbicfg.h>
+#elif !defined(NCBI_OS_MSWIN)
 #include <dlfcn.h>
 #endif
 
@@ -293,7 +295,11 @@ string RetrieveModuleFileName(void)
 {
     string file_name;
 
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_CYGWIN)
+	// no dladdr; just return the standard location
+	file_name = NCBI_GetDefaultRunpath() + string("libpython_ncbi_dbapi.a");
+
+#elif defined(NCBI_OS_MSWIN)
     // Add an additional search path ...
     const DWORD buff_size = 1024;
     DWORD cur_size = 0;
