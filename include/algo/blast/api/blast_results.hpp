@@ -240,7 +240,7 @@ public:
     /// @param aligns vector of all queries' alignments [in]
     /// @param msg_vec vector of all queries' messages [in]
     /// @param ancillary_data vector of per-query search ancillary data [in]
-    /// @param query_masks Mask locations for this query [in]
+    /// @param masks Mask locations for this query [in]
     CSearchResultSet(TQueryIdVector  ids,
                      TSeqAlignVector aligns,
                      TSearchMessages msg_vec,
