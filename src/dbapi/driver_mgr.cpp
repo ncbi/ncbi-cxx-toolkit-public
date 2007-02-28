@@ -69,11 +69,9 @@ CDriverManager::CDriverManager()
 CDriverManager::~CDriverManager()
 {
     try {
-        typedef map<string, IDataSource*> TContainer;
-
         CMutexGuard mg(m_Mutex);
 
-        ITERATE(TContainer, it, m_ds_list) {
+        ITERATE(TDsContainer, it, m_ds_list) {
             IDataSource* ds = it->second;
 
             if (ds) {
@@ -100,7 +98,7 @@ IDataSource* CDriverManager::CreateDs(const string&        driver_name,
 {
     CMutexGuard mg(m_Mutex);
 
-    map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
+    TDsContainer::iterator i_ds = m_ds_list.find(driver_name);
     if (i_ds != m_ds_list.end()) {
         return (*i_ds).second;
     }
@@ -161,10 +159,26 @@ void CDriverManager::DestroyDs(const string& driver_name)
 {
     CMutexGuard mg(m_Mutex);
 
-    map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
+    TDsContainer::iterator i_ds = m_ds_list.find(driver_name);
     if (i_ds != m_ds_list.end()) {
         delete i_ds->second;
         m_ds_list.erase(i_ds);
+    }
+}
+
+void CDriverManager::DestroyDs(const IDataSource* ds)
+{
+    CMutexGuard mg(m_Mutex);
+
+    TDsContainer::iterator iter = m_ds_list.begin();
+    TDsContainer::iterator eiter = m_ds_list.end();
+
+    for (; iter != eiter; ++iter) {
+        if (iter->second == ds) {
+            m_ds_list.erase(iter);
+            delete iter->second;
+            break;
+        }
     }
 }
 

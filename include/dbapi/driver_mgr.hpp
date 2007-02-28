@@ -81,8 +81,11 @@ public:
 
     // Destroy datasource object
     void DestroyDs(const string& driver_name);
+    void DestroyDs(const IDataSource* ds);
 
 protected:
+    typedef map<string, class IDataSource*> TDsContainer;
+
     // Prohibit explicit construction and destruction
     CDriverManager();
     virtual ~CDriverManager();
@@ -92,8 +95,8 @@ protected:
     class IDataSource* RegisterDs(const string& driver_name,
                   class I_DriverContext* ctx);
 
-    mutable CMutex                  m_Mutex;
-    map<string, class IDataSource*> m_ds_list;
+    mutable CMutex  m_Mutex;
+    TDsContainer    m_ds_list;
 };
 
 END_NCBI_SCOPE
