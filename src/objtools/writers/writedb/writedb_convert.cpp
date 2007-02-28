@@ -323,7 +323,7 @@ public:
         
         _ASSERT(r.Value() <= 15);
         _ASSERT((length_m1 >> 4) == 0);
-        _ASSERT(off <= 0xFFF);
+        _ASSERT(off <= 0xFFFFFF); // old form uses three byte offsets
         
         // All in one word.
         char A1[4];
