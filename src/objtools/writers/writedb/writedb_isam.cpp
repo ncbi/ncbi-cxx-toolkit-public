@@ -512,6 +512,10 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
             x_AddLocal(oid, seqid);
             break;
             
+        case CSeq_id::e_Patent:
+            x_AddPatent(oid, seqid);
+            break;
+            
         default:
             {
                 string msg = "Seq-id type not implemented (";
@@ -543,6 +547,14 @@ void CWriteDB_IsamIndex::x_AddLocal(int             oid,
     }
     if (objid.IsStr()) {
         x_AddString(oid, objid.GetStr());
+    }
+}
+
+void CWriteDB_IsamIndex::x_AddPatent(int             oid,
+                                     const CSeq_id & seqid)
+{
+    if (! m_Sparse) {
+        x_AddString(oid, seqid.AsFastaString());
     }
 }
 

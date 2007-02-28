@@ -530,6 +530,50 @@ BOOST_AUTO_UNIT_TEST(s_MultiVolume)
     s_RemoveFiles(f);
 }
 
+BOOST_AUTO_UNIT_TEST(s_UsPatId)
+{
+    START;
+    
+    CRef<CSeq_id> seqid(new CSeq_id("pat|us|123|456"));
+    vector<string> files;
+    
+    {
+        CRef<CWriteDB> writedb
+            (new CWriteDB("uspatid",
+                          CWriteDB::eProtein,
+                          "patent id test",
+                          CWriteDB::eFullIndex));
+        
+        CSeqDB seqdb("nr", CSeqDB::eProtein);
+        
+        CRef<CBioseq> bs = seqdb.GiToBioseq(129297);
+        
+        CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set);
+        CRef<CBlast_def_line> dl(new CBlast_def_line);
+        bdls->Set().push_back(dl);
+        
+        dl->SetTitle("Some protein sequence");
+        dl->SetSeqid().push_back(seqid);
+        dl->SetTaxid(12345);
+        
+        writedb->AddSequence(*bs);
+        writedb->SetDeflines(*bdls);
+        
+        writedb->Close();
+        writedb->ListFiles(files);
+        CHECK(files.size());
+    }
+    
+    CSeqDB seqdb("uspatid", CSeqDB::eProtein);
+    int oid(-1);
+    bool found = seqdb.SeqidToOid(*seqid, oid);
+    
+    CHECK_EQUAL(found, true);
+    CHECK_EQUAL(oid,   0);
+    
+    s_RemoveFiles(files);
+}
+
 /*
  * ===========================================================================
  * $Log$

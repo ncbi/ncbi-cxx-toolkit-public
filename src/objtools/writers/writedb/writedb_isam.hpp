@@ -197,6 +197,19 @@ private:
     /// @param objid The data type for the local ID.
     void x_AddLocal(int oid, const CSeq_id & seqid);
     
+    /// Add a 'patent' type Seq-id.
+    /// 
+    /// For each Seq-id type, there is a defined set of strings that
+    /// are constructed from the ID and added to the index file.  This
+    /// method handles the 'patent' ID, i.e. those IDs that would be
+    /// something similar to "pat|xy|1234|56".  Here, the 'xy' is the
+    /// issuing authority (country of origin), the 1234 is the patent
+    /// number and 56 is the sequence number (within the 1234 patent).
+    /// 
+    /// @param oid OID for this sequence.
+    /// @param seqid The sequence identifier.
+    void x_AddPatent(int oid, const CSeq_id & seqid);
+    
     /// Add a text ID.
     ///
     /// For each Seq-id type, there is a defined set of strings that
