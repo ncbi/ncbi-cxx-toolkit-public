@@ -73,6 +73,8 @@ public:
     void   SetAccession(string Accession, int Version);   // set accession and version of CD
     void   SetAccession(string Accession);
     void   EraseUID();                                    // erase CD's uid
+    int    GetUID() const;                                // return the first 'uid' found, or '0' if none exist.
+                                                          // (this is the PSSM_id for a published CD)
     /* ADDED */ 
     bool HasCddId(const CCdd_id& id) const;               // is 'id' an identifier for this CD
 

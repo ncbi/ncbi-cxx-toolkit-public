@@ -143,6 +143,20 @@ void CCdCore::EraseUID() {
   }
 }
 
+int CCdCore::GetUID() const
+{
+    int uid = 0;
+    const CCdd_id_set::Tdata ids = GetId().Get();
+    CCdd_id_set::Tdata::const_iterator idCit = ids.begin(), idEnd = ids.end();
+    for (; idCit != idEnd; ++idCit) {
+        if ((*idCit)->IsUid()) {
+            uid = (*idCit)->GetUid();
+            break;
+        }
+    }
+    return uid;
+}
+
 
 /* ADDED */
 // is 'id' an identifier for this CD?
