@@ -497,9 +497,9 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
 #elif defined(NCBI_OS_SOLARIS)
     Int8 len = CFile("/proc/self/as").GetLength();
     if (len > 0) {
-        *total    = len;
-        *resident = len; // conservative estimate
-        *shared   = 0;   // does this info exist anywhere?
+        *total    = (size_t)len;
+        *resident = (size_t)len; // conservative estimate
+        *shared   = 0;           // does this info exist anywhere?
         return true;
     }
 #elif defined(HAVE_GETRUSAGE)
