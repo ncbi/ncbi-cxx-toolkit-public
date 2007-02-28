@@ -528,7 +528,8 @@ SOBJMGR_LDEP = seqset seqedit $(SEQ_LIBS) pub medline biblio general \
 SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
 
-BLAST_FORMATTER_LIBS = xblastformat xalnmgr ncbi_xloader_blastdb xcgi xhtml
+BLAST_FORMATTER_LIBS = xblastformat xalnmgr blastinput ncbi_xloader_blastdb \
+                       blastxml xcgi xhtml
 BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment xalgodustmask \
              seqdb xobjsimple xobjutil xobjread creaders \
              xnetblastcli xnetblast blastdb scoremat tables
