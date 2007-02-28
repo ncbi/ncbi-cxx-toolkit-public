@@ -661,6 +661,9 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
     case eQueue:
         db_type = DB_QUEUE;
         break;
+    case eHash:
+        db_type = DB_HASH;
+        break;
     default:
         _ASSERT(0);
     }

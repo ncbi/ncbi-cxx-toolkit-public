@@ -165,7 +165,7 @@ struct TestDBF2 : public CBDB_File
     }
 };
 
-
+/// @internal
 struct TestQueue : public CBDB_File
 {
     CBDB_FieldInt4        key;
@@ -184,6 +184,23 @@ struct TestQueue : public CBDB_File
     }
 };
 
+/// @internal
+struct TestHash : public CBDB_File
+{
+    CBDB_FieldString      key;
+    CBDB_FieldString      value;
+
+    TestHash() 
+        : CBDB_File(CBDB_RawFile::eDuplicatesDisable, CBDB_RawFile::eHash)
+    {
+        DisableNull();
+        BindKey("key", &key, 256);
+        BindData("value", &value);
+    }
+};
+
+
+/// @internal
 struct TestQueueBlob : public CBDB_BLobFile
 {
     CBDB_FieldInt4        key;
@@ -198,7 +215,8 @@ struct TestQueueBlob : public CBDB_BLobFile
 };
 
 
-// Utility function to check record consistency 
+/// Utility function to check record consistency 
+/// @internal
 void ValidateRecord(const TestDBF2& dbf2, unsigned i)
 {
     char buf[256];
@@ -1942,6 +1960,8 @@ static void s_TEST_db_multimap(void)
 
 }
 */
+
+/// @internal
 static void s_TEST_BDB_Queue()
 {
     cout << "======== Queue test." << endl;
@@ -2007,6 +2027,79 @@ static void s_TEST_BDB_Queue()
 
     cout << "======== Queue test ok." << endl;
 }
+
+
+
+/// @internal
+static void s_TEST_BDB_Hash()
+{
+    cout << "======== Hash test." << endl;
+    EBDB_ErrCode ret;
+
+    TestHash  db_h;
+
+    db_h.Open("db_hash.db", CBDB_File::eCreate);
+
+    for (int i = 0; i < 100; ++i) {
+        string k = "key_" + NStr::IntToString(i);
+        string d = "data_" + NStr::IntToString(i);
+        db_h.key = k;
+        db_h.value = d;
+
+        ret = db_h.Insert();
+        assert (ret == eBDB_Ok);
+    }
+
+    db_h.key = "key_0";
+    ret = db_h.Fetch();
+    assert (ret == eBDB_Ok);
+
+    string d = db_h.value;
+    assert (d == "data_0");
+
+
+    db_h.key = "update1";
+    db_h.value = "udata1";
+    ret = db_h.Insert();
+    assert (ret == eBDB_Ok);
+
+    db_h.key = "update1";
+    db_h.value = "udata2";
+    ret = db_h.UpdateInsert();
+    assert (ret == eBDB_Ok);
+
+    db_h.key = "update1";
+    ret = db_h.Fetch();
+    assert (ret == eBDB_Ok);
+    string udata = db_h.value;
+    assert(udata == "udata2");
+
+    db_h.key = "update1";
+    ret = db_h.Delete();
+    assert (ret == eBDB_Ok);
+
+    db_h.key = "update1";
+    ret = db_h.Fetch();
+    assert (ret == eBDB_NotFound);
+
+    for (int i = 0; i < 100; ++i) {
+        string k = "key_" + NStr::IntToString(i);
+        string d = "data_" + NStr::IntToString(i);
+        db_h.key = k;
+
+        ret = db_h.Fetch();
+        assert (ret == eBDB_Ok);
+        string v = db_h.value;
+        assert (d == v);
+    }
+
+    cout << "======== Hash test ok." << endl;
+}
+
+
+
+
+
 
 static void s_TEST_ICache(void)
 {
@@ -2134,10 +2227,11 @@ int CBDB_Test::Run(void)
 
     try
     {        
-
         s_TEST_BDB_Types();
 
         s_TEST_BDB_Queue();
+
+        s_TEST_BDB_Hash();
 
         s_TEST_BDB_IdTable_Fill();
 
@@ -2166,8 +2260,6 @@ int CBDB_Test::Run(void)
         s_TEST_BDB_Query();
 
         s_TEST_BDB_IdTable_FillStress();
-
-
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -2197,209 +2289,3 @@ int main(int argc, const char* argv[])
 }
 
 
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.66  2007/01/04 15:09:06  kuznets
- * Minor warning fix
- *
- * Revision 1.65  2006/11/15 13:49:14  rsmith
- * return colors by const ref again.include/gui/widgets/aln_data/scoring_method.hpp
- *
- * Revision 1.64  2006/01/13 14:42:44  vasilche
- * Fixed comparison in assert() call.
- *
- * Revision 1.63  2006/01/10 14:31:20  kuznets
- * Commented out currently unused proc to make compiler happy
- *
- * Revision 1.62  2005/12/14 19:27:08  kuznets
- * +test for queue db type
- *
- * Revision 1.61  2005/08/29 16:14:55  kuznets
- * Added thread test for BDB transactions
- *
- * Revision 1.60  2005/03/15 14:47:28  kuznets
- * Removed unnecessary transaction commit()
- *
- * Revision 1.59  2005/03/08 17:43:27  vasilche
- * Put file-scope static names in anonymous namespace instead to please WorkShop.
- *
- * Revision 1.58  2005/02/22 14:08:40  kuznets
- * Cursor reopen test
- *
- * Revision 1.57  2005/02/02 19:49:54  grichenk
- * Fixed more warnings
- *
- * Revision 1.56  2004/12/17 12:10:35  kuznets
- * Code cleanup: removed unused variable
- *
- * Revision 1.55  2004/11/23 17:09:11  kuznets
- * Implemented BLOB update in cursor
- *
- * Revision 1.54  2004/11/01 16:55:15  kuznets
- * test for RMW locks
- *
- * Revision 1.53  2004/10/14 17:45:50  vasilche
- * Use IOS_BASE instead of non-portable ios_base.
- *
- * Revision 1.52  2004/08/24 14:20:14  kuznets
- * Fixed opening a read-only cache(wrong path)
- *
- * Revision 1.51  2004/08/24 14:08:29  kuznets
- * Cache test improved
- *
- * Revision 1.50  2004/08/13 11:51:16  kuznets
- * Stress test improvements
- *
- * Revision 1.49  2004/08/13 11:13:48  kuznets
- * changes in tests
- *
- * Revision 1.48  2004/06/21 15:11:15  kuznets
- * Added recovery flag to the transactional test
- *
- * Revision 1.47  2004/06/14 16:11:15  kuznets
- * Test for read-only cache
- *
- * Revision 1.46  2004/05/25 18:48:51  kuznets
- * Added cache RAM size parameter to CBDB_Cache::Open.
- *
- * Revision 1.45  2004/05/17 20:55:27  gorelenk
- * Added include of PCH ncbi_pch.hpp
- *
- * Revision 1.44  2004/04/28 12:18:27  kuznets
- * Remove obsolete IntCache test
- *
- * Revision 1.43  2004/03/23 16:37:55  kuznets
- * Implemented NOT predicate
- *
- * Revision 1.42  2004/03/23 14:51:19  kuznets
- * Implemented logical NOT, <, <=, >, >=
- *
- * Revision 1.41  2004/03/12 12:41:50  kuznets
- * + stress test for cursors
- *
- * Revision 1.40  2004/03/10 16:22:22  kuznets
- * + more tests
- *
- * Revision 1.39  2004/03/10 16:19:55  kuznets
- * + test case for single word queries
- *
- * Revision 1.38  2004/03/08 13:36:09  kuznets
- * One more test case for queries
- *
- * Revision 1.37  2004/03/01 14:07:11  kuznets
- * + test case for queries
- *
- * Revision 1.36  2004/02/04 19:16:50  kuznets
- * Fixed compilation bug (Workshop)
- *
- * Revision 1.35  2004/02/04 17:05:47  kuznets
- * Minor fix (compilation).
- *
- * Revision 1.34  2004/02/04 15:13:11  kuznets
- * + test case for length prefixed strings, when source std::string
- * contains zero chars.
- *
- * Revision 1.33  2003/12/23 22:32:24  ucko
- * Rename the second s_TEST_BDB_IdTable_Fill, but don't run it yet
- * because it crashes. :-/
- *
- * Revision 1.32  2003/12/22 18:58:02  kuznets
- * Added l-string test
- *
- * Revision 1.31  2003/12/12 19:13:31  kuznets
- * Transaction test: minor change file opening option.
- *
- * Revision 1.30  2003/12/12 14:09:53  kuznets
- * + s_TEST_BDB_Transaction()
- *
- * Revision 1.29  2003/11/26 13:09:44  kuznets
- * Re-enables icache test
- *
- * Revision 1.28  2003/11/25 19:58:37  kuznets
- * Temporary disabled ICache test (fails on Solaris)
- *
- * Revision 1.27  2003/11/25 19:36:54  kuznets
- * + test for ICache implementation
- *
- * Revision 1.26  2003/11/14 04:31:10  ucko
- * bytes_read should be size_t, not unsigned.
- *
- * Revision 1.25  2003/10/27 14:21:15  kuznets
- * + DBD dumper test
- *
- * Revision 1.24  2003/10/24 13:41:51  kuznets
- * Tested blob stream PendingCount
- *
- * Revision 1.23  2003/10/20 20:15:54  kuznets
- * Cache test improved
- *
- * Revision 1.22  2003/10/20 19:59:03  kuznets
- * + Unit test for Int cache
- *
- * Revision 1.21  2003/10/15 18:14:33  kuznets
- * Changed test to work with alternative page size and larger cache.
- *
- * Revision 1.20  2003/09/29 16:54:58  kuznets
- * Reverting unnecessary commit
- *
- * Revision 1.19  2003/09/29 16:27:07  kuznets
- * Cleaned up 64-bit compilation warnings
- *
- * Revision 1.18  2003/09/17 18:19:02  kuznets
- * Added test for BLOB streaming
- *
- * Revision 1.17  2003/09/16 15:15:16  kuznets
- * Test corrected to use Int2 field
- *
- * Revision 1.16  2003/08/27 20:05:33  kuznets
- * Added test working with file locking environment
- *
- * Revision 1.15  2003/07/25 15:35:59  kuznets
- * Added simple db_map<string, int> test
- *
- * Revision 1.14  2003/07/24 15:44:44  kuznets
- * Clened up several compiler warnings
- *
- * Revision 1.13  2003/07/23 20:23:37  kuznets
- * + test for clean, erase (db_map)
- *
- * Revision 1.12  2003/07/22 19:21:56  kuznets
- * Added test case for CBDB_File::Attach function
- *
- * Revision 1.11  2003/07/22 16:38:30  kuznets
- * Polishing test
- *
- * Revision 1.10  2003/07/22 15:21:17  kuznets
- * Sketched two tet cases for db_map and db_multimap
- *
- * Revision 1.9  2003/07/09 14:29:47  kuznets
- * Added DB_DUP mode test.
- *
- * Revision 1.8  2003/05/27 18:05:08  kuznets
- * Fixed compilation warnings
- *
- * Revision 1.7  2003/05/08 13:44:04  kuznets
- * Minor test improvements
- *
- * Revision 1.6  2003/05/07 14:13:45  kuznets
- * + test case for cursor reading of BLOB storage.
- *
- * Revision 1.5  2003/05/05 20:15:35  kuznets
- * Added CBDB_BLobFile
- *
- * Revision 1.4  2003/05/02 14:10:57  kuznets
- * Added test for UpdateInsert
- *
- * Revision 1.3  2003/04/29 20:50:22  kuznets
- * Code cleanup
- *
- * Revision 1.2  2003/04/29 19:04:13  kuznets
- * +Test makefiles
- *
- * Revision 1.1  2003/04/28 18:12:52  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */

@@ -273,7 +273,9 @@ BDB_Hash(DB *, const void *bytes, unsigned length)
 {
     const unsigned char* buf = (const unsigned char*)bytes;
     const unsigned char* buf_end = buf + length;
-    return StringHash17(buf, buf_end);
+    unsigned ha = StringHash17(buf, buf_end);
+//cerr << buf << "len=" << length << " HA=" << ha << endl;
+    return ha;
 }
 
 
@@ -678,13 +680,14 @@ void CBDB_BufferManager::PrepareDBT_ForWrite(DBT* dbt)
 void CBDB_BufferManager::PrepareDBT_ForRead(DBT* dbt)
 {
     dbt->data = m_Buffer;
-    dbt->size = dbt->ulen = (unsigned)m_BufferSize;
+    dbt->size = (unsigned)m_PackedSize;
+    dbt->ulen = (unsigned)m_BufferSize;
     dbt->flags = DB_DBT_USERMEM;
 }
 
-int CBDB_BufferManager::Compare(const CBDB_BufferManager& buf_mgr,
-                                unsigned int              field_count)
-    const
+int 
+CBDB_BufferManager::Compare(const CBDB_BufferManager& buf_mgr,
+                            unsigned int              field_count) const
 {
     if ( !field_count ) {
         field_count = FieldCount();
