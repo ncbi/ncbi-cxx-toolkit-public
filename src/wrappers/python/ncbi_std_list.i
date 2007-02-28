@@ -106,7 +106,7 @@ namespace std {
         %typemap(out) list<T> {
             $result = PyList_New($1.size());
             unsigned int i = 0;
-            for (list<T >::iterator it = $1.begin();
+            for (std::list<T >::iterator it = $1.begin();
                  it != $1.end(); ++it) {
                 T* ptr = new T(*it);
                 PyList_SetItem($result, i, SWIG_NewPointerObj((void *) ptr,
@@ -251,7 +251,7 @@ namespace std {
         %typemap(out) list<T > {
             $result = PyList_New($1.size());
             unsigned int i = 0;
-            for (list<T >::iterator it = $1.begin();
+            for (std::list<T >::iterator it = $1.begin();
                  it != $1.end();  ++it) {
                 PyList_SetItem($result, i, FROM_CPP(*it));
                 ++i;
