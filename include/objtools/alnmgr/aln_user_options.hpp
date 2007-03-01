@@ -37,7 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-//#include <objmgr/bioseq_handle.hpp>
+#include <objtools/alnmgr/aln_user_options.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 
 
