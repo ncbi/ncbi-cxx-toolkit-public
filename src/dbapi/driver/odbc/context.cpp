@@ -404,7 +404,7 @@ void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 {
     CMutexGuard mg(m_CtxMtx);
 
-    m_PacketSize = (SQLULEN)packet_size;
+    m_PacketSize = packet_size;
 }
 
 

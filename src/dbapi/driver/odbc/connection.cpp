@@ -746,10 +746,10 @@ CStatementBase::CStatementBase(CODBC_Connection& conn) :
     }
     m_Reporter.SetHandle(m_Cmd);
 
-    SQLUINTEGER query_timeout = conn.GetTimeout();
+    SQLUINTEGER query_timeout = static_cast<SQLUINTEGER>(conn.GetTimeout());
     switch(SQLSetStmtAttr(GetHandle(),
                        SQL_ATTR_QUERY_TIMEOUT,
-                       (SQLPOINTER)query_timeout,
+                       (SQLPOINTER)static_cast<uintptr_t>(query_timeout),
                        0))
     {
     case SQL_SUCCESS_WITH_INFO:
