@@ -66,7 +66,7 @@ public:
     CSimpleBuffer& operator=(const CSimpleBuffer& sb) 
     {
         if (this != &sb) {
-            if (sb.size() < m_Capacity) {
+            if (sb.size() <= m_Capacity) {
                 m_Size = sb.size();
             } else {
                 x_Deallocate();
@@ -96,7 +96,7 @@ public:
 
     void resize(size_type new_size)
     {
-        if (new_size < m_Capacity) {
+        if (new_size <= m_Capacity) {
             m_Size = new_size;
         } else {
             value_type* new_buffer = new value_type[new_size];
@@ -112,7 +112,7 @@ public:
     /// Resize the buffer. No data preservation.
     void resize_mem(size_type new_size)
     {
-        if (new_size < m_Capacity) {
+        if (new_size <= m_Capacity) {
             m_Size = new_size;
         } else {
             value_type* new_buffer = new value_type[new_size];
