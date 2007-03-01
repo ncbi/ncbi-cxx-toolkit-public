@@ -135,6 +135,9 @@ public:
     class IPackTarget
     {
     public:
+        // Virtual destructor, if only as a matter of principle.
+        virtual ~IPackTarget() {}
+
         // Return the approximate overhead per segment, in bytes
         virtual SIZE_TYPE GetOverhead(void) const = 0;
 
