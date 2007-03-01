@@ -184,12 +184,18 @@ s_ConstBioseqSetToSeqLocs(CConstRef<CBioseq_set> bioseq_set)
 class CObjMgrFree_RemoteQueryData : public IRemoteQueryData
 {
 public:
+    /// Construct query data from a CBioseq_set..
+    /// @param queries Queries expressed as a CBioseq_set.
     CObjMgrFree_RemoteQueryData(CConstRef<CBioseq_set> bioseq_set);
 
+    /// Accessor for the CBioseq_set.
     virtual CRef<CBioseq_set> GetBioseqSet();
+
+    /// Accessor for the TSeqLocs.
     virtual TSeqLocs GetSeqLocs();
 
 private:
+    /// Queries, expressed as a CBioseq_set.
     CConstRef<CBioseq_set> m_ClientBioseqSet;
 };
 
