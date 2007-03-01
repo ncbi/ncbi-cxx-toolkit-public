@@ -349,7 +349,7 @@ public:
         eIncorrectNodeType,
         eParserError,
         eCompileError,
-        eUnknownFunction,
+        eUnknownFunction
     };
 
     virtual const char* GetErrCodeString(void) const

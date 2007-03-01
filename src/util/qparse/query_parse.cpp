@@ -236,6 +236,8 @@ CQueryParseTree::CreateNode(CQueryParseNode::EType     op,
 class CQueryTreeResetFunc
 {
 public:
+    CQueryTreeResetFunc(){}
+    
     ETreeTraverseCode 
     operator()(CTreeNode<CQueryParseNode>& tr, int delta) 
     {
@@ -267,20 +269,3 @@ void CQueryParseTree::ResetUserObjects()
 
 END_NCBI_SCOPE
 
-/*
- * ===========================================================================
- * $Log: query_parse.cpp,v $
- * Revision 1.3  2007/01/11 14:49:51  kuznets
- * Many cosmetic fixes and functional development
- *
- * Revision 1.2  2007/01/11 01:04:17  ucko
- * Give CQueryParseNode a private default constructor, as a formality for
- * CTreeNode<CQueryParseNode> (granting the latter friend-level access).
- * Rename "identificator" to the proper word "identifier".
- * Indent with spaces, not tabs.
- *
- * Revision 1.1  2007/01/10 16:14:01  kuznets
- * initial revision
- *
- * ===========================================================================
- */
