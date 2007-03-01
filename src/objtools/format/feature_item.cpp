@@ -2327,14 +2327,7 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
             }}
             break;
         case eFQ_inference:
-            //
-            //  the "inference" gb-qualifier is strictly a modifier for the "real" 
-            //  qualifier, and it has already been dealt with in that context. We deal
-            //  with it here only in dump mode.
-            //
-            if (ctx.Config().IsModeDump()) {
-                x_AddQual(slot, new CFlatStringQVal(val));
-            }
+            x_AddQual(slot, new CFlatStringQVal(val));
             break;
 
         default:
