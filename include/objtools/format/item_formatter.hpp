@@ -109,6 +109,8 @@ public:
     virtual void FormatOrigin    (const COriginItem&, IFlatTextOStream&)      {}
     virtual void FormatGap       (const CGapItem&, IFlatTextOStream&)         {}
     virtual void FormatAlignment (const CAlignmentItem& , IFlatTextOStream&)  {}
+    virtual void FormatGenomeProject(
+                                  const CGenomeProjectItem&, IFlatTextOStream&) {}
 
     // Context
     void SetContext(CFlatFileContext& ctx);

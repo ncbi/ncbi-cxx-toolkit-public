@@ -57,6 +57,7 @@
 #include <objtools/format/items/genome_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/origin_item.hpp>
+#include <objtools/format/items/genome_project_item.hpp>
 #include <objtools/format/gather_items.hpp>
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/context.hpp>
@@ -97,6 +98,9 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     ItemOS() << new CDeflineItem(ctx);
     ItemOS() << new CAccessionItem(ctx);
     ItemOS() << new CVersionItem(ctx);
+    if ( ctx.IsGbGenomeProject() ) {
+        ItemOS() << new CGenomeProjectItem(ctx);
+    }
     if ( ctx.IsProt() ) {
         ItemOS() << new CDBSourceItem(ctx);
     }

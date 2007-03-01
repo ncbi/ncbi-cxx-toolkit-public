@@ -69,7 +69,7 @@ class COriginItem;
 class CStartSectionItem;
 class CEndSectionItem;
 class CGapItem;
-
+class CGenomeProjectItem;
 
 class IFormatter : public CObject
 {
@@ -106,6 +106,7 @@ public:
     virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) = 0;
     virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os) = 0;
     virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os) = 0;
+    virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&) {}
     
     virtual ~IFormatter(void) {}
 };

@@ -98,6 +98,7 @@ public:
     virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os);
     virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os);
     virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);
+    virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&);
 
 private:
     // source

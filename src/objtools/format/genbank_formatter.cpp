@@ -59,6 +59,7 @@
 #include <objtools/format/items/genome_item.hpp>
 #include <objtools/format/items/origin_item.hpp>
 #include <objtools/format/items/gap_item.hpp>
+#include <objtools/format/items/genome_project_item.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
 
@@ -231,6 +232,24 @@ void CGenbankFormatter::FormatVersion
     text_os.AddParagraph(l, version.GetObject());
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Genome Project
+
+void CGenbankFormatter::FormatGenomeProject(
+    const CGenomeProjectItem& gp,
+    IFlatTextOStream& text_os) {
+    
+    if (0 == gp.GetProjectNumber()) {
+        return;
+    }
+    list<string> l;
+    CNcbiOstrstream project_line;
+    project_line << "GenomeProject:" << gp.GetProjectNumber();
+    Wrap(l, GetWidth(), "PROJECT", CNcbiOstrstreamToString(project_line));
+    text_os.AddParagraph(l, gp.GetObject());
+}
 
 ///////////////////////////////////////////////////////////////////////////
 //
