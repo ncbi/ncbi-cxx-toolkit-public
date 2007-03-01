@@ -215,68 +215,76 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk * subject,
                        BlastUngappedStats * ungapped_stats)
 {
     Int2 status = 0;
-    BlastUngappedCutoffs *cutoffs;
-
-    /* find the word hits and do ungapped extensions */
 
     if (ewp->diag_table->multiple_hits) {
-        if (lut_wrap->lut_type == eRPSLookupTable) {
-            /* for rpsblast, query contains the concatenated database
-               and subject contains one query sequence (or one frame
-               of a translated nucleotide sequence). This means the cutoff
-               and X-drop value is the same for all hits */
-            Int4 context = subject->oid;
-            if (subject->frame != 0) {
-                context = subject->oid * NUM_FRAMES +
-                          BLAST_FrameToContext(subject->frame,
-                                               eBlastTypeRpsTblastn);
-            }
-            cutoffs = word_params->cutoffs + context;
-            status = s_BlastRPSWordFinder_TwoHit(subject, query,
-                                                 lut_wrap, ewp,
-                                                 matrix,
-                                                 cutoffs->cutoff_score,
-                                                 cutoffs->x_dropoff,
-                                                 init_hitlist, ungapped_stats);
-        } else {
-            status = s_BlastAaWordFinder_TwoHit(subject, query,
-                                                lut_wrap, ewp,
-                                                matrix,
-                                                word_params,
-                                                query_info,
-                                                offset_pairs,
-                                                offset_array_size,
-                                                init_hitlist, ungapped_stats);
-        }
+        status = s_BlastAaWordFinder_TwoHit(subject, query,
+                                            lut_wrap, ewp,
+                                            matrix,
+                                            word_params,
+                                            query_info,
+                                            offset_pairs,
+                                            offset_array_size,
+                                            init_hitlist, ungapped_stats);
     } else {
-        if (lut_wrap->lut_type == eRPSLookupTable) {
-            Int4 context = subject->oid;
-            if (subject->frame != 0) {
-                context = subject->oid * NUM_FRAMES +
-                          BLAST_FrameToContext(subject->frame,
-                                               eBlastTypeRpsTblastn);
-            }
-            cutoffs = word_params->cutoffs + context;
-            status = s_BlastRPSWordFinder_OneHit(subject, query,
-                                                 lut_wrap, ewp,
-                                                 matrix,
-                                                 cutoffs->cutoff_score,
-                                                 cutoffs->x_dropoff,
-                                                 init_hitlist, ungapped_stats);
-        } else {
-            status = s_BlastAaWordFinder_OneHit(subject, query,
-                                                lut_wrap, ewp,
-                                                matrix,
-                                                word_params,
-                                                query_info,
-                                                offset_pairs,
-                                                offset_array_size,
-                                                init_hitlist, ungapped_stats);
-        }
+        status = s_BlastAaWordFinder_OneHit(subject, query,
+                                            lut_wrap, ewp,
+                                            matrix,
+                                            word_params,
+                                            query_info,
+                                            offset_pairs,
+                                            offset_array_size,
+                                            init_hitlist, ungapped_stats);
     }
 
     Blast_InitHitListSortByScore(init_hitlist);
+    return status;
+}
 
+Int2 BlastRPSWordFinder(BLAST_SequenceBlk * subject,
+                        BLAST_SequenceBlk * query,
+                        BlastQueryInfo * query_info,
+                        LookupTableWrap * lut_wrap,
+                        Int4 ** matrix,
+                        const BlastInitialWordParameters * word_params,
+                        Blast_ExtendWord * ewp,
+                        BlastOffsetPair * NCBI_RESTRICT offset_pairs,
+                        Int4 offset_array_size,
+                        BlastInitHitList * init_hitlist,
+                        BlastUngappedStats * ungapped_stats)
+{
+    Int2 status = 0;
+    BlastUngappedCutoffs *cutoffs;
+    Int4 context = subject->oid;
+
+    /* for rpsblast, query contains the concatenated database
+       and subject contains one query sequence (or one frame
+       of a translated nucleotide sequence). This means the cutoff
+       and X-drop value is the same for all hits */
+
+    if (subject->frame != 0) {
+        context = subject->oid * NUM_FRAMES +
+                        BLAST_FrameToContext(subject->frame, 
+                                             eBlastTypeRpsTblastn);
+    }
+    cutoffs = word_params->cutoffs + context;
+
+    if (ewp->diag_table->multiple_hits) {
+        status = s_BlastRPSWordFinder_TwoHit(subject, query,
+                                             lut_wrap, ewp,
+                                             matrix,
+                                             cutoffs->cutoff_score,
+                                             cutoffs->x_dropoff,
+                                             init_hitlist, ungapped_stats);
+    } else {
+        status = s_BlastRPSWordFinder_OneHit(subject, query,
+                                             lut_wrap, ewp,
+                                             matrix,
+                                             cutoffs->cutoff_score,
+                                             cutoffs->x_dropoff,
+                                             init_hitlist, ungapped_stats);
+    }
+
+    Blast_InitHitListSortByScore(init_hitlist);
     return status;
 }
 

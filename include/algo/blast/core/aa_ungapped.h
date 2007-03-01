@@ -43,7 +43,7 @@
 extern "C" {
 #endif
 
-/** Scan a subject sequence for word hits
+/** Scan a subject sequence for word hits (blastp)
  *
  * @param subject the subject sequence [in]
  * @param query the query sequence [in]
@@ -68,6 +68,32 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
                        Int4 offset_array_size,
                        BlastInitHitList* init_hitlist, 
                        BlastUngappedStats* ungapped_stats);
+
+/** Scan a subject sequence for word hits (rpsblast and rpstblastn)
+ *
+ * @param subject the subject sequence [in]
+ * @param query the query sequence [in]
+ * @param query_info concatenated query information [in]
+ * @param lookup the lookup table [in]
+ * @param matrix the substitution matrix [in]
+ * @param word_params word parameters, needed for cutoff and dropoff [in]
+ * @param ewp extend parameters, needed for diagonal tracking [in]
+ * @param offset_pairs Array for storing query and subject offsets. [in]
+ * @param offset_array_size the number of elements in each offset array [in]
+ * @param init_hitlist hsps resulting from the ungapped extension [out]
+ * @param ungapped_stats Various hit counts. Not filled if NULL [out]
+ */
+Int2 BlastRPSWordFinder(BLAST_SequenceBlk* subject,
+                        BLAST_SequenceBlk* query,
+                        BlastQueryInfo* query_info,
+                        LookupTableWrap* lookup,
+                        Int4** matrix,
+                        const BlastInitialWordParameters* word_params,
+                        Blast_ExtendWord* ewp,
+                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
+                        Int4 offset_array_size,
+                        BlastInitHitList* init_hitlist, 
+                        BlastUngappedStats* ungapped_stats);
 
 #ifdef __cplusplus
 }
