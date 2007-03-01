@@ -964,10 +964,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   A string describing the database
-    string GetTitle(const CSeqDBVolSet & volset) const
-    {
-        return m_Node->GetTitle(volset);
-    }
+    string GetTitle(const CSeqDBVolSet & volset) const;
     
     /// Get the number of sequences available
     ///
@@ -981,10 +978,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of included sequences
-    Int8 GetNumSeqs(const CSeqDBVolSet & volset) const
-    {
-        return m_Node->GetNumSeqs(volset);
-    }
+    Int8 GetNumSeqs(const CSeqDBVolSet & volset) const;
     
     /// Get the size of the OID range
     ///
@@ -997,10 +991,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of OIDs found during traversal
-    Int8 GetNumOIDs(const CSeqDBVolSet & volset) const
-    {
-        return m_Node->GetNumOIDs(volset);
-    }
+    Int8 GetNumOIDs(const CSeqDBVolSet & volset) const;
     
     /// Get the total length of the set of databases
     ///
@@ -1016,10 +1007,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The total length of all included sequences
-    Uint8 GetTotalLength(const CSeqDBVolSet & volset) const
-    {
-        return m_Node->GetTotalLength(volset);
-    }
+    Uint8 GetTotalLength(const CSeqDBVolSet & volset) const;
     
     /// Get the sum of the volume lengths
     ///
@@ -1032,10 +1020,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The sum of all volumes lengths as traversed
-    Uint8 GetVolumeLength(const CSeqDBVolSet & volset) const
-    {
-        return m_Node->GetVolumeLength(volset);
-    }
+    Uint8 GetVolumeLength(const CSeqDBVolSet & volset) const;
     
     /// Get the membership bit
     ///
@@ -1049,11 +1034,8 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The membership bit, or zero if none was found.
-    int GetMembBit(const CSeqDBVolSet & volset) const
-    {
-        return m_Node->GetMembBit(volset);
-    }
-
+    int GetMembBit(const CSeqDBVolSet & volset) const;
+    
     /// Check whether a db scan is need to compute correct totals.
     ///
     /// This traverses this node and its subnodes to determine whether
@@ -1064,10 +1046,7 @@ public:
     ///   The set of database volumes.
     /// @return
     ///   True if the database scan is required.
-    bool NeedTotalsScan(const CSeqDBVolSet & volset) const
-    {
-        return m_Node->NeedTotalsScan(volset);
-    }
+    bool NeedTotalsScan(const CSeqDBVolSet & volset) const;
     
     /// Set filtering options for all volumes
     ///
@@ -1125,6 +1104,30 @@ private:
     
     /// True if this is a protein database.
     bool m_IsProtein;
+    
+    /// Number of sequences.
+    mutable int m_NumSeqs;
+    
+    /// Number of OIDs.
+    mutable int m_NumOIDs;
+    
+    /// Total length.
+    mutable Int8 m_TotalLength;
+    
+    /// Total length ignoring filtering.
+    mutable Int8 m_VolumeLength;
+    
+    /// Membership bit.
+    mutable int m_MembBit;
+    
+    /// True if we have the database title.
+    mutable bool m_HaveTitle;
+    
+    /// Database title.
+    mutable string m_Title;
+    
+    /// 1 if we need a totals scan, 0 if not, -1 if not known.
+    mutable int m_NeedTotalsScan;
     
     /// Disable copy operator.
     CSeqDBAliasFile & operator =(const CSeqDBAliasFile &);

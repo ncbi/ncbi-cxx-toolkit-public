@@ -56,8 +56,15 @@ BEGIN_NCBI_SCOPE
 CSeqDBAliasFile::CSeqDBAliasFile(CSeqDBAtlas     & atlas,
                                  const string    & name_list,
                                  char              prot_nucl)
-    : m_AliasSets (atlas),
-      m_IsProtein (prot_nucl == 'p')
+    : m_AliasSets     (atlas),
+      m_IsProtein     (prot_nucl == 'p'),
+      m_NumSeqs       (-1),
+      m_NumOIDs       (-1),
+      m_TotalLength   (-1),
+      m_VolumeLength  (-1),
+      m_MembBit       (-1),
+      m_HaveTitle     (false),
+      m_NeedTotalsScan(-1)
 {
     if (name_list.size() && prot_nucl != '-') {
         m_Node.Reset(new CSeqDBAliasNode(atlas,
@@ -1521,6 +1528,72 @@ void CSeqDBAliasFile::GetAliasFileValues(TAliasFileValues   & afv,
     }
     
     m_Node->GetAliasFileValues(afv);
+}
+
+
+int CSeqDBAliasFile::GetMembBit(const CSeqDBVolSet & volset) const
+{
+    // Default is zero; -1 means not-computed-yet.
+    if (m_MembBit == -1) {
+        m_MembBit = m_Node->GetMembBit(volset);
+    }
+    
+    return m_MembBit;
+}
+
+
+string CSeqDBAliasFile::GetTitle(const CSeqDBVolSet & volset) const
+{
+    if (! m_HaveTitle)
+        m_Title = m_Node->GetTitle(volset);
+    
+    return m_Title;
+}
+
+
+Int8 CSeqDBAliasFile::GetNumSeqs(const CSeqDBVolSet & volset) const
+{
+    if (m_NumSeqs == -1)
+        m_NumSeqs = m_Node->GetNumSeqs(volset);
+    
+    return m_NumSeqs;
+}
+
+
+Int8 CSeqDBAliasFile::GetNumOIDs(const CSeqDBVolSet & volset) const
+{
+    if (m_NumOIDs == -1)
+        m_NumOIDs = m_Node->GetNumOIDs(volset);
+    
+    return m_NumOIDs;
+}
+
+
+Uint8 CSeqDBAliasFile::GetTotalLength(const CSeqDBVolSet & volset) const
+{
+    if (m_TotalLength == -1)
+        m_TotalLength = m_Node->GetTotalLength(volset);
+    
+    return m_TotalLength;
+}
+
+
+Uint8 CSeqDBAliasFile::GetVolumeLength(const CSeqDBVolSet & volset) const
+{
+    if (m_VolumeLength == -1)
+        m_VolumeLength = m_Node->GetVolumeLength(volset);
+    
+    return m_VolumeLength;
+}
+
+
+bool CSeqDBAliasFile::NeedTotalsScan(const CSeqDBVolSet & volset) const
+{
+    if (m_NeedTotalsScan == -1) {
+        bool need = m_Node->NeedTotalsScan(volset);
+        m_NeedTotalsScan = need ? 1 : 0;
+    }
+    return m_NeedTotalsScan == 1;
 }
 
 
