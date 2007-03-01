@@ -608,16 +608,14 @@ bool obeysParentTypeConstraints(const CCdCore* pCD) {
 
 void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 {
-	MultipleAlignment ma(cd);
-	if (ma.isBlockAligned())
-	{
-		rankList.clear();
-		TreeOptions treeOptions;
-		SeqTree* seqTree = TreeFactory::makeTree(&ma, treeOptions);
-		int colRow = ma.GetRowSourceTable().convertFromCDRow(cd, 0);
-		seqTree->getDiversityRankToRow(colRow, rankList);
-		delete seqTree;
-	}
+	AlignmentCollection ac(cd, CCdCore::USE_NORMAL_ALIGNMENT);
+	rankList.clear();
+	TreeOptions treeOptions;
+	treeOptions.distMethod = ePercentIdentityRelaxed;
+	SeqTree* seqTree = TreeFactory::makeTree(&ac, treeOptions);
+	int colRow = ac.GetRowSourceTable().convertFromCDRow(cd, 0);
+	seqTree->getDiversityRankToRow(colRow, rankList);
+	delete seqTree;
 }
 
 bool RemasterWithStructure(CCdCore* cd, string* msg)
