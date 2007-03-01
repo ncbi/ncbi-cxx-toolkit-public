@@ -124,7 +124,7 @@ bool FlexiDm::ComputeMatrix(pProgressFunction pFunc) {
 void FlexiDm::GetPercentIdentities(pProgressFunction pFunc) 
 {
     int nrows = m_aligns->GetNumRows();
-	LOG_POST("Start building Distance Matrix");
+	//LOG_POST("Start building Distance Matrix");
 	//LOG_POST("Start building ResidueProfiles with "<<nrows<<" rows.");
     ResidueProfiles* rp = new ResidueProfiles();
     string mseq = m_aligns->GetSequenceForRow(0);
@@ -169,7 +169,7 @@ void FlexiDm::GetPercentIdentities(pProgressFunction pFunc)
         count += nrows - (j+1);
         pFunc(count, total);
     }
-	LOG_POST("Done building DistanceMatrix");
+	//LOG_POST("Done building DistanceMatrix");
     assert(count == total);
 	delete rm;
 //    cout << "Total number rows:  " << nrows << "  Alignment length:  " << alignLen << endl;
