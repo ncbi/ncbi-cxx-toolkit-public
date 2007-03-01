@@ -324,8 +324,8 @@ namespace NWinHook
     private:
         HMODULE                 m_ModuleKenell32;
         PIMAGE_NT_HEADERS       m_nt_header;
-        DWORD                   m_ImageStart;
-        DWORD                   m_ImageEnd;
+        unsigned long long      m_ImageStart;
+        unsigned long long      m_ImageEnd;
         static FLoadLibraryA    sm_FLoadLibraryA;
         static FLoadLibraryW    sm_FLoadLibraryW;
         static FLoadLibraryExA  sm_FLoadLibraryExA;
@@ -367,7 +367,7 @@ namespace NWinHook
         m_ImageStart = m_nt_header->OptionalHeader.ImageBase;
         m_ImageEnd = m_ImageStart + m_nt_header->OptionalHeader.SizeOfImage;
 
-        DWORD mod_addr = (DWORD)m_ModuleKenell32;
+        unsigned long long mod_addr = (uintptr_t)m_ModuleKenell32;
 
         sm_FGetProcAddress = IsPatched(sm_FGetProcAddress) ?
             reinterpret_cast<FGetProcAddress>(
@@ -413,7 +413,8 @@ namespace NWinHook
 
     bool CKernell32::IsPatched(const void* addr)
     {
-        if ((DWORD)addr >= m_ImageStart && (DWORD)addr < m_ImageEnd) {
+        if ((unsigned long long)addr >= m_ImageStart &&
+            (unsigned long long)addr < m_ImageEnd) {
             return false;
         }
 
@@ -1626,11 +1627,11 @@ namespace NWinHook
             strcpy(szFuncName, pszFuncName);
         }
         else {
-			// It is safe to cast a pointer to DWORD here because it is not a
-			// pointer, it is an ordinal number of a function.
+            // It is safe to cast a pointer to DWORD here because it is not a
+            // pointer, it is an ordinal number of a function.
             GetFunctionNameByOrdinal(pszCalleeModName,
                                      static_cast<DWORD>(
-										reinterpret_cast<uintptr_t>(pszFuncName)),
+                                        reinterpret_cast<uintptr_t>(pszFuncName)),
                                      szFuncName);
         }
 
@@ -1671,11 +1672,11 @@ namespace NWinHook
             strcpy(szFuncName, pszFuncName);
         }
         else {
-			// It is safe to cast a pointer to DWORD here because it is not a
-			// pointer, it is an ordinal number of a function.
+            // It is safe to cast a pointer to DWORD here because it is not a
+            // pointer, it is an ordinal number of a function.
             GetFunctionNameByOrdinal(hmodOriginal,
                                      static_cast<DWORD>(
-										reinterpret_cast<uintptr_t>(pszFuncName)),
+                                        reinterpret_cast<uintptr_t>(pszFuncName)),
                                      szFuncName);
         }
 
