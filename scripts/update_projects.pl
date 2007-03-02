@@ -17,6 +17,7 @@ use NCBI::SVN::Update;
 use NCBI::SVN::MultiSwitch;
 
 use File::Spec;
+use File::Basename;
 use File::Find;
 use Cwd;
 use Fcntl qw(F_SETFD);
