@@ -69,11 +69,6 @@ public:
     CLocalDbAdapter(CRef<CSeqDB> seqdb);
     
     /// Constructor
-    /// @param seqsrc 
-    ///     BlastSeqSrc object for an already opened BLAST database
-    //CLocalDbAdapter(BlastSeqSrc* seqsrc);
-
-    /// Constructor
     /// @param subject_sequences
     ///     Set of sequences which should be used as subjects
     /// @param opts_handle
