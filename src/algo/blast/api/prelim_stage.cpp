@@ -44,7 +44,6 @@ static char const rcsid[] =
 #include "prelim_search_runner.hpp"
 #include "blast_aux_priv.hpp"
 #include "psiblast_aux_priv.hpp"
-#include "blast_seqsrc_adapter_priv.hpp"
 
 #include <algo/blast/api/blast_dbindex.hpp>
 
