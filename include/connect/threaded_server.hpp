@@ -87,7 +87,9 @@ public:
     void Run(void);
 
     /// Runs asynchronously (from a separate thread) for each request.
-    /// Implementor must take care of closing socket when done.
+    /// Implementor must take care of closing the socket when done.
+    /// (Using it as the basis of a CConn_SocketStream object will do
+    /// so automatically.)
     virtual void Process(SOCK sock) = 0;
 
     /// Get the listening port number back.

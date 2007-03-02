@@ -65,6 +65,7 @@ private:
 
 void CTestThreadedServer::Process(SOCK sock)
 {
+    // CConn_SocketStream's destructor will take care of closing sock.
     CConn_SocketStream stream(sock);
     string message;
     
