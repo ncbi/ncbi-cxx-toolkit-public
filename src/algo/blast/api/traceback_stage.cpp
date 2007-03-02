@@ -42,7 +42,6 @@ static char const rcsid[] =
 #include <objtools/readers/seqdb/seqdb.hpp>     // for CSeqDb
 
 #include "blast_memento_priv.hpp"
-#include "blast_seqsrc_adapter_priv.hpp"
 #include "blast_seqalign.hpp"
 #include "blast_aux_priv.hpp"
 #include "psiblast_aux_priv.hpp"
@@ -102,28 +101,6 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
     m_SeqInfoSrc = InitSeqInfoSrc(&*db);
     m_OwnSeqInfoSrc = true;
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
-    m_InternalData->m_HspStream.Reset(hsps);
-}
-
-CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>    qf,
-                                             CRef<CBlastOptions>    opts,
-                                             IBlastSeqSrcAdapter  & ssa,
-                                             CRef<TBlastHSPStream>  hsps)
-    : m_QueryFactory (qf),
-      m_Options      (opts),
-      m_InternalData (new SInternalData),
-      m_OptsMemento  (0),
-      m_HspResults   (0),
-      m_SeqInfoSrc   (0),
-      m_OwnSeqInfoSrc(false),
-      m_ResultType(eDatabaseSearch),
-      m_DBscanInfo(0)
-{
-    BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
-    m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
-    m_OwnSeqInfoSrc = true;
-    x_Init(qf, opts, CRef<CPssmWithParameters>(), BlastSeqSrcGetName(seqsrc));
-    m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
     m_InternalData->m_HspStream.Reset(hsps);
 }
 

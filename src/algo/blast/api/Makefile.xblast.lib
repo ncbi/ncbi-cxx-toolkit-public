@@ -59,8 +59,6 @@ query_data \
 objmgr_query_data \
 objmgrfree_query_data \
 bioseq_extract_data_priv \
-blast_seqsrc_adapter_priv \
-seqsrc_adapter_seqdb_priv \
 effsearchspace_calc \
 blast_seqinfosrc_aux \
 blast_dbindex

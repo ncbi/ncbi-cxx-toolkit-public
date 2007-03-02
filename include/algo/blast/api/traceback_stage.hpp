@@ -50,7 +50,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 // Forward declaration
-class IBlastSeqSrcAdapter;
 class IBlastSeqInfoSrc;
 
 class NCBI_XBLAST_EXPORT CBlastTracebackSearch : public CObject
@@ -70,14 +69,7 @@ public:
                           CRef<TBlastHSPStream>   hsps);
     
     
-    /// Create a BlastSeqSrc using an IBlastSeqSrcAdapter.
-    /// @note We don't own the IBlastSeqSrcAdapter.
-    CBlastTracebackSearch(CRef<IQueryFactory>   qf,
-                          CRef<CBlastOptions>   opts,
-                          IBlastSeqSrcAdapter & db,
-                          CRef<TBlastHSPStream> hsps);
-    
-    /// Create a BlastSeqSrc using an IBlastSeqSrcAdapter.
+    /// Create a BlastSeqSrc re-using an already created BlastSeqSrc
     /// @note We don't own the BlastSeqSrc
     CBlastTracebackSearch(CRef<IQueryFactory>   qf,
                           CRef<CBlastOptions>   opts,
