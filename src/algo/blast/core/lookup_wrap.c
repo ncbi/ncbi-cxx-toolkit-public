@@ -116,7 +116,6 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
                             (BlastSmallNaLookupTable* *) &(lookup_wrap->lut), 
                              lookup_options, lut_width);
              if (status != 0) {
-                 printf("failed\n");
                 lookup_wrap->lut_type = eNaLookupTable;
                 status = BlastNaLookupTableNew(query, lookup_segments,
                             (BlastNaLookupTable* *) &(lookup_wrap->lut), 
