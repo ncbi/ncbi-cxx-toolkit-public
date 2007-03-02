@@ -39,17 +39,24 @@ use Getopt::Long qw(:config no_ignore_case bundling no_auto_abbrev);
 use Pod::Usage;
 
 use constant VERSION => 1.0;
+use constant DEBUG => 1;
 
 pod2usage({-exitval => 1, -verbose => 2}) if (@ARGV == 0);
 
 my $application = shift;
-my $print_only = "1"; # Determines whether script prints or runs the command
+my $print_only = "0"; # Determines whether script prints or runs the command
 
 my $cmd;
 if ($application eq "blastall") {
     $cmd = &handle_blastall(\$print_only);
 } elsif ($application eq "megablast") {
     $cmd = &handle_megablast(\$print_only);
+} elsif ($application eq "blastpgp") {
+    $cmd = &handle_blastpgp(\$print_only);
+} elsif ($application eq "bl2seq") {
+    $cmd = &handle_bl2seq(\$print_only);
+} elsif ($application eq "rpsblast") {
+    $cmd = &handle_rpsblast(\$print_only);
 } else {
     die "$application is not supported\n";
 }
@@ -57,7 +64,22 @@ if ($application eq "blastall") {
 if ($print_only) {
     print "$cmd\n";
 } else {
+    print STDERR "$cmd\n" if (DEBUG);
     system($cmd);
+}
+
+sub convert_strand($)
+{
+    my $old_strand_arg = shift;
+    my $retval = "-strand ";
+    if ($old_strand_arg == 1) {
+        $retval .= "plus ";
+    } elsif ($old_strand_arg == 2) {
+        $retval .= "minus ";
+    } else {
+        $retval .= "both ";
+    }
+    return $retval;
 }
 
 sub handle_blastall($)
@@ -184,16 +206,7 @@ sub handle_blastall($)
     if (defined $opt_J and $opt_J =~ /t/i) {
         $retval .= "-parse_query_defline ";
     }
-    if (defined $opt_S) {
-        $retval .= "-strand ";
-        if ($opt_S == 1) {
-            $retval .= "plus ";
-        } elsif ($opt_S == 2) {
-            $retval .= "minus ";
-        } else {
-            $retval .= "both ";
-        }
-    }
+    $retval .= &convert_strand($opt_S) if (defined $opt_S);
     if (defined $opt_s and $opt_s =~ /t/i) {
         $retval .= "-use_sw_tback ";
     }
@@ -205,7 +218,61 @@ sub handle_blastall($)
 sub handle_megablast($)
 {
     my $print_only = shift;
+    my ($opt_A, $opt_D, $opt_E, $opt_F, $opt_G, $opt_H, $opt_I, $opt_J, 
+        $opt_L, $opt_M, $opt_N, $opt_O, $opt_P, $opt_Q, $opt_R, $opt_S, 
+        $opt_T, $opt_U, $opt_V, $opt_W, $opt_X, $opt_Y, $opt_Z, $opt_a, 
+        $opt_b, $opt_d, $opt_e, $opt_f, $opt_g, $opt_i, $opt_l, $opt_m, 
+        $opt_n, $opt_o, $opt_p, $opt_q, $opt_r, $opt_s, $opt_t, $opt_v, 
+        $opt_y, $opt_z);
+
+    GetOptions("<>"             => sub { $application = shift; },
+               "print_only!"    => $print_only,
+               "A=i"            => \$opt_A,
+               "D=i"            => \$opt_D,
+               "E=i"            => \$opt_E,
+               "F=s"            => \$opt_F,
+               "G=i"            => \$opt_G,
+               "H=i"            => \$opt_H,
+               "I=s"            => \$opt_I,
+               "J=s"            => \$opt_J,
+               "L=s"            => \$opt_L,
+               "M=i"            => \$opt_M,
+               "N=i"            => \$opt_N,
+               "O=s"            => \$opt_O,
+               "P=i"            => \$opt_P,
+               "Q=s"            => \$opt_Q,
+               "R=s"            => \$opt_R,
+               "S=i"            => \$opt_S,
+               "T=s"            => \$opt_T,
+               "U=s"            => \$opt_U,
+               "V=s"            => \$opt_V,
+               "W=i"            => \$opt_W,
+               "X=i"            => \$opt_X,
+               "Y=f"            => \$opt_Y,
+               "Z=i"            => \$opt_Z,
+               "a=i"            => \$opt_a,
+               "b=i"            => \$opt_b,
+               "d=s"            => \$opt_d,
+               "e=f"            => \$opt_e,
+               "f=s"            => \$opt_f,
+               "g=s"            => \$opt_g,
+               "i=s"            => \$opt_i,
+               "l=s"            => \$opt_l,
+               "m=i"            => \$opt_m,
+               "n=s"            => \$opt_n,
+               "o=s"            => \$opt_o,
+               "p=f"            => \$opt_p,
+               "q=i"            => \$opt_q,
+               "r=i"            => \$opt_r,
+               "s=i"            => \$opt_s,
+               "t=i"            => \$opt_t,
+               "v=i"            => \$opt_v,
+               "y=i"            => \$opt_y,
+               "z=f"            => \$opt_z
+               );
     my $retval;
+
+    $retval .= &convert_strand($opt_S) if (defined $opt_S);
 
     return $retval;
 }
@@ -213,7 +280,70 @@ sub handle_megablast($)
 sub handle_blastpgp($)
 {
     my $print_only = shift;
+    my ($opt_A, $opt_B, $opt_C, $opt_E, $opt_F, $opt_G, $opt_H, $opt_I, 
+        $opt_J, $opt_K, $opt_L, $opt_M, $opt_N, $opt_O, $opt_P, $opt_Q, 
+        $opt_R, $opt_S, $opt_T, $opt_U, $opt_W, $opt_X, $opt_Y, $opt_Z, 
+        $opt_a, $opt_b, $opt_c, $opt_d, $opt_e, $opt_f, $opt_h, $opt_i, 
+        $opt_j, $opt_k, $opt_l, $opt_m, $opt_o, $opt_p, $opt_q, $opt_s, 
+        $opt_t, $opt_u, $opt_v, $opt_y, $opt_z);
+
+    GetOptions("<>"             => sub { $application = shift; },
+               "print_only!"    => $print_only,
+               "A=i"            => \$opt_A,
+               "B=s"            => \$opt_B,
+               "C=s"            => \$opt_C,
+               "E=i"            => \$opt_E,
+               "F=s"            => \$opt_F,
+               "G=i"            => \$opt_G,
+               "H=i"            => \$opt_H,
+               "I=s"            => \$opt_I,
+               "J=s"            => \$opt_J,
+               "K=i"            => \$opt_K,
+               "L=i"            => \$opt_L,
+               "M=s"            => \$opt_M,
+               "N=f"            => \$opt_N,
+               "O=s"            => \$opt_O,
+               "P=i"            => \$opt_P,
+               "Q=s"            => \$opt_Q,
+               "R=s"            => \$opt_R,
+               "S=i"            => \$opt_S,
+               "T=s"            => \$opt_T,
+               "U=s"            => \$opt_U,
+               "W=i"            => \$opt_W,
+               "X=i"            => \$opt_X,
+               "Y=f"            => \$opt_Y,
+               "Z=i"            => \$opt_Z,
+               "a=i"            => \$opt_a,
+               "b=i"            => \$opt_b,
+               "c=i"            => \$opt_c,
+               "d=s"            => \$opt_d,
+               "e=f"            => \$opt_e,
+               "f=i"            => \$opt_f,
+               "h=f"            => \$opt_h,
+               "i=s"            => \$opt_i,
+               "j=i"            => \$opt_j,
+               "k=s"            => \$opt_k,
+               "l=s"            => \$opt_l,
+               "m=i"            => \$opt_m,
+               "o=s"            => \$opt_o,
+               "p=s"            => \$opt_p,
+               "q=i"            => \$opt_q,
+               "s=s"            => \$opt_s,
+               "t=s"            => \$opt_t,
+               "u=i"            => \$opt_u,
+               "v=i"            => \$opt_v,
+               "y=f"            => \$opt_y,
+               "z=f"            => \$opt_z
+               );
     my $retval;
+
+    if (defined $opt_p) {
+        if ($opt_p eq "blastpgp") {
+            $retval = "./psiblast ";
+            # FIXME...
+        } elsif ($opt_p eq "phiblast") {
+        }
+    }
 
     $retval .= "-gap_trigger $opt_N "       if (defined $opt_N);
     $retval .= "-num_iterations $opt_j "    if (defined $opt_j);
@@ -225,54 +355,117 @@ sub handle_blastpgp($)
 
     return $retval;
 }
+
+sub handle_bl2seq
+{
+    my $print_only = shift;
+    my ($opt_A, $opt_D, $opt_E, $opt_F, $opt_G, $opt_I, $opt_J, $opt_M, 
+        $opt_S, $opt_T, $opt_U, $opt_V, $opt_W, $opt_X, $opt_Y, $opt_a, 
+        $opt_d, $opt_e, $opt_g, $opt_i, $opt_j, $opt_m, $opt_o, $opt_p, 
+        $opt_q, $opt_r, $opt_t);
+
+    GetOptions("<>"             => sub { $application = shift; },
+               "print_only!"    => $print_only,
+               "A=s"            => \$opt_A,
+               "D=i"            => \$opt_D,
+               "E=i"            => \$opt_E,
+               "F=s"            => \$opt_F,
+               "G=i"            => \$opt_G,
+               "I=s"            => \$opt_I,
+               "J=s"            => \$opt_J,
+               "M=s"            => \$opt_M,
+               "S=i"            => \$opt_S,
+               "T=s"            => \$opt_T,
+               "U=s"            => \$opt_U,
+               "V=i"            => \$opt_V,
+               "W=i"            => \$opt_W,
+               "X=i"            => \$opt_X,
+               "Y=f"            => \$opt_Y,
+               "a=i"            => \$opt_a,
+               "d=f"            => \$opt_d,
+               "e=f"            => \$opt_e,
+               "g=s"            => \$opt_g,
+               "i=s"            => \$opt_i,
+               "j=s"            => \$opt_j,
+               "m=i"            => \$opt_m,
+               "o=s"            => \$opt_o,
+               "p=s"            => \$opt_p,
+               "q=i"            => \$opt_q,
+               "r=i"            => \$opt_r,
+               "t=i"            => \$opt_t
+               );
+    my $retval;
+
+    $retval .= &convert_strand($opt_S) if (defined $opt_S);
+
+    return $retval;
+}
+
+sub handle_rpsblast
+{
+    my $print_only = shift;
+    my ($opt_F, $opt_I, $opt_J, $opt_L, $opt_N, $opt_O, $opt_P, $opt_T, 
+        $opt_U, $opt_V, $opt_X, $opt_Y, $opt_Z, $opt_a, $opt_b, $opt_d, 
+        $opt_e, $opt_i, $opt_l, $opt_m, $opt_o, $opt_p, $opt_v, $opt_y, 
+        $opt_z);
+
+    GetOptions("<>"             => sub { $application = shift; },
+               "print_only!"    => $print_only,
+               "F=s"            => \$opt_F,
+               "I=s"            => \$opt_I,
+               "J=s"            => \$opt_J,
+               "L=s"            => \$opt_L,
+               "N=f"            => \$opt_N,
+               "O=s"            => \$opt_O,
+               "P=i"            => \$opt_P,
+               "T=s"            => \$opt_T,
+               "U=s"            => \$opt_U,
+               "V=s"            => \$opt_V,
+               "X=i"            => \$opt_X,
+               "Y=f"            => \$opt_Y,
+               "Z=i"            => \$opt_Z,
+               "a=i"            => \$opt_a,
+               "b=i"            => \$opt_b,
+               "d=s"            => \$opt_d,
+               "e=f"            => \$opt_e,
+               "i=s"            => \$opt_i,
+               "l=s"            => \$opt_l,
+               "m=i"            => \$opt_m,
+               "o=s"            => \$opt_o,
+               "p=s"            => \$opt_p,
+               "v=i"            => \$opt_v,
+               "y=f"            => \$opt_y,
+               "z=f"            => \$opt_z
+               );
+    my $retval;
+
+    return $retval;
+}
+
 __END__
 
 =head1 NAME
 
-B<legacy_blast.pl> - Convert 
+B<legacy_blast.pl> - Convert BLAST command line invocations from NCBI C 
+toolkit's implementation to NCBI C++ toolkit's implementation.
 
 =head1 SYNOPSIS
 
-legacy_blast.pl [options] blastdb ...
+legacy_blast.pl [--print_only] <C toolkit command line program and arguments>
 
 =head1 OPTIONS
 
 =over 2
 
-=item B<--showall>
+=item B<--print_only>
 
-Show all available pre-formatted BLAST databases (default: false). The output
-of this option lists the database names which should be used when
-requesting downloads or updates using this script.
-
-=item B<--passive>
-
-Use passive FTP, useful when behind a firewall (default: false).
-
-=item B<--timeout>
-
-Timeout on connection to NCBI (default: 120 seconds).
-
-=item B<--force>
-
-Force download even if there is a archive already on local directory (default:
-false).
-
-=item B<--verbose>
-
-Increment verbosity level (default: 1). Repeat this option multiple times to 
-increase the verbosity level (maximum 2).
-
-=item B<--quiet>
-
-Produce no output (default: false). Overrides the B<--verbose> option.
-
-=back
+Print the equivalent command line option instead of running the command (default: false).
 
 =head1 DESCRIPTION
 
-This script will download the pre-formatted BLAST databases requested in the
-command line from the NCBI ftp site.
+This script converts and runs the equivalent NCBI C toolkit command line BLAST 
+program and arguments provided to it (whenever possible) to NCBI C++ tookit 
+BLAST programs.
 
 =head1 EXIT CODES
 
