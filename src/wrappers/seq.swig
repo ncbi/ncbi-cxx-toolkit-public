@@ -106,6 +106,8 @@ objects/seq/Seq_descr.hpp
 objects/seq/Seq_descr_.hpp
 objects/seq/Seq_ext.hpp
 objects/seq/Seq_ext_.hpp
+objects/seq/Seq_gap.hpp
+objects/seq/Seq_gap_.hpp
 objects/seq/Seq_hist.hpp
 objects/seq/Seq_hist_.hpp
 objects/seq/Seq_hist_rec.hpp
