@@ -822,15 +822,19 @@ void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
     buffer.SetData(itemInfo, objectPtr, GetDataFormat(), *src);
 }
 
-void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
+bool CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
 {
-    if (GetVerifyData() == eSerialVerifyData_Yes) {
-        ThrowError(fFormatError,
-                   "member "+memberInfo->GetId().ToString()+" expected");
-    } else {
-        SetFailFlags(fMissingValue);
-        ERR_POST("member "+memberInfo->GetId().ToString()+" is missing");
+    const CItemInfo* info = CItemsInfo::FindNextMandatory(memberInfo);
+    if (info) {
+        if (GetVerifyData() == eSerialVerifyData_Yes) {
+            ThrowError(fFormatError,
+                    "member "+info->GetId().ToString()+" expected");
+        } else {
+            SetFailFlags(fMissingValue);
+            ERR_POST("member "+info->GetId().ToString()+" is missing");
+        }
     }
+    return (info != 0);
 }
 
 void CObjectIStream::DuplicatedMember(const CMemberInfo* memberInfo)

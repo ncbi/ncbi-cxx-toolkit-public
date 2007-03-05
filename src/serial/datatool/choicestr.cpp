@@ -40,6 +40,7 @@
 #include <serial/datatool/srcutil.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/datatool/statictype.hpp>
+#include <serial/datatool/unitype.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -1385,6 +1386,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     if (bits) {
                         methods << "->SetCompressed()";
                     }
+                }
+                const CUniSequenceDataType* uniseq =
+                    dynamic_cast<const CUniSequenceDataType*>(i->dataType);
+                if (uniseq && uniseq->IsNonEmpty()) {
+                    methods << "->SetNonEmpty()";
                 }
             }
             methods << ";\n";

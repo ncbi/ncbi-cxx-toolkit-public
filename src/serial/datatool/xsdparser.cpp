@@ -631,7 +631,6 @@ void XSDParser::ParseAttribute(DTDElement& node)
 void XSDParser::ParseAny(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
-    const string& name = node.GetName();
     if (GetAttribute("processContents")) {
         if (!IsValue("lax") && !IsValue("skip")) {
             ParseError("Unsupported attribute");

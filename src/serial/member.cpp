@@ -155,7 +155,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CMemberId& id, TPointerOffsetType offset,
                          const CTypeRef& type)
     : CParent(id, offset, type),
-      m_ClassType(classType), m_Optional(false), m_NonEmpty(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_Default(0),
       m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
@@ -180,7 +180,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CMemberId& id, TPointerOffsetType offset,
                          TTypeInfo type)
     : CParent(id, offset, type),
-      m_ClassType(classType), m_Optional(false), m_NonEmpty(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_Default(0),
       m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
@@ -205,7 +205,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const char* id, TPointerOffsetType offset,
                          const CTypeRef& type)
     : CParent(id, offset, type),
-      m_ClassType(classType), m_Optional(false), m_NonEmpty(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_Default(0),
       m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
@@ -230,7 +230,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const char* id, TPointerOffsetType offset,
                          TTypeInfo type)
     : CParent(id, offset, type),
-      m_ClassType(classType), m_Optional(false), m_NonEmpty(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_Default(0),
       m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
@@ -311,12 +311,6 @@ CMemberInfo* CMemberInfo::SetOptional(void)
 {
     m_Optional = true;
     UpdateFunctions();
-    return this;
-}
-
-CMemberInfo* CMemberInfo::SetNonEmpty(void)
-{
-    m_NonEmpty = true;
     return this;
 }
 

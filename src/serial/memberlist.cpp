@@ -212,26 +212,9 @@ TMemberIndex CItemsInfo::FindDeep(const CLightString& name) const
         const CItemInfo* info = GetItemInfo(item);
         const CMemberId& id = info->GetId();
         if (!id.IsAttlist() && id.HasNotag()) {
-            const CTypeInfo* type;
-            for (type = info->GetTypeInfo();;) {
-                if (type->GetTypeFamily() == eTypeFamilyContainer) {
-                    const CContainerTypeInfo* cont =
-                        dynamic_cast<const CContainerTypeInfo*>(type);
-                    if (cont) {
-                        type = cont->GetElementType();
-                    }
-                } else if (type->GetTypeFamily() == eTypeFamilyPointer) {
-                    const CPointerTypeInfo* ptr =
-                        dynamic_cast<const CPointerTypeInfo*>(type);
-                    if (ptr) {
-                        type = ptr->GetPointedType();
-                    }
-                } else {
-                    break;
-                }
-            }
             const CClassTypeInfoBase* classType =
-                dynamic_cast<const CClassTypeInfoBase*>(type);
+                dynamic_cast<const CClassTypeInfoBase*>(
+                    FindRealTypeInfo(info->GetTypeInfo()));
             if (classType) {
                 if (classType->GetItems().FindDeep(name) != kInvalidMember) {
                     return *item;
@@ -240,6 +223,78 @@ TMemberIndex CItemsInfo::FindDeep(const CLightString& name) const
         }
     }
     return kInvalidMember;
+}
+
+const CTypeInfo* CItemsInfo::FindRealTypeInfo(const CTypeInfo* info)
+{
+    const CTypeInfo* type;
+    for (type = info;;) {
+        if (type->GetTypeFamily() == eTypeFamilyContainer) {
+            const CContainerTypeInfo* cont =
+                dynamic_cast<const CContainerTypeInfo*>(type);
+            if (cont) {
+                type = cont->GetElementType();
+            }
+        } else if (type->GetTypeFamily() == eTypeFamilyPointer) {
+            const CPointerTypeInfo* ptr =
+                dynamic_cast<const CPointerTypeInfo*>(type);
+            if (ptr) {
+                type = ptr->GetPointedType();
+            }
+        } else {
+            break;
+        }
+    }
+    return type;
+}
+
+const CItemInfo* CItemsInfo::FindNextMandatory(const CItemInfo* info)
+{
+    if (!info->GetId().HasNotag()) {
+        const CMemberInfo* mem = dynamic_cast<const CMemberInfo*>(info);
+        if (mem && mem->Optional()) {
+            return 0;
+        }
+        return info;
+    }
+    const CItemInfo* found = 0;
+    TTypeInfo type = FindRealTypeInfo(info->GetTypeInfo());
+    ETypeFamily family = type->GetTypeFamily();
+    if (family == eTypeFamilyClass || family == eTypeFamilyChoice) {
+        const CClassTypeInfoBase* classType =
+            dynamic_cast<const CClassTypeInfoBase*>(type);
+        _ASSERT(classType);
+        const CItemsInfo& items = classType->GetItems();
+        TMemberIndex i;
+        for (i = items.FirstIndex(); !found && i <= items.LastIndex(); ++i) {
+
+            const CItemInfo* item = classType->GetItems().GetItemInfo(i);
+            const CMemberId& id = item->GetId();
+            ETypeFamily item_family = item->GetTypeInfo()->GetTypeFamily();
+
+            if (item_family == eTypeFamilyPointer) {
+                found = FindNextMandatory( item );
+                continue;
+            }
+            if (item_family == eTypeFamilyContainer) {
+                if (item->NonEmpty()) {
+                    return FindNextMandatory( item);
+                }
+            }
+            if (family == eTypeFamilyClass) {
+                const CMemberInfo* mem = dynamic_cast<const CMemberInfo*>(item);
+                if (!mem->Optional()) {
+                    return FindNextMandatory( item);
+                }
+                continue;
+            }
+            if ( id.HasNotag() ) {
+                found = FindNextMandatory( item );
+                continue;
+            }
+        }
+    }
+    return found;
 }
 
 TMemberIndex CItemsInfo::FindEmpty(void) const
