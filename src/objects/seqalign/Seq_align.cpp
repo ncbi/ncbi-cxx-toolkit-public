@@ -1024,7 +1024,7 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
     }
     CSeq_loc src_loc(*id, 0, len - 1);
     CSeq_loc_Mapper_Base mapper(src_loc, loc);
-    return mapper.Map(align);
+    return mapper.Map(align, row);
 }
 
 
