@@ -91,9 +91,6 @@ public:
     CMemberInfo* SetAnyContent(void);
     CMemberInfo* SetCompressed(void);
 
-    bool NonEmpty(void) const;
-    CMemberInfo* SetNonEmpty(void);
-
     TConstObjectPtr GetDefault(void) const;
     CMemberInfo* SetDefault(TConstObjectPtr def);
 
@@ -199,7 +196,6 @@ private:
     const CClassTypeInfoBase* m_ClassType;
     // is optional
     bool m_Optional;
-    bool m_NonEmpty;
     // default value
     TConstObjectPtr m_Default;
     // offset of 'SET' flag inside object

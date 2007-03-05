@@ -74,6 +74,12 @@ TConstObjectPtr CItemInfo::GetItemPtr(TConstObjectPtr classPtr) const
     return CRawPointer::Add(classPtr, GetOffset());
 }
 
+inline
+bool CItemInfo::NonEmpty(void) const
+{
+    return m_NonEmpty;
+}
+
 
 #endif /* def ITEM__HPP  &&  ndef ITEM__INL */
 

@@ -715,7 +715,7 @@ public:
     virtual void UnendedFrame(void);
     // report class member errors
     void DuplicatedMember(const CMemberInfo* memberInfo);
-    void ExpectedMember(const CMemberInfo* memberInfo);
+    bool ExpectedMember(const CMemberInfo* memberInfo);
 
     // check if m_Input has any more data to read
     // (ANY data, including white spaces and comments)

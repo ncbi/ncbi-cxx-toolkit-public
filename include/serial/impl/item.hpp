@@ -80,6 +80,9 @@ public:
     TObjectPtr GetItemPtr(TObjectPtr object) const;
     TConstObjectPtr GetItemPtr(TConstObjectPtr object) const;
 
+    bool NonEmpty(void) const;
+    CItemInfo* SetNonEmpty(void);
+
 private:
     friend class CItemsInfo;
 
@@ -91,6 +94,8 @@ private:
     TPointerOffsetType m_Offset;
     // type of member
     CTypeRef m_Type;
+
+    bool m_NonEmpty;
 };
 
 

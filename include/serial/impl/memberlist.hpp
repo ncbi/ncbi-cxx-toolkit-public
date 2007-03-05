@@ -89,6 +89,9 @@ public:
     TMemberIndex Find(TTag tag) const;
     TMemberIndex Find(TTag tag, TMemberIndex pos) const;
 
+    static const CTypeInfo* FindRealTypeInfo(const CTypeInfo* info);
+    static const CItemInfo* FindNextMandatory(const CItemInfo* info);
+
     const CItemInfo* GetItemInfo(TMemberIndex index) const;
     void AddItem(CItemInfo* item);
 

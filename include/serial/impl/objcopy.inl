@@ -71,8 +71,11 @@ void CObjectStreamCopier::ThrowError1(const CDiagCompileInfo& diag_info,
 inline
 void CObjectStreamCopier::ExpectedMember(const CMemberInfo* memberInfo)
 {
+    bool was_set = (Out().GetFailFlags() & CObjectOStream::fInvalidData) != 0;
     Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
-    In().ExpectedMember(memberInfo);
+    if (!In().ExpectedMember(memberInfo) && !was_set) {
+        Out().ClearFailFlags(CObjectOStream::fInvalidData);
+    }
 }
 
 inline

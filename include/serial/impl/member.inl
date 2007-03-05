@@ -45,12 +45,6 @@ bool CMemberInfo::Optional(void) const
 }
 
 inline
-bool CMemberInfo::NonEmpty(void) const
-{
-    return m_NonEmpty;
-}
-
-inline
 TConstObjectPtr CMemberInfo::GetDefault(void) const
 {
     return m_Default;
