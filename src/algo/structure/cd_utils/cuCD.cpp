@@ -557,7 +557,16 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd)
 	{
 		int gi = cd->GetGIFromSequenceList(i);
 		int taxid = 0;
-		if (taxServer.GetTaxId4GI(gi, taxid) && (taxid > 0))
+		taxServer.GetTaxId4GI(gi, taxid);
+		if (taxid == 0)
+		{
+			CRef< CBioseq > bioseq;
+			if (cd->GetBioseqForRow(i, bioseq))
+			{
+				taxid = GetTaxIdInBioseq(*bioseq);
+			}
+		}
+		if (taxid > 0)
 		{
 			if (comTax == 0)
 				comTax = taxid;
@@ -572,6 +581,8 @@ CRef< COrg_ref > GetCommonTax(CCdCore* cd)
 	bool is_uncultured;
 	string blast_name;
 
+	if (comTax == 0)
+		comTax = 1;
     if (comTax > 0) {
         orgRef->Assign(*taxServer.GetOrgRef(comTax, is_species, is_uncultured, blast_name));
     } else {
