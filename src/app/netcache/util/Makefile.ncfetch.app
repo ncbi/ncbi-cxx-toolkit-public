@@ -4,7 +4,7 @@
 #
 
 
-include Makefile.builddir
+#include Makefile.builddir
 
 
 include $(builddir)/Makefile.mk
