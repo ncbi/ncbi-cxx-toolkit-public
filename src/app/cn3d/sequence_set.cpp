@@ -119,6 +119,18 @@ SequenceSet::SequenceSet(StructureBase *parent, SeqEntryList& seqEntries) :
     TRACEMSG("number of sequences: " << sequences.size());
 }
 
+const Sequence * SequenceSet::FindMatchingSequence(const ncbi::objects::CBioseq::TId& ids) const
+{
+    SequenceList::const_iterator s, se = sequences.end();
+    for (s=sequences.begin(); s!=se; ++s) {
+        CBioseq::TId::const_iterator i, ie = ids.end();
+        for (i=ids.begin(); i!=ie; ++i)
+            if ((*s)->identifier->MatchesSeqId(**i))
+                return *s;
+    }
+    return NULL;
+}
+
 #define FIRSTOF2(byte) (((byte) & 0xF0) >> 4)
 #define SECONDOF2(byte) ((byte) & 0x0F)
 
@@ -188,51 +200,6 @@ static void StringFromStdaa(const vector < char >& vec, string *str)
 Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
     StructureBase(parent), bioseqASN(&bioseq), identifier(NULL), molecule(NULL), isProtein(false)
 {
-    int gi = MoleculeIdentifier::VALUE_NOT_SET, mmdbID = MoleculeIdentifier::VALUE_NOT_SET,
-        pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
-    string pdbID, accession;
-
-    // get Seq-id info
-    CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
-    for (s=bioseq.GetId().begin(); s!=se; ++s) {
-        if ((*s)->IsGi()) {
-            gi = (*s)->GetGi();
-        } else if ((*s)->IsPdb()) {
-            pdbID = (*s)->GetPdb().GetMol().Get();
-            if ((*s)->GetPdb().IsSetChain())
-                pdbChain = (*s)->GetPdb().GetChain();
-            else
-                pdbChain = ' ';
-        } else if ((*s)->IsLocal()) {
-            if ((*s)->GetLocal().IsStr()) {
-                accession = (*s)->GetLocal().GetStr();
-                // special case where local accession is actually a PDB chain + extra stuff
-                if (pdbID.size() == 0 && accession.size() >= 7 &&
-                        accession[4] == ' ' && accession[6] == ' ' && isalpha((unsigned char) accession[5])) {
-                    pdbID = accession.substr(0, 4);
-                    pdbChain = accession[5];
-                    accession.erase();
-                }
-            } else {
-                accession = NStr::IntToString((*s)->GetLocal().GetId());
-            }
-        } else if ((*s)->IsGenbank() && (*s)->GetGenbank().IsSetAccession()) {
-            accession = (*s)->GetGenbank().GetAccession();
-        } else if ((*s)->IsSwissprot() && (*s)->GetSwissprot().IsSetAccession()) {
-            accession = (*s)->GetSwissprot().GetAccession();
-        } else if ((*s)->IsOther() && (*s)->GetOther().IsSetAccession()) {
-            accession = (*s)->GetOther().GetAccession();
-        } else if ((*s)->IsEmbl() && (*s)->GetEmbl().IsSetAccession()) {
-            accession = (*s)->GetEmbl().GetAccession();
-        } else if ((*s)->IsDdbj() && (*s)->GetDdbj().IsSetAccession()) {
-            accession = (*s)->GetDdbj().GetAccession();
-        }
-    }
-    if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
-        ERRORMSG("Sequence::Sequence() - can't parse SeqId");
-        return;
-    }
-
     if (bioseq.IsSetDescr()) {
         string defline, taxid;
         CSeq_descr::Tdata::const_iterator d, de = bioseq.GetDescr().Get().end();
@@ -266,6 +233,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
     }
 
     // get link to MMDB id - mainly for CDD's where Biostrucs have to be loaded separately
+    int mmdbID = MoleculeIdentifier::VALUE_NOT_SET;
     if (bioseq.IsSetAnnot()) {
         CBioseq::TAnnot::const_iterator a, ae = bioseq.GetAnnot().end();
         for (a=bioseq.GetAnnot().begin(); a!=ae; ++a) {
@@ -283,9 +251,6 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
             }
         }
     }
-    if (mmdbID != MoleculeIdentifier::VALUE_NOT_SET)
-        TRACEMSG("sequence gi " << gi << ", PDB '" << pdbID << "' chain '" << (char) pdbChain <<
-            "', is from MMDB id " << mmdbID);
 
     // get sequence string
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_raw && bioseq.GetInst().IsSetSeq_data()) {
@@ -326,7 +291,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
         }
 
         else {
-            ERRORMSG("Sequence::Sequence() - sequence " << gi
+            ERRORMSG("Sequence::Sequence() - sequence " << bioseq.GetId().front()->GetSeqIdString()
                 << ": confused by sequence string format");
             return;
         }
@@ -342,12 +307,12 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
             sequenceString[i] = toupper((unsigned char) sequenceString[i]);
 
     } else {
-        ERRORMSG("Sequence::Sequence() - sequence " << gi << ": confused by sequence representation");
+        ERRORMSG("Sequence::Sequence() - sequence " << bioseq.GetId().front()->GetSeqIdString() << ": confused by sequence representation");
         return;
     }
 
     // get identifier (may be NULL if there's a problem!)
-    identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, mmdbID, gi, accession);
+    identifier = MoleculeIdentifier::GetIdentifier(this, mmdbID, bioseq.GetId());
 }
 
 string Sequence::GetDescription(void) const
@@ -480,9 +445,11 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
         oss << identifier->pdbID.c_str();
         if (identifier->pdbChain != ' ')
             oss << (char) identifier->pdbChain;
-    } else if (identifier->accession.size() > 0) {
-        if (identifier->accession == "query" || identifier->accession == "consensus") return;
-        oss << identifier->accession.c_str();
+    } else {
+        string label = identifier->GetLabel();
+        if (label == "query" || label == "consensus")
+            return;
+        oss << label;
     }
     LaunchWebPage(((string) CNcbiOstrstreamToString(oss)).c_str());
 }

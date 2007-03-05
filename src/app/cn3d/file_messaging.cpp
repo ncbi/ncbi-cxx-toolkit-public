@@ -36,6 +36,10 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
+#include <serial/serial.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objostrxml.hpp>
+#include <serial/objistr.hpp>
 
 #include <memory>
 
@@ -43,6 +47,7 @@
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 // diagnostic streams
 #define TRACEMSG(stream) ERR_POST(Trace << stream)
@@ -471,6 +476,45 @@ void FileMessagingManager::PollMessageFiles(void)
     FileMessengerList::iterator f, fe = messengers.end();
     for (f=messengers.begin(); f!=fe; ++f)
         (*f)->PollMessageFile();
+}
+
+bool SeqIdToIdentifier(const CRef < ncbi::objects::CSeq_id >& seqID, string& identifier)
+{
+    if (seqID.Empty())
+        return false;
+    try {
+        CNcbiOstrstream oss;
+        auto_ptr < CObjectOStream > osa(CObjectOStream::Open(eSerial_Xml, oss, false));
+        osa->SetUseIndentation(false);
+        CObjectOStreamXml *osx = dynamic_cast<CObjectOStreamXml*>(osa.get());
+        if (osx)
+            osx->SetReferenceDTD(false);
+        *osa << *seqID;
+        identifier = CNcbiOstrstreamToString(oss);
+        NStr::ReplaceInPlace(identifier, "\n", "");
+        NStr::ReplaceInPlace(identifier, "\r", "");
+        NStr::ReplaceInPlace(identifier, "\t", "");
+        if (NStr::StartsWith(identifier, "<?")) {
+            SIZE_TYPE endb = NStr::Find(identifier, "?>");
+            identifier = identifier.substr(endb + 2);
+        }
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+bool IdentifierToSeqId(const string& identifier, CRef < ncbi::objects::CSeq_id >& seqID)
+{
+    try {
+        CNcbiIstrstream iss(identifier.data(), identifier.size());
+        auto_ptr < CObjectIStream > isa(CObjectIStream::Open(eSerial_Xml, iss, false));
+        seqID.Reset(new CSeq_id());
+        *isa >> *seqID;
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 END_NCBI_SCOPE

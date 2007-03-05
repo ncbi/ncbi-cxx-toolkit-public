@@ -335,8 +335,8 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                     if (sequence->identifier->pdbChain != ' ')
                         uids[row] += (char) sequence->identifier->pdbChain;
                 }
-            } else if (sequence->identifier->accession.size() > 0) {
-                uids[row] = sequence->identifier->accession;
+            } else {
+                uids[row] = sequence->identifier->GetLabel();
             }
         }
     }

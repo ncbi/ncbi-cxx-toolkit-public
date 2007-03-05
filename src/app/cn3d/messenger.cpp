@@ -517,21 +517,16 @@ bool Messenger::GetHighlightsForSelectionMessage(string *data) const
     for (h=highlights.begin(); h!=he; ++h) {
 
         // add identifier
-        if (h->first->pdbID.size() > 0) {
-            oss << "pdb " << h->first->pdbID;
-            if (h->first->pdbChain != ' ')
-                oss << '_' << (char) h->first->pdbChain;
-        } else if (h->first->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-            oss << "gi " << h->first->gi;
-        } else if (h->first->accession.size() > 0) {
-            oss << "acc " << h->first->accession;
-        } else {
-            WARNINGMSG("Messenger::GetHighlightsForSelectionMessage() - unimplemented identifier type");
+        string id;
+        if (!SeqIdToIdentifier(h->first->seqIDs.front(), id)) {
+            WARNINGMSG("Messenger::GetHighlightsForSelectionMessage() - SeqIdToIdentifier() failed");
             continue;
         }
+        oss << id << '\t';  // separate id from intervals with tab
 
         // add range(s)
         unsigned int first = 0, last = 0;
+        bool firstInterval = true;
         while (first < h->second.size()) {
 
             // find first highlighted residue
@@ -542,8 +537,12 @@ bool Messenger::GetHighlightsForSelectionMessage(string *data) const
             last = first;
             while (last + 1 < h->second.size() && h->second[last + 1]) ++last;
 
-            // add new interval to list
-            oss << ' ' << first;
+            // add new interval to list (separated by spaces)
+            if (!firstInterval)
+                oss << ' ';
+            else
+                firstInterval = false;
+            oss << first;
             if (last > first)
                 oss << '-' << last;
 

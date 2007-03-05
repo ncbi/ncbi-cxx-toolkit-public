@@ -53,8 +53,8 @@ class wxFrame;
 #include <wx/platform.h>
 #include <wx/version.h>
 
-#if !wxCHECK_VERSION(2,6,2)
-#error Cn3D requires wxWindows version 2.6.2 or higher!
+#if !wxCHECK_VERSION(2,8,0)
+#error Cn3D requires wxWindows version 2.8.0 or higher!
 #endif
 
 #if !defined(__WXMSW__) && !defined(__WXGTK__) && !defined(__WXMAC__)

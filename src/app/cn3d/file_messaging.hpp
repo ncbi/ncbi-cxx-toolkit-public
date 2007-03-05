@@ -38,6 +38,8 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbifile.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
+
 #include <string>
 #include <map>
 #include <list>
@@ -54,8 +56,8 @@ class MessageResponder
 {
 public:
     // called when a (new) command is received
-    virtual void ReceivedCommand(const std::string& fromApp, unsigned long id,
-        const std::string& command, const std::string& data) = 0;
+    virtual void ReceivedCommand(const string& fromApp, unsigned long id,
+        const string& command, const string& data) = 0;
 
     // possible reply status values
     enum ReplyStatus {
@@ -64,8 +66,8 @@ public:
     };
 
     // called when a reply is received
-    virtual void ReceivedReply(const std::string& fromApp, unsigned long id,
-        ReplyStatus status, const std::string& data) = 0;
+    virtual void ReceivedReply(const string& fromApp, unsigned long id,
+        ReplyStatus status, const string& data) = 0;
 };
 
 //
@@ -79,7 +81,7 @@ private:
     // (de)construction handled only by FileMessagingManager parent
     friend class FileMessagingManager;
     FileMessenger(FileMessagingManager *parentManager,
-        const std::string& messageFilename, MessageResponder *responderObject, bool isReadOnly);
+        const string& messageFilename, MessageResponder *responderObject, bool isReadOnly);
 
     // any pending commands are sent before the object is deconstructed
     ~FileMessenger(void);
@@ -90,21 +92,21 @@ private:
     const bool readOnly;
 
     // keep track of id's used and sent to/from which recipient, and whether reply was received
-    typedef std::map < std::string , std::string > TargetApp2Command;
-    typedef std::map < unsigned long , TargetApp2Command > CommandOriginators;
+    typedef map < string , string > TargetApp2Command;
+    typedef map < unsigned long , TargetApp2Command > CommandOriginators;
     CommandOriginators commandsSent, commandsReceived;
 
-    typedef std::map < std::string , MessageResponder::ReplyStatus > TargetApp2Status;
-    typedef std::map < unsigned long , TargetApp2Status > CommandReplies;
+    typedef map < string , MessageResponder::ReplyStatus > TargetApp2Status;
+    typedef map < unsigned long , TargetApp2Status > CommandReplies;
     CommandReplies repliesReceived, repliesSent;
 
     // keep a queue of commands to send next time the file is opened for writing
     typedef struct {
-        std::string to;
+        string to;
         unsigned long id;
-        std::string command, data;
+        string command, data;
     } CommandInfo;
-    typedef std::list < CommandInfo > CommandList;
+    typedef list < CommandInfo > CommandList;
     CommandList pendingCommands;
 
     // keep track of file size last time the file was read
@@ -118,12 +120,12 @@ private:
 
 public:
     // send a new command (must have a unique id for given target app)
-    void SendCommand(const std::string& targetApp, unsigned long id,
-        const std::string& command, const std::string& data);
+    void SendCommand(const string& targetApp, unsigned long id,
+        const string& command, const string& data);
 
     // send reply to previously received command
-    void SendReply(const std::string& targetApp, unsigned long id,
-        MessageResponder::ReplyStatus status, const std::string& data);
+    void SendReply(const string& targetApp, unsigned long id,
+        MessageResponder::ReplyStatus status, const string& data);
 
     // receives any new commands/replies and sends any pending ones
     void PollMessageFile(void);
@@ -137,19 +139,19 @@ class FileMessagingManager
 {
 private:
     friend class FileMessenger;
-    const std::string applicationName;
+    const string applicationName;
 
-    typedef std::list < FileMessenger * > FileMessengerList;
+    typedef list < FileMessenger * > FileMessengerList;
     FileMessengerList messengers;
 
 public:
-    FileMessagingManager(const std::string& appName);
+    FileMessagingManager(const string& appName);
     // stops all monitoring and destroys all messenger objects, but does not delete any message files
     ~FileMessagingManager(void);
 
     // to create a new message file connection; if readOnly==false then replies are sent through
     // the same file, otherwise replies are logged internally but the message file isn't changed
-    FileMessenger * CreateNewFileMessenger(const std::string& messageFilename,
+    FileMessenger * CreateNewFileMessenger(const string& messageFilename,
         MessageResponder *responderObject, bool readOnly);
 
     // stop monitoring a connection, and destroy the messenger (but doesn't delete the file)
@@ -158,6 +160,10 @@ public:
     // for all FileMessengers, receives any new commands/replies and sends any pending ones
     void PollMessageFiles(void);
 };
+
+// convenience functions for reading/writing ids for Cn3D's Highlight command
+bool SeqIdToIdentifier(const CRef < ncbi::objects::CSeq_id >& seqID, string& identifier);
+bool IdentifierToSeqId(const string& identifier, CRef < ncbi::objects::CSeq_id >& seqID);
 
 END_NCBI_SCOPE
 

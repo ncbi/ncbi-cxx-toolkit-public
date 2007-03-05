@@ -439,7 +439,7 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
                 if (&(*d) == selDescr) {
                     descrSet->Set().erase(d);
                     sSet->SetDataChanged(StructureSet::eCDDData);
-                    if (selectedItem == listbox->GetCount() - 1)
+                    if (selectedItem == (int) listbox->GetCount() - 1)
                         --selectedItem;
                     break;
                 }

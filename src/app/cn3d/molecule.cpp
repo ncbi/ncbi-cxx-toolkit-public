@@ -70,9 +70,6 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     const ResidueGraphList& localDictionary) :
         StructureBase(parentGraph), type(eOther), nDomains(0), sequence(NULL)
 {
-    int gi = MoleculeIdentifier::VALUE_NOT_SET, pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
-    string pdbID, accession;
-
     // get ID, name, and type
     id = graph.GetId().Get();
     CMolecule_graph::TDescr::const_iterator k, ke=graph.GetDescr().end();
@@ -86,42 +83,18 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     }
 
     // get Seq-id for biopolymer chains (for sequence alignment stuff)
+    MoleculeIdentifier::SeqIdList seqIDs;
     if (IsProtein() || IsNucleotide()) {
         if (graph.IsSetSeq_id()) {
-            if (graph.GetSeq_id().IsGi())
-                gi = graph.GetSeq_id().GetGi();
-            else if (graph.GetSeq_id().IsPdb()) {
-                pdbID = graph.GetSeq_id().GetPdb().GetMol().Get();
-                if (graph.GetSeq_id().GetPdb().IsSetChain())
-                    pdbChain = graph.GetSeq_id().GetPdb().GetChain();
-                else
-                    pdbChain = ' ';
-            }
-            else if (graph.GetSeq_id().IsLocal() && graph.GetSeq_id().GetLocal().IsStr()) {
-                accession = graph.GetSeq_id().GetLocal().GetStr();
-                // special case where local accession is actually a PDB chain + extra stuff
-                if (pdbID.size() == 0 && accession.size() >= 7 &&
-                        accession[4] == ' ' && accession[6] == ' ' && isalpha((unsigned char) accession[5])) {
-                    pdbID = accession.substr(0, 4);
-                    pdbChain = accession[5];
-                    accession.erase();
-                }
-            }
-        }
-        if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
+            seqIDs.push_back(CRef<CSeq_id>(const_cast<CSeq_id*>(&(graph.GetSeq_id()))));
+        } else {
             ERRORMSG("Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");
             return;
         }
     }
 
-    // if no PDB id assigned to biopolymer, assign default PDB identifier from parent, assuming 'name'
-    // is actually the chainID if this is a biopolymer
     const StructureObject *object;
     if (!GetParentOfType(&object)) return;
-    if ((IsProtein() || IsNucleotide()) && pdbID.size() == 0) {
-        pdbID = object->pdbID;
-        if (name.size() == 1) pdbChain = name[0];
-    }
 
     // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
     CMolecule_graph::TInter_residue_bonds::const_iterator j, je, jOrig;
@@ -237,7 +210,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     }
 
     // get identifier
-    identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, gi, accession);
+    identifier = MoleculeIdentifier::GetIdentifier(this, seqIDs);
 }
 
 Vector Molecule::GetResidueColor(int sequenceIndex) const

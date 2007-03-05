@@ -32,10 +32,9 @@
 *
 *       Highlight:
 *           data is any number of the following, one per line separated by '\n':
-*               gi [#] [ranges]
-*               pdb [pdb_id] [ranges]
-*               acc [accession] [ranges]
-*           where pdb_id is 4 or 6-letters, e.g. 1abc or 1def_a
+*               [identifier] \t [ranges]
+*           where [identifier] is an XML-format Seq-id
+*           where a tab character separates the identifier from the ranges
 *           where ranges is sequence of zero-numbered numerical positions or ranges,
 *               e.g. "1-100, 102, 105-192"
 *
@@ -65,6 +64,7 @@
 #include <wx/tokenzr.h>
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
@@ -128,65 +128,31 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
     SPLIT_DATAIN_INTO_LINES;
     for (l=lines.begin(); l!=le; ++l) {
 
-        wxStringTokenizer tkz(l->c_str(), ":, \t", wxTOKEN_STRTOK);
-        if (tkz.CountTokens() < 3) {
-            ADD_REPLY_ERROR(string("incomplete line: ") + *l);
+        vector < string > toks;
+        NStr::Tokenize(*l, "\t", toks);
+        if (toks.size() != 2) {
+            ADD_REPLY_ERROR(string("invalid line, expected 'id' + tab + 'ranges': ") + *l);
             continue;
         }
 
-		SequenceSet::SequenceList::const_iterator
-            s = structureWindow->glCanvas->structureSet->sequenceSet->sequences.begin(),
-            se = structureWindow->glCanvas->structureSet->sequenceSet->sequences.end();
+        // sequence to highlight on
+        const Sequence *seq;
 
         // get identifier
-        const wxString
-            idType = tkz.GetNextToken(),
-            id = tkz.GetNextToken();
-
-        // parse gi
-        if (idType == "gi") {
-            unsigned long gi;
-            if (!id.ToULong(&gi)) {
-                ADD_REPLY_ERROR(string("bad gi: ") + id.c_str());
-                continue;
-            }
-            for (; s!=se; ++s)
-                if ((*s)->identifier->gi == (int) gi)
-                    break;
-        }
-
-        // parse pdb
-        else if (idType == "pdb") {
-            if (id.size() == 4 || (id.size() == 6 && id[4] == '_')) {
-                string pdbID = id.substr(0, 4).c_str();
-                int pdbChain = ((id.size() == 6) ? id[5] : ' ');
-                for (; s!=se; ++s)
-                    if ((*s)->identifier->pdbID == pdbID && (*s)->identifier->pdbChain == pdbChain)
-                        break;
-            } else {
-                ADD_REPLY_ERROR(string("bad pdb id: ") + id.c_str());
-                continue;
-            }
-        }
-
-        // parse accession
-        else if (idType == "acc") {
-            for (; s!=se; ++s)
-                if ((*s)->identifier->accession == id.c_str())
-                    break;
-        }
-
-        else {
-            ADD_REPLY_ERROR(string("unrecognized id type: ") + idType.c_str());
+        list < CRef < CSeq_id > > idList;
+        idList.resize(1);
+        if (!IdentifierToSeqId(toks[0], idList.front())) {
+            ADD_REPLY_ERROR(string("unparseable id: ") + toks[0]);
             continue;
         }
-
-        if (s == se) {
-            ADD_REPLY_ERROR(string("sequence not found: ") + idType.c_str() + ' ' + id.c_str());
+        seq = structureWindow->glCanvas->structureSet->sequenceSet->FindMatchingSequence(idList);
+        if (!seq) {
+            ADD_REPLY_ERROR(string("sequence not found: ") + toks[0]);
             continue;
         }
 
         // now parse ranges and highlight
+        wxStringTokenizer tkz(toks[1].c_str(), ", ", wxTOKEN_STRTOK);
         while (tkz.HasMoreTokens()) {
             wxString range = tkz.GetNextToken();
             wxStringTokenizer rangeToks(range, "-", wxTOKEN_RET_EMPTY);
@@ -200,16 +166,15 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
                 okay = rangeToks.GetNextToken().ToULong(&from);
                 to = from;
             } else {
-                okay = (rangeToks.GetNextToken().ToULong(&from) &&
-                            rangeToks.GetNextToken().ToULong(&to));
+                okay = (rangeToks.GetNextToken().ToULong(&from) && rangeToks.GetNextToken().ToULong(&to));
             }
-            if (!okay || from >= (*s)->Length() || to >= (*s)->Length() || from > to) {
+            if (!okay || from >= seq->Length() || to >= seq->Length() || from > to) {
                 ADD_REPLY_ERROR(string("bad range value(s): ") + range.c_str());
                 continue;
             }
 
             // actually do the highlighting, finally!
-            GlobalMessenger()->AddHighlights(*s, from, to);
+            GlobalMessenger()->AddHighlights(seq, from, to);
         }
     }
 }

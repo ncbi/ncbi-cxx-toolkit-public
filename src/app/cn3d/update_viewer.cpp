@@ -318,7 +318,7 @@ void UpdateViewer::FetchSequencesViaHTTP(SequenceList *newSequences, StructureSe
         CRef < CBioseq > bioseq = FetchSequenceViaHTTP(id.c_str());
         if (bioseq.Empty())
             return;
-        const Sequence *sequence = sSet->CreateNewSequence(*bioseq);
+        const Sequence *sequence = sSet->FindOrCreateSequence(*bioseq);
         if (sequence) {
             if (sequence->isProtein)
                 newSequences->push_back(sequence);
@@ -350,7 +350,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
 
         // create Sequences from each one
         if (se->IsSeq()) {
-            const Sequence *sequence = sSet->CreateNewSequence(se->SetSeq());
+            const Sequence *sequence = sSet->FindOrCreateSequence(se->SetSeq());
             if (sequence)
                  newSequences->push_back(sequence);
         } else if (se->IsSet() && se->GetSet().GetSeq_set().size() >= 0)  {
@@ -359,7 +359,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
                 if (!(*b)->IsSeq()) {
                     WARNINGMSG("CFastaReader returned nested Bioseq-set");
                 } else {
-                    const Sequence *sequence = sSet->CreateNewSequence((*b)->SetSeq());
+                    const Sequence *sequence = sSet->FindOrCreateSequence((*b)->SetSeq());
                     if (sequence)
                          newSequences->push_back(sequence);
                 }
@@ -749,7 +749,7 @@ void UpdateViewer::ImportStructure(void)
                         break;
                 }
                 if (i != ie) {
-                    const Sequence *sequence = master->parentSet->CreateNewSequence(**b);
+                    const Sequence *sequence = master->parentSet->FindOrCreateSequence(**b);
                     if (sequence) {
                         TRACEMSG("found Bioseq for " << sids[j]->GetSeqIdString());
                         newSequences.push_back(sequence);

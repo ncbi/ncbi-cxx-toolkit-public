@@ -64,6 +64,8 @@ public:
     SequenceList sequences;
 
     bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
+
+    const Sequence * FindMatchingSequence(const ncbi::objects::CBioseq::TId& ids) const;
 };
 
 class Sequence : public StructureBase

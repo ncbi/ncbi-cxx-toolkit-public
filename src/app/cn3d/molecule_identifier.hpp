@@ -53,9 +53,11 @@ class MoleculeIdentifier
 public:
     static const int VALUE_NOT_SET;
 
-    // possible identifiers (not all will necessarily be set)
+    // store all Seq-ids, and also mmdb info
+    typedef std::list < ncbi::CRef < ncbi::objects::CSeq_id > > SeqIdList;
+    SeqIdList seqIDs;
     int mmdbID, moleculeID, pdbChain, gi;
-    std::string pdbID, accession;
+    std::string pdbID;
 
     // # residues (1 for non-biopolymers - hets, solvents)
     unsigned int nResidues;
@@ -64,10 +66,8 @@ public:
     std::string ToString(void) const;
 
     // create, or retrieve if known, an identifier for an entity
-    static const MoleculeIdentifier * GetIdentifier(const Molecule *molecule,
-        const std::string& pdbID, int pdbChain, int gi, const std::string& accession);
-    static const MoleculeIdentifier * GetIdentifier(const Sequence *sequence,
-        const std::string& pdbID, int pdbChain, int mmdbID, int gi, const std::string& accession);
+    static const MoleculeIdentifier * GetIdentifier(const Molecule *molecule, const SeqIdList& ids);
+    static const MoleculeIdentifier * GetIdentifier(const Sequence *sequence, int mmdbID, const SeqIdList& ids);
 
     // get identifier for MMDB ID + molecule (NULL if not found)
     static const MoleculeIdentifier * FindIdentifier(int mmdbID, int moleculeID);
@@ -83,19 +83,32 @@ public:
     {
         return (
             (mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) ||
-            (pdbID.size() > 0 && pdbChain != VALUE_NOT_SET)
-        );
+            (pdbID.size() > 0 && pdbChain != VALUE_NOT_SET));
     }
 
     // comparison of identifiers (e.g. for sorting) - floats PDB's to top, then gi's in numerical order
     static bool CompareIdentifiers(const MoleculeIdentifier *a, const MoleculeIdentifier *b);
 
+    // get general label (e.g. an accession)
+    std::string GetLabel(void) const
+    {
+        std::string label;
+        if (seqIDs.size() > 0)
+            seqIDs.front()->GetLabel(&label, ncbi::objects::CSeq_id::eContent, 0);
+        return label;
+    }
+
 private:
     // can't create one of these directly - must use GetIdentifier()
-    MoleculeIdentifier(void) : mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET),
-        pdbChain(VALUE_NOT_SET), gi(VALUE_NOT_SET), nResidues(0)
+    MoleculeIdentifier(void) :
+        mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(VALUE_NOT_SET), gi(VALUE_NOT_SET), nResidues(0)
         { }
 
+    // get identifier based on Seq-id match
+    static MoleculeIdentifier * GetIdentifier(const SeqIdList& ids);
+
+    // save and fill out special id fields from Seq-ids
+    void AddFields(const SeqIdList& ids);
 };
 
 END_SCOPE(Cn3D)

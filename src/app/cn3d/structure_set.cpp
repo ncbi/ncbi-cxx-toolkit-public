@@ -411,7 +411,7 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
         return;
     }
     if (objects.size() == 0 && structureLimit > 0 && masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET &&
-            master->identifier->accession != "consensus")   // special case for looking at "raw" CD's
+            master->identifier->GetLabel() != "consensus")   // special case for looking at "raw" CD's
         LoadMaster(masterMMDBID);
 
     // cross-match master sequence and structure
@@ -974,17 +974,22 @@ void StructureSet::SelectByDistance(double cutoff, unsigned int options) const
             GlobalMessenger()->ToggleHighlight(r->second, r->first->id, false);
 }
 
-const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
+const Sequence * StructureSet::FindOrCreateSequence(ncbi::objects::CBioseq& bioseq)
 {
-    // add Sequence to SequenceSet
+    // see if we have this sequence already
+    const Sequence *seq = sequenceSet->FindMatchingSequence(bioseq.GetId());
+    if (seq)
+        return seq;
+
+    // if not, add new Sequence to SequenceSet
     SequenceSet *modifiableSet = const_cast<SequenceSet*>(sequenceSet);
-    const Sequence *newSeq = new Sequence(modifiableSet, bioseq);
-    if (!newSeq->identifier) {
-        ERRORMSG("StructureSet::CreateNewSequence() - identifier conflict, no new sequence created");
-        delete newSeq;
+    seq = new Sequence(modifiableSet, bioseq);
+    if (!seq->identifier) {
+        ERRORMSG("StructureSet::FindOrCreateSequence() - identifier conflict, no new sequence created");
+        delete seq;
         return NULL;
     }
-    modifiableSet->sequences.push_back(newSeq);
+    modifiableSet->sequences.push_back(seq);
 
     // add asn sequence to asn data
     if (dataManager->GetSequences()) {
@@ -992,10 +997,10 @@ const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
         se->SetSeq(bioseq);
         dataManager->GetSequences()->push_back(CRef<CSeq_entry>(se));
     } else
-        ERRORMSG("StructureSet::CreateNewSequence() - no sequence list in asn data");
+        ERRORMSG("StructureSet::FindOrCreateSequence() - no sequence list in asn data");
     SetDataChanged(eSequenceData);
 
-    return newSeq;
+    return seq;
 }
 
 void StructureSet::RejectAndPurgeSequence(const Sequence *reject, string reason, bool purge)

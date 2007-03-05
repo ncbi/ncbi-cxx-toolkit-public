@@ -36,6 +36,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
@@ -51,193 +52,181 @@ USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
+USING_SCOPE(objects);
 
 // there is one (global) list of molecule identifiers
 
 typedef list < MoleculeIdentifier > MoleculeIdentifierList;
 static MoleculeIdentifierList knownIdentifiers;
-static map < string, bool > bannedAccessions;
 
 const int MoleculeIdentifier::VALUE_NOT_SET = -1;
 
-const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *molecule,
-    const string& _pdbID, int _pdbChain, int _gi, const string& _accession)
+const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *molecule, const SeqIdList& ids)
 {
+    // get or create identifer
+    MoleculeIdentifier *identifier = GetIdentifier(ids);
+    if (!identifier)
+        return NULL;
+
+    // check/assign mmdb id
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return NULL;
-
-    // see if there's already an identifier that matches this molecule
-    MoleculeIdentifier *identifier = NULL;
-    MoleculeIdentifierList::iterator i, ie = knownIdentifiers.end();
-    for (i=knownIdentifiers.begin(); i!=ie; ++i) {
-        if ((object->mmdbID != StructureObject::NO_MMDB_ID && object->mmdbID == i->mmdbID &&
-             i->moleculeID != VALUE_NOT_SET && molecule->id == i->moleculeID) ||
-            (_pdbID.size() > 0 && _pdbID == i->pdbID &&
-             _pdbChain != VALUE_NOT_SET && _pdbChain == i->pdbChain) ||
-            (_gi != VALUE_NOT_SET && _gi == i->gi) ||
-            (_accession.size() > 0 && _accession == i->accession)) {
-            identifier = &(*i);
-            break;
-        }
-    }
-
-    // if no equivalent found, create a new one
-    if (!identifier) {
-        knownIdentifiers.resize(knownIdentifiers.size() + 1, MoleculeIdentifier());
-        identifier = &(knownIdentifiers.back());
-    }
-
-    // check consistency, and see if there's some more information we can fill out
     if (object->mmdbID != StructureObject::NO_MMDB_ID) {
-        if (identifier->mmdbID != VALUE_NOT_SET &&
-            identifier->mmdbID != object->mmdbID && identifier->moleculeID != molecule->id) {
-            ERRORMSG("MoleculeIdentifier::GetIdentifier() - mmdb/molecule ID mismatch");
+        if ((identifier->mmdbID != VALUE_NOT_SET && identifier->mmdbID != object->mmdbID) ||
+                (identifier->moleculeID != VALUE_NOT_SET && identifier->moleculeID != molecule->id)) {
+            ERRORMSG("MoleculeIdentifier::GetIdentifier() - mmdb/molecule ID mismatch for " << identifier->ToString());
         } else {
             identifier->mmdbID = object->mmdbID;
             identifier->moleculeID = molecule->id;
         }
     }
-    if (_pdbID.size() > 0) {
-        if (identifier->pdbID.size() > 0) {
-            if (identifier->pdbID != _pdbID || identifier->pdbChain != _pdbChain)
-                ERRORMSG("MoleculeIdentifier::GetIdentifier() - pdbID/chain mismatch");
-        } else {
-            identifier->pdbID = _pdbID;
-            identifier->pdbChain = _pdbChain;
-        }
-    }
-    if (_gi != VALUE_NOT_SET) {
-        if (identifier->gi != VALUE_NOT_SET) {
-            if (identifier->gi != _gi)
-                ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
-        } else {
-            identifier->gi = _gi;
-        }
-    }
-    if (_accession.size() > 0) {
-        if (identifier->accession.size() > 0) {
-            if (identifier->accession != _accession)
-                ERRORMSG("MoleculeIdentifier::GetIdentifier() - accession mismatch");
-        } else {
-            if (bannedAccessions.find(_accession) == bannedAccessions.end())
-                identifier->accession = _accession;
-        }
-    }
 
-    if (identifier->nResidues == 0)
-        identifier->nResidues = molecule->NResidues();
-    else if (identifier->nResidues != molecule->NResidues())
-        ERRORMSG("Length mismatch in molecule identifier " << identifier->ToString());
-
-    if (molecule->IsProtein() || molecule->IsNucleotide())
-        TRACEMSG("biopolymer molecule: identifier " << identifier << " (" << identifier->ToString() << ')');
     return identifier;
 }
 
-const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *sequence,
-    const string& _pdbID, int _pdbChain, int _mmdbID, int _gi, const string& _accession)
+const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *sequence, int mmdbID, const SeqIdList& ids)
 {
-    // see if there's already an identifier that matches this sequence
-    MoleculeIdentifier *identifier = NULL;
-    MoleculeIdentifierList::iterator i, ie = knownIdentifiers.end();
-    for (i=knownIdentifiers.begin(); i!=ie; ++i) {
-        if ((_pdbID.size() > 0 && _pdbID == i->pdbID &&
-             _pdbChain != VALUE_NOT_SET && _pdbChain == i->pdbChain) ||
-            (_gi != VALUE_NOT_SET && _gi == i->gi) ||
-            (_accession.size() > 0 && _accession == i->accession)) {
-            identifier = &(*i);
-            break;
-        }
-    }
+    // get or create identifer
+    MoleculeIdentifier *identifier = GetIdentifier(ids);
+    if (!identifier)
+        return NULL;
 
-    // if no equivalent found, create a new one
-    if (!identifier) {
-        knownIdentifiers.resize(knownIdentifiers.size() + 1, MoleculeIdentifier());
-        identifier = &(knownIdentifiers.back());
-    }
-
-    if (_gi != VALUE_NOT_SET) {
-        if (identifier->gi != VALUE_NOT_SET) {
-            if (identifier->gi != _gi) {
-                if (identifier->accession.size() > 0 && identifier->accession == _accession) {
-
-                    // special case where accession is same, gi is different: two versions of same sequence
-                    ERRORMSG("The sequence gi " << _gi << " has the same accession code ("
-                        << _accession << ") as gi " << identifier->gi
-                        << ". You should remove the older sequence (presumably gi "
-                        << ((_gi < identifier->gi) ? _gi : identifier->gi) << ").");
-
-                    // make a new identifier to keep the two gi's separate, and "forget" the accession
-                    // so there's no ambiguity if something tries to refer to one of these by accession only
-                    bannedAccessions[_accession] = true;
-                    identifier->accession.erase();
-                    knownIdentifiers.resize(knownIdentifiers.size() + 1, MoleculeIdentifier());
-                    identifier = &(knownIdentifiers.back());
-                    identifier->gi = _gi;
-
-                } else {
-                    ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
-                }
-            }
-        } else {
-            identifier->gi = _gi;
-        }
-    }
-
-    // check consistency, and see if there's some more information we can fill out
-    if (_mmdbID != VALUE_NOT_SET) {
+    // check/assign mmdb id
+    if (mmdbID != VALUE_NOT_SET) {
         if (identifier->mmdbID != VALUE_NOT_SET) {
-            if (identifier->mmdbID != _mmdbID)
-                ERRORMSG("MoleculeIdentifier::GetIdentifier() - mmdbID mismatch");
+            if (identifier->mmdbID != mmdbID)
+                ERRORMSG("MoleculeIdentifier::GetIdentifier() - mmdbID mismatch for " << identifier->ToString());
         } else {
-            identifier->mmdbID = _mmdbID;
-        }
-    }
-    if (_pdbID.size() > 0) {
-        if (identifier->pdbID.size() > 0) {
-            if (identifier->pdbID != _pdbID || identifier->pdbChain != _pdbChain)
-                ERRORMSG("MoleculeIdentifier::GetIdentifier() - pdbID/chain mismatch");
-        } else {
-            identifier->pdbID = _pdbID;
-            identifier->pdbChain = _pdbChain;
-        }
-    }
-    if (_accession.size() > 0) {
-        if (identifier->accession.size() > 0) {
-            if (identifier->accession != _accession)
-                ERRORMSG("MoleculeIdentifier::GetIdentifier() - accession mismatch");
-        } else {
-            if (bannedAccessions.find(_accession) == bannedAccessions.end())
-                identifier->accession = _accession;
+            identifier->mmdbID = mmdbID;
         }
     }
 
+    // check/assign length
     if (identifier->nResidues == 0)
         identifier->nResidues = sequence->Length();
     else if (identifier->nResidues != sequence->Length())
-        ERRORMSG("Length mismatch in sequence identifier " << identifier->ToString());
+        ERRORMSG("Length mismatch in sequence identifier for " << identifier->ToString());
 
-//    TESTMSG("sequence: identifier " << identifier << " (" << identifier->ToString() << ')');
     return identifier;
 }
 
-string MoleculeIdentifier::ToString(void) const
+MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const SeqIdList& ids)
 {
-    CNcbiOstrstream oss;
-    if (pdbID.size() > 0 && pdbChain != VALUE_NOT_SET) {
-        oss << pdbID;
-        if (pdbChain != ' ') {
-            oss <<  '_' << (char) pdbChain;
+    // first check known identifiers to see if there's a match, and posibly merge in new ids
+    MoleculeIdentifierList::iterator k, ke = knownIdentifiers.end();
+    for (k=knownIdentifiers.begin(); k!=ke; ++k) {
+
+        // for each known, compare lists of Seq-ids, looking for matches and mismatches
+        SeqIdList newIDs;
+        vector < string > matches, mismatches;
+        bool mismatchGIonly = false;
+        SeqIdList::const_iterator o, oe = k->seqIDs.end(), n, ne = ids.end();
+        for (n=ids.begin(); n!=ne; ++n) {
+
+            // does the new (incoming) Seq-id (mis)match any old (existing) Seq-id?
+            bool foundMatch = false, foundMismatch = false;
+            for (o=k->seqIDs.begin(); o!=oe; ++o) {
+                switch ((*o)->Compare(**n)) {
+                    case CSeq_id::e_DIFF:   // different types, can't compare; do nothing
+                        break;
+                    case CSeq_id::e_NO:     // same type but different id -> mismatch
+                        mismatches.push_back((*o)->GetSeqIdString() + " != " + (*n)->GetSeqIdString());
+                        foundMismatch = true;
+                        if (mismatches.size() == 1) {
+                            if ((*n)->IsGi())
+                                mismatchGIonly = true;
+                        } else {
+                            mismatchGIonly = false;
+                        }
+                        break;
+                    case CSeq_id::e_YES:    // same type and same id -> match
+                        matches.push_back((*o)->GetSeqIdString() + " == " + (*n)->GetSeqIdString());
+                        foundMatch = true;
+                        break;
+                   default:
+                        ERRORMSG("Problem comparing Seq-ids " << (*o)->GetSeqIdString() << " and " << (*n)->GetSeqIdString());
+                        continue;
+                }
+            }
+
+            // if no match or mismatch is found, this is a potential new id for this known identifier
+            if (!foundMatch && !foundMismatch)
+                newIDs.push_back(*n);
         }
-    } else if (gi != VALUE_NOT_SET)
-        oss << "gi " << gi;
-    else if (accession.size() > 0)
-        oss << accession;
-    else if (mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) {
-        oss << "mmdb " << mmdbID << " molecule " << moleculeID;
-    } else
-        oss << '?';
-    return (string) CNcbiOstrstreamToString(oss);
+
+        // if we have matches and no mismatches, then we've found the identifier; merge in any new ids
+        if (matches.size() > 0 && mismatches.size() == 0) {
+            if (newIDs.size() > 0)
+                k->AddFields(newIDs);
+            return &(*k);
+        }
+
+        // if we have matches *and* mismatches then there's a problem
+        if (matches.size() > 0 && mismatches.size() > 0) {
+
+            // special case: gi (only) is different but something else (presumably an accession) is the same, then
+            // warn about possibly outdated gi; don't merge in new ids
+            if (mismatchGIonly) {
+                ERRORMSG("GetIdentifier(): incoming Seq-id list has a GI mismatch ("
+                    << mismatches.front() << ") with sequence " << k->seqIDs.front()->GetSeqIdString()
+                    << " but otherwise matches (" << matches.front()
+                    << "); please update outdated GI(s) for this sequence");
+                return &(*k);
+            }
+
+            // otherwise, error
+            ERRORMSG("GetIdentifier(): incoming Seq-id list has match(es) ("
+                << matches.front() << ") and mismatch(es) ("
+                << mismatches.front() << ") with identifier " << k->ToString());
+            return NULL;
+        }
+    }
+
+    // if we get here, then this is a new sequence
+    knownIdentifiers.resize(knownIdentifiers.size() + 1, MoleculeIdentifier());
+    MoleculeIdentifier *identifier = &(knownIdentifiers.back());
+    identifier->AddFields(ids);
+    return identifier;
+}
+
+void MoleculeIdentifier::AddFields(const SeqIdList& ids)
+{
+    // save these ids (should already know that the new ids don't overlap any existing ones)
+    seqIDs.insert(seqIDs.end(), ids.begin(), ids.end());
+
+    SeqIdList::const_iterator n, ne = ids.end();
+    for (n=ids.begin(); n!=ne; ++n) {
+
+        // pdb
+        if ((*n)->IsPdb()) {
+            if (pdbID.size() == 0 && pdbChain == VALUE_NOT_SET) {
+                pdbID = (*n)->GetPdb().GetMol();
+                pdbChain = (*n)->GetPdb().GetChain();
+            } else {
+                ERRORMSG("AddFields: identifier already has pdb ID " << pdbID << "_" << ((char) pdbChain));
+            }
+        }
+
+        // gi
+        else if ((*n)->IsGi()) {
+            if (gi == VALUE_NOT_SET)
+                gi = (*n)->GetGi();
+            else
+                ERRORMSG("AddFields(): identifier already has gi " << gi);
+        }
+
+        // special case where local accession is actually a PDB identifier + chain + extra stuff,
+        // separated by spaces: of the format '1ABC X ...' where X can be a chain alphanum character or space
+        else if (pdbID.size() == 0 && pdbChain == VALUE_NOT_SET &&
+            (*n)->IsLocal() && (*n)->GetLocal().IsStr() &&
+            (*n)->GetLocal().GetStr().size() >= 7 && (*n)->GetLocal().GetStr()[4] == ' ' &&
+            (*n)->GetLocal().GetStr()[6] == ' ' &&
+            (isalnum((unsigned char) (*n)->GetLocal().GetStr()[5]) || (*n)->GetLocal().GetStr()[5] == ' '))
+        {
+            pdbID = (*n)->GetLocal().GetStr().substr(0, 4);
+            pdbChain = (*n)->GetLocal().GetStr()[5];
+        }
+    }
 }
 
 const MoleculeIdentifier * MoleculeIdentifier::FindIdentifier(int mmdbID, int moleculeID)
@@ -256,54 +245,15 @@ const MoleculeIdentifier * MoleculeIdentifier::FindIdentifier(int mmdbID, int mo
 void MoleculeIdentifier::ClearIdentifiers(void)
 {
     knownIdentifiers.clear();
-    bannedAccessions.clear();
 }
 
 bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
 {
-    if (sid.IsGi())
-        return (sid.GetGi() == gi);
+    SeqIdList::const_iterator i, ie = seqIDs.end();
+    for (i=seqIDs.begin(); i!=ie; ++i)
+        if (sid.Match(**i))
+            return true;
 
-    if (sid.IsPdb()) {
-        if (sid.GetPdb().GetMol().Get() == pdbID) {
-            if (sid.GetPdb().IsSetChain() && sid.GetPdb().GetChain() != pdbChain)
-                return false;
-            else
-                return true;
-        } else
-            return false;
-    }
-
-    if (sid.IsLocal()) {
-        if (sid.GetLocal().IsStr())
-            return (sid.GetLocal().GetStr() == accession || (accession.size() == 0 &&
-                    // special case where local accession is actually a PDB identifier + extra stuff
-                    sid.GetLocal().GetStr().size() >= 7 && sid.GetLocal().GetStr()[4] == ' ' &&
-                    sid.GetLocal().GetStr()[6] == ' ' && isalpha((unsigned char) sid.GetLocal().GetStr()[5]) &&
-                    sid.GetLocal().GetStr().substr(0, 4) == pdbID && sid.GetLocal().GetStr()[5] == pdbChain));
-        else
-            return (NStr::IntToString(sid.GetLocal().GetId()) == accession);
-    }
-
-    if (sid.IsGenbank() && sid.GetGenbank().IsSetAccession())
-        return (sid.GetGenbank().GetAccession() == accession);
-
-    if (sid.IsSwissprot() && sid.GetSwissprot().IsSetAccession())
-        return (sid.GetSwissprot().GetAccession() == accession);
-
-    if (sid.IsOther() && sid.GetOther().IsSetAccession())
-        return (sid.GetOther().GetAccession() == accession);
-
-    if (sid.IsEmbl() && sid.GetEmbl().IsSetAccession())
-        return (sid.GetEmbl().GetAccession() == accession);
-
-    if (sid.IsDdbj() && sid.GetDdbj().IsSetAccession())
-        return (sid.GetDdbj().GetAccession() == accession);
-
-    if (sid.IsPir() && sid.GetPir().IsSetAccession())
-        return (sid.GetPir().GetAccession() == accession);
-
-    ERRORMSG("MoleculeIdentifier::MatchesSeqId() - can't match this type of Seq-id");
     return false;
 }
 
@@ -331,15 +281,34 @@ bool MoleculeIdentifier::CompareIdentifiers(const MoleculeIdentifier *a, const M
             return true;
     }
 
-    else if (a->accession.size() > 0) {
-        if (b->pdbID.size() > 0 || b->gi != VALUE_NOT_SET)
-            return false;
-        else if (b->accession.size() > 0)
-            return (a->accession < b->accession);
-    }
+    else if (b->pdbID.size() > 0 || b->gi != VALUE_NOT_SET)
+        return false;
 
-    ERRORMSG("MoleculeIdentifier::CompareIdentifiers() - confused by identifier type");
+    else if (a->seqIDs.size() > 0 && b->seqIDs.size() > 0)
+        return (a->seqIDs.front()->GetSeqIdString() < b->seqIDs.front()->GetSeqIdString());
+
+    ERRORMSG("Don't know how to compare identifiers " << a->ToString() << " and " << b->ToString());
     return false;
+}
+
+string MoleculeIdentifier::ToString(void) const
+{
+    CNcbiOstrstream oss;
+    if (pdbID.size() > 0 && pdbChain != VALUE_NOT_SET) {
+        oss << pdbID;
+        if (pdbChain != ' ') {
+            oss <<  '_' << (char) pdbChain;
+        }
+    } else if (gi != VALUE_NOT_SET) {
+        oss << "gi " << gi;
+    } else if (mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) {
+        oss << "mmdb " << mmdbID << " molecule " << moleculeID;
+    } else if (seqIDs.size() > 0) {
+        oss << seqIDs.front()->GetSeqIdString();
+    } else {
+        oss << '?';
+    }
+    return (string) CNcbiOstrstreamToString(oss);
 }
 
 END_SCOPE(Cn3D)

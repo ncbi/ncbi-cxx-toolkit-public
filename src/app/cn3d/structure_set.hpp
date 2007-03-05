@@ -198,8 +198,8 @@ public:
     // writes data to a file; returns true on success
     bool SaveASNData(const char *filename, bool doBinary, unsigned int *changeFlags);
 
-    // adds a new Sequence to the SequenceSet
-    const Sequence * CreateNewSequence(ncbi::objects::CBioseq& bioseq);
+    // adds a new Sequence to the SequenceSet if it doesn't exist already
+    const Sequence * FindOrCreateSequence(ncbi::objects::CBioseq& bioseq);
 
     // reject sequence (from CDD)
     void RejectAndPurgeSequence(const Sequence *reject, std::string reason, bool purge);
