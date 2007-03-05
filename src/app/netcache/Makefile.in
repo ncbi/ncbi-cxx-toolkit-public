@@ -2,5 +2,5 @@ APP_PROJ = netcached netcache_control netcache_check
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
-SUB_PROJ = test
+SUB_PROJ = util test
 

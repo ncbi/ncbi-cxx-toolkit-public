@@ -1,0 +1,5 @@
+APP_PROJ = ncfetch
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+
