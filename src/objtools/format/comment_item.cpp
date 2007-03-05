@@ -855,6 +855,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
         {{
             prefix = "Region: ";
             str = desc.GetRegion();
+            NStr::ReplaceInPlace(str, "\"", "\'");
         }}
         break;
     default:
