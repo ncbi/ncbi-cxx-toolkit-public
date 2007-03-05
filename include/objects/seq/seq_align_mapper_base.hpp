@@ -110,7 +110,11 @@ public:
                            EWidthFlag        map_widths);
     ~CSeq_align_Mapper_Base(void);
 
+    /// Map the whole alignment
     void Convert(CSeq_loc_Mapper_Base& mapper);
+    /// Map a single row of the alignment
+    void Convert(CSeq_loc_Mapper_Base& mapper,
+                 size_t                row);
 
     CRef<CSeq_align> GetDstAlign(void) const;
 
@@ -144,7 +148,7 @@ private:
     void x_Init(const CSeq_align_set& align_set);
 
     // Mapping through CSeq_loc_Mapper
-    void x_ConvertAlign(CSeq_loc_Mapper_Base& mapper);
+    void x_ConvertAlign(CSeq_loc_Mapper_Base& mapper, size_t* row);
     void x_ConvertRow(CSeq_loc_Mapper_Base& mapper,
                       size_t                row);
     CSeq_id_Handle x_ConvertSegment(TSegments::iterator&  seg_it,

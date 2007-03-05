@@ -248,8 +248,13 @@ public:
     /// correspond to the strand of the mapping source.
     CSeq_loc_Mapper_Base& SetCheckStrand(bool value = true);
 
+    /// Map seq-loc
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
+    /// Map the whole alignment
     CRef<CSeq_align> Map(const CSeq_align& src_align);
+    /// Map a single row of the alignment
+    CRef<CSeq_align> Map(const CSeq_align& src_align,
+                         size_t            row);
 
     /// Check if the last mapping resulted in partial location
     bool             LastIsPartial(void);
@@ -395,7 +400,9 @@ private:
 
     void x_PushLocToDstMix(CRef<CSeq_loc> loc);
 
-    CRef<CSeq_align> x_MapSeq_align(const CSeq_align& src_align);
+    // Map alignment. If row == -1, map all rows.
+    CRef<CSeq_align> x_MapSeq_align(const CSeq_align& src_align,
+                                    size_t*           row);
 
     // Access mapped ranges, check vector size
     TMappedRanges& x_GetMappedRanges(const CSeq_id_Handle& id,
@@ -585,6 +592,21 @@ bool CSeq_loc_Mapper_Base::x_ReverseRangeOrder(void) const
         return m_Mappings->GetReverseDst();
     }
     return m_Mappings->GetReverseSrc() != m_Mappings->GetReverseDst();
+}
+
+
+inline
+CRef<CSeq_align> CSeq_loc_Mapper_Base::Map(const CSeq_align& src_align)
+{
+    return x_MapSeq_align(src_align, 0);
+}
+
+
+inline
+CRef<CSeq_align> CSeq_loc_Mapper_Base::Map(const CSeq_align& src_align,
+                                           size_t            row)
+{
+    return x_MapSeq_align(src_align, &row);
 }
 
 

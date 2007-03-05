@@ -64,7 +64,7 @@ CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
     // Create source seq-loc
     CSeq_loc src_loc(*id, 0, GetLength(loc, scope) - 1);
     CSeq_loc_Mapper mapper(src_loc, loc, scope);
-    return mapper.Map(align);
+    return mapper.Map(align, row);
 }
 
 

@@ -1673,15 +1673,6 @@ CSeq_loc_Mapper_Base::InitAlignMapper(const CSeq_align& src_align)
 }
 
 
-CRef<CSeq_align>
-CSeq_loc_Mapper_Base::x_MapSeq_align(const CSeq_align& src_align)
-{
-    CRef<CSeq_align_Mapper_Base> aln_mapper(InitAlignMapper(src_align));
-    aln_mapper->Convert(*this);
-    return aln_mapper->GetDstAlign();
-}
-
-
 CRef<CSeq_loc> CSeq_loc_Mapper_Base::Map(const CSeq_loc& src_loc)
 {
     m_Dst_loc.Reset();
@@ -1694,12 +1685,21 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::Map(const CSeq_loc& src_loc)
 }
 
 
-CRef<CSeq_align> CSeq_loc_Mapper_Base::Map(const CSeq_align& src_align)
+CRef<CSeq_align>
+CSeq_loc_Mapper_Base::x_MapSeq_align(const CSeq_align& src_align,
+                                     size_t*           row)
 {
     m_Dst_loc.Reset();
     m_Partial = false; // reset for each location
     m_LastTruncated = false;
-    return x_MapSeq_align(src_align);
+    CRef<CSeq_align_Mapper_Base> aln_mapper(InitAlignMapper(src_align));
+    if ( row ) {
+        aln_mapper->Convert(*this, *row);
+    }
+    else {
+        aln_mapper->Convert(*this);
+    }
+    return aln_mapper->GetDstAlign();
 }
 
 

@@ -455,13 +455,33 @@ void CSeq_align_Mapper_Base::Convert(CSeq_loc_Mapper_Base& mapper)
         }
         return;
     }
-    x_ConvertAlign(mapper);
+    x_ConvertAlign(mapper, 0);
 }
 
 
-void CSeq_align_Mapper_Base::x_ConvertAlign(CSeq_loc_Mapper_Base& mapper)
+void CSeq_align_Mapper_Base::Convert(CSeq_loc_Mapper_Base& mapper,
+                                     size_t                row)
+{
+    m_DstAlign.Reset();
+
+    if (m_SubAligns.size() > 0) {
+        NON_CONST_ITERATE(TSubAligns, it, m_SubAligns) {
+            (*it)->Convert(mapper, row);
+        }
+        return;
+    }
+    x_ConvertAlign(mapper, &row);
+}
+
+
+void CSeq_align_Mapper_Base::x_ConvertAlign(CSeq_loc_Mapper_Base& mapper,
+                                            size_t*               row)
 {
     if (m_Segs.size() == 0) {
+        return;
+    }
+    if ( row ) {
+        x_ConvertRow(mapper, *row);
         return;
     }
     for (size_t row_idx = 0; row_idx < m_Dim; ++row_idx) {
