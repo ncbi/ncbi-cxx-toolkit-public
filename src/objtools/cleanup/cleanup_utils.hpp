@@ -136,7 +136,7 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
         iterator dup_it = case_insensitive ?
             find_if( l.begin(), l_it, SCaseInsensitiveStrComp(*l_it) ) :
             find( l.begin(), l_it, *l_it );
-        if (dup_it != l.end()) {
+        if (dup_it != l_it) {
             l_it = l.erase(l_it);
             changed = true;
         } else {
