@@ -707,6 +707,21 @@ public:
                        CArgAllow*         constraint,
                        EConstraintNegate  negate = eConstraint);
 
+    /// Dependencies between arguments.
+    enum EDependency {
+        eRequires, ///< One argument requires another
+        eExcludes  ///< One argument excludes another
+    };
+
+    /// Define a dependency. If arg1 was specified and requires arg2,
+    /// arg2 is treated as a mandatory one even if was defined as optional.
+    /// If arg1 excludes arg2, arg2 must not be set even if it's mandatory.
+    /// This allows to create a set of arguments exactly one of which
+    /// must be set.
+    void SetDependency(const string& arg1,
+                       EDependency   dep,
+                       const string& arg2);
+
     /// Set current arguments group name. When printing descriptions for
     /// optional arguments (on -help command), they will be arranged by
     /// group name. Empty group name resets the group. Arguments without
@@ -772,6 +787,18 @@ private:
     typedef list<string>              TKeyFlagArgs; ///< List of flag arguments
     typedef vector<string>            TArgGroups;   ///< Argument groups
 
+    // Dependencies
+    struct SArgDependency
+    {
+        SArgDependency(const string arg, EDependency dep)
+            : m_Arg(arg), m_Dep(dep) {}
+        string      m_Arg;
+        EDependency m_Dep;
+    };
+    // Map arguments to their dependencies
+    typedef multimap<string, SArgDependency> TDependencies;
+    typedef TDependencies::const_iterator TDependency_CI;
+
 private:
     EArgSetType  m_ArgsType;     ///< Type of arguments
     TArgs        m_Args;         ///< Assoc.map of arguments' name/descr
@@ -783,6 +810,7 @@ private:
     TArgGroups   m_ArgGroups;    ///< Argument groups
     size_t       m_CurrentGroup; ///< Currently selected group (0 = no group)
     EArgPositionalMode m_PositionalMode; ///< Processing of positional args
+    TDependencies      m_Dependencies;   ///< Arguments' dependencies
 
     // Extra USAGE info
     string    m_UsageName;         ///< Program name

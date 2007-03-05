@@ -1606,6 +1606,20 @@ void CArgDescriptions::SetConstraint(const string&      name,
 }
 
 
+void CArgDescriptions::SetDependency(const string& arg1,
+                                     EDependency   dep,
+                                     const string& arg2)
+{
+    m_Dependencies.insert(TDependencies::value_type(arg1,
+        SArgDependency(arg2, dep)));
+    if (dep == eExcludes) {
+        // Exclusions must work in both directions
+        m_Dependencies.insert(TDependencies::value_type(arg2,
+            SArgDependency(arg1, dep)));
+    }
+}
+
+
 void CArgDescriptions::SetCurrentGroup(const string& group)
 {
     m_CurrentGroup = x_GetGroupIndex(group);
@@ -2012,6 +2026,28 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
         NCBI_THROW(CArgHelpException, eHelp, kEmptyStr);
     }
 
+    // Check dependencies, create set of exclusions
+    set<string> exclude;
+    set<string> require;
+    ITERATE(TDependencies, dep, m_Dependencies) {
+        if ( !args.Exist(dep->first) ) {
+            continue;
+        }
+        switch ( dep->second.m_Dep ) {
+        case eRequires:
+            require.insert(dep->second.m_Arg);
+            break;
+        case eExcludes:
+            if ( args.Exist(dep->second.m_Arg) ) {
+                NCBI_THROW(CArgException, eConstraint,
+                    s_ArgExptMsg(dep->second.m_Arg,
+                    "Conflict with argument", dep->first));
+            }
+            exclude.insert(dep->second.m_Arg);
+            break;
+        }
+    }
+
     // Check if all mandatory unnamed positional arguments are provided
     if (m_PosArgs.size() <= n_plain  &&
         n_plain < m_PosArgs.size() + m_nExtra){
@@ -2024,10 +2060,16 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
     // Compose an ordered list of args
     list<const CArgDesc*> def_args;
     ITERATE (TKeyFlagArgs, it, m_KeyFlagArgs) {
+        if (exclude.find(*it) != exclude.end()) {
+            continue;
+        }
         const CArgDesc& arg = **x_Find(*it);
         def_args.push_back(&arg);
     }
     ITERATE (TPosArgs, it, m_PosArgs) {
+        if (exclude.find(*it) != exclude.end()) {
+            continue;
+        }
         const CArgDesc& arg = **x_Find(*it);
         def_args.push_back(&arg);
     }
@@ -2040,6 +2082,13 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
         // Nothing to do if defined in the command-line
         if ( args.Exist(arg.GetName()) ) {
             continue;
+        }
+
+        if (require.find(arg.GetName()) != require.end() ) {
+            // Required argument must be present
+            NCBI_THROW(CArgException, eConstraint,
+                s_ArgExptMsg(arg.GetName(),
+                "Explicit value required by dependencies", kEmptyStr));
         }
 
         // Use default argument value
@@ -2215,6 +2264,34 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
     if ( dflt ) {
         s_PrintCommentBody
             (arr, "Default = `" + dflt->GetDefaultValue() + '\'', width);
+    }
+
+    // Print required/excluded args
+    string require;
+    string exclude;
+    pair<TDependency_CI, TDependency_CI> dep_rg =
+        m_Dependencies.equal_range(arg.GetName());
+    for (TDependency_CI dep = dep_rg.first; dep != dep_rg.second; ++dep) {
+        switch ( dep->second.m_Dep ) {
+        case eRequires:
+            if ( !require.empty() ) {
+                require += ", ";
+            }
+            require += dep->second.m_Arg;
+            break;
+        case eExcludes:
+            if ( !exclude.empty() ) {
+                exclude += ", ";
+            }
+            exclude += dep->second.m_Arg;
+            break;
+        }
+    }
+    if ( !require.empty() ) {
+        s_PrintCommentBody(arr, " * Requires:  " + require, width);
+    }
+    if ( !exclude.empty() ) {
+        s_PrintCommentBody(arr, " * Incompatible with:  " + exclude, width);
     }
 }
 
