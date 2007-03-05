@@ -166,7 +166,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    BlastInitialWordParameters* *parameters)
 {
    BlastInitialWordParameters *p;
-   Blast_KarlinBlk* kbp_std;
+   Blast_KarlinBlk* kbp;
    Int2 status = 0;
    Int4 context;
    const int kQueryLenForHashTable = 8000; /* For blastn, use hash table rather 
@@ -180,7 +180,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 
    ASSERT(word_options);
    ASSERT(sbp);
-   if (s_BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp_std) != 0)
+   if (s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
          return -1;
 
    p = *parameters = (BlastInitialWordParameters*)calloc(1, 
@@ -198,11 +198,11 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 
       if (!(query_info->contexts[context].is_valid))
          continue;
-      kbp_std = sbp->kbp_std[context];
-      ASSERT(s_BlastKarlinBlkIsValid(kbp_std));
-      p->cutoffs[context].x_dropoff_init = (Int4)(sbp->scale_factor * 
-                                     ceil(word_options->x_dropoff * 
-                                          NCBIMATH_LN2 / kbp_std->Lambda));
+      kbp= sbp->kbp[context];
+      ASSERT(s_BlastKarlinBlkIsValid(kbp));
+      p->cutoffs[context].x_dropoff_init =
+          (Int4)(sbp->scale_factor *
+                 ceil(word_options->x_dropoff * NCBIMATH_LN2 / kbp->Lambda));
    }
 
    if (program_number == eBlastTypeBlastn &&
@@ -806,12 +806,12 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
 
       /* If using sum statistics, use a modified cutoff score 
          if that turns out smaller */
-      if (params->options->do_sum_stats && gapped_calculation) {
+      if (params->link_hsp_params && gapped_calculation) {
 
          double evalue_hsp = 1.0;
          Int4 concat_qlen =
              query_info->contexts[query_info->last_context].query_offset +
-             query_info->contexts[query_info->last_context].query_length - 1;
+             query_info->contexts[query_info->last_context].query_length;
          Int4 avg_qlen = concat_qlen / (query_info->last_context + 1);
          Int8 searchsp = (Int8)MIN(avg_qlen, avg_subject_length) * 
                          (Int8)avg_subject_length;
@@ -941,6 +941,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log: blast_parameters.c,v $
+ * Revision 1.34  2007/02/08 16:55:42  kazimird
+ * Synchronized with the C++ Toolkit.
+ *
  * Revision 1.33  2007/01/21 08:45:12  kazimird
  * Synchronized with the C++ Toolkit.
  *

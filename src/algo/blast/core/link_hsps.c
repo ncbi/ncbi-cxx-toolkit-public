@@ -39,6 +39,7 @@ static char const rcsid[] =
 
 #include <algo/blast/core/link_hsps.h>
 #include <algo/blast/core/blast_util.h>
+#include "blast_hits_priv.h"
 
 /******************************************************************************
  * Structures and functions used only in even (small or large) gap linking    *
@@ -1238,7 +1239,7 @@ s_SumScoreCompareLinkedHSPSets(const void* v1, const void* v2)
     if (h1->sum_score > h2->sum_score)
         return -1;
 
-    return 0;
+    return ScoreCompareHSPs(&h1->hsp, &h2->hsp);
 }
 
 /** Find an HSP on the same context as the one given, with closest start offset
@@ -1804,7 +1805,7 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
     /* Remove any information on number of linked HSPs from previous
        linking. */
     for (index = 0; index < hsp_list->hspcnt; ++index)
-        hsp_list->hsp_array[index]->num = 1;
+        hsp_list->hsp_array[index]->num = 0;
     
     /* Link up the HSP's for this hsp_list. */
     if (link_hsp_params->longest_intron <= 0) {

@@ -539,7 +539,7 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
 
     /** @todo how to determine this for PSI-BLAST bootstrap run (i.e. when
      * program is blastp? */
-    if (Blast_QueryIsPssm(program)) {
+    if (Blast_QueryIsPssm(program) && ! Blast_SubjectIsTranslated(program)) {
         (*options)->compositionBasedStats = TRUE;
     }
 
@@ -570,7 +570,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
       }
    }
 
-   if (Blast_QueryIsPssm(program)) {
+   if (Blast_QueryIsPssm(program) && ! Blast_SubjectIsTranslated(program)) {
        options->compositionBasedStats = TRUE;
    }
 
@@ -1231,12 +1231,14 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
 		return BLASTERR_OPTION_VALUE_INVALID;
 	}	
 
-   if (options->longest_intron != 0 && 
-       program_number != eBlastTypeTblastn && 
+   if (options->longest_intron != 0 &&
+       program_number != eBlastTypeTblastn &&
+       program_number != eBlastTypePsiTblastn &&
        program_number != eBlastTypeBlastx) {
-		Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
-         "Uneven gap linking of HSPs is allowed for blastx and tblastn only");
-		return BLASTERR_OPTION_PROGRAM_INVALID;
+                Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
+         "Uneven gap linking of HSPs is allowed for blastx, "
+         "tblastn, and psitblastn only");
+                return BLASTERR_OPTION_PROGRAM_INVALID;
    }
 
 	if (options->culling_limit < 0)
@@ -1449,6 +1451,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log: blast_options.c,v $
+ * Revision 1.197  2007/02/14 20:25:43  kazimird
+ * Synchronized with the C++ Toolkit.
+ *
  * Revision 1.196  2007/02/08 17:55:32  kazimird
  * Synchronized with the C++ Toolkit.
  *
